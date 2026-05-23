@@ -768,6 +768,11 @@ export async function bakeLook(lookName, opts = {}) {
   // texture-tile dedup pattern atlas-survey uses for bark/leaf.
   const gradientSeenSha = new Map() // sha1 -> { key, lutBuffer, refs:[] }
   const gradientStopsByRef = new Map() // "species|variantId" -> stops array (for downstream)
+  // Brief 2.1 (Birch): per-variant cross-tree hash amp authored alongside
+  // gradientStops. NOT folded into the LUT sha1 dedup — two variants with
+  // identical ramps but different hashAmps still share one atlas tile;
+  // the amp travels as a slot field consumed by applyBarkUniforms at runtime.
+  const gradientHashAmpByRef = new Map() // "species|variantId" -> number
   {
     const manifestCache = new Map()
     for (const v of roster) {
@@ -785,6 +790,8 @@ export async function bakeLook(lookName, opts = {}) {
       const stops = variant?.bark?.gradientStops
       if (!Array.isArray(stops) || stops.length < 2) continue
       gradientStopsByRef.set(refKey, stops)
+      gradientHashAmpByRef.set(refKey,
+        typeof variant.bark.gradientHashAmp === 'number' ? variant.bark.gradientHashAmp : 0)
       const lutBuffer = compileGradientLUT(stops)
       const sha = gradientSha1(lutBuffer)
       const existing = gradientSeenSha.get(sha)
@@ -913,15 +920,18 @@ export async function bakeLook(lookName, opts = {}) {
   // preserving Brief 1.5a back-compat.
   const barkGradientByVariant = {}
   for (const gt of unified?.gradientTiles || []) {
-    const slot = {
-      offsetU: gt.uvTransform.offsetU,
-      offsetV: gt.uvTransform.offsetV,
-      scaleU: gt.uvTransform.scaleU,
-      scaleV: gt.uvTransform.scaleV,
-    }
     for (const ref of gt.refs) {
       if (!barkGradientByVariant[ref.species]) barkGradientByVariant[ref.species] = {}
-      barkGradientByVariant[ref.species][ref.variantId] = slot
+      // Brief 2.1: hashAmp travels per-(species, variantId) — two variants
+      // sharing one deduped LUT tile may still carry different amps.
+      const amp = gradientHashAmpByRef.get(`${ref.species}|${ref.variantId}`) ?? 0
+      barkGradientByVariant[ref.species][ref.variantId] = {
+        offsetU: gt.uvTransform.offsetU,
+        offsetV: gt.uvTransform.offsetV,
+        scaleU: gt.uvTransform.scaleU,
+        scaleV: gt.uvTransform.scaleV,
+        hashAmp: amp,
+      }
     }
   }
 

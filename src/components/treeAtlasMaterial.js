@@ -91,6 +91,12 @@ function injectFoliageSway(material) {
     shader.uniforms.uUseBarkGradient = { value: 0 }
     shader.uniforms.uBarkGradientTileOffset = { value: new THREE.Vector2(0, 0) }
     shader.uniforms.uBarkGradientTileScale = { value: new THREE.Vector2(1, 1) }
+    // Brief 2.1 (Birch) — per-pixel luminance pivot. uBarkGradientHashAmp
+    // adds optional cross-tree modulation on top of the luminance base
+    // sampling axis. Default 0 = pure luminance → identical bark+gradient
+    // pairs render pixel-identical across instances. >0 sub-amplitude
+    // hash offset preserves species character with subtle variety.
+    shader.uniforms.uBarkGradientHashAmp = { value: 0 }
     // Brief 2.1a (Cinder) — bark Detail Texturing composite. Detail tile
     // packs into the same unified atlas as bark/leaves/gradient; sampled
     // via `map` at vMapUv * Scale + Offset, Overlay-blended over whatever
@@ -193,6 +199,7 @@ function injectFoliageSway(material) {
          uniform float uUseBarkGradient;
          uniform vec2  uBarkGradientTileOffset;
          uniform vec2  uBarkGradientTileScale;
+         uniform float uBarkGradientHashAmp;
          uniform vec2  uBarkDetailTileOffset;
          uniform vec2  uBarkDetailTileScale;
          uniform float uBarkDetailStrength;
@@ -232,19 +239,27 @@ function injectFoliageSway(material) {
            float effJitter   = mix(uBarkTintJitterRange, regionJitter, uBarkRegionSplit);
            vec3 perInstanceTint = mix(vec3(1.0), 0.5 + jitter, effJitter);
            vec3 barkTint = effTintBase * perInstanceTint;
-           // Brief 2 (Holm) per-variant gradient: a fresh hash channel
-           // (uncorrelated with jh1/jh2/jh3 used by tintJitter so gradient
-           // and legacy jitter don't covary if both are ever active)
-           // indexes a 256×1 LUT tile packed into the unified atlas. The
-           // LUT was authored sRGB at bake time and the atlas texture is
-           // tagged SRGBColorSpace, so this sample is auto-linearized. The
-           // *2.0 bias keeps midtone ramp stops near identity-multiplication
-           // against the bark texture's luminance.
+           // Brief 2.1 (Birch) per-pixel luminance gradient with REPLACE
+           // semantics: when bound, the gradient LUT-sampled-at-luminance
+           // IS the bark color — it does NOT tint or multiply the PBR
+           // sample. "Luminance is the substrate; gradient is the palette."
+           // Same gradient stops across different bark refs → distinct
+           // species identities (Maple furrow vs Oak furrow drive the LUT
+           // differently). Rec.601 luminance computed on post-<map_fragment>
+           // diffuseColor (linearized via SRGBColorSpace atlas tag).
+           // uBarkGradientHashAmp adds optional sub-amplitude per-instance
+           // modulation on top of the luminance base; default 0 = pure
+           // luminance, identical bark+gradient pairs render pixel-identical.
+           // jh4 stays uncorrelated with jh1/jh2/jh3 used by tintJitter.
+           // Final mix is between two complete bark colors: legacy tinted-PBR
+           // (no gradient bound) vs gradient-replaced (gradient bound).
+           float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
            float jh4 = fract(sin(dot(vWorldXZ.xz, vec2(521.7, 233.1))) * 43758.5453);
-           vec2 lutUV = vec2(jh4, 0.5) * uBarkGradientTileScale + uBarkGradientTileOffset;
-           vec3 gradientTint = texture2D(map, lutUV).rgb * 2.0;
-           vec3 effTintFinal = mix(barkTint, gradientTint, uUseBarkGradient);
-           vec3 barkColor = diffuseColor.rgb * effTintFinal;
+           float gradT = clamp(lum + (jh4 - 0.5) * uBarkGradientHashAmp, 0.0, 1.0);
+           vec2 lutUV = vec2(gradT, 0.5) * uBarkGradientTileScale + uBarkGradientTileOffset;
+           vec3 gradientColor = texture2D(map, lutUV).rgb;
+           vec3 legacyBark = diffuseColor.rgb * barkTint;
+           vec3 barkColor = mix(legacyBark, gradientColor, uUseBarkGradient);
            // Brief 2.1a (Cinder) Detail Texturing composite — Unreal Detail
            // Texture / Unity HDRP Detail Albedo. Recover the [0,1] tile-local
            // UV from vMapUv (which lives in the bark sub-region of the

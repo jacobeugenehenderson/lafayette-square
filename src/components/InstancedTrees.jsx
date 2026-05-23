@@ -235,8 +235,13 @@ function applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot) {
     shader.uniforms.uUseBarkGradient.value = 1
     shader.uniforms.uBarkGradientTileOffset.value.set(gradientSlot.offsetU, gradientSlot.offsetV)
     shader.uniforms.uBarkGradientTileScale.value.set(gradientSlot.scaleU, gradientSlot.scaleV)
+    // Brief 2.1 (Birch) — per-pixel luminance pivot. hashAmp adds
+    // sub-amplitude cross-tree modulation on top of the luminance base;
+    // default 0 keeps adjacent same-species trees pixel-identical.
+    shader.uniforms.uBarkGradientHashAmp.value = gradientSlot.hashAmp ?? 0
   } else {
     shader.uniforms.uUseBarkGradient.value = 0
+    shader.uniforms.uBarkGradientHashAmp.value = 0
   }
   // Brief 2.1a (Cinder) — detail slot carries the detail sub-region
   // uvTransform PLUS the species's primary bark tile bounds so the shader

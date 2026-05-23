@@ -53,18 +53,19 @@ const CATEGORY_TARGET_HEIGHT = {
   unusual: 10,
 }
 
-// Studio framing: centers the bullseye (y=0) and the category-target band
-// (y=target) vertically in the viewport. fov=38° (matches the Canvas).
-// Padding adds a little headroom above the canopy so the yardstick mark
-// isn't pinned at the frame edge.
+// Studio framing: centers the bullseye (y=0) and the canopy top (y=treeH)
+// vertically in the viewport. fov=38° (matches the Canvas). Padding adds
+// a little headroom above the canopy. `treeH` defaults to the broadleaf
+// category target (12m) for first-paint before the GLB finishes loading;
+// once Skeleton emits its computed top-Y the framing re-fits on the real
+// chassis height — fixes the 30m Linden being clipped at default 12m fit.
 const STUDIO_FOV_DEG = 38
-function studioFraming(category) {
-  const target = CATEGORY_TARGET_HEIGHT[category] ?? 12
+function studioFraming(treeH = 12) {
   const padding = 2
-  const halfSpan = target / 2 + padding
+  const halfSpan = treeH / 2 + padding
   const halfFov = (STUDIO_FOV_DEG * Math.PI / 180) / 2
   const distance = halfSpan / Math.tan(halfFov)
-  return { height: target / 2, distance }
+  return { height: treeH / 2, distance }
 }
 
 // ── Camera — fixed azimuth, separate zoom (distance) + crane (height) ─
@@ -75,9 +76,18 @@ function studioFraming(category) {
 // `cameraStateRef` is owned by the parent (Workstage), so the camera
 // position survives Canvas remounts when the operator switches LOD,
 // variant, or species — it doesn't snap back to defaults every click.
-function DollyCam({ cameraStateRef }) {
+function DollyCam({ cameraStateRef, dragPanRef, rotationY = 0, rotationOffset, onRotationChange }) {
   const { camera, gl } = useThree()
   const stateRef = cameraStateRef
+  // Track latest rotationY in a ref so the pointerdown listener captures
+  // the live value at gesture start without re-binding listeners every
+  // rotation change.
+  const rotYRef = useRef(rotationY)
+  useEffect(() => { rotYRef.current = rotationY }, [rotationY])
+  const rotOffsetRef = useRef(rotationOffset)
+  useEffect(() => { rotOffsetRef.current = rotationOffset }, [rotationOffset])
+  const onRotRef = useRef(onRotationChange)
+  useEffect(() => { onRotRef.current = onRotationChange }, [onRotationChange])
 
   useFrame(() => {
     const { distance, height } = stateRef.current
@@ -91,11 +101,14 @@ function DollyCam({ cameraStateRef }) {
   useEffect(() => {
     const dom = gl.domElement
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+    // Height clamp bumped 40 → 60 so the operator can crane up to inspect
+    // the canopy on mature broadleaf chassis (Linden 30m, mature 40m).
+    const H_MIN = 0.1, H_MAX = 60
     const onWheel = (e) => {
       e.preventDefault()
       const s = stateRef.current
       if (e.shiftKey) {
-        s.height = clamp(s.height - e.deltaY * 0.03, 0.1, 40)
+        s.height = clamp(s.height - e.deltaY * 0.03, H_MIN, H_MAX)
       } else {
         s.distance = clamp(s.distance + e.deltaY * 0.04, 1.5, 150)
       }
@@ -103,18 +116,66 @@ function DollyCam({ cameraStateRef }) {
     const onKey = (e) => {
       const s = stateRef.current
       const step = e.shiftKey ? 2 : 0.5
-      if (e.key === 'ArrowUp')   { s.height   = clamp(s.height + step, 0.1, 40) }
-      if (e.key === 'ArrowDown') { s.height   = clamp(s.height - step, 0.1, 40) }
+      if (e.key === 'ArrowUp')   { s.height   = clamp(s.height + step, H_MIN, H_MAX) }
+      if (e.key === 'ArrowDown') { s.height   = clamp(s.height - step, H_MIN, H_MAX) }
       if (e.key === '=' || e.key === '+') { s.distance = clamp(s.distance - step, 1.5, 150) }
       if (e.key === '-' || e.key === '_') { s.distance = clamp(s.distance + step, 1.5, 150) }
     }
+    // Alt (Option on Mac) + drag → 2-axis camera gesture: dy cranes the
+    // camera up/down, dx turntable-rotates the tree. Capture-phase
+    // listener fires BEFORE R3F's bubble-phase canvas listener on the
+    // same element, so stopPropagation prevents gnomon handles from
+    // also processing the click. Without Alt, clicks pass through
+    // normally. Sensitivity: 0.05 m/px crane, 0.008 rad/px rotate
+    // (≈ 360° per 800px drag).
+    const onDown = (e) => {
+      if (!e.altKey || e.button !== 0 || !stateRef?.current) return
+      dragPanRef.current = {
+        x0: e.clientX,
+        y0: e.clientY,
+        h0: stateRef.current.height,
+        ry0: rotYRef.current,
+        axis: null,  // 'x' or 'y' — locked after first 5px of travel
+      }
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    const onMove = (e) => {
+      const d = dragPanRef?.current
+      if (!d) return
+      const dy = e.clientY - d.y0
+      const dx = e.clientX - d.x0
+      // Axis lock: whichever direction first crosses 5px deadzone wins,
+      // and the rest of the gesture stays on that axis. Prevents
+      // accidental cross-axis micro-input.
+      if (!d.axis) {
+        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return
+        d.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      }
+      if (d.axis === 'y') {
+        // Drag UP → camera DOWN (inverted per operator preference —
+        // matches "pull the view down to reveal what's up").
+        stateRef.current.height = clamp(d.h0 + dy * 0.05, H_MIN, H_MAX)
+      } else if (d.axis === 'x' && onRotRef.current) {
+        const nextRy = d.ry0 + dx * 0.008
+        const off = rotOffsetRef.current || [0, 0, 0]
+        onRotRef.current(off[0], nextRy, off[2])
+      }
+    }
+    const onUp = () => { if (dragPanRef) dragPanRef.current = null }
     dom.addEventListener('wheel', onWheel, { passive: false })
+    dom.addEventListener('pointerdown', onDown, { capture: true })
     window.addEventListener('keydown', onKey)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
     return () => {
       dom.removeEventListener('wheel', onWheel)
+      dom.removeEventListener('pointerdown', onDown, { capture: true })
       window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
     }
-  }, [gl])
+  }, [gl, dragPanRef])
 
   return null
 }
@@ -469,13 +530,15 @@ function AxisArrow({ color, direction, length, tipR, onDown, onMove, onUp }) {
 // ── Yardstick — vertical post w/ labeled tick marks + category target band ─
 function Yardstick({ targetCategory = 'broadleaf' }) {
   const target = CATEGORY_TARGET_HEIGHT[targetCategory] ?? 12
-  const ticks = [1, 5, 10, 15, 20, 25]
+  // Extended 25 → 40m 2026-05-22 (Linden 30.7m). Mature broadleaf upper
+  // bound for the LS inventory comfortably fits within 40m.
+  const ticks = [1, 5, 10, 15, 20, 25, 30, 35, 40]
 
   return (
     <group position={[3, 0, 0]}>
       {/* Post */}
-      <mesh position={[0, 12.5, 0]}>
-        <cylinderGeometry args={[0.04, 0.04, 25, 12]} />
+      <mesh position={[0, 20, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 40, 12]} />
         <meshStandardMaterial color="#888" roughness={0.7} />
       </mesh>
 
@@ -589,6 +652,52 @@ function PointCloud({ url }) {
 // ── Specimen content — published GLB ──────────────────────────────────
 // Applies effectiveScale (override or normalize) so what you see here is
 // what InstancedTrees ships. Auto-plants base by sampling lowest mesh Y.
+// Brief 2.1 (Birch): build a 256×1 sRGB RGBA LUT from gradient stops.
+// Mirrors arborist/bake-look.js#compileGradientLUT — linear interp between
+// stops, sorted by t. Used by the Salon preview path to inject the same
+// per-pixel-luminance gradient as treeAtlasMaterial without going through
+// the bake → atlas → reload cycle.
+//
+// ⚠ KNOWN DRIFT — INTERIM, RETIRED BY BRIEF 7 (Salon Preview Atlas) ⚠
+// This helper duplicates bake-look#compileGradientLUT. Brief 7 mounts
+// treeAtlasMaterial directly in Salon preview, at which point this whole
+// helper goes away and the LUT lives in the per-composition preview atlas.
+function buildGradientLUT(stops) {
+  const sorted = [...stops].sort((a, b) => a.t - b.t)
+  const hexToRgb = (hex) => {
+    const s = (hex || '#000000').replace(/^#/, '')
+    const v = s.length === 3 ? s.split('').map(c => c + c).join('') : s
+    return [
+      parseInt(v.slice(0, 2), 16) || 0,
+      parseInt(v.slice(2, 4), 16) || 0,
+      parseInt(v.slice(4, 6), 16) || 0,
+    ]
+  }
+  const data = new Uint8Array(256 * 4)
+  for (let i = 0; i < 256; i++) {
+    const t = i / 255
+    let lo = sorted[0], hi = sorted[sorted.length - 1]
+    for (let k = 0; k < sorted.length - 1; k++) {
+      if (sorted[k].t <= t && sorted[k + 1].t >= t) { lo = sorted[k]; hi = sorted[k + 1]; break }
+    }
+    const span = Math.max(1e-6, hi.t - lo.t)
+    const f = Math.max(0, Math.min(1, (t - lo.t) / span))
+    const [lr, lg, lb] = hexToRgb(lo.color)
+    const [hr, hg, hb] = hexToRgb(hi.color)
+    data[i * 4 + 0] = Math.round(lr + (hr - lr) * f)
+    data[i * 4 + 1] = Math.round(lg + (hg - lg) * f)
+    data[i * 4 + 2] = Math.round(lb + (hb - lb) * f)
+    data[i * 4 + 3] = 255
+  }
+  const tex = new THREE.DataTexture(data, 256, 1, THREE.RGBAFormat)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearFilter
+  tex.generateMipmaps = false
+  tex.needsUpdate = true
+  return tex
+}
+
 function Skeleton({
   url, forestryRotation,
   scale = 1,
@@ -596,6 +705,8 @@ function Skeleton({
   rotationOffset = [0, 0, 0],
   onTopY,
   windStrength = 0,
+  gradientStops = null,
+  gradientHashAmp = 0,
 }) {
   const { scene } = useGLTF(url)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
@@ -617,6 +728,42 @@ function Skeleton({
   useFrame((_, dt) => {
     windUniformsRef.current.uTime.value += dt
   })
+
+  // Brief 2.1 (Birch): gradient uniforms shared across every bark material
+  // patched in this scene. Same mutable-ref pattern as windUniformsRef so
+  // stops/hashAmp can update live without remounting the Canvas. The LUT
+  // texture is rebuilt + swapped on stops change; the prior texture is
+  // disposed to release GPU memory.
+  // 1×1 white fallback so the sampler always binds to a valid texture even
+  // when no gradient is authored (uUseBarkGradient=0 discards the sample).
+  // The fallback is created lazily once per Skeleton instance.
+  const gradientFallbackRef = useRef(null)
+  if (!gradientFallbackRef.current) {
+    const fb = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat)
+    fb.needsUpdate = true
+    gradientFallbackRef.current = fb
+  }
+  const gradientUniformsRef = useRef({
+    uUseBarkGradient:     { value: 0 },
+    uBarkGradientLUT:     { value: gradientFallbackRef.current },
+    uBarkGradientHashAmp: { value: 0 },
+  })
+  useEffect(() => {
+    const u = gradientUniformsRef.current
+    const valid = Array.isArray(gradientStops) && gradientStops.length >= 2
+    const prev = u.uBarkGradientLUT.value
+    if (valid) {
+      u.uBarkGradientLUT.value = buildGradientLUT(gradientStops)
+      u.uUseBarkGradient.value = 1
+    } else {
+      u.uBarkGradientLUT.value = gradientFallbackRef.current
+      u.uUseBarkGradient.value = 0
+    }
+    if (prev && prev !== gradientFallbackRef.current && prev.dispose) prev.dispose()
+  }, [gradientStops])
+  useEffect(() => {
+    gradientUniformsRef.current.uBarkGradientHashAmp.value = gradientHashAmp ?? 0
+  }, [gradientHashAmp])
 
   // Strip vertex-color AO baking + patch each material with the wind
   // shader. Patch is idempotent (userData.windPatched gate) so the
@@ -662,6 +809,68 @@ function Skeleton({
           shader.uniforms.uTime         = windUniformsRef.current.uTime
           shader.uniforms.uWindStrength = windUniformsRef.current.uWindStrength
           shader.uniforms.uIsLeaf       = { value: isLeaf ? 1.0 : 0.0 }
+          // Brief 2.1 (Birch): bark-only per-pixel luminance gradient
+          // REPLACE. Mirrors treeAtlasMaterial.js's chunk so the Salon
+          // preview shows gradient stops live without going through bake →
+          // atlas → reload. Bound uniforms come from gradientUniformsRef so
+          // the operator's slider/stop edits propagate via .value mutation
+          // (no shader recompile).
+          //
+          // ⚠ KNOWN DRIFT — INTERIM SHAPE, RETIRED BY BRIEF 7 ⚠
+          // This chunk is a hand-mirror of the bark-gradient injection in
+          // treeAtlasMaterial.js#injectFoliageSway (the production LS path).
+          // Two implementations of one feature is exactly the architectural
+          // failure Brief 2.1 was triggered by (see
+          // feedback_spec_compression). It exists here ONLY because the
+          // Salon preview renders raw GLB materials, not the shared atlas
+          // material — there is no atlas-of-one for an in-flight
+          // composition. Brief 7 (Salon Preview Atlas) builds a per-
+          // composition atlas server-side so SpecimenViewport can mount
+          // treeAtlasMaterial directly; this whole block — and the
+          // gradientUniformsRef + buildGradientLUT helpers above — disappear
+          // when Brief 7 lands. Until then: any edit to the bark-gradient
+          // semantics in treeAtlasMaterial.js MUST be mirrored here.
+          if (!isLeaf) {
+            shader.uniforms.uUseBarkGradient     = gradientUniformsRef.current.uUseBarkGradient
+            shader.uniforms.uBarkGradientLUT     = gradientUniformsRef.current.uBarkGradientLUT
+            shader.uniforms.uBarkGradientHashAmp = gradientUniformsRef.current.uBarkGradientHashAmp
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <common>',
+              `#include <common>
+               uniform float     uUseBarkGradient;
+               uniform sampler2D uBarkGradientLUT;
+               uniform float     uBarkGradientHashAmp;
+               varying vec3      vSalonWorldXZ;`
+            ).replace(
+              // Inject AFTER <map_fragment> so diffuseColor carries the
+              // bark photo's linearized RGB. Luminance lookup REPLACES the
+              // sample (no multiplicative tint) per Brief 2.1.
+              '#include <map_fragment>',
+              `#include <map_fragment>
+               {
+                 float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+                 float jh4 = fract(sin(dot(vSalonWorldXZ.xz, vec2(521.7, 233.1))) * 43758.5453);
+                 float gradT = clamp(lum + (jh4 - 0.5) * uBarkGradientHashAmp, 0.0, 1.0);
+                 vec3 gradientColor = texture2D(uBarkGradientLUT, vec2(gradT, 0.5)).rgb;
+                 diffuseColor.rgb = mix(diffuseColor.rgb, gradientColor, uUseBarkGradient);
+               }`
+            )
+            // vSalonWorldXZ exists only to feed jh4. modelMatrix's
+            // translation column is constant per draw — fine for a
+            // single-tree preview; hashAmp variation visualizes as a
+            // uniform offset rather than across-tree variety here, but the
+            // per-pixel luminance axis (the verification target) is
+            // unaffected.
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <common>',
+              `#include <common>
+               varying vec3 vSalonWorldXZ;`
+            ).replace(
+              '#include <begin_vertex>',
+              `#include <begin_vertex>
+               vSalonWorldXZ = vec3(modelMatrix[3].x, 0.0, modelMatrix[3].z);`
+            )
+          }
           shader.vertexShader = shader.vertexShader.replace(
             '#include <common>',
             `uniform float uTime;
@@ -791,6 +1000,8 @@ export default function SpecimenViewport({
   cameraStateRef,
   windStrength = 0,
   onPerfSample,
+  gradientStops = null,
+  gradientHashAmp = 0,
 }) {
   if (mode === 'skeleton' && !glbUrl) {
     return <EmptyState>No baked variant for this specimen.</EmptyState>
@@ -799,22 +1010,32 @@ export default function SpecimenViewport({
     return <EmptyState>Select a specimen to preview</EmptyState>
   }
   const topYRef = useRef(12)
+  const [topY, setTopY] = useState(null)  // null until Skeleton reports
+  // Drag-to-crane: empty-space drag adjusts camera height. `onPointerMissed`
+  // gates the start so gnomon handles keep input priority — only empty
+  // canvas clicks arm the drag. Mid-drag updates land in DollyCam via the
+  // shared ref (set on the pointerdown, read in pointermove).
+  const dragPanRef = useRef(null)
   // 'studio' = full gizmo (xy + z + rotation), 'worm' = only z + rotation
   // (xy makes no sense looking horizontally near the floor — operator
   // uses Oubliette drag for horizontal placement instead).
   const [camMode, setCamMode] = useState('studio')
-  // First-mount framing: snap the camera to studio so the bullseye and
-  // category-target band are centered. The ref is owned by the parent
-  // and persists across Canvas remounts (variant/LOD swaps), so we
-  // seed only when it still holds the WorkstageGlb default sentinel —
-  // operator tweaks survive variant navigation.
-  if (cameraStateRef?.current
-      && cameraStateRef.current.distance === 22
-      && cameraStateRef.current.height === 8) {
-    const f = studioFraming(targetCategory)
+  // Auto-fit camera whenever the chassis changes. Triggers on viewKey
+  // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
+  // remounts the Canvas) AND on the first topY emission per chassis.
+  // The fit uses the ACTUAL loaded chassis height — fixes the previous
+  // CATEGORY_TARGET_HEIGHT default (12m broadleaf) clipping 30m chassis
+  // like Linden. Operator dolly/crane tweaks AFTER fit are preserved
+  // since we only re-fit on the first topY signal per chassis.
+  const lastFitKeyRef = useRef(null)
+  useEffect(() => {
+    if (!cameraStateRef?.current || topY == null) return
+    if (lastFitKeyRef.current === viewKey) return  // already fit this chassis
+    lastFitKeyRef.current = viewKey
+    const f = studioFraming(topY)
     cameraStateRef.current.distance = f.distance
     cameraStateRef.current.height   = f.height
-  }
+  }, [topY, viewKey, cameraStateRef])
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Canvas
@@ -835,8 +1056,10 @@ export default function SpecimenViewport({
               scale={effectiveScale}
               positionOffset={positionOffset}
               rotationOffset={rotationOffset}
-              onTopY={(y) => { topYRef.current = y }}
+              onTopY={(y) => { topYRef.current = y; setTopY(y) }}
               windStrength={windStrength}
+              gradientStops={gradientStops}
+              gradientHashAmp={gradientHashAmp}
             />
           )}
         </Suspense>
@@ -854,7 +1077,13 @@ export default function SpecimenViewport({
             onScale={onScaleChange}
           />
         )}
-        <DollyCam cameraStateRef={cameraStateRef} />
+        <DollyCam
+          cameraStateRef={cameraStateRef}
+          dragPanRef={dragPanRef}
+          rotationY={rotationOffset[1]}
+          rotationOffset={rotationOffset}
+          onRotationChange={onRotationChange}
+        />
         {onPerfSample && <PerfProbe onSample={onPerfSample} />}
       </Canvas>
       {mode === 'skeleton' && glbUrl && (

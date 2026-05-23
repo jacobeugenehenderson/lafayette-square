@@ -436,6 +436,8 @@ function SlotCard({
             cameraStateRef={cameraStateRef}
             windStrength={windEnabled ? windStrength : 0}
             onPerfSample={setPerfSample}
+            gradientStops={bark?.gradientStops}
+            gradientHashAmp={bark?.gradientHashAmp}
           />
         )}
         {/* LoD selector (lifted) */}
@@ -633,7 +635,7 @@ function insertMidpointStop(stops) {
   const next = [...sorted.slice(0, gapI + 1), { t, color }, ...sorted.slice(gapI + 1)]
   return next
 }
-function BarkGradientEditor({ stops, tintBase, onCommit }) {
+function BarkGradientEditor({ stops, tintBase, hashAmp, onCommit, onCommitHashAmp }) {
   // Stash the last-authored stops in a ref so a toggle-off-then-on round
   // trip preserves the operator's work (brief AC #6). The stash is updated
   // whenever a valid (>=2-stop) array passes through.
@@ -704,8 +706,17 @@ function BarkGradientEditor({ stops, tintBase, onCommit }) {
           + Add stop
         </button>
       </Row>
+      {/* Brief 2.1 (Birch): cross-tree variation rides on top of the
+          per-pixel luminance base. 0 = adjacent same-species trees
+          pixel-identical; >0 = sub-amplitude hash offset along the ramp. */}
+      <Row label="Cross-tree">
+        <DraftSlider min={0} max={0.3} step={0.01}
+          value={typeof hashAmp === 'number' ? hashAmp : 0}
+          onCommit={(v) => onCommitHashAmp(v)}
+          format={(v) => v.toFixed(2)} />
+      </Row>
       <div style={{ fontSize: 10, color: '#888', fontStyle: 'italic', marginTop: 2 }}>
-        Gradient overrides tint base + jitter at runtime
+        Gradient replaces bark color via per-pixel luminance lookup
       </div>
     </>
   )
@@ -892,7 +903,9 @@ function SalonControlsPanel({
       <BarkGradientEditor
         stops={bark?.gradientStops}
         tintBase={bark?.tintBase}
-        onCommit={(next) => onParams({ bark: { gradientStops: next } })} />
+        hashAmp={bark?.gradientHashAmp}
+        onCommit={(next) => onParams({ bark: { gradientStops: next } })}
+        onCommitHashAmp={(v) => onParams({ bark: { gradientHashAmp: v } })} />
 
       <SectionLabel>Leaves</SectionLabel>
       {/* Brief 5: bare-chassis inspection toggle (workstage preview only;

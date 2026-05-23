@@ -1128,16 +1128,23 @@ async function patchManifestForSalon(species, compositions) {
   // variant. Existing variant.bark blocks are preserved so a re-publish
   // doesn't blow away unrelated per-variant data future briefs might add.
   for (let i = 0; i < compositions.length; i++) {
-    const stops = compositions[i]?.effective?.bark?.gradientStops
+    const compBark = compositions[i]?.effective?.bark
+    const stops = compBark?.gradientStops
+    // Brief 2.1 (Birch): per-composition cross-tree hash amp authored
+    // alongside gradientStops. Default 0 = pure per-pixel luminance.
+    // Only written when gradient is active; cleared with the stops.
+    const hashAmp = typeof compBark?.gradientHashAmp === 'number'
+      ? compBark.gradientHashAmp
+      : 0
     const variantId = i + 1
     const variant = m.variants?.find(v => v.id === variantId || String(v.id) === String(variantId))
     if (!variant) continue
     if (Array.isArray(stops) && stops.length >= 2) {
-      variant.bark = { ...(variant.bark || {}), gradientStops: stops }
+      variant.bark = { ...(variant.bark || {}), gradientStops: stops, gradientHashAmp: hashAmp }
     } else if (variant.bark?.gradientStops) {
-      // Composition toggled gradient OFF → clear stops on disk; preserve
-      // any sibling per-variant bark fields a future brief may have added.
-      const { gradientStops: _drop, ...rest } = variant.bark
+      // Composition toggled gradient OFF → clear stops + hashAmp on disk;
+      // preserve any sibling per-variant bark fields a future brief may add.
+      const { gradientStops: _drop, gradientHashAmp: _drop2, ...rest } = variant.bark
       variant.bark = Object.keys(rest).length ? rest : undefined
       if (variant.bark === undefined) delete variant.bark
     }
