@@ -141,7 +141,12 @@ function parseHexColor(hex) {
 // Compile a stops array → 256×1 raw RGBA buffer (1024 bytes). Stops are
 // {t, color} where t∈[0,1] and color is "#RRGGBB". The output is in sRGB
 // byte space — Three.js's SRGBColorSpace decode happens on sample.
-function compileGradientLUT(stops) {
+// Brief 7 (Cambium): named export so the Salon preview-atlas builder can
+// reuse this helper without re-implementing the stops → 256×1 LUT bytes
+// math. Preview atlas compiles one LUT per composition; bake-look compiles
+// one per unique sha1 across the per-Look roster. Same function body, same
+// output shape — drift-free.
+export function compileGradientLUT(stops) {
   // Sort + clamp + dedup-by-t to make sampling robust to operator input
   const sorted = (stops || [])
     .filter(s => s && typeof s.t === 'number' && typeof s.color === 'string')
@@ -388,7 +393,8 @@ async function bakeAtlas(tiles, atlasName, outDir, lookName) {
 // (one shader program) regardless of bark vs leaves classification — Bloom
 // is intolerant of more than one tree shader program in this scene, so this
 // is non-negotiable.
-async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookName) {
+// Brief 7 (Cambium): named export for Salon preview atlas reuse.
+export async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookName) {
   if (!bark && !leaves && !gradient && !detail) return null
 
   // Pack the sub-atlas pages as rects; skyline picks side-by-side or stacked
@@ -578,7 +584,12 @@ function transformUVs(uvArr, t) {
   }
 }
 
-async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale = 1) {
+// Brief 7 (Cambium): named export so the Salon preview-atlas builder can
+// UV-rewrite a single-composition chassis GLB using the same code path that
+// rewrites runtime LS GLBs. Identical contract: srcFile read, dstFile
+// written, lookupIdx is `${lookupKey}|${matName}` → tile. Preview uses
+// lookupKey='preview' with two entries (salonBark, salonLeaves).
+export async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale = 1) {
   const doc = await io.read(srcFile)
   const root = doc.getRoot()
 

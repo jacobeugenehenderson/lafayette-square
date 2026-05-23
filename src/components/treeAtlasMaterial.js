@@ -152,10 +152,17 @@ function injectFoliageSway(material) {
          // tight transition: trunk stays fully dark, canopy fully lit.
          vCanopyW = smoothstep(3.0, 4.5, position.y);
          {
-           // Per-instance phase from instanceMatrix translation column.
-           // Tree trunks anchor at y=0; sway scales with vertex height so
-           // canopy moves and base stays planted.
-           vec3 instWorld = vec3(instanceMatrix[3].x, 0.0, instanceMatrix[3].z);
+           // Per-instance phase from instanceMatrix translation column when
+           // rendered via InstancedMesh (LS path). Brief 7 (Cambium) added
+           // the non-instanced fallback so the same material can mount on a
+           // plain Mesh in the Salon preview — modelMatrix's translation
+           // column substitutes; per-tree variety degrades to a single
+           // constant value, which is fine for one-tree preview rendering.
+           #ifdef USE_INSTANCING
+             vec3 instWorld = vec3(instanceMatrix[3].x, 0.0, instanceMatrix[3].z);
+           #else
+             vec3 instWorld = vec3(modelMatrix[3].x, 0.0, modelMatrix[3].z);
+           #endif
            float phase = instWorld.x * 0.05 + instWorld.z * 0.07;
            float h = max(position.y, 0.0);
            // Phase 5a: scalar wind. uSwayWindSpeed scales the time
@@ -443,4 +450,213 @@ export function useTreeAtlas(lookName) {
 export function invalidateTreeAtlas(lookName) {
   if (!lookName) return
   _cache.delete(lookName)
+}
+
+// ── Brief 7 (Cambium): Salon-preview material path ──────────────────────
+//
+// The workstage preview mounts the SAME material the LS runtime mounts. The
+// only differences are: (a) the atlas is a per-composition preview atlas
+// (one bark + one leaf + optional gradient LUT + optional detail), and
+// (b) preview isn't on terrain, so patchTerrainInstanced is skipped. Every
+// shader-side feature — bark gradient luminance REPLACE, detail Overlay
+// composite, region split, lamp glow, sway — runs through the SAME
+// injectFoliageSway path. Birch's interim chunk-replication in
+// SpecimenViewport is retired by this hook.
+//
+// Cache keyed by manifestUrl (which carries `?v=<ts>` from the workstage
+// so a new build naturally invalidates). Each cache entry owns its own
+// MeshStandardMaterial + two textures (atlas color + normal). On URL bump
+// for the same (species, slot) — the operator authoring loop — the old
+// entry is disposed and dropped, so material/texture allocation doesn't
+// grow unbounded across an authoring session. Without this, every keystroke
+// leaks a material + two ~3 MB PNGs; the workstage's WebGL context dies
+// after ~10 edits of a slider.
+const _previewCache = new Map()
+const MAX_PREVIEW_CACHE = 4
+
+function disposePreviewEntry(entry) {
+  if (!entry || entry.status !== 'ready') return
+  try { entry.treeMaterial?.map?.dispose() } catch {}
+  try { entry.treeMaterial?.normalMap?.dispose() } catch {}
+  try { entry.treeMaterial?.dispose() } catch {}
+}
+
+function evictOldPreviewEntries() {
+  if (_previewCache.size <= MAX_PREVIEW_CACHE) return
+  // Map iteration is insertion-order — oldest first. Drop the oldest
+  // entries (with disposal) until size <= MAX_PREVIEW_CACHE.
+  const keys = [..._previewCache.keys()]
+  for (let i = 0; i < keys.length - MAX_PREVIEW_CACHE; i++) {
+    const k = keys[i]
+    disposePreviewEntry(_previewCache.get(k))
+    _previewCache.delete(k)
+  }
+}
+
+async function buildPreviewMaterials(manifestUrl) {
+  const manifestRes = await fetch(manifestUrl)
+  if (!manifestRes.ok) throw new Error(`preview manifest ${manifestUrl} → ${manifestRes.status}`)
+  const manifest = await manifestRes.json()
+  const { atlas, materialDefaults } = manifest
+  if (!atlas) throw new Error(`atlas missing in preview manifest`)
+  const roughness = materialDefaults?.roughness ?? 0.85
+  const metalness = materialDefaults?.metalness ?? 0
+
+  // Inherit the manifest's cache-bust into the texture URLs so the new
+  // atlas bytes are picked up by TextureLoader (otherwise a same-named
+  // PNG fetched earlier would serve from the browser cache).
+  const cacheBust = manifestUrl.includes('?') ? manifestUrl.slice(manifestUrl.indexOf('?')) : ''
+  const [color, normal] = await Promise.all([
+    loadTexture(atlas.colorPath + cacheBust),
+    loadNormalTexture(atlas.normalPath + cacheBust),
+  ])
+
+  const treeMaterial = new THREE.MeshStandardMaterial({
+    map: color,
+    normalMap: normal,
+    roughness,
+    metalness,
+    side: atlas.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
+    transparent: false,
+    alphaTest: atlas.alphaTest ?? 0.5,
+  })
+  treeMaterial.name = `tree-atlas:salon-preview`
+  injectFoliageSway(treeMaterial)
+  // NB: NO patchTerrainInstanced — workstage preview is a flat-ground
+  // single-tree composition; LS-runtime terrain lift isn't applicable.
+  return { manifest, treeMaterial }
+}
+
+/**
+ * Salon-preview variant of useTreeAtlas. Returns the same shape:
+ *   { status, manifest, treeMaterial, error }
+ * Cache-keyed by manifestUrl; the workstage cache-busts on each successful
+ * preview-atlas build so a new URL drives a fresh build automatically.
+ */
+export function useSalonPreviewAtlas(manifestUrl) {
+  const [bump, setBump] = useState(0)
+  const entry = manifestUrl ? _previewCache.get(manifestUrl) : null
+  useEffect(() => {
+    if (!manifestUrl) return
+    let cached = _previewCache.get(manifestUrl)
+    if (cached?.status === 'ready' || cached?.status === 'loading') return
+    cached = { status: 'loading' }
+    _previewCache.set(manifestUrl, cached)
+    setBump(b => b + 1)
+    buildPreviewMaterials(manifestUrl)
+      .then((built) => {
+        _previewCache.set(manifestUrl, { status: 'ready', ...built })
+        evictOldPreviewEntries()
+        setBump(b => b + 1)
+      })
+      .catch((err) => {
+        console.warn('[salonPreviewAtlas] failed for', manifestUrl, err)
+        _previewCache.set(manifestUrl, { status: 'error', error: err })
+        setBump(b => b + 1)
+      })
+  }, [manifestUrl])
+  return useMemo(() => {
+    if (!manifestUrl) return { status: 'idle' }
+    return _previewCache.get(manifestUrl) || { status: 'idle' }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manifestUrl, bump, entry?.status])
+}
+
+// Per-vertex attribute stamper shared between the LS runtime
+// (InstancedTrees#meshes) and the Salon preview (SpecimenViewport#Skeleton).
+// Reads atlasKind / barkRegion from prim extras (geometry.userData populated
+// by three.js's GLTFLoader from gltf-transform's prim.extras) and stamps
+// constant arrays of length === position.count. Keeps both consumers using
+// the exact same aBark/aBarkRegion contract the shader expects.
+export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
+  if (!geometry?.attributes?.position) return
+  const pos = geometry.attributes.position
+  // GLTFLoader puts primitive-level extras in different places depending on
+  // version / extension. Match InstancedTrees#meshes' three-location lookup
+  // exactly so the LS runtime and Salon preview see the same atlasKind for
+  // the same on-disk GLB.
+  const atlasKind  = geometry.userData?.atlasKind
+                  ?? owner?.userData?.atlasKind
+                  ?? owner?.userData?.gltfExtras?.atlasKind
+                  ?? fallback.atlasKind
+  const barkRegion = geometry.userData?.barkRegion
+                  ?? owner?.userData?.barkRegion
+                  ?? owner?.userData?.gltfExtras?.barkRegion
+                  ?? fallback.barkRegion
+  if (!geometry.attributes.aBark) {
+    const arr = new Float32Array(pos.count)
+    if (atlasKind === 'bark') arr.fill(1)
+    geometry.setAttribute('aBark', new THREE.BufferAttribute(arr, 1))
+  }
+  if (!geometry.attributes.aBarkRegion) {
+    const arr = new Float32Array(pos.count)
+    if (barkRegion === 'trunk') arr.fill(1)
+    geometry.setAttribute('aBarkRegion', new THREE.BufferAttribute(arr, 1))
+  }
+  if (!geometry.attributes.aLampGlow) {
+    // Preview = no lamp contribution. LS runtime overwrites with the per-
+    // instance baked attribute via InstancedBufferAttribute.
+    const arr = new Float32Array(pos.count)
+    geometry.setAttribute('aLampGlow', new THREE.BufferAttribute(arr, 1))
+  }
+}
+
+// Applies per-draw bark uniforms. Moved here from InstancedTrees.jsx by
+// Brief 7 so the Salon preview path (SpecimenViewport) reuses the SAME
+// per-draw uniform setup. Single implementation across LS runtime and
+// workstage preview — drift-prevention is the structural reason this
+// function lives here, next to its uniform contract.
+export function applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot) {
+  const shader = material?.userData?.shader
+  if (!shader) return
+  // Gradient slot
+  if (gradientSlot) {
+    shader.uniforms.uUseBarkGradient.value = 1
+    shader.uniforms.uBarkGradientTileOffset.value.set(gradientSlot.offsetU, gradientSlot.offsetV)
+    shader.uniforms.uBarkGradientTileScale.value.set(gradientSlot.scaleU, gradientSlot.scaleV)
+    shader.uniforms.uBarkGradientHashAmp.value = gradientSlot.hashAmp ?? 0
+  } else {
+    shader.uniforms.uUseBarkGradient.value = 0
+    shader.uniforms.uBarkGradientHashAmp.value = 0
+  }
+  // Detail slot
+  if (detailSlot) {
+    const d = detailSlot.uvTransform
+    const b = detailSlot.barkTileUV
+    shader.uniforms.uBarkDetailTileOffset.value.set(d.offsetU, d.offsetV)
+    shader.uniforms.uBarkDetailTileScale.value.set(d.scaleU, d.scaleV)
+    shader.uniforms.uBarkTileOffset.value.set(b.offsetU, b.offsetV)
+    shader.uniforms.uBarkTileScale.value.set(b.scaleU, b.scaleV)
+  } else {
+    shader.uniforms.uBarkDetailTileScale.value.set(0, 0)
+    shader.uniforms.uBarkTileScale.value.set(0, 0)
+  }
+  // Bark settings (region split or legacy single-spec)
+  if (!barkSettings) {
+    shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
+    shader.uniforms.uBarkTintJitterRange.value = 0
+    shader.uniforms.uBarkRoughnessOverride.value = -1
+    shader.uniforms.uBarkRegionSplit.value = 0
+    return
+  }
+  const isRegionSplit = !!(barkSettings.trunk || barkSettings.branch)
+  if (isRegionSplit) {
+    const trunk = barkSettings.trunk || barkSettings.branch
+    const branch = barkSettings.branch || barkSettings.trunk
+    shader.uniforms.uBarkTrunkTintBase.value.set(trunk.tintBase || '#ffffff')
+    shader.uniforms.uBarkBranchTintBase.value.set(branch.tintBase || '#ffffff')
+    shader.uniforms.uBarkTrunkJitterRange.value = trunk.tintJitterRange ?? 0
+    shader.uniforms.uBarkBranchJitterRange.value = branch.tintJitterRange ?? 0
+    shader.uniforms.uBarkTrunkRoughness.value = trunk.roughnessOverride ?? -1
+    shader.uniforms.uBarkBranchRoughness.value = branch.roughnessOverride ?? -1
+    shader.uniforms.uBarkRegionSplit.value = 1
+    shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
+    shader.uniforms.uBarkTintJitterRange.value = 0
+    shader.uniforms.uBarkRoughnessOverride.value = -1
+    return
+  }
+  shader.uniforms.uBarkTintBase.value.set(barkSettings.tintBase || '#ffffff')
+  shader.uniforms.uBarkTintJitterRange.value = barkSettings.tintJitterRange ?? 0
+  shader.uniforms.uBarkRoughnessOverride.value = barkSettings.roughnessOverride ?? -1
+  shader.uniforms.uBarkRegionSplit.value = 0
 }

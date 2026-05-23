@@ -29,6 +29,7 @@ import {
   generateSingleCompositionGLB,
 } from './generate-salon.js'
 import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
+import { buildPreviewAtlas, previewDir } from './salon-preview-atlas.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -628,7 +629,9 @@ const server = createServer(async (req, res) => {
     // GET /lidar/specimen/:treeId/lil-vera-runs
     // List saved Li'l Vera runs for this specimen (newest first). Used by
     // the Saved Runs picker so the operator can browse past overnight runs.
-    if (req.method === 'GET' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/lil-vera-runs$/))) {
+    // Optional ?t= cache-buster appended by the frontend; tolerated by the
+    // regex (same pattern as commit 182bd54's /species/:id fix).
+    if (req.method === 'GET' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/lil-vera-runs(\?.*)?$/))) {
       const treeId = m[1]
       const dir = join(STATE_DIR, 'lil-vera', treeId)
       if (!existsSync(dir)) return jsonRes(res, 200, { treeId, runs: [] })
@@ -659,7 +662,7 @@ const server = createServer(async (req, res) => {
 
     // GET /lidar/specimen/:treeId/lil-vera-run/:filename
     // Load a specific saved run by filename.
-    if (req.method === 'GET' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/lil-vera-run\/([^/?]+)$/))) {
+    if (req.method === 'GET' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/lil-vera-run\/([^/?]+)(\?.*)?$/))) {
       const treeId = m[1]
       const filename = m[2]
       if (!/^run-[0-9A-Za-z._-]+\.json$/.test(filename)) {
@@ -1162,6 +1165,72 @@ const server = createServer(async (req, res) => {
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }
+    }
+
+    // Brief 7 (Cambium): POST /salon/:species/:slot/preview-atlas
+    //
+    // Rebuilds the Salon-side per-composition atlas + UV-rewritten chassis
+    // GLB into arborist/_cache/salon-preview/<species>/<slot>/. The
+    // workstage calls this AFTER persisting the overlay (POST compositions)
+    // so the builder sees the operator's just-saved state on disk. Returns
+    // { atlasUrl, normalUrl, glbUrl, manifestUrl, path: 'full' |
+    // 'gradient-only' | 'noop', ms }. Path semantics:
+    //   full          → chassis/bark/leaves/etc. changed; full rebuild
+    //   gradient-only → only bark.gradientStops / gradientHashAmp changed;
+    //                   LUT tile spliced into existing atlas-color.png
+    //                   (~tens of ms, no GLB regen)
+    //   noop          → snapshot matches the prior build; no work done
+    if (req.method === 'POST' && (m = path.match(/^\/salon\/([^/]+)\/([^/]+)\/preview-atlas$/))) {
+      const species = m[1]
+      const slot = m[2]
+      const body = await readBody(req)
+      console.log('[preview-atlas] POST', species, slot, 'chassis=', body.chassis, 'bark.ref=', body.bark?.ref, 'leaves.pack=', body.leaves?.pack)
+      try {
+        const out = await buildPreviewAtlas({
+          species, slot,
+          composition: {
+            chassis: body.chassis,
+            bark:    body.bark   || {},
+            leaves:  body.leaves || {},
+          },
+        })
+        return jsonRes(res, 200, { ok: true, species, slot, ...out })
+      } catch (err) {
+        const code = err.statusCode || 500
+        // Echo the request body's identifying fields so the failure is
+        // diagnosable from the network tab without a server-side log dive.
+        return jsonRes(res, code, {
+          error: 'preview-atlas build failed',
+          species, slot,
+          chassis: body.chassis,
+          barkRef: body.bark?.ref,
+          leavesPack: body.leaves?.pack,
+          message: err.message,
+          stack: err.stack?.split('\n').slice(0, 6),
+        })
+      }
+    }
+
+    // GET /preview-atlas/:species/:slot/(atlas-color.png|atlas-normal.png
+    //                                    |chassis.glb|manifest.json)
+    //
+    // Serves the static artifacts the builder wrote. Per-composition
+    // isolation lives in the directory path. Files are written atomically
+    // by the builder so a concurrent GET mid-write reads either the prior
+    // build's bytes (fine — they were a valid build) or the new bytes
+    // (also fine) — never a torn write.
+    if (req.method === 'GET' && (m = path.match(/^\/preview-atlas\/([^/]+)\/([^/]+)\/(atlas-color\.png|atlas-normal\.png|chassis\.glb|manifest\.json)$/))) {
+      const species = m[1], slot = m[2], file = m[3]
+      const filePath = join(previewDir(species, slot), file)
+      if (!existsSync(filePath)) return jsonRes(res, 404, { error: 'not built', species, slot, file })
+      const ct = file.endsWith('.png')  ? 'image/png'
+               : file.endsWith('.glb')  ? 'model/gltf-binary'
+               : file.endsWith('.json') ? 'application/json'
+               : 'application/octet-stream'
+      const stat = statSync(filePath)
+      res.writeHead(200, { 'Content-Type': ct, 'Content-Length': stat.size, 'Cache-Control': 'no-store' })
+      createReadStream(filePath).pipe(res)
+      return
     }
 
     // POST /salon/generate — body { chassis, bark, leaves, lod }

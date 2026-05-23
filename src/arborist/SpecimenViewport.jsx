@@ -22,6 +22,11 @@ import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import * as THREE from 'three'
+import {
+  useSalonPreviewAtlas,
+  applyBarkUniforms,
+  stampTreeVertexAttrs,
+} from '../components/treeAtlasMaterial.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -652,61 +657,19 @@ function PointCloud({ url }) {
 // ── Specimen content — published GLB ──────────────────────────────────
 // Applies effectiveScale (override or normalize) so what you see here is
 // what InstancedTrees ships. Auto-plants base by sampling lowest mesh Y.
-// Brief 2.1 (Birch): build a 256×1 sRGB RGBA LUT from gradient stops.
-// Mirrors arborist/bake-look.js#compileGradientLUT — linear interp between
-// stops, sorted by t. Used by the Salon preview path to inject the same
-// per-pixel-luminance gradient as treeAtlasMaterial without going through
-// the bake → atlas → reload cycle.
-//
-// ⚠ KNOWN DRIFT — INTERIM, RETIRED BY BRIEF 7 (Salon Preview Atlas) ⚠
-// This helper duplicates bake-look#compileGradientLUT. Brief 7 mounts
-// treeAtlasMaterial directly in Salon preview, at which point this whole
-// helper goes away and the LUT lives in the per-composition preview atlas.
-function buildGradientLUT(stops) {
-  const sorted = [...stops].sort((a, b) => a.t - b.t)
-  const hexToRgb = (hex) => {
-    const s = (hex || '#000000').replace(/^#/, '')
-    const v = s.length === 3 ? s.split('').map(c => c + c).join('') : s
-    return [
-      parseInt(v.slice(0, 2), 16) || 0,
-      parseInt(v.slice(2, 4), 16) || 0,
-      parseInt(v.slice(4, 6), 16) || 0,
-    ]
-  }
-  const data = new Uint8Array(256 * 4)
-  for (let i = 0; i < 256; i++) {
-    const t = i / 255
-    let lo = sorted[0], hi = sorted[sorted.length - 1]
-    for (let k = 0; k < sorted.length - 1; k++) {
-      if (sorted[k].t <= t && sorted[k + 1].t >= t) { lo = sorted[k]; hi = sorted[k + 1]; break }
-    }
-    const span = Math.max(1e-6, hi.t - lo.t)
-    const f = Math.max(0, Math.min(1, (t - lo.t) / span))
-    const [lr, lg, lb] = hexToRgb(lo.color)
-    const [hr, hg, hb] = hexToRgb(hi.color)
-    data[i * 4 + 0] = Math.round(lr + (hr - lr) * f)
-    data[i * 4 + 1] = Math.round(lg + (hg - lg) * f)
-    data[i * 4 + 2] = Math.round(lb + (hb - lb) * f)
-    data[i * 4 + 3] = 255
-  }
-  const tex = new THREE.DataTexture(data, 256, 1, THREE.RGBAFormat)
-  tex.colorSpace = THREE.SRGBColorSpace
-  tex.magFilter = THREE.LinearFilter
-  tex.minFilter = THREE.LinearFilter
-  tex.generateMipmaps = false
-  tex.needsUpdate = true
-  return tex
-}
+// Brief 7 (Cambium): buildGradientLUT helper retired — the per-composition
+// preview atlas now carries the LUT tile inline, baked by
+// arborist/salon-preview-atlas.js#bakeGradientPage. The shared
+// treeAtlasMaterial samples it from the unified atlas exactly like the LS
+// runtime does. One implementation across both surfaces.
 
 function Skeleton({
-  url, forestryRotation,
+  url, atlasManifestUrl, forestryRotation,
   scale = 1,
   positionOffset = [0, 0, 0],
   rotationOffset = [0, 0, 0],
   onTopY,
   windStrength = 0,
-  gradientStops = null,
-  gradientHashAmp = 0,
 }) {
   const { scene } = useGLTF(url)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
@@ -729,187 +692,114 @@ function Skeleton({
     windUniformsRef.current.uTime.value += dt
   })
 
-  // Brief 2.1 (Birch): gradient uniforms shared across every bark material
-  // patched in this scene. Same mutable-ref pattern as windUniformsRef so
-  // stops/hashAmp can update live without remounting the Canvas. The LUT
-  // texture is rebuilt + swapped on stops change; the prior texture is
-  // disposed to release GPU memory.
-  // 1×1 white fallback so the sampler always binds to a valid texture even
-  // when no gradient is authored (uUseBarkGradient=0 discards the sample).
-  // The fallback is created lazily once per Skeleton instance.
-  const gradientFallbackRef = useRef(null)
-  if (!gradientFallbackRef.current) {
-    const fb = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat)
-    fb.needsUpdate = true
-    gradientFallbackRef.current = fb
-  }
-  const gradientUniformsRef = useRef({
-    uUseBarkGradient:     { value: 0 },
-    uBarkGradientLUT:     { value: gradientFallbackRef.current },
-    uBarkGradientHashAmp: { value: 0 },
-  })
-  useEffect(() => {
-    const u = gradientUniformsRef.current
-    const valid = Array.isArray(gradientStops) && gradientStops.length >= 2
-    const prev = u.uBarkGradientLUT.value
-    if (valid) {
-      u.uBarkGradientLUT.value = buildGradientLUT(gradientStops)
-      u.uUseBarkGradient.value = 1
-    } else {
-      u.uBarkGradientLUT.value = gradientFallbackRef.current
-      u.uUseBarkGradient.value = 0
-    }
-    if (prev && prev !== gradientFallbackRef.current && prev.dispose) prev.dispose()
-  }, [gradientStops])
-  useEffect(() => {
-    gradientUniformsRef.current.uBarkGradientHashAmp.value = gradientHashAmp ?? 0
-  }, [gradientHashAmp])
+  // Brief 7 (Cambium): the shared treeAtlasMaterial owns the bark gradient
+  // path now. Birch's gradientUniformsRef + fallback texture + per-prop
+  // useEffects are gone — the preview-atlas pipeline encodes the LUT into
+  // the unified atlas tile, and applyBarkUniforms (below) binds the
+  // resulting uvTransform + hashAmp into the material's uniforms.
+  const atlas = useSalonPreviewAtlas(atlasManifestUrl)
 
-  // Strip vertex-color AO baking + patch each material with the wind
-  // shader. Patch is idempotent (userData.windPatched gate) so the
-  // useMemo can re-run on scene changes without compounding patches.
-  // Bark vs leaf is read from the primitive's atlasKind extra (stamped
-  // by buildSourceGLB at bake time) — leaves layer a high-frequency
-  // small-amplitude flutter on top of the slow sway, branches don't.
+  // Brief 7 (Cambium): replace raw GLB materials with the shared
+  // treeAtlasMaterial. Stamp per-vertex aBark / aBarkRegion / aLampGlow
+  // (the shared shader expects these) and apply the workstage's wind
+  // injection ONCE as a post-injectFoliageSway chain on the shared material.
+  // Idempotent via material.userData.__workstageWindPatched.
   useMemo(() => {
+    if (!atlas.treeMaterial) return
+    const treeMaterial = atlas.treeMaterial
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
-      const atlasIsLeaf = o.geometry?.userData?.atlasKind === 'leaf'
-      const mats = Array.isArray(o.material) ? o.material : [o.material]
-      for (const m of mats) {
-        if (!m) continue
-        // Name-based fallback for vendor GLBs that weren't stamped by
-        // buildSourceGLB (e.g. the maple-pack purchase): treat any
-        // material whose name contains "leaf" as leaf-side.
-        const isLeaf = atlasIsLeaf || /leaf/i.test(m.name || '')
-        if (m.vertexColors) { m.vertexColors = false; m.needsUpdate = true }
-        // Dry swap (2026-05-21): replace vendor leaf diffuse with our
-        // Sugar Maple single-leaf card. Vendor UV-spans [0,1] per card,
-        // so a one-leaf-centered texture renders one leaf per card.
-        // Idempotent via userData.__leafSwapped gate.
-        // 2026-05-22: scoped to vendor leaves only — Salon-emitted leaves
-        // (material name 'salonLeaves') carry the operator-picked pack
-        // texture and MUST NOT be overridden, or pack picks render as Sugar
-        // Maple regardless of selection.
-        const isSalonLeaf = /^salon/i.test(m.name || '')
-        if (isLeaf && !isSalonLeaf && !m.userData.__leafSwapped) {
-          m.map = getSugarMapleLeafTex()
-          m.transparent = true
-          m.alphaTest = 0.5
-          m.side = THREE.DoubleSide
-          m.userData.__leafSwapped = true
-          m.needsUpdate = true
-        }
-        if (m.userData.__windPatched) continue
-        const prev = m.onBeforeCompile
-        m.onBeforeCompile = (shader, renderer) => {
-          if (prev) prev(shader, renderer)
-          shader.uniforms.uTime         = windUniformsRef.current.uTime
-          shader.uniforms.uWindStrength = windUniformsRef.current.uWindStrength
-          shader.uniforms.uIsLeaf       = { value: isLeaf ? 1.0 : 0.0 }
-          // Brief 2.1 (Birch): bark-only per-pixel luminance gradient
-          // REPLACE. Mirrors treeAtlasMaterial.js's chunk so the Salon
-          // preview shows gradient stops live without going through bake →
-          // atlas → reload. Bound uniforms come from gradientUniformsRef so
-          // the operator's slider/stop edits propagate via .value mutation
-          // (no shader recompile).
-          //
-          // ⚠ KNOWN DRIFT — INTERIM SHAPE, RETIRED BY BRIEF 7 ⚠
-          // This chunk is a hand-mirror of the bark-gradient injection in
-          // treeAtlasMaterial.js#injectFoliageSway (the production LS path).
-          // Two implementations of one feature is exactly the architectural
-          // failure Brief 2.1 was triggered by (see
-          // feedback_spec_compression). It exists here ONLY because the
-          // Salon preview renders raw GLB materials, not the shared atlas
-          // material — there is no atlas-of-one for an in-flight
-          // composition. Brief 7 (Salon Preview Atlas) builds a per-
-          // composition atlas server-side so SpecimenViewport can mount
-          // treeAtlasMaterial directly; this whole block — and the
-          // gradientUniformsRef + buildGradientLUT helpers above — disappear
-          // when Brief 7 lands. Until then: any edit to the bark-gradient
-          // semantics in treeAtlasMaterial.js MUST be mirrored here.
-          if (!isLeaf) {
-            shader.uniforms.uUseBarkGradient     = gradientUniformsRef.current.uUseBarkGradient
-            shader.uniforms.uBarkGradientLUT     = gradientUniformsRef.current.uBarkGradientLUT
-            shader.uniforms.uBarkGradientHashAmp = gradientUniformsRef.current.uBarkGradientHashAmp
-            shader.fragmentShader = shader.fragmentShader.replace(
-              '#include <common>',
-              `#include <common>
-               uniform float     uUseBarkGradient;
-               uniform sampler2D uBarkGradientLUT;
-               uniform float     uBarkGradientHashAmp;
-               varying vec3      vSalonWorldXZ;`
-            ).replace(
-              // Inject AFTER <map_fragment> so diffuseColor carries the
-              // bark photo's linearized RGB. Luminance lookup REPLACES the
-              // sample (no multiplicative tint) per Brief 2.1.
-              '#include <map_fragment>',
-              `#include <map_fragment>
-               {
-                 float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-                 float jh4 = fract(sin(dot(vSalonWorldXZ.xz, vec2(521.7, 233.1))) * 43758.5453);
-                 float gradT = clamp(lum + (jh4 - 0.5) * uBarkGradientHashAmp, 0.0, 1.0);
-                 vec3 gradientColor = texture2D(uBarkGradientLUT, vec2(gradT, 0.5)).rgb;
-                 diffuseColor.rgb = mix(diffuseColor.rgb, gradientColor, uUseBarkGradient);
-               }`
-            )
-            // vSalonWorldXZ exists only to feed jh4. modelMatrix's
-            // translation column is constant per draw — fine for a
-            // single-tree preview; hashAmp variation visualizes as a
-            // uniform offset rather than across-tree variety here, but the
-            // per-pixel luminance axis (the verification target) is
-            // unaffected.
-            shader.vertexShader = shader.vertexShader.replace(
-              '#include <common>',
-              `#include <common>
-               varying vec3 vSalonWorldXZ;`
-            ).replace(
-              '#include <begin_vertex>',
-              `#include <begin_vertex>
-               vSalonWorldXZ = vec3(modelMatrix[3].x, 0.0, modelMatrix[3].z);`
-            )
-          }
-          shader.vertexShader = shader.vertexShader.replace(
-            '#include <common>',
-            `uniform float uTime;
-             uniform float uWindStrength;
-             uniform float uIsLeaf;
-             #include <common>`
-          ).replace(
-            '#include <begin_vertex>',
-            `#include <begin_vertex>
-             // Phase W: height-falloff sway. Below ~1m, no wind; above,
-             // sway grows linearly with height. uWindStrength=1 → ~15 cm
-             // peak at a 10m canopy. Two phase-offset sines on X and Z
-             // give a gentle elliptical wander rather than pure 1D shake.
-             float _windH = max(0.0, position.y - 1.0);
-             float _windAmt = _windH * 0.015 * uWindStrength;
-             float _windPhase = uTime * 1.5;
-             transformed.x += sin(_windPhase) * _windAmt;
-             transformed.z += sin(_windPhase * 0.7 + 1.3) * _windAmt;
-             // Leaf flutter: high-frequency, small-amplitude per-vertex
-             // wobble layered on top so leaves jitter against the slow
-             // branch sway. Per-leaf phase from the leaf-card center
-             // (varies along position so adjacent cards don't sync).
-             if (uIsLeaf > 0.5) {
-               float _leafPhase = uTime * 8.0
-                 + position.x * 3.7
-                 + position.z * 4.1
-                 + position.y * 2.3;
-               float _leafAmp = 0.025 * uWindStrength;
-               transformed.x += sin(_leafPhase) * _leafAmp;
-               transformed.y += sin(_leafPhase * 1.3 + 0.7) * _leafAmp * 0.6;
-               transformed.z += cos(_leafPhase * 0.9 + 1.1) * _leafAmp;
-             }`
-          )
-        }
-        m.userData.__windPatched = true
-        m.needsUpdate = true
+      if (o.geometry) {
+        stampTreeVertexAttrs(o.geometry, {}, o)
+        // Strip vertex colors — they flip USE_COLOR in three.js's shader
+        // cache, which would compile a parallel program; the shared
+        // material expects no vertex colors.
+        if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
       }
+      o.material = treeMaterial
     })
-  }, [scene])
+
+    // Workstage-only wind patch — chains onto the existing
+    // treeAtlasMaterial onBeforeCompile (injectFoliageSway). Brief 7's
+    // Out-of-Scope §6.184 explicitly defers Phase W (production wind in
+    // treeAtlasMaterial) to a separate brief; the wind chunks live here
+    // and are NOT drift because the LS runtime has no wind counterpart.
+    // Injected BEFORE `#include <project_vertex>` so it runs after
+    // injectFoliageSway's `begin_vertex` sway block — adds onto the sway
+    // offsets rather than colliding with them.
+    if (!treeMaterial.userData.__workstageWindPatched) {
+      const prev = treeMaterial.onBeforeCompile
+      treeMaterial.onBeforeCompile = (shader, renderer) => {
+        if (prev) prev(shader, renderer)
+        shader.uniforms.uWsTime         = windUniformsRef.current.uTime
+        shader.uniforms.uWsWindStrength = windUniformsRef.current.uWindStrength
+        shader.vertexShader = shader.vertexShader
+          .replace(
+            '#include <common>',
+            `#include <common>
+             uniform float uWsTime;
+             uniform float uWsWindStrength;`
+          )
+          .replace(
+            '#include <project_vertex>',
+            `// Brief 7 (Cambium): workstage-only wind layered ON TOP of
+             // injectFoliageSway's sway block. aBark (per-vertex, declared
+             // by injectFoliageSway) gates the high-frequency leaf flutter.
+             {
+               float _windH = max(0.0, position.y - 1.0);
+               float _windAmt = _windH * 0.015 * uWsWindStrength;
+               float _windPhase = uWsTime * 1.5;
+               transformed.x += sin(_windPhase) * _windAmt;
+               transformed.z += sin(_windPhase * 0.7 + 1.3) * _windAmt;
+               if (aBark < 0.5) {
+                 float _leafPhase = uWsTime * 8.0
+                   + position.x * 3.7
+                   + position.z * 4.1
+                   + position.y * 2.3;
+                 float _leafAmp = 0.025 * uWsWindStrength;
+                 transformed.x += sin(_leafPhase) * _leafAmp;
+                 transformed.y += sin(_leafPhase * 1.3 + 0.7) * _leafAmp * 0.6;
+                 transformed.z += cos(_leafPhase * 0.9 + 1.1) * _leafAmp;
+               }
+             }
+             #include <project_vertex>`
+          )
+      }
+      treeMaterial.userData.__workstageWindPatched = true
+      treeMaterial.needsUpdate = true
+    }
+  }, [scene, atlas.treeMaterial])
+
+  // Brief 7: apply per-composition bark uniforms each frame. material.user
+  // Data.shader is undefined until three.js compiles the shader on the
+  // first render — a useEffect that runs before first paint would early-
+  // return and never get re-invoked, leaving the uniforms at defaults
+  // (uUseBarkGradient=0, etc.) forever. InstancedTrees handles this via
+  // onBeforeRender per draw; for the preview's single-tree single-material
+  // setup, a useFrame call is the cleanest equivalent. applyBarkUniforms is
+  // a handful of value assignments — well below per-frame cost concern.
+  const barkUniformsState = useMemo(() => {
+    if (!atlas.manifest) return null
+    const m = atlas.manifest
+    const sp = m.previewKey?.species
+    const vid = m.previewKey?.variantId
+    return {
+      barkSettings: (sp && m.barkBySpecies?.[sp]) || null,
+      gradientSlot: (sp && m.barkGradientByVariant?.[sp]?.[vid]) || null,
+      detailSlot:   (sp && m.barkDetailBySpecies?.[sp]) || null,
+    }
+  }, [atlas.manifest])
+  useFrame(() => {
+    if (!atlas.treeMaterial || !barkUniformsState) return
+    applyBarkUniforms(
+      atlas.treeMaterial,
+      barkUniformsState.barkSettings,
+      barkUniformsState.gradientSlot,
+      barkUniformsState.detailSlot,
+    )
+  })
 
   // Auto-anchor on the DOMINANT trunk, not the centroid of all trunks.
   // For a single-tree variant: same as before. For a multi-trunk variant
@@ -1000,8 +890,16 @@ export default function SpecimenViewport({
   cameraStateRef,
   windStrength = 0,
   onPerfSample,
-  gradientStops = null,
-  gradientHashAmp = 0,
+  // Brief 7 (Cambium): SpecimenViewport now mounts the shared
+  // treeAtlasMaterial via the per-composition preview atlas. atlasUrl /
+  // atlasNormalUrl are accepted but unused at this level — the atlas PNGs
+  // are loaded by useSalonPreviewAtlas inside Skeleton via the manifest's
+  // colorPath / normalPath. Accepting them as props keeps the prop contract
+  // explicit (the workstage is passing them through, even if currently they
+  // get re-resolved from the manifest).
+  atlasUrl,
+  atlasNormalUrl,
+  atlasManifestUrl,
 }) {
   if (mode === 'skeleton' && !glbUrl) {
     return <EmptyState>No baked variant for this specimen.</EmptyState>
@@ -1052,14 +950,13 @@ export default function SpecimenViewport({
           {mode === 'skeleton' && glbUrl   && (
             <Skeleton
               url={glbUrl}
+              atlasManifestUrl={atlasManifestUrl}
               forestryRotation={forestryRotation}
               scale={effectiveScale}
               positionOffset={positionOffset}
               rotationOffset={rotationOffset}
               onTopY={(y) => { topYRef.current = y; setTopY(y) }}
               windStrength={windStrength}
-              gradientStops={gradientStops}
-              gradientHashAmp={gradientHashAmp}
             />
           )}
         </Suspense>

@@ -19,7 +19,7 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { useTreeAtlas, treeSwayUniforms } from './treeAtlasMaterial'
+import { useTreeAtlas, treeSwayUniforms, applyBarkUniforms } from './treeAtlasMaterial'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -216,85 +216,9 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
   )
 }
 
-// Phase B (2026-05-15): per-draw bark retint state. Mutates the SHARED
-// tree material's uniforms right before the draw so the GLSL program is
-// reused across every species (single compiled program for Bloom-stability,
-// per bake-look's "non-negotiable" comment). The next draw's onBeforeRender
-// overwrites these values for its own species; three.js uploads the
-// uniform block per-draw, so cross-draw bleed doesn't occur.
-const _barkTintTmp = new THREE.Color()
-const _barkTrunkTmp = new THREE.Color()
-const _barkBranchTmp = new THREE.Color()
-function applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot) {
-  const shader = material?.userData?.shader
-  if (!shader) return
-  // Brief 2 (Holm) — gradient slot is independent of bark/region path.
-  // Reset every draw so a draw without a gradient doesn't inherit the
-  // prior draw's offset/scale. uUseBarkGradient=1 only when a slot exists.
-  if (gradientSlot) {
-    shader.uniforms.uUseBarkGradient.value = 1
-    shader.uniforms.uBarkGradientTileOffset.value.set(gradientSlot.offsetU, gradientSlot.offsetV)
-    shader.uniforms.uBarkGradientTileScale.value.set(gradientSlot.scaleU, gradientSlot.scaleV)
-    // Brief 2.1 (Birch) — per-pixel luminance pivot. hashAmp adds
-    // sub-amplitude cross-tree modulation on top of the luminance base;
-    // default 0 keeps adjacent same-species trees pixel-identical.
-    shader.uniforms.uBarkGradientHashAmp.value = gradientSlot.hashAmp ?? 0
-  } else {
-    shader.uniforms.uUseBarkGradient.value = 0
-    shader.uniforms.uBarkGradientHashAmp.value = 0
-  }
-  // Brief 2.1a (Cinder) — detail slot carries the detail sub-region
-  // uvTransform PLUS the species's primary bark tile bounds so the shader
-  // can recover local-UV. Scale=0 disables the composite (no detail map
-  // bound) — the shader short-circuits to identity (barkColor unchanged).
-  if (detailSlot) {
-    const d = detailSlot.uvTransform
-    const b = detailSlot.barkTileUV
-    shader.uniforms.uBarkDetailTileOffset.value.set(d.offsetU, d.offsetV)
-    shader.uniforms.uBarkDetailTileScale.value.set(d.scaleU, d.scaleV)
-    shader.uniforms.uBarkTileOffset.value.set(b.offsetU, b.offsetV)
-    shader.uniforms.uBarkTileScale.value.set(b.scaleU, b.scaleV)
-  } else {
-    shader.uniforms.uBarkDetailTileScale.value.set(0, 0)
-    shader.uniforms.uBarkTileScale.value.set(0, 0)
-  }
-  // No bark spec? Reset to identity so leaf-only draws don't carry stale
-  // tints from the prior bark draw. Region split disabled.
-  if (!barkSettings) {
-    shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
-    shader.uniforms.uBarkTintJitterRange.value = 0
-    shader.uniforms.uBarkRoughnessOverride.value = -1
-    shader.uniforms.uBarkRegionSplit.value = 0
-    return
-  }
-  // Phase L Cycle 2: per-region path when barkSettings carries .trunk
-  // and/or .branch sub-blocks. Legacy single-spec path otherwise.
-  const isRegionSplit = !!(barkSettings.trunk || barkSettings.branch)
-  if (isRegionSplit) {
-    const trunk = barkSettings.trunk || barkSettings.branch
-    const branch = barkSettings.branch || barkSettings.trunk
-    _barkTrunkTmp.set(trunk.tintBase || '#ffffff')
-    _barkBranchTmp.set(branch.tintBase || '#ffffff')
-    shader.uniforms.uBarkTrunkTintBase.value.copy(_barkTrunkTmp)
-    shader.uniforms.uBarkBranchTintBase.value.copy(_barkBranchTmp)
-    shader.uniforms.uBarkTrunkJitterRange.value = trunk.tintJitterRange ?? 0
-    shader.uniforms.uBarkBranchJitterRange.value = branch.tintJitterRange ?? 0
-    shader.uniforms.uBarkTrunkRoughness.value = trunk.roughnessOverride ?? -1
-    shader.uniforms.uBarkBranchRoughness.value = branch.roughnessOverride ?? -1
-    shader.uniforms.uBarkRegionSplit.value = 1
-    // Keep legacy uniforms benign in case a sibling draw forgets to set them.
-    shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
-    shader.uniforms.uBarkTintJitterRange.value = 0
-    shader.uniforms.uBarkRoughnessOverride.value = -1
-    return
-  }
-  const tintHex = barkSettings.tintBase || '#ffffff'
-  _barkTintTmp.set(tintHex)
-  shader.uniforms.uBarkTintBase.value.copy(_barkTintTmp)
-  shader.uniforms.uBarkTintJitterRange.value = barkSettings.tintJitterRange ?? 0
-  shader.uniforms.uBarkRoughnessOverride.value = barkSettings.roughnessOverride ?? -1
-  shader.uniforms.uBarkRegionSplit.value = 0
-}
+// Brief 7 (Cambium): applyBarkUniforms moved to treeAtlasMaterial.js so the
+// Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
+// setup as the LS runtime. Imported above.
 
 function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot, detailSlot }) {
   const ref = useRef(null)

@@ -332,7 +332,13 @@ function SlotCard({
   onParams, onNameChange, onReset, onAdopt,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
 }) {
-  const [glbUrl, setGlbUrl] = useState(null)
+  // Brief 7 (Cambium): replaced the /salon/generate blob-URL flow with the
+  // preview-atlas pipeline. The endpoint builds a per-composition atlas +
+  // UV-rewritten chassis GLB server-side; the workstage fetches static URLs
+  // and SpecimenViewport mounts the SAME treeAtlasMaterial the LS runtime
+  // uses. One shader implementation across both surfaces — Birch's interim
+  // chunk-replication in SpecimenViewport retires with this commit.
+  const [previewUrls, setPreviewUrls] = useState(null)  // { glbUrl, atlasUrl, normalUrl, manifestUrl }
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
   const [perfSample, setPerfSample] = useState(null)
@@ -344,39 +350,53 @@ function SlotCard({
 
   useEffect(() => {
     if (!chassis) {
-      setGlbUrl(null); setLoading(false); setPreviewError('Pick a chassis to preview')
+      setPreviewUrls(null); setLoading(false); setPreviewError('Pick a chassis to preview')
       return
     }
     let cancelled = false
-    let revokeUrl = null
     setLoading(true)
     setPreviewError(null)
-    fetch('/api/arborist/salon/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chassis, bark, leaves, lod: previewLod }),
-    })
-      .then(r => {
-        if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error || `HTTP ${r.status}`)))
-        return r.blob()
+    // Debounce: HTML `<input type="color">` fires onChange continuously
+    // during drag (~30 Hz); each fires a full preview-atlas POST cascade
+    // (manifest + atlas PNGs + GLB regen) that overwhelms the server queue
+    // AND the browser's WebGL texture cache. 150 ms is the sweet spot —
+    // operator drag feels live, but a held-and-dragged color picker
+    // collapses to one trailing POST per stable frame.
+    const timer = setTimeout(() => {
+      fetch(`/api/arborist/salon/${encodeURIComponent(species)}/${slot}/preview-atlas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chassis, bark, leaves }),
       })
-      .then(blob => {
-        if (cancelled) return
-        const url = URL.createObjectURL(blob)
-        revokeUrl = url
-        setGlbUrl(url)
-        setLoading(false)
-      })
-      .catch(err => {
-        if (cancelled) return
-        setPreviewError(String(err))
-        setLoading(false)
-      })
-    return () => {
-      cancelled = true
-      if (revokeUrl) URL.revokeObjectURL(revokeUrl)
-    }
-  }, [chassis, paramsKey, previewLod])
+        .then(r => {
+          if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error || `HTTP ${r.status}`)))
+          return r.json()
+        })
+        .then(data => {
+          if (cancelled) return
+          // Cache-bust on every successful build so useGLTF / TextureLoader
+          // see a fresh URL when underlying bytes change. `path: 'noop'`
+          // reuses bytes; bumping the version is still cheap and avoids
+          // stale browser caches between sessions.
+          const v = Date.now()
+          setPreviewUrls({
+            glbUrl:      `${data.glbUrl}?v=${v}`,
+            atlasUrl:    `${data.atlasUrl}?v=${v}`,
+            normalUrl:   `${data.normalUrl}?v=${v}`,
+            manifestUrl: `${data.manifestUrl}?v=${v}`,
+            buildPath:   data.path,
+            buildMs:     data.ms,
+          })
+          setLoading(false)
+        })
+        .catch(err => {
+          if (cancelled) return
+          setPreviewError(String(err))
+          setLoading(false)
+        })
+    }, 150)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [species, slot, chassis, paramsKey])
 
   const [nameDraft, setNameDraft] = useState(slotName || `Slot ${slot}`)
   useEffect(() => { setNameDraft(slotName || `Slot ${slot}`) }, [slotName, slot])
@@ -420,10 +440,13 @@ function SlotCard({
       }}>
         {loading && <div style={loaderStyle}>regenerating…</div>}
         {previewError && <div style={{ ...loaderStyle, color: '#f88' }}>{previewError}</div>}
-        {glbUrl && !previewError && (
+        {previewUrls && !previewError && (
           <SpecimenViewport
             mode="skeleton"
-            glbUrl={glbUrl}
+            glbUrl={previewUrls.glbUrl}
+            atlasUrl={previewUrls.atlasUrl}
+            atlasNormalUrl={previewUrls.normalUrl}
+            atlasManifestUrl={previewUrls.manifestUrl}
             viewKey={viewKey}
             forestryRotation={false}
             targetCategory={targetCategory}
@@ -436,8 +459,6 @@ function SlotCard({
             cameraStateRef={cameraStateRef}
             windStrength={windEnabled ? windStrength : 0}
             onPerfSample={setPerfSample}
-            gradientStops={bark?.gradientStops}
-            gradientHashAmp={bark?.gradientHashAmp}
           />
         )}
         {/* LoD selector (lifted) */}
