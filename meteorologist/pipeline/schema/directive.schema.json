@@ -45,8 +45,20 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "scale": { "type": "number", "minimum": 0, "maximum": 5, "description": "Wind strength multiplier broadcast via useWindState; trees, pennants, future precip read it." },
-        "dir":   { "type": "number", "minimum": 0, "maximum": 360, "description": "Compass bearing the wind is blowing TO (rendering convention; flipped from meteorological)." }
+        "scale": { "type": "number", "minimum": 0, "maximum": 5, "description": "Cloud-advection multiplier on Atmosphere; preserved for Phase 5a + 9b. Not used by wind-field.js." },
+        "dir":   { "type": "number", "minimum": 0, "maximum": 360, "description": "Compass bearing the wind is blowing TO (rendering convention; flipped from meteorological)." },
+        "speed":        { "type": "number", "minimum": 0, "maximum": 40, "description": "Resolved wind speed in m/s. Brief 9a — read by `src/lib/wind-field.js#windAt` to drive tree sway + (Brief 9b) Atmosphere cloud advection." },
+        "gustsScale":   { "type": "number", "minimum": 0, "maximum": 20, "description": "Peak amplitude (m/s) of smoothmax-modulated gust spikes. Phase 6 modulators author this (cold-front passage, derecho, etc.)." },
+        "gustEnvelope": { "type": "number", "minimum": 0, "maximum": 1,  "description": "Slow (~30s) modulation on gust-spike amplitude. 0 = calm spike floor, 1 = full spike amplitude. Phase 6 modulators author this." },
+        "gustFrontVelocity": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "World-space gust-front advection velocity (m/s). Independent of base wind per ADR S2 — outflow boundaries can outrun ambient wind. If absent, wind-field.js defaults to baseDirection × 10 m/s.",
+          "properties": {
+            "x": { "type": "number" },
+            "z": { "type": "number" }
+          }
+        }
       }
     },
     "precip": {

@@ -1,0 +1,726 @@
+kind,chainIdx,chainName,side,blockKey,edgeOrd,segOrds,adjacentLu,selfInt,overshootsRing,blockKeyDrifted,hasTerminalSidewalk,tlDepth,swDepth,bandRingCount,zeroBands,customs
+straight,99,South 12th Street,left,"118.0,744.0",16,,,0,1,0,1,0.7506041978824456,1.524,2,0,0
+straight,99,South 12th Street,right,"118.0,744.0",18,,,0,1,0,1,0,1.524,1,0,0
+straight,186,South Jefferson Avenue,right,"118.0,744.0",21,,,0,1,0,1,0,1.524,1,0,0
+straight,42,Ann Avenue,right,"118.0,744.0",22,,residential,0,1,0,1,0.00476208821259938,1.524,2,0,0
+straight,50,McNair Avenue,left,"118.0,744.0",23,,,0,1,0,1,0,1.524,1,0,0
+straight,42,Ann Avenue,left,"118.0,744.0",24,,recreation,0,1,0,1,0,1.524,1,0,0
+straight,50,McNair Avenue,left,"118.0,744.0",25,,recreation,0,1,0,1,0,1.524,1,0,0
+straight,102,Russell Boulevard,right,"118.0,744.0",26,,recreation,0,1,0,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"118.0,744.0",27,,recreation,0,1,0,1,1.524,1.8288000000000002,2,0,0
+straight,51,Allen Avenue,right,"118.0,744.0",28,,recreation,0,1,0,1,0.4016055921006334,1.524,2,0,0
+straight,2,South 18th Street,left,"118.0,744.0",29,,recreation,0,1,0,1,1.2456,1.524,2,0,0
+straight,127,Geyer Avenue,left,"118.0,744.0",30,,recreation,0,1,0,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"118.0,744.0",31,,recreation,0,1,0,1,1.524,1.8288000000000002,2,0,0
+straight,186,South Jefferson Avenue,left,"-620.5,752.0",0,,commercial,0,,1,1,2.002554538036364,5.108928968970948,2,0,0
+straight,57,Ohio Avenue,left,"-620.5,752.0",2,,,0,,1,1,0,1.524,1,0,0
+straight,43,Ann Avenue,right,"-620.5,752.0",3,,,0,,1,1,0.00476208821259938,1.524,2,0,0
+straight,50,McNair Avenue,right,"-229.0,696.5",0,,,0,1,0,1,0.12231091077400436,1.524,2,0,0
+straight,42,Ann Avenue,left,"-229.0,696.5",1,,unknown,0,1,0,1,0,1.524,1,0,0
+straight,29,Missouri Avenue,left,"-229.0,696.5",2,,,0,1,0,1,3.020838982094821,2.263884048165316,2,0,0
+straight,102,Russell Boulevard,right,"-229.0,696.5",3,,,0,1,0,1,0,1.524,1,0,0
+straight,57,Ohio Avenue,right,"-793.0,669.5",0,,,0,1,0,1,0,1.524,1,0,0
+straight,44,Ann Avenue,right,"-793.0,669.5",2,,,0,1,0,1,0.00476208821259938,1.524,2,0,0
+straight,63,California Avenue,left,"-793.0,669.5",3,,,0,1,0,1,0,1.524,1,0,0
+straight,44,Ann Avenue,right,"-793.0,669.5",4,,,0,1,0,1,0.00476208821259938,1.524,2,0,0
+straight,1,Mississippi Avenue,right,"-3.0,655.5",0,,unknown,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,102,Russell Boulevard,left,"-3.0,655.5",1,,unknown,0,,1,1,0.07868542325239236,1.524,2,0,0
+straight,50,McNair Avenue,left,"-3.0,655.5",2,,unknown,0,,1,1,0,1.524,1,0,0
+straight,51,Allen Avenue,right,"-3.0,655.5",3,,unknown,0,,1,1,0.4016055921006334,1.524,2,0,0
+straight,29,Missouri Avenue,right,"-422.0,627.5",0,,,0,1,0,1,3.1519828488643356,2.345906370814321,2,0,0
+straight,42,Ann Avenue,left,"-422.0,627.5",1,,,0,1,0,1,0,1.524,1,0,0
+straight,186,South Jefferson Avenue,right,"-422.0,627.5",2,,residential,0,1,0,1,0,1.524,1,0,0
+straight,102,Russell Boulevard,right,"-422.0,627.5",3,,,0,1,0,1,0,1.524,1,0,0
+straight,2,South 18th Street,right,"202.5,616.5",0,,recreation,0,,1,1,4.3856,1.524,2,0,0
+straight,51,Allen Avenue,left,"202.5,616.5",1,,recreation,0,,1,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"202.5,616.5",2,,recreation,0,,1,1,1.524,1.8288000000000002,2,0,0
+straight,127,Geyer Avenue,right,"202.5,616.5",3,,recreation,0,,1,1,0,1.524,1,0,0
+straight,99,South 12th Street,right,"734.5,654.0",1,,,0,1,0,1,0,1.524,1,0,0
+straight,101,South Tucker Boulevard,left,"734.5,654.0",3,,,0,1,0,1,0.004861376526111627,1.524,2,0,0
+straight,50,McNair Avenue,right,"-210.0,582.5",0,,,0,1,0,1,0.12231091077400436,1.524,2,0,0
+straight,102,Russell Boulevard,left,"-210.0,582.5",1,,,0,1,0,1,0.07868542325239236,1.524,2,0,0
+straight,29,Missouri Avenue,left,"-210.0,582.5",2,,recreation,0,1,0,1,3.020838982094821,2.263884048165316,2,0,0
+straight,51,Allen Avenue,right,"-210.0,582.5",3,,,0,1,0,1,0.4016055921006334,1.524,2,0,0
+straight,198,Gravois Avenue,right,"613.0,660.5",2,,unknown,0,0,0,1,4.997845986206832,1.524,2,0,0
+straight,101,South Tucker Boulevard,right,"590.0,634.0",0,,park,0,1,0,1,3.374861376526111,1.524,2,0,0
+straight,102,Russell Boulevard,right,"-599.5,576.5",0,,commercial,0,1,0,1,0,1.524,1,0,0
+straight,186,South Jefferson Avenue,left,"-599.5,576.5",1,,,0,1,0,1,2.002554538036364,5.108928968970948,2,0,0
+straight,43,Ann Avenue,left,"-599.5,576.5",2,,commercial,0,1,0,1,0,1.524,1,0,0
+straight,57,Ohio Avenue,left,"-599.5,576.5",3,,,0,1,0,1,0,1.524,1,0,0
+straight,105,Russell Boulevard,right,"-599.5,576.5",4,,commercial,0,1,0,1,0,1.524,1,0,0
+straight,101,South Tucker Boulevard,left,"744.5,624.0",1,,,0,1,0,1,0.004861376526111627,1.524,2,0,0
+straight,1,Mississippi Avenue,right,"14.0,548.0",0,,,0,1,0,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,51,Allen Avenue,left,"14.0,548.0",1,,,0,1,0,1,0,1.524,1,0,0
+straight,87,Serbian Drive,left,"14.0,548.0",2,,residential,0,1,0,1,0,1.524,1,0,0
+straight,123,Geyer Avenue,right,"14.0,548.0",3,,,0,1,0,1,0,1.524,1,0,0
+straight,57,Ohio Avenue,right,"-794.0,545.0",0,,residential,0,,1,1,0,1.524,1,0,0
+straight,44,Ann Avenue,left,"-794.0,545.0",1,,residential,0,,1,1,0,1.524,1,0,0
+straight,63,California Avenue,left,"-794.0,545.0",2,,residential,0,,1,1,0,1.524,1,0,0
+straight,105,Russell Boulevard,right,"-794.0,545.0",3,,residential,0,,1,1,0,1.524,1,0,0
+straight,34,South 17th Street,left,"854.5,16.5",0,,,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,93,Papin Street,right,"854.5,16.5",1,,,0,1,0,1,0,1.524,1,0,0
+straight,139,Chouteau Avenue,left,"854.5,16.5",3,,,0,0,0,1,0.47900241494727425,1.524,2,0,0
+straight,101,South Tucker Boulevard,left,"854.5,16.5",8,,,0,1,0,1,0.004861376526111627,1.524,2,0,0
+straight,16,Emmet Street,left,"854.5,16.5",9,,,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,101,South Tucker Boulevard,left,"854.5,16.5",10,,,0,1,0,1,0.004861376526111627,1.524,2,0,0
+straight,35,South 13th Street,left,"854.5,16.5",12,,parking,0,1,0,1,3.972476097438771,1.524,2,0,0
+straight,154,Lafayette Avenue,right,"854.5,16.5",13,,,0,1,0,1,3.756012002197112,1.524,2,0,0
+straight,152,Lafayette Avenue,left,"854.5,16.5",14,,parking,0,1,0,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,164,South 14th Street,right,"854.5,16.5",15,,parking,0,0,0,1,0,1.524,1,0,0
+straight,159,Lafayette Avenue,left,"854.5,16.5",16,,parking,0,1,0,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,164,South 14th Street,right,"854.5,16.5",17,,,0,1,0,1,0,1.524,1,0,0
+straight,163,South 14th Street,right,"854.5,16.5",18,,,0,1,0,1,0,1.524,1,0,0
+straight,169,Park Avenue,right,"854.5,16.5",19,,residential,0,1,0,1,1,3.693069658822573,2,0,0
+straight,166,Park Avenue,right,"854.5,16.5",23,,residential,0,1,0,1,1,3.693069658822573,2,0,0
+straight,54,Dillon Drive,left,"854.5,16.5",24,,,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,48,Rutger Lane,left,"854.5,16.5",25,,,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,54,Dillon Drive,left,"854.5,16.5",26,,,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,89,Peabody Court,left,"854.5,16.5",27,,parking,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,54,Dillon Drive,left,"854.5,16.5",28,,parking,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,199,Lasalle Lane,left,"854.5,16.5",29,,parking,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,45,Grattan Street,right,"854.5,16.5",30,,parking,0,1,0,1,7.025599999999999,1.524,2,0,0
+straight,228,secondary_link 29,right,"854.5,16.5",31,,parking,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,139,Chouteau Avenue,left,"854.5,16.5",32,,,0,1,0,1,0.47900241494727425,1.524,2,0,0
+straight,93,Papin Street,right,"854.5,16.5",34,,commercial,0,1,0,1,0,1.524,1,0,0
+straight,29,Missouri Avenue,right,"-403.5,515.0",0,,commercial,0,,1,1,3.1519828488643356,2.345906370814321,2,0,0
+straight,102,Russell Boulevard,left,"-403.5,515.0",1,,commercial,0,,1,1,0.07868542325239236,1.524,2,0,0
+straight,186,South Jefferson Avenue,right,"-403.5,515.0",2,,commercial,0,,1,1,0,1.524,1,0,0
+straight,51,Allen Avenue,right,"-403.5,515.0",3,,commercial,0,,1,1,0.4016055921006334,1.524,2,0,0
+straight,151,Lafayette Avenue,right,"658.0,431.0",0,,commercial,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,154,Lafayette Avenue,right,"658.0,431.0",1,,commercial,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,75,Soulard Street,right,"658.0,431.0",3,,commercial,0,,1,1,0,1.524,1,0,0
+straight,101,South Tucker Boulevard,right,"658.0,431.0",4,,park,0,,1,1,3.374861376526111,1.524,2,0,0
+straight,87,Serbian Drive,right,"-193.5,475.5",0,,,0,1,0,1,0.10628768885094075,1.524,4,0,0
+straight,51,Allen Avenue,left,"-193.5,475.5",1,,,0,1,0,1,0,1.524,1,0,0
+straight,29,Missouri Avenue,left,"-193.5,475.5",2,,,0,1,0,1,3.020838982094821,2.263884048165316,2,0,0
+straight,123,Geyer Avenue,right,"-193.5,475.5",3,,recreation,0,1,0,1,0,1.524,1,0,0
+straight,63,California Avenue,right,"-917.5,512.5",0,,,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,105,Russell Boulevard,right,"-917.5,512.5",2,,,1,,1,1,0,1.524,1,0,0
+straight,195,South Jefferson Avenue,right,"-757.0,370.0",5,,recreation,0,,1,1,0,1.524,1,0,0
+straight,186,South Jefferson Avenue,left,"-757.0,370.0",6,,recreation,1,,1,1,2.002554538036364,5.108928968970948,2,0,0
+straight,51,Allen Avenue,left,"-757.0,370.0",7,,recreation,0,,1,1,0,1.524,1,0,0
+straight,186,South Jefferson Avenue,left,"-757.0,370.0",8,,recreation,0,,1,1,2.002554538036364,5.108928968970948,2,0,0
+straight,102,Russell Boulevard,left,"-757.0,370.0",9,,recreation,0,,1,1,0.07868542325239236,1.524,2,0,0
+straight,106,Russell Boulevard,left,"-757.0,370.0",10,,recreation,0,,1,1,0.07868542325239236,1.524,2,0,0
+straight,57,Ohio Avenue,left,"-757.0,370.0",11,,recreation,0,,1,1,0,1.524,1,0,0
+straight,53,Allen Avenue,left,"-757.0,370.0",12,,recreation,0,,1,1,0,1.524,1,0,0
+straight,57,Ohio Avenue,left,"-757.0,370.0",13,,recreation,0,,1,1,0,1.524,1,0,0
+straight,121,Geyer Avenue,left,"-757.0,370.0",14,,recreation,0,,1,1,0,1.524,1,0,0
+straight,63,California Avenue,left,"-757.0,370.0",15,,recreation,0,,1,1,0,1.524,1,0,0
+straight,121,Geyer Avenue,left,"-757.0,370.0",16,,residential,0,,1,1,0,1.524,1,0,0
+straight,61,Oregon Avenue,right,"-757.0,370.0",17,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,121,Geyer Avenue,left,"-757.0,370.0",18,,residential,0,,1,1,0,1.524,1,0,0
+straight,61,Oregon Avenue,right,"-757.0,370.0",19,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,86,Nebraska Avenue,left,"-757.0,370.0",21,,residential,0,,1,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"269.0,463.5",3,,unknown,0,1,0,1,1.524,1.8288000000000002,2,0,0
+straight,1,Mississippi Avenue,right,"-150.5,409.0",4,,residential,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,126,Geyer Avenue,left,"-150.5,409.0",5,,residential,0,,1,1,0,1.524,1,0,0
+straight,14,Waverly Place,right,"-150.5,409.0",6,,residential,0,,1,1,2.3125350666523836,1.524,2,0,0
+straight,13,Waverly Place,right,"-150.5,409.0",7,,residential,0,,1,1,2.3125350666523836,1.524,2,0,0
+straight,126,Geyer Avenue,left,"-150.5,409.0",9,,residential,0,,1,1,0,1.524,1,0,0
+straight,29,Missouri Avenue,right,"-150.5,409.0",10,,residential,0,,1,1,3.1519828488643356,2.345906370814321,2,0,0
+straight,125,Geyer Avenue,left,"-150.5,409.0",11,,residential,0,,1,1,0,1.524,1,0,0
+straight,122,Geyer Avenue,left,"-150.5,409.0",12,,residential,0,,1,1,0,1.524,1,0,0
+straight,160,Lafayette Avenue,right,"459.0,391.0",0,,park,0,1,0,1,3.756012002197112,1.524,2,0,0
+straight,161,Lafayette Avenue,right,"459.0,391.0",1,,park,0,1,0,1,3.756012002197112,1.524,2,0,0
+straight,151,Lafayette Avenue,right,"459.0,391.0",2,,park,0,1,0,1,3.756012002197112,1.524,2,0,0
+straight,57,Ohio Avenue,right,"-778.0,437.0",0,,,0,1,0,1,0,1.524,1,0,0
+straight,103,Russell Boulevard,left,"-778.0,437.0",1,,,0,1,0,1,0.07868542325239236,1.524,2,0,0
+straight,63,California Avenue,left,"-778.0,437.0",2,,residential,0,1,0,1,0,1.524,1,0,0
+straight,53,Allen Avenue,right,"-778.0,437.0",3,,,0,1,0,1,0.4016055921006334,1.524,2,0,0
+straight,125,Geyer Avenue,right,"-385.5,403.5",0,,,0,1,0,1,0,1.524,1,0,0
+straight,29,Missouri Avenue,right,"-385.5,403.5",1,,residential,0,1,0,1,3.1519828488643356,2.345906370814321,2,0,0
+straight,51,Allen Avenue,left,"-385.5,403.5",2,,residential,0,1,0,1,0,1.524,1,0,0
+straight,186,South Jefferson Avenue,right,"-385.5,403.5",3,,residential,0,1,0,1,0,1.524,1,0,0
+straight,188,South Jefferson Avenue,right,"-385.5,403.5",4,,,0,1,0,1,0,1.524,1,0,0
+straight,122,Geyer Avenue,right,"-385.5,403.5",5,,,0,1,0,1,0,1.524,1,0,0
+straight,63,California Avenue,right,"-916.5,365.0",0,,residential,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,103,Russell Boulevard,left,"-916.5,365.0",1,,residential,0,,1,1,0.07868542325239236,1.524,2,0,0
+straight,61,Oregon Avenue,left,"-916.5,365.0",2,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,121,Geyer Avenue,right,"-916.5,365.0",3,,residential,0,,1,1,0,1.524,1,0,0
+straight,6,South 18th Street,right,"278.5,353.5",7,,,0,1,0,1,4.3856,1.524,3,0,0
+straight,160,Lafayette Avenue,right,"278.5,353.5",8,,park,0,1,0,1,3.756012002197112,1.524,2,0,0
+straight,1,Mississippi Avenue,right,"-150.5,337.5",3,,vacant,0,1,0,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,187,South Jefferson Avenue,right,"-150.5,337.5",8,,vacant,0,1,0,1,0,1.524,1,0,0
+straight,57,Ohio Avenue,right,"-762.0,340.0",0,,,0,1,0,1,0,1.524,1,0,0
+straight,53,Allen Avenue,left,"-762.0,340.0",1,,,0,1,0,1,0,1.524,1,0,0
+straight,63,California Avenue,left,"-762.0,340.0",2,,,0,1,0,1,0,1.524,1,0,0
+straight,121,Geyer Avenue,right,"-762.0,340.0",3,,,0,1,0,1,0,1.524,1,0,0
+straight,155,Lafayette Avenue,right,"259.0,312.0",1,,recreation,0,,1,1,1.0668,1.6764000000000001,2,0,0
+straight,10,South 18th Street,left,"259.0,312.0",2,,,0,,1,1,1.2456,1.524,2,0,0
+straight,3,South 18th Street,right,"259.0,312.0",3,,recreation,0,,1,1,4.3856,1.524,2,0,0
+straight,1,Mississippi Avenue,left,"259.0,312.0",6,,recreation,0,,1,1,1.524,1.8288000000000002,2,0,0
+straight,155,Lafayette Avenue,right,"259.0,312.0",7,,,0,,1,1,1.0668,1.6764000000000001,2,0,0
+straight,153,Lafayette Avenue,right,"-132.0,264.5",0,,residential,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,30,Missouri Avenue,right,"-132.0,264.5",1,,residential,0,,1,1,3.1519828488643356,2.345906370814321,2,0,0
+straight,30,Missouri Avenue,left,"-132.0,264.5",3,,,0,,1,1,3.020838982094821,2.263884048165316,2,0,0
+straight,153,Lafayette Avenue,right,"-132.0,264.5",4,,residential,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,36,Simpson Place,right,"-132.0,264.5",5,,residential,0,,1,1,0,1.524,1,0,0
+straight,153,Lafayette Avenue,right,"-132.0,264.5",6,,residential,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,12,Waverly Place,right,"-132.0,264.5",7,,residential,0,,1,1,2.3125350666523836,1.524,2,0,0
+straight,153,Lafayette Avenue,right,"-132.0,264.5",8,,residential,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,18,Nicholson Place,right,"-132.0,264.5",9,,residential,0,,1,1,0.8654940208702975,1.524,2,0,0
+straight,153,Lafayette Avenue,right,"-132.0,264.5",10,,residential,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,1,Mississippi Avenue,right,"-132.0,264.5",11,,,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,190,South Jefferson Avenue,right,"-132.0,264.5",16,,residential,0,,1,1,0,1.524,1,0,0
+straight,189,South Jefferson Avenue,right,"-132.0,264.5",17,,residential,0,,1,1,0,1.524,1,0,0
+straight,158,Lafayette Avenue,right,"-132.0,264.5",18,,residential,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,195,South Jefferson Avenue,left,"-460.0,333.5",1,,,0,1,0,1,2.002554538036364,5.108928968970948,1,0,0
+straight,122,Geyer Avenue,right,"-460.0,333.5",3,,residential,0,1,0,1,0,1.524,1,0,0
+straight,193,South Jefferson Avenue,right,"-483.0,315.5",0,,island,0,1,0,1,0,1.524,1,0,0
+straight,187,South Jefferson Avenue,right,"-342.5,293.0",2,,recreation,0,1,0,1,0,1.524,1,0,0
+straight,187,South Jefferson Avenue,right,"-342.5,293.0",4,,recreation,0,1,0,1,0,1.524,1,0,0
+straight,151,Lafayette Avenue,right,"557.0,301.5",2,,,0,1,0,1,3.756012002197112,1.524,2,0,0
+straight,191,South Jefferson Avenue,right,"-569.0,278.5",1,,,0,1,0,1,0,1.524,1,0,0
+straight,122,Geyer Avenue,left,"-453.5,289.0",2,,residential,0,1,0,1,0,1.524,1,0,0
+straight,179,Park Place,left,"696.5,166.0",1,,commercial,0,0,0,1,0,1.524,1,0,0
+straight,163,South 14th Street,right,"696.5,166.0",3,,commercial,0,1,0,1,0,1.524,1,0,0
+straight,151,Lafayette Avenue,left,"696.5,166.0",4,,commercial,0,1,0,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,142,Truman Parkway,right,"696.5,166.0",5,,,0,1,0,1,2.1256000000000004,1.524,2,0,0
+straight,73,Carroll Street,right,"696.5,166.0",6,,commercial,0,1,0,1,0,1.524,1,0,0
+straight,169,Park Avenue,right,"696.5,166.0",8,,,0,1,0,1,1,3.693069658822573,2,0,0
+straight,187,South Jefferson Avenue,right,"-322.5,241.5",2,,,0,0,0,1,0,1.524,0,1,0
+straight,187,South Jefferson Avenue,right,"-322.5,241.5",4,,commercial,0,1,0,1,0,1.524,1,0,0
+straight,151,Lafayette Avenue,left,"572.0,129.0",2,,recreation,0,1,0,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,149,Truman Parkway,left,"572.0,129.0",3,,,0,1,0,1,12.775599999999999,1.524,2,0,0
+straight,173,Park Avenue,right,"572.0,129.0",5,,recreation,0,1,0,1,1,3.693069658822573,2,0,0
+straight,173,Park Avenue,right,"382.5,114.5",0,,,0,,1,1,1,3.693069658822573,2,0,0
+straight,146,Truman Parkway,right,"382.5,114.5",1,,residential,0,,1,1,2.1256000000000004,1.524,2,0,0
+straight,149,Truman Parkway,right,"382.5,114.5",2,,residential,0,,1,1,2.1256000000000004,1.524,2,0,0
+straight,151,Lafayette Avenue,left,"382.5,114.5",3,,residential,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,162,Lafayette Avenue,left,"382.5,114.5",4,,residential,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,156,Lafayette Avenue,left,"382.5,114.5",5,,,1,,1,1,1.5200585066011074,1.5184476651648833,2,0,0
+straight,1,Mississippi Avenue,left,"382.5,114.5",6,,,0,,1,1,1.524,1.8288000000000002,2,0,0
+straight,5,South 18th Street,left,"382.5,114.5",8,,residential,0,,1,1,1.2456,1.524,2,0,0
+straight,74,Carroll Street,right,"382.5,114.5",9,,residential,0,,1,1,0,1.524,1,0,0
+straight,91,Dolman Street,left,"382.5,114.5",10,,residential,1,,1,1,1.3756000000000004,1.524,2,0,0
+straight,74,Carroll Street,right,"382.5,114.5",11,,residential,0,,1,1,0,1.524,1,0,0
+straight,91,Dolman Street,left,"382.5,114.5",12,,residential,0,,1,1,1.3756000000000004,1.524,2,0,0
+straight,172,Park Avenue,right,"382.5,114.5",13,,,0,,1,1,1,3.693069658822573,2,0,0
+straight,191,South Jefferson Avenue,right,"-752.5,225.0",4,,,0,1,0,1,0,1.524,1,0,0
+straight,191,South Jefferson Avenue,right,"-752.5,225.0",6,,vacant,0,1,0,1,0,1.524,1,0,0
+straight,86,Nebraska Avenue,left,"-752.5,225.0",10,,residential,0,1,0,1,0,1.524,1,0,0
+straight,191,South Jefferson Avenue,right,"-561.0,224.5",0,,park,0,1,0,1,0,1.524,1,0,0
+straight,191,South Jefferson Avenue,right,"-561.0,224.5",2,,park,0,1,0,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,right,"3.0,0.0",0,,,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,153,Lafayette Avenue,left,"3.0,0.0",1,,,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,31,Missouri Avenue,left,"3.0,0.0",2,,,0,,1,1,3.020838982094821,2.263884048165316,2,0,0
+straight,167,Park Avenue,left,"3.0,0.0",3,,,0,,1,1,3.192626415453148,1.7297401723922992,2,0,0
+straight,0,Oregon Place,left,"-735.0,129.5",0,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,150,Lafayette Avenue,right,"-735.0,129.5",1,,recreation,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,62,California Avenue,left,"-735.0,129.5",2,,,0,,1,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,right,"-735.0,129.5",3,,recreation,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,26,Iowa Avenue,right,"-735.0,129.5",4,,recreation,0,,1,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,right,"-735.0,129.5",5,,recreation,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,60,Ohio Avenue,left,"-735.0,129.5",6,,recreation,0,,1,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,right,"-735.0,129.5",7,,recreation,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,189,South Jefferson Avenue,left,"-735.0,129.5",8,,recreation,1,,1,1,2.002554538036364,5.108928968970948,2,0,0
+straight,191,South Jefferson Avenue,right,"-735.0,129.5",9,,recreation,0,,1,1,0,1.524,1,0,0
+straight,86,Nebraska Avenue,left,"-735.0,129.5",15,,residential,0,,1,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,right,"-735.0,129.5",16,,residential,0,,1,1,3.756012002197112,1.524,2,0,0
+straight,190,South Jefferson Avenue,right,"-416.0,203.0",1,,island,0,1,0,1,0,1.524,1,0,0
+straight,190,South Jefferson Avenue,left,"-438.0,195.5",3,,residential,0,1,0,1,2.002554538036364,5.108928968970948,1,0,0
+straight,191,South Jefferson Avenue,right,"-459.0,200.5",2,,island,0,1,0,1,0,1.524,1,0,0
+straight,86,Nebraska Avenue,right,"-1045.5,106.0",0,,,0,1,0,1,0,1.524,1,0,0
+straight,86,Nebraska Avenue,right,"-1045.5,106.0",2,,,0,0,0,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,right,"-1045.5,106.0",4,,,0,1,0,1,3.756012002197112,1.524,2,0,0
+straight,31,Missouri Avenue,right,"-297.0,22.0",0,,residential,0,,1,1,3.1519828488643356,2.345906370814321,2,0,1
+straight,49,Whittemore Place,left,"-297.0,22.0",1,,residential,0,,1,1,1.326821815429419,1.25354467209816,2,0,0
+straight,31,Missouri Avenue,right,"-297.0,22.0",2,,residential,0,,1,1,3.1519828488643356,2.345906370814321,2,0,0
+straight,153,Lafayette Avenue,left,"-297.0,22.0",3,,residential,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,157,Lafayette Avenue,left,"-297.0,22.0",4,,residential,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,185,South Jefferson Avenue,right,"-297.0,22.0",5,,,0,,1,1,0,1.524,1,0,0
+straight,83,Albion Place,right,"-297.0,22.0",6,,,0,,1,1,1.0330239630137168,1,2,0,0
+straight,17,Vail Place,left,"305.5,-2.0",0,,residential,0,,1,1,0,1.524,1,0,0
+straight,167,Park Avenue,left,"305.5,-2.0",1,,residential,0,,1,1,3.192626415453148,1.7297401723922992,2,0,0
+straight,5,South 18th Street,right,"305.5,-2.0",2,,,1,,1,1,4.3856,1.524,2,0,0
+straight,71,Kennett Place,left,"305.5,-2.0",3,,residential,0,,1,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"305.5,-2.0",4,,residential,0,,1,1,1.524,1.8288000000000002,2,0,0
+straight,167,Park Avenue,left,"305.5,-2.0",5,,residential,0,,1,1,3.192626415453148,1.7297401723922992,2,0,0
+straight,20,Dillon Street,right,"641.5,64.5",0,,parking,0,,1,1,0,1.524,1,0,0
+straight,73,Carroll Street,left,"641.5,64.5",1,,parking,0,,1,1,0,1.524,1,0,0
+straight,142,Truman Parkway,right,"641.5,64.5",2,,parking,0,,1,1,2.1256000000000004,1.524,2,0,0
+straight,148,Truman Parkway,right,"641.5,64.5",3,,parking,0,,1,1,2.1256000000000004,1.524,2,0,0
+straight,169,Park Avenue,right,"641.5,64.5",4,,parking,0,,1,1,1,3.693069658822573,2,0,0
+straight,163,South 14th Street,right,"854.5,16.5",18,,,0,0,0,1,0,1.524,0,1,0
+straight,177,Park Place,left,"854.5,16.5",19,,,0,0,0,1,0,1.524,0,1,0
+straight,179,Park Place,left,"854.5,16.5",20,,,0,0,0,1,0,1.524,0,1,0
+straight,178,Park Place,left,"854.5,16.5",21,,,0,0,0,1,0,1.524,0,1,0
+straight,169,Park Avenue,right,"854.5,16.5",22,,,0,0,0,1,1,3.693069658822573,0,1,1
+straight,183,South Jefferson Avenue,right,"-592.0,-79.5",0,,park,0,,1,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,left,"-592.0,-79.5",1,,park,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,60,Ohio Avenue,left,"-592.0,-79.5",2,,park,0,,1,1,0,1.524,1,0,0
+straight,60,Ohio Avenue,right,"-592.0,-79.5",4,,park,0,,1,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,left,"-592.0,-79.5",5,,park,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,62,California Avenue,left,"-592.0,-79.5",6,,park,0,,1,1,0,1.524,1,0,0
+straight,37,Saint Vincent Avenue,right,"-592.0,-79.5",7,,park,0,,1,1,0,1.524,1,0,0
+straight,47,St. Vincent Court,left,"-592.0,-79.5",9,,park,0,,1,1,0,1.524,1,0,0
+straight,37,Saint Vincent Avenue,right,"-592.0,-79.5",11,,park,0,,1,1,0,1.524,1,0,0
+straight,39,Saint Vincent Avenue,left,"-592.0,-79.5",12,,park,0,,1,1,0,1.524,1,0,0
+straight,37,Saint Vincent Avenue,left,"-592.0,-79.5",13,,park,0,,1,1,0,1.524,1,0,0
+straight,58,Ohio Avenue,left,"-592.0,-79.5",14,,park,0,,1,1,0,1.524,1,0,0
+straight,171,Park Avenue,right,"-592.0,-79.5",15,,park,0,,1,1,1,3.693069658822573,2,0,0
+straight,91,Dolman Street,right,"456.5,13.5",0,,residential,0,,1,1,0,1.524,1,0,0
+straight,74,Carroll Street,left,"456.5,13.5",1,,residential,0,,1,1,0,1.524,1,0,0
+straight,5,South 18th Street,left,"456.5,13.5",2,,residential,0,,1,1,1.2456,1.524,2,0,0
+straight,172,Park Avenue,right,"456.5,13.5",3,,,0,,1,1,1,3.693069658822573,2,0,0
+straight,62,California Avenue,right,"-888.0,-142.0",0,,residential,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,37,Saint Vincent Avenue,left,"-888.0,-142.0",1,,,0,,1,1,0,1.524,1,0,0
+straight,62,California Avenue,right,"-888.0,-142.0",2,,,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,132,Eads Avenue,right,"-888.0,-142.0",3,,residential,0,,1,1,0.8427603314829444,1.524,2,0,0
+straight,62,California Avenue,right,"-888.0,-142.0",4,,residential,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,27,Henrietta Street,right,"-888.0,-142.0",5,,residential,0,,1,1,0,1.524,1,0,0
+straight,62,California Avenue,right,"-888.0,-142.0",6,,residential,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,150,Lafayette Avenue,left,"-888.0,-142.0",7,,,0,,1,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,86,Nebraska Avenue,left,"-888.0,-142.0",8,,residential,0,,1,1,0,1.524,1,0,0
+straight,175,Park Avenue,right,"-888.0,-142.0",9,,,0,,1,1,1,3.693069658822573,2,0,0
+straight,86,Nebraska Avenue,right,"-1038.5,-14.0",0,,,0,1,0,1,0,1.524,1,0,0
+straight,150,Lafayette Avenue,left,"-1038.5,-14.0",1,,,0,1,0,1,3.5560120021971127,4.213893953647322,2,0,0
+straight,28,Henrietta Street,right,"-1038.5,-14.0",3,,,0,1,0,1,0,1.524,1,0,0
+straight,54,Dillon Drive,right,"684.5,-97.5",0,,unknown,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,48,Rutger Lane,left,"684.5,-97.5",1,,unknown,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,54,Dillon Drive,right,"684.5,-97.5",2,,unknown,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,166,Park Avenue,right,"684.5,-97.5",3,,unknown,0,,1,1,1,3.693069658822573,2,0,0
+straight,145,Truman Parkway,right,"684.5,-97.5",4,,unknown,0,,1,1,2.1256000000000004,1.524,2,0,0
+straight,45,Grattan Street,right,"684.5,-97.5",5,,unknown,0,,1,1,7.025599999999999,1.524,2,0,0
+straight,130,Hickory Lane,right,"684.5,-97.5",6,,unknown,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,143,Truman Parkway,left,"653.5,-236.5",0,,recreation,1,,1,1,12.775599999999999,1.524,2,0,0
+straight,166,Park Avenue,right,"653.5,-236.5",2,,recreation,0,,1,1,1,3.693069658822573,2,0,0
+straight,144,Truman Parkway,left,"653.5,-236.5",4,,recreation,0,,1,1,12.775599999999999,1.524,2,0,0
+straight,139,Chouteau Avenue,right,"653.5,-236.5",5,,,0,,1,1,0.46900241494727446,1.524,2,0,0
+straight,147,Truman Parkway,right,"611.0,-246.5",1,,residential,0,,1,1,2.1256000000000004,1.524,2,0,0
+straight,170,Park Avenue,right,"611.0,-246.5",2,,residential,0,,1,1,1,3.693069658822573,2,0,0
+straight,91,Dolman Street,left,"611.0,-246.5",3,,residential,0,,1,1,1.3756000000000004,1.524,2,0,0
+straight,22,Hickory Street,right,"611.0,-246.5",4,,residential,0,,1,1,0,1.524,1,0,0
+straight,91,Dolman Street,left,"611.0,-246.5",5,,residential,0,,1,1,1.3756000000000004,1.524,2,0,0
+straight,90,Dolman Street,left,"611.0,-246.5",6,,residential,0,,1,1,1.3756000000000004,1.524,2,0,0
+straight,196,West 18th Street,left,"611.0,-246.5",7,,residential,0,,1,1,0,1.524,1,0,0
+straight,90,Dolman Street,left,"611.0,-246.5",8,,,1,,1,1,1.3756000000000004,1.524,2,0,0
+straight,139,Chouteau Avenue,right,"611.0,-246.5",9,,residential,0,,1,1,0.46900241494727446,1.524,2,0,0
+straight,91,Dolman Street,right,"498.5,-175.0",0,,commercial,0,,1,1,0,1.524,1,0,0
+straight,170,Park Avenue,right,"498.5,-175.0",1,,commercial,0,,1,1,1,3.693069658822573,2,0,0
+straight,5,South 18th Street,left,"498.5,-175.0",2,,commercial,0,,1,1,1.2456,1.524,2,0,0
+straight,22,Hickory Street,right,"498.5,-175.0",3,,commercial,0,,1,1,0,1.524,1,0,0
+straight,86,Nebraska Avenue,right,"-1029.0,-114.0",0,,,0,,1,1,0,1.524,1,0,0
+straight,28,Henrietta Street,left,"-1029.0,-114.0",1,,,0,,1,1,0,1.524,1,0,0
+straight,131,Eads Avenue,left,"-1029.0,-114.0",3,,,0,,1,1,0,1.524,1,0,0
+straight,145,Truman Parkway,right,"671.5,-235.0",0,,park,0,1,0,1,2.1256000000000004,1.524,2,0,0
+straight,143,Truman Parkway,right,"671.5,-235.0",1,,park,0,0,0,1,2.1256000000000004,1.524,2,0,0
+straight,228,secondary_link 29,right,"671.5,-235.0",3,,park,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,31,Missouri Avenue,right,"-265.5,-164.5",0,,,0,1,0,1,3.1519828488643356,2.345906370814321,2,0,0
+straight,83,Albion Place,left,"-265.5,-164.5",1,,residential,0,1,0,1,1,1,2,0,0
+straight,185,South Jefferson Avenue,right,"-265.5,-164.5",2,,residential,0,1,0,1,0,1.524,1,0,0
+straight,167,Park Avenue,left,"-265.5,-164.5",3,,residential,0,1,0,1,3.192626415453148,1.7297401723922992,2,0,0
+straight,5,South 18th Street,right,"341.5,-153.0",0,,commercial,0,,1,1,4.3856,1.524,2,0,0
+straight,167,Park Avenue,right,"341.5,-153.0",1,,commercial,0,,1,1,1.7258555231174242,2.866669482870156,2,0,0
+straight,1,Mississippi Avenue,left,"341.5,-153.0",2,,,0,,1,1,1.524,1.8288000000000002,2,0,0
+straight,5,South 18th Street,right,"354.0,-202.5",0,,commercial,0,,1,1,4.3856,1.524,2,0,0
+straight,1,Mississippi Avenue,left,"354.0,-202.5",2,,commercial,0,,1,1,1.524,1.8288000000000002,2,0,0
+straight,77,Rutger Street,right,"354.0,-202.5",3,,commercial,0,,1,1,0,1.524,1,0,0
+straight,86,Nebraska Avenue,right,"-1015.5,-212.5",0,,,0,1,0,1,0,1.524,1,0,0
+straight,131,Eads Avenue,right,"-1015.5,-212.5",1,,residential,0,1,0,1,0.8427603314829444,1.524,2,0,0
+straight,38,Saint Vincent Avenue,right,"-1015.5,-212.5",3,,,0,1,0,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,right,"117.5,-299.5",0,,residential,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,77,Rutger Street,left,"117.5,-299.5",1,,residential,0,,1,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,right,"117.5,-299.5",2,,residential,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,1,Mississippi Avenue,right,"117.5,-299.5",4,,residential,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,167,Park Avenue,right,"117.5,-299.5",5,,residential,0,,1,1,1.7258555231174242,2.866669482870156,2,0,0
+straight,84,Benton Place,left,"117.5,-299.5",6,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,85,Benton Place,left,"117.5,-299.5",7,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,84,Benton Place,right,"117.5,-299.5",8,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,167,Park Avenue,right,"117.5,-299.5",9,,residential,0,,1,1,1.7258555231174242,2.866669482870156,2,0,0
+straight,40,Mackay Place,right,"117.5,-299.5",10,,residential,0,,1,1,0,1.524,1,0,0
+straight,22,Hickory Street,right,"117.5,-299.5",11,,,0,,1,1,0,1.524,1,0,0
+straight,41,Mackay Place,right,"117.5,-299.5",12,,residential,0,,1,1,0,1.524,1,0,0
+straight,22,Hickory Street,right,"117.5,-299.5",13,,residential,0,,1,1,0,1.524,1,0,0
+straight,54,Dillon Drive,right,"730.0,-252.0",0,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,130,Hickory Lane,left,"730.0,-252.0",1,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,45,Grattan Street,right,"730.0,-252.0",2,,residential,0,,1,1,7.025599999999999,1.524,2,0,0
+straight,199,Lasalle Lane,right,"730.0,-252.0",3,,residential,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,58,Ohio Avenue,right,"-665.5,-256.5",0,,,0,1,0,1,0,1.524,1,0,0
+straight,37,Saint Vincent Avenue,left,"-665.5,-256.5",1,,residential,0,1,0,1,0,1.524,1,0,0
+straight,62,California Avenue,left,"-665.5,-256.5",2,,,0,1,0,1,0,1.524,1,0,0
+straight,171,Park Avenue,right,"-665.5,-256.5",3,,,0,1,0,1,1,3.693069658822573,2,0,0
+straight,5,South 18th Street,right,"372.5,-272.5",0,,,0,1,0,1,4.3856,1.524,2,0,0
+straight,77,Rutger Street,left,"372.5,-272.5",1,,,0,1,0,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"372.5,-272.5",2,,residential,0,1,0,1,1.524,1.8288000000000002,2,0,0
+straight,22,Hickory Street,right,"372.5,-272.5",3,,,0,1,0,1,0,1.524,1,0,0
+straight,40,Mackay Place,left,"-75.0,-320.0",0,,recreation,0,,1,1,0,1.524,1,0,0
+straight,167,Park Avenue,right,"-75.0,-320.0",1,,recreation,0,,1,1,1.7258555231174242,2.866669482870156,2,0,0
+straight,32,Missouri Avenue,left,"-75.0,-320.0",2,,,0,,1,1,1,1.1215809834366155,2,0,0
+straight,78,Rutger Street,right,"-75.0,-320.0",3,,,0,,1,1,0,1.524,1,0,0
+straight,32,Missouri Avenue,left,"-75.0,-320.0",4,,recreation,0,,1,1,1,1.1215809834366155,2,0,0
+straight,23,Hickory Street,right,"-75.0,-320.0",5,,,0,,1,1,0,1.524,1,0,0
+straight,32,Missouri Avenue,right,"-240.5,-302.0",0,,residential,0,,1,1,0,1,1,0,0
+straight,167,Park Avenue,right,"-240.5,-302.0",1,,residential,0,,1,1,1.7258555231174242,2.866669482870156,2,0,0
+straight,184,South Jefferson Avenue,right,"-240.5,-302.0",2,,residential,0,,1,1,0,1.524,1,0,0
+straight,78,Rutger Street,right,"-240.5,-302.0",3,,residential,0,,1,1,0,1.524,1,0,0
+straight,86,Nebraska Avenue,right,"-997.0,-312.5",0,,,0,,1,1,0,1.524,1,0,0
+straight,38,Saint Vincent Avenue,left,"-997.0,-312.5",1,,,0,,1,1,0,1.524,1,0,0
+straight,176,Park Avenue,left,"-997.0,-312.5",3,,,0,,1,1,1,1,2,0,0
+straight,184,South Jefferson Avenue,left,"-406.0,-412.0",0,,parking,0,,1,1,2.002554538036364,5.108928968970948,2,0,0
+straight,168,Park Avenue,right,"-406.0,-412.0",1,,,0,,1,1,1,3.693069658822573,2,0,0
+straight,59,Ohio Avenue,left,"-406.0,-412.0",2,,parking,0,,1,1,0,1.524,1,0,0
+straight,69,Caroline Street,right,"-406.0,-412.0",3,,parking,0,,1,1,0,1.524,1,0,0
+straight,59,Ohio Avenue,left,"-406.0,-412.0",4,,parking,0,,1,1,0,1.524,1,0,0
+straight,76,Rutger Street,right,"-406.0,-412.0",5,,parking,1,,1,1,0,1.524,1,0,0
+straight,59,Ohio Avenue,left,"-406.0,-412.0",6,,parking,0,,1,1,0,1.524,1,0,0
+straight,24,Hickory Street,right,"-406.0,-412.0",7,,parking,0,,1,1,0,1.524,1,0,0
+straight,5,South 18th Street,left,"543.0,-340.5",0,,residential,0,,1,1,1.2456,1.524,2,0,0
+straight,91,Dolman Street,right,"543.0,-340.5",2,,residential,0,,1,1,0,1.524,1,0,0
+straight,91,Dolman Street,right,"543.0,-340.5",4,,,0,,1,1,0,1.524,1,0,0
+straight,22,Hickory Street,left,"543.0,-340.5",5,,residential,0,,1,1,0,1.524,1,0,0
+straight,5,South 18th Street,left,"543.0,-340.5",6,,residential,0,,1,1,1.2456,1.524,2,0,0
+straight,139,Chouteau Avenue,right,"459.5,-414.0",0,,,0,1,0,1,0.46900241494727446,1.524,2,0,0
+straight,90,Dolman Street,right,"459.5,-414.0",1,,,0,1,0,1,0,1.524,1,0,0
+straight,196,West 18th Street,left,"459.5,-414.0",2,,residential,0,1,0,1,0,1.524,1,0,0
+straight,5,South 18th Street,right,"459.5,-414.0",3,,residential,0,1,0,1,4.3856,1.524,2,0,0
+straight,22,Hickory Street,left,"459.5,-414.0",4,,,0,1,0,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"459.5,-414.0",5,,,0,1,0,1,1.524,1.8288000000000002,2,0,0
+straight,65,Lasalle Street,right,"459.5,-414.0",6,,residential,0,1,0,1,0,1.524,1,0,0
+straight,1,Mississippi Avenue,left,"459.5,-414.0",7,,,0,1,0,1,1.524,1.8288000000000002,2,0,0
+straight,141,Chouteau Avenue,right,"459.5,-414.0",8,,residential,0,1,0,1,0.46900241494727446,1.524,2,0,0
+straight,59,Ohio Avenue,right,"-599.0,-503.0",0,,,0,,1,1,0,1.524,1,0,0
+straight,69,Caroline Street,left,"-599.0,-503.0",1,,,0,,1,1,0,1.524,1,0,0
+straight,59,Ohio Avenue,right,"-599.0,-503.0",2,,residential,0,,1,1,0,1.524,1,0,0
+straight,168,Park Avenue,right,"-599.0,-503.0",3,,residential,0,,1,1,1,3.693069658822573,2,0,0
+straight,62,California Avenue,left,"-599.0,-503.0",4,,residential,0,,1,1,0,1.524,1,0,0
+straight,70,Caroline Street,right,"-599.0,-503.0",5,,residential,0,,1,1,0,1.524,1,0,0
+straight,62,California Avenue,left,"-599.0,-503.0",6,,residential,0,,1,1,0,1.524,1,0,0
+straight,80,Rutger Street,left,"-599.0,-503.0",7,,residential,0,,1,1,0,1.524,1,0,0
+straight,62,California Avenue,left,"-599.0,-503.0",8,,residential,0,,1,1,0,1.524,1,0,0
+straight,25,Hickory Street,right,"-599.0,-503.0",9,,residential,0,,1,1,0,1.524,1,0,0
+straight,62,California Avenue,left,"-599.0,-503.0",10,,recreation,0,,1,1,0,1.524,1,0,0
+straight,67,Lasalle Street,right,"-599.0,-503.0",11,,residential,0,,1,1,0,1.524,1,0,0
+straight,33,Missouri Avenue,right,"-190.5,-453.5",0,,commercial,0,,1,1,1.8227470700872805,2.1601083922874764,2,0,1
+straight,23,Hickory Street,left,"-190.5,-453.5",1,,commercial,0,,1,1,0,1.524,1,0,0
+straight,32,Missouri Avenue,right,"-190.5,-453.5",2,,commercial,0,,1,1,0,1,1,0,0
+straight,78,Rutger Street,left,"-190.5,-453.5",3,,,0,,1,1,0,1.524,1,0,0
+straight,184,South Jefferson Avenue,right,"-190.5,-453.5",4,,commercial,0,,1,1,0,1.524,1,0,0
+straight,64,Lasalle Street,right,"-190.5,-453.5",5,,commercial,0,,1,1,0,1.524,1,0,0
+straight,62,California Avenue,right,"-811.5,-399.0",0,,commercial,0,1,0,1,0.0006568506589585965,1.524,2,0,0
+straight,174,Park Avenue,right,"-811.5,-399.0",1,,,0,1,0,1,1,3.693069658822573,2,0,0
+straight,134,South Ewing Avenue,left,"-811.5,-399.0",2,,institutional,0,1,0,1,0,1.524,1,0,0
+straight,70,Caroline Street,right,"-811.5,-399.0",3,,,0,1,0,1,0,1.524,1,0,0
+straight,134,South Ewing Avenue,right,"-936.0,-423.5",0,,recreation,0,,1,1,0,1.524,1,0,0
+straight,174,Park Avenue,right,"-936.0,-423.5",1,,recreation,0,,1,1,1,3.693069658822573,2,0,0
+straight,176,Park Avenue,right,"-936.0,-423.5",2,,recreation,0,,1,1,1,3.693069658822573,2,0,0
+straight,82,Montrose Avenue,left,"-936.0,-423.5",3,,recreation,0,,1,1,0,1.524,1,0,0
+straight,70,Caroline Street,right,"-936.0,-423.5",4,,recreation,0,,1,1,0,1.524,1,0,0
+straight,141,Chouteau Avenue,right,"116.5,-497.0",0,,residential,0,,1,1,0.46900241494727446,1.524,2,0,0
+straight,1,Mississippi Avenue,right,"116.5,-497.0",1,,residential,0,,1,1,2.9144876422016814,3.219995027327654,2,0,0
+straight,22,Hickory Street,left,"116.5,-497.0",2,,residential,0,,1,1,0,1.524,1,0,0
+straight,41,Mackay Place,left,"116.5,-497.0",3,,residential,0,,1,1,0,1.524,1,0,0
+straight,23,Hickory Street,left,"116.5,-497.0",4,,residential,0,,1,1,0,1.524,1,0,0
+straight,33,Missouri Avenue,left,"116.5,-497.0",5,,residential,0,,1,1,3.020838982094821,2.263884048165316,2,0,1
+straight,64,Lasalle Street,right,"116.5,-497.0",6,,residential,0,,1,1,0,1.524,1,0,0
+straight,33,Missouri Avenue,left,"116.5,-497.0",7,,residential,0,,1,1,3.020838982094821,2.263884048165316,2,0,0
+straight,138,Chouteau Avenue,right,"116.5,-497.0",8,,residential,0,,1,1,0.46900241494727446,1.524,2,0,0
+straight,228,secondary_link 29,left,"716.5,-416.5",0,,,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,143,Truman Parkway,right,"716.5,-416.5",1,,,0,,1,1,2.1256000000000004,1.524,2,0,0
+straight,139,Chouteau Avenue,right,"716.5,-416.5",2,,park,0,,1,1,0.46900241494727446,1.524,2,0,0
+straight,62,California Avenue,right,"-771.5,-545.0",0,,residential,0,1,0,1,0.0006568506589585965,1.524,2,0,0
+straight,70,Caroline Street,left,"-771.5,-545.0",1,,residential,0,1,0,1,0,1.524,1,0,0
+straight,135,South Ewing Avenue,left,"-771.5,-545.0",2,,,0,1,0,1,0,1.524,1,0,0
+straight,79,Rutger Street,right,"-771.5,-545.0",3,,park,0,1,0,1,0,1.524,1,0,0
+straight,135,South Ewing Avenue,left,"-771.5,-545.0",4,,park,0,1,0,1,0,1.524,2,0,0
+straight,25,Hickory Street,right,"-771.5,-545.0",5,,,0,1,0,1,0,1.524,1,0,0
+straight,139,Chouteau Avenue,left,"680.5,-503.5",0,,,0,,1,1,0.47900241494727425,1.524,2,0,0
+straight,93,Papin Street,right,"680.5,-503.5",2,,recreation,0,,1,1,0,1.524,1,0,0
+straight,8,South 18th Street,left,"680.5,-503.5",3,,recreation,0,,1,1,1.2456,1.524,2,0,0
+straight,139,Chouteau Avenue,left,"678.0,-469.0",0,,residential,0,,1,1,0.47900241494727425,1.524,2,0,0
+straight,229,secondary_link 30,left,"678.0,-469.0",1,,,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,7,South 18th Street,right,"678.0,-469.0",2,,,0,,1,1,4.3856,1.524,2,0,0
+straight,4,South 18th Street,right,"55.0,-767.0",0,,,0,1,0,1,4.3856,1.524,3,0,0
+straight,4,South 18th Street,right,"55.0,-767.0",4,,,0,1,0,1,4.3856,1.524,3,0,0
+straight,9,South 18th Street,right,"55.0,-767.0",5,,,0,0,0,1,4.3856,1.524,2,0,0
+straight,7,South 18th Street,right,"55.0,-767.0",6,,parking,0,1,0,1,4.3856,1.524,2,0,0
+straight,98,Papin Street,left,"55.0,-767.0",7,,,0,1,0,1,5.448220840963817,1.524,2,0,0
+straight,95,Papin Street,left,"55.0,-767.0",8,,parking,0,0,0,1,5.448220840963817,1.524,2,0,0
+straight,96,Papin Street,right,"55.0,-767.0",9,,parking,0,1,0,1,0,1.524,1,0,0
+straight,94,Papin Street,right,"55.0,-767.0",10,,parking,0,1,0,1,0,1.524,1,0,0
+straight,97,Papin Street,right,"55.0,-767.0",11,,,0,1,0,1,0,1.524,1,0,0
+straight,7,South 18th Street,right,"55.0,-767.0",12,,,0,1,0,1,4.3856,1.524,2,0,0
+straight,229,secondary_link 30,right,"55.0,-767.0",13,,,0,1,0,1,1.3716000000000002,1.524,2,0,0
+straight,139,Chouteau Avenue,left,"55.0,-767.0",14,,parking,0,0,0,1,0.47900241494727425,1.524,2,0,0
+straight,140,Chouteau Avenue,left,"55.0,-767.0",15,,parking,0,0,0,1,0.47900241494727425,1.524,2,0,0
+straight,138,Chouteau Avenue,left,"55.0,-767.0",16,,parking,0,1,0,1,0.47900241494727425,1.524,2,0,0
+straight,120,South 21st Street,left,"55.0,-767.0",17,,,0,1,0,1,0,1.524,1,0,0
+straight,92,Papin Street,left,"55.0,-767.0",18,,,0,1,0,1,5.448220840963817,1.524,2,0,0
+straight,19,South 22nd Street,left,"55.0,-767.0",19,,industrial,0,1,0,1,0,1.524,1,0,0
+straight,92,Papin Street,right,"55.0,-767.0",20,,,0,1,0,1,0,1.524,1,0,0
+straight,19,South 22nd Street,right,"55.0,-767.0",21,,,0,1,0,1,0.2203665568145814,1.524,2,0,0
+straight,138,Chouteau Avenue,left,"55.0,-767.0",22,,industrial,0,1,0,1,0.47900241494727425,1.524,2,0,0
+straight,182,South Jefferson Avenue,right,"55.0,-767.0",23,,industrial,0,1,0,1,0,1.524,1,0,0
+straight,192,South Jefferson Avenue,right,"55.0,-767.0",24,,industrial,0,0,0,1,0,1.524,1,0,0
+straight,194,South Jefferson Avenue,right,"55.0,-767.0",25,,industrial,0,1,0,1,0,1.524,1,0,0
+straight,138,Chouteau Avenue,left,"55.0,-767.0",26,,industrial,0,1,0,1,0.47900241494727425,1.524,2,0,0
+straight,56,Ohio Avenue,left,"55.0,-767.0",27,,industrial,0,1,0,1,0,1.524,1,0,0
+straight,138,Chouteau Avenue,left,"55.0,-767.0",28,,,0,1,0,1,0.47900241494727425,1.524,2,0,0
+straight,135,South Ewing Avenue,right,"-896.0,-527.0",0,,residential,0,,1,1,0,1.524,1,0,0
+straight,70,Caroline Street,left,"-896.0,-527.0",1,,residential,0,,1,1,0,1.524,1,0,0
+straight,82,Montrose Avenue,left,"-896.0,-527.0",2,,residential,0,,1,1,0,1.524,1,0,0
+straight,79,Rutger Street,right,"-896.0,-527.0",3,,residential,0,,1,1,0,1.524,1,0,0
+straight,93,Papin Street,left,"822.0,-563.5",0,,,1,,1,1,5.448220840963817,1.524,2,0,0
+straight,34,South 17th Street,left,"822.0,-563.5",1,,,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,184,South Jefferson Avenue,left,"-356.5,-584.5",0,,parking,0,,1,1,2.002554538036364,5.108928968970948,2,0,0
+straight,24,Hickory Street,left,"-356.5,-584.5",1,,parking,0,,1,1,0,1.524,1,0,0
+straight,59,Ohio Avenue,left,"-356.5,-584.5",2,,parking,0,,1,1,0,1.524,1,0,0
+straight,68,Lasalle Street,right,"-356.5,-584.5",3,,parking,0,,1,1,0,1.524,1,0,0
+straight,33,Missouri Avenue,right,"-140.0,-613.5",0,,,0,1,0,1,0,5.497889219678656,1,0,0
+straight,64,Lasalle Street,left,"-140.0,-613.5",1,,parking,0,1,0,1,0,1.524,1,0,0
+straight,184,South Jefferson Avenue,right,"-140.0,-613.5",2,,parking,0,1,0,1,0,1.524,1,0,0
+straight,138,Chouteau Avenue,right,"-140.0,-613.5",3,,,0,1,0,1,0.46900241494727446,1.524,2,0,0
+straight,8,South 18th Street,left,"652.5,-627.0",0,,recreation,0,,1,1,1.2456,1.524,2,0,0
+straight,93,Papin Street,left,"652.5,-627.0",1,,commercial,0,,1,1,5.448220840963817,1.524,2,0,0
+straight,9,South 18th Street,left,"652.5,-627.0",3,,commercial,0,,1,1,1.2456,1.524,2,0,0
+straight,165,Gratiot Street,right,"652.5,-627.0",4,,recreation,0,,1,1,12.720397245853075,1.524,2,0,0
+straight,34,South 17th Street,right,"706.5,-628.0",0,,parking,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,93,Papin Street,left,"706.5,-628.0",1,,,0,,1,1,5.448220840963817,1.524,2,0,0
+straight,165,Gratiot Street,right,"706.5,-628.0",3,,parking,0,,1,1,12.720397245853075,1.524,2,0,0
+straight,135,South Ewing Avenue,right,"-859.5,-613.5",0,,recreation,0,,1,1,0,1.524,1,0,0
+straight,79,Rutger Street,left,"-859.5,-613.5",1,,recreation,0,,1,1,0,1.524,1,0,0
+straight,25,Hickory Street,right,"-859.5,-613.5",3,,recreation,0,,1,1,0,1.524,1,0,0
+straight,120,South 21st Street,right,"162.0,-645.0",0,,,0,1,0,1,2.014772761667942,1.524,2,0,0
+straight,138,Chouteau Avenue,left,"162.0,-645.0",1,,,0,1,0,1,0.47900241494727425,1.524,2,0,0
+straight,19,South 22nd Street,left,"162.0,-645.0",2,,,0,1,0,1,0,1.524,1,0,0
+straight,92,Papin Street,right,"162.0,-645.0",3,,,0,1,0,1,0,1.524,1,0,0
+straight,55,Singleton Street,left,"808.0,-638.5",0,,,0,,1,1,0,1.524,1,0,0
+straight,34,South 17th Street,left,"808.0,-638.5",1,,,0,,1,1,1.3716000000000002,1.524,2,0,0
+straight,165,Gratiot Street,right,"808.0,-638.5",2,,,0,,1,1,12.720397245853075,1.524,2,0,0
+straight,184,South Jefferson Avenue,left,"-331.5,-673.0",0,,,0,1,0,1,2.002554538036364,5.108928968970948,2,0,0
+straight,68,Lasalle Street,left,"-331.5,-673.0",1,,,0,1,0,1,0,1.524,1,0,0
+straight,59,Ohio Avenue,left,"-331.5,-673.0",2,,,0,1,0,1,0,1.524,1,0,0
+straight,138,Chouteau Avenue,right,"-331.5,-673.0",3,,commercial,0,1,0,1,0.46900241494727446,1.524,2,0,0
+straight,62,California Avenue,right,"-734.0,-684.0",0,,residential,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,25,Hickory Street,left,"-734.0,-684.0",1,,residential,0,,1,1,0,1.524,1,0,0
+straight,133,South Ewing Avenue,left,"-734.0,-684.0",2,,residential,0,,1,1,0,1.524,1,0,0
+straight,66,Lasalle Street,right,"-734.0,-684.0",3,,residential,0,,1,1,0,1.524,1,0,0
+straight,59,Ohio Avenue,right,"-538.5,-728.0",0,,,0,1,0,1,0,1.524,1,0,0
+straight,67,Lasalle Street,left,"-538.5,-728.0",1,,,0,1,0,1,0,1.524,1,0,0
+straight,62,California Avenue,left,"-538.5,-728.0",2,,,0,1,0,1,0,1.524,1,0,0
+straight,138,Chouteau Avenue,right,"-538.5,-728.0",3,,parking,0,1,0,1,0.46900241494727446,1.524,2,0,0
+straight,9,South 18th Street,left,"652.0,-707.5",1,,,0,,1,1,1.2456,1.524,2,0,0
+straight,8,South 18th Street,left,"652.0,-707.5",2,,,0,,1,1,1.2456,1.524,2,0,0
+straight,62,California Avenue,right,"-704.0,-766.5",0,,recreation,0,,1,1,0.0006568506589585965,1.524,2,0,0
+straight,66,Lasalle Street,left,"-704.0,-766.5",1,,recreation,0,,1,1,0,1.524,1,0,0
+straight,138,Chouteau Avenue,right,"-704.0,-766.5",2,,recreation,0,,1,1,0.46900241494727446,1.524,2,0,0
+arc,42,Ann Avenue,right,"118.0,744.0",22,,,0,,,1,0.00476208821259938,1.524,3,0,0
+arc,50,McNair Avenue,left,"118.0,744.0",25,,,0,,,1,0,1.524,1,0,0
+arc,42,Ann Avenue,left,"118.0,744.0",24,,,0,,,1,0,1.524,1,0,0
+arc,42,Ann Avenue,left,"118.0,744.0",24,,,0,,,1,0,1.524,1,0,0
+arc,102,Russell Boulevard,right,"118.0,744.0",26,,,0,,,1,0,1.524,1,0,0
+arc,51,Allen Avenue,right,"118.0,744.0",28,,,0,,,1,0.4016055921006334,1.524,1,0,0
+arc,51,Allen Avenue,right,"118.0,744.0",28,,,0,,,1,0.4016055921006334,1.524,3,0,0
+arc,42,Ann Avenue,left,"-229.0,696.5",1,,,0,,,1,0,1.524,1,0,0
+arc,42,Ann Avenue,left,"-229.0,696.5",1,,,1,,,1,0,1.524,1,0,0
+arc,2,South 18th Street,right,"203.0,617.0",,,,0,,,1,4.3856,1.524,3,0,0
+arc,2,South 18th Street,right,"203.0,617.0",,,,0,,,1,4.3856,1.524,3,0,0
+arc,102,Russell Boulevard,right,"-599.5,576.5",0,,,0,,,1,0,1.524,1,0,0
+arc,102,Russell Boulevard,right,"-599.5,576.5",0,,,0,,,1,0,1.524,1,0,0
+arc,105,Russell Boulevard,right,"-599.5,576.5",4,,,0,,,1,0,1.524,1,0,0
+arc,63,California Avenue,left,"-794.5,545.0",,,,0,,,1,0,1.524,1,0,0
+arc,63,California Avenue,left,"-794.5,545.0",,,,0,,,1,0,1.524,1,0,0
+arc,34,South 17th Street,left,"854.5,16.5",0,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,34,South 17th Street,left,"854.5,16.5",0,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,16,Emmet Street,left,"854.5,16.5",9,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,16,Emmet Street,left,"854.5,16.5",9,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,152,Lafayette Avenue,left,"854.5,16.5",14,,,0,,,1,3.5560120021971127,4.213893953647322,3,0,0
+arc,152,Lafayette Avenue,left,"854.5,16.5",14,,,0,,,1,3.5560120021971127,4.213893953647322,3,0,0
+arc,48,Rutger Lane,left,"854.5,16.5",25,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,48,Rutger Lane,left,"854.5,16.5",25,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,89,Peabody Court,left,"854.5,16.5",27,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,199,Lasalle Lane,left,"854.5,16.5",29,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,45,Grattan Street,right,"854.5,16.5",30,,,0,,,1,7.025599999999999,1.524,1,0,0
+arc,45,Grattan Street,right,"854.5,16.5",30,,,1,,,1,7.025599999999999,1.524,3,0,0
+arc,123,Geyer Avenue,right,"-193.5,475.5",3,,recreation,0,,,1,0,1.524,1,0,0
+arc,123,Geyer Avenue,right,"-193.5,475.5",3,,,0,,,1,0,1.524,1,0,0
+arc,51,Allen Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,51,Allen Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,102,Russell Boulevard,left,"-757.0,369.5",,,,0,,,1,0.07868542325239236,1.524,3,0,0
+arc,106,Russell Boulevard,left,"-757.0,369.5",,,,0,,,1,0.07868542325239236,1.524,3,0,0
+arc,106,Russell Boulevard,left,"-757.0,369.5",,,,0,,,1,0.07868542325239236,1.524,3,0,0
+arc,53,Allen Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,53,Allen Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,121,Geyer Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,63,California Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,63,California Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,61,Oregon Avenue,right,"-757.0,369.5",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,121,Geyer Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,121,Geyer Avenue,left,"-757.0,369.5",,,,0,,,1,0,1.524,1,0,0
+arc,13,Waverly Place,right,"-150.5,408.0",,,,0,,,1,2.3125350666523836,1.524,3,0,0
+arc,29,Missouri Avenue,right,"-150.5,408.0",,,,0,,,1,3.1519828488643356,2.345906370814321,3,0,0
+arc,29,Missouri Avenue,right,"-150.5,408.0",,,,0,,,1,3.1519828488643356,2.345906370814321,3,0,0
+arc,122,Geyer Avenue,right,"-385.5,403.5",5,,,0,,,1,0,1.524,1,0,0
+arc,188,South Jefferson Avenue,right,"-385.5,403.5",4,,,0,,,1,0,1.524,1,0,0
+arc,122,Geyer Avenue,right,"-385.5,403.5",5,,,1,,,1,0,1.524,1,0,0
+arc,61,Oregon Avenue,left,"-917.0,365.0",,,,0,,,1,1.3716000000000002,1.524,1,0,0
+arc,61,Oregon Avenue,left,"-917.0,365.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,63,California Avenue,right,"-917.0,365.0",,,,0,,,1,0.0006568506589585965,1.524,3,0,0
+arc,155,Lafayette Avenue,right,"259.0,313.0",,,,0,,,1,1.0668,1.6764000000000001,3,0,0
+arc,155,Lafayette Avenue,right,"259.0,313.0",,,,0,,,1,1.0668,1.6764000000000001,3,0,0
+arc,158,Lafayette Avenue,right,"-132.0,265.0",,,,0,,,1,3.756012002197112,1.524,3,0,0
+arc,36,Simpson Place,right,"-132.0,265.0",,,,0,,,1,0,1.524,1,0,0
+arc,36,Simpson Place,right,"-132.0,265.0",,,,0,,,1,0,1.524,1,0,0
+arc,12,Waverly Place,right,"-132.0,265.0",,,,0,,,1,2.3125350666523836,1.524,3,0,0
+arc,12,Waverly Place,right,"-132.0,265.0",,,,0,,,1,2.3125350666523836,1.524,3,0,0
+arc,18,Nicholson Place,right,"-132.0,265.0",,,,0,,,1,0.8654940208702975,1.524,3,0,0
+arc,18,Nicholson Place,right,"-132.0,265.0",,,,0,,,1,0.8654940208702975,1.524,3,0,0
+arc,158,Lafayette Avenue,right,"-132.0,265.0",,,,0,,,1,3.756012002197112,1.524,3,0,0
+arc,179,Park Place,left,"696.5,166.0",1,,,0,,,1,0,1.524,1,0,0
+arc,179,Park Place,left,"696.5,166.0",1,,,0,,,1,0,1.524,1,0,0
+arc,173,Park Avenue,right,"572.0,129.0",5,,,0,,,1,1,3.693069658822573,3,0,0
+arc,146,Truman Parkway,right,"382.0,115.0",,,,0,,,1,2.1256000000000004,1.524,3,0,0
+arc,162,Lafayette Avenue,left,"382.0,115.0",,,,0,,,1,3.5560120021971127,4.213893953647322,1,0,0
+arc,5,South 18th Street,right,"382.0,115.0",,,,0,,,1,4.3856,1.524,3,0,0
+arc,5,South 18th Street,right,"382.0,115.0",,,,0,,,1,4.3856,1.524,3,0,0
+arc,91,Dolman Street,left,"382.0,115.0",,,,0,,,1,1.3756000000000004,1.524,3,0,0
+arc,74,Carroll Street,right,"382.0,115.0",,,,0,,,1,0,1.524,1,0,0
+arc,74,Carroll Street,right,"382.0,115.0",,,,0,,,1,0,1.524,1,0,0
+arc,172,Park Avenue,right,"382.0,115.0",,,,0,,,1,1,3.693069658822573,3,0,0
+arc,1,Mississippi Avenue,right,"2.5,0.0",,,,0,,,1,2.9144876422016814,3.219995027327654,3,0,0
+arc,153,Lafayette Avenue,left,"2.5,0.0",,,,0,,,1,3.5560120021971127,4.213893953647322,3,0,0
+arc,31,Missouri Avenue,left,"2.5,0.0",,,,0,,,1,3.020838982094821,2.263884048165316,1,0,0
+arc,167,Park Avenue,left,"2.5,0.0",,,,0,,,1,3.192626415453148,1.7297401723922992,3,0,0
+arc,0,Oregon Place,left,"-735.5,130.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,62,California Avenue,left,"-735.5,130.0",,,,0,,,1,0,1.524,1,0,0
+arc,62,California Avenue,left,"-735.5,130.0",,,,0,,,1,0,1.524,1,0,0
+arc,26,Iowa Avenue,right,"-735.5,130.0",,,,0,,,1,0,1.524,1,0,0
+arc,26,Iowa Avenue,right,"-735.5,130.0",,,,0,,,1,0,1.524,1,0,0
+arc,60,Ohio Avenue,left,"-735.5,130.0",,,,0,,,1,0,1.524,1,0,0
+arc,150,Lafayette Avenue,right,"-735.5,130.0",,,,0,,,1,3.756012002197112,1.524,1,0,0
+arc,150,Lafayette Avenue,right,"-735.5,130.0",,,,0,,,1,3.756012002197112,1.524,3,0,0
+arc,0,Oregon Place,left,"-735.5,130.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,86,Nebraska Avenue,right,"-1045.5,106.0",2,,,0,,,1,0,1.524,1,0,0
+arc,83,Albion Place,right,"-295.5,21.5",,,,0,,,1,1.0330239630137168,1,3,0,0
+arc,49,Whittemore Place,left,"-295.5,21.5",,,,0,,,1,1.326821815429419,1.25354467209816,3,0,0
+arc,49,Whittemore Place,left,"-295.5,21.5",,,,0,,,1,1.326821815429419,1.25354467209816,3,0,0
+arc,157,Lafayette Avenue,left,"-295.5,21.5",,,,0,,,1,3.5560120021971127,4.213893953647322,3,0,0
+arc,83,Albion Place,right,"-295.5,21.5",,,,0,,,1,1.0330239630137168,1,1,0,0
+arc,17,Vail Place,left,"306.0,-2.0",,,,0,,,1,0,1.524,1,0,0
+arc,5,South 18th Street,right,"306.0,-2.0",,,,0,,,1,4.3856,1.524,1,0,0
+arc,5,South 18th Street,right,"306.0,-2.0",,,,0,,,1,4.3856,1.524,3,0,0
+arc,167,Park Avenue,left,"306.0,-2.0",,,,1,,,1,3.192626415453148,1.7297401723922992,3,0,0
+arc,142,Truman Parkway,right,"641.5,65.0",,,,0,,,1,2.1256000000000004,1.524,3,0,0
+arc,142,Truman Parkway,right,"641.5,65.0",,,,0,,,1,2.1256000000000004,1.524,3,0,0
+arc,177,Park Place,left,"821.5,94.5",,,,0,,,1,0,1.524,1,0,0
+arc,179,Park Place,left,"821.5,94.5",,,,0,,,1,0,1.524,1,0,0
+arc,179,Park Place,left,"821.5,94.5",,,residential,0,,,1,0,1.524,1,0,0
+arc,163,South 14th Street,right,"821.5,94.5",,,,0,,,1,0,1.524,1,0,0
+arc,183,South Jefferson Avenue,right,"-592.5,-79.0",,,,0,,,1,0,1.524,1,0,0
+arc,183,South Jefferson Avenue,right,"-592.5,-79.0",,,park,0,,,1,0,1.524,1,0,0
+arc,62,California Avenue,left,"-592.5,-79.0",,,,0,,,1,0,1.524,1,0,0
+arc,62,California Avenue,left,"-592.5,-79.0",,,,0,,,1,0,1.524,1,0,0
+arc,39,Saint Vincent Avenue,left,"-592.5,-79.0",,,,0,,,1,0,1.524,1,0,0
+arc,39,Saint Vincent Avenue,left,"-592.5,-79.0",,,,0,,,1,0,1.524,1,0,0
+arc,171,Park Avenue,right,"-592.5,-79.0",,,,0,,,1,1,3.693069658822573,3,0,0
+arc,91,Dolman Street,right,"456.5,15.0",,,,0,,,1,0,1.524,1,0,0
+arc,91,Dolman Street,right,"456.5,15.0",,,,0,,,1,0,1.524,1,0,0
+arc,172,Park Avenue,right,"456.5,15.0",,,,0,,,1,1,3.693069658822573,3,0,0
+arc,175,Park Avenue,right,"-888.0,-141.5",,,,0,,,1,1,3.693069658822573,3,0,0
+arc,37,Saint Vincent Avenue,left,"-888.0,-141.5",,,,0,,,1,0,1.524,1,0,0
+arc,37,Saint Vincent Avenue,left,"-888.0,-141.5",,,,0,,,1,0,1.524,1,0,0
+arc,132,Eads Avenue,right,"-888.0,-141.5",,,,0,,,1,0.8427603314829444,1.524,3,0,0
+arc,132,Eads Avenue,right,"-888.0,-141.5",,,,0,,,1,0.8427603314829444,1.524,3,0,0
+arc,27,Henrietta Street,right,"-888.0,-141.5",,,,0,,,1,0,1.524,1,0,0
+arc,27,Henrietta Street,right,"-888.0,-141.5",,,,0,,,1,0,1.524,1,0,0
+arc,86,Nebraska Avenue,left,"-888.0,-141.5",,,,0,,,1,0,1.524,1,0,0
+arc,175,Park Avenue,right,"-888.0,-141.5",,,,0,,,1,1,3.693069658822573,1,0,0
+arc,48,Rutger Lane,left,"684.5,-98.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,48,Rutger Lane,left,"684.5,-98.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,45,Grattan Street,right,"684.5,-98.0",,,,0,,,1,7.025599999999999,1.524,2,0,0
+arc,45,Grattan Street,right,"684.5,-98.0",,,,0,,,1,7.025599999999999,1.524,3,0,0
+arc,54,Dillon Drive,right,"684.5,-98.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,143,Truman Parkway,left,"653.5,-236.0",,,,0,,,1,12.775599999999999,1.524,3,0,0
+arc,91,Dolman Street,left,"611.0,-247.0",,,,0,,,1,1.3756000000000004,1.524,3,0,0
+arc,22,Hickory Street,right,"611.0,-247.0",,,,0,,,1,0,1.524,1,0,0
+arc,91,Dolman Street,left,"611.0,-247.0",,,,0,,,1,1.3756000000000004,1.524,1,0,0
+arc,91,Dolman Street,left,"611.0,-247.0",,,,0,,,1,1.3756000000000004,1.524,3,0,0
+arc,170,Park Avenue,right,"499.0,-175.0",,,,0,,,1,1,3.693069658822573,3,0,0
+arc,5,South 18th Street,left,"499.0,-175.0",,,,0,,,1,1.2456,1.524,1,0,0
+arc,5,South 18th Street,left,"499.0,-175.0",,,,0,,,1,1.2456,1.524,3,0,0
+arc,83,Albion Place,left,"-265.5,-164.5",1,,,0,,,1,1,1,3,0,0
+arc,83,Albion Place,left,"-265.5,-164.5",1,,,0,,,1,1,1,3,0,0
+arc,167,Park Avenue,right,"342.5,-154.0",,,,0,,,1,1.7258555231174242,2.866669482870156,3,0,0
+arc,167,Park Avenue,right,"342.5,-154.0",,,,0,,,1,1.7258555231174242,2.866669482870156,3,0,0
+arc,46,St. Vincent Court,left,"-682.5,-180.5",,,,0,,,1,0,1.524,1,0,0
+arc,46,St. Vincent Court,left,"-682.5,-180.5",,,,0,,,1,0,1.524,1,0,0
+arc,77,Rutger Street,left,"117.5,-299.0",,,,0,,,1,0,1.524,1,0,0
+arc,77,Rutger Street,left,"117.5,-299.0",,,,0,,,1,0,1.524,1,0,0
+arc,85,Benton Place,left,"117.5,-299.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,85,Benton Place,left,"117.5,-299.0",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,40,Mackay Place,right,"117.5,-299.0",,,,0,,,1,0,1.524,1,0,0
+arc,40,Mackay Place,right,"117.5,-299.0",,,,0,,,1,0,1.524,1,0,0
+arc,37,Saint Vincent Avenue,left,"-665.5,-256.5",1,,,0,,,1,0,1.524,1,0,0
+arc,37,Saint Vincent Avenue,left,"-665.5,-256.5",1,,,0,,,1,0,1.524,1,0,0
+arc,78,Rutger Street,right,"-75.0,-320.5",,,,0,,,1,0,1.524,1,0,0
+arc,78,Rutger Street,right,"-75.0,-320.5",,,,0,,,1,0,1.524,1,0,0
+arc,168,Park Avenue,right,"-406.0,-413.0",,,,0,,,1,1,3.693069658822573,1,0,0
+arc,168,Park Avenue,right,"-406.0,-413.0",,,,0,,,1,1,3.693069658822573,3,0,0
+arc,69,Caroline Street,right,"-406.0,-413.0",,,,0,,,1,0,1.524,1,0,0
+arc,69,Caroline Street,right,"-406.0,-413.0",,,,0,,,1,0,1.524,1,0,0
+arc,76,Rutger Street,right,"-406.0,-413.0",,,,0,,,1,0,1.524,1,0,0
+arc,76,Rutger Street,right,"-406.0,-413.0",,,,0,,,1,0,1.524,1,0,0
+arc,184,South Jefferson Avenue,left,"-406.0,-413.0",,,,0,,,1,2.002554538036364,5.108928968970948,3,0,0
+arc,196,West 18th Street,left,"459.5,-414.0",2,,,0,,,1,0,1.524,1,0,0
+arc,196,West 18th Street,left,"459.5,-414.0",2,,,0,,,1,0,1.524,1,0,0
+arc,65,Lasalle Street,right,"459.5,-414.0",6,,,0,,,1,0,1.524,1,0,0
+arc,65,Lasalle Street,right,"459.5,-414.0",6,,,0,,,1,0,1.524,1,0,0
+arc,141,Chouteau Avenue,right,"459.5,-414.0",8,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,69,Caroline Street,left,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,69,Caroline Street,left,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,62,California Avenue,left,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,70,Caroline Street,right,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,70,Caroline Street,right,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,80,Rutger Street,left,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,80,Rutger Street,left,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,25,Hickory Street,right,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,25,Hickory Street,right,"-599.5,-503.0",,,,0,,,1,0,1.524,1,0,0
+arc,59,Ohio Avenue,right,"-599.5,-503.0",,,,1,,,1,0,1.524,1,0,0
+arc,23,Hickory Street,left,"-188.5,-453.5",,,,0,,,1,0,1.524,1,0,0
+arc,23,Hickory Street,left,"-188.5,-453.5",,,,0,,,1,0,1.524,1,0,0
+arc,62,California Avenue,right,"-811.5,-399.0",0,,,0,,,1,0.0006568506589585965,1.524,3,0,0
+arc,62,California Avenue,right,"-811.5,-399.0",0,,,0,,,1,0.0006568506589585965,1.524,3,0,0
+arc,82,Montrose Avenue,left,"-936.5,-423.5",,,,0,,,1,0,1.524,1,0,0
+arc,82,Montrose Avenue,left,"-936.5,-423.5",,,,0,,,1,0,1.524,1,0,0
+arc,138,Chouteau Avenue,right,"114.0,-497.0",,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,41,Mackay Place,left,"114.0,-497.0",,,,0,,,1,0,1.524,1,0,0
+arc,41,Mackay Place,left,"114.0,-497.0",,,,0,,,1,0,1.524,1,0,0
+arc,64,Lasalle Street,right,"114.0,-497.0",,,,0,,,1,0,1.524,1,0,0
+arc,64,Lasalle Street,right,"114.0,-497.0",,,,0,,,1,0,1.524,1,0,0
+arc,138,Chouteau Avenue,right,"114.0,-497.0",,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,143,Truman Parkway,right,"716.0,-420.5",,,,1,,,1,2.1256000000000004,1.524,3,0,0
+arc,143,Truman Parkway,right,"716.0,-420.5",,,,0,,,1,2.1256000000000004,1.524,3,0,0
+arc,228,secondary_link 29,left,"716.0,-420.5",,,,0,,,1,1.3716000000000002,1.524,3,0,0
+arc,79,Rutger Street,right,"-771.5,-545.0",3,,,1,,,1,0,1.524,1,0,0
+arc,79,Rutger Street,right,"-771.5,-545.0",3,,park,0,,,1,0,1.524,1,0,0
+arc,96,Papin Street,right,"55.0,-767.0",9,,,0,,,1,0,1.524,1,0,0
+arc,229,secondary_link 30,right,"55.0,-767.0",13,,,0,,,1,1.3716000000000002,1.524,1,0,0
+arc,120,South 21st Street,left,"55.0,-767.0",17,,,0,,,1,0,1.524,1,0,0
+arc,120,South 21st Street,left,"55.0,-767.0",17,,,0,,,1,0,1.524,1,0,0
+arc,19,South 22nd Street,left,"55.0,-767.0",19,,,0,,,1,0,1.524,1,0,0
+arc,92,Papin Street,right,"55.0,-767.0",20,,,0,,,1,0,1.524,1,0,0
+arc,92,Papin Street,right,"55.0,-767.0",20,,,0,,,1,0,1.524,1,0,0
+arc,138,Chouteau Avenue,left,"55.0,-767.0",28,,,0,,,1,0.47900241494727425,1.524,3,0,0
+arc,56,Ohio Avenue,left,"55.0,-767.0",27,,,0,,,1,0,1.524,1,0,0
+arc,56,Ohio Avenue,left,"55.0,-767.0",27,,,0,,,1,0,1.524,1,0,0
+arc,82,Montrose Avenue,left,"-896.5,-527.0",,,,0,,,1,0,1.524,1,0,0
+arc,82,Montrose Avenue,left,"-896.5,-527.0",,,,0,,,1,0,1.524,1,0,0
+arc,59,Ohio Avenue,left,"-357.0,-584.5",,,,0,,,1,0,1.524,1,0,0
+arc,59,Ohio Avenue,left,"-357.0,-584.5",,,parking,0,,,1,0,1.524,1,0,0
+arc,184,South Jefferson Avenue,right,"-140.0,-613.5",2,,,0,,,1,0,1.524,1,0,0
+arc,184,South Jefferson Avenue,right,"-140.0,-613.5",2,,,0,,,1,0,1.524,1,0,0
+arc,9,South 18th Street,left,"652.0,-627.0",,,,0,,,1,1.2456,1.524,3,0,0
+arc,9,South 18th Street,left,"652.0,-627.0",,,,0,,,1,1.2456,1.524,3,0,0
+arc,8,South 18th Street,left,"652.0,-627.0",,,recreation,0,,,1,1.2456,1.524,3,0,0
+arc,165,Gratiot Street,right,"808.0,-638.0",,,,0,,,1,12.720397245853075,1.524,3,0,0
+arc,165,Gratiot Street,right,"808.0,-638.0",,,,0,,,1,12.720397245853075,1.524,3,0,0
+arc,138,Chouteau Avenue,right,"-331.5,-673.0",3,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,138,Chouteau Avenue,right,"-331.5,-673.0",3,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,133,South Ewing Avenue,left,"-734.0,-684.5",,,,0,,,1,0,1.524,1,0,0
+arc,133,South Ewing Avenue,left,"-734.0,-684.5",,,,0,,,1,0,1.524,1,0,0
+arc,138,Chouteau Avenue,right,"-538.5,-728.0",3,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,138,Chouteau Avenue,right,"-538.5,-728.0",3,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,133,South Ewing Avenue,right,"-821.5,-685.0",,,,0,,,1,0,1.524,1,0,0
+arc,138,Chouteau Avenue,right,"-704.5,-767.0",,,,0,,,1,0.46900241494727446,1.524,3,0,0
+arc,138,Chouteau Avenue,right,"-704.5,-767.0",,,,0,,,1,0.46900241494727446,1.524,3,0,0

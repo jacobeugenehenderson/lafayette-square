@@ -868,7 +868,7 @@ export default function LidarWorkstage() {
         onLibrary={() => { setLidarOpen(false); setActiveSpecies(null) }}
       />
 
-      <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', gridTemplateRows: '1fr auto', minHeight: 0 }}>
+      <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', gridTemplateRows: '1fr 1fr', minHeight: 0 }}>
         {/* Left rail top — specimen browser */}
         <section style={{ ...panelStyle, gridRow: 1, borderRight: panelStyle.borderRight, overflow: 'auto' }}>
           <h3 style={sectionHeading}>Specimens</h3>
@@ -907,8 +907,8 @@ export default function LidarWorkstage() {
           </div>
         </section>
 
-        {/* Right pane top — viewport + layer toggles */}
-        <section style={{ ...panelStyle, gridRow: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* Right pane — viewport + layer toggles, spans both rows */}
+        <section style={{ ...panelStyle, gridRow: '1 / span 2', position: 'relative', overflow: 'hidden' }}>
           {!selectedTreeId ? (
             <div style={{ ...hintTextStyle, padding: 24 }}>Select a specimen to preview.</div>
           ) : (
@@ -1116,7 +1116,7 @@ export default function LidarWorkstage() {
         </section>
 
         {/* Left rail bottom — extraction tuner */}
-        <section style={{ ...panelStyle, gridRow: 2, borderRight: panelStyle.borderRight, borderTop: panelStyle.borderRight, padding: 14 }}>
+        <section style={{ ...panelStyle, gridRow: 2, borderRight: panelStyle.borderRight, borderTop: panelStyle.borderRight, padding: 14, overflow: 'auto', minHeight: 0 }}>
           <h3 style={sectionHeading}>Skeleton extraction</h3>
           {!selectedTreeId && <div style={hintTextStyle}>Pick a specimen first.</div>}
           {selectedTreeId && extractionParams && (

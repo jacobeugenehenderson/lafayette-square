@@ -268,6 +268,9 @@ const NUMERIC_BOUNDS = {
   'lightDome.ambientFloor':  [0, 1],
   'wind.scale':              [0, 5],
   'wind.dir':                [0, 360],
+  'wind.speed':              [0, 40],   // Brief 9a — m/s
+  'wind.gustsScale':         [0, 20],   // Brief 9a — m/s peak spike amplitude
+  'wind.gustEnvelope':       [0, 1],    // Brief 9a — slow gust modulator
   'precip.intensity':        [0, 1],
 }
 function clampForPath(path, n) {

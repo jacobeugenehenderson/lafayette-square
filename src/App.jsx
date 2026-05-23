@@ -30,6 +30,7 @@ import QRCode from 'qrcode'
 import { createLinkToken, checkLinkToken, getLinkedDeviceCount } from './lib/api'
 import { getDeviceHash } from './lib/device'
 import CourierDashboard, { useCourierDash } from './components/CourierDashboard'
+import ClockCalendarPump from './components/ClockCalendarPump'
 
 function LiveButton() {
   const isLive = useTimeOfDay((s) => s.isLive)
@@ -580,6 +581,7 @@ function App() {
 
   return (
     <div className="w-full h-full relative">
+      <ClockCalendarPump mode="live" />
       {!adminPromptOpen && splashReady && <SceneBoundary><Scene /></SceneBoundary>}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}

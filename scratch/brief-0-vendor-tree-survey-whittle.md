@@ -9,12 +9,12 @@
 
 ## 1. Summary stats
 
-- **Species dirs walked:** 67 (of 67 in `public/trees/index.json`)
+- **Species dirs walked:** 67 (of 68 in `public/trees/index.json`)
 - **GLBs surveyed (lod0 only, the chassis-eligible tier):** 347
 - **GLBs in vendor stock total (including LoD1/2 + unsuffixed):** 1044
 - **Primitives classified:** 1216
-  - WOOD: 314
-  - LEAF: 776
+  - WOOD: 260
+  - LEAF: 830
   - AMBIGUOUS: 126
 - **Chassis written:** 141
 - **Skipped (ambiguous):** 91
@@ -30,19 +30,19 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 
 | Species | Common label | Variants | Primitives | WOOD / LEAF / AMB | Status |
 |---|---|---:|---:|---|---|
-| abies_concolor | White Fir | 6 | 50 | 19 / 19 / 12 | 4 amb, 2 no-wood |
+| abies_concolor | White Fir | 6 | 50 | 15 / 23 / 12 | 4 amb, 2 no-wood |
 | acer_rubrum | Red Maple | 3 | 6 | 2 / 4 / 0 | 2 clean, 1 no-wood |
-| acer_saccharum | — | 18 | 96 | 23 / 73 / 0 | 18 clean |
-| acer_saccharum_lowpoly | Sugar Maple (low-poly forest) | 18 | 96 | 23 / 73 / 0 | 18 clean |
+| acer_saccharum | — | 18 | 96 | 21 / 75 / 0 | 18 clean |
+| acer_saccharum_lowpoly | Sugar Maple (low-poly forest) | 18 | 96 | 21 / 75 / 0 | 18 clean |
 | acer_saccharum_multistem | Sugar Maple (multistem) | 2 | 8 | 4 / 0 / 4 | 2 amb |
-| acer_saccharum_procedural | — | 5 | 10 | 10 / 0 / 0 | 5 clean |
+| acer_saccharum_procedural | — | 5 | 10 | 5 / 5 / 0 | 5 clean |
 | alaskan_cedar_2 | Alaskan Cedar (variant) | 2 | 8 | 3 / 3 / 2 | 2 amb |
 | betula_papyrifera | Paper Birch | 4 | 12 | 4 / 8 / 0 | 4 clean |
 | betula_pendula | Common Birch | 5 | 10 | 0 / 10 / 0 | 5 no-wood |
 | blue_spruce | Blue Spruce | 7 | 21 | 0 / 14 / 7 | 7 amb |
 | blue_spruce_winter | Blue Spruce (winter) | 6 | 22 | 0 / 22 / 0 | 6 no-wood |
-| broadleaf_03 | Flowering Peach | 5 | 27 | 9 / 18 / 0 | 5 clean |
-| broadleaf_04 | Peach Tree | 2 | 12 | 8 / 4 / 0 | 2 clean |
+| broadleaf_03 | Flowering Peach | 5 | 27 | 7 / 20 / 0 | 5 clean |
+| broadleaf_04 | Peach Tree | 2 | 12 | 6 / 6 / 0 | 2 clean |
 | broadleaf_rt3 | Broadleaf RT3 | 2 | 8 | 2 / 6 / 0 | 2 clean |
 | burnt_tree | Burnt Tree | 6 | 28 | 2 / 26 / 0 | 2 clean, 4 no-wood |
 | callitropsis_nootkatensis | Alaskan Cedar | 13 | 39 | 0 / 39 / 0 | 13 no-wood |
@@ -51,29 +51,29 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 | conifer_generic | Conifer Forest | 4 | 8 | 2 / 0 / 6 | 4 amb |
 | conifer_generic_2 | Conifer Forest 2 | 4 | 8 | 2 / 0 / 6 | 4 amb |
 | conifer_generic_3 | Conifer Forest 3 | 4 | 8 | 2 / 0 / 6 | 4 amb |
-| cupressus_sempervirens | Italian Cypress | 14 | 75 | 17 / 56 / 2 | 13 clean, 1 amb |
+| cupressus_sempervirens | Italian Cypress | 14 | 75 | 16 / 57 / 2 | 13 clean, 1 amb |
 | elderberry | Elderberry | 3 | 0 | 0 / 0 / 0 | 3 no-wood |
 | fagus_sylvatica | Common Beech | 4 | 16 | 6 / 10 / 0 | 4 clean |
-| garden_mix | Garden Trees Mix | 10 | 34 | 9 / 21 / 4 | 5 clean, 3 amb, 2 no-wood |
+| garden_mix | Garden Trees Mix | 10 | 34 | 8 / 22 / 4 | 5 clean, 3 amb, 2 no-wood |
 | generic_bark_tree | Generic Bark Tree | 2 | 6 | 2 / 2 / 2 | 2 amb |
 | generic_leaf_tree | Generic Leaf Tree | 2 | 5 | 3 / 2 / 0 | 2 clean |
 | generic_tree_1 | Generic Tree 1 | 1 | 3 | 2 / 1 / 0 | 1 clean |
-| generic_tree_2 | Generic Tree 2 | 1 | 3 | 3 / 0 / 0 | 1 clean |
+| generic_tree_2 | Generic Tree 2 | 1 | 3 | 2 / 1 / 0 | 1 clean |
 | generic_tree_3 | Bonsai | 1 | 4 | 0 / 4 / 0 | 1 no-wood |
 | generic_tree_4 | Generic Tree 4 | 2 | 14 | 2 / 9 / 3 | 2 amb |
 | gleditsia_triacanthos | Honey Locust | 3 | 30 | 4 / 20 / 6 | 3 amb |
-| juniperus_hollywood | Hollywood Juniper | 6 | 27 | 21 / 4 / 2 | 4 clean, 2 amb |
-| juniperus_occidentalis | Western Juniper | 2 | 11 | 6 / 4 / 1 | 1 clean, 1 amb |
+| juniperus_hollywood | Hollywood Juniper | 6 | 27 | 15 / 10 / 2 | 4 clean, 2 amb |
+| juniperus_occidentalis | Western Juniper | 2 | 11 | 5 / 5 / 1 | 1 clean, 1 amb |
 | magnolia_sp | Magnolia | 3 | 6 | 0 / 0 / 6 | 3 amb |
 | nyssa_sylvatica | Black Gum | 8 | 35 | 2 / 31 / 2 | 2 amb, 6 no-wood |
-| picea_abies | Norway Spruce | 2 | 12 | 4 / 0 / 8 | 2 amb |
+| picea_abies | Norway Spruce | 2 | 12 | 2 / 2 / 8 | 2 amb |
 | pine_corona | Pine (Corona) | 6 | 6 | 0 / 6 / 0 | 6 no-wood |
 | pinus_sp | Tall Pine | 5 | 10 | 3 / 7 / 0 | 3 clean, 2 no-wood |
 | pinus_sylvestris | Scots Pine | 10 | 30 | 2 / 18 / 10 | 10 amb |
 | platanus_acerifolia | London Plane | 14 | 49 | 8 / 39 / 2 | 8 clean, 2 amb, 4 no-wood |
 | populus_alba_fall | Poplar (fall) | 7 | 65 | 7 / 58 / 0 | 7 clean |
 | populus_canescens | Gray Poplar | 4 | 24 | 0 / 24 / 0 | 4 no-wood |
-| populus_tremuloides | Quaking Aspen | 5 | 23 | 11 / 12 / 0 | 5 clean |
+| populus_tremuloides | Quaking Aspen | 5 | 23 | 6 / 17 / 0 | 5 clean |
 | procedural_broadleaf | Procedural Broadleaf | 3 | 6 | 3 / 3 / 0 | 3 clean |
 | procedural_columnar | Procedural Columnar | 2 | 4 | 2 / 2 / 0 | 2 clean |
 | procedural_conifer | Procedural Conifer | 2 | 4 | 2 / 2 / 0 | 2 clean |
@@ -84,7 +84,7 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 | quercus_alba | White Oak | 4 | 8 | 4 / 4 / 0 | 4 clean |
 | quercus_winter_fall | Oak (winter/fall) | 6 | 19 | 1 / 17 / 1 | 1 amb, 5 no-wood |
 | salix_alba | White Willow | 6 | 6 | 0 / 6 / 0 | 6 no-wood |
-| salix_babylonica | Weeping Willow | 5 | 25 | 25 / 0 / 0 | 5 clean |
+| salix_babylonica | Weeping Willow | 5 | 25 | 5 / 20 / 0 | 5 clean |
 | spruce_corona | Spruce (Corona) | 2 | 0 | 0 / 0 / 0 | 2 no-wood |
 | stump_sycamore | Sycamore Stump Field | 1 | 2 | 1 / 1 / 0 | 1 clean |
 | stylized_trees_1 | Stylized Trees 1 | 5 | 10 | 4 / 4 / 2 | 3 clean, 2 amb |
@@ -119,7 +119,7 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 
 ### 1. `picea_abies/skeleton-1-lod0.glb` (Norway Spruce)
 
-- WOOD 2 / LEAF 0 / AMBIGUOUS 4
+- WOOD 1 / LEAF 1 / AMBIGUOUS 4
 - Ambiguous primitives:
   - mesh="NorwaySpruce_1" mat="NorwaySpruceCone" alpha=MASK v=51748 tris=25874 normalMap=true
   - mesh="NorwaySpruce_1" mat="NorwaySpruceNeedle" alpha=MASK v=406132 tris=221208 normalMap=true
@@ -129,7 +129,7 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 
 ### 2. `picea_abies/skeleton-2-lod0.glb` (Norway Spruce)
 
-- WOOD 2 / LEAF 0 / AMBIGUOUS 4
+- WOOD 1 / LEAF 1 / AMBIGUOUS 4
 - Ambiguous primitives:
   - mesh="NorwaySpruce_2" mat="NorwaySpruceCone" alpha=MASK v=26952 tris=13016 normalMap=true
   - mesh="NorwaySpruce_2" mat="NorwaySpruceNeedle" alpha=MASK v=292969 tris=147543 normalMap=true
@@ -139,7 +139,7 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 
 ### 3. `abies_concolor/skeleton-4-lod0.glb` (White Fir)
 
-- WOOD 4 / LEAF 2 / AMBIGUOUS 3
+- WOOD 3 / LEAF 3 / AMBIGUOUS 3
 - Ambiguous primitives:
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle" alpha=MASK v=54700 tris=40791 normalMap=true
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle_Snow" alpha=MASK v=119186 tris=89276 normalMap=true
@@ -148,7 +148,7 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 
 ### 4. `abies_concolor/skeleton-7-lod0.glb` (White Fir)
 
-- WOOD 5 / LEAF 1 / AMBIGUOUS 3
+- WOOD 4 / LEAF 2 / AMBIGUOUS 3
 - Ambiguous primitives:
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle" alpha=MASK v=87804 tris=65536 normalMap=true
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle_Snow" alpha=MASK v=176988 tris=132460 normalMap=true
@@ -157,7 +157,7 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 
 ### 5. `abies_concolor/skeleton-5-lod0.glb` (White Fir)
 
-- WOOD 5 / LEAF 0 / AMBIGUOUS 3
+- WOOD 4 / LEAF 1 / AMBIGUOUS 3
 - Ambiguous primitives:
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle" alpha=MASK v=67689 tris=50475 normalMap=true
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle_Snow" alpha=MASK v=141441 tris=105826 normalMap=true
@@ -166,7 +166,7 @@ Aggregated across lod0 variants for each species. Column "status" reports the do
 
 ### 6. `abies_concolor/skeleton-6-lod0.glb` (White Fir)
 
-- WOOD 5 / LEAF 0 / AMBIGUOUS 3
+- WOOD 4 / LEAF 1 / AMBIGUOUS 3
 - Ambiguous primitives:
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle" alpha=MASK v=68054 tris=50764 normalMap=true
   - mesh="WhiteFir_Winter_Med_3" mat="WhiteFirNeedle_Snow" alpha=MASK v=145148 tris=108611 normalMap=true
@@ -244,8 +244,8 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 
 ## 6. Naming pattern observations
 
-- **Top WOOD material tokens:** `mat` ×114, `cap` ×75, `bark` ×47, `vray` ×25, `2sided` ×23, `branches` ×20, `weepingwillowbranches` ×20, `trunk` ×15, `snow` ×12, `proceduralbark` ×11, `111` ×9, `hollywoodjuniperneedles` ×9
-- **Top LEAF material tokens:** `mat` ×384, `cap` ×92, `fall` ×87, `sugarmapleleaves` ×72, `leaf` ×61, `branches` ×60, `populier` ×51, `2sided` ×47, `green` ×43, `sugarmaplebark` ×42, `bark` ×37, `needles` ×34
+- **Top WOOD material tokens:** `mat` ×93, `cap` ×75, `bark` ×47, `2sided` ×23, `trunk` ×15, `proceduralbark` ×11, `111` ×9, `hollywoodjuniperneedles` ×9, `snow` ×8, `london` ×8, `plane` ×8, `douglasfirbark` ×8
+- **Top LEAF material tokens:** `mat` ×405, `cap` ×92, `fall` ×87, `branches` ×80, `sugarmapleleaves` ×72, `leaf` ×61, `populier` ×51, `2sided` ×47, `green` ×43, `sugarmaplebark` ×42, `bark` ×37, `needles` ×34
 - **Top AMBIGUOUS material tokens:** `mat` ×66, `needles` ×40, `2sided` ×39, `douglasfir` ×17, `cap` ×16, `desktop` ×13, `scotspine` ×10, `whitefirneedle` ×8, `material` ×8, `background` ×6, `conifer` ×6, `needle1` ×5
 
 ### Heuristic-refinement suggestions for a future re-run
@@ -286,14 +286,14 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 |---|---:|---|---|---|---|
 | abies_concolor | 1 | skeleton-1-lod0.glb | — | 0 / 8 / 0 | skipped-no-wood |
 | abies_concolor | 3 | skeleton-3-lod0.glb | — | 0 / 8 / 0 | skipped-no-wood |
-| abies_concolor | 4 | skeleton-4-lod0.glb | — | 4 / 2 / 3 | skipped-ambiguous |
-| abies_concolor | 5 | skeleton-5-lod0.glb | — | 5 / 0 / 3 | skipped-ambiguous |
-| abies_concolor | 6 | skeleton-6-lod0.glb | — | 5 / 0 / 3 | skipped-ambiguous |
-| abies_concolor | 7 | skeleton-7-lod0.glb | — | 5 / 1 / 3 | skipped-ambiguous |
+| abies_concolor | 4 | skeleton-4-lod0.glb | — | 3 / 3 / 3 | skipped-ambiguous |
+| abies_concolor | 5 | skeleton-5-lod0.glb | — | 4 / 1 / 3 | skipped-ambiguous |
+| abies_concolor | 6 | skeleton-6-lod0.glb | — | 4 / 1 / 3 | skipped-ambiguous |
+| abies_concolor | 7 | skeleton-7-lod0.glb | — | 4 / 2 / 3 | skipped-ambiguous |
 | acer_rubrum | 1 | skeleton-1-lod0.glb | red_maple_a | 1 / 1 / 0 | de-leafed |
 | acer_rubrum | 2 | skeleton-2-lod0.glb | red_maple_b | 1 / 1 / 0 | de-leafed |
 | acer_rubrum | 3 | skeleton-3-lod0.glb | — | 0 / 2 / 0 | skipped-no-wood |
-| acer_saccharum | 1 | skeleton-1-lod0.glb | acer_saccharum_a | 3 / 3 / 0 | de-leafed |
+| acer_saccharum | 1 | skeleton-1-lod0.glb | acer_saccharum_a | 2 / 4 / 0 | de-leafed |
 | acer_saccharum | 10 | skeleton-10-lod0.glb | acer_saccharum_j | 1 / 4 / 0 | de-leafed |
 | acer_saccharum | 11 | skeleton-11-lod0.glb | acer_saccharum_k | 1 / 4 / 0 | de-leafed |
 | acer_saccharum | 12 | skeleton-12-lod0.glb | acer_saccharum_l | 1 / 4 / 0 | de-leafed |
@@ -306,12 +306,12 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | acer_saccharum | 19 | skeleton-19-lod0.glb | acer_saccharum_s | 1 / 4 / 0 | de-leafed |
 | acer_saccharum | 20 | skeleton-20-lod0.glb | acer_saccharum_t | 1 / 4 / 0 | de-leafed |
 | acer_saccharum | 21 | skeleton-21-lod0.glb | acer_saccharum_u | 1 / 4 / 0 | de-leafed |
-| acer_saccharum | 3 | skeleton-3-lod0.glb | acer_saccharum_c | 4 / 2 / 0 | de-leafed |
+| acer_saccharum | 3 | skeleton-3-lod0.glb | acer_saccharum_c | 3 / 3 / 0 | de-leafed |
 | acer_saccharum | 4 | skeleton-4-lod0.glb | acer_saccharum_d | 1 / 5 / 0 | de-leafed |
 | acer_saccharum | 5 | skeleton-5-lod0.glb | acer_saccharum_e | 1 / 5 / 0 | de-leafed |
 | acer_saccharum | 8 | skeleton-8-lod0.glb | acer_saccharum_h | 1 / 5 / 0 | de-leafed |
 | acer_saccharum | 9 | skeleton-9-lod0.glb | acer_saccharum_i | 1 / 5 / 0 | de-leafed |
-| acer_saccharum_lowpoly | 1 | skeleton-1-lod0.glb | sugar_maple_low_poly_forest_a | 3 / 3 / 0 | de-leafed |
+| acer_saccharum_lowpoly | 1 | skeleton-1-lod0.glb | sugar_maple_low_poly_forest_a | 2 / 4 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 10 | skeleton-10-lod0.glb | sugar_maple_low_poly_forest_j | 1 / 4 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 11 | skeleton-11-lod0.glb | sugar_maple_low_poly_forest_k | 1 / 4 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 12 | skeleton-12-lod0.glb | sugar_maple_low_poly_forest_l | 1 / 4 / 0 | de-leafed |
@@ -324,18 +324,18 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | acer_saccharum_lowpoly | 19 | skeleton-19-lod0.glb | sugar_maple_low_poly_forest_s | 1 / 4 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 20 | skeleton-20-lod0.glb | sugar_maple_low_poly_forest_t | 1 / 4 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 21 | skeleton-21-lod0.glb | sugar_maple_low_poly_forest_u | 1 / 4 / 0 | de-leafed |
-| acer_saccharum_lowpoly | 3 | skeleton-3-lod0.glb | sugar_maple_low_poly_forest_c | 4 / 2 / 0 | de-leafed |
+| acer_saccharum_lowpoly | 3 | skeleton-3-lod0.glb | sugar_maple_low_poly_forest_c | 3 / 3 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 4 | skeleton-4-lod0.glb | sugar_maple_low_poly_forest_d | 1 / 5 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 5 | skeleton-5-lod0.glb | sugar_maple_low_poly_forest_e | 1 / 5 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 8 | skeleton-8-lod0.glb | sugar_maple_low_poly_forest_h | 1 / 5 / 0 | de-leafed |
 | acer_saccharum_lowpoly | 9 | skeleton-9-lod0.glb | sugar_maple_low_poly_forest_i | 1 / 5 / 0 | de-leafed |
 | acer_saccharum_multistem | 1 | skeleton-1-lod0.glb | — | 2 / 0 / 2 | skipped-ambiguous |
 | acer_saccharum_multistem | 2 | skeleton-2-lod0.glb | — | 2 / 0 / 2 | skipped-ambiguous |
-| acer_saccharum_procedural | 1 | skeleton-1-lod0.glb | acer_saccharum_procedural_a | 2 / 0 / 0 | de-leafed |
-| acer_saccharum_procedural | 2 | skeleton-2-lod0.glb | acer_saccharum_procedural_b | 2 / 0 / 0 | de-leafed |
-| acer_saccharum_procedural | 3 | skeleton-3-lod0.glb | acer_saccharum_procedural_c | 2 / 0 / 0 | de-leafed |
-| acer_saccharum_procedural | 4 | skeleton-4-lod0.glb | acer_saccharum_procedural_d | 2 / 0 / 0 | de-leafed |
-| acer_saccharum_procedural | 5 | skeleton-5-lod0.glb | acer_saccharum_procedural_e | 2 / 0 / 0 | de-leafed |
+| acer_saccharum_procedural | 1 | skeleton-1-lod0.glb | acer_saccharum_procedural_a | 1 / 1 / 0 | de-leafed |
+| acer_saccharum_procedural | 2 | skeleton-2-lod0.glb | acer_saccharum_procedural_b | 1 / 1 / 0 | de-leafed |
+| acer_saccharum_procedural | 3 | skeleton-3-lod0.glb | acer_saccharum_procedural_c | 1 / 1 / 0 | de-leafed |
+| acer_saccharum_procedural | 4 | skeleton-4-lod0.glb | acer_saccharum_procedural_d | 1 / 1 / 0 | de-leafed |
+| acer_saccharum_procedural | 5 | skeleton-5-lod0.glb | acer_saccharum_procedural_e | 1 / 1 / 0 | de-leafed |
 | alaskan_cedar_2 | 1 | skeleton-1-lod0.glb | — | 1 / 2 / 1 | skipped-ambiguous |
 | alaskan_cedar_2 | 2 | skeleton-2-lod0.glb | — | 2 / 1 / 1 | skipped-ambiguous |
 | betula_papyrifera | 2 | skeleton-2-lod0.glb | paper_birch_b | 1 / 2 / 0 | de-leafed |
@@ -360,13 +360,13 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | blue_spruce_winter | 6 | skeleton-6-lod0.glb | — | 0 / 4 / 0 | skipped-no-wood |
 | blue_spruce_winter | 7 | skeleton-7-lod0.glb | — | 0 / 4 / 0 | skipped-no-wood |
 | blue_spruce_winter | 8 | skeleton-8-lod0.glb | — | 0 / 4 / 0 | skipped-no-wood |
-| broadleaf_03 | 1 | skeleton-1-lod0.glb | flowering_peach_a | 3 / 3 / 0 | de-leafed |
-| broadleaf_03 | 3 | skeleton-3-lod0.glb | flowering_peach_c | 3 / 3 / 0 | de-leafed |
+| broadleaf_03 | 1 | skeleton-1-lod0.glb | flowering_peach_a | 2 / 4 / 0 | de-leafed |
+| broadleaf_03 | 3 | skeleton-3-lod0.glb | flowering_peach_c | 2 / 4 / 0 | de-leafed |
 | broadleaf_03 | 5 | skeleton-5-lod0.glb | flowering_peach_e | 1 / 4 / 0 | de-leafed |
 | broadleaf_03 | 6 | skeleton-6-lod0.glb | flowering_peach_f | 1 / 4 / 0 | de-leafed |
 | broadleaf_03 | 7 | skeleton-7-lod0.glb | flowering_peach_g | 1 / 4 / 0 | de-leafed |
-| broadleaf_04 | 1 | skeleton-1-lod0.glb | peach_tree_a | 4 / 2 / 0 | de-leafed |
-| broadleaf_04 | 2 | skeleton-2-lod0.glb | peach_tree_b | 4 / 2 / 0 | de-leafed |
+| broadleaf_04 | 1 | skeleton-1-lod0.glb | peach_tree_a | 3 / 3 / 0 | de-leafed |
+| broadleaf_04 | 2 | skeleton-2-lod0.glb | peach_tree_b | 3 / 3 / 0 | de-leafed |
 | broadleaf_rt3 | 1 | skeleton-1-lod0.glb | broadleaf_rt3_a | 1 / 3 / 0 | de-leafed |
 | broadleaf_rt3 | 2 | skeleton-2-lod0.glb | broadleaf_rt3_b | 1 / 3 / 0 | de-leafed |
 | burnt_tree | 1 | skeleton-1-lod0.glb | burnt_tree_a | 1 / 4 / 0 | de-leafed |
@@ -409,7 +409,7 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | conifer_generic_3 | 2 | skeleton-2-lod0.glb | — | 0 / 0 / 1 | skipped-ambiguous |
 | conifer_generic_3 | 3 | skeleton-3-lod0.glb | — | 1 / 0 / 2 | skipped-ambiguous |
 | conifer_generic_3 | 4 | skeleton-4-lod0.glb | — | 1 / 0 / 2 | skipped-ambiguous |
-| cupressus_sempervirens | 1 | skeleton-1-lod0.glb | — | 4 / 0 / 2 | skipped-ambiguous |
+| cupressus_sempervirens | 1 | skeleton-1-lod0.glb | — | 3 / 1 / 2 | skipped-ambiguous |
 | cupressus_sempervirens | 10 | skeleton-10-lod0.glb | italian_cypress_j | 1 / 5 / 0 | de-leafed |
 | cupressus_sempervirens | 11 | skeleton-11-lod0.glb | italian_cypress_k | 1 / 5 / 0 | de-leafed |
 | cupressus_sempervirens | 12 | skeleton-12-lod0.glb | italian_cypress_l | 1 / 5 / 0 | de-leafed |
@@ -434,7 +434,7 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | garden_mix | 10 | skeleton-10-lod0.glb | — | 0 / 0 / 0 | skipped-no-wood |
 | garden_mix | 2 | skeleton-2-lod0.glb | garden_trees_mix_b | 1 / 1 / 0 | de-leafed |
 | garden_mix | 3 | skeleton-3-lod0.glb | — | 0 / 1 / 1 | skipped-ambiguous |
-| garden_mix | 4 | skeleton-4-lod0.glb | — | 2 / 5 / 1 | skipped-ambiguous |
+| garden_mix | 4 | skeleton-4-lod0.glb | — | 1 / 6 / 1 | skipped-ambiguous |
 | garden_mix | 5 | skeleton-5-lod0.glb | garden_trees_mix_e | 2 / 6 / 0 | de-leafed |
 | garden_mix | 6 | skeleton-6-lod0.glb | garden_trees_mix_f | 2 / 6 / 0 | de-leafed |
 | garden_mix | 7 | skeleton-7-lod0.glb | garden_trees_mix_g | 1 / 1 / 0 | de-leafed |
@@ -445,21 +445,21 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | generic_leaf_tree | 3 | skeleton-3-lod0.glb | generic_leaf_tree_c | 1 / 1 / 0 | de-leafed |
 | generic_leaf_tree | 4 | skeleton-4-lod0.glb | generic_leaf_tree_d | 2 / 1 / 0 | de-leafed |
 | generic_tree_1 | 1 | skeleton-1-lod0.glb | generic_tree_1_a | 2 / 1 / 0 | de-leafed |
-| generic_tree_2 | 1 | skeleton-1-lod0.glb | generic_tree_2_a | 3 / 0 / 0 | de-leafed |
+| generic_tree_2 | 1 | skeleton-1-lod0.glb | generic_tree_2_a | 2 / 1 / 0 | de-leafed |
 | generic_tree_3 | 1 | skeleton-1-lod0.glb | — | 0 / 4 / 0 | skipped-no-wood |
 | generic_tree_4 | 1 | skeleton-1-lod0.glb | — | 1 / 4 / 2 | skipped-ambiguous |
 | generic_tree_4 | 2 | skeleton-2-lod0.glb | — | 1 / 5 / 1 | skipped-ambiguous |
 | gleditsia_triacanthos | 1 | skeleton-1-lod0.glb | — | 1 / 7 / 2 | skipped-ambiguous |
 | gleditsia_triacanthos | 2 | skeleton-2-lod0.glb | — | 2 / 6 / 2 | skipped-ambiguous |
 | gleditsia_triacanthos | 3 | skeleton-3-lod0.glb | — | 1 / 7 / 2 | skipped-ambiguous |
-| juniperus_hollywood | 1 | skeleton-1-lod0.glb | hollywood_juniper_a | 4 / 1 / 0 | de-leafed |
-| juniperus_hollywood | 2 | skeleton-2-lod0.glb | hollywood_juniper_b | 3 / 1 / 0 | de-leafed |
-| juniperus_hollywood | 3 | skeleton-3-lod0.glb | — | 3 / 0 / 1 | skipped-ambiguous |
-| juniperus_hollywood | 4 | skeleton-4-lod0.glb | — | 4 / 0 / 1 | skipped-ambiguous |
-| juniperus_hollywood | 5 | skeleton-5-lod0.glb | hollywood_juniper_e | 4 / 1 / 0 | de-leafed |
-| juniperus_hollywood | 6 | skeleton-6-lod0.glb | hollywood_juniper_f | 3 / 1 / 0 | de-leafed |
+| juniperus_hollywood | 1 | skeleton-1-lod0.glb | hollywood_juniper_a | 3 / 2 / 0 | de-leafed |
+| juniperus_hollywood | 2 | skeleton-2-lod0.glb | hollywood_juniper_b | 2 / 2 / 0 | de-leafed |
+| juniperus_hollywood | 3 | skeleton-3-lod0.glb | — | 2 / 1 / 1 | skipped-ambiguous |
+| juniperus_hollywood | 4 | skeleton-4-lod0.glb | — | 3 / 1 / 1 | skipped-ambiguous |
+| juniperus_hollywood | 5 | skeleton-5-lod0.glb | hollywood_juniper_e | 3 / 2 / 0 | de-leafed |
+| juniperus_hollywood | 6 | skeleton-6-lod0.glb | hollywood_juniper_f | 2 / 2 / 0 | de-leafed |
 | juniperus_occidentalis | 1 | skeleton-1-lod0.glb | western_juniper_a | 3 / 4 / 0 | de-leafed |
-| juniperus_occidentalis | 2 | skeleton-2-lod0.glb | — | 3 / 0 / 1 | skipped-ambiguous |
+| juniperus_occidentalis | 2 | skeleton-2-lod0.glb | — | 2 / 1 / 1 | skipped-ambiguous |
 | magnolia_sp | 1 | skeleton-1-lod0.glb | — | 0 / 0 / 2 | skipped-ambiguous |
 | magnolia_sp | 2 | skeleton-2-lod0.glb | — | 0 / 0 / 2 | skipped-ambiguous |
 | magnolia_sp | 3 | skeleton-3-lod0.glb | — | 0 / 0 / 2 | skipped-ambiguous |
@@ -471,8 +471,8 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | nyssa_sylvatica | 7 | skeleton-7-lod0.glb | — | 0 / 5 / 0 | skipped-no-wood |
 | nyssa_sylvatica | 8 | skeleton-8-lod0.glb | — | 0 / 5 / 0 | skipped-no-wood |
 | nyssa_sylvatica | 9 | skeleton-9-lod0.glb | — | 0 / 5 / 0 | skipped-no-wood |
-| picea_abies | 1 | skeleton-1-lod0.glb | — | 2 / 0 / 4 | skipped-ambiguous |
-| picea_abies | 2 | skeleton-2-lod0.glb | — | 2 / 0 / 4 | skipped-ambiguous |
+| picea_abies | 1 | skeleton-1-lod0.glb | — | 1 / 1 / 4 | skipped-ambiguous |
+| picea_abies | 2 | skeleton-2-lod0.glb | — | 1 / 1 / 4 | skipped-ambiguous |
 | pine_corona | 1 | skeleton-1-lod0.glb | — | 0 / 1 / 0 | skipped-no-wood |
 | pine_corona | 2 | skeleton-2-lod0.glb | — | 0 / 1 / 0 | skipped-no-wood |
 | pine_corona | 3 | skeleton-3-lod0.glb | — | 0 / 1 / 0 | skipped-no-wood |
@@ -519,10 +519,10 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | populus_canescens | 2 | skeleton-2-lod0.glb | — | 0 / 6 / 0 | skipped-no-wood |
 | populus_canescens | 3 | skeleton-3-lod0.glb | — | 0 / 6 / 0 | skipped-no-wood |
 | populus_canescens | 4 | skeleton-4-lod0.glb | — | 0 / 6 / 0 | skipped-no-wood |
-| populus_tremuloides | 1 | skeleton-1-lod0.glb | quaking_aspen_a | 2 / 3 / 0 | de-leafed |
-| populus_tremuloides | 2 | skeleton-2-lod0.glb | quaking_aspen_b | 3 / 2 / 0 | de-leafed |
-| populus_tremuloides | 3 | skeleton-3-lod0.glb | quaking_aspen_c | 2 / 3 / 0 | de-leafed |
-| populus_tremuloides | 4 | skeleton-4-lod0.glb | quaking_aspen_d | 2 / 3 / 0 | de-leafed |
+| populus_tremuloides | 1 | skeleton-1-lod0.glb | quaking_aspen_a | 1 / 4 / 0 | de-leafed |
+| populus_tremuloides | 2 | skeleton-2-lod0.glb | quaking_aspen_b | 1 / 4 / 0 | de-leafed |
+| populus_tremuloides | 3 | skeleton-3-lod0.glb | quaking_aspen_c | 1 / 4 / 0 | de-leafed |
+| populus_tremuloides | 4 | skeleton-4-lod0.glb | quaking_aspen_d | 1 / 4 / 0 | de-leafed |
 | populus_tremuloides | 5 | skeleton-5-lod0.glb | quaking_aspen_e | 2 / 1 / 0 | de-leafed |
 | procedural_broadleaf | 1 | skeleton-1-lod0.glb | procedural_broadleaf_a | 1 / 1 / 0 | de-leafed |
 | procedural_broadleaf | 2 | skeleton-2-lod0.glb | procedural_broadleaf_b | 1 / 1 / 0 | de-leafed |
@@ -568,11 +568,11 @@ Stock with names suggesting non-tree or stylized one-offs (operator judgement; n
 | salix_alba | 4 | skeleton-4-lod0.glb | — | 0 / 1 / 0 | skipped-no-wood |
 | salix_alba | 5 | skeleton-5-lod0.glb | — | 0 / 1 / 0 | skipped-no-wood |
 | salix_alba | 6 | skeleton-6-lod0.glb | — | 0 / 1 / 0 | skipped-no-wood |
-| salix_babylonica | 1 | skeleton-1-lod0.glb | weeping_willow_a | 5 / 0 / 0 | de-leafed |
-| salix_babylonica | 2 | skeleton-2-lod0.glb | weeping_willow_b | 5 / 0 / 0 | de-leafed |
-| salix_babylonica | 3 | skeleton-3-lod0.glb | weeping_willow_c | 5 / 0 / 0 | de-leafed |
-| salix_babylonica | 4 | skeleton-4-lod0.glb | weeping_willow_d | 5 / 0 / 0 | de-leafed |
-| salix_babylonica | 5 | skeleton-5-lod0.glb | weeping_willow_e | 5 / 0 / 0 | de-leafed |
+| salix_babylonica | 1 | skeleton-1-lod0.glb | weeping_willow_a | 1 / 4 / 0 | de-leafed |
+| salix_babylonica | 2 | skeleton-2-lod0.glb | weeping_willow_b | 1 / 4 / 0 | de-leafed |
+| salix_babylonica | 3 | skeleton-3-lod0.glb | weeping_willow_c | 1 / 4 / 0 | de-leafed |
+| salix_babylonica | 4 | skeleton-4-lod0.glb | weeping_willow_d | 1 / 4 / 0 | de-leafed |
+| salix_babylonica | 5 | skeleton-5-lod0.glb | weeping_willow_e | 1 / 4 / 0 | de-leafed |
 | spruce_corona | 4 | skeleton-4-lod0.glb | — | 0 / 0 / 0 | skipped-no-wood |
 | spruce_corona | 5 | skeleton-5-lod0.glb | — | 0 / 0 / 0 | skipped-no-wood |
 | stump_sycamore | 1 | skeleton-1-lod0.glb | sycamore_stump_field_a | 1 / 1 / 0 | de-leafed |

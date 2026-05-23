@@ -898,6 +898,26 @@
     {
       "species": "acer_saccharum_procedural",
       "variantId": 1
+    },
+    {
+      "species": "acer_saccharum_procedural",
+      "variantId": 2
+    },
+    {
+      "species": "acer_saccharum_procedural",
+      "variantId": 3
+    },
+    {
+      "species": "acer_saccharum_procedural",
+      "variantId": 4
+    },
+    {
+      "species": "acer_saccharum_procedural",
+      "variantId": 5
+    },
+    {
+      "species": "acer_saccharum",
+      "variantId": 1
     }
   ]
 }

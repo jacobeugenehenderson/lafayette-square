@@ -189,13 +189,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.527698142855643,
+          "pavementHW": 7.524836729760599,
           "treelawn": 1.524,
-          "sidewalk": 1.8288000000000002,
+          "sidewalk": 3.771508774121749,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 11.335654156628953,
+          "pavementHW": 11.876374210124538,
           "treelawn": 2.9144876422016814,
           "sidewalk": 3.219995027327654,
           "terminal": "sidewalk"
@@ -2201,7 +2201,7 @@
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 8.73105352144237,
+          "pavementHW": 6.628525862907328,
           "treelawn": 3.1519828488643356,
           "sidewalk": 2.345906370814321,
           "terminal": "sidewalk"

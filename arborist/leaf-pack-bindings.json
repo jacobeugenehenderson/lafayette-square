@@ -1,0 +1,80 @@
+{
+  "_comment": "Maps tree morphology + species to leaf shape packs. Read by ProceduralWorkstage + LidarWorkstage for auto-suggested-pack header; read by bake-look.js (Cycle 2+) for actual manifest binding when no per-species shapeRef is specified. Pack IDs reference directories at public/textures/leaves/shapes/<packId>/ (Cycle 2 ships the directory structure; until then, source-of-truth is assets/botanical-reference-hires/<packId>/). Morphology candidates are ORDERED — first is default, rest are alternates. See arborist/ARCHITECTURE.md 'Phase F leaf-color architecture' for context.",
+  "_authoredBy": "Arborist coordinator 2026-05-19; sourced from assets/botanical-reference-hires/README.txt morphology tags. Brief 1.5e (Fern, 2026-05-21) appended semantic-id pack entries (palmate, lobed, ovate, ...) for the Salon dir-scan picker; the original LeafSet0xx entries are retained for the Lidar/Procedural auto-suggest header path.",
+  "morphologyToPacks": {
+    "palmate": [
+      { "packId": "palmate", "label": "Sycamore / Maple (palmate lobed)" },
+      { "packId": "LeafSet010", "label": "Sycamore / Maple (palmate lobed) — vendor ref" }
+    ],
+    "lobed": [
+      { "packId": "lobed", "label": "Oak (lobed)" },
+      { "packId": "oak_autumn", "label": "Oak autumn variant" },
+      { "packId": "LeafSet016", "label": "Oak (lobed) — vendor ref" },
+      { "packId": "LeafSet012", "label": "Oak autumn variant — vendor ref" }
+    ],
+    "heart": [
+      { "packId": "heart", "label": "Redbud / Lilac (heart-shaped)" },
+      { "packId": "LeafSet004", "label": "Redbud / Lilac (heart-shaped) — vendor ref" }
+    ],
+    "serrate_ovate": [
+      { "packId": "serrate_ovate", "label": "Elm / Hornbeam (serrate ovate)" },
+      { "packId": "elm_autumn", "label": "Elm autumn variant" },
+      { "packId": "LeafSet001", "label": "Elm / Hornbeam (serrate ovate) — vendor ref" },
+      { "packId": "LeafSet007", "label": "Elm autumn variant — vendor ref" }
+    ],
+    "ovate": [
+      { "packId": "ovate", "label": "Mulberry / Dogwood / Hydrangea (ovate)" }
+    ],
+    "ovate_branchlet": [
+      { "packId": "ovate", "label": "Branch with broadleaves (multi-leaf branchlet)" },
+      { "packId": "LeafSet005", "label": "Branch with broadleaves (multi-leaf branchlet) — vendor ref" }
+    ],
+    "ovate_large": [
+      { "packId": "ovate_large", "label": "Mulberry / Hydrangea (large ovate single)" },
+      { "packId": "Leaf001", "label": "Mulberry / Hydrangea (large ovate single) — vendor ref" }
+    ],
+    "lanceolate": [
+      { "packId": "lanceolate", "label": "Willow (lanceolate / narrow)" },
+      { "packId": "LeafSet013", "label": "Willow (lanceolate / narrow) — vendor ref" }
+    ],
+    "narrow": [
+      { "packId": "lanceolate", "label": "Willow (lanceolate / narrow)" },
+      { "packId": "LeafSet013", "label": "Willow (lanceolate / narrow) — vendor ref" }
+    ],
+    "long_needle": [
+      { "packId": "long_needle", "label": "Pine (long needle)" },
+      { "packId": "LeafSet019", "label": "Pine (long needle) — vendor ref" }
+    ],
+    "seasonal_elm": [
+      { "packId": "elm_autumn", "label": "Elm autumn variant" }
+    ],
+    "seasonal_oak": [
+      { "packId": "oak_autumn", "label": "Oak autumn variant" }
+    ]
+  },
+  "speciesOverrides": {
+    "acer_saccharum_procedural": "LeafSet010",
+    "acer_rubrum_procedural":    "LeafSet010",
+    "quercus_alba_procedural":   "LeafSet016",
+    "salix_babylonica_procedural": "LeafSet013",
+    "ginkgo_biloba_procedural":  null,
+    "gleditsia_triacanthos_procedural": null
+  },
+  "shapeToMorphology": {
+    "broad":      "palmate",
+    "broadleaf":  "palmate",
+    "ornamental": "heart",
+    "columnar":   "palmate",
+    "weeping":    "narrow",
+    "conifer":    "long_needle"
+  },
+  "coverageGaps": [
+    { "morphology": "fan",              "neededFor": "Ginkgo (G.2)", "notes": "Bilobed fan; distinctive autumn gold. No vendor source available." },
+    { "morphology": "fine_compound",    "neededFor": "Honeylocust (G.4)", "notes": "Bipinnately compound; sparse dappled canopy." },
+    { "morphology": "palmate_compound", "neededFor": "Buckeye", "notes": "5–7 radiating leaflets per leaf." },
+    { "morphology": "tulip",            "neededFor": "Tuliptree", "notes": "Unique 4-lobed shape." },
+    { "morphology": "short_needle",     "neededFor": "Spruce / Holly", "notes": "Short flat needles." },
+    { "morphology": "scale",            "neededFor": "Juniper / Cypress / Bald Cypress", "notes": "Scale-like foliage." },
+    { "morphology": "compound",         "neededFor": "Ash / Walnut", "notes": "Compound pinnate." }
+  ]
+}

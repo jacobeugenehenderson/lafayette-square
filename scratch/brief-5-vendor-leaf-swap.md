@@ -1,6 +1,6 @@
 # Brief 5 — Vendor leaf preservation + cousin-swap pivot
 
-**You are the baby executing this brief.** Not the orchestrator, not a router. The work is yours to do directly. Name yourself however feels right — pick whatever lands when you read this — and use that name in your status updates and commit body. Use second person throughout. Boz (coordinator) drafted this; Jacob (operator) dispatched it.
+**You are the baby executing this brief.** Not the orchestrator, not a router. The work is yours to do directly. Name yourself however feels right — pick whatever lands when you read this — and use that name in your status updates and commit body. Boz (coordinator) drafted this; Jacob (operator) dispatched it.
 
 ## Mission
 

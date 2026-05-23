@@ -97,7 +97,20 @@ function lerpDirective(from, to, t) {
     const tw = to.wind || {}
     out.wind = {
       scale: lerp(fw.scale ?? tw.scale ?? 1, tw.scale ?? fw.scale ?? 1, t),
-      dir: lerp(fw.dir ?? tw.dir ?? 0, tw.dir ?? fw.dir ?? 0, t),
+      dir:   lerp(fw.dir   ?? tw.dir   ?? 0, tw.dir   ?? fw.dir   ?? 0, t),
+      // Brief 9a — m/s authority for wind-field.js. `speed` falls back
+      // to `scale * 3` upstream (`resolveWindState`) if absent.
+      speed:        lerp(fw.speed        ?? tw.speed        ?? 0, tw.speed        ?? fw.speed        ?? 0, t),
+      gustsScale:   lerp(fw.gustsScale   ?? tw.gustsScale   ?? 0, tw.gustsScale   ?? fw.gustsScale   ?? 0, t),
+      gustEnvelope: lerp(fw.gustEnvelope ?? tw.gustEnvelope ?? 1, tw.gustEnvelope ?? fw.gustEnvelope ?? 1, t),
+    }
+    if (fw.gustFrontVelocity || tw.gustFrontVelocity) {
+      const fg = fw.gustFrontVelocity || {}
+      const tg = tw.gustFrontVelocity || {}
+      out.wind.gustFrontVelocity = {
+        x: lerp(fg.x ?? tg.x ?? 0, tg.x ?? fg.x ?? 0, t),
+        z: lerp(fg.z ?? tg.z ?? 0, tg.z ?? fg.z ?? 0, t),
+      }
     }
   }
   if (from.precip || to.precip) {

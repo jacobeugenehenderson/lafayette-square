@@ -1,0 +1,189 @@
+{
+  "chassis": {
+    "garden_trees_mix_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "broadleaf_rt3_a.glb": {
+      "displayName": "Broadleaf",
+      "approved": null,
+      "notes": ""
+    },
+    "garden_trees_mix_b.glb": {
+      "displayName": "Weeping Willow",
+      "approved": true,
+      "notes": ""
+    },
+    "garden_trees_mix_g.glb": {
+      "displayName": "Red Maple",
+      "approved": true,
+      "notes": ""
+    },
+    "generic_leaf_tree_c.glb": {
+      "displayName": "Red Maple",
+      "approved": false,
+      "notes": ""
+    },
+    "generic_leaf_tree_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_c.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "london_plane_d.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "london_plane_f.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "london_plane_g.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "london_plane_h.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "london_plane_i.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "london_plane_k.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "london_plane_l.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "paper_birch_b.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "paper_birch_c.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "paper_birch_d.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "red_maple_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "red_maple_b.glb": {
+      "displayName": "Broadleaf",
+      "approved": true,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_a.glb": {
+      "displayName": "Red Maple 2",
+      "approved": null,
+      "notes": ""
+    },
+    "white_oak_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "white_oak_b.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "yellow_autumn_tree_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "yellow_autumn_tree_c.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "hollywood_juniper_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "hollywood_juniper_b.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "hollywood_juniper_e.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "hollywood_juniper_f.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "tall_pine_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "tall_pine_d.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "tall_pine_e.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "western_juniper_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "quaking_aspen_a.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "quaking_aspen_c.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "quaking_aspen_d.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "quaking_aspen_e.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    },
+    "quaking_aspen_b.glb": {
+      "displayName": "",
+      "approved": true,
+      "notes": ""
+    }
+  }
+}

@@ -239,17 +239,17 @@
       "params": {
         "coverage": {
           "values": {
-            "value": 0.3
+            "value": 0.6
           }
         },
         "density": {
           "values": {
-            "value": 0.6
+            "value": 1.2
           }
         },
         "thickness": {
           "values": {
-            "value": 1200
+            "value": 9750
           }
         },
         "baseAlt": {

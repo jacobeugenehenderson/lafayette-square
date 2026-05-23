@@ -337,6 +337,23 @@ export async function writeCompositions(species, compositions) {
 // is regenerated with different output). Union, not intersection — operator
 // never loses a species they were working on, and discovers new species the
 // moment Whittle's de-leaf produces chassis for them.
+//
+// Brief 15 (2026-05-23): Salon is the composer's space for vendor +
+// hand-composed trees. Procedural species own ProceduralWorkstage; LiDAR
+// Scan-mode species own LidarWorkstage. Both are EXCLUDED here so the Salon
+// picker only shows species the operator authors compositionally.
+//   - Procedural: name matches /^procedural_/ OR /_procedural$/
+//   - LiDAR Scan-mode: `arborist/state/<species>/seedlings.json` exists
+//     (Scan-mode operator state)
+function isProceduralSpecies(speciesId) {
+  return /^procedural_/.test(speciesId) || /_procedural$/.test(speciesId)
+}
+async function hasLidarSeedlings(speciesId) {
+  try {
+    await fs.access(path.join(STATE_ROOT, speciesId, 'seedlings.json'))
+    return true
+  } catch { return false }
+}
 export async function listSalonSpecies() {
   const chassis = await listChassis()
   const speciesIds = new Set()
@@ -353,6 +370,12 @@ export async function listSalonSpecies() {
       } catch { /* no compositions yet */ }
     }
   } catch { /* state dir missing */ }
+  // Brief 15: filter out procedural + LiDAR species (they have their own
+  // workspaces). Done AFTER the union so the union logic stays unchanged.
+  for (const speciesId of [...speciesIds]) {
+    if (isProceduralSpecies(speciesId)) { speciesIds.delete(speciesId); continue }
+    if (await hasLidarSeedlings(speciesId)) { speciesIds.delete(speciesId) }
+  }
   const out = []
   for (const speciesId of [...speciesIds].sort()) {
     const chassisForSpecies = chassis.filter(c => c.source && c.source.species === speciesId)

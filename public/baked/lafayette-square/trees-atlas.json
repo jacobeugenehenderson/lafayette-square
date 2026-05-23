@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-05-22T05:26:47.812Z",
+  "generatedAt": "2026-05-23T02:38:17.035Z",
   "lookName": "lafayette-square",
-  "rosterSize": 30,
+  "rosterSize": 31,
   "materialDefaults": {
     "roughness": 0.85,
     "metalness": 0
   },
   "atlas": {
     "width": 4040,
-    "height": 5176,
+    "height": 5185,
     "colorPath": "/baked/lafayette-square/trees-atlas-color.png",
     "normalPath": "/baked/lafayette-square/trees-atlas-normal.png",
     "alphaMode": "MASK",
@@ -77,9 +77,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
@@ -124,9 +124,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -171,9 +171,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -208,15 +208,52 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
       "tileIndex": 4,
+      "key": "9c0dbb9fa2fa|4248af0d275f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "acer_saccharum",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.7999999999999999,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.0987463837994214
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 5,
       "key": "3b7c8f7988b9|ae418d353754",
       "atlas": "unified",
       "classification": "bark",
@@ -233,38 +270,6 @@
         }
       ],
       "content": {
-        "x": 2356,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.8013910355486863,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 5,
-      "key": "9c0dbb9fa2fa|4248af0d275f",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_ornamental",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
         "x": 2876,
         "y": 524,
         "w": 512,
@@ -272,9 +277,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.8013910355486863,
+        "offsetV": 0.7999999999999999,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -304,9 +309,9 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.8013910355486863,
+        "offsetV": 0.7999999999999999,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -336,9 +341,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.9003091190108192,
+        "offsetV": 0.8987463837994214,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -363,9 +368,9 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -390,9 +395,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -417,9 +422,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -444,9 +449,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -471,9 +476,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -538,9 +543,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -585,9 +590,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -632,9 +637,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -674,9 +679,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -716,9 +721,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -758,9 +763,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -795,9 +800,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -827,9 +832,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -859,9 +864,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -886,9 +891,9 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
@@ -913,9 +918,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
@@ -940,9 +945,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -967,9 +972,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -987,16 +992,16 @@
         }
       ],
       "content": {
-        "x": 4,
+        "x": 524,
         "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.6004636785162287,
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.5994214079074253,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -1021,9 +1026,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -1048,9 +1053,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -1068,16 +1073,16 @@
         }
       ],
       "content": {
-        "x": 268,
+        "x": 788,
         "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.06633663366336634,
-        "offsetV": 0.6004636785162287,
+        "offsetU": 0.19504950495049506,
+        "offsetV": 0.5994214079074253,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
@@ -1102,9 +1107,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -1129,12 +1134,39 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 19,
+      "key": "c228f537c0bf|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "acer_saccharum",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 1044,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.5994214079074253,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09874638379942141
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
     }
   ],
   "tilesByKey": {
@@ -1198,9 +1230,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
@@ -1245,9 +1277,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1292,9 +1324,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1329,15 +1361,52 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "9c0dbb9fa2fa|4248af0d275f": {
+      "tileIndex": 4,
+      "key": "9c0dbb9fa2fa|4248af0d275f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "acer_saccharum",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.7999999999999999,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     "3b7c8f7988b9|ae418d353754": {
-      "tileIndex": 4,
+      "tileIndex": 5,
       "key": "3b7c8f7988b9|ae418d353754",
       "atlas": "unified",
       "classification": "bark",
@@ -1354,38 +1423,6 @@
         }
       ],
       "content": {
-        "x": 2356,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.8013910355486863,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "9c0dbb9fa2fa|4248af0d275f": {
-      "tileIndex": 5,
-      "key": "9c0dbb9fa2fa|4248af0d275f",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_ornamental",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
         "x": 2876,
         "y": 524,
         "w": 512,
@@ -1393,9 +1430,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.8013910355486863,
+        "offsetV": 0.7999999999999999,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1425,9 +1462,9 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.8013910355486863,
+        "offsetV": 0.7999999999999999,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1457,9 +1494,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.9003091190108192,
+        "offsetV": 0.8987463837994214,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1484,9 +1521,9 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -1511,9 +1548,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -1538,9 +1575,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1565,9 +1602,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1592,9 +1629,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19783616692426587
+        "scaleV": 0.1974927675988428
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1659,9 +1696,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -1706,9 +1743,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1753,9 +1790,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1795,9 +1832,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1837,9 +1874,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1879,9 +1916,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1916,9 +1953,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1948,9 +1985,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1980,9 +2017,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -2007,9 +2044,9 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
@@ -2034,9 +2071,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.3995363214837712,
+        "offsetV": 0.39884281581485054,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
@@ -2061,9 +2098,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -2088,9 +2125,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -2108,16 +2145,16 @@
         }
       ],
       "content": {
-        "x": 4,
+        "x": 524,
         "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.6004636785162287,
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.5994214079074253,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -2142,9 +2179,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -2169,9 +2206,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -2189,16 +2226,16 @@
         }
       ],
       "content": {
-        "x": 268,
+        "x": 788,
         "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.06633663366336634,
-        "offsetV": 0.6004636785162287,
+        "offsetU": 0.19504950495049506,
+        "offsetV": 0.5994214079074253,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
@@ -2223,9 +2260,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -2250,12 +2287,39 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.5,
+        "offsetV": 0.4991321118611379,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213292
+        "scaleV": 0.09874638379942141
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
+    },
+    "c228f537c0bf|": {
+      "tileIndex": 19,
+      "key": "c228f537c0bf|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "acer_saccharum",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 1044,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.5994214079074253,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09874638379942141
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
     }
   },
   "barkBySpecies": {
@@ -2331,92 +2395,126 @@
         "roughnessOverride": -1
       },
       "regionThreshold": 0.04127992455715992
+    },
+    "acer_saccharum": {
+      "materialRef": "Bark003",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
     }
   },
-  "barkGradientByVariant": {},
+  "barkGradientByVariant": {
+    "acer_saccharum": {
+      "1": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.9990356798457087,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.00019286403085824492,
+        "hashAmp": 0
+      }
+    }
+  },
   "barkDetailBySpecies": {
     "procedural_broadleaf": {
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0007727975270479134,
+        "offsetV": 0.0007714561234329798,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.19783616692426584
+        "scaleV": 0.19749276759884282
       },
       "barkTileUV": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       }
     },
     "acer_saccharum_procedural": {
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0007727975270479134,
+        "offsetV": 0.0007714561234329798,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.19783616692426584
+        "scaleV": 0.19749276759884282
       },
       "barkTileUV": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.7009273570324576,
+        "offsetV": 0.6997107039537126,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       }
     },
     "procedural_conifer": {
       "uvTransform": {
         "offsetU": 0.25643564356435644,
-        "offsetV": 0.0007727975270479134,
+        "offsetV": 0.0007714561234329798,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.19783616692426584
+        "scaleV": 0.19749276759884282
       },
       "barkTileUV": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.8013910355486863,
+        "offsetU": 0.711881188118812,
+        "offsetV": 0.7999999999999999,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       }
     },
     "procedural_ornamental": {
       "uvTransform": {
         "offsetU": 0.5118811881188119,
-        "offsetV": 0.0007727975270479134,
+        "offsetV": 0.0007714561234329798,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.19783616692426584
+        "scaleV": 0.19749276759884282
       },
       "barkTileUV": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.8013910355486863,
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.7999999999999999,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
+      }
+    },
+    "acer_saccharum": {
+      "uvTransform": {
+        "offsetU": 0.5118811881188119,
+        "offsetV": 0.0007714561234329798,
+        "scaleU": 0.25346534653465347,
+        "scaleV": 0.19749276759884282
+      },
+      "barkTileUV": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.7999999999999999,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.0987463837994214
       }
     },
     "procedural_columnar": {
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.20015455950540958,
+        "offsetV": 0.19980713596914176,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.19783616692426584
+        "scaleV": 0.19749276759884282
       },
       "barkTileUV": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.8013910355486863,
+        "offsetV": 0.7999999999999999,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       }
     },
     "procedural_weeping": {
       "uvTransform": {
         "offsetU": 0.25643564356435644,
-        "offsetV": 0.20015455950540958,
+        "offsetV": 0.19980713596914176,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.19783616692426584
+        "scaleV": 0.19749276759884282
       },
       "barkTileUV": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.9003091190108192,
+        "offsetV": 0.8987463837994214,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09891808346213293
+        "scaleV": 0.0987463837994214
       }
     }
   }
