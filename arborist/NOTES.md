@@ -4,6 +4,41 @@
 
 ---
 
+## 2026-05-22 — Brief 8: Salon canary setter (Linnet)
+
+**Baby: Linnet. Cold dispatch, parallel-safe with Brief 7 (Birch). Closed the Salon → Meteorologist iteration gap.**
+
+Today the Arborist ↔ Meteorologist canary contract had one writer call-site (Grove's per-tile hover-card) and the operator's authoring surface had moved to the Salon. Iteration loop "author → adopt → republish → storm-test under stormy weather" required navigating away from the Salon to Grove to set canary. Brief 8 adds the second writer call-site in `SalonWorkstage.jsx`'s per-slot footer; payload + reader unchanged.
+
+### Surface items (per `feedback_baby_must_surface_scope_drift`)
+
+1. **ARCH.md doctrine vs brief recommendation.** §canary contract said "useArboristStore doesn't track the canary; the write is a one-shot from the click handler". The brief allowed "a small store action that updates a local `salonCanaryRef`". Resolved by making the store action a pure side-effect — no state held in the store, just `localStorage.setItem` + a synthetic `window.dispatchEvent(new StorageEvent(...))` so same-tab subscribers (the Salon indicator) react. ARCH.md updated to spell out the new "store posture" precisely — no canary state in the store; one pure side-effect action exposed. Spirit of the original doctrine preserved.
+
+2. **Slot → variantId mapping is contiguous-only.** Brief stated `slot N → variantId N`. Confirmed against `generate-salon.js` line 1139 (`variantId = i + 1` iterating compositions array) + `addSalonSlot` (`maxSlot + 1`). No delete-slot action exists today, so slots are contiguous and the mapping holds. **Fragile assumption:** if a per-slot delete action ever lands, slots will diverge from publish-glb's emission order, and this writer will set canary to the wrong variant. Either gate slot-delete on a re-pack that resequences slot numbers, or change generate-salon to emit `variantId = c.slot` directly. Filed under Brief 8's "Doesn't fix" line in BACKLOG.md.
+
+3. **Variant-existence check fetched from server, not store.** Salon doesn't load per-species `manifest.json` (the main Workstage does, but Salon was clean). Added a lazy `fetch('/api/arborist/species/<id>?t=...')` inside SalonWorkstage keyed on `activeSpecies` + `publishing` — re-fetches once each republish settles. Cheap, idempotent. Could be promoted to the store as a `salonPublishedVariantsBySpecies` slice if a second consumer wants it; not warranted for one reader.
+
+### Files touched
+
+- `src/arborist/stores/useArboristStore.js` (+22 LOC) — `setSalonCanary` action.
+- `src/arborist/SalonWorkstage.jsx` (+~80 LOC) — `useCanaryPref` hook, manifest fetch, tab CANARY chip, SlotCard `onSetCanary` / `canaryDisabledReason` / `isCanary` props + footer button.
+- `arborist/ARCHITECTURE.md` (canary contract block — store-posture + writer-call-sites lines updated).
+- `arborist/FEATURES.md` (Salon §per-slot actions block updated).
+- `arborist/BACKLOG.md` (Brief 8 marked shipped with follow-ups).
+- `arborist/NOTES.md` (this entry).
+
+### Acceptance criteria status
+
+1. ✅ Canary button visible in each Salon slot's footer (alongside Reset + Adopt + Name input).
+2. ✅ Click writes correct payload (`{species, variantId: slot, lookId}`).
+3. ✅ Meteorologist `CanaryScene` reacts via cross-tab `storage` event (reader unchanged; same shape as Grove writer).
+4. ✅ Disabled with precedence tooltip when no Look / dirty / never-published.
+5. ✅ Grove's writer unchanged (`Grove.jsx#setMeteorologistCanary` untouched).
+6. ✅ Active-canary chip on the slot tab; subscribes to `storage` for cross-tab + receives same-tab updates via the synthetic event.
+7. ✅ No store touches to canary state — the action is a pure side-effect; no state slice added to `useArboristStore`.
+
+---
+
 ## 2026-05-22 — Brief 6: Tree-aware geometry decimation (Spindle)
 
 **Baby: Spindle. Brief 6 prescribed four levers (twig pruning, parallel-branch collapse, leaf-card silhouette reduction, quality bracket). Shipped two; dropped two before code on premise mismatch caught during GLB inspection. Survey at `scratch/brief-decimation-survey-spindle.md`.**
@@ -51,6 +86,43 @@ Verified via three-way shasum match (`f92aa1f63…`): fresh run 1, fresh run 2, 
 Lever 3 fires on Robinia; AC 4 + AC 5 visual diff requires operator verification in Salon. Lever 4 introduces no novel visual risk (uses MeshoptSimplifier unchanged). Recommend running `node arborist/publish-glb.js --source public/trees/_chassis/robinia_pseudoacacia_a_tree_robinia_pseudoacacia_a.glb --species _spindle_check` and visually comparing the decimated output against the current Robinia in LS Hero / Browse views.
 
 — Spindle
+
+---
+
+## 2026-05-22 — Brief 6 ship (Spindle) + three-baby alignment-check pattern
+
+**Coordinator: Boz. Brief 6 (geometry-aware tree decimation) shipped by Spindle at commit `3bd0a17`. Reframed mid-flight per Spindle's alignment check (Levers 1+2 dropped; A+B path shipped). Three findings worth folding into doctrine.**
+
+### What shipped (Spindle, A+B reframe)
+
+- `arborist/decimate-tree.mjs` — Lever 3 card-aware leaf-card reduction (silhouette-preserving canopy-hull cull on card-based topology; no-op on connected-mesh; no-op on naturally-light species)
+- `arborist/publish-glb.js` — Lever 4 adaptive simplify-to-bracket replacing fixed ratios; per-species achievable tri counts surfaced via `✗bracket[min-max]` logs for operator tuning
+- Architectural relocation: `decimate-tree.mjs` is IMPORTED by `publish-glb.js`, NOT a standalone CLI step between generators and publish-glb. Saved ~30 LOC across `generate-procedural.js` + `generate-salon.js` + `bake-tree.py` (no upstream wiring needed). CLI mode preserved for testing.
+
+Robinia bundle test: 324K → 217K tris (−33%); leaf primitive 193K → 87K (−55%). Connected-mesh chassis (Linden) and naturally-light chassis (Italian Cypress) no-op correctly. Determinism: sha1 three-way match (`f92aa1f63…`).
+
+### Surprising findings Spindle surfaced
+
+- **Linden bark = 722K-tri single primitive** is the dominant heaviness target across the chassis library — far heavier than any leaf primitive (Robinia leaf 193K is the largest). Lever 3 can't touch bark. This is the new context driving a future Brief 6.2 (connected-mesh bark decimation), which neither Olmsted's nor Boz's brief drafting anticipated.
+- **Brief 6's example brackets (LoD0: 5K-15K) are tighter than `MeshoptSimplifier`'s topology floor allows** at default error budget. 13/15 tiers log `✗bracket` because the simplifier refuses to collapse hard alpha-test edges — niceness pillar holding correctly. Defaults shipped tight to keep per-species signal visible; operator can retune later (Spindle recommends LoD0 15K-200K / LoD1 5K-60K / LoD2 1K-20K).
+
+### Doctrine encoded — [[feedback_geometry_briefs_need_artifact_inspection]]
+
+Boz drafted Brief 6 assuming a walkable per-branch node graph on chassis GLBs. Inspection showed flat-merged structure (1-3 wood primitives per chassis, no per-branch nodes). Spindle caught the premise mismatch at alignment-check, BEFORE writing code. Levers 1+2 (twig-pruning + parallel-branch collapse) were dropped from this brief and filed as Brief 6.1 (generator-side, pre-merge inside SCA + LiDAR cylinder graphs).
+
+Three coordinator-grade alignment-check saves by babies in two sessions:
+- Birch on Brief 2.1 — bake-look.js scope drift (manifest→atlas channel missing from brief's file list)
+- Hazel on Brief 9 — wind contract spec-compression (Meteorologist BACKLOG had richer architecture)
+- Spindle on Brief 6 — topology assumption (post-merge flat GLBs vs assumed per-branch graph)
+
+Pattern: babies surfacing alignment checks BEFORE writing code is the right discipline. Coordinator should write briefs that EXPECT this and welcome it. Cost of an alignment-check pause: minutes. Cost of executing against a wrong premise: a baby cycle. The new memory entry codifies the artifact-inspection discipline.
+
+### Open follow-ups (Boz picks up)
+
+- Brief 6 doc revision to match shipped scope (drop Lever 1+2 sections; note decimate-tree.mjs relocation; fix LoD0 ratio 1.0→0.85)
+- Brief 6.1 — generator-side branch decimation (pre-merge Lever 1+2 in `generate-procedural.js` SCA graph + `bake-tree.py` LiDAR cylinder graph)
+- Brief 6.2 — connected-mesh bark decimation for Linden-class targets (new follow-up surfaced by Spindle's bark-dominance finding)
+- AC 4+5 visual diff deferred to next LS look — no novel visual risk; Lever 4 leaves simplifier unchanged; Lever 3's silhouette-preserving design is provable from code
 
 ---
 

@@ -714,6 +714,27 @@ const useArboristStore = create((set, get) => ({
     }
   },
 
+  // Brief 8 (Linnet): writer side of the Arborist ↔ Meteorologist canary
+  // contract, mirrored from Grove.jsx's per-tile affordance. Pure
+  // side-effect — no state held in the store (per ARCHITECTURE.md §canary
+  // contract: "useArboristStore doesn't track the canary"). The synthetic
+  // dispatchEvent fires same-tab listeners; the browser already fires
+  // 'storage' in OTHER same-origin tabs automatically. Composition slot N
+  // maps to variantId N (matches publish-glb's emission order).
+  setSalonCanary: (species, slot, lookId) => {
+    const payload = {
+      species,
+      variantId: Number(slot),
+      lookId: lookId || null,
+    }
+    const value = JSON.stringify(payload)
+    localStorage.setItem('meteorologist-canary-tree', value)
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'meteorologist-canary-tree',
+      newValue: value,
+    }))
+  },
+
   loadSpecies: async () => {
     try {
       // Cache-bust: the /species response can otherwise be served from

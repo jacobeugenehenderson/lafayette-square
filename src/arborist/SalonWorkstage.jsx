@@ -52,6 +52,28 @@ const MORPH_TO_TARGET_CATEGORY = {
   ornamental: 'ornamental',
 }
 
+// Brief 8 (Linnet): subscribe to the Meteorologist canary localStorage key
+// for the active-canary indicator. Returns the parsed payload or null.
+// Cross-tab via browser's 'storage' event; same-tab via the synthetic
+// StorageEvent fired by setSalonCanary in the store (browsers don't fire
+// 'storage' in the writer's own tab).
+function readCanaryPref() {
+  try { return JSON.parse(localStorage.getItem('meteorologist-canary-tree') ?? 'null') }
+  catch { return null }
+}
+function useCanaryPref() {
+  const [pref, setPref] = useState(() => readCanaryPref())
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== 'meteorologist-canary-tree') return
+      setPref(readCanaryPref())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+  return pref
+}
+
 export default function SalonWorkstage() {
   const setSalonOpen        = useArboristStore(s => s.setSalonOpen)
   const speciesList         = useArboristStore(s => s.salonSpeciesList)
@@ -77,6 +99,9 @@ export default function SalonWorkstage() {
   const chassisCuration     = useArboristStore(s => s.salonChassisCuration)
   const loadChassisCuration = useArboristStore(s => s.loadSalonChassisCuration)
   const setChassisCuration  = useArboristStore(s => s.setSalonChassisCuration)
+  // Brief 8 (Linnet): canary writer + active-canary indicator.
+  const setSalonCanary      = useArboristStore(s => s.setSalonCanary)
+  const canaryPref          = useCanaryPref()
 
   // Mount-time fetch: when Salon was restored open via localStorage, setSalonOpen
   // never fires this session, so the store's load actions wouldn't otherwise run.
@@ -90,6 +115,28 @@ export default function SalonWorkstage() {
   // "Approved only" filter — default ON. Persists for the session only;
   // the filter is a viewing preference, not authored chassis state.
   const [approvedOnly, setApprovedOnly] = useState(true)
+
+  // Brief 8 (Linnet): published-variant set for the active species, used to
+  // gate the canary button. A composition slot is "canary-ready" iff its
+  // variant id exists in the published manifest (i.e. operator has run
+  // Re-publish since the slot was added). Re-fetched on species change and
+  // after a republish completes; cache-busted so a fresh publish is seen
+  // immediately. Per ARCH.md §canary — kept in component state, not store.
+  const [publishedVariants, setPublishedVariants] = useState(new Set())
+  useEffect(() => {
+    if (!activeSpecies) { setPublishedVariants(new Set()); return }
+    if (publishing) return  // refetch once the republish settles
+    let cancelled = false
+    fetch(`/api/arborist/species/${encodeURIComponent(activeSpecies)}?t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(m => {
+        if (cancelled) return
+        const ids = new Set((m?.variants || []).map(v => Number(v.id)))
+        setPublishedVariants(ids)
+      })
+      .catch(() => { if (!cancelled) setPublishedVariants(new Set()) })
+    return () => { cancelled = true }
+  }, [activeSpecies, publishing])
 
   const compositions = compositionsBySpecies[activeSpecies] || []
   const dirty        = dirtyBySpecies[activeSpecies] || {}
@@ -203,8 +250,12 @@ export default function SalonWorkstage() {
         {compositions.map(v => {
           const isActive = v.slot === activeSlot
           const isDirty  = !!dirty[v.slot]
+          const isCanary = canaryPref
+            && canaryPref.species === activeSpecies
+            && Number(canaryPref.variantId) === Number(v.slot)
           return (
             <button key={v.slot} onClick={() => setActiveSlot(v.slot)}
+              title={isCanary ? 'Currently set as Meteorologist canary' : undefined}
               style={{
                 background: isActive ? 'rgba(232,184,96,0.18)' : 'rgba(255,255,255,0.04)',
                 border: '1px solid ' + (isActive
@@ -223,6 +274,15 @@ export default function SalonWorkstage() {
                   width: 6, height: 6, borderRadius: '50%',
                   background: '#e8b860',
                 }} />
+              )}
+              {isCanary && (
+                <span style={{
+                  fontSize: 9, letterSpacing: '0.1em',
+                  padding: '1px 5px', borderRadius: 2,
+                  background: 'rgba(200,192,224,0.18)',
+                  border: '1px solid rgba(200,192,224,0.4)',
+                  color: '#c8c0e0',
+                }}>CANARY</span>
               )}
             </button>
           )
@@ -273,6 +333,18 @@ export default function SalonWorkstage() {
             onNameChange={(name) => setSlotName(activeSpecies, activeComposition.slot, name)}
             onReset={() => resetSlot(activeSpecies, activeComposition.slot)}
             onAdopt={() => adoptSlot(activeSpecies, activeComposition.slot)}
+            onSetCanary={() => setSalonCanary(activeSpecies, activeComposition.slot, activeLookId)}
+            canaryDisabledReason={
+              !activeLookId ? 'No active Look — open a Look in the cartograph first'
+              : (dirty[activeComposition.slot] ? 'Adopt the composition first'
+              : (!publishedVariants.has(Number(activeComposition.slot)) ? 'Re-publish species first'
+              : null))
+            }
+            isCanary={
+              canaryPref
+              && canaryPref.species === activeSpecies
+              && Number(canaryPref.variantId) === Number(activeComposition.slot)
+            }
             chassisCuration={chassisCuration}
             onChassisCuration={setChassisCuration}
             approvedOnly={approvedOnly}
@@ -330,6 +402,7 @@ function SlotCard({
   windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange,
   previewLod, onPreviewLodChange,
   onParams, onNameChange, onReset, onAdopt,
+  onSetCanary, canaryDisabledReason, isCanary,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
 }) {
   // Brief 7 (Cambium): replaced the /salon/generate blob-URL flow with the
@@ -609,6 +682,27 @@ function SlotCard({
               opacity: dirty ? 1 : 0.5,
             }}>
             ✓ Adopt
+          </button>
+          {/* Brief 8 (Linnet): set this composition as the Meteorologist
+              canary. Same payload Grove writes — see ARCHITECTURE.md
+              §canary contract. Disabled until composition is adopted +
+              re-published in the active Look. */}
+          <button
+            onClick={onSetCanary}
+            disabled={!!canaryDisabledReason}
+            title={canaryDisabledReason
+              || (isCanary
+                  ? 'Already the Meteorologist canary — click to re-fire (refreshes lookId)'
+                  : 'Set this composition as Meteorologist canary')}
+            style={{
+              ...btnStyle(),
+              background: isCanary ? 'rgba(200,192,224,0.18)' : 'rgba(255,255,255,0.04)',
+              border: '1px solid ' + (isCanary ? 'rgba(200,192,224,0.5)' : 'rgba(255,255,255,0.1)'),
+              color: canaryDisabledReason ? '#666' : (isCanary ? '#c8c0e0' : '#bbb'),
+              cursor: canaryDisabledReason ? 'not-allowed' : 'pointer',
+              opacity: canaryDisabledReason ? 0.5 : 1,
+            }}>
+            → Set canary
           </button>
         </div>
       </div>
