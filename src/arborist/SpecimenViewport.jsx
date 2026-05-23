@@ -74,6 +74,35 @@ function studioFraming(treeH = 12) {
   return { height: treeH / 2, distance }
 }
 
+// Brief 13 (Vantage): three preset camera framings matching the three
+// bark-shader tiers (Brief 10 sub-phase A — uBarkShaderTier 0/1/2).
+// Generic studio-inspection distances, NOT cartograph SHOT imports —
+// Salon stays helper-internal per project_kit_helpers_pattern.
+//   overhead → aerial tier verification (~150m+ above, looking down)
+//   hero     → mid-distance Browse/Hero (current studio framing)
+//   street   → close-up walking distance (~5m, near human eye level)
+// Returns {distance, height, lookAtY}. lookAtY=0 for overhead so the
+// camera tilts down at the chassis base; horizontal (=height) otherwise.
+function presetFraming(preset, treeH = 12) {
+  switch (preset) {
+    case 'overhead': {
+      const distance = Math.max(150, treeH * 6)
+      const height = treeH + 50
+      return { distance, height, lookAtY: 0 }
+    }
+    case 'street': {
+      const distance = Math.max(5, treeH * 0.2)
+      const height = 1.8
+      return { distance, height, lookAtY: height }
+    }
+    case 'hero':
+    default: {
+      const f = studioFraming(treeH)
+      return { distance: f.distance, height: f.height, lookAtY: f.height }
+    }
+  }
+}
+
 // ── Camera — fixed azimuth, separate zoom (distance) + crane (height) ─
 // Target tracks the camera height so the camera looks horizontally
 // forward, like a film crane rising up the tree. Crane down to look at
@@ -96,27 +125,34 @@ function DollyCam({ cameraStateRef, dragPanRef, rotationY = 0, rotationOffset, o
   useEffect(() => { onRotRef.current = onRotationChange }, [onRotationChange])
 
   useFrame(() => {
-    const { distance, height } = stateRef.current
+    const { distance, height, lookAtY } = stateRef.current
     camera.position.set(0, height, distance)
-    // Always look horizontally forward at the same Y as the camera.
-    // To inspect the ground plane, the operator cranes DOWN — they
-    // bring the camera near floor level rather than tilting it.
-    camera.lookAt(0, height, 0)
+    // Default behavior: look horizontally forward at the same Y as the
+    // camera — film-crane mental model, crane DOWN to see the ground.
+    // Brief 13 (Vantage): the overhead preset overrides lookAtY=0 so the
+    // camera tilts down toward the chassis base; without this, an
+    // overhead-from-90m-up camera looking horizontally would frame empty
+    // sky with the tree dwindling far below the lens.
+    const ly = (typeof lookAtY === 'number') ? lookAtY : height
+    camera.lookAt(0, ly, 0)
   })
 
   useEffect(() => {
     const dom = gl.domElement
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
-    // Height clamp bumped 40 → 60 so the operator can crane up to inspect
-    // the canopy on mature broadleaf chassis (Linden 30m, mature 40m).
-    const H_MIN = 0.1, H_MAX = 60
+    // Height clamp: bumped 40 → 60 (Brief 7, mature broadleaf canopy);
+    // bumped 60 → 120 (Brief 13 Vantage) so the Overhead preset can park
+    // the camera at treeH+50 ≈ 90m on a 40m chassis. Distance max 150 →
+    // 300 for the same reason (treeH*6 ≈ 240 on a 40m chassis).
+    const H_MIN = 0.1, H_MAX = 120
+    const D_MIN = 1.5, D_MAX = 300
     const onWheel = (e) => {
       e.preventDefault()
       const s = stateRef.current
       if (e.shiftKey) {
         s.height = clamp(s.height - e.deltaY * 0.03, H_MIN, H_MAX)
       } else {
-        s.distance = clamp(s.distance + e.deltaY * 0.04, 1.5, 150)
+        s.distance = clamp(s.distance + e.deltaY * 0.04, D_MIN, D_MAX)
       }
     }
     const onKey = (e) => {
@@ -124,8 +160,8 @@ function DollyCam({ cameraStateRef, dragPanRef, rotationY = 0, rotationOffset, o
       const step = e.shiftKey ? 2 : 0.5
       if (e.key === 'ArrowUp')   { s.height   = clamp(s.height + step, H_MIN, H_MAX) }
       if (e.key === 'ArrowDown') { s.height   = clamp(s.height - step, H_MIN, H_MAX) }
-      if (e.key === '=' || e.key === '+') { s.distance = clamp(s.distance - step, 1.5, 150) }
-      if (e.key === '-' || e.key === '_') { s.distance = clamp(s.distance + step, 1.5, 150) }
+      if (e.key === '=' || e.key === '+') { s.distance = clamp(s.distance - step, D_MIN, D_MAX) }
+      if (e.key === '-' || e.key === '_') { s.distance = clamp(s.distance + step, D_MIN, D_MAX) }
     }
     // Alt (Option on Mac) + drag → 2-axis camera gesture: dy cranes the
     // camera up/down, dx turntable-rotates the tree. Capture-phase
@@ -893,22 +929,43 @@ export default function SpecimenViewport({
   // (xy makes no sense looking horizontally near the floor — operator
   // uses Oubliette drag for horizontal placement instead).
   const [camMode, setCamMode] = useState('studio')
+  // Brief 13 (Vantage) — preset camera for bark-tier verification.
+  // Separate concern from camMode (gizmo affordance): camPreset only
+  // sets camera distance/height/lookAt. Defaults to 'hero' so existing
+  // Salon workflow is undisturbed.
+  const [camPreset, setCamPreset] = useState('hero')
   // Auto-fit camera whenever the chassis changes. Triggers on viewKey
   // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
   // remounts the Canvas) AND on the first topY emission per chassis.
-  // The fit uses the ACTUAL loaded chassis height — fixes the previous
-  // CATEGORY_TARGET_HEIGHT default (12m broadleaf) clipping 30m chassis
-  // like Linden. Operator dolly/crane tweaks AFTER fit are preserved
-  // since we only re-fit on the first topY signal per chassis.
+  // The fit uses the ACTUAL loaded chassis height AND the current
+  // camPreset — fixes the previous CATEGORY_TARGET_HEIGHT default (12m
+  // broadleaf) clipping 30m chassis like Linden, and ensures e.g.
+  // overhead preset re-fits to treeH+50 when a 30m chassis loads while
+  // overhead is active. Operator dolly/crane tweaks AFTER fit are
+  // preserved since we only re-fit on the first topY signal per chassis.
   const lastFitKeyRef = useRef(null)
   useEffect(() => {
     if (!cameraStateRef?.current || topY == null) return
     if (lastFitKeyRef.current === viewKey) return  // already fit this chassis
     lastFitKeyRef.current = viewKey
-    const f = studioFraming(topY)
+    const f = presetFraming(camPreset, topY)
     cameraStateRef.current.distance = f.distance
     cameraStateRef.current.height   = f.height
-  }, [topY, viewKey, cameraStateRef])
+    cameraStateRef.current.lookAtY  = f.lookAtY
+  }, [topY, viewKey, cameraStateRef, camPreset])
+  // Snap to the active preset whenever the operator picks one. Reads the
+  // latest known chassis height (topY if reported, else 12m default).
+  // Independent of the auto-fit-on-chassis-change useEffect above — that
+  // one runs once per viewKey; this one runs every time the operator
+  // taps a different preset button.
+  useEffect(() => {
+    if (!cameraStateRef?.current) return
+    const h = (typeof topY === 'number') ? topY : 12
+    const f = presetFraming(camPreset, h)
+    cameraStateRef.current.distance = f.distance
+    cameraStateRef.current.height   = f.height
+    cameraStateRef.current.lookAtY  = f.lookAtY
+  }, [camPreset, cameraStateRef])
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Canvas
@@ -969,8 +1026,11 @@ export default function SpecimenViewport({
           />
         </Suspense>
       )}
-      {/* Snap-to-preset buttons. Both stay on the same crane+zoom rig
-          — they just set distance + height to useful inspection points. */}
+      {/* Gizmo-mode toggle (Brief 7). Studio = full xy+z+rotate gizmo;
+          Worm = only z + rotate (xy makes no sense at eye level — drag
+          the Oubliette for horizontal placement instead). These buttons
+          ALSO snap the camera as a courtesy, but the camera framing of
+          record is the preset row below — Brief 13. */}
       <div style={{
         position: 'absolute', top: 12, left: 12,
         display: 'flex', gap: 6,
@@ -978,11 +1038,14 @@ export default function SpecimenViewport({
         <button
           onClick={() => {
             if (cameraStateRef?.current) {
-              const f = studioFraming(targetCategory)
+              const h = (typeof topY === 'number') ? topY : 12
+              const f = studioFraming(h)
               cameraStateRef.current.distance = f.distance
               cameraStateRef.current.height   = f.height
+              cameraStateRef.current.lookAtY  = f.height
             }
             setCamMode('studio')
+            setCamPreset('hero')
           }}
           style={presetBtnStyle(camMode === 'studio')}
           title="Frames bullseye + canopy target centered in view">
@@ -993,6 +1056,7 @@ export default function SpecimenViewport({
             if (cameraStateRef?.current) {
               cameraStateRef.current.distance = 6
               cameraStateRef.current.height = 0.3
+              cameraStateRef.current.lookAtY = 0.3
             }
             setCamMode('worm')
           }}
@@ -1000,6 +1064,29 @@ export default function SpecimenViewport({
           title="Eye-level near the bullseye; only scale + rotation handles, drag the Oubliette for X/Z">
           Worm
         </button>
+      </div>
+      {/* Brief 13 (Vantage) — preset camera distances matching the three
+          bark-shader tiers (Brief 10 sub-phase A — uBarkShaderTier).
+          Operator picks the tier they want to verify; chassis re-frames
+          to the corresponding generic studio-inspection distance. NOT
+          coupled to uBarkShaderTier — operator controls those
+          independently per brief Out-of-Scope §Auto-tier-binding. */}
+      <div style={{
+        position: 'absolute', top: 44, left: 12,
+        display: 'flex', gap: 6,
+      }}>
+        {[
+          ['overhead', 'Overhead', '~200m above — aerial-tier silhouette read'],
+          ['hero',     'Hero',     'Studio framing — mid-distance Browse/Hero (default)'],
+          ['street',   'Street',   '~5m close-up at human eye level — bark detail read'],
+        ].map(([key, label, title]) => (
+          <button key={key}
+            onClick={() => setCamPreset(key)}
+            style={presetBtnStyle(camPreset === key)}
+            title={title}>
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   )

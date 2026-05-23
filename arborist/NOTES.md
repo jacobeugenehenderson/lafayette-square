@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-05-23 — Brief 13: Salon preset cameras (Vantage)
+
+**Baby: Vantage. Small UI brief (~130 LOC), independent of Brief 10's in-flight sub-phases — zero file overlap.** Boz drafted, Jacob dispatched. Lands the review tool Brief 10 sub-phase A's pause needs: the operator can now park the Salon viewport at the camera distance each bark tier was designed for.
+
+**What shipped — three preset framings + a `lookAtY` extension to the camera-state contract:**
+
+- `presetFraming(preset, treeH)` helper in `SpecimenViewport.jsx`, mirroring `studioFraming`:
+  - `overhead` → `{distance: max(150, treeH*6), height: treeH+50, lookAtY: 0}` — looks DOWN at the chassis base from ~150m+
+  - `hero` → forwards to `studioFraming(treeH)` with `lookAtY = height` (horizontal, existing behavior)
+  - `street` → `{distance: max(5, treeH*0.2), height: 1.8, lookAtY: 1.8}` — human eye level at ~5m
+- New `camPreset` state at `SpecimenViewport` Workstage scope, default `hero`. Per-session UI preference; no persistence; mirrors the existing `previewLod`/`camMode` patterns.
+- Two `useEffect`s wire the snap behavior:
+  - The existing chassis-load auto-fit useEffect now uses `presetFraming(camPreset, topY)` instead of `studioFraming(topY)` — switching chassis while in Overhead re-fits to overhead, not back to hero.
+  - A new useEffect fires whenever the operator taps a preset button; uses `topY ?? 12` so first-mount snaps work before the chassis reports its top.
+- `DollyCam.useFrame` now reads `lookAtY` from `stateRef.current`. When absent or numeric-default, falls back to `height` — legacy crane mental model preserved. The Overhead preset's `lookAtY: 0` is what makes the camera tilt down at the chassis base rather than frame empty sky from 90m up.
+- Crane `H_MAX` 60 → 120 and dolly `D_MAX` 150 → 300 (with new symbolic `D_MIN`/`D_MAX` constants for keyboard + wheel paths). Required because Overhead on a 40m chassis parks at height ≈ 90 and distance ≈ 240; the old clamps would silently chop the preset.
+- UI: a second button row below the existing Studio/Worm row at top-left of the viewport. Three buttons `Overhead | Hero | Street`, reuses the same `presetBtnStyle` (amber accent matches kit chrome). Single-select, default `Hero` highlighted.
+- Existing Studio button's `studioFraming(targetCategory)` call (passing a category-name STRING into a `treeH:number` parameter — silent NaN bug) corrected to use `topY ?? 12` while I was there.
+
+**No coupling to `uBarkShaderTier`.** Per brief's explicit Out-of-Scope §Auto-tier-binding: operator drives camera and tier independently so "what does street tier look like from overhead camera" is debuggable. Brief 10 sub-phase D's tier selector will live alongside this preset row but not co-control.
+
+**Camera mechanics preserved.** Option+drag cranes/turntables from any preset, wheel zooms, ArrowUp/Down + `=`/`-` keys still work (all using the bumped clamps). Auto-fit on chassis change still fires once per `viewKey`.
+
+### Surface items (per `feedback_baby_must_surface_scope_drift`)
+
+1. **Existing Studio/Worm row functionally overlaps with Hero/Street.** The `camMode='studio'|'worm'` state mixes two concerns: gizmo affordance (`showXZArrows`, `wormMode`) AND camera framing (the buttons also write distance/height). Brief 13's `camPreset` is the cleaner separation. Refactor candidate: keep `camMode` purely for gizmo affordance, route ALL camera framing through `camPreset` (and probably split the Worm button into a "worm gizmo mode" toggle that's orthogonal to camera preset). Out of scope for Brief 13; left intact so the operator's existing workflow is undisturbed. Worth a follow-up brief if the two-row layout reads crowded after a few sessions.
+2. **`studioFraming(targetCategory)` was silently NaN.** Passing a category-name string into a `treeH:number` parameter made `distance` evaluate to NaN, which the `useFrame` would have fed to `camera.position.set`. Three.js typically retains the last valid position when fed NaN, so the bug was masked — the Studio button was effectively a no-op camera-wise (the gizmo mode change still landed). Corrected in passing to use `topY` like the auto-fit path. If anyone was relying on the click-Studio-to-reset-camera behavior, it's now actually wired.
+3. **Camera-state ref shape contract.** `cameraStateRef = useRef({distance, height})` in three parent workstages (Workstage / SalonWorkstage / ProceduralWorkstage). I extended SpecimenViewport's CONSUMPTION to read an optional `lookAtY`, but did NOT touch the parents — they continue to seed `{distance: 22, height: 8}` and SpecimenViewport's effects populate `lookAtY` on first mount. Backwards-compatible.
+4. **Overhead at small chassis reads weird.** On a 6m chassis (Holly), Overhead parks at distance=150m, height=56m — chassis is a tiny green dot. Brief flagged this as a possible tuning issue. Left as-is for first pass; tuning to ~`max(80, treeH*8)` distance + `treeH*4` height might keep the chassis legible on small species. Operator-tunable from devtools by editing `presetFraming` if it bothers them.
+5. **No animation between presets.** Snap-only per brief §Camera mechanics. Animation is v1.6 polish if operator wants smooth transitions.
+6. **Street preset's "looking up" framing.** Brief described street as "looking up." The implementation looks HORIZONTALLY at human eye level (1.8m), which puts trunk bark detail dead center of the frame — better for bark inspection than tilted-up framing (which would push canopy to center, defeating the purpose). If operator wants "looking up at the canopy from 5m" as a distinct framing, that's a fourth preset and a separate brief.
+
+### Files touched
+
+| File | Δ |
+|---|---|
+| `src/arborist/SpecimenViewport.jsx` | +80 LOC (presetFraming helper + camPreset state + two useEffects + 3-button UI + lookAtY in DollyCam + clamp bumps + Studio-button bugfix) |
+| `arborist/FEATURES.md` | +1 paragraph (preset cameras under workstage overlays) |
+| `arborist/ARCHITECTURE.md` | +1 paragraph (Salon preset cameras under bark tier section) |
+| `arborist/BACKLOG.md` | +1 line (Brief 13 marked shipped) |
+| `arborist/NOTES.md` | this entry |
+
+---
+
 ## 2026-05-23 — Brief 10 sub-phase A: Aerial bark tier infrastructure (Cork)
 
 **Baby: Cork. Sub-phase A of the four-step view-aware bark arc (Boz drafted, Hazel audited). Pauses here for operator review per the brief's sub-phasing rule; B/C/D queued for separate dispatches.**
