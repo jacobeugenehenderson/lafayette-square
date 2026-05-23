@@ -4,6 +4,41 @@
 
 ---
 
+## 2026-05-23 — Brief 11 lightweight: LS runtime bark-tier auto-bind (Plumb)
+
+**Baby: Plumb.** Boz drafted, Jacob dispatched. Pure runtime activation of the tier seam Cork shipped in 10A and Vantage wired in Salon under Brief 13. No new uniforms, no shader edits — one new component (`TierDriver`) mounted as a sibling of `SwayDriver` inside `ParkPopulation`.
+
+**What shipped.** `src/components/InstancedTrees.jsx` gained:
+- `useThree` added to the `@react-three/fiber` import (was just `useFrame`).
+- `treeBarkTierUniform` + `treeBarkTierPinned` added to the named imports from `treeAtlasMaterial.js`.
+- `TIER_AERIAL_MIN_ALTITUDE = 150` + `TIER_STREET_MAX_ALTITUDE = 5` module-scope constants.
+- `computeTier(camera)` pure helper: `y > 150 → 0`, `y < 5 → 2`, else `1`.
+- `TierDriver` component: `useFrame` reads camera, yields if pinned, writes uniform only on change.
+- `<TierDriver />` mounted as a sibling immediately after `<SwayDriver />` inside `ParkPopulation`.
+
+Net delta ~45 LOC, single file. `treeAtlasMaterial.js` untouched. `SpecimenViewport.jsx` untouched. Algorithm is **structurally** Vantage's `if (!treeBarkTierPinned.value) { const desired = …; if (uniform.value !== desired) uniform.value = desired }`, so the operator iterating in Salon predicts LS behavior.
+
+**Threshold calibration — discriminating signal swapped from distance to altitude.** LS has no "tree at origin" Salon-style, so Vantage's `distance < 20` doesn't translate. Surveyed `Scene.jsx`'s `PRESETS`: `HERO_CENTER y = 55m`, `browse position[1] = 600m` (range 50–4000m via wheel), `MODE_CONSTRAINTS.browse.minPolarAngle = maxPolarAngle = 0.001` (top-down-locked), street eyeHeight 1.73m. Brief's first-pass `y > 50 → 0` would have misclassified Hero (55m) as aerial — surfaced and tuned upward to **150**. The Browse cone is min 50m altitude → max 4000m; threshold at 150 means deep zoom on Browse (50–150m) flips to Hero tier, which matches what the operator would want visually (close-zoom needs the detail Overlay). Street threshold at 5 covers eyeHeight 1.73 with daylight.
+
+**`scene.json#shots` is framing knobs, not camera positions.** Looked first since the brief recommended it. LS scene.json carries `{browse: {fov, padding, bounds}, hero: {fov}, street: {fov, eyeHeight}}` — the actual camera positions are computed by `CameraRig` in `Scene.jsx` from PRESETS + framing knobs. PRESETS is the load-bearing calibration source.
+
+**Mount-site surface — no asymmetry.** Both consumers of `InstancedTrees` (Cartograph `CartographApp.jsx:585`, Preview `PreviewApp.jsx:580`) mount `ParkPopulation`, so `TierDriver` fires identically in both. Meteorologist's `CanaryScene.jsx` bypasses `InstancedTrees` (direct `useGLTF`), so the tier driver doesn't fire there — fine; Meteorologist isn't a tree-bark consumer.
+
+**Acceptance check.** Per-frame uniform read/write avoids no-op cascades (the equality guard is the same one Vantage uses). Single shader program: no `customProgramCacheKey` touched. Pin/release contract unchanged — `window.__setBarkShaderTier(0)` from devtools at Hero camera holds tier 0 across frames; `window.__releaseBarkShaderTier()` resumes from the next frame. Salon-side DollyCam still owns its own write path; both surfaces share the uniform + pin without cross-interference.
+
+**Per-frame perf signal at Browse.** Code-read confirms: when `treeBarkTierUniform.value === 0`, the bark fragment shader's `step(0.5, uBarkShaderTier) == 0`, so the detail Overlay's `texture2D(uBarkDetail, ...)` sample is gated out of the composite. One fewer texture sample per bark fragment at Browse altitude, scene-wide. Not measured through DevTools GPU profiling per the brief's "or just confirm via code-read" allowance.
+
+**Surfaced for follow-up:**
+
+1. **Hysteresis at the threshold edges.** Browse zoom near 150m, or any future SHOT crane through 150m or 5m, will pop the tier — visible if the detail composite re-enables mid-crane. Per Vantage's snap-only precedent and the brief's explicit "no animation" — not shipped. v1.6 polish brief if the pop reads.
+2. **Planetarium parks at HERO_CENTER (y=55).** Lands tier 1. Probably right — planetarium orbits in place at hero altitude. If planetarium ever migrates to a higher-altitude entry, will need re-tuning.
+3. **The v2 cartograph SHOT-driven authoring channel is genuinely worthwhile.** Reasoning: LS's three view modes (browse / hero / planetarium) cleanly separate by altitude, but a future SHOT that's hand-authored to look down from 30m at a single placement (between Hero and Browse altitudes) would land tier 1 by altitude but probably wants tier 0 for the cinematic feel. The altitude heuristic is good-enough for v1; v2's per-SHOT authored tier handles the cases altitude can't disambiguate.
+4. **`treeBarkTierPinned` is module-state, not URL-state.** Pin set via devtools in tab A is invisible to tab B. Fine for debug; surfaced for completeness.
+
+**Files:** `src/components/InstancedTrees.jsx` (+~45), `arborist/BACKLOG.md` (Brief 11 lightweight marked shipped), `arborist/NOTES.md` (this entry), `arborist/ARCHITECTURE.md` (+~10, runtime driver subsection extension), `scratch/brief-11-lightweight-runtime-bark-tier.md` (Boz's brief).
+
+---
+
 ## 2026-05-23 — Brief 6.2: Connected-mesh bark decimation (Adze)
 
 **Shipped Lever 5** — `decimateBarkPrimitives` in `arborist/decimate-tree.mjs`. Runs BEFORE Lever 4 emitLod, gated on `extras.atlasKind === 'bark' && vcount > 100K`. Calls `MeshoptSimplifier.simplifyWithAttributes` at `errorTolerance=0.05, targetRatio=0.15, uvWeight=0.5`. Idempotent via `extras.adzeDecimatedBark`. Linden's headline bark prim collapsed 850K → 127K tris (−85%, achieved err 1.38e-3, well below the 0.05 ceiling — the ratio was the binding constraint).

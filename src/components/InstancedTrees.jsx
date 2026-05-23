@@ -16,10 +16,16 @@
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { useTreeAtlas, treeSwayUniforms, applyBarkUniforms } from './treeAtlasMaterial'
+import {
+  useTreeAtlas,
+  treeSwayUniforms,
+  applyBarkUniforms,
+  treeBarkTierUniform,
+  treeBarkTierPinned,
+} from './treeAtlasMaterial'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -312,6 +318,43 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
 // without uploading per-instance attributes per frame.
 const _swayWindState = defaultWindState()
 
+// Brief 11 lightweight (Plumb) — LS-runtime bark-tier auto-bind. Mirrors
+// Vantage's Salon-side DollyCam binding (SpecimenViewport.jsx) so operator
+// iterating in Salon can predict LS behavior: one shared uniform, one
+// shared pin, recognizably the same algorithm.
+//
+// LS has no "tree at origin" the way Salon does; the discriminating signal
+// is camera altitude (y-up world frame). Calibration against Scene.jsx
+// PRESETS: HERO_CENTER y = 55m, browse default y = 600m (zoom range
+// 50–4000m), street eyeHeight = 1.73m. Thresholds pick the gaps:
+//   y > 150 → aerial (browse default 600 well above; hero 55 well below)
+//   y < 5   → street (eyeHeight 1.73 well below; hero 55 well above)
+//   else    → hero
+// Snap only — no hysteresis, mirroring Vantage. If operator zooms browse
+// in past minDistance 50 (below the 150 threshold), tier flips to hero,
+// which is the correct quality level for that close a framing.
+const TIER_AERIAL_MIN_ALTITUDE = 150
+const TIER_STREET_MAX_ALTITUDE = 5
+
+function computeTier(camera) {
+  const y = camera.position.y
+  if (y > TIER_AERIAL_MIN_ALTITUDE) return 0
+  if (y < TIER_STREET_MAX_ALTITUDE) return 2
+  return 1
+}
+
+function TierDriver() {
+  const camera = useThree(s => s.camera)
+  useFrame(() => {
+    if (treeBarkTierPinned.value) return
+    const desired = computeTier(camera)
+    if (treeBarkTierUniform.value !== desired) {
+      treeBarkTierUniform.value = desired
+    }
+  })
+  return null
+}
+
 function SwayDriver() {
   useFrame((_, delta) => {
     treeSwayUniforms.uTime.value += delta
@@ -493,6 +536,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
   return (
     <>
       <SwayDriver />
+      <TierDriver />
       {Array.from(groups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {
           const species = urlToSpecies(url)
