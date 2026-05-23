@@ -28,12 +28,17 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { cloneDocument, dedup, prune, weld, simplify, textureCompress } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
 import { rebuildIndex } from './build-index.js'
+import { decimateLeafPrimitives, loadDecimationConfig } from './decimate-tree.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
 
-// LOD presets. ratio = fraction of triangles to keep (1.0 = full).
-// textureSize = max dimension for any texture (down-rez via sharp).
+// LOD presets. textureSize = max dimension for any texture (down-rez via sharp).
+// `ratio` is a FALLBACK seed for the adaptive simplify-to-bracket (Brief 6,
+// Spindle 2026-05-22): we start the simplifier at `ratio` and tighten if the
+// result exceeds `qualityBracket[lod].maxTris` from decimation-defaults.json.
+// Chassis whose pre-simplify tri count is already inside the bracket are
+// emitted as-is.
 const LODS = [
   { id: 'lod0', ratio: 0.85, textureSize: 2048, error: 0.0005 },
   { id: 'lod1', ratio: 0.40, textureSize: 1024, error: 0.0020 },
@@ -610,15 +615,42 @@ function guessCategory(speciesMeta, speciesId) {
   return 'broadleaf'
 }
 
-async function emitLod(doc, lod) {
+// Lever 4 (Brief 6): adaptive simplify-to-bracket. Walk the simplifier ratio
+// down from `lod.ratio` until tri count lands in qualityBracket[lod].maxTris,
+// or until we hit the ratio floor. Naturally light chassis (already below
+// maxTris) skip simplify entirely; the goal is "tris in bracket", not "always
+// reduce". One extra simplify pass per overshoot — typically 0–2 retries.
+async function emitLod(doc, lod, bracket) {
   const lodDoc = cloneDocument(doc)
+  await lodDoc.transform(weld(), dedup())
+  const startTris = countTris(lodDoc)
+  // If already under maxTris, skip simplify — chassis was naturally light.
+  if (bracket && startTris <= bracket.maxTris) {
+    await lodDoc.transform(textureCompress({ targetFormat: 'webp', resize: [lod.textureSize, lod.textureSize] }))
+    return { doc: lodDoc, ratioApplied: 1.0, startTris, inBracket: startTris >= (bracket.minTris ?? 0) }
+  }
+  // Seed ratio from bracket if available, else fall back to lod.ratio.
+  let ratio = bracket ? Math.max(0.01, Math.min(1.0, bracket.maxTris / startTris)) : lod.ratio
+  let lastTris = startTris
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const tryDoc = cloneDocument(lodDoc)
+    await tryDoc.transform(simplify({ simplifier: MeshoptSimplifier, ratio, error: lod.error }))
+    const tris = countTris(tryDoc)
+    if (!bracket || (tris <= bracket.maxTris && tris >= (bracket.minTris ?? 0))) {
+      await tryDoc.transform(textureCompress({ targetFormat: 'webp', resize: [lod.textureSize, lod.textureSize] }))
+      return { doc: tryDoc, ratioApplied: ratio, startTris, finalTris: tris, inBracket: true }
+    }
+    lastTris = tris
+    if (tris > bracket.maxTris) ratio = Math.max(0.01, ratio * (bracket.maxTris / tris) * 0.95)
+    else break // below minTris — already overshot; emit and surface
+  }
+  // Final pass at the converged ratio.
   await lodDoc.transform(
-    weld(),
-    dedup(),
-    simplify({ simplifier: MeshoptSimplifier, ratio: lod.ratio, error: lod.error }),
+    simplify({ simplifier: MeshoptSimplifier, ratio, error: lod.error }),
     textureCompress({ targetFormat: 'webp', resize: [lod.textureSize, lod.textureSize] }),
   )
-  return lodDoc
+  const finalTris = countTris(lodDoc)
+  return { doc: lodDoc, ratioApplied: ratio, startTris, finalTris, inBracket: !!bracket && finalTris <= bracket.maxTris && finalTris >= (bracket.minTris ?? 0) }
 }
 
 async function main() {
@@ -659,6 +691,9 @@ async function main() {
   const { mode, variants } = await listVariants(io, sourceGlb)
   console.log(`[publish-glb] variant mode: ${mode} (${variants.length} ${variants.length === 1 ? 'variant' : 'variants'})`)
 
+  // Brief 6 (Spindle, 2026-05-22): load decimation config once.
+  const decimationConfig = await loadDecimationConfig()
+
   const category = guessCategory(speciesMeta, args.species)
   const defaultStyles = inferStyles(args.species, 'glb')
 
@@ -693,18 +728,32 @@ async function main() {
     if (helpersRemoved) console.log(`  filtered ${helpersRemoved} helper mesh node(s)`)
     const fallbackTouched = fallbackColorsForUnboundMaterials(variantDoc)
     if (fallbackTouched) console.log(`  fallback color set on ${fallbackTouched} unbound material(s)`)
+
+    // Brief 6 Lever 3: pre-decimate leaf cards on card-based topologies.
+    const triBefore = countTris(variantDoc)
+    const decimReports = decimateLeafPrimitives(variantDoc, decimationConfig)
+    const triAfter = countTris(variantDoc)
+    if (triAfter < triBefore) {
+      console.log(`  leaf decimation: ${triBefore.toLocaleString()} → ${triAfter.toLocaleString()} tris (${decimReports.filter(r => r.reason === 'decimated').length}/${decimReports.length} leaf prim(s) reduced)`)
+    } else if (decimReports.length) {
+      const skips = decimReports.map(r => r.reason).join(',')
+      console.log(`  leaf decimation: no-op (${decimReports.length} leaf prim(s): ${skips})`)
+    }
+
     const approxHeightM = computeApproxHeight(variantDoc)
     const skeletons = {}
 
     for (const lod of LODS) {
       const t0 = Date.now()
-      const lodDoc = await emitLod(variantDoc, lod)
+      const bracket = decimationConfig.qualityBracket?.[lod.id]
+      const { doc: lodDoc, ratioApplied, startTris, finalTris, inBracket } = await emitLod(variantDoc, lod, bracket)
       const filename = `skeleton-${variantId}-${lod.id}.glb`
       const outPath = path.join(outDir, filename)
       await io.write(outPath, lodDoc)
       const stats = await fs.stat(outPath)
-      const tris = countTris(lodDoc)
-      console.log(`  ${lod.id}: ${tris.toLocaleString()} tris, ${(stats.size / 1024).toFixed(0)} KB, ${Date.now() - t0}ms`)
+      const tris = finalTris ?? countTris(lodDoc)
+      const bracketTag = bracket ? (inBracket ? '✓bracket' : `✗bracket[${bracket.minTris}-${bracket.maxTris}]`) : ''
+      console.log(`  ${lod.id}: ${tris.toLocaleString()} tris (ratio ${ratioApplied.toFixed(3)} ${bracketTag}), ${(stats.size / 1024).toFixed(0)} KB, ${Date.now() - t0}ms`)
       skeletons[lod.id] = filename
     }
 

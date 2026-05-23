@@ -239,6 +239,22 @@ Same `{species, slot, seed, params}` + same on-disk materials → byte-identical
 
 ---
 
+## Decimation pipeline (Brief 6, Spindle 2026-05-22)
+
+Inside `publish-glb.js`'s per-variant loop, after `loadVariantDocument` and before LoD emission, two tree-aware decimation levers run:
+
+**Lever 3 — card-aware leaf-card reduction** (`arborist/decimate-tree.mjs`, importable). For each primitive with `extras.atlasKind === 'leaf'`:
+- If `max-vert-use === 1` (Robinia-class card-based topology), compute per-triangle XZ centroid, build 2D convex hull of all centroids, drop interior triangles by deterministic Knuth-hash with `innerHullDropFactor` (default 0.6). Outer-silhouette triangles (within `outerHullToleranceFrac × bboxDiag` of hull boundary, default 0.05) are always kept.
+- If `max-vert-use > 1` (Linden-class connected-mesh), skip — defers to MeshoptSimplifier.
+- If `tcount < minTrisToFire` (default 1000), skip — chassis was already light.
+- Stamps `prim.extras.spindleDecimated = true` for idempotency on re-runs.
+
+**Lever 4 — adaptive simplify-to-bracket** (inside `publish-glb.js#emitLod`). Replaces the prior fixed `ratio: 0.85/0.40/0.10` with per-LoD `[minTris, maxTris]` brackets read from `arborist/decimation-defaults.json`. The simplifier ratio is seeded from `maxTris / startTris`, then iteratively tightened up to 3× on overshoot. Chassis whose pre-simplify tri count is already inside the bracket skip simplify entirely. Out-of-bracket results are logged with `✗bracket[min-max]`; MeshoptSimplifier's topology floor (controlled by `error`) bounds how aggressive Lever 4 can be without exceeding visual-quality budget — see `scratch/brief-decimation-survey-spindle.md` for observed per-species behavior.
+
+**Levers 1 + 2 (Order-N twig pruning, parallel-branch collapse) were dropped before code** — vendor + procedural chassis arrive flat-merged with no walkable per-branch node graph. Filed as Brief 6.1 candidate (generator-side pre-merge inside `generate-procedural.js`'s SCA graph and `bake-tree.py`'s LiDAR cylinder graph). See `BACKLOG.md`.
+
+---
+
 ## Pipeline integration
 
 The deployed runtime — `src/components/InstancedTrees.jsx` — consumes Arborist artifacts unchanged:

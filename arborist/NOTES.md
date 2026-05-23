@@ -4,6 +4,74 @@
 
 ---
 
+## 2026-05-22 — Brief 6: Tree-aware geometry decimation (Spindle)
+
+**Baby: Spindle. Brief 6 prescribed four levers (twig pruning, parallel-branch collapse, leaf-card silhouette reduction, quality bracket). Shipped two; dropped two before code on premise mismatch caught during GLB inspection. Survey at `scratch/brief-decimation-survey-spindle.md`.**
+
+### Dropped levers (filed as Brief 6.1 candidate)
+
+GLB inspection on `acer_saccharum_a` / `robinia_pseudoacacia_a` / `american_linden_a` / `italian_cypress_c` / `acer_saccharum_procedural_a` revealed every chassis arrives flat-merged with 1–3 wood primitives total — no walkable per-branch node graph. Lever 1 (Order-N twig pruning) and Lever 2 (parallel-branch collapse) require per-branch identity, which exists only PRE-merge inside `generate-procedural.js`'s SCA graph and `bake-tree.py`'s LiDAR cylinder graph. Filed as **Brief 6.1 candidate: generator-side branch decimation operating pre-merge.** Vendor-stock chassis have no equivalent — vendors ship pre-merged.
+
+### What shipped
+
+- **`arborist/decimate-tree.mjs`** — Lever 3, card-aware leaf-card reduction. For leaf primitives with `max vert-use === 1` (Robinia-class), compute per-tri XZ centroid + 2D convex hull, drop interior tris by deterministic Knuth-hash with `innerHullDropFactor=0.6`, preserve outer-silhouette (within `0.05 × bboxDiag` of hull boundary). Connected-mesh leaf primitives (Linden-class, max-use > 1) deferred to `MeshoptSimplifier`. Idempotency via `prim.extras.spindleDecimated`.
+- **`arborist/publish-glb.js`** — Lever 4, adaptive simplify-to-bracket. Replaces fixed `LODS.ratio` (0.85/0.40/0.10) with bracket-driven adaptive ratio seeded from `maxTris / startTris`, up to 3 iterative retries on overshoot.
+- **`arborist/decimation-defaults.json`** — operator-tunable; brief's prescribed brackets shipped as defaults to keep the survey signal loud during initial tuning.
+
+### Topology classification (reframe vs brief)
+
+Brief framed Lever 3 around 4-vert/6-index "cards" as discrete walkable units. Inspection showed Robinia's index buffer scrambles tri composition across vert ranges — vert stride of 4 doesn't align with triangulation. Implementable invariant is simpler: **`max vert-use === 1` means every tri is independent** (no shared verts), so per-triangle drop is safe without card-grouping. Hull-distance per centroid is the silhouette signal. More granular than brief's framing, same intent.
+
+### Lever 4 surfaces real signal
+
+Default brief brackets (LoD0: 5K-15K) are far tighter than current pipeline behavior at default `error: 0.0005`. Only 2/15 LoD tiers across the test bed land in bracket. **MeshoptSimplifier has a topology floor** at the configured error — it refuses to collapse hard alpha-test edges. This is doctrine-correct (niceness pillar holding). Recommended retune (LoD0: 15K-200K, LoD1: 5K-60K, LoD2: 1K-20K) surfaced in survey but **not shipped** — keeping defaults loud so operator can chart per-species achievable numbers.
+
+### Architecture choice: decimate-tree.mjs as importable module
+
+Brief specified standalone CLI invoked between generators and `publish-glb.js`. Instead, `decimateLeafPrimitives` is imported by publish-glb's per-variant loop. Three generator files untouched (`generate-procedural.js` / `generate-salon.js` / `bake-tree.py`); equivalent semantics; ~30 LOC saved. CLI mode preserved for standalone testing.
+
+### Determinism + idempotency
+
+Verified via three-way shasum match (`f92aa1f63…`): fresh run 1, fresh run 2, re-run on already-decimated output. The `spindleDecimated` extras marker is the idempotency hook.
+
+### Performance shape
+
+| Species | Pre-Lever-3 | Post-Lever-3 | LoD0 final | Notes |
+|---|---:|---:|---:|---|
+| Robinia | 324K | **217K (−33%)** | 146K | Card-based — Lever 3 fires |
+| American Linden | 1.15M | 1.15M | **588K** | Connected-mesh skip — bark dominates |
+| Sugar Maple vendor | 55K | 55K | 19K | Naturally light |
+| Italian Cypress | 3K | 3K | 3K | Already below LoD0 floor |
+| Sugar Maple procedural | 46K | 46K | 43K | No leaf prims in chassis |
+
+**Robinia is the only species in stock where Lever 3 fires today.** Linden bark (722K single primitive) is the heaviest single target across the library — generic simplifier territory, not Lever 3's wheelhouse.
+
+### Operator-eye visual sign-off pending
+
+Lever 3 fires on Robinia; AC 4 + AC 5 visual diff requires operator verification in Salon. Lever 4 introduces no novel visual risk (uses MeshoptSimplifier unchanged). Recommend running `node arborist/publish-glb.js --source public/trees/_chassis/robinia_pseudoacacia_a_tree_robinia_pseudoacacia_a.glb --species _spindle_check` and visually comparing the decimated output against the current Robinia in LS Hero / Browse views.
+
+— Spindle
+
+---
+
+## 2026-05-22 — Coordinator failure: Salon preview routed to LS Stage (Boz)
+
+**Coordinator: Boz. During Brief 2.1 (Birch) visual verification, operator asked "what am I supposed to see?" after toggling gradient stops in the Salon. Coordinator's answer — "Salon preview uses raw GLB materials; effect only visible after Adopt → republish → reload LS" — routed operator AWAY from the Salon and into the production bake chain for every iteration. Operator's response: "ONCE AGAIN, I am working in the Arborist Salon."**
+
+**The failure:** The Salon Workstage IS the operator's authoring surface. Effects landing only at LS Stage are functionally undeployed for the authoring loop — the operator iterates against a blind preview, can't see their own work until they've gone through a multi-minute bake chain per change. That's not authoring; that's batch-and-reload.
+
+**The root cause:** Brief 2.1's shader pivot landed in `src/components/treeAtlasMaterial.js` only. `src/arborist/SpecimenViewport.jsx` (the Salon preview viewport) renders raw GLB materials with `onBeforeCompile` patches for wind, but no gradient/bark uniforms wired. Brief 2.1's effect literally cannot fire there — the bound material doesn't have the chunk.
+
+**Doctrine encoded (see [[feedback_salon_preview_is_authoring_surface]]):** every brief touching `treeAtlasMaterial.js` must explicitly require the same effect to fire in `SpecimenViewport.jsx`'s preview path. Sibling discipline to `project_stage_consumer_parity` applied to Arborist's preview-vs-runtime split.
+
+**ARCHITECTURE.md extended:** added "Salon preview ↔ LS runtime material parity (doctrine)" section above the bark shader unification — codifies the two-consumer pattern + the two satisfactory implementation shapes (preview swaps in treeAtlasMaterial, or preview replicates fragment chunks via onBeforeCompile).
+
+**Mid-flight correction shipped:** revised note to Birch redirecting them to investigate the SpecimenViewport material chain and close the preview-rendering gap, NOT chase the bake chain.
+
+**Lessons folded into the Brief 6 (decimation) draft template at session-end:** every future brief touching treeAtlasMaterial includes the preview-parity acceptance criterion. Coordinator (me) takes this on as standing discipline.
+
+---
+
 ## 2026-05-22 — Project: Brief 2.1a — Bark Detail Texturing Layer (baby Cinder)
 
 **Tiny baby, additive over Holm's Brief 2 gradient bark. Bake-time high-pass extraction (`arborist/extract-bark-detail.mjs`) → atlas 4th sub-region inside `unifyAtlases` → fragment Overlay-blend composite on the FINAL bark color, gated by `vBark`. Five new uniforms, one extra `texture2D` per bark fragment, no new programs, no new sampler bindings. Detail keyed per-bark-ref, dedup-shared across species using the same ref.**

@@ -18,7 +18,8 @@ bake-tree.py             (Scan mode)
     ▼
 publish-glb.js
     │  variant detection (namesSuggestVariants / nodesSpatiallySeparated)
-    │  LOD simplification (ratio 0.85 / 0.40 / 0.10 — three tiers)
+    │  Brief 6 Lever 3 — decimateLeafPrimitives (card-aware leaf reduction, in-line import from decimate-tree.mjs)
+    │  Brief 6 Lever 4 — adaptive simplify-to-bracket per LoD tier (replaces fixed 0.85/0.40/0.10)
     │  manifest emission, helper-mesh filtering, normalizeScale
     ▼
 public/trees/<species>/{skeleton-N-lod0/1/2.glb, tips-N.json, manifest.json}
@@ -43,7 +44,7 @@ public/baked/<look>/trees/<species>/...
 src/components/InstancedTrees.jsx
 ```
 
-**Foundational stages stay untouched across the v1.5 arc.** `publish-glb.js`, `bake-look.js`, `bake-trees.js`, `atlas-pack.js`, `atlas-survey.js`, and the runtime `treeAtlasMaterial.js` did not fork in any phase — generator output adapts to what they expect. This is the no-parallel-pipeline rule (`feedback_no_parallel_pipeline_for_scenes`) applied to a helper: one publishing channel, one runtime consumer.
+**Foundational stages stay untouched across the v1.5 arc.** `publish-glb.js`, `bake-look.js`, `bake-trees.js`, `atlas-pack.js`, `atlas-survey.js`, and the runtime `treeAtlasMaterial.js` did not fork in any phase — generator output adapts to what they expect. This is the no-parallel-pipeline rule (`feedback_no_parallel_pipeline_for_scenes`) applied to a helper: one publishing channel, one runtime consumer. **Brief 6 (Spindle, 2026-05-22) extends `publish-glb.js`** with tree-aware decimation: leaf-card reduction (Lever 3, importable from `decimate-tree.mjs`) and adaptive simplify-to-bracket (Lever 4 inside `emitLod`). The pipeline shape and the no-parallel rule are preserved — the publish step gets richer, but the publishing channel stays singular.
 
 ---
 
@@ -147,6 +148,42 @@ generateTreeMesh({
 `resolveVariantParams` does a one-level-deep merge for nested `envelope` / `sca` / `branching` objects, so a partial overlay (e.g. operator dragging just `sca.tropism.Y`) doesn't wipe sibling fields off the PRESET base.
 
 **Hero species are first-class at this same API.** Full per-species `bark` extras (pattern + colors + scale + roughness), `leafCluster` reference, two-stop `tintRamp` per season — signature does not change. Heroes get their own PRESETS entries; `park_species_map.json` routes inventory entries via preferred-species lists. The distinction between "hero" and "filler" is **quality rating + per-species tuning depth**, not pipeline location.
+
+---
+
+## Salon preview ↔ LS runtime material parity (doctrine, load-bearing)
+
+**The Salon Workstage preview IS the published artifact, rendered live.** Not "similar to," not "two consumers of the same material" — IS. The bake chain (Adopt → generate-salon → bake-look) is the slab boundary that publishes whatever the Salon authored. LS Stage is where that published slab gets consumed. There is no daylight between Salon preview and LS render that the operator should ever have to step across to verify their work.
+
+**Sequencing:**
+
+```
+[operator iterates in the Salon]              ← AUTHORING (must be visually complete here)
+       ↓ Adopt
+[operator hits Re-publish species]
+       ↓ generate-salon → publish-glb
+       ↓ bake-look → bake-trees
+       ↓ ════════ SLAB BOUNDARY ════════
+[scene.json + trees-atlas + per-Look GLBs]   ← FROZEN ARTIFACT
+       ↓ load
+[InstancedTrees.jsx renders in LS]            ← CONSUMPTION
+```
+
+If a shader effect doesn't fire in the Salon preview, the operator can't author against it. Period. They have no iteration loop. Telling the operator to "verify in LS" routes them past the slab boundary into production — which IS the publishing step, not a verification step. That's the bug that triggered this doctrine (Brief 2.1, 2026-05-22).
+
+**This is `project_preview_equals_ls_literally` applied to the Arborist helper.** Sibling enforcement of `project_stage_consumer_parity` (cartograph-side: Stage and production mount the same consumer file with override props). Forked consumers are drift; the only honest architecture is shared materials.
+
+**The correct implementation shape — one path:**
+
+The Salon preview path (`SpecimenViewport.jsx`) must render through `treeAtlasMaterial.js` directly, with the same `applyBarkUniforms` wiring the runtime uses (`InstancedTrees.jsx`). The preview supplies workstage-context overrides (live composition state, not baked manifest); the material logic is one implementation.
+
+**Wrong shapes to avoid:**
+
+- ❌ Preview renders raw GLB materials; runtime renders through `treeAtlasMaterial`. Two materials, two implementations, drift inevitable.
+- ❌ Preview replicates fragment chunks via `onBeforeCompile` patches that mirror chunks living in `treeAtlasMaterial`. Two implementations of the same logic, must stay synchronized forever, drift on the first divergent edit.
+- ⚠️ Preview uses `onBeforeCompile` patches for WORKSTAGE-ONLY effects (wind shader, debug overlays). Acceptable IF the chunk is truly workstage-only (never lands in published artifact). Today's wind patches are this case — and even they are drift-adjacent; consolidation candidate.
+
+**The criterion every brief touching `treeAtlasMaterial.js` carries:** *Effect visible in Salon workstage preview at parameter authoring time, in the live composition state, without going through bake → reload LS.* The brief is unshipped until this is true. Per [[feedback_salon_preview_is_authoring_surface]] (2026-05-22, caught on Brief 2.1).
 
 ---
 

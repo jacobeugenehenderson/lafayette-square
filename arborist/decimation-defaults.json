@@ -1,0 +1,13 @@
+{
+  "qualityBracket": {
+    "lod0": { "minTris": 5000, "maxTris": 15000 },
+    "lod1": { "minTris": 1500, "maxTris":  5000 },
+    "lod2": { "minTris":  300, "maxTris":  1500 }
+  },
+  "innerCanopyLeafReduction": {
+    "enabled": true,
+    "innerHullDropFactor": 0.6,
+    "outerHullToleranceFrac": 0.05,
+    "minTrisToFire": 1000
+  }
+}
