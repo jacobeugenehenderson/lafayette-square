@@ -26,6 +26,7 @@ import {
   useSalonPreviewAtlas,
   applyBarkUniforms,
   stampTreeVertexAttrs,
+  treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
@@ -678,18 +679,21 @@ function Skeleton({
   const lod0Url = url.replace(/-lod[12]\.glb($|\?)/, '-lod0.glb$1')
   const { scene: anchorScene } = useGLTF(lod0Url)
 
-  // Wind uniforms — shared across every patched material on this scene
-  // so a single useFrame tick drives the whole tree. Mutate `.value` in
-  // place; the references the materials captured stay valid.
-  const windUniformsRef = useRef({
-    uTime:         { value: 0 },
-    uWindStrength: { value: windStrength },
-  })
-  useEffect(() => {
-    windUniformsRef.current.uWindStrength.value = windStrength
-  }, [windStrength])
+  // Brief 9a (Sough) — workstage drives the SHARED treeSwayUniforms;
+  // Phase W's wind chunks live in `treeAtlasMaterial.js#injectFoliageSway`
+  // now, so Salon preview and LS runtime share the same vertex-shader
+  // wind path. The local `windStrength` slider (0..1) maps to a synthetic
+  // wind state — ~5 m/s drift + light gusts at strength=1, with the
+  // rustle floor visible at strength=0. Direction is fixed east-bound
+  // for the workstage (no preview-only direction knob today).
   useFrame((_, dt) => {
-    windUniformsRef.current.uTime.value += dt
+    treeSwayUniforms.uTime.value += dt
+    const speed = Math.max(0, windStrength) * 5.0
+    treeSwayUniforms.uWindForce.value.set(speed, 0, 0)
+    treeSwayUniforms.uWindIntensity.value = speed
+    treeSwayUniforms.uGustFrontVelocity.value.set(10, 0, 0)
+    treeSwayUniforms.uGustsScale.value   = windStrength * 4.0
+    treeSwayUniforms.uGustEnvelope.value = windStrength > 0 ? 1.0 : 0.0
   })
 
   // Brief 7 (Cambium): the shared treeAtlasMaterial owns the bark gradient
@@ -701,18 +705,32 @@ function Skeleton({
 
   // Brief 7 (Cambium): replace raw GLB materials with the shared
   // treeAtlasMaterial. Stamp per-vertex aBark / aBarkRegion / aLampGlow
-  // (the shared shader expects these) and apply the workstage's wind
-  // injection ONCE as a post-injectFoliageSway chain on the shared material.
-  // Idempotent via material.userData.__workstageWindPatched.
+  // / aWindTier (Brief 9a) so the shared shader sees the same per-vertex
+  // signals here as in the LS runtime.
   useMemo(() => {
     if (!atlas.treeMaterial) return
     const treeMaterial = atlas.treeMaterial
+    // Brief 10A (Cork) — chassis-wide Y bbox for aBarkWorldYNorm normalization,
+    // so multi-mesh skeletons share the same aerial-gradient range as the LS
+    // runtime computes across its merged chassis. Pass it down to
+    // stampTreeVertexAttrs as fallback (no caller-supplied range → per-geometry).
+    let chassisMinY = Infinity, chassisMaxY = -Infinity
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes?.position) return
+      const p = o.geometry.attributes.position
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i)
+        if (y < chassisMinY) chassisMinY = y
+        if (y > chassisMaxY) chassisMaxY = y
+      }
+    })
+    const chassisYRange = Math.max(chassisMaxY - chassisMinY, 1e-6)
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
       if (o.geometry) {
-        stampTreeVertexAttrs(o.geometry, {}, o)
+        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
         // Strip vertex colors — they flip USE_COLOR in three.js's shader
         // cache, which would compile a parallel program; the shared
         // material expects no vertex colors.
@@ -721,55 +739,12 @@ function Skeleton({
       o.material = treeMaterial
     })
 
-    // Workstage-only wind patch — chains onto the existing
-    // treeAtlasMaterial onBeforeCompile (injectFoliageSway). Brief 7's
-    // Out-of-Scope §6.184 explicitly defers Phase W (production wind in
-    // treeAtlasMaterial) to a separate brief; the wind chunks live here
-    // and are NOT drift because the LS runtime has no wind counterpart.
-    // Injected BEFORE `#include <project_vertex>` so it runs after
-    // injectFoliageSway's `begin_vertex` sway block — adds onto the sway
-    // offsets rather than colliding with them.
-    if (!treeMaterial.userData.__workstageWindPatched) {
-      const prev = treeMaterial.onBeforeCompile
-      treeMaterial.onBeforeCompile = (shader, renderer) => {
-        if (prev) prev(shader, renderer)
-        shader.uniforms.uWsTime         = windUniformsRef.current.uTime
-        shader.uniforms.uWsWindStrength = windUniformsRef.current.uWindStrength
-        shader.vertexShader = shader.vertexShader
-          .replace(
-            '#include <common>',
-            `#include <common>
-             uniform float uWsTime;
-             uniform float uWsWindStrength;`
-          )
-          .replace(
-            '#include <project_vertex>',
-            `// Brief 7 (Cambium): workstage-only wind layered ON TOP of
-             // injectFoliageSway's sway block. aBark (per-vertex, declared
-             // by injectFoliageSway) gates the high-frequency leaf flutter.
-             {
-               float _windH = max(0.0, position.y - 1.0);
-               float _windAmt = _windH * 0.015 * uWsWindStrength;
-               float _windPhase = uWsTime * 1.5;
-               transformed.x += sin(_windPhase) * _windAmt;
-               transformed.z += sin(_windPhase * 0.7 + 1.3) * _windAmt;
-               if (aBark < 0.5) {
-                 float _leafPhase = uWsTime * 8.0
-                   + position.x * 3.7
-                   + position.z * 4.1
-                   + position.y * 2.3;
-                 float _leafAmp = 0.025 * uWsWindStrength;
-                 transformed.x += sin(_leafPhase) * _leafAmp;
-                 transformed.y += sin(_leafPhase * 1.3 + 0.7) * _leafAmp * 0.6;
-                 transformed.z += cos(_leafPhase * 0.9 + 1.1) * _leafAmp;
-               }
-             }
-             #include <project_vertex>`
-          )
-      }
-      treeMaterial.userData.__workstageWindPatched = true
-      treeMaterial.needsUpdate = true
-    }
+    // Brief 9a (Sough): workstage's onBeforeCompile wind chunk is RETIRED
+    // — Phase W wind logic + rustle floor now live in the shared
+    // `treeAtlasMaterial.js#injectFoliageSway` (single path, both
+    // consumers). The workstage drives the wind via `treeSwayUniforms`
+    // uniforms in the useFrame above. `feedback_salon_preview_is_authoring_surface`
+    // is honored — wind effects fire identically here and in LS.
   }, [scene, atlas.treeMaterial])
 
   // Brief 7: apply per-composition bark uniforms each frame. material.user

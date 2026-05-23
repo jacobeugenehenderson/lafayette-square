@@ -4,6 +4,60 @@
 
 ---
 
+## 2026-05-23 — Brief 10 sub-phase A: Aerial bark tier infrastructure (Cork)
+
+**Baby: Cork. Sub-phase A of the four-step view-aware bark arc (Boz drafted, Hazel audited). Pauses here for operator review per the brief's sub-phasing rule; B/C/D queued for separate dispatches.**
+
+What shipped — the **tier-selection seam** the rest of Brief 10 hangs off of:
+
+- `uBarkShaderTier` module-scope uniform in `treeAtlasMaterial.js` (mirrors `treeSwayUniforms`). Default = 1 (hero = current behavior, regression-safe). One mutation propagates to every mounted tree material — LS runtime and every Salon-preview material — because the same `{value}` object is wired into every compiled shader's `uniforms` map.
+- Aerial fragment branch (`uBarkShaderTier < 0.5`): REPLACE bark color with `texture2D(map, gradientUV)` sampled at `vBarkWorldYNorm` (per-vertex normalized chassis Y) modulated by the existing `uBarkGradientHashAmp` axis (same `jh4` — aerial and hero share modulation direction per tree). Detail Overlay + tint contribution are bypassed by the REPLACE. Falls back to hero if no gradient bound, so a no-gradient composition doesn't ship black bark.
+- Hero (tier 1): unchanged. Regression-safe by default.
+- Street (tier 2): currently falls back to hero. 10C will wire the full PBR sample (roughness + optional displacement) into this branch.
+- `aBarkWorldYNorm` per-vertex attribute computed at runtime-merge time per [[project_runtime_merge_vertex_attributes]] (Sough's Brief 9a precedent for `aWindTier`):
+  - `InstancedTrees.jsx#meshes`: chassis-wide bbox scan over the collected primitives BEFORE merge, then stamp each primitive against the shared `(chassisMinY, chassisYRange)`. After `mergeGeometries` the attribute carries forward to the InstancedMesh.
+  - `treeAtlasMaterial.js#stampTreeVertexAttrs`: accepts `fallback.chassisMinY/chassisYRange`; falls back to per-geometry min/max if absent.
+  - `SpecimenViewport.jsx`: scans the scene's meshes once for chassis-wide bbox, passes range into `stampTreeVertexAttrs` so multi-mesh skeletons share normalization with the LS runtime.
+- Debug operator-review affordance: `window.__setBarkShaderTier(n)` sets the shared uniform from devtools. Sub-phase D adds a proper tier-selector overlay in `SpecimenViewport`; cartograph SHOT driver lands in Brief 11.
+
+**Single shader program preserved.** The aerial branch is a uniform-driven `if` inside the existing `<map_fragment>` patch — no `customProgramCacheKey`, no sibling material. Perf gauge `programs` count expected unchanged across all three tier values; operator to verify on review.
+
+**Bake artifacts byte-identical.** No `publish-glb.js` / `bake-look.js` changes in sub-phase A — the new attribute is runtime-only, computed once per GLB load. `trees-atlas.json` + chassis GLBs untouched.
+
+### Surface items (per `feedback_baby_must_surface_scope_drift`)
+
+1. **stampTreeVertexAttrs lives in `treeAtlasMaterial.js`, not `InstancedTrees.jsx`** as the brief's file table implied. The InstancedTrees inline stamp predates Sough's Brief 9a helper; both code paths exist today (LS inline, Salon helper), kept consistent by mirroring the same classifier logic. Adding `aBarkWorldYNorm` here followed the same dual-write pattern; not unified into a single helper yet. **Open follow-up:** consider migrating `InstancedTrees#meshes` to call `stampTreeVertexAttrs` directly (with chassis-wide range) so both consumers go through one helper. Out of scope for sub-phase A; raise during 10B if natural.
+2. **Aerial-tier fallback when no gradient bound.** Brief specified "gradient LUT only" — implementation gracefully degrades to the hero path when `uUseBarkGradient == 0` rather than rendering bark as undefined-sampled-LUT-pixel (probably black or a wrong corner of the atlas). Documented in code + ARCHITECTURE. Operator can override by making aerial-tier gradient authoring mandatory if preferred — surface for decision.
+3. **Aerial fragment cost.** The `<map_fragment>` chunk runs unconditionally (bark color is sampled even in aerial), then we replace with the gradient LUT. The "no bark texture work" benefit is partial — we still pay one bark color sample per aerial fragment. True elision would require `customProgramCacheKey` divergence (forbidden — single-program doctrine). Operator-eye perf review at LS scale will say whether the partial saving suffices.
+4. **Chassis-wide vs per-primitive bbox in preview.** Per-mesh fallback path retained in `stampTreeVertexAttrs` for callers that don't pre-scan. SpecimenViewport now pre-scans and passes chassis-wide, but the fallback covers any future single-mesh consumer paths.
+5. **Where should the operator-facing tier toggle live for 10B/10C testing?** Sub-phase D adds the Salon overlay; LS Stage may also want one for at-scale verification of tier=0 across the full park. Defer to Brief 11 wiring (cartograph SHOTS drive it natively) or add a Stage debug control if at-scale verification is needed before Brief 11 lands.
+
+### Files touched
+
+- `src/components/treeAtlasMaterial.js` — `treeBarkTierUniform` + `setBarkShaderTier`/`window.__setBarkShaderTier`; `uBarkShaderTier` wired into `injectFoliageSway`; `aBarkWorldYNorm` attribute + `vBarkWorldYNorm` varying through vertex; aerial branch in fragment `<map_fragment>` patch; `stampTreeVertexAttrs` extended with chassis-range fallback.
+- `src/components/InstancedTrees.jsx` — chassis-wide bbox scan after the per-primitive stamp loop; `aBarkWorldYNorm` stamped against the shared range.
+- `src/arborist/SpecimenViewport.jsx` — chassis-wide bbox scan over `scene.traverse`; pass `chassisMinY` + `chassisYRange` into `stampTreeVertexAttrs`.
+- `arborist/ARCHITECTURE.md` — new "View-aware bark tiering" subsection in the bark-shader-unification arc.
+- `arborist/BACKLOG.md` — Brief 10 entry with sub-phase A/B/C/D checkboxes; A marked shipped.
+- `arborist/NOTES.md` — this entry.
+
+### Acceptance criteria (sub-phase A)
+
+1. ✅ `uBarkShaderTier` uniform initialized to 1 (hero); operator can flip via `window.__setBarkShaderTier(0|1|2)` from devtools.
+2. ✅ Tier=0 renders aerial path: gradient LUT sampled at per-vertex normalized chassis Y, replaces bark color (when gradient bound).
+3. ✅ Tier=1 renders hero: identical to current Brief 2.1+2.1a behavior (default, no diff vs pre-Cork).
+4. ⏳ Single shader program preserved (perf gauge `programs` count unchanged) — operator to verify on review by checking the workstage `programs` HUD value at tier=0, 1, 2.
+
+### Operator review gate
+
+Pause for operator review before continuing to sub-phase B (posterization + hero substrate swap). Particular questions for review:
+
+- Aerial tier visual readback at LS scale — does the per-tree gradient grade read as intended from overhead?
+- Tier-selection seam shape — `treeBarkTierUniform` as module-scope shared object — does this match how Brief 11 wants to drive it from cartograph SHOTS? (If not, easier to reshape before B/C build on top.)
+- Surface item #2 (aerial graceful fallback to hero when no gradient) — keep as-is, or require gradient at aerial tier?
+
+---
+
 ## 2026-05-22 — Brief 8: Salon canary setter (Linnet)
 
 **Baby: Linnet. Cold dispatch, parallel-safe with Brief 7 (Birch). Closed the Salon → Meteorologist iteration gap.**
@@ -1880,3 +1934,28 @@ Top-level mode toggle in the Arborist app: `[Scan] | [Procedural]`. Procedural m
 - 2-line stale-residue cleanup (`R3FErrorBoundary.jsx` doc-comment, `arborist/SPEC.md:16`) lands in same commit
 
 ---
+
+## 2026-05-23 — Brief 9a — Phase 7a wind, tree-side (Sough)
+
+Phase W ships, tree-side. Cross-helper seam with Meteorologist landed at `src/lib/wind-field.js` (precedent: `src/lib/almanac-eval.js`). ADR at `scratch/wind-contract-phase7a.md` covers the five decisions Sough surfaced before code (S1 directive units, S2 independent gust-front velocity, S3 rustle-floor identity, S4 runtime-merge `aWindTier`, S5 cross-helper scope expansion).
+
+**Shipped:**
+- `src/lib/wind-field.js` — `windAt(t, pos, windState) → {force, intensity}`. Three temporal scales (drift / gust envelope / smoothmax spikes). Independent `gustFrontVelocity` so gust fronts visibly travel. Pure / unit-testable.
+- `treeAtlasMaterial.js` — `injectFoliageSway` formalised as rustle-floor + Phase 7a wind in one shared block; multi-scale damping via `aWindTier`. Phase 5a's `uSwayWindSpeed` + `uSwayWindDir` retired in favor of `uWindForce` + `uWindIntensity` + `uGustFrontVelocity` + `uGustsScale` + `uGustEnvelope` + `uRustleAmplitude`. Single shader program preserved.
+- `InstancedTrees.jsx` — `aWindTier` baked at runtime-merge time from local radius + Y (chassis GLBs + `trees-atlas.json` byte-identical, AC #12). `SwayDriver` rewired to `resolveWindState(tweenedDirective)` → drift + gust uniforms; per-tree advected spike is synthesised in the vertex shader, not on the CPU, so AC #5 (visible gust travel across LS) holds without per-instance per-frame uploads.
+- `stampTreeVertexAttrs` — Salon-preview path mirrors the same `aWindTier` classifier so workstage + LS see identical tier-per-vertex.
+- `SpecimenViewport.jsx` — workstage `userData.__workstageWindPatched` onBeforeCompile patch RETIRED. Workstage drives the same shared `treeSwayUniforms` LS drives. Single vertex path, two consumers (`feedback_salon_preview_is_authoring_surface`).
+- Meteorologist side (scope expansion S5): `directive.schema.json` gains `wind.speed` (m/s) + `wind.gustsScale` (m/s) + `wind.gustEnvelope` ∈ [0,1] + `wind.gustFrontVelocity` ({x,z}) — non-breaking; `wind.scale` preserved for Atmosphere's existing cloud multiplier (Brief 9b will choose whether to retarget it). `AtmosphereDirectiveDriver`'s `lerpDirective` tweens the new fields. `almanac-eval.js` NUMERIC_BOUNDS extended.
+
+**Pattern unlocked.** `aWindTier` is the first runtime-merge per-vertex attribute. Brief 10's `aBarkWorldYNorm` plugs into the same slot — pre-`mergeGeometries`, in `InstancedTrees.jsx#meshes` + `stampTreeVertexAttrs`.
+
+**Scope surfaced + resolved during execution:**
+- Pre-implementation: 5 ADR-level surface items (resolved by operator before code; see ADR).
+- Mid-implementation: GLSL ES branchless per-tier amp/tempo scaling was tempting (table lookup), but the obvious `if`-chain (4 tiers) compiles to the same single program. Kept readable.
+- Spike CPU-vs-shader question: `windAt`'s smoothmax spike is the contract; trees synthesise an equivalent (sin-product-clamped) spike in the vertex shader so spatial advection per tree is preserved without per-frame instance uploads. Atmosphere (Brief 9b) will use the CPU `windAt` directly at camera position — different consumer, same parameter set.
+
+**Open follow-ups (Brief 9b territory):**
+- Atmosphere migration to `windAt(t, cameraPos, ws)`. `wind.scale` semantics decision (keep as cloud multiplier vs retarget onto `speed`).
+- `aWindTier` thresholds (`r > 0.15`, `r > 0.06`) are first-pass. Conifers (narrow lateral branches) might want a per-species override; deferred unless visible.
+- Salon workstage wind toggle direction is fixed east-bound (no preview-only direction knob). Add a slider if iteration calls for it.
+

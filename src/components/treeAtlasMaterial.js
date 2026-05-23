@@ -22,21 +22,59 @@ import { patchTerrainInstanced } from '../utils/terrainShader'
 // tree re-renders.
 const _cache = new Map()  // lookName -> { manifest, barkMaterial, leavesMaterial, status, error }
 
-// Shared sway uniform — single object mutated each frame by the runtime.
-// Using one uniform across all leaves materials means re-baking a Look
-// doesn't drop animation continuity, and there's still only one shader
-// program for leaves regardless of how many Looks have been visited.
+// Shared sway uniforms — single object mutated each frame by the runtime.
+// Both the LS InstancedTrees consumer and the Salon workstage preview
+// write into the SAME object; only one renders at a time (different
+// routes) so they don't fight, and sharing the uniform set keeps the
+// shader program count at one regardless of which surface is active.
+//
+// Brief 9a (Sough, 2026-05-22) — Phase 7a wind contract. Replaces the
+// Phase 5a scalar `uSwayWindSpeed` + `uSwayWindDir` pair (retired) with
+// the wind-field.js contract: a composed force/intensity pair plus the
+// gust-front velocity for spatial advection inside the vertex shader,
+// plus a tiny rustle-floor amplitude.
 export const treeSwayUniforms = {
-  uTime: { value: 0 },
-  // Phase 5a — wind cross-helper subscriber. The driver in
-  // AtmosphereDirectiveDriver.jsx writes directive.wind into these each
-  // frame. uSwayWindSpeed scales the existing time-driven oscillation
-  // (1.0 = today's hardcoded behavior). uSwayWindDir is a unit XZ
-  // vector that biases the sway in the wind's direction (so leaves
-  // lean +wind, not just oscillate symmetrically). Phase 7a will
-  // replace this scalar with a multi-timescale gust envelope.
-  uSwayWindSpeed: { value: 1.0 },
-  uSwayWindDir: { value: new THREE.Vector2(1, 0) },
+  uTime:              { value: 0 },
+  // Composed wind vector (m/s, world-space XZ) from `windAt(t, camera, ws)`.
+  // Direction = unit(uWindForce.xz); amplitude = uWindIntensity.
+  uWindForce:         { value: new THREE.Vector3(0, 0, 0) },
+  uWindIntensity:     { value: 0 },
+  // Spatial advection — vertex shader offsets its phase by
+  // dot(instanceWorldXZ, uGustFrontVelocity.xz) / |front|² so gust fronts
+  // visibly travel through the scene.
+  uGustFrontVelocity: { value: new THREE.Vector3(10, 0, 0) },
+  // Phase 7a gust parameters — vertex shader computes the spike itself
+  // (spatially advected per tree). CPU windAt() is used by non-shader
+  // consumers (Atmosphere in Brief 9b for cloud advection); the tree
+  // shader keeps full per-tree spatial variation by sampling its own
+  // spike phase. Both reach the same answer in expectation.
+  uGustsScale:        { value: 0 },
+  uGustEnvelope:      { value: 0 },
+  // Rustle floor amplitude in metres (operator spec: ~5 mm leaf-tip sway).
+  uRustleAmplitude:   { value: 0.005 },
+}
+
+// Brief 10A (Cork, 2026-05-23) — view-aware bark tier selector. Single
+// uniform gates which fragment path runs on bark fragments:
+//   0 = aerial (gradient-LUT-only, sampled at per-vertex normalized chassis Y)
+//   1 = hero   (current Brief 2.1 + 2.1a path — posterized substrate lands in 10B)
+//   2 = street (full PBR — tier 2 falls back to hero until 10C ships)
+// Promoted to module-scope (mirrors `treeSwayUniforms` pattern) so flipping
+// the value once propagates to BOTH the LS-runtime material and every
+// Salon-preview material simultaneously, with no per-draw plumbing. Honors
+// the single-shader-program doctrine: uniform branch, NOT customProgramCacheKey.
+export const treeBarkTierUniform = { value: 1 }
+
+// Debug setter for sub-phase A operator review — drives the shared uniform.
+// Sub-phase D will replace this with a tier-selector overlay in
+// SpecimenViewport. Window-bound below for devtools access.
+export function setBarkShaderTier(tier) {
+  const t = Number(tier)
+  if (!Number.isFinite(t)) return
+  treeBarkTierUniform.value = Math.max(0, Math.min(2, Math.round(t)))
+}
+if (typeof window !== 'undefined') {
+  window.__setBarkShaderTier = setBarkShaderTier
 }
 
 // Phase B (2026-05-15) — per-(species, draw) bark retint uniforms. These
@@ -57,9 +95,13 @@ export const treeSwayUniforms = {
 // branch and a low one in the same tree share a tint.
 function injectFoliageSway(material) {
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = treeSwayUniforms.uTime
-    shader.uniforms.uSwayWindSpeed = treeSwayUniforms.uSwayWindSpeed
-    shader.uniforms.uSwayWindDir = treeSwayUniforms.uSwayWindDir
+    shader.uniforms.uTime              = treeSwayUniforms.uTime
+    shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
+    shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
+    shader.uniforms.uGustFrontVelocity = treeSwayUniforms.uGustFrontVelocity
+    shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
+    shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
+    shader.uniforms.uRustleAmplitude   = treeSwayUniforms.uRustleAmplitude
     // Per-tree lamp-glow uniform — driven by CartographApp from the
     // per-Look TOD curve (lampGlow.trees slider). The per-instance
     // `aLampGlow` attribute (pre-baked at tree position) carries the
@@ -115,6 +157,12 @@ function injectFoliageSway(material) {
     // no slot is bound.
     shader.uniforms.uBarkTileOffset = { value: new THREE.Vector2(0, 0) }
     shader.uniforms.uBarkTileScale = { value: new THREE.Vector2(1, 1) }
+    // Brief 10A (Cork) — view-aware bark tier. Shared module-scope uniform
+    // object so a single mutation drives every mounted tree material at
+    // once (LS runtime + Salon preview). Aerial path samples the gradient
+    // LUT at per-vertex normalized chassis Y (aBarkWorldYNorm); hero is
+    // the existing path; street currently falls back to hero (10C wires PBR).
+    shader.uniforms.uBarkShaderTier = treeBarkTierUniform
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -129,15 +177,22 @@ function injectFoliageSway(material) {
         '#include <common>',
         `#include <common>
          uniform float uTime;
-         uniform float uSwayWindSpeed;
-         uniform vec2  uSwayWindDir;
+         uniform vec3  uWindForce;
+         uniform float uWindIntensity;
+         uniform vec3  uGustFrontVelocity;
+         uniform float uGustsScale;
+         uniform float uGustEnvelope;
+         uniform float uRustleAmplitude;
          attribute float aLampGlow;
          attribute float aBark;
          attribute float aBarkRegion;
+         attribute float aWindTier;
+         attribute float aBarkWorldYNorm;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
          varying float vBarkRegion;
+         varying float vBarkWorldYNorm;
          varying vec3 vWorldXZ;`
       )
       .replace(
@@ -146,6 +201,7 @@ function injectFoliageSway(material) {
          vLampGlow = aLampGlow;
          vBark = aBark;
          vBarkRegion = aBarkRegion;
+         vBarkWorldYNorm = aBarkWorldYNorm;
          // Canopy weight: hard-zero on the trunk, ramping in only above
          // the canopy break. Earlier 1.5→4.0 left ~20% contribution at 2m
          // which still showed as a faint trunk stripe. 3.0→4.5 gives a
@@ -165,22 +221,98 @@ function injectFoliageSway(material) {
            #endif
            float phase = instWorld.x * 0.05 + instWorld.z * 0.07;
            float h = max(position.y, 0.0);
-           // Phase 5a: scalar wind. uSwayWindSpeed scales the time
-           // basis (gentle 1.0 today → faster oscillation under stronger
-           // wind). uSwayWindDir biases the sway so leaves lean toward
-           // the wind direction (constant offset proportional to speed)
-           // on top of the symmetric oscillation. Phase 7a replaces with
-           // a multi-timescale gust envelope.
-           float swayAmp = 0.04;
-           float t = uTime * (0.6 + 0.4 * (uSwayWindSpeed - 1.0));
-           float swayX = sin(t + phase) * swayAmp * h;
-           float swayZ = cos(t * 0.83 + phase * 1.3) * swayAmp * h;
-           // Static lean — small offset in the wind direction proportional
-           // to speed. Keeps the canopy's neutral position slightly
-           // tipped under sustained wind.
-           float lean = clamp((uSwayWindSpeed - 1.0) * 0.25, -0.6, 0.6) * swayAmp * h;
-           transformed.x += swayX + uSwayWindDir.x * lean;
-           transformed.z += swayZ + uSwayWindDir.y * lean;
+           // ── Brief 9a (Sough): two-layer wind composition ──────────────
+           // RUSTLE FLOOR — deterministic per-(instance, vertex) noise,
+           // always on, very small (~5 mm at leaf tier). Per the operator's
+           // 2026-05-22 spec: "a very subtle 'rustle' as the 'floor' for
+           // ambient 'life'." Calm weather → only this layer is visible.
+           //
+           // Per-tier amplitude scale (aWindTier: 0=trunk, 1=branch,
+           // 2=twig, 3=leaf — assigned at runtime-merge time in
+           // InstancedTrees.jsx). Trunks stay still; leaves flutter.
+           float ampScale;
+           if (aWindTier < 0.5)      ampScale = 0.05;  // trunk
+           else if (aWindTier < 1.5) ampScale = 0.30;  // branch
+           else if (aWindTier < 2.5) ampScale = 0.60;  // twig
+           else                      ampScale = 1.00;  // leaf
+           float tempoScale;
+           if (aWindTier < 0.5)      tempoScale = 0.7;
+           else if (aWindTier < 1.5) tempoScale = 1.0;
+           else if (aWindTier < 2.5) tempoScale = 1.3;
+           else                      tempoScale = 1.6;
+           {
+             float rt = uTime * 2.5 * tempoScale;
+             float rphase = phase + position.y * 0.3;
+             vec2 rustle = vec2(
+               sin(rt + rphase),
+               sin(rt * 0.83 + rphase * 1.4 + 1.7)
+             ) * uRustleAmplitude * ampScale * h;
+             transformed.xz += rustle;
+           }
+           // DIRECTIVE WIND — sampled from wind-field.js#windAt on the
+           // CPU side; uWindForce already encodes direction × intensity
+           // (m/s, XZ-plane). Vertex shader applies spatial advection so
+           // gust fronts visibly travel across the scene at
+           // |uGustFrontVelocity| m/s. Multi-scale damping per aWindTier.
+           //
+           // Composition is additive on top of the rustle floor — calm
+           // weather has uWindIntensity ≈ 0 and this block contributes
+           // ~nothing; storm weather swamps the floor.
+           {
+             // Spatial advection: phase-offset proportional to position
+             // along the gust-front direction. Far-upwind trees lead
+             // far-downwind trees by Δd/|front| seconds. The gust
+             // contribution alone uses this offset; the drift component
+             // is spatially uniform (all trees feel the same baseline).
+             float frontLenSq = dot(uGustFrontVelocity.xz, uGustFrontVelocity.xz);
+             float phaseOffset = (frontLenSq > 1e-4)
+               ? dot(instWorld.xz, uGustFrontVelocity.xz) / frontLenSq
+               : 0.0;
+             // Drift (uniform across scene) — uses raw uTime.
+             float wtDrift = uTime;
+             // Gust spike (per-tree advected) — uses offset uTime.
+             float wtGust  = uTime - phaseOffset;
+             // Direction of horizontal sway: prefer the composed wind
+             // direction; fall back to gust-front direction if drift is
+             // zero (calm with active gust front — unusual but possible
+             // under e.g. a thunderstorm outflow).
+             vec2 windDirXZ;
+             if (uWindIntensity > 1e-3) {
+               windDirXZ = uWindForce.xz / uWindIntensity;
+             } else if (frontLenSq > 1e-4) {
+               windDirXZ = uGustFrontVelocity.xz / sqrt(frontLenSq);
+             } else {
+               windDirXZ = vec2(0.0);
+             }
+             // Sway amplitude: drift component (constant intensity) +
+             // spike component (per-tree advected). The 0.012 converts
+             // m/s of wind into roughly metres of leaf-tip sway per
+             // metre of height — tuned for the operator's "flutter
+             // visibly but trunks barely move" target.
+             //
+             // Spike: cheap noise-product gated by max(_,0) to give the
+             // smoothmax-shaped sharp positive spikes the CPU windAt
+             // produces. Spatial correlation length ~100 m (0.01 m⁻¹).
+             float spikePhase  = wtGust * 1.5 + instWorld.x * 0.01 + instWorld.z * 0.007;
+             float spikeRaw    = sin(spikePhase) * 0.6
+                               + sin(spikePhase * 1.7 + 1.3) * 0.3
+                               + sin(spikePhase * 0.31 + 0.7) * 0.1;
+             float spikeShape  = max(spikeRaw - 0.35, 0.0) * 2.2;
+             float gustAmp     = uGustsScale * uGustEnvelope * spikeShape;
+             float driftOsc    = sin(wtDrift * tempoScale + phase);
+             float gustOsc     = sin(wtGust  * tempoScale * 1.9 + phase * 1.7);
+             // Drift sway scales with intensity; gust sway is its own
+             // amplitude on top. Both pass through the per-tier ampScale.
+             float swayMps     = uWindIntensity * driftOsc + gustAmp * gustOsc;
+             float swayMetres  = ampScale * swayMps * 0.012 * h;
+             transformed.xz += windDirXZ * swayMetres;
+             // Static lean — small constant offset toward wind dir
+             // proportional to total intensity. Sustained wind tips
+             // the canopy; trunks barely lean (heavy damping); leaves
+             // lean a lot.
+             float leanMps     = uWindIntensity + gustAmp * 0.5;
+             transformed.xz += windDirXZ * (ampScale * leanMps * 0.012 * h * 0.3);
+           }
            // Per-instance world-XZ for fragment hue jitter. We sample the
            // instance translation column (constant within a draw) so every
            // fragment of one tree gets ONE jitter value, not noise per
@@ -212,10 +344,12 @@ function injectFoliageSway(material) {
          uniform float uBarkDetailStrength;
          uniform vec2  uBarkTileOffset;
          uniform vec2  uBarkTileScale;
+         uniform float uBarkShaderTier;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
          varying float vBarkRegion;
+         varying float vBarkWorldYNorm;
          varying vec3  vWorldXZ;`
       )
       .replace(
@@ -289,6 +423,28 @@ function injectFoliageSway(material) {
            vec3 ovHi = 1.0 - 2.0 * (1.0 - barkColor) * (1.0 - detailSample);
            vec3 composite = mix(ovLo, ovHi, step(vec3(0.5), barkColor));
            barkColor = mix(barkColor, composite, uBarkDetailStrength);
+           // Brief 10A (Cork) — view-aware bark tier branch.
+           //   tier 0 (aerial) → REPLACE barkColor with gradient LUT sampled
+           //     at per-vertex normalized chassis Y. Strip the bark-texture +
+           //     detail-composite contribution entirely; the aerial path is
+           //     "no bark texture work, just a vertical color grade." Per-tree
+           //     hash modulation rides via the existing uBarkGradientHashAmp
+           //     (same jh4 axis as the hero luminance path, so a tree's
+           //     aerial and hero presentations share the same modulation
+           //     direction). Falls back to the hero path if no gradient is
+           //     bound (uUseBarkGradient == 0) — aerial tier requires gradient
+           //     authoring, but this avoids shipping black bark on a
+           //     no-gradient composition.
+           //   tier 1 (hero) → keep barkColor as composed above.
+           //   tier 2 (street) → currently falls back to hero; sub-phase 10C
+           //     wires the full-PBR path with roughness + (optional) displacement.
+           // Single shader program preserved (uniform-driven mix, no #defines).
+           if (uBarkShaderTier < 0.5 && uUseBarkGradient > 0.5) {
+             float aerialT = clamp(vBarkWorldYNorm + (jh4 - 0.5) * uBarkGradientHashAmp, 0.0, 1.0);
+             vec2 aerialLutUV = vec2(aerialT, 0.5) * uBarkGradientTileScale + uBarkGradientTileOffset;
+             vec3 aerialBark = texture2D(map, aerialLutUV).rgb;
+             barkColor = aerialBark;
+           }
            diffuseColor.rgb = mix(diffuseColor.rgb, barkColor, vBark);
          }`
       )
@@ -598,6 +754,58 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
     // instance baked attribute via InstancedBufferAttribute.
     const arr = new Float32Array(pos.count)
     geometry.setAttribute('aLampGlow', new THREE.BufferAttribute(arr, 1))
+  }
+  // Brief 9a (Sough) — per-vertex wind tier for multi-scale sway. Mirrors
+  // InstancedTrees.jsx's classifier so Salon preview and LS see the same
+  // tier per vertex. Leaves: tier 3. Bark: tier from radial distance
+  // around the tree's local Y-axis (trunk ≈ X=Z=0 thanks to clean
+  // chassis-bake coordinate frame). Stamped once per geometry.
+  if (!geometry.attributes.aWindTier) {
+    const arr = new Float32Array(pos.count)
+    const isBark = atlasKind === 'bark'
+    if (!isBark) {
+      arr.fill(3)
+    } else {
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i)
+        const y = pos.getY(i)
+        const z = pos.getZ(i)
+        const r = Math.sqrt(x * x + z * z)
+        let tier
+        if (r > 0.15 && y < 3.0) tier = 0
+        else if (r > 0.06)       tier = 1
+        else                     tier = 2
+        arr[i] = tier
+      }
+    }
+    geometry.setAttribute('aWindTier', new THREE.BufferAttribute(arr, 1))
+  }
+  // Brief 10A (Cork) — per-vertex normalized chassis Y for the aerial-tier
+  // gradient sample. Same runtime-merge slot Sough's aWindTier (Brief 9a)
+  // established: stamped once per geometry-load, bake artifacts untouched.
+  // `fallback.chassisMinY` / `fallback.chassisYRange` let callers pass a
+  // chassis-wide range so multiple primitives of one tree share normalization
+  // (LS runtime computes this across the merged-chassis bbox); when absent,
+  // we fall back to per-geometry min/max (sufficient for Salon's single-
+  // skeleton preview).
+  if (!geometry.attributes.aBarkWorldYNorm) {
+    const arr = new Float32Array(pos.count)
+    let minY = fallback.chassisMinY
+    let range = fallback.chassisYRange
+    if (!Number.isFinite(minY) || !Number.isFinite(range) || range < 1e-6) {
+      let lo = Infinity, hi = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i)
+        if (y < lo) lo = y
+        if (y > hi) hi = y
+      }
+      minY = lo
+      range = Math.max(hi - lo, 1e-6)
+    }
+    for (let i = 0; i < pos.count; i++) {
+      arr[i] = (pos.getY(i) - minY) / range
+    }
+    geometry.setAttribute('aBarkWorldYNorm', new THREE.BufferAttribute(arr, 1))
   }
 }
 

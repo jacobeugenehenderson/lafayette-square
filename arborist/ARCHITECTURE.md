@@ -229,6 +229,22 @@ Runtime classifies each cylinder by radius at bake time → assigns `aBark` attr
 
 **Carrier (locked Cycle 2 Stage 1):** primitive split. `bake-tree.py` emits a `trimesh.Scene` with two named geometries `trunkBark` + `branchBark` (radius ≥ median → trunk, sections=8; else branch, sections=6). `lidar-publish.js` attaches the per-region Bark photo packs as `baseColorTexture` + `normalTexture` on the matching materials so `atlas-survey.js` picks them up (without a `baseColorTexture` it'd skip the material entirely). `bake-look.js`'s atlas pass reads `mesh.getName()` to stamp `extras.barkRegion: 'trunk'|'branch'` alongside `extras.atlasKind: 'bark'`. `InstancedTrees.jsx` reads `geometry.userData.barkRegion` at runtime merge time, stamps a per-vertex `aBarkRegion` (1=trunk, 0=branch). The fragment shader gates region selection via `uBarkRegionSplit` (per-draw uniform: 1 enables region, 0 falls back to legacy single-spec). Stage 2's Configuration D will add a third+fourth primitive category (`canopyCard` outer-shell + inner-mass points) — the GLB structure inherits cleanly since each category is its own primitive with its own mesh-name marker.
 
+### View-aware bark tiering (Brief 10 — sub-phase A SHIPPED 2026-05-23 by Cork)
+
+`project_view_aware_baking` applied to the bark surface. One uniform — `uBarkShaderTier` — selects the fragment path per bark fragment; same compiled program serves all tiers (Bloom-stable, single-program-doctrine preserved). Three tiers map to three view classes:
+
+| Tier | Fragment work | Atlas inputs | Status |
+|---|---|---|---|
+| **0 — Aerial** | Gradient LUT sampled at per-vertex normalized chassis Y; REPLACE bark color | gradient LUT only (no bark color, no detail, no PBR sample work) | shipped (10A) |
+| **1 — Hero** | Brief 2.1 luminance-gradient REPLACE + Brief 2.1a detail Overlay composite | gradient LUT + bark color + bark detail | shipped (10A — current default) |
+| **2 — Street** | Full vendor PBR (color + normal + roughness + optional displacement) | gradient LUT + bark color + bark roughness/displacement | falls back to tier 1 until 10C |
+
+**Tier uniform shape (locked sub-phase A).** `treeBarkTierUniform` lives at module scope in `treeAtlasMaterial.js` (mirrors `treeSwayUniforms`); every mounted tree material — LS runtime and Salon preview — shares the same `value`, so flipping it once propagates everywhere. Sub-phase A exposes a debug setter via `window.__setBarkShaderTier(n)`; sub-phase D adds the Salon tier-selector overlay; Brief 11 wires the cartograph SHOT driver. The uniform is the frozen seam.
+
+**Per-vertex normalized chassis Y (`aBarkWorldYNorm`).** The aerial path samples the gradient LUT at `t = vBarkWorldYNorm` (with the existing `uBarkGradientHashAmp` cross-tree modulation). The per-vertex attribute is computed at runtime-merge time in `InstancedTrees.jsx` (chassis-wide bbox over the merged geometries) and in `stampTreeVertexAttrs` (Salon preview path, with chassis-wide fallback passed by `SpecimenViewport`). Per `project_runtime_merge_vertex_attributes` — Sough's Brief 9a precedent (`aWindTier`) — chassis GLBs and `trees-atlas.json` stay byte-identical; the attribute is runtime-only.
+
+**Aerial gracefully falls back to hero** when no gradient is bound (`uUseBarkGradient == 0`) — aerial requires gradient authoring but no-gradient compositions render the hero path rather than ship black bark.
+
 ### Bark tile wrap is the open shader question (Phase B.2 — deferred)
 
 The `fract`-inside-atlas wrap has unavoidable derivative discontinuity at wrap lines — narrow blurry stripes that "crawl" at close-up Hero. Proper fixes (one of):
@@ -534,6 +550,23 @@ Cross-helper seam for the Meteorologist's CanaryScene hero tree. Mirrors the hel
 - **Store posture.** `useArboristStore` doesn't hold canary state; it exposes one pure side-effect action `setSalonCanary(species, slot, lookId)` that writes localStorage and dispatches a synthetic `StorageEvent` so same-tab listeners (the Salon active-canary indicator) react too. Same-tab needs the synthetic event because browsers fire `storage` in OTHER tabs only. Meteorologist owns the read.
 - **No auto-rewrite on Look switch.** Stale `lookId` is intentional — operator re-clicks to refresh. Auto-update is a future-design call per the Meteorologist contract.
 - **Independent ship halves.** Arborist (writer) and Meteorologist (reader) land separately; the contract is the only coupling.
+
+---
+
+## Arborist ↔ Meteorologist wind contract (Phase 7a / Brief 9a, 2026-05-22)
+
+Second frozen seam between the helpers (after the canary contract). Same discipline: no helper-to-helper imports; both helpers import `src/lib/wind-field.js`. ADR at `scratch/wind-contract-phase7a.md` records the design decisions (S1–S5).
+
+- **The module.** `src/lib/wind-field.js` exports `windAt(t, pos, windState) → { force: Vector3 (m/s), intensity: number (m/s) }`, plus `resolveWindState(directive)` and `defaultWindState()`. Pure — identical inputs return identical outputs, no global state.
+- **Three temporal scales composed inside `windAt`.** (1) DRIFT = `baseDirection × baseSpeedMps`, scene-uniform. (2) GUST ENVELOPE — a [0,1] slow modulator (~30s period) authored by Phase 6 modulators. (3) GUST SPIKES — `smoothmax`-shaped 1–2 s spikes whose phase is offset per `pos` by `dot(pos, gustFrontVelocity)/|front|²` seconds, so spikes visibly travel across the scene at `|gustFrontVelocity|`.
+- **`windState` shape (publisher contract).** `{ baseSpeedMps, baseDirection: Vector3, gustsScale, gustEnvelope, gustFrontVelocity: Vector3 }`. Resolved from the existing tweened directive channel — no new store key, no new React context.
+- **Independent gust-front velocity (ADR S2).** `gustFrontVelocity` is independent of base wind, default `baseDirection × 10 m/s`; modulators may author it. Real-world outflow boundaries can outrun ambient wind, and the richer model is the architectural extension (`feedback_spec_compression`).
+- **Tree consumer (`InstancedTrees.jsx` + shared `treeAtlasMaterial.js`).** Per-frame `SwayDriver` calls `resolveWindState(tweenedDirective)`, writes drift force + gust parameters into `treeSwayUniforms`. The vertex shader synthesises its own per-tree spatially-advected gust spike from `uGustsScale` + `uGustEnvelope` + `uGustFrontVelocity` — the spatial advection (AC #5) lives in the shader, not the CPU sample point. Multi-scale damping per `aWindTier` (0=trunk, 1=branch, 2=twig, 3=leaf).
+- **`aWindTier` is runtime-merged (ADR S4).** Classified per vertex in `InstancedTrees.jsx#meshes` (LS path) and `stampTreeVertexAttrs` (Salon preview path) from local radial distance + Y. Chassis GLBs and `trees-atlas.json` stay byte-identical — the attribute materializes at merge time, not bake time. Pattern is the slot Brief 10's `aBarkWorldYNorm` will also use.
+- **Rustle floor is `injectFoliageSway` (ADR S3).** Always-on, ~5 mm leaf-tip noise gated by `uRustleAmplitude`. Operator-stated 2026-05-22: "very subtle 'rustle' as the 'floor' for ambient 'life'." Wind sway composes additively on top. Calm-weather scene shows rustle floor only; storm swamps it.
+- **Retired uniforms.** Phase 5a's `uSwayWindSpeed` + `uSwayWindDir` are removed from the tree side (replaced by `uWindForce`/`uWindIntensity`). Atmosphere still owns `uWindScale`/`uWindDir` for its own cloud advection — Brief 9b retargets Atmosphere onto `windAt` too.
+- **Single shader program preserved.** All new logic is uniform-driven; no `#define` branches, no parallel materials. Bloom remains stable.
+- **Salon preview parity (`feedback_salon_preview_is_authoring_surface`).** SpecimenViewport's former `userData.__workstageWindPatched` onBeforeCompile patch is RETIRED — the workstage drives the same shared `treeSwayUniforms` the LS runtime drives. One vertex path, two consumers.
 
 ---
 

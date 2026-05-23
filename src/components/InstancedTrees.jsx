@@ -23,6 +23,7 @@ import { useTreeAtlas, treeSwayUniforms, applyBarkUniforms } from './treeAtlasMa
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
+import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -122,9 +123,72 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
       const aBarkRegionArr = new Float32Array(pos.count)
       if (barkRegion === 'trunk') aBarkRegionArr.fill(1)
       g.setAttribute('aBarkRegion', new THREE.BufferAttribute(aBarkRegionArr, 1))
+      // Brief 9a (Sough) per-vertex wind tier (0=trunk, 1=branch, 2=twig,
+      // 3=leaf) — drives multi-scale damping in the shared shader's sway
+      // block. Computed at runtime-merge time so chassis GLBs +
+      // trees-atlas.json stay byte-identical (AC #12). Leaves always get
+      // tier 3; bark vertices classify by radial distance from the
+      // tree-local Y-axis (we read g.attributes.position AFTER applyMatrix4,
+      // so XZ is tree-local thanks to the bake's clean coordinate frame —
+      // trunks sit at X≈Z≈0). Pattern reusable for Brief 10's
+      // aBarkWorldYNorm — same runtime-merge slot.
+      const aWindTierArr = new Float32Array(pos.count)
+      const gpos = g.attributes.position
+      if (!isBark) {
+        // Leaf cards: tier 3 unconditionally.
+        aWindTierArr.fill(3)
+      } else {
+        for (let i = 0; i < gpos.count; i++) {
+          const x = gpos.getX(i)
+          const y = gpos.getY(i)
+          const z = gpos.getZ(i)
+          const r = Math.sqrt(x * x + z * z)
+          // Thresholds tuned against the v1.5 chassis stock (alaskan_cedar,
+          // broadleaf_rt3, generic_leaf_tree, etc.) — trunk radii sit at
+          // ~0.15–0.5m, secondary branches 0.05–0.15m, twigs <0.05m. The
+          // Y<3.0 gate on trunk-class prevents tall thick trunks above
+          // ~3m being misread as twigs.
+          let tier
+          if (r > 0.15 && y < 3.0) tier = 0  // trunk
+          else if (r > 0.06)       tier = 1  // major branch
+          else                     tier = 2  // twig
+          aWindTierArr[i] = tier
+        }
+      }
+      g.setAttribute('aWindTier', new THREE.BufferAttribute(aWindTierArr, 1))
       collected.push(g)
     })
     if (collected.length === 0) return []
+
+    // Brief 10A (Cork) — per-vertex normalized chassis Y for the aerial-tier
+    // bark gradient (`aBarkWorldYNorm` → fragment `vBarkWorldYNorm` →
+    // gradient LUT sample). The brief specifies chassis-wide normalization
+    // (not per-primitive), so we scan ALL collected geometries for the
+    // chassis Y range first, then stamp each primitive against the shared
+    // (chassisMinY, chassisYRange). The aWindTier classifier above runs
+    // per-primitive against local XZ — independent of this; both stamps
+    // share the runtime-merge slot per project_runtime_merge_vertex_attributes
+    // (Sough's Brief 9a precedent). Chassis GLBs + trees-atlas.json stay
+    // byte-identical.
+    let chassisMinY = Infinity, chassisMaxY = -Infinity
+    for (const g of collected) {
+      const gp = g.attributes.position
+      for (let i = 0; i < gp.count; i++) {
+        const y = gp.getY(i)
+        if (y < chassisMinY) chassisMinY = y
+        if (y > chassisMaxY) chassisMaxY = y
+      }
+    }
+    const chassisYRange = Math.max(chassisMaxY - chassisMinY, 1e-6)
+    for (const g of collected) {
+      if (g.attributes.aBarkWorldYNorm) continue
+      const gp = g.attributes.position
+      const arr = new Float32Array(gp.count)
+      for (let i = 0; i < gp.count; i++) {
+        arr[i] = (gp.getY(i) - chassisMinY) / chassisYRange
+      }
+      g.setAttribute('aBarkWorldYNorm', new THREE.BufferAttribute(arr, 1))
+    }
 
     // Verify all geometries share the same attribute keys before merging.
     // If something diverges (rare, but a future tree variant could ship
@@ -267,19 +331,29 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   )
 }
 
+// Brief 9a (Sough) — wind-field consumer. Resolves the directive into a
+// `windState` once per frame via the shared wind-field.js seam, then
+// writes the drift component + gust parameters into the shared sway
+// uniforms. The vertex shader synthesises its own per-tree spatially-
+// advected gust spikes from `uGustsScale` + `uGustEnvelope` +
+// `uGustFrontVelocity`, so spatial advection (AC #5) is preserved
+// without uploading per-instance attributes per frame.
+const _swayWindState = defaultWindState()
+
 function SwayDriver() {
   useFrame((_, delta) => {
     treeSwayUniforms.uTime.value += delta
-    // Phase 5a — pull wind from the live directive. directive.wind.dir
-    // is meteorological FROM-bearing; convert to TO unit vector in XZ
-    // (+X east, +Z south in three's world frame). Falls back to gentle
-    // east-ward sway when no directive has resolved yet.
     const directive = useAtmosphere.getState().tweenedDirective
-    if (directive?.wind) {
-      treeSwayUniforms.uSwayWindSpeed.value = directive.wind.scale ?? 1.0
-      const fromRad = ((directive.wind.dir ?? 0) * Math.PI) / 180
-      treeSwayUniforms.uSwayWindDir.value.set(-Math.sin(fromRad), -Math.cos(fromRad))
-    }
+    resolveWindState(directive, _swayWindState)
+    // Drift = baseDirection × baseSpeedMps (constant across the scene).
+    treeSwayUniforms.uWindForce.value
+      .copy(_swayWindState.baseDirection)
+      .multiplyScalar(_swayWindState.baseSpeedMps)
+    treeSwayUniforms.uWindIntensity.value = _swayWindState.baseSpeedMps
+    // Gust parameters drive the shader's per-tree spike computation.
+    treeSwayUniforms.uGustFrontVelocity.value.copy(_swayWindState.gustFrontVelocity)
+    treeSwayUniforms.uGustsScale.value   = _swayWindState.gustsScale
+    treeSwayUniforms.uGustEnvelope.value = _swayWindState.gustEnvelope
   })
   return null
 }
