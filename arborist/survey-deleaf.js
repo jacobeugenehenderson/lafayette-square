@@ -23,6 +23,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
+import { classifyPrim, buildMeshAncestorNames } from './atlas-kind-classifier.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -41,82 +42,11 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
 
 const DRY_RUN = process.argv.includes('--dry-run')
 
-// ── Classification heuristic (Brief 0 spec, first match wins) ──────────────
-// LEAF if:
-//   0. any ancestor node name matches /leaf|leaves|foliage/i — catches the
-//      C4D "SG" selection-group convention (`LeavesSG`, `FoliageSG`) the
-//      vendor preserves through FBX→GLB export even when all primitives
-//      share a single bark-named material. Tilia/EuropeanLinden was the
-//      tell (`BranchesSG / CapsSG / LeavesSG` all bound to
-//      `EuropeanLindenBark_Mat`). Node-name rule is STRICTLY tighter than
-//      the material rule below — no `branch` here (BranchesSG is wood).
-//   1. material name matches /leaf|leaves|foliage|leafCard|branch/i
-//      (note: `branch` here aligns with atlas-survey.js:34 — bomi1337-style
-//       vendor packs use `Branches_*` for leaf-card clusters, not bark.
-//       Per feedback_classifier_keyword_cross_check, classifier disagreements
-//       across sibling files must be reconciled; we adopt atlas-survey's precedent.)
-//   2. geometry.userData.atlasKind === 'leaf' (i.e. primitive extras)
-//   3. alphaMode in (MASK, BLEND) AND vertex count < 5000
-//   4. avg tri area < 0.001 m² AND tri count > 100
-// WOOD if:
-//   0. any ancestor node name matches /branch(es)?|caps?|trunk|wood|bark|stem/i
-//      — symmetric to LEAF rule 0, same C4D "SG" convention. `Caps`/`CapsSG`
-//      catches branch end-caps (visible cross-section discs where branches
-//      terminate — common stylistic detail across vendor packs, geometry is
-//      wood despite the obscure per-cap material names like `cap_03_mat`).
-//      LEAF checks above run first so a hypothetical `LeafBranch` ancestor
-//      would still classify LEAF.
-//   1. material name matches /bark|trunk|wood|stem/i
-//   2. primitive extras atlasKind === 'bark'
-//   3. opaque (no alphaMode set OR alphaMode === 'OPAQUE') AND material has a
-//      normal map texture binding
-// otherwise AMBIGUOUS.
-function classifyPrim(prim, ancestorNodeNames = []) {
-  const mat = prim.getMaterial()
-  const matName = (mat?.getName() || '').toLowerCase()
-  const alphaMode = mat?.getAlphaMode() || 'OPAQUE'
-  const extras = prim.getExtras() || {}
-
-  const posAttr = prim.getAttribute('POSITION')
-  const vcount = posAttr ? posAttr.getCount() : 0
-  const idx = prim.getIndices()
-  const tcount = idx ? Math.floor(idx.getCount() / 3) : Math.floor(vcount / 3)
-  const hasNormal = !!mat?.getNormalTexture()
-  const avgTriArea = (tcount > 100 && posAttr && idx) ? avgTriangleArea(posAttr, idx) : null
-
-  const base = { matName: mat?.getName() || '<unnamed>', alphaMode, vcount, tcount, hasNormal, avgTriArea }
-  const mk = (cls, why) => ({ cls, why, ...base })
-
-  // Explicit name / extras signals run FIRST — Brief 5 (Tendril, 2026-05-22)
-  // re-ordering. Previously LEAF rule 4 (avgTriArea < 0.001 + tcount > 100)
-  // ran before WOOD matName, which mis-fired on Robinia at vendor cm→m
-  // scale: every prim's absolute tri area is microscopic (bark + leaf alike),
-  // so geometric fallback shouldn't beat an explicit "bark" mat-name. Per
-  // `feedback_classifier_keyword_cross_check`, name signals are the strong
-  // axis; geometric heuristics are only a fallback for unnamed material slots.
-  if (ancestorNodeNames.some(n => /leaf|leaves|foliage/i.test(n))) {
-    return mk('LEAF', 'nodeName')
-  }
-  if (ancestorNodeNames.some(n => /branch(es)?|caps?|trunk|wood|bark|stem/i.test(n))) {
-    return mk('WOOD', 'nodeName')
-  }
-  if (/leaf|leaves|foliage|leafcard|branch/.test(matName)) return mk('LEAF', 'matName')
-  if (/bark|trunk|wood|stem/.test(matName)) return mk('WOOD', 'matName')
-  if (extras.atlasKind === 'leaf') return mk('LEAF', 'extras')
-  if (extras.atlasKind === 'bark') return mk('WOOD', 'extras')
-
-  // Geometric / material-property fallbacks — for prims whose mat names + node
-  // ancestry give us no signal. Brief-0 heuristics, unchanged in intent.
-  if ((alphaMode === 'MASK' || alphaMode === 'BLEND') && vcount < 5000) {
-    return mk('LEAF', `alphaMode=${alphaMode} vcount=${vcount}<5000`)
-  }
-  if (avgTriArea !== null && avgTriArea < 0.001 && tcount > 100) {
-    return mk('LEAF', `avgTriArea=${avgTriArea.toExponential(2)} tcount=${tcount}`)
-  }
-  if (alphaMode === 'OPAQUE' && hasNormal) return mk('WOOD', 'opaque+normalMap')
-
-  return mk('AMBIGUOUS', `mat="${matName}" alpha=${alphaMode} v=${vcount} normalMap=${hasNormal}`)
-}
+// Classification (LEAF / WOOD / AMBIGUOUS) lives in `atlas-kind-classifier.js`
+// since 2026-05-23 (Brief 6.2, Adze) — publish-glb.js also stamps atlasKind
+// from this classifier so Spindle's Lever 3 + Adze's Lever 5 can gate on
+// `extras.atlasKind` without re-implementing the keyword set in two places
+// (per [[feedback_classifier_keyword_cross_check]]).
 
 // Brief 5 (Tendril): dispose vendor textures bound to a leaf material so the
 // chassis GLB doesn't ship a ~50MB vendor leaf atlas. Salon rebinds
@@ -145,63 +75,7 @@ function stripMaterialTextures(mat) {
   }
 }
 
-function avgTriangleArea(posAttr, idx) {
-  const pos = posAttr.getArray()
-  const indices = idx.getArray()
-  const n = indices.length
-  if (n < 3) return 0
-  let total = 0, count = 0
-  // Sample to keep this O(1) on huge meshes — 1000 evenly-spaced triangles.
-  const stride = Math.max(1, Math.floor((n / 3) / 1000))
-  for (let i = 0; i + 2 < n / 3; i += stride) {
-    const a = indices[i * 3] * 3
-    const b = indices[i * 3 + 1] * 3
-    const c = indices[i * 3 + 2] * 3
-    const ax = pos[a], ay = pos[a + 1], az = pos[a + 2]
-    const bx = pos[b], by = pos[b + 1], bz = pos[b + 2]
-    const cx = pos[c], cy = pos[c + 1], cz = pos[c + 2]
-    const ux = bx - ax, uy = by - ay, uz = bz - az
-    const vx = cx - ax, vy = cy - ay, vz = cz - az
-    const nx = uy * vz - uz * vy
-    const ny = uz * vx - ux * vz
-    const nz = ux * vy - uy * vx
-    total += 0.5 * Math.sqrt(nx * nx + ny * ny + nz * nz)
-    count++
-  }
-  return count > 0 ? total / count : 0
-}
-
-// Build a mesh → [ancestor-node-name, ...] map by walking every scene's node
-// tree. A mesh referenced by N nodes contributes N ancestry chains; we flatten
-// them so the leaf classifier sees ANY referencing node's ancestor names. Also
-// catches orphan-rooted nodes (per Sorrel's note on `candicands_b`).
-function buildMeshAncestorNames(doc) {
-  const out = new Map()
-  function record(mesh, names) {
-    if (!mesh) return
-    if (!out.has(mesh)) out.set(mesh, [])
-    for (const n of names) if (n) out.get(mesh).push(n)
-  }
-  function walk(node, ancestry) {
-    const next = [...ancestry, node.getName() || '']
-    record(node.getMesh(), next)
-    for (const child of node.listChildren()) walk(child, next)
-  }
-  const inScene = new Set()
-  for (const scene of doc.getRoot().listScenes()) {
-    for (const root of scene.listChildren()) {
-      const collect = (n) => { inScene.add(n); n.listChildren().forEach(collect) }
-      collect(root)
-    }
-    for (const root of scene.listChildren()) walk(root, [])
-  }
-  for (const node of doc.getRoot().listNodes()) {
-    if (!inScene.has(node) && node.getMesh()) {
-      record(node.getMesh(), [node.getName() || ''])
-    }
-  }
-  return out
-}
+// avgTriangleArea + buildMeshAncestorNames live in atlas-kind-classifier.js.
 
 // ── Name resolution ────────────────────────────────────────────────────────
 function commonNameSlug(speciesId, label) {

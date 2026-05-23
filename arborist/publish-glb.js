@@ -28,7 +28,8 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { cloneDocument, dedup, prune, weld, simplify, textureCompress } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
 import { rebuildIndex } from './build-index.js'
-import { decimateLeafPrimitives, loadDecimationConfig } from './decimate-tree.mjs'
+import { decimateLeafPrimitives, decimateBarkPrimitives, loadDecimationConfig } from './decimate-tree.mjs'
+import { stampAtlasKind } from './atlas-kind-classifier.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -729,15 +730,41 @@ async function main() {
     const fallbackTouched = fallbackColorsForUnboundMaterials(variantDoc)
     if (fallbackTouched) console.log(`  fallback color set on ${fallbackTouched} unbound material(s)`)
 
+    // Brief 6.2 (Adze, 2026-05-23): stamp `extras.atlasKind` from the shared
+    // classifier BEFORE the decimation levers run — raw vendor GLBs arrive
+    // with empty extras; without this pass Spindle's Lever 3 (and Adze's
+    // Lever 5) gate-out on every primitive and silently no-op. Idempotent.
+    const stampReport = stampAtlasKind(variantDoc)
+    if (stampReport.bark + stampReport.leaf + stampReport.ambiguous > 0) {
+      console.log(`  atlasKind stamped: bark=${stampReport.bark} leaf=${stampReport.leaf} ambiguous=${stampReport.ambiguous}${stampReport.alreadyStamped ? ` already=${stampReport.alreadyStamped}` : ''}`)
+    }
+
     // Brief 6 Lever 3: pre-decimate leaf cards on card-based topologies.
     const triBefore = countTris(variantDoc)
     const decimReports = decimateLeafPrimitives(variantDoc, decimationConfig)
-    const triAfter = countTris(variantDoc)
-    if (triAfter < triBefore) {
-      console.log(`  leaf decimation: ${triBefore.toLocaleString()} → ${triAfter.toLocaleString()} tris (${decimReports.filter(r => r.reason === 'decimated').length}/${decimReports.length} leaf prim(s) reduced)`)
+    const triAfterLeaf = countTris(variantDoc)
+    if (triAfterLeaf < triBefore) {
+      console.log(`  leaf decimation: ${triBefore.toLocaleString()} → ${triAfterLeaf.toLocaleString()} tris (${decimReports.filter(r => r.reason === 'decimated').length}/${decimReports.length} leaf prim(s) reduced)`)
     } else if (decimReports.length) {
       const skips = decimReports.map(r => r.reason).join(',')
       console.log(`  leaf decimation: no-op (${decimReports.length} leaf prim(s): ${skips})`)
+    }
+
+    // Brief 6.2 Lever 5: connected-mesh bark decimation for Linden-class
+    // heavyweights. Runs BEFORE emitLod so Lever 4's per-LoD simplifier has
+    // a smaller bark mesh to work with — typically rescues Linden lod2 from
+    // ✗bracket.
+    const barkReports = await decimateBarkPrimitives(variantDoc, decimationConfig)
+    const triAfterBark = countTris(variantDoc)
+    if (triAfterBark < triAfterLeaf) {
+      const reduced = barkReports.filter(r => r.reason === 'decimated')
+      console.log(`  bark decimation: ${triAfterLeaf.toLocaleString()} → ${triAfterBark.toLocaleString()} tris (${reduced.length}/${barkReports.length} bark prim(s) reduced)`)
+      for (const r of reduced) {
+        console.log(`    ${r.mesh}: ${r.tcount.toLocaleString()} → ${r.kept.toLocaleString()} tris (verts ${r.vcount.toLocaleString()} → ${r.vcountAfter.toLocaleString()}, err ${r.achievedError?.toExponential(2) ?? '?'})`)
+      }
+    } else if (barkReports.length) {
+      const skips = barkReports.map(r => r.reason).join(',')
+      console.log(`  bark decimation: no-op (${barkReports.length} bark prim(s): ${skips})`)
     }
 
     const approxHeightM = computeApproxHeight(variantDoc)

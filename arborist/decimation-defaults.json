@@ -9,5 +9,13 @@
     "innerHullDropFactor": 0.6,
     "outerHullToleranceFrac": 0.05,
     "minTrisToFire": 1000
+  },
+  "barkDecimation": {
+    "enabled": true,
+    "vertexThreshold": 100000,
+    "errorTolerance": 0.05,
+    "targetRatio": 0.15,
+    "algorithm": "meshopt",
+    "uvWeight": 0.5
   }
 }

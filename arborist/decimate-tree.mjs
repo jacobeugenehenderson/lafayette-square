@@ -34,6 +34,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
+import { MeshoptSimplifier } from 'meshoptimizer'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -71,6 +72,18 @@ export const DEFAULT_CONFIG = {
     innerHullDropFactor: 0.6,       // fraction of interior tris dropped
     outerHullToleranceFrac: 0.05,   // tris within this fraction of bbox-diag of hull = "outer", never dropped
     minTrisToFire: 1000,            // skip tiny leaf prims (italian cypress etc.)
+  },
+  barkDecimation: {
+    // Brief 6.2 (Adze, 2026-05-23) — connected-mesh bark decimation, Lever 5.
+    // Fires before Lever 4 emitLod to break MeshoptSimplifier's topology
+    // floor on Linden-class heavyweights. Naturally-light bark (Cypress,
+    // procedural cylinders) below vertexThreshold no-ops.
+    enabled: true,
+    vertexThreshold: 100000,        // skip bark prims with fewer verts (only fire on Linden-class)
+    errorTolerance: 0.05,           // MeshoptSimplifier target_error — much higher than emitLod's 0.0005
+    targetRatio: 0.15,              // target index count = ratio × original (cap; error may stop earlier)
+    algorithm: 'meshopt',           // 'meshopt' (simplifyWithAttributes, UV-preserving) | 'auto'
+    uvWeight: 0.5,                  // simplifyWithAttributes UV stream weighting
   },
 }
 
@@ -276,6 +289,142 @@ function minDistToHullBoundary(px, pz, hull) {
     if (d < best) best = d
   }
   return best
+}
+
+// ── Lever 5: connected-mesh bark decimation (Brief 6.2, Adze, 2026-05-23) ──
+//
+// Operates ONLY on primitives with `extras.atlasKind === 'bark'` whose vertex
+// count exceeds `barkDecimation.vertexThreshold` — the Linden-class single-
+// primitive 700K-vert connected-mesh bark targets. Smaller bark prims (Cypress,
+// procedural cylinder bark, etc.) no-op naturally.
+//
+// Why MeshoptSimplifier hits a floor on these: emitLod's per-LoD `error`
+// budget (0.0005 for lod0) is intentionally tight to preserve leaf-card
+// silhouettes. Applied uniformly to bark, that error wall refuses to collapse
+// the connected mesh below its topology floor. Bark continuity matters more
+// than micro-detail at Browse distance, so we run a separate pass at much
+// looser error (0.05 default) BEFORE emitLod runs — giving the per-LoD
+// simplifier a smaller bark mesh to work with.
+//
+// UV preservation: bark UVs carry atlas-region addressing after bake-look
+// rewrites them into sub-regions. `simplifyWithAttributes` weights UV
+// continuity into the collapse cost so atlas sampling stays coherent across
+// surviving edges. Per [[feedback_atlas_subregion_uv_recovery]] this matters
+// downstream even if it looks redundant here.
+//
+// Idempotency: stamps `extras.adzeDecimatedBark = true` on success; re-runs
+// short-circuit. Connected-mesh check (maxVertUse > 1) skipped — bark prims
+// are always connected meshes when above the vertex threshold; non-connected
+// per-cylinder bark is below threshold by construction.
+export async function decimateBarkPrimitives(doc, config) {
+  const cfg = { ...DEFAULT_CONFIG, ...(config || {}) }
+  const opts = cfg.barkDecimation
+  if (!opts?.enabled) return []
+  await MeshoptSimplifier.ready
+
+  const reports = []
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      const kind = (prim.getExtras() || {}).atlasKind
+      if (kind !== 'bark') continue
+      const r = decimateBarkOnePrim(prim, opts)
+      if (r) reports.push({ mesh: mesh.getName() || '<mesh>', ...r })
+    }
+  }
+  return reports
+}
+
+function decimateBarkOnePrim(prim, opts) {
+  const posAttr = prim.getAttribute('POSITION')
+  const idxAttr = prim.getIndices()
+  if (!posAttr || !idxAttr) return null
+
+  const vcount = posAttr.getCount()
+  const tcountBefore = Math.floor(idxAttr.getCount() / 3)
+  const existingExtras = prim.getExtras() || {}
+
+  if (existingExtras.adzeDecimatedBark) {
+    return { reason: 'already-decimated', vcount, tcount: tcountBefore, kept: tcountBefore }
+  }
+  if (vcount < opts.vertexThreshold) {
+    return { reason: 'below-vertexThreshold', vcount, tcount: tcountBefore, threshold: opts.vertexThreshold }
+  }
+
+  const positions = new Float32Array(posAttr.getArray())   // copy; simplifier may read repeatedly
+  const indicesSrc = idxAttr.getArray()
+  const indices = indicesSrc instanceof Uint32Array ? indicesSrc.slice() : new Uint32Array(indicesSrc)
+
+  const targetIndexCount = Math.max(3, Math.floor(indices.length * opts.targetRatio / 3) * 3)
+  const flags = []
+
+  // Use UV-preserving variant when a UV stream + the 'meshopt' or 'auto' algo
+  // is selected. Falls back to plain simplify otherwise.
+  const uvAttr = prim.getAttribute('TEXCOORD_0')
+  let newIndices, achievedError
+  if ((opts.algorithm === 'meshopt' || opts.algorithm === 'auto') && uvAttr && typeof MeshoptSimplifier.simplifyWithAttributes === 'function') {
+    const uvs = new Float32Array(uvAttr.getArray())
+    const result = MeshoptSimplifier.simplifyWithAttributes(
+      indices,
+      positions, 3,
+      uvs, 2,
+      [opts.uvWeight ?? 0.5, opts.uvWeight ?? 0.5],
+      null,                          // vertex_lock — none
+      targetIndexCount,
+      opts.errorTolerance,
+      flags,
+    )
+    newIndices = result[0]
+    achievedError = result[1]
+  } else {
+    const result = MeshoptSimplifier.simplify(
+      indices,
+      positions, 3,
+      targetIndexCount,
+      opts.errorTolerance,
+      flags,
+    )
+    newIndices = result[0]
+    achievedError = result[1]
+  }
+
+  const tcountAfter = Math.floor(newIndices.length / 3)
+  if (tcountAfter >= tcountBefore) {
+    // Simplifier couldn't collapse further at this error budget. Stamp anyway
+    // so retries are no-ops; surface as 'floor-hit' in the report.
+    prim.setExtras({ ...existingExtras, adzeDecimatedBark: true })
+    return { reason: 'floor-hit', vcount, tcount: tcountBefore, kept: tcountBefore, achievedError, targetIndexCount: targetIndexCount / 3 }
+  }
+
+  // Compact: build old→new vert map in scan order across new indices.
+  const remap = new Int32Array(vcount).fill(-1)
+  let nextVert = 0
+  for (let i = 0; i < newIndices.length; i++) {
+    const v = newIndices[i]
+    if (remap[v] < 0) remap[v] = nextVert++
+  }
+  const newVcount = nextVert
+  const remappedIndices = new Uint32Array(newIndices.length)
+  for (let i = 0; i < newIndices.length; i++) remappedIndices[i] = remap[newIndices[i]]
+
+  rewriteAttribute(prim, 'POSITION', remap, newVcount, 3)
+  for (const sem of ['NORMAL', 'TANGENT', 'TEXCOORD_0', 'TEXCOORD_1', 'COLOR_0']) {
+    if (prim.getAttribute(sem)) {
+      const dim = prim.getAttribute(sem).getElementSize()
+      rewriteAttribute(prim, sem, remap, newVcount, dim)
+    }
+  }
+  const idxArr = pickIndexArrayType(newVcount, remappedIndices)
+  idxAttr.setArray(idxArr)
+
+  prim.setExtras({ ...existingExtras, adzeDecimatedBark: true })
+
+  return {
+    reason: 'decimated',
+    vcount, vcountAfter: newVcount,
+    tcount: tcountBefore, kept: tcountAfter, dropped: tcountBefore - tcountAfter,
+    achievedError,
+    targetIndexCount: targetIndexCount / 3,
+  }
 }
 
 function pointSegDist(px, pz, ax, az, bx, bz) {

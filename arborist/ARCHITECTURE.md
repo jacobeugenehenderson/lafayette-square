@@ -18,7 +18,9 @@ bake-tree.py             (Scan mode)
     ▼
 publish-glb.js
     │  variant detection (namesSuggestVariants / nodesSpatiallySeparated)
+    │  Brief 6.2 stamp — stampAtlasKind on variantDoc (atlas-kind-classifier.js shared with survey-deleaf)
     │  Brief 6 Lever 3 — decimateLeafPrimitives (card-aware leaf reduction, in-line import from decimate-tree.mjs)
+    │  Brief 6.2 Lever 5 — decimateBarkPrimitives (connected-mesh bark, MeshoptSimplifier.simplifyWithAttributes at higher error tolerance, Linden-class only)
     │  Brief 6 Lever 4 — adaptive simplify-to-bracket per LoD tier (replaces fixed 0.85/0.40/0.10)
     │  manifest emission, helper-mesh filtering, normalizeScale
     ▼
@@ -44,7 +46,7 @@ public/baked/<look>/trees/<species>/...
 src/components/InstancedTrees.jsx
 ```
 
-**Foundational stages stay untouched across the v1.5 arc.** `publish-glb.js`, `bake-look.js`, `bake-trees.js`, `atlas-pack.js`, `atlas-survey.js`, and the runtime `treeAtlasMaterial.js` did not fork in any phase — generator output adapts to what they expect. This is the no-parallel-pipeline rule (`feedback_no_parallel_pipeline_for_scenes`) applied to a helper: one publishing channel, one runtime consumer. **Brief 6 (Spindle, 2026-05-22) extends `publish-glb.js`** with tree-aware decimation: leaf-card reduction (Lever 3, importable from `decimate-tree.mjs`) and adaptive simplify-to-bracket (Lever 4 inside `emitLod`). The pipeline shape and the no-parallel rule are preserved — the publish step gets richer, but the publishing channel stays singular.
+**Foundational stages stay untouched across the v1.5 arc.** `publish-glb.js`, `bake-look.js`, `bake-trees.js`, `atlas-pack.js`, `atlas-survey.js`, and the runtime `treeAtlasMaterial.js` did not fork in any phase — generator output adapts to what they expect. This is the no-parallel-pipeline rule (`feedback_no_parallel_pipeline_for_scenes`) applied to a helper: one publishing channel, one runtime consumer. **Brief 6 (Spindle, 2026-05-22) + Brief 6.2 (Adze, 2026-05-23) extend `publish-glb.js`** with tree-aware decimation: leaf-card reduction (Lever 3, importable from `decimate-tree.mjs`), connected-mesh bark decimation (Lever 5, ditto), adaptive simplify-to-bracket (Lever 4 inside `emitLod`). The pipeline shape and the no-parallel rule are preserved — the publish step gets richer, but the publishing channel stays singular. **`arborist/atlas-kind-classifier.js`** is the single source of truth for LEAF/WOOD/AMBIGUOUS keyword classification, imported by both `publish-glb.js` (stamps `extras.atlasKind` on raw vendor variantDocs so the decimation gates fire) and `survey-deleaf.js` (chassis emission). Per [[feedback_classifier_keyword_cross_check]] — one keyword set, two consumers.
 
 ---
 

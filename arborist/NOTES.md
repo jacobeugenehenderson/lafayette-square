@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-05-23 — Brief 6.2: Connected-mesh bark decimation (Adze)
+
+**Shipped Lever 5** — `decimateBarkPrimitives` in `arborist/decimate-tree.mjs`. Runs BEFORE Lever 4 emitLod, gated on `extras.atlasKind === 'bark' && vcount > 100K`. Calls `MeshoptSimplifier.simplifyWithAttributes` at `errorTolerance=0.05, targetRatio=0.15, uvWeight=0.5`. Idempotent via `extras.adzeDecimatedBark`. Linden's headline bark prim collapsed 850K → 127K tris (−85%, achieved err 1.38e-3, well below the 0.05 ceiling — the ratio was the binding constraint).
+
+**Inspection-first surfaced a deployed-pipeline bug.** Boz's brief assumed `extras.atlasKind` would be set on `variantDoc` at publish-glb time. It isn't: raw vendor GLBs arrive with empty extras. `atlasKind` is only stamped later by survey-deleaf when it produces chassis docs. **Spindle's Lever 3 has been silently no-op'ing through the deployed `publish-glb.js` path since Brief 6 shipped 2026-05-22** — `if (kind !== 'leaf') continue` early-returned on every primitive. Spindle's reported Robinia leaf-decimation numbers (−55%) came from CLI-direct runs against already-tagged chassis docs, not the deployed pipeline. Surfaced this to Boz mid-brief; Boz approved Option C tweaked: lift the classifier into a shared module per [[feedback_classifier_keyword_cross_check]] (same doctrine Mullion landed today for `species-category.js` in Brief 18A).
+
+**Architectural lift.** `arborist/atlas-kind-classifier.js` (new, ~140 LOC) holds `classifyPrim`, `buildMeshAncestorNames`, `stampAtlasKind`. `survey-deleaf.js` imports the first two (pure refactor, deleted ~85 LOC of inline copies). `publish-glb.js` calls `stampAtlasKind(variantDoc)` at the top of per-variant processing, BEFORE both decimation levers. One keyword set, two consumers.
+
+**Spindle rescue numbers, quantified.** Disappointing: re-publishing Linden and real-trees-pack Robinia, Lever 3 still didn't fire on either (both ship connected-mesh leaves; Spindle's lever gates on `maxVertexUse === 1`). The deployed plumbing is in place — any future republish from a card-based vendor pack (bomi1337 Forest Pack style) will finally trip Lever 3 in the bake chain. None happened to be re-published in this session.
+
+**New architectural finding for follow-up.** With bark collapsed by 85% on Linden, the connected-mesh **leaf** prim (419K tris on Linden, 130K-260K on real-trees-pack Robinia variants) becomes the new floor-bearer. LoD2 still ✗bracket on Linden because of leaves, not bark. Candidate Brief 6.3 in BACKLOG: connected-mesh leaf decimation, same `simplifyWithAttributes` machinery with higher UV weight to protect alpha-card silhouette edges.
+
+**Files:** `arborist/atlas-kind-classifier.js` (new, ~140), `arborist/decimate-tree.mjs` (+150, mostly Lever 5), `arborist/publish-glb.js` (+25, stamp + Lever 5 wiring), `arborist/decimation-defaults.json` (+8, `barkDecimation` sub-tree), `arborist/survey-deleaf.js` (−85 +2, refactor to import shared classifier), `arborist/ARCHITECTURE.md` (+~6, Lever 5 in publish-loop diagram), `arborist/BACKLOG.md` (+1 shipped marker), `scratch/brief-6.2-bark-decimation-survey-adze.md` (new, ~150).
+
+---
+
 ## 2026-05-23 — Brief 13: Salon preset cameras (Vantage)
 
 **Baby: Vantage. Small UI brief (~130 LOC), independent of Brief 10's in-flight sub-phases — zero file overlap.** Boz drafted, Jacob dispatched. Lands the review tool Brief 10 sub-phase A's pause needs: the operator can now park the Salon viewport at the camera distance each bark tier was designed for.
