@@ -380,7 +380,7 @@ export default function SalonWorkstage() {
             anyDirty ? 'Adopt all dirty slots before republishing'
             : anyMissingChassis ? 'Every slot needs a chassis picked before publish'
             : compositions.length === 0 ? 'Add a composition first'
-            : 'Rebake this species + auto-bake per-Look atlas'
+            : 'Stage this composition to the species library. Bake the slab from Grove when ready to ship to LS.'
           }
           style={{
             ...btnStyle(),
@@ -393,9 +393,7 @@ export default function SalonWorkstage() {
           {publishing ? 'Re-publishing…' : 'Re-publish species'}
         </button>
         <span>
-          {activeLookId
-            ? <>per-Look atlas auto-bakes for <code style={{ color: '#bbb' }}>{activeLookId}</code></>
-            : 'no active Look — atlas auto-bake will be skipped'}
+          Stages to the species library — bake the slab from <strong style={{ color: '#bbb' }}>Grove</strong> to update LS.
         </span>
       </footer>
     </div>

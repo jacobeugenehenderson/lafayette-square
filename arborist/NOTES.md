@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-05-23 — Brief 14: Decouple Salon Re-publish from auto-bake (Lintel)
+
+**Baby: Lintel.** Boz drafted, Jacob dispatched. **Name choice:** architectural — the lintel is the load-bearing beam that spans an opening and separates the load above from the void below; maps directly to a brief about cleanly separating two fused gestures. Non-plant, non-mineral, phonetically distinct from the claimed roster (Mullion is the closest neighbor — different word, different element).
+
+**The problem.** Salon Re-publish did two things in one click: (1) stage species artifacts to the library (authoring), and (2) fire `bakeLook(lookName)` fire-and-forget to rebuild the master atlas / slab (production). Per `[[project_authoring_is_live_production_is_static]]` those are opposite sides of the slab boundary. Conflating them meant rapid Salon iteration spam-baked the slab, and muddied the operator's mental model about when LS actually changes.
+
+**What shipped (single surgical change + copy + docs).**
+- **`arborist/serve.js` `/salon/:species/publish`:** removed the `if (lookName) { bakeLook(lookName).catch(...) }` fire-and-forget block (was lines ~1280-1284). Endpoint now: shell out to `generate-salon.js --species <id>` (which still runs `syncLookRoster` in its `main()` — metadata-only roster sync, **kept** per brief) → `rebuildIndex()` → return. No slab touch. Rewrote the endpoint's leading comment to state the authoring-only contract.
+- **`?look=` param fate:** kept accepted + still echoed in the response (`look: lookName`), now vestigial — documented in the comment + FEATURES table + BACKLOG. Dropping it would have meant a client store edit (`republishSalonSpecies` still appends `?look=`) for zero behavioral gain; keeping it accepted is the smaller change and leaves the store untouched.
+- **`src/arborist/SalonWorkstage.jsx` footer:** Re-publish button label unchanged (operator muscle memory — "Re-publish species"); success-state tooltip reworded `'Rebake this species + auto-bake per-Look atlas'` → `'Stage this composition to the species library. Bake the slab from Grove when ready to ship to LS.'`. The always-on inline hint span (was "per-Look atlas auto-bakes for <look>" / "no active Look — atlas auto-bake will be skipped") replaced with "Stages to the species library — bake the slab from **Grove** to update LS." `activeLookId` still used elsewhere in the file (canary button), so no dead variable.
+- **Grove:** existing `/atlas/bake?look=<id>` trigger is intact + already a discoverable Grove button (Grove is the roster-curation + bake surface). No new Grove UI built. It's now the *only* path to the slab.
+- **Docs:** FEATURES endpoint table (salon publish row → authoring-only; atlas/bake row → "explicit ship-to-slab"), Grove FEATURES section (gesture-split paragraph), ARCHITECTURE publish-loop sequencing diagram (split into STAGE TO LIBRARY → SHIP TO SLAB with a note that this does NOT relax the preview-equals-LS doctrine), BACKLOG Brief 14 marked shipped.
+
+**Surfaced (out of scope, NOT changed — operator decision):**
+- **`/procedural/:species/publish` (serve.js ~1453) has the identical auto-bake fire-and-forget.** Same `if (lookName) bakeLook(lookName).catch(...)` pattern. Brief scoped to the Salon path only and explicitly said to surface-not-ship the procedural twin. Operator may want the same decouple for consistency — flag to Boz. (No LiDAR `/publish` endpoint with this pattern exists; LiDAR's publish runs an awaited bake chain inside `lidar-publish.js`, a different shape.)
+- **Vellum posterized-substrate auto-extract relocates correctly.** It rides `bake-look.js` (the `ensurePosterizedForRef` collection block), so removing the Salon auto-bake means it now fires on the Grove bake gesture instead of Salon Re-publish. This is correct per Brief 10B's design — extraction stays tied to the bake step wherever it lives. Nothing orphaned.
+
+**Verification.** See AC notes — Re-publish updates `public/trees/<species>` + `index.json` without touching `public/baked/<look>` atlas (mtime stable); Grove bake still rebuilds the master atlas. `npm run dev` console clean.
+
+---
+
 ## 2026-05-23 — Brief 10B: Posterized bark substrate + tier-gated swap (Vellum)
 
 **Baby: Vellum.** Boz drafted, Jacob dispatched. Substrate side of Brief 10's view-aware bark tiering: under tier ≤ 1 (aerial + hero, v1.5 ship-path), `diffuseColor.rgb` is replaced with a sample from a fifth `barkPosterized` atlas sub-page BEFORE Brief 2.1's luminance math runs. Tier 2 (street) keeps vendor color via the same `step(1.5, uBarkShaderTier)` shape Brief 10A uses to gate the detail composite — forward-compat with 10C street-PBR.
@@ -57,6 +78,12 @@
 Net ~325 LOC of code + ~80 LOC of survey.
 
 — Vellum
+
+### Coordinator addendum (Boz, 2026-05-23) — `colors` pinned 16, 10B visually signed off
+
+Operator reviewed in Salon (Overhead + Ground/Hero cameras — the doctrine-correct review surface per `[[feedback_salon_preview_is_authoring_surface]]`). Overhead (tier 0, posterized substrate without detail composite) reads good. Hero (tier 1) shows no visible difference — which is the **designed** outcome, not a miss: tier 0 and tier 1 take the identical posterized-substrate branch (`step(1.5, uBarkShaderTier)` puts both on posterized; only tier 2 reverts to vendor). The single architectural difference is the detail composite (`step(0.5, tier)`) which tier 1 layers on top — masking the posterization banding at Hero. So Overhead visibly posterizing PROVES the swap fires for the whole `tier ≤ 1` branch; Hero is posterized too, just visually carried by gradient + detail. This is the operator-lock holding verbatim: *posterized everywhere it doesn't hurt fidelity.* **10B visual ACs (#3-#5, #7 Salon parity) signed off.**
+
+**`colors` pinned 32 → 16.** Vellum surfaced that sharp's libimagequant clamps the requested `colors: 32` down to a 16-color palette via its own optimization. Operator reviewed the 16-color result in Salon and accepted it as the kit identity (punchier illustrated snap, serves the texture-sharing-across-species goal). `posterize-defaults.json` + `.defaults.json` both pinned to `16` explicitly — defensive against a future sharp/libimagequant version that stops clamping and would silently start delivering 32, drifting the kit identity without anyone touching config. Per-ref override slot (`perBarkRef.<ref>.colors`) remains for any bark ref that reads too coarse at 16. Original ask was 32 (operator-locked 2026-05-23 morning); effective + accepted value is 16 (operator-locked 2026-05-23 afternoon after Salon review).
 
 ---
 

@@ -162,14 +162,20 @@ generateTreeMesh({
 ```
 [operator iterates in the Salon]              ← AUTHORING (must be visually complete here)
        ↓ Adopt
-[operator hits Re-publish species]
+[operator hits Re-publish species]            ← STAGE TO LIBRARY (authoring side)
        ↓ generate-salon → publish-glb
-       ↓ bake-look → bake-trees
+       ↓ rebuild index + syncLookRoster (metadata)
+[species artifacts in public/trees/<species>] ← STAGED (library), slab untouched
+       ↓
+[operator opens Grove, hits Bake]             ← SHIP TO SLAB (production side, explicit)
+       ↓ bake-look → bake-trees (+ Vellum posterized extract)
        ↓ ════════ SLAB BOUNDARY ════════
 [scene.json + trees-atlas + per-Look GLBs]   ← FROZEN ARTIFACT
        ↓ load
 [InstancedTrees.jsx renders in LS]            ← CONSUMPTION
 ```
+
+**Gesture split (Brief 14, Lintel 2026-05-23):** Re-publish and the slab bake were a single fused gesture (Re-publish fired `bakeLook` fire-and-forget). They're now two intentional gestures — Re-publish *stages to the library*, Grove *ships to the slab*. This stops rapid Salon iteration from spam-baking the slab and keeps the operator's mental model honest about when LS changes. Per `project_authoring_is_live_production_is_static`. Note this does NOT relax the preview-equals-LS doctrine above: the Salon preview must still be visually complete: the split only changes *when the bake fires*, not *what the operator authors against*.
 
 If a shader effect doesn't fire in the Salon preview, the operator can't author against it. Period. They have no iteration loop. Telling the operator to "verify in LS" routes them past the slab boundary into production — which IS the publishing step, not a verification step. That's the bug that triggered this doctrine (Brief 2.1, 2026-05-22).
 

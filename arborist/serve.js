@@ -1257,8 +1257,15 @@ const server = createServer(async (req, res) => {
       }
     }
 
-    // POST /salon/:species/publish — shell out to `generate-salon.js --species <id>`,
-    // rebuild the index, fire-and-forget per-Look atlas auto-bake.
+    // POST /salon/:species/publish — authoring-side "stage to library" only:
+    // shell out to `generate-salon.js --species <id>` (writes species artifacts +
+    // syncs the Look roster metadata via its main()) and rebuild the index.
+    // Brief 14 (Lintel 2026-05-23): the slab bake is DECOUPLED — this endpoint
+    // no longer fires bakeLook. Shipping to the slab is now the explicit Grove
+    // gesture (POST /atlas/bake?look=<id>). Per
+    // [[project_authoring_is_live_production_is_static]], Re-publish stages to
+    // the library; Grove bakes the slab. The ?look= param is still accepted
+    // (echoed in the response) but is now vestigial — it no longer triggers a bake.
     if (req.method === 'POST' && (m = path.match(/^\/salon\/([^/]+)\/publish$/))) {
       const species = m[1]
       const lookName = new URL(req.url, 'http://x').searchParams.get('look') || null
@@ -1276,11 +1283,6 @@ const server = createServer(async (req, res) => {
           await rebuildIndex()
         } catch (e) {
           console.warn('[arborist] index rebuild failed after salon publish:', e.message)
-        }
-        if (lookName) {
-          bakeLook(lookName).catch(err =>
-            console.warn('[arborist] atlas auto-bake after salon publish failed for', lookName, err.message),
-          )
         }
         return jsonRes(res, 200, {
           ok: true, ms: Date.now() - t0, species,

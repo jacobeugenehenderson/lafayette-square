@@ -22,9 +22,11 @@ These are the contract the deployed runtime (`InstancedTrees.jsx`) consumes. The
 
 ---
 
-## Four authoring modes
+## Authoring surface: Salon is default; Procedural / LiDAR / Scan are legacy sources
 
-The Arborist UI (`/arborist`) opens to a mode selector — **Scan** (legacy LiDAR Workstage), **Procedural** (synthesize from parameters), **LiDAR** (QSM extraction from scans), and **Salon** (compose chassis + bark + leaves; Brief 1, 2026-05-21). All four share the same publish pipeline and the same per-Look atlas pass.
+**Post-Brief-18A (Mullion, 2026-05-23)**: the Arborist UI (`/arborist`) opens **directly into the Salon Workstage** — there is no Library landing, no mode-selector chrome at the top. The header reads `Arborist / Salon` (brand) + `LookPicker` + `Grove →` button. Procedural, LiDAR, and the legacy Scan Workstage stay reachable only via dev-fallback URL params (`?legacy=procedural`, `?legacy=lidar`, `?legacy=workstage&species=<id>`, `?legacy=grove`) during the transition to Brief 18B (source-picker — merges Procedural + LiDAR's authoring affordances into Salon's slot card; queued). All workspaces' `← Library` buttons now read `← Salon` and route home to the Salon Workstage.
+
+The four authoring paths (Salon + the three legacy modes) all share the same publish pipeline and the same per-Look atlas pass. The chrome flattened; the publish contract did not change. Below, each path is documented; Salon is the operator's canonical surface as of 2026-05-23.
 
 ### Scan mode (`src/arborist/Workstage.jsx`)
 
@@ -69,7 +71,7 @@ All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final comm
 
 - **Wind** (bottom-left). Toggle + strength slider (0–2). Two-layer sway — wood gets a slow height-falloff sway, leaves layer a high-frequency flutter on top. Operator-tunable in the workstage; production wind in `treeAtlasMaterial.js` is Phase W proper (still pending). Viewing condition.
 
-- **Preset cameras** (top-left, second row — Brief 13 Vantage 2026-05-23, refined same session). Two buttons: **Overhead** (literal top-down plan view — camera directly above the trunk at `treeH+20`, looking at `(0,0,0)`; yardstick + canopy fan-out visible in plan) and **Ground** (existing studio framing, default). The bark-shader tier (Brief 10's `uBarkShaderTier`) is auto-bound from the active preset + camera distance per-frame inside `DollyCam`: Overhead → tier 0 (aerial); Ground with distance > 20m → tier 1 (hero); Ground with distance < 20m → tier 2 (street). Threshold tunable; first-pass 20m. The Ground mode preserves the existing Option+drag (crane + Y-rotate), wheel zoom (distance), shift+wheel (height), and arrow-key cranes — operator wheels in from 25m → 18m and watches the bark shift from hero to street live. Overhead routes non-shift wheel to altitude so wheel-zoom does the intuitive plan-view thing. `window.__setBarkShaderTier(n)` (Cork's debug setter) now PINS the tier, suspending auto-bind so the operator can verify cross-pairs ("what does street tier look like from overhead camera"); `window.__releaseBarkShaderTier()` restores auto-bind.
+- **Preset cameras** (top-left, second row — Brief 13 Vantage 2026-05-23, refined same session). Two buttons: **Overhead** (literal top-down plan view — camera directly above the trunk at `treeH+20`, looking at `(0,0,0)`; yardstick + canopy fan-out visible in plan) and **Ground** (existing studio framing, default). The bark-shader tier (Brief 10's `uBarkShaderTier`) is auto-bound from the active preset + camera distance per-frame inside `DollyCam`: Overhead → tier 0 (aerial); Ground with distance > 20m → tier 1 (hero); Ground with distance < 20m → tier 2 (street). Threshold tunable; first-pass 20m. The Ground mode preserves the existing Option+drag (crane + Y-rotate), wheel zoom (distance), shift+wheel (height), and arrow-key cranes — operator wheels in from 25m → 18m and watches the bark shift from hero to street live. Overhead routes non-shift wheel to altitude so wheel-zoom does the intuitive plan-view thing. `window.__setBarkShaderTier(n)` (Cork's debug setter) now PINS the tier, suspending auto-bind so the operator can verify cross-pairs ("what does street tier look like from overhead camera"); `window.__releaseBarkShaderTier()` restores auto-bind. **LS-runtime parity (Brief 11 lightweight, Plumb 2026-05-23)**: the same tier auto-bind fires in production via `TierDriver` in `InstancedTrees.jsx`, with the discriminating signal swapped to camera altitude (`y > 150 → 0`, `y < 5 → 2`, else 1, calibrated against `Scene.jsx` PRESETS). Pin/release works across both surfaces — pinning in Salon devtools sticks across LS frames.
 
 - **LoD selector** (top-right, **Procedural-only** as of Brief 13 refinement 2026-05-23 — Salon retired it per the "Salon authors at raw fidelity, geometry LoD is a deploy concern" doctrine; Brief 6's adaptive bake pipeline owns LoD generation downstream). Three buttons (0 / 1 / 2) that re-fetch the preview at the corresponding simplification ratio. `POST /procedural/generate` carries the `lod` field; the server runs gltf-transform's `weld → dedup → simplify` with `MeshoptSimplifier` at the same ratios `publish-glb.js` uses (lod1 ratio 0.40 / err 0.002, lod2 ratio 0.10 / err 0.008). Active button gets the amber accent matching the Re-publish chrome; disabled while a preview is regenerating. State lives at `ProceduralWorkstage` scope so the choice survives slot-tab switches. Preview fidelity dial.
 
@@ -156,7 +158,7 @@ Workspace render budget: desktop-class, single specimen at a time. Hi-res author
 
 | Region | Purpose |
 |---|---|
-| Header | Mode toggle (Procedural / LiDAR / Grove), active species dropdown (filtered to LiDAR-source species), auto-suggested leaf pack readout (`arborist/leaf-pack-bindings.json`-derived: species override wins → morphology fallback → first candidate; informational only — Cycle 2 binds via `bake-look.js`), `← Library` |
+| Header | Active species dropdown (filtered to LiDAR-source species), auto-suggested leaf pack readout (`arborist/leaf-pack-bindings.json`-derived: species override wins → morphology fallback → first candidate; informational only — Cycle 2 binds via `bake-look.js`), `← Salon` (post-Brief-18A; was `← Library`). The Mode-toggle row retired — LiDAR reached via `?legacy=lidar` URL until Brief 18B merges its affordances into Salon's slot card. |
 | Specimen browser (left top) | Filter (display name substring OR height range like `8-12`), sorted by `treeH` descending. Each row: `✦/◯ {height}m {scanType} {displayName-or-tree-treeId}`. ✦ = saved seedling. Active row tinted amber. |
 | 3D viewport (right top) | Multi-layer composite: raw point cloud (`THREE.Points`, size-attenuated, cyan tint, ≤1M pts streamed from existing `/specimens/:treeId/preview.ply`), QSM cylinder overlay (two `InstancedMesh` draws split at median radius — trunk-like red, branch-like cyan, translucent). Layer toggle chips overlay top-left (Points / Cylinders / Skeleton only / Full preview) + Fit-to-specimen button. `OrbitControls`. |
 | Skeleton extraction (left bottom) | Three `DraftSlider`s — Voxel (m), Min radius (m), Tip radius (m) — 150ms idle commit + pointer-up final (per [[feedback_heavy_render_sliders_need_draft]]). Re-extract + Save seedling buttons. Specimen details subsection (treeId, scan type, height) + inline `display name (optional)` input that saves into `seedlings.json#displayNames[treeId]`. |
@@ -181,6 +183,8 @@ Cycle 1 endpoints used:
 ## Grove (`src/arborist/Grove.jsx`)
 
 Per-Look roster curation. Reads `public/looks/<look>/design.json#/trees`; lets the operator scope `In Look` / `All Rated`, click-to-toggle tree membership, fires `/api/cartograph/looks/<id>/trees` + `/api/arborist/atlas/bake?look=<id>` automatically. **The Grove is how operators prune heavy hand-authored variants from a Look — not by editing design.json directly.**
+
+**Authoring/production gesture split (Brief 14, Lintel 2026-05-23):** the Grove bake is now the *explicit* ship-to-slab gesture. Salon Re-publish stages species artifacts to the library (authoring side) but no longer auto-bakes; baking the master atlas / slab is a separate, intentional Grove action. Operator workflow is two gestures: **Salon Re-publish (stage to library) → Grove bake (ship to slab).** This stops rapid Salon iteration from spam-baking the slab and keeps the operator's mental model clear about when LS actually changes. Per `project_authoring_is_live_production_is_static`. (The Vellum posterized-substrate auto-extract rides `bake-look.js`, so it now fires on the Grove bake — correct, extraction stays tied to the bake step.)
 
 The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innovation that makes hero species nearly free to add: `atlas-survey.js` dedupes tiles by sha1 hash before pack, so hero bark + leaf-cluster tiles collapse against the filler roster's identical content. See `ARCHITECTURE.md` for the full story.
 
@@ -213,10 +217,10 @@ Mounted under `/api/arborist` from the web app via Vite proxy.
 | `GET`  | `/salon/:species/leaves` | Leaf packs (shapes/ dir if present, else flat PNG fallback) |
 | `GET\|POST` | `/salon/:species/compositions` | Overlay; GET returns `effective` per composition; POST merges with absent-keys-preserved |
 | `POST` | `/salon/generate` | Body `{chassis, bark, leaves, lod}` — returns `model/gltf-binary` for live preview |
-| `POST` | `/salon/:species/publish?look=<id>` | Shells out to `node generate-salon.js --species <id>` + fires per-Look atlas auto-bake fire-and-forget |
+| `POST` | `/salon/:species/publish?look=<id>` | **Authoring-only (Brief 14, Lintel 2026-05-23):** shells out to `node generate-salon.js --species <id>` + rebuilds the index. Stages species artifacts to the library; does **not** bake the slab atlas. `?look=` accepted + echoed but vestigial (no longer triggers a bake). Slab bake is the explicit Grove gesture below. |
 | `GET`  | `/salon/curation` | Salon chassis curation file (`arborist/state/_chassis-curation.json`) |
 | `POST` | `/salon/curation/:chassisName` | Body `{displayName?, approved?, notes?}` — merges with absent-keys-preserved; `null` clears displayName/notes or restores unreviewed for approved |
-| `POST` | `/atlas/bake?look=<id>` | Re-run `bake-look.js` for one Look (used by Grove on curation changes) |
+| `POST` | `/atlas/bake?look=<id>` | Re-run `bake-look.js` for one Look (used by Grove on curation changes). **The explicit ship-to-slab gesture** — post-Brief-14 this is the *only* path that rebuilds the master atlas / slab artifact. |
 
 ---
 
