@@ -26,6 +26,7 @@ export default function Workstage() {
   const species          = useArboristStore(s => s.species)
   const activeSpeciesId  = useArboristStore(s => s.activeSpeciesId)
   const setActiveSpecies = useArboristStore(s => s.setActiveSpecies)
+  const setSalonOpen     = useArboristStore(s => s.setSalonOpen)
   const specimens        = useArboristStore(s => s.specimens)
   const specimensError   = useArboristStore(s => s.specimensError)
   const starredTreeIds   = useArboristStore(s => s.starredTreeIds)
@@ -113,8 +114,8 @@ export default function Workstage() {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', alignItems: 'center', gap: 14,
       }}>
-        <button onClick={() => setActiveSpecies(null)} style={btnStyle()}>
-          ← Library
+        <button onClick={() => { setActiveSpecies(null); setSalonOpen(true) }} style={btnStyle()}>
+          ← Salon
         </button>
         <strong style={{
           letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -745,6 +746,7 @@ function WorkstageGlb({
 }) {
   const setVariantOverride = useArboristStore(s => s.setVariantOverride)
   const setSpeciesOverride = useArboristStore(s => s.setSpeciesOverride)
+  const setSalonOpen       = useArboristStore(s => s.setSalonOpen)
   const allSpecies = useArboristStore(s => s.species)
   // Persist camera state across Canvas remounts (variant / LOD / species swap).
   const cameraStateRef = useRef({ distance: 22, height: 8 })
@@ -804,8 +806,8 @@ function WorkstageGlb({
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', alignItems: 'center', gap: 14,
       }}>
-        <button onClick={() => setActiveSpecies(null)} style={btnStyle()}>
-          ← Library
+        <button onClick={() => { setActiveSpecies(null); setSalonOpen(true) }} style={btnStyle()}>
+          ← Salon
         </button>
         <div style={{ display: 'flex', gap: 4 }}>
           <button onClick={() => advance(-1)} title="Previous variant (←)" style={btnStyle()}>‹</button>

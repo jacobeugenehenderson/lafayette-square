@@ -1,17 +1,22 @@
 /**
  * Arborist — species-asset library producer.
  *
- * Four surfaces (Phase L Cycle 1 2026-05-19 added LiDAR):
- *   - Library: list of declared species. Click a row → workstage.
- *   - Workstage: specimen browser + 3D viewport + pick-to-promote (legacy Scan mode).
- *   - Procedural: dice + adopt procedural variants per species.
- *   - LiDAR: LiDAR specimen browse + QSM cylinder extraction tuning.
- *   - Grove: every rated variant across the library on one ground plane.
+ * Brief 18A (Mullion, 2026-05-23): the flat Library list retires. Salon is
+ * now the default surface; ArboristApp's job collapses to (a) initialize
+ * legacy-URL dev fallback on mount, (b) render exactly one workstage from
+ * the mode-flag ladder, (c) hold no chrome of its own. Procedural / LiDAR /
+ * legacy single-species Workstage remain reachable via `?legacy=…` URL
+ * params during the 18A→18B transition; no UI hints them. Source-picker
+ * merge into Salon's slot card is 18B.
  *
- * Mode is implicit: lidarOpen / proceduralOpen / groveOpen / activeSpeciesId
- * in the store decide which view renders. No router needed.
+ *   - Salon: default. Compose chassis · bark · leaves; LookPicker + Grove
+ *     → in its header strip.
+ *   - Grove: destination — every rated variant across the library on one
+ *     ground plane. Reached via Salon's Grove → button (or ?legacy=grove).
+ *   - Procedural / LiDAR / Workstage: legacy authoring surfaces, reached
+ *     via ?legacy= URL params only.
  */
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import Workstage from './Workstage.jsx'
 import Grove from './Grove.jsx'
@@ -20,8 +25,6 @@ import LidarWorkstage from './LidarWorkstage.jsx'
 import SalonWorkstage from './SalonWorkstage.jsx'
 
 export default function ArboristApp() {
-  const species         = useArboristStore(s => s.species)
-  const speciesError    = useArboristStore(s => s.speciesError)
   const activeSpeciesId = useArboristStore(s => s.activeSpeciesId)
   const groveOpen       = useArboristStore(s => s.groveOpen)
   const setGroveOpen    = useArboristStore(s => s.setGroveOpen)
@@ -29,8 +32,6 @@ export default function ArboristApp() {
   const setProceduralOpen  = useArboristStore(s => s.setProceduralOpen)
   const lidarOpen          = useArboristStore(s => s.lidarOpen)
   const setLidarOpen       = useArboristStore(s => s.setLidarOpen)
-  const salonOpen          = useArboristStore(s => s.salonOpen)
-  const setSalonOpen       = useArboristStore(s => s.setSalonOpen)
   const loadSpecies     = useArboristStore(s => s.loadSpecies)
   const setActiveSpecies = useArboristStore(s => s.setActiveSpecies)
   const loadLooks       = useArboristStore(s => s.loadLooks)
@@ -45,213 +46,27 @@ export default function ArboristApp() {
     return () => window.removeEventListener('focus', onFocus)
   }, [loadLooks])
 
-  if (salonOpen) return <SalonWorkstage />
+  // Brief 18A: dev-fallback URL params route to legacy workstages on mount.
+  // No UI hints these; they exist so the operator doesn't lose access to
+  // Procedural / LiDAR authoring during the 18A→18B transition.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const legacy = params.get('legacy')
+    if (legacy === 'procedural') setProceduralOpen(true)
+    else if (legacy === 'lidar') setLidarOpen(true)
+    else if (legacy === 'grove') setGroveOpen(true)
+    else if (legacy === 'workstage') {
+      const sp = params.get('species')
+      if (sp) setActiveSpecies(sp)
+    }
+  }, [setProceduralOpen, setLidarOpen, setGroveOpen, setActiveSpecies])
+
+  // Mode-route ladder. Salon is the default (always-true salonOpen flag)
+  // and sits at the bottom; a legacy URL or stale localStorage *Open flag
+  // wins precedence above it.
   if (lidarOpen) return <LidarWorkstage />
   if (proceduralOpen) return <ProceduralWorkstage />
   if (groveOpen) return <Grove />
   if (activeSpeciesId) return <Workstage />
-
-  // ── Library view ────────────────────────────────────────────
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, color: '#ddd',
-      fontFamily: '-apple-system, sans-serif', fontSize: 13,
-      display: 'flex', flexDirection: 'column',
-      background: '#111',
-    }}>
-      <header style={{
-        padding: '14px 18px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex', alignItems: 'center', gap: 16,
-      }}>
-        <strong style={{
-          letterSpacing: '0.15em', textTransform: 'uppercase',
-          fontSize: 12, color: '#fff',
-        }}>Arborist</strong>
-        <span style={{ color: '#888' }}>species library producer</span>
-        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <LookPicker />
-          <button onClick={() => setProceduralOpen(true)}
-            title="Dice + adopt procedural variants (Phase A)"
-            style={{
-              background: 'rgba(232,184,96,0.15)',
-              border: '1px solid rgba(232,184,96,0.4)',
-              color: '#e8c878',
-              padding: '5px 12px', borderRadius: 4,
-              fontFamily: 'inherit', fontSize: 12,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}>
-            Procedural →
-          </button>
-          <button onClick={() => setSalonOpen(true)}
-            title="Compose chassis + bark + leaves (Salon — Brief 1)"
-            style={{
-              background: 'rgba(192,140,232,0.15)',
-              border: '1px solid rgba(192,140,232,0.4)',
-              color: '#c89cf0',
-              padding: '5px 12px', borderRadius: 4,
-              fontFamily: 'inherit', fontSize: 12,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}>
-            Salon →
-          </button>
-          <button onClick={() => setLidarOpen(true)}
-            title="LiDAR specimen browse + QSM cylinder extraction tuning (Phase L Cycle 1)"
-            style={{
-              background: 'rgba(126,200,224,0.12)',
-              border: '1px solid rgba(126,200,224,0.4)',
-              color: '#7fc8e0',
-              padding: '5px 12px', borderRadius: 4,
-              fontFamily: 'inherit', fontSize: 12,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}>
-            LiDAR →
-          </button>
-          <button onClick={() => setGroveOpen(true)}
-            title="See every rated variant on one ground plane"
-            style={{
-              background: 'rgba(106,154,74,0.15)',
-              border: '1px solid rgba(106,154,74,0.4)',
-              color: '#bce0a0',
-              padding: '5px 12px', borderRadius: 4,
-              fontFamily: 'inherit', fontSize: 12,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}>
-            Grove →
-          </button>
-          <span style={{ color: '#888' }}>{species.length} species</span>
-        </span>
-      </header>
-
-      <main style={{ flex: 1, padding: 18, overflow: 'auto' }}>
-        {speciesError && (
-          <div style={{ color: '#f88', marginBottom: 12 }}>
-            Backend unreachable: {speciesError}
-            <div style={{ color: '#888', fontSize: 11, marginTop: 4 }}>
-              Make sure <code>arborist/serve.js</code> is running on port 3334.
-            </div>
-          </div>
-        )}
-
-        {!speciesError && species.length === 0 && (
-          <div style={{ color: '#888' }}>
-            No species declared yet. Edit <code>arborist/species-map.json</code> to add one.
-          </div>
-        )}
-
-        <div style={{ display: 'grid', gap: 8 }}>
-          {species.map(s => (
-            <button key={s.id}
-              onClick={() => setActiveSpecies(s.id)}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 6,
-                padding: '12px 14px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                color: '#ddd',
-                fontFamily: 'inherit', fontSize: 13,
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-              <strong style={{ minWidth: 140 }}>{s.label}</strong>
-              <em style={{ color: '#888', minWidth: 160 }}>{s.scientific}</em>
-              <span style={{ color: '#666', fontSize: 11 }}>
-                {s.tier} · {s.leafMorph} leaves
-              </span>
-              <span style={{
-                marginLeft: 8,
-                fontSize: 10, padding: '2px 6px', borderRadius: 3,
-                background: s.source === 'glb' ? 'rgba(96,180,232,0.15)' : 'rgba(232,184,96,0.15)',
-                color:      s.source === 'glb' ? '#7fb8e4' : '#e8b860',
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-              }}>
-                {s.source || 'lidar'}
-              </span>
-              <span style={{ marginLeft: 'auto', color: '#888', fontSize: 12 }}>
-                {s.bakedAt
-                  ? `${s.variants} variant${s.variants === 1 ? '' : 's'} · ${new Date(s.bakedAt).toLocaleDateString()}`
-                  : (s.source === 'glb' ? 'no glb published yet' : `${s.seedlingsPicked} seedlings · not baked`)}
-              </span>
-            </button>
-          ))}
-        </div>
-      </main>
-
-      <footer style={{
-        padding: '10px 18px',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        color: '#666', fontSize: 11,
-      }}>
-        Click a species to enter the workstage. Tune panel + bake action coming next.
-      </footer>
-    </div>
-  )
-}
-
-// ── Look picker ───────────────────────────────────────────────────────
-// Lists every Look from Cartograph + a "+ New Look" row at the bottom.
-// The active Look is the curation target — Workstage's "Add to Look"
-// (pass 2) and Grove's roster will both write to the active Look's
-// design.json `trees` field.
-function LookPicker() {
-  const looks         = useArboristStore(s => s.looks)
-  const activeLookId  = useArboristStore(s => s.activeLookId)
-  const defaultLookId = useArboristStore(s => s.defaultLookId)
-  const looksError    = useArboristStore(s => s.looksError)
-  const setActiveLook = useArboristStore(s => s.setActiveLook)
-  const createLook    = useArboristStore(s => s.createLook)
-
-  const active = looks.find(l => l.id === activeLookId)
-
-  const onChange = async (e) => {
-    const v = e.target.value
-    if (v === '__new__') {
-      const name = window.prompt('New Look name')
-      if (!name) return
-      await createLook(name)
-      return
-    }
-    setActiveLook(v)
-  }
-
-  if (looksError) {
-    return (
-      <span style={{ color: '#f88', fontSize: 11 }} title={looksError}>
-        Looks unreachable
-      </span>
-    )
-  }
-
-  return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888' }}>
-      <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Look</span>
-      <select
-        value={activeLookId || ''}
-        onChange={onChange}
-        title={active ? `Curating: ${active.name}` : 'Pick a Look to curate'}
-        style={{
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: '#ddd',
-          padding: '4px 8px', borderRadius: 4,
-          fontFamily: 'inherit', fontSize: 12,
-          minWidth: 160,
-        }}
-      >
-        {looks.length === 0 && <option value="">(no looks)</option>}
-        {looks.map(l => (
-          <option key={l.id} value={l.id}>
-            {l.name}{l.id === defaultLookId ? ' ★' : ''}
-          </option>
-        ))}
-        <option disabled>──────────</option>
-        <option value="__new__">+ New Look…</option>
-      </select>
-    </label>
-  )
+  return <SalonWorkstage />
 }

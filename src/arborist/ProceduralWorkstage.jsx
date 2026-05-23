@@ -36,6 +36,7 @@ const SPECIES_TARGET_CATEGORY = {
 
 export default function ProceduralWorkstage() {
   const setProceduralOpen        = useArboristStore(s => s.setProceduralOpen)
+  const setSalonOpen             = useArboristStore(s => s.setSalonOpen)
   const speciesList              = useArboristStore(s => s.proceduralSpeciesList)
   const activeSpecies            = useArboristStore(s => s.proceduralActiveSpecies)
   const setActiveSpecies         = useArboristStore(s => s.setProceduralActiveSpecies)
@@ -88,8 +89,8 @@ export default function ProceduralWorkstage() {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', alignItems: 'center', gap: 14,
       }}>
-        <button onClick={() => setProceduralOpen(false)} style={btnStyle()}>
-          ← Library
+        <button onClick={() => { setProceduralOpen(false); setSalonOpen(true) }} style={btnStyle()}>
+          ← Salon
         </button>
         <strong style={{
           letterSpacing: '0.15em', textTransform: 'uppercase',

@@ -33,6 +33,7 @@ export default function Grove() {
   const loading     = useArboristStore(s => s.groveLoading)
   const error       = useArboristStore(s => s.groveError)
   const setGroveOpen = useArboristStore(s => s.setGroveOpen)
+  const setSalonOpen = useArboristStore(s => s.setSalonOpen)
   const loadGrove   = useArboristStore(s => s.loadGrove)
   const looks       = useArboristStore(s => s.looks)
   const activeLookId = useArboristStore(s => s.activeLookId)
@@ -129,7 +130,7 @@ export default function Grove() {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', alignItems: 'center', gap: 14,
       }}>
-        <button onClick={() => setGroveOpen(false)} style={btn()}>← Library</button>
+        <button onClick={() => { setGroveOpen(false); setSalonOpen(true) }} style={btn()}>← Salon</button>
         <strong style={{
           letterSpacing: '0.1em', textTransform: 'uppercase',
           fontSize: 12, color: '#fff',

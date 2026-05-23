@@ -436,8 +436,12 @@ const useArboristStore = create((set, get) => ({
   // payload is `compositions` instead of `seedlings`. Effective layering
   // (DEFAULTS → CHASSIS_DEFAULTS → operator overlay) is mirrored into
   // the store on patch so controlled selects reflect immediately.
-  salonOpen: (typeof localStorage !== 'undefined'
-    ? localStorage.getItem(SALON_OPEN_KEY) === '1' : false),
+  // Brief 18A (Mullion): Salon is the default Arborist surface. Initial value
+  // is unconditionally true — the localStorage gate from Brief 1 is bypassed
+  // because Library no longer exists as a destination. Persistence on
+  // setSalonOpen below is retained so the flag remains a real piece of state
+  // for 18B (e.g. source-picker that asks "is Salon active?").
+  salonOpen: true,
   setSalonOpen: (open) => {
     set({ salonOpen: !!open })
     if (typeof localStorage !== 'undefined') {

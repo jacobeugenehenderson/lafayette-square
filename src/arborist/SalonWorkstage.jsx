@@ -4,7 +4,9 @@
  * per-slot controls rail and data wiring swapped. ~70% lifted intact:
  *
  * LIFTED INTACT (do not re-implement — see brief constraints):
- *   - Header strip pattern (mode toggle, active-species dropdown, ← Library)
+ *   - Header strip pattern (active-species dropdown, etc.) — Brief 18A
+ *     (Mullion) replaced the ← Library button with LookPicker + Grove →
+ *     and renamed the brand to `Arborist / Salon` (Salon is now default)
  *   - Slot tabs strip + dirty-dot indicator
  *   - SlotCard (viewport + right rail + footer pattern)
  *   - SpecimenViewport mount with rotator ring + obelisk + height indicator
@@ -77,7 +79,7 @@ function useCanaryPref() {
 }
 
 export default function SalonWorkstage() {
-  const setSalonOpen        = useArboristStore(s => s.setSalonOpen)
+  const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
   const speciesList         = useArboristStore(s => s.salonSpeciesList)
   const activeSpecies       = useArboristStore(s => s.salonActiveSpecies)
   const setActiveSpecies    = useArboristStore(s => s.setSalonActiveSpecies)
@@ -173,14 +175,10 @@ export default function SalonWorkstage() {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', alignItems: 'center', gap: 14,
       }}>
-        <button onClick={() => setSalonOpen(false)} style={btnStyle()}>
-          ← Library
-        </button>
         <strong style={{
           letterSpacing: '0.15em', textTransform: 'uppercase',
           fontSize: 12, color: '#fff',
-        }}>Salon</strong>
-        <span style={{ color: '#888' }}>compose chassis · bark · leaves (Brief 1)</span>
+        }}>Arborist <span style={{ color: '#666', margin: '0 4px' }}>/</span> Salon</strong>
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 16, color: '#888', fontSize: 11 }}>
           <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Species</span>
@@ -205,10 +203,26 @@ export default function SalonWorkstage() {
           </select>
         </label>
 
-        <span style={{ marginLeft: 'auto', color: '#888', fontSize: 11 }}>
-          {anyDirty
-            ? <span style={{ color: '#e8b860' }}>{Object.keys(dirty).length} unadopted</span>
-            : 'all adopted'}
+        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ color: '#888', fontSize: 11 }}>
+            {anyDirty
+              ? <span style={{ color: '#e8b860' }}>{Object.keys(dirty).length} unadopted</span>
+              : 'all adopted'}
+          </span>
+          <LookPicker />
+          <button onClick={() => setGroveOpen(true)}
+            title="See every rated variant on one ground plane"
+            style={{
+              background: 'rgba(106,154,74,0.15)',
+              border: '1px solid rgba(106,154,74,0.4)',
+              color: '#bce0a0',
+              padding: '5px 12px', borderRadius: 4,
+              fontFamily: 'inherit', fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}>
+            Grove →
+          </button>
         </span>
       </header>
 
@@ -1317,5 +1331,69 @@ function DraftSlider({ value, onCommit, min, max, step, format }) {
         {format ? format(draft) : draft}
       </span>
     </div>
+  )
+}
+
+// ── Look picker ───────────────────────────────────────────────────────
+// Lifted from ArboristApp.jsx in Brief 18A (Mullion). Lists every Look
+// from Cartograph + a "+ New Look" row. The active Look is the curation
+// target — Grove's roster writes to the active Look's design.json.
+// Grove keeps its own LookPicker copy (per brief constraint — no shared
+// hook refactor in 18A).
+function LookPicker() {
+  const looks         = useArboristStore(s => s.looks)
+  const activeLookId  = useArboristStore(s => s.activeLookId)
+  const defaultLookId = useArboristStore(s => s.defaultLookId)
+  const looksError    = useArboristStore(s => s.looksError)
+  const setActiveLook = useArboristStore(s => s.setActiveLook)
+  const createLook    = useArboristStore(s => s.createLook)
+
+  const active = looks.find(l => l.id === activeLookId)
+
+  const onChange = async (e) => {
+    const v = e.target.value
+    if (v === '__new__') {
+      const name = window.prompt('New Look name')
+      if (!name) return
+      await createLook(name)
+      return
+    }
+    setActiveLook(v)
+  }
+
+  if (looksError) {
+    return (
+      <span style={{ color: '#f88', fontSize: 11 }} title={looksError}>
+        Looks unreachable
+      </span>
+    )
+  }
+
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888' }}>
+      <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Look</span>
+      <select
+        value={activeLookId || ''}
+        onChange={onChange}
+        title={active ? `Curating: ${active.name}` : 'Pick a Look to curate'}
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: '#ddd',
+          padding: '4px 8px', borderRadius: 4,
+          fontFamily: 'inherit', fontSize: 12,
+          minWidth: 160,
+        }}
+      >
+        {looks.length === 0 && <option value="">(no looks)</option>}
+        {looks.map(l => (
+          <option key={l.id} value={l.id}>
+            {l.name}{l.id === defaultLookId ? ' ★' : ''}
+          </option>
+        ))}
+        <option disabled>──────────</option>
+        <option value="__new__">+ New Look…</option>
+      </select>
+    </label>
   )
 }

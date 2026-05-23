@@ -431,6 +431,7 @@ export default function LidarWorkstage() {
   const setProceduralOpen   = useArboristStore(s => s.setProceduralOpen)
   const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
   const setLidarOpen        = useArboristStore(s => s.setLidarOpen)
+  const setSalonOpen        = useArboristStore(s => s.setSalonOpen)
   // Phase L Cycle 2 publish.
   const lidarPublishing     = useArboristStore(s => s.lidarPublishing)
   const lidarPublishError   = useArboristStore(s => s.lidarPublishError)
@@ -865,7 +866,7 @@ export default function LidarWorkstage() {
         pack={pack}
         onProcedural={() => { setLidarOpen(false); setProceduralOpen(true) }}
         onGrove={() => { setLidarOpen(false); setGroveOpen(true) }}
-        onLibrary={() => { setLidarOpen(false); setActiveSpecies(null) }}
+        onLibrary={() => { setLidarOpen(false); setActiveSpecies(null); setSalonOpen(true) }}
       />
 
       <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', gridTemplateRows: '1fr 1fr', minHeight: 0 }}>
@@ -1459,7 +1460,7 @@ function Header({ activeSpeciesId, lidarSpecies, onSpeciesChange, pack, onProced
           <span style={{ color: '#666' }}> · {pack.label}</span>
         </span>
       )}
-      <button onClick={onLibrary} style={{ ...btnGhostStyle, marginLeft: 'auto' }}>← Library</button>
+      <button onClick={onLibrary} style={{ ...btnGhostStyle, marginLeft: 'auto' }}>← Salon</button>
     </header>
   )
 }
