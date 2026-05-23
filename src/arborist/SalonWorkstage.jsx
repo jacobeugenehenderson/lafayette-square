@@ -8,7 +8,6 @@
  *   - Slot tabs strip + dirty-dot indicator
  *   - SlotCard (viewport + right rail + footer pattern)
  *   - SpecimenViewport mount with rotator ring + obelisk + height indicator
- *   - LoD selector (top-right overlay)
  *   - Perf gauge (bottom-right overlay)
  *   - Wind toggle (bottom-left overlay)
  *   - DraftSlider commit semantics
@@ -30,8 +29,11 @@
  *     not PRESET-derived, so the operator picks how many to author)
  *
  * Surfaced for Brief 2/3/4 (per `feedback_baby_must_surface_scope_drift`):
- *   - The LoD / wind / perf gauge floating-overlay pattern is now duplicated
+ *   - The wind / perf gauge floating-overlay pattern is now duplicated
  *     across Procedural + Salon. Future consolidation candidate; flagged.
+ *     (LoD selector retired from Salon per Brief 13 refinement 2026-05-23 —
+ *     Salon authors at raw chassis fidelity; geometry LoD is a downstream
+ *     deploy concern handled by Brief 6's adaptive bake.)
  *   - SpecimenViewport's `targetCategory` prop expects a procedural-style
  *     morphology bucket. Salon passes the resolved species morphology;
  *     mismatches fall through to 'broadleaf' default — visually fine.
@@ -150,7 +152,6 @@ export default function SalonWorkstage() {
   const [activeSlot, setActiveSlot] = useState(null)
   const [windEnabled, setWindEnabled] = useState(false)
   const [windStrength, setWindStrength] = useState(1.0)
-  const [previewLod, setPreviewLod] = useState(0)
   useEffect(() => {
     if (compositions.length === 0) { setActiveSlot(null); return }
     if (activeSlot == null || !compositions.find(v => v.slot === activeSlot)) {
@@ -327,8 +328,6 @@ export default function SalonWorkstage() {
             windStrength={windStrength}
             onWindEnabledChange={setWindEnabled}
             onWindStrengthChange={setWindStrength}
-            previewLod={previewLod}
-            onPreviewLodChange={setPreviewLod}
             onParams={(patch) => setSlotParams(activeSpecies, activeComposition.slot, patch)}
             onNameChange={(name) => setSlotName(activeSpecies, activeComposition.slot, name)}
             onReset={() => resetSlot(activeSpecies, activeComposition.slot)}
@@ -400,7 +399,6 @@ function SlotCard({
   chassisCatalog, speciesMorphology, barkRefs, leafPacks,
   dirty, targetCategory,
   windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange,
-  previewLod, onPreviewLodChange,
   onParams, onNameChange, onReset, onAdopt,
   onSetCanary, canaryDisabledReason, isCanary,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
@@ -534,39 +532,13 @@ function SlotCard({
             onPerfSample={setPerfSample}
           />
         )}
-        {/* LoD selector (lifted) */}
-        <div style={{
-          position: 'absolute', top: 12, right: 12,
-          background: 'rgba(0,0,0,0.55)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 4,
-          padding: 4,
-          display: 'flex', gap: 3, fontSize: 11,
-          pointerEvents: 'auto',
-        }}>
-          {[0, 1, 2].map((lod) => {
-            const active = previewLod === lod
-            return (
-              <button key={lod}
-                disabled={loading}
-                onClick={() => onPreviewLodChange(lod)}
-                style={{
-                  background: active ? 'rgba(232,184,96,0.18)' : 'transparent',
-                  border: '1px solid ' + (active ? 'rgba(232,184,96,0.5)' : 'rgba(255,255,255,0.08)'),
-                  color: active ? '#e8c878' : '#888',
-                  padding: '3px 8px', borderRadius: 3,
-                  fontFamily: 'inherit', fontSize: 10,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                  cursor: loading ? 'wait' : 'pointer',
-                  opacity: loading ? 0.5 : 1,
-                }}>
-                LOD {lod}
-              </button>
-            )
-          })}
-        </div>
-
-        <PerfGauge sample={perfSample} previewLod={previewLod} />
+        {/* LoD selector retired Brief 13 refinement (2026-05-23 Vantage):
+            Salon authors at raw chassis fidelity — geometry LoD is a
+            deploy concern handled downstream by Brief 6's adaptive bake
+            pipeline. One chassis at a time exerts no GPU budget pressure
+            in the workstage; the perf gauge below still reports actual
+            loaded counts. */}
+        <PerfGauge sample={perfSample} />
 
         {/* Wind toggle (lifted) */}
         <div style={{
@@ -1079,12 +1051,14 @@ function SalonControlsPanel({
 
 // ── Lifted helpers (identical to ProceduralWorkstage) ──────────────────
 
-function PerfGauge({ sample, previewLod }) {
+function PerfGauge({ sample }) {
   const fmtN = (n) => n == null ? '—' : n.toLocaleString()
   const tris = sample?.tris
-  const lodScale = previewLod === 1 ? 0.5 : previewLod === 2 ? 0.2 : 1
-  const greenLim  = 20000 * lodScale
-  const yellowLim = 40000 * lodScale
+  // LoD selector removed (Brief 13 refinement). Salon authors at raw
+  // fidelity, so tri bands no longer scale by LoD — green < 20k, yellow
+  // 20–40k, red > 40k applies to the unsimplified chassis.
+  const greenLim  = 20000
+  const yellowLim = 40000
   const trisColor = tris == null ? '#888'
     : tris < greenLim  ? '#7ec97e'
     : tris < yellowLim ? '#e8c878'

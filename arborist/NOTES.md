@@ -46,6 +46,27 @@
 | `arborist/BACKLOG.md` | +1 line (Brief 13 marked shipped) |
 | `arborist/NOTES.md` | this entry |
 
+### Same-session refinement (operator review, 2026-05-23)
+
+Operator pushed four refinements after first ship; all landed same session:
+
+1. **Overhead is literal top-down, not high-oblique.** Reframed `presetFraming('overhead')` from `{distance: max(150, treeH*6), height: treeH+50, lookAtY: 0}` (a high-oblique that needed look-down rotation) to `{distance: 0, height: treeH+20, lookAtY: 0, topDown: true}` (camera directly over the trunk axis, looking at origin). Bird's-eye plan view; the tree fans symmetrically from a centered trunk dot; yardstick visible in plan. `DollyCam.useFrame` now branches on `topDown`: swaps `camera.up` to `(0,0,-1)` (avoids the +Y-look gimbal singularity that would have produced garbage orientation), positions camera at `(0, height, 0)`, looks at `(0,0,0)`. Ground restores `camera.up = (0,1,0)` and the original `lookAt(0, height, 0)` (horizontal — cranes stay level, matching the film-crane mental model).
+2. **Reduced 3 presets → 2.** Hero + Street collapsed into a single `Ground` mode whose tier auto-binds from camera distance per-frame inside `DollyCam.useFrame`: `topDown` → tier 0 (aerial); else `distance < 20m` → tier 2 (street); else → tier 1 (hero). Threshold 20m is first-pass; tune by feel. Operator wheels in from 25m to 18m and watches bark switch hero → street live. Original brief's §Out-of-Scope no-auto-tier-binding rule was explicitly overridden — operator preference is binding-by-default in the authoring space; the conservative no-coupling default is unnecessary when the escape hatch exists.
+3. **Debug pin preserved as override.** `window.__setBarkShaderTier(n)` (Cork's setter) now sets `treeBarkTierPinned.value = true` in addition to writing the uniform; per-frame auto-bind reads the pinned flag and yields. `window.__releaseBarkShaderTier()` (new) releases the pin so auto-bind resumes. New `treeBarkTierPinned = { value: false }` exported from `treeAtlasMaterial.js` alongside `treeBarkTierUniform`. Operator can verify "street tier from overhead camera" via the pin path.
+4. **LoD selector retired from Salon Workstage.** Geometry LoD is a deploy concern handled downstream by Brief 6's adaptive bake pipeline; Salon authors at raw chassis fidelity (one chassis at a time exerts no GPU budget pressure on the workstage). Dropped `previewLod` state, the SlotCard pass-through, the top-right button row, and the PerfGauge's `lodScale` band-scaling math. PerfGauge keeps its tris/leafCards/drawCalls/programs readout — it reports actual loaded counts, no toggle needed. The `/api/arborist/salon/.../preview-atlas` path never carried a `lod:` arg (Cambium's Brief 7 superseded `/salon/generate`'s blob-URL flow), so server-side is untouched. Procedural workstage's LoD selector is unchanged — that workstage benefits from the simplification preview during procedural authoring.
+
+### Camera-behavior fix (same session, mid-refinement)
+
+First pass of the refinement broke Ground camera behavior: the per-frame `useFrame` was reading `lookAtY` from `cameraStateRef` (saved as a fixed value by `applyFraming`) instead of computing `lookAt(0, height, 0)` from the live height. Result: when the operator cranes height via Option+drag or shift+wheel, the lookAt target stayed fixed and the camera tilted — broke the "cranes stay level" mental model. Restored by splitting `useFrame` into clean `topDown`/Ground branches: Ground is byte-for-byte the original `camera.position.set(0, height, distance); camera.lookAt(0, height, 0)` from pre-Brief-13. The `lookAtY` ref-shape extension is still set by `applyFraming` but no longer consumed by `DollyCam` (left for now; harmless and may be useful for a future preset that needs an explicit lookAt offset). Caught when operator surfaced "camera isn't back to how it was" within a few minutes of the refinement landing.
+
+### Files touched (refinement adds)
+
+| File | Δ |
+|---|---|
+| `src/components/treeAtlasMaterial.js` | +`treeBarkTierPinned` export, `setBarkShaderTier` now pins, +`releaseBarkShaderTier`, `__releaseBarkShaderTier` window bind |
+| `src/arborist/SpecimenViewport.jsx` | `presetFraming` reduced 3→2 (overhead/ground), `topDown` field on cameraStateRef, DollyCam useFrame branched on topDown, wheel routes to height in topDown, per-frame auto-tier-bind, UI reduced to 2 buttons |
+| `src/arborist/SalonWorkstage.jsx` | LoD button row + `previewLod` state + SlotCard pass-through + `lodScale` math removed |
+
 ---
 
 ## 2026-05-23 — Brief 10 sub-phase A: Aerial bark tier infrastructure (Cork)

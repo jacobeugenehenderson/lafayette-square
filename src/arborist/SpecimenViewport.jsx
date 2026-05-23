@@ -27,6 +27,8 @@ import {
   applyBarkUniforms,
   stampTreeVertexAttrs,
   treeSwayUniforms,
+  treeBarkTierUniform,
+  treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
@@ -74,31 +76,32 @@ function studioFraming(treeH = 12) {
   return { height: treeH / 2, distance }
 }
 
-// Brief 13 (Vantage): three preset camera framings matching the three
-// bark-shader tiers (Brief 10 sub-phase A — uBarkShaderTier 0/1/2).
-// Generic studio-inspection distances, NOT cartograph SHOT imports —
-// Salon stays helper-internal per project_kit_helpers_pattern.
-//   overhead → aerial tier verification (~150m+ above, looking down)
-//   hero     → mid-distance Browse/Hero (current studio framing)
-//   street   → close-up walking distance (~5m, near human eye level)
-// Returns {distance, height, lookAtY}. lookAtY=0 for overhead so the
-// camera tilts down at the chassis base; horizontal (=height) otherwise.
+// Brief 13 (Vantage 2026-05-23, refined post-ship same-session): two
+// preset camera framings driving Brief 10's bark-shader tier
+// (uBarkShaderTier 0/1/2) via auto-binding from camera distance.
+//   overhead → literal top-down plan view. Camera at (0, treeH+20, 0)
+//              looking at (0,0,0). Yardstick + tree fan-out read in
+//              plan; trunk = centered dot. topDown:true so DollyCam
+//              swaps camera.up to (0,0,-1) (avoids the +Y/-Y gimbal
+//              singularity) and routes wheel-zoom to height instead
+//              of distance. Pins tier 0.
+//   ground   → current studio framing (Hero default). Existing
+//              Option+drag + wheel-zoom + key cranes preserved. Tier
+//              auto-binds from distance per-frame: distance > 20m =>
+//              tier 1 (hero), distance < 20m => tier 2 (street).
+// Threshold 20m is first-pass per refinement note; tune from visual
+// feel. Generic studio-inspection — NOT cartograph SHOT imports per
+// project_kit_helpers_pattern.
+const GROUND_TIER_DISTANCE_THRESHOLD = 20
 function presetFraming(preset, treeH = 12) {
   switch (preset) {
     case 'overhead': {
-      const distance = Math.max(150, treeH * 6)
-      const height = treeH + 50
-      return { distance, height, lookAtY: 0 }
+      return { distance: 0, height: treeH + 20, lookAtY: 0, topDown: true }
     }
-    case 'street': {
-      const distance = Math.max(5, treeH * 0.2)
-      const height = 1.8
-      return { distance, height, lookAtY: height }
-    }
-    case 'hero':
+    case 'ground':
     default: {
       const f = studioFraming(treeH)
-      return { distance: f.distance, height: f.height, lookAtY: f.height }
+      return { distance: f.distance, height: f.height, lookAtY: f.height, topDown: false }
     }
   }
 }
@@ -125,16 +128,34 @@ function DollyCam({ cameraStateRef, dragPanRef, rotationY = 0, rotationOffset, o
   useEffect(() => { onRotRef.current = onRotationChange }, [onRotationChange])
 
   useFrame(() => {
-    const { distance, height, lookAtY } = stateRef.current
-    camera.position.set(0, height, distance)
-    // Default behavior: look horizontally forward at the same Y as the
-    // camera — film-crane mental model, crane DOWN to see the ground.
-    // Brief 13 (Vantage): the overhead preset overrides lookAtY=0 so the
-    // camera tilts down toward the chassis base; without this, an
-    // overhead-from-90m-up camera looking horizontally would frame empty
-    // sky with the tree dwindling far below the lens.
-    const ly = (typeof lookAtY === 'number') ? lookAtY : height
-    camera.lookAt(0, ly, 0)
+    const s = stateRef.current
+    if (s.topDown) {
+      // Overhead — literal top-down plan view. camera.up swaps to
+      // (0,0,-1) so the +Y look direction isn't parallel to up
+      // (gimbal singularity), and the plan view renders with +X
+      // screen-right.
+      if (camera.up.z !== -1) camera.up.set(0, 0, -1)
+      camera.position.set(0, s.height, 0)
+      camera.lookAt(0, 0, 0)
+    } else {
+      // Ground — preserve exact pre-Brief-13 behavior: camera at
+      // (0, height, distance) looking horizontally at the same Y, so
+      // cranes (height changes) keep the camera level — film-crane
+      // mental model.
+      if (camera.up.y !== 1) camera.up.set(0, 1, 0)
+      camera.position.set(0, s.height, s.distance)
+      camera.lookAt(0, s.height, 0)
+    }
+    // Auto-bind uBarkShaderTier per Brief 13 refinement: Overhead → 0,
+    // Ground distance < 20m → 2 (street), else → 1 (hero). Yields to
+    // the debug pin (treeBarkTierPinned) so the operator can verify
+    // cross-pairs via window.__setBarkShaderTier(n).
+    if (!treeBarkTierPinned.value) {
+      const desired = s.topDown
+        ? 0
+        : (s.distance < GROUND_TIER_DISTANCE_THRESHOLD ? 2 : 1)
+      if (treeBarkTierUniform.value !== desired) treeBarkTierUniform.value = desired
+    }
   })
 
   useEffect(() => {
@@ -149,7 +170,13 @@ function DollyCam({ cameraStateRef, dragPanRef, rotationY = 0, rotationOffset, o
     const onWheel = (e) => {
       e.preventDefault()
       const s = stateRef.current
-      if (e.shiftKey) {
+      // In topDown (Overhead) mode, distance is locked at 0 and the
+      // intuitive zoom axis is altitude. Route non-shift wheel to
+      // height so wheel-up = lift, wheel-down = descend — wheel-distance
+      // would otherwise pull the camera off the trunk axis and break
+      // the plan view. Shift+wheel still adjusts height in both modes.
+      const wheelToHeight = !!s.topDown
+      if (e.shiftKey || wheelToHeight) {
         s.height = clamp(s.height - e.deltaY * 0.03, H_MIN, H_MAX)
       } else {
         s.distance = clamp(s.distance + e.deltaY * 0.04, D_MIN, D_MAX)
@@ -930,28 +957,35 @@ export default function SpecimenViewport({
   // uses Oubliette drag for horizontal placement instead).
   const [camMode, setCamMode] = useState('studio')
   // Brief 13 (Vantage) — preset camera for bark-tier verification.
-  // Separate concern from camMode (gizmo affordance): camPreset only
-  // sets camera distance/height/lookAt. Defaults to 'hero' so existing
-  // Salon workflow is undisturbed.
-  const [camPreset, setCamPreset] = useState('hero')
+  // Two presets only (refined post-ship): 'ground' (default — current
+  // studio framing, existing Option+drag + wheel-zoom + key cranes
+  // preserved) and 'overhead' (literal top-down plan view, distance=0,
+  // height=treeH+20, lookAtY=0). The Hero/Street distinction collapsed
+  // into auto-tier-binding driven by camera distance in DollyCam.
+  const [camPreset, setCamPreset] = useState('ground')
   // Auto-fit camera whenever the chassis changes. Triggers on viewKey
   // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
   // remounts the Canvas) AND on the first topY emission per chassis.
   // The fit uses the ACTUAL loaded chassis height AND the current
   // camPreset — fixes the previous CATEGORY_TARGET_HEIGHT default (12m
   // broadleaf) clipping 30m chassis like Linden, and ensures e.g.
-  // overhead preset re-fits to treeH+50 when a 30m chassis loads while
+  // overhead preset re-fits to treeH+20 when a 30m chassis loads while
   // overhead is active. Operator dolly/crane tweaks AFTER fit are
   // preserved since we only re-fit on the first topY signal per chassis.
   const lastFitKeyRef = useRef(null)
+  const applyFraming = (preset, treeH) => {
+    if (!cameraStateRef?.current) return
+    const f = presetFraming(preset, treeH)
+    cameraStateRef.current.distance = f.distance
+    cameraStateRef.current.height   = f.height
+    cameraStateRef.current.lookAtY  = f.lookAtY
+    cameraStateRef.current.topDown  = !!f.topDown
+  }
   useEffect(() => {
     if (!cameraStateRef?.current || topY == null) return
     if (lastFitKeyRef.current === viewKey) return  // already fit this chassis
     lastFitKeyRef.current = viewKey
-    const f = presetFraming(camPreset, topY)
-    cameraStateRef.current.distance = f.distance
-    cameraStateRef.current.height   = f.height
-    cameraStateRef.current.lookAtY  = f.lookAtY
+    applyFraming(camPreset, topY)
   }, [topY, viewKey, cameraStateRef, camPreset])
   // Snap to the active preset whenever the operator picks one. Reads the
   // latest known chassis height (topY if reported, else 12m default).
@@ -961,10 +995,7 @@ export default function SpecimenViewport({
   useEffect(() => {
     if (!cameraStateRef?.current) return
     const h = (typeof topY === 'number') ? topY : 12
-    const f = presetFraming(camPreset, h)
-    cameraStateRef.current.distance = f.distance
-    cameraStateRef.current.height   = f.height
-    cameraStateRef.current.lookAtY  = f.lookAtY
+    applyFraming(camPreset, h)
   }, [camPreset, cameraStateRef])
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -1037,18 +1068,15 @@ export default function SpecimenViewport({
       }}>
         <button
           onClick={() => {
-            if (cameraStateRef?.current) {
-              const h = (typeof topY === 'number') ? topY : 12
-              const f = studioFraming(h)
-              cameraStateRef.current.distance = f.distance
-              cameraStateRef.current.height   = f.height
-              cameraStateRef.current.lookAtY  = f.height
-            }
+            // Camera framing now lives on camPreset; Studio just snaps
+            // back to the Ground preset's framing if the operator was
+            // in Overhead. Gizmo mode is the only thing Studio uniquely
+            // owns.
             setCamMode('studio')
-            setCamPreset('hero')
+            setCamPreset('ground')
           }}
           style={presetBtnStyle(camMode === 'studio')}
-          title="Frames bullseye + canopy target centered in view">
+          title="Full gnomon — XY + Z + rotation handles">
           Studio
         </button>
         <button
@@ -1057,6 +1085,7 @@ export default function SpecimenViewport({
               cameraStateRef.current.distance = 6
               cameraStateRef.current.height = 0.3
               cameraStateRef.current.lookAtY = 0.3
+              cameraStateRef.current.topDown = false
             }
             setCamMode('worm')
           }}
@@ -1065,20 +1094,20 @@ export default function SpecimenViewport({
           Worm
         </button>
       </div>
-      {/* Brief 13 (Vantage) — preset camera distances matching the three
-          bark-shader tiers (Brief 10 sub-phase A — uBarkShaderTier).
-          Operator picks the tier they want to verify; chassis re-frames
-          to the corresponding generic studio-inspection distance. NOT
-          coupled to uBarkShaderTier — operator controls those
-          independently per brief Out-of-Scope §Auto-tier-binding. */}
+      {/* Brief 13 (Vantage, refined 2026-05-23) — two preset cameras
+          driving Brief 10's bark-shader tier auto-binding. Overhead
+          pins tier 0 (aerial). Ground hands off to distance-based
+          tier-switching (per-frame in DollyCam): distance > 20m → tier 1
+          (hero), distance < 20m → tier 2 (street). Debug pin via
+          window.__setBarkShaderTier(n) overrides the auto-binding;
+          window.__releaseBarkShaderTier() restores it. */}
       <div style={{
         position: 'absolute', top: 44, left: 12,
         display: 'flex', gap: 6,
       }}>
         {[
-          ['overhead', 'Overhead', '~200m above — aerial-tier silhouette read'],
-          ['hero',     'Hero',     'Studio framing — mid-distance Browse/Hero (default)'],
-          ['street',   'Street',   '~5m close-up at human eye level — bark detail read'],
+          ['overhead', 'Overhead', 'Bird\'s-eye plan view — tier 0 (aerial). Wheel zooms altitude.'],
+          ['ground',   'Ground',   'Studio framing — distance auto-switches tier 1 (hero >20m) / tier 2 (street <20m). Default.'],
         ].map(([key, label, title]) => (
           <button key={key}
             onClick={() => setCamPreset(key)}

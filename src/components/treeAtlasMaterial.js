@@ -65,16 +65,30 @@ export const treeSwayUniforms = {
 // the single-shader-program doctrine: uniform branch, NOT customProgramCacheKey.
 export const treeBarkTierUniform = { value: 1 }
 
-// Debug setter for sub-phase A operator review — drives the shared uniform.
-// Sub-phase D will replace this with a tier-selector overlay in
-// SpecimenViewport. Window-bound below for devtools access.
+// Brief 13 refinement (Vantage 2026-05-23) — auto-tier binding from
+// Salon camera distance + preset. The Salon viewport drives the uniform
+// per-frame from `cameraStateRef` (Overhead → 0, Ground+distance>20 → 1,
+// Ground+distance<20 → 2). The debug setter still works as an override:
+// calling `__setBarkShaderTier(n)` PINS the tier so the auto-binding
+// yields; `__releaseBarkShaderTier()` releases the pin and auto-binding
+// resumes. Use the pin to verify "what does street tier look like from
+// overhead camera" — the inspection that motivated the conservative
+// no-coupling stance in Brief 13's original draft.
+export const treeBarkTierPinned = { value: false }
+
+// Debug setter — drives the shared uniform AND pins it so per-frame
+// auto-binding (Salon SpecimenViewport) yields until release.
 export function setBarkShaderTier(tier) {
+  if (tier == null) { treeBarkTierPinned.value = false; return }
   const t = Number(tier)
   if (!Number.isFinite(t)) return
   treeBarkTierUniform.value = Math.max(0, Math.min(2, Math.round(t)))
+  treeBarkTierPinned.value = true
 }
+export function releaseBarkShaderTier() { treeBarkTierPinned.value = false }
 if (typeof window !== 'undefined') {
   window.__setBarkShaderTier = setBarkShaderTier
+  window.__releaseBarkShaderTier = releaseBarkShaderTier
 }
 
 // Phase B (2026-05-15) — per-(species, draw) bark retint uniforms. These
