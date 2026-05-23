@@ -773,27 +773,12 @@ function Skeleton({
   useMemo(() => {
     if (!atlas.treeMaterial) return
     const treeMaterial = atlas.treeMaterial
-    // Brief 10A (Cork) — chassis-wide Y bbox for aBarkWorldYNorm normalization,
-    // so multi-mesh skeletons share the same aerial-gradient range as the LS
-    // runtime computes across its merged chassis. Pass it down to
-    // stampTreeVertexAttrs as fallback (no caller-supplied range → per-geometry).
-    let chassisMinY = Infinity, chassisMaxY = -Infinity
-    scene.traverse((o) => {
-      if (!o.isMesh || !o.geometry?.attributes?.position) return
-      const p = o.geometry.attributes.position
-      for (let i = 0; i < p.count; i++) {
-        const y = p.getY(i)
-        if (y < chassisMinY) chassisMinY = y
-        if (y > chassisMaxY) chassisMaxY = y
-      }
-    })
-    const chassisYRange = Math.max(chassisMaxY - chassisMinY, 1e-6)
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
       if (o.geometry) {
-        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+        stampTreeVertexAttrs(o.geometry, {}, o)
         // Strip vertex colors — they flip USE_COLOR in three.js's shader
         // cache, which would compile a parallel program; the shared
         // material expects no vertex colors.

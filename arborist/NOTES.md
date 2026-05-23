@@ -69,6 +69,43 @@ First pass of the refinement broke Ground camera behavior: the per-frame `useFra
 
 ---
 
+## 2026-05-23 — Brief 10 sub-phase A: post-review pivot to luminance-axis aerial (Cork)
+
+**Baby: Cork (continued). Pivot landed in response to Boz + Jacob's review feedback after the initial 10A ship + Vantage's Brief 13 wiring.**
+
+Operator review surfaced the architectural issue with the original aerial-tier sampling axis: per-vertex world-Y normalized read camera-angle-dependent — Overhead and Ground saw different gradient distributions because different portions of bark surface were visible per framing. Hero's luminance-driven REPLACE (Brief 2.1, Birch) doesn't have this issue — per-pixel texture-driven, identical regardless of camera.
+
+Pivoted aerial to the same Brief 2.1 luminance sampling axis as hero. Aerial-vs-hero divergence collapses to a single architectural knob: **aerial skips the Brief 2.1a detail Overlay composite; hero (and street, until 10C) include it.** Encoded as `barkColor = mix(barkColor, composite, uBarkDetailStrength * step(0.5, uBarkShaderTier))` — one `step()` gates the detail step by tier.
+
+### What changed
+
+- `treeAtlasMaterial.js` aerial REPLACE branch retired; detail-composite line gated by tier instead. `aBarkWorldYNorm` attribute + `vBarkWorldYNorm` varying removed from vertex + fragment.
+- `stampTreeVertexAttrs` — `aBarkWorldYNorm` stamping block removed; `chassisMinY`/`chassisYRange` fallback parameters no longer consumed.
+- `InstancedTrees.jsx#meshes` — chassis-wide bbox pre-scan + per-primitive `aBarkWorldYNorm` stamp loop removed.
+- `SpecimenViewport.jsx` — chassis-wide bbox pre-scan + `{chassisMinY, chassisYRange}` argument to `stampTreeVertexAttrs` removed (call goes back to `stampTreeVertexAttrs(o.geometry, {}, o)`). Vantage's Brief 13 wiring (preset framings, `treeBarkTierPinned`, camera-driven auto-bind) untouched.
+- `ARCHITECTURE.md` — table row + "Sampling axis (post-review pivot)" rewrite + "Identity-safe with no gradient bound" replaces the "graceful fallback to hero" framing (no fallback needed once both tiers share the same substrate). The `aWindTier` ADR S4 entry's forward-reference to `aBarkWorldYNorm` rewritten as a generic "next per-vertex-only consumer" pointer; the runtime-merge slot stays open.
+
+### Acceptance update
+
+- ✅ Aerial-tier visual reads identically regardless of camera angle. Same luminance axis everywhere.
+- ✅ `uBarkGradientHashAmp` (cross-tree variation) now ALSO modulates aerial samples — adjacent same-species trees sample at slightly different luminance offsets along the gradient, same behavior as hero. Operator's existing slider authoring carries over.
+- ✅ `aBarkWorldYNorm` cleanly removed — no consumers, no orphan stampers across the three call sites.
+- ⏳ Operator-eye verification: workstage `programs` HUD count still expected unchanged across tier=0/1/2.
+
+### Notes for Brief 11 + sub-phase B/C composition
+
+- **Brief 11 (cartograph SHOT-driven tier) is unaffected.** Frozen seam (`treeBarkTierUniform` + `treeBarkTierPinned`) stays exactly as Cork + Vantage left it. SHOT-driven tier just becomes another writer to that uniform (yielding to or stomping the Vantage auto-bind — operator's call when 11 lands).
+- **Sub-phase B composes naturally.** Posterization affects what `diffuseColor.rgb` contains before the luminance computation. Aerial and hero both pick up the posterized substrate; aerial drops detail, hero keeps it. Fragment retarget is one line (`<map_fragment>` reads from the posterized sub-region under tier ≥ 1, or under all tiers if operator wants aerial-on-posterized too — Boz's call when drafting 10B).
+- **Sub-phase C (street PBR) gets richer.** Today the `step(0.5, uBarkShaderTier)` gates detail; 10C can introduce additional `step(1.5, uBarkShaderTier)` gates for street-only roughness/displacement sampling. Architectural symmetry preserved — uniform-driven branches, single program.
+
+### Surface items
+
+1. **Cross-tree hash on aerial** — `uBarkGradientHashAmp` now affects aerial. Operator should verify this reads desirable from Overhead at LS scale; if too noisy across a dense planting, ship a separate `uBarkAerialHashAmp` (rejected as premature — surface drift, defer until visual review says so).
+2. **Tier 2 → hero fallback shape** — currently expressed as `step(0.5, uBarkShaderTier)`, which evaluates to 1 at tier 2 (street included). Once 10C lands and street wants a separate composite path, the `step` becomes inadequate (would need `clamp` or explicit `if` ladder). Note for 10C: re-shape the gate at that time.
+3. **Brief 13 (Vantage) auto-bind interaction with the luminance pivot** — Vantage's Overhead camera + tier 0 binding still works correctly because the pivot didn't change WHICH tier renders at WHICH camera distance; only HOW tier 0 renders changed. No Vantage-side changes needed.
+
+---
+
 ## 2026-05-23 — Brief 10 sub-phase A: Aerial bark tier infrastructure (Cork)
 
 **Baby: Cork. Sub-phase A of the four-step view-aware bark arc (Boz drafted, Hazel audited). Pauses here for operator review per the brief's sub-phasing rule; B/C/D queued for separate dispatches.**

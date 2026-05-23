@@ -56,7 +56,10 @@ export const treeSwayUniforms = {
 
 // Brief 10A (Cork, 2026-05-23) — view-aware bark tier selector. Single
 // uniform gates which fragment path runs on bark fragments:
-//   0 = aerial (gradient-LUT-only, sampled at per-vertex normalized chassis Y)
+//   0 = aerial (gradient-LUT-only, sampled at the SAME luminance axis as
+//       hero — Brief 2.1's Rec.601 luminance + uBarkGradientHashAmp; the
+//       aerial path skips the Brief 2.1a detail Overlay composite, that's
+//       the only difference from hero. Camera-angle-independent sampling.)
 //   1 = hero   (current Brief 2.1 + 2.1a path — posterized substrate lands in 10B)
 //   2 = street (full PBR — tier 2 falls back to hero until 10C ships)
 // Promoted to module-scope (mirrors `treeSwayUniforms` pattern) so flipping
@@ -173,9 +176,10 @@ function injectFoliageSway(material) {
     shader.uniforms.uBarkTileScale = { value: new THREE.Vector2(1, 1) }
     // Brief 10A (Cork) — view-aware bark tier. Shared module-scope uniform
     // object so a single mutation drives every mounted tree material at
-    // once (LS runtime + Salon preview). Aerial path samples the gradient
-    // LUT at per-vertex normalized chassis Y (aBarkWorldYNorm); hero is
-    // the existing path; street currently falls back to hero (10C wires PBR).
+    // once (LS runtime + Salon preview). Aerial samples the gradient LUT
+    // at the same Brief 2.1 luminance axis as hero but skips the Brief 2.1a
+    // detail composite; hero is the existing path; street currently falls
+    // back to hero (10C wires full PBR).
     shader.uniforms.uBarkShaderTier = treeBarkTierUniform
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
@@ -201,12 +205,10 @@ function injectFoliageSway(material) {
          attribute float aBark;
          attribute float aBarkRegion;
          attribute float aWindTier;
-         attribute float aBarkWorldYNorm;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
          varying float vBarkRegion;
-         varying float vBarkWorldYNorm;
          varying vec3 vWorldXZ;`
       )
       .replace(
@@ -215,7 +217,6 @@ function injectFoliageSway(material) {
          vLampGlow = aLampGlow;
          vBark = aBark;
          vBarkRegion = aBarkRegion;
-         vBarkWorldYNorm = aBarkWorldYNorm;
          // Canopy weight: hard-zero on the trunk, ramping in only above
          // the canopy break. Earlier 1.5→4.0 left ~20% contribution at 2m
          // which still showed as a faint trunk stripe. 3.0→4.5 gives a
@@ -363,7 +364,6 @@ function injectFoliageSway(material) {
          varying float vCanopyW;
          varying float vBark;
          varying float vBarkRegion;
-         varying float vBarkWorldYNorm;
          varying vec3  vWorldXZ;`
       )
       .replace(
@@ -436,29 +436,23 @@ function injectFoliageSway(material) {
            vec3 ovLo = 2.0 * barkColor * detailSample;
            vec3 ovHi = 1.0 - 2.0 * (1.0 - barkColor) * (1.0 - detailSample);
            vec3 composite = mix(ovLo, ovHi, step(vec3(0.5), barkColor));
-           barkColor = mix(barkColor, composite, uBarkDetailStrength);
-           // Brief 10A (Cork) — view-aware bark tier branch.
-           //   tier 0 (aerial) → REPLACE barkColor with gradient LUT sampled
-           //     at per-vertex normalized chassis Y. Strip the bark-texture +
-           //     detail-composite contribution entirely; the aerial path is
-           //     "no bark texture work, just a vertical color grade." Per-tree
-           //     hash modulation rides via the existing uBarkGradientHashAmp
-           //     (same jh4 axis as the hero luminance path, so a tree's
-           //     aerial and hero presentations share the same modulation
-           //     direction). Falls back to the hero path if no gradient is
-           //     bound (uUseBarkGradient == 0) — aerial tier requires gradient
-           //     authoring, but this avoids shipping black bark on a
-           //     no-gradient composition.
-           //   tier 1 (hero) → keep barkColor as composed above.
-           //   tier 2 (street) → currently falls back to hero; sub-phase 10C
-           //     wires the full-PBR path with roughness + (optional) displacement.
-           // Single shader program preserved (uniform-driven mix, no #defines).
-           if (uBarkShaderTier < 0.5 && uUseBarkGradient > 0.5) {
-             float aerialT = clamp(vBarkWorldYNorm + (jh4 - 0.5) * uBarkGradientHashAmp, 0.0, 1.0);
-             vec2 aerialLutUV = vec2(aerialT, 0.5) * uBarkGradientTileScale + uBarkGradientTileOffset;
-             vec3 aerialBark = texture2D(map, aerialLutUV).rgb;
-             barkColor = aerialBark;
-           }
+           // Brief 10A revision (Cork, post-review pivot 2026-05-23) — aerial
+           // tier samples the gradient LUT at the SAME luminance axis as hero
+           // (Brief 2.1's Rec.601 luminance + uBarkGradientHashAmp), not at a
+           // per-vertex normalized chassis Y. The original world-Y axis read
+           // camera-angle-dependent (Overhead vs Ground saw different gradient
+           // distributions because different portions of bark surface were
+           // visible per framing); luminance is per-pixel texture-driven and
+           // identical regardless of camera. The only architectural difference
+           // between aerial (tier 0) and hero (tier 1) becomes: aerial skips
+           // the Brief 2.1a detail Overlay composite; hero includes it. Gate
+           // the detail step by step(0.5, uBarkShaderTier): aerial → 0 → no
+           // detail; hero/street → 1 → full detail.
+           //   tier 0 (aerial) — Brief 2.1 luminance REPLACE, NO detail Overlay
+           //   tier 1 (hero)   — Brief 2.1 luminance REPLACE + Brief 2.1a detail Overlay
+           //   tier 2 (street) — falls back to hero; 10C wires full-PBR
+           float tierDetail = step(0.5, uBarkShaderTier);
+           barkColor = mix(barkColor, composite, uBarkDetailStrength * tierDetail);
            diffuseColor.rgb = mix(diffuseColor.rgb, barkColor, vBark);
          }`
       )
@@ -793,33 +787,6 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
       }
     }
     geometry.setAttribute('aWindTier', new THREE.BufferAttribute(arr, 1))
-  }
-  // Brief 10A (Cork) — per-vertex normalized chassis Y for the aerial-tier
-  // gradient sample. Same runtime-merge slot Sough's aWindTier (Brief 9a)
-  // established: stamped once per geometry-load, bake artifacts untouched.
-  // `fallback.chassisMinY` / `fallback.chassisYRange` let callers pass a
-  // chassis-wide range so multiple primitives of one tree share normalization
-  // (LS runtime computes this across the merged-chassis bbox); when absent,
-  // we fall back to per-geometry min/max (sufficient for Salon's single-
-  // skeleton preview).
-  if (!geometry.attributes.aBarkWorldYNorm) {
-    const arr = new Float32Array(pos.count)
-    let minY = fallback.chassisMinY
-    let range = fallback.chassisYRange
-    if (!Number.isFinite(minY) || !Number.isFinite(range) || range < 1e-6) {
-      let lo = Infinity, hi = -Infinity
-      for (let i = 0; i < pos.count; i++) {
-        const y = pos.getY(i)
-        if (y < lo) lo = y
-        if (y > hi) hi = y
-      }
-      minY = lo
-      range = Math.max(hi - lo, 1e-6)
-    }
-    for (let i = 0; i < pos.count; i++) {
-      arr[i] = (pos.getY(i) - minY) / range
-    }
-    geometry.setAttribute('aBarkWorldYNorm', new THREE.BufferAttribute(arr, 1))
   }
 }
 

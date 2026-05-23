@@ -130,8 +130,10 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
       // tier 3; bark vertices classify by radial distance from the
       // tree-local Y-axis (we read g.attributes.position AFTER applyMatrix4,
       // so XZ is tree-local thanks to the bake's clean coordinate frame —
-      // trunks sit at X≈Z≈0). Pattern reusable for Brief 10's
-      // aBarkWorldYNorm — same runtime-merge slot.
+      // trunks sit at X≈Z≈0). The runtime-merge per-vertex slot stays open
+      // for the next consumer; Brief 10A explored using it for an aerial-tier
+      // gradient axis but retired the attribute in favor of per-pixel
+      // luminance after operator review (camera-angle independence).
       const aWindTierArr = new Float32Array(pos.count)
       const gpos = g.attributes.position
       if (!isBark) {
@@ -159,36 +161,6 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
       collected.push(g)
     })
     if (collected.length === 0) return []
-
-    // Brief 10A (Cork) — per-vertex normalized chassis Y for the aerial-tier
-    // bark gradient (`aBarkWorldYNorm` → fragment `vBarkWorldYNorm` →
-    // gradient LUT sample). The brief specifies chassis-wide normalization
-    // (not per-primitive), so we scan ALL collected geometries for the
-    // chassis Y range first, then stamp each primitive against the shared
-    // (chassisMinY, chassisYRange). The aWindTier classifier above runs
-    // per-primitive against local XZ — independent of this; both stamps
-    // share the runtime-merge slot per project_runtime_merge_vertex_attributes
-    // (Sough's Brief 9a precedent). Chassis GLBs + trees-atlas.json stay
-    // byte-identical.
-    let chassisMinY = Infinity, chassisMaxY = -Infinity
-    for (const g of collected) {
-      const gp = g.attributes.position
-      for (let i = 0; i < gp.count; i++) {
-        const y = gp.getY(i)
-        if (y < chassisMinY) chassisMinY = y
-        if (y > chassisMaxY) chassisMaxY = y
-      }
-    }
-    const chassisYRange = Math.max(chassisMaxY - chassisMinY, 1e-6)
-    for (const g of collected) {
-      if (g.attributes.aBarkWorldYNorm) continue
-      const gp = g.attributes.position
-      const arr = new Float32Array(gp.count)
-      for (let i = 0; i < gp.count; i++) {
-        arr[i] = (gp.getY(i) - chassisMinY) / chassisYRange
-      }
-      g.setAttribute('aBarkWorldYNorm', new THREE.BufferAttribute(arr, 1))
-    }
 
     // Verify all geometries share the same attribute keys before merging.
     // If something diverges (rare, but a future tree variant could ship
