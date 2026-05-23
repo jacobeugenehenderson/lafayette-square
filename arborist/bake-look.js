@@ -26,6 +26,7 @@ import { prune } from '@gltf-transform/functions'
 import crypto from 'node:crypto'
 import { surveyRoster } from './atlas-survey.js'
 import { packSkyline } from './atlas-pack.js'
+import { ensurePosterizedForRef } from './extract-bark-posterized.mjs'
 
 // Per-tile mip-safe gutter (pixels). Edge pixels of each placed rect are
 // clamp-extended into the gutter so mip blending doesn't bleed across atlas
@@ -306,6 +307,76 @@ async function bakeDetailAtlas(tiles, outDir, lookName) {
   }
 }
 
+// ── Brief 10B (Vellum): bark Posterized Substrate layer ─────────────────
+//
+// Per-bark-ref colour-quantized substrate tiles (median-cut palette, light
+// FS dither — produced by arborist/extract-bark-posterized.mjs, auto-fired
+// from this script if the source posterized.png is missing). Packs as a
+// fifth `barkPosterized` sub-atlas page alongside bark/leaves/gradient/
+// detail. Runtime (tier ≤ 1) replaces `<map_fragment>`'s vendor sample
+// with a posterized sample at the same tile-local UV BEFORE Brief 2.1's
+// luminance gradient REPLACE runs — kit posterized look + cleaner LUT
+// indexing. Tier 2 (street) stays on vendor (forward-compat with 10C).
+//
+// One extra texture2D per bark fragment under tier ≤ 1; zero new programs,
+// zero new bindings (single unified atlas + single `map` sampler).
+//
+// Posterized tiles dedup by bark ref (same dedup pattern as Brief 2.1a
+// detail). Per-species manifest emission resolves through
+// barkBySpecies.materialRef; for region-split species the trunk ref wins.
+async function bakePosterizedAtlas(tiles, outDir, lookName) {
+  if (tiles.length === 0) return null
+  const contents = tiles.map(t => ({ w: t.w, h: t.h }))
+  const rects = contents.map(d => ({ w: d.w + GUTTER * 2, h: d.h + GUTTER * 2 }))
+  const pack = packSkyline(rects, { maxWidth: MAX_ATLAS_WIDTH })
+  const atlasW = pack.width
+  const atlasH = pack.height
+
+  const colorBase = sharp({
+    create: { width: atlasW, height: atlasH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
+  })
+  const colorParts = []
+  const tileEntries = []
+  for (let i = 0; i < tiles.length; i++) {
+    const t = tiles[i]
+    const place = pack.placements[i]
+    const content = contents[i]
+    const cx = place.x + GUTTER
+    const cy = place.y + GUTTER
+    const extendOpts = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
+    // sharp transparently decodes the source indexed PNG to RGBA on read;
+    // .toBuffer() emits a non-palette PNG so the master atlas composite never
+    // sees palette mode.
+    const colorBuf = await sharp(t.buffer)
+      .resize(content.w, content.h, { fit: 'fill' })
+      .extend(extendOpts)
+      .png()
+      .toBuffer()
+    colorParts.push({ input: colorBuf, left: place.x, top: place.y })
+    tileEntries.push({
+      tileIndex: i,
+      key: t.key,
+      atlas: 'barkPosterized',
+      classification: 'barkPosterized',
+      refs: t.refs,
+      content: { x: cx, y: cy, w: content.w, h: content.h },
+      uvTransform: {
+        offsetU: cx / atlasW,
+        offsetV: cy / atlasH,
+        scaleU: content.w / atlasW,
+        scaleV: content.h / atlasH,
+      },
+    })
+  }
+  const colorRel = `trees-atlas-bark-posterized-color.png`
+  await colorBase.composite(colorParts).png({ compressionLevel: 9 }).toFile(path.join(outDir, colorRel))
+  return {
+    width: atlasW, height: atlasH,
+    colorPath: `/baked/${lookName}/${colorRel}`,
+    tiles: tileEntries,
+  }
+}
+
 // ── atlas baking ─────────────────────────────────────────────────────────
 //
 // Skyline-packed atlas: each tile occupies its actual source content rect
@@ -394,21 +465,25 @@ async function bakeAtlas(tiles, atlasName, outDir, lookName) {
 // is intolerant of more than one tree shader program in this scene, so this
 // is non-negotiable.
 // Brief 7 (Cambium): named export for Salon preview atlas reuse.
-export async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookName) {
-  if (!bark && !leaves && !gradient && !detail) return null
+export async function unifyAtlases(bark, leaves, gradient, detail, posterized, outDir, lookName) {
+  if (!bark && !leaves && !gradient && !detail && !posterized) return null
 
   // Pack the sub-atlas pages as rects; skyline picks side-by-side or stacked
   // based on which wastes less. No fixed gutter here — sub-atlas edges are
   // already mip-safe (the sub-atlases include alpha=0 / flat normal
-  // background past their packed content). Brief 2 (Holm) adds a third
-  // sub-atlas for bark gradient LUTs; it has no normal map (LUTs are
-  // sampled by the fragment shader, not surface-shaded) so the unified
-  // normal map gets a flat-normal blit for its footprint.
+  // background past their packed content). Brief 2 (Holm) added a third
+  // sub-atlas for bark gradient LUTs; Brief 2.1a (Cinder) added a fourth
+  // for bark detail high-pass maps; Brief 10B (Vellum) adds a fifth for
+  // posterized bark substrate. None of these three carry normal maps (LUTs
+  // are sampled by the fragment shader, detail is greyscale, posterized
+  // is substrate-only) so the unified normal map gets a flat-normal blit
+  // for those footprints.
   const pages = []
-  if (bark)     pages.push({ kind: 'bark',     src: bark,     w: bark.width,     h: bark.height })
-  if (leaves)   pages.push({ kind: 'leaves',   src: leaves,   w: leaves.width,   h: leaves.height })
-  if (gradient) pages.push({ kind: 'gradient', src: gradient, w: gradient.width, h: gradient.height })
-  if (detail)   pages.push({ kind: 'detail',   src: detail,   w: detail.width,   h: detail.height })
+  if (bark)       pages.push({ kind: 'bark',       src: bark,       w: bark.width,       h: bark.height })
+  if (leaves)     pages.push({ kind: 'leaves',     src: leaves,     w: leaves.width,     h: leaves.height })
+  if (gradient)   pages.push({ kind: 'gradient',   src: gradient,   w: gradient.width,   h: gradient.height })
+  if (detail)     pages.push({ kind: 'detail',     src: detail,     w: detail.width,     h: detail.height })
+  if (posterized) pages.push({ kind: 'posterized', src: posterized, w: posterized.width, h: posterized.height })
   const pack = packSkyline(pages.map(p => ({ w: p.w, h: p.h })), { maxWidth: MAX_ATLAS_WIDTH })
   const unifiedW = Math.max(pack.width, 1)
   const unifiedH = Math.max(pack.height, 1)
@@ -417,6 +492,7 @@ export async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookN
   const placedLeaves = pages.find(p => p.kind === 'leaves')
   const placedGradient = pages.find(p => p.kind === 'gradient')
   const placedDetail = pages.find(p => p.kind === 'detail')
+  const placedPosterized = pages.find(p => p.kind === 'posterized')
 
   const colorOut = path.join(outDir, 'trees-atlas-color.png')
   const normalOut = path.join(outDir, 'trees-atlas-normal.png')
@@ -454,6 +530,13 @@ export async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookN
     // background fills the detail footprint (detail isn't normal-shaded).
     const detailColor = await fs.readFile(path.join(outDir, `trees-atlas-bark-detail-color.png`))
     colorParts.push({ input: detailColor, left: placedDetail.x, top: placedDetail.y })
+  }
+  if (placedPosterized) {
+    // Brief 10B (Vellum): posterized substrate sub-atlas color only. Tier
+    // ≤ 1 runtime resamples from this region instead of the vendor color
+    // tile via uBarkPosterizedTileScale/Offset. Normal map flat-tangent.
+    const postColor = await fs.readFile(path.join(outDir, `trees-atlas-bark-posterized-color.png`))
+    colorParts.push({ input: postColor, left: placedPosterized.x, top: placedPosterized.y })
   }
   await colorBase.composite(colorParts).png({ compressionLevel: 9 }).toFile(colorOut)
 
@@ -517,6 +600,7 @@ export async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookN
   // rewrite path's invariants intact.
   const gradientTiles = remap(placedGradient)
   const detailTiles = remap(placedDetail)
+  const posterizedTiles = remap(placedPosterized)
 
   return {
     width: unifiedW,
@@ -526,6 +610,7 @@ export async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookN
     tiles,
     gradientTiles,
     detailTiles,
+    posterizedTiles,
   }
 }
 
@@ -750,6 +835,7 @@ export async function bakeLook(lookName, opts = {}) {
       'trees-atlas-leaves-color.png', 'trees-atlas-leaves-normal.png',
       'trees-atlas-bark-gradient-color.png',
       'trees-atlas-bark-detail-color.png',
+      'trees-atlas-bark-posterized-color.png',
       'trees-atlas-bark-viz.png', 'trees-atlas-leaves-viz.png',
       'trees-atlas.json',
     ]) await rmrf(path.join(outDir, f))
@@ -868,15 +954,56 @@ export async function bakeLook(lookName, opts = {}) {
   }
   const detailTilesIn = [...detailSeenRef.values()]
 
+  // Brief 10B (Vellum): collect per-bark-ref posterized substrate tiles for
+  // every species in roster, mirroring the Brief 2.1a detail collection
+  // above. Resolves each species's primary bark ref (trunk-wins for region-
+  // split), auto-triggers extract-bark-posterized.mjs#posterizeBarkRef when
+  // the source posterized.png is missing (idempotent — re-bakes no-op),
+  // then reads + dedupes by bark ref into the posterized sub-atlas page.
+  // First cold bake per new ref pays ~0.1-0.3s of quantization; subsequent
+  // bakes are zero-latency (file exists, fs.access returns).
+  const posterizedSeenRef = new Map() // barkRef -> { key, buffer, w, h, refs:[{species}] }
+  {
+    const fileCache = new Map() // barkRef -> {buffer, w, h} | null
+    for (const [species, primaryRef] of speciesPrimaryBarkRef.entries()) {
+      if (!fileCache.has(primaryRef)) {
+        try {
+          await ensurePosterizedForRef(primaryRef)
+        } catch (err) {
+          console.warn(`[bake-look] posterize auto-trigger failed for ${primaryRef}: ${err.message}`)
+        }
+        const postPath = path.join(REPO_ROOT, 'public/textures/bark', primaryRef, 'posterized.png')
+        try {
+          const buf = await fs.readFile(postPath)
+          const meta = await sharp(buf).metadata()
+          fileCache.set(primaryRef, { buffer: buf, w: meta.width, h: meta.height })
+        } catch {
+          fileCache.set(primaryRef, null)
+        }
+      }
+      const slot = fileCache.get(primaryRef)
+      if (!slot) continue
+      const existing = posterizedSeenRef.get(primaryRef)
+      const ref = { species }
+      if (existing) {
+        if (!existing.refs.some(r => r.species === ref.species)) existing.refs.push(ref)
+      } else {
+        posterizedSeenRef.set(primaryRef, { key: `posterized-${primaryRef}`, buffer: slot.buffer, w: slot.w, h: slot.h, refs: [ref] })
+      }
+    }
+  }
+  const posterizedTilesIn = [...posterizedSeenRef.values()]
+
   const t1 = Date.now()
   const bark = await bakeAtlas(barkTiles, 'bark', outDir, lookName)
   const leaves = await bakeAtlas(leafTiles, 'leaves', outDir, lookName)
   const gradient = await bakeGradientAtlas(gradientTiles, outDir, lookName)
   const detail = await bakeDetailAtlas(detailTilesIn, outDir, lookName)
-  // Composite bark+leaves(+gradient)(+detail) into a single atlas so the
-  // runtime can use a single shared material. Tile uvTransforms are remapped
-  // into unified coordinates here.
-  const unified = await unifyAtlases(bark, leaves, gradient, detail, outDir, lookName)
+  const posterized = await bakePosterizedAtlas(posterizedTilesIn, outDir, lookName)
+  // Composite bark+leaves(+gradient)(+detail)(+posterized) into a single atlas
+  // so the runtime can use a single shared material. Tile uvTransforms are
+  // remapped into unified coordinates here.
+  const unified = await unifyAtlases(bark, leaves, gradient, detail, posterized, outDir, lookName)
   const tBake = Date.now() - t1
 
   // Phase B (2026-05-15): gather per-species bark spec from each species's
@@ -982,6 +1109,27 @@ export async function bakeLook(lookName, opts = {}) {
     }
   }
 
+  // Brief 10B (Vellum): per-species posterized substrate uvTransform. The
+  // runtime reads this to set uBarkPosterizedTileScale/Offset per draw — at
+  // tier ≤ 1 it resamples the posterized region instead of vendor color via
+  // localUV. Same shape + key convention as barkDetailBySpecies (re-uses
+  // tileBySpeciesBark since the local-UV recovery rides the same bark tile
+  // bounds the detail layer already needs).
+  const barkPosterizedBySpecies = {}
+  for (const pt of unified?.posterizedTiles || []) {
+    const slot = {
+      offsetU: pt.uvTransform.offsetU,
+      offsetV: pt.uvTransform.offsetV,
+      scaleU: pt.uvTransform.scaleU,
+      scaleV: pt.uvTransform.scaleV,
+    }
+    for (const ref of pt.refs) {
+      const barkTileUV = tileBySpeciesBark.get(ref.species)
+      if (!barkTileUV) continue
+      barkPosterizedBySpecies[ref.species] = { uvTransform: slot, barkTileUV }
+    }
+  }
+
   // Manifest
   const tilesByKey = {}
   for (const t of unified?.tiles || []) tilesByKey[t.key] = t
@@ -1004,6 +1152,7 @@ export async function bakeLook(lookName, opts = {}) {
     barkBySpecies,
     barkGradientByVariant,
     barkDetailBySpecies,
+    barkPosterizedBySpecies,
   }
   await fs.writeFile(path.join(outDir, 'trees-atlas.json'), JSON.stringify(manifest, null, 2))
 

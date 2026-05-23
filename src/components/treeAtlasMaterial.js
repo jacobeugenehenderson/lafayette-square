@@ -174,6 +174,16 @@ function injectFoliageSway(material) {
     // no slot is bound.
     shader.uniforms.uBarkTileOffset = { value: new THREE.Vector2(0, 0) }
     shader.uniforms.uBarkTileScale = { value: new THREE.Vector2(1, 1) }
+    // Brief 10B (Vellum) — posterized substrate sub-region. Under tier ≤ 1,
+    // the bark fragment chunk resamples from this region at the same tile-
+    // local UV used for detail (recovered from vMapUv via uBarkTileOffset/
+    // Scale) and replaces diffuseColor.rgb's bark pixels BEFORE Brief 2.1's
+    // luminance gradient REPLACE runs. Identity-safe when scale=0 (no slot
+    // bound — fresh checkout, no posterized.png, first cold bake fallback).
+    // Tier 2 (street) keeps vendor color via the same gating shape Brief 10A
+    // uses for the detail composite (forward-compat with 10C street-PBR).
+    shader.uniforms.uBarkPosterizedTileOffset = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uBarkPosterizedTileScale = { value: new THREE.Vector2(0, 0) }
     // Brief 10A (Cork) — view-aware bark tier. Shared module-scope uniform
     // object so a single mutation drives every mounted tree material at
     // once (LS runtime + Salon preview). Aerial samples the gradient LUT
@@ -359,6 +369,8 @@ function injectFoliageSway(material) {
          uniform float uBarkDetailStrength;
          uniform vec2  uBarkTileOffset;
          uniform vec2  uBarkTileScale;
+         uniform vec2  uBarkPosterizedTileOffset;
+         uniform vec2  uBarkPosterizedTileScale;
          uniform float uBarkShaderTier;
          varying float vLampGlow;
          varying float vCanopyW;
@@ -377,6 +389,40 @@ function injectFoliageSway(material) {
         '#include <map_fragment>',
         `#include <map_fragment>
          {
+           // Brief 10B (Vellum) — posterized substrate swap (tier ≤ 1).
+           // localUV computation lifted to the top of the bark chunk so both
+           // the substrate swap (10B) and the detail Overlay composite (2.1a)
+           // share one local-UV recovery from vMapUv. vMapUv lives inside the
+           // bark sub-region of the unified atlas; (vMapUv - uBarkTileOffset)
+           // / uBarkTileScale recovers the [0,1] tile-local UV. fract()
+           // wraps in case the bark UVs spilled past [0,1] pre-rewrite (per
+           // arborist/NOTES.md Cinder 2026-05-21 local-UV recovery).
+           vec2 localUV = (uBarkTileScale.x > 0.0 && uBarkTileScale.y > 0.0)
+             ? (vMapUv - uBarkTileOffset) / uBarkTileScale
+             : vec2(0.5);
+           localUV = fract(localUV);
+           // Posterized substrate sample at the same tile-local UV. When no
+           // slot is bound (uBarkPosterizedTileScale=0 — fresh checkout / no
+           // posterized.png yet), the ternary clamps postUV to (0.5, 0.5) so
+           // the wasted sample stays inside the atlas; havePosterized then
+           // gates the mix and the vendor diffuseColor passes through.
+           vec2 postUV = (uBarkPosterizedTileScale.x > 0.0 && uBarkPosterizedTileScale.y > 0.0)
+             ? (localUV * uBarkPosterizedTileScale + uBarkPosterizedTileOffset)
+             : vec2(0.5);
+           vec3 posterizedSample = texture2D(map, postUV).rgb;
+           // tier 0+1 → use posterized; tier 2 → keep vendor (street-PBR
+           // forward-compat with 10C). havePosterized gates the unbound case.
+           float useVendor = step(1.5, uBarkShaderTier);
+           float havePosterized = step(0.001, uBarkPosterizedTileScale.x * uBarkPosterizedTileScale.y);
+           vec3 substrate = mix(posterizedSample, diffuseColor.rgb, max(useVendor, 1.0 - havePosterized));
+           // Bark-fragment-only substrate replacement; leaves pass through
+           // <map_fragment>'s vendor sample untouched. Brief 2.1's luminance
+           // math + Brief 2.1a's detail Overlay below now operate on the
+           // kit-quantized substrate when tier ≤ 1 — cleaner LUT indexing
+           // (discrete luminance buckets → discrete gradient stops) + kit
+           // illustrated look at Browse + Hero distance.
+           diffuseColor.rgb = mix(diffuseColor.rgb, substrate, vBark);
+
            float jh1 = fract(sin(dot(vWorldXZ.xz, vec2(127.1, 311.7))) * 43758.5453);
            float jh2 = fract(sin(dot(vWorldXZ.xz, vec2(269.5, 183.3))) * 43758.5453);
            float jh3 = fract(sin(dot(vWorldXZ.xz, vec2(419.2, 371.9))) * 43758.5453);
@@ -416,16 +462,12 @@ function injectFoliageSway(material) {
            vec3 legacyBark = diffuseColor.rgb * barkTint;
            vec3 barkColor = mix(legacyBark, gradientColor, uUseBarkGradient);
            // Brief 2.1a (Cinder) Detail Texturing composite — Unreal Detail
-           // Texture / Unity HDRP Detail Albedo. Recover the [0,1] tile-local
-           // UV from vMapUv (which lives in the bark sub-region of the
-           // unified atlas), then sample the detail sub-region. Overlay
+           // Texture / Unity HDRP Detail Albedo. Uses the localUV computed
+           // at the top of this block (lifted by Brief 10B so substrate
+           // swap + detail composite share one local-UV recovery). Overlay
            // blend on the final bark color, additive over the tint/gradient
            // path. Identity-safe when uBarkTileScale=0 (no slot bound) since
            // uBarkDetailStrength is mixed against the unmodified barkColor.
-           vec2 localUV = (uBarkTileScale.x > 0.0 && uBarkTileScale.y > 0.0)
-             ? (vMapUv - uBarkTileOffset) / uBarkTileScale
-             : vec2(0.5);
-           localUV = fract(localUV);
            vec2 detailUV = localUV * uBarkDetailTileScale + uBarkDetailTileOffset;
            vec3 detailSample = texture2D(map, detailUV).rgb;
            // Overlay blend: per-channel, energy-preserving, bidirectionally
@@ -795,7 +837,7 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
 // per-draw uniform setup. Single implementation across LS runtime and
 // workstage preview — drift-prevention is the structural reason this
 // function lives here, next to its uniform contract.
-export function applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot) {
+export function applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot) {
   const shader = material?.userData?.shader
   if (!shader) return
   // Gradient slot
@@ -808,7 +850,10 @@ export function applyBarkUniforms(material, barkSettings, gradientSlot, detailSl
     shader.uniforms.uUseBarkGradient.value = 0
     shader.uniforms.uBarkGradientHashAmp.value = 0
   }
-  // Detail slot
+  // Detail slot (also carries the species's primary bark tile bounds —
+  // uBarkTileOffset/Scale — which the substrate swap reuses for local-UV
+  // recovery; if posterized binds but detail doesn't, the bark tile bounds
+  // still need to be set, see posterized-only branch below).
   if (detailSlot) {
     const d = detailSlot.uvTransform
     const b = detailSlot.barkTileUV
@@ -819,6 +864,22 @@ export function applyBarkUniforms(material, barkSettings, gradientSlot, detailSl
   } else {
     shader.uniforms.uBarkDetailTileScale.value.set(0, 0)
     shader.uniforms.uBarkTileScale.value.set(0, 0)
+  }
+  // Brief 10B (Vellum): posterized substrate slot. Shares the bark-tile-
+  // bounds uniforms (uBarkTileOffset/Scale) with the detail composite for
+  // local-UV recovery; when posterized binds but detail doesn't, lift those
+  // bark bounds from posterizedSlot.barkTileUV so local-UV is correct.
+  if (posterizedSlot) {
+    const p = posterizedSlot.uvTransform
+    shader.uniforms.uBarkPosterizedTileOffset.value.set(p.offsetU, p.offsetV)
+    shader.uniforms.uBarkPosterizedTileScale.value.set(p.scaleU, p.scaleV)
+    if (!detailSlot && posterizedSlot.barkTileUV) {
+      const b = posterizedSlot.barkTileUV
+      shader.uniforms.uBarkTileOffset.value.set(b.offsetU, b.offsetV)
+      shader.uniforms.uBarkTileScale.value.set(b.scaleU, b.scaleV)
+    }
+  } else {
+    shader.uniforms.uBarkPosterizedTileScale.value.set(0, 0)
   }
   // Bark settings (region split or legacy single-spec)
   if (!barkSettings) {

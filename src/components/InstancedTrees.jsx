@@ -66,7 +66,7 @@ function urlToVariantId(url) {
   return m ? m[1] : null
 }
 
-function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot }) {
+function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot }) {
   const { scene } = useGLTF(url)
 
   // Walk the rewritten GLB, baking each primitive's world matrix into its
@@ -252,6 +252,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
           barkSettings={barkSettings}
           gradientSlot={gradientSlot}
           detailSlot={detailSlot}
+          posterizedSlot={posterizedSlot}
         />
       ))}
     </>
@@ -262,7 +263,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot, detailSlot }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot, detailSlot, posterizedSlot }) {
   const ref = useRef(null)
   // Attach the per-instance lamp-glow attribute to the geometry. Each
   // unique GLB has a unique geometry instance, so this doesn't bleed
@@ -294,8 +295,8 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   // the uniforms; we overwrite right before three.js submits the draw,
   // and three.js uploads uniform values per draw.
   const onBeforeRender = useMemo(() => {
-    return () => applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot)
-  }, [material, barkSettings, gradientSlot, detailSlot])
+    return () => applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot)
+  }, [material, barkSettings, gradientSlot, detailSlot, posterizedSlot])
 
   return (
     <instancedMesh
@@ -530,6 +531,13 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     return atlas?.manifest?.barkDetailBySpecies || {}
   }, [atlas?.manifest?.barkDetailBySpecies])
 
+  // Brief 10B (Vellum): per-species posterized substrate uvTransform. Same
+  // URL→species lookup pattern as detail; absent slot → identity-safe
+  // (uBarkPosterizedTileScale=0 → vendor color flows through unchanged).
+  const barkPosterizedBySpecies = useMemo(() => {
+    return atlas?.manifest?.barkPosterizedBySpecies || {}
+  }, [atlas?.manifest?.barkPosterizedBySpecies])
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
@@ -546,6 +554,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
             ? (barkGradientByVariant[species]?.[variantId] || barkGradientByVariant[species]?.[Number(variantId)] || null)
             : null
           const detailSlot = species ? (barkDetailBySpecies[species] || null) : null
+          const posterizedSlot = species ? (barkPosterizedBySpecies[species] || null) : null
           return (
             <Suspense key={`${url}#${tileId}`} fallback={null}>
               <VariantInstances
@@ -555,6 +564,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
                 barkSettings={barkSettings}
                 gradientSlot={gradientSlot}
                 detailSlot={detailSlot}
+                posterizedSlot={posterizedSlot}
               />
             </Suspense>
           )

@@ -4,6 +4,62 @@
 
 ---
 
+## 2026-05-23 — Brief 10B: Posterized bark substrate + tier-gated swap (Vellum)
+
+**Baby: Vellum.** Boz drafted, Jacob dispatched. Substrate side of Brief 10's view-aware bark tiering: under tier ≤ 1 (aerial + hero, v1.5 ship-path), `diffuseColor.rgb` is replaced with a sample from a fifth `barkPosterized` atlas sub-page BEFORE Brief 2.1's luminance math runs. Tier 2 (street) keeps vendor color via the same `step(1.5, uBarkShaderTier)` shape Brief 10A uses to gate the detail composite — forward-compat with 10C street-PBR.
+
+**Why a name outside the plant namespace.** Per the brief's framing on pattern-match risk (Holm 2026-05-23 mis-fired on a near-neighbor bark brief; Cambium same-day); Birch/Cinder/Cork/Cambium all appear in the adjacent code I touched. **Vellum** = a prepared illustration substrate — directly maps to the brief's "substrate side" framing — and is non-plant, non-mineral-cliché, distinct from Spindle phonetically. Held the line.
+
+**What shipped.**
+- **`arborist/extract-bark-posterized.mjs` (new, ~115 LOC):** mirrors `extract-bark-detail.mjs`. Reads `public/textures/bark/<ref>/color.jpg`, resize to `tileSize` THEN quantize via sharp's `.png({palette:true, colors, dither})` (libimagequant median-cut + Floyd–Steinberg), writes `posterized.png` alongside. `writeIfChanged` + mtime touch per `[[project_writeifchanged_touches_mtime]]`. **Two entry-points**: CLI `node arborist/extract-bark-posterized.mjs` (iterates all `Bark*` refs) AND library exports `posterizeBarkRef(ref)` + `ensurePosterizedForRef(ref)` (the latter `fs.access`-gates so auto-triggers don't re-quantize). Defaults loaded from `arborist/posterize-defaults.json` (operator-tunable hand-authored JSON) with a `posterize-defaults.defaults.json` immutable backstop per `[[feedback_json_stringify_loses_handauthored_format]]`. `perBarkRef` override map supports per-ref `colors`/`tileSize`/`ditherStrength` knobs; empty for v1.
+- **Auto-trigger inside `bake-look.js`:** after the Brief 2.1a detail-collection block, a new posterized-collection block walks `speciesPrimaryBarkRef` (already built by the detail block), calls `ensurePosterizedForRef(primaryRef)` for each, then reads the result + dedup-bundles into `posterizedSeenRef`. First cold bake per missing ref fires the extract inline (~60 ms per ref); subsequent bakes are zero-latency via the `fs.access` short-circuit. New `bakePosterizedAtlas(tiles, outDir, lookName)` mirrors `bakeDetailAtlas` byte-for-byte — writes `trees-atlas-bark-posterized-color.png` sub-atlas, returns tile entries with `classification: 'barkPosterized'`.
+- **`unifyAtlases` signature grows** from `(bark, leaves, gradient, detail, outDir, lookName)` to `(bark, leaves, gradient, detail, posterized, outDir, lookName)`. The `posterized` page packs as the 5th skyline rect; flat-normal background covers its footprint (no normal map for substrate-only data). Both callers updated (`bake-look.js` orchestrator + `salon-preview-atlas.js`).
+- **`barkPosterizedBySpecies[<species>] = { uvTransform, barkTileUV }` emitted in manifest** — same shape + species key + bark-tile-bounds field as `barkDetailBySpecies`. The `barkTileUV` field carries the species's primary bark tile bounds in unified-atlas space so the runtime can recover `[0,1]` local-UV from `vMapUv` before mapping into the posterized sub-region (same recovery pattern Cinder established for detail per the 2026-05-21 sub-region-UV correction).
+- **Salon preview parity** (`arborist/salon-preview-atlas.js`): new `bakePosterizedPage(postBuf, dims, outDir)` mirrors `bakeDetailPage`; auto-triggers `ensurePosterizedForRef(barkRef)` inline before reading `posterized.png`; manifest emission for `barkPosterizedBySpecies[PREVIEW_SPECIES]` with `barkTileUV: primaryBark.uvTransform`. Per `[[feedback_salon_preview_is_authoring_surface]]` — load-bearing AC. Salon preview is the authoring surface; effects invisible there are functionally undeployed.
+- **Shader (`src/components/treeAtlasMaterial.js`):** two new uniforms `uBarkPosterizedTileOffset/Scale` (initialized to zero — identity-safe baseline). Bark fragment chunk extended: **`localUV` computation lifted** to the top of the `{ }` block (was at line 425 mid-chunk) so both the posterized substrate swap AND the existing Brief 2.1a detail Overlay composite share one local-UV recovery. Brief asked me to choose between lift vs duplicate; lifted (one division saved, cleaner forward-compat). Substrate swap chunk inserts right after the lift: samples posterized at `localUV * uBarkPosterizedTileScale + uBarkPosterizedTileOffset`, gates via `step(1.5, uBarkShaderTier)` (tier 0+1 use posterized, tier 2 keeps vendor) AND via `havePosterized = step(0.001, scale.x * scale.y)` (no-slot fallback), mixes into `diffuseColor.rgb` gated by `vBark` (leaves untouched). Brief 2.1's luminance + Brief 2.1a's detail Overlay below operate on the kit-quantized substrate when tier ≤ 1. Single program preserved (no `customProgramCacheKey` change, all uniform additions).
+- **`applyBarkUniforms`** extended with `posterizedSlot` 5th arg. Sets `uBarkPosterizedTileOffset/Scale` from `slot.uvTransform`; zeros scale when no slot. **Fallback case handled**: when `posterizedSlot` is present but `detailSlot` is absent, lift bark-tile bounds (`uBarkTileOffset/Scale`) from `posterizedSlot.barkTileUV` so local-UV recovery stays correct in the hypothetical posterized-without-detail composition. Doesn't fire in today's LS roster (every species with posterized also has detail by symmetry); makes the runtime composable for that future.
+- **InstancedTrees.jsx + SpecimenViewport.jsx**: `barkPosterizedBySpecies` memo + URL→species lookup + prop drilling through `VariantInstances` → `SubmeshInstances` → `onBeforeRender → applyBarkUniforms`. Same pattern Cinder established for `detailSlot`. Mirror call site in `SpecimenViewport.jsx#barkUniformsState`.
+- **`arborist/posterize-defaults.json`** + **`posterize-defaults.defaults.json`** sibling: `{ colors:32, tileSize:256, ditherStrength:0.5, perBarkRef:{} }`. Hand-authored format preservation pattern.
+
+**Atlas growth at LS roster.** `trees-atlas-color.png` 21,135,871 → 21,399,444 B (+263,573 B / +0.26 MB). **Dramatically under the brief's 10–20 MB worst-case** — five distinct bark refs in LS roster (after per-ref dedup at 7 species), each posterized tile at 256² 16-color indexed PNG ≈ 11–31 KB on disk. Skyline pack adds one row to the unified atlas. Atlas-size soft-guard at 32 MB threshold surfaced for follow-up; held back from 10B (single line, no behavior change).
+
+**Determinism (AC #10).** `shasum public/textures/bark/Bark003/posterized.png` stable across two consecutive `node arborist/extract-bark-posterized.mjs` runs (`a17570270073…`). libimagequant's median-cut + FS-dither is deterministic (no PRNG seed exposed). All 5 refs reproduce byte-identical on rerun.
+
+**Auto-trigger verified (AC #1b).** Deleted `public/textures/bark/Bark012/posterized.png`; ran `node arborist/bake-look.js --look lafayette-square --no-viz --no-rewrite`; file reappeared automatically at 31.5 KB. Bake total 8.86 s — no measurable cost vs idempotent path because per-ref extract is ~60 ms.
+
+**sharp's `colors:32` clamps to 16-color palette in practice.** Surfaced via `sharp().metadata()`: output reports `bitsPerSample:4 paletteBitDepth:4 isPalette:true` regardless of the `colors:32` argument. libimagequant's perceptual optimization compacts to 16 buckets when its model finds that sufficient. **Not a bug, not blocking** — visual posterization still hits; gradient LUT indexing on 16 discrete luminance buckets is still dramatically cleaner than the continuous photographic input. Operator can tune via `perBarkRef.<ref>.colors` if a specific ref reads too soft; default stays at 32 (the max budget, not a floor). Documented in survey.
+
+**Surfaced scope-drift items per `[[feedback_baby_must_surface_scope_drift]]`.**
+1. sharp 32→16 palette clamp — above.
+2. `localUV` lift vs duplicate — chose lift; one division saved, forward-compatible.
+3. `applyBarkUniforms` posterized-only fallback for bark-tile bounds — see above. Composable for posterized-without-detail; identity-no-op today.
+4. Atlas-size soft-guard at 32 MB suggested, NOT added in 10B (single-line tweak; flagged for follow-up).
+5. `extract-bark-detail.mjs` could follow the same auto-trigger pattern in a tiny follow-up; NOT shipped in 10B (scope wall).
+6. Gradient hash-amp × posterized interaction — discrete luminance buckets mean per-instance hash offset can cross bucket boundaries; visual character unverified until browser inspection. Tier-aware hash-amp dial (zero hash under tier ≤ 1) is the future remediation if banding reads as noise rather than character.
+7. Detail Overlay × posterized substrate — Overlay-blend math is local-per-channel so quantization doesn't break it, but visual character of the composite may shift. Default `uBarkDetailStrength=1.0` should look fine; if not, tier-aware detail strength is the dial.
+
+**ACs covered from CLI vs needing browser.** ✓ AC #1 (extract + auto-trigger), ✓ AC #2 (atlas packs 5th sub-page), ✓ AC #6 (identity-safe by shader structure — gated via `havePosterized` step), ✓ AC #10 (determinism), ✓ AC #11 (smallness — +0.26 MB delta). Visual ACs #3-#5 (Hero / Overhead / tier-2 fallback), #7 (Salon parity), #8 (single program — structurally guaranteed by no `customProgramCacheKey` touch + uniform-gated mix), #9 (no leaf regression — structurally guaranteed by `vBark` gate) need browser confirmation. Survey at `scratch/brief-10b-posterization-survey-vellum.md` includes the recommended smoke sequence.
+
+**Files touched.**
+- `arborist/extract-bark-posterized.mjs` (NEW, +115 LOC)
+- `arborist/posterize-defaults.json` (NEW, +6 LOC)
+- `arborist/posterize-defaults.defaults.json` (NEW, +6 LOC)
+- `arborist/bake-look.js` (+85 LOC — `bakePosterizedAtlas`, `unifyAtlases` extension, posterized collection block, `barkPosterizedBySpecies` emission, empty-roster wipe extension, import)
+- `arborist/salon-preview-atlas.js` (+45 LOC — `bakePosterizedPage`, posterized buffer load + auto-trigger, `barkPosterizedBySpecies` emission in manifest, import)
+- `src/components/treeAtlasMaterial.js` (+30 LOC — 2 uniform inits + 2 GLSL decls, substrate-swap shader chunk, localUV lift, `applyBarkUniforms` 5th-arg extension + fallback)
+- `src/components/InstancedTrees.jsx` (+8 LOC — memo, lookup, prop drill, `applyBarkUniforms` call)
+- `src/arborist/SpecimenViewport.jsx` (+4 LOC — `posterizedSlot` in `barkUniformsState`, `applyBarkUniforms` 5th arg)
+- `arborist/ARCHITECTURE.md` (+1 paragraph in view-aware bark tiering subsection)
+- `arborist/BACKLOG.md` (10B entry marked shipped + replacement summary)
+- `scratch/brief-10b-posterization-survey-vellum.md` (NEW, survey)
+- `arborist/NOTES.md` (this entry)
+
+Net ~325 LOC of code + ~80 LOC of survey.
+
+— Vellum
+
+---
+
 ## 2026-05-23 — Brief 11 lightweight: LS runtime bark-tier auto-bind (Plumb)
 
 **Baby: Plumb.** Boz drafted, Jacob dispatched. Pure runtime activation of the tier seam Cork shipped in 10A and Vantage wired in Salon under Brief 13. No new uniforms, no shader edits — one new component (`TierDriver`) mounted as a sibling of `SwayDriver` inside `ParkPopulation`.

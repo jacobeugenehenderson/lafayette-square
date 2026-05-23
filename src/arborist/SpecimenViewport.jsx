@@ -809,9 +809,10 @@ function Skeleton({
     const sp = m.previewKey?.species
     const vid = m.previewKey?.variantId
     return {
-      barkSettings: (sp && m.barkBySpecies?.[sp]) || null,
-      gradientSlot: (sp && m.barkGradientByVariant?.[sp]?.[vid]) || null,
-      detailSlot:   (sp && m.barkDetailBySpecies?.[sp]) || null,
+      barkSettings:    (sp && m.barkBySpecies?.[sp]) || null,
+      gradientSlot:    (sp && m.barkGradientByVariant?.[sp]?.[vid]) || null,
+      detailSlot:      (sp && m.barkDetailBySpecies?.[sp]) || null,
+      posterizedSlot:  (sp && m.barkPosterizedBySpecies?.[sp]) || null,
     }
   }, [atlas.manifest])
   useFrame(() => {
@@ -821,6 +822,7 @@ function Skeleton({
       barkUniformsState.barkSettings,
       barkUniformsState.gradientSlot,
       barkUniformsState.detailSlot,
+      barkUniformsState.posterizedSlot,
     )
   })
 

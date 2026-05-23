@@ -44,6 +44,7 @@ import {
 import {
   DEFAULTS, generateSingleCompositionGLB,
 } from './generate-salon.js'
+import { ensurePosterizedForRef } from './extract-bark-posterized.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.dirname(__dirname)
@@ -142,6 +143,15 @@ async function fullRebuild({ species, slot, composition, dir, cur, t0 }) {
     fs.readFile(path.join(BARK_DIR, barkRef, 'normal.jpg')),
   ])
   const barkDetailBuf = await fs.readFile(path.join(BARK_DIR, barkRef, 'detail.png')).catch(() => null)
+  // Brief 10B (Vellum): posterized substrate. Auto-trigger the extract if
+  // the source posterized.png is missing for this composition's bark ref —
+  // identical pattern to bake-look.js's auto-trigger so Salon preview and
+  // LS runtime share substrate identity from the very first cold-boot
+  // operator interaction (load-bearing per feedback_salon_preview_is_authoring_surface).
+  try { await ensurePosterizedForRef(barkRef) } catch (err) {
+    console.warn(`[salon-preview-atlas] posterize auto-trigger failed for ${barkRef}: ${err.message}`)
+  }
+  const barkPosterizedBuf = await fs.readFile(path.join(BARK_DIR, barkRef, 'posterized.png')).catch(() => null)
 
   const leafShapeBuf = await fs.readFile(path.join(LEAF_SHAPES_DIR, composition.leaves.pack, 'shape.png'))
     .catch(() => null)
@@ -169,11 +179,16 @@ async function fullRebuild({ species, slot, composition, dir, cur, t0 }) {
     const detailDims = await imgDims(barkDetailBuf)
     detail = await bakeDetailPage(barkDetailBuf, detailDims, dir)
   }
+  let posterized = null
+  if (barkPosterizedBuf) {
+    const postDims = await imgDims(barkPosterizedBuf)
+    posterized = await bakePosterizedPage(barkPosterizedBuf, postDims, dir)
+  }
 
   // 4. Unify into one master atlas using bake-look's helper. lookName is
   //    synthetic — only used as a colorPath prefix that we rewrite below.
   const unifiedLookName = `__salon-preview__/${species}/${slot}`
-  const unified = await unifyAtlases(bark, leaves, gradient, detail, dir, unifiedLookName)
+  const unified = await unifyAtlases(bark, leaves, gradient, detail, posterized, dir, unifiedLookName)
 
   // unifyAtlases writes trees-atlas-color.png + trees-atlas-normal.png to
   // `dir`. Rename to our atlas-color/normal.png convention.
@@ -436,6 +451,34 @@ async function bakeDetailPage(detailBuf, dims, outDir) {
   }
 }
 
+// Brief 10B (Vellum): mirror bakeDetailPage for the posterized substrate
+// tile. The source posterized.png is an indexed PNG (median-cut quantized);
+// sharp transparently decodes it to RGBA on the .extend().png() roundtrip,
+// so the master atlas composite never sees palette mode.
+async function bakePosterizedPage(postBuf, dims, outDir) {
+  const { w, h } = dims
+  const W = w + GUTTER * 2
+  const H = h + GUTTER * 2
+  const cx = GUTTER, cy = GUTTER
+  const ext = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
+  const cPng = await sharp(postBuf).extend(ext).png().toBuffer()
+  await fs.writeFile(path.join(outDir, 'trees-atlas-bark-posterized-color.png'), cPng)
+  return {
+    width: W, height: H,
+    colorPath: 'unused',
+    tiles: [{
+      tileIndex: 0,
+      key: 'preview-posterized',
+      atlas: 'barkPosterized',
+      classification: 'barkPosterized',
+      classifiedBy: 'preview',
+      refs: [{ species: PREVIEW_SPECIES }],
+      content: { x: cx, y: cy, w, h },
+      uvTransform: { offsetU: cx / W, offsetV: cy / H, scaleU: w / W, scaleV: h / H },
+    }],
+  }
+}
+
 // ── GLB UV-rewrite lookup ───────────────────────────────────────────────
 
 function buildLookupIdx(unified) {
@@ -497,6 +540,23 @@ function buildPreviewManifest({ species, slot, composition, unified, hashAmp }) 
     }
   }
 
+  // Brief 10B (Vellum): per-species posterized substrate uvTransform — same
+  // shape as detail, runtime reads at tier ≤ 1 to resample from the
+  // posterized region instead of the vendor bark color.
+  const barkPosterizedBySpecies = {}
+  for (const pt of unified.posterizedTiles || []) {
+    if (!primaryBark) continue
+    barkPosterizedBySpecies[PREVIEW_SPECIES] = {
+      uvTransform: {
+        offsetU: pt.uvTransform.offsetU,
+        offsetV: pt.uvTransform.offsetV,
+        scaleU: pt.uvTransform.scaleU,
+        scaleV: pt.uvTransform.scaleV,
+      },
+      barkTileUV: primaryBark.uvTransform,
+    }
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     salonPreview: { species, slot, sourceSpecies: species },
@@ -514,6 +574,7 @@ function buildPreviewManifest({ species, slot, composition, unified, hashAmp }) 
     barkBySpecies,
     barkGradientByVariant,
     barkDetailBySpecies,
+    barkPosterizedBySpecies,
     previewKey: {
       species: PREVIEW_SPECIES,
       variantId: PREVIEW_VARIANT,
