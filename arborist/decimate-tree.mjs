@@ -85,6 +85,35 @@ export const DEFAULT_CONFIG = {
     algorithm: 'meshopt',           // 'meshopt' (simplifyWithAttributes, UV-preserving) | 'auto'
     uvWeight: 0.5,                  // simplifyWithAttributes UV stream weighting
   },
+  leafDecimation: {
+    // Brief 6.3 (Gnomon, 2026-05-23) — connected-mesh leaf decimation, Lever 6.
+    // Sibling to Lever 5: same MeshoptSimplifier, gated on `atlasKind === 'leaf'`
+    // AND connected-mesh topology (maxVertUse > 1). Card-based leaves
+    // (maxVertUse === 1) are Spindle's Lever 3 territory and are skipped here.
+    // Fires before emitLod (Lever 4) to break the simplifier's topology floor
+    // on Linden-class 400-500K-tri sculpted leaves. Naturally-light connected-
+    // mesh leaves (Sugar Maple ~4K-tri prims, Italian Cypress) below
+    // vertexThreshold no-op.
+    //
+    // uvWeight is MAX (1.0), higher than Lever 5's 0.5: vendor leaf prims UV
+    // into a sub-region of a shared atlas page (Linden's leaf + bark share one
+    // material, disjoint UV sub-regions per [[feedback_atlas_subregion_uv_recovery]]).
+    // UV drift across sub-region boundaries makes leaves sample bark pixels.
+    //
+    // positionWeight: meshoptimizer's simplifyWithAttributes does NOT expose a
+    // separate position-stream weight (position is the intrinsic quadric base;
+    // attribute_weights only weight the UV stream). Silhouette discipline rides
+    // on the position quadric + the tight errorTolerance. Field retained in the
+    // defaults JSON as documentation but not passed to the simplifier.
+    enabled: true,
+    vertexThreshold: 100000,        // skip leaf prims with fewer verts (only fire on Linden-class connected-mesh)
+    errorTolerance: 0.02,           // tighter than Lever 5's 0.05 (silhouette + atlas-UV constraints) — looser than emitLod's 0.0005
+    targetRatio: 0.20,              // target index count = ratio × original (cap; error may stop earlier)
+    algorithm: 'meshopt',           // 'meshopt' (simplifyWithAttributes, UV-preserving) | 'auto'
+    uvWeight: 1.0,                  // MAX — atlas-sub-region UV preservation is load-bearing
+    positionWeight: 1.0,            // documented intent; API exposes no separate knob (see note above)
+    perLeafRef: {},                 // reserved per-species overrides (empty); structure TBD
+  },
 }
 
 // Load operator-tunable defaults from disk (falls back to DEFAULT_CONFIG).
@@ -424,6 +453,163 @@ function decimateBarkOnePrim(prim, opts) {
     tcount: tcountBefore, kept: tcountAfter, dropped: tcountBefore - tcountAfter,
     achievedError,
     targetIndexCount: targetIndexCount / 3,
+  }
+}
+
+// ── Lever 6: connected-mesh leaf decimation (Brief 6.3, Gnomon, 2026-05-23) ─
+//
+// Operates ONLY on primitives with `extras.atlasKind === 'leaf'` whose vertex
+// count exceeds `leafDecimation.vertexThreshold` AND whose topology is
+// connected-mesh (maxVertUse > 1). The Linden-class single-primitive sculpted
+// leaf (~470K verts / ~417K tris) is the headline target; the broader firing
+// set spans birch / red maple / aspen / white oak / tall pine / juniper /
+// peach / white fir — every chassis carrying a heavy connected-mesh leaf prim.
+//
+// Disjoint from Spindle's Lever 3: card-based leaves (maxVertUse === 1, e.g.
+// Robinia, where every vertex is referenced once) are silhouette-culled by
+// Lever 3 and SKIPPED here. The maxVertUse > 1 gate is the discriminator —
+// Lever 3 owns === 1, Lever 6 owns > 1. Both gate on atlasKind === 'leaf'.
+//
+// Why a separate pre-emitLod pass: emitLod's per-LoD `error` budget (0.0005
+// for lod0) is tuned tight to preserve leaf-card silhouettes and refuses to
+// collapse a 417K-tri connected mesh below its topology floor — Linden's lod2
+// never reached bracket. Running simplifyWithAttributes at a looser error
+// (0.02) here hands emitLod a far smaller leaf mesh to bracket from.
+//
+// UV preservation (load-bearing): vendor leaf prims UV into a sub-region of a
+// shared atlas page. On Linden the leaf and bark prims share ONE material and
+// occupy disjoint UV sub-regions (leaf U[0.45,0.99] V[0.62,0.77], bark
+// U[0.01,0.43] V[0.02,0.98]); UV drift across that boundary makes leaves
+// sample bark pixels. uvWeight defaults to MAX (1.0) for this reason, per
+// [[feedback_atlas_subregion_uv_recovery]].
+//
+// positionWeight: meshoptimizer exposes no separate position-stream weight
+// (position is the quadric base; attribute_weights weight only UV). The
+// defaults field is documentation; it is not passed to the simplifier.
+//
+// Idempotency: stamps `extras.gnomonDecimatedLeaf = true` on success; re-runs
+// short-circuit. Determinism: meshopt simplify is deterministic for a fixed
+// input + target + error, so same chassis → byte-identical output.
+export async function decimateLeafPrimitivesConnectedMesh(doc, config) {
+  const cfg = { ...DEFAULT_CONFIG, ...(config || {}) }
+  const opts = cfg.leafDecimation
+  if (!opts?.enabled) return []
+  await MeshoptSimplifier.ready
+
+  const reports = []
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      const kind = (prim.getExtras() || {}).atlasKind
+      if (kind !== 'leaf') continue
+      const r = decimateLeafConnectedOnePrim(prim, opts)
+      if (r) reports.push({ mesh: mesh.getName() || '<mesh>', ...r })
+    }
+  }
+  return reports
+}
+
+function decimateLeafConnectedOnePrim(prim, opts) {
+  const posAttr = prim.getAttribute('POSITION')
+  const idxAttr = prim.getIndices()
+  if (!posAttr || !idxAttr) return null
+
+  const vcount = posAttr.getCount()
+  const tcountBefore = Math.floor(idxAttr.getCount() / 3)
+  const existingExtras = prim.getExtras() || {}
+
+  if (existingExtras.gnomonDecimatedLeaf) {
+    return { reason: 'already-decimated', vcount, tcount: tcountBefore, kept: tcountBefore }
+  }
+  if (vcount < opts.vertexThreshold) {
+    return { reason: 'below-vertexThreshold', vcount, tcount: tcountBefore, threshold: opts.vertexThreshold }
+  }
+
+  // Topology gate: card-based (maxVertUse === 1) is Lever 3's. Only fire on
+  // connected-mesh (maxVertUse > 1).
+  const indicesSrc = idxAttr.getArray()
+  const useCount = new Uint32Array(vcount)
+  for (let i = 0; i < indicesSrc.length; i++) useCount[indicesSrc[i]]++
+  let maxUse = 0
+  for (let i = 0; i < vcount; i++) if (useCount[i] > maxUse) { maxUse = useCount[i]; if (maxUse > 1) break }
+  if (maxUse <= 1) {
+    return { reason: 'card-based', vcount, tcount: tcountBefore, kept: tcountBefore, maxUse }
+  }
+
+  const positions = new Float32Array(posAttr.getArray())   // copy; simplifier may read repeatedly
+  const indices = indicesSrc instanceof Uint32Array ? indicesSrc.slice() : new Uint32Array(indicesSrc)
+
+  const targetIndexCount = Math.max(3, Math.floor(indices.length * opts.targetRatio / 3) * 3)
+  const flags = []
+
+  // UV-preserving variant when a UV stream + the 'meshopt' or 'auto' algo is
+  // selected. Falls back to plain simplify otherwise (rare — leaf prims carry
+  // TEXCOORD_0 by construction).
+  const uvAttr = prim.getAttribute('TEXCOORD_0')
+  let newIndices, achievedError
+  if ((opts.algorithm === 'meshopt' || opts.algorithm === 'auto') && uvAttr && typeof MeshoptSimplifier.simplifyWithAttributes === 'function') {
+    const uvs = new Float32Array(uvAttr.getArray())
+    const result = MeshoptSimplifier.simplifyWithAttributes(
+      indices,
+      positions, 3,
+      uvs, 2,
+      [opts.uvWeight ?? 1.0, opts.uvWeight ?? 1.0],
+      null,                          // vertex_lock — none
+      targetIndexCount,
+      opts.errorTolerance,
+      flags,
+    )
+    newIndices = result[0]
+    achievedError = result[1]
+  } else {
+    const result = MeshoptSimplifier.simplify(
+      indices,
+      positions, 3,
+      targetIndexCount,
+      opts.errorTolerance,
+      flags,
+    )
+    newIndices = result[0]
+    achievedError = result[1]
+  }
+
+  const tcountAfter = Math.floor(newIndices.length / 3)
+  if (tcountAfter >= tcountBefore) {
+    // Simplifier couldn't collapse further at this error budget. Stamp anyway
+    // so retries are no-ops; surface as 'floor-hit'.
+    prim.setExtras({ ...existingExtras, gnomonDecimatedLeaf: true })
+    return { reason: 'floor-hit', vcount, tcount: tcountBefore, kept: tcountBefore, achievedError, targetIndexCount: targetIndexCount / 3, maxUse }
+  }
+
+  // Compact: build old→new vert map in scan order across new indices.
+  const remap = new Int32Array(vcount).fill(-1)
+  let nextVert = 0
+  for (let i = 0; i < newIndices.length; i++) {
+    const v = newIndices[i]
+    if (remap[v] < 0) remap[v] = nextVert++
+  }
+  const newVcount = nextVert
+  const remappedIndices = new Uint32Array(newIndices.length)
+  for (let i = 0; i < newIndices.length; i++) remappedIndices[i] = remap[newIndices[i]]
+
+  rewriteAttribute(prim, 'POSITION', remap, newVcount, 3)
+  for (const sem of ['NORMAL', 'TANGENT', 'TEXCOORD_0', 'TEXCOORD_1', 'COLOR_0']) {
+    if (prim.getAttribute(sem)) {
+      const dim = prim.getAttribute(sem).getElementSize()
+      rewriteAttribute(prim, sem, remap, newVcount, dim)
+    }
+  }
+  const idxArr = pickIndexArrayType(newVcount, remappedIndices)
+  idxAttr.setArray(idxArr)
+
+  prim.setExtras({ ...existingExtras, gnomonDecimatedLeaf: true })
+
+  return {
+    reason: 'decimated',
+    vcount, vcountAfter: newVcount,
+    tcount: tcountBefore, kept: tcountAfter, dropped: tcountBefore - tcountAfter,
+    achievedError,
+    targetIndexCount: targetIndexCount / 3,
+    maxUse,
   }
 }
 

@@ -28,7 +28,7 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { cloneDocument, dedup, prune, weld, simplify, textureCompress } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
 import { rebuildIndex } from './build-index.js'
-import { decimateLeafPrimitives, decimateBarkPrimitives, loadDecimationConfig } from './decimate-tree.mjs'
+import { decimateLeafPrimitives, decimateBarkPrimitives, decimateLeafPrimitivesConnectedMesh, loadDecimationConfig } from './decimate-tree.mjs'
 import { stampAtlasKind } from './atlas-kind-classifier.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -765,6 +765,24 @@ async function main() {
     } else if (barkReports.length) {
       const skips = barkReports.map(r => r.reason).join(',')
       console.log(`  bark decimation: no-op (${barkReports.length} bark prim(s): ${skips})`)
+    }
+
+    // Brief 6.3 Lever 6 (Gnomon, 2026-05-23): connected-mesh leaf decimation
+    // for Linden-class sculpted leaves (and birch/maple/aspen/oak/pine/juniper
+    // family heavies). Runs BEFORE emitLod — same role as Lever 5 but on the
+    // leaf prim. Card-based leaves (Lever 3 territory) skip via the maxVertUse
+    // gate. Gates on disjoint atlasKind from Lever 5, so order is irrelevant.
+    const leafCMReports = await decimateLeafPrimitivesConnectedMesh(variantDoc, decimationConfig)
+    const triAfterLeafCM = countTris(variantDoc)
+    if (triAfterLeafCM < triAfterBark) {
+      const reduced = leafCMReports.filter(r => r.reason === 'decimated')
+      console.log(`  leaf decimation (connected-mesh): ${triAfterBark.toLocaleString()} → ${triAfterLeafCM.toLocaleString()} tris (${reduced.length}/${leafCMReports.length} leaf prim(s) reduced)`)
+      for (const r of reduced) {
+        console.log(`    ${r.mesh}: ${r.tcount.toLocaleString()} → ${r.kept.toLocaleString()} tris (verts ${r.vcount.toLocaleString()} → ${r.vcountAfter.toLocaleString()}, err ${r.achievedError?.toExponential(2) ?? '?'})`)
+      }
+    } else if (leafCMReports.length) {
+      const skips = leafCMReports.map(r => r.reason).join(',')
+      console.log(`  leaf decimation (connected-mesh): no-op (${leafCMReports.length} leaf prim(s): ${skips})`)
     }
 
     const approxHeightM = computeApproxHeight(variantDoc)

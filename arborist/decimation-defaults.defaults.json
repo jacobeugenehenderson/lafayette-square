@@ -1,4 +1,6 @@
 {
+  "_comment": "Immutable backstop for arborist/decimation-defaults.json per feedback_json_stringify_loses_hand-authored_format. Hand-authored reference values for the decimation levers (qualityBracket, Lever 3 innerCanopyLeafReduction, Lever 5 barkDecimation, Lever 6 leafDecimation). The live .json is operator-editable; in-code DEFAULT_CONFIG in decimate-tree.mjs is the active runtime fallback. Edit the live file, not this one.",
+  "_authoredBy": "baby Gnomon 2026-05-23 (Brief 6.3 connected-mesh leaf decimation, Lever 6)",
   "qualityBracket": {
     "lod0": { "minTris": 5000, "maxTris": 15000 },
     "lod1": { "minTris": 1500, "maxTris":  5000 },
