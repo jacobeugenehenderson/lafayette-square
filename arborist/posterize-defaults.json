@@ -1,5 +1,5 @@
 {
-  "colors": 32,
+  "colors": 16,
   "tileSize": 256,
   "ditherStrength": 0.5,
   "perBarkRef": {}
