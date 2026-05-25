@@ -126,13 +126,16 @@ Fourth top-level mode. The Salon pivots from *generation* (Procedural / LiDAR �
       "chassis": "<chassis-name from _chassis library>",
       "bark":    { "ref": "Bark007", "uvScale": [1.5, 4], "tintBase": "#3a2820", "tintJitterRange": 0.12, "roughnessOverride": 0.8 },
       "leaves":  { "pack": "palmate", "occupancy": 0.7, "scale": 1.0, "tintFront": "#3a7530", "tintBack": "#a8b89a" },
-      "deformer": {}
+      "deformer": {},
+      "transform": { "posOffset": [0, 0, 0], "rotation": [0, 0, 0], "scale": 1 }
     }
   ]
 }
 ```
 
-`deformer` is reserved-but-empty in Brief 1 — Brief 3 fills. Brief 4 adds camera-aware hemisphere cull. Brief 2 (Holm, 2026-05-21) shipped multi-stop gradient bark on top of this schema — see "Bark gradient maps" below.
+`deformer` is reserved-but-empty in Brief 1 — Brief 3 fills. Brief 4 adds camera-aware hemisphere cull. Brief 2 (Holm, 2026-05-21) shipped multi-stop gradient bark on top of this schema — see "Bark gradient maps" below. `transform` (Brief 19) is the authored gizmo correction — absent/identity renders byte-identical (back-compat).
+
+**Authored chassis transform — persist + bake (Brief 19, Quartz 2026-05-25):** the Salon gnomon gizmo (rotateY / posOffset / scale / tiltX-Z drag handles + rotate ring + the "Y-up trunk 90°X" button) stands-up, centers, and scales mis-oriented vendor chassis (kit models often arrive Z-up / off-center / leaning). The authored value persists to `composition.transform` (`{posOffset, rotation:[tiltX,rotationY,tiltZ] radians XYZ, scale uniform}`) and **bakes into the published GLB geometry** so the chassis ships exactly as the operator saw it. *Was inspection-only* — local state reset on every slot/chassis switch, never written; the Z-up flip evaporated on publish. **The bake replicates the viewport composition exactly** (`[[project_preview_equals_ls_literally]]`): `SpecimenViewport.jsx`'s `<Skeleton>` composes `R · S · T_posOffset · T_autocenter` — it auto-centers the dominant-trunk base (`computeDominantTrunk`) to the bullseye BEFORE the authored transform, so rotation/scale pivot about the **trunk base, not the group origin**. `generate-salon.js#bakeAuthoredTransform` bakes the **conjugated** form `v' = T_autocenter⁻¹ · R · S · T_posOffset · T_autocenter · v` (in-place: correction about the trunk base, base stays put; identity → geometry untouched, byte-identical). Persist + hydrate is client-side (gizmo `onChange` → `onParams({transform})`, hydrate on slot/chassis switch); the bake runs **only on the publish path** (`writeMultiCompositionGLB`) — the live preview leaves the transform to the gizmo, so the published GLB carries it baked once with no runtime double-transform. Restores Brief 3A's premise (merge-time pivot now reads corrected geometry). Does NOT fix the separate global off-origin lean / wind-frame bug → BACKLOG Brief 20.
 
 **Leaf emission stub (Brief 1):** chassis `leafAttachmentTags` are operator-authoring fields populated post-Brief-1. While the array is empty, the generator samples a deterministic placement set from the chassis's upper-bbox volume (mulberry32-seeded by `hash(chassis|bark.ref|leaves.pack)`) so the operator has visible leaves to author against. The lifted D.1b helpers consume that point set just as they consume terminal-tip positions in the procedural path.
 

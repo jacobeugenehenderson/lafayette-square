@@ -194,6 +194,28 @@ The Salon preview path (`SpecimenViewport.jsx`) must render through `treeAtlasMa
 
 **The criterion every brief touching `treeAtlasMaterial.js` carries:** *Effect visible in Salon workstage preview at parameter authoring time, in the live composition state, without going through bake → reload LS.* The brief is unshipped until this is true. Per [[feedback_salon_preview_is_authoring_surface]] (2026-05-22, caught on Brief 2.1).
 
+### Geometry-parity corollary: the authored transform bake (Brief 19, Quartz 2026-05-25)
+
+The parity doctrine is not only about *materials* — it binds *geometry* too. The Salon gnomon gizmo authors a per-composition transform (stand-up / center / scale a mis-oriented chassis); that correction must ship in the published GLB **byte-faithfully to what the viewport displayed**, or the operator authored against a lie.
+
+The load-bearing subtlety: the viewport does NOT render the chassis in a naïve `T·R·S`-about-origin frame. `SpecimenViewport.jsx`'s `<Skeleton>` composes (outer→inner)
+
+```
+display(v) = R · S · T_posOffset · T_autocenter · v
+```
+
+where `T_autocenter` (from `computeDominantTrunk` — bottom-5%-Y-slab densest-XZ-cell centroid) re-centers the dominant-trunk base on the bullseye **before** the authored transform. So rotation/scale pivot about the **trunk base**, and posOffset lives *inside* scale+rotation. Real chassis are off-origin ([[project_chassis_frame_not_origin_centered]]), so this is not academic — a flip baked about the group origin lands the tree metres from where the viewport showed it.
+
+`generate-salon.js#bakeAuthoredTransform` therefore bakes the **conjugated** transform
+
+```
+v' = T_autocenter⁻¹ · R · S · T_posOffset · T_autocenter · v
+```
+
+(operator-chosen "in-place" semantics — the correction pivots about the trunk base, the base stays where it was; the viewport's centering is framing-only). Identity authoring → `T⁻¹·T = I` → geometry untouched (byte-identical, regression-safe). **The bake runs only on the publish path** (`writeMultiCompositionGLB` → `buildCompositionDocument`, after bark+leaf prims and after `bakeAllNodeTransforms` so POSITION == chassis-root-local); `generateSingleCompositionGLB` (live preview) leaves the transform null and the gizmo applies it for display — so the published GLB carries the transform baked **once**, never double-applied at runtime.
+
+**Divergence hazard:** `computeAutoCenterPivot` (gltf-transform, producer) is a hand-port of `computeDominantTrunk` (three.js, viewport). They MUST stay in sync or the bake silently stops matching the viewport — a shared-helper lift per the classifier-lift doctrine ([[feedback_classifier_keyword_cross_check]]) is a tracked follow-up (BACKLOG Brief 20), deferred because the two read different representations and SpecimenViewport was inspection-only this brief.
+
 ---
 
 ## Bark shader unification (Bloom-stable single program)

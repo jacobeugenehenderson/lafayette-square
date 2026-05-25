@@ -113,6 +113,13 @@ export const DEFAULTS = {
     tintBack:  '#a8b89a',
   },
   deformer: {},   // reserved-but-empty — Brief 3 fills
+  // Brief 19 (Quartz): authored chassis transform (Salon gizmo → bake).
+  // Identity = no-op. `rotation` is [tiltX, rotationY, tiltZ] radians in the
+  // gizmo's Euler XYZ order; `scale` is uniform. Applied LIVE by the viewport
+  // gizmo at preview; BAKED into the published geometry at publish
+  // (writeMultiCompositionGLB → buildCompositionDocument), so the chassis
+  // ships oriented/placed/scaled exactly as the operator authored it.
+  transform: { posOffset: [0, 0, 0], rotation: [0, 0, 0], scale: 1 },
 }
 
 // Base card extent in metres. Multiplied by composition.leaves.scale at
@@ -282,6 +289,14 @@ function resolveEffective(composition, chassisMeta) {
       ...(chassisDefaults.deformer || {}),
       ...(composition.deformer || {}),
     },
+    // Brief 19 (Quartz): authored gizmo transform. Whole-key replace (arrays
+    // overwrite, not element-merge) — the client always writes the full
+    // {posOffset, rotation, scale}. Absent → identity (back-compat).
+    transform: {
+      ...DEFAULTS.transform,
+      ...(chassisDefaults.transform || {}),
+      ...(composition.transform || {}),
+    },
   }
 }
 
@@ -300,6 +315,7 @@ export async function readEffectiveCompositions(species) {
       bark:    c.bark    || {},
       leaves:  c.leaves  || {},
       deformer: c.deformer || {},
+      transform: c.transform || {},
       effective: resolveEffective(c, meta),
     })
   }
@@ -321,6 +337,7 @@ export async function writeCompositions(species, compositions) {
     bark:    c.bark    || {},
     leaves:  c.leaves  || {},
     deformer: c.deformer || {},
+    transform: c.transform || {},
   }))
   await fs.writeFile(
     compositionsStatePath(species),
@@ -741,7 +758,199 @@ function bakeAllNodeTransforms(doc) {
   }
 }
 
-async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false }) {
+// ── Brief 19 (Quartz): authored-transform bake ─────────────────────────────
+//
+// Persists + bakes the Salon gizmo's authored transform into the published
+// geometry. The CORRECTNESS requirement (AC #3) is that the bake replicate
+// the viewport's transform composition EXACTLY (project_preview_equals_ls_
+// literally). The viewport does NOT compose a plain T·R·S about the group
+// origin — `SpecimenViewport.jsx` Skeleton composes (outer→inner):
+//
+//     display(v) = R · S · T_posOffset · T_autocenter · v
+//
+// where T_autocenter (= translate(-trunk.x, -trunk.minY, -trunk.z), from
+// `computeDominantTrunk`) re-centers the dominant-trunk base on the bullseye
+// BEFORE the authored transform, so rotation/scale pivot about the trunk
+// base, not the group origin. Real chassis are meaningfully off-origin
+// (chassis_frame_not_origin_centered), so this distinction is load-bearing.
+//
+// To match the viewport AND keep identity byte-identical (AC #4), we bake the
+// CONJUGATED transform — operator-approved "in-place" semantics (the trunk
+// base stays where it was; the viewport's centering is framing-only):
+//
+//     v' = T_autocenter⁻¹ · R · S · T_posOffset · T_autocenter · v
+//
+// Identity authoring → T_autocenter⁻¹·T_autocenter = I → geometry untouched.
+
+// Column-major 4×4 multiply (matches bakeAllNodeTransforms#mul + bakeInto's
+// element convention: m[12..14] = translation).
+function mat4Mul(a, b) {
+  const o = new Array(16)
+  for (let c = 0; c < 4; c++) {
+    for (let r = 0; r < 4; r++) {
+      o[c*4+r] = a[r]*b[c*4] + a[4+r]*b[c*4+1] + a[8+r]*b[c*4+2] + a[12+r]*b[c*4+3]
+    }
+  }
+  return o
+}
+function mat4Translate(tx, ty, tz) {
+  return [1,0,0,0, 0,1,0,0, 0,0,1,0, tx,ty,tz,1]
+}
+function mat4Scale(s) {
+  return [s,0,0,0, 0,s,0,0, 0,0,s,0, 0,0,0,1]
+}
+// Euler XYZ → column-major rotation matrix, byte-for-byte the same formula
+// three.js Matrix4.makeRotationFromEuler uses for order 'XYZ' (the order a
+// single <group rotation={[rx,ry,rz]}> applies). Replicating it exactly is
+// what makes the baked rotation match what the operator saw.
+function eulerXYZToMat4(rx, ry, rz) {
+  const a = Math.cos(rx), b = Math.sin(rx)
+  const c = Math.cos(ry), d = Math.sin(ry)
+  const e = Math.cos(rz), f = Math.sin(rz)
+  const ae = a*e, af = a*f, be = b*e, bf = b*f
+  const m = new Array(16).fill(0)
+  m[0] = c*e;        m[4] = -c*f;       m[8]  = d
+  m[1] = af + be*d;  m[5] = ae - bf*d;  m[9]  = -b*c
+  m[2] = bf - ae*d;  m[6] = be + af*d;  m[10] = a*c
+  m[15] = 1
+  return m
+}
+
+// Port of SpecimenViewport.jsx#computeDominantTrunk, operating on the
+// post-bakeAllNodeTransforms doc (node TRS already identity, so POSITION
+// accessors ARE world coords). Traverses ALL prims (bark + leaf), matching
+// the viewport's anchorScene. Returns { x, z, minY } — the trunk-base pivot.
+//
+// ⚠ KEEP IN SYNC with computeDominantTrunk: the bake matches the viewport
+// ONLY if both find the same pivot. If you retune one (GRID, slab %, the
+// densest-3×3-cell rule), retune the other or AC #3 silently breaks. A
+// shared-helper lift is a tracked follow-up (BACKLOG Brief 20 note).
+function computeAutoCenterPivot(doc) {
+  const meshes = doc.getRoot().listMeshes()
+  let minY = Infinity, maxY = -Infinity
+  for (const mesh of meshes) {
+    for (const prim of mesh.listPrimitives()) {
+      const pos = prim.getAttribute('POSITION')
+      if (!pos) continue
+      const arr = pos.getArray()
+      for (let i = 1; i < arr.length; i += 3) {
+        if (arr[i] < minY) minY = arr[i]
+        if (arr[i] > maxY) maxY = arr[i]
+      }
+    }
+  }
+  if (!isFinite(minY)) return null
+  const total = maxY - minY
+  const slabHi = minY + Math.max(0.05 * total, 0.05)
+  const GRID = 0.5
+  const cells = new Map()
+  for (const mesh of meshes) {
+    for (const prim of mesh.listPrimitives()) {
+      const pos = prim.getAttribute('POSITION')
+      if (!pos) continue
+      const arr = pos.getArray()
+      for (let i = 0; i < arr.length; i += 3) {
+        const x = arr[i], y = arr[i+1], z = arr[i+2]
+        if (y > slabHi) continue
+        const ix = Math.floor(x / GRID), iz = Math.floor(z / GRID)
+        const key = `${ix},${iz}`
+        let cl = cells.get(key)
+        if (!cl) { cl = { ix, iz, count: 0, sx: 0, sz: 0 }; cells.set(key, cl) }
+        cl.count++; cl.sx += x; cl.sz += z
+      }
+    }
+  }
+  if (cells.size === 0) return { x: 0, z: 0, minY }
+  let bestSum = -1, bestCell = null
+  for (const cl of cells.values()) {
+    let sum = 0
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const n = cells.get(`${cl.ix+dx},${cl.iz+dz}`)
+      if (n) sum += n.count
+    }
+    if (sum > bestSum) { bestSum = sum; bestCell = cl }
+  }
+  let sx = 0, sz = 0, n = 0
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+    const cl = cells.get(`${bestCell.ix+dx},${bestCell.iz+dz}`)
+    if (!cl) continue
+    sx += cl.sx; sz += cl.sz; n += cl.count
+  }
+  return { x: sx / n, z: sz / n, minY }
+}
+
+function isIdentityTransform(t) {
+  if (!t) return true
+  const po  = Array.isArray(t.posOffset) ? t.posOffset : [0, 0, 0]
+  const rot = Array.isArray(t.rotation)  ? t.rotation  : [0, 0, 0]
+  const s   = typeof t.scale === 'number' ? t.scale : 1
+  return po[0] === 0 && po[1] === 0 && po[2] === 0
+    && rot[0] === 0 && rot[1] === 0 && rot[2] === 0
+    && s === 1
+}
+
+// Bake the authored transform into every prim's POSITION + NORMAL. No-op
+// (geometry untouched → byte-identical) for identity authoring.
+function bakeAuthoredTransform(doc, transform) {
+  if (isIdentityTransform(transform)) return
+  const po  = Array.isArray(transform.posOffset) ? transform.posOffset : [0, 0, 0]
+  const rot = Array.isArray(transform.rotation)  ? transform.rotation  : [0, 0, 0]
+  // Uniform scale only — the gizmo emits a scalar (scaleOverride). Coerce +
+  // guard so an accidental array can't smuggle in a non-uniform scale (which
+  // the upper-3×3 normal bake below does NOT handle correctly).
+  const s = typeof transform.scale === 'number' ? transform.scale : 1
+
+  const pivot = computeAutoCenterPivot(doc)
+  // T_autocenter centers the trunk base on the origin (centerX=-x, ground=
+  // -minY, centerZ=-z), exactly as the viewport's <Skeleton> inner group.
+  const Tc    = pivot ? mat4Translate(-pivot.x, -pivot.minY, -pivot.z) : mat4Translate(0, 0, 0)
+  const TcInv = pivot ? mat4Translate( pivot.x,  pivot.minY,  pivot.z) : mat4Translate(0, 0, 0)
+  const Toff  = mat4Translate(po[0], po[1], po[2])
+  const S     = mat4Scale(s)
+  const R     = eulerXYZToMat4(rot[0], rot[1], rot[2])
+
+  // M = TcInv · R · S · Toff · Tc   (compose inner→outer)
+  let m = Tc
+  m = mat4Mul(Toff, m)
+  m = mat4Mul(S, m)
+  m = mat4Mul(R, m)
+  m = mat4Mul(TcInv, m)
+
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      const pos = prim.getAttribute('POSITION')
+      if (pos) {
+        const src = pos.getArray()
+        const out = new Float32Array(src.length)
+        for (let i = 0; i < src.length; i += 3) {
+          const x = src[i], y = src[i+1], z = src[i+2]
+          out[i]   = m[0]*x + m[4]*y + m[8] *z + m[12]
+          out[i+1] = m[1]*x + m[5]*y + m[9] *z + m[13]
+          out[i+2] = m[2]*x + m[6]*y + m[10]*z + m[14]
+        }
+        prim.setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(out))
+      }
+      const nrm = prim.getAttribute('NORMAL')
+      if (nrm) {
+        // Upper-3×3 + renormalize. Exact for rotation + uniform scale (the
+        // scale factor drops out under renormalization).
+        const src = nrm.getArray()
+        const out = new Float32Array(src.length)
+        for (let i = 0; i < src.length; i += 3) {
+          const x = src[i], y = src[i+1], z = src[i+2]
+          const nx = m[0]*x + m[4]*y + m[8] *z
+          const ny = m[1]*x + m[5]*y + m[9] *z
+          const nz = m[2]*x + m[6]*y + m[10]*z
+          const len = Math.hypot(nx, ny, nz) || 1
+          out[i] = nx/len; out[i+1] = ny/len; out[i+2] = nz/len
+        }
+        prim.setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(out))
+      }
+    }
+  }
+}
+
+async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false, transform = null }) {
   const chassisPath = path.join(CHASSIS_DIR, `${chassis}.glb`)
   const io = makeIO()
   const chassisDoc = await io.read(chassisPath)
@@ -952,6 +1161,15 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     }
   }
 
+  // Brief 19 (Quartz): bake the authored gizmo transform into POSITION +
+  // NORMAL, AFTER bark + leaf prims are in place (so leaves rotate/scale with
+  // the chassis) and AFTER node transforms are identity (POSITION == chassis-
+  // root-local == the frame the viewport renders). Only the PUBLISH path
+  // passes `transform`; the live preview leaves it null and the viewport
+  // gizmo applies it for display (so the preview GLB is NOT pre-baked — no
+  // double-transform). Identity authoring is a geometry no-op.
+  if (transform) bakeAuthoredTransform(chassisDoc, transform)
+
   return chassisDoc
 }
 
@@ -977,6 +1195,7 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
       bark: c.effective.bark,
       leaves: c.effective.leaves,
       slotName,
+      transform: c.effective.transform,
     })
     // Serialize the sub-doc and reload into the master as an embedded
     // subtree. We deep-copy primitives by re-creating accessors so they

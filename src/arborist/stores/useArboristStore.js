@@ -652,7 +652,7 @@ const useArboristStore = create((set, get) => ({
     set(s => {
       const list = s.salonCompositions[speciesId] || []
       const next = list.map(v => v.slot === slot
-        ? { ...v, chassis: null, bark: {}, leaves: {}, deformer: {} }
+        ? { ...v, chassis: null, bark: {}, leaves: {}, deformer: {}, transform: {} }
         : v)
       return { salonCompositions: { ...s.salonCompositions, [speciesId]: next } }
     })

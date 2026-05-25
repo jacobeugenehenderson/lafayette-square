@@ -332,6 +332,7 @@ export default function SalonWorkstage() {
             chassis={activeComposition.effective?.chassis || activeComposition.chassis || null}
             bark={activeComposition.effective?.bark || {}}
             leaves={activeComposition.effective?.leaves || {}}
+            transform={activeComposition.effective?.transform || activeComposition.transform || {}}
             chassisCatalog={chassisCatalog}
             speciesMorphology={speciesMeta?.morphology}
             barkRefs={barkRefs}
@@ -407,7 +408,7 @@ export default function SalonWorkstage() {
 // footer with manual name + reset + adopt.
 
 function SlotCard({
-  species, slot, slotName, chassis, bark, leaves,
+  species, slot, slotName, chassis, bark, leaves, transform,
   chassisCatalog, speciesMorphology, barkRefs, leafPacks,
   dirty, targetCategory,
   windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange,
@@ -494,19 +495,49 @@ function SlotCard({
   // GLB on the wire but not on screen).
   const viewKey = `${species}:${slot}:${chassis || 'none'}:${bark?.ref || ''}:${leaves?.pack || ''}`
 
-  // Inspection-only transforms. Includes lean/tilt (X/Z) lifted from
-  // Workstage.jsx for chassis straightening — vendor GLBs come at random tilts.
-  // Reset deps include chassis so scale/tilt don't leak across chassis picks
-  // within the same slot.
+  // Brief 19 (Quartz): the authored gizmo transform (lean/tilt X-Z, rotateY,
+  // posOffset, scale) — straightens/centers/scales mis-oriented vendor
+  // chassis. Persisted to composition.transform and baked into the published
+  // geometry (was inspection-only + thrown away on every slot/chassis switch).
   const [rotationY, setRotationY] = useState(0)
   const [posOffset, setPosOffset] = useState([0, 0, 0])
   const [scaleOverride, setScaleOverride] = useState(1)
   const [tiltX, setTiltX] = useState(0)
   const [tiltZ, setTiltZ] = useState(0)
+  // HYDRATE from the persisted transform on slot/chassis switch (was: reset
+  // to identity — which left persistence write-only). Identity when absent.
+  // `transform` is intentionally NOT in the deps: re-hydrating on every
+  // persistence write would fight the live gizmo drag (each drag writes
+  // transform → would snap the gizmo back). Slot switch remounts the card
+  // (key=slot); chassis switch re-reads the slot's stored transform.
   useEffect(() => {
-    setRotationY(0); setPosOffset([0, 0, 0]); setScaleOverride(1)
-    setTiltX(0); setTiltZ(0)
+    const t = transform || {}
+    const po  = Array.isArray(t.posOffset) ? t.posOffset : [0, 0, 0]
+    const rot = Array.isArray(t.rotation)  ? t.rotation  : [0, 0, 0]
+    setPosOffset([po[0] || 0, po[1] || 0, po[2] || 0])
+    setRotationY(rot[1] || 0)
+    setTiltX(rot[0] || 0)
+    setTiltZ(rot[2] || 0)
+    setScaleOverride(typeof t.scale === 'number' ? t.scale : 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [species, slot, chassis])
+
+  // Persist the authored transform to composition.transform (→ setSlotParams
+  // → compositions.json on Adopt; marks the slot dirty). Fires on every gizmo
+  // change to match the existing param-edit pattern (immediate store write,
+  // adopt persists). transform is absent from the preview `paramsKey`, so
+  // this does NOT trigger a preview-atlas regen — the gizmo applies it live.
+  const persistTransform = (over) => {
+    onParams({ transform: {
+      posOffset: over.posOffset ?? posOffset,
+      rotation: [
+        over.tiltX     ?? tiltX,
+        over.rotationY ?? rotationY,
+        over.tiltZ     ?? tiltZ,
+      ],
+      scale: over.scaleOverride ?? scaleOverride,
+    } })
+  }
 
   return (
     <div style={{
@@ -536,9 +567,9 @@ function SlotCard({
             effectiveScale={scaleOverride}
             positionOffset={posOffset}
             rotationOffset={[tiltX, rotationY, tiltZ]}
-            onRotationChange={(_rx, ry, _rz) => setRotationY(ry)}
-            onPositionChange={(x, y, z) => setPosOffset([x, y, z])}
-            onScaleChange={(s) => setScaleOverride(s)}
+            onRotationChange={(_rx, ry, _rz) => { setRotationY(ry); persistTransform({ rotationY: ry }) }}
+            onPositionChange={(x, y, z) => { setPosOffset([x, y, z]); persistTransform({ posOffset: [x, y, z] }) }}
+            onScaleChange={(s) => { setScaleOverride(s); persistTransform({ scaleOverride: s }) }}
             cameraStateRef={cameraStateRef}
             windStrength={windEnabled ? windStrength : 0}
             onPerfSample={setPerfSample}
@@ -614,8 +645,8 @@ function SlotCard({
           onParams={onParams}
           tiltX={tiltX}
           tiltZ={tiltZ}
-          onTiltXChange={setTiltX}
-          onTiltZChange={setTiltZ}
+          onTiltXChange={(v) => { setTiltX(v); persistTransform({ tiltX: v }) }}
+          onTiltZChange={(v) => { setTiltZ(v); persistTransform({ tiltZ: v }) }}
           chassisCuration={chassisCuration}
           onChassisCuration={onChassisCuration}
           approvedOnly={approvedOnly}

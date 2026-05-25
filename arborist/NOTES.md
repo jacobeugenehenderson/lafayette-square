@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-05-25 — Brief 19: Persist + bake authored chassis transform (Quartz)
+
+**Baby: Quartz.** Boz drafted, Jacob dispatched. **Name note:** first self-named *Corbel*, but a parallel baby shipped Brief 14.1 under that name (commit ac0e896) and claimed it — renamed to Quartz (mineral; deliberately off the saturating architectural namespace Corbel/Lintel/Mullion).
+
+**The bug.** The Salon gnomon gizmo (rotateY / posOffset / scale / tiltX-Z) let the operator stand-up/center/scale mis-oriented vendor chassis, but the transform was **inspection-only**: local `useState` in `SlotCard`, reset on every `[species,slot,chassis]` change, never written to the composition (`SalonWorkstage.jsx:497` literally `// Inspection-only transforms`). Corrections evaporated on adopt/publish/slot-switch — the Z-up kit chassis kept shipping Z-up. Blocks Brief 3A (the deformer's merge-time pivot must read a corrected base).
+
+**Alignment-check finding (surfaced before any bake code, per `[[feedback_geometry_briefs_need_artifact_inspection]]`).** The brief assumed the bake replicates a plain `T·R·S` about the **group origin**, in "chassis-root-local space — the same space the viewport renders." **Both halves were wrong.** Decoding `SpecimenViewport.jsx:856-865`, the Salon `<Skeleton>` composes (outer→inner):
+
+```
+display(v) = R · S · T_posOffset · T_autocenter · v
+```
+
+`T_autocenter` = `translate(-trunk.x, -trunk.minY, -trunk.z)` from `computeDominantTrunk` (bottom-5%-Y-slab densest-XZ-cell centroid) re-centers the dominant-trunk base on the bullseye BEFORE the authored transform — so rotation/scale pivot about the **trunk base, not the group origin**, and the order is `R·S·T` (posOffset inside scale+rotation), not `T·R·S`. Per `[[project_chassis_frame_not_origin_centered]]` real chassis are meaningfully off-origin (broadleaf_rt3 base Y≈−1.3, trunk centroid X≈−3.0/Z≈−0.7), so a flip baked about the group origin would swing the tree ~3m off where the viewport showed it.
+
+**Operator decision (asked before coding).** Two ways to satisfy both "bake matches viewport" (AC #3) and "identity byte-identical" (AC #4): **Option 1 in-place conjugated** — `v' = T_autocenter⁻¹ · R · S · T_posOffset · T_autocenter · v` (correction about the trunk base, base stays where it was; identity → `T⁻¹·T = I` → untouched); **Option 2 center-to-origin** — drop the un-center so the base lands at world origin (would also fix the wind-frame bug, but breaks byte-identity for every existing composition). **Jacob chose Option 1.** Option 2 deferred as Brief 20.
+
+**Implementation.**
+- *Client* (`SalonWorkstage.jsx`): gizmo `onChange` (+ tilt handlers) now also fire `onParams({transform})` → `setSlotParams` → `composition.transform`; the reset-to-defaults effect became hydrate-from-`composition.transform` (keyed `[species,slot,chassis]`, deliberately NOT depending on `transform` so live edits don't fight the gizmo). Live-edit persistence (matches the existing bark/leaf param pattern); `transform` is absent from the preview `paramsKey`, so it triggers no preview-atlas regen — the gizmo applies it live.
+- *Producer* (`generate-salon.js`): `bakeAuthoredTransform(doc, transform)` runs at the tail of `buildCompositionDocument` (after bark+leaf prims, after `bakeAllNodeTransforms` → POSITION == chassis-root-local). Builds `M = T⁻¹·R·S·Toff·Tc` column-major, applies to POSITION + upper-3×3-renormalized NORMAL across all prims. **Only the publish path passes `transform`** (`writeMultiCompositionGLB`); `generateSingleCompositionGLB` (preview) leaves it null → the preview GLB is NOT pre-baked → no double-transform. `composition.transform` now persists through `writeCompositions` / `readEffectiveCompositions` / `resolveEffective` (identity default; `setSalonSlotParams` already merged nested patches — no store change).
+- *Identity early-out*: `isIdentityTransform` returns before touching geometry → byte-identical + deterministic for unauthored compositions.
+
+**Verification.** `eulerXYZToMat4` byte-exact (0 err) vs three.js `Matrix4.makeRotationFromEuler('XYZ')`; on a real 52,213-vert chassis: identity → byte-identical POSITION; 90°X flip swaps Y-extent↔Z-extent (1061.93 both) with the trunk-base pivot fixed; two non-identity bakes byte-identical (determinism); writeBinary round-trip preserves the bake. UI not driven this session (no browser) — math + producer verified at the artifact level.
+
+**Watchouts surfaced.**
+- **Trunk-finder duplication:** `computeAutoCenterPivot` (gltf-transform) is a hand-port of `SpecimenViewport.jsx#computeDominantTrunk` (three.js). They can silently diverge and break AC #3 — a shared-helper lift (per `[[feedback_classifier_keyword_cross_check]]` classifier-lift doctrine) is a follow-up, NOT done here because SpecimenViewport is inspection-only this brief and the two read different representations.
+- `forestryRotation` is `false` in all four consumers (Salon/Procedural/Grove/Workstage) — its `-90°X` primitive branch is inert today, so no double-rotate with the authored transform.
+- **Forward-only fix:** corrections lost to the old bug were never saved; operators must re-author them once. Past compositions render byte-identical until re-authored.
+- `scale` is uniform-only (gizmo emits a scalar); the normal bake assumes it. Guarded by coercing `Number(transform.scale)`.
+
 ## 2026-05-25 — Brief 14.1: Decouple Procedural Re-publish from auto-bake (Corbel)
 
 **Baby: Corbel.** Boz drafted, Jacob dispatched. **Name choice:** architectural — a corbel is the bracket that carries a load projecting from a wall; sits in the Lintel/Mullion/Plumb structural namespace the kit favours, novel against the claimed roster. Deliberately reached past the saturated plant/tool space the brief warned about (Holm/Cambium misfires).
