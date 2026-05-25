@@ -403,10 +403,11 @@ const useArboristStore = create((set, get) => ({
     }
   },
   // Republish via the publish endpoint. The endpoint shells out to
-  // `node arborist/generate-procedural.js --species <id>` then fires the
-  // per-Look atlas bake fire-and-forget (matches Grove's _saveLookRoster
-  // flow). Passes the operator's currently-active Look so the atlas reflects
-  // the new GLB hashes without a manual rebake.
+  // `node arborist/generate-procedural.js --species <id>` (writes species
+  // artifacts + syncs the Look roster) and rebuilds the index. Brief 14.1
+  // (Corbel) decoupled the slab bake — the endpoint no longer auto-bakes;
+  // shipping to the slab is the explicit Grove gesture. The ?look= param is
+  // still sent for symmetry with the Salon path but is now vestigial.
   republishProceduralSpecies: async (speciesId) => {
     set({ proceduralPublishing: true, proceduralError: null })
     const lookId = get().activeLookId

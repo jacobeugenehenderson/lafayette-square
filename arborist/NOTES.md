@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-05-25 — Brief 14.1: Decouple Procedural Re-publish from auto-bake (Corbel)
+
+**Baby: Corbel.** Boz drafted, Jacob dispatched. **Name choice:** architectural — a corbel is the bracket that carries a load projecting from a wall; sits in the Lintel/Mullion/Plumb structural namespace the kit favours, novel against the claimed roster. Deliberately reached past the saturated plant/tool space the brief warned about (Holm/Cambium misfires).
+
+**The job.** Apply Lintel's Brief 14 decouple to the procedural twin Lintel surfaced. `/procedural/:species/publish` had the byte-identical `if (lookName) { bakeLook(lookName).catch(...) }` fire-and-forget Brief 14 removed from the Salon path. One behavioral deletion + comment/copy cleanup.
+
+**What shipped (single surgical change + copy + docs).**
+- **`arborist/serve.js` `/procedural/:species/publish`:** removed the `bakeLook(lookName)` fire-and-forget block (was ~1452-1458). Endpoint now shells out to `generate-procedural.js --species <id>` → `rebuildIndex()` → returns. Rewrote the leading comment to the authoring-only contract, mirroring Lintel's Salon comment. `?look=` kept accepted + echoed (vestigial) — mirrors Lintel; dropping it would mean a client edit for zero gain.
+- **Roster sync — verified NOT orphaned (the brief's key risk).** Procedural's roster sync is `syncLookRoster('lafayette-square', …)` called inside `generate-procedural.js#main()` (line ~1220), exactly like the Salon path. It runs on the shell-out, **not** via the bake. The endpoint comment claiming the auto-bake "mirrors the Grove roster save" was misleading — the roster sync was never bake-coupled. Removing `bakeLook` leaves it fully intact.
+- **Legacy chrome (surfaced + touched).** `ProceduralWorkstage.jsx` is `?legacy=procedural`-only post-Brief-18A. I'd normally skip polishing a retiring surface, BUT its Re-publish copy actively *claimed* "per-Look atlas auto-bakes for <look>" — now false and misleading to anyone who opens the legacy view. Honesty > leaving a lie in place, so: footer tooltip + inline hint reworded to the two-gesture model (mirrors Lintel's SalonWorkstage wording), the now-orphaned `activeLookId` selector removed, the stale `republishProceduralSpecies` store comment corrected, and the file's header jsdoc step 4 updated. All comment/copy, no behavior.
+- **`generate-procedural.js` console hint left as-is.** Its end-of-run log already prints `node arborist/bake-look.js --look lafayette-square` — now exactly the correct two-gesture instruction. No change needed; noted for the record.
+
+**Verification — structural, deliberately no publish run.** AC1 asks "slab atlas unchanged after publish." Rather than run a full procedural publish (heavy GLB regen + pollutes gitignored `public/trees/` per Gnomon's notes), I proved it by construction: grepped `generate-procedural.js` + `build-index.js` — neither writes to `public/baked/<look>/trees-atlas.json` or the master PNG (only `public/trees/<species>/` + `index.json`). The removed `bakeLook` was the **sole** slab-write path in the endpoint, so the slab is now structurally untouchable from `/procedural/publish`. `bakeLook` stays wired at `/atlas/bake` (Grove, AC2) + the full-bake path (line ~901). `serve.js` passes `node --check`. AC3/AC5 hold by construction (roster sync in-script; generation logic untouched).
+
+**Surfaced.** (1) Posterized auto-extract (Vellum) rides `bake-look.js`, so — same as Lintel found on the Salon path — it now fires on the Grove bake gesture instead of procedural Re-publish. Correct per Brief 10B; nothing orphaned. (2) No LiDAR `/publish` auto-bake pattern exists (confirmed by Lintel; LiDAR awaits its bake inside `lidar-publish.js`). The procedural twin was the last instance of this fire-and-forget pattern — both authoring publish paths are now decoupled.
+
+---
+
 ## 2026-05-23 — Brief 6.3: Connected-mesh leaf decimation, Lever 6 (Gnomon)
 
 **Baby: Gnomon.** Boz drafted, Jacob dispatched. **Name choice:** a gnomon is the geometric figure left when you remove a similar shape from a corner (also the shadow-caster of a sundial) — apt for a decimation lever: what remains after you subtract. Non-plant, non-sibling; deliberately reached past the saturated plant/tool namespace to dodge the Spindle/Adze pattern-match the brief warned about.

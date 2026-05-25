@@ -1423,10 +1423,18 @@ const server = createServer(async (req, res) => {
       }
     }
 
-    // POST /procedural/:species/publish — rebake one species through the
-    // standard pipeline + fire the per-Look atlas auto-bake (mirrors the
-    // Grove roster save flow). Shell-out matches the v1 CLI invocation so
-    // the publish path round-trips through publish-glb.js untouched.
+    // POST /procedural/:species/publish — authoring-side "stage to library"
+    // only: shell out to `generate-procedural.js --species <id>` (writes species
+    // artifacts + syncs the Look roster metadata via its main()) and rebuild the
+    // index. Shell-out matches the v1 CLI invocation so the publish path
+    // round-trips through publish-glb.js untouched.
+    // Brief 14.1 (Corbel 2026-05-25): the slab bake is DECOUPLED — mirrors the
+    // Salon path's Brief 14 (Lintel) change. This endpoint no longer fires
+    // bakeLook. Shipping to the slab is now the explicit Grove gesture
+    // (POST /atlas/bake?look=<id>). Per
+    // [[project_authoring_is_live_production_is_static]], Re-publish stages to
+    // the library; Grove bakes the slab. The ?look= param is still accepted
+    // (echoed in the response) but is now vestigial — it no longer triggers a bake.
     if (req.method === 'POST' && (m = path.match(/^\/procedural\/([^/]+)\/publish$/))) {
       const species = m[1]
       if (!PROCEDURAL_PRESETS[species]) {
@@ -1448,13 +1456,6 @@ const server = createServer(async (req, res) => {
           await rebuildIndex()
         } catch (e) {
           console.warn('[arborist] index rebuild failed after procedural publish:', e.message)
-        }
-        // Per-Look atlas auto-bake — fire-and-forget, same pattern as the
-        // Grove roster save (useArboristStore.js _saveLookRoster).
-        if (lookName) {
-          bakeLook(lookName).catch(err =>
-            console.warn('[arborist] atlas auto-bake after procedural publish failed for', lookName, err.message),
-          )
         }
         return jsonRes(res, 200, {
           ok: true, ms: Date.now() - t0, species,

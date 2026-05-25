@@ -9,8 +9,9 @@
  *      only, no file write).
  *   3. Click ✓ adopt to persist the slot's seed to
  *      `arborist/state/<species>/seedlings.json`.
- *   4. Click "Re-publish species" to rebake the species through
- *      publish-glb.js + fire per-Look atlas auto-bake.
+ *   4. Click "Re-publish species" to stage the species to the library
+ *      through publish-glb.js. Brief 14.1 (Corbel) decoupled the slab
+ *      bake — shipping to LS is the explicit Grove gesture.
  *
  * Phase A scope: dice + adopt + republish, full stop. Envelope panels,
  * tropism sliders, bark/leaf pickers land in subsequent phases (D, E, B,
@@ -50,7 +51,6 @@ export default function ProceduralWorkstage() {
   const republishSpecies         = useArboristStore(s => s.republishProceduralSpecies)
   const publishing               = useArboristStore(s => s.proceduralPublishing)
   const error                    = useArboristStore(s => s.proceduralError)
-  const activeLookId             = useArboristStore(s => s.activeLookId)
 
   const seedlings = seedlingsByspecies[activeSpecies] || []
   const dirty     = dirtyByspecies[activeSpecies] || {}
@@ -223,7 +223,7 @@ export default function ProceduralWorkstage() {
         <button
           onClick={() => republishSpecies(activeSpecies)}
           disabled={publishing || anyDirty || !activeSpecies}
-          title={anyDirty ? 'Adopt all dirty slots before republishing' : 'Rebake this species + auto-bake per-Look atlas'}
+          title={anyDirty ? 'Adopt all dirty slots before republishing' : 'Stage this species to the library. Bake the slab from Grove when ready to ship to LS.'}
           style={{
             ...btnStyle(),
             opacity: (publishing || anyDirty || !activeSpecies) ? 0.4 : 1,
@@ -235,9 +235,7 @@ export default function ProceduralWorkstage() {
           {publishing ? 'Re-publishing…' : 'Re-publish species'}
         </button>
         <span>
-          {activeLookId
-            ? <>per-Look atlas auto-bakes for <code style={{ color: '#bbb' }}>{activeLookId}</code></>
-            : 'no active Look — atlas auto-bake will be skipped'}
+          Stages to the species library — bake the slab from <strong style={{ color: '#bbb' }}>Grove</strong> to update LS.
         </span>
       </footer>
     </div>
