@@ -1,0 +1,54 @@
+{
+  "_comment": "Producer-derived by arborist/survey-deleaf.js — NOT operator state. Single-mesh FOREST chassis (group shots) flagged by surveyTrunkClusters: >1 trunk in one merged mesh. Brief 23 worklist for Brief 23a per-tree segmentation + the Salon catalog group-shot suppression filter (generate-salon.js#listForestChassis). Regenerated every run.",
+  "forests": {
+    "acer_saccharum_a.glb": {
+      "source": {
+        "species": "acer_saccharum",
+        "filename": "skeleton-1-lod0.glb"
+      },
+      "clusterCount": 17
+    },
+    "acer_saccharum_c.glb": {
+      "source": {
+        "species": "acer_saccharum",
+        "filename": "skeleton-3-lod0.glb"
+      },
+      "clusterCount": 22
+    },
+    "burnt_tree_a.glb": {
+      "source": {
+        "species": "burnt_tree",
+        "filename": "skeleton-1-lod0.glb"
+      },
+      "clusterCount": 7
+    },
+    "burnt_tree_d.glb": {
+      "source": {
+        "species": "burnt_tree",
+        "filename": "skeleton-4-lod0.glb"
+      },
+      "clusterCount": 4
+    },
+    "burnt_tree_f.glb": {
+      "source": {
+        "species": "burnt_tree",
+        "filename": "skeleton-6-lod0.glb"
+      },
+      "clusterCount": 8
+    },
+    "sugar_maple_low_poly_forest_a.glb": {
+      "source": {
+        "species": "acer_saccharum_lowpoly",
+        "filename": "skeleton-1-lod0.glb"
+      },
+      "clusterCount": 17
+    },
+    "sugar_maple_low_poly_forest_c.glb": {
+      "source": {
+        "species": "acer_saccharum_lowpoly",
+        "filename": "skeleton-3-lod0.glb"
+      },
+      "clusterCount": 22
+    }
+  }
+}

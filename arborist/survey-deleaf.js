@@ -42,6 +42,16 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
 
 const DRY_RUN = process.argv.includes('--dry-run')
 
+// Brief 23 (Mistral, 2026-05-25): `--clean` prunes stale orphans from the
+// gitignored `_chassis/` dir after a full regen, so re-runs self-heal instead
+// of accreting (Sextant's Brief 20 had to wipe `_chassis/` by hand). It is
+// IDEMPOTENT-COMPLETE per [[feedback_clean_regen_must_be_idempotent_complete]]:
+// it deletes ONLY chassis it just regenerated equivalents for (stale output of
+// a still-present, still-walked vendor source), and REFUSES to delete anything
+// it can't account for — procedural / LiDAR-sourced chassis, sources whose
+// vendor dir is gone, or files with no meta. Those are surfaced, never removed.
+const CLEAN = process.argv.includes('--clean')
+
 // Classification (LEAF / WOOD / AMBIGUOUS) lives in `atlas-kind-classifier.js`
 // since 2026-05-23 (Brief 6.2, Adze) — publish-glb.js also stamps atlasKind
 // from this classifier so Spindle's Lever 3 + Adze's Lever 5 can gate on
@@ -199,22 +209,44 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
     for (const prim of mesh.listPrimitives()) allPrims.push(prim)
   recenterPrimsToDominantTrunk(allPrims)
 
+  // Brief 23 (Mistral): unit-fix extreme mis-scale (e.g. 900m forest → 9m)
+  // AFTER recenter, BEFORE the cluster survey + height read so both see the
+  // corrected metres (the 0.5m trunk grid is meaningless on a 900m mesh).
+  const unitRescale = rescaleIfMisScaled(allPrims)
+
   // Compute height range from the recentered geometry (now base-at-origin →
   // [~0, H], matching the bundle path's form).
   const heightRange = computeHeightRange(doc)
 
-  // Surface single-mesh FOREST chassis (operator 2026-05-25): >1 distinct trunk
-  // cluster in the bottom slab = several separate trees in one file, so
-  // dominant-trunk centers the whole scene on one arbitrary stem. That's a
-  // classification problem, not a centering one — recenter best-effort, capture
-  // for curation, don't block. (Multi-STEM organisms like gray_poplar resolve to
-  // one cluster and center fine; this flags the true forest case e.g.
-  // acer_saccharum_a/c.) The clusterCount is the ready-made input for a
-  // follow-up forest-splitter (extends Riven's Brief 1.5c root-based detection).
-  const { clusterCount } = surveyTrunkClusters(allPrims)
-  const forestLike = clusterCount > 1
+  // Brief 23 (Mistral, 2026-05-25): flag the MERGED single-mesh FOREST — the
+  // genuinely-hard case where N trunks are baked into ONE primitive (e.g.
+  // acer_saccharum's bark prim holds 17 trunks). The gate keys on
+  // **max-trunk-clusters-within-a-single-WOOD-primitive**, NOT the whole-chassis
+  // count — so it never sweeps the already-separable chassis whose trees live in
+  // separate primitives/files: vendor file-pre-split singles (garden_trees_mix_*)
+  // read 1 cluster/prim, and Riven/Brief-6.2's 58 multi-root splits
+  // (candicands / honey_locust / gray_poplar / london_plane / black_locust /
+  // poplar_fall) take the bundle path and never reach this check at all. A
+  // decomposed single tree = 1 cluster → KEEP; a merged forest = N → suppress +
+  // worklist for Brief 23a's per-tree segmentation. (Operator-bounded: the
+  // separable decomposition is DONE — 23a is ONLY these merged meshes.)
+  let clusterCount = 0
+  for (const p of primClassifications) {
+    if (p.cls !== 'WOOD') continue
+    const { clusterCount: cc } = surveyTrunkClusters([p._prim])
+    if (cc > clusterCount) clusterCount = cc
+  }
+  // Require ≥3 trunks-in-one-mesh to call it a forest. A 2-cluster reading is
+  // ambiguous — a multi-STEM organism (sugar_maple_multistem) or a forked base
+  // (italian_cypress / blue_spruce / common_beech / western_juniper all read 2)
+  // is one legit tree, NOT a forest, and must stay in the catalog (operator's
+  // stem-vs-tree distinction + "don't sweep good chassis"). Genuine merged
+  // forests carry many (acer_saccharum 17–22, burnt_tree 4–8); erring toward
+  // under-suppression is safe (a borderline 2-trunk stays visible).
+  const FOREST_MIN_TRUNKS = 3
+  const forestLike = clusterCount >= FOREST_MIN_TRUNKS
   if (forestLike) {
-    console.warn(`[sextant] forest chassis "${filename}" (${label || speciesId}): ${clusterCount} trunk clusters — dominant-trunk center is arbitrary; flag for curation + forest-split follow-up`)
+    console.warn(`[mistral] merged forest chassis "${filename}" (${label || speciesId}): ${clusterCount} trunks in one mesh — suppressed from Salon catalog + added to Brief 23a worklist`)
   }
 
   // Naming
@@ -231,7 +263,7 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
     const meta = {
       morphology: category || 'unknown',
       heightRange,
-      source: { species: speciesId, variant: variantIdx + 1 },
+      source: { species: speciesId, variant: variantIdx + 1, ...(unitRescale > 1 ? { unitRescale } : {}) },
       scaffoldCount: null,
       canopyStart: null,
       leafAttachmentTags: [],
@@ -249,6 +281,7 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
     heightRange,
     forestLike,
     trunkClusters: clusterCount,
+    unitRescale,
   }
 }
 
@@ -583,6 +616,52 @@ function recenterPrimsToDominantTrunk(prims) {
   return base
 }
 
+// ── Brief 23 (Mistral): extreme mis-scale unit-fix (folds in old Brief 21) ──
+//
+// Some vendor chassis import at 900–1700m tall (gray_poplar ~983m, honey_locust
+// ~1700m, acer_saccharum forest ~900m) — an un-applied cm→m / mm→m unit error
+// at kit extraction, NOT real height. They render "empty" in the Salon because
+// SpecimenViewport's framing distance scales with treeH while Brief 13 clamps
+// the camera at H_MAX=120, so a 56–140× oversized tree can't be pulled back far
+// enough to frame. This detects height ≫ plausible-max and divides POSITION by
+// the power-of-10 that lands it back in a real-tree band — the one place
+// auto-scale is justified (extreme outliers are unambiguously unit-bugs; normal
+// 12-vs-18m variation stays the operator's manual scale gizmo). Operator folded
+// old Brief 21 in here 2026-05-25 so forest-splits (Brief 23a) become framable.
+//
+// Runs AFTER recenter (trunk base already at origin → uniform scale about origin
+// keeps base at 0; NORMALs unaffected by uniform scale). Never up-scales (only
+// corrects ≥10× errors). Returns the divisor applied (1 = untouched).
+const MISSCALE_THRESHOLD_M = 100   // only touch chassis taller than this
+const MISSCALE_TARGET_M = 15       // typical real tree → pick divisor toward this
+// The power-of-10 divisor that lands height H back near a real tree, or 1 if H
+// isn't egregiously oversized. Note the divisor is STABLE across a decade band
+// (H∈[~47,474]→10, [~474,4740]→100), so siblings in the same band rescale
+// consistently — provided they're all judged against the SAME H (see bundle path).
+function misScaleDivisor(H) {
+  if (!isFinite(H) || H <= MISSCALE_THRESHOLD_M) return 1
+  const d = Math.pow(10, Math.round(Math.log10(H / MISSCALE_TARGET_M)))
+  return d < 10 ? 1 : d
+}
+function applyDivisor(prims, d) {
+  if (!(d > 1)) return
+  const inv = 1 / d
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION')
+    if (!pos) continue
+    const arr = pos.getArray()
+    const out = new Float32Array(arr.length)
+    for (let i = 0; i < arr.length; i++) out[i] = arr[i] * inv
+    pos.setArray(out)
+  }
+}
+function rescaleIfMisScaled(prims) {
+  const bb = primBboxAcc(prims)
+  const d = misScaleDivisor(isFinite(bb.maxY) && isFinite(bb.minY) ? bb.maxY - bb.minY : 0)
+  applyDivisor(prims, d)
+  return d
+}
+
 // Bake every node's world matrix into its prims' POSITION/NORMAL, then reset
 // all node TRS to identity — so POSITION accessors carry world coords (matching
 // what the viewport's matrixWorld and generate-salon's bakeAllNodeTransforms
@@ -630,6 +709,31 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
   const peekDoc = await io.read(srcPath)
   const peekRoots = findGeometryRoots(peekDoc)
   const rootNames = peekRoots.map(n => n.getName() || '')
+
+  // Brief 23 (Mistral): one mis-scale divisor for the WHOLE bundle, from its
+  // tallest root's baked height — applied uniformly to every decomposed tree.
+  // Per-root rescale would bisect siblings that straddle the 100m threshold
+  // (candicands at 56/87/110m → only the 110m one shrinks → inversion); a single
+  // bundle divisor keeps them consistent. Heights via each root's LOCAL matrix
+  // (bundle roots are top-level), robust to candicands' orphan-rooted meshes
+  // that computeHeightRange's scene-walk misses.
+  let bundleMaxH = 0
+  for (const r of peekRoots) {
+    const m = matrixFromNode(r)
+    let maxY = -Infinity, minY = Infinity
+    for (const { prim } of collectPrims(r)) {
+      const pos = prim.getAttribute('POSITION')
+      if (!pos) continue
+      const a = pos.getArray()
+      for (let i = 0; i < a.length; i += 3) {
+        const y = m[1] * a[i] + m[5] * a[i + 1] + m[9] * a[i + 2] + m[13]
+        if (y > maxY) maxY = y
+        if (y < minY) minY = y
+      }
+    }
+    if (isFinite(maxY) && isFinite(minY)) bundleMaxH = Math.max(bundleMaxH, maxY - minY)
+  }
+  const bundleDivisor = misScaleDivisor(bundleMaxH)
 
   for (let rootIdx = 0; rootIdx < rootNames.length; rootIdx++) {
     const rootName = rootNames[rootIdx]
@@ -725,6 +829,11 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
     // was overridden by the viewport's auto-center anyway). Minor XZ shift for
     // asymmetric-canopy roots; see BACKLOG Brief 20.
     recenterPrimsToDominantTrunk(remainingPrims)
+    // Brief 23 (Mistral): apply the bundle-wide mis-scale divisor uniformly
+    // (honey_locust ~1700m, gray_poplar ~983m, poplar_fall ~1250m all ÷100;
+    // candicands ÷10), post-recenter so base stays at origin.
+    const unitRescale = bundleDivisor
+    applyDivisor(remainingPrims, bundleDivisor)
     resetTRSChain(target)
 
     // Compute final height range from the recentered geometry
@@ -741,7 +850,7 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
       const meta = {
         morphology: category || 'unknown',
         heightRange,
-        source: { species: speciesId, variant: variantIdx + 1, bundleNode: rootName || `node${rootIdx}` },
+        source: { species: speciesId, variant: variantIdx + 1, bundleNode: rootName || `node${rootIdx}`, ...(unitRescale > 1 ? { unitRescale } : {}) },
         scaffoldCount: null,
         canopyStart: null,
         leafAttachmentTags: [],
@@ -755,6 +864,7 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
       chassisName: baseName,
       usedCommonName,
       heightRange,
+      unitRescale,
     })
   }
 
@@ -923,10 +1033,105 @@ async function main() {
   }
   await writeRivenReport({ results, speciesMap, otherFilesSurveyed, indexCount: index.species.length, elapsedMs: Date.now() - t0 })
 
+  // Brief 23 (Mistral): persist the single-mesh FOREST worklist. Producer-
+  // derived (regenerated every run, NOT operator state), so it lives next to
+  // curation in state/ but is owned by this script. Feeds Brief 23a's per-tree
+  // segmentation AND the Salon catalog's group-shot suppression filter.
+  if (!DRY_RUN) await writeForestWorklist(results)
+
   const writtenSingle = results.filter(r => r.status === 'de-leafed').length
   const writtenBundle = results.filter(r => r.status === 'bundle-decomposed').length
   const debrisCount = results.filter(r => r.status === 'bundle-debris').length
   console.log(`[riven] done in ${Math.round((Date.now() - t0) / 1000)}s — ${writtenSingle} single-tree chassis (Whittle path) + ${writtenBundle} bundle-decomposed chassis, ${debrisCount} bundle-debris items skipped, report at ${path.relative(REPO_ROOT, RIVEN_REPORT_PATH)}`)
+
+  // Brief 23 (Mistral): --clean prune (idempotent-complete; see CLEAN comment).
+  if (CLEAN && !DRY_RUN) {
+    await pruneOrphanChassis({ results, speciesDirs })
+  }
+}
+
+// ── Brief 23 (Mistral): forest worklist + idempotent-complete --clean ────────
+
+const FOREST_WORKLIST_PATH = path.join(REPO_ROOT, 'arborist/state/_chassis-forests.json')
+
+// Write the single-mesh-forest worklist: every emitted chassis the trunk-cluster
+// survey flagged as multi-tree (>1 strong cluster). Deterministic (keys sorted;
+// surveyTrunkClusters is deterministic) so re-runs are byte-identical (AC #8).
+async function writeForestWorklist(results) {
+  const forests = {}
+  for (const r of results) {
+    if (r.forestLike && r.chassisName) {
+      forests[`${r.chassisName}.glb`] = {
+        source: { species: r.speciesId, filename: r.filename || null },
+        clusterCount: r.trunkClusters ?? null,
+      }
+    }
+  }
+  const sortedKeys = Object.keys(forests).sort()
+  const obj = {
+    _comment: 'Producer-derived by arborist/survey-deleaf.js — NOT operator state. Single-mesh FOREST chassis (group shots) flagged by surveyTrunkClusters: >1 trunk in one merged mesh. Brief 23 worklist for Brief 23a per-tree segmentation + the Salon catalog group-shot suppression filter (generate-salon.js#listForestChassis). Regenerated every run.',
+    forests: {},
+  }
+  for (const k of sortedKeys) obj.forests[k] = forests[k]
+  await fs.mkdir(path.dirname(FOREST_WORKLIST_PATH), { recursive: true })
+  await fs.writeFile(FOREST_WORKLIST_PATH, JSON.stringify(obj, null, 2) + '\n')
+  console.log(`[mistral] forest worklist: ${sortedKeys.length} single-mesh forest chassis → ${path.relative(REPO_ROOT, FOREST_WORKLIST_PATH)}`)
+}
+
+// Cross-producer guards — mirror generate-salon.js so survey-deleaf refuses to
+// prune chassis whose source it doesn't own (procedural / LiDAR Scan-mode).
+function isProceduralSpeciesName(speciesId) {
+  return /^procedural_/.test(speciesId) || /_procedural$/.test(speciesId)
+}
+async function hasLidarSeedlingsName(speciesId) {
+  try { await fs.access(path.join(REPO_ROOT, 'arborist/state', speciesId, 'seedlings.json')); return true }
+  catch { return false }
+}
+
+// Prune stale orphans from _chassis/ AFTER a full regen. Deletes ONLY a chassis
+// that this run did NOT emit AND whose meta.source.species is a vendor species
+// still present + walked this run (so the script demonstrably regenerates that
+// source — the orphan is genuinely superseded output, e.g. an old whole-bundle
+// or pre-rename name). REFUSES (surfaces, never deletes) anything it can't
+// account for: no meta, procedural/LiDAR source, or a source dir that's gone —
+// the [[feedback_clean_regen_must_be_idempotent_complete]] guard that the
+// procedural_broadleaf loss taught us.
+async function pruneOrphanChassis({ results, speciesDirs }) {
+  const emitted = new Set(results.filter(r => r.chassisName).map(r => r.chassisName))
+  const speciesDirSet = new Set(speciesDirs)
+  let entries
+  try { entries = await fs.readdir(CHASSIS_DIR) } catch { return }
+  const glbs = entries.filter(n => n.endsWith('.glb')).sort()
+  const deleted = [], refused = []
+  for (const glb of glbs) {
+    const stem = glb.replace(/\.glb$/, '')
+    if (emitted.has(stem)) continue // regenerated this run — keep
+    let meta = null
+    try { meta = JSON.parse(await fs.readFile(path.join(CHASSIS_DIR, `${stem}.meta.json`), 'utf8')) } catch {}
+    const sp = meta?.source?.species
+    let refuseReason = null
+    if (!sp) refuseReason = 'no meta/source.species — cannot verify producer'
+    else if (isProceduralSpeciesName(sp)) refuseReason = `procedural source (${sp}) — not survey-deleaf's to delete`
+    else if (await hasLidarSeedlingsName(sp)) refuseReason = `LiDAR Scan-mode source (${sp}) — not survey-deleaf's to delete`
+    else if (!speciesDirSet.has(sp)) refuseReason = `source dir public/trees/${sp} absent — cannot regenerate`
+    if (refuseReason) { refused.push({ stem, reason: refuseReason }); continue }
+    await fs.rm(path.join(CHASSIS_DIR, glb))
+    await fs.rm(path.join(CHASSIS_DIR, `${stem}.meta.json`)).catch(() => {})
+    deleted.push(stem)
+  }
+  console.log(`[mistral --clean] pruned ${deleted.length} stale orphan(s); refused ${refused.length} (protected / unrecoverable)`)
+  for (const d of deleted.sort()) console.log(`  [pruned]  ${d}`)
+  for (const r of refused.sort((a, b) => a.stem.localeCompare(b.stem))) console.log(`  [refused] ${r.stem} — ${r.reason}`)
+  // Read-only curation cross-check (preserves the never-touch-curation invariant):
+  // surface live curation entries pointing at chassis that no longer exist.
+  try {
+    const curPath = path.join(REPO_ROOT, 'arborist/state/_chassis-curation.json')
+    const cur = JSON.parse(await fs.readFile(curPath, 'utf8'))
+    const orphanKeys = Object.keys(cur.chassis || {}).filter(k => !emitted.has(k.replace(/\.glb$/, '')))
+    if (orphanKeys.length) {
+      console.log(`[mistral --clean] curation has ${orphanKeys.length} entr(y/ies) pointing at non-emitted chassis (name-keyed, harmless; reconcile if stale): ${orphanKeys.join(', ')}`)
+    }
+  } catch { /* no curation file */ }
 }
 
 // ── Report ─────────────────────────────────────────────────────────────────

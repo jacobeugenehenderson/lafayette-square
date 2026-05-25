@@ -22,6 +22,7 @@ import {
 import {
   listSalonSpecies,
   listChassis as listSalonChassis,
+  listForestChassis,
   listBarkRefs as listSalonBarkRefs,
   listLeafPacks as listSalonLeafPacks,
   readEffectiveCompositions,
@@ -1061,9 +1062,15 @@ const server = createServer(async (req, res) => {
         // (acer_saccharum_a/c, source.species=acer_saccharum) leaked into the
         // slot-card picker. Filter the catalog to chassis whose species is in
         // the Salon picker set, mirroring listSalonSpecies's exclusions.
-        // (Forest/group-shot decomposition regression is separate — Brief 23.)
         const allowedSpecies = new Set((await listSalonSpecies()).map(s => s.speciesId))
         chassis = chassis.filter(c => !c.source?.species || allowedSpecies.has(c.source.species))
+        // Brief 23 (Mistral 2026-05-25): suppress MERGED single-mesh forests
+        // (group shots — one mesh holding N trunks, e.g. acer_saccharum_lowpoly,
+        // burnt_tree) until Brief 23a splits them into per-tree singles. Keys on
+        // survey-deleaf's producer-derived forest worklist, so it hits ONLY the
+        // merged meshes — the 58 already-separable splits stay in the catalog.
+        const forestChassis = await listForestChassis()
+        chassis = chassis.filter(c => !forestChassis.has(c.name))
         if (filter) chassis = chassis.filter(c => c.morphology === filter)
         return jsonRes(res, 200, { chassis })
       } catch (err) {

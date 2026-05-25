@@ -172,6 +172,18 @@ async function loadChassisMeta(chassisName) {
   return JSON.parse(await fs.readFile(p, 'utf8'))
 }
 
+// Brief 23 (Mistral, 2026-05-25): single-mesh FOREST chassis (group shots — one
+// merged mesh holding 11–57 trunks, never auto-split because Riven's detector is
+// root-based) are suppressed from the Salon catalog until Brief 23a splits them
+// into per-tree singles. The list is producer-derived by survey-deleaf.js at
+// `state/_chassis-forests.json`; returns a Set of chassis stems (no `.glb`).
+export async function listForestChassis() {
+  try {
+    const data = JSON.parse(await fs.readFile(path.join(STATE_ROOT, '_chassis-forests.json'), 'utf8'))
+    return new Set(Object.keys(data?.forests || {}).map(k => k.replace(/\.glb$/, '')))
+  } catch { return new Set() }
+}
+
 // ── Bark + leaf libraries ───────────────────────────────────────────────
 
 export async function listBarkRefs() {
