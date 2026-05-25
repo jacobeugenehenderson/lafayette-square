@@ -1,8 +1,16 @@
 # Brief 6.2 — Connected-mesh bark decimation (Linden-class targets)
 
-**You are the baby executing this brief.** Not the orchestrator, not a router. The work is yours to do directly. Name yourself however feels right — pick whatever lands when you read this — and use that name in your status updates and commit body. Boz (coordinator) drafted this; Jacob (operator) dispatched it.
+**You are the baby executing this brief.** Not the orchestrator, not a router. The work is yours to do directly. Boz (coordinator) drafted this; Jacob (operator) dispatched it.
+
+**Name yourself — and it MUST be a name that has not already been used in this project.** Babies in this project pattern-match heavily to names they see in NOTES.md / BACKLOG.md / code comments and pick collisions; Jacob has had to redirect repeated misfires (Holm 2026-05-23, Cambium same-day). Pattern-match risk is especially high on bark/atlas briefs — Holm shipped Brief 2 (bark gradients), Cambium shipped Brief 7 (Salon preview atlas), both will appear near your code.
+
+**Names already claimed — do NOT reuse any of these:** Whittle, Sequoia, Quill, Riven, Fern, Holm, Birch, Cinder, Tendril, Cambium, Spindle, Linnet, Cork, Vantage, Sough, Wisp, Hazel, Olmsted, Wren, Penzias, Nimbus, Sorrel, Boz.
+
+**Pick something novel.** Anything — a word, a symbol, a string of sounds, something in another language, something invented, a non-plant noun, a mineral, a tool, a star name, a piece of weather, a body of water, an architectural term, a verb conjugation. The project has saturated the plant-adjacent namespace; reach further. State your name in your first message back; sign your commits with it.
 
 ## Why this brief exists
+
+The Arborist's mission is to deliver beautiful GPU-manageable assets at hundreds of simultaneous tree placements in the slab. Linden bark is the single largest obstacle to that mission today.
 
 Brief 6 (Spindle, shipped 2026-05-22 commit `3bd0a17`) added card-aware leaf-card reduction (Lever 3) + adaptive simplify-to-bracket (Lever 4). Spindle's survey surfaced a finding that neither Olmsted's nor Boz's brief drafting anticipated:
 
@@ -12,7 +20,23 @@ Brief 6 (Spindle, shipped 2026-05-22 commit `3bd0a17`) added card-aware leaf-car
 
 Brief 6.1 (already drafted) picks up the pre-merge branch-decimation levers for the procedural + LiDAR paths. **This brief — 6.2 — picks up the connected-mesh bark side specifically.** Salon-imported chassis (vendor stock) with connected-mesh bark primitives need targeted decimation that the generic `MeshoptSimplifier` may handle adequately at the right error tolerances, or may need a richer approach.
 
-The headline target: **Linden's `american_linden_a` chassis, 722K-tri single bark primitive**. This single primitive at scale across 745 LS placements is the dominant bake-time bark budget on connected-mesh species.
+The headline target: **Linden's `american_linden_a` chassis, 722K-tri single bark primitive**. LS has ~30+ Linden placements; at 722K × 30 = 21M+ bake-time bark tris from one species alone. This is the dominant park-wide bark budget. Getting Linden into Browse-distance budget at LoD2 is mission-critical for v1.5.
+
+## Doctrine: this is the LoD pyramid working as designed — NOT a parallel lite chassis
+
+The operator has explicitly ruled out authoring a `american_linden_lite` parallel chassis as the answer to Linden's weight. The doctrine for handling heavy species (per 2026-05-23 conversation) is that **one chassis publishes a parameterized family of reads, composed from existing tunable types**:
+
+- **Geometry LoD bracket** (Brief 6 Lever 4 — shipped) — adaptive simplify produces LoD0/1/2 tiers
+- **Leaf-card silhouette cull** (Brief 6 Lever 3 — shipped) — Robinia-class card-based leaf reduction
+- **Bark mesh decimation** (this brief, Lever 5)
+- **Bark substrate tier** (Brief 10B — in flight) — posterized + no-detail-composite at aerial tier
+- **Bark tier driver** (Brief 11 lightweight — queued) — distance-driven tier swap in InstancedTrees
+- **Generator pre-merge prune** (Brief 6.1 — cooled to v1.6+) — generator-side only
+- **Hemisphere cull** (Brief 4 — queued) — back-facing leaf alpha = 0
+
+Your work is the *geometry* axis of that family. The Browse-distance "lite Linden" emerges from composing your aggressively-decimated LoD2 bark mesh + Brief 10B's posterized substrate + (eventually) Brief 11's distance-driven tier swap. Browse-distance Linden should land at LoD2 + tier 0 — small geometry, small substrate, no detail composite. Hero-distance Linden stays at LoD0 + tier 1. **One chassis, multiple compositional reads.** Your job is to push LoD2 Linden bark through MeshoptSimplifier's topology floor so the LoD pyramid actually has a usable bottom rung.
+
+This framing matters because it tells you what "good enough" looks like: LoD2 bark visible at LS Browse distance (parallax-small) reads coherently; LoD0 bark visible at LS Hero distance retains silhouette + surface continuity. The two operate under different visual budgets.
 
 ## What's currently broken
 
@@ -30,7 +54,7 @@ Two operations within Lever 5:
 
 1. **Aggressive error budget for bark.** Pass a higher error tolerance to `MeshoptSimplifier` for the bark primitive specifically (e.g., `0.01` vs the default `0.0005` Spindle's bracket-aware path uses). Surface continuity matters more than micro-detail; bark fragments tens of meters across the canopy can afford coarser sampling.
 
-2. **Optional decimation-via-quadric-edge-collapse** if MeshoptSimplifier's aggressive-error path still can't hit the bracket. Quadric-edge-collapse is a different mesh-decimation algorithm that may handle large connected meshes better than meshopt's edge-flip-based simplification. `meshoptimizer` includes `MeshoptSimplifier.simplify` (already used) and `MeshoptSimplifier.simplifyWithAttributes` (preserves attributes); a third option `MeshoptSimplifier.simplifyWithAttributes` with relaxed `error_target` parameters may suffice. Surface the algorithmic choice in the survey.
+2. **Algorithm escalation if aggressive error still can't hit the bracket.** `meshoptimizer` exposes `MeshoptSimplifier.simplify` (the default Spindle uses) and `MeshoptSimplifier.simplifyWithAttributes` (preserves vertex attributes including UVs across collapses — likely the right tool for bark since UVs carry atlas-region addressing). Try `simplifyWithAttributes` with a high `error_target` and explicit UV-stream weighting before reaching for anything more exotic. If even that hits a floor, surface the wall and the survey is the deliverable — don't blindly reach for a quadric-edge-collapse implementation that doesn't exist in the project's tool chain. The cost of switching to a non-JS algorithm (e.g., a Python preprocessing step) is large; surface it for operator decision rather than shipping it.
 
 ## Files you'll touch
 
@@ -46,9 +70,14 @@ Two operations within Lever 5:
 
 Total: ~410 LOC.
 
+## Coordination
+
+- **Brief 18A is dispatching in parallel** — pure UI pivot in `src/arborist/*.jsx` (retiring the Library landing page, defaulting Arborist into Salon). Zero file overlap with this brief. Confirm via `git status` before commit that you've touched only the files listed in the file-by-file plan; if you find yourself near `src/arborist/ArboristApp.jsx` or any workstage file, you've drifted.
+- **Brief 10B is queued** (substrate-tier posterization + aerial/hero swap). Its commit may land before or after yours; both write to bake-time artifacts but at different stages (10B is `unifyAtlases` + atlas extraction; 6.2 is `decimate-tree.mjs` + `publish-glb.js`). Should not collide. Per `[[feedback_load_bearing_files_serial_dispatch]]`: if you find yourself editing `bake-look.js#unifyAtlases` or atlas-survey code, you've drifted out of decimation territory — surface and pause.
+
 ## Acceptance criteria
 
-1. **Linden bark significantly reduced.** Run Brief 6.2 against `american_linden_a` (the headline target). Bark primitive vert count drops by ≥50% at LoD0 vs Spindle's post-Brief-6 baseline. Quantify per-LoD.
+1. **Linden bark significantly reduced at LoD2.** This is the load-bearing target. LoD2 is the Browse-distance read; if LoD2 still misses bracket on Linden, the LoD pyramid is broken and Brief 11's distance-driven tier swap has nothing to swap *to*. Quantify Linden bark primitive vert + tri counts per-LoD pre- and post-6.2; LoD2 should clear `decimation-defaults.json`'s configured max (operator-tunable; today's default 20K, may need bumping per Spindle's "tight bracket" finding — survey it).
 2. **Visual diff at LS Hero distance.** Linden trunk + branches retain visible silhouette continuity. No tearing, no holes, no obvious facet-flat regions. **Operator-eye verification required.** Baby provides before/after screenshots in the survey.
 3. **Visual diff at LS Browse distance.** Same — at Browse distance the bark is small but parallax-visible; ensure simplification doesn't create silhouette artifacts.
 4. **Naturally-light bark untouched.** Italian Cypress and procedural broadleaf bark primitives (well below 100K verts) no-op. Verify in survey.
@@ -85,13 +114,15 @@ Surface in status update AND commit body.
 
 ## Out of scope
 
+- **Authoring a parallel "lite" chassis** (e.g., `american_linden_lite`) — explicitly ruled out by operator 2026-05-23. The doctrine is one chassis publishes a parameterized family of reads via the LoD pyramid + tier system; your job is to make the existing pyramid's LoD2 floor *real* for Linden, not to invent a second chassis. If you find yourself reaching for a parallel-file approach, you've drifted.
 - **Leaf-side decimation** — Spindle's Lever 3 territory. Untouched here.
-- **Generator-side pre-merge decimation** — Brief 6.1 territory.
-- **Quality bracket re-tuning** — operator-tuned per chassis; out of decimation's scope.
-- **Cardinal Configuration D runtime** (Points + A2C + LoD selection) — orthogonal.
-- **Brief 10 (view-aware bark tiering)** — orthogonal; tier-selection is fragment-shader path; decimation is geometry-side.
+- **Generator-side pre-merge decimation** — Brief 6.1 territory (cooled to v1.6+).
+- **Quality bracket re-tuning** at the global level — operator-tuned per chassis; if you find Linden needs a per-species bracket override (e.g., `species-map.json#/<species>/decimation`), surface as a follow-up; don't ship the per-species override plumbing yourself.
+- **Configuration D runtime** (Points + A2C + LoD selection) — orthogonal.
+- **Brief 10B (substrate tier swap)** — orthogonal; tier-selection is fragment-shader path; decimation is geometry-side. They compose at runtime but don't share files.
 - **Atlas-survey or bake-look changes** — `decimateBarkPrimitives` operates BEFORE bake-look; atlas pipeline downstream is unchanged.
-- **Texture decimation / posterization** — that's Brief 10 sub-phase B territory.
+- **Texture decimation / posterization** — Brief 10B territory.
+- **Brief 11 distance-driven tier swap** — runtime, in InstancedTrees.jsx; orthogonal.
 
 ## Memory refs
 

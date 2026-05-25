@@ -10,12 +10,12 @@
 
 ## 1. Bundle detection summary
 
-- **Bundle GLBs detected:** 21
-- **Decomposed chassis emitted (new):** 46
+- **Bundle GLBs detected:** 20
+- **Decomposed chassis emitted (new):** 42
 - **Bundle-debris items skipped (no WOOD in subtree):** 125
 - **Bundle items skipped (ambiguous in subtree):** 11
-- **Single-tree chassis emitted via Whittle path (byte-identical to Brief 0):** 195
-- **Single-tree skipped-ambiguous:** 81; **skipped-no-wood:** 51; **errored:** 0
+- **Single-tree chassis emitted via Whittle path (byte-identical to Brief 0):** 199
+- **Single-tree skipped-ambiguous:** 82; **skipped-no-wood:** 51; **errored:** 0
 
 **Bundle-detection heuristic:** a GLB is a bundle if it carries more than one geometry-bearing root node — counting both direct scene children with geometry in their subtree AND orphan nodes (mesh-bearing nodes that aren't a child of any other node, the flat-scene pattern seen in `candicands/`).
 
@@ -61,18 +61,17 @@
 | populus_canescens/skeleton-2-lod0.glb | 6 | `gray_poplar_b_trunk11`, `gray_poplar_b_trunk33`, `gray_poplar_b_trunk44` | `leaf11` (W0/L1/A0); `leaf33` (W0/L1/A0); `leaf44` (W0/L1/A0) | — |
 | populus_canescens/skeleton-3-lod0.glb | 6 | `gray_poplar_c_trunk11`, `gray_poplar_c_trunk22`, `gray_poplar_c_trunk44` | `leaf11` (W0/L1/A0); `leaf22` (W0/L1/A0); `leaf44` (W0/L1/A0) | — |
 | populus_canescens/skeleton-4-lod0.glb | 6 | `gray_poplar_d_trunk11`, `gray_poplar_d_trunk22`, `gray_poplar_d_trunk33` | `leaf11` (W0/L1/A0); `leaf22` (W0/L1/A0); `leaf33` (W0/L1/A0) | — |
-| robinia_pseudoacacia/skeleton-1-lod0.glb | 4 | `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_d`, `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_a`, `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_b`, `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_c` | — | — |
 
 ## 4. Coverage delta — morphology distribution
 
 | Morphology | Whittle (single-tree) | After Riven (incl. decomposed) | Delta |
 |---|---:|---:|---:|
-| broadleaf | 116 | 158 | +42 |
+| broadleaf | 138 | 180 | +42 |
 | conifer | 33 | 33 | 0 |
 | ornamental | 0 | 0 | 0 |
 | columnar | 15 | 15 | 0 |
 | weeping | 13 | 13 | 0 |
-| unknown | 18 | 22 | +4 |
+| unknown | 0 | 0 | 0 |
 
 **Ornamental coverage:** unchanged. The decomposed bundles inherit their source species' morphology (`candicands` → whatever index.json declares), which may not be ornamental. Operator may want to override the morphology field on the decomposed chassis' meta.json post-Riven.
 
@@ -80,12 +79,15 @@
 
 **Species rescued by bundle decomposition** (had zero Whittle chassis, now have ≥1 bundle-decomposed chassis):
 
+- `candicands` ("Candicands") — 12 bundle-decomposed chassis
 - `gleditsia_triacanthos` ("Honey Locust") — 12 bundle-decomposed chassis
+- `populus_alba_fall` ("Poplar (fall)") — 4 bundle-decomposed chassis
 - `populus_canescens` ("Gray Poplar") — 12 bundle-decomposed chassis
 
 **Species still recommended for operator review** (no clean chassis even after bundle decomposition):
 
 - `alaskan_cedar_2` ("Alaskan Cedar (variant)") — no clean output (mix of ambiguous / no-wood / errored)
+- `broadleaf_rt3` ("Broadleaf RT3") — still no usable chassis (all variants no-wood or bundle-debris)
 - `cedar_generic` ("Cedar") — no clean output (mix of ambiguous / no-wood / errored)
 - `conifer_generic` ("Conifer Forest") — no clean output (mix of ambiguous / no-wood / errored)
 - `conifer_generic_2` ("Conifer Forest 2") — no clean output (mix of ambiguous / no-wood / errored)
@@ -96,6 +98,7 @@
 - `magnolia_sp` ("Magnolia") — no clean output (mix of ambiguous / no-wood / errored)
 - `picea_abies` ("Norway Spruce") — no clean output (mix of ambiguous / no-wood / errored)
 - `pinus_sylvestris` ("Scots Pine") — no clean output (mix of ambiguous / no-wood / errored)
+- `procedural_broadleaf` ("Procedural Broadleaf") — still no usable chassis (all variants no-wood or bundle-debris)
 - `pseudotsuga_menziesii` ("Douglas Fir") — no clean output (mix of ambiguous / no-wood / errored)
 - `pseudotsuga_oregon` ("Oregon Pine / Douglas Fir") — no clean output (mix of ambiguous / no-wood / errored)
 - `spruce_corona` ("Spruce (Corona)") — still no usable chassis (all variants no-wood or bundle-debris)
@@ -266,71 +269,71 @@ All curation-referenced chassis names are still emitted. ✓
 | Source | Node | Status | WOOD / LEAF / AMB | Chassis | heightRange |
 |---|---|---|---|---|---|
 | candicands/skeleton-1-lod0.glb | `1_leaf22` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-1-lod0.glb | `Bark_122` | bundle-decomposed | 1 / 0 / 0 | `candicands_a_bark_122` | [0, 110.1614] |
+| candicands/skeleton-1-lod0.glb | `Bark_122` | bundle-decomposed | 1 / 0 / 0 | `candicands_a_bark_122` | [0, 11.0161] |
 | candicands/skeleton-1-lod0.glb | `flower_122` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
 | candicands/skeleton-1-lod0.glb | `1_leaf33` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-1-lod0.glb | `Bark_133` | bundle-decomposed | 1 / 0 / 0 | `candicands_a_bark_133` | [0, 86.6504] |
+| candicands/skeleton-1-lod0.glb | `Bark_133` | bundle-decomposed | 1 / 0 / 0 | `candicands_a_bark_133` | [0, 8.665] |
 | candicands/skeleton-1-lod0.glb | `flower_133` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-1-lod0.glb | `1_leaf44` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-1-lod0.glb | `Bark_144` | bundle-decomposed | 1 / 0 / 0 | `candicands_a_bark_144` | [0, 55.5631] |
+| candicands/skeleton-1-lod0.glb | `Bark_144` | bundle-decomposed | 1 / 0 / 0 | `candicands_a_bark_144` | [0, 5.5563] |
 | candicands/skeleton-1-lod0.glb | `flower_144` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-2-lod0.glb | `1_leaf11` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-2-lod0.glb | `Bark_111` | bundle-decomposed | 1 / 0 / 0 | `candicands_b_bark_111` | [0, 110.1614] |
+| candicands/skeleton-2-lod0.glb | `Bark_111` | bundle-decomposed | 1 / 0 / 0 | `candicands_b_bark_111` | [0, 11.0161] |
 | candicands/skeleton-2-lod0.glb | `flower_111` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-2-lod0.glb | `1_leaf33` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-2-lod0.glb | `Bark_133` | bundle-decomposed | 1 / 0 / 0 | `candicands_b_bark_133` | [0, 86.6504] |
+| candicands/skeleton-2-lod0.glb | `Bark_133` | bundle-decomposed | 1 / 0 / 0 | `candicands_b_bark_133` | [0, 8.665] |
 | candicands/skeleton-2-lod0.glb | `flower_133` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-2-lod0.glb | `1_leaf44` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-2-lod0.glb | `Bark_144` | bundle-decomposed | 1 / 0 / 0 | `candicands_b_bark_144` | [0, 55.5631] |
+| candicands/skeleton-2-lod0.glb | `Bark_144` | bundle-decomposed | 1 / 0 / 0 | `candicands_b_bark_144` | [0, 5.5563] |
 | candicands/skeleton-2-lod0.glb | `flower_144` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-3-lod0.glb | `1_leaf11` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-3-lod0.glb | `Bark_111` | bundle-decomposed | 1 / 0 / 0 | `candicands_c_bark_111` | [0, 110.1614] |
+| candicands/skeleton-3-lod0.glb | `Bark_111` | bundle-decomposed | 1 / 0 / 0 | `candicands_c_bark_111` | [0, 11.0161] |
 | candicands/skeleton-3-lod0.glb | `flower_111` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-3-lod0.glb | `1_leaf22` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-3-lod0.glb | `Bark_122` | bundle-decomposed | 1 / 0 / 0 | `candicands_c_bark_122` | [0, 110.1614] |
+| candicands/skeleton-3-lod0.glb | `Bark_122` | bundle-decomposed | 1 / 0 / 0 | `candicands_c_bark_122` | [0, 11.0161] |
 | candicands/skeleton-3-lod0.glb | `flower_122` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
 | candicands/skeleton-3-lod0.glb | `1_leaf44` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-3-lod0.glb | `Bark_144` | bundle-decomposed | 1 / 0 / 0 | `candicands_c_bark_144` | [0, 55.5631] |
+| candicands/skeleton-3-lod0.glb | `Bark_144` | bundle-decomposed | 1 / 0 / 0 | `candicands_c_bark_144` | [0, 5.5563] |
 | candicands/skeleton-3-lod0.glb | `flower_144` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-4-lod0.glb | `1_leaf11` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-4-lod0.glb | `Bark_111` | bundle-decomposed | 1 / 0 / 0 | `candicands_d_bark_111` | [0, 110.1614] |
+| candicands/skeleton-4-lod0.glb | `Bark_111` | bundle-decomposed | 1 / 0 / 0 | `candicands_d_bark_111` | [0, 11.0161] |
 | candicands/skeleton-4-lod0.glb | `flower_111` | bundle-debris | 0 / 1 / 0 | — | — |
 | candicands/skeleton-4-lod0.glb | `1_leaf22` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-4-lod0.glb | `Bark_122` | bundle-decomposed | 1 / 0 / 0 | `candicands_d_bark_122` | [0, 110.1614] |
+| candicands/skeleton-4-lod0.glb | `Bark_122` | bundle-decomposed | 1 / 0 / 0 | `candicands_d_bark_122` | [0, 11.0161] |
 | candicands/skeleton-4-lod0.glb | `flower_122` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
 | candicands/skeleton-4-lod0.glb | `1_leaf33` | bundle-debris | 0 / 1 / 0 | — | — |
-| candicands/skeleton-4-lod0.glb | `Bark_133` | bundle-decomposed | 1 / 0 / 0 | `candicands_d_bark_133` | [0, 86.6504] |
+| candicands/skeleton-4-lod0.glb | `Bark_133` | bundle-decomposed | 1 / 0 / 0 | `candicands_d_bark_133` | [0, 8.665] |
 | candicands/skeleton-4-lod0.glb | `flower_133` | bundle-debris | 0 / 1 / 0 | — | — |
-| gleditsia_triacanthos/skeleton-1-lod0.glb | `bark2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_bark2` | [0, 1250.9213] |
+| gleditsia_triacanthos/skeleton-1-lod0.glb | `bark2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_bark2` | [0, 12.5092] |
 | gleditsia_triacanthos/skeleton-1-lod0.glb | `fuzz2` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-1-lod0.glb | `leaff2` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-1-lod0.glb | `seed2` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
-| gleditsia_triacanthos/skeleton-1-lod0.glb | `stem2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_stem2` | [0, 1311.5845] |
-| gleditsia_triacanthos/skeleton-1-lod0.glb | `bark3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_bark3` | [0, 1624.6931] |
+| gleditsia_triacanthos/skeleton-1-lod0.glb | `stem2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_stem2` | [0, 13.1158] |
+| gleditsia_triacanthos/skeleton-1-lod0.glb | `bark3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_bark3` | [0, 16.2469] |
 | gleditsia_triacanthos/skeleton-1-lod0.glb | `fuzz3` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-1-lod0.glb | `leaff3` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-1-lod0.glb | `seed3` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
-| gleditsia_triacanthos/skeleton-1-lod0.glb | `stem3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_stem3` | [0, 1328.701] |
-| gleditsia_triacanthos/skeleton-2-lod0.glb | `bark1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_bark1` | [0, 1709.0269] |
+| gleditsia_triacanthos/skeleton-1-lod0.glb | `stem3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_a_stem3` | [0, 13.287] |
+| gleditsia_triacanthos/skeleton-2-lod0.glb | `bark1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_bark1` | [0, 17.0903] |
 | gleditsia_triacanthos/skeleton-2-lod0.glb | `fuzz1` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-2-lod0.glb | `leaff1` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-2-lod0.glb | `seed1` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
-| gleditsia_triacanthos/skeleton-2-lod0.glb | `stem1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_stem1` | [0, 1628.224] |
-| gleditsia_triacanthos/skeleton-2-lod0.glb | `bark3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_bark3` | [0, 1624.6931] |
+| gleditsia_triacanthos/skeleton-2-lod0.glb | `stem1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_stem1` | [0, 16.2822] |
+| gleditsia_triacanthos/skeleton-2-lod0.glb | `bark3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_bark3` | [0, 16.2469] |
 | gleditsia_triacanthos/skeleton-2-lod0.glb | `fuzz3` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-2-lod0.glb | `leaff3` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-2-lod0.glb | `seed3` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
-| gleditsia_triacanthos/skeleton-2-lod0.glb | `stem3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_stem3` | [0, 1328.701] |
-| gleditsia_triacanthos/skeleton-3-lod0.glb | `bark1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_bark1` | [0, 1709.0269] |
+| gleditsia_triacanthos/skeleton-2-lod0.glb | `stem3` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_b_stem3` | [0, 13.287] |
+| gleditsia_triacanthos/skeleton-3-lod0.glb | `bark1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_bark1` | [0, 17.0903] |
 | gleditsia_triacanthos/skeleton-3-lod0.glb | `fuzz1` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-3-lod0.glb | `leaff1` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-3-lod0.glb | `seed1` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
-| gleditsia_triacanthos/skeleton-3-lod0.glb | `stem1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_stem1` | [0, 1628.224] |
-| gleditsia_triacanthos/skeleton-3-lod0.glb | `bark2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_bark2` | [0, 1250.9213] |
+| gleditsia_triacanthos/skeleton-3-lod0.glb | `stem1` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_stem1` | [0, 16.2822] |
+| gleditsia_triacanthos/skeleton-3-lod0.glb | `bark2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_bark2` | [0, 12.5092] |
 | gleditsia_triacanthos/skeleton-3-lod0.glb | `fuzz2` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-3-lod0.glb | `leaff2` | bundle-debris | 0 / 1 / 0 | — | — |
 | gleditsia_triacanthos/skeleton-3-lod0.glb | `seed2` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
-| gleditsia_triacanthos/skeleton-3-lod0.glb | `stem2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_stem2` | [0, 1311.5845] |
+| gleditsia_triacanthos/skeleton-3-lod0.glb | `stem2` | bundle-decomposed | 1 / 0 / 0 | `honey_locust_c_stem2` | [0, 13.1158] |
 | platanus_acerifolia/skeleton-13-lod0.glb | `PT_G2` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
 | platanus_acerifolia/skeleton-13-lod0.glb | `WhiteBirchBark_G2` | bundle-decomposed | 1 / 0 / 0 | `london_plane_m_whitebirchbark_g2` | [0, 16.8575] |
 | platanus_acerifolia/skeleton-14-lod0.glb | `PT_F2` | bundle-skipped-ambiguous | 0 / 0 / 1 | — | — |
@@ -341,7 +344,7 @@ All curation-referenced chassis names are still emitted. ✓
 | populus_alba_fall/skeleton-1-lod0.glb | `L_P_Populier_Green_02.002` | bundle-debris | 0 / 1 / 0 | — | — |
 | populus_alba_fall/skeleton-1-lod0.glb | `Bark_Populier_Fall_02` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-1-lod0.glb | `L_P_Populier_Fall_02` | bundle-debris | 0 / 0 / 0 | — | — |
-| populus_alba_fall/skeleton-1-lod0.glb | `Bark_Populier_Fall_02.001` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_a_bark_populier_fall_02_001` | [0, 1250.7374] |
+| populus_alba_fall/skeleton-1-lod0.glb | `Bark_Populier_Fall_02.001` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_a_bark_populier_fall_02_001` | [0, 12.5074] |
 | populus_alba_fall/skeleton-1-lod0.glb | `L_P_Populier_Fall_02.001` | bundle-debris | 0 / 1 / 0 | — | — |
 | populus_alba_fall/skeleton-1-lod0.glb | `Bark_Populier_Fall_02.002` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-1-lod0.glb | `L_P_Populier_Fall_02.002` | bundle-debris | 0 / 1 / 0 | — | — |
@@ -355,7 +358,7 @@ All curation-referenced chassis names are still emitted. ✓
 | populus_alba_fall/skeleton-2-lod0.glb | `L_P_Populier_Fall_02` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-2-lod0.glb | `Bark_Populier_Fall_02.001` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-2-lod0.glb | `L_P_Populier_Fall_02.001` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_alba_fall/skeleton-2-lod0.glb | `Bark_Populier_Fall_02.002` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_b_bark_populier_fall_02_002` | [0, 1379.7125] |
+| populus_alba_fall/skeleton-2-lod0.glb | `Bark_Populier_Fall_02.002` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_b_bark_populier_fall_02_002` | [0, 13.7971] |
 | populus_alba_fall/skeleton-2-lod0.glb | `L_P_Populier_Fall_02.002` | bundle-debris | 0 / 1 / 0 | — | — |
 | populus_alba_fall/skeleton-2-lod0.glb | `Bark_Populier_Fall_02.003` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-2-lod0.glb | `L_P_Populier_Fall_02.003` | bundle-debris | 0 / 0 / 0 | — | — |
@@ -383,7 +386,7 @@ All curation-referenced chassis names are still emitted. ✓
 | populus_alba_fall/skeleton-4-lod0.glb | `L_P_Populier_Fall_02.002` | bundle-debris | 0 / 1 / 0 | — | — |
 | populus_alba_fall/skeleton-4-lod0.glb | `Bark_Populier_Fall_02.003` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-4-lod0.glb | `L_P_Populier_Fall_02.003` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_alba_fall/skeleton-5-lod0.glb | `Bark_Populier_Green_02` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_e_bark_populier_green_02` | [0, 1250.7374] |
+| populus_alba_fall/skeleton-5-lod0.glb | `Bark_Populier_Green_02` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_e_bark_populier_green_02` | [0, 12.5074] |
 | populus_alba_fall/skeleton-5-lod0.glb | `L_P_Populier_Green_02` | bundle-debris | 0 / 1 / 0 | — | — |
 | populus_alba_fall/skeleton-5-lod0.glb | `Bark_Populier_Green_02.001` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-5-lod0.glb | `L_P_Populier_Green_02.001` | bundle-debris | 0 / 1 / 0 | — | — |
@@ -397,7 +400,7 @@ All curation-referenced chassis names are still emitted. ✓
 | populus_alba_fall/skeleton-5-lod0.glb | `L_P_Populier_Fall_02.003` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-6-lod0.glb | `Bark_Populier_Green_02` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-6-lod0.glb | `L_P_Populier_Green_02` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_alba_fall/skeleton-6-lod0.glb | `Bark_Populier_Green_02.001` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_f_bark_populier_green_02_001` | [0, 1379.7125] |
+| populus_alba_fall/skeleton-6-lod0.glb | `Bark_Populier_Green_02.001` | bundle-decomposed | 1 / 0 / 0 | `poplar_fall_f_bark_populier_green_02_001` | [0, 13.7971] |
 | populus_alba_fall/skeleton-6-lod0.glb | `L_P_Populier_Green_02.001` | bundle-debris | 0 / 1 / 0 | — | — |
 | populus_alba_fall/skeleton-6-lod0.glb | `Bark_Populier_Green_02.002` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-6-lod0.glb | `L_P_Populier_Green_02.002` | bundle-debris | 0 / 1 / 0 | — | — |
@@ -420,30 +423,26 @@ All curation-referenced chassis names are still emitted. ✓
 | populus_alba_fall/skeleton-7-lod0.glb | `Bark_Populier_Fall_02.002` | bundle-debris | 0 / 0 / 0 | — | — |
 | populus_alba_fall/skeleton-7-lod0.glb | `L_P_Populier_Fall_02.002` | bundle-debris | 0 / 1 / 0 | — | — |
 | populus_canescens/skeleton-1-lod0.glb | `leaf22` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-1-lod0.glb | `Trunk22` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_a_trunk22` | [0, 642.6094] |
+| populus_canescens/skeleton-1-lod0.glb | `Trunk22` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_a_trunk22` | [0, 6.4261] |
 | populus_canescens/skeleton-1-lod0.glb | `leaf33` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-1-lod0.glb | `Trunk33` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_a_trunk33` | [0, 982.7008] |
+| populus_canescens/skeleton-1-lod0.glb | `Trunk33` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_a_trunk33` | [0, 9.827] |
 | populus_canescens/skeleton-1-lod0.glb | `leaf44` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-1-lod0.glb | `Trunk44` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_a_trunk44` | [0, 982.5243] |
+| populus_canescens/skeleton-1-lod0.glb | `Trunk44` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_a_trunk44` | [0, 9.8252] |
 | populus_canescens/skeleton-2-lod0.glb | `leaf11` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-2-lod0.glb | `Trunk11` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_b_trunk11` | [0, 683.6552] |
+| populus_canescens/skeleton-2-lod0.glb | `Trunk11` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_b_trunk11` | [0, 6.8366] |
 | populus_canescens/skeleton-2-lod0.glb | `leaf33` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-2-lod0.glb | `Trunk33` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_b_trunk33` | [0, 982.7008] |
+| populus_canescens/skeleton-2-lod0.glb | `Trunk33` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_b_trunk33` | [0, 9.827] |
 | populus_canescens/skeleton-2-lod0.glb | `leaf44` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-2-lod0.glb | `Trunk44` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_b_trunk44` | [0, 982.5243] |
+| populus_canescens/skeleton-2-lod0.glb | `Trunk44` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_b_trunk44` | [0, 9.8252] |
 | populus_canescens/skeleton-3-lod0.glb | `leaf11` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-3-lod0.glb | `Trunk11` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_c_trunk11` | [0, 683.6552] |
+| populus_canescens/skeleton-3-lod0.glb | `Trunk11` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_c_trunk11` | [0, 6.8366] |
 | populus_canescens/skeleton-3-lod0.glb | `leaf22` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-3-lod0.glb | `Trunk22` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_c_trunk22` | [0, 642.6094] |
+| populus_canescens/skeleton-3-lod0.glb | `Trunk22` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_c_trunk22` | [0, 6.4261] |
 | populus_canescens/skeleton-3-lod0.glb | `leaf44` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-3-lod0.glb | `Trunk44` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_c_trunk44` | [0, 982.5243] |
+| populus_canescens/skeleton-3-lod0.glb | `Trunk44` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_c_trunk44` | [0, 9.8252] |
 | populus_canescens/skeleton-4-lod0.glb | `leaf11` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-4-lod0.glb | `Trunk11` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_d_trunk11` | [0, 683.6552] |
+| populus_canescens/skeleton-4-lod0.glb | `Trunk11` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_d_trunk11` | [0, 6.8366] |
 | populus_canescens/skeleton-4-lod0.glb | `leaf22` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-4-lod0.glb | `Trunk22` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_d_trunk22` | [0, 642.6094] |
+| populus_canescens/skeleton-4-lod0.glb | `Trunk22` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_d_trunk22` | [0, 6.4261] |
 | populus_canescens/skeleton-4-lod0.glb | `leaf33` | bundle-debris | 0 / 1 / 0 | — | — |
-| populus_canescens/skeleton-4-lod0.glb | `Trunk33` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_d_trunk33` | [0, 982.7008] |
-| robinia_pseudoacacia/skeleton-1-lod0.glb | `Tree_Robinia-pseudoacacia_D` | bundle-decomposed | 1 / 1 / 0 | `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_d` | [0, 9.9252] |
-| robinia_pseudoacacia/skeleton-1-lod0.glb | `Tree_Robinia-pseudoacacia_A` | bundle-decomposed | 1 / 1 / 0 | `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_a` | [0, 6.5879] |
-| robinia_pseudoacacia/skeleton-1-lod0.glb | `Tree_Robinia-pseudoacacia_B` | bundle-decomposed | 1 / 1 / 0 | `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_b` | [0, 8.509] |
-| robinia_pseudoacacia/skeleton-1-lod0.glb | `Tree_Robinia-pseudoacacia_C` | bundle-decomposed | 1 / 1 / 0 | `robinia_pseudoacacia_a_tree_robinia_pseudoacacia_c` | [0, 6.6293] |
+| populus_canescens/skeleton-4-lod0.glb | `Trunk33` | bundle-decomposed | 1 / 0 / 0 | `gray_poplar_d_trunk33` | [0, 9.827] |
