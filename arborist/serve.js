@@ -1054,6 +1054,16 @@ const server = createServer(async (req, res) => {
       try {
         const filter = new URL(req.url, 'http://x').searchParams.get('morphology') || null
         let chassis = await listSalonChassis()
+        // Brief 15 extension (Boz inline 2026-05-25): the species dropdown
+        // already excludes procedural + LiDAR species, but the chassis catalog
+        // was never filtered — so after Brief 20's regen, procedural variants
+        // (acer_saccharum_procedural_*) and LiDAR-species chassis
+        // (acer_saccharum_a/c, source.species=acer_saccharum) leaked into the
+        // slot-card picker. Filter the catalog to chassis whose species is in
+        // the Salon picker set, mirroring listSalonSpecies's exclusions.
+        // (Forest/group-shot decomposition regression is separate — Brief 23.)
+        const allowedSpecies = new Set((await listSalonSpecies()).map(s => s.speciesId))
+        chassis = chassis.filter(c => !c.source?.species || allowedSpecies.has(c.source.species))
         if (filter) chassis = chassis.filter(c => c.morphology === filter)
         return jsonRes(res, 200, { chassis })
       } catch (err) {
