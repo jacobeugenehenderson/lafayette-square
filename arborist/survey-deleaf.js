@@ -184,8 +184,38 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
     }
   }
 
-  // Compute height range from POSITION bbox across all remaining primitives.
+  // Brief 20 (Sextant): recenter to dominant-trunk base at origin. Bake the
+  // node hierarchy so POSITION = world coords, then translate so the densest-
+  // trunk base lands at (0,0,0). Drops Brief 0's byte-identity carve-out for
+  // the 141 single-tree chassis — the off-origin frame was a pure kit-extraction
+  // artifact, and the viewport auto-center + Brief 19 bake already re-derived
+  // this exact center downstream (so authored posOffset/tilt stay valid: the
+  // recenter does at source what the viewport did at display). ALL prims
+  // (bark + retained Tendril leaves) feed the finder, matching the viewport's
+  // anchorScene; the bottom-5% slab keeps canopy out of the trunk-base estimate.
+  bakeSceneTransforms(doc)
+  const allPrims = []
+  for (const mesh of doc.getRoot().listMeshes())
+    for (const prim of mesh.listPrimitives()) allPrims.push(prim)
+  recenterPrimsToDominantTrunk(allPrims)
+
+  // Compute height range from the recentered geometry (now base-at-origin →
+  // [~0, H], matching the bundle path's form).
   const heightRange = computeHeightRange(doc)
+
+  // Surface single-mesh FOREST chassis (operator 2026-05-25): >1 distinct trunk
+  // cluster in the bottom slab = several separate trees in one file, so
+  // dominant-trunk centers the whole scene on one arbitrary stem. That's a
+  // classification problem, not a centering one — recenter best-effort, capture
+  // for curation, don't block. (Multi-STEM organisms like gray_poplar resolve to
+  // one cluster and center fine; this flags the true forest case e.g.
+  // acer_saccharum_a/c.) The clusterCount is the ready-made input for a
+  // follow-up forest-splitter (extends Riven's Brief 1.5c root-based detection).
+  const { clusterCount } = surveyTrunkClusters(allPrims)
+  const forestLike = clusterCount > 1
+  if (forestLike) {
+    console.warn(`[sextant] forest chassis "${filename}" (${label || speciesId}): ${clusterCount} trunk clusters — dominant-trunk center is arbitrary; flag for curation + forest-split follow-up`)
+  }
 
   // Naming
   const variantIdx = variantIndexFromName(filename)
@@ -217,6 +247,8 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
     chassisName: baseName,
     usedCommonName,
     heightRange,
+    forestLike,
+    trunkClusters: clusterCount,
   }
 }
 
@@ -382,6 +414,212 @@ function resetTRSChain(node) {
   for (const c of node.listChildren()) resetTRSChain(c)
 }
 
+// ── Brief 20 (Sextant): recenter every chassis to dominant-trunk origin ──────
+//
+// Ported from SpecimenViewport.jsx#computeDominantTrunk + generate-salon.js#
+// computeAutoCenterPivot (the two downstream finders). Operates on prims whose
+// POSITION accessors are already WORLD coords (node transforms baked first via
+// bakeSceneTransforms / the bundle path's per-root bake). Bins the bottom-5% Y
+// slab into a 0.5m XZ grid, finds the densest 3×3-cell neighborhood, and
+// returns its centroid as the trunk-base point { x, z, minY, height }.
+//
+// ⚠ THREE copies of this algorithm now exist (this + the two downstream). The
+// port (not a shared-lift) was the deliberate call — see BACKLOG Brief 20. They
+// do NOT need active sync-discipline because, on a chassis recentered HERE, all
+// three return ~origin and therefore AGREE BY CONSTRUCTION: the viewport
+// auto-center and Brief 19's bake conjugation both degenerate to identity. The
+// hazard is only re-armed if you RETUNE one (GRID / slab% / densest-cell rule)
+// without the others — then the source frame shifts and the un-retuned
+// downstream finders re-introduce a non-identity center on already-shipped
+// compositions. Retune all three together, or do the deferred shared-lift +
+// delete-the-quiet-finders cleanup (BACKLOG Brief 20 "deferred cleanup").
+function computeDominantTrunkBase(prims) {
+  let minY = Infinity, maxY = -Infinity
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION')
+    if (!pos) continue
+    const arr = pos.getArray()
+    for (let i = 1; i < arr.length; i += 3) {
+      if (arr[i] < minY) minY = arr[i]
+      if (arr[i] > maxY) maxY = arr[i]
+    }
+  }
+  if (!isFinite(minY)) return null
+  const total = maxY - minY
+  const slabHi = minY + Math.max(0.05 * total, 0.05)
+  const GRID = 0.5
+  const cells = new Map()
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION')
+    if (!pos) continue
+    const arr = pos.getArray()
+    for (let i = 0; i < arr.length; i += 3) {
+      const x = arr[i], y = arr[i + 1], z = arr[i + 2]
+      if (y > slabHi) continue
+      const ix = Math.floor(x / GRID), iz = Math.floor(z / GRID)
+      const key = `${ix},${iz}`
+      let c = cells.get(key)
+      if (!c) { c = { ix, iz, count: 0, sx: 0, sz: 0 }; cells.set(key, c) }
+      c.count++; c.sx += x; c.sz += z
+    }
+  }
+  if (cells.size === 0) return { x: 0, z: 0, minY, height: total }
+  let bestSum = -1, bestCell = null
+  for (const c of cells.values()) {
+    let sum = 0
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const n = cells.get(`${c.ix + dx},${c.iz + dz}`)
+      if (n) sum += n.count
+    }
+    if (sum > bestSum) { bestSum = sum; bestCell = c }
+  }
+  let sx = 0, sz = 0, n = 0
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+    const c = cells.get(`${bestCell.ix + dx},${bestCell.iz + dz}`)
+    if (!c) continue
+    sx += c.sx; sz += c.sz; n += c.count
+  }
+  return { x: sx / n, z: sz / n, minY, height: total }
+}
+
+// Survey-only (Brief 20, Sextant + operator 2026-05-25): count distinct trunk
+// clusters in the bottom-5% slab via connected-component labeling on the SAME
+// 0.5m grid the centerer uses. More than one STRONG cluster = a single-mesh
+// FOREST (several separate trees in one file) — the signature behind
+// dominant-trunk "picking one stem far from bbox-center". We do NOT decompose
+// here (out of scope): we capture { clusterCount } as ready-made input for a
+// follow-up that extends Riven's Brief 1.5c root-based split with this spatial
+// clustering. Diagnostic ONLY — it never feeds the centering math, so it cannot
+// drift the chassis frame (the KEEP-IN-SYNC concern stays confined to
+// computeDominantTrunkBase).
+//
+// "Strong" = a cluster holding ≥50% of the dominant cluster's vertex mass AND
+// spanning ≥2 grid cells. Tuned against real stock (Sextant probe 2026-05-25): a
+// genuine forest shows many co-equal clusters (acer_saccharum_lowpoly: 8+ at
+// 57-100% of dominant), whereas a single tree shows ONE dominant cluster plus
+// sub-20% single-cell specks (root flare, a low branch tip dipping into the
+// slab) that the threshold correctly rejects. Multi-STEM organisms reach this
+// path only via the bundle splitter (already root-decomposed by Brief 1.5c), so
+// this flag isolates the true single-file multi-TREE case.
+function surveyTrunkClusters(prims) {
+  let minY = Infinity, maxY = -Infinity
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION')
+    if (!pos) continue
+    const arr = pos.getArray()
+    for (let i = 1; i < arr.length; i += 3) {
+      if (arr[i] < minY) minY = arr[i]
+      if (arr[i] > maxY) maxY = arr[i]
+    }
+  }
+  if (!isFinite(minY)) return { clusterCount: 0, components: 0 }
+  const total = maxY - minY
+  const slabHi = minY + Math.max(0.05 * total, 0.05)
+  const GRID = 0.5
+  const cells = new Map()
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION')
+    if (!pos) continue
+    const arr = pos.getArray()
+    for (let i = 0; i < arr.length; i += 3) {
+      const x = arr[i], y = arr[i + 1], z = arr[i + 2]
+      if (y > slabHi) continue
+      const ix = Math.floor(x / GRID), iz = Math.floor(z / GRID)
+      const key = `${ix},${iz}`
+      let c = cells.get(key)
+      if (!c) { c = { ix, iz, count: 0 }; cells.set(key, c) }
+      c.count++
+    }
+  }
+  if (cells.size === 0) return { clusterCount: 0, components: 0 }
+  // Connected components (8-connectivity) over occupied slab cells.
+  const seen = new Set()
+  const comps = []
+  for (const start of cells.values()) {
+    const startKey = `${start.ix},${start.iz}`
+    if (seen.has(startKey)) continue
+    seen.add(startKey)
+    const stack = [start]
+    let sum = 0, ncells = 0
+    while (stack.length) {
+      const cur = stack.pop()
+      sum += cur.count; ncells++
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dz) continue
+        const nk = `${cur.ix + dx},${cur.iz + dz}`
+        if (seen.has(nk)) continue
+        const nb = cells.get(nk)
+        if (nb) { seen.add(nk); stack.push(nb) }
+      }
+    }
+    comps.push({ sum, ncells })
+  }
+  comps.sort((a, b) => b.sum - a.sum)
+  const top = comps[0].sum
+  const strong = comps.filter(c => c.sum >= 0.5 * top && c.ncells >= 2)
+  return { clusterCount: strong.length, components: comps.length }
+}
+
+// Translate every prim's POSITION so the dominant-trunk base lands at origin
+// (X=0, Z=0, Y=0). prims must already be in world coords. Returns the applied
+// base { x, z, minY }, or null if empty.
+//
+// Single pass by design. The estimator is grid-quantized (0.5m XZ bins), so for
+// a trunk that straddles a cell boundary the densest-cell pick can flip under
+// the very translation we apply — leaving a sub-grid XZ residual that no
+// translation can drive to exactly zero (it's a period-2 limit cycle, verified:
+// iterating just flips the residual's sign at the same magnitude). Y is exact
+// (not quantized) → always lands at 0. We translate by the pivot the downstream
+// finders ALSO compute (byte-identical estimator), so their auto-center drops
+// from the chassis's full multi-metre offset to just this sub-grid residual —
+// "goes quiet" / "≈ identity" per the brief (AC #3), not bit-zero. Residual is
+// ≤~1.4m on ~10 boundary-straddle chassis, ~0 on the other 231; the multi-stem
+// candicands_*_bark_144 are a separate degenerate (mis-scale → Brief 21, +
+// forest-split follow-up). See BACKLOG Brief 20 surface notes.
+function recenterPrimsToDominantTrunk(prims) {
+  const base = computeDominantTrunkBase(prims)
+  if (!base) return null
+  translatePrimsInPlace(prims, -base.x, -base.minY, -base.z)
+  return base
+}
+
+// Bake every node's world matrix into its prims' POSITION/NORMAL, then reset
+// all node TRS to identity — so POSITION accessors carry world coords (matching
+// what the viewport's matrixWorld and generate-salon's bakeAllNodeTransforms
+// produce). Mirrors that helper's proven structure: walk from parentless nodes,
+// guard shared meshes with a Set, bake orphan meshes with identity, then reset.
+// This is what drops Brief 0's byte-identity carve-out for the 141 single-tree
+// chassis: their baked node translation (e.g. TREE_00 at T=[3.9,0,−3.8]) and
+// cm→m scale fold into POSITION here, exactly as the runtime already applied
+// them at display.
+function bakeSceneTransforms(doc) {
+  const baked = new Set()
+  const walk = (node, parentM) => {
+    const m = mul4(parentM, matrixFromNode(node))
+    const mesh = node.getMesh()
+    if (mesh && !baked.has(mesh)) {
+      baked.add(mesh)
+      for (const prim of mesh.listPrimitives()) bakeMatrixIntoPrim(prim, m, doc)
+    }
+    for (const c of node.listChildren()) walk(c, m)
+  }
+  for (const node of doc.getRoot().listNodes()) {
+    if (!node.getParentNode()) walk(node, identity4())
+  }
+  for (const mesh of doc.getRoot().listMeshes()) {
+    if (baked.has(mesh)) continue
+    for (const prim of mesh.listPrimitives()) bakeMatrixIntoPrim(prim, identity4(), doc)
+  }
+  for (const node of doc.getRoot().listNodes()) {
+    node.setTranslation([0, 0, 0])
+    node.setRotation([0, 0, 0, 1])
+    node.setScale([1, 1, 1])
+    if (node.setMatrix) {
+      try { node.setMatrix([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]) } catch {}
+    }
+  }
+}
+
 // Decompose a bundle GLB into per-root chassis. Returns an array of result
 // entries shaped like processGlb's return + an extra `bundleNode` field on
 // decomposed entries. Re-reads the doc per-emission to keep doc state clean.
@@ -472,22 +710,21 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
     }
 
     // Bake the root node's local matrix into all remaining primitives, then
-    // recenter to origin (XZ-center=0, Y-min=0). Then reset the root chain's
-    // TRS to identity. Per the brief: chassis should emerge upright + centered
-    // as if it were a standalone single-tree source.
+    // recenter to origin. Then reset the root chain's TRS to identity. Per the
+    // brief: chassis should emerge upright + centered as if it were a
+    // standalone single-tree source.
     const rootMatrix = matrixFromNode(target)
     const remainingPrims = collectPrims(target).map(({ prim }) => prim)
     for (const prim of remainingPrims) {
       bakeMatrixIntoPrim(prim, rootMatrix, doc)
     }
-    // Compute bbox post-bake and recenter
-    const bb = primBboxAcc(remainingPrims)
-    if (isFinite(bb.minY)) {
-      const dx = -(bb.minX + bb.maxX) / 2
-      const dz = -(bb.minZ + bb.maxZ) / 2
-      const dy = -bb.minY
-      translatePrimsInPlace(remainingPrims, dx, dy, dz)
-    }
+    // Brief 20 (Sextant): recenter via dominant-trunk (was bbox-XZ-center +
+    // bbox-Y-min). On a multi-stem bundle root the densest stem becomes origin,
+    // matching the viewport's computeDominantTrunk display-center — so the
+    // source frame now equals what was already shown downstream (bbox-center
+    // was overridden by the viewport's auto-center anyway). Minor XZ shift for
+    // asymmetric-canopy roots; see BACKLOG Brief 20.
+    recenterPrimsToDominantTrunk(remainingPrims)
     resetTRSChain(target)
 
     // Compute final height range from the recentered geometry
