@@ -1,6 +1,6 @@
 # Coordinator Handoff — Arborist, 2026-05-25 (Boz → next coordinator)
 
-You're the new coordinator. This note hands you the seat for the next tranche: **Brief 3A (per-instance deformer) + Brief 6.3-followup (bark lod2 floor)**. Boz held the chassis-quality + bark-pipeline tranche; it's closed and committed. Read this, then the load-bearing docs below, and you'll be productive in your first hour.
+You're New Boz, the new coordinator. This note hands you the seat for the next tranche: **Brief 3A (per-instance deformer) + Brief 6.3-followup (bark lod2 floor)**. Previous Boz held the chassis-quality + bark-pipeline tranche; it's closed and committed. Read this, then the load-bearing docs below, and you'll be productive in your first hour.
 
 ## You are the coordinator — the operating model
 
@@ -20,7 +20,9 @@ The relationship triangle:
 
 **The chassis library is correct** — the big achievement of the closing tranche. Every chassis is: split (58 multi-root + garden_mix multipack — Whittle/Riven + the 6.2-classifier-fix-on-regen), centered (Brief 20 dominant-trunk → origin), rescaled (Brief 23 unit-fixed the 900–1700m mis-scales), forests suppressed (≥3-trunk merged group-shots out of the Salon catalog), procedural/lidar filtered out of the catalog, and `--clean` is now idempotent-complete-guarded.
 
-**One pending OPERATOR gesture (not yours):** re-publish the affected species + Grove bake, to propagate Brief 20 + 23 to the slab/LS. Until Jacob does it, the chassis fixes are in-source-only. **3A can develop against the correct in-source library (via Salon preview) regardless** — so this isn't a hard blocker for you, but LS won't show the fixes until Jacob propagates.
+The library is correct in `_chassis/`. **No slab propagation is pending** — verified at handoff that there are zero *vendor* Salon compositions yet (a `generate-salon` run published nothing), so nothing currently in the slab derives from the corrected chassis. The fixes flow to the slab naturally when Jacob composes a vendor species in the Salon → publish → Grove bake (his normal prep loop, which he's about to ramp). So you develop 3A against a fully-correct in-source library; there's no propagation gesture to wait on.
+
+**LiDAR is a dormant test path — ignore it.** The one composition on disk (`acer_saccharum`, a LiDAR-seedling species) is leftover test residue; Jacob confirmed 2026-05-25 that "we don't need any LiDAR pieces right now, that was only a test, it's irrelevant." Don't chase the LiDAR-species publish filter, the Scan-mode workspace, or `bake-tree.py` — the live v1.5 path is **vendor chassis → Salon composition**. (Procedural's status wasn't restated; treat it as-is unless Jacob says otherwise.)
 
 ## Your two live items
 
@@ -52,7 +54,7 @@ Claimed (do NOT reuse): Whittle, Sequoia, Quill, Riven, Fern, Holm, Birch, Cinde
 
 ## Deferred / pending (don't lose these)
 
-- **Brief-20/23 cleanup** — delete the now-quiet trunk-finders (`computeDominantTrunk`/`computeAutoCenterPivot`) + collapse Brief 19's conjugation to plain `R·S·T`. **Gated on Jacob's post-propagation Salon verification** — don't dispatch until he's confirmed Brief 20/23 render right.
+- **Brief-20/23 cleanup** — delete the now-quiet trunk-finders (`computeDominantTrunk`/`computeAutoCenterPivot`) + collapse Brief 19's conjugation to plain `R·S·T`. **Gated on Jacob's Salon verification** that Brief 20/23 render right (propagation's done; the gate is just his eye-confirm) — don't dispatch the cleanup until he's confirmed.
 - **Operator-eye verifications Jacob owes himself:** Brief 19 AC#4/#5 (authored transforms render unchanged on recentered chassis), the gradient-tier 10B.1 test (does a contrasty gradient over-stylize the hero trunk? → maybe a tier-gated-gradient refinement).
 - **Brief 23a (merged-forest 3D segmentation) is filed-but-dormant** — `scratch/brief-23a-merged-forest-segmentation.md`. Do NOT dispatch unless Jacob surfaces a concrete need for those specific vendor merged-forest trees as individuals (he won't — Sugar Maple singles come from LiDAR/procedural). It's the hard crown-interleave case for a handful of unused assets.
 - **`_chassis-forests.json`** is now committed (small metadata driving Salon suppression; tracked like the curation file).
