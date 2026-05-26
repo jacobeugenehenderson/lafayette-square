@@ -328,10 +328,31 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
   )
 }
 
+// ── Preview layer-toggle convention (Vernier, 2026-05-26) ──────────────────
+// Every Scene-layer toggle gates `.visible` (a <group visible={...}> wrapper,
+// or an `enabled`-style prop for non-drawn drivers like fog), NEVER the mount.
+// Rationale: Preview is production's render tree + inspection bolt-ons over the
+// top (project_preview_equals_ls_literally) — "all on" must equal production's
+// literal mount list, and a toggle must be a clean per-frame on/off, not a
+// destructive unmount/dispose/re-upload that churns the GPU meter.
+//   - A layer whose cost is a draw (geometry) → wrap in <group visible>.
+//   - A layer that is a scene property (fog) → pass an `enabled` prop; the
+//     component nulls the property instead of unmounting.
+//   - The ONE sanctioned mount-gate is the live LafayetteScene buildings:
+//     production unmounts them (the slab is the rendered path), so they stay
+//     unmounted here too — visibility-gating ~1082 dead meshes would regress
+//     production. The Buildings toggle gates the SLAB's .visible.
+//   - PostFX is the exception: the composer can only add/remove passes, so FX
+//     toggles mount/unmount their pass. Accepted (cheap, full-screen) — but
+//     the same transient caveat applies to FX deltas.
+// Migration A/B flags (e.g. a tree-impostor on/off during a cutover) are
+// TEMPORARY: ship as one extra toggle, then collapse to a single .visible
+// toggle once the new path is operator-confirmed. (This is the convention
+// Azimuth's Phase-C tree-impostor flag adopts — the retired `slabBuildings`
+// A/B is the worked example.)
 const SCENE_LAYERS = [
   ['ground',     'Ground + AO'],
   ['buildings',  'Buildings'],
-  ['slabBuildings', 'Buildings → Slab (A/B)'],
   ['trees',      'Trees'],
   ['park',       'Park (paths/water/canopy)'],
   ['lights',     'Streetlamps'],
@@ -361,22 +382,32 @@ const FX_LAYERS = [
 //           default off so reloads don't burn into a black scene.
 //   AO + aerial + grade + grain — full-fidelity desktop targets, on
 const DEFAULT_LAYERS = {
-  // slabBuildings on by default — Preview emulates production, which now ships
-  // the merged-mesh slab (L1.3 cutover). Toggle it off to A/B against the live
-  // LafayetteScene buildings (kept as an inspection affordance).
-  ground: true, buildings: true, slabBuildings: true, trees: true,
+  // `buildings` gates the merged-mesh slab's visibility (production ships the
+  // L1.3 slab; the live LafayetteScene buildings stay unmounted, as in
+  // production). The old `slabBuildings` A/B toggle was retired in Phase 2 —
+  // there is now one Buildings toggle, gating .visible.
+  ground: true, buildings: true, trees: true,
   park: true, lights: true, arch: true, neon: true,
   celestial: true, clouds: true, fog: true,
   ao: true, bloom: false, aerial: true, grade: true, grain: true,
 }
 
-const LAYERS_KEY = 'preview.layers.v2'   // v2: slabBuildings default on (L1.3 cutover)
+// v3 (Vernier Phase 2): retired the `slabBuildings` A/B key — one `buildings`
+// toggle now gates the slab's .visible. Old v2 state is dropped (defaults
+// reapply) and its key cleaned up, since the buildings semantics changed.
+const LAYERS_KEY = 'preview.layers.v3'
+const LAYERS_KEY_PREV = 'preview.layers.v2'
 function loadLayers() {
   if (typeof localStorage === 'undefined') return DEFAULT_LAYERS
   try {
+    if (localStorage.getItem(LAYERS_KEY_PREV)) localStorage.removeItem(LAYERS_KEY_PREV)
     const raw = localStorage.getItem(LAYERS_KEY)
     if (!raw) return DEFAULT_LAYERS
-    return { ...DEFAULT_LAYERS, ...JSON.parse(raw) }
+    // Drop any retired keys (e.g. slabBuildings) not in DEFAULT_LAYERS.
+    const saved = JSON.parse(raw)
+    const next = { ...DEFAULT_LAYERS }
+    for (const k of Object.keys(DEFAULT_LAYERS)) if (k in saved) next[k] = saved[k]
+    return next
   } catch { return DEFAULT_LAYERS }
 }
 function saveLayers(layers) {
@@ -481,6 +512,22 @@ function ProfilerTab({ tab, setTab }) {
   )
 }
 
+// How to read the per-layer numbers — three caveats that, unstated, would
+// mislead (Vernier Phase 2). Render cost, not memory; non-additive; neon
+// forced on.
+function PanelCaveats() {
+  return (
+    <div className="glass-text-dim" style={{
+      fontSize: 9.5, lineHeight: 1.5, paddingTop: 6, marginTop: 2,
+      borderTop: '1px solid rgba(255,255,255,0.08)',
+    }}>
+      <div><b>render cost, not memory</b> — toggles hide a layer (skip its draw); geometry stays GPU-resident.</div>
+      <div><b>deltas don't sum</b> — overdraw is shared (hiding trees also cuts buildings' fill); trust the all-on total, not the sum of layers.</div>
+      <div><b>neon forced on</b> — all tubes lit for worst-case profiling, unlike production's authored/TOD-gated neon.</div>
+    </div>
+  )
+}
+
 function RightPanel({ layers, setLayer, top, bottom }) {
   return (
     <div className="absolute z-10 flex flex-col gap-3 pointer-events-auto overflow-y-auto"
@@ -498,6 +545,7 @@ function RightPanel({ layers, setLayer, top, bottom }) {
               onToggle={(v) => setLayer(key, v)} />
           ))}
         </div>
+        <PanelCaveats />
       </div>
 
       <div className="glass-panel rounded-xl p-3 space-y-2">
@@ -712,28 +760,26 @@ function CanvasContents({ layers, shot, setShot }) {
         <group visible={layers.ground}>
           <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>
         </group>
-        {/* Buildings — left as conditional-MOUNT here on purpose. The live
-            LafayetteScene buildings are the A/B-only path: production keeps
-            them unmounted (the slab replaces them), so visibility-gating them
-            would regress production by holding ~1082 invisible meshes
-            resident. The buildings double-toggle collapse + slab .visible
-            gating is Phase 2's job. NOTE: `neon` now gates .visible INSIDE
-            LafayetteScene; `building` stays a mount gate to preserve parity.
-            This component also owns Foundations + <SceneNeon> + street labels. */}
+        {/* Buildings (Phase 2 — collapsed to one toggle). LafayetteScene's
+            live Building+Foundations stay unmounted always (`building: true`),
+            exactly like production where the slab replaces them — it's kept
+            mounted only for <SceneNeon> + street labels + landmark markers +
+            click-catcher. The single "Buildings" toggle gates the rendered
+            SlabBuildings' .visible below. `neon` gates .visible inside
+            LafayetteScene (the toggle, not a mount). */}
         <R3FErrorBoundary name="LafayetteScene">
           <LafayetteScene
             lookId={lookId}
-            hiddenLayers={{ building: !layers.buildings || layers.slabBuildings, neon: !layers.neon }}
+            hiddenLayers={{ building: true, neon: !layers.neon }}
             forceNeonOn={layers.neon || undefined}
           />
         </R3FErrorBoundary>
-        {/* Slab buildings (L1.3): default on, matching production. Still
-            conditional-mount pending the Phase 2 collapse (single .visible
-            "Buildings" toggle on the slab). Toggle off to A/B against the
-            live mount. */}
-        {layers.slabBuildings && <R3FErrorBoundary name="SlabBuildings">
-          <SlabBuildings lookId={lookId} />
-        </R3FErrorBoundary>}
+        {/* Slab buildings (L1.3) — the rendered buildings path, as in
+            production. Always mounted, .visible-gated by the single Buildings
+            toggle: a clean per-frame draws/tris on-off (Vernier Phase 2). */}
+        <group visible={layers.buildings}>
+          <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={lookId} /></R3FErrorBoundary>
+        </group>
         {/* Trees / Park / Streetlamps / Arch — visibility-gated (always
             mounted, baked assets resident). Each toggle is a clean per-frame
             draws/tris on-off with no dispose/re-upload (Vernier Phase 1b). */}
