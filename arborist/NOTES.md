@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-05-26 — Milestone: LS roster re-seed + tree pipeline reaches production (build → finesse)
+
+The night the kit "broke through to together." Two arborist-relevant milestones:
+
+1. **LS roster re-seeded → 9 composed species, baked, rendering everywhere.** The Salon roster-driven navigator (Brief 26, canonical-id slugs) was used to compose 9 species (`maple_sugar, ash_green, maple_silver, maple_red, birch, blackgum, linden_american, oak_bur` + `platanus`/sycamore); `design.json#/trees` pruned of the stale forest/generics; full bake (`bake-look` + `bake-trees`, 745/756 placed); committed `810f5b5`. Proved the compose→publish→bake→slab loop end-to-end. (Diagnostic banked: "Stage dark, Preview fine" = half-baked slab — run `bake-trees`, not just `bake-look`; `[[stage-dark-preview-fine-half-baked-slab]]`.)
+2. **Trees now render in PRODUCTION**, not just Preview/Stage. The render-parity pass (commit `5313473`, cartograph/ls-side, Preview-agent) mounted `InstancedTrees` (+ StageFog, LampGlowDriver, hero keyframes, the Atmosphere weather-driver chain that fixes Stage/Preview clouds) in `Scene.jsx`. **`[[project_v1_no_trees]]` is obsolete** — the roster shipped; production's missing tree mount was migration debt, now closed.
+
+**Phase shift recorded** (`[[build-to-finesse-phase-shift]]`): the three helpers + slab are one working whole; the arc is now finesse/QC/parity-polish, not whole-cloth building. Next structural item: hybrid buildings bake (`HANDOFF-buildings-bake.md`, bumps slab → v2). Cross-helper level-set pending Jacob's "deep breath."
+
 ## 2026-05-25 — Brief 31 (Cleat): Grove per-tile editor → click-to-select fixed panel
 
 Grove per-tile editor is now **click-to-select → a fixed right-rail `GroveEditorPanel`**, retiring the camera-chasing `<Html>` hover-card. Root cause of the dead click confirmed: `onPointerOut → hovered=null` unmounted the card before the click landed (cursor had to leave the tile mesh to reach the card). Selection-driven rendering removes that travel; `EditorCard` controls (rating / category / notes / Look-toggle / canary) reused verbatim — only *where* it renders and *what* drives it changed. Click vs orbit-drag split via R3F `e.delta > 5`; deselect via ground-click + Canvas `onPointerMissed` (both delta-guarded) + a × close. No data/store/runtime/slab changes (`toggleInLook`/`setGroveVariantOverride` untouched). Commit `a66a2b3` (Grove.jsx only). **Surfaced:** pre-existing dangling symlink `public/photos/lafayette-square/other → ../../../photos-wikimedia/other` (target missing) breaks vite build's publicDir-copy step — module transform itself clean (1041/1041); operator restores `photos-wikimedia/other` to unblock production builds. Operator click-through pending.
