@@ -149,3 +149,23 @@ separate doctrine-parity question for Boz/Jacob.
 
 **Empirical confirmation available:** temporarily setting `logarithmicDepthBuffer: true` in `Scene.jsx`
 should make the hero occlusion correct — the "toggle to localize" test the brief suggests.
+
+---
+
+## ✅ COMPLETE (Ballast, 2026-05-26) — both phases landed + verified
+
+- **Phase 1** (`0274dcd`) — roof-outline trace. Slab path parses Alidade's `roofOutline` .bin section
+  through `SlabBuildings` → index → `SceneNeon`; live/Stage path derives the matching ring via the new
+  exported `LafayetteScene.roofTopRingFor` (same `classifyRoof` + inset 0.30 as the producer).
+  Hip roofs (159, degenerate <3-pt rings) fall back to the footprint so they keep their neon.
+  **Verified by Jacob:** neon hugs the actual rooftop.
+- **Phase 2** (`0ccd5cc`) — hero depth culling. `USE_LOGDEPTHBUF` define gated on
+  `gl.capabilities.logarithmicDepthBuffer` (production = linear, Stage/Preview = log). Glow doctrine +
+  `depthWrite:false` untouched. **Verified by Jacob.**
+
+**Memory updated:** `feedback_raw_shadermaterial_needs_logdepth_chunks` refined — production runs LINEAR
+depth; gate the define, don't force it.
+
+**Left for Boz/Jacob (NOT done — out of scope):** Option A — whether to enable
+`logarithmicDepthBuffer:true` in `Scene.jsx` so production matches the "mandatory kit-wide" doctrine +
+Stage/Preview. Real divergence, scene-wide blast radius, separate decision.
