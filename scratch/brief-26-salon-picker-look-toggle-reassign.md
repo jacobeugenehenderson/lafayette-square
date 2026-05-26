@@ -40,7 +40,13 @@ Every roster species has exactly **one canonical library-species-id** — its bo
 - **Gap species:** the canonical id exists (botanical), the composition is **not-available** until a chassis is acquired + picked → renders no tree.
 - **No procedural-filler fallback** — a roster species is explicitly composed or not-available (matches the operator's removal of fillers from the roster).
 
-**Implementation detail to confirm against the current file (not a design question):** whether `park_species_map` keeps its list shape (canonical = first entry) or migrates to a single canonical id with the candidate list moved to live-compute. Either way the canonical-per-roster-species principle holds — surface your choice in the commit body.
+**Canonical-id minting — DECIDED (operator 2026-05-25): Option 1, slug-default with existing-entry precedence.**
+> **canonical id = `park_species_map[rosterName]` if an entry already exists, else a deterministic slug minted from the canonical roster name** (`'Oak, Pin'` → `oak_pin`, `'Ash, Green'` → `ash_green`).
+
+- Mechanical slug of the operator's *own roster name* — **no botanical guessing** (the brief's `quercus_palustris`-style examples were illustrative, NOT a mandate to invent latin). Distinct per roster species (Pin Oak ≠ Willow Oak ✓ spine). Nothing blocks — every species gets an id on first compose. **Renameable to a botanical id anytime** by editing `park_species_map` (operator curates the ~10 literals when he wants).
+- **Existing-entry precedence** keeps the `acer_saccharum` smoke-test composition: point `'Maple, Sugar'` at it; the slug-default only mints for roster species with no existing map entry.
+- This is fine *because the chassis is free geometry* — the id was never going to match the chassis's botanical name (`garden_mix` under a willow key), so `oak_pin` holding oak-chassis geometry is no stranger than the library's existing `broadleaf_03` / `garden_mix` ids.
+- **Surface the `park_species_map` shape you land on** (list vs single canonical) in the commit body — implementation detail, not a re-opened design question.
 
 ## Goal — two sub-phases (ship + verify each, per `[[feedback_d3_bundling_failure_modes]]`)
 
