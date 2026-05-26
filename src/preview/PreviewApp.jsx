@@ -31,6 +31,7 @@ import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { V_EXAG } from '../utils/terrainShader'
 import LafayetteScene from '../components/LafayetteScene'
+import SlabBuildings from '../components/SlabBuildings'
 import PreviewPostFx from './PreviewPostFx'
 import { ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
@@ -330,6 +331,7 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
 const SCENE_LAYERS = [
   ['ground',     'Ground + AO'],
   ['buildings',  'Buildings'],
+  ['slabBuildings', 'Buildings → Slab (A/B)'],
   ['trees',      'Trees'],
   ['park',       'Park (paths/water/canopy)'],
   ['lights',     'Streetlamps'],
@@ -359,7 +361,7 @@ const FX_LAYERS = [
 //           default off so reloads don't burn into a black scene.
 //   AO + aerial + grade + grain — full-fidelity desktop targets, on
 const DEFAULT_LAYERS = {
-  ground: true, buildings: true, trees: true,
+  ground: true, buildings: true, slabBuildings: false, trees: true,
   park: true, lights: true, arch: true, neon: true,
   celestial: true, clouds: true, fog: true,
   ao: true, bloom: false, aerial: true, grade: true, grain: true,
@@ -699,10 +701,17 @@ function CanvasContents({ layers, shot, setShot }) {
         <R3FErrorBoundary name="LafayetteScene">
           <LafayetteScene
             lookId={lookId}
-            hiddenLayers={{ building: !layers.buildings, neon: !layers.neon }}
+            hiddenLayers={{ building: !layers.buildings || layers.slabBuildings, neon: !layers.neon }}
             forceNeonOn={layers.neon || undefined}
           />
         </R3FErrorBoundary>
+        {/* Slab buildings A/B (Phase B, Preview-only flag): when on, the live
+            LafayetteScene buildings + foundations are hidden above and this
+            merged-mesh consumer renders them off the slab instead. Toggle
+            both to compare draw calls + look in the GPU panel. */}
+        {layers.slabBuildings && <R3FErrorBoundary name="SlabBuildings">
+          <SlabBuildings lookId={lookId} />
+        </R3FErrorBoundary>}
         {layers.trees && <R3FErrorBoundary name="InstancedTrees">
           <InstancedTrees lookId={lookId} />
         </R3FErrorBoundary>}

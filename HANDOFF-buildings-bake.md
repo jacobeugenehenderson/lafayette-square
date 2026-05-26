@@ -177,7 +177,39 @@ Proceeding to Phase A (no Jacob check-in needed pre-A; the A→B seam is the sch
 - **Scope guard honored:** `SLAB-CONTRACT §0` version-refusal applies to the buildings
   consumer only; the tree path stays version-agnostic and was not touched.
 
-⏸ **AT THE A→B SEAM — awaiting Jacob's schema review before Phase B.**
+✅ **A→B seam — schema reviewed & GREEN-LIT by Jacob (2026-05-26).** Proceeding to Phase B.
+
+**Phase B — code-complete (commit lands this phase). Awaiting Jacob's visual A/B in Preview.**
+
+- New shared consumer `src/components/SlabBuildings.jsx` + a shared identity store
+  `src/hooks/useSlabBuildingIndex.js` (the seam Phases C/D read instead of `src/data/buildings`).
+- **Refuses `version !== 2`** (SLAB-CONTRACT §0/§10.3).
+- **Material parity port (vs the live `Building`/`Foundations`, not BakedBuildings):**
+  albedo from baked per-vertex color **sRGB→linear** (matches `new THREE.Color(hex)` under
+  ColorManagement; the flat-roof `[0.04,0.04,0.045]` constant stays raw-linear); walls+roofs
+  **0.9/0.05**, foundation **0.95/0** (live roof is a Y-branch of the building material, NOT
+  the slab's per-group slate/metal PBR — that was BakedBuildings divergence); night: walls
+  lerp to an exact HSL-shifted `aNightColor` attribute, roofs ×(1−darkFactor·0.75), foundation
+  lerp tan→#3d3530; desktop dominant-axis triplanar wall texture + roof texture overlay,
+  mobile untextured; `applyWeatherToShader` on walls+roofs (NOT foundation, matching live);
+  terrain lift via baked `aCentroidY × uExag`; texture UV anchored to UN-lifted world pos
+  (matches live so textures don't swim with exag).
+- **Identity:** per-vertex `aBuildingId` stamped from the index ranges (numeric id = position
+  in `manifest.buildings`); in-shader selection/hover emissive via `uSelectedId`/`uHoveredId`
+  (0x333 selected / 0x222 hover, selected wins); raycast→id via the `aBuildingId` attribute at
+  the hit face. (SelectionRing + place card stay for Phase D.)
+- **Preview A/B:** new layer toggle **“Buildings → Slab (A/B)”** (default off). On → live
+  buildings+foundations hidden, `SlabBuildings` renders them off the slab beside the live mount.
+- **Verified:** full module graph transforms clean (`vite build` reaches asset-copy; only a
+  pre-existing broken `public/photos/.../other` symlink stops it — unrelated). GLSL chunk
+  strings audited against three 0.160. **Runtime GLSL-compile + visual parity + draw-call drop
+  → Jacob's eyeball in Preview (checklist in handoff message).**
+- **Stage-convergence decision (Phase-B finding):** the consumer reads `scene.materialPhysics`
+  and gates on `scene.layerVis.building`, but does NOT yet take live `paletteOverride`/
+  `materialPhysicsOverride` props the way `LafayetteScene` does for Stage retint. So Stage
+  should **keep its live `LafayetteScene` mount** for now (authoring needs instant retint);
+  converging Stage onto `SlabBuildings` would require threading the override props through —
+  out of scope for this brief. Recommend Stage stays live; Preview+production move to slab.
 
 ## Phase A — Producer: emit the per-building index (no consumer change)
 
