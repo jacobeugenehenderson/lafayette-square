@@ -174,7 +174,15 @@ function buildPath(footprint) {
  * they're index-referenced from neighboring quads.
  */
 function buildTube(building, tubeRadius) {
-  const fp = building.footprint
+  // Trace the actual rooftop-perimeter ring, not the wider footprint.
+  // `roofOutline` is the true roof edge — the footprint for flat roofs (no
+  // visible change), the inset top-cap ring for mansards (tube pulls in to the
+  // real roof edge). Both the slab path (Alidade's baked `roofOutline`) and the
+  // live path (LafayetteScene.roofTopRingFor) supply it. Fall back to the
+  // footprint when it's absent (older bakes) or degenerate (<3 pts): hip roofs
+  // emit a ridge/apex with no traceable perimeter, so neon sits on the eave.
+  const ro = building.roofOutline
+  const fp = (ro && ro.length >= 3) ? ro : building.footprint
   if (!fp || fp.length < 3) return null
   const r = tubeRadius
   // ROOF_DROP = -r puts tube BOTTOM at rooftop seam (whole tube above

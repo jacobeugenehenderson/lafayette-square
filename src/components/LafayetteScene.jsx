@@ -321,6 +321,31 @@ function buildHipRoof(localPts, wallHeight, stories) {
   return { geos: [geo], peakHeight: peakH }
 }
 
+// roofTopRingFor — the rooftop-perimeter ring the neon tube should trace,
+// derived from the SAME classify + shape logic LafayetteScene renders and that
+// bake-buildings.js bakes into the slab's `roofOutline`. Returns world [x,z]:
+//   • mansard (convex)  → inset top-cap ring. MUST match buildMansardRoof's
+//                         innerPts above AND bake-buildings buildMansardRoofWorld
+//                         (inset 0.30) — change all three together.
+//   • flat / hip / non-convex-mansard → the footprint. A hip's true top edge is
+//                         a degenerate ridge/apex (no perimeter), so neon sits
+//                         on the eave == footprint, matching the slab consumer's
+//                         <3-point roofOutline fallback (NeonBands.buildTube).
+// Used by SceneNeon's live path so Stage neon traces the roof edge identically
+// to the baked slab path (Preview slab A/B toggle shows no pop). Hoisted export
+// → safe across the LafayetteScene⟷SceneNeon circular import, like getRoofPeakHeight.
+export function roofTopRingFor(building) {
+  const fp = building.footprint
+  if (!fp || fp.length < 3) return fp || null
+  let shape = classifyRoof(building)
+  if (shape === 'mansard' && !isConvex(fp)) shape = 'flat'
+  if (shape !== 'mansard') return fp
+  const pts = ensureCCW(fp)
+  const [cx, cz] = centroid2D(pts)
+  const inset = 0.30
+  return pts.map(([x, z]) => [x + (cx - x) * inset, z + (cz - z) * inset])
+}
+
 export function getRoofPeakHeight(building) {
   const roofType = classifyRoof(building)
   if (roofType === 'flat') return 0

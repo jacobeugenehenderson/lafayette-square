@@ -124,12 +124,26 @@ export default function SlabBuildings({ lookId } = {}) {
     if (!data) return
     const { manifest, bin } = data
     const fpView = new Float32Array(bin, manifest.footprintByteOffset, manifest.footprintPointCount * 2)
+    // roofOutline — the true rooftop-edge ring per building (v2 additive .bin
+    // section). SceneNeon traces it instead of the wider footprint. Optional:
+    // older bakes without the section leave roofOutline undefined and the neon
+    // consumer falls back to the footprint. Hip roofs bake a degenerate ring
+    // (1–2 pts); the consumer treats <3 pts as a footprint fallback.
+    const roView = manifest.roofOutlineByteOffset != null
+      ? new Float32Array(bin, manifest.roofOutlineByteOffset, manifest.roofOutlinePointCount * 2)
+      : null
     const byNum = manifest.buildings.map((b) => {
       const [ptStart, ptCount] = b.footprintRange
       const footprint = new Array(ptCount)
       for (let i = 0; i < ptCount; i++) footprint[i] = [fpView[(ptStart + i) * 2], fpView[(ptStart + i) * 2 + 1]]
+      let roofOutline
+      if (roView && b.roofOutlineRange) {
+        const [rStart, rCount] = b.roofOutlineRange
+        roofOutline = new Array(rCount)
+        for (let i = 0; i < rCount; i++) roofOutline[i] = [roView[(rStart + i) * 2], roView[(rStart + i) * 2 + 1]]
+      }
       return {
-        id: b.id, footprint, centroidY: b.centroidY, baseY: b.baseY,
+        id: b.id, footprint, roofOutline, centroidY: b.centroidY, baseY: b.baseY,
         wallMaterial: b.wallMaterial, roofMaterial: b.roofMaterial, zoning: b.zoning,
         ranges: b.ranges,
       }

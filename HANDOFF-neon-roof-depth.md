@@ -89,3 +89,63 @@ NOT share a commit. Canonical off-limits: the neon glow doctrine above. Check in
 **each phase** (both are visual-parity calls — dark-TOD eyeball). **49/51:** the tube must read
 beautifully; tracing the roof edge and fixing occlusion are fidelity wins, not just correctness.
 Surface anything not in this brief in your status + commit bodies.
+
+---
+
+## Phase 0 — Findings (agent: **Ballast**, 2026-05-26)
+
+### ⛔ Phase 1 is BLOCKED — `roofOutline` has NOT landed
+
+The brief's hard dependency is absent. Verified three ways:
+- `public/baked/lafayette-square/buildings.json` (version 2, 1082 buildings): NO `roofOutline` or
+  `roofOutlineRange` on any entry. Building keys are `id, footprintRange, centroidY, baseY,
+  wallMaterial, roofMaterial, zoning, ranges`. `ANY roofOutline? false`.
+- Zero `roofOutline` references anywhere in `src/` or the producer `cartograph/bake-buildings.js`.
+- Alidade's cutover commits (A–D, through `f7f67d3`) are in, but the `roofOutline` index-emit
+  **addendum** (memory note #3) has not been committed/re-baked yet.
+
+**→ Phase 1 cannot start until Alidade emits `roofOutline` into the index + re-bakes.** Holding it.
+
+### ✅ Phase 2 root cause FOUND — production runs the renderer in LINEAR depth
+
+The hero depth bug is fully mechanistic (no eyeball needed to find it; eyeball needed to confirm the
+fix). The chain:
+
+1. **Kit doctrine: log depth is mandatory** (`CanaryScene.jsx:22` — "logarithmicDepthBuffer is
+   mandatory — kit-wide depth precision"). Stage (`CartographApp.jsx:805`) and Preview
+   (`PreviewApp.jsx:599`) both set `logarithmicDepthBuffer: true`.
+2. **Production `Scene.jsx` Canvas (gl block `:648`) OMITS it** → r3f default `false` → the
+   production renderer runs **linear** hardware depth. This contradicts the brief's stated premise
+   ("Canvas runs with logarithmicDepthBuffer: true") and the NeonBands header comment, which both
+   assume log depth everywhere. It is true only in Stage/Preview.
+3. **NeonBands forces `defines: { USE_LOGDEPTHBUF: '' }` unconditionally** (`:370`) — but NOT
+   `USE_LOGDEPTHBUF_EXT`. In three r0.16x the **fragment** chunk is double-gated
+   (`#if defined(USE_LOGDEPTHBUF) && defined(USE_LOGDEPTHBUF_EXT)`), so NeonBands **never writes
+   `gl_FragDepth`** — the active path is the **vertex** chunk's `#else` branch:
+   `gl_Position.z = log2(max(EPSILON, w+1)) * logDepthBufFC - 1.0; gl_Position.z *= w`.
+4. **`logDepthBufFC` is only uploaded when `capabilities.logarithmicDepthBuffer` is true**
+   (`three.module.js:30327`). In production it's never uploaded → defaults to **0**.
+5. → neon vertex z collapses to `(x·0 − 1.0)·w = −w` → NDC z = **−1** → the **near plane**. Every
+   neon fragment lands at depth ≈ 0, passes the LESS depth test against everything, and draws over
+   nearer trees. **That is the symptom.** It is production-hero-specific (Stage/Preview have a
+   correct `logDepthBufFC`, so neon depth-tests correctly there).
+
+**CONTRADICTION with the brief's hypothesis framing:** the bug is NOT a `gl_FragDepth` mismatch
+(the frag path never runs — `_EXT` undefined). It is the **vertex** log-depth transform reading a
+zeroed `logDepthBufFC` because the *production renderer itself* isn't in log mode. `depthWrite:false`
+is a red herring — even with depthWrite off, the depth *test* uses this collapsed z.
+
+**Proposed fix — Option B (local to NeonBands, brief-aligned):** gate the `USE_LOGDEPTHBUF` define on
+`gl.capabilities.logarithmicDepthBuffer` (read via `useThree`). In Stage/Preview (log on) → identical
+to today. In production (linear) → define dropped, chunks compile out, neon uses standard linear z
+like every other production material → correct occlusion. No touch to the glow/blend/normal doctrine;
+keeps `depthWrite:false`. Cache key must encode the logdepth state to avoid program-cache collision.
+
+**Alternative — Option A:** add `logarithmicDepthBuffer: true` to `Scene.jsx`'s gl block (aligns
+production with the kit doctrine + Stage/Preview). Correct in principle but a scene-wide depth-encoding
+change (z-fighting/coplanar-stacking blast radius across ground ribbons, buildings, terrain) and edits
+`Scene.jsx`, not `NeonBands.jsx`. Out of Phase 2's stated NeonBands scope. **Recommend B**; flag A as a
+separate doctrine-parity question for Boz/Jacob.
+
+**Empirical confirmation available:** temporarily setting `logarithmicDepthBuffer: true` in `Scene.jsx`
+should make the hero occlusion correct — the "toggle to localize" test the brief suggests.

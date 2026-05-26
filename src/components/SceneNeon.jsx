@@ -30,7 +30,7 @@ import { getElevationRaw } from '../utils/elevation'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { INSTANCE } from '../instance.js'
 import NeonBands from './NeonBands.jsx'
-import { getFoundationHeight, getRoofPeakHeight } from './LafayetteScene.jsx'
+import { getFoundationHeight, getRoofPeakHeight, roofTopRingFor } from './LafayetteScene.jsx'
 
 // ── Open-by-hours filter ────────────────────────────────────────────
 // Glows when the place is currently open AND it's dark enough to see.
@@ -129,9 +129,11 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
         if (!on) continue
         // baseY + groundYRaw (== centroidY) are baked into the index by the
         // SAME anchor math the live path uses below, so tubes lift in lockstep
-        // with their building on sloped terrain. NeonBands.buildTube reads only
-        // footprint / baseY / groundYRaw / neon.category.
-        places.push({ footprint: e.footprint, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
+        // with their building on sloped terrain. NeonBands.buildTube traces
+        // roofOutline (true roof edge, Alidade's baked field) and falls back to
+        // footprint where it's absent/degenerate; baseY / groundYRaw / category
+        // are unchanged.
+        places.push({ footprint: e.footprint, roofOutline: e.roofOutline, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
       }
       return places
     }
@@ -163,7 +165,11 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
       } else {
         groundYRaw = getElevationRaw(b.position[0], b.position[2])
       }
-      places.push({ ...b, baseY, groundYRaw, neon: { category: info.category } })
+      // roofTopRingFor derives the SAME rooftop ring bake-buildings bakes into
+      // roofOutline (inset cap for mansard, footprint for flat/hip), so Stage's
+      // live-path neon traces the roof edge identically to the slab path — the
+      // Preview slab A/B toggle shows no pop (project_stage_consumer_parity).
+      places.push({ ...b, baseY, groundYRaw, roofOutline: roofTopRingFor(b), neon: { category: info.category } })
     }
     return places
   }, [neonLookup, neonTick, forceNeonOn, slabIndex])
