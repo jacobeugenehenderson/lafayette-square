@@ -29,7 +29,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
 // Per-building centroid elevation is emitted as a raw `aCentroidY`
-// per-vertex attribute; BakedBuildings multiplies by `uExag` (the same
+// per-vertex attribute; SlabBuildings multiplies by `uExag` (the same
 // uniform driving ground displacement) so buildings rise/fall in lockstep
 // with the ground. Hence we use getElevationRaw, NOT getElevation.
 const _terrainMeta = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))

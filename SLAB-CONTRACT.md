@@ -6,13 +6,13 @@ The slab is everything under `public/baked/`. Cartograph publishes; LS reads. Ne
 
 This doc is owned by neither app — it lives at the repo root next to `PUBLISH.md` because it's the *interface*. Drift between sides is not allowed without revising this file.
 
-Last verified: 2026-05-26 (parity pass — §5/§6.3/§11 updated: L1.1 shipped, L1.3 decided hybrid, Preview moved to live buildings). Prior full pass: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. Cross-refs: [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) (producer architecture), [`ls/ARCHITECTURE.md`](ls/ARCHITECTURE.md) §2 (consumer architecture), [`ls/reference/INVENTORY-DATA.md`](ls/reference/INVENTORY-DATA.md) §A (consumer mount status).
+Last verified: 2026-05-26 (L1.3 shipped — `buildings.json` → **version 2** render-scoped index; §0/§1/§6/§11 updated; `SlabBuildings` is the Preview+production consumer; `BakedBuildings` deleted). Prior full pass: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. Cross-refs: [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) (producer architecture), [`ls/ARCHITECTURE.md`](ls/ARCHITECTURE.md) §2 (consumer architecture), [`ls/reference/INVENTORY-DATA.md`](ls/reference/INVENTORY-DATA.md) §A (consumer mount status).
 
 ---
 
 ## 0. Scope and version
 
-**Slab version:** every manifest carries `"version": 1`. A consumer MUST refuse to render manifests with a version it doesn't recognize. A producer that changes the binary layout, group semantics, or coordinate frame MUST bump this number.
+**Slab version:** every manifest carries a `"version"`. Most are `1`; **`buildings.json` is `2`** (the render-scoped per-building index + footprints/roofOutlines `.bin` sections, added 2026-05-26 — see §6). A consumer MUST refuse to render manifests with a version it doesn't recognize. A producer that changes the binary layout, group semantics, or coordinate frame MUST bump this number. (Forward-compatible *additive* fields — like `roofOutlines` within v2 — do not require a bump; see §10 rule 5.)
 
 **Coordinate frame:** all slab geometry is in **compass-frame world meters**, origin at the neighborhood center, equirectangular GPS→meters projection. No rotation applied. Y is up; XZ is the ground plane. See [`cartograph/FEATURES.md` §"Frame discipline"](cartograph/FEATURES.md) for the canonical statement and the historical reasons.
 
@@ -46,7 +46,7 @@ public/baked/
 └── <look>.json                      ← (some looks) tree placement override pointer
 ```
 
-**Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `BakedBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/FEATURES.md` §"Bake artifacts are browser-cached"](cartograph/FEATURES.md) for the historical bug.
+**Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `SlabBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/FEATURES.md` §"Bake artifacts are browser-cached"](cartograph/FEATURES.md) for the historical bug.
 
 ---
 
@@ -219,11 +219,11 @@ Consumer: `src/components/BakedLamps.jsx` — Stage, Preview, *and* production (
 
 ## 6. `buildings.json` — building geometry manifest
 
-The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex color + UV + centroid-Y attributes for shading.
+The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex color + UV + centroid-Y attributes for shading, **plus a render-scoped per-building index** (`buildings`) and **footprints / roofOutlines `.bin` sections** so the runtime resolves per-building identity (click / hover / neon / selection) against the slab instead of `src/data/buildings`. **This manifest is `version: 2`.**
 
 ```jsonc
 {
-  "version": 1,
+  "version": 2,
   "look": "lafayette-square",
   "bbox": { … },
   "bin": "buildings.bin",
@@ -232,14 +232,24 @@ The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex 
   "uvFormat": "float32",
   "centroidYFormat": "float32",
   "indexFormat": "uint32",
+  "footprintFormat": "float32",
   "componentsPerVertex": 3,
   "colorsPerVertex": 3,
   "uvsPerVertex": 2,
   "centroidYsPerVertex": 1,
-  "buildingCount": 1056,
-  "groups": [ … ]
+  "footprintComponentsPerPoint": 2,
+  "footprintByteOffset":    <byte>,   // start of the footprints section in .bin
+  "footprintPointCount":    <n>,      // total [x,z] points across all buildings
+  "roofOutlineByteOffset":  <byte>,   // start of the roofOutlines section (additive)
+  "roofOutlinePointCount":  <n>,
+  "buildingCount":          1082,     // source count (= buildings.length); drifts per survey
+  "renderedBuildingCount":  1082,     // entries actually emitted (skips <3pt footprints)
+  "buildings": [ … ],                 // the render-scoped per-building index; see §6.3
+  "groups": [ … ]                     // material groups; see §6.1
 }
 ```
+
+The consumer is `src/components/SlabBuildings.jsx` — Preview *and* production (L1.3 cutover, 2026-05-26). It draws the ~9 group meshes and publishes the parsed index to `useSlabBuildingIndex`, which `SceneNeon` + selection read. It **refuses any version ≠ 2**.
 
 ### 6.1. Group entry
 
@@ -268,18 +278,48 @@ The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex 
 ### 6.2. Binary layout
 
 ```
-| positions  (float32 × 3)   |
-| colors     (float32 × 3)   |
-| uvs        (float32 × 2)   |
-| centroidYs (float32 × 1)   |
-| indices    (uint32)        |
+| positions    (float32 × 3)  |  ← per-vertex, sliced by per-group byte offsets
+| colors       (float32 × 3)  |
+| uvs          (float32 × 2)  |
+| centroidYs   (float32 × 1)  |
+| indices      (uint32)       |  ← absolute into the position array
+| footprints   (float32 × 2)  |  ← per-building [x,z] rings, concatenated (v2)
+| roofOutlines (float32 × 2)  |  ← per-building rooftop-edge rings (v2, additive)
 ```
 
-All four per-vertex attributes are sliced by per-group byte offsets, then indices follow.
+The four per-vertex attributes are sliced by per-group byte offsets, then indices follow. The `footprints` and `roofOutlines` sections are appended last (their starts are `footprintByteOffset` / `roofOutlineByteOffset`), so the per-group offsets are unaffected by their presence. Both index in **point units** (`× 8` bytes) via the per-building ranges in §6.3.
 
-### 6.3. Consumer status
+### 6.3. Per-building render index (`buildings`)
 
-**This artifact currently has ZERO consumers (as of 2026-05-26).** Production `LafayetteScene` reads live `src/data/buildings.json` for per-id interactivity (click handlers, neon, place state); the parity pass moved Preview onto that same live mount (so the GPU profiler measures the shipping render), retiring `src/preview/BakedBuildings.jsx` as the merged mesh's last reader. So `bake-buildings.js` produces dead output today. **Resolution is now decided: hybrid** — bake the merged geometry + a **per-building index sidecar** (`id → vertex ranges + footprint + centroidY + baseY + materials`) so production can consume the slab without losing per-building identity, then point production *and* Preview at it. This bumps the slab to **version 2**. See **`HANDOFF-buildings-bake.md`** (root) for the 6-phase brief; tracked as LS backlog L1.3.
+The render-scoped per-building index. One entry per *rendered* building (skips `<3`-point footprints), carrying only what the 3D render + neon + click-identity path needs — **not** the LS content record (name / address / architect / historic_status / sqft / style / lot_acres → those stay in the content layer; see the C2 boundary below). The numeric building id used by the consumer = the entry's position in this array (stamped per-vertex as `aBuildingId`).
+
+```jsonc
+{
+  "id": "bldg-0019",
+  "footprintRange":   [ptStart, ptCount],   // into the .bin footprints section (point units)
+  "roofOutlineRange": [ptStart, ptCount],    // into the .bin roofOutlines section (point units)
+  "centroidY": 15.21,                        // mean footprint-corner raw elevation (= neon groundYRaw)
+  "baseY": 11.8,                             // rooftop world Y; = getFoundationHeight + size[1] + getRoofPeakHeight + 0.3
+  "wallMaterial": "brick_red",
+  "roofMaterial": "flat",
+  "zoning": "F",                             // drives neon's default category for non-listing buildings
+  "ranges": {                                // GROUP-LOCAL [startVert, count] into the building's group
+    "wall":       [v0, n],
+    "roof":       [v0, n],
+    "foundation": [v0, n]                    // omitted when a building has no foundation geometry
+  }
+}
+```
+
+- **Range convention** is `[start, count]` (NOT `[start, end]`) everywhere — `ranges.*`, `footprintRange`, `roofOutlineRange`. `ranges.*` are **group-local** vertex indices; per-building ranges tile each group with no gaps/overlaps (asserted at bake).
+- **`footprint`** is the building outline (world XZ). **`roofOutline`** is the actual rooftop-edge ring of the baked roof — `= footprint` for flat roofs, the inset cap ring for mansard, and a **degenerate 1–2 point** ridge/apex for hip (a hip has no closed top ring). Consumers of `roofOutline` MUST handle `ptCount < 3`. `roofOutline` is additive within v2 — nothing in the slab consumer reads it yet; the neon-roof-depth brief is its consumer.
+- **`zoning`** is carried verbatim (including compound codes like `"BC"`, which fall to the residential default under the same `_NEON_ZONING_CATEGORY` lookup the runtime uses). Listing `hours`/`category` are NOT here — they live in the separate `useListings` content store.
+
+**C2 boundary (why the index is render-scoped, not a full per-building record):** `buildings.json` (source) does two jobs — a *geometry/render* record (footprint, materials, zoning, anchors), which belongs in the slab, and a *content* record (name, address, architect, historic_status…), which is LS app content. The slab doctrine ("production trusts the slab, never reaches into source") is about the **3D render** trusting baked geometry/optics; it never required dissolving the content DB into the bake. So the render path resolves `raycast → id` against the slab, and the content layer resolves `id → record` via `buildingMap` / `useListings`. Relocating the content DB off `src/data/buildings` is a *separate future brief*, not part of L1.3.
+
+### 6.4. Consumer status — RESOLVED (L1.3, 2026-05-26)
+
+**Hybrid shipped.** `src/components/SlabBuildings.jsx` is the single buildings consumer for **Preview and production**: it draws the merged mesh (matching the live `Building`/`Foundations` material exactly) and resolves per-building identity against the §6.3 index. `SceneNeon` sources neon geometry/anchors from the index when it's published (production + Preview), falling back to live `src/data/buildings` where it isn't (Stage authoring). `src/preview/BakedBuildings.jsx` is **deleted**. **Stage keeps its live `LafayetteScene` mount** (authoring needs live retint via `paletteOverride`/`materialPhysicsOverride`), so the `import` of `src/data/buildings` remains in the shared `LafayetteScene`/`SceneNeon` files for that path + the content layer — production no longer *renders* live building geometry, which is the render-path gate. See **`HANDOFF-buildings-bake.md`** (root).
 
 ---
 
@@ -381,7 +421,7 @@ Consumer: `src/components/InstancedTrees.jsx` (production + Stage + Preview, sam
 
 - ~~**L1.1** Production `Scene.jsx` mounts `BakedLamps` (consumes §5) instead of live `StreetLights`.~~ **SHIPPED** — production mounts `BakedLamps`.
 - **L1.2** `LafayettePark` park water + park paths are already in §2's ground groups; remove the parallel live imports from `LafayettePark.jsx`.
-- **L1.3** Buildings strategy — **decided: hybrid** (slab mesh + per-building index sidecar; bumps to version 2). Dispatch-ready brief: `HANDOFF-buildings-bake.md`. Until executed, production reads `src/data/buildings.json` live (slab-completeness gap) and `buildings.json`/`BakedBuildings` are orphaned.
+- ~~**L1.3** Buildings strategy — hybrid (slab mesh + per-building index sidecar; version 2).~~ **SHIPPED** (2026-05-26, render-scoped) — `SlabBuildings` consumes the merged mesh + §6.3 index in Preview *and* production; `SceneNeon` + selection resolve identity against the slab; `BakedBuildings` deleted. The render path no longer renders live building geometry. Remaining (separate future brief, NOT L1.3): relocating the *content* DB (name/address/architect…) off `src/data/buildings` — the content importers (`SidePanel`, `GlassSearch`, `useListings`, `CheckinPage`, `PlaceCard`) intentionally still read it as source.
 - **Meteorologist clouds.** `public/clouds/{presets,almanac}.json` are *not* part of this slab contract — they're a separate publish-loop artifact. They exist on disk but have no runtime consumer today. Either wire `CloudDome` to consume them, or remove the artifacts. (Not slab; mentioned here only for completeness.)
 
 ---

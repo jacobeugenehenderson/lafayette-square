@@ -428,6 +428,32 @@ confirmed; commit lands this phase).**
   **Production visual confirmation → Jacob (index.html): buildings render off the slab; neon at
   night; click/select/card; draw-call drop.**
 
+**Phase F — retire + docs (DONE; commit lands this phase). ⚠ Touches `SLAB-CONTRACT.md` — landed
+first per the established sequencing; the tree arc (Azimuth) rebases its `heroTier` field on top.**
+
+- Deleted `src/preview/BakedBuildings.jsx` (zero importers; transform graph clean after).
+- **`SLAB-CONTRACT.md`:** §0 (buildings → v2 + additive-field rule), §1 (cache-bust list
+  `BakedBuildings`→`SlabBuildings`), §6 fully rewritten (v2 manifest + §6.3 per-building index
+  schema with the `[start,count]` convention, footprints/roofOutlines `.bin` sections, the C2
+  boundary, hip-degeneracy note), §6.4 consumer status RESOLVED, §11 L1.3 marked SHIPPED, header
+  "Last verified" updated.
+- **`ls/FEATURES.md`** + **`cartograph/FEATURES.md`** (render-environments table + the two
+  buildings/Preview prose blocks): updated to "buildings render off the slab; Stage stays live."
+- Did NOT delete `src/data/buildings.json` — still the geometry *source* (Designer/bake) AND the
+  content DB (content importers). Documented that the content layer is intentionally still
+  source-backed; relocating it is a separate future brief, not L1.3.
+- **⚠ Surfaced (out of Phase-F brief scope — for Boz/Jacob to sweep or assign):** stale
+  `BakedBuildings`/"buildings-live" references remain in `ls/ARCHITECTURE.md` (:97 mount list,
+  :114 + :252 tables/lists), `ls/reference/INVENTORY-DATA.md` (:20), `ls/reference/RUNTIME-DELTA.md`
+  (:25, :87), and BACKLOG mentions (`ls/BACKLOG.md:48`, `cartograph/BACKLOG.md:2299`). The
+  `SceneNeon.jsx` header comment also still narrates the old BakedBuildings-Preview history (left
+  as accurate history of *why* SceneNeon was extracted). I corrected `bake-buildings.js:32`
+  (my file). The brief scoped Phase-F docs to SLAB-CONTRACT/ls-FEATURES/cartograph-FEATURES;
+  these others are factually stale post-cutover but beyond my mandate to rewrite unilaterally.
+
+**ALL PHASES COMPLETE (A–F + roofOutline addendum). Pending: Jacob's production-app visual
+confirmation (index.html). Branch `cartograph-looks-pass-ab`, local-only.**
+
 ---
 
 ## Explicitly out of scope
