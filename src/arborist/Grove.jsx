@@ -9,7 +9,9 @@
  * Two scopes: "In Look" (the active Look's roster) and "All Published"
  * (every published composition in the library — the surface for adding a
  * library composition to a Look it isn't yet in). Duds still jump out
- * side-by-side; one click on a tile's card flips `excluded`.
+ * side-by-side; click a tile to select it — a fixed editor panel
+ * (rating, category, notes, Look membership) drives the edits rather
+ * than a hover-card that chases the camera.
  *
  * Distinct from the Stage app downstream (which composes a Look from the
  * trees this view publishes). This is the operator's tree-pool review.
@@ -20,7 +22,7 @@
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, useGLTF, Html } from '@react-three/drei'
+import { OrbitControls, useGLTF } from '@react-three/drei'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
 import CoverageView from './CoverageView.jsx'
@@ -60,6 +62,7 @@ export default function Grove() {
   const [view, setView] = useState('gallery')
   const [scope, setScope] = useState('look')
   const [hovered, setHovered] = useState(null)
+  const [selected, setSelected] = useState(null)  // {speciesId, variantId} — click-selected tile; drives the fixed editor panel
   const [toast, setToast] = useState(null)
 
   // Per-operator UI preference: tell the Meteorologist helper which tree
@@ -83,21 +86,12 @@ export default function Grove() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
   }, [])
 
-  // Hover persistence — cursor can move tile → card without losing
-  // focus. Tile-out + card-out both schedule a delayed clear; tile-in
-  // and card-in cancel any pending clear.
-  const closeTimerRef = useRef(null)
-  const cancelClose = () => {
-    if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null }
-  }
-  const scheduleClose = (delay = 250) => {
-    cancelClose()
-    closeTimerRef.current = setTimeout(() => {
-      closeTimerRef.current = null
-      setHovered(null)
-    }, delay)
-  }
-  const enterHover = (id) => { cancelClose(); setHovered(id) }
+  // Hover is now only a light highlight preview — the editor is
+  // selection-driven (click a tile → fixed panel), so there's no
+  // cursor-to-card travel to keep alive. Pointer-down coords let an
+  // empty-space click deselect while rejecting an orbit drag (which
+  // also ends with the cursor over empty space).
+  const downRef = useRef(null)
 
   const activeLook = looks.find(l => l.id === activeLookId)
   const inLook = (v) => activeLookTrees.some(
@@ -126,6 +120,18 @@ export default function Grove() {
       cz * TILE_SPACING,
     ]
   })
+
+  // The click-selected tile's data drives the fixed editor panel.
+  // Derived from the visible set so it stays bound to what's on screen;
+  // if a scope/view change filters the tile out, drop the selection.
+  const selectedVariant = selected
+    ? visible.find(v => v.speciesId === selected.speciesId && Number(v.variantId) === Number(selected.variantId))
+    : null
+  useEffect(() => {
+    if (selected && !visible.some(v => v.speciesId === selected.speciesId && Number(v.variantId) === Number(selected.variantId))) {
+      setSelected(null)
+    }
+  }, [visible, selected])
 
   return (
     <div style={{
@@ -189,7 +195,10 @@ export default function Grove() {
         )}
       </header>
 
-      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+      <div
+        style={{ flex: 1, position: 'relative', minHeight: 0 }}
+        onPointerDown={(e) => { downRef.current = { x: e.clientX, y: e.clientY } }}
+      >
         {view === 'coverage' && <CoverageView />}
         {view === 'gallery' && <>
         {loading && (
@@ -209,6 +218,13 @@ export default function Grove() {
         <Canvas
           shadows
           camera={{ position: [0, 30, 60], near: 0.5, far: 1000, fov: 40 }}
+          onPointerMissed={(e) => {
+            // Click that hit nothing → deselect. Skip if the pointer
+            // travelled far between down/up (an orbit drag, not a click).
+            const d = downRef.current
+            if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) return
+            setSelected(null)
+          }}
         >
           <color attach="background" args={['#f7f5f1']} />
           <hemisphereLight args={['#ffffff', '#e8e4dc', 0.85]} />
@@ -219,7 +235,11 @@ export default function Grove() {
             shadow-camera-top={200} shadow-camera-bottom={-200}
             shadow-camera-near={0.5} shadow-camera-far={400}
           />
-          <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <mesh
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+            onClick={(e) => { if (e.delta > 5) return; setSelected(null) }}
+          >
             <planeGeometry args={[2000, 2000]} />
             <meshStandardMaterial color="#f7f5f1" roughness={1} />
           </mesh>
@@ -231,14 +251,11 @@ export default function Grove() {
                 variant={v}
                 position={positions[i]}
                 inLook={inLook(v)}
-                activeLookId={activeLookId}
-                hovered={hovered?.speciesId === v.speciesId && hovered?.variantId === v.variantId}
-                onHoverIn={() => enterHover({ speciesId: v.speciesId, variantId: v.variantId })}
-                onHoverOut={() => scheduleClose()}
-                activeLookName={activeLook?.name}
-                onSetOverride={(key, val) => setGroveVariantOverride(v.speciesId, v.variantId, key, val)}
-                onToggleInLook={() => toggleInLook(activeLookId, v.speciesId, v.variantId)}
-                onSetMeteorologistCanary={() => setMeteorologistCanary(v)}
+                hovered={hovered?.speciesId === v.speciesId && Number(hovered?.variantId) === Number(v.variantId)}
+                selected={selected?.speciesId === v.speciesId && Number(selected?.variantId) === Number(v.variantId)}
+                onHoverIn={() => setHovered({ speciesId: v.speciesId, variantId: v.variantId })}
+                onHoverOut={() => setHovered(h => (h?.speciesId === v.speciesId && Number(h?.variantId) === Number(v.variantId) ? null : h))}
+                onSelect={() => setSelected({ speciesId: v.speciesId, variantId: v.variantId })}
               />
             ))}
           </Suspense>
@@ -246,6 +263,19 @@ export default function Grove() {
           <FitToContent count={visible.length} cols={cols} />
           <OrbitControls makeDefault target={[0, 4, ((Math.ceil(visible.length / cols) - 1) * TILE_SPACING) / 2]} />
         </Canvas>
+
+        {selectedVariant && (
+          <GroveEditorPanel
+            variant={selectedVariant}
+            inLook={inLook(selectedVariant)}
+            activeLookId={activeLookId}
+            activeLookName={activeLook?.name}
+            onSetOverride={(key, val) => setGroveVariantOverride(selectedVariant.speciesId, selectedVariant.variantId, key, val)}
+            onToggleInLook={() => toggleInLook(activeLookId, selectedVariant.speciesId, selectedVariant.variantId)}
+            onSetMeteorologistCanary={() => setMeteorologistCanary(selectedVariant)}
+            onClose={() => setSelected(null)}
+          />
+        )}
 
         {toast && (
           <div style={{
@@ -281,7 +311,7 @@ function FitToContent({ count, cols }) {
   return null
 }
 
-function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered, onHoverIn, onHoverOut, onSetOverride, onToggleInLook, onSetMeteorologistCanary }) {
+function Tile({ variant, position, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
   const { glbUrl, normalizeScale, position: posOv, rotation: rotOv, quality, excluded, speciesLabel, variantId } = variant
   const { scene } = useGLTF(glbUrl)
   // Clone so each tile has its own scene graph (drei caches by URL).
@@ -321,28 +351,38 @@ function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered
 
   return (
     <group position={[px, py, pz]}>
-      {/* Tile base — color = quality. Hover opens an editor card; the
-          tile itself no longer toggles roster on click (avoids
-          accidental removes). Removal is an explicit button in the card. */}
+      {/* Tile base — color = quality. Click selects the tile (opens the
+          fixed editor panel); hover is a light highlight preview only.
+          e.delta rejects an orbit drag registering as a click. */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, 0.005, 0]}
         receiveShadow
         onPointerOver={(e) => { e.stopPropagation(); onHoverIn() }}
         onPointerOut={onHoverOut}
+        onClick={(e) => { e.stopPropagation(); if (e.delta > 5) return; onSelect() }}
       >
         <circleGeometry args={[TILE_SPACING * 0.42, 48]} />
         <meshStandardMaterial
           color={excluded ? '#3a3a3a' : baseColor}
           opacity={
             excluded ? 0.35 :
-            inLook   ? (hovered ? 0.95 : 0.78) :
-                       (hovered ? 0.45 : 0.22)
+            inLook   ? ((hovered || selected) ? 0.95 : 0.78) :
+                       ((hovered || selected) ? 0.45 : 0.22)
           }
           transparent
           roughness={0.85}
         />
       </mesh>
+
+      {/* Selection highlight — a bright ring so the panel's binding to a
+          tile is unambiguous in the 3D scene. */}
+      {selected && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]}>
+          <ringGeometry args={[TILE_SPACING * 0.44, TILE_SPACING * 0.5, 48]} />
+          <meshBasicMaterial color="#bce0a0" transparent opacity={0.95} toneMapped={false} />
+        </mesh>
+      )}
 
       {/* Stack mirrors SpecimenViewport's Skeleton (rotation → scale →
           positionOverride → trunk auto-center). The forestry rotation is
@@ -356,32 +396,56 @@ function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered
           </group>
         </group>
       </group>
-
-      {/* Hover card — interactive editor: rating, category, notes,
-          remove. Stays open while the cursor is over the card itself. */}
-      {hovered && (
-        <Html position={[0, 0.05, 0]}>
-          <EditorCard
-            variant={variant}
-            inLook={inLook}
-            activeLookId={activeLookId}
-            activeLookName={activeLookName}
-            onSetOverride={onSetOverride}
-            onToggleInLook={onToggleInLook}
-            onSetMeteorologistCanary={onSetMeteorologistCanary}
-            onPointerEnter={onHoverIn}
-            onPointerLeave={onHoverOut}
-          />
-        </Html>
-      )}
     </group>
   )
 }
 
-// Hover editor card. Stays open while the cursor is over it; exposes
-// rating, category, notes, and Remove. All edits go through the
-// store's setGroveVariantOverride (POST + optimistic local update).
-function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary, onPointerEnter, onPointerLeave }) {
+// Fixed editor rail for the click-selected tile. Anchored to the Grove
+// chrome (right side of the gallery), so it never chases the camera the
+// way the old tile-anchored Html card did. Per
+// feedback_focus_one_over_grid_for_3d_inspection: a focused panel beats
+// a grid of transient hover-cards.
+function GroveEditorPanel({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary, onClose }) {
+  return (
+    <div style={{
+      position: 'absolute', top: 0, right: 0, bottom: 0, width: 320,
+      background: 'rgba(16,16,20,0.97)',
+      borderLeft: '3px solid ' + (inLook ? '#5a8a5a' : 'rgba(255,255,255,0.15)'),
+      boxShadow: '-6px 0 24px rgba(0,0,0,0.45)',
+      zIndex: 4, display: 'flex', flexDirection: 'column',
+      color: '#ddd', fontFamily: '-apple-system, sans-serif', fontSize: 12,
+    }}>
+      <div style={{
+        padding: '10px 14px', display: 'flex', alignItems: 'center',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <span style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Editor</span>
+        <button onClick={onClose} title="Close (or click empty space)" style={{
+          marginLeft: 'auto', background: 'transparent', border: 'none',
+          color: '#aaa', fontSize: 18, lineHeight: 1, cursor: 'pointer', padding: 0,
+        }}>×</button>
+      </div>
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        <EditorCard
+          variant={variant}
+          inLook={inLook}
+          activeLookId={activeLookId}
+          activeLookName={activeLookName}
+          onSetOverride={onSetOverride}
+          onToggleInLook={onToggleInLook}
+          onSetMeteorologistCanary={onSetMeteorologistCanary}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Editor body for the selected tile — rating, category, notes, Look
+// membership, canary. Rendered inside the fixed GroveEditorPanel (no
+// longer a tile-anchored Html card), so it carries no positioning
+// chrome of its own. All edits go through setGroveVariantOverride /
+// toggleInLook (POST + optimistic local update).
+function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary }) {
   const { speciesId, speciesLabel, variantId, quality, category, excluded, operatorNotes } = variant
   const [notes, setNotes] = useState(operatorNotes || '')
   useEffect(() => { setNotes(operatorNotes || '') }, [speciesId, variantId, operatorNotes])
@@ -391,23 +455,7 @@ function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverri
   const saveNotes = () => onSetOverride('operatorNotes', notes.trim() ? notes : null)
 
   return (
-    <div
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-      style={{
-        background: 'rgba(20,20,24,0.96)',
-        color: '#ddd',
-        padding: '10px 12px', borderRadius: 6,
-        fontFamily: '-apple-system, sans-serif', fontSize: 12,
-        width: 280,
-        border: '1px solid ' + (inLook ? '#5a8a5a' : 'rgba(255,255,255,0.15)'),
-        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-        // Position above the tile (Html anchors at world point);
-        // a small upward translate keeps it from overlapping the tree.
-        transform: 'translate(-50%, -100%)',
-        marginTop: -8,
-      }}
-    >
+    <div style={{ padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
         <strong style={{ color: '#fff' }}>{speciesLabel}</strong>
         <span style={{ color: '#888', fontSize: 11 }}>· v{variantId}</span>
