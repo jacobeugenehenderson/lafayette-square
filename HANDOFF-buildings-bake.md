@@ -84,8 +84,14 @@ elevation) so neon / foundations lift in lockstep on sloped terrain.
 
 - **Fixes:** slab now carries building identity.
 - **Doesn't fix:** nothing renders differently yet.
-- **Verify:** index length == `buildingCount` (1056); ranges tile the buffer with no
-  gaps/overlaps; `--clean` re-bake idempotent (regen everything it deletes).
+- **Verify:** index length == manifest `buildingCount` (== `buildings.length`, ~1082 today
+  — don't hardcode, it drifts per survey); the real gate is that the per-group ranges **tile
+  the `.bin` with no gaps/overlaps**; `--clean` re-bake idempotent (regen everything it deletes).
+- **Scope guard (don't over-apply the version rule):** the "refuse unknown versions" rule is
+  for the **buildings** manifest/consumer only. The tree path (`InstancedTrees`,
+  `trees-atlas.json`) is deliberately version-agnostic (no version field) — the slab→v2 bump
+  is safe for trees *because* nothing version-checks them. Do **not** retrofit version-refusal
+  onto the tree path while touching `SLAB-CONTRACT.md`.
 
 ## Phase B — Consumer `SlabBuildings.jsx` (Preview-only, behind a flag)
 
