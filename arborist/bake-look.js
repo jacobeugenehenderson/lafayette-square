@@ -26,6 +26,7 @@ import { prune } from '@gltf-transform/functions'
 import crypto from 'node:crypto'
 import { surveyRoster } from './atlas-survey.js'
 import { packSkyline } from './atlas-pack.js'
+import { computeTreeBounds } from './tree-bounds.js'
 import { ensurePosterizedForRef } from './extract-bark-posterized.mjs'
 
 // Per-tile mip-safe gutter (pixels). Edge pixels of each placed rect are
@@ -811,9 +812,15 @@ export async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale =
   // materials reference no textures (atlas materials are assembled at
   // runtime; UVs map into them).
   await doc.transform(prune({ keepAttributes: true, keepIndices: true }))
+  // Hero-tier dims (Azimuth): the doc is now the clean, scale-applied tree the
+  // runtime renders (scale was multiplied into the node transforms above, so
+  // these bounds are REAL METRES). The prominence pass reads canopyRadiusM +
+  // heightM per rendered roster variant — measured here, at the stage with the
+  // real input, not from publish-glb's dirty whole-scene source (finding #7).
+  const bounds = computeTreeBounds(doc)
   await ensureDir(path.dirname(dstFile))
   await io.write(dstFile, doc)
-  return { primCount, missCount, missed: [...missed] }
+  return { primCount, missCount, missed: [...missed], bounds }
 }
 
 // ── orchestrator ─────────────────────────────────────────────────────────
@@ -1139,6 +1146,21 @@ export async function bakeLook(lookName, opts = {}) {
     }
   }
 
+  // Hero-tier canopy dims (Azimuth) — real-metre { heightM, canopyRadiusM } per
+  // rendered roster variant (species → variantId), consumed by bake-trees'
+  // prominence pass. Declared here so the manifest holds the reference; the GLB
+  // rewrite loop below MUTATES this object (dims are measured from the clean
+  // scale-applied lod2 GLB), and the manifest is written AFTER that loop. When
+  // rewrite=false (atlas-only rebuild) the GLBs are untouched → carry forward
+  // the prior manifest's dims rather than dropping them.
+  let canopyByVariant = {}
+  if (!rewrite) {
+    try {
+      const prior = JSON.parse(await fs.readFile(path.join(outDir, 'trees-atlas.json'), 'utf8'))
+      canopyByVariant = prior.canopyByVariant || {}
+    } catch { /* no prior manifest */ }
+  }
+
   // Manifest
   const tilesByKey = {}
   for (const t of unified?.tiles || []) tilesByKey[t.key] = t
@@ -1163,8 +1185,14 @@ export async function bakeLook(lookName, opts = {}) {
     barkDetailBySpecies,
     barkPosterizedBySpecies,
     deformerBySpecies,
+    // Hero-tier canopy dims (Azimuth) — real-metre bounding sphere per rendered
+    // roster variant, consumed by bake-trees' prominence pass. {species:{variantId:
+    // {heightM, canopyRadiusM}}}. Measured from the clean scale-applied lod2 GLB.
+    canopyByVariant,
   }
-  await fs.writeFile(path.join(outDir, 'trees-atlas.json'), JSON.stringify(manifest, null, 2))
+  // NB: trees-atlas.json is written AFTER the GLB rewrite loop below, so the
+  // freshly-measured canopyByVariant dims land in it (the loop mutates the
+  // object the manifest holds).
 
   // Optional viz (uses raw grid w/h, not pow2)
   let tViz = 0
@@ -1213,6 +1241,13 @@ export async function bakeLook(lookName, opts = {}) {
         try {
           const r = await rewriteGLB(src, dst, `${v.species}|${v.variantId}`, lookupIdx, scale)
           rewriteStats.push({ species: v.species, variantId: v.variantId, lod, scale, ...r })
+          // Capture dims from the SHIPPED tier (lod2) — what the runtime renders.
+          if (lod === 'lod2' && r.bounds?.canopyRadiusM != null) {
+            ;(canopyByVariant[v.species] ||= {})[v.variantId] = {
+              heightM: r.bounds.heightM,
+              canopyRadiusM: r.bounds.canopyRadiusM,
+            }
+          }
         } catch (err) {
           rewriteStats.push({ species: v.species, variantId: v.variantId, lod, error: err.message })
         }
@@ -1220,6 +1255,10 @@ export async function bakeLook(lookName, opts = {}) {
     }
     tRewrite = Date.now() - r0
   }
+
+  // Write the manifest now that the rewrite loop has populated canopyByVariant
+  // (the loop mutated the object the manifest object holds a reference to).
+  await fs.writeFile(path.join(outDir, 'trees-atlas.json'), JSON.stringify(manifest, null, 2))
 
   return {
     ok: true,
