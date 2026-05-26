@@ -96,10 +96,25 @@ contradicts this brief.**
 6. **Classifier feasibility:** proper frustum projection (not a cone approx) is non-degenerate;
    analytic occlusion via nearer-tree angular-disk overlap is ~12M ops at bake (fine). Gap:
    classifier needs a per-variant **canopy bbox (radius/height)** which `bake-trees.js` doesn't
-   currently load — must source it (trees-atlas manifest or one geometry scan). Threshold
-   calibration is exactly what the Grove QC overlay + A→B seam exist to do.
+   currently load. Threshold calibration is exactly what the Grove QC overlay + A→B seam exist
+   to do.
+   - **RESOLVED (Boz, 2026-05-26) — see Phase A prerequisite.** Don't scan geometry in
+     `bake-trees`, don't bolt onto the atlas manifest. `publish-glb` already loads each mesh and
+     persists per-variant `approxHeightM` + `normalizeScale` in `public/trees/<species>/manifest.json`.
+     **`publish-glb` owns the canopy bbox**: add `canopyRadiusM` next to `approxHeightM` (same
+     `Box3`, X/Z extent already in hand); the prominence pass *reads* both from the manifest.
 
 ## Phase A — Bake-time visibility classification → per-tree `heroTier` (no render change)
+
+**Prerequisite (discrete commit, lands first — `publish-glb` owns canopy dims):** the prominence
+pass needs a per-variant canopy bbox. `publish-glb` already computes the mesh `Box3` for
+`approxHeightM`; add **`canopyRadiusM`** (X/Z extent) to the per-variant `manifest.json` entry
+alongside it. **Do NOT** load geometry in `bake-trees` or derive this from the atlas manifest —
+the prominence pass *reads* `approxHeightM` + `canopyRadiusM` from `public/trees/<species>/manifest.json`.
+To populate already-published variants, a **one-time** bbox backfill of existing GLBs is acceptable
+(it's a migration; `publish-glb` recomputes on every future publish). A per-bake-trees geometry
+scan is NOT (that's re-deriving downstream every run). Keep this as its own commit, separate from
+the prominence pass (D.3).
 
 Add an **analytic** (CPU, no GPU/headless-GL) prominence pass to the tree placement bake. For N
 sampled camera poses along the hero pan arc:
@@ -177,9 +192,12 @@ Preview. **Browse / Street stay all-mesh — explicitly out of scope, do not tou
 
 ## Phase F — Cleanup + docs
 
-If `lod0`/`lod1` are confirmed unreferenced (Phase 0), stop producing them in `publish-glb.js`
-(separate commit). Update `arborist/NOTES.md`, `cartograph/BACKLOG.md`, `cartograph/FEATURES.md`
-(view-aware baking realized for hero trees), and `SLAB-CONTRACT.md` if the slab gained `heroTier`.
+**REVISED 2026-05-26 (Phase 0 finding + operator confirm):** lod0/lod1 are NOT dead track — lod0
+is the **authoring anchor LOD** (Salon `SpecimenViewport`, Meteorologist `CanaryScene`, Workstage
+LOD picker, ProceduralWorkstage, arborist store default). **Do NOT touch `publish-glb.js`; keep
+producing all three LODs.** This phase is docs-only: confirm the LS *production* bake stays lod2-only
+(already true), and update `arborist/NOTES.md`, `cartograph/BACKLOG.md`, `cartograph/FEATURES.md`
+(view-aware baking realized for hero trees), and `SLAB-CONTRACT.md` for the new `heroTier` field.
 
 ---
 
