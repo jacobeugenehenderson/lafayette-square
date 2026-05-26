@@ -217,10 +217,25 @@ Add an instanced, camera-facing **impostor quad** path to `InstancedTrees.jsx`: 
 draw per species, sampling the impostor atlas by current camera azimuth (+ runtime relight).
 Mount behind a flag in Preview **beside** the all-mesh path for A/B comparison.
 
+**⚠️ Preview-toggle convention (NEW — coordinate, don't freelance).** Your A/B flag lives in
+`PreviewApp.jsx`, which a concurrent **Preview measurement-regime** arc (`HANDOFF-preview-measurement.md`)
+is fixing — it's making toggles **non-destructive** (gate `.visible`, never conditional-mount/unmount,
+so the GPU meter reads a clean per-frame delta) and establishing that **migration A/B flags are
+TEMPORARY**. So your impostor flag must:
+- **Gate `.visible`, not the mount** — do NOT `{flag && <Impostors/>}`. Mount both paths; flip
+  visibility. Otherwise toggling churns the meter (re-upload/re-compile) and your Phase-D/Phase-C
+  "overdraw drop" reading is contaminated — and that reading is your whole success gate.
+- **Be explicitly temporary** — once the operator confirms the impostors (your end-of-Phase-D /
+  cutover seam), it **collapses to a single "Trees" toggle**, not a permanent second toggle. Note this
+  in the flag's comment.
+- **Surface to Boz before editing `PreviewApp.jsx`** so it's sequenced with the measurement arc (that
+  arc sets the canonical toggle pattern; adopt it rather than inventing a parallel one).
+
 - **Fixes:** Preview can render + measure impostors.
 - **Doesn't fix:** tier-based splitting yet (everything still draws as mesh in production).
 - **Verify:** impostors sample the correct view across the pan; **draw-call + overdraw drop
-  visible in the Preview GPU panel** vs the Phase-0 baseline.
+  visible in the Preview GPU panel** vs the Phase-0 baseline. (Trustworthy only once the measurement
+  arc's non-destructive gating is in — coordinate timing.)
 
 ## Phase D — Wire `heroTier` → split instance buckets (the payoff)
 
