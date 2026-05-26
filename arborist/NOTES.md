@@ -4,6 +4,10 @@
 
 ---
 
+## 2026-05-25 — Brief 31 (Cleat): Grove per-tile editor → click-to-select fixed panel
+
+Grove per-tile editor is now **click-to-select → a fixed right-rail `GroveEditorPanel`**, retiring the camera-chasing `<Html>` hover-card. Root cause of the dead click confirmed: `onPointerOut → hovered=null` unmounted the card before the click landed (cursor had to leave the tile mesh to reach the card). Selection-driven rendering removes that travel; `EditorCard` controls (rating / category / notes / Look-toggle / canary) reused verbatim — only *where* it renders and *what* drives it changed. Click vs orbit-drag split via R3F `e.delta > 5`; deselect via ground-click + Canvas `onPointerMissed` (both delta-guarded) + a × close. No data/store/runtime/slab changes (`toggleInLook`/`setGroveVariantOverride` untouched). Commit `a66a2b3` (Grove.jsx only). **Surfaced:** pre-existing dangling symlink `public/photos/lafayette-square/other → ../../../photos-wikimedia/other` (target missing) breaks vite build's publicDir-copy step — module transform itself clean (1041/1041); operator restores `photos-wikimedia/other` to unblock production builds. Operator click-through pending.
+
 ## 2026-05-25 — Brief 3A: Per-instance deformer engine — lean + twist + wander (Cant)
 
 The artistic-integrity capstone: one chassis → ~100 visually-distinct reads via per-instance vertex-shader displacement, authored as per-species ranges. Procedural-fill only (3B designed-slots + 3C asymmetry/branch-jitter deferred).
