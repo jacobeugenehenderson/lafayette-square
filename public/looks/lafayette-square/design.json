@@ -433,9 +433,9 @@
   },
   "bloom": {
     "values": {
-      "intensity": 0,
-      "threshold": 1,
-      "smoothing": 0
+      "intensity": 0.5,
+      "threshold": 0.3,
+      "smoothing": 0.1
     }
   },
   "warmth": {
@@ -627,18 +627,6 @@
   },
   "trees": [
     {
-      "species": "cedar_generic",
-      "variantId": 1
-    },
-    {
-      "species": "broadleaf_rt3",
-      "variantId": 1
-    },
-    {
-      "species": "alaskan_cedar_2",
-      "variantId": 1
-    },
-    {
       "species": "platanus_acerifolia",
       "variantId": 6
     },
@@ -659,18 +647,6 @@
       "variantId": 10
     },
     {
-      "species": "generic_leaf_tree",
-      "variantId": 3
-    },
-    {
-      "species": "generic_tree_2",
-      "variantId": 1
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 4
-    },
-    {
       "species": "platanus_acerifolia",
       "variantId": 3
     },
@@ -683,27 +659,43 @@
       "variantId": 1
     },
     {
-      "species": "acer_saccharum_procedural",
+      "species": "maple_sugar",
       "variantId": 1
     },
     {
-      "species": "acer_saccharum_procedural",
+      "species": "ash_green",
+      "variantId": 1
+    },
+    {
+      "species": "maple_silver",
+      "variantId": 1
+    },
+    {
+      "species": "maple_red",
+      "variantId": 1
+    },
+    {
+      "species": "birch",
+      "variantId": 1
+    },
+    {
+      "species": "blackgum",
+      "variantId": 1
+    },
+    {
+      "species": "linden_american",
+      "variantId": 1
+    },
+    {
+      "species": "linden_american",
       "variantId": 2
     },
     {
-      "species": "acer_saccharum_procedural",
+      "species": "linden_american",
       "variantId": 3
     },
     {
-      "species": "acer_saccharum_procedural",
-      "variantId": 4
-    },
-    {
-      "species": "acer_saccharum_procedural",
-      "variantId": 5
-    },
-    {
-      "species": "acer_saccharum",
+      "species": "oak_bur",
       "variantId": 1
     }
   ]

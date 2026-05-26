@@ -1,18 +1,15 @@
 {
-  "_doc": "Maps park_trees.json species names \u2192 preferred library species_ids. Empty array = no preferred match, runtime falls through to category-based picker (using park_trees.shape). Operator-edit by hand; this is the kind of curation no auto-guess gets right.",
+  "_doc": "Maps park_trees.json species names → preferred library species_ids. Empty array = no preferred match, runtime falls through to category-based picker (using park_trees.shape). Operator-edit by hand; this is the kind of curation no auto-guess gets right.",
   "_libraryAt": "2026-04-29",
   "map": {
     "Maple, Sugar": [
-      "acer_saccharum_procedural",
-      "acer_saccharum",
-      "acer_saccharum_multistem"
+      "maple_sugar"
     ],
     "Maple, Silver": [
-      "acer_saccharum",
-      "acer_rubrum"
+      "maple_silver"
     ],
     "Maple, Red": [
-      "acer_rubrum"
+      "maple_red"
     ],
     "Maple, Red 'October Glory'": [
       "acer_rubrum"
@@ -61,7 +58,7 @@
       "quercus_alba"
     ],
     "oak, bur": [
-      "quercus_alba"
+      "oak_bur"
     ],
     "oak, water": [
       "quercus_alba"
@@ -70,8 +67,7 @@
       "quercus_alba"
     ],
     "Birch": [
-      "betula_pendula",
-      "betula_papyrifera"
+      "birch"
     ],
     "Pine, White": [
       "pinus_sp",
@@ -88,7 +84,7 @@
       "pinus_sp"
     ],
     "Linden, American": [
-      "tilia_americana"
+      "linden_american"
     ],
     "Linden, Littleleaf": [
       "tilia_americana"
@@ -112,7 +108,7 @@
       "populus_tremuloides"
     ],
     "Blackgum": [
-      "nyssa_sylvatica"
+      "blackgum"
     ],
     "Elm, American": [
       "ulmus_americana"
@@ -144,6 +140,9 @@
     ],
     "Spruce, Norway": [
       "picea_abies"
+    ],
+    "Ash, Green": [
+      "ash_green"
     ]
   }
 }

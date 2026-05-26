@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1779759608149,
+  "bakedAt": 1779773920078,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -160,9 +160,9 @@
   },
   "bloom": {
     "values": {
-      "intensity": 0,
-      "threshold": 1,
-      "smoothing": 0
+      "intensity": 0.5,
+      "threshold": 0.3,
+      "smoothing": 0.1
     }
   },
   "ao": {
