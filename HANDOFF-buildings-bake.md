@@ -365,6 +365,28 @@ content importers still read it as the content DB. Only the *render-path* runtim
 is removed; document that the content layer is intentionally still source-backed (the separate
 relocation brief, if pursued, handles that).
 
+## Addendum — emit `roofOutline` into the index (Boz/Jacob, 2026-05-26)
+
+A neon-fidelity bug surfaced at the C/D review: the neon tube traces the **building footprint**
+at roof height, so on inset roofs (mansard/hip) it hangs out past the actual roof edge. Fix needs
+the rooftop perimeter polygon. Per operator call (2026-05-26), **emit it now** while you're in the
+schema (avoids a later slab bump).
+
+- **`roofOutline` per building** = the rooftop perimeter the tube should sit on — **= footprint for
+  flat roofs, the inset top edge for mansard/hip** — derived from the **same roof geometry the bake
+  already builds** (`classifyRoofFor` + the roof vert construction you replicated for `baseY`). Don't
+  re-derive an inset heuristic; take the actual top-edge ring of the baked roof.
+- **Pack into `.bin` per C1** (bulk numerics, never JSON floats): a `roofOutlineRange: [ptStart,
+  ptCount]` per building, into its own `.bin` section (or extend the footprints section). Mirror the
+  `footprintRange` convention.
+- **Additive, optional field → stays within slab v2** (no v3 bump — that's the whole point of doing
+  it now). Nothing consumes it yet, so old v2 readers tolerate it.
+- **Discrete producer commit**, separate from the `Scene.jsx` cutover (D.3). Land before or after
+  the cutover, your call — it doesn't change cutover behavior.
+- **The neon does NOT get rewired here.** Tracing `roofOutline` (and the depth-culling fix) is a
+  separate neon brief (`HANDOFF-neon-roof-depth.md`) that consumes what you emit. You're the
+  producer; the neon brief is the consumer.
+
 ---
 
 ## Explicitly out of scope
