@@ -461,6 +461,52 @@ const useArboristStore = create((set, get) => ({
     set({ salonActiveSpecies: s })
     if (s) get().loadSalonCompositions(s)
   },
+
+  // ── Roster-driven Salon navigator (Brief 26, Cadastre 2026-05-25) ─────────
+  // The Salon's top nav is the canonicalized park ROSTER (from GET /coverage),
+  // not the library species list. Selecting a roster species resolves its
+  // canonical library-species-id (a slug — the settled keying spine) and drives
+  // salonActiveSpecies, so the EXISTING composition machinery authors under
+  // that canonical id (state/<canonicalId>/compositions.json).
+  rosterCoverage: null,            // { summary, species:[...] } from /coverage
+  rosterLoading: false,
+  rosterError: null,
+  activeRosterName: null,          // canonical roster name of the selected row
+  loadRosterCoverage: async () => {
+    set({ rosterLoading: true, rosterError: null })
+    try {
+      const r = await fetch(`/api/arborist/coverage?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set({ rosterCoverage: d, rosterLoading: false })
+    } catch (err) {
+      set({ rosterError: String(err), rosterLoading: false })
+    }
+  },
+  // Select a roster row → drive the Salon onto its canonical id. The existing
+  // composition slice (salonCompositions[canonicalId]) loads automatically.
+  selectRosterSpecies: (row) => {
+    if (!row) return
+    set({ activeRosterName: row.species })
+    get().setSalonActiveSpecies(row.canonicalId)
+  },
+  // The ONE park_species_map write (routing source of truth, roster → canonical
+  // id). canonicalId → composed routing [slug]; null → not-available (empty []).
+  setRosterRouting: async (rosterName, canonicalId) => {
+    try {
+      const body = canonicalId ? { canonicalId } : { notAvailable: true }
+      const r = await fetch(`/api/arborist/coverage/${encodeURIComponent(rosterName)}/routing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      await get().loadRosterCoverage()
+    } catch (err) {
+      set({ rosterError: String(err) })
+    }
+  },
+
   salonSpeciesList: [],            // [{speciesId, label, morphology, chassisCount, compositionCount}]
   salonCompositions: {},           // { [speciesId]: [{slot, name, chassis, bark, leaves, deformer, effective}] }
   salonDirtyBySpecies: {},

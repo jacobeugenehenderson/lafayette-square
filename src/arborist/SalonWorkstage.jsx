@@ -82,7 +82,6 @@ export default function SalonWorkstage() {
   const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
   const speciesList         = useArboristStore(s => s.salonSpeciesList)
   const activeSpecies       = useArboristStore(s => s.salonActiveSpecies)
-  const setActiveSpecies    = useArboristStore(s => s.setSalonActiveSpecies)
   const compositionsBySpecies = useArboristStore(s => s.salonCompositions)
   const dirtyBySpecies      = useArboristStore(s => s.salonDirtyBySpecies)
   const chassisCatalog      = useArboristStore(s => s.salonChassisCatalog)
@@ -99,6 +98,16 @@ export default function SalonWorkstage() {
   const activeLookId        = useArboristStore(s => s.activeLookId)
   const loadSalonSpecies    = useArboristStore(s => s.loadSalonSpecies)
   const loadSalonLibraries  = useArboristStore(s => s.loadSalonLibraries)
+  // Brief 26 (Cadastre): roster-driven navigation. The top nav is the
+  // canonicalized park roster (from GET /coverage); selecting a roster species
+  // drives salonActiveSpecies onto its canonical id, and the existing
+  // composition machinery authors under it.
+  const rosterCoverage      = useArboristStore(s => s.rosterCoverage)
+  const rosterLoading       = useArboristStore(s => s.rosterLoading)
+  const loadRosterCoverage  = useArboristStore(s => s.loadRosterCoverage)
+  const activeRosterName    = useArboristStore(s => s.activeRosterName)
+  const selectRosterSpecies = useArboristStore(s => s.selectRosterSpecies)
+  const setRosterRouting    = useArboristStore(s => s.setRosterRouting)
   // Brief 1.5b (Quill): chassis curation surface.
   const chassisCuration     = useArboristStore(s => s.salonChassisCuration)
   const loadChassisCuration = useArboristStore(s => s.loadSalonChassisCuration)
@@ -114,11 +123,21 @@ export default function SalonWorkstage() {
     loadSalonSpecies()
     loadSalonLibraries()
     loadChassisCuration()
-  }, [loadSalonSpecies, loadSalonLibraries, loadChassisCuration])
+    loadRosterCoverage()
+  }, [loadSalonSpecies, loadSalonLibraries, loadChassisCuration, loadRosterCoverage])
 
   // "Approved only" filter — default ON. Persists for the session only;
   // the filter is a viewing preference, not authored chassis state.
   const [approvedOnly, setApprovedOnly] = useState(true)
+  // Brief 26: candidate scope for the chassis picker — 'recommended' (chassis
+  // fitting THIS roster species, from the coverage join) vs 'all' (full library).
+  const [candidateScope, setCandidateScope] = useState('recommended')
+
+  // The selected roster row + its recommended-chassis names (computed by the
+  // coverage join). The navigator drives salonActiveSpecies = row.canonicalId.
+  const rosterSpecies   = rosterCoverage?.species || []
+  const activeRosterRow = rosterSpecies.find(s => s.species === activeRosterName) || null
+  const recommendedNames = activeRosterRow?.recommendedChassis || []
 
   // Brief 8 (Linnet): published-variant set for the active species, used to
   // gate the canary button. A composition slot is "canary-ready" iff its
@@ -180,28 +199,11 @@ export default function SalonWorkstage() {
           fontSize: 12, color: '#fff',
         }}>Arborist <span style={{ color: '#666', margin: '0 4px' }}>/</span> Salon</strong>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 16, color: '#888', fontSize: 11 }}>
-          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Species</span>
-          <select
-            value={activeSpecies || ''}
-            onChange={(e) => setActiveSpecies(e.target.value)}
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#ddd',
-              padding: '4px 8px', borderRadius: 4,
-              fontFamily: 'inherit', fontSize: 12,
-              minWidth: 260,
-            }}
-          >
-            {speciesList.length === 0 && <option value="">(loading…)</option>}
-            {speciesList.map(s => (
-              <option key={s.speciesId} value={s.speciesId}>
-                {s.label} · {s.chassisCount} chassis · {s.compositionCount} compositions
-              </option>
-            ))}
-          </select>
-        </label>
+        {/* Brief 26: the SPECIES dropdown is gone — navigation is the roster
+            list in the left column. Show the selected roster species here. */}
+        <span style={{ marginLeft: 16, color: activeRosterName ? '#e8c878' : '#666', fontSize: 12, letterSpacing: '0.04em' }}>
+          {activeRosterName || 'Select a roster species →'}
+        </span>
 
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ color: '#888', fontSize: 11 }}>
@@ -255,117 +257,156 @@ export default function SalonWorkstage() {
         </div>
       )}
 
-      {/* Slot tabs + Add-slot button */}
-      <div style={{
-        padding: '8px 18px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', gap: 6,
-        background: 'rgba(255,255,255,0.015)',
-      }}>
-        {compositions.map(v => {
-          const isActive = v.slot === activeSlot
-          const isDirty  = !!dirty[v.slot]
-          const isCanary = canaryPref
-            && canaryPref.species === activeSpecies
-            && Number(canaryPref.variantId) === Number(v.slot)
-          return (
-            <button key={v.slot} onClick={() => setActiveSlot(v.slot)}
-              title={isCanary ? 'Currently set as Meteorologist canary' : undefined}
-              style={{
-                background: isActive ? 'rgba(232,184,96,0.18)' : 'rgba(255,255,255,0.04)',
-                border: '1px solid ' + (isActive
-                  ? 'rgba(232,184,96,0.5)'
-                  : (isDirty ? 'rgba(232,184,96,0.35)' : 'rgba(255,255,255,0.1)')),
-                color: isActive ? '#e8c878' : (isDirty ? '#e8b860' : '#bbb'),
-                padding: '5px 12px', borderRadius: 3,
-                fontFamily: 'inherit', fontSize: 11,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-                cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-              {v.name || `Slot ${v.slot}`}
-              {isDirty && (
-                <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: '#e8b860',
-                }} />
-              )}
-              {isCanary && (
-                <span style={{
-                  fontSize: 9, letterSpacing: '0.1em',
-                  padding: '1px 5px', borderRadius: 2,
-                  background: 'rgba(200,192,224,0.18)',
-                  border: '1px solid rgba(200,192,224,0.4)',
-                  color: '#c8c0e0',
-                }}>CANARY</span>
-              )}
-            </button>
-          )
-        })}
-        <button onClick={() => activeSpecies && addSlot(activeSpecies)}
-          disabled={!activeSpecies}
-          style={{
-            ...btnStyle(),
-            opacity: activeSpecies ? 1 : 0.4,
-            cursor: activeSpecies ? 'pointer' : 'not-allowed',
-          }}>
-          + Add slot
-        </button>
-      </div>
+      {/* Main: roster navigator (left) + inside authoring view (right) */}
+      <main style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
+        <RosterNavigator
+          species={rosterSpecies}
+          loading={rosterLoading}
+          activeRosterName={activeRosterName}
+          onSelect={selectRosterSpecies}
+        />
 
-      {/* Main focus */}
-      <main style={{
-        flex: 1, padding: 18, overflow: 'hidden',
-        display: 'flex', minHeight: 0,
-      }}>
-        {compositions.length === 0 && !chassisLibEmpty && (
-          <div style={{ color: '#888', padding: 12 }}>
-            No compositions yet for {speciesMeta?.label || activeSpecies}. Click <b>+ Add slot</b> to start.
-          </div>
-        )}
-        {activeComposition && (
-          <SlotCard
-            key={activeComposition.slot}
-            species={activeSpecies}
-            slot={activeComposition.slot}
-            slotName={activeComposition.name}
-            chassis={activeComposition.effective?.chassis || activeComposition.chassis || null}
-            bark={activeComposition.effective?.bark || {}}
-            leaves={activeComposition.effective?.leaves || {}}
-            deformer={activeComposition.effective?.deformer || {}}
-            transform={activeComposition.effective?.transform || activeComposition.transform || {}}
-            chassisCatalog={chassisCatalog}
-            speciesMorphology={speciesMeta?.morphology}
-            barkRefs={barkRefs}
-            leafPacks={leafPacks}
-            dirty={!!dirty[activeComposition.slot]}
-            targetCategory={targetCategory}
-            windEnabled={windEnabled}
-            windStrength={windStrength}
-            onWindEnabledChange={setWindEnabled}
-            onWindStrengthChange={setWindStrength}
-            onParams={(patch) => setSlotParams(activeSpecies, activeComposition.slot, patch)}
-            onNameChange={(name) => setSlotName(activeSpecies, activeComposition.slot, name)}
-            onReset={() => resetSlot(activeSpecies, activeComposition.slot)}
-            onAdopt={() => adoptSlot(activeSpecies, activeComposition.slot)}
-            onSetCanary={() => setSalonCanary(activeSpecies, activeComposition.slot, activeLookId)}
-            canaryDisabledReason={
-              !activeLookId ? 'No active Look — open a Look in the cartograph first'
-              : (dirty[activeComposition.slot] ? 'Adopt the composition first'
-              : (!publishedVariants.has(Number(activeComposition.slot)) ? 'Re-publish species first'
-              : null))
-            }
-            isCanary={
-              canaryPref
-              && canaryPref.species === activeSpecies
-              && Number(canaryPref.variantId) === Number(activeComposition.slot)
-            }
-            chassisCuration={chassisCuration}
-            onChassisCuration={setChassisCuration}
-            approvedOnly={approvedOnly}
-            onApprovedOnlyChange={setApprovedOnly}
-          />
-        )}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          {!activeRosterName && (
+            <div style={{ color: '#888', padding: 24, margin: 'auto', textAlign: 'center', maxWidth: 440, lineHeight: 1.6 }}>
+              Pick a roster species on the left to author it — choose a chassis
+              (<em>recommended</em> or <em>show all</em>) + bark + leaves + height,
+              or mark it <em>not-available</em> (renders no tree).
+            </div>
+          )}
+
+          {activeRosterName && (
+            <>
+              <InsideHeader
+                row={activeRosterRow}
+                candidateScope={candidateScope}
+                onCandidateScope={setCandidateScope}
+                recommendedCount={recommendedNames.length}
+                onNotAvailable={() => {
+                  if (window.confirm(`Mark "${activeRosterName}" not-available? Its placements route to no tree (deliberate gap). You can re-compose it later.`)) {
+                    setRosterRouting(activeRosterName, null)
+                  }
+                }}
+              />
+
+              {/* Slot tabs + Add-slot button */}
+              <div style={{
+                padding: '8px 18px',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+                background: 'rgba(255,255,255,0.015)',
+              }}>
+                {compositions.map(v => {
+                  const isActive = v.slot === activeSlot
+                  const isDirty  = !!dirty[v.slot]
+                  const isCanary = canaryPref
+                    && canaryPref.species === activeSpecies
+                    && Number(canaryPref.variantId) === Number(v.slot)
+                  return (
+                    <button key={v.slot} onClick={() => setActiveSlot(v.slot)}
+                      title={isCanary ? 'Currently set as Meteorologist canary' : undefined}
+                      style={{
+                        background: isActive ? 'rgba(232,184,96,0.18)' : 'rgba(255,255,255,0.04)',
+                        border: '1px solid ' + (isActive
+                          ? 'rgba(232,184,96,0.5)'
+                          : (isDirty ? 'rgba(232,184,96,0.35)' : 'rgba(255,255,255,0.1)')),
+                        color: isActive ? '#e8c878' : (isDirty ? '#e8b860' : '#bbb'),
+                        padding: '5px 12px', borderRadius: 3,
+                        fontFamily: 'inherit', fontSize: 11,
+                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}>
+                      {v.name || `Slot ${v.slot}`}
+                      {isDirty && (
+                        <span style={{
+                          width: 6, height: 6, borderRadius: '50%',
+                          background: '#e8b860',
+                        }} />
+                      )}
+                      {isCanary && (
+                        <span style={{
+                          fontSize: 9, letterSpacing: '0.1em',
+                          padding: '1px 5px', borderRadius: 2,
+                          background: 'rgba(200,192,224,0.18)',
+                          border: '1px solid rgba(200,192,224,0.4)',
+                          color: '#c8c0e0',
+                        }}>CANARY</span>
+                      )}
+                    </button>
+                  )
+                })}
+                <button onClick={() => activeSpecies && addSlot(activeSpecies)}
+                  disabled={!activeSpecies}
+                  style={{
+                    ...btnStyle(),
+                    opacity: activeSpecies ? 1 : 0.4,
+                    cursor: activeSpecies ? 'pointer' : 'not-allowed',
+                  }}>
+                  + Add slot
+                </button>
+              </div>
+
+              {/* Inside authoring view */}
+              <div style={{
+                flex: 1, padding: 18, overflow: 'hidden',
+                display: 'flex', minHeight: 0,
+              }}>
+                {compositions.length === 0 && !chassisLibEmpty && (
+                  <div style={{ color: '#888', padding: 12 }}>
+                    No composition yet for <b>{activeRosterName}</b> (authored under <code style={{ color: '#aaa' }}>{activeSpecies}</code>).
+                    Click <b>+ Add slot</b> to start, or mark it not-available above.
+                  </div>
+                )}
+                {activeComposition && (
+                  <SlotCard
+                    key={activeComposition.slot}
+                    species={activeSpecies}
+                    slot={activeComposition.slot}
+                    slotName={activeComposition.name}
+                    chassis={activeComposition.effective?.chassis || activeComposition.chassis || null}
+                    bark={activeComposition.effective?.bark || {}}
+                    leaves={activeComposition.effective?.leaves || {}}
+                    deformer={activeComposition.effective?.deformer || {}}
+                    transform={activeComposition.effective?.transform || activeComposition.transform || {}}
+                    chassisCatalog={chassisCatalog}
+                    speciesMorphology={speciesMeta?.morphology}
+                    barkRefs={barkRefs}
+                    leafPacks={leafPacks}
+                    dirty={!!dirty[activeComposition.slot]}
+                    targetCategory={targetCategory}
+                    windEnabled={windEnabled}
+                    windStrength={windStrength}
+                    onWindEnabledChange={setWindEnabled}
+                    onWindStrengthChange={setWindStrength}
+                    onParams={(patch) => setSlotParams(activeSpecies, activeComposition.slot, patch)}
+                    onNameChange={(name) => setSlotName(activeSpecies, activeComposition.slot, name)}
+                    onReset={() => resetSlot(activeSpecies, activeComposition.slot)}
+                    onAdopt={() => adoptSlot(activeSpecies, activeComposition.slot)}
+                    onSetCanary={() => setSalonCanary(activeSpecies, activeComposition.slot, activeLookId)}
+                    canaryDisabledReason={
+                      !activeLookId ? 'No active Look — open a Look in the cartograph first'
+                      : (dirty[activeComposition.slot] ? 'Adopt the composition first'
+                      : (!publishedVariants.has(Number(activeComposition.slot)) ? 'Re-publish species first'
+                      : null))
+                    }
+                    isCanary={
+                      canaryPref
+                      && canaryPref.species === activeSpecies
+                      && Number(canaryPref.variantId) === Number(activeComposition.slot)
+                    }
+                    chassisCuration={chassisCuration}
+                    onChassisCuration={setChassisCuration}
+                    approvedOnly={approvedOnly}
+                    onApprovedOnlyChange={setApprovedOnly}
+                    candidateScope={candidateScope}
+                    recommendedNames={recommendedNames}
+                  />
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </main>
 
       {/* Footer */}
@@ -376,13 +417,20 @@ export default function SalonWorkstage() {
         color: '#888', fontSize: 11,
       }}>
         <button
-          onClick={() => republishSpecies(activeSpecies)}
+          onClick={async () => {
+            // Compose = publish the composition under the canonical id, THEN
+            // claim the routing (park_species_map[rosterName] = [canonicalId])
+            // so bake-trees#pickVariant sends this roster species' placements
+            // to it. Brief 26 routing write.
+            await republishSpecies(activeSpecies)
+            if (activeRosterName) await setRosterRouting(activeRosterName, activeSpecies)
+          }}
           disabled={publishing || anyDirty || !activeSpecies || compositions.length === 0 || anyMissingChassis}
           title={
             anyDirty ? 'Adopt all dirty slots before republishing'
             : anyMissingChassis ? 'Every slot needs a chassis picked before publish'
             : compositions.length === 0 ? 'Add a composition first'
-            : 'Stage this composition to the species library. Bake the slab from Grove when ready to ship to LS.'
+            : 'Publish this composition under the roster species canonical id + route its placements to it. Bake the slab from Grove to ship to LS.'
           }
           style={{
             ...btnStyle(),
@@ -416,6 +464,7 @@ function SlotCard({
   onParams, onNameChange, onReset, onAdopt,
   onSetCanary, canaryDisabledReason, isCanary,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
+  candidateScope, recommendedNames,
 }) {
   // Brief 7 (Cambium): replaced the /salon/generate blob-URL flow with the
   // preview-atlas pipeline. The endpoint builds a per-composition atlas +
@@ -662,6 +711,8 @@ function SlotCard({
           onChassisCuration={onChassisCuration}
           approvedOnly={approvedOnly}
           onApprovedOnlyChange={onApprovedOnlyChange}
+          candidateScope={candidateScope}
+          recommendedNames={recommendedNames}
         />
 
         {/* Footer: name + reset + adopt */}
@@ -872,6 +923,7 @@ function SalonControlsPanel({
   onParams, onReroll,
   tiltX, tiltZ, onTiltXChange, onTiltZChange,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
+  candidateScope, recommendedNames,
 }) {
   // Chassis picker filtered by morphology suggestion: matching-morphology
   // first, then everything else. Brief 1.5b layers curation on top:
@@ -881,16 +933,23 @@ function SalonControlsPanel({
   // Empty-state is handled by the parent (whole workstage shows the
   // regenerate instruction when catalog is empty).
   const curationKey = (c) => `${c.name}.glb`
+  // Brief 26: candidate scope. 'recommended' = chassis fitting THIS roster
+  // species (names from the coverage join), intersected with the catalog (so
+  // procedural/forest chassis the catalog already excludes never appear).
+  // 'all' = the full catalog, with the Brief 1.5b approved-only sub-filter.
   const ranked = useMemo(() => {
     if (chassisCatalog.length === 0) return []
     let pool = chassisCatalog
-    if (approvedOnly) {
+    if (candidateScope === 'recommended') {
+      const set = new Set(recommendedNames || [])
+      pool = pool.filter(c => set.has(c.name))
+    } else if (approvedOnly) {
       pool = pool.filter(c => (chassisCuration[curationKey(c)] || {}).approved === true)
     }
     const matches = pool.filter(c => c.morphology === speciesMorphology)
     const others  = pool.filter(c => c.morphology !== speciesMorphology)
     return [...matches, ...others]
-  }, [chassisCatalog, speciesMorphology, approvedOnly, chassisCuration])
+  }, [chassisCatalog, speciesMorphology, approvedOnly, chassisCuration, candidateScope, recommendedNames])
   const activeChassis = ranked.find(c => c.name === chassis)
   // Curation entry for the currently-picked chassis (may be undefined if
   // chassis is null OR if the chassis is excluded by the approved filter
@@ -925,18 +984,28 @@ function SalonControlsPanel({
       fontSize: 11, color: '#aaa',
     }}>
       <SectionLabel>Chassis</SectionLabel>
-      {/* Brief 1.5b: approved-only filter toggle. Default ON; flip OFF to
-          reveal unreviewed + rejected chassis when authoring new curation. */}
-      <Row label="">
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
-          <input type="checkbox" checked={!!approvedOnly}
-            onChange={(e) => onApprovedOnlyChange(e.target.checked)}
-            style={{ margin: 0 }} />
-          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Approved only {approvedOnly ? `(${ranked.length})` : `(${chassisCatalog.length})`}
+      {/* Brief 26: candidate scope is driven by the inside-view toggle. In
+          'recommended' scope the picker shows the roster species' fits and the
+          approved-only sub-filter is bypassed; in 'all' scope the Brief 1.5b
+          approved-only toggle applies over the full catalog. */}
+      {candidateScope === 'recommended' ? (
+        <Row label="">
+          <span style={{ fontSize: 10, color: '#888', lineHeight: 1.4 }}>
+            Showing <b style={{ color: '#bbb' }}>{ranked.length}</b> recommended chassis for this roster species. Switch to <i>Show all</i> above for the full library.
           </span>
-        </label>
-      </Row>
+        </Row>
+      ) : (
+        <Row label="">
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
+            <input type="checkbox" checked={!!approvedOnly}
+              onChange={(e) => onApprovedOnlyChange(e.target.checked)}
+              style={{ margin: 0 }} />
+            <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Approved only {approvedOnly ? `(${ranked.length})` : `(${chassisCatalog.length})`}
+            </span>
+          </label>
+        </Row>
+      )}
       <Row label="Pick">
         <select
           value={chassis || ''}
@@ -1506,5 +1575,123 @@ function LookPicker() {
         <option value="__new__">+ New Look…</option>
       </select>
     </label>
+  )
+}
+
+// ── Roster navigator (Brief 26, Cadastre 2026-05-25) ──────────────────────
+// The Salon's top nav: the canonicalized park roster (GET /coverage). Each row
+// shows placement count + coverage badge (🟢 literal / 🟡 composite / 🔴 gap)
+// + authoring state (composed / not-available / unauthored). Clicking drives
+// salonActiveSpecies onto the row's canonical id (a slug — the settled keying
+// spine), where the existing composition machinery authors under it.
+const COVERAGE_DOT = { literal: '🟢', composite: '🟡', gap: '🔴' }
+const STATE_META = {
+  composed:        { label: 'composed',      color: '#9ed8b0' },
+  'not-available': { label: 'not-available', color: '#c89a3a' },
+  unauthored:      { label: 'unauthored',    color: '#777' },
+}
+
+function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
+  const [q, setQ] = useState('')
+  const [stateFilter, setStateFilter] = useState('all')
+  const rows = species.filter(s => {
+    if (q && !s.species.toLowerCase().includes(q.toLowerCase())) return false
+    if (stateFilter !== 'all' && s.authoringState !== stateFilter) return false
+    return true
+  })
+  return (
+    <div style={{
+      width: 300, flexShrink: 0,
+      borderRight: '1px solid rgba(255,255,255,0.08)',
+      display: 'flex', flexDirection: 'column', minHeight: 0,
+      background: 'rgba(255,255,255,0.015)',
+    }}>
+      <div style={{
+        padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', flexDirection: 'column', gap: 6,
+      }}>
+        <div style={{ fontSize: 10, color: '#888', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Roster · {species.length} species
+        </div>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="filter species…"
+          style={{ ...selectStyle, padding: '4px 6px' }} />
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[['all', 'All'], ['unauthored', 'Todo'], ['composed', 'Done'], ['not-available', 'N/A']].map(([v, l]) => (
+            <button key={v} onClick={() => setStateFilter(v)}
+              style={{
+                flex: 1, ...btnStyle(), fontSize: 10, padding: '3px 4px',
+                background: stateFilter === v ? 'rgba(232,184,96,0.18)' : 'rgba(255,255,255,0.04)',
+                color: stateFilter === v ? '#e8c878' : '#aaa',
+              }}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+        {loading && <div style={{ padding: 12, color: '#888', fontSize: 11 }}>Loading roster…</div>}
+        {!loading && rows.length === 0 && <div style={{ padding: 12, color: '#888', fontSize: 11 }}>No matching species.</div>}
+        {rows.map(s => {
+          const active = s.species === activeRosterName
+          const sm = STATE_META[s.authoringState] || STATE_META.unauthored
+          return (
+            <button key={s.species} onClick={() => onSelect(s)}
+              title={`canonical: ${s.canonicalId} · coverage: ${s.coverage}`}
+              style={{
+                width: '100%', textAlign: 'left', border: 'none',
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                background: active ? 'rgba(232,184,96,0.14)' : 'transparent',
+                cursor: 'pointer', padding: '7px 10px', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+              <span style={{ width: 18, textAlign: 'center' }}>{COVERAGE_DOT[s.coverage] || ''}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 12, color: active ? '#e8c878' : '#ddd',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{s.species}</div>
+                <div style={{ fontSize: 10, color: sm.color }}>{s.count} placements · {sm.label}</div>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// Inside-view header strip: roster species identity + coverage badge +
+// authoring state, the recommended ↔ show-all candidate toggle, and the
+// mark-not-available action.
+function InsideHeader({ row, candidateScope, onCandidateScope, recommendedCount, onNotAvailable }) {
+  if (!row) return null
+  return (
+    <div style={{
+      padding: '8px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 13, color: '#fff' }}>{COVERAGE_DOT[row.coverage]} {row.species}</span>
+      <span style={{ fontSize: 11, color: '#888' }}>
+        {row.count} placements · canonical <code style={{ color: '#aaa' }}>{row.canonicalId}</code>
+        {row.authoringState === 'not-available' && <span style={{ color: '#c89a3a' }}> · NOT-AVAILABLE</span>}
+        {row.authoringState === 'composed' && <span style={{ color: '#9ed8b0' }}> · composed</span>}
+      </span>
+      <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
+          {[['recommended', `Recommended (${recommendedCount})`], ['all', 'Show all']].map(([v, l]) => (
+            <button key={v} onClick={() => onCandidateScope(v)}
+              style={{
+                border: 'none', padding: '5px 10px', fontSize: 11,
+                background: candidateScope === v ? 'rgba(255,255,255,0.14)' : 'transparent',
+                color: candidateScope === v ? '#fff' : '#aaa',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>{l}</button>
+          ))}
+        </div>
+        <button onClick={onNotAvailable}
+          title="Mark this roster species as a deliberate gap (routes to no tree)"
+          style={{ ...btnStyle(), color: '#c89a3a', border: '1px solid rgba(200,154,58,0.4)' }}>
+          Mark not-available
+        </button>
+      </span>
+    </div>
   )
 }

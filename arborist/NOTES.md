@@ -2366,3 +2366,28 @@ Turned the hand-maintained `arborist/ROSTER-COVERAGE.md` join into a live, **rea
 
 **Verified:** endpoint counts sum to 756 (via Vite proxy `5173 → 3334`); both JSX files transpile; literal/composite/gap split eyeballed against ROSTER-COVERAGE §1/§2. UI not click-tested in a browser (no browser harness in this run) — wiring + data flow confirmed, structure compiles.
 
+---
+
+## 2026-05-25 — Brief 26 — Roster-driven Salon: navigate by roster species → compose-or-unavailable (Cadastre)
+
+Flipped the Salon's authoring unit from LIBRARY species → **roster species**. The "SPECIES" dropdown is gone; the top nav is a roster navigator fed by Brief 24's `/coverage` join. (Same baby Cadastre, dispatched after Brief 24 + the deep-link back-out + 3A all committed.) The Brief 24 "clickable→Salon" addendum is **superseded** by this (the roster row IS the navigator).
+
+**Settled keying spine (operator decision 2026-05-25): canonical-id-per-roster-species.** Operator chose, when asked, **slug-from-roster-name** as the minting rule (over "canonical = first map entry", which collapses 13 oaks onto `quercus_alba`, and over guessing botanical latin). `slugifyRoster("Oak, Pin") = "oak_pin"` — distinct per roster species, no botanical auto-guess, renameable later.
+
+**Shipped:**
+- `arborist/roster-coverage.js` (NEW) — lifted Brief 24's inline `/coverage` join into one shared module (AC5). `computeCoverage()` also returns per-species `canonicalId` (slug), `recommendedChassis` (chassis whose `source.species` ∈ covering library ids), `authoringState` (composed / not-available / unauthored), `publishedCanonical`. `slugifyRoster` exported.
+- `arborist/serve.js` — `/coverage` refactored to a thin `computeCoverage()` call. NEW `POST /coverage/:rosterName/routing` — the one `park_species_map.json` write (`{canonicalId}`→`[slug]`, `{notAvailable:true}`→`[]`); mirrors onto merge-table raw aliases; preserves `_doc`/`_libraryAt` + key order. Tested end-to-end, file restored.
+- `src/arborist/stores/useArboristStore.js` — roster slice: `rosterCoverage` + `loadRosterCoverage`, `activeRosterName` + `selectRosterSpecies(row)` (drives `setSalonActiveSpecies(row.canonicalId)`), `setRosterRouting(rosterName, canonicalId|null)`.
+- `src/arborist/SalonWorkstage.jsx` — removed the SPECIES dropdown; added `RosterNavigator` (left column: count + coverage badge + authoring state, name/state filters) + `InsideHeader` (identity + recommended↔show-all toggle + Mark-not-available). The existing SlotCard/composition controls re-parent under the selected roster species' canonical id **unchanged**. Chassis picker honors `candidateScope` (recommended = `recommendedChassis` ∩ catalog; all = full catalog w/ approved-only sub-filter). Footer republish also writes the routing entry.
+
+**Why the composition/publish path was reusable as-is:** it already keys on a library-species-id (`state/<id>/compositions.json` → `public/trees/<id>`), and `listSalonSpecies` auto-includes any id with a compositions file. So a slug id (`oak_pin`) flows through compositions GET/POST, preview-atlas, and `generate-salon --species <slug>` publish without any generator change (scope wall: `generate-salon.js` untouched — only imported `listChassis`).
+
+**Scope walls honored (git-verified):** zero edits to `treeAtlasMaterial.js` / `InstancedTrees.jsx` / `bake-look.js` / `bake-trees.js` / `trees-atlas.json` / `SpecimenViewport.jsx` / `generate-salon.js`. Grove Look-curation + the composition publish model untouched.
+
+**Surfaced (per `feedback_baby_must_surface_scope_drift`):**
+- **`park_species_map` shape choice (the brief's one open item):** kept the **list shape** (`[canonicalId]`, single-element) rather than a scalar — lowest risk, `bake-trees#pickVariant` reads the list unchanged. Candidate lists are live-computed, not stored.
+- **not-available bake honoring is deferred.** Marking writes `map[rosterName]=[]`; making the bake render *no tree* for an empty array needs a `bake-trees.js#pickVariant` change, behind this brief's scope wall. Today an empty array falls through pickVariant's category picker (renders *something*), so "renders no tree" (AC4) is recorded in authoring state but not yet enforced at bake. Flagged for a bake-side follow-up.
+- **`speciesMeta`/`morphology` is undefined for slug canonical ids** (slugs aren't in `salonSpeciesList`), so the chassis picker's morphology pre-ordering no-ops and `targetCategory` falls to `broadleaf`. Cosmetic — recommended-scope filtering is the real ranking now.
+
+**Verified:** `node --check` clean on serve.js + roster-coverage.js + generate-salon.js; `computeCoverage()` reconciles to 756 / 84 canonical; routing endpoint tested live (compose, alias propagation, not-available reflected in `authoringState`); full SalonWorkstage import tree bundles clean via esbuild. **`vite build` blocked by a pre-existing dangling symlink** (`public/photos/lafayette-square/other → ../../../photos-wikimedia/other`, missing) in the public-copy step — not code; verified via esbuild bundle instead. UI not click-tested in a browser (no harness this run).
+
