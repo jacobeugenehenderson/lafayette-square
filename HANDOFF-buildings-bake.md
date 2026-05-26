@@ -387,6 +387,25 @@ schema (avoids a later slab bump).
   separate neon brief (`HANDOFF-neon-roof-depth.md`) that consumes what you emit. You're the
   producer; the neon brief is the consumer.
 
+**Addendum — DONE (Alidade, 2026-05-26; discrete producer commit, lands separately from the cutover).**
+
+- Roof builders (`buildMansardRoofWorld`/`buildHipRoofWorld`) now return their internal
+  `topRing`; `buildingGeometry` returns `roofTopRing` from whichever branch built the roof —
+  so `roofOutline` is the **actual baked top edge**, not a re-derived inset. Rule: **flat →
+  footprint**, **mansard → the inset-0.30 cap ring** (n pts), **hip → ridge endpoints `[r0,r1]`
+  or pyramid apex `[cx,cz]`**.
+- Packed into a new **`roofOutlines` `.bin` section** (Float32 [x,z], after `footprints`, so all
+  prior offsets are byte-unchanged) + per-building `roofOutlineRange: [ptStart, ptCount]`.
+  Manifest gains `roofOutlineByteOffset` + `roofOutlinePointCount`. **Additive → stays slab v2**
+  (no v3 bump). Nothing consumes it yet.
+- **⚠ Note for the neon-roof-depth consumer:** **hip roofOutlines are degenerate** — 1 pt
+  (pyramid apex) or 2 pts (ridge) — because a hip roof has no closed top ring. 159 hips are
+  1–2 pt; the consumer must handle `ptCount < 3` (e.g. trace the eave/`footprint` instead, or
+  render a peak accent). flat (710) = full footprint; mansard (213) = n-pt inset ring.
+- **Verified:** bin size byte-exact; footprint section intact; flat outline==footprint 710/710;
+  mansard 213 inset rings (all toward centroid); hip 159 degenerate (0 malformed);
+  710+213+159=1082; re-bake byte-identical.
+
 ---
 
 ## Explicitly out of scope

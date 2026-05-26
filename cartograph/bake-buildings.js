@@ -250,7 +250,9 @@ function buildMansardRoofWorld(pts, wallTop, stories) {
     const j = (i + 1) % n
     indices.push(capBase, capBase + 1 + i, capBase + 1 + j)
   }
-  return { positions, indices, uvs }
+  // topRing = the inset top-cap perimeter (world [x,z]) — the actual rooftop
+  // edge a neon tube should trace (NOT the wider footprint). See roofOutline.
+  return { positions, indices, uvs, topRing: innerPts }
 }
 
 // Build hip roof geometry — single peak (pyramid) for square-ish/many-sided
@@ -310,8 +312,14 @@ function buildHipRoofWorld(pts, wallTop, stories) {
     indices.push(base, base + 1, base + 2, base, base + 2, base + 3)
   }
 
+  // topRing = the actual top edge of the hip geometry — degenerate by nature:
+  // a single apex point for a pyramid, the ridge segment otherwise. Emitted
+  // as roofOutline so the neon brief traces the true rooftop edge, not the
+  // wider eave footprint. (Consumer handles ptCount < 3.)
+  let topRing
   if (ratio > 0.8 || n > 8) {
     // Pyramid to single peak
+    topRing = [[cx, cz]]
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n
       emitSlopeTri(pts[i], pts[j], [cx, cz])
@@ -332,6 +340,7 @@ function buildHipRoofWorld(pts, wallTop, stories) {
       r0 = [cx, minZ + dz * ridgeInset]
       r1 = [cx, maxZ - dz * ridgeInset]
     }
+    topRing = [r0, r1]
     // Per-edge: find the ridge endpoint nearest to each endpoint of the
     // edge. If both ends connect to the same ridge endpoint → triangle
     // (short side of the hip roof). If they differ → trapezoid (long
@@ -352,7 +361,7 @@ function buildHipRoofWorld(pts, wallTop, stories) {
       }
     }
   }
-  return { positions, indices, uvs }
+  return { positions, indices, uvs, topRing }
 }
 
 // Triangulate a 2D footprint contour. ShapeUtils handles either winding;
@@ -460,16 +469,23 @@ function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
   if (useShape === 'mansard' && !isConvex(footprint)) useShape = 'flat'
   if (useShape === 'hip' && footprint.length > 8)    useShape = 'flat'
 
+  // roofTopRing = the actual rooftop perimeter (world [x,z]) the neon tube
+  // should trace, taken from the SAME geometry built here (not a re-derived
+  // heuristic): the inset cap for mansard, the ridge/apex for hip, the
+  // footprint for flat. Emitted into the index as `roofOutline`.
+  let roofTopRing
   if (useShape === 'mansard') {
     const m = buildMansardRoofWorld(footprint, wallTop, stories || 1)
     for (let i = 0; i < m.positions.length; i++) roofPositions.push(m.positions[i])
     for (let i = 0; i < m.uvs.length;       i++) roofUVs.push(m.uvs[i])
     for (let i = 0; i < m.indices.length;   i++) roofIndices.push(m.indices[i])
+    roofTopRing = m.topRing
   } else if (useShape === 'hip') {
     const h = buildHipRoofWorld(footprint, wallTop, stories || 1)
     for (let i = 0; i < h.positions.length; i++) roofPositions.push(h.positions[i])
     for (let i = 0; i < h.uvs.length;       i++) roofUVs.push(h.uvs[i])
     for (let i = 0; i < h.indices.length;   i++) roofIndices.push(h.indices[i])
+    roofTopRing = h.topRing
   } else {
     // Flat cap — planar XZ UV (texture seen from above, doesn't matter
     // much because flat roofs don't typically use directional textures).
@@ -479,12 +495,14 @@ function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
       roofUVs.push(x, z)
     }
     for (const t of tris) roofIndices.push(t[0], t[2], t[1])
+    roofTopRing = footprint   // flat roof cap == footprint
   }
 
   return {
     wallPositions, wallIndices, wallUVs,
     roofPositions, roofIndices, roofUVs,
     foundPositions, foundIndices, foundUVs,
+    roofTopRing,
   }
 }
 
@@ -559,6 +577,14 @@ export async function bakeBuildings({ look = 'default' } = {}) {
   const buildingIndex = []
   const footprintData = []   // flat Float32 [x0,z0, x1,z1, …] across all buildings
   let footprintPtCursor = 0
+  // roofOutline: the actual rooftop-perimeter ring per building (= footprint
+  // for flat, inset cap for mansard, ridge/apex for hip). Bulk numerics →
+  // its own .bin section (C1); `roofOutlineRange: [ptStart, ptCount]` mirrors
+  // footprintRange. Additive/optional → stays slab v2. Nothing consumes it
+  // yet (the neon-roof-depth brief is the consumer). Hip rings are degenerate
+  // (1–2 pts) by the geometry's nature.
+  const roofOutlineData = []
+  let roofOutlinePtCursor = 0
 
   for (const b of buildings) {
     const fp = b.footprint
@@ -583,6 +609,7 @@ export async function bakeBuildings({ look = 'default' } = {}) {
       wallPositions, wallIndices, wallUVs,
       roofPositions, roofIndices, roofUVs,
       foundPositions, foundIndices, foundUVs,
+      roofTopRing,
     } = buildingGeometry(fp, foundationY, wallTop, roofShape, stories)
 
     // Per-building color packing — pick from the Look's palette via
@@ -651,6 +678,14 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     for (let i = 0; i < fp.length; i++) footprintData.push(fp[i][0], fp[i][1])
     footprintPtCursor += fp.length
 
+    // roofOutline → .bin (C1). The actual rooftop-edge ring returned by
+    // buildingGeometry (footprint for flat, inset cap for mansard, ridge/apex
+    // for hip). Falls back to footprint if the roof builder returned nothing.
+    const ring = (roofTopRing && roofTopRing.length) ? roofTopRing : fp
+    const roofPtStart = roofOutlinePtCursor
+    for (let i = 0; i < ring.length; i++) roofOutlineData.push(ring[i][0], ring[i][1])
+    roofOutlinePtCursor += ring.length
+
     // baseY = rooftop world Y (pre-terrain-lift), identical to the runtime
     // neon term getFoundationHeight + size[1] + getRoofPeakHeight + 0.3
     // (SceneNeon.jsx:124). `h` === b.size[1] for all real buildings; the
@@ -662,6 +697,7 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     buildingIndex.push({
       id: b.id,
       footprintRange: [ptStart, fp.length],
+      roofOutlineRange: [roofPtStart, ring.length],
       centroidY,
       baseY,
       wallMaterial: wallMat,
@@ -780,16 +816,18 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     console.log(`[bake-buildings] index tiling verified: ${buildingIndex.length} buildings tile ${groups.length} groups with no gaps/overlaps`)
   }
 
-  // Layout: [positions][colors][uvs][centroidYs][indices][footprints].
+  // Layout: [positions][colors][uvs][centroidYs][indices][footprints][roofOutlines].
   const totalPosBytes = posByteOffset
   const totalColBytes = colByteOffset
   const totalUvBytes  = uvByteOffset
   const totalCyBytes  = cyByteOffset
   const totalIdxBytes = idxByteOffset
-  // Footprints section (C1): Float32 [x,z] pairs, all buildings concatenated,
-  // appended AFTER indices so the existing per-group offsets are undisturbed.
-  const footprints = new Float32Array(footprintData)
-  const buf = new Uint8Array(totalPosBytes + totalColBytes + totalUvBytes + totalCyBytes + totalIdxBytes + footprints.byteLength)
+  // Footprints + roofOutlines sections (C1): Float32 [x,z] pairs, all buildings
+  // concatenated, appended AFTER indices so the existing per-group offsets are
+  // undisturbed.
+  const footprints   = new Float32Array(footprintData)
+  const roofOutlines = new Float32Array(roofOutlineData)
+  const buf = new Uint8Array(totalPosBytes + totalColBytes + totalUvBytes + totalCyBytes + totalIdxBytes + footprints.byteLength + roofOutlines.byteLength)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -819,11 +857,14 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }
-  // Footprints last. `footprintByteOffset` is the section start; per-building
-  // `footprintRange: [ptStart, ptCount]` indexes it in POINT units (×8 bytes).
+  // Footprints, then roofOutlines. Each section start is a byte offset; the
+  // per-building ranges index it in POINT units (×8 bytes).
   const footprintByteOffset = totalPosBytes + totalColBytes + totalUvBytes + totalCyBytes + totalIdxBytes
   buf.set(new Uint8Array(footprints.buffer, footprints.byteOffset, footprints.byteLength), off)
   off += footprints.byteLength
+  const roofOutlineByteOffset = footprintByteOffset + footprints.byteLength
+  buf.set(new Uint8Array(roofOutlines.buffer, roofOutlines.byteOffset, roofOutlines.byteLength), off)
+  off += roofOutlines.byteLength
 
   // Bbox
   let bx0 = +Infinity, by0 = +Infinity, bz0 = +Infinity
@@ -859,6 +900,11 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     footprintComponentsPerPoint: 2,
     footprintByteOffset,
     footprintPointCount: footprintData.length / 2,
+    // roofOutlines: additive (slab v2), same [x,z] Float32 format as footprints.
+    // Per-building `roofOutlineRange: [ptStart, ptCount]`. Consumed by the
+    // separate neon-roof-depth brief, not yet by SlabBuildings.
+    roofOutlineByteOffset,
+    roofOutlinePointCount: roofOutlineData.length / 2,
     buildingCount: buildings.length,
     renderedBuildingCount: buildingIndex.length,
     buildings: buildingIndex,
@@ -872,7 +918,7 @@ export async function bakeBuildings({ look = 'default' } = {}) {
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)
   const totalVerts = groups.reduce((s, g) => s + g.vertexCount, 0)
   const skipped = buildings.length - buildingIndex.length
-  console.log(`[bake-buildings] look=${look}: ${buildings.length} buildings (${buildingIndex.length} rendered${skipped ? `, ${skipped} skipped <3pt footprints` : ''}), ${groups.length} groups, ${totalVerts} verts, ${totalTris} tris, ${footprintData.length / 2} footprint pts, ${sizeKb} KB`)
+  console.log(`[bake-buildings] look=${look}: ${buildings.length} buildings (${buildingIndex.length} rendered${skipped ? `, ${skipped} skipped <3pt footprints` : ''}), ${groups.length} groups, ${totalVerts} verts, ${totalTris} tris, ${footprintData.length / 2} footprint pts, ${roofOutlineData.length / 2} roofOutline pts, ${sizeKb} KB`)
   return manifest
 }
 
