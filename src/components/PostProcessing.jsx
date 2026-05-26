@@ -404,17 +404,22 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
 // ── Atmospheric fog (blends ground into sky at horizon) ─────────────────────
 // scene.mist (or `mistOverride` from Stage) drives FogExp2 density + color.
 
-export function StageFog({ lookId, bakeLastMs, mistOverride }) {
+// `enabled` (default true) lets a consumer toggle fog non-destructively
+// without unmounting — fog is a scene property, not a drawn layer, so the
+// Preview "Atmospheric Fog" toggle nulls scene.fog rather than churning the
+// mount. Production + Stage pass no `enabled` → unchanged.
+export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
   const { scene: threeScene } = useThree()
   const fogRef = useRef()
   const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
   const mistChannel = mistOverride ?? sceneJson?.mist ?? MIST_DEFAULT_CHANNEL
 
   useEffect(() => {
+    if (!enabled) { threeScene.fog = null; fogRef.current = null; return }
     threeScene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, MIST_FLAT_DEFAULTS.density * MIST_DENSITY_SCALE)
     fogRef.current = threeScene.fog
-    return () => { threeScene.fog = null }
-  }, [threeScene])
+    return () => { threeScene.fog = null; fogRef.current = null }
+  }, [threeScene, enabled])
 
   useFrame(() => {
     if (!fogRef.current) return

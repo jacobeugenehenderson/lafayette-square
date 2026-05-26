@@ -1287,8 +1287,13 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       {/* Neon — single Path B mesh over all currently-open places, with
           scene.json.neon driving the uCore/uTube/uBleed uniforms. Gated by
           hide.neon so Preview's per-layer toggle can isolate it; production
-          and Stage pass no `neon` key, so it stays on. */}
-      {!hide.neon && <SceneNeon forceNeonOn={forceNeonOn} lookId={INSTANCE.lookId} />}
+          and Stage pass no `neon` key, so it stays visible. Visibility-gated
+          (not unmounted) so the Preview toggle is a clean per-frame on/off
+          with no rebuild — it's one merged mesh, resident as in production
+          (Vernier Phase 1b). */}
+      <group visible={!hide.neon}>
+        <SceneNeon forceNeonOn={forceNeonOn} lookId={INSTANCE.lookId} />
+      </group>
 
       {/* Street labels — SceneLabel renderer, panel-driven style; widthM
           carries the chain's pavement width so labels scale with the

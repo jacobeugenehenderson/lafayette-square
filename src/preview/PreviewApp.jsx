@@ -682,25 +682,44 @@ function CanvasContents({ layers, shot, setShot }) {
           matches Stage + production. Canvas already runs shadows="soft". */}
       <StageShadows lookId={lookId} />
       {/* Atmospheric fog (FogExp2 from scene.mist) — Stage mounts this; it
-          was previously absent from Preview entirely. */}
-      {layers.fog && <StageFog lookId={lookId} />}
+          was previously absent from Preview entirely. Always mounted now;
+          the toggle nulls scene.fog via `enabled` (fog is a scene property,
+          not a drawn layer) so there's no mount churn (Vernier Phase 1b). */}
+      <StageFog lookId={lookId} enabled={layers.fog} />
       {/* Lamp-glow uniforms (grass pools / tree emissive / pool radial) from
           scene.lampGlow — the same driver production now mounts. Without it
           the uniforms stay at dead defaults and lamp pools never appear. */}
       <LampGlowDriver lookId={lookId} />
 
-      {layers.celestial
-        ? <R3FErrorBoundary name="CelestialBodies"><CelestialBodies /></R3FErrorBoundary>
-        : <BasicLights />}
-      {layers.clouds && <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>}
+      {/* Celestial + clouds visibility-gated, both always mounted. When
+          celestial is off, the always-mounted BasicLights takes over via its
+          own visibility — no mount swap. group.visible=false skips the
+          subtree's draws AND lights, so "all on" == production (CelestialBodies
+          visible, BasicLights dark = zero contribution) (Vernier Phase 1b).
+          BasicLights is a Preview-only inspection fallback (no production
+          analog) — held resident-but-hidden, never drawn in the all-on path. */}
+      <group visible={layers.celestial}>
+        <R3FErrorBoundary name="CelestialBodies"><CelestialBodies /></R3FErrorBoundary>
+      </group>
+      <group visible={!layers.celestial}>
+        <BasicLights />
+      </group>
+      <group visible={layers.clouds}>
+        <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>
+      </group>
 
       <Suspense fallback={null}>
-        {layers.ground    && <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>}
-        {/* Buildings — the SAME live LafayetteScene production renders (not a
-            baked merged-mesh proxy). hiddenLayers gates buildings + neon per
-            the Preview toggles; neon forced on for inspection. This component
-            also owns Foundations + <SceneNeon> + street labels, matching the
-            production render tree exactly. */}
+        <group visible={layers.ground}>
+          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>
+        </group>
+        {/* Buildings — left as conditional-MOUNT here on purpose. The live
+            LafayetteScene buildings are the A/B-only path: production keeps
+            them unmounted (the slab replaces them), so visibility-gating them
+            would regress production by holding ~1082 invisible meshes
+            resident. The buildings double-toggle collapse + slab .visible
+            gating is Phase 2's job. NOTE: `neon` now gates .visible INSIDE
+            LafayetteScene; `building` stays a mount gate to preserve parity.
+            This component also owns Foundations + <SceneNeon> + street labels. */}
         <R3FErrorBoundary name="LafayetteScene">
           <LafayetteScene
             lookId={lookId}
@@ -708,19 +727,28 @@ function CanvasContents({ layers, shot, setShot }) {
             forceNeonOn={layers.neon || undefined}
           />
         </R3FErrorBoundary>
-        {/* Slab buildings (L1.3): default on, matching production. When on,
-            the live LafayetteScene buildings + foundations are hidden above and
-            this merged-mesh consumer renders them off the slab instead. Toggle
-            off to A/B against the live mount (draw calls + look in the GPU panel). */}
+        {/* Slab buildings (L1.3): default on, matching production. Still
+            conditional-mount pending the Phase 2 collapse (single .visible
+            "Buildings" toggle on the slab). Toggle off to A/B against the
+            live mount. */}
         {layers.slabBuildings && <R3FErrorBoundary name="SlabBuildings">
           <SlabBuildings lookId={lookId} />
         </R3FErrorBoundary>}
-        {layers.trees && <R3FErrorBoundary name="InstancedTrees">
-          <InstancedTrees lookId={lookId} />
-        </R3FErrorBoundary>}
-        {layers.park   && <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>}
-        {layers.lights && <R3FErrorBoundary name="StreetLights"><BakedLamps /></R3FErrorBoundary>}
-        {layers.arch   && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
+        {/* Trees / Park / Streetlamps / Arch — visibility-gated (always
+            mounted, baked assets resident). Each toggle is a clean per-frame
+            draws/tris on-off with no dispose/re-upload (Vernier Phase 1b). */}
+        <group visible={layers.trees}>
+          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} /></R3FErrorBoundary>
+        </group>
+        <group visible={layers.park}>
+          <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
+        </group>
+        <group visible={layers.lights}>
+          <R3FErrorBoundary name="StreetLights"><BakedLamps /></R3FErrorBoundary>
+        </group>
+        <group visible={layers.arch}>
+          <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
+        </group>
       </Suspense>
 
       <ShotCamera shot={shot} setShot={setShot} />
