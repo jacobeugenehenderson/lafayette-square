@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-05-23T18:12:59.636Z",
+  "generatedAt": "2026-05-26T00:01:33.643Z",
   "lookName": "lafayette-square",
-  "rosterSize": 31,
+  "rosterSize": 20,
   "materialDefaults": {
     "roughness": 0.85,
     "metalness": 0
   },
   "atlas": {
     "width": 4040,
-    "height": 5440,
+    "height": 3104,
     "colorPath": "/baked/lafayette-square/trees-atlas-color.png",
     "normalPath": "/baked/lafayette-square/trees-atlas-normal.png",
     "alphaMode": "MASK",
@@ -77,9 +77,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
@@ -124,9 +124,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -171,185 +171,15 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
       "tileIndex": 3,
-      "key": "f24561453b5f|026eed9e6935",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 3,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 3396,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.6669117647058823,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 4,
-      "key": "9c0dbb9fa2fa|4248af0d275f",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_ornamental",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "acer_saccharum",
-          "variantId": 1,
-          "matName": "salonBark"
-        }
-      ],
-      "content": {
-        "x": 2356,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 5,
-      "key": "3b7c8f7988b9|ae418d353754",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_conifer",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_conifer",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 2876,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 6,
-      "key": "3d7d8613ae27|a0320064e00d",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_columnar",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_columnar",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 3396,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 7,
-      "key": "19ec8d128907|9baa036ecb92",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_weeping",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_weeping",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 4,
-        "y": 1036,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8566176470588235,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 8,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -368,15 +198,15 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 9,
+      "tileIndex": 4,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -395,15 +225,15 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 10,
+      "tileIndex": 5,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -422,15 +252,15 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 11,
+      "tileIndex": 6,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -449,15 +279,15 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 12,
+      "tileIndex": 7,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -476,11 +306,38 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 8,
+      "key": "9c0dbb9fa2fa|4248af0d275f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "acer_saccharum",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.8405940594059406,
+        "offsetV": 0.336340206185567,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16494845360824742
+      },
+      "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
@@ -543,9 +400,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -590,9 +447,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -637,9 +494,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -679,9 +536,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -721,158 +578,15 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
       "tileIndex": 5,
-      "key": "383eadd8d437|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_columnar",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_columnar",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_weeping",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_weeping",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 2604,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.6445544554455446,
-        "offsetV": 0.3801470588235294,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
-    {
-      "tileIndex": 6,
-      "key": "83c3429d7bf0|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 3,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 3124,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.7732673267326733,
-        "offsetV": 0.3801470588235294,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
-    {
-      "tileIndex": 7,
-      "key": "415674677609|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_conifer",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_conifer",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 4,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.47573529411764703,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
-    {
-      "tileIndex": 8,
-      "key": "ba98615d97e8|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_ornamental",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 524,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.1297029702970297,
-        "offsetV": 0.47573529411764703,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
-    {
-      "tileIndex": 9,
       "key": "5fa47a22ede0|0cce76cc520f",
       "atlas": "unified",
       "classification": "leaf",
@@ -891,15 +605,15 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 10,
+      "tileIndex": 6,
       "key": "82efa31c1b78|44630a487d2f",
       "atlas": "unified",
       "classification": "leaf",
@@ -918,15 +632,15 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 11,
+      "tileIndex": 7,
       "key": "238d9c7235d3|08b77dbfc0a1",
       "atlas": "unified",
       "classification": "leaf",
@@ -938,22 +652,22 @@
         }
       ],
       "content": {
-        "x": 1044,
-        "y": 524,
+        "x": 2604,
+        "y": 4,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.2584158415841584,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 12,
+      "tileIndex": 8,
       "key": "415533f5f2d9|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -965,22 +679,22 @@
         }
       ],
       "content": {
-        "x": 3644,
+        "x": 2084,
         "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.901980198019802,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.5158415841584159,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     {
-      "tileIndex": 13,
+      "tileIndex": 9,
       "key": "56cbc3829802|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -992,22 +706,22 @@
         }
       ],
       "content": {
-        "x": 524,
-        "y": 1044,
+        "x": 2348,
+        "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.1297029702970297,
-        "offsetV": 0.5713235294117647,
+        "offsetU": 0.5811881188118811,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     {
-      "tileIndex": 14,
+      "tileIndex": 10,
       "key": "524432a66f66|6e1f6d575ec1",
       "atlas": "unified",
       "classification": "leaf",
@@ -1019,22 +733,22 @@
         }
       ],
       "content": {
-        "x": 1564,
-        "y": 524,
+        "x": 3124,
+        "y": 4,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.38712871287128714,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     {
-      "tileIndex": 15,
+      "tileIndex": 11,
       "key": "524432a66f66|c4d03f72b0d6",
       "atlas": "unified",
       "classification": "leaf",
@@ -1046,22 +760,22 @@
         }
       ],
       "content": {
-        "x": 2084,
+        "x": 4,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.5158415841584159,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     {
-      "tileIndex": 16,
+      "tileIndex": 12,
       "key": "be4fc10697e8|59f3147e44d4",
       "atlas": "unified",
       "classification": "leaf",
@@ -1073,22 +787,22 @@
         }
       ],
       "content": {
-        "x": 788,
-        "y": 1044,
+        "x": 2612,
+        "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.19504950495049506,
-        "offsetV": 0.5713235294117647,
+        "offsetU": 0.6465346534653466,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
     },
     {
-      "tileIndex": 17,
+      "tileIndex": 13,
       "key": "13157a39ecd0|5889b08555c0",
       "atlas": "unified",
       "classification": "leaf",
@@ -1100,22 +814,22 @@
         }
       ],
       "content": {
-        "x": 2604,
+        "x": 524,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.6445544554455446,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 18,
+      "tileIndex": 14,
       "key": "0ecef2de0d01|c84336f17870",
       "atlas": "unified",
       "classification": "leaf",
@@ -1127,22 +841,22 @@
         }
       ],
       "content": {
-        "x": 3124,
+        "x": 1044,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.7732673267326733,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 19,
+      "tileIndex": 15,
       "key": "c228f537c0bf|",
       "atlas": "unified",
       "classification": "leaf",
@@ -1154,16 +868,16 @@
         }
       ],
       "content": {
-        "x": 4,
-        "y": 1044,
+        "x": 1564,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.5713235294117647,
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1230,9 +944,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
@@ -1277,9 +991,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1324,185 +1038,15 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "f24561453b5f|026eed9e6935": {
-      "tileIndex": 3,
-      "key": "f24561453b5f|026eed9e6935",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 3,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 3396,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.6669117647058823,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "9c0dbb9fa2fa|4248af0d275f": {
-      "tileIndex": 4,
-      "key": "9c0dbb9fa2fa|4248af0d275f",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_ornamental",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "acer_saccharum",
-          "variantId": 1,
-          "matName": "salonBark"
-        }
-      ],
-      "content": {
-        "x": 2356,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "3b7c8f7988b9|ae418d353754": {
-      "tileIndex": 5,
-      "key": "3b7c8f7988b9|ae418d353754",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_conifer",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_conifer",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 2876,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "3d7d8613ae27|a0320064e00d": {
-      "tileIndex": 6,
-      "key": "3d7d8613ae27|a0320064e00d",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_columnar",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_columnar",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 3396,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "19ec8d128907|9baa036ecb92": {
-      "tileIndex": 7,
-      "key": "19ec8d128907|9baa036ecb92",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_weeping",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_weeping",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 4,
-        "y": 1036,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8566176470588235,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     "15c88e3d0ad6|8f0866f3e68b": {
-      "tileIndex": 8,
+      "tileIndex": 3,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -1521,15 +1065,15 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     "52f3b6d064a1|31382c4db848": {
-      "tileIndex": 9,
+      "tileIndex": 4,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -1548,15 +1092,15 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     "ef7d501fb660|68ed62827ad4": {
-      "tileIndex": 10,
+      "tileIndex": 5,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -1575,15 +1119,15 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     "42788cae31b1|44d10fcb4523": {
-      "tileIndex": 11,
+      "tileIndex": 6,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -1602,15 +1146,15 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     "c936750534a1|d8d5b8abe1ab": {
-      "tileIndex": 12,
+      "tileIndex": 7,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -1629,11 +1173,38 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "9c0dbb9fa2fa|4248af0d275f": {
+      "tileIndex": 8,
+      "key": "9c0dbb9fa2fa|4248af0d275f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "acer_saccharum",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.8405940594059406,
+        "offsetV": 0.336340206185567,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16494845360824742
+      },
+      "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     "3b70158cae63|58277515a126": {
@@ -1696,9 +1267,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -1743,9 +1314,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1790,9 +1361,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1832,9 +1403,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1874,158 +1445,15 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
-    "383eadd8d437|": {
-      "tileIndex": 5,
-      "key": "383eadd8d437|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_columnar",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_columnar",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_weeping",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_weeping",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 2604,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.6445544554455446,
-        "offsetV": 0.3801470588235294,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
-    "83c3429d7bf0|": {
-      "tileIndex": 6,
-      "key": "83c3429d7bf0|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_broadleaf",
-          "variantId": 3,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 3124,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.7732673267326733,
-        "offsetV": 0.3801470588235294,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
-    "415674677609|": {
-      "tileIndex": 7,
-      "key": "415674677609|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_conifer",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_conifer",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 4,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.47573529411764703,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
-    "ba98615d97e8|": {
-      "tileIndex": 8,
-      "key": "ba98615d97e8|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralLeaves"
-        },
-        {
-          "species": "procedural_ornamental",
-          "variantId": 2,
-          "matName": "proceduralLeaves"
-        }
-      ],
-      "content": {
-        "x": 524,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.1297029702970297,
-        "offsetV": 0.47573529411764703,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": null
-    },
     "5fa47a22ede0|0cce76cc520f": {
-      "tileIndex": 9,
+      "tileIndex": 5,
       "key": "5fa47a22ede0|0cce76cc520f",
       "atlas": "unified",
       "classification": "leaf",
@@ -2044,15 +1472,15 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
     },
     "82efa31c1b78|44630a487d2f": {
-      "tileIndex": 10,
+      "tileIndex": 6,
       "key": "82efa31c1b78|44630a487d2f",
       "atlas": "unified",
       "classification": "leaf",
@@ -2071,15 +1499,15 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.3801470588235294,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
     },
     "238d9c7235d3|08b77dbfc0a1": {
-      "tileIndex": 11,
+      "tileIndex": 7,
       "key": "238d9c7235d3|08b77dbfc0a1",
       "atlas": "unified",
       "classification": "leaf",
@@ -2091,22 +1519,22 @@
         }
       ],
       "content": {
-        "x": 1044,
-        "y": 524,
+        "x": 2604,
+        "y": 4,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.2584158415841584,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
     },
     "415533f5f2d9|6b23a51141b4": {
-      "tileIndex": 12,
+      "tileIndex": 8,
       "key": "415533f5f2d9|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -2118,22 +1546,22 @@
         }
       ],
       "content": {
-        "x": 3644,
+        "x": 2084,
         "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.901980198019802,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.5158415841584159,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     "56cbc3829802|6b23a51141b4": {
-      "tileIndex": 13,
+      "tileIndex": 9,
       "key": "56cbc3829802|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -2145,22 +1573,22 @@
         }
       ],
       "content": {
-        "x": 524,
-        "y": 1044,
+        "x": 2348,
+        "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.1297029702970297,
-        "offsetV": 0.5713235294117647,
+        "offsetU": 0.5811881188118811,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     "524432a66f66|6e1f6d575ec1": {
-      "tileIndex": 14,
+      "tileIndex": 10,
       "key": "524432a66f66|6e1f6d575ec1",
       "atlas": "unified",
       "classification": "leaf",
@@ -2172,22 +1600,22 @@
         }
       ],
       "content": {
-        "x": 1564,
-        "y": 524,
+        "x": 3124,
+        "y": 4,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.38712871287128714,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.001288659793814433,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     "524432a66f66|c4d03f72b0d6": {
-      "tileIndex": 15,
+      "tileIndex": 11,
       "key": "524432a66f66|c4d03f72b0d6",
       "atlas": "unified",
       "classification": "leaf",
@@ -2199,22 +1627,22 @@
         }
       ],
       "content": {
-        "x": 2084,
+        "x": 4,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.5158415841584159,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     "be4fc10697e8|59f3147e44d4": {
-      "tileIndex": 16,
+      "tileIndex": 12,
       "key": "be4fc10697e8|59f3147e44d4",
       "atlas": "unified",
       "classification": "leaf",
@@ -2226,22 +1654,22 @@
         }
       ],
       "content": {
-        "x": 788,
-        "y": 1044,
+        "x": 2612,
+        "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.19504950495049506,
-        "offsetV": 0.5713235294117647,
+        "offsetU": 0.6465346534653466,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
     },
     "13157a39ecd0|5889b08555c0": {
-      "tileIndex": 17,
+      "tileIndex": 13,
       "key": "13157a39ecd0|5889b08555c0",
       "atlas": "unified",
       "classification": "leaf",
@@ -2253,22 +1681,22 @@
         }
       ],
       "content": {
-        "x": 2604,
+        "x": 524,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.6445544554455446,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
     },
     "0ecef2de0d01|c84336f17870": {
-      "tileIndex": 18,
+      "tileIndex": 14,
       "key": "0ecef2de0d01|c84336f17870",
       "atlas": "unified",
       "classification": "leaf",
@@ -2280,22 +1708,22 @@
         }
       ],
       "content": {
-        "x": 3124,
+        "x": 1044,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.7732673267326733,
-        "offsetV": 0.47573529411764703,
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
     },
     "c228f537c0bf|": {
-      "tileIndex": 19,
+      "tileIndex": 15,
       "key": "c228f537c0bf|",
       "atlas": "unified",
       "classification": "leaf",
@@ -2307,72 +1735,22 @@
         }
       ],
       "content": {
-        "x": 4,
-        "y": 1044,
+        "x": 1564,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.5713235294117647,
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.1688144329896907,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
     }
   },
   "barkBySpecies": {
-    "procedural_broadleaf": {
-      "materialRef": "Bark007",
-      "uvScale": [
-        1,
-        1
-      ],
-      "tintBase": "#ffffff",
-      "tintJitterRange": 0.08,
-      "roughnessOverride": -1
-    },
-    "procedural_conifer": {
-      "materialRef": "Bark012",
-      "uvScale": [
-        1,
-        1
-      ],
-      "tintBase": "#ffffff",
-      "tintJitterRange": 0.06,
-      "roughnessOverride": -1
-    },
-    "procedural_ornamental": {
-      "materialRef": "Bark003",
-      "uvScale": [
-        1,
-        1
-      ],
-      "tintBase": "#ffffff",
-      "tintJitterRange": 0.1,
-      "roughnessOverride": -1
-    },
-    "procedural_columnar": {
-      "materialRef": "Bark004",
-      "uvScale": [
-        1,
-        1
-      ],
-      "tintBase": "#ffffff",
-      "tintJitterRange": 0.05,
-      "roughnessOverride": -1
-    },
-    "procedural_weeping": {
-      "materialRef": "Bark015",
-      "uvScale": [
-        1,
-        1
-      ],
-      "tintBase": "#ffffff",
-      "tintJitterRange": 0.07,
-      "roughnessOverride": -1
-    },
     "acer_saccharum_procedural": {
       "trunk": {
         "materialRef": "Bark007",
@@ -2410,212 +1788,73 @@
   "barkGradientByVariant": {
     "acer_saccharum": {
       "1": {
-        "offsetU": 0.32772277227722774,
-        "offsetV": 0.9522058823529411,
+        "offsetU": 0.6425742574257426,
+        "offsetV": 0.6688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.0001838235294117647,
+        "scaleV": 0.00032216494845360824,
         "hashAmp": 0
       }
     }
   },
   "barkDetailBySpecies": {
-    "procedural_broadleaf": {
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0007352941176470588,
-        "scaleU": 0.25346534653465347,
-        "scaleV": 0.18823529411764706
-      },
-      "barkTileUV": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.6669117647058823,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
     "acer_saccharum_procedural": {
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0007352941176470588,
+        "offsetV": 0.6688144329896907,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "barkTileUV": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_conifer": {
-      "uvTransform": {
-        "offsetU": 0.25643564356435644,
-        "offsetV": 0.0007352941176470588,
-        "scaleU": 0.25346534653465347,
-        "scaleV": 0.18823529411764706
-      },
-      "barkTileUV": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_ornamental": {
-      "uvTransform": {
-        "offsetU": 0.5118811881188119,
-        "offsetV": 0.0007352941176470588,
-        "scaleU": 0.25346534653465347,
-        "scaleV": 0.18823529411764706
-      },
-      "barkTileUV": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       }
     },
     "acer_saccharum": {
       "uvTransform": {
-        "offsetU": 0.5118811881188119,
-        "offsetV": 0.0007352941176470588,
+        "offsetU": 0.25643564356435644,
+        "offsetV": 0.6688144329896907,
         "scaleU": 0.25346534653465347,
-        "scaleV": 0.18823529411764706
-      },
-      "barkTileUV": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_columnar": {
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.19044117647058822,
-        "scaleU": 0.25346534653465347,
-        "scaleV": 0.18823529411764706
+        "scaleV": 0.32989690721649484
       },
       "barkTileUV": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.7625,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_weeping": {
-      "uvTransform": {
-        "offsetU": 0.25643564356435644,
-        "offsetV": 0.19044117647058822,
-        "scaleU": 0.25346534653465347,
-        "scaleV": 0.18823529411764706
-      },
-      "barkTileUV": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8566176470588235,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       }
     }
   },
   "barkPosterizedBySpecies": {
-    "procedural_broadleaf": {
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.9522058823529411,
-        "scaleU": 0.06336633663366337,
-        "scaleV": 0.047058823529411764
-      },
-      "barkTileUV": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.6669117647058823,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
     "acer_saccharum_procedural": {
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.9522058823529411,
+        "offsetU": 0.5118811881188119,
+        "offsetV": 0.6688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.047058823529411764
+        "scaleV": 0.08247422680412371
       },
       "barkTileUV": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6669117647058823,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_conifer": {
-      "uvTransform": {
-        "offsetU": 0.06633663366336634,
-        "offsetV": 0.9522058823529411,
-        "scaleU": 0.06336633663366337,
-        "scaleV": 0.047058823529411764
-      },
-      "barkTileUV": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_ornamental": {
-      "uvTransform": {
-        "offsetU": 0.1316831683168317,
-        "offsetV": 0.9522058823529411,
-        "scaleU": 0.06336633663366337,
-        "scaleV": 0.047058823529411764
-      },
-      "barkTileUV": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       }
     },
     "acer_saccharum": {
       "uvTransform": {
-        "offsetU": 0.1316831683168317,
-        "offsetV": 0.9522058823529411,
+        "offsetU": 0.5772277227722773,
+        "offsetV": 0.6688144329896907,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.047058823529411764
-      },
-      "barkTileUV": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.7625,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_columnar": {
-      "uvTransform": {
-        "offsetU": 0.19702970297029704,
-        "offsetV": 0.9522058823529411,
-        "scaleU": 0.06336633663366337,
-        "scaleV": 0.047058823529411764
+        "scaleV": 0.08247422680412371
       },
       "barkTileUV": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.7625,
+        "offsetV": 0.336340206185567,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
-      }
-    },
-    "procedural_weeping": {
-      "uvTransform": {
-        "offsetU": 0.2623762376237624,
-        "offsetV": 0.9522058823529411,
-        "scaleU": 0.06336633663366337,
-        "scaleV": 0.047058823529411764
-      },
-      "barkTileUV": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8566176470588235,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.09411764705882353
+        "scaleV": 0.16494845360824742
       }
     }
-  }
+  },
+  "deformerBySpecies": {}
 }
