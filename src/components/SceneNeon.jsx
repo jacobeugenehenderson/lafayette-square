@@ -24,6 +24,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { buildings as _allBuildings } from '../data/buildings'
 import useListings from '../hooks/useListings'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { getElevationRaw } from '../utils/elevation'
 import { CATEGORY_HEX } from '../tokens/categories'
@@ -58,8 +59,11 @@ const _NEON_ZONING_CATEGORY = {
   F: 'services',    G: 'services',    H: 'services',    I: 'services',
   J: 'community',
 }
+function defaultNeonCategoryForZoning(zoning) {
+  return _NEON_ZONING_CATEGORY[zoning] || 'residential'
+}
 function defaultNeonCategoryForBuilding(building) {
-  return _NEON_ZONING_CATEGORY[building.zoning] || 'residential'
+  return defaultNeonCategoryForZoning(building.zoning)
 }
 function defaultNeonHexForBuilding(building) {
   return CATEGORY_HEX[defaultNeonCategoryForBuilding(building)]
@@ -100,13 +104,38 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
     return () => clearInterval(id)
   }, [])
 
-  // openPlaces — buildings eligible for tube geometry. Every building in
-  // _allBuildings is a candidate; listings-authored ones carry their
-  // authored category color via neonLookup, every other building falls
-  // back to a zoning-derived default.
+  // Slab path: when SlabBuildings has published the render-scoped index,
+  // source neon geometry/anchors from it (production after cutover, and
+  // Preview with the slab A/B on). Until then — Stage, and Preview with the
+  // slab A/B off — fall back to live _allBuildings so nothing breaks
+  // pre-cutover. Either way, listing hours/category still come from
+  // useListings (content, not slab); the index only replaces the building
+  // geometry/anchor/zoning side of openPlaces.
+  const slabIndex = useSlabBuildingIndex((s) => s.index)
+
+  // openPlaces — buildings eligible for tube geometry. Every building is a
+  // candidate; listings-authored ones carry their authored category via
+  // neonLookup, every other building falls back to a zoning-derived default.
   const openPlaces = useMemo(() => {
     const places = []
     const now = useTimeOfDay.getState().currentTime
+
+    if (slabIndex) {
+      for (const e of slabIndex.byNum) {
+        const listingInfo = neonLookup[e.id]
+        const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
+        const hours = listingInfo ? listingInfo.hours : null
+        const on = forceNeonOn !== undefined ? !!forceNeonOn : _isWithinHours(hours, now)
+        if (!on) continue
+        // baseY + groundYRaw (== centroidY) are baked into the index by the
+        // SAME anchor math the live path uses below, so tubes lift in lockstep
+        // with their building on sloped terrain. NeonBands.buildTube reads only
+        // footprint / baseY / groundYRaw / neon.category.
+        places.push({ footprint: e.footprint, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
+      }
+      return places
+    }
+
     for (const b of _allBuildings) {
       const listingInfo = neonLookup[b.id]
       const info = listingInfo || {
@@ -137,7 +166,7 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
       places.push({ ...b, baseY, groundYRaw, neon: { category: info.category } })
     }
     return places
-  }, [neonLookup, neonTick, forceNeonOn])
+  }, [neonLookup, neonTick, forceNeonOn, slabIndex])
 
   if (openPlaces.length === 0) return null
   return <NeonBands places={openPlaces} lookId={lookId} />

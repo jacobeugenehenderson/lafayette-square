@@ -88,6 +88,11 @@ export default function SlabBuildings({ lookId } = {}) {
   const [data, setData] = useState(null)   // { manifest, bin }
   const [scene, setScene] = useState(null)
   const setIndex = useSlabBuildingIndex((s) => s.setIndex)
+  const clearIndex = useSlabBuildingIndex((s) => s.clear)
+
+  // Drop the published index on unmount so downstream consumers (SceneNeon,
+  // selection) revert to the live path — keeps the Preview slab A/B clean.
+  useEffect(() => () => clearIndex(), [clearIndex])
 
   // ── Load manifest + bin + scene.json ──────────────────────────────
   useEffect(() => {

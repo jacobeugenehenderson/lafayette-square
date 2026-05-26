@@ -211,6 +211,25 @@ Proceeding to Phase A (no Jacob check-in needed pre-A; the A→B seam is the sch
   converging Stage onto `SlabBuildings` would require threading the override props through —
   out of scope for this brief. Recommend Stage stays live; Preview+production move to slab.
 
+**Phase B — visual A/B CONFIRMED by Jacob (2026-05-26): "looks good."**
+
+**Phase C — neon off the index (code-complete; commit lands this phase).**
+
+- `SceneNeon.openPlaces` now branches: when `useSlabBuildingIndex` has a published index
+  (Preview-slab-on / production-after-cutover), it sources each open place's
+  `footprint` / `baseY` / `groundYRaw(=centroidY)` / zoning-default `category` from the
+  **slab index**; otherwise it uses the unchanged live `_allBuildings` path. Gated by index
+  presence, so Stage + Preview-slab-off stay live until cutover.
+- **`useListings` untouched** — listing `hours`/`category` still come from the content store
+  (`neonLookup`); the index only replaces the building geometry/anchor/zoning side. The
+  zoning-default category uses the same `_NEON_ZONING_CATEGORY` lookup as the live path.
+- `NeonBands.buildTube` reads only `footprint`/`baseY`/`groundYRaw`/`neon.category` — all in
+  the index, with `baseY`/`groundYRaw` baked by the SAME anchor math, so tubes lift in lockstep.
+- `SlabBuildings` clears the index store on unmount → Preview A/B off reverts neon to live too.
+- **Verify (Jacob):** Preview slab A/B on vs off at a dark TOD (neon forced on in Preview) —
+  tube positions / categories / colors should be identical, and the listing-lit vs
+  zoning-default split unchanged. Transform graph clean.
+
 ## Phase A — Producer: emit the per-building index (no consumer change)
 
 In `bake-buildings.js`, while accumulating each building into the material buckets, record
