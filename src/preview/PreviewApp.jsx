@@ -351,7 +351,7 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
 // Azimuth's Phase-C tree-impostor flag adopts — the retired `slabBuildings`
 // A/B is the worked example.)
 const SCENE_LAYERS = [
-  ['ground',     'Ground + AO'],
+  ['ground',     'Ground'],
   ['buildings',  'Buildings'],
   ['trees',      'Trees'],
   ['park',       'Park (paths/water/canopy)'],
