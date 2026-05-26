@@ -251,3 +251,28 @@ low. Surfacing for a Phase-1-scope decision.
 2. Phase 2: collapse buildings to one `.visible`-gated toggle on the slab; document the convention; migrate
    `preview.layers.v2 → v3`. Surface to Boz before landing (Azimuth PreviewApp convergence).
 3. Defer §6 to the next arc (operator-designated). E + F are the highest-leverage parity gaps.
+
+---
+
+# LANDED (Vernier, 2026-05-26)
+
+- **Phase 0** `8005223` — this findings note (no code).
+- **Phase 1a** `d336789` — GpuMonitor window fix (§3). Post = average of 5 settled post-toggle samples
+  after skipping 2 transient samples; pre = settled rolling baseline. Deltas now read true, not ~10× low.
+- **Phase 1b** `5a55437` — `.visible` gating for ground/trees/park/lights/arch (group wrappers),
+  celestial+clouds (both CelestialBodies and BasicLights always mount, visibility-gated — no mount swap),
+  fog (`StageFog enabled` prop nulls `scene.fog`), and neon (group inside `LafayetteScene`). **Refinement
+  to the planned "convert inside LafayetteScene":** `hide.building` stays a *mount* gate — production
+  unmounts the live buildings (slab replaces them), so `.visible`-gating ~1082 dead meshes would regress
+  production. Neon (one merged mesh, always visible in production) was the safe internal conversion.
+- **Phase 2** `4fbaec0` — one `Buildings` toggle gating the slab's `.visible`; live buildings unmounted
+  always (`building: true`); `slabBuildings` A/B retired; key `v2 → v3`. Toggle convention documented in
+  `PreviewApp.jsx` (above `SCENE_LAYERS`). Panel honesty (`PanelCaveats`): render-cost-not-memory,
+  deltas-don't-sum, neon-forced-on.
+
+**Open (Jacob's half of the seam):** empirical confirm in Preview — toggles now move the meter by a stable
+repeatable amount, no remount spikes, instant re-enable; Buildings actually moves it; "all on" draws/tris
+match a production `index.html` reading of the same shot (modulo the §6 flagged divergences — esp. D
+UserDot/CourierDots, E log-vs-linear depth, F phone≠mobile).
+
+**Next arc:** §6 divergence inventory (operator-designated) — E + F highest leverage.
