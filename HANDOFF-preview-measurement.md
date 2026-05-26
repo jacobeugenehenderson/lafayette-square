@@ -140,3 +140,114 @@ this touches `PreviewApp.jsx`, which Azimuth's tree arc will also touch at its P
 adopts your convention. Check in with Jacob after **Phase 0** (does the audit match his read of the
 meter misbehavior?) and after **Phase 2** (one-toggle + convention). Surface anything not in this brief
 in your status + commit bodies.
+
+---
+
+# Phase 0 — Audit Findings (Vernier, 2026-05-26) — NO CODE CHANGED
+
+Agent: **Vernier**. Read-only static audit of `PreviewApp.jsx`, `GpuMonitor.jsx`, `PreviewPostFx.jsx`,
+`LafayetteScene.jsx`, `SlabBuildings.jsx` against `Scene.jsx` (production) and the Stage 3D render tree
+(`CartographApp.jsx` + `StageApp.jsx#StageEnvironment`). Empirical meter-toggle run is the Jacob seam
+(he already reports the buildings-toggle symptom — §3 predicts every toggle's behavior to confirm against).
+
+## §1 — Toggle → cost-gating inventory
+
+| Toggle (key) | Gating mechanism | Destructive? | Notes |
+|---|---|---|---|
+| `ground` | conditional-MOUNT `{layers.ground && <BakedGround/>}` (`:698`) | **yes** | unmount disposes ground geo/tex |
+| `buildings` | **prop** → `hiddenLayers.building` on LafayetteScene (`:707`) | n/a (see §2-bug) | `building: !buildings \|\| slabBuildings` — **dead when slab on** |
+| `slabBuildings` | conditional-MOUNT `{layers.slabBuildings && <SlabBuildings/>}` (`:715`) | **yes** | this is the A/B that actually swaps the rendered path |
+| `trees` | conditional-MOUNT (`:718`) | **yes** | |
+| `park` | conditional-MOUNT (`:721`) | **yes** | |
+| `lights` | conditional-MOUNT `<BakedLamps>` (`:722`) | **yes** | |
+| `arch` | conditional-MOUNT (`:723`) | **yes** | |
+| `neon` | **prop** → `hiddenLayers.neon` + `forceNeonOn` on LafayetteScene (`:707-708`) | no | but inside LafayetteScene neon is still `{!hide.neon && <SceneNeon/>}` (mount) — see §2 |
+| `celestial` | conditional **swap** `celestial ? <CelestialBodies/> : <BasicLights/>` (`:692`) | **yes** | OFF substitutes BasicLights, doesn't remove light |
+| `clouds` | conditional-MOUNT `<Atmosphere>` (`:695`) | **yes** | |
+| `fog` | conditional-MOUNT `<StageFog>` (`:686`) | **yes** | |
+| `ao/bloom/aerial/grade/grain` | **prop** → pass mounts inside `<EffectComposer>` (PreviewPostFx) | **yes-ish** | composer rebuilds + recompiles passes on change; `!anyOn` unmounts the whole composer. This is the *only* mechanism postprocessing offers — accepted, but the churn caveat applies to FX deltas too. |
+
+`hide.building`/`hide.neon` inside LafayetteScene are themselves conditional-MOUNT
+(`LafayetteScene.jsx:1276,1291`), not `.visible` — so even the prop-gated toggles unmount their target.
+
+**Verdict:** every SCENE geometry toggle is destructive conditional-mount. Confirms the brief's premise.
+
+## §2 — The buildings double-toggle bug (root cause, confirmed)
+
+Defaults: `buildings:true, slabBuildings:true`. The wiring (`:707`):
+`hiddenLayers.building = !layers.buildings || layers.slabBuildings`.
+
+- **All-on:** `building = !true || true = true` → live buildings hidden (unmounted), **SlabBuildings renders**. Correct, matches production.
+- **Toggle "Buildings" OFF** → `building = !false || true = true` → **unchanged** (still hidden). SlabBuildings (the *rendered* path) untouched. **Meter does not move.** ← exactly Jacob's symptom.
+- **Toggle "Buildings → Slab (A/B)" OFF** → SlabBuildings unmounts AND `building = !true || false = false` → live buildings mount. This is a slab↔live **swap**, not an off.
+
+So there is **no toggle that cleanly turns buildings off**: you'd need both off simultaneously. The "Buildings" checkbox only does anything when slab is already off (i.e. it's a no-op in the default/production config). This is the miswire Phase 2 collapses.
+
+## §3 — Meter behavior: a SECOND, independent bug in `GpuMonitor` (flag — decision needed)
+
+Even with a perfectly-wired `.visible` toggle, the measured delta would read **~10% of the true cost**, for a window-mismatch reason separate from the mount churn:
+
+- `measureToggle` snapshots `pre` at toggle time, then captures `post` after `MEASURE_DELAY = 30` frames (`GpuMonitor.jsx:32-34,148-160`).
+- But `snapshotStats()` averages the last `SAMPLE_WINDOW = 30` **samples**, and samples are pushed **once per 10 frames** (inside the `% 10` block, `:127,143`). So the averaging window spans **~300 frames (~5 s)**, while the pre→post delay is only **30 frames**.
+- At `post`, only ~3 of the 30 averaged samples postdate the toggle → `post ≈ 0.9·pre + 0.1·steady` → **measured Δ ≈ 0.1 × true Δ.**
+
+Consequence: buildings reads ≈0 today for **two** compounding reasons — (a) the toggle changes nothing (§2), and (b) even a working toggle is diluted ~10×. The remount transient (dispose/upload spike) also lands inside those ~3 post samples, so the reading can be noisy or wrong-signed. **This is squarely "needed to trust the reading" — recommend fixing alongside Phase 1** (e.g. `MEASURE_DELAY` ≥ averaging span, or average only post-toggle samples). Flagging as a decision per the GpuMonitor-internals scope line; will not touch it without your nod.
+
+**Predicted per-toggle behavior on a fixed shot/TOD (to confirm empirically):** all geometry toggles move the meter by a diluted, transient-contaminated amount with a remount spike on flip; `buildings` moves ≈0; `slabBuildings` swaps cost (live↔slab draw-call delta, not a zero); `celestial` never fully zeros (BasicLights substitutes); FX toggles move cleanly-ish but rebuild the composer.
+
+## §4 — Render cost vs memory (intent confirmation)
+
+The mobile bomb is per-frame **render** cost (draws/fill/tris). `.visible=false` skips the draw with no
+churn and keeps geometry resident — the right instrument. **Recommend: regime goal = render cost.**
+Memory attribution (needs real disposal) should be a separate explicit mode, not the default. Panel must
+*say* "render cost, not memory" so `.visible` readings aren't misread as a memory budget.
+
+## §5 — CPU vs GPU caveat
+
+An invisible component's `useFrame`/uniform writes still run on CPU (InstancedTrees wind, Atmosphere cloud
+advection, the PostFx FxDriver, the various tickers). So the **`ms`** delta for a `.visible`-gated layer
+won't fully zero — only its **draws/tris** will. `ms` attribution is muddier than draws/tris; the clean
+signals are draws/tris. Worth a one-line panel note.
+
+## §6 — Stage ↔ Preview ↔ Production divergence inventory (FLAG-ONLY — scopes the NEXT arc)
+
+"All-on == production" is the tail; the head is "the product is what the operator sees in **Stage**."
+Below: every divergence across the three consumers. **None fixed here** — slab-completeness is
+SLAB-CONTRACT territory and the operator-designated next arc. Severity = impact on the *measurement's*
+legitimacy (does Preview measure the faithful bake of the authored product, in production's actual regime?).
+
+| # | Divergence | Stage | Preview | Production | Type / severity |
+|---|---|---|---|---|---|
+| **A** | **Buildings path** | LIVE `LafayetteScene` buildings; no `SlabBuildings`; neon/selection off live source | `SlabBuildings` (default) + live hidden | `SlabBuildings` + live hidden | **Intended cutover.** Slab must be the faithful bake of Stage's live. *Candidate slab gap only if slab ≠ live visually.* → parity arc: A/B Stage-live vs slab at matched shot/TOD. |
+| **B** | **Neon force-on** | `forceNeonOn` from store (QA) | `forceNeonOn = layers.neon` → **all tubes forced on** (worst-case) | authored open/closed × TOD, no force | Intended (worst-case profiling). **Caveat:** Preview neon COST ≠ production neon cost. |
+| **C** | **TOD pinned** | live/authored | `ForceDaytimeOnMount` → **10:30 fixed** | live/authored | Intended (repeatable). **Caveat:** night layers (neon, lamp glow, sun) under-measured at 10:30. |
+| **D** | **UserDot / CourierDots** | ❌ neither | ❌ neither | ✅ **both mounted** (`:704-705`) | **Preview drift from production** — "all-on" ≠ prod literal tree; these are unmeasured layers. Small/variable draw cost (geolocation+courier feed). Flag for parity arc. |
+| **E** | **logarithmicDepthBuffer** | ON | **ON** | **OFF** (`Scene.jsx` omits it) | **Critical.** Preview measures under LOG depth; production ships LINEAR → different depth-cull / z-fight / overdraw. `[[project_production_linear_depth_gap]]`, queued Option-A. **Preview≠prod at the depth regime.** |
+| **F** | **Phone mode ≠ mobile path** | n/a | "Phone" is a viewport frame; still desktop settings (antialias on, `dpr [1,1.5]`, shadows soft, full lamps, **textured** SlabBuildings since `IS_MOBILE` false in desktop browser) | real mobile path gates `dpr=1`, antialias off, shadows off, `DeferredStreetLights`, arch hero-only | **Critical for a mobile-perf instrument.** Phone-mode numbers are desktop-quality-settings numbers. The whole mobile arc measures the wrong profile unless Phone adopts IS_MOBILE gating. |
+| **G** | **frameloop** | always | always | **demand + FrameLimiter** (30/60fps, pauses on overlays) | Intended (Preview honest continuous cost). `ms` is continuous-render; prod throttles. |
+| **H** | **BakedGround exag** | per-shot `targetExag` | per-shot `targetExag` (`:698`) | **no `targetExag`** → component default (`Scene.jsx:698`) | Preview/Stage morph ground per shot; production doesn't. Possible visible + measured ground divergence. Flag. |
+| **I** | **PostFX component** | `PostProcessing` + overrides | `PreviewPostFx` (per-effect toggle, reads scene.json) | `PostProcessing` (frozen scene.json) | All-FX-on passes match (N8AO/Bloom/Aerial/Grade/Grain). **Verify in parity arc:** pass ORDER + any production pass NOT exposed as a Preview toggle (e.g. tone/SMAA) → would be silently unmeasured. |
+| **J** | **LampGlowDriver** | custom `LampGlowPump`+`NeonPump` (module uniforms) | `LampGlowDriver` | `LampGlowDriver` | Same uniform outcome, different driver. Not a render-cost divergence. Note only. |
+| **K** | **near plane** | — | fixed `near:1` | CameraRig sets `near:10` in hero, `1` else | Minor depth-precision diff. Note. |
+| **L** | **celestial OFF substitutes BasicLights** | — | OFF → `BasicLights` (a Preview-only fallback that production has no analog for) | always CelestialBodies | Preview-only; only matters when toggled off. Note. |
+
+**Severity ranking for the next arc:** E (linear-vs-log) and F (phone≠mobile) are the two that most undermine
+the mobile-perf numbers — both mean Preview measures a *different render regime* than production ships.
+A is the canonical slab-completeness check (is the slab a faithful bake of Stage's live?). D/H/I are smaller
+parity gaps. B/C/G/J/K/L are intended-or-cosmetic (document, don't "fix").
+
+## §7 — Contradictions with the brief?
+
+None material. The brief's model holds: toggles should gate `.visible`, the buildings double-toggle is
+miswired, conditional-mount is not intentional. **One thing the brief didn't anticipate:** the §3
+GpuMonitor window-mismatch is an *independent* meter bug — fixing the mount churn (Phase 1) is necessary
+but **not sufficient** for trustworthy deltas; §3 must also be addressed or every layer still reads ~10×
+low. Surfacing for a Phase-1-scope decision.
+
+## Recommended sequencing into Phase 1/2
+
+1. Phase 1: mount all production layers unconditionally, gate `.visible`; fold the §3 `MEASURE_DELAY`/window
+   fix in (with Jacob's nod) so the per-frame deltas read true.
+2. Phase 2: collapse buildings to one `.visible`-gated toggle on the slab; document the convention; migrate
+   `preview.layers.v2 → v3`. Surface to Boz before landing (Azimuth PreviewApp convergence).
+3. Defer §6 to the next arc (operator-designated). E + F are the highest-leverage parity gaps.
