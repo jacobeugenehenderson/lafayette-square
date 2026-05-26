@@ -2338,3 +2338,31 @@ Phase W ships, tree-side. Cross-helper seam with Meteorologist landed at `src/li
 - `aWindTier` thresholds (`r > 0.15`, `r > 0.06`) are first-pass. Conifers (narrow lateral branches) might want a per-species override; deferred unless visible.
 - Salon workstage wind toggle direction is fixed east-bound (no preview-only direction knob). Add a slider if iteration calls for it.
 
+---
+
+## 2026-05-25 — Brief 24 — Grove Coverage view (roster-anchored have-vs-need) (Cadastre)
+
+Turned the hand-maintained `arborist/ROSTER-COVERAGE.md` join into a live, **read-only** Grove panel. Parallel-safe with Brief 3A (zero edits to its five files — verified by `git diff --name-only`).
+
+**Shipped:**
+- `arborist/serve.js` — `GET /coverage` (pure read, writes nothing). Joins canonicalized park roster × library (`index.json` + `_chassis/*.meta.json` via `listChassis` + `state/*/compositions.json`) × routing (`park_species_map.json`). Returns `{summary, species:[…]}`. Counts reconcile to 756 placements / 84 canonical species (89 raw, 5 merges).
+- `arborist/roster-name-canon.json` — operator-editable `{raw → canonical}` merge table, seeded from `ROSTER-COVERAGE.md` §intro's 5 merges only. Unmerged raw names pass through visibly so a missing merge is spottable.
+- `src/arborist/CoverageView.jsx` — the Coverage half of a new Grove `Gallery ↔ Coverage` header toggle. Table: coverage badge / count / roster species (+ merged-from) / covering library species / routing with flags. Class filter chips (all/🟢/🟡/🔴). Self-contained `fetch` (read-only, no store slice, no autosave).
+- `src/arborist/Grove.jsx` — view toggle; gallery-only header controls gated behind `view === 'gallery'`; body renders `<CoverageView/>` vs the existing Canvas crop. Gallery behavior untouched.
+- Docs: FEATURES.md Grove section + API table row.
+
+**Coverage rule (operator-confirmed before build — token-match heuristic):**
+- 🔴 **gap** = no `park_species_map` routing to any *existing* library species. Cleanly derivable; reproduces ROSTER-COVERAGE §2 well (~30 species incl. Ash Green, Sweetgum, Bald Cypress, Redbud, Crabapple, Tuliptree…).
+- 🟢 **literal** vs 🟡 **composite** = name-token heuristic: literal iff the park name's distinctive tokens (genus stopword removed; bare-genus → genus token) all appear in a routed library id's id/label/scientific. Provenance derived live, **never persisted** (slab provenance is Brief 25).
+
+**Findings surfaced (the worktable's whole point):**
+- `park_species_map.json` is genuinely stale (2026-04-29) and **wrong in places** — `black locust → gleditsia_triacanthos` (Honey Locust) instead of `robinia_pseudoacacia`. The doc calls black locust 🟢; the live view correctly shows 🟡 because the map mis-routes it. View shows routing so the operator fixes the map by hand.
+- Live data is sometimes *more* accurate than the doc's first-pass guesses: `Elm, American → ulmus_americana` and `Spruce, Norway → picea_abies` are published and route correctly → 🟢 literal (doc had pencilled them composite via `fagus`/`blue_spruce`).
+- No routed id is currently dangling-by-publish (all 69 published), but `pinus_sylvestris`/`ulmus_americana`/`magnolia_sp`/`picea_abies` are published-but-chassis-less → shown as "thin (no chassis)".
+
+**Scope notes (per `feedback_baby_must_surface_scope_drift`):**
+- Literal/composite is NOT cleanly derivable from data (the cousin problem: Pin Oak and White Oak both route to `quercus_alba`; only name identity distinguishes them). The heuristic is faithful for most rows but the operator owns edge calls — surfaced in the UI as a heuristic with routing shown, not hidden.
+- The optional recipe-hint column (leaf pack + height from ROSTER-COVERAGE §1) was left out — it's the one part not cleanly data-derivable and the brief marked it optional. Easy add if wanted.
+
+**Verified:** endpoint counts sum to 756 (via Vite proxy `5173 → 3334`); both JSX files transpile; literal/composite/gap split eyeballed against ROSTER-COVERAGE §1/§2. UI not click-tested in a browser (no browser harness in this run) — wiring + data flow confirmed, structure compiles.
+

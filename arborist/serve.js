@@ -41,6 +41,7 @@ const PREVIEW_DIR  = join(CACHE_DIR, 'preview')
 const VENV_PYTHON  = join(__dirname, '.venv', 'bin', 'python')
 const PREVIEW_PY   = join(__dirname, 'preview-laz.py')
 const SPECIES_MAP  = join(__dirname, 'species-map.json')
+const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 const CONFIG_PATH  = join(__dirname, 'config.json')
 const PORT = 3334
 
@@ -1011,6 +1012,159 @@ const server = createServer(async (req, res) => {
         .map(([species, count]) => ({ species, count }))
         .sort((a, b) => b.count - a.count)
       return jsonRes(res, 200, { total: trees.length, species: sorted })
+    }
+
+    // GET /coverage — roster-anchored "have vs need" join (Brief 24, Cadastre
+    // 2026-05-25). READ-ONLY. Computes, live, the comparison hand-maintained in
+    // arborist/ROSTER-COVERAGE.md: one row per canonicalized park species (from
+    // src/data/park_trees.json), sorted by placement count desc, each tagged
+    //   literal   — a routed library species whose name identity matches
+    //   composite — covered only by a cousin library species
+    //   gap       — no map routing to any existing library species
+    // plus current park_species_map routing (with missing/dangling flags) so the
+    // view doubles as the map-refresh worktable. Writes NOTHING and derives
+    // provenance on the fly — no persisted provenance field (that's Brief 25).
+    if (req.method === 'GET' && path === '/coverage') {
+      // ── Roster (what we're supposed to have) ──────────────────────────
+      const trees = readJsonOrNull(join(ROOT, 'src', 'data', 'park_trees.json'))?.trees || []
+      const canon = readJsonOrNull(ROSTER_CANON)?.canon || {}
+      const canonize = (raw) => canon[raw] || raw
+      const byCanon = new Map()  // canonical -> { count, rawNames:Set }
+      for (const t of trees) {
+        const raw = t.species || 'unknown'
+        const c = canonize(raw)
+        if (!byCanon.has(c)) byCanon.set(c, { count: 0, rawNames: new Set() })
+        const e = byCanon.get(c)
+        e.count++
+        e.rawNames.add(raw)
+      }
+
+      // ── Routing (park_species_map, keyed by raw name) ─────────────────
+      const speciesMap = readJsonOrNull(join(ROOT, 'src', 'data', 'park_species_map.json'))?.map || {}
+
+      // ── Library (what we literally have) ──────────────────────────────
+      const idx = readJsonOrNull(indexPath)?.species || []
+      const libById = new Map()   // libId -> { label, scientific }
+      const published = new Set()
+      for (const s of idx) {
+        published.add(s.species)
+        libById.set(s.species, { label: s.label || null, scientific: s.scientific || null })
+      }
+      const chassis = await listSalonChassis()    // [{name, source:{species}, ...}]
+      const chassisCountBySpecies = new Map()      // libId -> n
+      const chassisSpeciesByName = new Map()       // chassisName -> source.species
+      for (const c of chassis) {
+        const sp = c.source?.species || null
+        chassisSpeciesByName.set(c.name, sp)
+        if (sp) chassisCountBySpecies.set(sp, (chassisCountBySpecies.get(sp) || 0) + 1)
+      }
+      // Authored compositions on disk (may be unpublished). dir name = target
+      // library species id; literal-per-composition = bound chassis's
+      // source.species === that target id.
+      const compositionsBySpecies = new Map()      // libId -> [{slot,name,chassis,literal}]
+      let stateEntries = []
+      try { stateEntries = readdirSync(STATE_DIR, { withFileTypes: true }) } catch {}
+      for (const ent of stateEntries) {
+        if (!ent.isDirectory()) continue
+        const comp = readJsonOrNull(join(STATE_DIR, ent.name, 'compositions.json'))
+        const list = Array.isArray(comp?.compositions) ? comp.compositions : []
+        if (!list.length) continue
+        compositionsBySpecies.set(ent.name, list.map(co => ({
+          slot: co.slot ?? null,
+          name: co.name || null,
+          chassis: co.chassis || null,
+          literal: !!(co.chassis && chassisSpeciesByName.get(co.chassis) === ent.name),
+        })))
+      }
+      const libExists = (id) =>
+        published.has(id) || (chassisCountBySpecies.get(id) || 0) > 0 || compositionsBySpecies.has(id)
+
+      // ── Token-match identity heuristic (Brief 24 chosen rule) ─────────
+      // literal iff the park name's distinctive tokens (genus stopword removed)
+      // all appear in a routed library id's id/label/scientific text. Bare-genus
+      // names (e.g. "Birch") fall back to requiring the genus token itself.
+      // Imperfect on cultivars; a wrong map entry surfaces as composite — the
+      // operator owns the final call and the routing is shown so they verify.
+      const GENUS_STOP = new Set([
+        'maple', 'oak', 'pine', 'linden', 'birch', 'elm', 'spruce', 'willow',
+        'juniper', 'cypress', 'locust', 'poplar', 'cottonwood', 'dogwood',
+        'magnolia', 'cherry', 'ash', 'fir', 'beech', 'plane', 'sycamore',
+      ])
+      const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+      const toks = (s) => norm(s).split(' ').filter(Boolean)
+      const libText = (id) => {
+        const e = libById.get(id)
+        return norm([id, e?.label, e?.scientific].filter(Boolean).join(' '))
+      }
+      const literalMatch = (parkName, routedExisting) => {
+        const ptoks = toks(parkName)
+        const distinct = ptoks.filter(t => !GENUS_STOP.has(t))
+        const need = distinct.length ? distinct : ptoks
+        for (const id of routedExisting) {
+          const text = libText(id)
+          const words = text.split(' ').filter(Boolean)
+          const concat = text.replace(/\s+/g, '')
+          const ok = need.every(t =>
+            words.some(w => w === t || w.includes(t) || t.includes(w)) || concat.includes(t))
+          if (ok) return id
+        }
+        return null
+      }
+
+      // ── Join ──────────────────────────────────────────────────────────
+      const species = []
+      for (const [canonical, { count, rawNames }] of byCanon) {
+        // Routed library ids: union across merged raw names, order-preserving.
+        const routed = []
+        for (const raw of rawNames) {
+          for (const id of (speciesMap[raw] || [])) if (!routed.includes(id)) routed.push(id)
+        }
+        const routing = routed.map(id => ({
+          libId: id,
+          label: libById.get(id)?.label || null,
+          published: published.has(id),
+          chassisCount: chassisCountBySpecies.get(id) || 0,
+          compositionCount: (compositionsBySpecies.get(id) || []).length,
+          dangling: !libExists(id),   // routed but nothing in the library answers to it
+        }))
+        const routedExisting = routed.filter(libExists)
+        const dangling = routing.filter(r => r.dangling).map(r => r.libId)
+
+        const coverage = routedExisting.length === 0
+          ? 'gap'
+          : (literalMatch(canonical, routedExisting) ? 'literal' : 'composite')
+
+        const covering = routedExisting.map(id => ({
+          libId: id,
+          label: libById.get(id)?.label || null,
+          published: published.has(id),
+          chassisCount: chassisCountBySpecies.get(id) || 0,
+          compositions: compositionsBySpecies.get(id) || [],
+        }))
+
+        species.push({
+          species: canonical,
+          count,
+          mergedFrom: [...rawNames].sort(),
+          coverage,
+          covering,
+          routing,
+          mapMissing: routed.length === 0,
+          dangling,
+        })
+      }
+      species.sort((a, b) => b.count - a.count || a.species.localeCompare(b.species))
+
+      const summary = {
+        totalPlacements: trees.length,
+        canonicalSpecies: species.length,
+        rawNames: new Set(trees.map(t => t.species || 'unknown')).size,
+        literal:   species.filter(s => s.coverage === 'literal').length,
+        composite: species.filter(s => s.coverage === 'composite').length,
+        gap:       species.filter(s => s.coverage === 'gap').length,
+        merges:    Object.keys(canon).length,
+      }
+      return jsonRes(res, 200, { summary, species })
     }
 
     // POST /atlas/bake?look=<name> — per-Look tree atlas + UV-rewritten GLBs.

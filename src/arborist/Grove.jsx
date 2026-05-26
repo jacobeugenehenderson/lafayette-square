@@ -18,6 +18,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Html } from '@react-three/drei'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
+import CoverageView from './CoverageView.jsx'
 
 const TILE_SPACING = 8        // meters between tiles, edge-to-edge centers
 const QUALITY_COLOR = {
@@ -47,6 +48,10 @@ export default function Grove() {
   //   'all'    — every rated variant in the library (browse mode)
   // Click action mirrors the mode: in 'look' mode click removes from
   // the active Look; in 'all' mode click adds/removes membership.
+  // Top-level view: 'gallery' (the by-model 3D crop — keep/relocate the
+  // existing tile view here) ↔ 'coverage' (Brief 24 — roster-anchored
+  // have-vs-need table). The scope/quality controls below belong to gallery.
+  const [view, setView] = useState('gallery')
   const [scope, setScope] = useState('look')
   const [filterQuality, setFilterQuality] = useState(0)
   const [hovered, setHovered] = useState(null)
@@ -135,11 +140,28 @@ export default function Grove() {
           letterSpacing: '0.1em', textTransform: 'uppercase',
           fontSize: 12, color: '#fff',
         }}>Grove</strong>
+        <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
+          {[
+            { v: 'gallery',  label: 'Gallery' },
+            { v: 'coverage', label: 'Coverage' },
+          ].map(o => (
+            <button key={o.v} onClick={() => setView(o.v)}
+              style={{
+                border: 'none', padding: '6px 12px', fontSize: 11,
+                background: view === o.v ? 'rgba(255,255,255,0.16)' : 'transparent',
+                color: view === o.v ? '#fff' : '#aaa',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>{o.label}</button>
+          ))}
+        </div>
         <span style={{ color: '#888' }}>
-          {scope === 'look'
+          {view === 'coverage'
+            ? <>roster-anchored coverage · read-only</>
+            : scope === 'look'
             ? <>roster for <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong> · click to remove</>
             : <>all rated variants · click to add/remove from <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong></>}
         </span>
+        {view === 'gallery' && (
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
           <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
             {[
@@ -176,9 +198,12 @@ export default function Grove() {
             {scope === 'look' ? `${visible.length} in roster` : `${visible.length} of ${variants.length}`}
           </span>
         </span>
+        )}
       </header>
 
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        {view === 'coverage' && <CoverageView />}
+        {view === 'gallery' && <>
         {loading && (
           <div style={overlayMsg}>Loading manifests…</div>
         )}
@@ -247,6 +272,7 @@ export default function Grove() {
             boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
           }}>{toast}</div>
         )}
+        </>}
       </div>
     </div>
   )

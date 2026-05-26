@@ -195,6 +195,21 @@ The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innov
 
 **Set as Meteorologist canary** (per-tile hover-card affordance). Click `→ Set as Meteorologist canary` on any tile to publish `{species, variantId, lookId}` into `localStorage.meteorologist-canary-tree`. Meteorologist's CanaryScene listens for the `storage` event (cross-tab, same origin) and swaps its hero tree to match — useful for sanity-checking a freshly adopted variant under stormy weather conditions without leaving Arborist. Per-operator UI preference; not authored, not per-Look state. Contract lives in `ARCHITECTURE.md` "Arborist ↔ Meteorologist canary contract".
 
+### Gallery ↔ Coverage view toggle (Brief 24, Cadastre 2026-05-25)
+
+The Grove header carries a top-level view toggle:
+
+- **Gallery** — the existing by-model 3D crop (per-Look `In Look` / `All Rated` scope + quality filters + tile hover-card). Unchanged; all roster-curation behavior lives here.
+- **Coverage** (`src/arborist/CoverageView.jsx`) — a **read-only**, roster-anchored "have vs need" table. One row per *canonicalized* Lafayette Square park species (from `src/data/park_trees.json`), sorted by placement count descending, each tagged 🟢 **literal** / 🟡 **composite** / 🔴 **gap**, with the covering library species and the current `park_species_map.json` routing. It reproduces, live, the join hand-maintained in `arborist/ROSTER-COVERAGE.md`. Computed by `GET /coverage`; writes nothing.
+
+**Coverage classification (derived on the fly, never persisted — slab provenance is the separate Brief 25):**
+- 🔴 **gap** — the species has no `park_species_map` routing to any *existing* library species (no published manifest, no chassis, no composition). This is the roster-anchored shopping list.
+- 🟢 **literal** vs 🟡 **composite** — a name-token heuristic: literal iff the park name's distinctive tokens (genus stopword removed; bare-genus names fall back to the genus token) all appear in a routed library id's `id` / `label` / `scientific` text. Imperfect on cultivars (e.g. honeylocust "thornless") and a stale/wrong map entry surfaces as composite (e.g. `black locust → gleditsia_triacanthos` mis-routing) — **the operator owns the final literal/composite call**; the routing column is shown so they can verify and hand-correct `park_species_map.json`.
+
+**Map-refresh worktable.** Each row displays its current `park_species_map.json` routing and flags ⚠ missing (no map entry) / ⚠ dangling (routed at a library id nothing answers to) / thin (routed at a published-but-no-chassis species). The view *displays* routing only — it never writes `park_species_map.json` (curation is by hand). This is the surface for refreshing the stale (2026-04-29) map so `bake-trees.js#pickVariant` fans the park-names onto the right published species.
+
+**Canonicalization** — `arborist/roster-name-canon.json` (`{ "<raw name>": "<canonical name>" }`) merges messy duplicate roster names (casing / word-order / cultivar) before counting, so the coverage list doesn't double-count. Operator-editable; seeded from the 5 merges in `ROSTER-COVERAGE.md` §intro (Oak Pin + restricted = 46, Bald Cypress + Baldcypress = 25, etc.). Unmerged raw names pass through as their own canonical name (visible, so a missing merge is spottable). Canonical counts sum to the full 756 placements.
+
 ---
 
 ## API endpoints (`arborist/serve.js`, port 3334)
@@ -212,6 +227,7 @@ Mounted under `/api/arborist` from the web app via Vite proxy.
 | `POST` | `/species/:id/bake` | Run `python bake-tree.py --species=<id>` |
 | `DELETE` | `/species/:id` | Remove published artifacts + state |
 | `GET` | `/inventory` | Species histogram from `src/data/park_trees.json` |
+| `GET` | `/coverage` | **Read-only (Brief 24, Cadastre 2026-05-25):** roster-anchored have-vs-need join — canonicalized park species (`park_trees.json` merged via `roster-name-canon.json`) × library (`index.json` + `_chassis/*.meta.json` + `state/*/compositions.json`) × routing (`park_species_map.json`). Returns `{summary, species:[{species,count,mergedFrom,coverage,covering,routing,mapMissing,dangling}]}`. Provenance derived on the fly, nothing written. Powers the Grove Coverage view. |
 | `GET` | `/procedural/species` | List of procedural species + hero entries |
 | `GET\|POST` | `/procedural/:species/seedlings` | Procedural seedlings overlay (`arborist/state/<species>/seedlings.json`); GET returns `effective` field per variant (PRESETS base merged with operator overlay) |
 | `POST` | `/procedural/generate` | Returns `model/gltf-binary` directly for a single (species, slot, seed, params) — used by the workstage dice/preview loop |
