@@ -230,6 +230,31 @@ Proceeding to Phase A (no Jacob check-in needed pre-A; the A→B seam is the sch
   tube positions / categories / colors should be identical, and the listing-lit vs
   zoning-default split unchanged. Transform graph clean.
 
+**Phase D — selection / click / place cards (code-complete; commit lands this phase).**
+
+Findings shrank this phase to one real change:
+- **Selection + place card already work in slab mode** via Phase B's `select(id)`/`setHovered(id)`
+  raycast wiring. `PlaceCard` (`Controls.jsx:54`) is a store-driven 2D overlay that resolves
+  `selectedId → record` through the content layer (`getByBuildingId` / `useListings`) — exactly
+  the C2 split (slab = spatial identity; content = what to display). No re-plumb needed; the
+  card opens with correct content once the id is selected. Hover highlight is the Phase-B
+  in-shader emissive. (Card UI itself isn't mounted in the Preview harness — that flow verifies
+  in the real app post-cutover; the wiring is environment-agnostic.)
+- **Added `SlabSelectionRing`** — the only 3D selection visual the live path mounted per
+  `<Building>` (hidden in slab mode). Rebuilt from the index footprint (world coords, expanded
+  0.15m, #ff6644 additive pulse, radius 0.045), ring Y = `baseY − 0.15` (≡ live for flat roofs,
+  within a roof-peak for shaped). Like the live ring it does not terrain-lift (A/B parity).
+- **⚠ SCOPE-DRIFT FLAG (sim-open neon):** the brief's verify line "sim-open neon toggles per
+  building" is **stale**. `usePlaceState.openBuildings` is read only by `LafayetteScene:620`'s
+  `isSimOpen`, which fed the **pre-Path-B per-Building neon** — the merged `SceneNeon`/`NeonBands`
+  gates purely on listing hours / `forceNeonOn`, NOT on `openBuildings`. So sim-open drives no
+  rendered neon **today, in the live path too**. I did NOT resurrect it (adding it to the slab
+  neon would diverge from the live mount = non-parity scope creep). If "randomize open places →
+  neon" is wanted as a feature, it's a **separate brief** (wire `openBuildings` into `openPlaces`
+  in BOTH paths). Surfacing per the scope-drift discipline; no action taken.
+- **Verify (Jacob):** Preview slab A/B on — click a building → emissive highlight + ring appear
+  on the correct building; hover highlights; ring hugs the roofline. Transform graph clean.
+
 ## Phase A — Producer: emit the per-building index (no consumer change)
 
 In `bake-buildings.js`, while accumulating each building into the material buckets, record

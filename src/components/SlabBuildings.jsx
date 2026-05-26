@@ -230,6 +230,13 @@ export default function SlabBuildings({ lookId } = {}) {
     }
   })
 
+  // Selection ring — mounted here (the live path mounts it per <Building>,
+  // which is hidden in slab mode). Resolve the selected building's footprint
+  // from the index. keyed by id so the pulse-in replays on each new select.
+  const selectedId = useSelectedBuilding((s) => s.selectedId)
+  const indexForRing = useSlabBuildingIndex((s) => s.index)
+  const selectedEntry = (selectedId && indexForRing) ? indexForRing.byId.get(selectedId) : null
+
   if (!meshes) return null
   if (scene?.layerVis?.building === false) return null
 
@@ -247,8 +254,61 @@ export default function SlabBuildings({ lookId } = {}) {
           registerShader={(sh) => shadersRef.current.push(sh)}
         />
       ))}
+      {selectedEntry && <SlabSelectionRing key={selectedId} entry={selectedEntry} />}
     </group>
   )
+}
+
+// ── Selection ring (neon outline around the selected building) ──────────
+// Mirrors LafayetteScene.SelectionRing: #ff6644 additive tube, 0.045 radius,
+// footprint expanded 0.15m outward from its centroid, pulse-in then breathe.
+// Built in world coords from the index footprint; ring Y = baseY − 0.15 (the
+// live ring sits at foundationY+size[1]+0.15, which equals baseY−0.15 for flat
+// roofs — the common case — and within a roof-peak for shaped roofs). Like the
+// live ring, it does not terrain-lift (matches the live mount for A/B parity).
+const _RING_COLOR = new THREE.Color('#ff6644')
+function SlabSelectionRing({ entry }) {
+  const ringRef = useRef()
+  const phaseRef = useRef(0)
+
+  const ringGeometry = useMemo(() => {
+    const fp = entry.footprint
+    if (!fp || fp.length < 3) return null
+    const y = entry.baseY - 0.15
+    let cx = 0, cz = 0
+    for (const [x, z] of fp) { cx += x; cz += z }
+    cx /= fp.length; cz /= fp.length
+    const points = fp.map(([x, z]) => {
+      const lx = x - cx, lz = z - cz
+      const len = Math.sqrt(lx * lx + lz * lz) || 1
+      return new THREE.Vector3(x + (lx / len) * 0.15, y, z + (lz / len) * 0.15)
+    })
+    points.push(points[0].clone())
+    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0)
+    return new THREE.TubeGeometry(curve, points.length * 8, 0.045, 6, false)
+  }, [entry])
+
+  const ringMaterial = useMemo(() => new THREE.MeshBasicMaterial({
+    color: _RING_COLOR, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
+  }), [])
+
+  useFrame((_, delta) => {
+    if (!ringRef.current) return
+    const mat = ringRef.current.material
+    const phase = phaseRef.current
+    if (phase < 1) {
+      phaseRef.current = Math.min(1, phase + delta * 2.5)
+      const t = phaseRef.current
+      const pulse = t < 0.5 ? t * 2 * 1.4 : 1.4 - (t - 0.5) * 2 * 0.4
+      mat.opacity = Math.min(1, pulse * 0.85)
+    } else {
+      mat.opacity = 0.75 + Math.sin(Date.now() * 0.003) * 0.08
+    }
+  })
+
+  if (!ringGeometry) return null
+  return <mesh ref={ringRef} geometry={ringGeometry} material={ringMaterial} renderOrder={999} />
 }
 
 // overlay() blend (mirrors LafayetteScene) — kept as a glsl string fragment.
