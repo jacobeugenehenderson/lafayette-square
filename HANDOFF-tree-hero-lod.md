@@ -219,3 +219,13 @@ with Jacob at:** the **A→B seam** (QC the derived classification — does the 
 must still read beautifully through the full pan — impostors earn their place by being invisible
 as impostors, not just by measuring faster. Surface anything not in this brief in your status +
 commit bodies.
+
+**⚠️ Concurrent-arc convergence (`SLAB-CONTRACT.md` + `Scene.jsx`).** A second arc is in flight
+in parallel — the hybrid buildings bake (`HANDOFF-buildings-bake.md`, agent Alidade). The two
+arcs are on disjoint files **except** `SLAB-CONTRACT.md` (buildings bumps it to v2; you add a
+`heroTier` field) and `src/components/Scene.jsx` (buildings' Phase E swaps `LafayetteScene`→
+`SlabBuildings`; your Phase E wires the tier render). **The buildings arc is further along and
+lands FIRST on both files — you rebase on top of its v2 contract, not the reverse.** Before you
+touch either `SLAB-CONTRACT.md` or `Scene.jsx`, **stop and surface to Boz** to confirm the
+buildings cutover has landed; then add `heroTier` to the *already-v2* contract and wire your tier
+render into the *already-`SlabBuildings`* Scene. Do not race a second cutover into those files.

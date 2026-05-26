@@ -311,3 +311,12 @@ owns them: `RIBBONS.md`, ground / terrain bake. Check in with Jacob at the **Pha
 (schema review) and **before Phase E** (the production cutover is the irreversible-feeling
 one). **Aesthetics + perf are co-equal** (49/51 doctrine): the merged mesh must look
 identical to the live buildings — no flatter lighting — not just measure faster.
+
+**⚠️ Concurrent-arc convergence (`SLAB-CONTRACT.md` + `Scene.jsx`).** A second arc is in flight
+in parallel — the hero-tree visibility-LOD (`HANDOFF-tree-hero-lod.md`, agent Azimuth). The two
+arcs are on disjoint files **except** `SLAB-CONTRACT.md` (you bump it to v2; trees adds a
+`heroTier` field) and `src/components/Scene.jsx` (your Phase E swaps `LafayetteScene`→`SlabBuildings`;
+trees' Phase E wires the tier render). **This arc is further along and lands FIRST on both files.**
+Do NOT defer your `SLAB-CONTRACT` v2 bump or `Scene.jsx` cutover for the tree arc — proceed
+normally. But **surface to Boz before touching either file** so the sequencing is confirmed; the
+tree arc rebases on top of your v2 contract, not the reverse.
