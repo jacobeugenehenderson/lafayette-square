@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1779515537059,
+  "bakedAt": 1779759608149,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -160,9 +160,9 @@
   },
   "bloom": {
     "values": {
-      "intensity": 0.5,
-      "threshold": 0.85,
-      "smoothing": 0.4
+      "intensity": 0,
+      "threshold": 1,
+      "smoothing": 0
     }
   },
   "ao": {
@@ -248,17 +248,17 @@
   "heroKeyframes": [
     {
       "position": [
-        -519,
-        135,
-        394
+        -540,
+        55,
+        362
       ],
       "fov": 22
     },
     {
       "position": [
-        -280,
-        68,
-        11
+        -260,
+        55,
+        98
       ],
       "fov": 22
     }
