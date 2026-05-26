@@ -5,9 +5,10 @@
 > sidecar** so the runtime resolves identity (click / neon / place state) against the
 > slab instead of rebuilding from `src/data/buildings.json` at runtime.
 
-**You are the dispatched agent. Name yourself** (masonry theme fits — Mortar, Course,
-Lintel, Keystone, Quoin — your pick; **not** Holm or any retired name). You own this
-end-to-end across the phases below. This is a *load-bearing, multi-file* migration
+**You are the dispatched agent. Name yourself** — pick it independently, from your own
+read of the work; the only constraints are that it be novel and NOT already used in this
+project (check the claimed roster in `NOTES.md` / `BACKLOG.md` / commits before you choose).
+No suggested themes — the name is yours. You own this end-to-end across the phases below. This is a *load-bearing, multi-file* migration
 touching the producer, a new consumer, the neon path, and the production cutover — so
 it is **strictly sub-phased**. Do **not** bundle producer geometry changes with the
 consumer swap; that hides which layer broke what (the D.3 bundling lesson).
