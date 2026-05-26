@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1779773920078,
+  "bakedAt": 1779775853781,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -201,9 +201,9 @@
   },
   "grade": {
     "values": {
-      "contrast": 0,
+      "contrast": 0.28,
       "toe": 0.6,
-      "saturation": 1.35,
+      "saturation": 1.25,
       "vignette": 0.7
     }
   },
@@ -248,17 +248,17 @@
   "heroKeyframes": [
     {
       "position": [
-        -540,
-        55,
-        362
+        -258,
+        78,
+        298
       ],
       "fov": 22
     },
     {
       "position": [
-        -260,
-        55,
-        98
+        -288,
+        57,
+        -54
       ],
       "fov": 22
     }
