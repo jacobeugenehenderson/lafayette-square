@@ -31,6 +31,15 @@ two consumers of the same slab with **identical render trees**; Preview adds ins
 the top*. A toggle that changes the **mount** (rather than visibility) forks Preview from production
 and contaminates the measurement with mount/unmount transients.
 
+**The full parity chain — measurement only matters if it traces back to Stage.** Per `cartograph/
+FEATURES.md`: **"the product is what the operator sees in Stage."** The chain is **Stage authors
+(live) → bake → slab → Preview measures it == Production ships it.** So "all on == production" is the
+*tail* of the chain, not the whole of it: the thing you measure in Preview is only legitimate if it's
+the faithful bake of what **Stage displays**. Verifying only Preview↔Production can miss that *both*
+diverge from Stage — e.g., an authored layer that didn't bake through (a slab gap; the "Stage dark
+but Preview fine = half-baked slab" failure mode). Your audit cross-checks against Stage and **flags**
+divergence; it does **not fix** slab-completeness gaps (that's SLAB-CONTRACT territory — see scope).
+
 ## Current state (verified 2026-05-26)
 
 - **All geometry layers conditional-MOUNT:** `{layers.fog && …}`, `ground`, `slabBuildings`, `trees`,
@@ -55,6 +64,12 @@ and contaminates the measurement with mount/unmount transients.
    `src/components/Scene.jsx`'s mount list. Enumerate every divergence (the live-vs-slab buildings
    path, any Preview-only mounts, prop differences). The target end-state: all-on Preview is production's
    exact render tree.
+2b. **And == Stage?** Cross-check the measured layer set against what **Stage** (`/cartograph.html` in
+   shot modes) displays — Stage is the authored source of truth ("the product is what the operator sees
+   in Stage"). A layer Stage shows but Preview doesn't measure = a candidate **slab gap** (authored-but-
+   not-baked); a layer Preview/production renders that Stage doesn't = **drift**. **Flag these as
+   findings — do NOT fix them here** (slab-completeness is SLAB-CONTRACT territory). The point is to
+   confirm the meter measures the faithful bake of the authored product, and to surface it if it doesn't.
 3. **Sanity-test the meter empirically.** On a fixed shot/TOD, toggle each layer and record the
    draws/tris/ms delta. Flag any toggle whose delta is implausible (buildings ≈ 0 today). Establish
    whether there's a fixed **baseline** cost (everything off) that should be subtracted, and whether
@@ -110,7 +125,11 @@ Editing `src/components/Scene.jsx` (production render tree is the reference, not
 it); the GpuMonitor's internals beyond what's needed to trust the reading (no new overdraw-capture
 instrumentation unless the audit proves it necessary — surface as a decision); the neon and tree feature
 arcs (you set the toggle convention they follow; you don't implement their layers). Memory-attribution
-mode is out unless the audit elevates it.
+mode is out unless the audit elevates it. **Fixing Stage↔Preview↔Production parity / slab-completeness
+gaps is OUT — flag them as findings only;** closing a slab gap is SLAB-CONTRACT work. **That fix is the
+designated NEXT arc (operator, 2026-05-26)** — so make your flagged divergence inventory clean and
+complete; it's the input that scopes the next arc (it feeds `cartograph/BACKLOG.md`'s "Slab completeness"
+track). Enumerating well here is part of the job even though fixing isn't.
 
 ## Commit boundaries
 
