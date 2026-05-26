@@ -66,6 +66,39 @@ unified atlas material so they match the mesh, and span only the ~180° arc the 
 Write a 10-line findings note in this brief's status before Phase A. **Surface anything that
 contradicts this brief.**
 
+### Phase 0 — Findings (Azimuth, 2026-05-26)
+
+1. **Inspection complete.** Runtime consumers: `InstancedTrees` is mounted by Scene (prod),
+   PreviewApp, CartographApp (Stage), ToyTrees — all read `baked/default.json` (lod2). Material:
+   `treeAtlasMaterial.js` (one shared `MeshStandardMaterial`, `injectFoliageSway` per-draw uniform
+   mutation). Producer: `bake-trees.js` (placement only — loads NO geometry, just positions +
+   variant URLs). GPU readout: `GpuMonitor` reads `renderer.info` (draws/tris/ms) + per-layer
+   `measureToggle` on the `trees` layer.
+2. **Hero pan is NOT a 180° pan.** Slab: 2 keyframes, pos `[-258,78,298]↔[-288,57,-54]`, sine
+   ping-pong period 720, fov **22 (telephoto)**, target `HERO_TARGET=[400,45,-100]` (`heroSubject`
+   null → fallback; Scene/Preview/Stage parity ✓). Camera **heading sweep ≈ 27°**, not 180°.
+   ~60% of trees (448/745) fall in-frame at some pose; ~316 in-frame per pose.
+3. **"180° arc" reinterpreted.** Per-tree viewing-azimuth span across the pan is *small* (median
+   5°, p90 42°). The wide spread is the **union of view azimuths across all instances of a
+   shared per-species impostor** (trees on the near/far side of the park are seen from opposite
+   directions). So size K against the cross-instance azimuth union, NOT a camera pan that doesn't
+   happen. ⚠️ Possible spec-compression: a *static* hero split + near-fixed per-tree azimuth may
+   not need K=5–9 + runtime relight — revisit with Phase-B cost numbers.
+4. **Draw baseline:** 745 instances, 39 variants, **≈377 `url×tile` InstancedMesh draw groups**
+   (pre-roster-subst). Live frame-ms/tris baseline must be read off the running Preview GPU panel
+   (toggle `trees` layer for attribution). ⚠️ GpuMonitor has **no overdraw field** — overdraw
+   shows up only as frame-ms under a fill-bound mobile profile.
+5. **⚠️ CONTRADICTION — lod0/lod1 are NOT dead track.** lod0 is the authoring anchor LOD: Salon
+   `SpecimenViewport` (×2), Meteorologist `CanaryScene`, Workstage LOD picker, ProceduralWorkstage,
+   `useArboristStore` default. Unreferenced only in the *LS production runtime* (ships lod2).
+   **Phase F as written ("stop producing lod0/lod1 in publish-glb") would break the author tools.**
+   Recommend re-scoping Phase F to "confirm lod2-only in the prod bake" and NOT touching publish-glb.
+6. **Classifier feasibility:** proper frustum projection (not a cone approx) is non-degenerate;
+   analytic occlusion via nearer-tree angular-disk overlap is ~12M ops at bake (fine). Gap:
+   classifier needs a per-variant **canopy bbox (radius/height)** which `bake-trees.js` doesn't
+   currently load — must source it (trees-atlas manifest or one geometry scan). Threshold
+   calibration is exactly what the Grove QC overlay + A→B seam exist to do.
+
 ## Phase A — Bake-time visibility classification → per-tree `heroTier` (no render change)
 
 Add an **analytic** (CPU, no GPU/headless-GL) prominence pass to the tree placement bake. For N
