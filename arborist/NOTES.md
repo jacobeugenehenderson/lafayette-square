@@ -2391,3 +2391,23 @@ Flipped the Salon's authoring unit from LIBRARY species → **roster species**. 
 
 **Verified:** `node --check` clean on serve.js + roster-coverage.js + generate-salon.js; `computeCoverage()` reconciles to 756 / 84 canonical; routing endpoint tested live (compose, alias propagation, not-available reflected in `authoringState`); full SalonWorkstage import tree bundles clean via esbuild. **`vite build` blocked by a pre-existing dangling symlink** (`public/photos/lafayette-square/other → ../../../photos-wikimedia/other`, missing) in the public-copy step — not code; verified via esbuild bundle instead. UI not click-tested in a browser (no harness this run).
 
+## 2026-05-25 — Brief 27 — Grove population from Salon compositions (retire the rating gate) (Scion)
+
+Narrowed the Grove from a *"gallery of every **rated** variant"* to a **roster-driven view of published Salon compositions**. Depends on Brief 26 (canonical-id-per-roster-species); dispatched after `83edde9`.
+
+**The reframe that resized the brief (pre-dispatch inspection):** the Grove visibility gate was never really in `Grove.jsx`. It's `serve.js#/grove` line ~295 (`if (quality < 2) continue`), reading **raw manifests** via `scanBakedManifests()` — NOT `index.json`. And `quality >= 2` is the **de-facto "published" signal**: `generate-salon.js#patchManifestForSalon` stamps every Salon-published variant `qualityOverride: 4`, while raw ingested vendor chassis (`acer_rubrum`, `abies_concolor` — `source:glb`, quality 0, with LODs) stay at 0. So the rating gate and the published-not-raw-chassis gate are the **same line** — removing it would flood the Grove with unpublished chassis. Consequence: **acceptance criteria 1/2/4 were already functionally wired** (Re-publish → stamp 4 → `syncLookRoster` → `design.json#/trees` → `Grove.jsx#inLook`, no manual rate step). The real work was **criterion 3** — retire the *UI rating-gate affordances + stale mental model*, not a data rewire.
+
+**Shipped:**
+- `src/arborist/Grove.jsx` — removed `filterQuality` state + the All/≥Fill/≥Mid/Hero filter control; relabeled scope `All Rated` → `All Published`; rewrote empty-state + header copy to the compose-and-Re-publish model (no "rate variants in a species workstage" instruction); rewrote the file doc comment. Kept: `inLook` per-Look membership toggle (AC4), the EditorCard rating ladder (still authors `qualityOverride`), tile quality coloring, Gallery↔Coverage toggle.
+- `arborist/serve.js` — `/grove` gate comment reframed as **published-not-raw-chassis** (mechanism `quality < 2` unchanged — it correctly keeps raw chassis out; published compositions are always Hero so they pass).
+
+**`qualityOverride` downstream (AC5, reported):** `bake-trees.js#pickVariant` does **NOT** read `qualityOverride` — it reads the resolved `v.quality` from `index.json` (line ~187) for the hero-lottery `maxQ` tiering. `qualityOverride` is consumed only in `build-index.js` (the `effQuality<2` runtime gate + the `quality` value it writes into `index.json`). So the rating ladder stays as the authoring surface for a still-consumed field; only its Grove-visibility role retired.
+
+**Scope walls honored:** no touch to the bake gesture (`/atlas/bake`), CoverageView (Brief 24), the Salon navigator (Brief 26), the LS runtime/shaders, or the slab artifacts. `generate-salon.js` read for inspection only — not edited.
+
+**Surfaced / deferred (per `feedback_baby_must_surface_scope_drift`):**
+- **Explicit `v.published` marker** — a clean decoupling of the `/grove` gate from the rating *value* (so a hand-downrated published composition stays visible) would be a `generate-salon` schema addition touching the publish path. Named, not built — out past this brief's scope wall.
+- **Quality lottery vestigiality** — under one-composition-per-roster-species the `pickVariant` hero-lottery usually has a single candidate and everything's Hero(4); whether the rating control retires entirely is the separate bake-trees question the brief deferred. Not resolved here.
+
+**Verified:** `node --check` clean on `serve.js`; `Grove.jsx` esbuild-bundles clean. `vite build` still blocked by the same pre-existing dangling `public/photos/.../other` symlink (not code — see Brief 26 entry). UI not click-tested in a browser (no harness this run).
+

@@ -1,10 +1,15 @@
 /**
- * Grove — gallery of every rated GLB variant in the library, all visible
- * at once on a single ground plane. Use case: "I rated a bunch of trees
- * and a couple don't really work; I have no way of easily figuring out
- * which they are." The Grove shows them side-by-side so duds jump out;
- * one click on a tile flips `excluded` and the runtime drops the variant
- * from the picker.
+ * Grove — gallery of published Salon compositions, all visible at once on
+ * a single ground plane. Population is roster-driven (Brief 27): a
+ * composition appears once it's been Re-published in the Salon — publish
+ * stamps it Hero and `syncLookRoster` adds it to the Look's
+ * `design.json#/trees`. There is no separate "rate it, then add it" step;
+ * visibility = published-and-in-roster, not a Fill/Mid/Hero rating.
+ *
+ * Two scopes: "In Look" (the active Look's roster) and "All Published"
+ * (every published composition in the library — the surface for adding a
+ * library composition to a Look it isn't yet in). Duds still jump out
+ * side-by-side; one click on a tile's card flips `excluded`.
  *
  * Distinct from the Stage app downstream (which composes a Look from the
  * trees this view publishes). This is the operator's tree-pool review.
@@ -43,17 +48,17 @@ export default function Grove() {
   const setGroveVariantOverride = useArboristStore(s => s.setGroveVariantOverride)
   const activeLookTrees = looksRosters[activeLookId] || []
 
-  // Two viewing modes:
+  // Two scopes (both populated by published compositions — visibility is
+  // never gated on a Fill/Mid/Hero rating; see file header / Brief 27):
   //   'look'   — only the active Look's roster (curation review)
-  //   'all'    — every rated variant in the library (browse mode)
-  // Click action mirrors the mode: in 'look' mode click removes from
-  // the active Look; in 'all' mode click adds/removes membership.
-  // Top-level view: 'gallery' (the by-model 3D crop — keep/relocate the
-  // existing tile view here) ↔ 'coverage' (Brief 24 — roster-anchored
-  // have-vs-need table). The scope/quality controls below belong to gallery.
+  //   'all'    — every published composition in the library (browse + the
+  //              surface for adding a library composition to this Look)
+  // Click action mirrors the scope: in 'look' the card removes from the
+  // active Look; in 'all' it adds/removes membership.
+  // Top-level view: 'gallery' (the by-model 3D crop) ↔ 'coverage'
+  // (Brief 24 — roster-anchored have-vs-need table).
   const [view, setView] = useState('gallery')
   const [scope, setScope] = useState('look')
-  const [filterQuality, setFilterQuality] = useState(0)
   const [hovered, setHovered] = useState(null)
   const [toast, setToast] = useState(null)
 
@@ -102,14 +107,13 @@ export default function Grove() {
   const visible = useMemo(() => {
     let rows = variants
     if (scope === 'look') rows = rows.filter(v => inLook(v))
-    if (filterQuality > 0) rows = rows.filter(v => v.quality >= filterQuality)
     return [...rows].sort((a, b) => {
       if (b.quality !== a.quality) return b.quality - a.quality
       const s = (a.speciesLabel || a.speciesId).localeCompare(b.speciesLabel || b.speciesId)
       if (s !== 0) return s
       return a.variantId - b.variantId
     })
-  }, [variants, scope, filterQuality, activeLookTrees])
+  }, [variants, scope, activeLookTrees])
   // (activeLookTrees is recomputed each render via looksRosters[activeLookId])
 
   const cols = Math.max(1, Math.ceil(Math.sqrt(visible.length)))
@@ -158,37 +162,21 @@ export default function Grove() {
           {view === 'coverage'
             ? <>roster-anchored coverage · read-only</>
             : scope === 'look'
-            ? <>roster for <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong> · click to remove</>
-            : <>all rated variants · click to add/remove from <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong></>}
+            ? <>published compositions in <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong> · click to remove</>
+            : <>all published compositions · click to add/remove from <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong></>}
         </span>
         {view === 'gallery' && (
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
           <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
             {[
               { v: 'look', label: 'In Look' },
-              { v: 'all',  label: 'All Rated' },
+              { v: 'all',  label: 'All Published' },
             ].map(o => (
               <button key={o.v} onClick={() => setScope(o.v)}
                 style={{
                   border: 'none', padding: '6px 10px', fontSize: 11,
                   background: scope === o.v ? 'rgba(255,255,255,0.12)' : 'transparent',
                   color: scope === o.v ? '#fff' : '#aaa',
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}>{o.label}</button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
-            {[
-              { v: 0, label: 'All' },
-              { v: 2, label: '≥ Fill' },
-              { v: 3, label: '≥ Mid' },
-              { v: 4, label: 'Hero' },
-            ].map(o => (
-              <button key={o.v} onClick={() => setFilterQuality(o.v)}
-                style={{
-                  border: 'none', padding: '6px 10px', fontSize: 11,
-                  background: filterQuality === o.v ? 'rgba(255,255,255,0.12)' : 'transparent',
-                  color: filterQuality === o.v ? '#fff' : '#aaa',
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}>{o.label}</button>
             ))}
@@ -213,8 +201,8 @@ export default function Grove() {
         {!loading && !error && visible.length === 0 && (
           <div style={overlayMsg}>
             {scope === 'look'
-              ? <>No trees in <strong>{activeLook?.name || 'this Look'}</strong> yet. Switch to <em>All Rated</em> above, or rate variants in the species workstage and tap "Add to {activeLook?.name || 'Look'}".</>
-              : <>No rated variants yet. Rate variants in a species workstage (Fill / Mid / Hero) and they'll show up in the Grove.</>}
+              ? <>No compositions in <strong>{activeLook?.name || 'this Look'}</strong> yet. Compose a species in the Salon and Re-publish, or switch to <em>All Published</em> above to add an existing composition.</>
+              : <>No published compositions yet. Compose a species in the Salon and Re-publish — published compositions show up here automatically.</>}
           </div>
         )}
 

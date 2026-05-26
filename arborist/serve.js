@@ -277,10 +277,10 @@ const server = createServer(async (req, res) => {
       return jsonRes(res, 200, { species: listSpecies() })
     }
 
-    // GET /grove — all rated GLB variants across the library, flattened.
-    // Used by the Arborist Grove view to render every accepted variant
-    // side-by-side so the operator can spot the duds. Includes the
-    // `excluded` flag so the view can show kill-switched variants too.
+    // GET /grove — published Salon compositions across the library,
+    // flattened. Used by the Arborist Grove view to render every published
+    // composition side-by-side so the operator can spot the duds. Includes
+    // the `excluded` flag so the view can show kill-switched variants too.
     // (Distinct from the Stage app downstream, which consumes published
     // trees rather than producing them.)
     if (req.method === 'GET' && path === '/grove') {
@@ -292,7 +292,14 @@ const server = createServer(async (req, res) => {
         const speciesCategory = m.category || null
         for (const v of m.variants) {
           const quality = v.qualityOverride ?? v.quality ?? 0
-          if (quality < 2) continue   // skip Untouched + Trash
+          // Published-not-raw-chassis gate (Brief 27): publish stamps
+          // `qualityOverride: 4` (generate-salon#patchManifestForSalon),
+          // so this keeps raw INGESTED vendor chassis (quality 0, never
+          // composed) out of the Grove. NOT a Fill/Mid/Hero rating gate —
+          // Grove visibility is published-and-in-roster, never a rating the
+          // operator must set. (A future explicit `v.published` marker would
+          // decouple this from the rating *value*; deferred — Brief 27.)
+          if (quality < 2) continue
           const lod = v.skeletons?.lod1 || v.skeletons?.lod0 || v.skeletons?.lod2
           if (!lod) continue
           variants.push({

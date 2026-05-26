@@ -18,6 +18,17 @@ Under the **new roster-driven regime** (Brief 26): the operator composes per ros
 
 - **The Grove updates on Re-publish**, NOT on Adopt. Re-publish *stages to the library* (`public/trees/<canonical>` + `syncLookRoster` → `design.json#/trees`); the Grove reads that published/roster state. Adopt-only (unpublished) compositions do not appear — consistent with the authoring/production split (`[[project_authoring_is_live_production_is_static]]` / Brief 14: Adopt=author → Re-publish=stage-to-library → Grove-bake=ship-to-slab).
 
+## Pre-dispatch inspection (Scion, 2026-05-25) — read before coding
+
+Brief 26 landed (`83edde9`); dependency gate clear. Inspection findings that **resize this brief**:
+
+- **The Grove visibility gate is `serve.js#/grove` line ~295 (`if (quality < 2) continue`), reading RAW manifests via `scanBakedManifests()` — NOT `index.json`.** `Grove.jsx#filterQuality` is a *secondary, optional* UI filter (defaults 0=off); `build-index.js#effQuality<2` gates the *runtime* path, not the Grove. Three gates, only the serve.js one is load-bearing for the Grove. (Classic `[[feedback_data_flow_split_first_check]]`: Grove reads file X, gate lives in endpoint Y.)
+- **`quality >= 2` IS the de-facto "published" signal.** `patchManifestForSalon` (`generate-salon.js` ~1395) stamps **`qualityOverride: 4`** on every Salon-published variant; raw ingested vendor chassis (e.g. `acer_rubrum`, `abies_concolor` — `source:glb`, quality 0, with LODs) stay at 0. So the rating gate and the published-not-raw-chassis gate are the **same line**. **Removing `quality < 2` floods the Grove with unpublished chassis** — do NOT remove it; reframe it.
+- **Acceptance criteria 1, 2, 4 are ALREADY functionally wired.** Re-publish → `patchManifestForSalon` stamps 4 → passes serve.js gate → `syncLookRoster` adds `{species,variantId}` to `design.json#/trees` → store `looksRosters` → `Grove.jsx#inLook` shows it In-Look, no manual rate step. The real remaining work is **criterion 3**: retire the *UI rating-gate affordances + stale mental model*, not a data rewire.
+- **`bake-trees.js#pickVariant` does NOT read `qualityOverride`** — it reads the resolved `v.quality` from `index.json` (line ~187) for the hero-lottery `maxQ` tiering. `qualityOverride` is consumed only in `build-index.js` (gate + the `quality` value it writes). Under one-composition-per-roster-species the lottery is effectively vestigial (publish Heroes everything to 4; usually one candidate per species) — **but that's the deferred bake-trees question, not this brief.** So the EditorCard rating ladder STAYS (only authoring surface for the still-consumed field); only its *visibility-gate* role is retired.
+
+**Scope as executed:** UI + copy in `Grove.jsx` (remove `filterQuality` control, rewrite empty-state/scope copy to compose-and-republish, relabel "All Rated"→"All Published", fix doc comment) + a comment reframe at `serve.js#/grove` (gate is published-not-rated). **An explicit `v.published` marker** (decoupling the gate from the rating *value* entirely, so a hand-downrated composition stays visible) is a clean generate-salon schema addition — **deferred to follow-up**, named here, not built (would touch the publish/bake path; out of scope wall).
+
 ## Goal
 
 1. **Populate the Grove from published Salon compositions in the active Look's roster**, not from the "all rated variants" gallery. A composition that's been Re-published (and is in the Look's `design.json#/trees`) appears in the Grove; one that hasn't doesn't.
@@ -45,8 +56,8 @@ Under the **new roster-driven regime** (Brief 26): the operator composes per ros
 
 1. **Grove population path today** — exactly how the variant list + `inLook` + `filterQuality` build the visible set, so you swap the *gate* (rating → published-in-roster) without breaking the membership toggle or the bake button.
 2. **`syncLookRoster` carries the new compositions** — confirm Re-published canonical-id compositions land in `design.json#/trees` in the shape the Grove reads. (Per `[[feedback_data_flow_split_first_check]]` — the Grove reads file X, publish writes file Y; verify they match.)
-3. **`qualityOverride` downstream** — is it still consumed by `bake-trees.js#pickVariant`? Report yes/no so we know whether the rating control retires entirely (separate brief) or just stops gating Grove visibility.
-4. **"All Rated" scope fate** — retire it (coverage view + Salon navigator supersede it) or repurpose it to "all published compositions (browse)"? Surface your recommendation.
+3. **`qualityOverride` downstream** — is it still consumed by `bake-trees.js#pickVariant`? Report yes/no so we know whether the rating control retires entirely (separate brief) or just stops gating Grove visibility. **→ RESOLVED (Scion): NO — `pickVariant` reads resolved `v.quality` from index.json, not `qualityOverride`. `qualityOverride` is consumed only in `build-index.js` (gate + value). Rating ladder stays (still feeds the lottery via index.json `quality`); only its Grove-visibility role retires. Full lottery-vestigiality = deferred bake-trees brief.**
+4. **"All Rated" scope fate** — retire it (coverage view + Salon navigator supersede it) or repurpose it to "all published compositions (browse)"? Surface your recommendation. **→ DECIDED (Scion): repurpose to "All Published" — it remains the surface for adding a library composition to a Look it isn't yet in (compositions are library-level; a Look rosters a subset). Keep the scope toggle; drop only the Fill/Mid/Hero quality filter.**
 
 ## Acceptance criteria
 
