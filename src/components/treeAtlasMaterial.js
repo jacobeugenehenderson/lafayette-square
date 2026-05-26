@@ -94,6 +94,22 @@ if (typeof window !== 'undefined') {
   window.__releaseBarkShaderTier = releaseBarkShaderTier
 }
 
+// Phase A (Azimuth) — hero-tier QC overlay. READ-ONLY visualization: when > 0,
+// every tree fragment tints by its per-instance `aHeroTier` (mesh → green,
+// impostor → magenta) so the operator can eyeball the DERIVED classification
+// through the hero pan (the A→B seam). Default 0 → bit-identical render (the
+// gate short-circuits; no functional change). Module-scope shared uniform +
+// debug setter mirror the treeBarkTier pattern, so flipping it once drives every
+// mounted tree material (LS runtime + Salon preview) with no per-draw plumbing,
+// honoring the single-shader-program constraint (uniform branch, not a variant).
+export const treeHeroTierQC = { value: 0 }
+export function setHeroTierQC(on) { treeHeroTierQC.value = on ? 1 : 0 }
+if (typeof window !== 'undefined') {
+  window.__setHeroTierQC = setHeroTierQC
+  // URL opt-in so Stage/Preview can boot straight into the QC view: ?heroTierQC=1
+  try { if (/[?&]heroTierQC=1\b/.test(window.location.search)) treeHeroTierQC.value = 1 } catch {}
+}
+
 // Phase B (2026-05-15) — per-(species, draw) bark retint uniforms. These
 // live on the SHARED tree material; InstancedTrees mutates the values in
 // each submesh's onBeforeRender right before the draw, so bark fragments
@@ -191,6 +207,8 @@ function injectFoliageSway(material) {
     // detail composite; hero is the existing path; street currently falls
     // back to hero (10C wires full PBR).
     shader.uniforms.uBarkShaderTier = treeBarkTierUniform
+    // Phase A (Azimuth) — hero-tier QC overlay gate (shared module-scope uniform).
+    shader.uniforms.uHeroTierQC = treeHeroTierQC
     // Brief 3A (Cant) — per-instance deformer ranges. Three vec2 [lo,hi]
     // ranges (lean/twist in radians, wander in metres) sampled per-instance
     // by a world-XZ hash in the vertex shader. Default (0,0) → identity, so
@@ -227,6 +245,7 @@ function injectFoliageSway(material) {
          attribute float aBarkRegion;
          attribute float aWindTier;
          attribute float aTreeHeightNorm;
+         attribute float aHeroTier;
          uniform vec2 uDeformLeanRange;
          uniform vec2 uDeformTwistRange;
          uniform vec2 uDeformWanderRange;
@@ -235,6 +254,7 @@ function injectFoliageSway(material) {
          varying float vCanopyW;
          varying float vBark;
          varying float vBarkRegion;
+         varying float vHeroTier;
          varying vec3 vWorldXZ;
          // Brief 3A (Cant) — per-instance deformer. Builds the lean∘twist
          // rotation about the trunk base (= origin, Brief 20 recenter) and the
@@ -317,6 +337,7 @@ function injectFoliageSway(material) {
          vLampGlow = aLampGlow;
          vBark = aBark;
          vBarkRegion = aBarkRegion;
+         vHeroTier = aHeroTier;
          // Canopy weight: hard-zero on the trunk, ramping in only above
          // the canopy break. Earlier 1.5→4.0 left ~20% contribution at 2m
          // which still showed as a faint trunk stripe. 3.0→4.5 gives a
@@ -462,10 +483,12 @@ function injectFoliageSway(material) {
          uniform vec2  uBarkPosterizedTileOffset;
          uniform vec2  uBarkPosterizedTileScale;
          uniform float uBarkShaderTier;
+         uniform float uHeroTierQC;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
          varying float vBarkRegion;
+         varying float vHeroTier;
          varying vec3  vWorldXZ;`
       )
       .replace(
@@ -586,6 +609,13 @@ function injectFoliageSway(material) {
            float tierDetail = step(0.5, uBarkShaderTier);
            barkColor = mix(barkColor, composite, uBarkDetailStrength * tierDetail);
            diffuseColor.rgb = mix(diffuseColor.rgb, barkColor, vBark);
+           // Phase A (Azimuth) hero-tier QC overlay — read-only. Tints the whole
+           // tree (bark + leaf) by its derived class so the operator eyeballs the
+           // mesh/impostor split through the hero pan. Gated → no-op when off.
+           if (uHeroTierQC > 0.5) {
+             vec3 qc = mix(vec3(0.15, 0.95, 0.35), vec3(1.0, 0.20, 0.85), step(0.5, vHeroTier));
+             diffuseColor.rgb = mix(diffuseColor.rgb, qc, 0.65);
+           }
          }`
       )
       .replace(
@@ -894,6 +924,12 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
     // instance baked attribute via InstancedBufferAttribute.
     const arr = new Float32Array(pos.count)
     geometry.setAttribute('aLampGlow', new THREE.BufferAttribute(arr, 1))
+  }
+  // Phase A (Azimuth) — hero-tier QC attribute. Preview has no hero classification
+  // (single specimen); default 0 (= mesh) keeps the shader's aHeroTier valid. The
+  // LS runtime overwrites this with the per-instance baked tier (InstancedTrees).
+  if (!geometry.attributes.aHeroTier) {
+    geometry.setAttribute('aHeroTier', new THREE.BufferAttribute(new Float32Array(pos.count), 1))
   }
   // Brief 9a (Sough) — per-vertex wind tier for multi-scale sway. Mirrors
   // InstancedTrees.jsx's classifier so Salon preview and LS see the same

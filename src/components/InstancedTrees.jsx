@@ -258,6 +258,17 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
     return arr
   }, [instances])
 
+  // Phase A (Azimuth) — per-instance hero-tier (0 = mesh, 1 = impostor) from the
+  // baked `heroTier` field. Drives the read-only QC tint (treeHeroTierQC); later
+  // phases consume it to split the hero-shot render. Absent field → 0 (mesh).
+  const heroTiers = useMemo(() => {
+    const arr = new Float32Array(instances.length)
+    for (let i = 0; i < instances.length; i++) {
+      arr[i] = instances[i].heroTier === 'impostor' ? 1 : 0
+    }
+    return arr
+  }, [instances])
+
   // One log per (url × tile) saying how many submeshes we ended up with.
   // After the primitive-merge optimization this should be 1 for all variants
   // — if any logs show >1, the merge fell back (attribute-set mismatch).
@@ -279,6 +290,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
           localMatrix={m.localMatrix}
           placementMatrices={matrices}
           lampGlows={lampGlows}
+          heroTiers={heroTiers}
           barkSettings={barkSettings}
           gradientSlot={gradientSlot}
           detailSlot={detailSlot}
@@ -294,16 +306,17 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
   const ref = useRef(null)
-  // Attach the per-instance lamp-glow attribute to the geometry. Each
-  // unique GLB has a unique geometry instance, so this doesn't bleed
-  // across variants. The attribute is consumed by the shader injection
-  // in treeAtlasMaterial.js.
+  // Attach the per-instance lamp-glow + hero-tier attributes to the geometry.
+  // Each unique GLB has a unique geometry instance (per url×tile), so these
+  // don't bleed across variants. Consumed by the shader injection in
+  // treeAtlasMaterial.js (aLampGlow → emissive; aHeroTier → QC tint).
   useEffect(() => {
-    if (!geometry || !lampGlows) return
-    geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
-  }, [geometry, lampGlows])
+    if (!geometry) return
+    if (lampGlows) geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
+    if (heroTiers) geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
+  }, [geometry, lampGlows, heroTiers])
   useEffect(() => {
     const im = ref.current
     if (!im) return

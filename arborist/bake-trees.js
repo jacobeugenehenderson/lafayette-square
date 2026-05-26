@@ -5,18 +5,24 @@
  *   public/trees/index.json      — rated runtime pool
  *   src/data/park_trees.json     — 644 placement positions
  *   src/data/park_species_map.json — species-id → preferred library subset
+ *   public/baked/<heroLook>/scene.json       — hero pan (heroTier classifier)
+ *   public/baked/<heroLook>/trees-atlas.json — canopyByVariant dims (bake-look)
  *   --look <name>                — Look name (defaults 'default')
  *   --styles realistic[,winter…] — active style set (defaults 'realistic')
  *   --lod lod0|lod1|lod2         — LOD to ship (defaults 'lod2')
+ *   --heroLook <name>            — Look whose hero pan drives heroTier (def 'lafayette-square')
  *
  * Writes:
  *   public/baked/<look>.json
  *
  * Schema:
- *   { generatedAt, look, lod, activeStyles, count,
+ *   { generatedAt, look, lod, activeStyles, count, heroTierMeta,
  *     tiles: { cols, rows, minX, minZ, tileW, tileD,
  *              instancesByTile: [{ tileX, tileZ, instances: [...] }, ...] } | null,
- *     instances: [{ x, z, url, scale, rotY, species, variantId }] }
+ *     instances: [{ x, z, url, scale, rotY, species, variantId, heroTier? }] }
+ *
+ * `heroTier` ('mesh'|'impostor') is a purely DERIVED per-tree visibility class
+ * for the Hero shot (no authored override). Omitted when no hero pan is found.
  *
  * Stage / Mobile read this file and instance directly. No live picker,
  * no index.json, no overrides — just placements.
@@ -25,6 +31,11 @@ import { promises as fs } from 'node:fs'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+// Shared hero-pan math — the SAME Catmull-Rom the runtime plays
+// (src/preview/heroAnim.js: pure, allocation-free, no React/DOM). Importing it
+// (vs reimplementing) keeps the bake-time classifier's camera locus in lock-step
+// with what Scene/Preview/Stage actually render. Node-safe ESM.
+import { catmullRom } from '../src/preview/heroAnim.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -204,10 +215,174 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
   return null
 }
 
+// ── Hero-shot visibility tiering (Phase A — Azimuth) ─────────────────────────
+// Analytic prominence pass: score each placed tree across the authored hero pan
+// and label it `mesh` (keep full lod2 geometry) or `impostor` (cheap billboard,
+// consumed in later phases). Purely DERIVED — no authored override, no knobs.
+//
+// The hero "arc" is whatever the camera ACTUALLY traverses; the pan is read from
+// the slab, so the classification self-adjusts when the operator re-polishes the
+// shot (NOT pinned to any fixed angle). Tier is the MAX over sampled poses ⇒
+// constant through the pan ⇒ no mid-pan popping.
+//
+// Tunables — calibrated against the operator's eye at the A→B seam (QC overlay):
+const HERO_TIER = {
+  POSES: 24,             // camera samples along the keyframe path
+  PROM_THRESHOLD: 0.05,  // min screen-prominence (at ANY pose) to stay `mesh`
+  OCC_FRAC: 0.7,         // a nearer canopy covering ≥ this fraction of a tree's
+                         // projected disk occludes it at that pose
+  ASPECT: 16 / 9,        // viewport aspect for the horizontal frustum bound
+  CENTER_Y_FRAC: 0.6,    // canopy vertical centre as a fraction of tree height
+}
+// Mirror of StageApp.FALLBACK_HERO_SUBJECT / Scene.HERO_TARGET (both [400,45,-100]).
+// Used when the slab's heroSubject is null (current LS state).
+const FALLBACK_HERO_TARGET = [400, 45, -100]
+
+const _clamp1 = (x) => (x < -1 ? -1 : x > 1 ? 1 : x)
+// Fraction of circle i (radius ri) covered by circle j (radius rj), centres d apart.
+function circleCoverFrac(d, ri, rj) {
+  if (ri <= 0) return 0
+  if (d >= ri + rj) return 0
+  if (d <= Math.abs(rj - ri)) return rj >= ri ? 1 : (rj * rj) / (ri * ri)
+  const ri2 = ri * ri, rj2 = rj * rj
+  const a = (ri2 - rj2 + d * d) / (2 * d)
+  const h = Math.sqrt(Math.max(0, ri2 - a * a))
+  const pi_ = ri2 * Math.acos(_clamp1(a / ri)) - a * h
+  const b = d - a
+  const pj_ = rj2 * Math.acos(_clamp1(b / rj)) - b * h
+  return (pi_ + pj_) / (Math.PI * ri2)
+}
+
+// Resolve each placement's canopy dims (real metres) from bake-look's
+// `trees-atlas.json#canopyByVariant`. 93% of placements are out-of-roster and
+// substituted to a SAME-CATEGORY roster variant at RUNTIME (InstancedTrees), and
+// bake-look only has dims for the (rendered) roster variants — so we use the
+// exact roster dims when a placement is itself in-roster, else the category mean
+// over roster variants (the substitute is always same-category). No lib→roster
+// hash mirroring; real measured dims; correct in expectation. (Validated at the
+// A→B QC seam — if substituted trees misclassify, escalate to a shared
+// substitution fn.)
+function buildCanopyResolver(canopyByVariant, indexVariants) {
+  const categoryOf = new Map()  // "species:variantId" → category (from index pool)
+  for (const v of indexVariants) categoryOf.set(`${v.species}:${v.variantId}`, v.category)
+  const exact = new Map()       // "species:variantId" → { heightM, canopyRadiusM }
+  const catAccum = new Map()    // category → { h, r, n }
+  for (const [sp, vars] of Object.entries(canopyByVariant || {})) {
+    for (const [vid, d] of Object.entries(vars)) {
+      if (d?.canopyRadiusM == null) continue
+      exact.set(`${sp}:${vid}`, d)
+      const cat = categoryOf.get(`${sp}:${vid}`) || 'broadleaf'
+      const a = catAccum.get(cat) || { h: 0, r: 0, n: 0 }
+      a.h += d.heightM ?? 12; a.r += d.canopyRadiusM; a.n++
+      catAccum.set(cat, a)
+    }
+  }
+  const catMean = new Map()
+  for (const [cat, a] of catAccum) catMean.set(cat, { heightM: a.h / a.n, canopyRadiusM: a.r / a.n })
+  let gh = 0, gr = 0, gn = 0
+  for (const d of exact.values()) { gh += d.heightM ?? 12; gr += d.canopyRadiusM; gn++ }
+  const globalMean = gn ? { heightM: gh / gn, canopyRadiusM: gr / gn } : { heightM: 12, canopyRadiusM: 4 }
+  const resolve = (species, variantId, category) =>
+    exact.get(`${species}:${variantId}`) || catMean.get(category) || globalMean
+  return { resolve, haveDims: exact.size > 0 }
+}
+
+// canopies: [{ x, z, centerY, R }] world-space bounding spheres, parallel to the
+// placed instances. Returns { tiers: ('mesh'|'impostor')[], meta }.
+function classifyHeroTiers(canopies, heroPan) {
+  const n = canopies.length
+  const tiers = new Array(n).fill('mesh')
+  if (!heroPan?.keyframes?.length || n === 0) {
+    return { tiers, meta: { skipped: 'no-hero-pan' } }
+  }
+  const positions = heroPan.keyframes.map((k) => k.position)
+  const fovDeg = heroPan.keyframes[0].fov ?? 22
+  const vHalf = (fovDeg * Math.PI / 180) / 2
+  const hHalf = Math.atan(Math.tan(vHalf) * HERO_TIER.ASPECT)
+  const target = Array.isArray(heroPan.subject) ? heroPan.subject : FALLBACK_HERO_TARGET
+  const tension = heroPan.tension ?? 0.5
+  const diagHalf = Math.hypot(hHalf, vHalf)
+
+  // Camera positions sampled uniformly along the locus catmullRom(positions, t),
+  // t∈[0,1]. The motion wave only changes dwell/speed, not the set of points the
+  // camera occupies, so uniform-t covers the whole sweep for max-over-arc.
+  const N = HERO_TIER.POSES
+  const poses = []
+  for (let s = 0; s < N; s++) {
+    const t = N === 1 ? 0 : s / (N - 1)
+    const p = catmullRom(positions, t, tension, [0, 0, 0])
+    poses.push([p[0], p[1], p[2]])
+  }
+
+  const maxProm = new Float64Array(n)
+  const proj = new Array(n)
+  for (let i = 0; i < n; i++) proj[i] = { in: false, h: 0, v: 0, r: 0, depth: 0 }
+
+  for (const cam of poses) {
+    // Camera basis: forward = unit(target - cam); right = unit(forward × up);
+    // up' = right × forward. Sign of `right` is irrelevant (we test |angle|).
+    let fx = target[0] - cam[0], fy = target[1] - cam[1], fz = target[2] - cam[2]
+    const fl = Math.hypot(fx, fy, fz) || 1; fx /= fl; fy /= fl; fz /= fl
+    let rx = -fz, ry = 0, rz = fx              // forward × (0,1,0)
+    const rl = Math.hypot(rx, ry, rz) || 1; rx /= rl; ry /= rl; rz /= rl
+    const ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx
+
+    for (let i = 0; i < n; i++) {
+      const c = canopies[i]
+      const dx = c.x - cam[0], dy = c.centerY - cam[1], dz = c.z - cam[2]
+      const depth = dx * fx + dy * fy + dz * fz
+      const pr = proj[i]
+      if (depth <= 0.01) { pr.in = false; continue }
+      const xc = dx * rx + dy * ry + dz * rz
+      const yc = dx * ux + dy * uy + dz * uz
+      const ah = Math.atan2(xc, depth)
+      const av = Math.atan2(yc, depth)
+      const ar = Math.atan2(c.R, Math.hypot(dx, dy, dz))
+      pr.in = Math.abs(ah) < hHalf + ar && Math.abs(av) < vHalf + ar
+      pr.h = ah; pr.v = av; pr.r = ar; pr.depth = depth
+    }
+    for (let i = 0; i < n; i++) {
+      const pr = proj[i]
+      if (!pr.in) continue
+      let occ = 0
+      for (let j = 0; j < n; j++) {
+        if (j === i) continue
+        const pj = proj[j]
+        if (!pj.in || pj.depth >= pr.depth - 0.5) continue    // only nearer disks occlude
+        const f = circleCoverFrac(Math.hypot(pr.h - pj.h, pr.v - pj.v), pr.r, pj.r)
+        if (f > occ) occ = f
+        if (occ >= HERO_TIER.OCC_FRAC) break
+      }
+      if (occ >= HERO_TIER.OCC_FRAC) continue
+      const coverage = (2 * pr.r) / (2 * vHalf)               // angular diameter / vfov
+      const centrality = Math.max(0, 1 - Math.hypot(pr.h, pr.v) / diagHalf)
+      const prom = coverage * centrality
+      if (prom > maxProm[i]) maxProm[i] = prom
+    }
+  }
+
+  let meshN = 0, impostorN = 0
+  const hist = new Array(10).fill(0)                          // 0.05-wide buckets
+  for (let i = 0; i < n; i++) {
+    const m = maxProm[i]
+    hist[Math.min(9, Math.floor(m * 20))]++
+    if (m >= HERO_TIER.PROM_THRESHOLD) { tiers[i] = 'mesh'; meshN++ }
+    else { tiers[i] = 'impostor'; impostorN++ }
+  }
+  return {
+    tiers,
+    meta: {
+      poses: N, promThreshold: HERO_TIER.PROM_THRESHOLD, occFrac: HERO_TIER.OCC_FRAC,
+      fovDeg, target, mesh: meshN, impostor: impostorN, promHistogram: hist,
+    },
+  }
+}
+
 export async function bakeTrees({
   look = 'default',
   styles = ['realistic'],
   lod = 'lod2',
+  heroLook = 'lafayette-square', // which Look's baked hero pan + canopy dims drive heroTier
   placements,    // override path, e.g. 'src/data/toy/toy-trees.json'
   output,        // override output path; defaults to public/baked/<look>.json
   verbose = false,
@@ -236,8 +411,42 @@ export async function bakeTrees({
   const isForbidden = placements ? null : makeForbiddenTester()
 
   const instances = []
+  // Parallel to `instances` (pushed in lock-step) — per-tree canopy bounding
+  // sphere {x, z, centerY, R} in world metres for the hero-tier prominence pass.
+  const canopies = []
   let unmatched = 0
   const forbiddenCounts = {}
+
+  // Hero pan + canopy dims for the heroTier classifier, both read from the active
+  // Look's baked slab (render-truth — the SAME hero the runtime plays + the dims
+  // bake-look measured from the rendered roster trees). Skipped for the toy
+  // fixture (no hero shot). Absent → heroTier omitted; runtime falls back to
+  // all-mesh (version-agnostic tree path).
+  let heroPan = null
+  let resolveCanopy = null
+  if (!placements) {
+    try {
+      const s = JSON.parse(await fs.readFile(
+        path.join(REPO_ROOT, 'public', 'baked', heroLook, 'scene.json'), 'utf8'))
+      if (Array.isArray(s.heroKeyframes) && s.heroKeyframes.length) {
+        heroPan = { keyframes: s.heroKeyframes, subject: s.heroSubject, tension: s.heroMotion?.tension }
+      }
+    } catch (e) {
+      if (verbose) console.log(`[bake-trees] hero pan unavailable for '${heroLook}' (${e.code || e.message}) — heroTier skipped`)
+    }
+    if (heroPan) {
+      let canopyByVariant = {}
+      try {
+        canopyByVariant = JSON.parse(await fs.readFile(
+          path.join(REPO_ROOT, 'public', 'baked', heroLook, 'trees-atlas.json'), 'utf8')).canopyByVariant || {}
+      } catch { /* dims absent → resolver falls back to global mean */ }
+      const r = buildCanopyResolver(canopyByVariant, index.variants)
+      resolveCanopy = r.resolve
+      if (!r.haveDims && verbose) {
+        console.log(`[bake-trees] canopyByVariant empty for '${heroLook}' — heroTier uses fallback dims`)
+      }
+    }
+  }
 
   for (let i = 0; i < park.trees.length; i++) {
     const tree = park.trees[i]
@@ -287,6 +496,28 @@ export async function bakeTrees({
       // final emissive contribution.
       lampGlow: +lampGlowAt(finalX, finalZ).toFixed(4),
     })
+    // Canopy bounding sphere (parallel push) for the hero-tier prominence pass.
+    if (resolveCanopy) {
+      const dims = resolveCanopy(v.species, v.variantId, v.category)
+      canopies.push({
+        x: finalX, z: finalZ,
+        centerY: (dims.heightM ?? 12) * HERO_TIER.CENTER_Y_FRAC,
+        R: Math.max(0.5, dims.canopyRadiusM ?? 4),
+      })
+    }
+  }
+
+  // Hero-tier classification (Phase A). Assign `heroTier` per instance in
+  // lock-step with `canopies`. Skipped (field omitted) when no hero pan/dims.
+  let heroTierMeta = null
+  if (heroPan && canopies.length === instances.length && canopies.length) {
+    const { tiers, meta } = classifyHeroTiers(canopies, heroPan)
+    for (let i = 0; i < instances.length; i++) instances[i].heroTier = tiers[i]
+    heroTierMeta = { heroLook, ...meta }
+    if (verbose) {
+      console.log(`[bake-trees] heroTier: ${meta.mesh} mesh / ${meta.impostor} impostor `
+        + `(thresh ${meta.promThreshold}, ${meta.poses} poses, fov ${meta.fovDeg}°)`)
+    }
   }
 
   // Stats
@@ -345,6 +576,9 @@ export async function bakeTrees({
     count: instances.length,
     unmatched,
     uniqueVariants: variantUseCount.size,
+    // Hero-tier classification summary (Phase A). null when no hero pan/dims;
+    // per-instance `heroTier` lives on each entry in `instances`.
+    heroTierMeta,
     tiles,
     instances,
   }
@@ -376,6 +610,7 @@ if (isDirect) {
     look: args.look,
     styles: (args.styles || 'realistic').split(',').map(s => s.trim()).filter(Boolean),
     lod: args.lod,
+    heroLook: args.heroLook,
     placements: args.placements,
     output: args.output,
     verbose: true,
