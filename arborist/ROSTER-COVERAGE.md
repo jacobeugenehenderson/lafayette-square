@@ -132,6 +132,15 @@ Split by whether a usable cousin exists at all, so the initial roster has the ri
 
 ---
 
+## §6 — Known stale state (found 2026-05-25 via the Grove coverage view)
+
+The published library is rich (**69 species** in `public/trees/`), but the **Look roster** (`public/looks/lafayette-square/design.json#/trees`) — what the Grove gallery *and* the slab actually render — is a **stale 8-species / 20-entry subset** (`cedar_generic`, `broadleaf_rt3`, `generic_tree_2`, `acer_saccharum_procedural`, `acer_saccharum`, …). It predates the Brief 20/23 chassis corrections and was never re-seeded.
+
+- **🔴 `acer_saccharum` publishes as the OLD FOREST** — `public/trees/acer_saccharum/manifest.json` is 1 variant, the 17-trunk merged group-shot from a prior LiDAR/Scan pass, NOT the 18 corrected singles (`acer_saccharum_a`–`_u`) now in the chassis library. So the Grove renders a forest where Sugar Maple should be. **Fix: re-publish `acer_saccharum` from a single chassis (kills the forest publish).**
+- **The roster needs a full re-seed** from the corrected library: compose the ~25–30 intended library species in the Salon → re-publish → re-seed `design.json#/trees` → refresh `park_species_map.json` (§4 step 2) → Grove bake. The coverage view is the punch-list; Brief 24's clickable rows (addendum) open the Salon per species to do it.
+- Not a Grove code bug — the Grove faithfully renders the roster; the roster *data* + the `acer_saccharum` forest publish are stale.
+
 ## §5 — Changelog
+- **2026-05-25 (later)** — Logged the stale-roster finding (§6): published library rich (69) but Look roster a stale 8-species subset; `acer_saccharum` published as the old forest, not the corrected singles. Surfaced by the shipped Brief 24 coverage view (Cadastre).
 
 - **2026-05-25** — Boz seeded the doc from the 2026-05-25 chassis library (241 chassis / 46 source species) + the 756-placement roster. Recipes are first-pass; bark picks unverified (can't see textures). Awaiting Jacob's QC pass.

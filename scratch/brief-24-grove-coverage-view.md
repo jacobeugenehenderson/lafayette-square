@@ -82,3 +82,28 @@ Per `[[feedback_baby_must_surface_scope_drift]]`: if you touch a file, schema, o
 ## Dispatch posture
 
 Cold, **parallel-safe with Brief 3A** (disjoint files). Solo otherwise. ~200–350 LOC across `Grove.jsx` + a coverage component + one `serve.js` GET endpoint + the canon JSON + the join helper. The join logic already exists by hand in `ROSTER-COVERAGE.md` — your job is to compute it live and render it.
+
+---
+
+## ADDENDUM — ⛔ SUPERSEDED 2026-05-25 — back out (see below)
+
+> The operator reframed the authoring model right after Cadastre absorbed this addendum. The clickable target here (coverage row → Salon on the *covering/HAVE library species*) is the **wrong unit** — the authoring unit is the **roster species**, and click-to-author now belongs to the roster navigator in **Brief 26** (rewritten). **Cadastre should back this deep-link out and keep only the committed read-only coverage view (`95ef2dc`).** The original addendum text is preserved below for history.
+
+## ADDENDUM (ORIGINAL, superseded) — clickable coverage rows → open Salon (follow-up, same baby Cadastre, 2026-05-25)
+
+**You're Cadastre, continuing your Brief 24 work.** The coverage view shipped and reads correctly. The operator wants it to become a **clickable worklist**: click a species row → land in the **Salon Workstage** with that species active, to visually inspect / recompose it.
+
+**Concrete driver:** published `acer_saccharum` is a stale *forest* publish (1 variant, the old 17-trunk merged mesh) rather than the 18 corrected singles — so the operator clicks `acer_saccharum` in the coverage list, lands in the Salon, sees the forest, and recomposes it from a single chassis. The list is the punch-list for re-seeding the stale roster.
+
+**Behavior:**
+- A **covered row (🟢 literal / 🟡 composite)** is clickable → opens the Salon Workstage with the row's **covering library species** (the routed-to id you already compute, e.g. Pin Oak → `quercus_alba`) set as the **active species**. Navigate from Grove → Salon.
+- A **gap row (🔴)** has no library species to open → not clickable (or visibly disabled / "no model — acquire"). Nothing to inspect.
+- Target is the **covering/routed library species id**, NOT the park common-name.
+
+**Mechanism:** row `onClick` → the store action(s) that (a) set the active Salon species and (b) `setSalonOpen(true)` / route to the Salon (you touched `Grove.jsx` + the Arborist app shell, so you know the seam). **Set the active species directly even if the Salon picker's current filter would exclude it** — e.g. `acer_saccharum` is LiDAR-filtered out of the Salon picker (Brief 15), but the operator still needs to land on it to inspect. Inspection is the point; surface this filter interaction in your report (Brief 26's "browse all" toggle is the durable fix for the filter, not your problem here).
+
+**Scope walls (unchanged):** still read-only on coverage data; no writes; don't touch `generate-salon.js` / the runtime / the slab; keep the existing Gallery↔Coverage toggle + table behavior intact.
+
+**Inspection point:** confirm the store seam that opens Salon + selects a species (you've seen it from the Grove side); confirm gap rows resolve to no valid target so they're correctly inert.
+
+**AC:** clicking a covered row lands in the Salon on the correct covering species (even if filtered from the picker); gap rows don't navigate (or clearly indicate no model); the coverage view + Gallery toggle are otherwise unchanged; read-only preserved. Note the filter interaction in your commit body.

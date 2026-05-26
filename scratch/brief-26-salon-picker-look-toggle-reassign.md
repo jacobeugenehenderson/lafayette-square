@@ -1,93 +1,95 @@
-# Brief 26 — Salon picker: Look-only toggle + browse-all + chassis species reassignment
+# Brief 26 (REWRITTEN 2026-05-25) — Roster-driven Salon: navigate by roster species → compose-or-unavailable
 
-**You are the baby executing this brief.** Not the orchestrator, not a router. The work is yours to do directly. Boz (coordinator) drafted this; Jacob (operator) dispatched it.
+> **This supersedes the prior "Look-only toggle + chassis species reassignment" draft.** The operator reframed the authoring model: the unit is the **roster species** (what the park needs), not the library species. Picking any chassis for a roster species *is* the assignment, so the old `speciesOverride`/relabel concept is dissolved. Prior draft preserved in git history (commit before this rewrite).
 
-**Name yourself — a name NOT already used in this project.** Babies pattern-match to names in the code/notes and pick collisions; Jacob has had to redirect repeated misfires.
+**You are the baby executing this brief.** Not the orchestrator, not a router. Boz (coordinator) drafted this; Jacob (operator) dispatched it.
 
-**Names already claimed — do NOT reuse:** Whittle, Sequoia, Quill, Riven, Fern, Holm, Birch, Cinder, Tendril, Cambium, Spindle, Linnet, Cork, Vantage, Sough, Wisp, Mullion, Adze, Plumb, Vellum, Lintel, Gnomon, Corbel, Quartz, Sextant, Mistral, Hazel, Olmsted, Wren, Penzias, Nimbus, Sorrel, Cant, Boz.
+**Name yourself — a name NOT already used.** Pattern-matching to code/notes names causes collisions Jacob has had to redirect.
 
-**Collision note:** Brief 24 (Grove coverage view) may be running concurrently and is steered toward the *ledger / cartography* domain; Brief 3A just shipped as *Cant*. Pick a name **outside** those spaces — go somewhere genuinely novel. State it in your first message; sign your commits with it.
+**Names already claimed — do NOT reuse:** Whittle, Sequoia, Quill, Riven, Fern, Holm, Birch, Cinder, Tendril, Cambium, Spindle, Linnet, Cork, Vantage, Sough, Wisp, Mullion, Adze, Plumb, Vellum, Lintel, Gnomon, Corbel, Quartz, Sextant, Mistral, Hazel, Olmsted, Wren, Penzias, Nimbus, Sorrel, Cant, Cadastre, Boz. (Cant=tilt/joinery, Cadastre=ledger/cartography — go elsewhere.)
 
 ---
 
-## Why this brief exists
+## The model
 
-The operator authors the LS tree library in the Salon, walking species one-by-one. Two problems block that today:
+**The Salon's authoring unit flips from LIBRARY species → ROSTER species.** The operator navigates the park's roster (what Lafayette Square actually needs), and for each roster species authors a **full composition** — or marks it **not-available**.
 
-1. **The picker hides what needs labeling.** The Chassis picker defaults to an `Approved only` filter (Brief 1.5b) that drops every un-approved chassis — which is *all* of the unlabeled singles that were decomposed out of group packs (Riven's Brief 1.5c bundle-splits: `honey_locust_*`, `gray_poplar_*`, `poplar_fall_*`, `candicands`, `london_plane_*`, each carrying `meta.source.bundleNode`). The operator can't reach them to label them.
-2. **Mislabeled chassis can't be re-homed.** Some chassis are filed under generic/vendor species (`garden_mix`, `generic_leaf_tree`, `broadleaf_03`) but are *actually* a recognizable species — e.g. a "Generic Garden Tree" that is really a **Weeping Willow**. The operator needs to **reassign the chassis to its true species** so it groups correctly and counts toward that species' roster coverage.
+- **Top nav = the Roster Species list** (canonicalized park species from the `GET /coverage` data — Brief 24). **This replaces the current "SPECIES" dropdown.** Each entry shows: placement count, coverage badge (🟢 literal / 🟡 composite / 🔴 gap), and authored state (composed / not-available).
+- **Click a roster species → an inside authoring view:**
+  - **Candidate "pick" pulldown** = the chassis that could serve it. A **toggle** scopes it: **"recommended"** (ranked fit for this roster species — literal + good cousins, from `ROSTER-COVERAGE.md` recipes / the coverage candidate logic) vs **"show all chassis"** (the entire library, including unlabeled bundle-splits + generics — so a `garden_mix` that's really a Weeping Willow is reachable here).
+  - **Full composition controls**: chassis + **bark + leaves + height** — the existing Salon composition controls, re-parented under the roster species.
+  - **Not-available**: pick no chassis (no acceptable sub, or operator rejects all) → the roster species renders **no tree** (deliberate gap; coverage shows it unmet).
+- **The composition is library-level → reusable across Looks.** Authoring it once publishes a reusable composition (existing publish model: `public/trees/<species>`); any Look containing this roster species routes to it. Not Look-bound.
 
-This brief restructures the Salon picker around the operator's real workflow: **browse the whole library, fix mislabels by reassigning species, and narrow to the active Look when polishing.**
+This unifies three things into one surface: the SPECIES dropdown, the coverage list (becomes the navigator), and the old reassignment idea (picking any chassis *is* the binding — no separate relabel).
 
-## Decisions already locked (do not re-litigate)
+## The keying spine — SETTLED: canonical-id-per-roster-species (operator decision 2026-05-25)
 
-- **Retire the `Approved only` filter; replace it with a `Look only` toggle.** Approval/reject stays as a *label* in the curation row — it just stops *hiding* chassis.
-- **No group shots in the picker.** The three merged-forest chassis (`acer_saccharum` forest, `sugar_maple_low_poly_forest`, `burnt_tree`) stay **suppressed** (Brief 23 / `_chassis-forests.json`). Brief 23a (splitting them into singles) stays **dormant** — operator confirmed they're redundant (18 Sugar Maple singles already exist) / niche. Do NOT split forests.
-- **"Relabel" = species reassignment**, not just a display name. "Generic Garden Tree" → "Weeping Willow" must re-home the chassis into the Weeping Willow species bucket.
-- **Procedural / LiDAR species stay excluded** from the Salon picker (Brief 15) — they're *sources* with their own workspaces (18A/18B doctrine), not vendor chassis composed here.
+Every roster species has exactly **one canonical library-species-id** — its botanical home, regardless of which chassis serves it:
+- Maple, Sugar → `acer_saccharum` · Oak, Pin → `quercus_palustris` · Willow, Weeping → `salix_babylonica` · Ash, Green → `fraxinus_pennsylvanica` (canonical id **exists even with no chassis yet**).
+- This is a **hand-curated registry** (roster common-name → canonical id — curation, no auto-guess) that lives in / extends **`park_species_map.json`**, which is also the bake routing. The canonical id is the single routing target (not a fallback list).
+
+**Composing a roster species:**
+1. writes the composition (chassis + bark + leaves + height) under its **canonical id** (`state/<canonical>/compositions.json` → `public/trees/<canonical>`), and
+2. ensures `park_species_map[<rosterName>] = <canonical>` so `bake-trees.js#pickVariant` routes that species' placements there.
+
+**Rules that follow:**
+- **The chassis is free geometry.** Any chassis can serve the canonical id (`garden_mix` geometry published as `salix_babylonica`). The chassis's own `source.species` keys NOTHING — it's just the picked model. (This is why the old `speciesOverride` is gone.)
+- **Each roster species is its own canonical species.** Pin Oak and Willow Oak are *separate* compositions under separate canonical ids even if both pick the same oak chassis. Cousins share chassis *geometry* (the atlas dedups it); the compositions stay distinct (own bark/leaves/height). No more "all oaks collapse to one."
+- **Candidate list is computed live** (recommended + show-all), NOT stored as routing — routing needs only the one canonical id.
+- **Gap species:** the canonical id exists (botanical), the composition is **not-available** until a chassis is acquired + picked → renders no tree.
+- **No procedural-filler fallback** — a roster species is explicitly composed or not-available (matches the operator's removal of fillers from the roster).
+
+**Implementation detail to confirm against the current file (not a design question):** whether `park_species_map` keeps its list shape (canonical = first entry) or migrates to a single canonical id with the candidate list moved to live-compute. Either way the canonical-per-roster-species principle holds — surface your choice in the commit body.
+
+## Goal — two sub-phases (ship + verify each, per `[[feedback_d3_bundling_failure_modes]]`)
+
+### 26a — Roster-species navigator + candidate computation + composition/routing wiring (data/nav)
+- The roster-species list as the top nav (reuse the `GET /coverage` join, Brief 24 — lift the shared join/effective-species helper rather than forking).
+- Per-species candidate computation: **recommended** (the coverage literal/cousin candidates, ranked) vs **all** (full chassis library).
+- The compose action: writes the composition under the resolved library-species-id + the routing entry. The not-available state.
+
+### 26b — Inside full-composition authoring view (UI)
+- Re-parent the existing Salon composition controls (chassis + bark + leaves + height) under the selected roster species.
+- The candidate pulldown + **recommended / show-all toggle**.
+- The not-available control.
+- Coverage badge + state reflected live as the operator composes.
+
+## What this does NOT do (scope walls)
+
+- **Do NOT break the Grove.** The Grove still curates *which compositions are in a given Look* (per-Look roster membership) — that's the production/curation side. This brief is the *authoring/compose* side. Keep them distinct.
+- **Keep the existing composition publish model** (`generate-salon` → `public/trees/<species>` → Looks roster via `design.json#/trees`). You're re-parenting the *navigation*, not forking the publish.
+- **No runtime / shader / slab touch** — no `treeAtlasMaterial.js` / `InstancedTrees.jsx` / `bake-look.js` / `bake-trees.js` / `trees-atlas.json`. Authoring-UI + composition-state + routing-map only.
+- **Forests stay suppressed** (Brief 23 / `_chassis-forests.json`); Brief 23a stays dormant. Procedural/LiDAR stay out of candidates (sources per 18A/18B) — confirm "show all" is chassis-level and doesn't pull them in.
+- **Do NOT bake provenance** (literal/composite → slab) — that's Brief 25.
+
+## Relationship to Brief 24 (committed, Cadastre `95ef2dc`)
+
+Brief 24's `GET /coverage` + `CoverageView.jsx` are the read-only diagnostic. THIS brief turns that roster list into the **live authoring navigator**. Reuse/evolve the `/coverage` join + the canonicalization (`roster-name-canon.json`); lift the shared effective-species + candidate helper into one module. **The Brief 24 "clickable→Salon addendum" is SUPERSEDED by this** — the roster row *is* the navigator; don't build a separate deep-link to the HAVE species.
 
 ## Read first
 
-- `src/arborist/SalonWorkstage.jsx` — the Chassis section: the `Approved only` checkbox, the species dropdown, the chassis picker, and the Brief 1.5b **curation row** (displayName input / tri-state Status button / notes). **NOTE: Brief 3A (Cant) just edited this file — rebase onto its committed state; do not start until 3A is committed.**
-- `arborist/serve.js` — `/salon/species` (`listSalonSpecies`), `/salon/:species/chassis` (catalog, `?morphology=` filter + forest suppression via `listForestChassis`), `/salon/curation` + `/salon/curation/:chassisName` (the curation read/merge endpoints).
-- `arborist/generate-salon.js` — `listSalonSpecies` (the species union: chassis-available ∪ composition-authored, minus procedural/LiDAR per Brief 15), `listForestChassis` (Brief 23 suppression). **Also touched by 3A — rebase.**
-- `arborist/state/_chassis-curation.json` + `_chassis-curation.defaults.json` — the curation schema you extend (`{chassis: {'<name>.glb': {displayName, approved, notes}}}`). Name-keyed, survives `survey-deleaf.js` regen.
-- `public/trees/_chassis/*.meta.json` — `source.species` (the field reassignment overrides; NEVER edit meta — it's regenerated). `source.bundleNode` marks bundle-split origin.
-- `arborist/ROSTER-COVERAGE.md` — the living roster doc; coverage depends on effective species (see Brief 24 coordination below).
-- Memory: `[[feedback_baby_briefs_need_identity_framing]]`, `[[feedback_baby_must_surface_scope_drift]]`, `[[feedback_load_bearing_files_serial_dispatch]]`, `[[feedback_d3_bundling_failure_modes]]`, `[[feedback_absence_means_inherit_in_authored_blocks]]`, `[[feedback_json_stringify_loses_handauthored_format]]`, `[[project_doped_artifact_placecard_edit_pattern]]`.
-
-## Goal — two sub-phases (ship + verify each before the next, per `[[feedback_d3_bundling_failure_modes]]`)
-
-### 26a — Chassis species reassignment (the load-bearing data change)
-
-- Add `speciesOverride` (string species-id, or absent) to the per-chassis curation schema in `_chassis-curation.json` (+ the `.defaults.json` sibling doc). Absent = inherit `meta.source.species` (per `[[feedback_absence_means_inherit_in_authored_blocks]]`).
-- The `/salon/curation/:chassisName` POST accepts `speciesOverride` with the same absent-keys-preserved / null-clears merge semantics already in place.
-- **Effective species** = `curation[chassis].speciesOverride ?? meta.source.species`. Lift this into ONE helper and use it everywhere `source.species` currently drives grouping:
-  - `listSalonSpecies` (the species union) — a chassis reassigned to `salix_babylonica` makes that species appear / gain an option.
-  - `/salon/:species/chassis` catalog — the chassis lists under its effective species, not its vendor species.
-- **Target-species options:** the reassignment control offers existing library species ids; allow assigning to a species not yet present (creates the bucket). Surface how you resolve common-name (“Weeping Willow”) vs species-id (`salix_babylonica`) — reuse `park_species_map.json` / displayName if helpful, but don't over-build; the override stores a species-id.
-- Determinism + format: preserve hand-authored JSON formatting (`[[feedback_json_stringify_loses_handauthored_format]]`); the `.defaults.json` backstop documents the new field.
-
-### 26b — Picker UI (Look-only toggle + browse-all + reassignment control)
-
-- **Replace the `Approved only` checkbox with a `Look only` toggle.** ON = filter the species list / picker to the **active Look's roster** species. OFF = the **full vendor single-tree chassis library**, including un-approved bundle-splits (so they're reachable to label). Forests stay suppressed in both states; procedural/LiDAR stay excluded in both states.
-- **Reassignment control** in the curation row: a target-species picker that writes `speciesOverride`. After reassignment, the chassis re-homes under the target species (verify it moves in the picker + species dropdown).
-- **Keep** displayName / Status (approve-reject) / notes — approve no longer filters; it's a label.
-- The active Look comes from the existing `LookPicker` in the header (no new Look-selection chrome — the toggle just reads `activeLookId`).
-
-## What this explicitly does NOT do (scope walls)
-
-- **Do NOT split or un-suppress the merged forests** (Brief 23a stays dormant). No group shots in the picker.
-- **Do NOT edit `meta.json`** to reassign species — reassignment lives in the curation override only (meta is regenerated by `survey-deleaf.js`).
-- **Do NOT touch the LS runtime, the shaders, or the slab** — no `treeAtlasMaterial.js` / `InstancedTrees.jsx` / `bake-look.js` / `bake-trees.js` / `trees-atlas.json`. This is an authoring-UI + curation-state change only.
-- **Do NOT un-exclude procedural/LiDAR** from the Salon picker.
-- **Do NOT bake provenance** (literal/composite) — that's the separate Brief 25.
-
-## Coordinate with Brief 24 (Grove coverage view)
-
-Brief 24 builds a read-only coverage join that reads each chassis's species. **The coverage join must read the *effective* species (`speciesOverride ?? source.species`), not raw `source.species`** — or a reassigned "Weeping Willow" won't count toward Weeping Willow's coverage. If Brief 24 has already shipped when you start, update its join helper to be override-aware. If it hasn't, leave a note in your commit body so 24's baby (or Boz) wires it. Lift the effective-species helper somewhere both can import.
-
-## Inspection points (surface before building)
-
-1. **How `listSalonSpecies` builds the union today** — where the effective-species helper slots in without breaking the "operator never loses a species they were working on" guarantee.
-2. **How the chassis catalog filters** — morphology + forest suppression + (today) approved. Confirm the `Look only` toggle composes cleanly with the morphology filter that already exists.
-3. **Common-name vs species-id** for the reassignment target — surface your resolution rule before building the control.
+- `src/arborist/SalonWorkstage.jsx` — the current SPECIES dropdown + chassis/bark/leaves controls you re-parent. (Brief 3A `8010c8e` + Cadastre's Brief 24 work are committed — rebase onto them.)
+- `src/arborist/CoverageView.jsx` + `arborist/serve.js` `GET /coverage` (Cadastre) — the roster join you evolve into the navigator.
+- `arborist/serve.js` `/salon/*` + `arborist/generate-salon.js` (`listSalonSpecies`, composition publish) — the publish path you keep.
+- `src/data/park_species_map.json` — the routing map (the spine; likely evolves here).
+- `arborist/ROSTER-COVERAGE.md` (esp. §1 recipes + §6 stale-roster finding) — the recommended-candidate source + the why.
+- Memory: `[[feedback_baby_briefs_need_identity_framing]]`, `[[feedback_baby_must_surface_scope_drift]]`, `[[feedback_geometry_briefs_need_artifact_inspection]]`, `[[feedback_d3_bundling_failure_modes]]`, `[[feedback_load_bearing_files_serial_dispatch]]`, `[[project_doped_artifact_placecard_edit_pattern]]`, `[[project_authoring_is_live_production_is_static]]`.
 
 ## Acceptance criteria
 
-1. `Approved only` checkbox is gone; a working `Look only` toggle replaces it. OFF shows the full library (incl. un-approved bundle-splits); ON shows only the active Look's roster species.
-2. Reassigning a chassis's species (e.g. a `garden_mix` variant → `salix_babylonica`) re-homes it: it appears under the target species in the picker + species dropdown, and disappears from its old vendor-species grouping.
-3. `speciesOverride` persists in `_chassis-curation.json`, survives a `survey-deleaf.js` regen (name-keyed), and inherits `source.species` when absent.
-4. Forests stay suppressed; procedural/LiDAR stay excluded — in both toggle states.
-5. The curation row's displayName / Status / notes still work; approve no longer hides chassis.
-6. Effective-species helper is the single source of truth, override-aware, and Brief 24's coverage join uses it (or a coordination note is left).
-7. No runtime / shader / slab / bake touch. `serve.js` passes `node --check`; vite build clean.
-8. Docs: `FEATURES.md` (Salon Chassis section + curation), `NOTES.md` dated entry, and a line in `ROSTER-COVERAGE.md` noting reassignment now drives coverage.
+1. Top nav is the **roster-species list** (the "SPECIES" dropdown is gone); each row shows count + coverage badge + composed/not-available state.
+2. Clicking a roster species opens the inside view: candidate pulldown with a **recommended ↔ show-all** toggle + full composition controls (chassis + bark + leaves + height) + a **not-available** option.
+3. Picking **any** chassis (incl. an unlabeled split / generic via "show all") composes the roster species and sets its routing; it publishes as a **library composition reusable by other Looks**.
+4. **Not-available** → that roster species renders no tree (deliberate gap), reflected in coverage.
+5. The keying is implemented per the **settled canonical-id-per-roster-species spine** (above), via one shared helper; `park_species_map` stays the routing source of truth (roster-name → canonical id).
+6. Grove Look-curation behavior intact; existing composition publish path intact; **no runtime/slab/shader touch**.
+7. `serve.js` `node --check` clean; vite build clean. Docs: `FEATURES.md` (Salon section rewrite) + `NOTES.md` dated entry + `ROSTER-COVERAGE.md` note that the navigator is now the authoring surface.
 
 ## Surface anything not in this brief
 
-Per `[[feedback_baby_must_surface_scope_drift]]`: disclose any file/schema/default you touch beyond those named. If the common-name↔species-id resolution turns out to need real curation (no clean auto-map), stop at a clean wall and say so — Jacob owns that judgment. If 26a's effective-species lift turns out to ripple wider than `listSalonSpecies` + the catalog (e.g. into the manifest or bake path), surface it rather than chasing it.
+Per `[[feedback_baby_must_surface_scope_drift]]`: the keying spine is **settled** (canonical-id-per-roster-species, above) — implement it, don't re-open it; only surface the list-vs-single `park_species_map` shape choice in your commit body. If re-parenting the composition controls ripples into the publish path or the Grove's roster-membership model, surface it rather than chasing it. If "show all" candidates can't cleanly exclude procedural/LiDAR at chassis granularity, say so.
 
 ## Dispatch posture
 
-**Serializes AFTER Brief 3A commits** (shares `SalonWorkstage.jsx` + `generate-salon.js` — load-bearing multi-edit files per `[[feedback_load_bearing_files_serial_dispatch]]`). Coordinate with Brief 24 (effective-species helper). Sub-phase 26a (data) before 26b (UI). ~300–450 LOC across `SalonWorkstage.jsx` + `serve.js` + `generate-salon.js` + the curation schema. Authoring-only — no slab/runtime risk.
+Big restructure of the Salon's core navigation. **Serialize after Cadastre's Brief 24 work has committed** (shares `CoverageView.jsx` / `serve.js` / the Arborist app shell). 3A (`8010c8e`) already committed. Sub-phase **26a (nav + wiring) before 26b (authoring UI)**. The keying spine is **settled** (canonical-id-per-roster-species). ~500–700 LOC across `SalonWorkstage.jsx` + `serve.js` + `generate-salon.js` + the routing map + the navigator component. Authoring-only — no slab/runtime risk.
