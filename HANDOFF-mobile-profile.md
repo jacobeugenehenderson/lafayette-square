@@ -1,97 +1,108 @@
-# Handoff (DRAFT — for fresh-Boz sanity-check, NOT dispatch-ready) — Mobile Profile as Authored Channel
+# Handoff — Mobile Policy: Per-Look Inclusion (slab) + Product Quality (instance)
 
-> **Status: DRAFT for review.** This arc is large and touches the most contended files in the repo
-> (`Scene.jsx`, `PreviewApp.jsx`, the slab schema, Stage authoring, the bake). Do NOT dispatch until a
-> second pass (fresh-context Boz + Jacob) pressure-tests the open design questions in §3. The phasing
-> in §5 is provisional.
+> **Status: review-integrated, near-dispatch-ready.** Cold-review (Boz #2, 2026-05-26) reframed the
+> architecture; live-context Boz verified its two load-bearing claims against the code and integrated it.
+> Open items before dispatch: Jacob's nod on the §2 amendment (accepted by seat-holder, see Provenance),
+> and the convergence sequencing in §6. Still touches contended files — lands after the in-flight arcs.
+
+## Provenance (why this brief changed shape)
+
+The first draft proposed one slab-authored "mobile profile." Cold-review caught that **`IS_MOBILE` is
+overloaded across two axes with *different timing constraints*** — and unifying them into one slab channel
+is what manufactured the original "Q1 stranding" problem. The real cut is **global-vs-per-layer**, which is
+*also* the **sync-vs-async** cut, which routes to **two existing homes**. Verified by the seat-holder:
+- **`INSTANCE` (`src/instance.js`) exists and is the doctrinal home for product-wide fixed-truth** — its
+  docstring: "fixed-truth identity the slab doesn't carry" ([[project_slab_is_the_instance_identity]]).
+- **Canvas-construction props can't be slab-authored** — `Scene.jsx`'s camera comment confirms "Canvas's
+  initial fov fires before scene.json resolves"; the code already works around this exact bootstrapping
+  constraint for fov. So `gl`/`dpr`/`shadows` *must* be synchronous (`INSTANCE`), not async (slab).
 
 ## 1. Why this exists (the ethos)
 
 What the product *is* on a phone is a **product decision the operator controls**, not something agents
-hardwire. Right now it's the opposite: ~20 `IS_MOBILE` branches scattered across 6 files silently decide
-what mobile users get, invisible to and uncontrollable by the operator. This violates "**user control over
-what makes it to runtime**" and is the textbook case for "**hardwires come out when channels install**"
-([[hardwires_come_out_when_channels_install]], [[project_slab_carries_full_authored_product]]). The fix:
-mobile degradation becomes an **operator-authored channel**, baked into the slab. See
-[[project_mobile_profile_authored_channel]] for the settled shape.
+hardwire. Today ~20 `IS_MOBILE` branches across 6 files silently decide what mobile users get — invisible,
+uncontrollable, duplicated. Violates "**user control over what makes it to runtime**"; textbook
+"**hardwires come out when channels install**" ([[hardwires_come_out_when_channels_install]],
+[[project_slab_carries_full_authored_product]], [[project_mobile_profile_authored_channel]]).
 
-## 2. Settled decisions (operator, 2026-05-26 — do NOT relitigate without cause)
+## 2. The architecture — two axes, two homes (SETTLED)
 
-- **Per-layer inclusion (Option A)** — reuse the existing layer taxonomy; operator sets "ship on mobile?"
-  per layer. NOT per-tree/micro (that granularity stays automatic, e.g. the tree `heroTier`).
-- **Authored in STAGE, baked into the slab.** Runtime detects device → selects the authored profile →
-  renders it. Device *sensing* stays in code (consolidate the 6 duplicated regexes to one); device
-  *policy* becomes authored.
-- **Seeded with today's hardwired choices as DEFAULTS** — no day-one behavior change ("dope the artifact").
-- **NO write-back from Preview to the slab** (operator: "too many chances for mischief, too little
-  payoff"). Preview stays a pure slab reader; it *measures* and *reflects*, never authors.
-- **The Stage mobile profile ("what ships to mobile") ≠ the Preview inspection toggles ("what am I
-  toggling to check perf").** Same per-layer *shape*, different purpose + surface.
+`IS_MOBILE` is doing two unrelated jobs. Split them:
 
-## 3. OPEN DESIGN QUESTIONS (the point of the review — please pressure-test)
+| Axis | What | Home | Why | Timing |
+|------|------|------|-----|--------|
+| **Inclusion** | which *layers* ship to mobile (lamps, arch, street lights…) | **slab / design.json**, Stage-authored, **per-Look** | mount-gates *inside* the render tree; an authored artistic choice | async-fine (gates after slab loads) |
+| **Global quality** | `dpr` / `antialias` / `shadows` / post-fx tier | **`INSTANCE.mobileQuality`**, **product-wide** | device *capability*, not art; Canvas-*construction* props | **must be synchronous** — set before the slab resolves |
+| **Shader-baked / structural** | `StreetLights` GLSL-template alpha + module consts; `PostProcessing` mobile effect graph | **stays code-side, documented** | converting a GLSL template constant to a slab uniform is a refactor wildly disproportionate to "halo 0.30 vs 0.45" | below operator-interest threshold ([[feedback_smallness_as_precondition]]) |
 
-**Q1 — Inclusion-only, or inclusion + quality? (the crux.)** The `IS_MOBILE` hardwires are a *mix*:
-  - **Layer inclusion** (clean fit for Option A): drop `BakedLamps`, arch only-in-hero, defer street lights.
-  - **Intra-layer quality** (does NOT fit a per-layer on/off): `StreetLights` glow/halo/pool radii + alpha,
-    `SlabBuildings`/`LafayetteScene` texture-res skip, `dpr` 1, `antialias` off, shadows off, the
-    `PostProcessing` mobile branch.
-  A pure layer-inclusion profile handles the first group and **strands the second**. Options:
-  (a) author inclusion only; leave intra-layer quality as a device-adaptive default in code (lean: simplest,
-  but then "what ships to mobile" is only *half* operator-controlled);
-  (b) extend the profile to a small set of **quality flags** per layer/global (shadows, dpr, post-fx tier,
-  texture tier) — richer schema + Stage UI, but the operator controls quality too;
-  (c) a coarse global "mobile quality preset" (low/med) bundling the GPU knobs, + per-layer inclusion on top.
-  **Which line?** This sizes the whole arc.
+**Device *sensing* stays in code** (consolidate the 6 duplicated `/iPhone|iPad|iPod|Android/i` regexes to
+ONE source). **Device *policy* splits to the two homes above.** Both seeded with today's hardwired values
+as defaults → **no day-one behavior change** ("dope the artifact"). Hardwires then come out.
 
-**Q2 — Per-Look or per-instance/deploy?** I've assumed the profile is **per-Look** (authored in design.json,
-  baked into each Look's slab) — consistent with the authoring ethos. But mobile/desktop is a *device* split,
-  arguably a per-instance/deploy concern (like [[project_kit_deploy_path_agnostic|BASE_URL]]). Is "drop the
-  arch on mobile" really a per-Look artistic choice, or a product-wide policy? **Lean per-Look (ethos), but
-  this is a genuine fork** — if it's product-wide, the home is instance/kit config, not design.json.
+**Carried over from the original settled decisions:** per-layer **inclusion** is Option A (reuse the layer
+taxonomy), Stage-authored; NOT per-tree/micro (that stays automatic). **NO write-back from Preview to the
+slab** (operator). Stage mobile-inclusion ("what ships") ≠ Preview inspection toggles ("what am I measuring").
 
-**Q3 — Can today's behavior be reproduced as a seeded default faithfully?** Some hardwires are entangled
-  (the StreetLights shader-constant branch bakes mobile into the *shader*; `LafayetteScene` texture-skip is a
-  load-time guard). Audit whether each maps cleanly to a profile knob or needs refactoring first. If some
-  don't map, the "no day-one behavior change" promise is at risk — surface before Phase A.
+**On the per-Look inclusion home (don't over-justify):** today inclusion is one global `IS_MOBILE`, so the
+per-Look *value* is partly speculative. Justify it as "the per-Look authoring surface already exists; seed
+all Looks identically from today's hardwires; the option's free if a Look ever diverges" — not with a use
+case we don't have. If no Look ever diverges, nothing's lost.
 
-**Q4 — Sequencing / convergence.** This touches `Scene.jsx` (the same file buildings-cutover + trees-Phase-E
-  touch), `PreviewApp.jsx` (measurement arc + trees impostor flag), the slab schema, Stage, the bake — the
-  most contended surfaces in flight. Almost certainly must land AFTER the measurement regime + after the
-  buildings/trees Scene.jsx work settles. Is "last in the queue" right, or does something force it earlier?
+## 3. Resolved design (was "open questions")
 
-## 4. The hardwire inventory (verified 2026-05-26)
+The reframe in §2 dissolves the original Q1/Q2/Q3:
+- **Q1 (inclusion-only vs +quality):** neither — it's a *disciplined* split, not a ladder. We have exactly
+  two device states, not a low/med spectrum; **don't invent a quality ladder.** One flat `mobileQuality`
+  block + per-layer inclusion + a documented code-side tail. Both halves of "what ships to mobile" are
+  controlled honestly without per-layer-quality schema blowup.
+- **Q2 (per-Look vs deploy):** *both, correctly routed* — inclusion per-Look (slab), quality product-wide
+  (`INSTANCE`). The "device concern" instinct was right for the quality half.
+- **Q3 (faithful seeded default):** easier under the reframe — the entangled/shader-baked cases **don't
+  move** (they stay code-side), so there's nothing to reproduce for them. Inclusion + flat quality both map
+  cleanly to seeded values.
 
-- `Scene.jsx`: `:138` no-hero-on-mobile, `:651` antialias, `:673` dpr, `:674`/`:676` shadows+`StageShadows`,
-  `:716` no `BakedLamps`, `:717` arch only-if-hero, `:721` `DeferredStreetLights`.
-- `StreetLights.jsx`: `:29/:30/:38` radii, `:234` alpha (shader constant).
-- `SlabBuildings.jsx:45`, `LafayetteScene.jsx:58`: texture/detail skip.
-- `PostProcessing.jsx:357`: mobile post-fx branch.
-- `ContactModal.jsx`: UI-only (out of scope — not render policy).
-- Device-sense regex `/iPhone|iPad|iPod|Android/i` duplicated in 6 files → consolidate to one.
+## 4. Hardwire inventory, classified (verified 2026-05-26)
 
-## 5. Provisional phasing (revisit after §3 is settled)
+- **Inclusion → slab:** `Scene.jsx:716` no `BakedLamps`, `:717` arch only-if-hero, `:721`
+  `DeferredStreetLights`, `:138` no-hero-on-mobile (confirm this one's an inclusion vs a quality call).
+- **Global quality → `INSTANCE`:** `Scene.jsx:651` antialias, `:673` dpr, `:674`/`:676` shadows +
+  `StageShadows`. (`SlabBuildings:45` / `LafayetteScene:58` texture/detail skip → quality-ish; audit which.)
+- **Shader-baked / structural → stays code-side, documented:** `StreetLights:234` alpha (compiled into the
+  GLSL source via template literal), `:29–38` radii (module consts), `PostProcessing:357` (separate effect
+  graph). `ContactModal` = UI-only, out of scope.
+- Device-sense regex duplicated 6× → consolidate to one.
 
-- **Phase 0 — Audit.** Inventory every `IS_MOBILE` branch, classify inclusion-vs-quality (feeds Q1), map each
-  to a seeded-default profile value or flag as entangled (Q3). No code.
-- **Phase A — Consolidate device sensing** to one `IS_MOBILE` source. Pure refactor, zero behavior change.
-- **Phase B — Profile schema + bake.** Author `mobileProfile` in design.json (scope per Q1), seed defaults,
-  bake into the slab. No runtime consumption yet.
-- **Phase C — Runtime profile selection.** Replace `IS_MOBILE ? …` policy branches with profile-driven
-  rendering; device-sense → profile-select; profile content → from slab. **Hardwires come out here.** Seeded
-  defaults ⇒ mobile renders identically to today (the verification gate).
-- **Phase D — Stage "Mobile" authoring.** A Stage view that applies the mobile profile (operator *sees* what
-  the phone gets) + per-layer (and per-Q1 quality) authoring → design.json.
-- **Phase E — Preview reflects + measures** the mobile profile (read-only; no write-back).
-- **Phase F — Docs + cleanup.** SLAB-CONTRACT (new channel), FEATURES, retire scattered regexes.
+## 5. Provisional phasing (the smaller arc)
 
-## 6. Fresh-Boz review prompts
+- **Phase 0 — Audit.** Classify every `IS_MOBILE` branch into the three §4 buckets; confirm the inclusion
+  list and the seeded `mobileQuality` values mirror today exactly; confirm the `:138`/texture-skip edge calls.
+- **Phase A — Consolidate device sensing** to one `IS_MOBILE`. Pure refactor, zero behavior change.
+- **Phase B — `INSTANCE.mobileQuality`** (sync, product-wide): move `gl`/`dpr`/`shadows`/post-fx-tier to read
+  from it, seeded to today's values. Mobile renders identically. (No slab/Stage work — self-contained.)
+- **Phase C — Inclusion channel** in design.json + bake → slab; seed from today's inclusion hardwires; runtime
+  gates layer mounts on the authored inclusion map. Hardwired inclusion branches come out. Identical behavior.
+- **Phase D — Stage "Mobile" view + per-layer inclusion authoring** → design.json. Operator sees what the
+  phone gets and toggles inclusion.
+- **Phase E — Preview reflects** the mobile profile (read-only; no write-back) + measures it.
+- **Phase F — Docs + cleanup.** SLAB-CONTRACT (inclusion channel), `INSTANCE` docs (mobileQuality), FEATURES,
+  retire regexes; document the code-side shader/structural tail.
 
-1. **Q1 is the big one** — inclusion-only vs inclusion+quality. Does leaving intra-layer quality as an
-   adaptive default undercut the whole ethos point, or is it a reasonable v1 line? Is (c) the right middle?
-2. **Q2** — per-Look vs product-wide. Is a per-Look mobile profile actually coherent, or am I forcing the
-   authoring-ethos frame onto what's really a deploy/device concern?
-3. Is the **seeded-default "no behavior change"** promise realistic given the entangled hardwires (Q3)?
-4. Is the **phasing** honest about which user-visible behavior each phase does/doesn't change?
-5. Am I **over-scoping**? Is there a smaller version that delivers the ethos win (operator controls what
-   ships to mobile) without the full schema+Stage-UI+runtime arc?
-6. Anything the **live-context me** has rationalized that doesn't hold up cold?
+Note: Phases B and C are independent (different homes) and individually shippable — B has no slab/Stage
+dependency at all, so it can land early and cheaply.
+
+## 6. Convergence + sequencing
+
+Touches `Scene.jsx` (buildings-cutover + trees-Phase-E also touch it), `PreviewApp.jsx` (measurement arc +
+trees impostor flag), the slab schema, Stage, the bake, AND `INSTANCE`. Highest convergence of any in-flight
+work → **lands last**, after measurement + the buildings/trees Scene.jsx work settles. The measurement regime
+is its *instrument* (per-layer cost → informs the inclusion authoring). Surface to Boz before touching
+`Scene.jsx` / `PreviewApp.jsx` / the slab schema so it sequences behind the others.
+
+## 7. Remaining review prompts (smaller now)
+
+1. Is **`:138` no-hero-on-mobile** inclusion or quality? (It gates a *shot*, not a layer — may be neither.)
+2. Are the **texture/detail skips** (`SlabBuildings:45`, `LafayetteScene:58`) a global quality flag, or
+   per-layer quality that argues for *some* per-layer quality after all? (The one place §2's clean split
+   might leak — audit before Phase 0 closes.)
+3. Still the right call to leave the **shader-baked tail** code-side, or does honesty-of-"what ships"
+   demand even those be operator-visible (even if read-only)?
