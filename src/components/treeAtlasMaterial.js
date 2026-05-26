@@ -191,6 +191,17 @@ function injectFoliageSway(material) {
     // detail composite; hero is the existing path; street currently falls
     // back to hero (10C wires full PBR).
     shader.uniforms.uBarkShaderTier = treeBarkTierUniform
+    // Brief 3A (Cant) — per-instance deformer ranges. Three vec2 [lo,hi]
+    // ranges (lean/twist in radians, wander in metres) sampled per-instance
+    // by a world-XZ hash in the vertex shader. Default (0,0) → identity, so
+    // any species without an authored deformer renders pixel-identical
+    // (regression-safe). uDeformSeed perturbs the hash anchor — 0 in LS
+    // (real per-instance anchors give the spread), non-zero in Salon preview
+    // so the single-tree preview can re-roll across the authored range.
+    shader.uniforms.uDeformLeanRange   = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uDeformTwistRange  = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uDeformWanderRange = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uDeformSeed        = { value: new THREE.Vector2(0, 0) }
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -215,15 +226,94 @@ function injectFoliageSway(material) {
          attribute float aBark;
          attribute float aBarkRegion;
          attribute float aWindTier;
+         attribute float aTreeHeightNorm;
+         uniform vec2 uDeformLeanRange;
+         uniform vec2 uDeformTwistRange;
+         uniform vec2 uDeformWanderRange;
+         uniform vec2 uDeformSeed;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
          varying float vBarkRegion;
-         varying vec3 vWorldXZ;`
+         varying vec3 vWorldXZ;
+         // Brief 3A (Cant) — per-instance deformer. Builds the lean∘twist
+         // rotation about the trunk base (= origin, Brief 20 recenter) and the
+         // per-height wander XZ offset, seeded by the instance anchor so every
+         // vertex of one tree shares one signature. Pure rigid rotation, so the
+         // SAME matrix rotates the normal exactly (no inverse-transpose — that's
+         // the canopy-asymmetry work deferred to 3C). All-zero ranges → identity
+         // matrix + zero offset, bit-exact regression-safe.
+         mat3 cantDeformBasis(vec2 anchorXZ, float hNorm, out vec2 wanderOut) {
+           float dh5 = fract(sin(dot(anchorXZ, vec2(73.1, 458.3)))  * 43758.5453); // lean+twist mag
+           float dh6 = fract(sin(dot(anchorXZ, vec2(151.7, 619.2))) * 43758.5453); // wander mag
+           float dh7 = fract(sin(dot(anchorXZ, vec2(311.3, 97.5)))  * 43758.5453); // lean azimuth
+           float dh8 = fract(sin(dot(anchorXZ, vec2(57.9, 271.4)))  * 43758.5453); // wander dir/phase
+           float leanAmt   = mix(uDeformLeanRange.x,   uDeformLeanRange.y,   dh5);
+           float twistAmt  = mix(uDeformTwistRange.x,  uDeformTwistRange.y,  dh5);
+           float wanderAmt = mix(uDeformWanderRange.x, uDeformWanderRange.y, dh6);
+           // Lean: tip toward a per-instance compass azimuth, angle grows with
+           // height so the base stays planted and the canopy tilts. Rotation
+           // axis is horizontal, perpendicular to the lean direction.
+           float az = dh7 * 6.2831853;
+           vec2  leanDir = vec2(cos(az), sin(az));
+           vec3  k = vec3(leanDir.y, 0.0, -leanDir.x);   // already unit
+           float la = leanAmt * hNorm;
+           float lc = cos(la), ls = sin(la), lC = 1.0 - lc;
+           mat3 leanRot = mat3(
+             lc + k.x*k.x*lC,  k.z*ls,           k.x*k.z*lC,
+             -k.z*ls,          lc,               k.x*ls,
+             k.x*k.z*lC,       -k.x*ls,          lc + k.z*k.z*lC
+           );
+           // Twist: rotate about local Y, angle grows with height.
+           float ta = twistAmt * hNorm;
+           float tc = cos(ta), ts = sin(ta);
+           mat3 twistRot = mat3(
+             tc,  0.0, -ts,
+             0.0, 1.0, 0.0,
+             ts,  0.0, tc
+           );
+           // Wander: sinusoidal-in-height XZ drift along a per-instance
+           // direction, fixed frequency (1.5 half-cycles over the trunk).
+           // Pure translation per height-slice — normal unaffected (the small
+           // tangent shear is ignored per 3A scope).
+           float wAz    = dh8 * 6.2831853;
+           float wPhase = fract(dh8 * 1.7 + 0.37) * 6.2831853;
+           float wander = wanderAmt * sin(hNorm * 3.14159265 * 1.5 + wPhase);
+           wanderOut = vec2(cos(wAz), sin(wAz)) * wander;
+           return leanRot * twistRot;
+         }`
+      )
+      .replace(
+        // Brief 3A (Cant): the deformer rotation must touch the NORMAL here,
+        // not in <begin_vertex>. In MeshStandardMaterial the normal chunks
+        // (<beginnormal_vertex>→<defaultnormal_vertex>→<normal_vertex>) all run
+        // BEFORE <begin_vertex>, so by the time `transformed` exists the normal
+        // is already baked into vNormal. We compute the lean∘twist matrix here,
+        // rotate objectNormal, and stash the matrix + wander offset in main()
+        // scope for the <begin_vertex> patch to reuse on the position. Anchor
+        // accessor mirrors the wind block's instWorld (instanceMatrix in the LS
+        // instanced path, modelMatrix fallback for the non-instanced Salon
+        // preview — Cambium Brief 7).
+        '#include <beginnormal_vertex>',
+        `#include <beginnormal_vertex>
+         #ifdef USE_INSTANCING
+           vec2 cantAnchorXZ = vec2(instanceMatrix[3].x, instanceMatrix[3].z) + uDeformSeed;
+         #else
+           vec2 cantAnchorXZ = vec2(modelMatrix[3].x, modelMatrix[3].z) + uDeformSeed;
+         #endif
+         float cantH = clamp(aTreeHeightNorm, 0.0, 1.0);
+         vec2 cantWander;
+         mat3 cantRot = cantDeformBasis(cantAnchorXZ, cantH, cantWander);
+         objectNormal = cantRot * objectNormal;`
       )
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
+         // Brief 3A (Cant): reshape the rest pose BEFORE wind sway. cantRot +
+         // cantWander were computed in the <beginnormal_vertex> patch above
+         // (same main() scope). Wind then oscillates around this deformed pose.
+         transformed = cantRot * transformed;
+         transformed.xz += cantWander;
          vLampGlow = aLampGlow;
          vBark = aBark;
          vBarkRegion = aBarkRegion;
@@ -829,6 +919,57 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
       }
     }
     geometry.setAttribute('aWindTier', new THREE.BufferAttribute(arr, 1))
+  }
+  // Brief 3A (Cant) — normalized trunk-base→top height [0,1], drives the
+  // per-instance deformer's lean/twist angle ramp. The chassis-wide (minY,
+  // yRange) is passed in via fallback so the Salon preview shares the exact
+  // normalization the LS runtime computes in InstancedTrees#meshes; if absent
+  // (no scan), fall back to this geometry's own Y extent. Base sits at Y≈0
+  // (Brief 20 recenter) so minY≈0 in practice, but normalizing base→top works
+  // for any frame.
+  if (!geometry.attributes.aTreeHeightNorm) {
+    const arr = new Float32Array(pos.count)
+    let minY = fallback.chassisMinY
+    let yRange = fallback.chassisYRange
+    if (typeof minY !== 'number' || typeof yRange !== 'number' || !(yRange > 0)) {
+      let lo = Infinity, hi = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i)
+        if (y < lo) lo = y
+        if (y > hi) hi = y
+      }
+      minY = Number.isFinite(lo) ? lo : 0
+      yRange = Math.max(1e-4, hi - lo)
+    }
+    for (let i = 0; i < pos.count; i++) {
+      const t = (pos.getY(i) - minY) / yRange
+      arr[i] = t < 0 ? 0 : t > 1 ? 1 : t
+    }
+    geometry.setAttribute('aTreeHeightNorm', new THREE.BufferAttribute(arr, 1))
+  }
+}
+
+// Brief 3A (Cant) — per-draw deformer ranges. Sibling of applyBarkUniforms
+// (NOT a widened arity) so bark and deformer stay separable and the preview
+// re-roll seed is deformer-only. Same per-draw mutation pattern: the shared
+// material carries the prior species' range until we overwrite it right
+// before the draw. Absent/empty range → (0,0) → identity (AC #5). lean/twist
+// are radians, wander metres; seed perturbs the hash anchor (0 in LS).
+export function applyDeformerUniforms(material, deformerRange, seed = null) {
+  const shader = material?.userData?.shader
+  if (!shader) return
+  const r = deformerRange || {}
+  const set2 = (uniform, pair) => {
+    if (!uniform) return
+    if (Array.isArray(pair) && pair.length >= 2) uniform.value.set(pair[0], pair[1])
+    else uniform.value.set(0, 0)
+  }
+  set2(shader.uniforms.uDeformLeanRange,   r.lean)
+  set2(shader.uniforms.uDeformTwistRange,  r.twist)
+  set2(shader.uniforms.uDeformWanderRange, r.wander)
+  if (shader.uniforms.uDeformSeed) {
+    if (Array.isArray(seed) && seed.length >= 2) shader.uniforms.uDeformSeed.value.set(seed[0], seed[1])
+    else shader.uniforms.uDeformSeed.value.set(0, 0)
   }
 }
 

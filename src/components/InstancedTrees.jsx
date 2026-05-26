@@ -23,6 +23,7 @@ import {
   useTreeAtlas,
   treeSwayUniforms,
   applyBarkUniforms,
+  applyDeformerUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
@@ -66,7 +67,7 @@ function urlToVariantId(url) {
   return m ? m[1] : null
 }
 
-function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot }) {
+function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
   const { scene } = useGLTF(url)
 
   // Walk the rewritten GLB, baking each primitive's world matrix into its
@@ -168,6 +169,35 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
     })
     if (collected.length === 0) return []
 
+    // Brief 3A (Cant) — chassis-wide trunk-base→top Y range, shared across all
+    // collected primitives so aTreeHeightNorm normalizes consistently (a leaf
+    // card high in the canopy and a trunk vertex at the base land on the same
+    // [0,1] axis). Cork's 10A pivot removed the equivalent scan when it retired
+    // aBarkWorldYNorm — the scan itself was sound (only the camera-angle-
+    // dependent bark CONSUMER was wrong); the deformer's height-norm is a
+    // legitimate consumer, so it's reintroduced here. Geometries are already in
+    // the merged frame (world transform baked via applyMatrix4 above), matching
+    // the existing aWindTier classifier's coordinate assumptions.
+    let chassisMinY = Infinity, chassisMaxY = -Infinity
+    for (const g of collected) {
+      g.computeBoundingBox()
+      if (g.boundingBox) {
+        if (g.boundingBox.min.y < chassisMinY) chassisMinY = g.boundingBox.min.y
+        if (g.boundingBox.max.y > chassisMaxY) chassisMaxY = g.boundingBox.max.y
+      }
+    }
+    if (!Number.isFinite(chassisMinY)) chassisMinY = 0
+    const chassisYRange = Math.max(1e-4, chassisMaxY - chassisMinY)
+    for (const g of collected) {
+      const gp = g.attributes.position
+      const arr = new Float32Array(gp.count)
+      for (let i = 0; i < gp.count; i++) {
+        const t = (gp.getY(i) - chassisMinY) / chassisYRange
+        arr[i] = t < 0 ? 0 : t > 1 ? 1 : t
+      }
+      g.setAttribute('aTreeHeightNorm', new THREE.BufferAttribute(arr, 1))
+    }
+
     // Verify all geometries share the same attribute keys before merging.
     // If something diverges (rare, but a future tree variant could ship
     // vertex colors on bark only), fall back to per-primitive submeshes.
@@ -253,6 +283,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
           gradientSlot={gradientSlot}
           detailSlot={detailSlot}
           posterizedSlot={posterizedSlot}
+          deformerRange={deformerRange}
         />
       ))}
     </>
@@ -263,7 +294,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot, detailSlot, posterizedSlot }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
   const ref = useRef(null)
   // Attach the per-instance lamp-glow attribute to the geometry. Each
   // unique GLB has a unique geometry instance, so this doesn't bleed
@@ -295,8 +326,14 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   // the uniforms; we overwrite right before three.js submits the draw,
   // and three.js uploads uniform values per draw.
   const onBeforeRender = useMemo(() => {
-    return () => applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot)
-  }, [material, barkSettings, gradientSlot, detailSlot, posterizedSlot])
+    return () => {
+      applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot)
+      // Brief 3A (Cant) — per-draw deformer range (LS seed stays 0; real
+      // per-instance anchors supply the spread). Same shared-material per-draw
+      // mutation as bark; a species with no authored deformer resets to (0,0).
+      applyDeformerUniforms(material, deformerRange)
+    }
+  }, [material, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange])
 
   return (
     <instancedMesh
@@ -538,6 +575,14 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     return atlas?.manifest?.barkPosterizedBySpecies || {}
   }, [atlas?.manifest?.barkPosterizedBySpecies])
 
+  // Brief 3A (Cant): per-species deformer ranges from trees-atlas.json (bake-
+  // look surfaces manifest.json#deformer.range into deformerBySpecies, same
+  // single-spec-per-species model as barkBySpecies). Looked up by URL→species
+  // at draw time; absent → null → identity uniforms (no deformation).
+  const deformerBySpecies = useMemo(() => {
+    return atlas?.manifest?.deformerBySpecies || {}
+  }, [atlas?.manifest?.deformerBySpecies])
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
@@ -555,6 +600,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
             : null
           const detailSlot = species ? (barkDetailBySpecies[species] || null) : null
           const posterizedSlot = species ? (barkPosterizedBySpecies[species] || null) : null
+          const deformerRange = species ? (deformerBySpecies[species]?.range || null) : null
           return (
             <Suspense key={`${url}#${tileId}`} fallback={null}>
               <VariantInstances
@@ -565,6 +611,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
                 gradientSlot={gradientSlot}
                 detailSlot={detailSlot}
                 posterizedSlot={posterizedSlot}
+                deformerRange={deformerRange}
               />
             </Suspense>
           )

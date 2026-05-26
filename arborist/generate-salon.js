@@ -112,7 +112,14 @@ export const DEFAULTS = {
     tintFront: '#3a7530',
     tintBack:  '#a8b89a',
   },
-  deformer: {},   // reserved-but-empty — Brief 3 fills
+  // Brief 3A (Cant): per-instance procedural-fill deformer. `range` carries
+  // three [lo,hi] pairs sampled per-instance by a world-XZ hash in the vertex
+  // shader: `lean`/`twist` in RADIANS (tilt-toward-azimuth + about-Y, angle
+  // grows base→top), `wander` in METRES (sinusoidal XZ drift along height).
+  // Empty (or all-zero ranges) → identity (no deformation; regression-safe).
+  // Runtime-only: applied as per-draw uniforms, nothing baked into GLB/atlas.
+  // (3B = designed slots/PlaceCard binding; 3C = canopy asymmetry/branch jitter.)
+  deformer: {},   // { range?: { lean:[lo,hi], twist:[lo,hi], wander:[lo,hi] } }
   // Brief 19 (Quartz): authored chassis transform (Salon gizmo → bake).
   // Identity = no-op. `rotation` is [tiltX, rotationY, tiltZ] radians in the
   // gizmo's Euler XYZ order; `scale` is uniform. Applied LIVE by the viewport
@@ -1352,6 +1359,19 @@ async function writeIfChanged(p, bytes) {
 async function patchManifestForSalon(species, compositions) {
   const p = path.join(REPO_ROOT, 'public/trees', species, 'manifest.json')
   const m = JSON.parse(await fs.readFile(p, 'utf8'))
+  // Brief 3A (Cant): per-species deformer range. Single spec per species (the
+  // first composition's effective deformer), matching bark's single-spec model.
+  // bake-look surfaces this into trees-atlas.json#deformerBySpecies; the runtime
+  // sets per-draw uniforms. Runtime-consumed only — nothing baked into GLB/atlas.
+  const firstDef = compositions[0]?.effective?.deformer?.range
+  if (firstDef && (firstDef.lean || firstDef.twist || firstDef.wander)) {
+    const pair = (p) => (Array.isArray(p) && p.length >= 2) ? [p[0], p[1]] : [0, 0]
+    m.deformer = { range: {
+      lean:   pair(firstDef.lean),
+      twist:  pair(firstDef.twist),
+      wander: pair(firstDef.wander),
+    } }
+  }
   const first = compositions[0]?.effective?.bark
   if (first) {
     m.bark = {

@@ -25,6 +25,7 @@ import * as THREE from 'three'
 import {
   useSalonPreviewAtlas,
   applyBarkUniforms,
+  applyDeformerUniforms,
   stampTreeVertexAttrs,
   treeSwayUniforms,
   treeBarkTierUniform,
@@ -734,6 +735,8 @@ function Skeleton({
   rotationOffset = [0, 0, 0],
   onTopY,
   windStrength = 0,
+  deformerRange = null,
+  deformerSeed = null,
 }) {
   const { scene } = useGLTF(url)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
@@ -773,12 +776,26 @@ function Skeleton({
   useMemo(() => {
     if (!atlas.treeMaterial) return
     const treeMaterial = atlas.treeMaterial
+    // Brief 3A (Cant): chassis-wide trunk-base→top Y range, pre-scanned over
+    // all preview meshes so aTreeHeightNorm normalizes against the same axis
+    // the LS runtime uses (InstancedTrees#meshes). Geometry-local Y, matching
+    // stampTreeVertexAttrs' existing aWindTier coordinate assumption (chassis
+    // GLBs are baked flat — base at Y≈0 per Brief 20).
+    let chMinY = Infinity, chMaxY = -Infinity
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes?.position) return
+      o.geometry.computeBoundingBox()
+      const bb = o.geometry.boundingBox
+      if (bb) { chMinY = Math.min(chMinY, bb.min.y); chMaxY = Math.max(chMaxY, bb.max.y) }
+    })
+    const chassisMinY = Number.isFinite(chMinY) ? chMinY : 0
+    const chassisYRange = Math.max(1e-4, chMaxY - chMinY)
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
       if (o.geometry) {
-        stampTreeVertexAttrs(o.geometry, {}, o)
+        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
         // Strip vertex colors — they flip USE_COLOR in three.js's shader
         // cache, which would compile a parallel program; the shared
         // material expects no vertex colors.
@@ -824,6 +841,18 @@ function Skeleton({
       barkUniformsState.detailSlot,
       barkUniformsState.posterizedSlot,
     )
+  })
+
+  // Brief 3A (Cant) — preview parity (LOAD-BEARING per
+  // `feedback_salon_preview_is_authoring_surface`). The deformer is uniform-
+  // driven (not atlas-baked), so we bind the LIVE authored range straight from
+  // the workstage state — the operator sees lean/twist/wander update instantly
+  // as they drag, with no preview-atlas re-bake. deformerSeed perturbs the hash
+  // anchor so the single-tree preview can re-roll across the authored spread
+  // (multi-instance preview is deferred — see brief surface notes).
+  useFrame(() => {
+    if (!atlas.treeMaterial) return
+    applyDeformerUniforms(atlas.treeMaterial, deformerRange, deformerSeed)
   })
 
   // Auto-anchor on the DOMINANT trunk, not the centroid of all trunks.
@@ -915,6 +944,9 @@ export default function SpecimenViewport({
   cameraStateRef,
   windStrength = 0,
   onPerfSample,
+  // Brief 3A (Cant): live authored deformer range + preview re-roll seed.
+  deformerRange = null,
+  deformerSeed = null,
   // Brief 7 (Cambium): SpecimenViewport now mounts the shared
   // treeAtlasMaterial via the per-composition preview atlas. atlasUrl /
   // atlasNormalUrl are accepted but unused at this level — the atlas PNGs
@@ -1007,6 +1039,8 @@ export default function SpecimenViewport({
               rotationOffset={rotationOffset}
               onTopY={(y) => { topYRef.current = y; setTopY(y) }}
               windStrength={windStrength}
+              deformerRange={deformerRange}
+              deformerSeed={deformerSeed}
             />
           )}
         </Suspense>

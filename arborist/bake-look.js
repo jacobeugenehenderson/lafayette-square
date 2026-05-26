@@ -1015,6 +1015,12 @@ export async function bakeLook(lookName, opts = {}) {
   // onBeforeRender. The materialColors[<speciesId>] Look-level override
   // wins over barkBySpecies[<speciesId>].tintBase at runtime.
   const barkBySpecies = {}
+  // Brief 3A (Cant): per-species deformer ranges surfaced from
+  // manifest.json#deformer.range (written by generate-salon#patchManifestForSalon).
+  // Runtime-consumed only (InstancedTrees sets per-draw uniforms) — nothing is
+  // baked into the atlas or GLB, so this is a pass-through, single-spec-per-
+  // species like barkBySpecies.
+  const deformerBySpecies = {}
   const speciesSeen = new Set()
   for (const v of roster) {
     if (speciesSeen.has(v.species)) continue
@@ -1022,6 +1028,9 @@ export async function bakeLook(lookName, opts = {}) {
     const mPath = path.join(TREES_DIR, v.species, 'manifest.json')
     try {
       const m = JSON.parse(await fs.readFile(mPath, 'utf8'))
+      if (m?.deformer?.range) {
+        deformerBySpecies[v.species] = { range: m.deformer.range }
+      }
       if (m?.bark) {
         // Per-region bark binding (Phase L Cycle 2): manifest.bark may
         // carry { trunk, branch, regionThreshold } (LiDAR variants) or
@@ -1153,6 +1162,7 @@ export async function bakeLook(lookName, opts = {}) {
     barkGradientByVariant,
     barkDetailBySpecies,
     barkPosterizedBySpecies,
+    deformerBySpecies,
   }
   await fs.writeFile(path.join(outDir, 'trees-atlas.json'), JSON.stringify(manifest, null, 2))
 
