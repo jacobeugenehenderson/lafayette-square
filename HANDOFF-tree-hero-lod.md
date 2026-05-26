@@ -103,18 +103,51 @@ contradicts this brief.**
      persists per-variant `approxHeightM` + `normalizeScale` in `public/trees/<species>/manifest.json`.
      **`publish-glb` owns the canopy bbox**: add `canopyRadiusM` next to `approxHeightM` (same
      `Box3`, X/Z extent already in hand); the prominence pass *reads* both from the manifest.
+7. **⚠️ BLOCKER (Azimuth, 2026-05-26) — `publish-glb`'s GLBs are NOT clean single trees; its
+   bbox canopy radius is garbage.** Verified by reading the artifacts (per the inspect-first rule):
+   `public/trees/<latin>/skeleton-*.glb` are `sourceName:"whole-scene"` exports with multiple
+   wide primitives. `computeTreeBounds` on them gives **acer_saccharum r=42.8 m (h=10.4)**,
+   **cupressus r=15.9 m (h=8.5)** — radii 4–8× the height. `approxHeightM` survived (Y extent
+   happened to be tree-sized) but X/Z is contaminated, so "same Box3, X/Z extent" yields nonsense.
+   - **The clean, real-world-meter single trees are the `bake-look` output**
+     `public/baked/<look>/trees/<roster>/skeleton-*-lod2.glb` → **sane radii 1.6–6.9 m, h≈12 m**.
+     This is also *what the runtime actually renders* (`InstancedTrees` fetches `baked/<look>/trees/…`,
+     not `public/trees/…`).
+   - **Keying mismatch too:** `default.json` instances carry **library** species
+     (`quercus_alba`, `betula_pendula`, `acer_saccharum_procedural`…); the baked clean trees use
+     **roster** names (`maple_sugar`, `birch`, `linden_american`…). Runtime substitutes lib→roster.
+     So canopy dims keyed by `publish-glb`'s library manifest don't line up with the rendered tree.
+   - **Recommendation:** **`bake-look` owns `canopyRadiusM`** (+ a real-meter `heightM`), computed
+     from the clean composed tree it already produces, written into `trees-atlas.json` keyed by the
+     SAME species/variant the runtime renders; the prominence pass reads it there. Alternative: a
+     guarded dominant-tree extraction in `publish-glb` (fragile against whole-scene sources). The
+     `publish-glb`→`build-index`→backfill plumbing is built but **HELD** pending this routing call.
+   - **RESOLVED (Boz, 2026-05-26) — re-route to `bake-look`, recommendation accepted.** Verified
+     structurally: runtime fetches `/baked/<look>/trees/…` (`InstancedTrees.jsx:48`), 9 clean
+     roster-keyed species on disk, `bake-trees` already resolves instance→roster variant via
+     `pickVariant`. **Discard** the held publish-glb/build-index/backfill plumbing (do NOT commit).
+     **Keep `tree-bounds.js`** (shared helper; bake-look uses it). See the rewritten Phase A
+     prerequisite. My original publish-glb call was wrong — it measured a dirty whole-scene source
+     and keyed by library, not the rendered roster tree.
 
 ## Phase A — Bake-time visibility classification → per-tree `heroTier` (no render change)
 
-**Prerequisite (discrete commit, lands first — `publish-glb` owns canopy dims):** the prominence
-pass needs a per-variant canopy bbox. `publish-glb` already computes the mesh `Box3` for
-`approxHeightM`; add **`canopyRadiusM`** (X/Z extent) to the per-variant `manifest.json` entry
-alongside it. **Do NOT** load geometry in `bake-trees` or derive this from the atlas manifest —
-the prominence pass *reads* `approxHeightM` + `canopyRadiusM` from `public/trees/<species>/manifest.json`.
-To populate already-published variants, a **one-time** bbox backfill of existing GLBs is acceptable
-(it's a migration; `publish-glb` recomputes on every future publish). A per-bake-trees geometry
-scan is NOT (that's re-deriving downstream every run). Keep this as its own commit, separate from
-the prominence pass (D.3).
+**Prerequisite (discrete commit, lands first — `bake-look` owns canopy dims).** *Re-routed from
+publish-glb (finding #7): publish-glb's source is dirty whole-scene GLBs keyed by library; the
+RENDERED tree is bake-look's clean roster-keyed composed output.* The prominence pass needs a
+per-variant canopy bbox, measured from **what the runtime actually renders**:
+- **`bake-look` emits `canopyRadiusM` + real-meter `heightM`** per roster variant, computed from
+  the clean composed tree it already produces (via the shared `tree-bounds.js`). Take BOTH from
+  this clean source — do NOT reuse publish-glb's `approxHeightM` (it survived only by luck on the
+  dirty source). Write into the manifest the runtime already loads (`trees-atlas.json` or a sibling
+  bake-look writes), keyed by the rendered roster variant.
+- **The prominence pass reads dims via `bake-trees`'s existing `pickVariant` resolution** — it
+  already resolves each placement to a roster variant, so it looks up that variant's dims. Keying
+  is correct by construction; no separate lib→roster mirroring. Do NOT load geometry in `bake-trees`.
+- **Ordering:** confirm `bake-look` runs before `bake-trees` so the dims exist when the prominence
+  pass reads them (add the dependency if not).
+- Keep this as its own commit, separate from the prominence pass (D.3). `tree-bounds.js` is the
+  shared bbox helper; the discarded publish-glb plumbing does NOT get committed.
 
 Add an **analytic** (CPU, no GPU/headless-GL) prominence pass to the tree placement bake. For N
 sampled camera poses along the hero pan arc:
