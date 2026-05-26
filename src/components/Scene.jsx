@@ -4,6 +4,7 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
 import LafayetteScene from './LafayetteScene'
+import SlabBuildings from './SlabBuildings'
 import CelestialBodies from './CelestialBodies'
 import BakedGround from './BakedGround.jsx'
 import LafayettePark from './LafayettePark'
@@ -702,7 +703,16 @@ function Scene() {
       {!IS_GROUND && <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <CourierDots />}
-      {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>}
+      {/* Buildings: production renders the merged-mesh slab (L1.3 cutover).
+          LafayetteScene stays mounted for neon / street labels / landmark
+          markers / click-catcher, with its live Building+Foundations hidden;
+          SlabBuildings draws the buildings off the slab and publishes the
+          per-building index that SceneNeon + selection now resolve against.
+          Stage (CartographApp) keeps the live mount (no SlabBuildings there →
+          the index store stays null → SceneNeon falls back to live source, so
+          authoring retint still works). */}
+      {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene hiddenLayers={{ building: true }} /></R3FErrorBoundary>}
+      {!IS_GROUND && <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
       {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       <CameraRig />

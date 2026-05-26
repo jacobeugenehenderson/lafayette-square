@@ -361,13 +361,16 @@ const FX_LAYERS = [
 //           default off so reloads don't burn into a black scene.
 //   AO + aerial + grade + grain — full-fidelity desktop targets, on
 const DEFAULT_LAYERS = {
-  ground: true, buildings: true, slabBuildings: false, trees: true,
+  // slabBuildings on by default — Preview emulates production, which now ships
+  // the merged-mesh slab (L1.3 cutover). Toggle it off to A/B against the live
+  // LafayetteScene buildings (kept as an inspection affordance).
+  ground: true, buildings: true, slabBuildings: true, trees: true,
   park: true, lights: true, arch: true, neon: true,
   celestial: true, clouds: true, fog: true,
   ao: true, bloom: false, aerial: true, grade: true, grain: true,
 }
 
-const LAYERS_KEY = 'preview.layers.v1'
+const LAYERS_KEY = 'preview.layers.v2'   // v2: slabBuildings default on (L1.3 cutover)
 function loadLayers() {
   if (typeof localStorage === 'undefined') return DEFAULT_LAYERS
   try {
@@ -705,10 +708,10 @@ function CanvasContents({ layers, shot, setShot }) {
             forceNeonOn={layers.neon || undefined}
           />
         </R3FErrorBoundary>
-        {/* Slab buildings A/B (Phase B, Preview-only flag): when on, the live
-            LafayetteScene buildings + foundations are hidden above and this
-            merged-mesh consumer renders them off the slab instead. Toggle
-            both to compare draw calls + look in the GPU panel. */}
+        {/* Slab buildings (L1.3): default on, matching production. When on,
+            the live LafayetteScene buildings + foundations are hidden above and
+            this merged-mesh consumer renders them off the slab instead. Toggle
+            off to A/B against the live mount (draw calls + look in the GPU panel). */}
         {layers.slabBuildings && <R3FErrorBoundary name="SlabBuildings">
           <SlabBuildings lookId={lookId} />
         </R3FErrorBoundary>}

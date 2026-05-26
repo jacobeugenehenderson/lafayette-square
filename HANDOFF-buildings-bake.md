@@ -406,6 +406,28 @@ schema (avoids a later slab bump).
   mansard 213 inset rings (all toward centroid); hip 159 degenerate (0 malformed);
   710+213+159=1082; re-bake byte-identical.
 
+**Phase E — production cutover (CLEARED by Jacob 2026-05-26; Scene.jsx surfaced to Boz, land-first
+confirmed; commit lands this phase).**
+
+- `src/components/Scene.jsx:714`: `<LafayetteScene />` → `<LafayetteScene hiddenLayers={{ building: true }} />`
+  (keeps neon / street labels / landmark markers / click-catcher; hides live Building+Foundations)
+  + new `<SlabBuildings lookId={INSTANCE.lookId} />` sibling. `SceneNeon` auto-switches to the slab
+  index (SlabBuildings publishes it). Production buildings now come from the slab.
+- **Preview pointed at the slab by default** (`DEFAULT_LAYERS.slabBuildings: true`, `LAYERS_KEY`→v2
+  so the new default takes), toggle kept as an A/B inspection affordance per Jacob.
+- **Stage stays live — verified:** `CartographApp` does NOT mount `SlabBuildings`, so the
+  `useSlabBuildingIndex` store stays null there and `SceneNeon` falls back to live `_allBuildings`
+  (Stage neon doesn't go dark; authoring retint intact).
+- **Render-path gate (per C2 correction):** production no longer *renders* live building geometry
+  (Building/Foundations hidden; SceneNeon off the index). The `import { buildings }` STRING remains
+  in `LafayetteScene.jsx` + `SceneNeon.jsx` purely for the Stage authoring path + the content layer —
+  it cannot be deleted without forking those files for Stage vs production (which would violate
+  `project_stage_consumer_parity`). Jacob confirmed this reading at the pre-E check-in: the gate is
+  render *behavior*, not bundle contents.
+- **Verified:** transform graph clean; SlabBuildings mounts only in Preview + production Scene.
+  **Production visual confirmation → Jacob (index.html): buildings render off the slab; neon at
+  night; click/select/card; draw-call drop.**
+
 ---
 
 ## Explicitly out of scope
