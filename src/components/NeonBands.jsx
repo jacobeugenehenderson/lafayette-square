@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { neon as _neonUniforms } from '../preview/neonState.js'
@@ -47,9 +47,12 @@ import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
  * the far side. Earlier prototypes that flipped the normal on the back
  * face made both sides hit coreMask ≈ 1 at the same camera angle and
  * the tube read as a flat ribbon. The <logdepthbuf_*> GLSL chunks are
- * included so this raw ShaderMaterial participates correctly in the
- * Canvas's logarithmic depth buffer — see
- * feedback_raw_shadermaterial_needs_logdepth_chunks memory.
+ * #included so this raw ShaderMaterial can participate in the Canvas's
+ * logarithmic depth buffer — but the USE_LOGDEPTHBUF define is gated on the
+ * renderer's actual `logarithmicDepthBuffer` capability (Stage/Preview run log
+ * depth, production runs linear), so neon always matches the depth encoding the
+ * rest of the scene uses and occludes correctly. See
+ * feedback_raw_shadermaterial_needs_logdepth_chunks memory + the material below.
  */
 
 // ── Geometry constants ──────────────────────────────────────────────
@@ -306,6 +309,19 @@ void main() {
 
 export default function NeonBands({ places, forceOn = true, lookId }) {
   const scene = useSceneJson(lookId || '')
+
+  // Match the renderer's ACTUAL depth encoding. The Canvas this neon mounts in
+  // may run linear depth (production Scene.jsx) or logarithmic (Stage / Preview,
+  // which set logarithmicDepthBuffer:true). three only uploads the `logDepthBufFC`
+  // uniform when the renderer was created with logarithmicDepthBuffer:true
+  // (WebGLRenderer.setProgram). Forcing the logdepth chunk on in a LINEAR
+  // renderer therefore runs the vertex transform with logDepthBufFC=0, which
+  // collapses every neon vertex to NDC z=-1 (the near plane) — so the tube draws
+  // over everything, including nearer trees in hero. Gating the define on the
+  // real capability makes neon use whatever depth the rest of the scene uses, so
+  // it occludes correctly in both. See HANDOFF-neon-roof-depth.md Phase 2 and
+  // [[feedback_raw_shadermaterial_needs_logdepth_chunks]].
+  const logDepth = useThree((s) => s.gl.capabilities.logarithmicDepthBuffer)
   useEffect(() => {
     if (!lookId || !scene?.neon?.values) return
     const v = scene.neon.values
@@ -367,15 +383,18 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   const materialRef = useRef(null)
   if (!materialRef.current) {
     materialRef.current = new THREE.ShaderMaterial({
-      // Required so three.js compiles in the <logdepthbuf_*> chunks the
-      // VERT/FRAG strings #include. Canvas runs with
-      // logarithmicDepthBuffer: true (CartographApp.jsx:802); without the
-      // chunks this raw ShaderMaterial would write linear depth into a
-      // log-depth buffer and lose comparisons against every standard
-      // material at camera-angle-dependent angles. See
-      // FEATURES.md §"Layering / coplanar stacking / depth precision"
-      // and [[feedback_raw_shadermaterial_needs_logdepth_chunks]].
-      defines: { USE_LOGDEPTHBUF: '' },
+      // Define ONLY when the renderer actually runs a log-depth buffer (Stage /
+      // Preview). Then three compiles in the <logdepthbuf_*> chunks the VERT/FRAG
+      // strings #include AND uploads logDepthBufFC, so neon shares the log-depth
+      // encoding every standard material uses. In a LINEAR renderer (production
+      // Scene.jsx) the define is dropped → the #ifdef'd chunks compile to no-ops →
+      // neon writes the same standard gl_Position.z as every other material and
+      // depth-tests correctly. Forcing the define unconditionally was the hero
+      // depth bug (logDepthBufFC=0 → near-plane collapse). See FEATURES.md
+      // §"Layering / coplanar stacking / depth precision",
+      // [[feedback_raw_shadermaterial_needs_logdepth_chunks]], and
+      // HANDOFF-neon-roof-depth.md Phase 2.
+      defines: logDepth ? { USE_LOGDEPTHBUF: '' } : {},
       vertexShader: VERT,
       fragmentShader: FRAG,
       uniforms: {
@@ -397,7 +416,10 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     })
     // Unique key — distinct shader family, do NOT collide with the
     // terrain-patched program cache. [[feedback_unique_program_cache_key_before_wrappers]]
-    materialRef.current.customProgramCacheKey = () => 'neon-bands-full-cylinder-logdepth'
+    // Encode the logdepth variant: the linear and log builds differ by the
+    // USE_LOGDEPTHBUF define, so they must not share a cached program if both
+    // ever live in one process (e.g. a linear production view + a log preview).
+    materialRef.current.customProgramCacheKey = () => `neon-bands-full-cylinder-${logDepth ? 'logdepth' : 'lineardepth'}`
   }
   materialRef.current.uniforms.uForceOn.value = forceOn ? 1.0 : 0.0
 
@@ -411,8 +433,8 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   // later transparent ground fragment (asphalt at street level, ~0.95)
   // passes its depthTest against that 1.0 and overdraws the neon. Drawing
   // neon LAST puts the ground's depth in the buffer first; the tube then
-  // depth-tests correctly. polygonOffset can't substitute here: under
-  // logarithmicDepthBuffer the fragment writes gl_FragDepth via the
-  // logdepthbuf chunk, bypassing polygon offset.
+  // depth-tests correctly (against the same depth encoding the renderer uses —
+  // see the logDepth gating on the material). This ordering is about
+  // transparent compositing + depthWrite:false, independent of log vs linear.
   return <mesh geometry={geometry} material={materialRef.current} renderOrder={100} frustumCulled={false} />
 }
