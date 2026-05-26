@@ -172,6 +172,25 @@ so the operator can eyeball "not terrible." Visualization only — no override d
   re-bake idempotent; analytic occlusion is adequate (escalate to a render-based ID pass only if
   it visibly misclassifies — flag as scope drift if so).
 
+### Phase A — Status (Azimuth, 2026-05-26) — landed, AT A→B SEAM
+
+Commits: prereq dims-emitter `bfdbdca`, classifier+QC `fcdc1eb`. Idempotent ✓; runtime files
+compile ✓; default render bit-identical when QC off ✓.
+- **Split:** 40 mesh / 705 impostor (5% mesh) at `PROM_THRESHOLD=0.05`. Prominence histogram tops
+  out ~0.09 (the 22° telephoto puts every canopy at small screen size), so **threshold is THE
+  calibration dial** — say the word and I re-bake at a lower threshold to keep more trees crisp.
+- **QC how-to:** open Stage or Preview with `?heroTierQC=1` (or `window.__setHeroTierQC(1)` in the
+  console), watch/scrub the hero pan. **green = stays full mesh, magenta = becomes impostor.**
+- **Decisions for the seam (need a nod):**
+  1. **Keying** — dims resolved exact-when-in-roster, else category-mean over roster variants (93%
+     of placements substitute to a same-category roster variant at *runtime*; no lib→roster hash
+     mirror). Adequate, or escalate to a shared exact-substitution fn?
+  2. **QC overlay home** — relocated from Grove (specimen gallery, no park/hero cam) to the
+     Stage/Preview hero render. OK?
+- **Spec-compression note resolved:** the 95%-low-prominence distribution *confirms* impostors are
+  worth it (most canopy is far/small/occluded in this telephoto hero). The open Phase-B question is
+  narrowed to multi-view K + TOD-relight cost, per that phase's seam.
+
 ## Phase B — Multi-view pan-arc impostor producer (Salon/arborist; no runtime consumption)
 
 New bake step: per species/variant, render the **lod2 mesh through the unified atlas material**
