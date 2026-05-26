@@ -27,6 +27,7 @@ import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 
 import { catmullRom, EASINGS } from '../preview/heroAnim'
+import { browseUpFromHeading } from '../lib/browseHeading.js'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -226,10 +227,9 @@ export function setBrowseHeading(deg) {
 }
 // up vector for the overhead Browse camera given a heading in degrees.
 // Camera looks down -Y; up lives in the XZ plane. heading=0 → -Z (compass-N).
-export function browseUpFromHeading(deg) {
-  const r = deg * Math.PI / 180
-  return [Math.sin(r), 0, -Math.cos(r)]
-}
+// browseUpFromHeading lives in src/lib/browseHeading.js (imported at top —
+// shared with Preview + production so all three consume scene.browseHeading
+// identically).
 
 // Live camera ref — populated by HeroPreview while mounted.
 // Set-from-view reads this synchronously to avoid stale broadcast values.

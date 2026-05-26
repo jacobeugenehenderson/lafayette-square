@@ -11,7 +11,8 @@ import { EffectComposer, Bloom, N8AO } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import { AerialPerspective, FilmGrade, FilmGrain, _postFxRefs } from '../components/PostProcessing.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
+import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
@@ -24,21 +25,36 @@ import {
   GRAIN_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 
-// Mirrors Stage's per-frame ref tweaks for AO + Bloom. Bloom now resolves
-// from the cartograph store's TOD `bloom` channel (Sky & Light card);
-// sun-altitude `dk` adaptive bump still rides on top.
-function FxDriver({ aoRef, bloomRef }) {
+// First-paint default channels — mirror PostProcessing.jsx so an unauthored
+// Look (or the ~100ms before scene.json resolves) reads identically.
+const _ch = (flat) => ({ values: flat })
+
+function resolveLookId(propLookId) {
+  if (propLookId) return propLookId
+  if (typeof window === 'undefined') return INSTANCE.lookId
+  const m = window.location.search.match(/look=([^&]+)/)
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
+}
+
+// Resolves the SAME authored post-FX channels PostProcessing reads, but from
+// the baked scene.json (the slab) — NOT useCartographStore. Preview runs in a
+// separate entry point (`/preview.html`) where the cartograph store holds only
+// boot defaults, so the old store read silently ignored both the operator's
+// authoring AND the bake. Reading scene.json is "Preview = LS literally": the
+// chain reflects exactly what's published. Per-effect mounting (the toggles
+// below) is Preview's only sanctioned divergence from the shared consumer.
+function FxDriver({ aoRef, bloomRef, lookId }) {
+  const scene = useSceneJson(resolveLookId(lookId))
   useFrame(() => {
     const tod = useTimeOfDay.getState()
     const slotMins = getTodSlotMinutes(tod.currentTime)
     const minute = tod.getMinuteOfDay()
-    const cs = useCartographStore.getState()
 
     // AO — N8AOPostPass params per-frame.
     const ao = aoRef.current
     if (ao?.configuration) {
       const aoTriple = resolveGroupAtMinute(
-        cs.ao, minute, slotMins, AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
+        scene?.ao ?? _ch(AO_FLAT_DEFAULTS), minute, slotMins, AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
       )
       ao.configuration.aoRadius = aoTriple.radius
       ao.configuration.intensity = aoTriple.intensity
@@ -53,7 +69,7 @@ function FxDriver({ aoRef, bloomRef }) {
       const alt = tod.getLightingPhase().sunAltitude
       const dk = alt > 0.1 ? 0 : alt < -0.15 ? 1 : 1 - (alt + 0.15) / 0.25
       const base = resolveGroupAtMinute(
-        cs.bloom, minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
+        scene?.bloom ?? _ch(BLOOM_FLAT_DEFAULTS), minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
       )
       bloom.intensity = base.intensity + dk * 0.5
       const lm = bloom.luminanceMaterial
@@ -68,20 +84,20 @@ function FxDriver({ aoRef, bloomRef }) {
     // FilmGrade.update() / FilmGrain.update() / AerialPerspective.update()
     // read these refs each pass, so Preview's chain picks up authored
     // channel values without mounting the full PostProcessing component.
-    _postFxRefs.exposure.current = resolveGroupAtMinute(cs.exposure, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
-    _postFxRefs.warmth.current   = resolveGroupAtMinute(cs.warmth,   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
-    const fillVal                = resolveGroupAtMinute(cs.fill,     minute, slotMins, ['value'], FILL_FLAT_DEFAULTS).value
+    _postFxRefs.exposure.current = resolveGroupAtMinute(scene?.exposure ?? _ch(EXPOSURE_FLAT_DEFAULTS), minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
+    _postFxRefs.warmth.current   = resolveGroupAtMinute(scene?.warmth   ?? _ch(WARMTH_FLAT_DEFAULTS),   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
+    const fillVal                = resolveGroupAtMinute(scene?.fill     ?? _ch(FILL_FLAT_DEFAULTS),     minute, slotMins, ['value'], FILL_FLAT_DEFAULTS).value
     _postFxRefs.fillToe.current  = fillVal <= 1 ? fillVal * 0.28 : 0.28 + (fillVal - 1) * 0.72
 
-    const grade = resolveGroupAtMinute(cs.grade, minute, slotMins, GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS)
+    const grade = resolveGroupAtMinute(scene?.grade ?? _ch(GRADE_FLAT_DEFAULTS), minute, slotMins, GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS)
     _postFxRefs.gradeContrast.current = grade.contrast
     _postFxRefs.gradeSat.current      = grade.saturation
     _postFxRefs.gradeVignette.current = grade.vignette
 
-    const grain = resolveGroupAtMinute(cs.grain, minute, slotMins, ['scale'], GRAIN_FLAT_DEFAULTS)
+    const grain = resolveGroupAtMinute(scene?.grain ?? _ch(GRAIN_FLAT_DEFAULTS), minute, slotMins, ['scale'], GRAIN_FLAT_DEFAULTS)
     _postFxRefs.grainScale.current = grain.scale
 
-    const halo = resolveGroupAtMinute(cs.halo, minute, slotMins, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS)
+    const halo = resolveGroupAtMinute(scene?.halo ?? _ch(HALO_FLAT_DEFAULTS), minute, slotMins, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS)
     _postFxRefs.haloStrength.current = halo.strength
     _postFxRefs.haloColor.current.set(halo.color)
   })
@@ -89,7 +105,7 @@ function FxDriver({ aoRef, bloomRef }) {
 }
 
 export default function PreviewPostFx({
-  ao = false, bloom = false, aerial = false, grade = false, grain = false,
+  lookId, ao = false, bloom = false, aerial = false, grade = false, grain = false,
 }) {
   const aoRef = useRef()
   const bloomRef = useRef()
@@ -99,7 +115,7 @@ export default function PreviewPostFx({
 
   return (
     <>
-      <FxDriver aoRef={aoRef} bloomRef={bloomRef} />
+      <FxDriver aoRef={aoRef} bloomRef={bloomRef} lookId={lookId} />
       <EffectComposer>
         {ao && (
           <N8AO ref={aoRef} halfRes={false} aoRadius={15} intensity={2.5}

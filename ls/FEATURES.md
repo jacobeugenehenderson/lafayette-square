@@ -80,7 +80,7 @@ What LS trusts cartograph to publish, and what LS does *not* re-author:
 ## Product / runtime decisions worth knowing
 
 [TO BE FILLED as decisions emerge from inventory + composition pass. Candidates from the walk:]
-- **Per-building neon stays live, not slab.** `LafayetteScene` reads `_allBuildings` and `src/data/buildings` directly for per-building neon + click handlers + place state. The merged building bake exists for performance proof in Preview but doesn't replace the live mount.
+- **Per-building neon stays live, not slab.** `LafayetteScene` reads `_allBuildings` and `src/data/buildings` directly for per-building neon + click handlers + place state. Stage, Preview, *and* production all mount this live `LafayetteScene` (Preview moved off the merged-mesh proxy onto the live mount in the 2026-05-26 parity pass, so the profiler measures the shipping render). The merged `buildings.json` bake + `BakedBuildings` consumer are now orphaned; reviving them as a *hybrid* (merged mesh + per-building index) so production reads buildings from the slab is **L1.3** — see `HANDOFF-buildings-bake.md`.
 - **Mobile-first staging.** `LafayetteScene` mobile-detects and staggers heavy content (labels, markers) across seconds to avoid GPU upload crashes.
 - **Time-of-day is live, not baked.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute sun/moon/sky continuously. The slab carries no time-of-day data.
 - **Authoring routes ship to production today.** `/cartograph`, `/arborist`, `/stage`, `/preview` bundle into the prod build. Stripping them is a v1 BACKLOG item — they expose authoring surfaces to end users and bloat first-paint (cartograph chunk is 4.5MB minified / 1.1MB gzipped).

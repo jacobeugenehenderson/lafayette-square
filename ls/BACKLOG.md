@@ -65,6 +65,7 @@ These don't gate the marriage leap; they progress on their own tracks.
 | **Cary v1 status decision** | Ship behind placeholder vs. wire up Supabase live. Affects bundle weight + secrets. Resolution lands in Phase B's parametrize plan (Cary's data layer is the kit-instance boundary). |
 | **`ls/FEATURES.md` end-user experience writeup** | Browse / Hero / Street / PlaceCard / Bulletin / residence / handles. Doc work, lags execution opportunistically. |
 | **`ls/reference/SECURITY.md`** | Device-hash identity, admin passphrase, Supabase RLS posture. Lands as part of Phase B's security audit doc. |
+| **L1.3 — Hybrid buildings bake** | Production renders buildings live from `src/data/buildings.json` (reaches into source, violating the slab boundary); the baked `buildings.json` merged mesh is now consumer-less (Preview moved to the live mount in the parity pass). Resolve hybrid: bake merged geometry **+ a per-building index sidecar** so the runtime resolves identity (click / neon / place state) against the slab. **Dispatch-ready brief: [`HANDOFF-buildings-bake.md`](../HANDOFF-buildings-bake.md)** (6 phases, own session). Supersedes the `SLAB-CONTRACT.md §6.3` / §11-L1.3 "keep live vs bake vs hybrid" open question. |
 
 ---
 

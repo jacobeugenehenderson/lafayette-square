@@ -35,7 +35,8 @@ import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from '../cartograph/animatedParam.js'
+import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState'
 import { INSTANCE } from '../instance.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
@@ -425,5 +426,31 @@ export function StageFog({ lookId, bakeLastMs, mistOverride }) {
     fogRef.current.color.copy(_tmpColor)
   })
 
+  return null
+}
+
+// ── Lamp-glow uniform driver (channel-driven) ───────────────────────────────
+// Writes the shared `_lampGlow.{grass,trees,pool}` uniforms — consumed by
+// grassMaterial (lawn pools), treeAtlasMaterial (canopy under-lamp emissive),
+// and StreetLights (pool radial) — from the authored `lampGlow` channel.
+// Production + Preview mount this with no override → frozen-at-bake from
+// scene.json. Stage drives the same uniforms live via CartographApp's
+// LampGlowPump (store-resolved), exactly as NeonPump↔NeonBands does for neon.
+// Without a mount, those uniforms sit at module defaults (grass 0, trees 0,
+// pool 1.0) and authored lamp pools / tree glow never appear off the slab.
+const LAMPGLOW_DEFAULT_CHANNEL = Object.freeze({ values: { grass: 0, trees: 0, pool: 1.0 } })
+
+export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
+  const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const channel = lampGlowOverride ?? sceneJson?.lampGlow ?? LAMPGLOW_DEFAULT_CHANNEL
+  useFrame(() => {
+    const tod = useTimeOfDay.getState()
+    const minute = tod.getMinuteOfDay()
+    const slotMinutes = channel.animated ? getTodSlotMinutes(tod.currentTime) : null
+    const triple = resolveLampGlowAtMinute(channel, minute, slotMinutes)
+    _lampGlowUniforms.grassUniform.value = triple.grass
+    _lampGlowUniforms.treesUniform.value = triple.trees
+    _lampGlowUniforms.poolUniform.value  = triple.pool
+  })
   return null
 }

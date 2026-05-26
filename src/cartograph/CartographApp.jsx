@@ -26,6 +26,9 @@ import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import CelestialBodies from '../components/CelestialBodies'
 import Atmosphere from '../components/Atmosphere'
+import WeatherPoller from '../components/WeatherPoller'
+import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
+import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
 import { V_EXAG } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
@@ -952,6 +955,12 @@ export default function CartographApp() {
               constellationsOverride={constellationsOverride}
               milkyWayOverride={milkyWayOverride}
             /></R3FErrorBoundary>
+            {/* Atmosphere driver chain — production feeds <Atmosphere> via
+                these; without them useAtmosphere.tweenedDirective stays empty
+                and no clouds render. Same fix mirrored into Preview. */}
+            <WeatherPoller />
+            <AtmosphereDirectiveDriver lookId={activeLookId} />
+            <WeatherEffects />
             <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>
             {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
                 visible ground. Terrain still mounts so its shader uniforms

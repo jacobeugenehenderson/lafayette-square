@@ -15,23 +15,30 @@ import InstancedTrees from '../components/InstancedTrees'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import CelestialBodies from '../components/CelestialBodies'
 import Atmosphere from '../components/Atmosphere'
+import WeatherPoller from '../components/WeatherPoller'
+import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
+import WeatherEffects from '../components/WeatherEffects'
+import Terrain from '../components/Terrain'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import LafayettePark from '../components/LafayettePark'
-import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
+import { SHOTS, computeBrowseAltitude, FALLBACK_HERO_SUBJECT } from '../stage/StageApp.jsx'
+import { useSceneJson } from '../lib/useSceneJson.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import BakedGround from '../components/BakedGround.jsx'
 import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { V_EXAG } from '../utils/terrainShader'
-import BakedBuildings from './BakedBuildings'
+import LafayetteScene from '../components/LafayetteScene'
 import PreviewPostFx from './PreviewPostFx'
-import { ExposureTicker } from '../components/PostProcessing.jsx'
+import { ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
 import { createCameraTween } from './cameraTween'
+import { heroKeyframeAnim } from './heroAnim.js'
+import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
 import {
   GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
@@ -90,20 +97,76 @@ function resolveShotPose(shot, aspect) {
   return { pos, target: s.target, fov: s.fov, up: s.up || [0, 1, 0] }
 }
 
-function ShotCamera({ shot }) {
-  const { camera, size } = useThree()
+// Reused temp for the hero keyframe pose (allocation-free hot path).
+const _heroPos = new THREE.Vector3()
+
+function ShotCamera({ shot, setShot }) {
+  const { camera, size, gl } = useThree()
   const controlsRef = useRef()
   const tweenRef = useRef(null)
   const lastShotRef = useRef(null)
 
+  // Hero is an auto-playing cinematic pan; a deliberate drag (>6px) or wheel
+  // must interrupt it and pull back to Browse — mirrors production's Hero↔Browse
+  // exit gesture (Scene.jsx CameraRig). The per-frame pan keeps overriding the
+  // camera so OrbitControls can't visibly rotate; this just detects intent.
+  useEffect(() => {
+    if (shot !== 'hero') return
+    const canvas = gl.domElement
+    let downXY = null
+    const onDown = (e) => { downXY = { x: e.clientX, y: e.clientY } }
+    const onMove = (e) => {
+      if (!downXY) return
+      const dx = e.clientX - downXY.x, dy = e.clientY - downXY.y
+      if (dx * dx + dy * dy > 36) { downXY = null; setShot('browse') }
+    }
+    const onUp = () => { downXY = null }
+    const onWheel = () => setShot('browse')
+    canvas.addEventListener('pointerdown', onDown)
+    canvas.addEventListener('pointermove', onMove)
+    canvas.addEventListener('pointerup', onUp)
+    canvas.addEventListener('wheel', onWheel, { passive: true })
+    return () => {
+      canvas.removeEventListener('pointerdown', onDown)
+      canvas.removeEventListener('pointermove', onMove)
+      canvas.removeEventListener('pointerup', onUp)
+      canvas.removeEventListener('wheel', onWheel)
+    }
+  }, [shot, gl, setShot])
+
   if (!tweenRef.current) tweenRef.current = createCameraTween()
   const tween = tweenRef.current
+
+  // Authored hero animation from the slab (same data Stage's HeroPreview
+  // plays). Falls back to the static hero pose for an unauthored Look.
+  const scene = useSceneJson(resolvePreviewLookId())
+  const heroKeyframes = scene?.heroKeyframes?.length
+    ? scene.heroKeyframes
+    : [{ position: SHOTS.hero.position, fov: SHOTS.hero.fov }]
+  const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
+  const heroSubject = Array.isArray(scene?.heroSubject) ? scene.heroSubject : FALLBACK_HERO_SUBJECT
+  const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
+
+  // Resolve the pose for a shot transition. Hero uses the keyframe path's
+  // start (+ subject as target) so the tween lands on the authored path
+  // instead of the legacy static center, avoiding a snap when the per-frame
+  // animation below takes over. Browse up comes from the authored heading
+  // (cosmetic screen orientation) — same scene.browseHeading production reads.
+  function poseFor(shotKey, aspect) {
+    if (shotKey === 'hero') {
+      const { fov } = heroKeyframeAnim(0, heroKeyframes, heroMotion, _heroPos)
+      return { pos: [_heroPos.x, _heroPos.y, _heroPos.z], target: heroSubject, fov, up: [0, 1, 0] }
+    }
+    const pose = resolveShotPose(shotKey, aspect)
+    if (shotKey === 'browse' && pose) pose.up = browseUpFromHeading(browseHeadingDeg)
+    return pose
+  }
 
   // Fire a transition when shot changes. First mount = instant set
   // (no tween) so the initial Hero pose is honest from frame 0.
   useEffect(() => {
     const aspect = size.width / Math.max(size.height, 1)
-    const pose = resolveShotPose(shot, aspect)
+    const pose = poseFor(shot, aspect)
     if (!pose) return
 
     const isFirstMount = lastShotRef.current == null
@@ -162,9 +225,26 @@ function ShotCamera({ shot }) {
     })
   }, [shot, camera, size.width, size.height])
 
-  // Drive the tween every frame.
-  useFrame(() => {
-    if (tween.isActive()) tween.tick(performance.now())
+  // Drive the tween every frame; when idle in Hero, play the AUTHORED
+  // keyframe animation (slab heroKeyframes/heroMotion, look at heroSubject)
+  // so Preview matches Stage and reflects what the operator tuned — not
+  // production's legacy lateral pan.
+  useFrame(({ clock }) => {
+    if (tween.isActive()) { tween.tick(performance.now()); return }
+    if (shot !== 'hero') return
+    const { fov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos)
+    camera.position.copy(_heroPos)
+    if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
+    const ctl = controlsRef.current
+    if (ctl) {
+      ctl.target.set(heroSubject[0], heroSubject[1], heroSubject[2])
+      // Direct position control — bypass damping so it doesn't fight the anim.
+      ctl.enableDamping = false
+      ctl.update()
+      ctl.enableDamping = true
+    } else {
+      camera.lookAt(heroSubject[0], heroSubject[1], heroSubject[2])
+    }
   })
 
   // Browse: LEFT-drag pans, wheel zooms; RIGHT-drag is the hidden 360° orbit.
@@ -254,9 +334,10 @@ const SCENE_LAYERS = [
   ['park',       'Park (paths/water/canopy)'],
   ['lights',     'Streetlamps'],
   ['arch',       'Gateway Arch'],
-  ['neon',       'Neon (TODO)'],
+  ['neon',       'Neon'],
   ['celestial',  'Sky + Sun'],
   ['clouds',     'Clouds'],
+  ['fog',        'Atmospheric Fog'],
 ]
 const FX_LAYERS = [
   ['ao',     'N8AO'],
@@ -270,18 +351,19 @@ const FX_LAYERS = [
 // Preview's source. Per `feedback_stage_is_source_preview_is_mirror.md`:
 // Stage authors, Look serializes, Preview reads. When phone-profile.json
 // lands, the field-of-truth moves there and this object goes away.
-//   neon  — data-blocked (TODO list)
-//   bloom — known-broken pending tree atlas work (project_bloom_diagnosis_actual.md)
+//   neon  — now mounts via <SceneNeon> (parity pass 2026-05-26); the
+//           Preview toggle forces all tubes on, mirroring Stage's Force
+//           Neon On QA bypass so cost is profiled worst-case.
+//   fog   — <StageFog> reads scene.mist; on by default for parity.
+//   bloom — known-broken pending tree atlas work (project_bloom_diagnosis_actual.md);
+//           default off so reloads don't burn into a black scene.
 //   AO + aerial + grade + grain — full-fidelity desktop targets, on
 const DEFAULT_LAYERS = {
   ground: true, buildings: true, trees: true,
-  park: true, lights: true, arch: true, neon: false,
-  celestial: true, clouds: true,
+  park: true, lights: true, arch: true, neon: true,
+  celestial: true, clouds: true, fog: true,
   ao: true, bloom: false, aerial: true, grade: true, grain: true,
 }
-// Neon stays off (data-blocked); bloom stays off (known broken)
-// stay off until they're fortified — no point burning into a black
-// scene on every reload while we work on them.
 
 const LAYERS_KEY = 'preview.layers.v1'
 function loadLayers() {
@@ -407,7 +489,7 @@ function RightPanel({ layers, setLayer, top, bottom }) {
         <div className="space-y-1">
           {SCENE_LAYERS.map(([key, label]) => (
             <LayerRow key={key} layerKey={key} label={label}
-              on={!!layers[key]} disabled={key === 'neon'}
+              on={!!layers[key]}
               onToggle={(v) => setLayer(key, v)} />
           ))}
         </div>
@@ -518,7 +600,7 @@ export default function PreviewApp() {
       shadows="soft"
       onCreated={({ camera }) => camera.lookAt(...SHOTS.hero.target)}
     >
-      <CanvasContents key={reloadKey} layers={layers} shot={shot} />
+      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} />
     </Canvas>
   )
 
@@ -559,14 +641,48 @@ export default function PreviewApp() {
   )
 }
 
-function CanvasContents({ layers, shot }) {
+function resolvePreviewLookId() {
+  if (typeof window === 'undefined') return INSTANCE.lookId
+  const m = window.location.search.match(/look=([^&]+)/)
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
+}
+
+function CanvasContents({ layers, shot, setShot }) {
+  const lookId = resolvePreviewLookId()
   return (
     <>
       <TimeTicker />
       <SkyStateTicker />
       <ForceDaytimeOnMount />
       <GpuMonitorTicker />
-      <ExposureTicker />
+      <ExposureTicker lookId={lookId} />
+
+      {/* Atmosphere driver chain — same as production. Without these,
+          useAtmosphere.tweenedDirective is never populated and <Atmosphere>
+          renders no clouds. WeatherPoller fetches live conditions,
+          AtmosphereDirectiveDriver blends the per-Look cloud directive,
+          WeatherEffects renders precipitation. */}
+      <WeatherPoller />
+      <AtmosphereDirectiveDriver lookId={lookId} />
+      <WeatherEffects />
+
+      {/* Hidden Terrain — keeps the shared terrainExag uniform live (drives
+          ribbon/building Y displacement). Mesh itself stays invisible, as in
+          production. */}
+      <group visible={false}>
+        <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
+      </group>
+
+      {/* Channel-driven soft shadows (size/samples from scene.shadow) —
+          matches Stage + production. Canvas already runs shadows="soft". */}
+      <StageShadows lookId={lookId} />
+      {/* Atmospheric fog (FogExp2 from scene.mist) — Stage mounts this; it
+          was previously absent from Preview entirely. */}
+      {layers.fog && <StageFog lookId={lookId} />}
+      {/* Lamp-glow uniforms (grass pools / tree emissive / pool radial) from
+          scene.lampGlow — the same driver production now mounts. Without it
+          the uniforms stay at dead defaults and lamp pools never appear. */}
+      <LampGlowDriver lookId={lookId} />
 
       {layers.celestial
         ? <R3FErrorBoundary name="CelestialBodies"><CelestialBodies /></R3FErrorBoundary>
@@ -574,23 +690,31 @@ function CanvasContents({ layers, shot }) {
       {layers.clouds && <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>}
 
       <Suspense fallback={null}>
-        {layers.ground    && <R3FErrorBoundary name="BakedGround"><BakedGround targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>}
-        {layers.buildings && <R3FErrorBoundary name="BakedBuildings"><BakedBuildings /></R3FErrorBoundary>}
+        {layers.ground    && <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>}
+        {/* Buildings — the SAME live LafayetteScene production renders (not a
+            baked merged-mesh proxy). hiddenLayers gates buildings + neon per
+            the Preview toggles; neon forced on for inspection. This component
+            also owns Foundations + <SceneNeon> + street labels, matching the
+            production render tree exactly. */}
+        <R3FErrorBoundary name="LafayetteScene">
+          <LafayetteScene
+            lookId={lookId}
+            hiddenLayers={{ building: !layers.buildings, neon: !layers.neon }}
+            forceNeonOn={layers.neon || undefined}
+          />
+        </R3FErrorBoundary>
         {layers.trees && <R3FErrorBoundary name="InstancedTrees">
-          <InstancedTrees lookId={(() => {
-            if (typeof window === 'undefined') return INSTANCE.lookId
-            const m = window.location.search.match(/look=([^&]+)/)
-            return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-          })()} />
+          <InstancedTrees lookId={lookId} />
         </R3FErrorBoundary>}
         {layers.park   && <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>}
         {layers.lights && <R3FErrorBoundary name="StreetLights"><BakedLamps /></R3FErrorBoundary>}
         {layers.arch   && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       </Suspense>
 
-      <ShotCamera shot={shot} />
+      <ShotCamera shot={shot} setShot={setShot} />
 
       <PreviewPostFx
+        lookId={lookId}
         ao={layers.ao} bloom={layers.bloom} aerial={layers.aerial}
         grade={layers.grade} grain={layers.grain}
       />

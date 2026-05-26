@@ -21,8 +21,11 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import Terrain from './Terrain'
-import { PostProcessing, StageShadows } from './PostProcessing.jsx'
+import InstancedTrees from './InstancedTrees'
+import { PostProcessing, StageShadows, StageFog, LampGlowDriver } from './PostProcessing.jsx'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { heroKeyframeAnim } from '../preview/heroAnim.js'
+import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 
@@ -32,19 +35,14 @@ function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
-// ── Hero pan path ────────────────────────────────────────────────────────────
-// Slow lateral tracking shot perpendicular to arch sight line.
-
+// ── Hero framing anchors ─────────────────────────────────────────────────────
+// Fallback hero pose for an unauthored Look + the default camera target
+// (heroSubject). The hero camera ANIMATION plays the authored heroKeyframes
+// via heroKeyframeAnim (src/preview/heroAnim.js) — same data Stage + Preview
+// play, so all three environments share one hero animation.
 const HERO_CENTER = [-400, 55, 230]
 const HERO_TARGET = [400, 45, -100]
-const PAN_HALF_LENGTH = 140
-const PAN_PERP = [0.358, 0.934]
-const PAN_PERIOD = 720
-const HERO_PHASE = Math.random()
-
-function heroPanSwing(t) {
-  return -Math.cos(((t % 1) + 1) % 1 * Math.PI * 2)
-}
+const _heroPos = new THREE.Vector3()
 
 // ── Camera presets ───────────────────────────────────────────────────────────
 // SC.5 (2026-05-13): FOVs + Street eye height retired from this const —
@@ -201,6 +199,21 @@ function CameraRig() {
   const streetFov    = shotsV.street?.fov         ?? SHOTS_FLAT_DEFAULTS.street.fov
   const streetEye    = shotsV.street?.eyeHeight   ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
 
+  // Authored hero camera animation from the slab — the SAME keyframes Stage +
+  // Preview play. Replaces production's legacy lateral pan so the operator's
+  // tuned hero motion ships. heroSubject (null in the slab) falls back to the
+  // default target; a building-id subject would resolve in a future pass.
+  const heroKeyframes = scene?.heroKeyframes?.length
+    ? scene.heroKeyframes
+    : [{ position: HERO_CENTER, fov: heroFov }]
+  const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
+  const heroSubject = Array.isArray(scene?.heroSubject) ? scene.heroSubject : HERO_TARGET
+
+  // Cosmetic Browse screen-orientation (authored Heading slider). Applied to
+  // the overhead camera's up vector once Browse settles (see the post-
+  // transition snap below). deg 0 → [0,0,-1], identical to today's framing.
+  const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
+
   // Projection vertical offset (lens shift) for panel-aware reframe
 
   // Cinematic multi-segment queue
@@ -218,7 +231,6 @@ function CameraRig() {
   const prevFlyTarget = useRef(null)
   const prevPanelState = useRef('neutral')
   const _panelCameraOffset = useRef(0)
-  const heroPanAccum = useRef({ t: HERO_PHASE, frames: 0 })
   const transToHero = useRef(false)
   const modeChangedAt = useRef(Date.now())
 
@@ -452,10 +464,11 @@ function CameraRig() {
           browseFov,
           1500
         )
-        // (SC.5: authored browseHeading consumption deferred — applying
-        // `camera.up = browseUpFromHeading(...)` here flipped the lookAt
-        // mid-transition. browseHeading bakes through the slab but the
-        // production-side Up application is follow-up work.)
+        // browseHeading up is applied at the post-transition snap (below),
+        // NOT here — applying it mid-transition flipped the lookAt (the
+        // original SC.5 bug). Non-zero headings end-snap the orientation at
+        // transition completion rather than interpolating up; acceptable for a
+        // cosmetic, and a no-op at the default heading 0.
       } else if (entering === 'planetarium') {
         // Street-level sky view at the clicked position. fov + eyeHeight
         // are authored (scene.shots.values.street); origin is a runtime
@@ -469,11 +482,10 @@ function CameraRig() {
           streetFov, 1500
         )
       } else if (PRESETS[entering]) {
-        // Transition to mode preset. fov comes from the slab; position +
-        // target are still production's hardcoded HERO_CENTER / HERO_TARGET
-        // (heroSubject / heroKeyframes / heroMotion bake but production
-        // hero-pan animation doesn't consume them yet — flagged as
-        // follow-up).
+        // Transition to mode preset. fov comes from the slab. For hero the
+        // steady-state useFrame plays the authored heroKeyframes (heroKeyframeAnim);
+        // this transition just lerps to the preset entry pose before the
+        // animation takes over.
         const p = PRESETS[entering]
         const fov = entering === 'hero' ? heroFov : entering === 'browse' ? browseFov : p.fov
         const dur = entering === 'hero' ? 2500 : 1500
@@ -501,22 +513,12 @@ function CameraRig() {
     if (transitioning.current) {
       relaxConstraints(ctl)
 
-      // If transitioning into hero, chase the moving pan position
+      // If transitioning into hero, chase the moving keyframe-animated pose
+      // so the transition lands on the authored path instead of a stale point.
       if (transToHero.current) {
-        const panElapsed = Math.max(0, clock.elapsedTime - 3)
-        const panT = panElapsed / PAN_PERIOD + HERO_PHASE
-        const swing = heroPanSwing(panT)
-        const panOff = swing * PAN_HALF_LENGTH
-        _toPos.set(
-          HERO_CENTER[0] + PAN_PERP[0] * panOff,
-          HERO_CENTER[1],
-          HERO_CENTER[2] + PAN_PERP[1] * panOff
-        )
-        _toTarget.set(
-          HERO_TARGET[0] + PAN_PERP[0] * panOff * 0.3,
-          HERO_TARGET[1],
-          HERO_TARGET[2] + PAN_PERP[1] * panOff * 0.3
-        )
+        const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _toPos)
+        _toTarget.set(heroSubject[0], heroSubject[1], heroSubject[2])
+        toFov.current = kfFov
       }
 
       const elapsed = Date.now() - transStart.current
@@ -543,8 +545,13 @@ function CameraRig() {
         } else {
           transitioning.current = false
           transToHero.current = false
-          // Post-transition snap: force pure top-down for browse
+          // Post-transition snap: force pure top-down for browse, oriented by
+          // the authored browseHeading. Setting up here (after the lerp, not
+          // mid-transition — the SC.5 lookAt-flip bug) keeps the descent clean;
+          // a horizontal up makes the straight-down view well-defined without
+          // the +0.01z gimbal tie-break. deg 0 = [0,0,-1] = today's framing.
           if (vm === 'browse') {
+            camera.up.set(...browseUpFromHeading(browseHeadingDeg))
             const tx = ctl.target.x, tz = ctl.target.z
             const dist = camera.position.distanceTo(ctl.target)
             camera.position.set(tx, dist, tz + 0.01)
@@ -563,30 +570,19 @@ function CameraRig() {
       camera.updateProjectionMatrix()
     }
 
-    // ── Hero lateral pan — slow tracking shot across neighborhood ──
+    // ── Hero camera animation — authored keyframe path (slab heroKeyframes) ──
     if (vm === 'hero') {
-      // Fixed-step accumulator: advance at a constant rate regardless of framerate.
-      // If a frame is slow, we advance less (not more), so the camera never jumps.
-      const elapsed = Math.max(0, clock.elapsedTime - 3)
-      const t = elapsed / PAN_PERIOD + HERO_PHASE
-      const swing = heroPanSwing(t)
-      const offset = swing * PAN_HALF_LENGTH
-      camera.position.set(
-        HERO_CENTER[0] + PAN_PERP[0] * offset,
-        HERO_CENTER[1],
-        HERO_CENTER[2] + PAN_PERP[1] * offset
-      )
-      ctl.target.set(
-        HERO_TARGET[0] + PAN_PERP[0] * offset * 0.3,
-        HERO_TARGET[1],
-        HERO_TARGET[2] + PAN_PERP[1] * offset * 0.3
-      )
+      const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos)
+      camera.position.copy(_heroPos)
+      if (Math.abs(camera.fov - kfFov) > 0.1) {
+        camera.fov = kfFov
+        camera.updateProjectionMatrix()
+      }
+      ctl.target.set(heroSubject[0], heroSubject[1], heroSubject[2])
       // Bypass damping — direct position control, no interpolation fighting
       ctl.enableDamping = false
       ctl.update()
       ctl.enableDamping = true
-
-    } else {
     }
 
     // ── Idle → hero ──
@@ -677,6 +673,9 @@ function Scene() {
       shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
     >
       {!IS_GROUND && !IS_MOBILE && <StageShadows />}
+      {/* Atmospheric fog (FogExp2 from scene.mist). Completes the authored
+          `mist` channel in production — no-op at density 0. */}
+      {!IS_GROUND && <StageFog />}
       <FrameLimiter />
       <TimeTicker />
       <SkyStateTicker />
@@ -697,12 +696,17 @@ function Scene() {
       </group>
       <R3FErrorBoundary name="BakedGround"><BakedGround lookId={INSTANCE.lookId} /></R3FErrorBoundary>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
+      {/* Trees — 9-species roster shipped into the slab this session; the
+          lightweight tier + LoD + deformer perf groundwork is in place, so
+          production mounts the same InstancedTrees Stage/Preview do. */}
+      {!IS_GROUND && <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <CourierDots />}
       {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>}
       {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       <CameraRig />
+      {!IS_GROUND && <LampGlowDriver />}
       {!IS_GROUND && <PostProcessing viewMode={viewMode} />}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
     </Canvas>

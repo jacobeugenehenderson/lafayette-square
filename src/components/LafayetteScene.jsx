@@ -21,7 +21,7 @@ import { terrainExag } from '../utils/terrainShader'
 import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import NeonBands from './NeonBands.jsx'
+import SceneNeon, { useNeonLookup } from './SceneNeon.jsx'
 
 // Deterministic string hash — same id always picks the same palette slot.
 function hashStr(s) {
@@ -109,7 +109,7 @@ function getGroundElevation(building) {
 
 // Thin alias preserving local call sites; canonical definition lives in
 // src/lib/foundationGeometry.js (shared with cartograph/bake-buildings.js).
-function getFoundationHeight(building) {
+export function getFoundationHeight(building) {
   return periodPedestalFor(building, _overrides)
 }
 
@@ -321,7 +321,7 @@ function buildHipRoof(localPts, wallHeight, stories) {
   return { geos: [geo], peakHeight: peakH }
 }
 
-function getRoofPeakHeight(building) {
+export function getRoofPeakHeight(building) {
   const roofType = classifyRoof(building)
   if (roofType === 'flat') return 0
   if (roofType === 'mansard') {
@@ -491,19 +491,10 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
 }
 
 // ============ NEON BAND ============
-// Glows when the place is currently open AND it's dark enough to see.
-// Real listings check their hours; simulated listings are always "open."
-const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-function _isWithinHours(hours, time) {
-  if (!hours) return false // no hours set → neon off
-  const day = _DAYS[time.getDay()]
-  const slot = hours[day]
-  if (!slot || !slot.open || !slot.close) return false // closed that day
-  const mins = time.getHours() * 60 + time.getMinutes()
-  const [oh, om] = slot.open.split(':').map(Number)
-  const [ch, cm] = slot.close.split(':').map(Number)
-  return mins >= oh * 60 + om && mins < ch * 60 + cm
-}
+// The open-by-hours filter, default zoning classification, neonLookup,
+// and openPlaces computation now live in ./SceneNeon.jsx — the single
+// neon consumer mounted by both LafayetteScene and Preview. See doctrine
+// project_preview_equals_ls_literally.
 
 // (NeonBand — the inline per-Building TubeGeometry+CatmullRom mount —
 // was retired during the Path B migration. Production now mounts a
@@ -521,38 +512,6 @@ function simColor(id) {
   let h = 0
   for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0
   return _SIM_HEXES[Math.abs(h) % _SIM_HEXES.length]
-}
-
-// ============ DEFAULT NEON CLASSIFICATION ============
-// Buildings without a listings.json entry still get neon tube geometry
-// (see openPlaces). The category that determines the tube color is
-// derived from the building's St. Louis zoning code — the only
-// classification field actually populated on buildings.json
-// (1036/1082 records, distribution: A/B/C/D/E residential, F/G/H/I
-// commercial, J industrial). Buckets:
-//
-//   A B C D E  →  residential   (Sage; single/two/multi-family dwellings)
-//   F G H I    →  services      (Prussian Blue; neighborhood-through-central commercial)
-//   J          →  community     (Terra Cotta; industrial as community/civic proxy)
-//   null/other →  residential   (safe default for the ~4% missing zoning)
-//
-// This is intentionally coarse: zoning code is the only classification
-// signal on buildings.json, and even that doesn't map cleanly to the
-// dining/historic/arts/parks/shopping/services/community/residential
-// taxonomy in CATEGORY_HEX. A richer mapping belongs to later authoring
-// (PlaceCard / Events tab) where the operator can override per-building.
-// Listings-authored buildings keep their authored category color via
-// neonLookup → openPlaces in LafayetteScene.
-const _NEON_ZONING_CATEGORY = {
-  A: 'residential', B: 'residential', C: 'residential', D: 'residential', E: 'residential',
-  F: 'services',    G: 'services',    H: 'services',    I: 'services',
-  J: 'community',
-}
-function defaultNeonCategoryForBuilding(building) {
-  return _NEON_ZONING_CATEGORY[building.zoning] || 'residential'
-}
-function defaultNeonHexForBuilding(building) {
-  return CATEGORY_HEX[defaultNeonCategoryForBuilding(building)]
 }
 
 // ============ BUILDINGS ============
@@ -1233,7 +1192,6 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
   const materialColors  = materialColorsOverride  ?? scene?.materialColors
 
   const deselect = useSelectedBuilding((state) => state.deselect)
-  const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
 
   // Lazy-load building textures on first mount (desktop only)
@@ -1266,97 +1224,10 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     }
   }, [viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Build a buildingId → { hex, hours } lookup — only for currently open listings.
-  // Re-check every 60s so neon bands mount/unmount as places open and close,
-  // instead of mounting all ~100+ and hiding with opacity:0.
-  const [neonTick, setNeonTick] = useState(0)
-  useEffect(() => {
-    const id = setInterval(() => setNeonTick(t => t + 1), 60000)
-    return () => clearInterval(id)
-  }, [])
-
-  const neonLookup = useMemo(() => {
-    const map = {}
-    listings.forEach(l => {
-      const bid = l.building_id || l.id
-      const hex = CATEGORY_HEX[l.category]
-      if (!bid || !hex) return
-      // Eligible if the listing has authored hours. `_isWithinHours`
-      // at the openPlaces filter below decides on/off at the current
-      // TOD; NeonBands itself renders binary (one merged mesh,
-      // all-or-nothing per uniform). Society Pages tag state lives in
-      // useLandmarkFilter and is intentionally NOT consulted here —
-      // that store drives pin visibility (LandmarkMarkers), not neon,
-      // per separation-of-concerns. Authoring-time previewing happens
-      // through the Force Neon On checkbox in the cartograph Neon
-      // panel; production glow follows authored hours only.
-      if (l.hours) {
-        map[bid] = { hex, hours: l.hours, category: l.category }
-      }
-    })
-    return map
-  }, [listings, neonTick])
-
-  // openPlaces — buildings eligible for tube geometry this frame. Every
-  // building in _allBuildings is a candidate; listings-authored ones
-  // carry their authored category color via neonLookup, every other
-  // building falls back to a zoning-derived default (see
-  // defaultNeonCategoryForBuilding above). Drives the single
-  // <NeonBands> mesh in the render block; refreshed on neonTick (60s)
-  // + listings + forceNeonOn. Per-instance aIsOpen is the HANDOFF-neon
-  // §"Instancing" amendment, deferred to v1.1.
-  const openPlaces = useMemo(() => {
-    const places = []
-    const now = useTimeOfDay.getState().currentTime
-    for (const b of _allBuildings) {
-      const listingInfo = neonLookup[b.id]
-      // Resolve color: listings-authored category wins; otherwise the
-      // zoning-derived default. `hours` only exists on the listings
-      // path, so production gating (below) keeps non-listings dark
-      // unless Stage's Force Neon On is the active gate.
-      const info = listingInfo || {
-        hex: defaultNeonHexForBuilding(b),
-        hours: null,
-        category: defaultNeonCategoryForBuilding(b),
-      }
-      // Stage vs production gating, decided by prop presence:
-      //   Stage (CartographApp passes the prop as a bool from the store):
-      //     forceNeonOn IS the sole gate. Checked = every building, off
-      //     = silence. The hours filter is intentionally bypassed in
-      //     Stage so authoring time doesn't lie about which places will
-      //     be lit at the current TOD.
-      //   Production (Scene.jsx omits the prop, undefined here):
-      //     `_isWithinHours` is the sole gate. Tubes auto-glow when a
-      //     listing's authored business hours intersect the current
-      //     TOD. Buildings without authored hours stay dark in
-      //     production — the eligibility extension is a Stage-side
-      //     authoring affordance, not a production behavior change.
-      const on = forceNeonOn !== undefined
-        ? !!forceNeonOn
-        : _isWithinHours(info.hours, now)
-      if (!on) continue
-      // baseY = world Y of the rooftop. Foundation pedestal lift
-      // (pre-1900: +1.2m, pre-1920: +0.8m, else 0) shifts the
-      // building's mounted position; the neon tube must sit at the
-      // same rooftop. NeonBands.buildTubeFor reads place.baseY.
-      const baseY = getFoundationHeight(b) + b.size[1] + getRoofPeakHeight(b) + 0.3
-      // Mean-corner raw elevation — canonical anchor matching Foundations
-      // (line 368) and Building walls (line 615). Threaded into NeonBands
-      // so the neon mesh lifts in lockstep with its building on sloped
-      // terrain. See cartograph/bake-buildings.js:571–575.
-      let groundYRaw
-      const fp = b.footprint
-      if (fp && fp.length >= 3) {
-        let sum = 0
-        for (let i = 0; i < fp.length; i++) sum += getElevationRaw(fp[i][0], fp[i][1])
-        groundYRaw = sum / fp.length
-      } else {
-        groundYRaw = getElevationRaw(b.position[0], b.position[2])
-      }
-      places.push({ ...b, baseY, groundYRaw, neon: { category: info.category } })
-    }
-    return places
-  }, [neonLookup, neonTick, forceNeonOn])
+  // buildingId → { hex, hours, category } for currently-authored listings.
+  // Shared with the neon mesh via the same hook SceneNeon uses, so the
+  // per-id <Building> mounts below and the merged neon tubes never drift.
+  const neonLookup = useNeonLookup()
 
   useEffect(() => {
     const handleKeyDown = (e) => { if (e.key === 'Escape') deselect() }
@@ -1389,8 +1260,10 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       )}
 
       {/* Neon — single Path B mesh over all currently-open places, with
-          scene.json.neon driving the uCore/uTube/uBleed uniforms. */}
-      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} />}
+          scene.json.neon driving the uCore/uTube/uBleed uniforms. Gated by
+          hide.neon so Preview's per-layer toggle can isolate it; production
+          and Stage pass no `neon` key, so it stays on. */}
+      {!hide.neon && <SceneNeon forceNeonOn={forceNeonOn} lookId={INSTANCE.lookId} />}
 
       {/* Street labels — SceneLabel renderer, panel-driven style; widthM
           carries the chain's pavement width so labels scale with the

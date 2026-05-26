@@ -6,7 +6,7 @@ The slab is everything under `public/baked/`. Cartograph publishes; LS reads. Ne
 
 This doc is owned by neither app — it lives at the repo root next to `PUBLISH.md` because it's the *interface*. Drift between sides is not allowed without revising this file.
 
-Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. Cross-refs: [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) (producer architecture), [`ls/ARCHITECTURE.md`](ls/ARCHITECTURE.md) §2 (consumer architecture), [`ls/reference/INVENTORY-DATA.md`](ls/reference/INVENTORY-DATA.md) §A (consumer mount status).
+Last verified: 2026-05-26 (parity pass — §5/§6.3/§11 updated: L1.1 shipped, L1.3 decided hybrid, Preview moved to live buildings). Prior full pass: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. Cross-refs: [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) (producer architecture), [`ls/ARCHITECTURE.md`](ls/ARCHITECTURE.md) §2 (consumer architecture), [`ls/reference/INVENTORY-DATA.md`](ls/reference/INVENTORY-DATA.md) §A (consumer mount status).
 
 ---
 
@@ -213,7 +213,7 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
 | `lamps[].x`, `lamps[].z` | World-meters position. Y is computed at runtime from terrain. |
 | `lamps[].park` | Bool: park-style lamp (vs street-style). Drives lamp model + glow params. |
 
-Consumer: `src/components/BakedLamps.jsx` (Stage + Preview today; production still mounts the live `StreetLights` component pending L1.1 in the LS backlog).
+Consumer: `src/components/BakedLamps.jsx` — Stage, Preview, *and* production (L1.1 shipped; production `Scene.jsx` mounts `<BakedLamps />`, mobile via `DeferredStreetLights`). The live `StreetLights` component is now toy-only.
 
 ---
 
@@ -279,7 +279,7 @@ All four per-vertex attributes are sliced by per-group byte offsets, then indice
 
 ### 6.3. Consumer status
 
-LS production today **does NOT mount this artifact.** It exists for `src/preview/BakedBuildings.jsx` (Preview) to prove perf characteristics. Production `LafayetteScene` reads live `src/data/buildings.json` for per-id interactivity (click handlers, neon, place state — see [`cartograph/FEATURES.md`](cartograph/FEATURES.md) "Buildings on Stage stay live"). Resolution: keep, retire, or hybrid is a v1 punchlist decision (LS backlog L1.3).
+**This artifact currently has ZERO consumers (as of 2026-05-26).** Production `LafayetteScene` reads live `src/data/buildings.json` for per-id interactivity (click handlers, neon, place state); the parity pass moved Preview onto that same live mount (so the GPU profiler measures the shipping render), retiring `src/preview/BakedBuildings.jsx` as the merged mesh's last reader. So `bake-buildings.js` produces dead output today. **Resolution is now decided: hybrid** — bake the merged geometry + a **per-building index sidecar** (`id → vertex ranges + footprint + centroidY + baseY + materials`) so production can consume the slab without losing per-building identity, then point production *and* Preview at it. This bumps the slab to **version 2**. See **`HANDOFF-buildings-bake.md`** (root) for the 6-phase brief; tracked as LS backlog L1.3.
 
 ---
 
@@ -379,9 +379,9 @@ Consumer: `src/components/InstancedTrees.jsx` (production + Stage + Preview, sam
 
 ## 11. Pending boundary work (cross-listed in `ls/BACKLOG.md`)
 
-- **L1.1** Production `Scene.jsx` mounts `BakedLamps` (consumes §5) instead of live `StreetLights`. Stage + Preview already do; production hasn't moved.
+- ~~**L1.1** Production `Scene.jsx` mounts `BakedLamps` (consumes §5) instead of live `StreetLights`.~~ **SHIPPED** — production mounts `BakedLamps`.
 - **L1.2** `LafayettePark` park water + park paths are already in §2's ground groups; remove the parallel live imports from `LafayettePark.jsx`.
-- **L1.3** Decide buildings strategy: keep live (per-id interactivity), bake (§6), or hybrid (slab mesh + per-id index).
+- **L1.3** Buildings strategy — **decided: hybrid** (slab mesh + per-building index sidecar; bumps to version 2). Dispatch-ready brief: `HANDOFF-buildings-bake.md`. Until executed, production reads `src/data/buildings.json` live (slab-completeness gap) and `buildings.json`/`BakedBuildings` are orphaned.
 - **Meteorologist clouds.** `public/clouds/{presets,almanac}.json` are *not* part of this slab contract — they're a separate publish-loop artifact. They exist on disk but have no runtime consumer today. Either wire `CloudDome` to consume them, or remove the artifacts. (Not slab; mentioned here only for completeness.)
 
 ---

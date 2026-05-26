@@ -91,3 +91,33 @@ export function heroAnimPose(t01, keyframes, motion, outPos, outTgt) {
 
   return { position, target, fov }
 }
+
+// Authored hero animation — the one the operator actually tunes in Stage.
+// Mirrors StageApp.jsx HeroPreview exactly: position swings along the
+// keyframe positions (Catmull-Rom, wave-eased period phase), the target is
+// the SUBJECT (NOT per-keyframe targets — these keyframes carry only
+// position + fov), and fov interpolates across keyframes. Shared by Stage
+// (HeroPreview), Preview (ShotCamera), and production (Scene.jsx CameraRig)
+// — one authored hero animation across all three environments.
+//
+// `elapsedSec` — seconds since mount; `motion` = { period, easing, speed?,
+// tension? }; writes the camera position into `outPos` (THREE.Vector3).
+// Returns { fov }.
+const _kfPositions = []
+export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos) {
+  const period = motion.period || 720
+  const speed = motion.speed || 1
+  const wave = WAVES[motion.easing] || WAVES.sine
+  const t = wave(((elapsedSec * speed) % period) / period)
+
+  if (keyframes.length <= 1) {
+    const p = keyframes[0]?.position || [0, 0, 0]
+    outPos.set(p[0], p[1], p[2])
+    return { fov: keyframes[0]?.fov ?? 22 }
+  }
+  _kfPositions.length = 0
+  for (const k of keyframes) _kfPositions.push(k.position)
+  const p = catmullRom(_kfPositions, t, motion.tension ?? 0.5)
+  outPos.set(p[0], p[1], p[2])
+  return { fov: lerpFov(keyframes, t) }
+}
