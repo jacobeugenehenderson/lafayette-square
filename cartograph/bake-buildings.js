@@ -130,6 +130,26 @@ function classifyRoofFor(building, overrides) {
   return 'flat'
 }
 
+// Mirrors LafayetteScene.getRoofPeakHeight EXACTLY — this is the rooftop
+// term the runtime neon baseY uses (SceneNeon.jsx:124). It must agree to the
+// centimeter or neon tubes float above / sink below the baked roof. NOTE:
+// the height switch reads RAW building.stories (NOT `|| 1`), matching the
+// runtime. getLocalPts is a pure translation, so the convexity + length
+// guards are footprint-invariant — run them against the world footprint.
+function getRoofPeakHeightFor(building, overrides) {
+  const roofType = classifyRoofFor(building, overrides)
+  if (roofType === 'flat') return 0
+  const fp = building.footprint
+  if (!fp || fp.length < 3) return 0
+  if (roofType === 'mansard') {
+    return isConvex(fp) ? (building.stories >= 3 ? 2.5 : 2.0) : 0
+  }
+  if (roofType === 'hip') {
+    return fp.length > 8 ? 0 : (building.stories === 1 ? 1.8 : 1.5)
+  }
+  return 0
+}
+
 function signedArea2D(pts) {
   let area = 0
   for (let i = 0, n = pts.length; i < n; i++) {
@@ -527,9 +547,23 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     for (let i = 0; i < count; i++) bucket.centroidYs.push(value)
   }
 
+  // ── Per-building RENDER-SCOPED index (slab v2) ──────────────────────
+  // One entry per rendered building, carrying only what the 3D render +
+  // neon + click-identity path needs (NOT the LS content record — name /
+  // address / architect etc. stay in the content layer; see C2 in
+  // HANDOFF-buildings-bake.md). `ranges` are GROUP-LOCAL [startVert, count]
+  // into the building's wall / foundation / roof group; the consumer stamps
+  // a per-vertex aBuildingId from them. Footprints are packed into the .bin
+  // (C1 — bulk numerics never go in JSON); `footprintRange` is [ptStart,
+  // ptCount] in POINT units into the bin's footprints section.
+  const buildingIndex = []
+  const footprintData = []   // flat Float32 [x0,z0, x1,z1, …] across all buildings
+  let footprintPtCursor = 0
+
   for (const b of buildings) {
     const fp = b.footprint
     if (!fp || fp.length < 3) continue
+    let wallRange = null, foundRange = null, roofRange = null
     const h = (b.size && b.size[1]) || (b.stories ? b.stories * 3.5 : 8)
     // Foundation: visible top = period pedestal (fh) above grade; bottom
     // extends FOUNDATION_BELOW_GRADE_M below grade so no corner of the
@@ -584,6 +618,7 @@ export async function bakeBuildings({ look = 'default' } = {}) {
       for (let i = 0; i < wallIndices.length;    i++) bucket.indices.push(wallIndices[i] + base)
       pushColors(bucket, vAdded, wallRgb)
       pushCentroidY(bucket, vAdded, centroidY)
+      wallRange = [base, vAdded]
       bucket.vCount += vAdded
     }
     if (foundPositions.length) {
@@ -595,6 +630,7 @@ export async function bakeBuildings({ look = 'default' } = {}) {
       for (let i = 0; i < foundIndices.length;    i++) bucket.indices.push(foundIndices[i] + base)
       pushColors(bucket, vAdded, foundRgb)
       pushCentroidY(bucket, vAdded, centroidY)
+      foundRange = [base, vAdded]
       bucket.vCount += vAdded
     }
     {
@@ -606,8 +642,33 @@ export async function bakeBuildings({ look = 'default' } = {}) {
       for (let i = 0; i < roofIndices.length;    i++) bucket.indices.push(roofIndices[i] + base)
       pushColors(bucket, vAdded, roofRgb)
       pushCentroidY(bucket, vAdded, centroidY)
+      roofRange = [base, vAdded]
       bucket.vCount += vAdded
     }
+
+    // Footprint → .bin (C1). ptStart/ptCount in POINT units.
+    const ptStart = footprintPtCursor
+    for (let i = 0; i < fp.length; i++) footprintData.push(fp[i][0], fp[i][1])
+    footprintPtCursor += fp.length
+
+    // baseY = rooftop world Y (pre-terrain-lift), identical to the runtime
+    // neon term getFoundationHeight + size[1] + getRoofPeakHeight + 0.3
+    // (SceneNeon.jsx:124). `h` === b.size[1] for all real buildings; the
+    // bake's fallback only differs for size-less records (none in prod).
+    const baseY = fh + h + getRoofPeakHeightFor(b, overrides) + 0.3
+
+    const ranges = { wall: wallRange, roof: roofRange }
+    if (foundRange) ranges.foundation = foundRange
+    buildingIndex.push({
+      id: b.id,
+      footprintRange: [ptStart, fp.length],
+      centroidY,
+      baseY,
+      wallMaterial: wallMat,
+      roofMaterial: roofMat,
+      zoning: b.zoning ?? null,
+      ranges,
+    })
   }
 
   // Pack groups in deterministic order: walls first (in palette order),
@@ -679,13 +740,56 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     if (roofs.has(mat)) emitGroup('roof', mat, ROOF_MATERIALS, roofs.get(mat))
   }
 
-  // Layout: [positions][colors][uvs][centroidYs][indices].
+  // ── Index tiling assertion (the real Phase-A correctness gate) ──────
+  // Every per-building group-local range must tile its group's vertices
+  // with no gaps / overlaps, and reference only emitted groups. If this
+  // throws, the consumer's per-vertex aBuildingId stamping would mis-map.
+  {
+    const gkey = (kind, mat) => `${kind}:${mat}`
+    const rangesByGroup = new Map()
+    const pushRange = (kind, mat, r) => {
+      if (!r) return
+      const k = gkey(kind, mat)
+      if (!rangesByGroup.has(k)) rangesByGroup.set(k, [])
+      rangesByGroup.get(k).push(r)
+    }
+    for (const e of buildingIndex) {
+      pushRange('wall', e.wallMaterial, e.ranges.wall)
+      pushRange('foundation', 'foundation', e.ranges.foundation)
+      pushRange('roof', e.roofMaterial, e.ranges.roof)
+    }
+    const emittedKeys = new Set(groups.map(g => gkey(g.kind, g.id)))
+    for (const k of rangesByGroup.keys()) {
+      if (!emittedKeys.has(k)) {
+        throw new Error(`[bake-buildings] index references non-emitted group "${k}" — geometry would be dropped`)
+      }
+    }
+    for (const g of groups) {
+      const rs = (rangesByGroup.get(gkey(g.kind, g.id)) || []).slice().sort((a, b) => a[0] - b[0])
+      let cursor = 0
+      for (const [start, count] of rs) {
+        if (start !== cursor) {
+          throw new Error(`[bake-buildings] index tiling gap/overlap in group "${gkey(g.kind, g.id)}": expected start ${cursor}, got ${start}`)
+        }
+        cursor += count
+      }
+      if (cursor !== g.vertexCount) {
+        throw new Error(`[bake-buildings] index under/over-covers group "${gkey(g.kind, g.id)}": covered ${cursor} of ${g.vertexCount} verts`)
+      }
+    }
+    console.log(`[bake-buildings] index tiling verified: ${buildingIndex.length} buildings tile ${groups.length} groups with no gaps/overlaps`)
+  }
+
+  // Layout: [positions][colors][uvs][centroidYs][indices][footprints].
   const totalPosBytes = posByteOffset
   const totalColBytes = colByteOffset
   const totalUvBytes  = uvByteOffset
   const totalCyBytes  = cyByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalColBytes + totalUvBytes + totalCyBytes + totalIdxBytes)
+  // Footprints section (C1): Float32 [x,z] pairs, all buildings concatenated,
+  // appended AFTER indices so the existing per-group offsets are undisturbed.
+  const footprints = new Float32Array(footprintData)
+  const buf = new Uint8Array(totalPosBytes + totalColBytes + totalUvBytes + totalCyBytes + totalIdxBytes + footprints.byteLength)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -715,6 +819,11 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }
+  // Footprints last. `footprintByteOffset` is the section start; per-building
+  // `footprintRange: [ptStart, ptCount]` indexes it in POINT units (×8 bytes).
+  const footprintByteOffset = totalPosBytes + totalColBytes + totalUvBytes + totalCyBytes + totalIdxBytes
+  buf.set(new Uint8Array(footprints.buffer, footprints.byteOffset, footprints.byteLength), off)
+  off += footprints.byteLength
 
   // Bbox
   let bx0 = +Infinity, by0 = +Infinity, bz0 = +Infinity
@@ -729,7 +838,11 @@ export async function bakeBuildings({ look = 'default' } = {}) {
   }
 
   const manifest = {
-    version: 1,
+    // v2 (slab bump): adds the render-scoped per-building index (`buildings`)
+    // + a footprints section in the .bin. Consumers MUST refuse unknown
+    // versions (SLAB-CONTRACT §0). NOTE: the tree path is deliberately
+    // version-agnostic and is NOT affected by this bump.
+    version: 2,
     look,
     bbox: { min: [bx0, by0, bz0], max: [bx1, by1, bz1] },
     bin: 'buildings.bin',
@@ -738,11 +851,17 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     uvFormat: 'float32',
     centroidYFormat: 'float32',
     indexFormat: 'uint32',
+    footprintFormat: 'float32',
     componentsPerVertex: 3,
     colorsPerVertex: 3,
     uvsPerVertex: 2,
     centroidYsPerVertex: 1,
+    footprintComponentsPerPoint: 2,
+    footprintByteOffset,
+    footprintPointCount: footprintData.length / 2,
     buildingCount: buildings.length,
+    renderedBuildingCount: buildingIndex.length,
+    buildings: buildingIndex,
     groups,
   }
 
@@ -752,7 +871,8 @@ export async function bakeBuildings({ look = 'default' } = {}) {
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)
   const totalVerts = groups.reduce((s, g) => s + g.vertexCount, 0)
-  console.log(`[bake-buildings] look=${look}: ${buildings.length} buildings, ${groups.length} groups, ${totalVerts} verts, ${totalTris} tris, ${sizeKb} KB`)
+  const skipped = buildings.length - buildingIndex.length
+  console.log(`[bake-buildings] look=${look}: ${buildings.length} buildings (${buildingIndex.length} rendered${skipped ? `, ${skipped} skipped <3pt footprints` : ''}), ${groups.length} groups, ${totalVerts} verts, ${totalTris} tris, ${footprintData.length / 2} footprint pts, ${sizeKb} KB`)
   return manifest
 }
 

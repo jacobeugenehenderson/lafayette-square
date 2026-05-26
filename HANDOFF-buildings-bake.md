@@ -125,6 +125,60 @@ Write a 10-line findings note in this brief's status before starting Phase A.
 
 ---
 
+## Status — Alidade (2026-05-26)
+
+**Phase 0 re-verification (warm continuation; confirmed Plat's findings against live source, no new contradictions):**
+
+1. **Append site (`bake-buildings.js:577-610`):** each material bucket → exactly one `emitGroup` call,
+   so the `base = bucket.vCount` captured *before* `bucket.vCount += vAdded` is the **group-local**
+   vertex start. That's the per-building, per-group range directly. Each building → 1 wall group
+   (`wall_material`), 1 roof group (`roof_material`), 1 foundation group — foundation appended only
+   `if (foundPositions.length)`, so a building's `foundation` range may legitimately be absent.
+2. **`baseY` parity:** runtime neon uses `getFoundationHeight(b) + b.size[1] + getRoofPeakHeight(b) + 0.3`
+   (`SceneNeon.jsx:124`). `getFoundationHeight` = `periodPedestalFor` = bake's `foundationHeightFor` (same
+   import). `getRoofPeakHeight` (`LafayetteScene.jsx:324`) replicable in-bake: `classifyRoofFor`≡runtime
+   `classifyRoof`, bake `isConvex`≡runtime `isConvex`, `getLocalPts` is translation-only (convexity +
+   `length>8` invariant) → run against `b.footprint`. **Uses RAW `b.stories`** in the 2.5/2.0/1.8/1.5
+   switch (NOT `||1`) — matched. `centroidY` already computed (`:573-575`) = neon `groundYRaw`.
+3. **`zoning`** lives on each building record and is the only field needed for the neon zoning-default
+   category (`_NEON_ZONING_CATEGORY`). Listing `hours`/`category` come from the separate `useListings`
+   store — confirmed untouched-by-slab (C2 boundary holds).
+4. **Footprint → `.bin` (C1):** packing a `footprints` section (Float32 [x,z] pairs, all buildings
+   concatenated) + per-building `footprintRange: [ptStart, ptCount]`. Appending it AFTER `indices` so
+   existing section offsets are undisturbed; indices stay absolute into the position array only.
+5. **Count caveat:** `buildingCount` = `buildings.length` (source count, includes any `fp.length<3`
+   skips which emit no geometry AND no index entry). The render-scoped `buildings[]` index length =
+   *rendered* count. Real gate is the tiling check (ranges cover each group with no gaps/overlaps), which
+   I assert in-bake. Will report both counts; if they differ, the skips are the reason (expected ~0).
+
+Proceeding to Phase A (no Jacob check-in needed pre-A; the A→B seam is the schema-review gate).
+
+**Phase A — COMPLETE & VERIFIED (commit lands this phase). As-built v2 schema:**
+
+- Manifest gains: `version: 2`, `footprintFormat`, `footprintComponentsPerPoint: 2`,
+  `footprintByteOffset` (section start), `footprintPointCount`, `renderedBuildingCount`,
+  and `buildings: [ … ]` (the render-scoped index). `.bin` layout is now
+  `[pos][col][uv][centroidY][indices][footprints]` — footprints appended LAST so every
+  existing per-group offset is byte-for-byte unchanged.
+- Per-building entry (as-built): `{ id, footprintRange: [ptStart, ptCount], centroidY,
+  baseY, wallMaterial, roofMaterial, zoning, ranges: { wall:[start,count], roof:[start,count],
+  foundation:[start,count]? } }`. **Convention note:** all ranges + footprintRange are
+  `[start, count]` (NOT `[start, end]`) — chosen for consistency with `footprintRange`'s
+  `[ptStart, ptCount]`. `ranges` are GROUP-LOCAL vertex indices (into the building's
+  wall/roof/foundation group). `foundation` is omitted when a building has no foundation
+  geometry. `zoning` is carried verbatim (compound codes like "BC" fall to the residential
+  default under the same `_NEON_ZONING_CATEGORY` lookup the runtime uses).
+- **Verification (all green):** tiling asserted in-bake (1082 buildings tile 9 groups, no
+  gaps/overlaps, no non-emitted-group refs); bin size matches declared sections to the byte;
+  footprint round-trip 1082/1082 vs source; `baseY` 0 mismatches vs an independent
+  runtime-faithful `periodPedestalFor + size[1] + getRoofPeakHeight + 0.3` recompute (peaks
+  fire: 47×2.0, 166×2.5 mansard; 110×1.8, 49×1.5 hip; 710 flat); re-bake byte-identical
+  (idempotent). Counts: `buildingCount` 1082 == `renderedBuildingCount` 1082 (0 skipped).
+- **Scope guard honored:** `SLAB-CONTRACT §0` version-refusal applies to the buildings
+  consumer only; the tree path stays version-agnostic and was not touched.
+
+⏸ **AT THE A→B SEAM — awaiting Jacob's schema review before Phase B.**
+
 ## Phase A — Producer: emit the per-building index (no consumer change)
 
 In `bake-buildings.js`, while accumulating each building into the material buckets, record
