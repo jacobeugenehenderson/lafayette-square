@@ -29,24 +29,34 @@ const notify = () => { for (const fn of subs) fn() }
 // as `pre`, then again ~30 frames later as `post`. The signed delta
 // (positive when toggling ON) is the layer's measured cost.
 
-const SAMPLE_WINDOW = 30   // frames over which to average pre/post
-const MEASURE_DELAY = 30   // frames to wait between pre and post
+const SAMPLE_WINDOW = 30   // samples (~300 frames) averaged for the pre-toggle baseline
+// Per-toggle measurement: skip the first SETTLE_SAMPLES post-toggle samples
+// (the toggle transient — re-upload spikes / first-draw shader compile / a
+// .visible flip settling), then average POST_SAMPLES purely-post-toggle
+// samples. The old design waited only MEASURE_DELAY=30 frames before reading
+// `post`, but `post` averaged the last ~300 frames of history — so ~90% of it
+// was pre-toggle samples and every delta read ~10% of true (Vernier Phase-0
+// §3). Averaging post-only samples is the timing fix.
+const SETTLE_SAMPLES = 2   // samples (~20 frames) discarded after a toggle
+const POST_SAMPLES   = 5   // settled post-toggle samples averaged for `post`
 
 const layerCosts = new Map()           // key → { ms, calls, tris }
 const layerCostListeners = new Set()
 const layerCostSubscribe = (fn) => { layerCostListeners.add(fn); return () => layerCostListeners.delete(fn) }
 const layerCostNotify = () => { for (const fn of layerCostListeners) fn() }
 
-const pendingMeasurements = []         // { key, willBeOn, pre, framesLeft }
+const pendingMeasurements = []         // { key, willBeOn, pre, skip, acc, n }
 
-// Public: tell the monitor a layer is about to flip. The monitor
-// captures the baseline now, schedules a post-capture, and stores the
-// delta as the layer's cost.
+// Public: tell the monitor a layer is about to flip. Captures the settled
+// pre-toggle baseline now; the ticker then discards the transient and
+// averages the next POST_SAMPLES settled samples into the layer's cost.
 export function measureToggle(key, willBeOn) {
   pendingMeasurements.push({
     key, willBeOn,
-    pre: snapshotStats(),
-    framesLeft: MEASURE_DELAY,
+    pre: snapshotStats(),          // settled pre-toggle rolling average
+    skip: SETTLE_SAMPLES,          // drop the post-toggle transient
+    acc: { ms: 0, calls: 0, tris: 0 },
+    n: 0,                          // settled post-toggle samples collected
   })
 }
 
@@ -140,18 +150,23 @@ export function GpuMonitorTicker() {
     stats.progs = info.programs?.length || 0
 
     // Push onto rolling buffer for per-layer attribution
-    sampleBuffer.push({ ms: stats.frameMs, calls: stats.calls, tris: stats.tris })
+    const sample = { ms: stats.frameMs, calls: stats.calls, tris: stats.tris }
+    sampleBuffer.push(sample)
     if (sampleBuffer.length > SAMPLE_WINDOW * 4) sampleBuffer.shift()
 
-    // Resolve any pending measurements
+    // Resolve pending measurements by averaging ONLY settled post-toggle
+    // samples (the transient is skipped first), so the delta is the layer's
+    // steady-state per-frame cost — not the old pre/post-overlap dilution.
     if (pendingMeasurements.length) {
       let dirty = false
       for (let i = pendingMeasurements.length - 1; i >= 0; i--) {
         const m = pendingMeasurements[i]
-        m.framesLeft -= 10  // we tick every 10 frames
-        if (m.framesLeft <= 0) {
-          const post = snapshotStats()
+        if (m.skip > 0) { m.skip--; continue }   // drop the toggle transient
+        m.acc.ms += sample.ms; m.acc.calls += sample.calls; m.acc.tris += sample.tris
+        m.n++
+        if (m.n >= POST_SAMPLES) {
           const sign = m.willBeOn ? 1 : -1
+          const post = { ms: m.acc.ms / m.n, calls: m.acc.calls / m.n, tris: m.acc.tris / m.n }
           layerCosts.set(m.key, {
             ms:    (post.ms    - m.pre.ms)    * sign,
             calls: Math.round((post.calls - m.pre.calls) * sign),
