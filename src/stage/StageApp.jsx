@@ -854,17 +854,17 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
       <SliderRow label="Period" value={heroMotion.period} min={60} max={1800} step={10} suffix="s"
         onChange={(v) => setHeroMotion({ ...heroMotion, period: v })} />
 
-      {/* Wave shape */}
+      {/* Ease — how the bounce sweeps through its extremes. (No loop mode;
+          the Hero motion is always a bounce. 'sawtooth' was a fake loop and
+          is retired — legacy Looks migrate to 'sine' on load.) */}
       <div className="space-y-0.5">
-        <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Wave</span>
+        <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Ease</span>
         <div className="flex gap-1">
           {[
-            { key: 'sine', desc: 'Sine — smooth, slows at endpoints',
+            { key: 'sine', desc: 'Sine — smooth bounce, slows at the extremes',
               path: 'M2 12 Q 9 2, 16 12 T 30 12' },
-            { key: 'triangle', desc: 'Triangle — constant speed, sharp turn',
+            { key: 'triangle', desc: 'Triangle — constant-speed bounce, sharp turn at the extremes',
               path: 'M2 18 L 9 6 L 16 18 L 23 6 L 30 18' },
-            { key: 'sawtooth', desc: 'Sawtooth — one-way sweep, snap reset',
-              path: 'M2 18 L 16 6 L 16 18 L 30 6 L 30 18' },
           ].map(t => {
             const active = heroMotion.easing === t.key
             return (

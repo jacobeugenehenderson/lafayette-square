@@ -1144,7 +1144,14 @@ const useCartographStore = create((set, get) => ({
         dirMoon:         migrateGroupChannel(design.dirMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS),
         heroSubject:    design.heroSubject    || null,
         heroKeyframes:  design.heroKeyframes  || get().heroKeyframes,
-        heroMotion:     { ...get().heroMotion, ...(design.heroMotion || {}) },
+        heroMotion:     (() => {
+          const m = { ...get().heroMotion, ...(design.heroMotion || {}) }
+          // 'sawtooth' was a one-way snap masquerading as a loop; retired from
+          // the picker now the Hero motion is explicitly a bounce. Migrate any
+          // legacy Look to 'sine' so it shows an active ease + bounces cleanly.
+          if (m.easing === 'sawtooth') m.easing = 'sine'
+          return m
+        })(),
         // SC.5 — shots is nested per-shot; merge shallowly against defaults
         // so a partial author (e.g., only design.shots.values.hero.fov)
         // still inherits the rest of the table.
