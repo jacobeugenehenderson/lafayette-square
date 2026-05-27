@@ -623,6 +623,7 @@ const SCENE_REGISTRY = {
           materialColorsOverride={materialColorsOverride}
           forceNeonOn={forceNeonOn}
           hiddenLayers={hiddenLayers}
+          forceContentReady
         /></R3FErrorBoundary>
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>

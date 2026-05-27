@@ -782,6 +782,7 @@ function CanvasContents({ layers, shot, setShot }) {
             lookId={lookId}
             hiddenLayers={{ building: true, neon: !layers.neon }}
             forceNeonOn={layers.neon || undefined}
+            labelViewMode={shot}
           />
         </R3FErrorBoundary>
         {/* Slab buildings (L1.3) — the rendered buildings path, as in

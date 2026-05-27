@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { buildings as _allBuildings, buildingMap as _buildingMap } from '../data/buildings'
 import getStreetLabels from '../lib/streetLabels.js'
 import SceneLabel from './SceneLabel.jsx'
+import { ParkTitle } from './LafayettePark'
 import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -1202,7 +1203,7 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, hiddenLayers } = {}) {
+function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, hiddenLayers, labelViewMode, forceContentReady } = {}) {
   // Panel layer toggles: { building, labels, ... } → boolean. Empty object in
   // production (no overrides). Stage passes the live store map; baked Stage
   // reads scene.json.layerVis. Foundations are tied to Building visibility.
@@ -1218,6 +1219,12 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
 
   const deselect = useSelectedBuilding((state) => state.deselect)
   const viewMode = useCamera((s) => s.viewMode)
+  // The browse-only-content gate (labels + markers) follows the CURRENT
+  // surface's view, not the global useCamera singleton — only production
+  // drives that singleton. Preview passes its own `shot` via labelViewMode so
+  // it mirrors production's Hero-hide; production passes nothing → reads the
+  // singleton as before. (Authoring uses forceContentReady below.)
+  const labelGateMode = labelViewMode ?? viewMode
 
   // Lazy-load building textures on first mount (desktop only)
   useEffect(() => { loadBuildingTextures() }, [])
@@ -1235,7 +1242,14 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
   const [labelsReady, setLabelsReady] = useState(false)
   const [markersReady, setMarkersReady] = useState(false)
   useEffect(() => {
-    if (viewMode !== 'hero') {
+    // Authoring surfaces (Stage) force browse-only content on so the operator
+    // can see/style labels + markers in any shot — no rebake required.
+    if (forceContentReady) {
+      setLabelsReady(true)
+      setMarkersReady(true)
+      return
+    }
+    if (labelGateMode !== 'hero') {
       if (isMobile) {
         const t1 = setTimeout(() => setLabelsReady(true), 2000)
         const t2 = setTimeout(() => setMarkersReady(true), 3500)
@@ -1247,7 +1261,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       setLabelsReady(false)
       setMarkersReady(false)
     }
-  }, [viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [labelGateMode, forceContentReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // buildingId → { hex, hours, category } for currently-authored listings.
   // Shared with the neon mesh via the same hook SceneNeon uses, so the
@@ -1308,6 +1322,13 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
           rotation={[-Math.PI / 2, 0, -lbl.angle]}
         />
       ))}
+
+      {/* Park title — the "LAFAYETTE PARK" landmark label. Grouped with the
+          street labels under the same `labels` layer toggle (no longer an
+          always-on orphan in LafayettePark). NOT gated by labelsReady: it's a
+          landmark establishing label shown in every shot (incl. Hero), unlike
+          the browse-only street labels. */}
+      {!hide.labels && <ParkTitle />}
 
       {/* Landmark markers */}
       {markersReady && <LandmarkMarkers />}

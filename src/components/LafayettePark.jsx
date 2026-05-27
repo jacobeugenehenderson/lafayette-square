@@ -829,19 +829,15 @@ function ElevatedGroup({ at, children }) {
   return <group ref={ref}>{children}</group>
 }
 
-function LafayettePark({ lookId, bakeLastMs } = {}) {
+// Park title — the "LAFAYETTE PARK" landmark label + subtitle. Rendered by
+// LafayetteScene alongside the street labels (gated by the `labels` layer
+// toggle) so the operator controls it from the Labels section instead of it
+// being an always-on orphan. Kept here so its park-relative position
+// constants + terrain-lift (ElevatedGroup) stay with the park geometry.
+export function ParkTitle() {
   return (
-    <group>
-      {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
-      <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />
-      <ParkPaths />
-      <PerimeterFence />
-
+    <>
       <ElevatedGroup at={LABEL_TITLE_POS}>
-        {/* Park title is intentionally a custom label, not driven by the
-            Designer Labels panel. Jacob's call: park is a singular
-            landmark; if its treatment ever changes it'll be authored
-            directly here. */}
         <Text
           position={[LABEL_TITLE_POS[0], 0.08, LABEL_TITLE_POS[1]]}
           rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
@@ -857,20 +853,33 @@ function LafayettePark({ lookId, bakeLastMs } = {}) {
         </Text>
       </ElevatedGroup>
       <ElevatedGroup at={LABEL_SUBTITLE_POS}>
-      <Text
-        position={[LABEL_SUBTITLE_POS[0], 0.08, LABEL_SUBTITLE_POS[1]]}
-        rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
-        fontSize={3}
-        color="#888890"
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.08}
-        outlineWidth={0.35}
-        outlineColor="#14141c"
-      >
-        {'EST. 1851 \u00B7 ST. LOUIS, MO'}
-      </Text>
+        <Text
+          position={[LABEL_SUBTITLE_POS[0], 0.08, LABEL_SUBTITLE_POS[1]]}
+          rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
+          fontSize={3}
+          color="#888890"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.08}
+          outlineWidth={0.35}
+          outlineColor="#14141c"
+        >
+          {'EST. 1851 · ST. LOUIS, MO'}
+        </Text>
       </ElevatedGroup>
+    </>
+  )
+}
+
+function LafayettePark({ lookId, bakeLastMs } = {}) {
+  return (
+    <group>
+      {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
+      <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />
+      <ParkPaths />
+      <PerimeterFence />
+      {/* Park title (ParkTitle) moved to LafayetteScene so it's gated by the
+          `labels` layer toggle with the rest of the text labels. */}
     </group>
   )
 }
