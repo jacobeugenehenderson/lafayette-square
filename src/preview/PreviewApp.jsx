@@ -22,7 +22,9 @@ import Terrain from '../components/Terrain'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import LafayettePark from '../components/LafayettePark'
-import { SHOTS, computeBrowseAltitude, FALLBACK_HERO_SUBJECT } from '../stage/StageApp.jsx'
+import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
+import { resolveHeroSubject } from '../lib/heroSubject.js'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -141,11 +143,15 @@ function ShotCamera({ shot, setShot }) {
   // Authored hero animation from the slab (same data Stage's HeroPreview
   // plays). Falls back to the static hero pose for an unauthored Look.
   const scene = useSceneJson(resolvePreviewLookId())
+  const slabIndex = useSlabBuildingIndex((s) => s.index)
   const heroKeyframes = scene?.heroKeyframes?.length
     ? scene.heroKeyframes
     : [{ position: SHOTS.hero.position, fov: SHOTS.hero.fov }]
   const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
-  const heroSubject = Array.isArray(scene?.heroSubject) ? scene.heroSubject : FALLBACK_HERO_SUBJECT
+  // Hero look-at via the SHARED resolver — parity with production CameraRig.
+  // Undesignated → the authored Gateway Arch (scene.arch.values); building/
+  // landmark → the slab index. (project_camera_framing_slab_contract)
+  const heroSubject = resolveHeroSubject(scene?.heroSubject, { slabIndex, archValues: scene?.arch?.values })
   const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
 
   // Resolve the pose for a shot transition. Hero uses the keyframe path's
