@@ -49,7 +49,7 @@ function effectiveBuildingColor(building, palette, override) {
 // brick patterns, but the 7 × 1024² textures cost ~28 MB VRAM.
 // Lazy-loaded in useEffect — buildings render with vertex colors first,
 // textures enhance when ready.
-const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 const _BASE = import.meta.env.BASE_URL
 const _buildingTextures = {}
 let _texturesLoaded = false
@@ -1231,7 +1231,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
   // On mobile, stagger browse-only content across several seconds so the GPU
   // can compile shaders and upload textures in batches instead of all at once.
   // Desktop mounts everything immediately.
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  const isMobile = _IS_MOBILE
   const [labelsReady, setLabelsReady] = useState(false)
   const [markersReady, setMarkersReady] = useState(false)
   useEffect(() => {

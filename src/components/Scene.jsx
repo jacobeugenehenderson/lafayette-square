@@ -3,6 +3,8 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
+import { IS_MOBILE } from '../lib/isMobile.js'
+import { browseAltitude } from '../lib/browseAltitude.js'
 import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
 import CelestialBodies from './CelestialBodies'
@@ -46,18 +48,6 @@ function easeInOutCubic(t) {
 const HERO_CENTER = [-400, 55, 230]
 const HERO_TARGET = [400, 45, -100]
 const _heroPos = new THREE.Vector3()
-
-// Browse overhead altitude that frames `bounds` (w×h) at `fov` for the viewport
-// aspect. MIRRORS computeBrowseAltitude in src/stage/StageApp.jsx — kept inline
-// so production's Scene.jsx doesn't import the heavy Stage module; the formula
-// is identical (a future dedup is conformance Phase 3 cleanup). Driven by the
-// SLAB's authored browse bounds so production frames like Stage/Preview.
-function browseAltitudeFor(aspect, fov, bounds, padding = 1.05) {
-  const tan = Math.tan((fov * Math.PI) / 360)
-  const altForH = (bounds.h * padding) / (2 * tan)
-  const altForW = (bounds.w * padding) / (2 * tan * Math.max(aspect, 1e-6))
-  return Math.max(altForH, altForW)
-}
 
 // ── Camera presets ───────────────────────────────────────────────────────────
 // SC.5 (2026-05-13): FOVs + Street eye height retired from this const —
@@ -510,7 +500,7 @@ function CameraRig() {
         const cz = hasUserPos ? loc.z : browseCz
         const altitude = hasUserPos
           ? 300
-          : browseAltitudeFor(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
+          : browseAltitude(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
         beginTransition(
           [cx, altitude, cz + 1],
           [cx, 0, cz],
@@ -534,7 +524,7 @@ function CameraRig() {
       } else if (entering === 'browse') {
         // Browse entered from a non-hero shot (e.g. planetarium→browse): same
         // slab-authored overhead framing as the hero→browse path above.
-        const altitude = browseAltitudeFor(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
+        const altitude = browseAltitude(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
         beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, BROWSE_TRANS_MS,
           browseUpFromHeading(browseHeadingDeg))
       } else if (PRESETS[entering]) {
@@ -684,7 +674,6 @@ function CameraRig() {
 // ── Scene ────────────────────────────────────────────────────────────────────
 
 const IS_GROUND = window.location.search.includes('ground')
-const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
 
 

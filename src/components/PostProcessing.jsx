@@ -51,8 +51,7 @@ import {
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 
-const IS_MOBILE = typeof navigator !== 'undefined'
-  && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+import { IS_MOBILE } from '../lib/isMobile.js'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 function resolveLookId(propLookId) {

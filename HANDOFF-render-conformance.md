@@ -124,10 +124,14 @@ break is in the data contract:
 `fromFov` fix. Sequence both under the camera/conformance work; do not let a camera fix re-hardcode what
 the slab should author.
 
-## Phase 3 — Consolidate the mobile path (own commit; no behavior change)
-Replace the **6 duplicated `/iPhone|iPad|iPod|Android/i` regexes** (Scene, PostProcessing, LafayetteScene
-×2, StreetLights, SlabBuildings) with ONE shared device-sense (`src/utils/deviceDetect.js` or
-`instance.js`). Pure refactor, zero behavior change — sets the foundation for the profile.
+## Phase 3 — Consolidate the mobile path (own commit; no behavior change) — ✅ DONE (Boz, 2026-05-27)
+Replaced the duplicated `/iPhone|iPad|iPod|Android/i` regexes with ONE shared `src/lib/isMobile.js`
+(`IS_MOBILE`, SSR-safe). Found **7** sites, not 6 — the list missed `ContactModal.jsx`; the others were
+Scene, PostProcessing, LafayetteScene ×2, StreetLights, SlabBuildings. Also collapsed the second
+duplication the camera work left behind: `Scene.jsx#browseAltitudeFor` (inlined to avoid bundling Stage)
+and `StageApp.jsx#computeBrowseAltitude` now both wrap one pure `src/lib/browseAltitude.js`. Zero behavior
+change; all parse. (Chose `src/lib/` over the suggested `src/utils/deviceDetect.js` to sit beside the
+other shared pure helpers.)
 
 ## Phase 4 — The virtual phone renders the mobile profile (the deploy-on-phone gate; own commit)
 Today Preview "Phone" mode renders DESKTOP settings in a phone viewport (Vernier §6-F) — so the virtual

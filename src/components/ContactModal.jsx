@@ -9,7 +9,7 @@ export const useContact = create((set) => ({
   setOpen: (open, initialMessage = '') => set({ open, initialMessage }),
 }))
 
-const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+import { IS_MOBILE } from '../lib/isMobile.js'
 
 export default function ContactModal() {
   const open = useContact((s) => s.open)

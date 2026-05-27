@@ -17,6 +17,7 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
+import { browseAltitude } from '../lib/browseAltitude.js'
 
 import LafayetteScene from '../components/LafayetteScene'
 import CelestialBodies from '../components/CelestialBodies'
@@ -197,12 +198,7 @@ export const SHOTS = {
 // in. Returns the altitude (camera Y) for a 90° overhead camera with the
 // given fov and viewport aspect (width / height).
 export function computeBrowseAltitude(aspect, fov = SHOTS.browse.fov) {
-  const { w, h } = SHOTS.browse.bounds
-  const pad = SHOTS.browse.padding ?? 1.05
-  const tan = Math.tan((fov * Math.PI) / 360)
-  const altForH = (h * pad) / (2 * tan)
-  const altForW = (w * pad) / (2 * tan * Math.max(aspect, 1e-6))
-  return Math.max(altForH, altForW)
+  return browseAltitude(aspect, fov, SHOTS.browse.bounds, SHOTS.browse.padding ?? 1.05)
 }
 
 // Live camera state bridge (R3F ↔ React DOM)

@@ -23,7 +23,7 @@ const LAMP_MODEL_HEIGHT = 2.65
 const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
 const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
 
-const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 const LAMP_COLOR_ON = new THREE.Color('#fff2e0')  // warm incandescent white
 const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.18 // tight glass halo

@@ -36,7 +36,7 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { INSTANCE } from '../instance.js'
 
-const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
 
 // Shared texture cache (heavy, shared across material groups + remounts).
