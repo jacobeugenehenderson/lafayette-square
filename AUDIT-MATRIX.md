@@ -50,7 +50,7 @@ Some concerns span domains; two pathologists co-own and reconcile what already e
 | **Capability statement** | "You can do X." The marketing line — **and the dead-code detector: if this reads as nonsense ("marry a man in South America in one click"), flag it.** |
 | **Source(s) of truth** | Where its data/config lives. Flag **duplication** and **hard-wiring** (hardcoded LS-specifics). |
 | **Cruft-class** | `real` (keep) · `duct-tape` (load-bearing hack → **fix/replace, never just remove**) · `vestigial` (dead → remove). |
-| **Action** | `keep` · `fix` (with the real solution sketched) · `remove` (**with evidence it's dead**). |
+| **Action** | `keep` · `fix` (real solution sketched — OK to do now) · `remove` (**TAG ONLY — frozen until v1 release; see the removal freeze below. Do not execute now.**). |
 | **Blocked-on / releases** | If it's a knot: what's stuck behind it, and what ships when it's untied. |
 | **Productization unlock** | `future-setting` (tier 1, front-front-end) · `slab-field` (tier 2, the format) · `api-route` (tier 4) · `none`. |
 | **Conflicts / notes** | Collisions with other items; Stage↔Production divergence; contract violations. |
@@ -64,6 +64,40 @@ Some concerns span domains; two pathologists co-own and reconcile what already e
 2. **The campaign is generative, not only subtractive.** Subtractive (remove vestigial) +
    corrective (fix duct-tape with real welds) + generative (release blocked work). The
    `blocked-on` column is how we know which stuck feature each untied knot frees.
+
+## 🧊 Removal freeze — tag now, cut after v1 release
+
+**Until v1 is released, we do NOT execute removals.** The codebase is still moving toward v1, and
+there's probably plenty like the ribbon/corner case — code that looks dead but is WIP toward an
+unfinished feature, or load-bearing in a way the audit can't yet see. Wrongly removing something
+mid-development is a hull-punch; holding a dead stub for a few weeks costs nothing.
+
+So during the run-up:
+- **Non-destructive work proceeds now** — fixes (duct-tape → real welds), consolidations to a single
+  source of truth (e.g. the `DESIGN_FIELDS` descriptor), de-hardwiring toward settings. These preserve
+  behavior and de-risk.
+- **Removals freeze.** Anything classified `remove` is *tagged into a deferred queue*, NOT cut. The
+  Documentation Officer maintains the queue (every `Action: remove` row). It executes in ONE dedicated
+  cleanup window **after v1 ships**, against a stable tree, with fresh evidence each item is truly dead.
+
+(Already in the queue, not executed: `PRESETS.browse`, the stale `lafayette-square.json` bake, the
+`/rebuild` stub, the CodeDesk token dup, the arborist `_attic` sweep. Comment-only doc fixes are not
+removals — fine to do now.)
+
+## ⛔ Exclusion zone — ribbons / corners / curbs / intersections / block geometry / measure / couplers
+
+**Ribbons and corners are NOT fixed yet** (the corner-arc continuation is mid-flight — see
+`cartograph/RIBBONS.md` + the cartograph BACKLOG). Everything that system governs — curbs,
+intersections, block geometry, the measure path, **couplers** (`toggleCoupler`,
+`setSegmentMeasure`, segment measures) — is **unfinished work-in-progress, NOT cruft.** Its loose
+ends (dead-looking code, zero-caller writers, back-compat shims) are WIP toward an in-progress
+fix and the queued sub-B redo may re-introduce them.
+
+**Rule: do NOT classify anything in this zone as vestigial or duct-tape, and do NOT remove or
+"fix" it during this campaign. HOLD it all until ribbons/corners are fixed.** Audit it for the
+*record* (inventory it, note it's RIBBONS-governed WIP), but it's off-limits for the rip-up.
+This is the classify-before-cut third question: "is this WIP toward the corner fix?" → if yes, hold.
+(Already cost us once: knot-4's V1 measure/coupler path was tagged removable; pulled and held.)
 
 ## Example rows (from this session — the pattern)
 
