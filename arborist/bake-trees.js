@@ -36,6 +36,7 @@ import { fileURLToPath } from 'node:url'
 // (vs reimplementing) keeps the bake-time classifier's camera locus in lock-step
 // with what Scene/Preview/Stage actually render. Node-safe ESM.
 import { catmullRom } from '../src/preview/heroAnim.js'
+import { resolveHeroSubject } from '../src/lib/heroSubject.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -242,9 +243,11 @@ const HERO_TIER = {
   // pan is read from the slab, so widening the hero shot re-classifies on rebake.
   CULL_FRUSTUM_GUARD: 1.3,
 }
-// Mirror of StageApp.FALLBACK_HERO_SUBJECT / Scene.HERO_TARGET (both [400,45,-100]).
-// Used when the slab's heroSubject is null (current LS state).
-const FALLBACK_HERO_TARGET = [400, 45, -100]
+// Hero target resolves via the shared resolveHeroSubject (imported above) — the
+// SAME resolver every runtime camera uses. No local fallback literal: the old
+// [400,45,-100] diverged from the runtime's arch default (Vernier's camera fix),
+// so the classifier scored heroTier for a shot ~1200m off the real arch. This
+// was the last unmigrated consumer of project_camera_framing_slab_contract.
 
 const _clamp1 = (x) => (x < -1 ? -1 : x > 1 ? 1 : x)
 // Fraction of circle i (radius ri) covered by circle j (radius rj), centres d apart.
@@ -307,7 +310,7 @@ function classifyHeroTiers(canopies, heroPan) {
   const fovDeg = heroPan.keyframes[0].fov ?? 22
   const vHalf = (fovDeg * Math.PI / 180) / 2
   const hHalf = Math.atan(Math.tan(vHalf) * HERO_TIER.ASPECT)
-  const target = Array.isArray(heroPan.subject) ? heroPan.subject : FALLBACK_HERO_TARGET
+  const target = resolveHeroSubject(heroPan.subject, { archValues: heroPan.archValues })
   const tension = heroPan.tension ?? 0.5
   const diagHalf = Math.hypot(hHalf, vHalf)
 
@@ -454,7 +457,7 @@ export async function bakeTrees({
       const s = JSON.parse(await fs.readFile(
         path.join(REPO_ROOT, 'public', 'baked', heroLook, 'scene.json'), 'utf8'))
       if (Array.isArray(s.heroKeyframes) && s.heroKeyframes.length) {
-        heroPan = { keyframes: s.heroKeyframes, subject: s.heroSubject, tension: s.heroMotion?.tension }
+        heroPan = { keyframes: s.heroKeyframes, subject: s.heroSubject, archValues: s.arch?.values, tension: s.heroMotion?.tension }
       }
     } catch (e) {
       if (verbose) console.log(`[bake-trees] hero pan unavailable for '${heroLook}' (${e.code || e.message}) — heroTier skipped`)
