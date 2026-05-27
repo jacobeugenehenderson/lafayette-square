@@ -168,6 +168,99 @@ function migrateLabels(labels) {
   return out
 }
 
+// ── Per-Look design block — ONE source of truth ─────────────────────────────
+// These design fields were hand-maintained in THREE places (two hydrate blocks
+// + the save writer); they had to stay byte-identical or a saved-but-not-
+// hydrated field got clobbered by init defaults on the next save. That drift
+// already cost 3 hero keyframes → 2 (feedback_dual_hydration_paths_drift) — and
+// the stopgap then was to copy lines into the third list. THIS is the real fix:
+// one descriptor. Each field knows how to hydrate from a fetched design.json
+// (its migration/default); it serializes uniformly as the live state value.
+// hydrateDesign() drives both hydrate paths, serializeDesign() the save writer,
+// so the set can never diverge again. Order = on-disk JSON key order (matches
+// the prior save writer → keeps design.json diffs clean). Add a future channel
+// in ONE place here.
+const _isObj = (v) => v && typeof v === 'object'
+const _grp = (key, KEYS, DEFAULTS) => ({ key, hydrate: (d) => migrateGroupChannel(d[key], KEYS, DEFAULTS) })
+
+const DESIGN_FIELDS = [
+  { key: 'layerVis',     hydrate: (d) => d.layerVis || {} },
+  { key: 'layerColors',  hydrate: (d) => d.layerColors || {} },
+  { key: 'layerStrokes', hydrate: (d) => d.layerStrokes || {} },
+  { key: 'luColors',     hydrate: (d) => d.luColors || {} },
+  { key: 'cornerRadiusScale', hydrate: (d) => Number.isFinite(d.cornerRadiusScale) ? d.cornerRadiusScale : 1 },
+  { key: 'cornerRadiusOverrides', hydrate: (d) => _isObj(d.cornerRadiusOverrides) ? d.cornerRadiusOverrides : {} },
+  { key: 'cornerCornerRadiusOverrides', hydrate: (d) => _isObj(d.cornerCornerRadiusOverrides) ? d.cornerCornerRadiusOverrides : {} },
+  { key: 'curbWidth',    hydrate: (d) => Number.isFinite(d.curbWidth) ? d.curbWidth : 0.1524 },
+  { key: 'alleyCap',     hydrate: (d) => ['square', 'rounded', 'round'].includes(d.alleyCap) ? d.alleyCap : 'square' },
+  { key: 'labels',       hydrate: (d, get) => migrateLabels({ ...get().labels, ...(_isObj(d.labels) ? d.labels : {}) }) },
+  { key: 'blockCustoms', hydrate: (d) => _isObj(d.blockCustoms) ? d.blockCustoms : {} },
+  { key: 'blockLandUse', hydrate: (d) => _isObj(d.blockLandUse) ? d.blockLandUse : {} },
+  { key: 'materialColors',  hydrate: (d) => d.materialColors || {} },
+  { key: 'materialPhysics', hydrate: (d) => d.materialPhysics || {} },
+  { key: 'buildingPalette', hydrate: (d, get) => d.buildingPalette || get().buildingPalette },
+  { key: 'lampGlow',     hydrate: (d) => migrateLampGlow(d.lampGlow) },
+  _grp('bloom',          BLOOM_FIELD_KEYS,          BLOOM_FLAT_DEFAULTS),
+  _grp('warmth',         WARMTH_FIELD_KEYS,         WARMTH_FLAT_DEFAULTS),
+  _grp('fill',           FILL_FIELD_KEYS,           FILL_FLAT_DEFAULTS),
+  _grp('exposure',       EXPOSURE_FIELD_KEYS,       EXPOSURE_FLAT_DEFAULTS),
+  _grp('ao',             AO_FIELD_KEYS,             AO_FLAT_DEFAULTS),
+  _grp('mist',           MIST_FIELD_KEYS,           MIST_FLAT_DEFAULTS),
+  _grp('halo',           HALO_FIELD_KEYS,           HALO_FLAT_DEFAULTS),
+  _grp('grade',          GRADE_FIELD_KEYS,          GRADE_FLAT_DEFAULTS),
+  _grp('grain',          GRAIN_FIELD_KEYS,          GRAIN_FLAT_DEFAULTS),
+  _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
+  _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
+  _grp('milkyWay',       MILKYWAY_FIELD_KEYS,       MILKYWAY_FLAT_DEFAULTS),
+  _grp('neon',           NEON_FIELD_KEYS,           NEON_FLAT_DEFAULTS),
+  { key: 'sky', hydrate: (d) => migrateSkyChannel(d.sky) },
+  _grp('ambient',        AMBIENT_FIELD_KEYS,        AMBIENT_FLAT_DEFAULTS),
+  _grp('hemi',           HEMI_FIELD_KEYS,           HEMI_FLAT_DEFAULTS),
+  _grp('dirSun',         DIRSUN_FIELD_KEYS,         DIRSUN_FLAT_DEFAULTS),
+  _grp('dirMoon',        DIRMOON_FIELD_KEYS,        DIRMOON_FLAT_DEFAULTS),
+  { key: 'heroSubject',   hydrate: (d) => d.heroSubject || null },
+  { key: 'heroKeyframes', hydrate: (d, get) => d.heroKeyframes || get().heroKeyframes },
+  { key: 'heroMotion',    hydrate: (d, get) => {
+    const m = { ...get().heroMotion, ...(d.heroMotion || {}) }
+    // 'sawtooth' was a one-way snap masquerading as a loop; retired now the Hero
+    // motion is explicitly a bounce. Migrate legacy Looks to 'sine'.
+    if (m.easing === 'sawtooth') m.easing = 'sine'
+    return m
+  } },
+  // SC.5 — shots is nested per-shot; merge shallowly against defaults so a
+  // partial author (e.g. only shots.values.hero.fov) inherits the rest.
+  { key: 'shots', hydrate: (d) => d.shots?.values
+    ? { values: {
+        browse: { ...SHOTS_FLAT_DEFAULTS.browse, ...(d.shots.values.browse || {}),
+          bounds: { ...SHOTS_FLAT_DEFAULTS.browse.bounds, ...(d.shots.values.browse?.bounds || {}) } },
+        hero:   { ...SHOTS_FLAT_DEFAULTS.hero,   ...(d.shots.values.hero   || {}) },
+        street: { ...SHOTS_FLAT_DEFAULTS.street, ...(d.shots.values.street || {}) },
+      } }
+    : { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) } },
+  { key: 'browseHeading', hydrate: (d) => d.browseHeading?.values
+    ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...d.browseHeading.values } }
+    : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } } },
+  _grp('arch',           ARCH_FIELD_KEYS,           ARCH_FLAT_DEFAULTS),
+  _grp('horizon',        HORIZON_FIELD_KEYS,        HORIZON_FLAT_DEFAULTS),
+  { key: 'clouds', hydrate: (d) => d.clouds?.values
+    ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...d.clouds.values } }
+    : { values: { ...CLOUDS_FLAT_DEFAULTS } } },
+  { key: 'openSections', hydrate: (d) => d.openSections || {} },
+]
+
+// Build the design-state patch from a fetched design.json (both hydrate paths).
+function hydrateDesign(design, get) {
+  const out = {}
+  for (const f of DESIGN_FIELDS) out[f.key] = f.hydrate(design, get)
+  return out
+}
+// Build the design.json payload from live state (the save writer).
+function serializeDesign(s) {
+  const out = {}
+  for (const f of DESIGN_FIELDS) out[f.key] = s[f.key]
+  return out
+}
+
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors ─────────────────────────────
   // Hydrated from the active Look's design.json on _loadCenterlines.
@@ -1107,73 +1200,7 @@ const useCartographStore = create((set, get) => ({
     // baked Look should still surface the Stage button as stale.
     try {
       const design = await fetchLookDesign(id)
-      set({
-        layerVis:       design.layerVis       || {},
-        layerColors:    design.layerColors    || {},
-        layerStrokes:   design.layerStrokes   || {},
-        luColors:       design.luColors       || {},
-        cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
-        curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
-        alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
-        labels: migrateLabels({ ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) }),
-        blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
-        blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
-        cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
-        cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
-        materialColors: design.materialColors || {},
-        materialPhysics: design.materialPhysics || {},
-        buildingPalette: design.buildingPalette || get().buildingPalette,
-        lampGlow:        migrateLampGlow(design.lampGlow),
-        bloom:           migrateGroupChannel(design.bloom, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS),
-        warmth:          migrateGroupChannel(design.warmth, WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS),
-        fill:            migrateGroupChannel(design.fill, FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS),
-        exposure:        migrateGroupChannel(design.exposure, EXPOSURE_FIELD_KEYS, EXPOSURE_FLAT_DEFAULTS),
-        ao:              migrateGroupChannel(design.ao, AO_FIELD_KEYS, AO_FLAT_DEFAULTS),
-        mist:            migrateGroupChannel(design.mist, MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS),
-        halo:            migrateGroupChannel(design.halo, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS),
-        grade:           migrateGroupChannel(design.grade, GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS),
-        grain:           migrateGroupChannel(design.grain, GRAIN_FIELD_KEYS, GRAIN_FLAT_DEFAULTS),
-        shadow:          migrateGroupChannel(design.shadow, SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS),
-        constellations:  migrateGroupChannel(design.constellations, CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
-        milkyWay:        migrateGroupChannel(design.milkyWay, MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS),
-        neon:            migrateGroupChannel(design.neon, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS),
-        sky:             migrateSkyChannel(design.sky),
-        ambient:         migrateGroupChannel(design.ambient, AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS),
-        hemi:            migrateGroupChannel(design.hemi,    HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS),
-        dirSun:          migrateGroupChannel(design.dirSun,  DIRSUN_FIELD_KEYS,  DIRSUN_FLAT_DEFAULTS),
-        dirMoon:         migrateGroupChannel(design.dirMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS),
-        heroSubject:    design.heroSubject    || null,
-        heroKeyframes:  design.heroKeyframes  || get().heroKeyframes,
-        heroMotion:     (() => {
-          const m = { ...get().heroMotion, ...(design.heroMotion || {}) }
-          // 'sawtooth' was a one-way snap masquerading as a loop; retired from
-          // the picker now the Hero motion is explicitly a bounce. Migrate any
-          // legacy Look to 'sine' so it shows an active ease + bounces cleanly.
-          if (m.easing === 'sawtooth') m.easing = 'sine'
-          return m
-        })(),
-        // SC.5 — shots is nested per-shot; merge shallowly against defaults
-        // so a partial author (e.g., only design.shots.values.hero.fov)
-        // still inherits the rest of the table.
-        shots: design.shots?.values
-          ? { values: {
-              browse: { ...SHOTS_FLAT_DEFAULTS.browse, ...(design.shots.values.browse || {}),
-                bounds: { ...SHOTS_FLAT_DEFAULTS.browse.bounds, ...(design.shots.values.browse?.bounds || {}) } },
-              hero:   { ...SHOTS_FLAT_DEFAULTS.hero,   ...(design.shots.values.hero   || {}) },
-              street: { ...SHOTS_FLAT_DEFAULTS.street, ...(design.shots.values.street || {}) },
-            } }
-          : { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
-        browseHeading: design.browseHeading?.values
-          ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...design.browseHeading.values } }
-          : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
-        arch:    migrateGroupChannel(design.arch,    ARCH_FIELD_KEYS,    ARCH_FLAT_DEFAULTS),
-        horizon: migrateGroupChannel(design.horizon, HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS),
-        clouds: design.clouds?.values
-          ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...design.clouds.values } }
-          : { values: { ...CLOUDS_FLAT_DEFAULTS } },
-        openSections:   design.openSections   || {},
-        bakeStale: !entry?.bakedAt,
-      })
+      set({ ...hydrateDesign(design, get), bakeStale: !entry?.bakedAt })
     } catch (err) {
       console.warn('[looks] hydrate failed for', id, err)
     }
@@ -1572,74 +1599,7 @@ const useCartographStore = create((set, get) => ({
       // Looks index loaded so it can validate the id, so chain through that.
       await get()._loadLooks()
       const design = await fetchLookDesign(get().activeLookId).catch(() => ({}))
-      set({
-        layerVis:       design.layerVis       || {},
-        layerColors:    design.layerColors    || {},
-        layerStrokes:   design.layerStrokes   || {},
-        luColors:       design.luColors       || {},
-        cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
-        curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
-        alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
-        labels: migrateLabels({ ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) }),
-        blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
-        blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
-        cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
-        cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
-        materialColors: design.materialColors || {},
-        materialPhysics: design.materialPhysics || {},
-        buildingPalette: design.buildingPalette || get().buildingPalette,
-        lampGlow:        migrateLampGlow(design.lampGlow),
-        bloom:           migrateGroupChannel(design.bloom, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS),
-        warmth:          migrateGroupChannel(design.warmth, WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS),
-        fill:            migrateGroupChannel(design.fill, FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS),
-        exposure:        migrateGroupChannel(design.exposure, EXPOSURE_FIELD_KEYS, EXPOSURE_FLAT_DEFAULTS),
-        ao:              migrateGroupChannel(design.ao, AO_FIELD_KEYS, AO_FLAT_DEFAULTS),
-        mist:            migrateGroupChannel(design.mist, MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS),
-        halo:            migrateGroupChannel(design.halo, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS),
-        grade:           migrateGroupChannel(design.grade, GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS),
-        grain:           migrateGroupChannel(design.grain, GRAIN_FIELD_KEYS, GRAIN_FLAT_DEFAULTS),
-        shadow:          migrateGroupChannel(design.shadow, SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS),
-        constellations:  migrateGroupChannel(design.constellations, CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
-        milkyWay:        migrateGroupChannel(design.milkyWay, MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS),
-        neon:            migrateGroupChannel(design.neon, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS),
-        sky:             migrateSkyChannel(design.sky),
-        ambient:         migrateGroupChannel(design.ambient, AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS),
-        hemi:            migrateGroupChannel(design.hemi,    HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS),
-        dirSun:          migrateGroupChannel(design.dirSun,  DIRSUN_FIELD_KEYS,  DIRSUN_FLAT_DEFAULTS),
-        dirMoon:         migrateGroupChannel(design.dirMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS),
-        // SC.5 — shots / browseHeading hydrate.
-        shots: design.shots?.values
-          ? { values: {
-              browse: { ...SHOTS_FLAT_DEFAULTS.browse, ...(design.shots.values.browse || {}),
-                bounds: { ...SHOTS_FLAT_DEFAULTS.browse.bounds, ...(design.shots.values.browse?.bounds || {}) } },
-              hero:   { ...SHOTS_FLAT_DEFAULTS.hero,   ...(design.shots.values.hero   || {}) },
-              street: { ...SHOTS_FLAT_DEFAULTS.street, ...(design.shots.values.street || {}) },
-            } }
-          : { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
-        browseHeading: design.browseHeading?.values
-          ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...design.browseHeading.values } }
-          : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
-        arch:    migrateGroupChannel(design.arch,    ARCH_FIELD_KEYS,    ARCH_FLAT_DEFAULTS),
-        horizon: migrateGroupChannel(design.horizon, HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS),
-        clouds: design.clouds?.values
-          ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...design.clouds.values } }
-          : { values: { ...CLOUDS_FLAT_DEFAULTS } },
-        // Hero camera path — MUST hydrate here on the boot path too, not just
-        // in setActiveLook. Omitting these left heroKeyframes/Motion/Subject at
-        // their store-init defaults after a fresh load; the first autosave then
-        // wrote those defaults over the design.json's authored values (e.g. an
-        // operator's 3 keyframes silently reverting to the 2 default anchors).
-        // Keep in sync with the setActiveLook hydrate block above.
-        heroSubject:    design.heroSubject    || null,
-        heroKeyframes:  design.heroKeyframes  || get().heroKeyframes,
-        heroMotion:     (() => {
-          const m = { ...get().heroMotion, ...(design.heroMotion || {}) }
-          if (m.easing === 'sawtooth') m.easing = 'sine'
-          return m
-        })(),
-        openSections:   design.openSections   || {},
-        _designHydrated: true,
-      })
+      set({ ...hydrateDesign(design, get), _designHydrated: true })
     } catch (e) { console.warn('[skeleton] load failed:', e) }
   },
 
@@ -1722,51 +1682,7 @@ const useCartographStore = create((set, get) => ({
       const id = s.activeLookId
       if (!id) return Promise.resolve()
       if (!get().bakeStale) set({ bakeStale: true })
-      const design = {
-          layerVis: s.layerVis,
-          layerColors: s.layerColors,
-          layerStrokes: s.layerStrokes,
-          luColors: s.luColors,
-          cornerRadiusScale: s.cornerRadiusScale,
-          cornerRadiusOverrides: s.cornerRadiusOverrides,
-          cornerCornerRadiusOverrides: s.cornerCornerRadiusOverrides,
-          curbWidth: s.curbWidth,
-          alleyCap: s.alleyCap,
-          labels: s.labels,
-          blockCustoms: s.blockCustoms,
-          blockLandUse: s.blockLandUse,
-          materialColors: s.materialColors,
-          materialPhysics: s.materialPhysics,
-          buildingPalette: s.buildingPalette,
-          lampGlow: s.lampGlow,
-          bloom: s.bloom,
-          warmth: s.warmth,
-          fill: s.fill,
-          exposure: s.exposure,
-          ao: s.ao,
-          mist: s.mist,
-          halo: s.halo,
-          grade: s.grade,
-          grain: s.grain,
-          shadow: s.shadow,
-          constellations: s.constellations,
-          milkyWay: s.milkyWay,
-          neon: s.neon,
-          sky: s.sky,
-          ambient: s.ambient,
-          hemi: s.hemi,
-          dirSun: s.dirSun,
-          dirMoon: s.dirMoon,
-          heroSubject: s.heroSubject,
-          heroKeyframes: s.heroKeyframes,
-          heroMotion: s.heroMotion,
-          shots: s.shots,
-          browseHeading: s.browseHeading,
-          arch: s.arch,
-          horizon: s.horizon,
-          clouds: s.clouds,
-          openSections: s.openSections,
-      }
+      const design = serializeDesign(s)
       return saveLookDesign(id, design).catch(err =>
         console.warn('[looks] design save failed:', err))
     }
