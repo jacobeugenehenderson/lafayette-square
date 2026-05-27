@@ -75,6 +75,51 @@ simpler, race-free.
 - **Verify:** cold-load the deployed app into Hero — camera lands on the authored keyframe path with no
   snap/lerp-from-stale; matches Stage/Preview hero motion.
 
+### Phase 2 — EXPANDED root causes (Vernier camera diagnosis, 2026-05-26)
+The deployed camera is "wrong top-to-bottom" because production's `CameraRig` rides **stale hardcoded
+`PRESETS`** instead of the slab's authored framing — a stronger version of the `fromFov` bug above. Two
+distinct divergences, both **camera-conformance** (production must frame like the authoring surfaces it
+was tuned on). **This must hold across ALL camera instantiations** (production `CameraRig`, Preview
+`ShotCamera`, Stage's CartographApp camera, and any future one) — the slab is the single source of camera
+framing; no camera may re-hardcode a pose the slab authors.
+
+**(A) Browse ignores the slab bounds.** Production reads only `shots.values.browse.fov` and centers Browse
+on hardcoded `PRESETS.browse` = `[0,0,0]` / altitude `600` (`Scene.jsx:61,461`). But the slab authors
+`shots.values.browse.bounds` = `{cx:95, cz:-158, w:1292, h:1025, padding:1.05}`. Preview/Stage center on
+`[95,-158]` via `SHOTS.browse` + `computeBrowseAltitude(aspect, fov)` fit to the bounds. So deployed Browse
+is off-center by ~`[95,-158]` AND at the wrong altitude → wrong view + controls pivoting on the wrong point.
+**Fix:** production CameraRig must read `scene.shots.values.browse.bounds` (cx/cz center + `computeBrowseAltitude`)
+exactly as Preview does — drop the `[0,0,0]/600` hardcode.
+
+**(B) Hero-subject contract is mismatched across the bake boundary.** Intended behavior (operator): the
+Hero shot keeps a designated **hero object** centered no matter where the camera moves — and CameraRig
+already re-locks `ctl.target` to the subject every frame (`Scene.jsx:582`), so the mechanism exists. The
+break is in the data contract:
+  - `design.json#heroSubject` is an operator **designation** `{kind:'building'|'landmark'|'arch', id}` (or null).
+  - `bake-scene.js:117` bakes `design.heroSubject || null` — the **raw, UNRESOLVED designation**.
+  - Stage resolves it live: `resolveHeroSubject(designation, buildings)` → `[x,y,z]` (`StageApp.jsx:548`,
+    `CartographApp.jsx:997`).
+  - Production (`Scene.jsx:211`) + Preview (`ShotCamera:148`) test `Array.isArray(scene.heroSubject)` —
+    they expect a **resolved point** and **never call `resolveHeroSubject`**. A `{kind,id}` object fails
+    `Array.isArray` → both **always fall back to `[400,45,-100]`** (legacy arch centroid) regardless of
+    designation. (For lafayette-square `heroSubject` is also `null` today — undesignated — so the fallback
+    fires for that reason too.)
+  - **Fix (the durable contract):** the **bake resolves the subject** — run `resolveHeroSubject` at bake
+    time and write the resolved `[x,y,z]` to `scene.heroSubject` (slab owns spatial identity per
+    `[[project_slab_render_vs_content_boundary]]`). Then every camera consumer reads one resolved point,
+    identically; the per-frame target-lock already centers it. `resolveHeroSubject` is the **single shared
+    resolver** — lift it to a shared module so bake + all runtimes resolve identically (don't let any camera
+    re-derive a subject differently). Arch subjects resolve from the baked `arch` channel at bake time too.
+  - **Operator action (separate from the code fix):** designate a hero object per Look in Stage
+    (SurveyorPanel) — until then the resolved-fallback applies; consider making that fallback the
+    neighborhood/browse-bounds center, not the arch centroid, so an undesignated Look doesn't frame a
+    building edge.
+
+**Scope note:** (A) is production CameraRig (Phase 2, `Scene.jsx`). (B) spans the **bake** (`bake-scene.js`)
++ the slab schema + the camera consumers — it's slab-completeness/conformance, larger than Phase 2's
+`fromFov` fix. Sequence both under the camera/conformance work; do not let a camera fix re-hardcode what
+the slab should author.
+
 ## Phase 3 — Consolidate the mobile path (own commit; no behavior change)
 Replace the **6 duplicated `/iPhone|iPad|iPod|Android/i` regexes** (Scene, PostProcessing, LafayetteScene
 ×2, StreetLights, SlabBuildings) with ONE shared device-sense (`src/utils/deviceDetect.js` or
