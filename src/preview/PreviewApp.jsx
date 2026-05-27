@@ -15,6 +15,8 @@ import InstancedTrees from '../components/InstancedTrees'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import CelestialBodies from '../components/CelestialBodies'
 import Atmosphere from '../components/Atmosphere'
+import CloudDome from '../components/CloudDome'
+import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
 import WeatherPoller from '../components/WeatherPoller'
 import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
@@ -759,7 +761,9 @@ function CanvasContents({ layers, shot, setShot }) {
         <BasicLights />
       </group>
       <group visible={layers.clouds}>
-        <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>
+        {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships,
+            <Atmosphere/> slab mounts under ?sky=volumetric. */}
+        <R3FErrorBoundary name="Atmosphere">{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}</R3FErrorBoundary>
       </group>
 
       <Suspense fallback={null}>

@@ -13,6 +13,8 @@ import LafayettePark from './LafayettePark'
 import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import Atmosphere from './Atmosphere'
+import CloudDome from './CloudDome'
+import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import WeatherEffects from './WeatherEffects'
@@ -755,7 +757,9 @@ function Scene() {
       <AtmosphereDirectiveDriver lookId={INSTANCE.lookId} />
       <WeatherEffects />
       <CelestialBodies />
-      <Atmosphere />
+      {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships, the
+          <Atmosphere/> slab mounts under ?sky=volumetric. */}
+      {SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}
       {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
           visible ground (Cartograph convention). Terrain still mounts
           so its `terrainExag` shader uniform stays live (drives Y

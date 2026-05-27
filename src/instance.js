@@ -18,6 +18,13 @@ export const INSTANCE = {
   // standalone path).
   lookId: 'lafayette-square',
 
+  // Sky renderer (TEMPORARY stopgap — see src/lib/skyMode.js). 'cheap'
+  // ships the restored procedural <CloudDome/>; 'volumetric' mounts the
+  // Meteorologist <Atmosphere/> slab. Default 'cheap' while the per-genus
+  // cloud work cooks; `?sky=volumetric` overrides per-URL. Remove this
+  // (and the switch) once the volumetric sky is the only sky.
+  skyMode: 'cheap',
+
   // Fixed-truth geography. SunCalc, weather API, planetarium sidereal
   // math all read from here.
   geography: {

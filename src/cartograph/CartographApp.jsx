@@ -26,6 +26,8 @@ import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import CelestialBodies from '../components/CelestialBodies'
 import Atmosphere from '../components/Atmosphere'
+import CloudDome from '../components/CloudDome'
+import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
 import WeatherPoller from '../components/WeatherPoller'
 import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
@@ -987,7 +989,9 @@ export default function CartographApp() {
             <WeatherPoller />
             <AtmosphereDirectiveDriver lookId={activeLookId} />
             <WeatherEffects />
-            <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>
+            {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships,
+                <Atmosphere/> slab mounts under ?sky=volumetric. */}
+            <R3FErrorBoundary name="Atmosphere">{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}</R3FErrorBoundary>
             {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
                 visible ground. Terrain still mounts so its shader uniforms
                 drive displacement for ribbons/buildings. */}
