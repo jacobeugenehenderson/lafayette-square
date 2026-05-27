@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1779861020375,
+  "bakedAt": 1779897596685,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -96,7 +96,7 @@
     "wall": false,
     "retaining_wall": false,
     "hedge": false,
-    "labels": false,
+    "labels": true,
     "centerline": false
   },
   "lampGlow": {
@@ -160,7 +160,7 @@
   },
   "bloom": {
     "values": {
-      "intensity": 0.1,
+      "intensity": 0.2,
       "threshold": 0.3,
       "smoothing": 0.1
     }
@@ -248,25 +248,25 @@
   "heroKeyframes": [
     {
       "position": [
-        -315,
-        111,
-        421
+        -339,
+        107,
+        371
       ],
       "fov": 22
     },
     {
       "position": [
-        -685,
-        123,
-        221
+        -491,
+        99,
+        243
       ],
       "fov": 22
     },
     {
       "position": [
-        -504,
-        88,
-        -81
+        -321,
+        57,
+        -125
       ],
       "fov": 22
     }

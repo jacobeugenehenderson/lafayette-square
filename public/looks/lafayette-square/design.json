@@ -32,7 +32,7 @@
     "wall": false,
     "retaining_wall": false,
     "hedge": false,
-    "labels": false,
+    "labels": true,
     "centerline": false
   },
   "layerColors": {
@@ -433,7 +433,7 @@
   },
   "bloom": {
     "values": {
-      "intensity": 0.1,
+      "intensity": 0.2,
       "threshold": 0.3,
       "smoothing": 0.1
     }
@@ -537,25 +537,25 @@
   "heroKeyframes": [
     {
       "position": [
-        -315,
-        111,
-        421
+        -339,
+        107,
+        371
       ],
       "fov": 22
     },
     {
       "position": [
-        -685,
-        123,
-        221
+        -491,
+        99,
+        243
       ],
       "fov": 22
     },
     {
       "position": [
-        -504,
-        88,
-        -81
+        -321,
+        57,
+        -125
       ],
       "fov": 22
     }
@@ -627,7 +627,7 @@
     "Blocks": false,
     "Paths": false,
     "Features": false,
-    "Labels": false,
+    "Labels": true,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,

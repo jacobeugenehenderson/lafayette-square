@@ -96,12 +96,12 @@
         },
         "density": {
           "values": {
-            "value": 0.22
+            "value": 1.31
           }
         },
         "thickness": {
           "values": {
-            "value": 600
+            "value": 10400
           }
         },
         "baseAlt": {
@@ -170,7 +170,7 @@
         },
         "density": {
           "values": {
-            "value": 0.3
+            "value": 0.98
           }
         },
         "thickness": {
@@ -210,17 +210,17 @@
         },
         "ambientFloor": {
           "values": {
-            "value": 0.55
+            "value": 0.27
           }
         },
         "edgeSilver": {
           "values": {
-            "value": 1.45
+            "value": 0
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.18
+            "value": 0
           }
         }
       },
@@ -574,22 +574,22 @@
         },
         "sunScatter": {
           "values": {
-            "value": 1.45
+            "value": 3
           }
         },
         "ambientFloor": {
           "values": {
-            "value": 0.55
+            "value": 1
           }
         },
         "edgeSilver": {
           "values": {
-            "value": 1.3
+            "value": 0
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.3
+            "value": 0
           }
         }
       },
