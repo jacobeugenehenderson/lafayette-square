@@ -994,7 +994,7 @@ export default function CartographApp() {
           <Controls controlsRef={controlsRef} />
           {shot === 'hero' && sceneCfg.hasHero && (
             <HeroPreview keyframes={keyframes} motion={heroMotion}
-              subject={resolveHeroSubject(heroSubject, _allBuildings)} />
+              subject={resolveHeroSubject(heroSubject, { buildings: _allBuildings, archValues: useCartographStore.getState().arch?.values })} />
           )}
         </Canvas>
 

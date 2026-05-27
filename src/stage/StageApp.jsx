@@ -539,34 +539,12 @@ export function defaultKeyframes(shotKey) {
   return [{ position: [...s.position], fov: s.fov }]
 }
 
-// Subject centroid resolver. The Hero shot frames around a single designated
-// object; this turns the operator's designation (kind + id) into the 3D point
-// the camera locks onto. Falls back to the legacy arch centroid when no
-// subject is set, so a Look without designation still has a sensible shot.
-export const FALLBACK_HERO_SUBJECT = [400, 45, -100]
-
-export function resolveHeroSubject(subject, buildings) {
-  if (!subject) return FALLBACK_HERO_SUBJECT
-  if (subject.kind === 'arch') {
-    // Cartograph/Stage arch lives at distance × bearing (live cartograph
-    // store `arch` channel post-SC.7), not at the legacy GatewayArch.jsx
-    // constants. Mid-height ≈ scale × 35 for the catenary geometry —
-    // close enough for "look at the arch."
-    const a = useCartographStore.getState().arch?.values
-    if (!a) return FALLBACK_HERO_SUBJECT
-    const x = a.distance * a.bearingX
-    const z = a.distance * a.bearingZ
-    const y = a.scale * 35
-    return [x, y, z]
-  }
-  if (subject.kind === 'building' || subject.kind === 'landmark') {
-    const b = buildings?.find(x => x.id === subject.id)
-    if (!b || !b.position) return FALLBACK_HERO_SUBJECT
-    const halfH = (b.size?.[1] ?? 10) / 2
-    return [b.position[0], halfH, b.position[2]]
-  }
-  return FALLBACK_HERO_SUBJECT
-}
+// Subject centroid resolver lifted to the shared pure module `src/lib/heroSubject.js`
+// (the single resolver Stage / production / Preview all use — no camera resolves
+// differently). Re-exported here so existing `from '../stage/StageApp.jsx'`
+// imports keep resolving. Stage call sites pass the cartograph store's arch
+// values; production/Preview pass `scene.arch.values`.
+export { resolveHeroSubject, FALLBACK_HERO_SUBJECT } from '../lib/heroSubject.js'
 
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
 
