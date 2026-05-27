@@ -569,10 +569,23 @@ function kfName(i, total) {
 
 // ── Shot-specific camera controls ───────────────────────────────────────────
 
-function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
+function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
   const scrubT = useHeroScrub()
   const trackRef = useRef(null)
   const [scrubDragging, setScrubDragging] = useState(false)
+
+  // Capture delight: a one-shot dot pulse on the keyframe a capture landed
+  // on. This is decorative only — the button's truth comes from the live-vs-
+  // stored comparison below, not from a timeout, so confirmation never
+  // "reverts" on its own.
+  const [pulse, setPulse] = useState(null)
+  const pulseTimer = useRef(null)
+  const triggerPulse = (index) => {
+    if (pulseTimer.current) clearTimeout(pulseTimer.current)
+    setPulse(index)
+    pulseTimer.current = setTimeout(() => setPulse(null), 650)
+  }
+  useEffect(() => () => { if (pulseTimer.current) clearTimeout(pulseTimer.current) }, [])
 
   const kfFractions = keyframes.length <= 1
     ? keyframes.map(() => 0)
@@ -580,8 +593,12 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
 
   // Selection is derived: if the playhead is on (close to) a keyframe dot,
   // that's the selected keyframe. Otherwise no selection (button = Add).
+  // Gated on PAUSED — during playback the bouncing playhead sweeps across
+  // dots, which would flicker the Add↔Update control. While previewing,
+  // there's no selection and the button stays stable.
   const SNAP_TOLERANCE = 0.02
   const selectedKf = (() => {
+    if (heroMotion.preview) return null
     let best = -1, bestDist = Infinity
     kfFractions.forEach((f, i) => {
       const d = Math.abs(f - scrubT)
@@ -590,6 +607,19 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
     return best >= 0 ? best : null
   })()
   const sel = selectedKf != null ? keyframes[selectedKf] : null
+
+  // Does the LIVE camera currently match the selected keyframe's stored pose?
+  // `cam` is the panel's broadcast of the live camera (~6 Hz), and stored
+  // keyframe positions/fov are rounded ints (captureCameraSnapshot), so an
+  // exact-ish compare is reliable. This is what makes the button truthful:
+  // right after a capture (or after scrubbing onto a dot) the camera matches
+  // → steady "✓ on keyframe"; orbit away → "Update". It only changes when the
+  // camera actually moves, never on a timer.
+  const liveOnKf = sel != null && cam &&
+    Math.abs(cam.position[0] - sel.position[0]) <= 1 &&
+    Math.abs(cam.position[1] - sel.position[1]) <= 1 &&
+    Math.abs(cam.position[2] - sel.position[2]) <= 1 &&
+    Math.abs(cam.fov - sel.fov) <= 1
 
   const fracFromX = useCallback((clientX) => {
     const rect = trackRef.current?.getBoundingClientRect()
@@ -634,12 +664,19 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
     const snap = captureCameraSnapshot()
     if (!snap) return
     const newKf = { position: snap.position, fov: snap.fov }
+    // Insert at the playhead's spot in path order. Post-L1 the playhead IS
+    // the true path position, so a gap between dots j and j+1 inserts at j+1
+    // (past the last dot → appends). Keyframes then re-space evenly by order.
     const insertAt = keyframes.length === 0
       ? 0
-      : Math.min(keyframes.length, Math.round(scrubT * keyframes.length))
+      : Math.min(keyframes.length, Math.floor(scrubT * (keyframes.length - 1)) + 1)
     const next = [...keyframes.slice(0, insertAt), newKf, ...keyframes.slice(insertAt)]
     setKeyframes(next)
-    // Land the playhead on the new keyframe so the button toggles to "Set"
+    // Pause and park the playhead on the new keyframe. The camera still
+    // matches it, so the button reads "✓ …set" until you move — then it
+    // becomes "Update", exactly as you'd expect.
+    setHeroMotion(m => ({ ...m, preview: false }))
+    triggerPulse(insertAt)
     requestAnimationFrame(() => {
       heroScrub.t = next.length <= 1 ? 0 : insertAt / (next.length - 1)
       notifyHeroScrub()
@@ -652,13 +689,20 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
     const next = [...keyframes]
     next[selectedKf] = { position: snap.position, fov: snap.fov }
     setKeyframes(next)
+    triggerPulse(selectedKf)
   }
+  // Start (0) and End (last) are the bounce's two extremes — permanent
+  // anchors. Only MID keyframes are deletable, and never below the two anchors.
+  const isMid = selectedKf != null && selectedKf > 0 && selectedKf < keyframes.length - 1
   const deleteSelected = () => {
-    if (selectedKf == null || keyframes.length <= 1) return
-    setKeyframes(keyframes.filter((_, j) => j !== selectedKf))
-    // Move playhead off the (now-deleted) frame so button goes back to "Add"
+    if (!isMid) return
+    const removed = selectedKf
+    setKeyframes(keyframes.filter((_, j) => j !== removed))
+    // Park the playhead on the now-previous keyframe (a real dot), so you
+    // land cleanly on an anchor/mid rather than in a gap.
     requestAnimationFrame(() => {
-      heroScrub.t = Math.min(0.999, scrubT + SNAP_TOLERANCE * 1.5)
+      const nLeft = keyframes.length - 1
+      heroScrub.t = nLeft <= 1 ? 0 : (removed - 1) / (nLeft - 1)
       notifyHeroScrub()
     })
   }
@@ -723,16 +767,17 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
               a dot still selects via SNAP_TOLERANCE in scrubTo). */}
           {kfFractions.map((frac, i) => {
             const active = selectedKf === i
+            const pulsing = pulse === i
             return (
               <div key={i}
-                className="absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border pointer-events-none"
+                className={`absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border pointer-events-none${pulsing ? ' hero-dot-pulse' : ''}`}
                 style={{
                   left: `${frac * 100}%`,
                   backgroundColor: 'var(--vic-gold)',
-                  borderColor: active ? '#fff' : 'rgba(255,255,255,0.5)',
+                  borderColor: active || pulsing ? '#fff' : 'rgba(255,255,255,0.5)',
                   borderWidth: active ? 2 : 1,
                   boxShadow: active ? '0 0 0 2px rgba(255,255,255,0.2)' : 'none',
-                  zIndex: 2,
+                  zIndex: pulsing ? 4 : 2,
                 }}
               />
             )
@@ -751,7 +796,13 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
         </div>
       </div>
 
-      {/* ── Add / Set / Delete — single primary action zone ─────── */}
+      {/* ── Capture zone ─────────────────────────────────────────────
+          One button, keyed off the playhead. In a gap → "Add Keyframe"
+          (inserts at the playhead capturing the live camera). Parked on a
+          keyframe → "Update Keyframe", which is match-aware: while the live
+          camera still matches the keyframe it reads a steady "✓ …set"
+          (persists — proof the capture stuck); move the camera and it lights
+          up "Update {name}". Click a dot to fly the camera there. */}
       {sel == null ? (
         <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
           style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface)', border: '1px solid var(--outline-variant)' }}
@@ -759,15 +810,27 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
         >+ Add Keyframe</button>
       ) : (
         <div className="flex gap-1.5">
-          <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-            style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface)', border: '1px solid var(--outline)' }}
+          <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all leading-tight"
+            style={{
+              background: liveOnKf ? 'var(--success-dim)' : 'var(--surface-container-highest)',
+              color: liveOnKf ? 'var(--success)' : 'var(--on-surface)',
+              border: `1px solid ${liveOnKf ? 'var(--success)' : 'var(--outline)'}`,
+            }}
             onClick={setSelectedFromView}
-          >Edit Keyframe</button>
-          {keyframes.length > 1 && (
+            title={liveOnKf ? 'This keyframe holds the current view' : 'Overwrite this keyframe with the current view'}
+          >{liveOnKf ? (
+            '✓ Keyframe set'
+          ) : (
+            <span className="flex flex-col items-center">
+              <span>Update Keyframe</span>
+              <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>capture current view</span>
+            </span>
+          )}</button>
+          {isMid && (
             <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
               style={{ background: 'transparent', color: 'var(--error)', border: '1px solid var(--outline-variant)' }}
               onClick={deleteSelected}
-              title="Delete keyframe"
+              title="Delete this mid keyframe"
             >×</button>
           )}
         </div>
@@ -781,6 +844,7 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
             next[selectedKf] = { ...sel, fov: v }
             setKeyframes(next)
             pushCamera({ fov: v })
+            triggerPulse(selectedKf)
           }} />
       )}
 
@@ -903,7 +967,11 @@ export function HeroPreview({ keyframes, motion, subject }) {
       const t01 = (elapsed.current % motion.period) / motion.period
       const t = wave(t01)
 
-      heroScrub.t = t01
+      // Publish the PATH position (post-wave), not the period phase, so the
+      // panel playhead lives in the same coordinate system as scrubbing and
+      // the dots — it visibly bounces out-and-back and stays glued to the
+      // camera (which sits at catmullRom(positions, t)).
+      heroScrub.t = t
       notifyHeroScrub()
 
       let pos, fov

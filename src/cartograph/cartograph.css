@@ -1101,6 +1101,17 @@
   filter: brightness(0.9);
 }
 
+/* Hero timeline: capture-acknowledgment pulse on the keyframe a capture
+   landed on (Add / Update / FOV). One ~600ms scale+glow swell. */
+@keyframes hero-dot-pulse {
+  0%   { transform: translate(-50%, -50%) scale(1);   box-shadow: 0 0 0 0 rgba(255,255,255,0.55); }
+  45%  { transform: translate(-50%, -50%) scale(1.9); box-shadow: 0 0 8px 4px rgba(255,255,255,0.45); }
+  100% { transform: translate(-50%, -50%) scale(1);   box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+.hero-dot-pulse {
+  animation: hero-dot-pulse 600ms ease-out;
+}
+
 
 /* Sky gradient swatch — strip native color-input chrome so the visible
    color fills the entire cell (otherwise browsers paint the swatch with
