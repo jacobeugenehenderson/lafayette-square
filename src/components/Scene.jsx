@@ -559,6 +559,14 @@ function CameraRig() {
     // ── During transition ──
     if (transitioning.current) {
       relaxConstraints(ctl)
+      // Drive the camera MANUALLY during the transition. OrbitControls is
+      // disabled so drei's per-frame `update()` can't run — that update
+      // reprojects the position from its spherical relative to camera.up, and
+      // when `up` rotates mid-transition the round-trip flips the camera to the
+      // underside (the SC.5 lookAt-flip — what made Browse end upside-down +
+      // underground). We orient with camera.lookAt instead (well-defined while
+      // up stays ⊥ the view), then hand back to OrbitControls at the very end.
+      ctl.enabled = false
 
       // If transitioning into hero, chase the moving keyframe-animated pose
       // so the transition lands on the authored path instead of a stale point.
@@ -577,20 +585,20 @@ function CameraRig() {
       camera.position.copy(_lerpPos)
       ctl.target.copy(_lerpTarget)
 
-      // Smoothly rotate the up-vector so e.g. Hero→Browse tilts into a true
-      // overhead (and Browse→Hero un-rolls). Set before ctl.update() so the
-      // controls orient against the interpolated up. lerp+normalize is a clean
-      // slerp for the ⊥, ≤90° hero/browse pair (never antiparallel).
+      // Smoothly rotate the up-vector so Hero→Browse tilts into a true overhead
+      // (and Browse→Hero un-rolls). lerp+normalize is a clean slerp for the ⊥,
+      // ≤90° hero/browse pair (never antiparallel), and lookAt below stays
+      // well-defined because up never aligns with the view direction.
       _lerpUp.copy(_fromUp).lerp(_toUp, e)
       if (_lerpUp.lengthSq() > 1e-6) { _lerpUp.normalize(); camera.up.copy(_lerpUp) }
+
+      camera.lookAt(_lerpTarget)
 
       const newFov = fromFov.current + (toFov.current - fromFov.current) * e
       if (Math.abs(camera.fov - newFov) > 0.01) {
         camera.fov = newFov
         camera.updateProjectionMatrix()
       }
-
-      ctl.update()
 
       if (t >= 1) {
         if (cinematicQueue.current.length > 0) {
@@ -599,9 +607,7 @@ function CameraRig() {
         } else {
           transitioning.current = false
           transToHero.current = false
-          // Land exactly on the destination up (up was slerped during the
-          // lerp, this just removes any residual normalize drift).
-          camera.up.copy(_toUp)
+          camera.up.copy(_toUp)   // land exactly on the destination up
           // Browse: snap to a pure overhead — camera directly above the target
           // at the lerped distance (the +0.01z avoids the straight-down gimbal
           // tie-break). Heading already lives in the up vector above.
@@ -610,6 +616,10 @@ function CameraRig() {
             const dist = camera.position.distanceTo(ctl.target)
             camera.position.set(tx, dist, tz + 0.01)
           }
+          camera.lookAt(ctl.target)
+          // Hand control back to OrbitControls now that up is settled and the
+          // pose is well-defined (browse overhead is equatorial in the up frame).
+          ctl.enabled = true
           applyConstraints(ctl, vm)
           ctl.update()
         }
