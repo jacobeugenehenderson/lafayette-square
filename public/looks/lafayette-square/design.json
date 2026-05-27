@@ -433,7 +433,7 @@
   },
   "bloom": {
     "values": {
-      "intensity": 0.5,
+      "intensity": 0.1,
       "threshold": 0.3,
       "smoothing": 0.1
     }
@@ -503,11 +503,11 @@
   },
   "neon": {
     "values": {
-      "core": 0.06,
-      "tube": 0.28,
-      "bleed": 0.54,
+      "core": 0.2,
+      "tube": 0.2,
+      "bleed": 0.5,
       "emissive": 8,
-      "tubeRadius": 0.15
+      "tubeRadius": 0.1
     }
   },
   "sky": {
@@ -537,17 +537,25 @@
   "heroKeyframes": [
     {
       "position": [
-        -258,
-        78,
-        298
+        -315,
+        111,
+        421
       ],
       "fov": 22
     },
     {
       "position": [
-        -288,
-        57,
-        -54
+        -685,
+        123,
+        221
+      ],
+      "fov": 22
+    },
+    {
+      "position": [
+        -504,
+        88,
+        -81
       ],
       "fov": 22
     }
