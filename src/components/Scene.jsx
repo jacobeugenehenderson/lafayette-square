@@ -78,6 +78,10 @@ const PRESETS = {
   },
 }
 
+// Hero→Browse transition duration (ms). 1.5s read as abrupt for the overhead
+// tilt; 2.4s lets it ease into the map as a deliberate "settle" move.
+const BROWSE_TRANS_MS = 2400
+
 const MODE_CONSTRAINTS = {
   hero: {
     enableRotate: false, enablePan: false, enableZoom: false,
@@ -511,7 +515,7 @@ function CameraRig() {
           [cx, altitude, cz + 1],
           [cx, 0, cz],
           browseFov,
-          1500,
+          BROWSE_TRANS_MS,
           browseUpFromHeading(browseHeadingDeg)   // tilt into a true overhead
         )
       } else if (entering === 'planetarium') {
@@ -531,7 +535,7 @@ function CameraRig() {
         // Browse entered from a non-hero shot (e.g. planetarium→browse): same
         // slab-authored overhead framing as the hero→browse path above.
         const altitude = browseAltitudeFor(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
-        beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, 1500,
+        beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, BROWSE_TRANS_MS,
           browseUpFromHeading(browseHeadingDeg))
       } else if (PRESETS[entering]) {
         // Transition to mode preset (hero). fov comes from the slab; the
