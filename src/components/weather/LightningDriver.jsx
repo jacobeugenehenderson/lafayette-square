@@ -27,14 +27,15 @@ import { useRef, useEffect, useMemo, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WEATHER_UNIFORMS } from '../../lib/weather-uniforms.js'
+import { SLAB_BASE_ALT } from '../atmosphere-materials.js'
 
 const ATTACK_MS = 50
 const DECAY_MS = 200
 
 function CloudToGroundStreak({ x, z, seed }) {
-  // Vertical line from cloud-base (~1200m, the atmosphere SLAB_BASE_ALT)
-  // down to ground y=0. Bright white emissive line. Single allocated
-  // BufferGeometry; reused across all flashes of this kind.
+  // Vertical line from cloud-base (SLAB_BASE_ALT) down to ground y=0.
+  // Bright white emissive line. Single allocated BufferGeometry; reused
+  // across all flashes of this kind.
   const geom = useMemo(() => {
     const points = []
     const segments = 12
@@ -46,7 +47,7 @@ function CloudToGroundStreak({ x, z, seed }) {
     }
     for (let i = 0; i <= segments; i++) {
       const t = i / segments
-      const y = 1200 - t * 1200
+      const y = SLAB_BASE_ALT * (1 - t)
       if (i > 0 && i < segments) {
         cx += (rng(i) - 0.5) * 15
         cz += (rng(i + 100) - 0.5) * 15

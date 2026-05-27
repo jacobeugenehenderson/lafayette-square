@@ -134,7 +134,7 @@ function bindUniformsFromDirective(material, directive, minute, slotMinutes, pre
   return true
 }
 
-export default function Atmosphere({ lookId } = {}) {
+export default function Atmosphere({ lookId, displayBaseAlt } = {}) {
   const material = useMemo(() => createAtmosphereMaterial(), [])
   const meshRef = useRef()
   const scene = useSceneJson(lookId || INSTANCE.lookId)
@@ -168,6 +168,32 @@ export default function Atmosphere({ lookId } = {}) {
       }
     } else if (directive) {
       usedDirective = bindUniformsFromDirective(material, directive, minute, slotMinutes, getPresetsCache())
+    }
+
+    // Authoring normalize (Meteorologist Teacup): place the cloud at a
+    // FIXED display altitude regardless of the preset's real baseAlt, so any
+    // selected cloud renders in the Canary's framed band. Shape params
+    // (coverage/density/thickness/warp) stay the preset's — only placement is
+    // overridden. Production/Preview pass no displayBaseAlt → real height.
+    if (displayBaseAlt != null) material.uniforms.uBaseAlt.value = displayBaseAlt
+
+    // Slab-follows-cloud: track the active cloud's [baseAlt, baseAlt+thickness]
+    // band each frame. The slab + box were hardcoded to the ~1200m
+    // cumulus_humilis band, so any preset at another altitude (cirrus ~9000m,
+    // stratus ~300m) produced ZERO density inside the fixed slab and rendered
+    // nothing. Move the AABB (ray-march bounds) AND the rasterized box to the
+    // band so every preset is renderable; the box keeps unit height and scales
+    // in Y so there's no per-frame geometry churn.
+    {
+      const baseAlt = material.uniforms.uBaseAlt.value
+      const thick = Math.max(material.uniforms.uThickness.value, 1)
+      material.uniforms.uSlabMin.value.set(-SLAB_HALF_XZ, baseAlt, -SLAB_HALF_XZ)
+      material.uniforms.uSlabMax.value.set( SLAB_HALF_XZ, baseAlt + thick, SLAB_HALF_XZ)
+      const mesh = meshRef.current
+      if (mesh) {
+        mesh.position.y = baseAlt + thick * 0.5
+        mesh.scale.y = thick
+      }
     }
 
     // Sky-light coupling — read the Look's sky channel and SunCalc's real
@@ -225,12 +251,16 @@ export default function Atmosphere({ lookId } = {}) {
     ).normalize()
   })
 
+  // Box is UNIT height; useFrame scales it in Y to the active cloud band and
+  // repositions it (slab-follows-cloud). Initial pose = the cumulus default
+  // so the first frame before useFrame runs isn't degenerate.
   const slabY = SLAB_BASE_ALT + SLAB_THICKNESS * 0.5
   const slabW = SLAB_HALF_XZ * 2
 
   return (
-    <mesh ref={meshRef} position={[0, slabY, 0]} material={material} frustumCulled={false}>
-      <boxGeometry args={[slabW, SLAB_THICKNESS, slabW]} />
+    <mesh ref={meshRef} position={[0, slabY, 0]} scale={[1, SLAB_THICKNESS, 1]}
+      material={material} frustumCulled={false}>
+      <boxGeometry args={[slabW, 1, slabW]} />
     </mesh>
   )
 }

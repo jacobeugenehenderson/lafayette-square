@@ -4,6 +4,21 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-27 — Cloud-realism reckoning + render fixes (Boz, with Jacob)
+
+A long diagnostic session that started as "weather renders nowhere" and ended at "the cloud renderer can't make the shapes." Sequence + findings, for the record:
+
+**Render bugs found + fixed (all in `src/components`, baseline for the specialist below):**
+- **Slab out of frustum.** The Atmosphere slab was a flat layer at y∈[1200,1700], ±4000m — LS's near-ground/horizontal framings never looked up into it, so it was entirely out of frame (uDebugMode=3 = nothing). Diagnosed via the built-in debug modes.
+- **Slab-vs-baseAlt mismatch (the "broken everywhere" root).** The slab Y-band was hardcoded to the cumulus_humilis altitude; every other preset declares its own real `baseAlt` (cirrus 9000m, stratus 300m, cumulonimbus 800m), so `verticalProfile` zeroed all density outside the band → most presets rendered nothing in any surface. **Fix: slab-follows-cloud** — `Atmosphere.jsx` now tracks `[baseAlt, baseAlt+thickness]` each frame (AABB + unit-box scaled in Y). Plus an optional `displayBaseAlt` prop; `CanaryScene` passes `1200` so the Teacup normalizes any preset into the band its cameras frame (authoring shows shape, not real altitude).
+- **Crushed-black shadows / "pre-composited" look.** The shader did `lit *= marchShadow`, multiplying the sky-coloured ambient floor toward black. **Fix: additive lighting** — `lit = ambient + direct + silver`, where ambient (skylight, sky-coloured) is never self-shadowed and only the direct-sun term is. Shadowed sides now fall back to sky colour + pick up the sky.
+
+**The reckoning (why we stop here and dispatch a specialist):** the data model is rich — 52 presets with 39 distinct, taxonomically-correct param sets, 67 quality tags (`fibrous`, `turreted`, `pouches`, `mares-tails`…), WMO codes, 42 reference photos, descriptions (all seeded by the prior cloud specialist, Nimbus). **But the renderer is one isotropic FBM** — coverage/density/lumpiness only, no morphology. So every genus renders as the same puffy blob; the quality tags are a spec the shader never fulfilled. No knob-tuning closes that. Decision: dispatch a dedicated cloud-design specialist to build a per-morphology procedural vocabulary + better scattering. Brief: `HANDOFF-cloud-specialist.md`. Four-phase spine (quality→geometry audit → noise/shape vocabulary → scattering → re-author presets). Operator tone constraint: outcome-framed, few plainly-named knobs — see [[feedback_outcome_framing_over_jargon]].
+
+**Deferred (operator, revisit later):** the **deployed** build shows wispy procedural clouds that are NOT connected to weather at all — a separate/older path from this Meteorologist directive pipeline. Parked intentionally; flagged in BACKLOG. Not the same as the slab clouds fixed above.
+
+**Uncommitted at session end:** the three render fixes (`Atmosphere.jsx`, `CanaryScene.jsx`, `LightningDriver.jsx` slab-base import) — to be committed as the specialist's baseline.
+
 ## 2026-05-23 — Brief 9b shipped — Atmosphere onto `wind-field.js` (Wisp)
 
 Sibling closer to Brief 9a (Sough). `<Atmosphere />`'s per-frame loop now reads through the shared seam: `resolveWindState(directive, _windState)` → `windAt(clock.elapsedTime, camera.position, _windState, _windSample)` → `uWindScale = sample.intensity / 3.0`, `uWindDir = normalize(sample.force)`. The directive-direct `directive.wind.scale` / `directive.wind.dir` reads at `Atmosphere.jsx:187–200` (the FROM→TO `(-sin, 0, -cos)` flip block) are gone — that flip lives inside `resolveWindState` once, where InstancedTrees already consumes it. One frozen seam.

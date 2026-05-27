@@ -266,18 +266,30 @@ void main() {
       vec3 n = cloudNormal(p);
       float sunFactor = dot(n, uSunDir) * 0.5 + 0.5;
 
-      vec3 sunSide = uSunColor * 1.30;
-      vec3 body    = mix(uSkyColor, uSunColor, 0.60);
-      vec3 shadow  = uSkyColor * uAmbientFloor;
+      // Skylight AMBIENT — the cloud is lit by the whole sky dome from every
+      // direction, present even where the sun is fully occluded. This is the
+      // floor the shadowed side falls back to, so dark faces read as
+      // sky-coloured (deep blue-grey at midday, warm at golden hour) rather
+      // than black, and the cloud picks up the colour of the sky it sits
+      // against. Deliberately NOT attenuated by the self-shadow march -- only
+      // the direct-sun term below is. A mild +sunFactor lift keeps lit faces
+      // from going flat. (Previously a single  lit *= marchShadow  multiplied
+      // this ambient floor toward zero -> the "pre-composited / pasted-on"
+      // look with crushed black shadows.)
+      vec3 ambient = uSkyColor * (uAmbientFloor + 0.20 * sunFactor);
 
-      vec3 lit = mix(shadow, body, smoothstep(0.0, 0.5, sunFactor));
-      lit      = mix(lit, sunSide, smoothstep(0.5, 1.0, sunFactor));
+      // DIRECT sun — ramps in as the face turns toward the sun, warms to the
+      // bright sun-side colour near grazing, and IS self-shadowed (the cloud
+      // occludes its own interior from the sun). Falls to ~0 on the dark
+      // side, leaving the ambient floor to carry the colour.
+      vec3 sunCol = mix(uSunColor, uSunColor * 1.30, smoothstep(0.5, 1.0, sunFactor));
+      vec3 direct = sunCol * smoothstep(0.0, 0.55, sunFactor) * marchShadow(p);
 
-      lit *= marchShadow(p);
-
+      // Silver lining — forward-scatter rim on thin edges, sun-coloured.
       float edgeFactor = 1.0 - smoothstep(0.0, 0.3, density);
       float silver = forwardScatter * edgeFactor * uEdgeSilver * uSunScatter;
-      lit += silver * uSunColor;
+
+      vec3 lit = ambient + direct + silver * uSunColor;
 
       // Alpha-accumulation multiplier. Tuning history:
       //   0.005  (Phase 4b.1 baby placeholder) → too faint, all rays

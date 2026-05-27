@@ -47,6 +47,12 @@ const DEFAULT_WIND_DIR_DEG = 0     // 0 = blowing toward +X
 const HERO_TREE_SPECIES = 'platanus_acerifolia'
 const HERO_TREE_SKELETON = 'skeleton-1-lod0.glb'
 
+// Display altitude for the authoring viewport. CANARY_CAMERAS are framed for
+// a cloud band at ~1200m (browse looks down from y=4000; ground looks up from
+// eye level), so we normalize every preset's placement here regardless of its
+// real baseAlt. Keep in sync with CANARY_CAMERAS framing in canaryCamera.js.
+const CANARY_DISPLAY_BASE_ALT = 1200
+
 export default function CanaryScene({ slot = 'browse' }) {
   const activeLookId = useMeteorologistStore(s => s.activeLookId)
   const cam = CANARY_CAMERAS[slot] || CANARY_CAMERAS.browse
@@ -107,7 +113,11 @@ export default function CanaryScene({ slot = 'browse' }) {
         </Suspense>
       )}
 
-      <Atmosphere lookId={activeLookId} />
+      {/* Authoring normalize: the Canary cameras frame the ~1200m band, so
+          place EVERY selected preset there regardless of its real baseAlt
+          (cirrus 9000m, stratus 300m). The operator authors cloud SHAPE here;
+          real-altitude placement is a production concern. */}
+      <Atmosphere lookId={activeLookId} displayBaseAlt={CANARY_DISPLAY_BASE_ALT} />
 
       {/* Orbit controls — only mounted if the slot wants them.
           BROWSE is locked (matches production's static overhead).

@@ -8,7 +8,15 @@ Punchlist for the cloud + weather authoring track. Items are independently shipp
 
 ## In flight — phase queue (next up first)
 
-Updated 2026-05-20. Phases 1–4b.1 shipped (see `NOTES.md` for commits). Next:
+Updated 2026-05-27. Phases 1–4b.1 shipped (see `NOTES.md` for commits). Next:
+
+### ▶ Cloud realism — morphology + scattering (SPECIALIST DISPATCH, `HANDOFF-cloud-specialist.md`)
+
+**The current gap (2026-05-27):** the renderer is a single isotropic FBM — coverage/density/lumpiness only. The data model is rich (39 distinct presets, 67 quality tags, WMO codes, 42 ref photos, descriptions — Nimbus-seeded), but the shader can't express any of that morphology: every genus renders as the same puffy blob. No knob-tuning closes the gap; it needs a per-morphology procedural vocabulary (think layered noise "mattes" combined per cloud type) + a real scattering model so clouds glow and sit in the sky instead of reading pre-composited. This is the **backdrop of the whole map** → top-tier fidelity target. Dispatch a dedicated cloud-design specialist; four-phase spine — **Phase 0 audit+survey** (reference-library lapses → fill gaps · quality→geometry · **off-the-shelf-vs-build**) · noise/shape vocabulary · scattering/luminance · re-author the 39 presets. **Off-the-shelf real-time renderer is welcome** if it hits budget (judge by result, not technique). The reference photo library has **known lapses** (missing/weak/mislabeled) — auditing+filling it gates the rest. Knob discipline: distinct, legible controls only — not a pile of opaque near-duplicates. Baseline = the three uncommitted render fixes (slab-follows-cloud, authoring-normalize, additive lighting).
+
+### ⏸ DEFERRED (revisit) — deployed clouds disconnected from weather
+
+The **deployed** build shows wispy procedural clouds that aren't wired to the weather/directive pipeline at all — a separate/older path from the Meteorologist `<Atmosphere>` system. Operator parked it 2026-05-27 ("let's see how far we get, then revisit"). Not the same as the slab clouds fixed this session. Re-attach to the directive pipeline (or replace) when the cloud-realism work lands.
 
 ### ✅ Phase 4b.1 — `<Atmosphere />` shader (shipped 2026-05-20, commit `d1c66fe`)
 
