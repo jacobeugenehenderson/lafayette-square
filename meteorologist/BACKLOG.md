@@ -10,7 +10,16 @@ Punchlist for the cloud + weather authoring track. Items are independently shipp
 
 Updated 2026-05-27. Phases 1–4b.1 shipped (see `NOTES.md` for commits). Next:
 
-### ▶ Cloud realism — morphology + scattering (SPECIALIST DISPATCH, `HANDOFF-cloud-specialist.md`)
+### ⏸ TABLED (2026-05-27) — Cloud realism — morphology + scattering (`HANDOFF-cloud-specialist.md`)
+
+**TABLED by operator (2026-05-27):** this is a **career-level / flagship-IP development** that
+needs Jacob's dedicated attention, and the team is neck-deep in the forensic-audit campaign.
+Paused deliberately — NOT abandoned, NOT blocked. Resume when it can have real focus. Tabling is
+**free**: the CloudDome stopgap (`29cf31c`) ships across all surfaces, the slab stays intact behind
+`?sky=volumetric`, CanaryScene stays volumetric, and Phase 0 findings are banked (`277121e`). The
+Phase 0 check-in (4 questions: adopt-vs-build · ~5-knob set · re-source weak refs [turret photo
+priority] · morphology-before-scattering) is **parked with the work**, not pending. Do not
+re-dispatch the specialist without Jacob re-opening this.
 
 **The current gap (2026-05-27):** the renderer is a single isotropic FBM — coverage/density/lumpiness only. The data model is rich (39 distinct presets, 67 quality tags, WMO codes, 42 ref photos, descriptions — Nimbus-seeded), but the shader can't express any of that morphology: every genus renders as the same puffy blob. No knob-tuning closes the gap; it needs a per-morphology procedural vocabulary (think layered noise "mattes" combined per cloud type) + a real scattering model so clouds glow and sit in the sky instead of reading pre-composited. This is the **backdrop of the whole map** → top-tier fidelity target. Dispatch a dedicated cloud-design specialist; four-phase spine — **Phase 0 audit+survey** (reference-library lapses → fill gaps · quality→geometry · **off-the-shelf-vs-build**) · noise/shape vocabulary · scattering/luminance · re-author the 39 presets. **Off-the-shelf real-time renderer is welcome** if it hits budget (judge by result, not technique). The reference photo library has **known lapses** (missing/weak/mislabeled) — auditing+filling it gates the rest. Knob discipline: distinct, legible controls only — not a pile of opaque near-duplicates. Baseline = the three uncommitted render fixes (slab-follows-cloud, authoring-normalize, additive lighting).
 
