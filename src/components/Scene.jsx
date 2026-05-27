@@ -28,6 +28,8 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { heroKeyframeAnim } from '../preview/heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { resolveHeroSubject } from '../lib/heroSubject.js'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -44,6 +46,18 @@ function easeInOutCubic(t) {
 const HERO_CENTER = [-400, 55, 230]
 const HERO_TARGET = [400, 45, -100]
 const _heroPos = new THREE.Vector3()
+
+// Browse overhead altitude that frames `bounds` (w×h) at `fov` for the viewport
+// aspect. MIRRORS computeBrowseAltitude in src/stage/StageApp.jsx — kept inline
+// so production's Scene.jsx doesn't import the heavy Stage module; the formula
+// is identical (a future dedup is conformance Phase 3 cleanup). Driven by the
+// SLAB's authored browse bounds so production frames like Stage/Preview.
+function browseAltitudeFor(aspect, fov, bounds, padding = 1.05) {
+  const tan = Math.tan((fov * Math.PI) / 360)
+  const altForH = (bounds.h * padding) / (2 * tan)
+  const altForW = (bounds.w * padding) / (2 * tan * Math.max(aspect, 1e-6))
+  return Math.max(altForH, altForW)
+}
 
 // ── Camera presets ───────────────────────────────────────────────────────────
 // SC.5 (2026-05-13): FOVs + Street eye height retired from this const —
@@ -187,13 +201,17 @@ const _lerpPos = new THREE.Vector3()
 const _lerpTarget = new THREE.Vector3()
 
 function CameraRig() {
-  const { camera, gl } = useThree()
+  const { camera, gl, size } = useThree()
   const controlsRef = useRef()
   const initialized = useRef(false)
 
   // SC.5 — per-shot framing knobs come from the slab. Production passes
   // no override; the cartograph chunk's Stage live-wires via the store.
   const scene = useSceneJson(INSTANCE.lookId)
+  // Render-scoped buildings index (published by SlabBuildings) — the shared
+  // hero-subject resolver reads building/landmark centroids from it, never
+  // live src/data/buildings (slab owns spatial identity).
+  const slabIndex = useSlabBuildingIndex((s) => s.index)
   const shotsV       = scene?.shots?.values || SHOTS_FLAT_DEFAULTS
   const browseFov    = shotsV.browse?.fov         ?? SHOTS_FLAT_DEFAULTS.browse.fov
   const heroFov      = shotsV.hero?.fov           ?? SHOTS_FLAT_DEFAULTS.hero.fov
@@ -202,18 +220,30 @@ function CameraRig() {
 
   // Authored hero camera animation from the slab — the SAME keyframes Stage +
   // Preview play. Replaces production's legacy lateral pan so the operator's
-  // tuned hero motion ships. heroSubject (null in the slab) falls back to the
-  // default target; a building-id subject would resolve in a future pass.
+  // tuned hero motion ships.
   const heroKeyframes = scene?.heroKeyframes?.length
     ? scene.heroKeyframes
     : [{ position: HERO_CENTER, fov: heroFov }]
   const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
-  const heroSubject = Array.isArray(scene?.heroSubject) ? scene.heroSubject : HERO_TARGET
+  // Hero look-at via the SHARED resolver (one resolver across production /
+  // Preview / Stage). Undesignated → the Gateway Arch (LS hero landmark) from
+  // scene.arch.values; building/landmark → the slab index. No stale literal,
+  // no re-bake (project_camera_framing_slab_contract).
+  const heroSubject = resolveHeroSubject(scene?.heroSubject, { slabIndex, archValues: scene?.arch?.values })
 
   // Cosmetic Browse screen-orientation (authored Heading slider). Applied to
   // the overhead camera's up vector once Browse settles (see the post-
   // transition snap below). deg 0 → [0,0,-1], identical to today's framing.
   const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
+
+  // Browse overhead framing from the SLAB's authored bounds — center on the
+  // neighborhood (cx/cz), fit altitude to the viewport, exactly as Stage/Preview
+  // do. Replaces the legacy hardcoded PRESETS.browse [0,0,0]/600 that framed
+  // off-center + at the wrong altitude (Vernier Phase 2).
+  const browseBounds = shotsV.browse?.bounds || SHOTS_FLAT_DEFAULTS.browse.bounds
+  const browsePad    = shotsV.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding ?? 1.05
+  const browseCx     = browseBounds?.cx ?? 0
+  const browseCz     = browseBounds?.cz ?? 0
 
   // Projection vertical offset (lens shift) for panel-aware reframe
 
@@ -453,12 +483,15 @@ function CameraRig() {
       cinematicQueue.current = []
 
       if (leaving === 'hero' && entering === 'browse') {
-        // Center on user's dot if in bounds, otherwise park center
+        // Center on user's dot if in bounds, otherwise the authored neighborhood
+        // center (slab browse bounds), at the bounds-fit overhead altitude.
         const loc = useUserLocation.getState()
         const hasUserPos = loc.active && loc.inBounds && loc.x != null
-        const cx = hasUserPos ? loc.x : 0
-        const cz = hasUserPos ? loc.z : 0
-        const altitude = hasUserPos ? 300 : PRESETS.browse.position[1]
+        const cx = hasUserPos ? loc.x : browseCx
+        const cz = hasUserPos ? loc.z : browseCz
+        const altitude = hasUserPos
+          ? 300
+          : browseAltitudeFor(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
         beginTransition(
           [cx, altitude, cz + 1],
           [cx, 0, cz],
@@ -482,13 +515,17 @@ function CameraRig() {
           [origin[0], streetEye, origin[1] - 0.5],  // look north, orbit takes over
           streetFov, 1500
         )
+      } else if (entering === 'browse') {
+        // Browse entered from a non-hero shot (e.g. planetarium→browse): same
+        // slab-authored overhead framing as the hero→browse path above.
+        const altitude = browseAltitudeFor(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
+        beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, 1500)
       } else if (PRESETS[entering]) {
-        // Transition to mode preset. fov comes from the slab. For hero the
-        // steady-state useFrame plays the authored heroKeyframes (heroKeyframeAnim);
-        // this transition just lerps to the preset entry pose before the
-        // animation takes over.
+        // Transition to mode preset (hero). fov comes from the slab; the
+        // steady-state useFrame plays the authored heroKeyframes (heroKeyframeAnim),
+        // this transition just lerps to the preset entry pose first.
         const p = PRESETS[entering]
-        const fov = entering === 'hero' ? heroFov : entering === 'browse' ? browseFov : p.fov
+        const fov = entering === 'hero' ? heroFov : p.fov
         const dur = entering === 'hero' ? 2500 : 1500
         transToHero.current = entering === 'hero'
         beginTransition(p.position, p.target, fov, dur)
