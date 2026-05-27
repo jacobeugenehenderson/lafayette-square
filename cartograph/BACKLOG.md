@@ -4,6 +4,12 @@
 >
 > **Ribbons / corners / curbs / intersections / block geometry:** every entry below that touches these systems is governed by `cartograph/RIBBONS.md` — read it (especially §1 regime + §6 active failure modes) before working any such entry.
 
+## 2026-05-27 — Hero keyframe FOV controls lost (regression, queued)
+
+The per-keyframe FOV control disappeared from the Stage Hero camera UX somewhere along the line (not in this session's hydration fix `fff8be1`). Keyframes still carry a `fov` field and the data path is intact — `HeroCamera` renders a per-keyframe `<SliderRow label="FOV">` (`src/stage/StageApp.jsx:840-849`) gated on `sel != null` (playhead parked on a selected dot), and `captureCameraSnapshot` still stamps fov on add/update. So the loss is in the UI surfacing, not the model.
+
+Likely suspects to check when picking this up: (1) does the FOV slider still render when a keyframe is selected, or did a refactor drop it / break the `sel`/`selectedKf` selection so it never shows; (2) the Détente keyframe-UX rework (`HANDOFF-hero-keyframes.md`, `3ebf510`) noted "FOV stays per-keyframe" as a kept feature — diff against that to see if a later commit regressed it. Not urgent; Jacob flagged it to address later.
+
 ## 2026-05-18 — Corner-arc continuation (IN-FLIGHT, sub-B redo queued for next session)
 
 End-of-session checkpoint. Full detail in `cartograph/RIBBONS.md` §6.9 + §7.

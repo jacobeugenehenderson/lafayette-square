@@ -134,6 +134,11 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   const { camera, scene, size } = useThree()
   const shot = useCartographStore(s => s.shot)
   const sceneKey = useCartographStore(s => s.scene)
+  // Re-assert framing once the design (incl. heroKeyframes) finishes hydrating.
+  // shot persists in localStorage, so a refresh can land directly in Hero
+  // before the async design fetch resolves — without this the rig reads the
+  // store-default keyframes and never re-applies (appliedShot guards re-entry).
+  const designHydrated = useCartographStore(s => s._designHydrated)
   // Grab the Canvas's default ortho camera once.
   useEffect(() => {
     if (!orthoRef.current) {
@@ -174,7 +179,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // target (and on Designer, also re-assert the ortho's orientation) here
   // after a frame delay — giving the new MapControls instance time to mount.
   useEffect(() => {
-    const key = `${sceneKey}:${shot}`
+    const key = `${sceneKey}:${shot}:${designHydrated}`
     if (appliedShot.current === key) return
     appliedShot.current = key
     const applyTarget = () => {
@@ -234,24 +239,45 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         // are runtime-input scaffolds — SHOTS const remains the canonical
         // Stage shot-switch framing until per-shot position authoring lands.
         const storeShots = useCartographStore.getState().shots?.values
-        const fov = storeShots?.[shot]?.fov ?? s.fov
+        let fov = storeShots?.[shot]?.fov ?? s.fov
         let toPos
+        let toTarget = [...s.target]
         if (shot === 'browse') {
           const aspect = size.width / Math.max(size.height, 1)
           const y = computeBrowseAltitude(aspect, fov)
           toPos = [s.position[0], y, s.position[2]]
+        } else if (shot === 'hero') {
+          // Hero framing is AUTHORED as keyframes + a designated subject, not
+          // the static SHOTS.hero scaffold. Enter at the path start (first
+          // keyframe) looking at the resolved subject, with the keyframe's fov;
+          // HeroPreview then owns subsequent aim/animation. Without this the
+          // camera dropped at the generic SHOTS.hero pose and ignored the
+          // operator's authored keyframes on load (and on every shot switch).
+          const kfs = useCartographStore.getState().heroKeyframes
+          const subj = resolveHeroSubject(
+            useCartographStore.getState().heroSubject,
+            { buildings: _allBuildings, archValues: useCartographStore.getState().arch?.values },
+          )
+          if (subj) toTarget = [...subj]
+          if (kfs && kfs.length >= 1) {
+            toPos = [...kfs[0].position]
+            if (kfs[0].fov != null) fov = kfs[0].fov
+          } else {
+            toPos = [...s.position]
+          }
         } else {
           toPos = [...s.position]
         }
         const toUp = s.up || [0, 1, 0]
-        const toTarget = [...s.target]
 
-        // First entry into a perspective shot from Designer/null prev:
-        // snap. The shot family hasn't been live yet — no "from" pose to
-        // glide out of (camera is wherever Designer left it, possibly
-        // unrelated to any LS shot framing).
-        const cameFromDesigner = prevShot.current === 'designer' || prevShot.current == null
-        if (cameFromDesigner) {
+        // Snap (no tween) on first entry into a perspective shot from
+        // Designer/null prev (the shot family hasn't been live — no "from"
+        // pose to glide out of), OR when re-applying the SAME shot (a
+        // post-hydration re-assert) — gliding a 2.5s tween between two hero
+        // poses on load would read as an odd drift.
+        const snapEntry = prevShot.current === 'designer' || prevShot.current == null
+          || prevShot.current === shot
+        if (snapEntry) {
           cam.position.set(toPos[0], toPos[1], toPos[2])
           cam.up.set(toUp[0], toUp[1], toUp[2])
           cam.fov = fov
@@ -297,7 +323,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     const id = requestAnimationFrame(applyTarget)
     useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
     return () => cancelAnimationFrame(id)
-  }, [shot, sceneKey, orthoRef, perspRef, controlsRef])
+  }, [shot, sceneKey, designHydrated, orthoRef, perspRef, controlsRef])
 
   // Drive the in-flight shot tween. Same vernacular as Preview's
   // ShotCamera + production CameraRig — easeInOutCubic position/target/
