@@ -649,6 +649,16 @@ function Scene() {
       gl={{
         alpha: false,
         antialias: !IS_MOBILE,
+        // Desktop renders under LOG depth — the validated authoring regime
+        // (Stage/Preview run logarithmicDepthBuffer:true), closing §6-E's
+        // desktop side: far-field precision at near:1/far:60000 + NeonBands
+        // auto-re-enables its LOG path (gl.capabilities gate, Ballast Option B)
+        // → resolves desktop neon-over-trees at the root. `!IS_MOBILE` is
+        // LOAD-BEARING: mobile stays LINEAR — a global flip writes gl_FragDepth
+        // on mobile WebGL2, kills early-Z, and taxes the canopy fill budget.
+        // The mobile depth decision is a later phone-measurement (conformance
+        // Phase 4/5), not this change.
+        logarithmicDepthBuffer: !IS_MOBILE,
         stencil: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
