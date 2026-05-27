@@ -29,12 +29,9 @@ function injectCircleCrop(mat) {
 }
 
 const CENTER = { lat: INSTANCE.geography.lat, lon: INSTANCE.geography.lon }
-const BBOX = {
-  minLat: 38.6100, maxLat: 38.6230,
-  minLon: -90.2290, maxLon: -90.2070,
-}
-const LON_TO_METERS = 86774
-const LAT_TO_METERS = 111000
+const BBOX = { ...INSTANCE.geography.bbox }
+const LON_TO_METERS = INSTANCE.geography.lonToMeters
+const LAT_TO_METERS = INSTANCE.geography.latToMeters
 
 function wgs84ToLocal(lon, lat) {
   return [

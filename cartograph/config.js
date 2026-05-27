@@ -1,23 +1,23 @@
 /**
  * Cartograph — shared configuration
  *
- * To target a different neighborhood, change CENTER and BBOX.
- * Everything downstream reads from here.
+ * Geography is sourced from the per-instance SSOT (src/instance.js#geography).
+ * To target a different neighborhood, edit THAT — not here. These re-exports
+ * preserve config.js's existing API for downstream pipeline scripts.
+ * (instance.js is pure/dependency-free, so this node backend can import it.)
  */
+import { INSTANCE } from '../src/instance.js'
 
-// Lafayette Square, St. Louis
-export const CENTER = { lat: 38.6160, lon: -90.2161 }
+const _geo = INSTANCE.geography
 
-export const BBOX = {
-  minLat: 38.6100,   // south edge: above I-44
-  maxLat: 38.6230,   // north edge: one block past Chouteau (both sides' buildings)
-  minLon: -90.2290,  // west: Lafayette commercial strip past Jefferson
-  maxLon: -90.2070,
-}
+// Lafayette Square, St. Louis — from the SSOT.
+export const CENTER = { lat: _geo.lat, lon: _geo.lon }
 
-// WGS84 → local meters conversion at this latitude
-export const LON_TO_METERS = 86774
-export const LAT_TO_METERS = 111000
+export const BBOX = { ..._geo.bbox }
+
+// WGS84 → local meters conversion at this latitude (from the SSOT).
+export const LON_TO_METERS = _geo.lonToMeters
+export const LAT_TO_METERS = _geo.latToMeters
 
 export function wgs84ToLocal(lon, lat) {
   const x = (lon - CENTER.lon) * LON_TO_METERS

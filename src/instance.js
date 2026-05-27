@@ -31,6 +31,13 @@ export const INSTANCE = {
     lat: 38.6160,
     lon: -90.2161,
     timezone: 'America/Chicago',  // IANA tz for weather API + display
+    // WGS84 → local-scene-meters conversion at this latitude. SSOT for the
+    // projection: both the frontend (AerialTiles) and the cartograph backend
+    // (config.js) read these instead of re-hardcoding the same numbers.
+    lonToMeters: 86774,
+    latToMeters: 111000,
+    // Neighborhood bbox: S above I-44, N past Chouteau, W past Jefferson.
+    bbox: { minLat: 38.6100, maxLat: 38.6230, minLon: -90.2290, maxLon: -90.2070 },
   },
 
   // Display name. Used sparingly in runtime (aria-labels, OG meta);
