@@ -199,6 +199,13 @@ const _sph = new THREE.Spherical()
 const _offset = new THREE.Vector3()
 const _lerpPos = new THREE.Vector3()
 const _lerpTarget = new THREE.Vector3()
+// Camera up-vector interpolated across a transition so Hero↔Browse tilts
+// smoothly into / out of a true overhead — up stays ⊥ the view direction the
+// whole way (no gimbal, no snap). Per-shot up is the only legitimate camera
+// rotation (compass-frame doctrine); browse = browseUpFromHeading, else [0,1,0].
+const _fromUp = new THREE.Vector3()
+const _toUp = new THREE.Vector3()
+const _lerpUp = new THREE.Vector3()
 
 function CameraRig() {
   const { camera, gl, size } = useThree()
@@ -265,13 +272,16 @@ function CameraRig() {
   const transToHero = useRef(false)
   const modeChangedAt = useRef(Date.now())
 
-  // Start a transition
-  function beginTransition(pos, target, fov, duration) {
+  // Start a transition. `toUp` (optional) is the destination shot's up vector;
+  // omit it to hold the current up (flyTo / panel-offset / cinematic don't roll).
+  function beginTransition(pos, target, fov, duration, toUp) {
     _fromPos.copy(camera.position)
     _fromTarget.copy(controlsRef.current.target)
+    _fromUp.copy(camera.up)
     fromFov.current = camera.fov
     _toPos.set(pos[0], pos[1], pos[2])
     _toTarget.set(target[0], target[1], target[2])
+    if (toUp) _toUp.set(toUp[0], toUp[1], toUp[2]); else _toUp.copy(camera.up)
     toFov.current = fov
     transStart.current = Date.now()
     transDuration.current = duration
@@ -496,13 +506,9 @@ function CameraRig() {
           [cx, altitude, cz + 1],
           [cx, 0, cz],
           browseFov,
-          1500
+          1500,
+          browseUpFromHeading(browseHeadingDeg)   // tilt into a true overhead
         )
-        // browseHeading up is applied at the post-transition snap (below),
-        // NOT here — applying it mid-transition flipped the lookAt (the
-        // original SC.5 bug). Non-zero headings end-snap the orientation at
-        // transition completion rather than interpolating up; acceptable for a
-        // cosmetic, and a no-op at the default heading 0.
       } else if (entering === 'planetarium') {
         // Street-level sky view at the clicked position. fov + eyeHeight
         // are authored (scene.shots.values.street); origin is a runtime
@@ -513,22 +519,25 @@ function CameraRig() {
         beginTransition(
           [origin[0], streetEye, origin[1]],
           [origin[0], streetEye, origin[1] - 0.5],  // look north, orbit takes over
-          streetFov, 1500
+          streetFov, 1500,
+          [0, 1, 0]                                  // street-level: upright
         )
       } else if (entering === 'browse') {
         // Browse entered from a non-hero shot (e.g. planetarium→browse): same
         // slab-authored overhead framing as the hero→browse path above.
         const altitude = browseAltitudeFor(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
-        beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, 1500)
+        beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, 1500,
+          browseUpFromHeading(browseHeadingDeg))
       } else if (PRESETS[entering]) {
         // Transition to mode preset (hero). fov comes from the slab; the
         // steady-state useFrame plays the authored heroKeyframes (heroKeyframeAnim),
-        // this transition just lerps to the preset entry pose first.
+        // this transition just lerps to the preset entry pose first. Up returns
+        // to [0,1,0] so Hero un-rolls smoothly out of Browse's overhead.
         const p = PRESETS[entering]
         const fov = entering === 'hero' ? heroFov : p.fov
         const dur = entering === 'hero' ? 2500 : 1500
         transToHero.current = entering === 'hero'
-        beginTransition(p.position, p.target, fov, dur)
+        beginTransition(p.position, p.target, fov, dur, [0, 1, 0])
       }
     }
 
@@ -568,6 +577,13 @@ function CameraRig() {
       camera.position.copy(_lerpPos)
       ctl.target.copy(_lerpTarget)
 
+      // Smoothly rotate the up-vector so e.g. Hero→Browse tilts into a true
+      // overhead (and Browse→Hero un-rolls). Set before ctl.update() so the
+      // controls orient against the interpolated up. lerp+normalize is a clean
+      // slerp for the ⊥, ≤90° hero/browse pair (never antiparallel).
+      _lerpUp.copy(_fromUp).lerp(_toUp, e)
+      if (_lerpUp.lengthSq() > 1e-6) { _lerpUp.normalize(); camera.up.copy(_lerpUp) }
+
       const newFov = fromFov.current + (toFov.current - fromFov.current) * e
       if (Math.abs(camera.fov - newFov) > 0.01) {
         camera.fov = newFov
@@ -583,13 +599,13 @@ function CameraRig() {
         } else {
           transitioning.current = false
           transToHero.current = false
-          // Post-transition snap: force pure top-down for browse, oriented by
-          // the authored browseHeading. Setting up here (after the lerp, not
-          // mid-transition — the SC.5 lookAt-flip bug) keeps the descent clean;
-          // a horizontal up makes the straight-down view well-defined without
-          // the +0.01z gimbal tie-break. deg 0 = [0,0,-1] = today's framing.
+          // Land exactly on the destination up (up was slerped during the
+          // lerp, this just removes any residual normalize drift).
+          camera.up.copy(_toUp)
+          // Browse: snap to a pure overhead — camera directly above the target
+          // at the lerped distance (the +0.01z avoids the straight-down gimbal
+          // tie-break). Heading already lives in the up vector above.
           if (vm === 'browse') {
-            camera.up.set(...browseUpFromHeading(browseHeadingDeg))
             const tx = ctl.target.x, tz = ctl.target.z
             const dist = camera.position.distanceTo(ctl.target)
             camera.position.set(tx, dist, tz + 0.01)
