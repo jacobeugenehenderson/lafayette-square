@@ -10,9 +10,11 @@
 ## The conformance principle
 
 Production is the reference for **what mounts and what's authored** (the render tree + slab channels).
-But the **depth regime** conforms *up to the kit doctrine* (LOG) that every authoring surface already
-runs — so production *changes* there. The win is **parity** (production renders like what the operator
-authors/sees), not a z-fighting fix. "The product is what the operator sees in Stage"
+The **depth regime** is the exception — and it's **per-device** (forensic verdict): the kit "LOG
+mandatory" doctrine holds for desktop (production-desktop conforms UP to it = parity + far-field gain),
+but **mobile stays LINEAR pending measurement** because a global LOG flip kills early-Z on mobile WebGL2
+(see Phase 1 + [[project_production_linear_depth_gap]]). The win where production conforms is **parity**
+(production renders like what the operator authors/sees), not a z-fighting fix. "The product is what the operator sees in Stage"
 ([[project_preview_equals_ls_literally]], [[project_stage_consumer_parity]]) — and Stage is LOG.
 
 **⚠️ Z-fighting is a KNOWN, still-open issue (operator-deprioritized to cosmetic) — NOT solved, and NOT
@@ -40,12 +42,24 @@ that produced the neon-over-trees bug ([[project_production_linear_depth_gap]]).
 - Confirm `src/instance.js` is the synchronous home for global mobile-quality (it is — docstring
   "fixed-truth the slab doesn't carry"; [[project_mobile_profile_authored_channel]]).
 
-## Phase 1 — Depth conformance: production → LOG (the spine; own commit)
-Add `logarithmicDepthBuffer: true` to `Scene.jsx`'s `gl` block. NeonBands already gates on
-`gl.capabilities.logarithmicDepthBuffer` (Ballast Option B), so it auto-re-enables the correct log path —
-do not re-hardcode it.
-- **Fixes:** production depth precision matches the authoring (LOG) regime — parity; expected to resolve
-  the deployed jank and the neon-far-over-trees at the root. (Does NOT fix z-fighting — see the ⚠️ above.)
+## Phase 1 — Depth conformance: DESKTOP→LOG (the spine; own commit) — NOT a global flip
+**AMENDED by forensic verdict (2026-05-26, [[project_production_linear_depth_gap]]):** the original
+"global production→LOG" was wrong on mobile. On WebGL2 (every mobile target) a global
+`logarithmicDepthBuffer:true` writes `gl_FragDepth` for every material → **disables early-Z** → taxes
+the canopy-overdraw budget the tree arc fights (the canopy doctrine *relies* on early-Z). So depth is a
+**per-device (mobile-class) quality knob**, not a global flip:
+- **Desktop → LOG now.** Safe: it's the validated authoring regime, N8AO + all post-FX already run under
+  it in Stage/Preview (H3 refuted — N8AO is fine under LOG), NeonBands auto-adapts via its
+  `gl.capabilities.logarithmicDepthBuffer` gate (Ballast Option B — do not re-hardcode), far-field
+  precision improves at near:1/far:60000. Drive it from `INSTANCE.mobileQuality` (the depth knob), set
+  LOG for desktop.
+- **Mobile → stays LINEAR for now**, gated behind a **Phase-4 virtual-phone measurement** (draws/tris/ms,
+  log vs linear, at Browse/Hero/Street under the mobile profile). The early-Z penalty magnitude is
+  *unprovable from the repo* — measure before flipping mobile. The depth regime lives in the mobile class
+  (Phase 5 / the mobile-class brief) as a global-quality knob.
+- **Fixes:** desktop parity + far-field precision; expected to resolve the deployed-DESKTOP jank and
+  neon-far-over-trees at the root. (Does NOT fix z-fighting — see ⚠️ above. Mobile depth deferred to a
+  measurement, not assumed.)
 - **Verify (scene-wide, the blast-radius check):** at Hero/Browse/Street in the deployed app, walk the
   coplanar-stack hotspots — BakedGround ribbons/grass (the `polygonOffset` parity surfaces), building
   foundations, terrain, neon over trees. Nothing should z-fight *worse* than the LOG authoring surfaces
@@ -117,8 +131,11 @@ the virtual phone**. Document the bake/test loop so Jacob isn't dependent on an 
 ---
 
 ## Decisions embedded (flag to overturn)
-1. **Depth conforms production→LOG** (not strip-log-from-authoring): doctrine-mandated, frustum needs it,
-   authoring regime is the validated one, NeonBands auto-adapts. Blast radius is into-the-validated-regime.
+1. **Depth is a per-device mobile-class knob: DESKTOP→LOG now, MOBILE→LINEAR pending a phone measurement**
+   (AMENDED by forensic verdict, [[project_production_linear_depth_gap]] — supersedes the original
+   "global production→LOG"). A global flip would write `gl_FragDepth` on mobile WebGL2 → kill early-Z →
+   hurt the canopy fill-rate budget. Desktop-LOG is safe (validated, N8AO works under it, NeonBands
+   auto-adapts); mobile-LOG is unmeasured — decide it in Phase 4/5, don't assume it.
 2. **Camera: defer hero transition** until slab resolves (vs re-seed mid-transition) — race-free.
 3. **Mobile = three homes** (inclusion/slab, quality/INSTANCE, authored-values/slab) — the cold-reviewed
    split, now with authored-value variants confirmed real by StreetLights.
