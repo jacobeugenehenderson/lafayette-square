@@ -86,7 +86,12 @@ const MODE_CONSTRAINTS = {
     enableRotate: false, enablePan: true, enableZoom: true,
     panSpeed: 1.5, zoomSpeed: 1.2,
     minDistance: 50, maxDistance: 4000,
-    minPolarAngle: 0.001, maxPolarAngle: 0.001,
+    // NO polar clamp. OrbitControls measures polar from camera.up, and Browse's
+    // up is browseUpFromHeading ([0,0,-1] at heading 0), so a true overhead sits
+    // at the EQUATOR (polar ≈ 90°), not the pole. Clamping to ~0 (the old
+    // [0,1,0]-frame assumption) yanked the camera to the horizon on handback.
+    // Overhead is held by positioning + enableRotate:false (matches Preview).
+    minPolarAngle: 0, maxPolarAngle: Math.PI,
     screenSpacePanning: true,
     mouseButtons: { LEFT: 2, MIDDLE: 2, RIGHT: 2 }, // all pan
     touches: { ONE: 1, TWO: 2 },  // one-finger pan, pinch zoom
