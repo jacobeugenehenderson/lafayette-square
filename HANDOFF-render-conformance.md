@@ -104,12 +104,16 @@ break is in the data contract:
     `Array.isArray` → both **always fall back to `[400,45,-100]`** (legacy arch centroid) regardless of
     designation. (For lafayette-square `heroSubject` is also `null` today — undesignated — so the fallback
     fires for that reason too.)
-  - **Fix (the durable contract):** the **bake resolves the subject** — run `resolveHeroSubject` at bake
-    time and write the resolved `[x,y,z]` to `scene.heroSubject` (slab owns spatial identity per
-    `[[project_slab_render_vs_content_boundary]]`). Then every camera consumer reads one resolved point,
-    identically; the per-frame target-lock already centers it. `resolveHeroSubject` is the **single shared
-    resolver** — lift it to a shared module so bake + all runtimes resolve identically (don't let any camera
-    re-derive a subject differently). Arch subjects resolve from the baked `arch` channel at bake time too.
+  - **Fix (the durable contract) — RUNTIME-resolve, not bake-resolve.** `bake-scene.js`'s SC.5 comment is
+    explicit that the hero *target* is a deliberate **runtime input**, NOT baked ("category 3 hardwire" —
+    like Browse altitude `computeBrowseAltitude(aspect)` and Street click-origin). So the slab keeps carrying
+    the **designation**, and **every runtime camera resolves it through the single shared `resolveHeroSubject`**
+    — exactly as Stage already does. The bug is only that production/Preview never call the resolver (they
+    test `Array.isArray` and bail). Fix: lift `resolveHeroSubject` + `FALLBACK_HERO_SUBJECT` to a shared
+    pure module; production + Preview call it with `_allBuildings` + the arch values from `scene.arch.values`
+    (Stage passes the store's arch values). One shared resolver, all cameras identical — no bake change, no
+    re-bake. The per-frame target-lock already centers the result. (NOT bake-resolve: a baked point would
+    duplicate what the designation+resolver already express and fights the SC.5 runtime-input intent.)
   - **Operator action (separate from the code fix):** designate a hero object per Look in Stage
     (SurveyorPanel) — until then the resolved-fallback applies; consider making that fallback the
     neighborhood/browse-bounds center, not the arch centroid, so an undesignated Look doesn't frame a
