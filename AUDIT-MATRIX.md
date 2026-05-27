@@ -27,12 +27,15 @@ the integration/emit seam.
 
 Some concerns span domains; two pathologists co-own and reconcile what already exists:
 
-- **CSS / design tokens.** Already present and **duplicated**: `src/index.css` (LS app entry),
-  `src/tokens/design.css` **and** `public/lsq-tokens.css` (two token files → reconcile to one),
-  `src/cartograph/cartograph.css`, `public/codedesk/styles/theme.css` (identify — possibly
-  vestigial). LS App Pathologist inventories LS's CSS/tokens (primary input), Cartograph
-  Pathologist inventories `cartograph.css`; reconcile to **one token source**. Productization:
-  the single token set becomes a future "theme/brand" setting.
+- **CSS / design tokens.** **CORRECTED by the LS App audit (Lintel, 2026-05-27):** the original
+  premise "`design.css` + `lsq-tokens.css` are duplicate token files → reconcile to one" was
+  half-wrong — they have **zero variable overlap**; they're two *different apps'* token sets (the
+  LS app vs. the CodeDesk QR tool). **LS's app token source is already singular** — not a problem.
+  The **real** duplication is *inside* CodeDesk (`lsq-tokens.css` ⟷ `theme.css` inline copy), and
+  separately `cartograph.css` runs its own parallel `--carto-*` set + ~10 raw hex (Cartograph audit).
+  So the CSS work is NOT "merge LS's two token files" — it's: dedup CodeDesk internally, and decide
+  whether `cartograph.css`'s token set should align to LS's or stay the tool's own. Doc Officer:
+  do not propagate the original mislabel.
 - **Mobile.** LS App owns the *shipped* mobile regime + integration; Cartograph owns
   authoring/preview-mobile (the Stage Mobile|Desktop tab); collaborate. `IS_MOBILE` is already
   one source (`src/lib/isMobile.js`).
