@@ -26,7 +26,17 @@
  * Doctrine: project_camera_framing_slab_contract — no camera may hardcode a
  * pose the slab authors, and no camera re-derives the subject differently.
  */
+// Last-resort guard only — used when no arch channel is present at all. The
+// undesignated DEFAULT is no longer this literal; it resolves the authored arch
+// (see below). For LS the arch sits ~1670m out, far from this stale [400,45,-100].
 export const FALLBACK_HERO_SUBJECT = [400, 45, -100]
+
+// The arch is the LS hero landmark. Resolve it from the authored `arch` channel
+// (distance × bearing), NOT a hardcoded centroid. Mid-height ≈ scale × 35.
+function archPoint(a) {
+  if (!a) return FALLBACK_HERO_SUBJECT
+  return [a.distance * a.bearingX, a.scale * 35, a.distance * a.bearingZ]
+}
 
 // Footprint-centroid XZ + mid-building Y (half the local rooftop height) — the
 // slab analog of the live path's [position, size[1]/2, position]. Terrain lift
@@ -42,14 +52,11 @@ function pointFromIndexEntry(e) {
 
 export function resolveHeroSubject(subject, { slabIndex, buildings, archValues } = {}) {
   if (Array.isArray(subject)) return subject       // already a resolved point
-  if (!subject) return FALLBACK_HERO_SUBJECT
-  if (subject.kind === 'arch') {
-    // Arch lives at distance × bearing (the `arch` channel), not the legacy
-    // GatewayArch.jsx constants. Mid-height ≈ scale × 35 for the catenary.
-    const a = archValues
-    if (!a) return FALLBACK_HERO_SUBJECT
-    return [a.distance * a.bearingX, a.scale * 35, a.distance * a.bearingZ]
-  }
+  // Undesignated → frame the arch, the LS hero landmark, resolved from the
+  // authored arch channel (operator-confirmed default; no designation / re-bake
+  // needed). The old [400,45,-100] literal is retired as the default.
+  if (!subject) return archPoint(archValues)
+  if (subject.kind === 'arch') return archPoint(archValues)
   if (subject.kind === 'building' || subject.kind === 'landmark') {
     // Slab path (production/Preview): resolve from the render-scoped index.
     if (slabIndex) {
