@@ -38,7 +38,7 @@ The split is intentional and load-bearing: **cartograph is fortified, slow, care
 [TO BE FILLED]
 
 ### Hero mode
-[TO BE FILLED]
+The landing shot — the first framing every visitor sees. A slow cinematic camera *bounce*: the camera sweeps a Catmull-Rom path out-and-back through the operator-authored keyframes, holding its gaze on the neighborhood's designated hero subject (the Gateway Arch) the whole time. The path's keyframes, per-keyframe FOV, the bounce period/easing, and the subject are all authored in Cartograph's Stage (Hero shot) and travel through the bake in `scene.json` (`heroKeyframes` / `heroMotion` / `heroSubject`); production replays them through `Scene.jsx`'s CameraRig and the shared `src/preview/heroAnim.js` motion model — identical to what the operator previewed in Stage.
 
 ### Street mode
 [TO BE FILLED]

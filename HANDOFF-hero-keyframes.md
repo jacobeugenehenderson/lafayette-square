@@ -1,5 +1,20 @@
 # Handoff — Hero Camera Keyframe Authoring: a timeline that tells the truth
 
+> ✅ **SHIPPED (Détente, `3ebf510`, 2026-05-26).** Landed as one coherent rework rather than the
+> original L1–L5 levers, which collapsed through operator iteration: **(L1) path-honest playhead** —
+> `HeroPreview` publishes the post-wave path position, not the period phase; **two-anchor bounce** —
+> Start + End are permanent extremes, only Mids are deletable (this also killed a hang from the old
+> degenerate sub-2-keyframe state); **single capture button keyed off the playhead** — gap → Add
+> (inserts a Mid *at* the playhead, capturing the live camera), on a dot → Update; **match-aware
+> confirmation** — the Update button reads a steady "✓ Keyframe set" while the live camera matches the
+> stored pose and only lights up "Update Keyframe" once the operator moves, never reverting on a timer
+> (this replaced the original flash-ack, which read as "it didn't stick"). FOV stays per-keyframe.
+> Touched only `HeroCamera` + `HeroPreview` (+ a pulse keyframe in `cartograph.css`); the shared
+> `resolveHeroSubject` re-export and `heroAnim.js` motion model were left untouched. Operator authored
+> 3 keyframes and re-baked the slab. FEATURES updated: `cartograph/FEATURES.md` (Stage) + `ls/FEATURES.md`
+> (production Hero mode). **Not done: L5** (sawtooth prune / "Wave"→"Ease" relabel) — pending operator's
+> sine-only-vs-keep-both call. Original brief preserved below.
+
 > Dispatch-ready brief. Stage's Hero-shot keyframe authoring is unintuitive and, worse, *lies*: the
 > timeline playhead means one thing while scrubbing and another while playing, so adding a keyframe drops
 > it in the middle of the path and the motion mirrors around it. Captures give no confirmation they took.
