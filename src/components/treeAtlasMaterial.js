@@ -613,7 +613,12 @@ function injectFoliageSway(material) {
            // tree (bark + leaf) by its derived class so the operator eyeballs the
            // mesh/impostor split through the hero pan. Gated → no-op when off.
            if (uHeroTierQC > 0.5) {
-             vec3 qc = mix(vec3(0.15, 0.95, 0.35), vec3(1.0, 0.20, 0.85), step(0.5, vHeroTier));
+             // 0 = mesh (green), 1 = impostor (magenta), 2 = cull (blue — these
+             // are dropped entirely in production; tinted here only so the
+             // operator can confirm nothing visible is being culled).
+             vec3 qc = vHeroTier < 0.5 ? vec3(0.15, 0.95, 0.35)
+                     : vHeroTier < 1.5 ? vec3(1.0, 0.20, 0.85)
+                     :                   vec3(0.15, 0.45, 1.0);
              diffuseColor.rgb = mix(diffuseColor.rgb, qc, 0.65);
            }
          }`

@@ -258,13 +258,15 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
     return arr
   }, [instances])
 
-  // Phase A (Azimuth) — per-instance hero-tier (0 = mesh, 1 = impostor) from the
-  // baked `heroTier` field. Drives the read-only QC tint (treeHeroTierQC); later
-  // phases consume it to split the hero-shot render. Absent field → 0 (mesh).
+  // Phase A (Azimuth) — per-instance hero-tier (0 = mesh, 1 = impostor, 2 = cull)
+  // from the baked `heroTier` field. Drives the read-only QC tint (treeHeroTierQC);
+  // later phases consume it to split the hero-shot render (cull = dropped entirely).
+  // Absent field → 0 (mesh).
   const heroTiers = useMemo(() => {
     const arr = new Float32Array(instances.length)
     for (let i = 0; i < instances.length; i++) {
-      arr[i] = instances[i].heroTier === 'impostor' ? 1 : 0
+      const t = instances[i].heroTier
+      arr[i] = t === 'cull' ? 2 : t === 'impostor' ? 1 : 0
     }
     return arr
   }, [instances])

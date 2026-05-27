@@ -228,11 +228,19 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
 // Tunables — calibrated against the operator's eye at the A→B seam (QC overlay):
 const HERO_TIER = {
   POSES: 24,             // camera samples along the keyframe path
-  PROM_THRESHOLD: 0.05,  // min screen-prominence (at ANY pose) to stay `mesh`
+  PROM_THRESHOLD: 0.02,  // min screen-prominence (at ANY pose) to stay `mesh` vs
+                         // `impostor` (calibrated at the A→B seam — telephoto
+                         // makes prominence top out ~0.09, so the dial is small)
   OCC_FRAC: 0.7,         // a nearer canopy covering ≥ this fraction of a tree's
                          // projected disk occludes it at that pose
   ASPECT: 16 / 9,        // viewport aspect for the horizontal frustum bound
   CENTER_Y_FRAC: 0.6,    // canopy vertical centre as a fraction of tree height
+  // `cull` tier (operator request 2026-05-26): a tree NEVER inside the frustum
+  // (expanded by this guard) across the whole pan is dropped entirely in the
+  // hero shot — strictly cheaper than an impostor. Guard is generous so cull is
+  // CONSERVATIVE: only trees well outside the view for the entire sweep go. The
+  // pan is read from the slab, so widening the hero shot re-classifies on rebake.
+  CULL_FRUSTUM_GUARD: 1.3,
 }
 // Mirror of StageApp.FALLBACK_HERO_SUBJECT / Scene.HERO_TARGET (both [400,45,-100]).
 // Used when the slab's heroSubject is null (current LS state).
@@ -315,6 +323,9 @@ function classifyHeroTiers(canopies, heroPan) {
   }
 
   const maxProm = new Float64Array(n)
+  const everSeen = new Uint8Array(n)   // ever inside the guard-expanded frustum
+  const hGuard = hHalf * HERO_TIER.CULL_FRUSTUM_GUARD
+  const vGuard = vHalf * HERO_TIER.CULL_FRUSTUM_GUARD
   const proj = new Array(n)
   for (let i = 0; i < n; i++) proj[i] = { in: false, h: 0, v: 0, r: 0, depth: 0 }
 
@@ -340,6 +351,8 @@ function classifyHeroTiers(canopies, heroPan) {
       const ar = Math.atan2(c.R, Math.hypot(dx, dy, dz))
       pr.in = Math.abs(ah) < hHalf + ar && Math.abs(av) < vHalf + ar
       pr.h = ah; pr.v = av; pr.r = ar; pr.depth = depth
+      // Looser, guard-expanded test for the cull tier (conservative drop).
+      if (Math.abs(ah) < hGuard + ar && Math.abs(av) < vGuard + ar) everSeen[i] = 1
     }
     for (let i = 0; i < n; i++) {
       const pr = proj[i]
@@ -361,19 +374,31 @@ function classifyHeroTiers(canopies, heroPan) {
     }
   }
 
-  let meshN = 0, impostorN = 0
-  const hist = new Array(10).fill(0)                          // 0.05-wide buckets
+  let meshN = 0, impostorN = 0, cullN = 0
+  const hist = new Array(20).fill(0)                          // 0.005-wide buckets [0,0.1)
   for (let i = 0; i < n; i++) {
     const m = maxProm[i]
-    hist[Math.min(9, Math.floor(m * 20))]++
-    if (m >= HERO_TIER.PROM_THRESHOLD) { tiers[i] = 'mesh'; meshN++ }
+    hist[Math.min(19, Math.floor(m * 200))]++
+    if (!everSeen[i]) { tiers[i] = 'cull'; cullN++ }          // never in frustum → dropped
+    else if (m >= HERO_TIER.PROM_THRESHOLD) { tiers[i] = 'mesh'; meshN++ }
     else { tiers[i] = 'impostor'; impostorN++ }
+  }
+  // Calibration curve: how many trees stay `mesh` at each candidate threshold,
+  // so the A→B seam can pick the split by intent ("keep the crisp X%") rather
+  // than guessing an absolute prominence value.
+  const sweep = {}
+  for (const th of [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.06, 0.08]) {
+    let c = 0
+    for (let i = 0; i < n; i++) if (maxProm[i] >= th) c++
+    sweep[th] = c
   }
   return {
     tiers,
     meta: {
       poses: N, promThreshold: HERO_TIER.PROM_THRESHOLD, occFrac: HERO_TIER.OCC_FRAC,
-      fovDeg, target, mesh: meshN, impostor: impostorN, promHistogram: hist,
+      cullFrustumGuard: HERO_TIER.CULL_FRUSTUM_GUARD,
+      fovDeg, target, mesh: meshN, impostor: impostorN, cull: cullN, promHistogram: hist,
+      thresholdSweep: sweep,
     },
   }
 }
@@ -515,8 +540,8 @@ export async function bakeTrees({
     for (let i = 0; i < instances.length; i++) instances[i].heroTier = tiers[i]
     heroTierMeta = { heroLook, ...meta }
     if (verbose) {
-      console.log(`[bake-trees] heroTier: ${meta.mesh} mesh / ${meta.impostor} impostor `
-        + `(thresh ${meta.promThreshold}, ${meta.poses} poses, fov ${meta.fovDeg}°)`)
+      console.log(`[bake-trees] heroTier: ${meta.mesh} mesh / ${meta.impostor} impostor / ${meta.cull} cull `
+        + `(thresh ${meta.promThreshold}, guard ${meta.cullFrustumGuard}, ${meta.poses} poses, fov ${meta.fovDeg}°)`)
     }
   }
 
