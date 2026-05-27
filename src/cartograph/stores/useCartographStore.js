@@ -1624,6 +1624,19 @@ const useCartographStore = create((set, get) => ({
         clouds: design.clouds?.values
           ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...design.clouds.values } }
           : { values: { ...CLOUDS_FLAT_DEFAULTS } },
+        // Hero camera path — MUST hydrate here on the boot path too, not just
+        // in setActiveLook. Omitting these left heroKeyframes/Motion/Subject at
+        // their store-init defaults after a fresh load; the first autosave then
+        // wrote those defaults over the design.json's authored values (e.g. an
+        // operator's 3 keyframes silently reverting to the 2 default anchors).
+        // Keep in sync with the setActiveLook hydrate block above.
+        heroSubject:    design.heroSubject    || null,
+        heroKeyframes:  design.heroKeyframes  || get().heroKeyframes,
+        heroMotion:     (() => {
+          const m = { ...get().heroMotion, ...(design.heroMotion || {}) }
+          if (m.easing === 'sawtooth') m.easing = 'sine'
+          return m
+        })(),
         openSections:   design.openSections   || {},
         _designHydrated: true,
       })
