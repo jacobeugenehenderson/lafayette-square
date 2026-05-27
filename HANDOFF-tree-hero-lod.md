@@ -172,24 +172,38 @@ so the operator can eyeball "not terrible." Visualization only — no override d
   re-bake idempotent; analytic occlusion is adequate (escalate to a render-based ID pass only if
   it visibly misclassifies — flag as scope drift if so).
 
-### Phase A — Status (Azimuth, 2026-05-26) — landed, AT A→B SEAM
+### Phase A — Status (Azimuth, 2026-05-26) — landed; PAUSED for the evening, mid design-pivot
 
-Commits: prereq dims-emitter `bfdbdca`, classifier+QC `fcdc1eb`. Idempotent ✓; runtime files
-compile ✓; default render bit-identical when QC off ✓.
-- **Split:** 40 mesh / 705 impostor (5% mesh) at `PROM_THRESHOLD=0.05`. Prominence histogram tops
-  out ~0.09 (the 22° telephoto puts every canopy at small screen size), so **threshold is THE
-  calibration dial** — say the word and I re-bake at a lower threshold to keep more trees crisp.
-- **QC how-to:** open Stage or Preview with `?heroTierQC=1` (or `window.__setHeroTierQC(1)` in the
-  console), watch/scrub the hero pan. **green = stays full mesh, magenta = becomes impostor.**
-- **Decisions for the seam (need a nod):**
-  1. **Keying** — dims resolved exact-when-in-roster, else category-mean over roster variants (93%
-     of placements substitute to a same-category roster variant at *runtime*; no lib→roster hash
-     mirror). Adequate, or escalate to a shared exact-substitution fn?
-  2. **QC overlay home** — relocated from Grove (specimen gallery, no park/hero cam) to the
-     Stage/Preview hero render. OK?
-- **Spec-compression note resolved:** the 95%-low-prominence distribution *confirms* impostors are
-  worth it (most canopy is far/small/occluded in this telephoto hero). The open Phase-B question is
-  narrowed to multi-view K + TOD-relight cost, per that phase's seam.
+Commits: dims-emitter `bfdbdca`, classifier+QC `fcdc1eb`, brief `98795f0`, **3-tier checkpoint
+`592cba6`**. Idempotent ✓; runtime files compile ✓; render bit-identical when QC off ✓.
+
+**▶️ RESUME HERE (next session) — the DoF pivot.** The operator reframed the classifier from
+screen-prominence to a **two-focal depth-of-field**: foreground (the neighborhood) sharp, mid-
+distance soft, the arch @infinity sharp. Applied to *trees*, the arch sits beyond every tree, so the
+far-sharp peak is empty → the tree rule **collapses to camera-distance bands**: `near → mesh`,
+`mid/far → impostor` (the impostor flatness *is* the DoF blur), `off-frame → cull`.
+- **Action:** in `classifyHeroTiers` (`arborist/bake-trees.js`), replace the prominence score
+  (coverage×centrality, occlusion) with **min-camera-distance-over-pan bands**. Keep a far-sharp
+  band in the formula for generality (empty of trees today). Dial = **near-sharp radius** (~150 m;
+  shot distances run ~67–480 m). Re-bake, QC via the overlay, tune the one distance.
+- **Unblocks:** camera distance is known *now* — this does NOT wait on placing the Hero Object
+  (unlike a hero-object gradient). Occlusion is dropped (fine for DoF). **Overrides finding #2**
+  ("visibility, not distance") — operator-confirmed: far trees *should* go soft. Update finding #2
+  + flag Boz when the pivot lands.
+- **Survives the pivot:** the `cull` tier, the 3-colour QC overlay, `heroTier` emission, the
+  bake-look dims emitter, the keying. Only the mesh↔impostor *scoring* changes.
+
+**Current checkpoint state (prominence model, `592cba6`):** 361 mesh (48%) / 362 impostor (49%) /
+22 cull (3%) at `PROM_THRESHOLD=0.02`, `CULL_FRUSTUM_GUARD=1.3`. QC: `?heroTierQC=1` (hard-reload
+first — shader edit) → green=mesh / magenta=impostor / blue=cull. `heroTierMeta` carries a
+`thresholdSweep` + `promHistogram` for calibration.
+
+**Still-open seam decisions (carry forward):**
+1. **Dims keying** — exact-when-in-roster else category-mean over roster variants (93% substitute at
+   runtime; no lib→roster mirror). Adequate, or escalate to a shared exact-substitution fn?
+2. **QC overlay home** — relocated Grove→Stage/Preview (Grove is a specimen gallery, no park/hero cam).
+3. **`cull` is a scope addition** vs the 2-tier brief (operator-requested) — extends Phase D to a
+   3-way render split (cull = don't emit). Boz to ratify.
 
 ## Phase B — Multi-view pan-arc impostor producer (Salon/arborist; no runtime consumption)
 

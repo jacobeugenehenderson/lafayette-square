@@ -2424,3 +2424,18 @@ Narrowed the Grove from a *"gallery of every **rated** variant"* to a **roster-d
 
 **Verified:** `node --check` clean on `serve.js`; `Grove.jsx` esbuild-bundles clean. `vite build` still blocked by the same pre-existing dangling `public/photos/.../other` symlink (not code — see Brief 26 entry). UI not click-tested in a browser (no harness this run).
 
+## 2026-05-26 — Hero-tree visibility-LOD + impostors (Azimuth) — IN FLIGHT, PAUSED eve
+
+Brief: repo-root `HANDOFF-tree-hero-lod.md` (its "Phase A — Status" block holds the live resume pointer). Hero-shot only. Renders only trees the hero pan sees well at full mesh, impostors the rest, culls the never-seen. Memory: [[project_tree_perf_state_2026_05_26]].
+
+**Landed:**
+- **`bfdbdca` — canopy-dims emitter (Phase A prereq).** `bake-look` writes real-metre `canopyByVariant {species:{variantId:{heightM,canopyRadiusM}}}` into `trees-atlas.json`, measured from the clean scale-applied lod2 GLB via new shared `arborist/tree-bounds.js`. **Re-routed from publish-glb** (Boz's first call) after artifact inspection: `public/trees/<latin>/*.glb` are `sourceName:"whole-scene"` exports → bbox radius garbage (acer 42.8 m for a 10.4 m tree); the *rendered* clean tree is bake-look's roster-keyed output (sane r 1.6–6.9 m). `bake-look` runs before `bake-trees` (serve.js) so dims exist at read.
+- **`fcdc1eb` — `heroTier` classifier + QC overlay (Phase A).** `bake-trees#classifyHeroTiers` samples the authored hero pan (shared `heroAnim.js` catmullRom — self-adjusts to whatever's authored), emits per-tree `heroTier` + `heroTierMeta`. Gated in-shader QC tint in `treeAtlasMaterial.js` + per-instance `aHeroTier` in `InstancedTrees.jsx` (`window.__setHeroTierQC(1)` / `?heroTierQC=1`; hard-reload first — shader edit). Render bit-identical when off.
+- **`592cba6` — 3-tier + retune (checkpoint).** Operator QC'd the first split (5% mesh / 95% impostor @ thresh 0.05) as too aggressive → threshold 0.05→0.02; **added a `cull` tier** (operator: "drop trees once they've passed the camera") = never inside the guard-expanded frustum across the pan → dropped entirely. Now 48% mesh / 49% impostor / 3% cull. QC → 3 colours (green/magenta/blue).
+
+**▶️ RESUME — DoF pivot (operator design call, tabled).** Replace prominence (coverage×centrality+occlusion) with a **two-focal depth-of-field** → for trees collapses to **camera-distance bands** (near `mesh`, mid/far `impostor` — flat impostor IS the DoF blur, off-frame `cull`); the arch sits beyond all trees so the far-sharp peak is empty. Dial = near-sharp radius ~150 m (shot dists ~67–480 m). **Unblocks without placing the Hero Object.** **Overrides brief finding #2** (visibility>distance — operator-confirmed far trees should soften). Edit `classifyHeroTiers` only; `cull`/QC/emission/dims survive.
+
+**Open (carry forward):** dims keying (in-roster-exact + category-mean; 93% substitute at runtime — adequate or share exact substitution fn?); QC overlay relocated Grove→Stage/Preview; `cull` is a scope add vs the 2-tier brief (Boz ratify, extends Phase D to 3-way). **Phase C:** A/B flag must gate `.visible` not mount, be temporary, surface to Boz before `PreviewApp.jsx` (measurement-arc convention). **Branch `cartograph-looks-pass-ab`, local-only; concurrent buildings (Alidade) + neon arcs — stop & surface before touching `SLAB-CONTRACT.md`/`Scene.jsx`.**
+
+**Verified:** bakes idempotent; `bake-trees`/`bake-look`/`tree-bounds` `node --check` clean; `treeAtlasMaterial.js`+`InstancedTrees.jsx` esbuild-bundle clean. Operator confirmed the QC tint renders live (green/magenta/blue); not otherwise browser-QC'd by me.
+
