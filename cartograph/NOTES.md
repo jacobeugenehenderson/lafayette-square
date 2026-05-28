@@ -8,6 +8,54 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-27 EOD → 2026-05-28 — Ribbon-corner arc ATTEMPTED, REVERTED. Brief rewrite pending.
+
+`HANDOFF-ribbon-corners.md` was dispatched to Verge. C0 spike passed cleanly (118/126 LS blocks yielded valid pedBands; synthetic regime sweep confirmed arc→point→self-clip at R=d). C1 through C5 + two post-C5 buildPedBand attempts landed (13 commits, `b8db7b0` → `4509171`). **Operator-gated visual test failed; the entire code arc was reverted in `ea0bed6`.**
+
+### Final visible failure mode
+At every IX corner: the rendered sidewalk traces a SQUARE OUTER CORNER instead of following `blockRounded`'s rounded silhouette concentrically. White triangular slivers visible in the asphalt area at IX corners (operator zoomed-in screenshot). Per-leg authored widths approximately matched the handle positions on straight runs, but corners read as 90° rectangles even though the underlying curb arc is rounded.
+
+### Root cause (the architectural diagnostic — load-bearing for the restart)
+`silhouetteStraightEmitter` partitions `blockRounded`'s vertex sequence into STRAIGHT runs (Bezier corner samples excluded via `arcMeta.corner`) and emits per-vertex-perp strips on those straight verts only. When `applyRoundCornersToRing` smooths an IX corner, the LAST literal vertex before the consumed Bezier span sits BACK from the original sharp corner. The per-leg strip's outer edge extends perpendicular from that last vert at depth `cw + sw` — producing a SQUARE outer corner that overshoots PAST the rounded curb position. Any separate corner-emitter (corner-pad in V2, my figure-ground residual + flanking-leg arc emission in post-C5) sits INSIDE that square overshoot and gets occluded.
+
+No buildPedBand reshuffling fixed it because the bug is **in the partition strategy of the per-leg emitter, not in the corner emitter**. The brief did not name this and should have.
+
+### The correct path (spine of tomorrow's brief)
+Per-vertex-perp on the FULL `blockRounded` ring (Bezier samples INCLUDED) at each vertex's authored depth. The strip wraps the rounded corner concentrically BY CONSTRUCTION. No separate corner emitter. No figure-ground residual. No global W bulge.
+
+**Mechanism that unblocks the per-vertex authoring lookup**: extend `applyRoundCornersToRing` to expose `consumed[]` (per-sharp-vertex → which Bezier span consumed it, or -1 if literal). Each Bezier sample then carries its owning sharp-vertex range → maps to the same fe as the flanking straight verts. Origin-fe per vertex falls out STRUCTURALLY, not via the per-vertex coord-match that broke at shared corners + stencil verts (the failed C4.5b first attempt).
+
+### What was tried and ruled out (don't re-explore in the rewrite)
+- **Wall (polygon-only barrier)**: enforced by C4.5 (`bebe7c3`) at signature level. NOT the bug. Reverted with the rest.
+- **T-junctions**: chain IXs share coords exactly (verified at Miss × Ken). Not the bug. (Previously fixed class.)
+- **Skeleton precision**: chain centerlines meet cleanly; OSM-derived coord-share within EPS=0.5 already handled by `resolveChainSegmentation`. Not the bug.
+- **Asphalt-union sub-pixel gaps**: hypothesis tested; not the source.
+- **Per-vertex coord-match for origin-fe tagging (C4.5b first attempt)**: shared corner coords are last-write-wins ambiguous and stencil-clipped verts aren't in any fe → only ~25.6% of blockRounded verts tagged → partition slices into length-1 fragments → 75% emission drop. Reverted.
+- **Global-W pedBand + figure-ground residual (post-C5 first attempt `36d9ef2`)**: invented surface area the operator never authored; produced wide cream uniform bands ignoring per-leg widths.
+- **Per-vertex-perp arc-span emission at flanking-leg authored depth (post-C5 second attempt `4509171`)**: structurally cleaner but still inherits the per-leg square overshoot from `silhouetteStraightEmitter` upstream.
+
+### What landed (operator value retained, before revert)
+The strips data model migration (C3.3 commit `91135da`) successfully transformed 534 sides across `design.json` / `ribbons.json` to `strips: [{width, fill}]` shape with immutable `.pre-strips.json` backups. **REVERTED.** Migration script `cartograph/migrations/finish-strips.mjs` removed. If Boz wants to re-migrate after the rewrite, the script is recoverable from the `ea0bed6` parent's reflog.
+
+### Reverted commits (single rollback `ea0bed6`)
+`4509171 36d9ef2 d8109d3 bebe7c3 bb5f401 5297dff ddc7af2 4aa5b37 91135da f51d66d f7a6201 834f0fe b8db7b0` — entire C1→post-C5 arc. Working tree at revert is byte-identical to `9f96f66` parent for every touched file. Camera, depth Phase 1, Buildings L1.3, neon, trees, measurement regime, render-conformance: untouched.
+
+### Preserved across the revert
+- `cartograph/RIBBONS.md` — §6.8/§6.9 + §1 + new §6.10 (this evening's diagnostic).
+- `cartograph/NOTES.md` — this entry.
+- `memory/project_ribbon_corner_uniform_width.md` (status + diagnostic).
+- `HANDOFF-ribbon-corners.md` — flagged superseded; Boz rewrites tomorrow with polygon-only / full-blockRounded-walk / `applyRoundCornersToRing.consumed[]` named upfront.
+- `scratch/ribbon-corner-rewrite-seed.md` — Boz's in-flight rewrite seed.
+
+### Operator-side uncommitted state at revert time (in `stash@{0}`)
+`design.json`, `ribbons.json`, `baked/*.json`, `looks/index.json` had operator-side uncommitted edits that pre-dated this arc — they were stashed before the revert. They're in `stash@{0}` ("preserve-during-ribbon-revert"); the data files contain the migrated (strips) form which is incompatible with the reverted code. Drop stash after confirming nothing valuable.
+
+---
+
+
+
+---
+
 ## 2026-05-18 PM — Neon arc close-out (V2 ship + authoring UX queue closure)
 
 Long-arc session that landed the full neon V2 shipping pass plus the post-ship authoring UX queue. Index:

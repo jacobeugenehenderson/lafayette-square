@@ -25,6 +25,8 @@
 
 ## §1. The regime, in plain words
 
+> **2026-05-27 → 2026-05-28 status note.** The uniform-width-model arc (HANDOFF-ribbon-corners.md) was attempted (C0–C5 + two post-C5 buildPedBand attempts, 13 commits) and REVERTED (`ea0bed6`) after the operator visual gate failed at every IX corner. **§6.8/§6.9 remain OPEN**; **new §6.10** captures the architectural diagnostic that ended the attempt and names the path forward. Brief rewrite pending. The doctrine below describes the V2 architecture as it stood pre-arc and stands now post-revert. The "uniform-width ped ribbon" framing the previous note adopted was not implementable on a rounded silhouette without the C6.10 mechanism in place first.
+
 ### The model in one sentence
 
 **Blocks are positive space; streets are the void around them; everything visible at street level — asphalt, curb, sidewalk, treelawn, corner mouths — is a property of the block polygons' silhouettes, not of the chain centerlines that derive them.**
@@ -35,12 +37,13 @@ The visible "street" is a Z-shaped cross-section running along the chain: asphal
 
 The corner is NOT something we construct as a separate primitive to glue two ribbons together. The corner is what naturally happens when the ribbon's outer edge (the asphalt boundary) follows the rounded block silhouette around the IX. This is the load-bearing inversion from V1 (per `feedback_corner_pad_continuity_first`):
 
-| V1 (retired in `0286cb1`) | V2 |
+| V1 (retired in `0286cb1`) | V2 cutover (current, post-HANDOFF C5) |
 |---|---|
 | Asphalt = union of per-chain rectangles | Asphalt = `stencil − blockRounded` |
-| Corner asphalt fillet = constructed annular sector or `buildCornerPlug` | Corner asphalt mouth = back side of the block's rounded corner |
-| Concrete corner pad = `buildCornerPadQuad` (tA-tB-anchored parallelogram clipped against blockRounded) | Concrete pad = arc-span band emitted by the same ribbon machinery as the straight-span band |
+| Corner asphalt fillet = constructed annular sector or `buildCornerPlug` | Corner asphalt mouth = back side of the block's rounded corner; residual at IXs → `cornerOrphanAsphalt` (renders as asphalt) |
+| Concrete corner pad = `buildCornerPadQuad` (tA-tB-anchored parallelogram clipped against blockRounded) | Concrete pad = the figure-ground residual of `pedBand` (one inward Clipper offset by `cw + W`; concentric, self-clips when sharp). No per-corner construction. |
 | Curb = per-side rectangle bands + per-corner curb annulus | Curb = single offset stroke of the entire rounded asphalt silhouette |
+| Per-side ped band = `{treelawn, sidewalk}` fixed pair | Per-side ped band = `{strips: [{width, fill ∈ {concrete, landuse}}, ...]}`; fill-toggle composes any cross-section |
 
 ### The three structural moves
 
@@ -50,11 +53,12 @@ The new regime collapses to three operations. Everything else falls out:
 - `applyRoundCornersToRing` runs Bezier (handle length `(4/3)·R·tan((π−θ)/4)`, 16 samples) at every block-convex matched vertex of each `blockSharp` ring.
 - `asphaltRounded = stencil − blockRounded`. The rounded asphalt mouth at every IX is the back side of the rounded block corner. No separate `cornerAsphaltPlugs` math. The mouth IS the geometry, not a residual.
 
-**2. The ribbon wraps the silhouette.**
-- Bands inset inward from the block edge by `cw` (curb), `cw + tl` (treelawn outer), `cw + tl + sw` (sidewalk outer).
-- On straight spans: parallel offsets. On arc spans: inset arcs.
-- The three-regime arc emitter (ASYMMETRIC / SYMMETRIC-WITH-RAMP / SYMMETRIC-NO-RAMP) is what to do when the two flanking straight spans want different cross-sections at the corner. It is the arc's response to the cross-section discontinuity, not a constructed bridge.
-- Each per-arc `frontageBand` entry carries ALL THREE materials of the corner wrap as one construct: `{ treelawnRings, sidewalkRings, asphaltRings, corner }`. `feedback_corner_pad_continuity_first` realized structurally (NOTES:620).
+**2. The ribbon wraps the silhouette (uniform-width model — HANDOFF-ribbon-corners.md).**
+- `pedBand = inset(blockRounded, cw) − inset(blockRounded, cw + W)` where `W = max` of per-leg authored strips-totals. Two uniform inward Clipper offsets + one difference. The corner falls out concentric for free: arc when `R > cw + W`, point at neutral, **self-clipped when sharp** — Clipper removes the crossing natively.
+- Per-leg materials inside the band: each side's `strips: [{width, fill}]` lists sub-strips at authored widths. `fill='concrete'` → sidewalk; `fill='landuse'` → the parcel showing through ("treelawn" dissolved as a special material — it's just a landuse-filled strip).
+- Grass (landuse) strips are emitted **per leg / per parcel** (load-bearing for the bake's per-LU routing at `bake-ground.js:349`), clipped to the straight run, cut off at corners.
+- The corner is the strips ARCING around — never a constructed block. The sidewalk simply bends; where a grass strip exists it stops at the corner and the gap fills with concrete via the figure-ground residual.
+- frontageBands entries: per-leg per-fe `{ treelawnRings, sidewalkRings, asphaltRings }` + ONE chainless entry carrying the uniform sidewalk ring + `cornerOrphanAsphalt` (the asphalt residual). The per-arc `corner` field is retired (C5).
 
 **3. The curb is the silhouette stroke.**
 - `curbBands = dilate(asphaltRounded, cw) − asphaltRounded`.
@@ -71,7 +75,7 @@ The new regime collapses to three operations. Everything else falls out:
 ### What this keeps
 
 - The polygon graph as substrate (blocks ARE the positive geometry from which everything emerges).
-- The stage wall (chains end forever at bake; polygons are the surface — FEATURES §"The stage wall").
+- The **stage wall**: chains end forever at bake; polygons are the surface. **This section is the canonical site of the doctrine** (the `FEATURES.md §"The stage wall"` cross-ref is stale — grep finds no such section today). Enforced structurally inside `buildBlockGeometryV2.js` since HANDOFF-ribbon-corners.md C4.5: `fe.measure` is baked once at fe-construction, and no emission function takes `streets` as a parameter (signature-level enforcement). Sanctioned exception: the corner-radius authoring kit (`cornersAtIx` + `applyRoundCornersToRing`) consults chains for radius authoring — separate concern.
 - Block-customs keying by `(blockKey, edgeOrd)` for per-block-edge authoring.
 - Inner-edge anchor mode for divided carriageways.
 - The 3-tier corner-radius authoring kit (global × per-IX × per-corner).
@@ -660,7 +664,12 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 
 `MeasureOverlay.jsx:777-783` reads double-click as deselect. NOTES:3549-3551 spec says double-click should insert a stripe split (treelawn/sidewalk boundary). Surface-only divergence; cosmetic. **Status:** deferred.
 
-### 6.8 Corner-interior regime emitter deviates from concentric doctrine — PARTIAL-RESOLVED 2026-05-18 (commit `3cafe7f`)
+### 6.8 Corner-interior regime emitter deviates from concentric doctrine — OPEN (attempted resolution 2026-05-27 reverted 2026-05-28 in `ea0bed6`; see §6.10)
+
+**2026-05-28 status update.** The HANDOFF-ribbon-corners.md uniform-width-model attempt aimed to resolve §6.8 by retiring the three-regime emitter and treating the corner as a single inward Clipper offset of `blockRounded` (`cw + W`, W = max-leg width). The arc landed (C0–C5 + post-C5 buildPedBand attempts) but the operator visual gate failed: the per-leg emitter's STRAIGHT-only partition continued to produce square outer corners at the rounded silhouette regardless of how the corner-emitter was shaped (see §6.10). Entire code arc reverted; §6.8 remains OPEN.
+
+— Pre-revert historical record below —
+
 
 **Symptom:** at every IX corner the visible interior of the corner zone (the bands as they wrap the rounded silhouette) reads as a *constructed plug between two straight ribbons* rather than as *continuous concentric arcs wrapping the silhouette*. Doctrine (§1, "the ribbon wraps the silhouette"): each band depth (curb at cw, treelawn outer at cw+tl, sidewalk outer at cw+tl+sw) emerges as a nested inset arc around the same effective corner center — concentric, like a target. Implementation in `buildFrontageBandsV2`'s three-regime emitter does not produce this geometry on ANY corner today.
 
@@ -702,7 +711,12 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 
 **Doctrinal note:** the figure-ground inversion (RIBBONS §1) is preserved because the visible CORNER geometry derives from blockRounded (corner pad's outer edge is the rounded silhouette arc). The legs' source-from-sharp-fe is a pragmatic implementation choice — the visible result is bounded by blockRounded via the H1 clip, so from the operator's POV the bands appear inset from the rounded silhouette regardless of which ring they were emitted from.
 
-### 6.9 Corner-input-preparation produces non-uniform output across IX corners — OPEN, DOMINANT (2026-05-18)
+### 6.9 Corner-input-preparation produces non-uniform output across IX corners — OPEN (attempted resolution 2026-05-27 reverted 2026-05-28 in `ea0bed6`; see §6.10)
+
+**2026-05-28 status update.** The arc that aimed to retire §6.9 by structurally collapsing all per-corner construction to a single inward offset (HANDOFF §3) did land that machinery but was reverted along with §6.8's resolution attempt — the upstream per-leg straight-only partition is the actual blocker (§6.10). When the rewrite goes in, §6.9 should be re-evaluated: the input-preparation drift it documents may have already been structurally retired by C4.5's `fe.measure`-bake (which was the part of the arc that genuinely held; reverted with the rest, but the doctrinal insight is preserved).
+
+— Pre-revert historical record below —
+
 
 **Symptom:** at a single IX, the four corner records (one per CCW leg pair) produce four different qualities of arc-span emission, despite all flowing through the identical Stage 9 single-polygon symmetric emitter code. Image 21 evidence at Mississippi × Park: SW correctly empty (park-interior, both flanks terminal=none), SE wrong-size symmetric pad, NE self-intersecting pad, NW correct shape but scaled to 60% of authored depth.
 
@@ -795,6 +809,46 @@ This doctrine resolves the asymmetric-flanks question without tapering, without 
 
 - `cornersAtIx` has 3 docblocks referencing retired `buildCornerPadQuad`.
 - FEATURES corner-plugs subsection (was lines 76-104 pre-migration) carries `[PHASE 2 SUPERSEDED]` placeholder marker.
+
+### 6.10 Per-leg straight-only emission produces square outer corners at the rounded silhouette — OPEN, DOMINANT, BLOCKS §6.8 + §6.9 fixes (2026-05-28)
+
+**Symptom:** at every IX corner the visible cream sidewalk traces a SQUARE 90° outer corner instead of following `blockRounded`'s rounded silhouette concentrically. Operator zoomed-in screenshot (2026-05-28) shows the asphalt curb visibly rounded at IXs but the cream sidewalk strip terminating in a sharp rectangular outer edge that overshoots PAST the rounded curb. Small triangular slivers of cream are also visible in the asphalt area at IX corners where the per-leg's square edge sticks out beyond the rounded silhouette.
+
+**Mechanism (discovered through the failed 2026-05-27 cutover attempt, HANDOFF-ribbon-corners.md C0–C5; reverted in `ea0bed6`):**
+
+`silhouetteStraightEmitter` partitions `blockRounded`'s vertex sequence into STRAIGHT runs (Bezier corner samples excluded by `arcMeta.corner`) and emits per-vertex-perp strips on those straight verts only. When `applyRoundCornersToRing` smooths an IX corner, the LAST literal vertex before the consumed Bezier span sits BACK from the original sharp corner. The per-leg strip's outer edge extends perpendicular from that last vert at depth `cw + sw` — producing a SQUARE outer corner that overshoots PAST the rounded curb position.
+
+Any separate corner-emitter (the original `buildFrontageBandsV2` per-vertex-perp pad in V2; the cutover's figure-ground residual at global W; the post-cutover per-arc emission at flanking-leg authored depth) sits INSIDE that square overshoot and gets occluded. No buildPedBand reshuffling fixes this because the bug is **in the partition strategy of the per-leg emitter, not in the corner emitter**.
+
+**Correct path (spine of the restart brief):**
+
+Per-vertex-perp on the FULL `blockRounded` ring (Bezier samples INCLUDED) at each vertex's authored depth. The strip wraps the rounded corner concentrically BY CONSTRUCTION. No separate corner emitter. No figure-ground residual. No global-W bulge.
+
+For each vertex on `blockRounded`:
+- If literal (sharp-vertex preserved) → owning fe = the fe whose `fe.points` includes this sharp-vertex idx. Strip depths come from `fe.measure`.
+- If Bezier sample → owning fe = the fe of the consumed sharp-vertex range. Strip depths come from that fe's `fe.measure`.
+
+The mechanism that unblocks per-vertex authoring lookup at Bezier samples:
+
+**Extend `applyRoundCornersToRing` to expose `consumed[]`.** Currently the function returns `{ring, arcMeta}` where `arcMeta[k]` is `null` for literal verts and `{corner, R, arcPositionFrac}` for Bezier samples. Add a third return field: `consumed: Array<{sharpStartIdx, sharpEndIdx}>` per Bezier span, or — equivalently — extend `arcMeta[k].corner` (Bezier sample) to carry `sourceSpan: {start, end}` referencing the sharp-vertex range that the span replaced. Each Bezier sample then carries its owning sharp-vertex range → maps to the same fe as the flanking straight verts.
+
+**Origin-fe per vertex falls out STRUCTURALLY** with this mechanism, no per-vertex coord-match required. The C4.5b first attempt used per-vertex coord-match (look up each rounded literal vert's coord in a global `coordToFe` map built from `fe.points`); this broke at shared corner verts (last-write-wins ambiguity) and stencil-clipped verts (not in any fe), tagging only ~25.6% of `blockRounded` verts and slicing partitions into length-1 fragments. Reverted.
+
+**Why this fixes §6.10 (and §6.8 with it):**
+
+When the per-leg strip wraps the rounded corner concentrically via per-vertex-perp on Bezier samples at authored depth, there is no square overshoot. The outer edge of the cream sidewalk follows the curb's rounded silhouette by construction. The "corner" is just the strip arcing around — exactly what the brief always promised but couldn't deliver while `silhouetteStraightEmitter` excluded the Bezier samples.
+
+**What was tried and ruled out (don't re-explore in the rewrite):**
+
+- **Wall (polygon-only barrier) enforcement (C4.5, `bebe7c3`):** signature-level wall held; NOT the bug.
+- **T-junction handling:** chain IXs share coords exactly (verified at Miss × Ken); previously fixed class.
+- **Skeleton precision:** chain centerlines meet cleanly; `resolveChainSegmentation` already coord-share-detects within EPS=0.5.
+- **Asphalt-union sub-pixel gaps:** hypothesis tested via small morphological closing; rejected (the polygon architecture handles this by design).
+- **Per-vertex coord-match for origin-fe tagging (C4.5b first attempt):** shared-corner ambiguity + stencil-clipped verts → only 25.6% tagging coverage; 75% emission drop.
+- **Global-W pedBand + figure-ground residual (post-C5 `36d9ef2`):** invented surface area the operator never authored; produced wide uniform cream bands ignoring per-leg authoring handles.
+- **Per-vertex-perp arc-span emission at flanking-leg authored depth (post-C5 `4509171`):** structurally cleaner but still inherits the per-leg square overshoot upstream.
+
+**Status:** OPEN. Restart brief pending (Boz, 2026-05-28). Diagnostic carried in `memory/project_ribbon_corner_uniform_width.md` and the new `feedback_per_leg_straight_only_overshoot.md` memory.
 - NOTES sub-entry consolidation: A.5 / A.6 / A.7 / Bezier-shipped / Phase 1 / Phase 2 / Phase 2.1 / 2.2-reverted / 2-arc cusp guard / 2-arc revert → single coherent "corner emission v2" entry.
 
 **Status:** queued housekeeping commit after corner arc closes.

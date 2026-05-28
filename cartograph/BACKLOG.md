@@ -10,6 +10,16 @@ The per-keyframe FOV control disappeared from the Stage Hero camera UX somewhere
 
 Likely suspects to check when picking this up: (1) does the FOV slider still render when a keyframe is selected, or did a refactor drop it / break the `sel`/`selectedKf` selection so it never shows; (2) the Détente keyframe-UX rework (`HANDOFF-hero-keyframes.md`, `3ebf510`) noted "FOV stays per-keyframe" as a kept feature — diff against that to see if a later commit regressed it. Not urgent; Jacob flagged it to address later.
 
+## 2026-05-27 — TAA post-pass (queued, not urgent)
+
+Temporal antialiasing as a post-process pass on the production Canvas (`src/components/Scene.jsx`) — softens residual sub-pixel z-fight at the seam where live 3D (buildings, trees, neon, lamps) meets the baked slab, and lifts overall AA quality in one move. The slab already absorbs ground coplanar; TAA covers what the slab structurally can't (live 3D parallax must stay live).
+
+Sketch: three.js postprocessing `TAARenderPass` (or `SSAARenderPass`) into the existing chain (`src/components/PostProcessing.jsx`); combines with the already-on MSAA. Ghosting cost is low because the slab gives TAA a stable history (large flat regions; Browse near-stationary, Hero slow, Street gentle).
+
+If TAA leaves a visible gap at the vertical-meets-ground seam (close-camera Street), the next layer is **stencil-sealed ground** — render slab first with stencil mark; live 3D respects it. Don't pull in pre-emptively. Per-shot Y-discipline (Browse=paper-flat, Street=real-world-stacking) is a future authoring knob, not bundled here.
+
+Doctrine: [[project_zfighting_known_cosmetic]].
+
 ## 2026-05-18 — Corner-arc continuation (IN-FLIGHT, sub-B redo queued for next session)
 
 End-of-session checkpoint. Full detail in `cartograph/RIBBONS.md` §6.9 + §7.
