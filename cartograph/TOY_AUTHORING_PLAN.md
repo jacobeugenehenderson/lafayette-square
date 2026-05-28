@@ -1,10 +1,9 @@
 # Toy Authoring Plan — Survey/Measure as the kit-design surface
 
-> **Read first.** Toy is a scene. A scene is a different *dataset* — same pipeline. If you find yourself writing `scene === 'toy'` branches, parallel emitters, or hybrid mounts, you are off-track; revert and make the canonical pipeline scene-parametric instead. See `cartograph/BACKLOG.md` top section + memory file `feedback_no_parallel_pipeline_for_scenes.md`. The whole point of this plan is to remove every toy-only branch by routing toy through the same code paths LS uses.
+> **Read [`/AGENT-VALIDATION-SURFACES.md`](../AGENT-VALIDATION-SURFACES.md) first** for the canonical *how to use toy* doctrine (production bake path, surface guardrails, brief-drafting pre-flight). This doc is the *fixture authoring plan* — what topology cases the toy fixture must cover and how the authoring tools land — not the usage doctrine.
 
-
-**Status:** Phase 0 is the next-session target. Framing below is directional, not blocking.
-**Owner:** next session opener.
+**Status (2026-05-28):** Toy is **operational** as a validation surface — full V2 pipeline mounted, `node cartograph/bake-ground.js` bakes toy via the scene-parametric pipeline, results render live in Toy designer. The "Phase 0 next session" framing below predates this; treat Phase 0+ here as the **fixture authoring** roadmap (kit completeness, training environment, topology coverage), not as gating for using toy as a spike surface.
+**Owner:** session-by-session as topology gaps surface.
 
 ### What matters now (Jacob, 2026-05-08, EOD)
 > "Phase 0 next session, but the goal is a working toy to validate LS, irrespective of its eventual utility. We need to fix these corners once and for all."
