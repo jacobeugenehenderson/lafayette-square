@@ -188,37 +188,39 @@ export function getStrips(side) {
 
 // Convert one side's measure into an ordered list of rings: one per stripe,
 // innerR → outerR from centerline outward. Materials are implied by position.
+//
+// C3.2: ped-zone strips now come from getStrips() — the strips model is the
+// source of truth, with legacy {treelawn, sidewalk} derived through the same
+// helper until C3.3 migrates the persisted data. Strip → material mapping:
+//   fill='landuse' + terminal='lawn'  → 'lawn'      (a side that never reaches
+//                                                   a sidewalk; renders as the
+//                                                   adjacent parcel)
+//   fill='landuse' (any other term)   → 'treelawn'  (the bake routes per-LU
+//                                                   via 'treelawn:<lu>')
+//   fill='concrete'                   → 'sidewalk'
+// Legacy data with terminal='sidewalk' + tl + sw derives exactly the same
+// material sequence sideToStripes used to emit by hand.
 export function sideToStripes(side) {
   if (!side) return []
   const out = []
   let r = 0
-  // asphalt — `side.material` overrides the default for highway-class
-  // chains so the Designer panel can recolor them independently.
   const asphMat = side.material || 'asphalt'
   if (side.pavementHW > 0) {
     out.push({ material: asphMat, innerR: r, outerR: r + side.pavementHW })
     r += side.pavementHW
   }
-  // curb — always present unless pavement is zero. Per-side `side.curb`
-  // overrides the constant; absent → use CURB_WIDTH default.
   if (side.pavementHW > 0 && side.terminal !== undefined) {
     const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
     out.push({ material: 'curb', innerR: r, outerR: r + cw })
     r += cw
   }
   if (side.terminal === 'none') return out
-  // treelawn (optional)
-  if (side.treelawn > 0) {
-    out.push({ material: 'treelawn', innerR: r, outerR: r + side.treelawn })
-    r += side.treelawn
-  }
-  // terminal stripe: sidewalk or lawn
-  if (side.terminal === 'sidewalk' && side.sidewalk > 0) {
-    out.push({ material: 'sidewalk', innerR: r, outerR: r + side.sidewalk })
-    r += side.sidewalk
-  } else if (side.terminal === 'lawn' && side.sidewalk > 0) {
-    out.push({ material: 'lawn', innerR: r, outerR: r + side.sidewalk })
-    r += side.sidewalk
+  const isLawnTerm = side.terminal === 'lawn'
+  for (const s of getStrips(side)) {
+    const material = s.fill === 'concrete' ? 'sidewalk'
+      : (isLawnTerm ? 'lawn' : 'treelawn')
+    out.push({ material, innerR: r, outerR: r + s.width })
+    r += s.width
   }
   return out
 }
@@ -400,7 +402,8 @@ export function measureForSegment(street, ordinal) {
 // Total half-width (for back-compat callers like surveyor ribbon preview).
 export function getHalfWidth(type) {
   const side = defaultSideMeasure(type)
-  return side.pavementHW + (side.terminal !== 'none' ? CURB_WIDTH : 0) + side.treelawn + side.sidewalk
+  const stripsTotal = getStrips(side).reduce((s, t) => s + t.width, 0)
+  return side.pavementHW + (side.terminal !== 'none' ? CURB_WIDTH : 0) + stripsTotal
 }
 
 // For inner-edge anchored chains, return the polyline offset to the inner

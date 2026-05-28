@@ -15,7 +15,23 @@
  * center.
  */
 import clipperLib from 'clipper-lib'
-import { CURB_WIDTH, innerEdgeMeasure } from '../cartograph/streetProfiles.js'
+import { CURB_WIDTH, innerEdgeMeasure, getStrips } from '../cartograph/streetProfiles.js'
+
+// C3.2 bridge: legacy two-strip {treelawn, sidewalk} pair derived from
+// the strips model so emitters that still talk in tl+sw stay byte-id on
+// legacy data while strips becomes the source of truth. First landuse
+// strip → tl (curb-side grass), first concrete strip → sw (terminal
+// sidewalk). The doomed buildFrontageBandsV2 corner-pad (retiring in
+// C5) is the only intentional caller of this bridge; live emitters
+// (silhouetteStraightEmitter, buildChainBandsLive, quarter caps, the
+// uniformW reducer) iterate getStrips() directly.
+function legacyTlSw(side) {
+  const strips = getStrips(side)
+  return {
+    tl: strips.find(s => s.fill === 'landuse')?.width || 0,
+    sw: strips.find(s => s.fill === 'concrete')?.width || 0,
+  }
+}
 
 const SCALE = 1000
 const ARC_N = 16          // half-cap arcs in chainPavementRing only
@@ -203,7 +219,7 @@ function unionRings(rings) {
 // they should be) and is the safer defense.
 function depthForSide(s) {
   if (s?.terminal !== 'sidewalk') return 0
-  return (s?.treelawn || 0) + (s?.sidewalk || 0)
+  return getStrips(s).reduce((acc, st) => acc + st.width, 0)
 }
 
 // Default-R rule (k = 0.5 pinch tolerance). See NOTES.md 2026-05-07.
@@ -1541,29 +1557,29 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
       const blockOverride = (sharpFe && blockCustoms?.[sharpFe.blockKey]?.[sharpFe.edgeOrd]) || null
       const eff = blockOverride || street?.measure?.[adj.side] || {}
       const isSidewalk = eff.terminal === 'sidewalk'
-      const tl = isSidewalk ? (eff.treelawn || 0) : 0
-      const sw = isSidewalk ? (eff.sidewalk || 0) : 0
-      if (!isSidewalk || (tl <= 0 && sw <= 0)) continue  // authoredZero
+      const strips = isSidewalk ? getStrips(eff) : []
+      if (!strips.length) continue   // authoredZero
 
-      // Per-vertex perp offset (exact for straight vertices).
+      // Per-vertex perp offset (exact for straight vertices). Walk the
+      // strips outward from the curb, each strip's inner edge = previous
+      // strip's outer edge; route the resulting ring by its fill (landuse
+      // → treelawnRings, the bake-ground per-LU probe; concrete →
+      // sidewalkRings, the uniform 'sidewalk' material).
       const perps = computePerps(pts)
       const offsetAt = (k, d) => [
         pts[k][0] + perps[k][0] * inwardSign * d,
         pts[k][1] + perps[k][1] * inwardSign * d,
       ]
-      const innerCurb = pts.map((_, k) => offsetAt(k, cw))
-      const tlOuter   = pts.map((_, k) => offsetAt(k, cw + tl))
-      const swOuter   = pts.map((_, k) => offsetAt(k, cw + tl + sw))
-
       const treelawnRings = []
       const sidewalkRings = []
-      if (tl > 0) {
-        const r = closeBandRingV2(tlOuter, innerCurb)
-        if (r) treelawnRings.push(r)
-      }
-      if (sw > 0) {
-        const r = closeBandRingV2(swOuter, tlOuter)
-        if (r) sidewalkRings.push(r)
+      let depth = cw
+      let innerEdge = pts.map((_, k) => offsetAt(k, depth))
+      for (const strip of strips) {
+        depth += strip.width
+        const outerEdge = pts.map((_, k) => offsetAt(k, depth))
+        const r = closeBandRingV2(outerEdge, innerEdge)
+        if (r) (strip.fill === 'landuse' ? treelawnRings : sidewalkRings).push(r)
+        innerEdge = outerEdge
       }
       if (!treelawnRings.length && !sidewalkRings.length) continue
 
@@ -1659,8 +1675,12 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
       const blockOverride = (sharpFe && blockCustoms?.[sharpFe.blockKey]?.[sharpFe.edgeOrd]) || null
       const eff = blockOverride || street?.measure?.[adj.side] || {}
       const isSidewalk = eff.terminal === 'sidewalk'
-      const tl = isSidewalk ? (eff.treelawn || 0) : 0
-      const sw = isSidewalk ? (eff.sidewalk || 0) : 0
+      // C3.2 legacy bridge — this corner-pad meta path is the variable-
+      // offset wedge code that retires in C5; bridging keeps the pad math
+      // byte-identical for the flag-off baseline until cutover.
+      const { tl: tlBridge, sw: swBridge } = legacyTlSw(eff)
+      const tl = isSidewalk ? tlBridge : 0
+      const sw = isSidewalk ? swBridge : 0
       // Stage 11a.1: split skip into two flags. `skip` is reserved for
       // partition artifacts (pts.length<2, adj=null). Operator-zero
       // (terminal!=sidewalk or tl=sw=0) becomes `authoredZero` — still
@@ -2216,10 +2236,15 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         // Asphalt pie slice fills out from the chain endpoint to hw.
         pushCcw(entry.asphaltRings, quarterCap(endpoint, T_out, sideSign, 0, hw))
         if (eff.terminal !== 'sidewalk') continue
-        const tl = eff.treelawn || 0
-        const sw = eff.sidewalk || 0
-        if (tl > 0) pushCcw(entry.treelawnCapRings, quarterCap(endpoint, T_out, sideSign, hw + cw, hw + cw + tl))
-        if (sw > 0) pushCcw(entry.sidewalkCapRings, quarterCap(endpoint, T_out, sideSign, hw + cw + tl, hw + cw + tl + sw))
+        // Walk the strips outward and emit a quarter-annulus per strip,
+        // routed by fill (landuse → treelawnCapRings; concrete → sidewalkCapRings).
+        let r = hw + cw
+        for (const strip of getStrips(eff)) {
+          const next = r + strip.width
+          const dest = strip.fill === 'landuse' ? entry.treelawnCapRings : entry.sidewalkCapRings
+          pushCcw(dest, quarterCap(endpoint, T_out, sideSign, r, next))
+          r = next
+        }
       }
     }
     if (capEnd === 'round' && n >= 2) {
@@ -2400,7 +2425,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       for (const sideKey of ['left', 'right']) {
         const m = s?.measure?.[sideKey]
         if (m?.terminal === 'sidewalk') {
-          uniformW = Math.max(uniformW, (m.treelawn || 0) + (m.sidewalk || 0))
+          const total = getStrips(m).reduce((acc, st) => acc + st.width, 0)
+          if (total > uniformW) uniformW = total
         }
       }
     }
@@ -2698,21 +2724,19 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
       const eff = sideKey === 'left' ? effL : effR
       if (!eff || eff.terminal !== 'sidewalk') continue
       const hw = eff.pavementHW || 0
-      const tl = eff.treelawn || 0
-      const sw = eff.sidewalk || 0
-      if (tl > 0) {
-        const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
-        if (ring) out.treelawnRings.push(ring)
-        out.treelawnEdges.push(
-          segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl)])
+      // C3.2: walk strips outward; per-fill routing keeps the live-drag
+      // preview's rings + outer-edge polylines in lockstep with the bake.
+      let r = hw + cw
+      for (const strip of getStrips(eff)) {
+        const next = r + strip.width
+        const ring = chainStripBand(segPts, segPerps, sideSign, r, next)
+        const ringsDest = strip.fill === 'landuse' ? out.treelawnRings : out.sidewalkRings
+        const edgesDest = strip.fill === 'landuse' ? out.treelawnEdges : out.sidewalkEdges
+        if (ring) ringsDest.push(ring)
+        edgesDest.push(
+          segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * next, p[1] + segPerps[i][1] * sideSign * next])
         )
-      }
-      if (sw > 0) {
-        const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-        if (ring) out.sidewalkRings.push(ring)
-        out.sidewalkEdges.push(
-          segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl + sw), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl + sw)])
-        )
+        r = next
       }
     }
   }
