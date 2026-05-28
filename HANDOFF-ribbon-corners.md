@@ -1,18 +1,22 @@
-# HANDOFF — Ribbon Corners (the figure-ground corner-pad model)
+# HANDOFF — Ribbon Corners (figure-ground via authored-strip union, curb caps it)
 
-**Status:** draft for dispatch, 2026-05-28. Post-revert (`ea0bed6`) rewrite of the 2026-05-27 HANDOFF.
+**Status:** draft for dispatch, 2026-05-28. Second rewrite after the 2026-05-27 revert (`ea0bed6`); supersedes the 2026-05-28 morning rewrite (uniform-W scaffold with visible scaffold polygon + ctrl-click fill toggle).
 **Author:** Boz, 2026-05-28.
-**Supersedes:** `HANDOFF-ribbon-corners.md` (uniform-width arc, C0–C5 + 2 post-C5 attempts, reverted) AND the "per-vertex-perp on full blockRounded with `consumed[]`" path named in `RIBBONS.md §6.10`. The reframe replaces both. Authoring surface (handles, lines, schema slots) is **repurposed in place** — the geometry the operator authors today is exactly the geometry this brief needs; only the *meaning* of two field names shifts.
+**Supersedes:** the prior `HANDOFF-ribbon-corners.md` (uniform-width arc, C0–C5 + 2 post-C5 attempts, reverted), the "per-vertex-perp on full `blockRounded` with `consumed[]`" path named in `RIBBONS.md §6.10`, AND the morning rewrite's `scaffold = inset(cw) − inset(cw + W_block)` construction. **Operator authoring surface is UNCHANGED in this brief** — same handles, same gestures, same `m.measure[side]` schema.
 
 ---
 
-## §0 Pattern note — read before §1
+## §0 Pattern notes — read before §1
 
-Two errors converged in the 2026-05-27 night. The brief that ran said *"emitted per-leg"* without specifying **material per-leg, not shape per-leg** — the executor implemented shape-per-leg. That single ambiguity was the entire night. The brief also invented vocabulary ("cream") for what is just concrete and grass — abstractions hid the simple thing.
+Two errors converged in the 2026-05-27 night, plus one more in the 2026-05-28 morning rewrite. The brief that ran said *"emitted per-leg"* without specifying **material per-leg, not shape per-leg** — the executor implemented shape-per-leg. The brief also invented vocabulary ("cream") for what is just concrete and grass. And the morning rewrite invented a *visible* "scaffold" polygon and a new fill-toggle UX, when in fact the scaffold is implicit (no polygon needs to exist) and the operator already authors the right thing today.
 
-**First check when opening any emission rewrite: is the curve we need already computed elsewhere?** If yes, inset/intersect/difference from it. The curb already exists; `blockRounded` already has Bezier-rounded corners. Stop reinventing.
+**Three tripwires for this brief:**
 
-Two materials in the band between curb and property line: **concrete** (sidewalk) and **grass** (landuse showing through). That is the vocabulary. Per-side authoring picks which strip is which at what width — those handles already exist and stay exactly where they are.
+1. **First check when opening any emission rewrite: is the curve we need already computed elsewhere?** If yes, inset/intersect/difference from it. `blockRounded` already has Bezier-rounded corners. Stop reinventing.
+2. **If you find yourself adding a new operator-facing UX surface, stop.** The operator already authors strips per side. The system reads the deepest one and fills the rest. The operator never sees the system's bookkeeping.
+3. **If you find yourself emitting an intermediate "zone" or "scaffold" polygon as a render-tree object, stop.** The only polygons that emit are authored-or-synthetic strips, the corner-pad residual, and the curb stroke cap. `W_block` is a per-block *scalar*, not a polygon.
+
+Two materials in the band between curb and property line: **concrete** (sidewalk) and **grass / land-use** (landuse showing through where the parcel reaches). That is the vocabulary.
 
 ---
 
@@ -20,94 +24,97 @@ Two materials in the band between curb and property line: **concrete** (sidewalk
 
 The 13-month corner dragon was always the **variable** offset — per-side depths → asymmetric corners → wedges → per-vertex-perp ballooning. Keystone:
 
-> **The ribbon (curb → property line) is one uniform width all the way around a block.** Per-side variation lives only in the *material* (concrete vs grass), not in the width. **Land-use fill plugs the per-side scaffold remainder**, so the viewer never sees the scaffolding.
+> **The ribbon (curb → property line) is one uniform width all the way around a block.** Per-side variation lives only in the *material* (concrete vs grass), not in the width. Where the operator authored a *shallower* side, the **system synthesizes a landuse strip** to push that side's outer edge to the deepest authored line — invisible to the operator, who just sees grass.
 
-With width uniform, the corner is a **single inward offset of the curb silhouette** — concentric, degenerating honestly with the authored radius. A point at neutral, an arc when radius opens past `cw + W`, self-clipped when sharp (Clipper's native self-intersection handling). No variable offset, no wedge, no per-corner joiner, no apex fillet, no per-vertex perp on Bezier samples, no `consumed[]` extension to `applyRoundCornersToRing`.
+With the inner ring uniform by construction, the corner is the figure-ground residual of (curb-side canvas − strip union) at the arc zones. No variable offset, no wedge, no per-corner joiner, no apex fillet, no per-vertex perp on Bezier samples, no `consumed[]` extension to `applyRoundCornersToRing`.
 
----
-
-## §2 The polygon-only barrier (the stage-wall doctrine)
-
-`RIBBONS.md` §1 is canonical (its `FEATURES.md` cross-ref is stale): **chains end forever at bake; polygons are the surface.** Inside `buildBlockGeometryV2.js`:
-
-1. **Polygon construction is phase 1** — `blockSharp`, `blockRounded`, `frontageEdges`, corner records. Chains are consulted *only here*.
-2. **After phase 1, emission consumes only polygon-side data.** `fe.measure` is baked at fe-construction; **no emission function takes `streets` as a parameter**.
-
-**Sanctioned exceptions:** `cornersAtIx` + `applyRoundCornersToRing` (corner-radius authoring kit — out of scope, do not touch); authoring-overlay reads in `BlockGeometryV2Debug.jsx` (`chainSkelId`/`chainName` for handle lookup) — wall is about *emitted geometry*, not authoring cross-reference.
-
-C4.5's wall enforcement was reverted with the 2026-05-27 arc. **C1 below re-lands it as the first commit**, not as an afterthought.
+**The curb plays a dual role** that makes this robust:
+- **Source:** `blockRounded` is the rounded silhouette we inset from to get the inside-of-curb canvas the strips live in.
+- **Cap:** the curb stroke renders **last, on top of everything**, as one continuous Bézier-rounded line. Small seams between strips and the corner pad along the curb side are invisible because the cap covers them. The curb is the visible polish layer — its smoothness does not depend on the scaffolding logic underneath.
 
 ---
 
-## §3 The construction — three Clipper ops, no vertex walking
+## §2 The polygon-only wall (sharpened)
+
+`RIBBONS.md` §1 is canonical (its `FEATURES.md` cross-ref is stale): **chains end forever at bake; polygons are the surface.** Sharpened to two tripwires for this work:
+
+> **(a)** After phase-1 polygon construction, if you are **reading or computing on a point or chain** during emission, you are doing the wrong thing.
+>
+> **(b)** If you are **emitting an intermediate polygon that is not** an authored-or-synthetic strip, the corner-pad residual, or the curb-stroke cap, you are doing the wrong thing.
+
+Sanctioned exceptions to (a):
+- Phase 1 itself (`blockSharp`, `blockRounded`, `frontageEdges`, corner records) — points/chains are the input here, by definition.
+- The corner-radius authoring kit (`cornersAtIx`, `applyRoundCornersToRing`) — sealed, out of scope.
+- Authoring-overlay handle lookup in `BlockGeometryV2Debug.jsx` (`chainSkelId`/`chainName`) — cross-reference for picking, not emitted geometry.
+
+There are **no sanctioned exceptions to (b) inside this brief.** `W_block` exists only as a per-block scalar that drives synthetic-strip generation; the strips are polygons, the residual is a polygon, the curb cap is a polygon. Nothing else.
+
+C4.5's wall enforcement was reverted with the 2026-05-27 arc. **C1 below re-lands it as the first commit.**
+
+---
+
+## §3 The construction — one inset, strip union, residual
 
 Figure-ground is unchanged and load-bearing: **block = positive space**, `asphalt = stencil − blockRounded`, curb rounded via cubic Bézier on convex vertices. `blockRounded` is the curb silhouette (per-side curb position from `pavementHW`; rounded corners from the radius kit). **The curve we need already exists.** Everything below derives from it.
 
-**Per block:**
+**Per block — one scalar, one offset, one union, one residual:**
 
 ```
-W_side  = m.treelawn + m.sidewalk                      // per-side authored band depth
-W_block = max(W_side) over the block's four sides       // the uniform scaffold depth
+W_block    = max over the four sides of (m.measure[side].treelawn + m.measure[side].sidewalk)
+             // deepest authored outer edge, a scalar — NOT a polygon
 
-scaffold = differenceRings(
-             inset(blockRounded, cw),                   // band's outer (curb-side) edge
-             inset(blockRounded, cw + W_block)          // band's inner (property-line) edge
-           )                                            // one ring per block; outer edge is rounded by construction
+insideCurb = inset(blockRounded, cw)
+             // single inward offset; canvas the strips live in;
+             // outer edge is concentric with the curb at every IX by construction
 ```
 
-Two uniform inward Clipper offsets + one difference. **The outer edge of `scaffold` is concentric with the curb at every IX corner** because `blockRounded` was already rounded. No partition, no Bezier-sample emission.
+**Step 1 — per-fe strips: authored + synthetic.**
 
-**Step 1 — clip the per-side rectangles against `scaffold`.**
+For each fe, build the authored strip rectangles at today's positions:
 
-The existing per-side rectangle emission (currently `silhouetteStraightEmitter`) stays structurally as today: for each fe, build the treelawn rectangle at `[cw, cw + m.treelawn]` and the sidewalk rectangle at `[cw + m.treelawn, cw + m.treelawn + m.sidewalk]`, both running the length of the fe. The §6.10 square-overshoot is fixed in one line: **`intersectRings(rect, scaffold)` before emission**, so any portion that would project past the rounded curb is clipped off by the scaffold's rounded outer boundary.
+- treelawn rect at `[cw, cw + m.treelawn]`, fill = landuse (per-LU keying preserved)
+- sidewalk rect at `[cw + m.treelawn, cw + m.treelawn + m.sidewalk]`, fill = concrete
 
-Per-side authoring semantics preserved verbatim. Per-LU routing at `bake-ground.js:349` continues to probe per-fe `treelawnRings[0]` and key as `treelawn:<lu>` — unchanged.
+Then, if `m.treelawn + m.sidewalk < W_block`, **synthesize one additional landuse strip** at `[cw + m.treelawn + m.sidewalk, cw + W_block]`, fill = landuse. It routes through the same per-LU keying as an authored landuse strip — the per-parcel grass probe at `bake-ground.js:349` does not need to distinguish authored from synthetic.
 
-**Step 2 — the corner pad falls out as the scaffold's figure-ground residual, clipped to the arc region.**
+> **Honesty note:** when a fe has `treelawn = 0, sidewalk = W_side < W_block` (e.g. concrete sidewalk right against the curb), the synthetic landuse strip lands directly *outboard* of the concrete sidewalk — grass between sidewalk and property line. That's the right answer and matches shallow real-world blocks. The strip stack from curb outward becomes [concrete, grass]; perfectly legible. Do not second-guess and skip the synthesis.
+
+Each strip is then intersected with `insideCurb` before emission. **This is the one-line §6.10 fix:** `intersectRings(rect, insideCurb)` clips any portion that would project past the rounded curb.
+
+**Step 2 — the corner pad falls out as the figure-ground residual, clipped to the arc region.**
 
 ```
-straightStripUnion = unionRings([ all per-side strip rects (both strips, both fills),
-                                  each clipped to scaffold ])
-arcRegion          = the polygon covering only the corner zones, built from
-                     blockRounded's arc spans (Bezier-sample runs in arcMeta)
-                     extruded inward to depth (cw + W_block)
-cornerPadRings     = intersectRings(
-                       differenceRings(scaffold, straightStripUnion),
-                       arcRegion
-                     )
+stripUnion     = unionRings([ all per-fe strip rects, each ∩ insideCurb ])
+arcRegion      = the polygon covering only the corner zones, built from
+                 blockRounded's arc spans (Bezier-sample runs in arcMeta)
+                 extruded inward to depth (cw + W_block)
+cornerPadRings = intersectRings(
+                   differenceRings(insideCurb, stripUnion),
+                   arcRegion
+                 )
 ```
 
-Per the operator-settled AASHTO/ADA doctrine (RIBBONS §6.9): the corner is **all-concrete (sidewalk material), uniform depth = W_block**. By construction, `cornerPadRings` is exactly the corner-region part of the scaffold the per-side strips did not cover. Its outer edge follows `blockRounded`'s Bezier-rounded arcs concentrically; its inner edge sits at `cw + W_block`. **No per-corner construction. No `consumed[]`. No per-vertex-perp on arc samples.** Material = concrete. Routed per-parcel via `cornerOrphanAsphalt`-style per-ring centroid probe.
+Per the operator-settled AASHTO/ADA doctrine (RIBBONS §6.9): the corner is **all-concrete (sidewalk material), uniform depth = W_block**. By construction, `cornerPadRings` is exactly the corner-region part of the canvas the strips did not cover. Its outer edge follows `blockRounded`'s Bezier-rounded arcs concentrically; its inner edge sits at `cw + W_block` because the synthetic landuse strips on shallow sides have already pushed every side's outer edge there. **No per-corner construction. No `consumed[]`. No per-vertex-perp on arc samples.** Material = concrete. Routed per-parcel via `cornerOrphanAsphalt`-style per-ring centroid probe.
 
-**Why the arc-region clip matters:** on a shallow leg (W_side < W_block), the per-side strips cover only to `cw + W_side`; the strip from `cw + W_side` to `cw + W_block` sits in `scaffold − straightStripUnion`. Without the `∩ arcRegion` clip, that residual would run the full length of the straight side and render as a visible concrete band. Clipping to `arcRegion` drops the straight-run residual; only the corner zone emits as pad. The straight-run portion between `cw + W_side` and `cw + W_block` is then handled by existing parcel construction (`bake-ground.js:381` `parcelInteriors = block − curbBands − (treelawn ∪ sidewalk)` reaches to the per-side authored boundary, unchanged) — the parcel polygon covers it as land-use, satisfying "land-use plugs the remainder."
+**Why the arc-region clip matters:** straight-run portions of `insideCurb − stripUnion` are now empty by construction (synthetic strips filled them), but the `∩ arcRegion` clip stays as a safety belt against authored configurations the synthesis can't reach (e.g. degenerate fes). On the corners themselves, the residual is the pad. Straight-side land-use beyond the strip stack is handled, as today, by parcel construction at `bake-ground.js:381` (`parcelInteriors = block − curbBands − (treelawn ∪ sidewalk)` reaches to the property line, unchanged).
 
-**Why grass never enters the corner:** grass strips are independent rectangles, stopped at the literal-vertex extent of each fe's straight run. The arc-region polygon excludes them by construction. Lopsided corners (grass-meets-concrete-only) render as material asymmetry approaching a still-symmetric concrete corner.
+**Why grass never wraps a corner:** strip rectangles are stopped at the literal-vertex extent of each fe's straight run. The arc-region polygon excludes them by construction. Lopsided corners (grass-meets-concrete-only) render as material asymmetry approaching a still-symmetric concrete corner.
 
-**Building `arcRegion`.** The corner-radius kit already marks arc samples via `arcMeta` (Bezier-sample verts have non-null `arcMeta[k]`). For each contiguous Bezier-sample run, take the run's polyline + a small lateral fade on each end (one or two literal verts) → polygonize inward to `cw + W_block` against `blockRounded`. Union of these polygons = `arcRegion`. **One sanctioned use of `arcMeta` for region delineation**, not for per-vertex emission. C0 spike verifies the construction visually.
+**Building `arcRegion`.** The corner-radius kit already marks arc samples via `arcMeta` (Bezier-sample verts have non-null `arcMeta[k]`). For each contiguous Bezier-sample run, take the run's polyline + a small lateral fade on each end (one or two literal verts) → polygonize inward to `cw + W_block` against `blockRounded`. Union of these polygons = `arcRegion`. **One sanctioned use of `arcMeta` for region delineation**, not for per-vertex emission. Note this is a polygon that does emit — but only as an intermediate clip mask, not into the render tree. Treat it as a transient. C0 spike verifies the construction visually.
+
+**The curb stroke cap.** The existing curb-stroke band (`curbBands` @2349) renders on top of the strip stack and the corner pad. Because it's a single continuous stroke derived from `blockRounded`, it guarantees the visible outer edge is smooth and Bézier-rounded regardless of how the strips and pad meet underneath. **Do not move this layer.** Verify in C0/C4 that it still renders last in the stack.
 
 ---
 
-## §4 Authoring — repurposed in place
+## §4 Authoring — UNCHANGED in this brief
 
-The existing per-side authoring already draws the right lines in the right places. The reshape is a **relabel + one new gesture**, NOT a new UX surface.
+The operator already authors the right thing today. **Nothing in `MeasureOverlay.jsx` changes.** Same handles (`pavementHW`, `treelawnOuter`), same insert/collapse gesture (`@697`, `@734`), same `{pavementHW, treelawn, sidewalk, terminal}` schema, same drag wiring (`@491`/`@542`).
 
-**The lines stay.** Two handles per side: `pavementHW` (curb edge) and `treelawnOuter` (the **divider** between the two ped-band strips). The outer edge of the second strip is the property line, implied by `pavementHW + strip1 + strip2`. These three positions are exactly the geometry the operator needs to author the cross-section. The handles' wiring (`MeasureOverlay.jsx` @491/542) stays byte-for-byte.
+The system's new behavior is **entirely behind the operator** — `W_block` is computed at bake from existing schema, synthetic landuse strips are emitted into the same per-fe slot as authored strips and routed per-LU identically. The operator sees: drag a handle on the deepest side, and shallower sides' grass auto-extends to meet it. They never had to think about "the W zone."
 
-**The schema is relabeled.** `m.measure[side] = {pavementHW, treelawn, sidewalk, terminal}` is reinterpreted as:
-- `treelawn` width → **inner strip width** (curb-adjacent slot).
-- `sidewalk` width → **outer strip width** (property-adjacent slot).
-- ADD: `innerFill ∈ {'concrete','landuse'}` (default `'landuse'`, matching legacy treelawn=grass behavior).
-- ADD: `outerFill ∈ {'concrete','landuse'}` (default `'concrete'`, matching legacy sidewalk).
+**Future scope (NOT in this brief):** if you later want operator-authored material control (concrete medians, grass shoulders, more than two strips), that's an `innerFill`/`outerFill` schema reshape + UX gesture in a separate brief. Don't bundle it here.
 
-**Defaults reproduce today's behavior exactly.** Legacy `{treelawn, sidewalk}` reads back as `{innerStrip=grass, outerStrip=concrete}` — pre-reshape blocks render identically until an operator toggles a fill.
-
-**The new gesture: ctrl-click toggles a strip's fill.** Click cycles between concrete and landuse. Implementation: one event handler addition in the strip-render path; no new chrome, no new panels. If event capture turns out to fight the existing drag handlers in C-Reshape, the fallback is a fill toggle next to the divider handle — still no new surface, just a marker.
-
-**Per-LU routing follows the fill, not the slot.** `bake-ground.js:349` currently keys per-fe `treelawnRings` to `treelawn:<lu>`. The keying shifts to **per-strip per-fill**: strips with `fill='landuse'` → `treelawn:<lu>` (per-parcel grass routing preserved); strips with `fill='concrete'` → `sidewalk` (or `sidewalk:<lu>` if needed — verify in C0 against the Designer consumer). "Treelawn" as a special material dissolves: it's just a landuse-filled strip.
-
-**Consumer contract preserved at the field level.** Per-leg per-fe output stays `{ stripRings: [...], asphaltRings }` where each strip ring carries its fill tag, plus `cornerOrphanAsphalt` + `cornerPadRings`. If touching the field names risks ripple, keep `treelawnRings` / `sidewalkRings` as the field names and let *fill* (carried alongside) drive routing — the name becomes legacy but harmless. **Pick the field-shape call in C0 by reading both consumers (`bake-ground.js:347–364`, `BlockGeometryV2Debug.jsx:512–592`) and noting which costs less to rename.**
-
-**Untouched in this brief:** corner-radius authoring kit; curb stroke + curb width authoring; live drag (`buildChainBandsLive`); `blockCustoms[blockKey][edgeOrd]` keying; the block polygon itself.
+**Untouched in this brief:** corner-radius authoring kit; curb stroke + curb width authoring; live drag (`buildChainBandsLive`); `blockCustoms[blockKey][edgeOrd]` keying; the block polygon itself; `MeasureOverlay.jsx` in its entirety.
 
 ---
 
@@ -115,13 +122,15 @@ The existing per-side authoring already draws the right lines in the right place
 
 All file:line in `src/lib/buildBlockGeometryV2.js` unless noted.
 
-**KEEP untouched:** figure-ground + curb rounding (`bezierReplaceCorner` @614, `applyRoundCornersToRing` @677, `blockSharp` @2197/2260, `blockRounded` @2294, `asphaltRounded` @2300); curb stroke (`dilateRings` @1853, `curbBands` @2349); the 3-tier corner-radius authoring kit (`CornerEditHandles.jsx`); the block polygon itself; live drag (`buildChainBandsLive` @2537); land-use / block fill (the plug); `MeasureOverlay.jsx` handle wiring; `m.measure[side]` schema.
+**KEEP untouched:** figure-ground + curb rounding (`bezierReplaceCorner` @614, `applyRoundCornersToRing` @677, `blockSharp` @2197/2260, `blockRounded` @2294, `asphaltRounded` @2300); **curb stroke cap** (`dilateRings` @1853, `curbBands` @2349 — renders last, on top); the 3-tier corner-radius authoring kit (`CornerEditHandles.jsx`); the block polygon itself; live drag (`buildChainBandsLive` @2537); land-use / block fill (the plug); `MeasureOverlay.jsx` (entire file); `m.measure[side]` schema.
 
-**GENERALIZE (no behavior change):** `dilateRings` — add inward + `jtRound` support so it can do the inward scaffold offsets; default args preserve the curb call byte-identical.
+**GENERALIZE (no behavior change):** `dilateRings` — add inward + `jtRound` support so it can do the inward `insideCurb` offset; default args preserve the curb call byte-identical.
 
-**REFACTOR — same algorithm, signature wall:** `silhouetteStraightEmitter` @1461 — keep its run-partition + per-side rectangle emission. **Add `intersectRings(rect, scaffold)` before emission** (the §6.10 fix). Consume `fe.measure` (baked at fe-construction by C1), not `streets[fe.chainIdx].measure[fe.side]`. Drop `streets` from signature.
+**REFACTOR — same algorithm, signature wall:** `silhouetteStraightEmitter` @1461 — keep its run-partition + per-side rectangle emission. **Add `intersectRings(rect, insideCurb)` before emission** (the §6.10 fix). **Add synthetic landuse strip emission** when `treelawn + sidewalk < W_block`. Consume `fe.measure` and `fe.W_block` (baked at fe-construction by C1), not `streets[fe.chainIdx].measure[fe.side]`. Drop `streets` from signature.
 
-**ADD:** `buildPedScaffold(blockRounded, cw, W_block)` @new — two inward insets + one difference; returns one scaffold ring per block. `cornerPadFromResidual(scaffold, straightSidewalkUnion)` @new — one Clipper difference; per-LU probe per ring.
+**ADD:**
+- `buildInsideCurb(blockRounded, cw)` @new — one inward inset; returns one ring per block.
+- `cornerPadFromResidual(insideCurb, stripUnion, arcRegion)` @new — one Clipper difference + one intersect; per-LU probe per ring.
 
 **REPLACE:** `buildFrontageBandsV2` @1607 (the per-vertex-perp pad — source of every §6.8/§6.9 defect) → replaced by `cornerPadFromResidual`. Retire three-regime constants, cusp guard, `RAMP_MIN_M`.
 
@@ -133,34 +142,41 @@ All file:line in `src/lib/buildBlockGeometryV2.js` unless noted.
 
 > The construction is *new*. C0 is a throwaway spike — *decide from a picture*.
 
-**C0 — Spike (throwaway).** In a scratch read-only probe, build `scaffold` via two inward insets + difference on one real `blockRounded` ring at Mississippi × Park. Build the per-side sidewalk rectangles (current emission) intersected with `scaffold`. Subtract their union from `scaffold` → `cornerPadRings`. **Confirm by eye:** outer edge concentric at every IX corner; lopsided IX (grass+sidewalk meeting sidewalk-only) reads cleanly; sharp-radius IX self-clips to a point without exploding. Test radii from neutral up to `R > cw + W_block`. **Gate:** the picture passes. No production edit; delete after.
+**C0 — Spike (throwaway).** In a scratch read-only probe, on one real `blockRounded` ring at Mississippi × Park: compute `W_block` from `m.measure[side]`; build `insideCurb` via one inward inset; emit authored + synthetic landuse strips per fe (each ∩ `insideCurb`); take `(insideCurb − stripUnion) ∩ arcRegion` for `cornerPadRings`. **Confirm by eye:**
+- Outer edge concentric at every IX corner (curb cap covers any seam).
+- Lopsided IX (grass+sidewalk meeting sidewalk-only) reads cleanly.
+- Sharp-radius IX self-clips to a point without exploding (Clipper's native handling).
+- Shallow-leg IX renders synthetic landuse outboard of the authored strips, reaching `cw + W_block`, with NO visible band of concrete projecting past the authored sidewalk.
+- The `treelawn=0, sidewalk=W_side<W_block` configuration renders [concrete, grass] outward from the curb — confirm this is the desired look.
 
-**C1 — Re-land the stage wall (C4.5).** At fe-construction in `buildFrontageEdges` @1045, resolve ONCE and bake onto fe:
+Test radii from neutral up to `R > cw + W_block`. **Gate:** the picture passes. No production edit; delete after.
+
+**C1 — Re-land the stage wall + bake `W_block` and synthetic strips onto fe.** At fe-construction in `buildFrontageEdges` @1045, resolve ONCE and bake onto each fe:
 ```
 fe.measure = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
           ?? streets[fe.chainIdx].measure[fe.side]
+fe.W_block = max over the block's fes of (fe.measure.treelawn + fe.measure.sidewalk)
+fe.syntheticLanduseDepth = max(0, fe.W_block − (fe.measure.treelawn + fe.measure.sidewalk))
 ```
-Refactor `silhouetteStraightEmitter` to consume `fe.measure` and drop `streets` from signatures. **Verify:** byte-identical visible output to pre-C1; grep audit shows zero `streets` references inside ribbon/corner *emission* functions (radius kit is the sanctioned exception). Pure parameter-list refactor; revertible.
+Refactor `silhouetteStraightEmitter` to consume `fe.measure` + `fe.W_block` + `fe.syntheticLanduseDepth` and drop `streets` from signatures. **Verify:** byte-identical visible output to pre-C1 (synthetic strip emission gated behind the C4 flag; this commit just bakes the data). Grep audit shows zero `streets` references inside ribbon/corner *emission* functions (radius kit is the sanctioned exception). Pure parameter-list refactor; revertible.
 
 **C2 — Generalize the offset kernel.** Add inward + `jtRound` support to `dilateRings`; default args preserve the curb call exactly. **Verify:** curb byte-identical.
 
-**C3 — New scaffold + corner-pad emitters behind a flag.** `buildPedScaffold(blockRounded, cw, W_block)` returns the scaffold ring. `cornerPadFromResidual(scaffold, straightSidewalkUnion)` returns `cornerPadRings`. Gate behind `opts.useScaffoldCorner`. **Verify (flag off):** baseline. **Verify (flag on):** scaffold + cornerPadRings populated; per-LU probe routes correctly.
+**C3 — New `insideCurb` + corner-pad emitters behind a flag.** `buildInsideCurb(blockRounded, cw)` returns the inside-curb ring. `cornerPadFromResidual(insideCurb, stripUnion, arcRegion)` returns `cornerPadRings`. Gate behind `opts.useResidualCorner`. Synthetic landuse strip emission in `silhouetteStraightEmitter` also gated behind the same flag. **Verify (flag off):** baseline. **Verify (flag on):** `insideCurb` + `cornerPadRings` populated; synthetic strips route correctly per-LU; per-LU probe routes correctly for both authored and synthetic landuse rings.
 
-**C4 — Clip straight rectangles against scaffold; cutover.** Inside `silhouetteStraightEmitter`'s per-fe rectangle emission, intersect each rectangle against `scaffold`. Flip `useScaffoldCorner` default on. Route `cornerPadRings` to the chainless `frontageBands` entry. Retire `buildFrontageBandsV2`'s pad path. **Verify (operator-gated, on the corrected render):** all 4 corners of every IX go uniform and concentric (§6.8/§6.9 closed); grass never wraps a corner; land-use parcel polygons plug shallow-leg residual on straight runs cleanly. Test Mississippi × Park (the §6.9 reference IX), one grass-grass IX, one sidewalk-sidewalk IX, one lopsided IX, one sharp-radius IX, one long curved chain.
-
-**C4.5 — Authoring reshape via repurposing (§4).** Add `innerFill`/`outerFill` to `m.measure[side]` with legacy-matching defaults. Add ctrl-click toggle in the strip-render path of `MeasureOverlay.jsx`. Route per-strip emission in `silhouetteStraightEmitter` by fill (concrete strips → sidewalk-keyed, landuse strips → treelawn-keyed for per-LU probe). **Verify:** pre-reshape blocks render byte-identical (defaults preserve legacy); ctrl-click on a strip flips its material in Designer + Stage; per-LU grass routing still picks up the adjacent parcel for landuse-filled strips. **If repurposing the existing handles fights the wiring** (e.g., ctrl-click capture conflict), fall back to a small fill marker beside the divider handle — note the fallback in commit body, do not invent a panel.
+**C4 — Clip strip rectangles against `insideCurb`; cutover.** Inside `silhouetteStraightEmitter`'s per-fe rectangle emission, intersect each rectangle (authored + synthetic) against `insideCurb`. Flip `useResidualCorner` default on. Route `cornerPadRings` to the chainless `frontageBands` entry. Retire `buildFrontageBandsV2`'s pad path. **Verify curb cap still renders last in the stack.** **Verify (operator-gated, on the corrected render):** all 4 corners of every IX go uniform and concentric (§6.8/§6.9 closed); grass never wraps a corner; synthetic landuse plugs shallow-leg seamlessly. Test Mississippi × Park, one grass-grass IX, one sidewalk-sidewalk IX, one lopsided IX, one sharp-radius IX, one long curved chain, one shallow-leg IX.
 
 **C5 — Retire dead code + verify residual attribution.** Delete `buildFrontageBands`, the `PHASE2_*` constants, the cusp-guard block. **Test whether `attributeFilletResidualToArcs` is still needed** — the corner-pad-as-residual should naturally absorb asphalt-mouth noise; if visible asphalt orphan slivers remain at IX mouths, keep it; otherwise retire. **Verify:** asphalt mouths intact; build clean; no orphan refs.
 
-**C6 — Re-validate authoring against the corrected render.** With geometry right, confirm tools work: (a) block-polygon / width edit re-derives scaffold + corner; (b) per-side `treelawn`/`sidewalk` handle drag re-emits at new widths; (c) radius drags re-shape the corner; (d) curb width + Stage color edit. **Then update docs:** `RIBBONS.md` §6.8/§6.9 → RESOLVED, §6.10 → SUPERSEDED (point to this brief), §1 → uniform-width scaffold + figure-ground corner pad. `NOTES.md` sub-entry. **MEMORY.md** — update `project_ribbon_corner_uniform_width.md` (drop the "per-vertex-perp + `consumed[]`" spine; replace with the figure-ground-residual spine). Update the STATE block.
+**C6 — Re-validate authoring against the corrected render + docs.** With geometry right, confirm tools work unchanged: (a) block-polygon / width edit re-derives `W_block` + corner; (b) per-side `treelawn`/`sidewalk` handle drag re-emits at new widths AND adjusts synthetic landuse on shallower sides; (c) collapsing/re-inserting the treelawn divider behaves as today; (d) radius drags re-shape the corner; (e) curb width + Stage color edit. **Then update docs:** `RIBBONS.md` §6.8/§6.9 → RESOLVED, §6.10 → SUPERSEDED (point to this brief), §1 → "uniform width by authoring + system landuse synthesis; figure-ground corner pad; curb stroke caps." `NOTES.md` sub-entry. **MEMORY.md** — update `project_ribbon_corner_uniform_width.md` (drop the "per-vertex-perp + `consumed[]`" spine AND the morning rewrite's visible-scaffold spine; replace with the residual-of-insideCurb-minus-stripUnion spine + curb-as-cap + system-synthesized landuse). Update the STATE block.
 
 ---
 
 ## §7 Critical files
-- `src/lib/buildBlockGeometryV2.js` — the construction. `buildFrontageEdges` @1045 = C1 bake site; `silhouetteStraightEmitter` @1461 = C4 clip site; `buildFrontageBandsV2` @1607 = C4 replacement target.
-- `cartograph/bake-ground.js` — consumer; per-parcel treelawn probe @349 is load-bearing; parcel-interior subtraction @381 plugs shallow-leg residual unchanged.
+- `src/lib/buildBlockGeometryV2.js` — the construction. `buildFrontageEdges` @1045 = C1 bake site (`fe.measure`, `fe.W_block`, `fe.syntheticLanduseDepth`); `silhouetteStraightEmitter` @1461 = C4 clip + synthetic-strip site; `buildFrontageBandsV2` @1607 = C4 replacement target; `curbBands` @2349 = the cap layer (verify renders last).
+- `cartograph/bake-ground.js` — consumer; per-parcel treelawn probe @349 is load-bearing (synthetic landuse routes through it identically); parcel-interior subtraction @381 unchanged.
 - `src/cartograph/BlockGeometryV2Debug.jsx` — Designer consumer + verification surface.
-- `src/cartograph/MeasureOverlay.jsx` — handles + `blockCustoms` writes (unchanged this brief; verified in C6).
+- `src/cartograph/MeasureOverlay.jsx` — **unchanged this brief.**
 - `cartograph/RIBBONS.md` §1 + §6.8/§6.9/§6.10 — update on close.
 
 (z-fighting is unaffected by this work — `[[project_zfighting_known_cosmetic]]`.)
@@ -169,12 +185,14 @@ Refactor `silhouetteStraightEmitter` to consume `fe.measure` and drop `streets` 
 
 ## §8 What was tried and ruled out (don't re-explore)
 
-From the reverted 2026-05-27 arc and earlier stages:
+From the reverted 2026-05-27 arc, the 2026-05-28 morning rewrite, and earlier stages:
 
 - **Per-vertex coord-match for origin-fe tagging** (C4.5b first attempt): shared-corner ambiguity + stencil-clipped verts → 25.6% tagging coverage; 75% emission drop.
-- **Global-W pedBand + figure-ground residual at global W** (post-C5 `36d9ef2`): invented surface area the operator never authored; produced wide uniform cream bands ignoring per-leg authoring. *Note: this brief's residual is restricted to the scaffold, NOT global — that is the difference.*
+- **Global-W pedBand + figure-ground residual at global W** (post-C5 `36d9ef2`): invented surface area the operator never authored; produced wide uniform cream bands ignoring per-leg authoring. *Note: this brief's residual is restricted to the inside-of-curb canvas and the strips include per-fe synthetic landuse, NOT a global W band — that is the difference.*
 - **Per-vertex-perp arc-span emission at flanking-leg authored depth** (post-C5 `4509171`): structurally cleaner but inherits the per-leg square overshoot upstream.
-- **Per-vertex-perp on full blockRounded with `consumed[]` extension** (§6.10's proposed path): correct in principle but unnecessary — the scaffold already provides the rounded curve without per-vertex authoring lookup at Bezier samples.
+- **Per-vertex-perp on full `blockRounded` with `consumed[]` extension** (§6.10's proposed path): correct in principle but unnecessary — `insideCurb` already provides the rounded curve without per-vertex authoring lookup at Bezier samples.
+- **Visible `scaffold` polygon via two insets + difference** (2026-05-28 morning rewrite): invented a render-tree object the operator never asked for; reintroduced the "what is this new zone?" confusion. The scalar `W_block` + synthetic landuse strips do the job without any new polygon.
+- **`innerFill`/`outerFill` + ctrl-click toggle UX** (2026-05-28 morning rewrite): operator-facing surface area for a problem the system can solve invisibly. Future-scope, not this brief.
 - **Walking `blockRounded` vertex-by-vertex to emit band shape** (Stage 8): Bezier consume-span absorbed interior fe vertices, ~30% of LS fes emitted nothing.
 - **Stage 9 single-polygon symmetric corner pad** (`3cafe7f`): doctrine-correct shape but built per-arc not per-figure-ground; failed §6.9 input-prep variance.
 - **Cusp guard / `RAMP_MIN_M = 1.5`** (Stage 10 audit): fires 0/666 — dead code under LS authoring; retire in C5.
@@ -186,12 +204,12 @@ From the reverted 2026-05-27 arc and earlier stages:
 Not commit count. **Operator-eye confirmation on these IXs:**
 
 1. Mississippi × Park (the §6.9 reference 4-corner IX).
-2. One grass-grass IX (both flanking sides have authored landuse-inner).
-3. One sidewalk-sidewalk IX (both flanking sides are concrete-only).
-4. One lopsided IX (landuse-inner+concrete-outer meets concrete-only).
-5. One sharp-radius IX (scaffold self-clips to a point cleanly).
+2. One grass-grass IX (both flanking sides have authored treelawn).
+3. One sidewalk-sidewalk IX (both flanking sides are concrete-only / treelawn=0).
+4. One lopsided IX (treelawn+sidewalk meets sidewalk-only).
+5. One sharp-radius IX (`insideCurb` self-clips to a point cleanly).
 6. One long curved chain (no straight-run regression).
-7. One shallow-leg IX (W_side < W_block on at least one flanking side; verify no straight-run concrete band leaks between `cw + W_side` and `cw + W_block`).
-8. After C4.5: ctrl-click toggles a strip's fill in Designer + Stage; per-LU grass routing follows the fill.
+7. One shallow-leg IX (`W_side < W_block` on at least one flanking side; verify synthetic landuse pads it out to `W_block` cleanly, no visible concrete band leaking).
+8. One `treelawn=0, sidewalk<W_block` fe (verify [concrete-then-grass] outward from curb is acceptable).
 
-Concentric outer edge at every corner. No square overshoot. Per-side authored widths visible on straight runs. Land-use plugs shallow-leg residual without seams. Pre-reshape blocks (legacy data) render byte-identical until ctrl-click.
+Concentric outer edge at every corner (curb-cap-guaranteed). No square overshoot. Per-side authored widths visible on straight runs. Synthetic landuse plugs shallow-leg residual without seams. Operator UX byte-identical to today. Pre-reshape blocks (existing data) render with the new uniform corners on first bake — no migration step.
