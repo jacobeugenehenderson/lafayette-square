@@ -17,22 +17,6 @@
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH, innerEdgeMeasure, getStrips } from '../cartograph/streetProfiles.js'
 
-// C3.2 bridge: legacy two-strip {treelawn, sidewalk} pair derived from
-// the strips model so emitters that still talk in tl+sw stay byte-id on
-// legacy data while strips becomes the source of truth. First landuse
-// strip → tl (curb-side grass), first concrete strip → sw (terminal
-// sidewalk). The doomed buildFrontageBandsV2 corner-pad (retiring in
-// C5) is the only intentional caller of this bridge; live emitters
-// (silhouetteStraightEmitter, buildChainBandsLive, quarter caps, the
-// uniformW reducer) iterate getStrips() directly.
-function legacyTlSw(side) {
-  const strips = getStrips(side)
-  return {
-    tl: strips.find(s => s.fill === 'landuse')?.width || 0,
-    sw: strips.find(s => s.fill === 'concrete')?.width || 0,
-  }
-}
-
 const SCALE = 1000
 const ARC_N = 16          // half-cap arcs in chainPavementRing only
 const BEZIER_N = 16       // cubic-Bezier corner sampling count
@@ -576,17 +560,14 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
   return corners
 }
 
-// Phase 2 — buildCornerPadQuad retired. The constructed concrete corner
-// pad (the tA-tB-anchored parallelogram clipped against blockRounded) is
-// replaced structurally by the three-regime arc emitter in
-// buildFrontageBandsV2 below. The arc emitter walks each block's rounded
-// silhouette and emits sidewalk-material wedges (ramp / asym-plug) at
-// every block corner directly from the band machinery; nothing is
-// "constructed and then clipped" anymore. cornerAsphaltPlugs is likewise
-// retired: blockRounded is now the rounded primitive, asphaltRounded
-// derives as `stencil − blockRounded`, and the rounded asphalt mouth
-// emerges from that subtraction without a residual fillet. See NOTES.md
-// "Phase 2 shipped" for full doctrine.
+// HANDOFF-ribbon-corners.md C5 — buildCornerPadQuad, the constructed
+// concrete corner pad, and the three-regime arc emitter (Phase 2's
+// buildFrontageBandsV2) are all retired. The corner is the figure-ground
+// residual of `pedBand` (one inward Clipper offset of blockRounded;
+// concentric, degenerates honestly). asphaltRounded continues to derive
+// as `stencil − blockRounded`; the rounded asphalt mouth emerges from
+// that subtraction. Corner asphalt residual goes straight to
+// `cornerOrphanAsphalt` and renders as asphalt in both consumers.
 
 // Evaluate cubic Bezier at parameter t ∈ [0,1].
 function cubicBezierEval(p0, p1, p2, p3, t) {
@@ -1329,45 +1310,6 @@ function findAdjacentChainForBlockEdge(edgePoints, ringCcw, streets, chainIndex)
   return { chainIdx: bestChainIdx, side }
 }
 
-// Phase 2 — Path-B regime emitter. Walks each blockRounded ring end-
-// to-end (with arcMeta sidecar from applyRoundCornersToRing) and emits
-// treelawn / sidewalk bands per span:
-//
-//   STRAIGHT spans (arcMeta=null run) → concentric tl + sw rings.
-//   ARC spans (consecutive vertices with same corner identity) →
-//     regime-classified per-arc emission:
-//       SYMMETRIC-NO-RAMP  (both legs sidewalk-only):
-//         single sw band [0, cw+sw_avg] across the arc.
-//       SYMMETRIC-WITH-RAMP (both legs tl+sw, depths ≈ match):
-//         outside ramp window — concentric tl + sw bands.
-//         inside ramp window — single sidewalk-material wedge spanning
-//           [0, cw+tl_avg+sw_avg] (pedestrians cross the would-be
-//           treelawn at the ADA ramp midpoint).
-//       ASYMMETRIC (legs differ in depth by >1m or ratio <0.7):
-//         single sidewalk-material plug across whole arc with sharp
-//         angular step at arc midpoint (frac=0.5).
-//
-// Bands extend to the asphalt boundary (no cw inset on the outer edge).
-// The normalized curb stroke (computed AFTER this returns, as
-// `dilateRings(asphaltRounded, cw) − asphaltRounded`) paints over the
-// inner cw of every band — visible treelawn/sidewalk widths equal the
-// operator's authored tl/sw because the band geometry abuts the asphalt
-// and the curb covers the would-be-tl portion that overlaps the curb.
-//
-// Phase 2 constants:
-//   ASYM_EPS_M   = 1.0   — abs leg-depth difference threshold
-//   ASYM_RATIO   = 0.7   — min(d)/max(d) threshold
-//   RAMP_MAX_M   = 2.0   — arc-length cap for ramp wedge
-//   RAMP_FRAC    = 0.4   — fraction of arc consumable by ramp
-//   RAMP_MIN_M   = 0.5   — skip ramp emission below this floor
-//   STEP_FRAC    = 0.5   — arc-position of asymmetric step
-const PHASE2_ASYM_EPS_M = 1.0
-const PHASE2_ASYM_RATIO = 0.7
-const PHASE2_RAMP_MAX_M = 2.0
-const PHASE2_RAMP_FRAC  = 0.4
-const PHASE2_RAMP_MIN_M = 0.5
-const PHASE2_STEP_FRAC  = 0.5
-
 function closeBandRingV2(outerEdge, innerEdge) {
   if (!outerEdge || outerEdge.length < 2 || !innerEdge || innerEdge.length < 2) return null
   const ring = [...outerEdge, ...innerEdge.slice().reverse()]
@@ -1375,104 +1317,18 @@ function closeBandRingV2(outerEdge, innerEdge) {
   return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
 }
 
-// SUB-A: retired by silhouetteStraightEmitter; remove in sub-C.
-// Pre-Phase-2 per-sharp-fe straight-span band emission. Kept in place
-// as dead code through sub-A so the sub-A diff stays bounded; sub-C
-// deletes the function definition along with the H1 clip (which is
-// structurally unnecessary for silhouette-walked bands since their
-// outer edges already follow blockRounded).
-// C4.5: SUB-A retired path, refactored to consume fe.measure for wall
-// hygiene until C5 deletes the function.
-function buildFrontageBands(frontageEdges, curbWidth, blockRounded) {
-  if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
-  const cw = curbWidth
-  const out = []
-
-  for (const fe of frontageEdges) {
-    const eff = fe.measure || {}
-    if (eff.terminal !== 'sidewalk') continue
-    const tl = eff.treelawn || 0
-    const sw = eff.sidewalk || 0
-    if (tl <= 0 && sw <= 0) continue
-
-    const points = fe.points
-    if (!points || points.length < 2) continue
-    const perps = computePerps(points)
-    const inwardSign = fe.ringCcw ? +1 : -1
-
-    const offsetPolyline = (r) =>
-      points.map((p, i) => [
-        p[0] + perps[i][0] * inwardSign * r,
-        p[1] + perps[i][1] * inwardSign * r,
-      ])
-
-    const innerEdge = offsetPolyline(cw)
-    const tlOuterEdge = offsetPolyline(cw + tl)
-    const swOuterEdge = offsetPolyline(cw + tl + sw)
-
-    const closeRing = (outerEdge, innerEdge_) => {
-      if (outerEdge.length < 2 || innerEdge_.length < 2) return null
-      const ring = [...outerEdge, ...innerEdge_.slice().reverse()]
-      return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
-    }
-
-    const treelawnRings = []
-    const sidewalkRings = []
-    if (tl > 0) {
-      const r = closeRing(tlOuterEdge, innerEdge)
-      if (r) treelawnRings.push(r)
-    }
-    if (sw > 0) {
-      const r = closeRing(swOuterEdge, tlOuterEdge)
-      if (r) sidewalkRings.push(r)
-    }
-    if (!treelawnRings.length && !sidewalkRings.length) continue
-
-    out.push({
-      blockKey: fe.blockKey,
-      edgeOrd: fe.edgeOrd,
-      chainIdx: fe.chainIdx,
-      side: fe.side,
-      points,
-      treelawnRings,
-      sidewalkRings,
-    })
-  }
-
-  if (blockRounded?.length) {
-    // D.7a — pass-1 fe.blockKey ≠ pass-2 blockKeyFromRing(ring) for ~58% of
-    // fes (bbox shift from wider asphalt). Resolve per-fe by interior probe
-    // against blockRounded directly; registry keying would lose pass-1
-    // collisions onto the same pass-2 ring. See RIBBONS.md §6.2.
-    for (const fe of out) {
-      const probe = fe.treelawnRings[0]?.[0] || fe.sidewalkRings[0]?.[0]
-      if (!probe) continue
-      let owningRing = null
-      for (const ring of blockRounded) {
-        if (pointInRing(probe[0], probe[1], ring)) { owningRing = ring; break }
-      }
-      if (!owningRing) continue
-      const clip = [owningRing]
-      if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, clip)
-      if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, clip)
-    }
-  }
-  return { frontageBands: out, frontageCaps: [] }
-}
-
-// Stage 12 sub-A — silhouette-walking STRAIGHT-span band emitter.
-// Replaces buildFrontageBands's per-sharp-fe leg emission with a walk
-// over blockRounded's straight-span runs. Arc-span emission remains on
-// buildFrontageBandsV2's per-corner-pad code path (sub-B retires that).
-// Per-vertex perp offset is geometrically exact for straight vertices,
-// so no Clipper-precision selfints (the failure mode that sent Phase 2's
+// Silhouette-walking STRAIGHT-span per-leg band emitter (HANDOFF
+// ribbon-corners.md §3). Walks blockRounded's straight-vertex runs +
+// emits per-strip per-vertex-perp rings — landuse → treelawnRings,
+// concrete → sidewalkRings — per fe / per parcel. Per-vertex perp
+// offset is geometrically exact for straight vertices, so no Clipper-
+// precision selfints (the failure mode that sent Phase 2's pre-cutover
 // blockRounded-walking spine back to per-fe emission).
 //
-// Per Stage 11a.1 doctrine: probe + customs + chain.measure resolves the
-// run's authored measure; if !isSidewalk || (tl<=0 && sw<=0) (authoredZero)
-// or probe-null (partition artifact), emit nothing for the run. Arc-span
-// flanking inheritance is sub-B's territory; sub-A only emits where the
-// straight-run itself probes to authored sidewalk.
+// authoredZero (terminal != sidewalk OR strips empty) and partition-
+// artifact runs (adj-null probe failures, pts.length<2) emit nothing.
+// Arc-span emission is no longer a separate path — the corner is the
+// figure-ground residual of pedBand (buildPedBand below).
 // C4.5: signature is polygon-side only — `frontageEdges` carries baked
 // `fe.measure`, and `chainDefaultMeasure` is a baked Map<"chainIdx|side"
 // → measure> that covers the no-matching-fe fallback (probe disagreement
@@ -1610,278 +1466,6 @@ function silhouetteStraightEmitter(blockRoundedWithMeta, frontageEdges, chainInd
     }
   }
   return { frontageBands: out }
-}
-
-// Stage 11a: ring-walk for arc-span flanking-meta resolution.
-// Walks PAST partition-artifact straights (skip:true — degenerate <2-
-// vertex spans + adj=null probe failures) and PAST arc spans, but STOPS
-// at authored-zero straights (authoredZero:true — terminal!=sidewalk or
-// tl<=0 && sw<=0). That distinction is Stage 11a.1: a flank where the
-// operator authored "no ped zone here" is real authored intent and must
-// contribute its zero depths to the corner, not be walked past in favor
-// of some distant chain's authoring. Doctrinal: walk past structural
-// gaps in the ring partition, stop at operator-intent zero.
-function walkToFirstAuthoredMeta(spanMeta, fromIdx, dir) {
-  const N = spanMeta.length
-  for (let step = 1; step < N; step++) {
-    const idx = ((fromIdx + dir * step) % N + N) % N
-    const m = spanMeta[idx]
-    if (m?.type !== 'straight') continue   // walk past arcs
-    if (m.skip) continue                   // walk past partition artifacts
-    return m                               // stop at authored (including authoredZero)
-  }
-  return null
-}
-
-// C4.5: signature is polygon-side only (see silhouetteStraightEmitter
-// header). Doomed in C5; refactored now so the wall holds until then.
-function buildFrontageBandsV2(blockRoundedWithMeta, frontageEdges, chainIndex, chainDefaultMeasure, curbWidth) {
-  if (!blockRoundedWithMeta?.length) return { frontageBands: [], frontageCaps: [] }
-  const cw = curbWidth
-  const out = []
-
-  // Sharp-fe lookup by (blockKey, chainIdx, side) so straight-spans
-  // inherit edgeOrd from the pre-rounding fe (blockCustoms keys are
-  // bbox-stable to corner rounding per blockKeyFromRing's 0.5m round).
-  const sharpFeByKey = new Map()
-  if (frontageEdges?.length) {
-    for (const fe of frontageEdges) {
-      if (fe.chainIdx == null) continue
-      // C4.5: key by rounded-ring blockKey (baked at fe-construction's
-      // close) so emitter lookups against blockRounded rings hit reliably.
-      sharpFeByKey.set(`${fe.roundedBlockKey ?? fe.blockKey}|${fe.chainIdx}|${fe.side}`, fe)
-    }
-  }
-
-  for (const { ring, arcMeta } of blockRoundedWithMeta) {
-    if (!ring || ring.length < 3 || !arcMeta) continue
-    const N = ring.length
-    const blockKey = blockKeyFromRing(ring)
-    const ringCcw = ringSignedArea2D(ring) >= 0
-    const inwardSign = ringCcw ? +1 : -1
-
-    // Partition into spans by arcMeta corner identity. null entry =
-    // straight vertex; non-null { corner } = arc vertex owned by that
-    // corner. Consecutive vertices with the same identity form one span.
-    const spans = []
-    let curSpan = { type: arcMeta[0]?.corner ? 'arc' : 'straight', idxs: [0], corner: arcMeta[0]?.corner || null }
-    for (let i = 1; i < N; i++) {
-      const c = arcMeta[i]?.corner || null
-      if (c === curSpan.corner) curSpan.idxs.push(i)
-      else { spans.push(curSpan); curSpan = { type: c ? 'arc' : 'straight', idxs: [i], corner: c } }
-    }
-    spans.push(curSpan)
-    // Wraparound merge: first + last span sharing identity = one span
-    // split by iteration boundary.
-    if (spans.length > 1 && spans[0].corner === spans[spans.length - 1].corner) {
-      const last = spans.pop()
-      spans[0].idxs = [...last.idxs, ...spans[0].idxs]
-    }
-    if (!spans.length) continue
-
-    // Per-span resolution. Straight spans probe chain adjacency + grab
-    // measure; arc spans defer until we read flanking-straight metas.
-    const spanMeta = spans.map(span => {
-      if (span.type === 'arc') return { type: 'arc', corner: span.corner }
-      const pts = span.idxs.map(i => ring[i])
-      if (pts.length < 2) return { type: 'straight', skip: true }
-      const adj = findAdjacentChainForBlockEdge(pts, ringCcw, undefined, chainIndex)
-      if (!adj) return { type: 'straight', skip: true }
-      const sharpFe = sharpFeByKey.get(`${blockKey}|${adj.chainIdx}|${adj.side}`)
-      // C4.5: per-side authoring from the fe; chainDefaultMeasure fallback
-      // for probe-disagreement runs (transitional, retired by C4.5b).
-      const eff = sharpFe?.measure
-        || chainDefaultMeasure.get(`${adj.chainIdx}|${adj.side}`)
-        || {}
-      const isSidewalk = eff.terminal === 'sidewalk'
-      // C3.2 legacy bridge — this corner-pad meta path is the variable-
-      // offset wedge code that retires in C5; bridging keeps the pad math
-      // byte-identical for the flag-off baseline until cutover.
-      const { tl: tlBridge, sw: swBridge } = legacyTlSw(eff)
-      const tl = isSidewalk ? tlBridge : 0
-      const sw = isSidewalk ? swBridge : 0
-      // Stage 11a.1: split skip into two flags. `skip` is reserved for
-      // partition artifacts (pts.length<2, adj=null). Operator-zero
-      // (terminal!=sidewalk or tl=sw=0) becomes `authoredZero` — still
-      // resolved (carries chainIdx/side/edgeOrd) but contributes zero
-      // depth to the corner pad rather than being walked past.
-      return {
-        type: 'straight',
-        skip: false,
-        authoredZero: !isSidewalk || (tl <= 0 && sw <= 0),
-        chainIdx: adj.chainIdx,
-        side: adj.side,
-        edgeOrd: sharpFe?.edgeOrd,
-        tl, sw,
-      }
-    })
-
-    for (let si = 0; si < spans.length; si++) {
-      const span = spans[si]
-      const meta = spanMeta[si]
-      const pts = span.idxs.map(i => ring[i])
-      if (pts.length < 2) continue
-      const perps = computePerps(pts)
-      const Nv = pts.length
-      const fracOf = (k) => Nv <= 1 ? 0 : k / (Nv - 1)
-      const offsetAt = (k, d) => [
-        pts[k][0] + perps[k][0] * inwardSign * d,
-        pts[k][1] + perps[k][1] * inwardSign * d,
-      ]
-
-      // Phase 2-arc revert: straight-span emission moved back to the
-      // per-sharp-fe helper `buildFrontageBands` (called alongside this
-      // function in the pipeline). The spanMeta straight-branch
-      // resolution above is retained — arc-span flanking-meta lookup
-      // (Bmeta / Ameta) reads tl/sw/edgeOrd off it.
-      if (meta.type === 'straight') continue
-
-      // ARC span — flanking straight-span metas. Walk order on block
-      // CCW arrives via leg-B side and departs via leg-A side (Phase 1
-      // emission reverses the natural [tA,...,tB] to [tB,...,tA] for
-      // block walks), so prevMeta corresponds to leg B, nextMeta to A.
-      // Stage 11a: walk past adjacent arc spans + skipped straights
-      // (adj=null / terminal=none / degenerate <2-vertex) until the
-      // first authored straight is reached. Stage 10.5 found 95% of
-      // adj=null events at the immediately-adjacent index were
-      // structural (back-to-back arcs or 1-vertex straights); the
-      // ring-walk unifies those with the alley/void/terminal=none cases.
-      const Bmeta = walkToFirstAuthoredMeta(spanMeta, si, -1)
-      const Ameta = walkToFirstAuthoredMeta(spanMeta, si, +1)
-      // Stage 11a.1: bilateral authored-zero short-circuit. If both
-      // flanks are unauthored (null) OR explicitly authored-zero, this
-      // corner has no ped zone to express — skip emission. Visible-defect
-      // case ("floating tab" at corners that previously inherited depth
-      // from a distant authored chain) closes here. Unilateral
-      // authoredZero still produces a symmetric pad via the meta-fallback
-      // chain below — visibly defective on one side, deferred to Stage 11b.
-      const Bzero = !Bmeta || Bmeta.authoredZero
-      const Azero = !Ameta || Ameta.authoredZero
-      if (Bzero && Azero) continue
-
-      let tl_B = Bmeta?.tl ?? Ameta?.tl ?? 0
-      let sw_B = Bmeta?.sw ?? Ameta?.sw ?? 0
-      let tl_A = Ameta?.tl ?? Bmeta?.tl ?? 0
-      let sw_A = Ameta?.sw ?? Bmeta?.sw ?? 0
-
-      // Cusp guard. When the requested inward offset exceeds the arc's
-      // local turning radius, the offset arc folds onto itself (cusp)
-      // and the resulting band ring self-intersects → renders as opaque
-      // triangulation artifacts at the corner. Manifested at Lafayette
-      // Park where authored radius (~6.4 m) is barely larger than
-      // park-side total ped-zone depth (cw+tl+sw ~6.6 m). Clamp by
-      // scaling tl/sw proportionally so the deepest ring stays inside
-      // (R − epsilon); cw (curb) is preserved as a hard minimum.
-      const arcR = arcMeta[span.idxs[0]]?.R ?? Infinity
-      const safeMax = Math.max(cw + 0.05, arcR * 0.9)
-      const totalMax = Math.max(cw + tl_A + sw_A, cw + tl_B + sw_B)
-      if (totalMax > safeMax) {
-        const k = (safeMax - cw) / Math.max(1e-9, totalMax - cw)
-        tl_A *= k; sw_A *= k; tl_B *= k; sw_B *= k
-      }
-
-      // Stage 9 — single-polygon symmetric corner emission. One polygon
-      // spans the full ped-zone depth from rounded asphalt edge to
-      // property line. Sidewalk-material across the entire corner zone
-      // (ADA poured-slab doctrine — corners are uniform-depth pads, not
-      // tapered). Replaces the three-regime branching (ASYM step /
-      // SYM-WITH-RAMP wedge / SYM-NO-RAMP single band) that produced
-      // 0/355 doctrine-correct concentric on LS (RIBBONS §6.8).
-      //
-      // Depth = max(legA total, legB total, RAMP_MIN_M). Symmetric flanks
-      // produce a corner pad whose inner edge matches the straight-band
-      // inner edge exactly at tA / tB → no step at the tangent point.
-      // Asymmetric flanks step at tA/tB; narrower side widens INTO the
-      // pad (real-world correct).
-      //
-      // RAMP_MIN_M floors corner depth at ADA-standard minimum width.
-      const RAMP_MIN_M = 1.5
-      const dCorner = Math.max(
-        cw + tl_A + sw_A,
-        cw + tl_B + sw_B,
-        RAMP_MIN_M,
-      )
-      const treelawnRings = []  // arc-span treelawn always empty (Stage 9)
-      const sidewalkRings = []
-      const outerEdge = pts
-      const innerEdge = pts.map((_, k) => offsetAt(k, dCorner))
-      const sidewalkRing = closeBandRingV2(outerEdge, innerEdge)
-      if (sidewalkRing && sidewalkRing.length >= 3 && Math.abs(ringSignedArea2D(sidewalkRing)) > 1e-3) {
-        sidewalkRings.push(sidewalkRing)
-      }
-
-      // Always emit an entry for arc spans (even with no inward bands)
-      // so Phase 2.1's per-arc asphalt-fillet attribution has a slot
-      // to populate. asphaltRings starts empty; populated post-build
-      // by attributeFilletResidualToArcs.
-      out.push({
-        blockKey,
-        edgeOrd: Ameta?.edgeOrd ?? Bmeta?.edgeOrd,
-        chainIdx: Ameta?.chainIdx ?? Bmeta?.chainIdx,
-        side: Ameta?.side ?? Bmeta?.side,
-        corner: span.corner,   // Phase 2.1: per-corner identity for attribution.
-        treelawnRings,
-        sidewalkRings,
-        asphaltRings: [],      // Phase 2.1: outer-face emission (filled below).
-      })
-    }
-  }
-  return { frontageBands: out, frontageCaps: [] }
-}
-
-// Phase 2.1 — per-corner outer-face emission. The regime emitter's
-// arc-span branch handles INWARD geometry (bands + ramp + plug); this
-// pass handles OUTWARD geometry — the fillet area between the rounded
-// asphalt silhouette and the per-chain rectangles' square ends at each
-// IX. Path (b) of Phase 2.1 brief: compute the residual globally
-// (`asphaltRounded − union(per-chain asphalt)`), then attribute each
-// output polygon to its nearest corner record by centroid match.
-// Attributed rings are pushed onto the matching frontageBand entry's
-// `asphaltRings` field; orphans (no corner within FILLET_ATTRIB_MAX_M
-// or no matching frontageBand entry for the corner) accumulate in
-// `cornerOrphanAsphalt` and render as asphalt anyway.
-const FILLET_ATTRIB_MAX_M = 8
-
-function ringCentroidApprox(ring) {
-  let cx = 0, cy = 0
-  for (const p of ring) { cx += p[0]; cy += p[1] }
-  const n = ring.length
-  return n > 0 ? [cx / n, cy / n] : [0, 0]
-}
-
-function attributeFilletResidualToArcs(asphaltRounded, perChainAsphalt, frontageBands, allCorners) {
-  if (!asphaltRounded?.length) return { attributed: 0, orphans: [] }
-  const filletRings = differenceRings(asphaltRounded, perChainAsphalt)
-  if (!filletRings.length) return { attributed: 0, orphans: [] }
-  // Index frontageBand entries by corner-identity for O(1) attribution.
-  const fbByCorner = new Map()
-  for (const fb of frontageBands) {
-    if (fb.corner) fbByCorner.set(fb.corner, fb)
-  }
-  const orphans = []
-  let attributed = 0
-  for (const ring of filletRings) {
-    if (!ring || ring.length < 3) continue
-    const c = ringCentroidApprox(ring)
-    // Find nearest corner by centroid distance.
-    let bestCorner = null
-    let bestD = Infinity
-    for (const corner of allCorners) {
-      const dx = c[0] - corner.point[0], dy = c[1] - corner.point[1]
-      const d = Math.hypot(dx, dy)
-      if (d < bestD) { bestD = d; bestCorner = corner }
-    }
-    if (bestCorner && bestD <= FILLET_ATTRIB_MAX_M) {
-      const fb = fbByCorner.get(bestCorner)
-      if (fb) {
-        fb.asphaltRings.push(ring)
-        attributed++
-        continue
-      }
-    }
-    orphans.push(ring)
-  }
-  return { attributed, orphans }
 }
 
 // ── Uniform-width ped band (HANDOFF-ribbon-corners.md, C2). ──────────
@@ -2058,28 +1642,6 @@ function quarterCap(center, T_out, sideSign, innerR, outerR) {
   return [...outer, ...inner.slice().reverse()]
 }
 
-// (Legacy 180° half-annulus retained as dead reference; superseded by
-// quarterCap above.)
-function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
-  if (dOuter <= dInner || dInner <= 0) return null
-  const ARC = 16
-  // perp_right of T_out is the "starting" angle of the cap arc; sweep CCW
-  // 180° through T_out (forward) to perp_left of T_out.
-  // perp_right(T) = (Ty, -Tx) → angle = atan2(-Tx, Ty)
-  const startA = Math.atan2(-T_out[0], T_out[1])
-  const endA   = startA + Math.PI
-  const inner = []
-  const outer = []
-  for (let k = 0; k <= ARC; k++) {
-    const a = startA + (endA - startA) * (k / ARC)
-    inner.push([center[0] + dInner * Math.cos(a), center[1] + dInner * Math.sin(a)])
-    outer.push([center[0] + dOuter * Math.cos(a), center[1] + dOuter * Math.sin(a)])
-  }
-  // Closed: outer forward + inner reverse. Connects flush to the straight
-  // chain bands at both endpoints (perp_right and perp_left of T_out).
-  return [...outer, ...inner.slice().reverse()]
-}
-
 // Set to true to log per-step timings each V2 build. Useful when chasing
 // performance regressions; silent by default to avoid console spam.
 const V2_PROFILE = false
@@ -2097,7 +1659,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
     curbWidth = CURB_WIDTH, blockCustoms = null,
-    blockLandUse = null, useUniformBand = true } = opts
+    blockLandUse = null } = opts
   // Apply inner-edge anchor transform to all chains up front: every
   // downstream consumer (street.measure, segmentMeasures via
   // measureForSegment) sees the post-transform measure where inboard
@@ -2222,10 +1784,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         entry.asphaltRings.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
       }
 
-      // Per-side ped-zone bands are emitted by buildFrontageBands from
-      // the polygon-walked block-edge polylines (D.3c, D.7d). The
-      // per-chain emission used to do this in parallel; that path has
-      // been retired — frontageBands is now the sole source.
+      // Per-side ped-zone bands come from silhouetteStraightEmitter
+      // (polygon-walked, per-fe). The per-chain emission used to do this
+      // in parallel; that path is retired — frontageBands is the sole
+      // source for ped-band geometry.
     }
     // V1-style per-side per-band quarter caps at round-cap endpoints.
     // Each side emits up to 3 quarter rings (asphalt pie + treelawn
@@ -2472,63 +2034,38 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   }
   __mark('asphaltRoundedDiff')
 
-  // Stage 12 sub-A — band emission is split across two helpers, both
-  // now sourcing geometry from blockRounded:
-  //  • silhouetteStraightEmitter walks each block's rounded ring,
-  //    partitions into straight-vertex runs, and emits tl + sw rings
-  //    by per-vertex perp offset. Replaces the per-sharp-fe legs from
-  //    pre-sub-A's buildFrontageBands. Per-vertex perp offset for
-  //    straight vertices is geometrically exact — no Clipper-precision
-  //    selfints (Phase 2's original blockRounded-spine failure mode).
-  //  • buildFrontageBandsV2 (Stage 9) walks blockRounded + arcMeta and
-  //    emits per-corner pads at arc spans, with the cusp guard +
-  //    RAMP_MIN_M dCorner. Sub-B replaces this with concentric arc-
-  //    span band emission.
-  // Concat into one frontageBands array; downstream iterates by field.
-  let frontageBands, frontageCaps
-  if (useUniformBand) {
-    // HANDOFF-ribbon-corners.md C2: uniform two-inset band replaces the
-    // straight-span + arc-span pair. W = deepest authored leg width; the
-    // corner falls out of the single inward offset (no per-vertex pad).
-    // C4.5: W is read off the BAKED fe.measure (polygon-side), not from
-    // streets — the orchestrator stays inside the wall too.
-    let uniformW = 0
-    for (const fe of frontageEdges) {
-      const m = fe.measure
-      if (m?.terminal !== 'sidewalk') continue
-      const total = getStrips(m).reduce((acc, st) => acc + st.width, 0)
-      if (total > uniformW) uniformW = total
-    }
-    const r = buildPedBand(
-      blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasureByChainSide, curbWidth, uniformW,
-    )
-    frontageBands = r.frontageBands
-    frontageCaps = r.frontageCaps
-  } else {
-    const { frontageBands: straightBands } = silhouetteStraightEmitter(
-      blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasureByChainSide, curbWidth,
-    )
-    const { frontageBands: arcBands, frontageCaps: arcCaps } = buildFrontageBandsV2(
-      blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasureByChainSide, curbWidth,
-    )
-    frontageBands = [...straightBands, ...arcBands]
-    frontageCaps = arcCaps
+  // C5 — single emission path. The uniform two-inset model
+  // (HANDOFF-ribbon-corners.md §3) is the cutover renderer: per-leg
+  // grass strips via silhouetteStraightEmitter (polygon-side, fe.measure-
+  // baked), one continuous uniform sidewalk per block. The flag-off
+  // branch + the per-vertex-perp corner pad (buildFrontageBandsV2) are
+  // retired as dead code. W = deepest authored leg width, derived from
+  // the baked fe.measure (orchestrator stays inside the polygon-only
+  // barrier, §2).
+  let uniformW = 0
+  for (const fe of frontageEdges) {
+    const m = fe.measure
+    if (m?.terminal !== 'sidewalk') continue
+    const total = getStrips(m).reduce((acc, st) => acc + st.width, 0)
+    if (total > uniformW) uniformW = total
   }
+  const _pedBand = buildPedBand(
+    blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasureByChainSide, curbWidth, uniformW,
+  )
+  const frontageBands = _pedBand.frontageBands
+  const frontageCaps  = _pedBand.frontageCaps
   __mark('frontageBands')
 
-  // Phase 2.1 — per-corner outer-face emission. Compute the fillet
-  // residual `asphaltRounded − union(per-chain asphaltRings)` and
-  // attribute each polygon to its nearest corner record's arc-span
-  // frontageBand entry. Restores the asphalt fill that Phase 2's
-  // deletion of cornerAsphaltPlugs accidentally removed (per-chain
-  // rectangles have square ends at IXs, leaving a fillet residual
-  // even though asphaltRounded has rounded mouths inherently).
-  const allChainAsphaltForFillet = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
-  const filletAttribution = attributeFilletResidualToArcs(
-    asphaltRounded, allChainAsphaltForFillet, frontageBands, allCorners,
-  )
-  const cornerOrphanAsphalt = filletAttribution.orphans
-  __mark('filletAttribution')
+  // C5 — corner asphalt residual. Under the uniform model no frontageBand
+  // entry carries a `.corner` identity, so attributeFilletResidualToArcs
+  // (now retired) would have routed everything to orphans anyway. Skip
+  // attribution entirely; the residual IS the orphan set, renders as
+  // asphalt in both consumers (bake-ground + BlockGeometryV2Debug).
+  const _perChainAsphaltForFillet = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
+  const cornerOrphanAsphalt = asphaltRounded?.length
+    ? differenceRings(asphaltRounded, _perChainAsphaltForFillet)
+    : []
+  __mark('cornerOrphanAsphalt')
 
   // Phase 2 — normalized curb stroke as final layer. dilate(asphaltRounded,
   // cw) − asphaltRounded gives a continuous cw-wide stroke around the
@@ -2696,9 +2233,9 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     frontageEdges,        // sharp fes — kept for cornersAtIx feLookup + MeasureOverlay consumer
     frontageBands,        // Phase 2: straight-span bands + arc-span regime emission; arc entries
                           //          also carry per-Phase-2.1 asphaltRings (corner outer face).
-    frontageCaps,         // empty in Phase 2 (frontageCaps not emitted by regime emitter)
-    cornerOrphanAsphalt,  // Phase 2.1: fillet polygons whose centroid didn't match any corner
-                          //            within FILLET_ATTRIB_MAX_M; renders as asphalt material.
+    frontageCaps,         // always empty under the uniform-band emitter (C5)
+    cornerOrphanAsphalt,  // C5: asphaltRounded − union(per-chain asphalt); the rounded-mouth
+                          //     fillet residual at every IX, rendered as asphalt in both consumers.
   }
 }
 
