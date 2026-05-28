@@ -1381,16 +1381,15 @@ function closeBandRingV2(outerEdge, innerEdge) {
 // deletes the function definition along with the H1 clip (which is
 // structurally unnecessary for silhouette-walked bands since their
 // outer edges already follow blockRounded).
-function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms) {
+// C4.5: SUB-A retired path, refactored to consume fe.measure for wall
+// hygiene until C5 deletes the function.
+function buildFrontageBands(frontageEdges, curbWidth, blockRounded) {
   if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
   const out = []
 
   for (const fe of frontageEdges) {
-    const street = streets[fe.chainIdx]
-    if (!street?.measure) continue
-    const blockOverride = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
-    const eff = blockOverride || street.measure[fe.side] || {}
+    const eff = fe.measure || {}
     if (eff.terminal !== 'sidewalk') continue
     const tl = eff.treelawn || 0
     const sw = eff.sidewalk || 0
@@ -1474,7 +1473,15 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blo
 // or probe-null (partition artifact), emit nothing for the run. Arc-span
 // flanking inheritance is sub-B's territory; sub-A only emits where the
 // straight-run itself probes to authored sidewalk.
-function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
+// C4.5: signature is polygon-side only — `frontageEdges` carries baked
+// `fe.measure`, and `chainDefaultMeasure` is a baked Map<"chainIdx|side"
+// → measure> that covers the no-matching-fe fallback (probe disagreement
+// at rounding-shifted midpoints). Both are constructed once at fe-
+// construction's close; neither makes the emitter touch `streets`.
+// `chainIndex` is the spatial cache used by the adjacency probe only.
+// TRANSITIONAL: C4.5b retires the probe (origin-fe-tagged vertices)
+// and the `chainDefaultMeasure` param can then be dropped.
+function silhouetteStraightEmitter(blockRoundedWithMeta, frontageEdges, chainIndex, chainDefaultMeasure, curbWidth) {
   if (!blockRoundedWithMeta?.length) return { frontageBands: [] }
   const cw = curbWidth
   const out = []
@@ -1483,7 +1490,9 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
   if (frontageEdges?.length) {
     for (const fe of frontageEdges) {
       if (fe.chainIdx == null) continue
-      sharpFeByKey.set(`${fe.blockKey}|${fe.chainIdx}|${fe.side}`, fe)
+      // C4.5: key by rounded-ring blockKey (baked at fe-construction's
+      // close) so emitter lookups against blockRounded rings hit reliably.
+      sharpFeByKey.set(`${fe.roundedBlockKey ?? fe.blockKey}|${fe.chainIdx}|${fe.side}`, fe)
     }
   }
 
@@ -1550,12 +1559,16 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
       const pts = run.idxs.map(i => ring[i])
       if (pts.length < 2) continue
 
-      const adj = findAdjacentChainForBlockEdge(pts, ringCcw, streets, chainIndex)
+      const adj = findAdjacentChainForBlockEdge(pts, ringCcw, undefined, chainIndex)
       if (!adj) continue
       const sharpFe = sharpFeByKey.get(`${blockKey}|${adj.chainIdx}|${adj.side}`)
-      const street = streets[adj.chainIdx]
-      const blockOverride = (sharpFe && blockCustoms?.[sharpFe.blockKey]?.[sharpFe.edgeOrd]) || null
-      const eff = blockOverride || street?.measure?.[adj.side] || {}
+      // C4.5: per-side authoring from the fe (baked at construction).
+      // Fallback through chainDefaultMeasure for runs whose probe answer
+      // doesn't correspond to any constructed fe — transitional, retired
+      // by C4.5b's origin-fe-tagged vertices.
+      const eff = sharpFe?.measure
+        || chainDefaultMeasure.get(`${adj.chainIdx}|${adj.side}`)
+        || {}
       const isSidewalk = eff.terminal === 'sidewalk'
       const strips = isSidewalk ? getStrips(eff) : []
       if (!strips.length) continue   // authoredZero
@@ -1620,7 +1633,9 @@ function walkToFirstAuthoredMeta(spanMeta, fromIdx, dir) {
   return null
 }
 
-function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
+// C4.5: signature is polygon-side only (see silhouetteStraightEmitter
+// header). Doomed in C5; refactored now so the wall holds until then.
+function buildFrontageBandsV2(blockRoundedWithMeta, frontageEdges, chainIndex, chainDefaultMeasure, curbWidth) {
   if (!blockRoundedWithMeta?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
   const out = []
@@ -1632,7 +1647,9 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
   if (frontageEdges?.length) {
     for (const fe of frontageEdges) {
       if (fe.chainIdx == null) continue
-      sharpFeByKey.set(`${fe.blockKey}|${fe.chainIdx}|${fe.side}`, fe)
+      // C4.5: key by rounded-ring blockKey (baked at fe-construction's
+      // close) so emitter lookups against blockRounded rings hit reliably.
+      sharpFeByKey.set(`${fe.roundedBlockKey ?? fe.blockKey}|${fe.chainIdx}|${fe.side}`, fe)
     }
   }
 
@@ -1668,12 +1685,14 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
       if (span.type === 'arc') return { type: 'arc', corner: span.corner }
       const pts = span.idxs.map(i => ring[i])
       if (pts.length < 2) return { type: 'straight', skip: true }
-      const adj = findAdjacentChainForBlockEdge(pts, ringCcw, streets, chainIndex)
+      const adj = findAdjacentChainForBlockEdge(pts, ringCcw, undefined, chainIndex)
       if (!adj) return { type: 'straight', skip: true }
       const sharpFe = sharpFeByKey.get(`${blockKey}|${adj.chainIdx}|${adj.side}`)
-      const street = streets[adj.chainIdx]
-      const blockOverride = (sharpFe && blockCustoms?.[sharpFe.blockKey]?.[sharpFe.edgeOrd]) || null
-      const eff = blockOverride || street?.measure?.[adj.side] || {}
+      // C4.5: per-side authoring from the fe; chainDefaultMeasure fallback
+      // for probe-disagreement runs (transitional, retired by C4.5b).
+      const eff = sharpFe?.measure
+        || chainDefaultMeasure.get(`${adj.chainIdx}|${adj.side}`)
+        || {}
       const isSidewalk = eff.terminal === 'sidewalk'
       // C3.2 legacy bridge — this corner-pad meta path is the variable-
       // offset wedge code that retires in C5; bridging keeps the pad math
@@ -1886,13 +1905,15 @@ function attributeFilletResidualToArcs(asphaltRounded, perChainAsphalt, frontage
 // grass/concrete split from existing measures (treelawn → grass, the rest
 // of the band → concrete); C3 makes the split an authored per-side channel
 // and silhouetteStraightEmitter becomes the grass+leg-concrete emitter.
-function buildPedBand(streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth, W) {
+// C4.5: signature is polygon-side only. `fe.measure` carries the
+// resolved per-side authoring; no `streets` / `blockCustoms` here.
+function buildPedBand(blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasure, curbWidth, W) {
   const cw = curbWidth
   // Grass strips = the straight emitter's treelawn output (per-leg, per-
   // parcel, corner-cut). Keep each entry's treelawn (the LU probe relies
   // on it); drop its straight sidewalk — the uniform band replaces it.
   const { frontageBands: straightBands } = silhouetteStraightEmitter(
-    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, cw,
+    blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasure, cw,
   )
   const grassEntries = straightBands
     .filter(fb => fb.treelawnRings?.length)
@@ -2394,6 +2415,55 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const blockRounded = blockRoundedResults.map(r => r.ring).filter(r => r && r.length >= 3)
   __mark('applyRoundCorners')
 
+  // C4.5 — bake per-fe effective measure + rounded-ring blockKey ONCE,
+  // here at fe-construction's close (now that blockRoundedResults exists).
+  // Every emitter downstream consumes `fe.measure` and never crosses back
+  // through `streets` to resolve per-side authoring. Structural
+  // enforcement of the polygon-only barrier (HANDOFF §0.5 — RIBBONS.md
+  // §1 stage-wall doctrine).
+  //
+  // `fe.roundedBlockKey`: emitters walk blockRounded rings whose blockKey
+  // (bbox-rounded to 0.5m) can drift from the sharp ring's key under
+  // corner rounding. Fes are constructed against blockSharp, so their
+  // `fe.blockKey` is the sharp key. Bake the rounded key here via the
+  // 1:1 sharp↔rounded ring index correspondence — sharpFeByKey can then
+  // be keyed by roundedBlockKey and lookups hit reliably from inside
+  // the emitter. The OLD code papered over this mismatch with a
+  // street.measure fallback; that fallback was a stage-wall leak.
+  const roundedKeyBySharpKey = new Map()
+  for (let i = 0; i < blockSharp.length; i++) {
+    const r = blockRoundedResults[i]?.ring
+    if (r && r.length >= 3) {
+      roundedKeyBySharpKey.set(blockKeyFromRing(blockSharp[i]), blockKeyFromRing(r))
+    }
+  }
+  for (const fe of frontageEdges) {
+    fe.measure = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
+              ?? streets[fe.chainIdx]?.measure?.[fe.side]
+              ?? null
+    fe.roundedBlockKey = roundedKeyBySharpKey.get(fe.blockKey) ?? fe.blockKey
+  }
+  // C4.5 — TRANSITIONAL polygon-side chain-default measure table. The
+  // emitters probe each rounded-ring run for its adjacent chain
+  // (`adj.chainIdx`+side); when that probe answer disagrees with the
+  // sharp-per-segment construction probe, no fe matches the run and we'd
+  // skip emission. The old code reached back through `street.measure`
+  // for those cases — a wall leak. This Map carries the same chain-
+  // default measure but baked once polygon-side, so emitters can recover
+  // without crossing the wall (signature still lists no `streets`).
+  //
+  // This is acknowledged transitional debt: C4.5b retires the probe
+  // entirely by tagging rounded vertices with their origin-fe in the
+  // arc-meta sidecar; once partitioning is fe-identity-based, no run
+  // ever fails to find its fe, and this Map can be deleted. Don't let it
+  // calcify — Boz, per Jacob's call.
+  const chainDefaultMeasureByChainSide = new Map()
+  for (let ci = 0; ci < streets.length; ci++) {
+    const m = streets[ci]?.measure
+    if (m?.left)  chainDefaultMeasureByChainSide.set(`${ci}|left`,  m.left)
+    if (m?.right) chainDefaultMeasureByChainSide.set(`${ci}|right`, m.right)
+  }
+
   let asphaltRounded = []
   if (stencil && stencil.length >= 3) {
     asphaltRounded = differenceRings([stencil], blockRounded)
@@ -2420,27 +2490,26 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     // HANDOFF-ribbon-corners.md C2: uniform two-inset band replaces the
     // straight-span + arc-span pair. W = deepest authored leg width; the
     // corner falls out of the single inward offset (no per-vertex pad).
+    // C4.5: W is read off the BAKED fe.measure (polygon-side), not from
+    // streets — the orchestrator stays inside the wall too.
     let uniformW = 0
-    for (const s of streets) {
-      for (const sideKey of ['left', 'right']) {
-        const m = s?.measure?.[sideKey]
-        if (m?.terminal === 'sidewalk') {
-          const total = getStrips(m).reduce((acc, st) => acc + st.width, 0)
-          if (total > uniformW) uniformW = total
-        }
-      }
+    for (const fe of frontageEdges) {
+      const m = fe.measure
+      if (m?.terminal !== 'sidewalk') continue
+      const total = getStrips(m).reduce((acc, st) => acc + st.width, 0)
+      if (total > uniformW) uniformW = total
     }
     const r = buildPedBand(
-      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth, uniformW,
+      blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasureByChainSide, curbWidth, uniformW,
     )
     frontageBands = r.frontageBands
     frontageCaps = r.frontageCaps
   } else {
     const { frontageBands: straightBands } = silhouetteStraightEmitter(
-      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
+      blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasureByChainSide, curbWidth,
     )
     const { frontageBands: arcBands, frontageCaps: arcCaps } = buildFrontageBandsV2(
-      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
+      blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasureByChainSide, curbWidth,
     )
     frontageBands = [...straightBands, ...arcBands]
     frontageCaps = arcCaps
