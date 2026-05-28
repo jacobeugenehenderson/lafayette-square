@@ -1468,68 +1468,96 @@ function silhouetteStraightEmitter(blockRoundedWithMeta, frontageEdges, chainInd
   return { frontageBands: out }
 }
 
-// ── Uniform-width ped band (HANDOFF-ribbon-corners.md, C2). ──────────
-// The settled model: the ped ribbon (curb → property line) is ONE uniform
-// width W all the way around a block, so the corner is a single inward
-// offset of the curb silhouette (blockRounded) — concentric, degenerating
-// honestly with the authored radius (arc when R > cw+W, point at neutral,
-// self-clipped when sharp). Clipper's native self-intersection clipping
-// does all the corner work; no per-vertex-perp pad, no wedge, no joiner.
+// ── Uniform-width ped band — figure-ground residual (HANDOFF §3). ──────
+// Two layers, both polygon-side:
 //
-//   curbInner    = inset(blockRounded, cw)        — inside the curb stroke
-//   propertyLine = inset(blockRounded, cw + W)    — W = deepest leg's width
-//   pedBand      = curbInner − propertyLine       — uniform sidewalk ring
+//   PER-LEG STRIPS (the straight emitter, fe.measure-baked):
+//     each fe's authored strips emit per-vertex-perp on its straight-run
+//     vertices — landuse → treelawnRings (per parcel, bake-ground:349
+//     probe), concrete → sidewalkRings (per fe). These stop at the
+//     leg's AUTHORED cw + stripsTotal. On a shallow leg whose strips
+//     total less than W, the gap [cw+stripsTotal, cw+W] gets no ring
+//     emitted — the block-fill (parcel) plugs through, per the brief
+//     "land-use fills everything ped materials don't on shallow sides."
 //
-// Grass (treelawn) sub-strips stay PER-LEG / PER-PARCEL: reuse the proven
-// straight-run emitter's treelawn rings (already clipped to straight runs
-// and cut off at corners, per-parcel for bake-ground's LU probe), then
-// subtract them from the uniform band so the two materials don't overlap.
-// Sidewalk fills everything grass doesn't — including every corner, which
-// is the sidewalk simply bending around. C2 derives the provisional
-// grass/concrete split from existing measures (treelawn → grass, the rest
-// of the band → concrete); C3 makes the split an authored per-side channel
-// and silhouetteStraightEmitter becomes the grass+leg-concrete emitter.
-// C4.5: signature is polygon-side only. `fe.measure` carries the
-// resolved per-side authoring; no `streets` / `blockCustoms` here.
+//   CORNER CONCRETE (figure-ground residual):
+//     pedBand     = inset(blockRounded, cw) − inset(blockRounded, cw+W)
+//     legCoverage = union of per-vertex-perp [cw, cw+W] bands over each
+//                   straight-vertex run of blockRounded (partitioned by
+//                   arcMeta.corner — polygon-side, no chains, no probe).
+//     corner      = pedBand − legCoverage
+//
+//     The corner is the strips ARCING around — NEVER a constructed
+//     block. Per HANDOFF §1 keystone: corner falls out concentric
+//     (Clipper inward offset; degenerates honestly — arc when R > cw+W,
+//     point at neutral, self-clipped natively when sharp).
+//
+// Signature is polygon-side only (HANDOFF §2 polygon-only barrier);
+// fe.measure baked at fe-construction's close carries authoring.
 function buildPedBand(blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasure, curbWidth, W) {
   const cw = curbWidth
-  // Grass strips = the straight emitter's treelawn output (per-leg, per-
-  // parcel, corner-cut). Keep each entry's treelawn (the LU probe relies
-  // on it); drop its straight sidewalk — the uniform band replaces it.
+  // Per-leg strips at AUTHORED depths (grass + concrete). silhouetteStraightEmitter
+  // walks blockRounded's straight runs, reads each run's fe.measure strips, emits
+  // per-strip rings routed by fill. Both treelawnRings AND sidewalkRings are kept
+  // intact on each entry — per-leg authored concrete is part of the visible result.
   const { frontageBands: straightBands } = silhouetteStraightEmitter(
     blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasure, cw,
   )
-  const grassEntries = straightBands
-    .filter(fb => fb.treelawnRings?.length)
-    .map(fb => ({ ...fb, sidewalkRings: [], asphaltRings: [] }))
-  const allGrass = grassEntries.flatMap(fb => fb.treelawnRings)
 
-  // Uniform sidewalk band per block ring: two inward insets + difference.
-  // Normalize each ring CCW first so dilateRings' negative delta insets
-  // inward (Clipper shrinks the positive side). jtRound keeps over-inset
-  // concave corners honest; the corner self-clips natively (C0 spike).
-  const bandRings = []
-  for (const { ring } of blockRoundedResults) {
+  // Corner concrete: pedBand minus per-leg coverage-at-W, evaluated per block.
+  const cornerRings = []
+  for (const { ring, arcMeta } of blockRoundedResults) {
     if (!ring || ring.length < 3) continue
-    const ccw = ringSignedArea2D(ring) >= 0 ? [ring] : [ring.slice().reverse()]
-    const curbInner = dilateRings(ccw, -cw, 'jtRound')
+    const ccwArr = ringSignedArea2D(ring) >= 0 ? [ring] : [ring.slice().reverse()]
+    const curbInner = dilateRings(ccwArr, -cw, 'jtRound')
     if (!curbInner.length) continue
-    const propLine = dilateRings(ccw, -(cw + W), 'jtRound')
-    const band = propLine.length ? differenceRings(curbInner, propLine) : curbInner
-    bandRings.push(...band)
+    const propLine = dilateRings(ccwArr, -(cw + W), 'jtRound')
+    const pedBand = propLine.length ? differenceRings(curbInner, propLine) : curbInner
+    if (!pedBand.length) continue
+    if (!arcMeta) { cornerRings.push(...pedBand); continue }   // no rounding meta → whole pedBand is "corner"
+    const N = ring.length
+    const inwardSign = ringSignedArea2D(ring) >= 0 ? +1 : -1
+    // Straight-vertex runs (the legs). arcMeta[i].corner set = Bezier
+    // corner sample (breaks the run); null = literal straight vertex.
+    const runs = []
+    let cur = null
+    for (let i = 0; i < N; i++) {
+      if (arcMeta[i]?.corner) { if (cur) { runs.push(cur); cur = null }; continue }
+      if (!cur) cur = { idxs: [] }
+      cur.idxs.push(i)
+    }
+    if (cur) runs.push(cur)
+    if (runs.length > 1 && !arcMeta[0]?.corner && !arcMeta[N - 1]?.corner) {
+      const last = runs.pop()
+      runs[0].idxs = [...last.idxs, ...runs[0].idxs]
+    }
+    // Per-vertex-perp coverage band [cw, cw+W] over each leg's straight
+    // run. Subtracting this from pedBand leaves only the arc-span
+    // regions — the corners arcing around.
+    const coverage = []
+    for (const run of runs) {
+      const pts = run.idxs.map(i => ring[i])
+      if (pts.length < 2) continue
+      const perps = computePerps(pts)
+      const inner = pts.map((p, k) => [p[0] + perps[k][0] * inwardSign * cw,         p[1] + perps[k][1] * inwardSign * cw])
+      const outer = pts.map((p, k) => [p[0] + perps[k][0] * inwardSign * (cw + W),   p[1] + perps[k][1] * inwardSign * (cw + W)])
+      const r = closeBandRingV2(outer, inner)
+      if (r) coverage.push(r)
+    }
+    const cornerForBlock = coverage.length ? differenceRings(pedBand, coverage) : pedBand
+    cornerRings.push(...cornerForBlock)
   }
-  const sidewalkRings = allGrass.length ? differenceRings(bandRings, allGrass) : bandRings
 
-  const out = [...grassEntries]
-  if (sidewalkRings.length) {
-    // One continuous-sidewalk entry — uniform material, not per-parcel, so
-    // it carries no corner/blockKey identity (routes to the 'sidewalk' key
-    // in both consumers; the per-parcel treelawn probe only reads grass
-    // entries' treelawnRings).
+  const out = [...straightBands]
+  if (cornerRings.length) {
+    // Single chainless entry — corner concrete is uniform material, not
+    // per-parcel. Routes to the 'sidewalk' material key in both consumers;
+    // the per-parcel treelawn probe reads landuse strips off the per-fe
+    // straightBands entries only.
     out.push({
       blockKey: null, edgeOrd: null, chainIdx: null, side: null,
       points: null, corner: null,
-      treelawnRings: [], sidewalkRings, asphaltRings: [],
+      treelawnRings: [], sidewalkRings: cornerRings, asphaltRings: [],
     })
   }
   return { frontageBands: out, frontageCaps: [] }
