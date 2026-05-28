@@ -126,7 +126,7 @@ All file:line in `src/lib/buildBlockGeometryV2.js` unless noted.
 
 **GENERALIZE (no behavior change):** `dilateRings` — add inward + `jtRound` support so it can do the inward `insideCurb` offset; default args preserve the curb call byte-identical.
 
-**REFACTOR — same algorithm, signature wall:** `silhouetteStraightEmitter` @1461 — keep its run-partition + per-side rectangle emission. **Add `intersectRings(rect, insideCurb)` before emission** (the §6.10 fix). **Add synthetic landuse strip emission** when `treelawn + sidewalk < W_block`. Consume `fe.measure` and `fe.W_block` (baked at fe-construction by C1), not `streets[fe.chainIdx].measure[fe.side]`. Drop `streets` from signature.
+**REWRITE — partition out, signature wall, per-fe emission:** `silhouetteStraightEmitter` @1461 — **drop the arcMeta-based run-partition, the kink-split (`KINK_THRESHOLD_RAD = 5°`), and the `pts.length < 2` skip.** They were defenses against per-vertex-perp ballooning that `∩ insideCurb` now neutralizes. Emit one rect per fe-strip over the full `fe.points` polyline, then `intersectRings(rect, insideCurb)` to clip ballooning back to the rounded canvas. Add synthetic landuse strip emission when `treelawn + sidewalk < W_block`. Consume `fe.measure` + `fe.W_block` + `fe.syntheticLanduseDepth` (baked at fe-construction by C1a), not `streets[fe.chainIdx].measure[fe.side]`. Drop `streets` from signature. **Verify by band-entry count, not by area:** every sidewalk-terminal fe of a block must contribute ≥1 straight-band entry. Coping's C0 redo (2026-05-28 evening) found 2-of-4 fes contributing zero on mississippi-park under the current per-run partition — a production bug masked today by `buildFrontageBandsV2`'s corner pad. The partition rewrite fixes it as a side-effect.
 
 **ADD:**
 - `buildInsideCurb(blockRounded, cw)` @new — one inward inset; returns one ring per block.
@@ -151,14 +151,16 @@ All file:line in `src/lib/buildBlockGeometryV2.js` unless noted.
 
 Test radii from neutral up to `R > cw + W_block`. **Gate:** the picture passes. No production edit; delete after.
 
-**C1 — Re-land the stage wall + bake `W_block` and synthetic strips onto fe.** At fe-construction in `buildFrontageEdges` @1045, resolve ONCE and bake onto each fe:
+**C1a — Re-land the stage wall + bake fe-side scalars.** Bake-only commit, no behavior change. At fe-construction in `buildFrontageEdges` @1045, resolve ONCE and bake onto each fe:
 ```
 fe.measure = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
           ?? streets[fe.chainIdx].measure[fe.side]
 fe.W_block = max over the block's fes of (fe.measure.treelawn + fe.measure.sidewalk)
 fe.syntheticLanduseDepth = max(0, fe.W_block − (fe.measure.treelawn + fe.measure.sidewalk))
 ```
-Refactor `silhouetteStraightEmitter` to consume `fe.measure` + `fe.W_block` + `fe.syntheticLanduseDepth` and drop `streets` from signatures. **Verify:** byte-identical visible output to pre-C1 (synthetic strip emission gated behind the C4 flag; this commit just bakes the data). Grep audit shows zero `streets` references inside ribbon/corner *emission* functions (radius kit is the sanctioned exception). Pure parameter-list refactor; revertible.
+Refactor `silhouetteStraightEmitter` signature to consume `fe.measure` + `fe.W_block` + `fe.syntheticLanduseDepth`; drop `streets` from signatures. **Verify:** byte-identical visible output to pre-C1a. Grep audit shows zero `streets` references inside ribbon/corner *emission* functions (radius kit is the sanctioned exception). Pure parameter-list refactor; revertible in isolation.
+
+**C1b — Partition rewrite: per-fe emission over `fe.points`, `∩ insideCurb` clip.** Replace `silhouetteStraightEmitter`'s arcMeta-partitioned per-run emission with one rect per fe-strip over the full `fe.points` polyline. Drop the kink-split, drop the arcMeta exclusion, drop the `pts.length < 2` skip. Add `intersectRings(rect, insideCurb)` before every emit; this clip absorbs per-vertex-perp ballooning on chain bends. Add synthetic landuse strip emission for fes with `syntheticLanduseDepth > 0`. **Synthetic emission AND `∩ insideCurb` clip both gated behind the C4 flag** — C1b lands the partition shape, C4 turns on the new construction. **Verify by band-entry count:** every sidewalk-terminal fe of mississippi-park (and the §9 reference IXs) contributes ≥1 straight-band entry — South 18th and Mississippi Avenue join Park Avenue. Visible output may shift slightly on curved chain bends (per-fe vs per-run); should be cleaner not worse. If anything regresses visibly, surface before C2.
 
 **C2 — Generalize the offset kernel.** Add inward + `jtRound` support to `dilateRings`; default args preserve the curb call exactly. **Verify:** curb byte-identical.
 
@@ -193,6 +195,7 @@ From the reverted 2026-05-27 arc, the 2026-05-28 morning rewrite, and earlier st
 - **Per-vertex-perp on full `blockRounded` with `consumed[]` extension** (§6.10's proposed path): correct in principle but unnecessary — `insideCurb` already provides the rounded curve without per-vertex authoring lookup at Bezier samples.
 - **Visible `scaffold` polygon via two insets + difference** (2026-05-28 morning rewrite): invented a render-tree object the operator never asked for; reintroduced the "what is this new zone?" confusion. The scalar `W_block` + synthetic landuse strips do the job without any new polygon.
 - **`innerFill`/`outerFill` + ctrl-click toggle UX** (2026-05-28 morning rewrite): operator-facing surface area for a problem the system can solve invisibly. Future-scope, not this brief.
+- **Per-RUN partition emission** (current production design — arcMeta-based run-partition + `KINK_THRESHOLD_RAD = 5°` kink-split + `pts.length < 2` skip in `silhouetteStraightEmitter`): Coping's C0 redo (2026-05-28 evening) found this leaves 2-of-4 fes on mississippi-park contributing **zero** straight-band entries — a production bug masked today by `buildFrontageBandsV2`'s corner pad covering the corners and land-use parcels plugging the gaps. The partition's defenses were obsolete once `∩ insideCurb` is in play. C1b replaces it with per-fe emission over `fe.points` ∩ `insideCurb`. **The prior 13-month arc's subtle wrongness traces to here** — every prior emission strategy inherited this coverage gap and explained the residual symptoms differently.
 - **Walking `blockRounded` vertex-by-vertex to emit band shape** (Stage 8): Bezier consume-span absorbed interior fe vertices, ~30% of LS fes emitted nothing.
 - **Stage 9 single-polygon symmetric corner pad** (`3cafe7f`): doctrine-correct shape but built per-arc not per-figure-ground; failed §6.9 input-prep variance.
 - **Cusp guard / `RAMP_MIN_M = 1.5`** (Stage 10 audit): fires 0/666 — dead code under LS authoring; retire in C5.
