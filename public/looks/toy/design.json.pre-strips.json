@@ -111,17 +111,9 @@
       "5": {
         "left": {
           "pavementHW": 18.77094972067039,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.0818657342657296,
-              "fill": "landuse"
-            },
-            {
-              "width": 8.445722399109272,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 8.445722399109272,
+          "terminal": "sidewalk"
         }
       }
     },
@@ -129,95 +121,47 @@
       "0": {
         "left": {
           "pavementHW": 5.258160735370765,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.0818657342657296,
-              "fill": "landuse"
-            },
-            {
-              "width": 3.5622841499694218,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 3.5622841499694218,
+          "terminal": "sidewalk"
         }
       },
       "1": {
         "left": {
           "pavementHW": 4.258903631284923,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.0818657342657296,
-              "fill": "landuse"
-            },
-            {
-              "width": 4.664848690793168,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 4.664848690793168,
+          "terminal": "sidewalk"
         }
       },
       "2": {
         "left": {
           "pavementHW": 5.770602101268835,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.2613357906667204,
-              "fill": "landuse"
-            },
-            {
-              "width": 3.8766475078163154,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.2613357906667204,
+          "sidewalk": 3.8766475078163154,
+          "terminal": "sidewalk"
         }
       },
       "3": {
         "left": {
           "pavementHW": 4.258903631284923,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.0818657342657296,
-              "fill": "landuse"
-            },
-            {
-              "width": 3.6372151821695518,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 3.6372151821695518,
+          "terminal": "sidewalk"
         }
       },
       "4": {
         "left": {
           "pavementHW": 6.826240166083942,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1.00584,
-              "fill": "landuse"
-            },
-            {
-              "width": 2.4384,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1.00584,
+          "sidewalk": 2.4384,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 6.783489947552418,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1,
-              "fill": "landuse"
-            },
-            {
-              "width": 2.4384,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1,
+          "sidewalk": 2.4384,
+          "terminal": "sidewalk"
         }
       }
     },

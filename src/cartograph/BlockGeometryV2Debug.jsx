@@ -24,7 +24,7 @@ import * as THREE from 'three'
 import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation, differenceRings } from '../lib/buildBlockGeometryV2.js'
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
-import { BAND_COLORS } from './streetProfiles.js'
+import { BAND_COLORS, getStrips } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 import useCartographStore from './stores/useCartographStore.js'
@@ -403,11 +403,12 @@ export default function BlockGeometryV2Debug({
     const m = chain.measure || {}
     const hwL = m.left?.pavementHW || 0
     const hwR = m.right?.pavementHW || 0
-    const tlL = m.left?.treelawn || 0,  swL = m.left?.sidewalk || 0
-    const tlR = m.right?.treelawn || 0, swR = m.right?.sidewalk || 0
+    // C3.2: strips-total replaces tl+sw for the probe radius.
+    const totalL = getStrips(m.left).reduce((s, t) => s + t.width, 0)
+    const totalR = getStrips(m.right).reduce((s, t) => s + t.width, 0)
     // Slack covers per-block customs that widen beyond the chain default.
     const PROBE_SLACK = 10
-    const probeR = Math.max(hwL + tlL + swL, hwR + tlR + swR) + curbWidth + PROBE_SLACK
+    const probeR = Math.max(hwL + totalL, hwR + totalR) + curbWidth + PROBE_SLACK
     const probeR2 = probeR * probeR
 
     // Probe by chain SEGMENT MIDPOINTS, not chain.points. Endpoints

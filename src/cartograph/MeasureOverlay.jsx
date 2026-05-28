@@ -2,7 +2,49 @@ import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
+import { defaultMeasure, sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure, getStrips } from './streetProfiles.js'
+
+// C3.3: writers emit strips going forward. Helpers build a fresh mutable
+// strips copy from a side (legacy or strips-shaped) so drag/delete/insert
+// gestures operate on one canonical shape, then write back `side.strips`
+// + drop the legacy {treelawn, sidewalk} fields so they never re-persist.
+const stripsCopy = (side) => getStrips(side).map(s => ({ ...s }))
+function writeStrips(sd, strips) {
+  sd.strips = strips
+  if ('treelawn' in sd) delete sd.treelawn
+  if ('sidewalk' in sd) delete sd.sidewalk
+}
+// Apply a handle-kind drag to one side via its strips. `r` = new absolute
+// radius from centerline; `caps` carries the same clamps the legacy paths
+// used (MAX_PAVEMENT_HW, MAX_STRIPE, STRIPE_MIN). Same drag semantics:
+//   pavementHW     — resize asphalt half-width
+//   treelawnOuter  — divide strips[0]/strips[1] within their existing total
+//   propertyLine   — grow/shrink the LAST strip (outer = r - inner)
+function applyStripsDrag(sd, kind, r, caps) {
+  const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
+  if (kind === 'pavementHW') {
+    sd.pavementHW = Math.min(caps.MAX_PAVEMENT_HW, Math.max(0.5, r))
+    return
+  }
+  const strips = stripsCopy(sd)
+  if (kind === 'treelawnOuter' && strips.length >= 2) {
+    const curbEnd = sd.pavementHW + cw
+    const total = strips[0].width + strips[1].width
+    if (total >= caps.STRIPE_MIN * 2) {
+      const newFirst = Math.max(caps.STRIPE_MIN, Math.min(total - caps.STRIPE_MIN, r - curbEnd))
+      strips[0].width = Math.min(caps.MAX_STRIPE, newFirst)
+      strips[1].width = Math.min(caps.MAX_STRIPE, total - newFirst)
+    } else {
+      strips[0].width = total / 2
+      strips[1].width = total / 2
+    }
+  } else if (kind === 'propertyLine' && strips.length) {
+    const curbEnd = sd.pavementHW + cw
+    const innerBeforeLast = curbEnd + strips.slice(0, -1).reduce((s, st) => s + st.width, 0)
+    strips[strips.length - 1].width = Math.min(caps.MAX_STRIPE, Math.max(caps.STRIPE_MIN, r - innerBeforeLast))
+  }
+  writeStrips(sd, strips)
+}
 import { polylineRibbon } from './overlayGeom.js'
 import ribbonsRaw from '../data/ribbons.json'
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
@@ -488,28 +530,12 @@ export default function MeasureOverlay() {
         return
       }
       const existing = useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
-      const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
-      const next = { ...seed }
-      const cw = Number.isFinite(next.curb) ? next.curb : CURB_WIDTH
-      const STRIPE_MIN = 1.0
-      if (kind === 'pavementHW') {
-        next.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
-      } else if (kind === 'treelawnOuter') {
-        const curbEnd = next.pavementHW + cw
-        const total = next.treelawn + next.sidewalk
-        if (total >= STRIPE_MIN * 2) {
-          const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
-          next.treelawn = Math.min(MAX_STRIPE, newTl)
-          next.sidewalk = Math.min(MAX_STRIPE, total - newTl)
-        } else {
-          next.treelawn = total / 2
-          next.sidewalk = total / 2
-        }
-      } else if (kind === 'propertyLine') {
-        const curbEnd = next.pavementHW + cw
-        const inner = curbEnd + next.treelawn
-        next.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
+      const seed = existing || st.measure?.[side] || {
+        pavementHW: 5, terminal: 'sidewalk',
+        strips: [{ width: 1.5, fill: 'landuse' }, { width: 1.5, fill: 'concrete' }],
       }
+      const next = { ...seed }
+      applyStripsDrag(next, kind, r, { MAX_PAVEMENT_HW, MAX_STRIPE, STRIPE_MIN: 1.0 })
       if (window.__customDebug) console.log('  → write blockEdge[', fe.blockKey, '][', fe.edgeOrd, '] =', next)
       useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
       return
@@ -534,31 +560,11 @@ export default function MeasureOverlay() {
       // than this. To eliminate a stripe entirely, ctrl/right-click the
       // boundary handle (existing delete gesture). Keeps handles from
       // visually collapsing onto each other and forces explicit removal.
-      const STRIPE_MIN = 1.0  // meters
+      const caps = { MAX_PAVEMENT_HW, MAX_STRIPE, STRIPE_MIN: 1.0 }
       for (const s of sides) {
         const sd = m[s]
         if (!sd) continue
-        const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
-        if (kind === 'pavementHW') {
-          sd.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
-        } else if (kind === 'treelawnOuter') {
-          const curbEnd = sd.pavementHW + cw
-          const total = sd.treelawn + sd.sidewalk
-          // treelawn ∈ [STRIPE_MIN, total - STRIPE_MIN]; sidewalk picks up the rest
-          if (total >= STRIPE_MIN * 2) {
-            const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
-            sd.treelawn = Math.min(MAX_STRIPE, newTl)
-            sd.sidewalk = Math.min(MAX_STRIPE, total - newTl)
-          } else {
-            // Total too small to honor both minimums — split evenly so neither vanishes
-            sd.treelawn = total / 2
-            sd.sidewalk = total / 2
-          }
-        } else if (kind === 'propertyLine') {
-          const curbEnd = sd.pavementHW + cw
-          const inner = curbEnd + sd.treelawn
-          sd.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
-        }
+        applyStripsDrag(sd, kind, r, caps)
       }
     })
   }, [modifyMeasure, findFeForSide, ixByChain])
@@ -694,13 +700,15 @@ export default function MeasureOverlay() {
               const sd = m[s]
               if (!sd) continue
               if (h.kind === 'treelawnOuter') {
-                // Collapse treelawn into sidewalk
-                sd.sidewalk += sd.treelawn
-                sd.treelawn = 0
+                // Collapse strips[0] into strips[1] (its width merges down).
+                const strips = stripsCopy(sd)
+                if (strips.length >= 2) {
+                  strips[1].width += strips[0].width
+                  strips.shift()
+                }
+                writeStrips(sd, strips)
               } else if (h.kind === 'propertyLine') {
-                // Remove the pedestrian zone entirely
-                sd.treelawn = 0
-                sd.sidewalk = 0
+                writeStrips(sd, [])
                 sd.terminal = 'none'
               }
             }
@@ -731,17 +739,22 @@ export default function MeasureOverlay() {
           if (!sd) continue
           const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
           const curbEnd = sd.pavementHW + cw
-          const outerEnd = curbEnd + sd.treelawn + sd.sidewalk
-          if (r > curbEnd + 0.2 && r < outerEnd - 0.2 && sd.treelawn < 0.05) {
-            // Insert treelawn at click position; sidewalk = outer remainder.
-            sd.treelawn = r - curbEnd
-            sd.sidewalk = outerEnd - r
+          const strips = stripsCopy(sd)
+          const outerEnd = curbEnd + strips.reduce((a, st) => a + st.width, 0)
+          // Single-strip + click between curb and outer → split: insert a
+          // landuse strip at the click; keep the existing strip's fill on
+          // the property-side remainder. (C3.4 will replace this gesture
+          // with fill-toggle, which is the brief's settled authoring story.)
+          if (r > curbEnd + 0.2 && r < outerEnd - 0.2 && strips.length === 1) {
+            const tail = strips[0]
+            writeStrips(sd, [
+              { width: r - curbEnd, fill: 'landuse' },
+              { width: outerEnd - r, fill: tail.fill },
+            ])
             inserted = true
           } else if (sd.terminal === 'none') {
-            // Re-seed pedestrian zone at this radius.
             sd.terminal = 'sidewalk'
-            sd.sidewalk = Math.max(0.3, r - curbEnd)
-            sd.treelawn = 0
+            writeStrips(sd, [{ width: Math.max(0.3, r - curbEnd), fill: 'concrete' }])
             inserted = true
           }
         }
