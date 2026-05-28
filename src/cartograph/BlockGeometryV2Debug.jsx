@@ -566,12 +566,28 @@ export default function BlockGeometryV2Debug({
   const frontageByChain = useMemo(() => {
     const m = new Map()
     for (const fe of frontageBands || []) {
+      if (fe.chainIdx == null) continue   // uniform-band entries route through uniformSidewalkGeo below
       let entry = m.get(fe.chainIdx)
       if (!entry) { entry = { treelawn: [], sidewalk: [] }; m.set(fe.chainIdx, entry) }
       if (fe.treelawnRings?.length) entry.treelawn.push(...fe.treelawnRings)
       if (fe.sidewalkRings?.length) entry.sidewalk.push(...fe.sidewalkRings)
     }
     return m
+  }, [frontageBands])
+
+  // Uniform-band sidewalk (HANDOFF-ribbon-corners.md C4): the cutover
+  // emits one continuous sidewalk ring across all blocks, carried on a
+  // chainless frontageBand entry (chainIdx == null) so the per-chain
+  // bucketing doesn't shard it. Render as a single mesh; not chain-keyed,
+  // not per-LU. Grass strips stay per-fe (chainIdx + parcel probe) and
+  // continue to render through treelawnByLuGeo.
+  const uniformSidewalkGeo = useMemo(() => {
+    const rings = []
+    for (const fe of frontageBands || []) {
+      if (fe.chainIdx != null) continue
+      if (fe.sidewalkRings?.length) rings.push(...fe.sidewalkRings)
+    }
+    return rings.length ? ringsToFlatGeo(rings, 0.03, true) : null
   }, [frontageBands])
 
   // Per-LU treelawn aggregation for non-selected chains. Each fe is
@@ -828,6 +844,14 @@ export default function BlockGeometryV2Debug({
         <mesh key={`s${g.chainIdx}`} geometry={g.sidewalk} renderOrder={PRI.sidewalk} receiveShadow
           material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.sidewalkSelected : bandMats.sidewalk} />
       ))}
+      {/* C4 uniform-band sidewalk — one continuous ring around every
+          block; carries no chainIdx (uniform material, not per-parcel),
+          so it lands here as a single mesh instead of through the per-
+          chain loop above. */}
+      {sidewalkVisible && uniformSidewalkGeo && (
+        <mesh geometry={uniformSidewalkGeo} renderOrder={PRI.sidewalk} receiveShadow
+          material={bandMats.sidewalk} />
+      )}
       {/* While a chain is selected (drag in flight), the global curb
           stroke is sized to the PREVIOUS V2 pass's asphaltRounded —
           it's stale relative to the live-band overlay. Hide it during
