@@ -2076,7 +2076,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
     curbWidth = CURB_WIDTH, blockCustoms = null,
-    blockLandUse = null, useUniformBand = false } = opts
+    blockLandUse = null, useUniformBand = true } = opts
   // Apply inner-edge anchor transform to all chains up front: every
   // downstream consumer (street.measure, segmentMeasures via
   // measureForSegment) sees the post-transform measure where inboard
