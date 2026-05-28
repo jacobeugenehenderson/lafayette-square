@@ -1845,6 +1845,71 @@ function attributeFilletResidualToArcs(asphaltRounded, perChainAsphalt, frontage
   return { attributed, orphans }
 }
 
+// ── Uniform-width ped band (HANDOFF-ribbon-corners.md, C2). ──────────
+// The settled model: the ped ribbon (curb → property line) is ONE uniform
+// width W all the way around a block, so the corner is a single inward
+// offset of the curb silhouette (blockRounded) — concentric, degenerating
+// honestly with the authored radius (arc when R > cw+W, point at neutral,
+// self-clipped when sharp). Clipper's native self-intersection clipping
+// does all the corner work; no per-vertex-perp pad, no wedge, no joiner.
+//
+//   curbInner    = inset(blockRounded, cw)        — inside the curb stroke
+//   propertyLine = inset(blockRounded, cw + W)    — W = deepest leg's width
+//   pedBand      = curbInner − propertyLine       — uniform sidewalk ring
+//
+// Grass (treelawn) sub-strips stay PER-LEG / PER-PARCEL: reuse the proven
+// straight-run emitter's treelawn rings (already clipped to straight runs
+// and cut off at corners, per-parcel for bake-ground's LU probe), then
+// subtract them from the uniform band so the two materials don't overlap.
+// Sidewalk fills everything grass doesn't — including every corner, which
+// is the sidewalk simply bending around. C2 derives the provisional
+// grass/concrete split from existing measures (treelawn → grass, the rest
+// of the band → concrete); C3 makes the split an authored per-side channel
+// and silhouetteStraightEmitter becomes the grass+leg-concrete emitter.
+function buildPedBand(streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth, W) {
+  const cw = curbWidth
+  // Grass strips = the straight emitter's treelawn output (per-leg, per-
+  // parcel, corner-cut). Keep each entry's treelawn (the LU probe relies
+  // on it); drop its straight sidewalk — the uniform band replaces it.
+  const { frontageBands: straightBands } = silhouetteStraightEmitter(
+    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, cw,
+  )
+  const grassEntries = straightBands
+    .filter(fb => fb.treelawnRings?.length)
+    .map(fb => ({ ...fb, sidewalkRings: [], asphaltRings: [] }))
+  const allGrass = grassEntries.flatMap(fb => fb.treelawnRings)
+
+  // Uniform sidewalk band per block ring: two inward insets + difference.
+  // Normalize each ring CCW first so dilateRings' negative delta insets
+  // inward (Clipper shrinks the positive side). jtRound keeps over-inset
+  // concave corners honest; the corner self-clips natively (C0 spike).
+  const bandRings = []
+  for (const { ring } of blockRoundedResults) {
+    if (!ring || ring.length < 3) continue
+    const ccw = ringSignedArea2D(ring) >= 0 ? [ring] : [ring.slice().reverse()]
+    const curbInner = dilateRings(ccw, -cw, 'jtRound')
+    if (!curbInner.length) continue
+    const propLine = dilateRings(ccw, -(cw + W), 'jtRound')
+    const band = propLine.length ? differenceRings(curbInner, propLine) : curbInner
+    bandRings.push(...band)
+  }
+  const sidewalkRings = allGrass.length ? differenceRings(bandRings, allGrass) : bandRings
+
+  const out = [...grassEntries]
+  if (sidewalkRings.length) {
+    // One continuous-sidewalk entry — uniform material, not per-parcel, so
+    // it carries no corner/blockKey identity (routes to the 'sidewalk' key
+    // in both consumers; the per-parcel treelawn probe only reads grass
+    // entries' treelawnRings).
+    out.push({
+      blockKey: null, edgeOrd: null, chainIdx: null, side: null,
+      points: null, corner: null,
+      treelawnRings: [], sidewalkRings, asphaltRings: [],
+    })
+  }
+  return { frontageBands: out, frontageCaps: [] }
+}
+
 // Polygon offset (Minkowski sum/difference with a disc of radius `delta`).
 // `delta > 0` dilates outward, `delta < 0` insets inward (Clipper shrinks
 // the positive side of each path — so callers offsetting CCW outer rings
@@ -1991,7 +2056,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
     curbWidth = CURB_WIDTH, blockCustoms = null,
-    blockLandUse = null } = opts
+    blockLandUse = null, useUniformBand = false } = opts
   // Apply inner-edge anchor transform to all chains up front: every
   // downstream consumer (street.measure, segmentMeasures via
   // measureForSegment) sees the post-transform measure where inboard
@@ -2325,13 +2390,35 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   //    RAMP_MIN_M dCorner. Sub-B replaces this with concentric arc-
   //    span band emission.
   // Concat into one frontageBands array; downstream iterates by field.
-  const { frontageBands: straightBands } = silhouetteStraightEmitter(
-    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
-  )
-  const { frontageBands: arcBands, frontageCaps } = buildFrontageBandsV2(
-    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
-  )
-  const frontageBands = [...straightBands, ...arcBands]
+  let frontageBands, frontageCaps
+  if (useUniformBand) {
+    // HANDOFF-ribbon-corners.md C2: uniform two-inset band replaces the
+    // straight-span + arc-span pair. W = deepest authored leg width; the
+    // corner falls out of the single inward offset (no per-vertex pad).
+    let uniformW = 0
+    for (const s of streets) {
+      for (const sideKey of ['left', 'right']) {
+        const m = s?.measure?.[sideKey]
+        if (m?.terminal === 'sidewalk') {
+          uniformW = Math.max(uniformW, (m.treelawn || 0) + (m.sidewalk || 0))
+        }
+      }
+    }
+    const r = buildPedBand(
+      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth, uniformW,
+    )
+    frontageBands = r.frontageBands
+    frontageCaps = r.frontageCaps
+  } else {
+    const { frontageBands: straightBands } = silhouetteStraightEmitter(
+      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
+    )
+    const { frontageBands: arcBands, frontageCaps: arcCaps } = buildFrontageBandsV2(
+      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
+    )
+    frontageBands = [...straightBands, ...arcBands]
+    frontageCaps = arcCaps
+  }
   __mark('frontageBands')
 
   // Phase 2.1 — per-corner outer-face emission. Compute the fillet
