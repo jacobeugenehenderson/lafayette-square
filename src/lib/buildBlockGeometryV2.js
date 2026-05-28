@@ -78,7 +78,7 @@ function hashKey(s) {
 // Bbox is more drift-tolerant than centroid when chain widths change —
 // the visible bbox of a block barely moves when a sidewalk widens by 1m,
 // whereas the centroid can shift several meters.
-function blockKeyFromRing(ring) {
+export function blockKeyFromRing(ring) {
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity
   for (const p of ring) {
     if (p[0]<minX)minX=p[0]; if (p[0]>maxX)maxX=p[0]
@@ -1942,7 +1942,7 @@ function buildPedBand(streets, blockRoundedResults, frontageEdges, chainIndex, b
 // `dilateRings(asphaltRounded, curbWidth)` is byte-identical to before.
 // The inward ped offsets pass 'jtRound' so newly-created concave corners
 // round honestly instead of spiking.
-function dilateRings(rings, delta, joinType = 'jtMiter') {
+export function dilateRings(rings, delta, joinType = 'jtMiter') {
   if (delta === 0 || !rings.length) return rings
   const { ClipperOffset, JoinType, EndType } = clipperLib
   const co = new ClipperOffset()

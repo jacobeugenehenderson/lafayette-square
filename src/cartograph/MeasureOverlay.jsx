@@ -47,7 +47,7 @@ function applyStripsDrag(sd, kind, r, caps) {
 }
 import { polylineRibbon } from './overlayGeom.js'
 import ribbonsRaw from '../data/ribbons.json'
-import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
+import { resolveChainSegmentation, dilateRings, blockKeyFromRing } from '../lib/buildBlockGeometryV2.js'
 
 // Lookup of survey-derived measure by street name — used when the operator
 // selects a street that has never been edited. Clicking it for the first
@@ -281,6 +281,7 @@ export default function MeasureOverlay() {
   // (chainIdx, segOrd, sideKey) tuple to its containing block-edge
   // (blockKey + edgeOrd) for per-block-edge customs authoring.
   const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
+  const v2Blocks        = useCartographStore(s => s._v2Blocks)
   // Coord-match IX identity per chain — single source of truth shared
   // with buildBlockGeometryV2 + buildChainBandsLive. naturalSegmentOrdinal
   // below uses this so the operator's drag resolves segOrds against the
@@ -453,6 +454,66 @@ export default function MeasureOverlay() {
     if (!selection) return
     useCartographStore.getState().setSegmentOrdinal(selection.ordinal)
   }, [selection])
+
+  // C3.4 — derived continuous border per adjacent block. Selecting a
+  // chain anchors handles on BOTH sides (operator clicks the centerline),
+  // so both adjacent blocks get their border visualized. Each border is
+  // the inward inset of that block's blockRounded by cw + W, where W =
+  // max(strips-total) across every fe on the block. Single-source: the
+  // same Clipper inward offset the cutover renderer uses (C2), evaluated
+  // on-demand from the stashed V2 outputs — what the operator sees is
+  // what the corner geometry will key off.
+  const derivedBlockBorders = useMemo(() => {
+    if (!active || !selection || !v2Blocks?.length || !v2FrontageEdges?.length) return []
+    const st = centerlineData.streets[selection.streetIdx]
+    if (!st) return []
+    const idKey = st.skelId || st.id || null
+    const nameKey = st.name || null
+    const adjBlockKeys = new Set()
+    for (const fe of v2FrontageEdges) {
+      const idMatch = idKey && fe.chainSkelId === idKey
+      const nameMatch = !idKey && nameKey && fe.chainName === nameKey
+      if (idMatch || nameMatch) adjBlockKeys.add(fe.blockKey)
+    }
+    if (!adjBlockKeys.size) return []
+    const ringByKey = new Map()
+    for (const ring of v2Blocks) ringByKey.set(blockKeyFromRing(ring), ring)
+    // Centerline lookup by skelId/name → chain object (for chain.measure
+    // fallback when no per-block custom is authored on a fe's edge).
+    const chainByKey = new Map()
+    for (const c of (centerlineData.streets || [])) {
+      const k = c.skelId || c.id || c.name
+      if (k) chainByKey.set(k, c)
+    }
+    const out = []
+    for (const bk of adjBlockKeys) {
+      const ring = ringByKey.get(bk)
+      if (!ring || ring.length < 3) continue
+      let W = 0
+      for (const fe of v2FrontageEdges) {
+        if (fe.blockKey !== bk) continue
+        const cust = blockCustoms?.[bk]?.[fe.edgeOrd]
+        const chain = chainByKey.get(fe.chainSkelId) || chainByKey.get(fe.chainName)
+        const sideM = cust || chain?.measure?.[fe.side]
+        if (!sideM) continue
+        const total = getStrips(sideM).reduce((s, x) => s + x.width, 0)
+        if (total > W) W = total
+      }
+      if (W <= 0) continue
+      // Normalize CCW so dilateRings' negative delta insets inward.
+      let area = 0
+      for (let i = 0, n = ring.length; i < n; i++) {
+        const [x1, y1] = ring[i], [x2, y2] = ring[(i + 1) % n]
+        area += x1 * y2 - x2 * y1
+      }
+      const ccwRing = area >= 0 ? ring : ring.slice().reverse()
+      const propLine = dilateRings([ccwRing], -(CURB_WIDTH + W), 'jtRound')
+      for (const pl of propLine) {
+        if (pl?.length >= 3) out.push({ blockKey: bk, ring: pl })
+      }
+    }
+    return out
+  }, [active, selection, centerlineData, blockCustoms, v2Blocks, v2FrontageEdges])
 
   // Whole-chain measure write — global Measure-mode drags target chain.measure
   // directly. Per-block divergence routes through setBlockEdgeCustom (D.6) on
@@ -762,12 +823,71 @@ export default function MeasureOverlay() {
       if (inserted) useCartographStore.setState({ status: 'Inserted boundary' })
       return inserted
     }
-    // Unified ctrl/right gesture: hit a handle → delete; otherwise → insert.
+    // C3.4 — toggle a strip's fill at the click point. The settled
+    // authoring story: ctrl-click in a band flips that strip between
+    // 'concrete' (sidewalk) and 'landuse' (the parcel showing through,
+    // what the old model called "treelawn"). Honors symmetric mode and
+    // the active measureMode (custom writes to blockCustoms; global
+    // writes to chain.measure). Insertion of a NEW strip splits in C3.5.
+    const tryToggleFill = (p) => {
+      if (!selection) return false
+      const st = centerlineData.streets[selection.streetIdx]
+      if (!st) return false
+      const frame = frameAtPoint(st.points, p.x, p.z)
+      const dx = p.x - frame.cx, dz = p.z - frame.cz
+      const signedPerp = dx * frame.nx + dz * frame.nz
+      const side = signedPerp >= 0 ? 'right' : 'left'
+      const r = Math.abs(signedPerp)
+      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
+      const fe = findFeForSide(selection.streetIdx, segOrd, side)
+      const cust = fe ? useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] : null
+      const seed = cust || st.measure?.[side]
+      if (!seed) return false
+      const cw = Number.isFinite(seed.curb) ? seed.curb : CURB_WIDTH
+      const curbEnd = (seed.pavementHW || 0) + cw
+      const baseStrips = getStrips(seed)
+      if (!baseStrips.length) return false
+      // Resolve which strip the click radius falls in.
+      let depth = curbEnd, hitIdx = -1
+      for (let i = 0; i < baseStrips.length; i++) {
+        const next = depth + baseStrips[i].width
+        if (r >= depth - 0.05 && r <= next + 0.05) { hitIdx = i; break }
+        depth = next
+      }
+      if (hitIdx < 0) return false
+      const flipFill = (f) => (f === 'concrete' ? 'landuse' : 'concrete')
+      const mode = useCartographStore.getState().measureMode
+      if (mode?.type !== 'global' && fe) {
+        const next = { ...seed, strips: baseStrips.map((s, i) =>
+          i === hitIdx ? { ...s, fill: flipFill(s.fill) } : { ...s }) }
+        if ('treelawn' in next) delete next.treelawn
+        if ('sidewalk' in next) delete next.sidewalk
+        useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
+      } else {
+        modifyMeasure(selection.streetIdx, segOrd, (m) => {
+          const sides = m.symmetric ? ['left', 'right'] : [side]
+          for (const s of sides) {
+            const sd = m[s]
+            if (!sd) continue
+            const strips = getStrips(sd).map((x, i) =>
+              i === hitIdx ? { ...x, fill: flipFill(x.fill) } : { ...x })
+            sd.strips = strips
+            if ('treelawn' in sd) delete sd.treelawn
+            if ('sidewalk' in sd) delete sd.sidewalk
+          }
+        })
+      }
+      useCartographStore.setState({ status: 'Toggled fill' })
+      return true
+    }
+    // Unified ctrl/right gesture: hit a handle → delete; else toggle fill
+    // of the strip under the click. (Strip insertion moves to C3.5.)
     const handleCtrlOrRight = (e) => {
       if (!selection) return false
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
       if (tryDeleteHandle(p)) return true
-      if (tryInsertBoundary(p)) return true
+      if (tryToggleFill(p)) return true
+      if (tryInsertBoundary(p)) return true   // legacy fallback; C3.5 supersedes
       return false
     }
     const onContextMenu = (e) => {
@@ -832,6 +952,31 @@ export default function MeasureOverlay() {
             depthTest={false} depthWrite={false} />
         </mesh>
       ))}
+      {/* C3.4 — derived per-block border at W = max(strips-total). One
+          ring per adjacent block; previews the uniform corner the
+          renderer keys off. View-only; persists no data. */}
+      {derivedBlockBorders.map((b, i) => {
+        const n = b.ring.length
+        const positions = new Float32Array((n + 1) * 3)
+        for (let k = 0; k < n; k++) {
+          positions[k * 3 + 0] = b.ring[k][0]
+          positions[k * 3 + 1] = 0.25
+          positions[k * 3 + 2] = b.ring[k][1]
+        }
+        positions[n * 3 + 0] = b.ring[0][0]
+        positions[n * 3 + 1] = 0.25
+        positions[n * 3 + 2] = b.ring[0][1]
+        return (
+          <line key={`bb-${i}-${b.blockKey}`} renderOrder={145}>
+            <bufferGeometry attach="geometry">
+              <bufferAttribute attach="attributes-position"
+                array={positions} count={n + 1} itemSize={3} />
+            </bufferGeometry>
+            <lineBasicMaterial color="#FFA500" transparent opacity={0.85}
+              depthTest={false} depthWrite={false} />
+          </line>
+        )
+      })}
       {selection && selection.handles.map((h, i) => (
         <group key={i} position={[h.x, 0, h.z]} rotation={[0, h.rotY, 0]}>
           {/* Black outline (slightly larger) — transparent flag puts it
