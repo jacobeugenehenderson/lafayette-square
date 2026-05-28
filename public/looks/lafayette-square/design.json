@@ -112,77 +112,37 @@
       "4": {
         "left": {
           "pavementHW": 5.614025837656785,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1.2026416547120755,
-              "fill": "landuse"
-            },
-            {
-              "width": 2.635159536909512,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1.2026416547120755,
+          "sidewalk": 2.635159536909512,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 8.656221051582422,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1.7304098259152152,
-              "fill": "landuse"
-            },
-            {
-              "width": 3.0129631312206957,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1.7304098259152152,
+          "sidewalk": 3.0129631312206957,
+          "terminal": "sidewalk"
         }
       },
       "5": {
         "right": {
           "pavementHW": 8.656221051582422,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1.7304098259152152,
-              "fill": "landuse"
-            },
-            {
-              "width": 11.371684139908538,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1.7304098259152152,
+          "sidewalk": 11.371684139908538,
+          "terminal": "sidewalk"
         }
       },
       "6": {
         "right": {
           "pavementHW": 8.656221051582422,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1.7304098259152152,
-              "fill": "landuse"
-            },
-            {
-              "width": 20,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1.7304098259152152,
+          "sidewalk": 20,
+          "terminal": "sidewalk"
         },
         "left": {
           "pavementHW": 7.203172199626125,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1.2026416547120755,
-              "fill": "landuse"
-            },
-            {
-              "width": 6.629828035727803,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1.2026416547120755,
+          "sidewalk": 6.629828035727803,
+          "terminal": "sidewalk"
         }
       }
     },
@@ -190,13 +150,9 @@
       "0": {
         "left": {
           "pavementHW": 0.5,
-          "terminal": "lawn",
-          "strips": [
-            {
-              "width": 1,
-              "fill": "landuse"
-            }
-          ]
+          "treelawn": 0,
+          "sidewalk": 1,
+          "terminal": "lawn"
         }
       }
     },
@@ -204,27 +160,15 @@
       "0": {
         "right": {
           "pavementHW": 22.011034185493354,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 2.3125350666523836,
-              "fill": "landuse"
-            },
-            {
-              "width": 1.524,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 2.3125350666523836,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
         },
         "left": {
           "pavementHW": 30,
-          "terminal": "lawn",
-          "strips": [
-            {
-              "width": 0.9144000000000001,
-              "fill": "landuse"
-            }
-          ]
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
         }
       }
     },
@@ -232,31 +176,15 @@
       "0": {
         "left": {
           "pavementHW": 7.470142842797157,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1.9037021553519873,
-              "fill": "landuse"
-            },
-            {
-              "width": 3.48044158466136,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1.9037021553519873,
+          "sidewalk": 3.48044158466136,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 5.190105979129703,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 0.8654940208702975,
-              "fill": "landuse"
-            },
-            {
-              "width": 4.1268325663291066,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 0.8654940208702975,
+          "sidewalk": 4.1268325663291066,
+          "terminal": "sidewalk"
         }
       }
     },
@@ -264,61 +192,29 @@
       "0": {
         "right": {
           "pavementHW": 16.568155178201053,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.1519828488643356,
-              "fill": "landuse"
-            },
-            {
-              "width": 4.24441045954833,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 4.24441045954833,
+          "terminal": "sidewalk"
         },
         "left": {
           "pavementHW": 8.385853030132012,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.020838982094821,
-              "fill": "landuse"
-            },
-            {
-              "width": 2.5291284592360714,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.5291284592360714,
+          "terminal": "sidewalk"
         }
       },
       "1": {
         "left": {
           "pavementHW": 8.385853030132012,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.020838982094821,
-              "fill": "landuse"
-            },
-            {
-              "width": 2.286,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.286,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 8.73105352144237,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.1519828488643356,
-              "fill": "landuse"
-            },
-            {
-              "width": 2.286,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.286,
+          "terminal": "sidewalk"
         }
       }
     },
@@ -326,27 +222,15 @@
       "0": {
         "left": {
           "pavementHW": 7.115830620475635,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.413597509572906,
-              "fill": "landuse"
-            },
-            {
-              "width": 4.305929018560233,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.413597509572906,
+          "sidewalk": 4.305929018560233,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 8.216335294041112,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 4.302710206132303,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 0,
+          "sidewalk": 4.302710206132303,
+          "terminal": "sidewalk"
         }
       }
     },
@@ -354,17 +238,9 @@
       "3": {
         "left": {
           "pavementHW": 10.555325676754327,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 3.5560120021971127,
-              "fill": "landuse"
-            },
-            {
-              "width": 20,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 20,
+          "terminal": "sidewalk"
         }
       }
     },
@@ -372,31 +248,15 @@
       "2": {
         "right": {
           "pavementHW": 11.542647309123844,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 2.2720885324451405,
-              "fill": "landuse"
-            },
-            {
-              "width": 2.1159141457231314,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 2.2720885324451405,
+          "sidewalk": 2.1159141457231314,
+          "terminal": "sidewalk"
         },
         "left": {
           "pavementHW": 5.645715395972545,
-          "terminal": "sidewalk",
-          "strips": [
-            {
-              "width": 1,
-              "fill": "landuse"
-            },
-            {
-              "width": 20,
-              "fill": "concrete"
-            }
-          ]
+          "treelawn": 1,
+          "sidewalk": 20,
+          "terminal": "sidewalk"
         }
       }
     },

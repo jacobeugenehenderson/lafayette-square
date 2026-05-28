@@ -2,55 +2,10 @@ import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure, getStrips } from './streetProfiles.js'
-
-// C3.3: writers emit strips going forward. Helpers build a fresh mutable
-// strips copy from a side (legacy or strips-shaped) so drag/delete/insert
-// gestures operate on one canonical shape, then write back `side.strips`
-// + drop the legacy {treelawn, sidewalk} fields so they never re-persist.
-const stripsCopy = (side) => getStrips(side).map(s => ({ ...s }))
-function writeStrips(sd, strips) {
-  sd.strips = strips
-  if ('treelawn' in sd) delete sd.treelawn
-  if ('sidewalk' in sd) delete sd.sidewalk
-}
-// Apply a handle-kind drag to one side via its strips. `r` = new absolute
-// radius from centerline; `caps` carries the same clamps the legacy paths
-// used (MAX_PAVEMENT_HW, MAX_STRIPE, STRIPE_MIN). C3.5 generalized:
-//   pavementHW                       — resize asphalt half-width
-//   stripDivider (dividerIdx = i)    — divide strips[i]/strips[i+1] within
-//                                      their existing total
-//   propertyLine                     — grow/shrink the LAST strip
-function applyStripsDrag(sd, kind, r, caps, dividerIdx) {
-  const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
-  if (kind === 'pavementHW') {
-    sd.pavementHW = Math.min(caps.MAX_PAVEMENT_HW, Math.max(0.5, r))
-    return
-  }
-  const strips = stripsCopy(sd)
-  const curbEnd = (sd.pavementHW || 0) + cw
-  if (kind === 'stripDivider') {
-    const i = dividerIdx ?? 0
-    if (strips.length < i + 2) { writeStrips(sd, strips); return }
-    const innerDepth = curbEnd + strips.slice(0, i).reduce((s, st) => s + st.width, 0)
-    const pair = strips[i].width + strips[i + 1].width
-    if (pair >= caps.STRIPE_MIN * 2) {
-      const newFirst = Math.max(caps.STRIPE_MIN, Math.min(pair - caps.STRIPE_MIN, r - innerDepth))
-      strips[i].width     = Math.min(caps.MAX_STRIPE, newFirst)
-      strips[i + 1].width = Math.min(caps.MAX_STRIPE, pair - newFirst)
-    } else {
-      strips[i].width = pair / 2
-      strips[i + 1].width = pair / 2
-    }
-  } else if (kind === 'propertyLine' && strips.length) {
-    const innerBeforeLast = curbEnd + strips.slice(0, -1).reduce((s, st) => s + st.width, 0)
-    strips[strips.length - 1].width = Math.min(caps.MAX_STRIPE, Math.max(caps.STRIPE_MIN, r - innerBeforeLast))
-  }
-  writeStrips(sd, strips)
-}
+import { defaultMeasure, sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
 import { polylineRibbon } from './overlayGeom.js'
 import ribbonsRaw from '../data/ribbons.json'
-import { resolveChainSegmentation, dilateRings, blockKeyFromRing } from '../lib/buildBlockGeometryV2.js'
+import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 
 // Lookup of survey-derived measure by street name — used when the operator
 // selects a street that has never been edited. Clicking it for the first
@@ -215,28 +170,21 @@ function midAndPerp(pts) {
   return { cx, cz, nx: -dz / len, nz: dx / len, segI }
 }
 
-// Boundaries on one side as draggable handles. C3.5: one handle per
-// inter-strip divider, generalizing the legacy 'treelawnOuter' (which
-// was the single divider in a 2-strip cross-section). N strips → N-1
-// stripDivider handles + a propertyLine at the outer edge.
-//   pavementHW   — asphalt outer (curb tracks it implicitly)
-//   stripDivider — between strips[i] and strips[i+1]; carries dividerIdx
-//   propertyLine — outer edge of the last strip
+// Boundaries on one side as draggable handles. Curb has fixed width, so only
+// one handle sits at the pavement/curb region (pavementHW) — the curb's outer
+// edge is implicitly pavementHW + CURB_WIDTH and tracks the pavementHW handle.
 function sideBoundaries(side) {
-  if (!side) return []
+  const stripes = sideToStripes(side)
+  if (!stripes.length) return []
   const out = []
-  if (side.pavementHW > 0) {
-    out.push({ r: side.pavementHW, kind: 'pavementHW' })
+  const asph = stripes.find(s => s.material === 'asphalt')
+  if (asph) out.push({ r: asph.outerR, kind: 'pavementHW' })
+  const tl = stripes.find(s => s.material === 'treelawn')
+  if (tl) out.push({ r: tl.outerR, kind: 'treelawnOuter' })
+  const last = stripes[stripes.length - 1]
+  if (last.material !== 'asphalt' && last.material !== 'curb') {
+    out.push({ r: last.outerR, kind: 'propertyLine' })
   }
-  const strips = getStrips(side)
-  if (!strips.length) return out
-  const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
-  let depth = (side.pavementHW || 0) + cw
-  for (let i = 0; i < strips.length - 1; i++) {
-    depth += strips[i].width
-    out.push({ r: depth, kind: 'stripDivider', dividerIdx: i })
-  }
-  out.push({ r: depth + strips[strips.length - 1].width, kind: 'propertyLine' })
   return out
 }
 
@@ -291,7 +239,6 @@ export default function MeasureOverlay() {
   // (chainIdx, segOrd, sideKey) tuple to its containing block-edge
   // (blockKey + edgeOrd) for per-block-edge customs authoring.
   const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
-  const v2Blocks        = useCartographStore(s => s._v2Blocks)
   // Coord-match IX identity per chain — single source of truth shared
   // with buildBlockGeometryV2 + buildChainBandsLive. naturalSegmentOrdinal
   // below uses this so the operator's drag resolves segOrds against the
@@ -423,7 +370,6 @@ export default function MeasureOverlay() {
         handles.push({
           side: sideKey,
           kind: b.kind,
-          dividerIdx: b.dividerIdx,   // present only on stripDivider handles
           r: b.r,
           x: cx + sign * nx * b.r,
           z: cz + sign * nz * b.r,
@@ -466,66 +412,6 @@ export default function MeasureOverlay() {
     useCartographStore.getState().setSegmentOrdinal(selection.ordinal)
   }, [selection])
 
-  // C3.4 — derived continuous border per adjacent block. Selecting a
-  // chain anchors handles on BOTH sides (operator clicks the centerline),
-  // so both adjacent blocks get their border visualized. Each border is
-  // the inward inset of that block's blockRounded by cw + W, where W =
-  // max(strips-total) across every fe on the block. Single-source: the
-  // same Clipper inward offset the cutover renderer uses (C2), evaluated
-  // on-demand from the stashed V2 outputs — what the operator sees is
-  // what the corner geometry will key off.
-  const derivedBlockBorders = useMemo(() => {
-    if (!active || !selection || !v2Blocks?.length || !v2FrontageEdges?.length) return []
-    const st = centerlineData.streets[selection.streetIdx]
-    if (!st) return []
-    const idKey = st.skelId || st.id || null
-    const nameKey = st.name || null
-    const adjBlockKeys = new Set()
-    for (const fe of v2FrontageEdges) {
-      const idMatch = idKey && fe.chainSkelId === idKey
-      const nameMatch = !idKey && nameKey && fe.chainName === nameKey
-      if (idMatch || nameMatch) adjBlockKeys.add(fe.blockKey)
-    }
-    if (!adjBlockKeys.size) return []
-    const ringByKey = new Map()
-    for (const ring of v2Blocks) ringByKey.set(blockKeyFromRing(ring), ring)
-    // Centerline lookup by skelId/name → chain object (for chain.measure
-    // fallback when no per-block custom is authored on a fe's edge).
-    const chainByKey = new Map()
-    for (const c of (centerlineData.streets || [])) {
-      const k = c.skelId || c.id || c.name
-      if (k) chainByKey.set(k, c)
-    }
-    const out = []
-    for (const bk of adjBlockKeys) {
-      const ring = ringByKey.get(bk)
-      if (!ring || ring.length < 3) continue
-      let W = 0
-      for (const fe of v2FrontageEdges) {
-        if (fe.blockKey !== bk) continue
-        const cust = blockCustoms?.[bk]?.[fe.edgeOrd]
-        const chain = chainByKey.get(fe.chainSkelId) || chainByKey.get(fe.chainName)
-        const sideM = cust || chain?.measure?.[fe.side]
-        if (!sideM) continue
-        const total = getStrips(sideM).reduce((s, x) => s + x.width, 0)
-        if (total > W) W = total
-      }
-      if (W <= 0) continue
-      // Normalize CCW so dilateRings' negative delta insets inward.
-      let area = 0
-      for (let i = 0, n = ring.length; i < n; i++) {
-        const [x1, y1] = ring[i], [x2, y2] = ring[(i + 1) % n]
-        area += x1 * y2 - x2 * y1
-      }
-      const ccwRing = area >= 0 ? ring : ring.slice().reverse()
-      const propLine = dilateRings([ccwRing], -(CURB_WIDTH + W), 'jtRound')
-      for (const pl of propLine) {
-        if (pl?.length >= 3) out.push({ blockKey: bk, ring: pl })
-      }
-    }
-    return out
-  }, [active, selection, centerlineData, blockCustoms, v2Blocks, v2FrontageEdges])
-
   // Whole-chain measure write — global Measure-mode drags target chain.measure
   // directly. Per-block divergence routes through setBlockEdgeCustom (D.6) on
   // the custom branch in applyDrag, keyed by (blockKey, edgeOrd).
@@ -547,7 +433,7 @@ export default function MeasureOverlay() {
   // point + dragged side using V2's stashed block rings. When in 'global'
   // mode, the drag also clears any customs on this chain — globals are
   // truth, customs are local deviations that don't survive a chain edit.
-  const applyDrag = useCallback((streetIdx, ordinal, side, kind, r, dividerIdx) => {
+  const applyDrag = useCallback((streetIdx, ordinal, side, kind, r) => {
     // Guard against non-finite r — if the pointer briefly leaves the canvas
     // mid-drag, screenToWorld can return NaN, distToPolyline propagates it,
     // and Math.max(0.3, NaN) is NaN. A persisted NaN in any measure field
@@ -602,12 +488,28 @@ export default function MeasureOverlay() {
         return
       }
       const existing = useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
-      const seed = existing || st.measure?.[side] || {
-        pavementHW: 5, terminal: 'sidewalk',
-        strips: [{ width: 1.5, fill: 'landuse' }, { width: 1.5, fill: 'concrete' }],
-      }
+      const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
       const next = { ...seed }
-      applyStripsDrag(next, kind, r, { MAX_PAVEMENT_HW, MAX_STRIPE, STRIPE_MIN: 1.0 }, dividerIdx)
+      const cw = Number.isFinite(next.curb) ? next.curb : CURB_WIDTH
+      const STRIPE_MIN = 1.0
+      if (kind === 'pavementHW') {
+        next.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
+      } else if (kind === 'treelawnOuter') {
+        const curbEnd = next.pavementHW + cw
+        const total = next.treelawn + next.sidewalk
+        if (total >= STRIPE_MIN * 2) {
+          const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
+          next.treelawn = Math.min(MAX_STRIPE, newTl)
+          next.sidewalk = Math.min(MAX_STRIPE, total - newTl)
+        } else {
+          next.treelawn = total / 2
+          next.sidewalk = total / 2
+        }
+      } else if (kind === 'propertyLine') {
+        const curbEnd = next.pavementHW + cw
+        const inner = curbEnd + next.treelawn
+        next.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
+      }
       if (window.__customDebug) console.log('  → write blockEdge[', fe.blockKey, '][', fe.edgeOrd, '] =', next)
       useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
       return
@@ -632,11 +534,31 @@ export default function MeasureOverlay() {
       // than this. To eliminate a stripe entirely, ctrl/right-click the
       // boundary handle (existing delete gesture). Keeps handles from
       // visually collapsing onto each other and forces explicit removal.
-      const caps = { MAX_PAVEMENT_HW, MAX_STRIPE, STRIPE_MIN: 1.0 }
+      const STRIPE_MIN = 1.0  // meters
       for (const s of sides) {
         const sd = m[s]
         if (!sd) continue
-        applyStripsDrag(sd, kind, r, caps, dividerIdx)
+        const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
+        if (kind === 'pavementHW') {
+          sd.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
+        } else if (kind === 'treelawnOuter') {
+          const curbEnd = sd.pavementHW + cw
+          const total = sd.treelawn + sd.sidewalk
+          // treelawn ∈ [STRIPE_MIN, total - STRIPE_MIN]; sidewalk picks up the rest
+          if (total >= STRIPE_MIN * 2) {
+            const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
+            sd.treelawn = Math.min(MAX_STRIPE, newTl)
+            sd.sidewalk = Math.min(MAX_STRIPE, total - newTl)
+          } else {
+            // Total too small to honor both minimums — split evenly so neither vanishes
+            sd.treelawn = total / 2
+            sd.sidewalk = total / 2
+          }
+        } else if (kind === 'propertyLine') {
+          const curbEnd = sd.pavementHW + cw
+          const inner = curbEnd + sd.treelawn
+          sd.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
+        }
       }
     })
   }, [modifyMeasure, findFeForSide, ixByChain])
@@ -658,7 +580,7 @@ export default function MeasureOverlay() {
         const along = dx * ax + dz * az
         const across = dx * nx + dz * nz
         if (Math.abs(along) < longHalf && Math.abs(across) < shortHalf) {
-          dragRef.current = { streetIdx: selection.streetIdx, ordinal: selection.ordinal, side: h.side, kind: h.kind, dividerIdx: h.dividerIdx }
+          dragRef.current = { streetIdx: selection.streetIdx, ordinal: selection.ordinal, side: h.side, kind: h.kind }
           e.stopPropagation()
           return
         }
@@ -689,7 +611,7 @@ export default function MeasureOverlay() {
   const onPointerMove = useCallback((e) => {
     if (dragRef.current) {
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
-      const { streetIdx, ordinal, side, kind, dividerIdx } = dragRef.current
+      const { streetIdx, ordinal, side, kind } = dragRef.current
       const cd = useCartographStore.getState().centerlineData
       const st = cd.streets[streetIdx]
       if (!st) return
@@ -699,12 +621,12 @@ export default function MeasureOverlay() {
         status: kind + ': ' + (r * 3.28084).toFixed(1) + 'ft',
       })
       // Buffer the drag's intent; coalesce to one applyDrag per frame.
-      pendingDragRef.current = { streetIdx, ordinal, side, kind, dividerIdx, r }
+      pendingDragRef.current = { streetIdx, ordinal, side, kind, r }
       if (dragRafRef.current == null) {
         dragRafRef.current = requestAnimationFrame(() => {
           dragRafRef.current = null
           const pending = pendingDragRef.current
-          if (pending) applyDrag(pending.streetIdx, pending.ordinal, pending.side, pending.kind, pending.r, pending.dividerIdx)
+          if (pending) applyDrag(pending.streetIdx, pending.ordinal, pending.side, pending.kind, pending.r)
         })
       }
       return
@@ -743,7 +665,7 @@ export default function MeasureOverlay() {
     }
     const pending = pendingDragRef.current
     pendingDragRef.current = null
-    if (pending) applyDrag(pending.streetIdx, pending.ordinal, pending.side, pending.kind, pending.r, pending.dividerIdx)
+    if (pending) applyDrag(pending.streetIdx, pending.ordinal, pending.side, pending.kind, pending.r)
     useCartographStore.setState({ status: '' })
   }, [applyDrag])
 
@@ -771,18 +693,14 @@ export default function MeasureOverlay() {
             for (const s of sides) {
               const sd = m[s]
               if (!sd) continue
-              if (h.kind === 'stripDivider') {
-                // Collapse strips[i] into strips[i+1] (width merges into
-                // the next strip; the deleted strip's fill is dropped).
-                const i = h.dividerIdx ?? 0
-                const strips = stripsCopy(sd)
-                if (strips.length >= i + 2) {
-                  strips[i + 1].width += strips[i].width
-                  strips.splice(i, 1)
-                }
-                writeStrips(sd, strips)
+              if (h.kind === 'treelawnOuter') {
+                // Collapse treelawn into sidewalk
+                sd.sidewalk += sd.treelawn
+                sd.treelawn = 0
               } else if (h.kind === 'propertyLine') {
-                writeStrips(sd, [])
+                // Remove the pedestrian zone entirely
+                sd.treelawn = 0
+                sd.sidewalk = 0
                 sd.terminal = 'none'
               }
             }
@@ -813,22 +731,17 @@ export default function MeasureOverlay() {
           if (!sd) continue
           const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
           const curbEnd = sd.pavementHW + cw
-          const strips = stripsCopy(sd)
-          const outerEnd = curbEnd + strips.reduce((a, st) => a + st.width, 0)
-          // Single-strip + click between curb and outer → split: insert a
-          // landuse strip at the click; keep the existing strip's fill on
-          // the property-side remainder. (C3.4 will replace this gesture
-          // with fill-toggle, which is the brief's settled authoring story.)
-          if (r > curbEnd + 0.2 && r < outerEnd - 0.2 && strips.length === 1) {
-            const tail = strips[0]
-            writeStrips(sd, [
-              { width: r - curbEnd, fill: 'landuse' },
-              { width: outerEnd - r, fill: tail.fill },
-            ])
+          const outerEnd = curbEnd + sd.treelawn + sd.sidewalk
+          if (r > curbEnd + 0.2 && r < outerEnd - 0.2 && sd.treelawn < 0.05) {
+            // Insert treelawn at click position; sidewalk = outer remainder.
+            sd.treelawn = r - curbEnd
+            sd.sidewalk = outerEnd - r
             inserted = true
           } else if (sd.terminal === 'none') {
+            // Re-seed pedestrian zone at this radius.
             sd.terminal = 'sidewalk'
-            writeStrips(sd, [{ width: Math.max(0.3, r - curbEnd), fill: 'concrete' }])
+            sd.sidewalk = Math.max(0.3, r - curbEnd)
+            sd.treelawn = 0
             inserted = true
           }
         }
@@ -836,142 +749,12 @@ export default function MeasureOverlay() {
       if (inserted) useCartographStore.setState({ status: 'Inserted boundary' })
       return inserted
     }
-    // C3.4 — toggle a strip's fill at the click point. The settled
-    // authoring story: ctrl-click in a band flips that strip between
-    // 'concrete' (sidewalk) and 'landuse' (the parcel showing through,
-    // what the old model called "treelawn"). Honors symmetric mode and
-    // the active measureMode (custom writes to blockCustoms; global
-    // writes to chain.measure). Insertion of a NEW strip splits in C3.5.
-    const tryToggleFill = (p) => {
-      if (!selection) return false
-      const st = centerlineData.streets[selection.streetIdx]
-      if (!st) return false
-      const frame = frameAtPoint(st.points, p.x, p.z)
-      const dx = p.x - frame.cx, dz = p.z - frame.cz
-      const signedPerp = dx * frame.nx + dz * frame.nz
-      const side = signedPerp >= 0 ? 'right' : 'left'
-      const r = Math.abs(signedPerp)
-      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-      const fe = findFeForSide(selection.streetIdx, segOrd, side)
-      const cust = fe ? useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] : null
-      const seed = cust || st.measure?.[side]
-      if (!seed) return false
-      const cw = Number.isFinite(seed.curb) ? seed.curb : CURB_WIDTH
-      const curbEnd = (seed.pavementHW || 0) + cw
-      const baseStrips = getStrips(seed)
-      if (!baseStrips.length) return false
-      // Resolve which strip the click radius falls in.
-      let depth = curbEnd, hitIdx = -1
-      for (let i = 0; i < baseStrips.length; i++) {
-        const next = depth + baseStrips[i].width
-        if (r >= depth - 0.05 && r <= next + 0.05) { hitIdx = i; break }
-        depth = next
-      }
-      if (hitIdx < 0) return false
-      const flipFill = (f) => (f === 'concrete' ? 'landuse' : 'concrete')
-      const mode = useCartographStore.getState().measureMode
-      if (mode?.type !== 'global' && fe) {
-        const next = { ...seed, strips: baseStrips.map((s, i) =>
-          i === hitIdx ? { ...s, fill: flipFill(s.fill) } : { ...s }) }
-        if ('treelawn' in next) delete next.treelawn
-        if ('sidewalk' in next) delete next.sidewalk
-        useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
-      } else {
-        modifyMeasure(selection.streetIdx, segOrd, (m) => {
-          const sides = m.symmetric ? ['left', 'right'] : [side]
-          for (const s of sides) {
-            const sd = m[s]
-            if (!sd) continue
-            const strips = getStrips(sd).map((x, i) =>
-              i === hitIdx ? { ...x, fill: flipFill(x.fill) } : { ...x })
-            sd.strips = strips
-            if ('treelawn' in sd) delete sd.treelawn
-            if ('sidewalk' in sd) delete sd.sidewalk
-          }
-        })
-      }
-      useCartographStore.setState({ status: 'Toggled fill' })
-      return true
-    }
-    // C3.5 — shift+ctrl-click in a band splits the clicked strip in two
-    // at the click radius, both halves inheriting the original strip's
-    // fill. Operator then ctrl-clicks either half to flip its fill —
-    // compositional authoring of rich strip patterns (concrete|grass|
-    // concrete, etc.) without enumerating cross-section shapes.
-    const trySplitStrip = (p) => {
-      if (!selection) return false
-      const st = centerlineData.streets[selection.streetIdx]
-      if (!st) return false
-      const frame = frameAtPoint(st.points, p.x, p.z)
-      const dx = p.x - frame.cx, dz = p.z - frame.cz
-      const signedPerp = dx * frame.nx + dz * frame.nz
-      const side = signedPerp >= 0 ? 'right' : 'left'
-      const r = Math.abs(signedPerp)
-      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-      const fe = findFeForSide(selection.streetIdx, segOrd, side)
-      const cust = fe ? useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] : null
-      const seed = cust || st.measure?.[side]
-      if (!seed) return false
-      const cw = Number.isFinite(seed.curb) ? seed.curb : CURB_WIDTH
-      const curbEnd = (seed.pavementHW || 0) + cw
-      const baseStrips = getStrips(seed)
-      if (!baseStrips.length) return false
-      // Resolve which strip the click radius falls in + offset within it.
-      let depth = curbEnd, hitIdx = -1, hitOffset = 0
-      for (let i = 0; i < baseStrips.length; i++) {
-        const next = depth + baseStrips[i].width
-        if (r >= depth && r <= next) { hitIdx = i; hitOffset = r - depth; break }
-        depth = next
-      }
-      if (hitIdx < 0) return false
-      const MIN = 0.3   // refuse to split if either half would be a sliver
-      const orig = baseStrips[hitIdx]
-      if (hitOffset < MIN || (orig.width - hitOffset) < MIN) return false
-      const splitTo = [
-        { width: hitOffset, fill: orig.fill },
-        { width: orig.width - hitOffset, fill: orig.fill },
-      ]
-      const composeStrips = (sourceStrips) => {
-        const out = sourceStrips.map(s => ({ ...s }))
-        if (hitIdx >= out.length) return out   // cross-section mismatch; bail
-        out.splice(hitIdx, 1, ...splitTo)
-        return out
-      }
-      const mode = useCartographStore.getState().measureMode
-      if (mode?.type !== 'global' && fe) {
-        const next = { ...seed, strips: composeStrips(baseStrips) }
-        if ('treelawn' in next) delete next.treelawn
-        if ('sidewalk' in next) delete next.sidewalk
-        useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
-      } else {
-        modifyMeasure(selection.streetIdx, segOrd, (m) => {
-          const sides = m.symmetric ? ['left', 'right'] : [side]
-          for (const s of sides) {
-            const sd = m[s]
-            if (!sd) continue
-            const src = getStrips(sd)
-            const out = composeStrips(src)
-            sd.strips = out
-            if ('treelawn' in sd) delete sd.treelawn
-            if ('sidewalk' in sd) delete sd.sidewalk
-          }
-        })
-      }
-      useCartographStore.setState({ status: `Split strip → ${baseStrips.length + 1}` })
-      return true
-    }
-    // Unified ctrl/right gesture: hit a handle → delete; else toggle fill
-    // of the strip under the click. (Strip insertion moves to C3.5.)
+    // Unified ctrl/right gesture: hit a handle → delete; otherwise → insert.
     const handleCtrlOrRight = (e) => {
       if (!selection) return false
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
       if (tryDeleteHandle(p)) return true
-      // shift+ctrl-click → split strip at the click radius (C3.5);
-      // plain ctrl-click → toggle the strip's fill (C3.4).
-      if (e.shiftKey) {
-        if (trySplitStrip(p)) return true
-      } else if (tryToggleFill(p)) return true
-      if (tryInsertBoundary(p)) return true   // re-seed when terminal='none'
+      if (tryInsertBoundary(p)) return true
       return false
     }
     const onContextMenu = (e) => {
@@ -1036,31 +819,6 @@ export default function MeasureOverlay() {
             depthTest={false} depthWrite={false} />
         </mesh>
       ))}
-      {/* C3.4 — derived per-block border at W = max(strips-total). One
-          ring per adjacent block; previews the uniform corner the
-          renderer keys off. View-only; persists no data. */}
-      {derivedBlockBorders.map((b, i) => {
-        const n = b.ring.length
-        const positions = new Float32Array((n + 1) * 3)
-        for (let k = 0; k < n; k++) {
-          positions[k * 3 + 0] = b.ring[k][0]
-          positions[k * 3 + 1] = 0.25
-          positions[k * 3 + 2] = b.ring[k][1]
-        }
-        positions[n * 3 + 0] = b.ring[0][0]
-        positions[n * 3 + 1] = 0.25
-        positions[n * 3 + 2] = b.ring[0][1]
-        return (
-          <line key={`bb-${i}-${b.blockKey}`} renderOrder={145}>
-            <bufferGeometry attach="geometry">
-              <bufferAttribute attach="attributes-position"
-                array={positions} count={n + 1} itemSize={3} />
-            </bufferGeometry>
-            <lineBasicMaterial color="#FFA500" transparent opacity={0.85}
-              depthTest={false} depthWrite={false} />
-          </line>
-        )
-      })}
       {selection && selection.handles.map((h, i) => (
         <group key={i} position={[h.x, 0, h.z]} rotation={[0, h.rotY, 0]}>
           {/* Black outline (slightly larger) — transparent flag puts it

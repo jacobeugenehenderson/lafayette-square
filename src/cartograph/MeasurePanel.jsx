@@ -1,37 +1,6 @@
 import { useState, useEffect } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, CURB_WIDTH, BAND_COLORS, getStrips } from './streetProfiles.js'
-
-// C3.3: panel still shows a 2-row view (Treelawn / Sidewalk) — the
-// brief's settled handle reshape (per-strip + fill-toggle) lands in
-// C3.4. These provisional read/write helpers project the strips model
-// onto the existing two-row UI: tl = the first landuse-fill strip's
-// width, sw = the first concrete-fill strip's. Writers reconstruct
-// the strips array, ensuring the cross-section stays {landuse,concrete}
-// in the conventional curb→property order.
-function getProvisionalTlSw(side) {
-  const strips = getStrips(side)
-  return {
-    tl: strips.find(s => s.fill === 'landuse')?.width || 0,
-    sw: strips.find(s => s.fill === 'concrete')?.width || 0,
-  }
-}
-function setSideTlSw(side, { tl, sw }) {
-  const strips = getStrips(side).map(s => ({ ...s }))
-  const upsert = (fill, w, insertIdx) => {
-    const i = strips.findIndex(s => s.fill === fill)
-    if (w > 0) {
-      if (i >= 0) strips[i].width = w
-      else strips.splice(insertIdx ?? strips.length, 0, { width: w, fill })
-    } else if (i >= 0) {
-      strips.splice(i, 1)
-    }
-  }
-  if (tl != null) upsert('landuse', tl, 0)         // curb-side
-  if (sw != null) upsert('concrete', sw)           // property-side
-  const { treelawn: _t, sidewalk: _s, ...rest } = side
-  return { ...rest, strips }
-}
+import { defaultMeasure, CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
 import ribbonsRaw from '../data/ribbons.json'
 
 const FT_PER_M = 3.28084
@@ -121,9 +90,11 @@ function hasAnyChainCustom(v2FrontageEdges, st, blockCustoms) {
 }
 
 function inferTerminal(side) {
-  const strips = getStrips(side)
-  if (!strips.length) return 'none'
-  return strips.some(s => s.fill === 'concrete') ? 'sidewalk' : 'lawn'
+  const tl = side.treelawn || 0
+  const sw = side.sidewalk || 0
+  if (tl > 0.01) return 'sidewalk'
+  if (sw > 0.01) return 'lawn'
+  return 'none'
 }
 
 // One editable numeric row. Local state for typing; commit on blur or Enter.
@@ -169,7 +140,6 @@ function NumberRow({ label, swatch, valueM, onCommit, readOnly }) {
 
 function SideBlock({ sideKey, side, onChange, single }) {
   const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
-  const { tl, sw } = getProvisionalTlSw(side)
   const set = (patch) => {
     const next = { ...side, ...patch }
     next.terminal = inferTerminal(next)
@@ -190,11 +160,11 @@ function SideBlock({ sideKey, side, onChange, single }) {
         valueM={cw}
         onCommit={v => set({ curb: v })} />
       <NumberRow label="Treelawn" swatch={BAND_COLORS.treelawn}
-        valueM={tl}
-        onCommit={v => onChange({ ...setSideTlSw(side, { tl: v }), terminal: inferTerminal(setSideTlSw(side, { tl: v })) })} />
+        valueM={side.treelawn || 0}
+        onCommit={v => set({ treelawn: v })} />
       <NumberRow label="Sidewalk" swatch={BAND_COLORS.sidewalk}
-        valueM={sw}
-        onCommit={v => onChange({ ...setSideTlSw(side, { sw: v }), terminal: inferTerminal(setSideTlSw(side, { sw: v })) })} />
+        valueM={side.sidewalk || 0}
+        onCommit={v => set({ sidewalk: v })} />
     </div>
   )
 }
