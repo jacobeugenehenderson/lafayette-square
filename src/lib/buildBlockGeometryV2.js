@@ -422,12 +422,25 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       // our right (we're facing the opposite direction along the chain).
       const left  = isBack ? effR : effL
       const right = isBack ? effL : effR
+      // C1 flanking-fes stamp: persist the per-side fes that buildLeg
+      // already resolved for customs lookup, with the same isBack flip.
+      // Corner-build below picks A.rightFe + B.leftFe — the two fes
+      // flanking the wedge between A and B. Read at C4 emit time via
+      // arcMeta[k].corner.flankingFes (corner record already exposed
+      // per-Bezier-sample by applyRoundCornersToRing). null when the
+      // probe didn't find an fe (parcel-only edge, segOrd unresolved);
+      // C2 must mirror the customs-lookup precedence (fe?.measure ??
+      // chain.measure[side]) when resolving swCornerDepth.
+      const leftFe  = isBack ? feR : feL
+      const rightFe = isBack ? feL : feR
       return {
         T: [dx / L, dz / L],
         outerL: left?.pavementHW || 0,
         outerR: right?.pavementHW || 0,
         leftDepth:  depthForSide(left),
         rightDepth: depthForSide(right),
+        leftFe,
+        rightFe,
         legKey: `${skel}:${dir === -1 ? 'b' : 'f'}`,
         skel,
         name: chain.name || null,
@@ -555,6 +568,11 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       T_A: localT_A, T_B: localT_B,
       outerR_A: A.outerR, outerL_B: B.outerL,
       rightDepth_A: A.rightDepth, leftDepth_B: B.leftDepth,
+      // C1: the two fes flanking this corner's wedge. A's right side
+      // and B's left side face the corner (matches d_A / d_B above).
+      // Either may be null if the leg's segOrd didn't resolve an fe
+      // (parcel-only edge etc.) — C2 falls back to leg chain.measure.
+      flankingFes: { A: A.rightFe || null, B: B.leftFe || null },
     })
   }
   return corners
