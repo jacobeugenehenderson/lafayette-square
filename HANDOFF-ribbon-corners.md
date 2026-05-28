@@ -16,6 +16,7 @@ Three errors converged across the 2026-05-27 night and the 2026-05-28 rewrites; 
 2. **If you find yourself adding a new operator-facing UX surface, stop.** The operator already authors strips per side; the system handles uniformity invisibly. Operator UX is byte-identical to today.
 3. **If you find yourself emitting a polygon that isn't a depth-band ring or a slice of one, stop.** The only polygons that emit are concentric inset rings of `blockRounded`, sliced into per-fe-sector and per-corner-zone arcs, plus the curb-stroke cap. `W_block` is a per-block *scalar*. There is no "scaffold" polygon, no "arcRegion" clip mask, no synthetic-strip rectangle.
 4. **If you find yourself per-vertex-perping anything, stop.** The doctrine is "concentric with the curb at every IX by construction." Per-vertex-perp produces a band concentric with the POLYLINE you're perping, which is `fe.points` (chain-bendy), not `blockRounded` (rounded curb). On bendy fes per-vertex-perp self-intersects and `∩ insideCurb` wipes it to empty (Coping's C0 redo #2 finding, ~12 blocks).
+5. **Toy IS the spike surface — do not build parallel spike/SVG/scratch tooling.** The production code path runs on toy via `node cartograph/bake-ground.js`; results render live in Toy designer. The doctrine: [[feedback_toy_is_the_construction_spike_surface]]. **Land C1a + C1b directly in `src/lib/buildBlockGeometryV2.js`,** gate C1b behind `opts.useConcentricEmitter`, turn the flag on for toy by default (off for LS), bake toy, view in Toy designer. The visual gate is the rendered toy bake — corner zones become all-concrete; grass stops at the literal-vert run boundary on each leg; no green wrap on rounded corners. If you find yourself writing a scratch JS file that simulates the construction outside the production code path, you are repeating Boz's 2026-05-28 misdirect — stop and route through the bake.
 
 Two materials in the band between curb and property line: **concrete** (sidewalk) and **grass / land-use** (landuse showing through where the parcel reaches). That is the vocabulary.
 
@@ -172,16 +173,9 @@ Consumes `fe.measure` + `fe.W_block` (baked at fe-construction by C1a), not `str
 
 > The construction is *new*. C0 is a throwaway spike — *decide from a picture*.
 
-**C0 — Spike (throwaway).** In a scratch read-only probe, on real `blockRounded` rings across the §9 reference IXs: compute `W_block` from `m.measure[side]`; build `depths_block`; build concentric `ring_i` via `inset(blockRounded, cw + d_i) − inset(blockRounded, cw + d_{i+1})`; slice each ring on `blockRounded` into per-fe-sector arcs + per-corner-zone arcs (using literal-vs-Bezier classification); attribute material per §3 Step-2 table; render bottom-up with curb cap last. **Confirm by eye AND by per-fe coverage table:**
-- Outer edge concentric at every IX corner **by construction** (no curb-cap concealment needed).
-- Lopsided IX (grass+sidewalk meeting sidewalk-only) reads cleanly; corner pad is concrete on both sides.
-- Sharp-radius IX self-clips to a point without exploding (Clipper's native handling).
-- Shallow-leg IX renders system-synthesized landuse in the deeper ring slices for that fe, reaching `cw + W_block` flush with the adjacent deeper sides.
-- The `treelawn=0, sidewalk=W_side<W_block` configuration renders [concrete, grass] outward from the curb.
-- **Per-fe coverage table** (the second hard verify): every sidewalk-terminal fe of every block contributes ≥1 ring slice per non-empty depth interval in its authored stack. Aggregate `fes_with_zero_slices` across 126 blocks must equal **0**. If non-zero, stop and surface — do not tune the spike to make the picture look clean.
-- **Per-corner-zone coverage**: every corner Bezier-vert span produces a concrete arc per ring at depth `< W_block`.
+**C0 — Toy is the spike (no scratch tooling).** ~~In a scratch read-only probe...~~ **There is no C0 spike commit. Toy IS the spike surface.** Land C1a + C1b directly in `src/lib/buildBlockGeometryV2.js`, gate C1b behind `opts.useConcentricEmitter`, turn the flag on for toy by default in the bake-ground scene-parametric path (off for LS until C4 cutover). Run `node cartograph/bake-ground.js`. View the result in Toy designer. The visual gate is the rendered toy bake: corner zones become all-concrete; grass stops at the literal-vert run boundary on each leg; no green wrap on rounded corners; lopsided / sharp-radius / shallow-leg / bendy-chain test fixtures all render correctly. See [[feedback_toy_is_the_construction_spike_surface]] for why this is the rule.
 
-Test radii from neutral up to `R > cw + W_block`. **Gate:** the picture passes AND the coverage tables are clean. No production edit; delete after.
+(The per-fe-per-depth-interval coverage table from prior C0 attempts is still the right diagnostic — but route it through the bake pipeline as a console log or diagnostic overlay, not as scratch SVG dumps.)
 
 **C1a — Re-land the stage wall + bake fe-side scalars.** Bake-only commit, no behavior change. At fe-construction in `buildFrontageEdges` @1045, resolve ONCE and bake onto each fe:
 ```
