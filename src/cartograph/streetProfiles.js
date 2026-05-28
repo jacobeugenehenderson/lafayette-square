@@ -158,6 +158,34 @@ export function defaultMeasure(type, survey) {
   return { left, right, symmetric }
 }
 
+// One side's strip list — the new strips model (HANDOFF-ribbon-corners.md C3).
+// Each strip is { width, fill ∈ {'concrete', 'landuse'} }: concrete renders as
+// sidewalk material; landuse lets the parcel show through (what the old model
+// called "treelawn"). Order is curb-side → property-side; a side may carry
+// zero, one, or many strips (per-side authorable: grass|concrete, all-concrete,
+// concrete|grass, etc.).
+//
+// During the strips finish-up `side.strips` is the source of truth; absence
+// means legacy `{treelawn, sidewalk}` data — derived here so the consumer
+// switch (C3.2) and the persisted migration (C3.3) can land in safe chunks
+// without ever breaking a build:
+//   treelawn       → { width: treelawn, fill: 'landuse' }   (grass = parcel showing through)
+//   sidewalk-term  → { width: sidewalk, fill: 'concrete' }
+//   lawn-term      → { width: sidewalk, fill: 'landuse' }   (no concrete on lawn sides)
+//   terminal=none  → []                                     (no ped zone)
+// Zero-width strips are dropped so consumers iterate only material slots.
+export function getStrips(side) {
+  if (!side) return []
+  if (Array.isArray(side.strips)) return side.strips.filter(s => (s?.width || 0) > 0)
+  if (side.terminal === 'none') return []
+  const out = []
+  if (side.treelawn > 0) out.push({ width: side.treelawn, fill: 'landuse' })
+  if (side.sidewalk > 0) {
+    out.push({ width: side.sidewalk, fill: side.terminal === 'lawn' ? 'landuse' : 'concrete' })
+  }
+  return out
+}
+
 // Convert one side's measure into an ordered list of rings: one per stripe,
 // innerR → outerR from centerline outward. Materials are implied by position.
 export function sideToStripes(side) {
