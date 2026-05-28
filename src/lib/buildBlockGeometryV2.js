@@ -1468,84 +1468,106 @@ function silhouetteStraightEmitter(blockRoundedWithMeta, frontageEdges, chainInd
   return { frontageBands: out }
 }
 
-// ── Uniform-width ped band — figure-ground residual (HANDOFF §3). ──────
-// Two layers, both polygon-side:
+// ── Ped band — authoring-truth only (HANDOFF §3, corrected). ───────────
+// Every rendered pixel corresponds to a strip the operator authored.
+// No uniform-W pedBand, no figure-ground residual — those invent surface
+// area the operator never authored.
 //
 //   PER-LEG STRIPS (the straight emitter, fe.measure-baked):
 //     each fe's authored strips emit per-vertex-perp on its straight-run
-//     vertices — landuse → treelawnRings (per parcel, bake-ground:349
-//     probe), concrete → sidewalkRings (per fe). These stop at the
-//     leg's AUTHORED cw + stripsTotal. On a shallow leg whose strips
-//     total less than W, the gap [cw+stripsTotal, cw+W] gets no ring
-//     emitted — the block-fill (parcel) plugs through, per the brief
-//     "land-use fills everything ped materials don't on shallow sides."
+//     vertices at AUTHORED widths. landuse → treelawnRings (per parcel
+//     for the bake-ground:349 LU probe); concrete → sidewalkRings
+//     (per fe).
 //
-//   CORNER CONCRETE (figure-ground residual):
-//     pedBand     = inset(blockRounded, cw) − inset(blockRounded, cw+W)
-//     legCoverage = union of per-vertex-perp [cw, cw+W] bands over each
-//                   straight-vertex run of blockRounded (partitioned by
-//                   arcMeta.corner — polygon-side, no chains, no probe).
-//     corner      = pedBand − legCoverage
-//
-//     The corner is the strips ARCING around — NEVER a constructed
-//     block. Per HANDOFF §1 keystone: corner falls out concentric
-//     (Clipper inward offset; degenerates honestly — arc when R > cw+W,
-//     point at neutral, self-clipped natively when sharp).
+//   CORNER CONCRETE (the concrete strip wrapping the rounded corner,
+//   at AUTHORED depth):
+//     For each arc-span in blockRounded, the two literal verts flanking
+//     the arc identify the two flanking legs (coord match → fe). The
+//     corner concrete fills [cw, cw + max(flank.stripsTotal)] over the
+//     arc-span via per-vertex-perp — the brief's "grass cuts off at the
+//     corner and the gap becomes concrete," but the OUTER depth is the
+//     flanking-leg's authored cw+tl+sw, NOT global W. Concentric,
+//     polygon-side. Reads "the concrete strip bends around the corner."
 //
 // Signature is polygon-side only (HANDOFF §2 polygon-only barrier);
 // fe.measure baked at fe-construction's close carries authoring.
-function buildPedBand(blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasure, curbWidth, W) {
+// `_W` parameter retained for signature stability — no longer driving
+// any band depth (the brief's global-W scaffolding was the bug).
+function buildPedBand(blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasure, curbWidth, _W) {
   const cw = curbWidth
-  // Per-leg strips at AUTHORED depths (grass + concrete). silhouetteStraightEmitter
-  // walks blockRounded's straight runs, reads each run's fe.measure strips, emits
-  // per-strip rings routed by fill. Both treelawnRings AND sidewalkRings are kept
-  // intact on each entry — per-leg authored concrete is part of the visible result.
+  // Per-leg AUTHORED strips on straight runs — untouched.
   const { frontageBands: straightBands } = silhouetteStraightEmitter(
     blockRoundedResults, frontageEdges, chainIndex, chainDefaultMeasure, cw,
   )
 
-  // Corner concrete: pedBand minus per-leg coverage-at-W, evaluated per block.
+  // Global coord→fe map (polygon-side). Lookup only at arc-span
+  // boundaries — two queries per arc-span — so shared-corner
+  // last-write-wins ambiguity at the lookup point is irrelevant.
+  const coordToFe = new Map()
+  for (const fe of (frontageEdges || [])) {
+    if (fe.chainIdx == null) continue
+    for (const p of fe.points) coordToFe.set(`${p[0]}|${p[1]}`, fe)
+  }
+  const stripsTotal = (fe) => fe?.measure
+    ? getStrips(fe.measure).reduce((s, st) => s + st.width, 0)
+    : 0
+
+  // CORNER CONCRETE — per-vertex-perp band over each arc-span at the
+  // flanking legs' max authored ped depth (cw + max(tl+sw)).
   const cornerRings = []
   for (const { ring, arcMeta } of blockRoundedResults) {
-    if (!ring || ring.length < 3) continue
-    const ccwArr = ringSignedArea2D(ring) >= 0 ? [ring] : [ring.slice().reverse()]
-    const curbInner = dilateRings(ccwArr, -cw, 'jtRound')
-    if (!curbInner.length) continue
-    const propLine = dilateRings(ccwArr, -(cw + W), 'jtRound')
-    const pedBand = propLine.length ? differenceRings(curbInner, propLine) : curbInner
-    if (!pedBand.length) continue
-    if (!arcMeta) { cornerRings.push(...pedBand); continue }   // no rounding meta → whole pedBand is "corner"
+    if (!ring || ring.length < 3 || !arcMeta) continue
     const N = ring.length
     const inwardSign = ringSignedArea2D(ring) >= 0 ? +1 : -1
-    // Straight-vertex runs (the legs). arcMeta[i].corner set = Bezier
-    // corner sample (breaks the run); null = literal straight vertex.
-    const runs = []
+
+    // Partition into arc-spans (continuous arcMeta.corner verts).
+    const arcs = []
     let cur = null
     for (let i = 0; i < N; i++) {
-      if (arcMeta[i]?.corner) { if (cur) { runs.push(cur); cur = null }; continue }
-      if (!cur) cur = { idxs: [] }
-      cur.idxs.push(i)
+      if (arcMeta[i]?.corner) {
+        if (!cur) cur = { idxs: [] }
+        cur.idxs.push(i)
+      } else if (cur) {
+        arcs.push(cur); cur = null
+      }
     }
-    if (cur) runs.push(cur)
-    if (runs.length > 1 && !arcMeta[0]?.corner && !arcMeta[N - 1]?.corner) {
-      const last = runs.pop()
-      runs[0].idxs = [...last.idxs, ...runs[0].idxs]
+    if (cur) arcs.push(cur)
+    // Wraparound merge when both ring ends belong to the same corner.
+    if (arcs.length > 1
+        && arcMeta[0]?.corner
+        && arcMeta[N - 1]?.corner
+        && arcMeta[0].corner === arcMeta[N - 1].corner) {
+      const last = arcs.pop()
+      arcs[0].idxs = [...last.idxs, ...arcs[0].idxs]
     }
-    // Per-vertex-perp coverage band [cw, cw+W] over each leg's straight
-    // run. Subtracting this from pedBand leaves only the arc-span
-    // regions — the corners arcing around.
-    const coverage = []
-    for (const run of runs) {
-      const pts = run.idxs.map(i => ring[i])
+
+    for (const arc of arcs) {
+      const firstArcIdx = arc.idxs[0]
+      const lastArcIdx  = arc.idxs[arc.idxs.length - 1]
+      const beforeIdx = ((firstArcIdx - 1) % N + N) % N
+      const afterIdx  = (lastArcIdx + 1) % N
+      const beforeVert = arcMeta[beforeIdx]?.corner ? null : ring[beforeIdx]
+      const afterVert  = arcMeta[afterIdx]?.corner  ? null : ring[afterIdx]
+      const feBefore = beforeVert ? coordToFe.get(`${beforeVert[0]}|${beforeVert[1]}`) : null
+      const feAfter  = afterVert  ? coordToFe.get(`${afterVert[0]}|${afterVert[1]}`)  : null
+      const D = Math.max(stripsTotal(feBefore), stripsTotal(feAfter))
+      if (D <= 0) continue   // both flanking legs unauthored → no corner concrete
+
+      // Extend the arc by 1 literal vert on each side so the corner
+      // concrete butts cleanly into each leg's authored strips (Clipper
+      // union absorbs sliver overlap at the seam).
+      const ext = []
+      if (beforeVert) ext.push(beforeIdx)
+      ext.push(...arc.idxs)
+      if (afterVert && afterIdx !== beforeIdx) ext.push(afterIdx)
+      const pts = ext.map(i => ring[i])
       if (pts.length < 2) continue
       const perps = computePerps(pts)
-      const inner = pts.map((p, k) => [p[0] + perps[k][0] * inwardSign * cw,         p[1] + perps[k][1] * inwardSign * cw])
-      const outer = pts.map((p, k) => [p[0] + perps[k][0] * inwardSign * (cw + W),   p[1] + perps[k][1] * inwardSign * (cw + W)])
+      const inner = pts.map((p, k) => [p[0] + perps[k][0] * inwardSign * cw,        p[1] + perps[k][1] * inwardSign * cw])
+      const outer = pts.map((p, k) => [p[0] + perps[k][0] * inwardSign * (cw + D),  p[1] + perps[k][1] * inwardSign * (cw + D)])
       const r = closeBandRingV2(outer, inner)
-      if (r) coverage.push(r)
+      if (r) cornerRings.push(r)
     }
-    const cornerForBlock = coverage.length ? differenceRings(pedBand, coverage) : pedBand
-    cornerRings.push(...cornerForBlock)
   }
 
   const out = [...straightBands]
