@@ -278,7 +278,7 @@ function ringsToHoledPolys(rings) {
   return outers.map((o, i) => ({ outer: o, holes: holesByOuter[i] }))
 }
 
-function buildV2BakeShape(ribbons, design, stencilPolygon) {
+function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
   const v2 = buildBlockGeometryV2(ribbons, {
     stencil: stencilPolygon,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
@@ -287,6 +287,7 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
     blockCustoms:    design.blockCustoms    || null,
     blockLandUse:    design.blockLandUse    || null,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
+    useRingBandEmitter: !!opts.useRingBandEmitter,  // C4: toy default on, LS off until C5 cutover
   })
 
   const byMaterial = new Map()
@@ -578,7 +579,10 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const designLayerColors = design.layerColors || {}
   const designLuColors    = design.luColors    || {}
-  const { byMaterial, byFaceUse } = buildV2BakeShape(ribbons, design, stencil.clipPolygon)
+  // C4 — toy gets the new ring-band emitter (default on for toy only);
+  // LS stays on the legacy emitter until C5 cutover.
+  const useRingBandEmitter = scene === 'toy'
+  const { byMaterial, byFaceUse } = buildV2BakeShape(ribbons, design, stencil.clipPolygon, { useRingBandEmitter })
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group

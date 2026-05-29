@@ -1896,6 +1896,285 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
   return { frontageBands: out, frontageCaps: [] }
 }
 
+// C4 — ring-band emitter. Walks `blockRounded` CCW once, perp-offsets
+// per vertex with region-aware depth, emits two band polygons (sidewalk
+// + LU) per span. Replaces silhouetteStraightEmitter (straight runs)
+// AND buildFrontageBandsV2's arc-pad branch (corner zones) under one
+// loop. Outputs the same { frontageBands } entry shape today's bake
+// consumer expects (bake-ground.js:347-359: per-fe treelawnRings →
+// 'treelawn:<lu>' via centroid probe; sidewalkRings → 'sidewalk';
+// asphaltRings filled by attributeFilletResidualToArcs).
+//
+// Per-leg straight runs (one entry per fe):
+//   treelawn-strip   perp(cw) → perp(cw + tl)                — LU material
+//   sidewalk-strip   perp(cw + tl) → perp(cw + tl + sw)     — concrete
+//   LU-beyond-stack  perp(cw + tl + sw) → perp(W)           — LU material (new)
+// (treelawn-strip + LU-beyond-stack both pushed to treelawnRings; same
+// fe = same adjacent parcel → same LU key under the consumer's
+// pushClipperRings(key, fe.treelawnRings).)
+//
+// Corner zones (one entry per Bezier span):
+//   concrete-pad     perp(cw) → perp(corner.swCornerDepth)  — concrete
+//   LU-beyond        perp(swCornerDepth) → perp(W)          — LU material
+// (AASHTO doctrine: corner pads are uniform concrete from curb to the
+// deepest-adjacent-leg's stack; treelawn dissolves at the corner.)
+//
+// Seam handling: the leg-stack vs swCornerDepth depth step is built INTO
+// the corner ring's outer/inner edges by extending the corner span to
+// include its bounding literal verts at the leg's stack depth. The leg
+// run ALSO emits at its boundary vert at the leg's stack depth — both
+// rings share the boundary vert position (zero-area overlap), so there
+// is no sliver between adjacent rings at the seam.
+//
+// Owning-fe attribution per straight span: the C1 sidecar
+// (corner.flankingFes) maps each corner's adjacent fes; a straight run
+// CCW-bounded by corners X and Y belongs to X.flankingFes.A AND
+// Y.flankingFes.B (same fe, the block edge between the two corners).
+// Fallback for non-corner-bounded runs (divided-pair endpoint IXs,
+// theta-skipped IXs, no-polylineCross IXs — Waverly-toy fixture class):
+// findAdjacentChainForBlockEdge probe per sub-run. This is a CONTAINED
+// wall-doctrine relaxation, scoped to fe-attribution only; depth
+// resolution still comes from fe.measure (no streets reads for measure).
+// C6 docs note: future tightening could pre-bake per-vertex fe
+// attribution at construction.
+function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blockScalars, streets, chainIndex, curbWidth) {
+  if (!blockRoundedWithMeta?.length) return { frontageBands: [] }
+  const cw = curbWidth
+  const out = []
+
+  // fes grouped by block — keyed by blockSharp's blockKey (same key fes
+  // were built with). See [[feedback_block_key_rounded_vs_sharp_diverges]]:
+  // blockKeyFromRing(blockRounded) drifts from blockKeyFromRing(blockSharp)
+  // when corner Bezier samples push the bbox past a 0.5m bin. Looking up
+  // by the rounded key silently misses fes on divergent blocks (Benton/
+  // Waverly fixture class in toy). We have parallel arrays via the
+  // applyRoundCornersToRing call site, so use index parity.
+  const fesByBlock = new Map()
+  for (const fe of frontageEdges) {
+    if (!fe.blockKey) continue
+    let arr = fesByBlock.get(fe.blockKey)
+    if (!arr) { arr = []; fesByBlock.set(fe.blockKey, arr) }
+    arr.push(fe)
+  }
+
+  const KINK_THRESHOLD_RAD = 5 * Math.PI / 180
+
+  for (let bi = 0; bi < blockRoundedWithMeta.length; bi++) {
+    const { ring, arcMeta } = blockRoundedWithMeta[bi]
+    if (!ring || ring.length < 3 || !arcMeta) continue
+    const N = ring.length
+    // Sharp-keyed blockKey for fe lookup; rounded ring drives geometry.
+    const sharpRing = blockSharp[bi]
+    const blockKey = sharpRing ? blockKeyFromRing(sharpRing) : blockKeyFromRing(ring)
+    const blockScale = blockScalars?.get(blockKey)
+    const W = blockScale?.W
+    if (!W || W <= cw + 1e-9) continue   // no ribbon to draw on this block
+
+    const ringCcw = ringSignedArea2D(ring) >= 0
+    const inwardSign = ringCcw ? +1 : -1
+    const perps = computePerps(ring)
+    const offsetAt = (idx, d) => [
+      ring[idx][0] + perps[idx][0] * inwardSign * d,
+      ring[idx][1] + perps[idx][1] * inwardSign * d,
+    ]
+
+    // Partition into spans by arcMeta corner identity.
+    const spans = []
+    let cur = { type: arcMeta[0]?.corner ? 'arc' : 'straight',
+                idxs: [0], corner: arcMeta[0]?.corner || null }
+    for (let i = 1; i < N; i++) {
+      const c = arcMeta[i]?.corner || null
+      if (c === cur.corner) cur.idxs.push(i)
+      else { spans.push(cur); cur = { type: c ? 'arc' : 'straight', idxs: [i], corner: c } }
+    }
+    spans.push(cur)
+    // Wraparound merge: first + last same identity = one span split by iter boundary.
+    if (spans.length > 1 && spans[0].corner === spans[spans.length - 1].corner) {
+      const last = spans.pop()
+      spans[0].idxs = [...last.idxs, ...spans[0].idxs]
+    }
+
+    // Sub-split straight spans at chain-tangent kinks (>5°) — handles
+    // non-corner IXs (divided-pair endpoint, theta-skipped) that pass
+    // through the rounded ring as straight verts but cross fe boundaries.
+    // Matches silhouetteStraightEmitter's sub-A.1 logic.
+    const splitSpans = []
+    for (const span of spans) {
+      if (span.type !== 'straight' || span.idxs.length < 3) { splitSpans.push(span); continue }
+      let curIdxs = [span.idxs[0]]
+      for (let k = 1; k < span.idxs.length - 1; k++) {
+        const i = span.idxs[k]
+        const prev = ring[span.idxs[k - 1]]
+        const curV = ring[i]
+        const next = ring[span.idxs[k + 1]]
+        const inDir = unit([curV[0] - prev[0], curV[1] - prev[1]])
+        const outDir = unit([next[0] - curV[0], next[1] - curV[1]])
+        const dot = Math.max(-1, Math.min(1, inDir[0] * outDir[0] + inDir[1] * outDir[1]))
+        const kink = Math.acos(dot)
+        curIdxs.push(i)
+        if (kink > KINK_THRESHOLD_RAD) {
+          splitSpans.push({ type: 'straight', idxs: curIdxs, corner: null })
+          curIdxs = [i]
+        }
+      }
+      curIdxs.push(span.idxs[span.idxs.length - 1])
+      splitSpans.push({ type: 'straight', idxs: curIdxs, corner: null })
+    }
+
+    const Ns = splitSpans.length
+    const blockFes = fesByBlock.get(blockKey) || []
+
+    // Per-fe geometric probe fallback. Used when a straight sub-span isn't
+    // bounded by corners on both sides (kink-split sub-runs, or rings
+    // with no corners at all).
+    const probeFeForRun = (idxs) => {
+      const pts = idxs.map(i => ring[i])
+      if (pts.length < 2) return null
+      const adj = findAdjacentChainForBlockEdge(pts, ringCcw, streets, chainIndex)
+      if (!adj) return null
+      for (const fe of blockFes) {
+        if (fe.chainIdx === adj.chainIdx && fe.side === adj.side) return fe
+      }
+      return null
+    }
+
+    for (let si = 0; si < Ns; si++) {
+      const span = splitSpans[si]
+
+      if (span.type === 'arc') {
+        // Corner zone. Build concrete pad + LU-beyond ring; extend with
+        // bounding literal verts at the leg's stack depth so the depth
+        // step at tA/tB is built INTO the corner ring's edges.
+        const corner = span.corner
+        const swCD = corner.swCornerDepth || 0
+        if (swCD <= cw + 1e-9) continue
+
+        const prevSpan = splitSpans[(si - 1 + Ns) % Ns]
+        const nextSpan = splitSpans[(si + 1) % Ns]
+        // Walk-order: prev = literal-on-leg-B side, next = literal-on-leg-A side
+        // (per RIBBONS §3.7 + the Bezier reversal at applyRoundCornersToRing).
+        const dB_stack = corner.leftDepth_B  || 0
+        const dA_stack = corner.rightDepth_A || 0
+
+        const concreteOuter = []
+        const concreteInner = []
+        // Prepend bounding literal vert on leg-B side.
+        if (prevSpan.type === 'straight' && prevSpan.idxs.length > 0) {
+          const bIdx = prevSpan.idxs[prevSpan.idxs.length - 1]
+          concreteOuter.push(offsetAt(bIdx, cw))
+          concreteInner.push(offsetAt(bIdx, cw + dB_stack))
+        }
+        for (const i of span.idxs) {
+          concreteOuter.push(offsetAt(i, cw))
+          concreteInner.push(offsetAt(i, swCD))
+        }
+        // Append bounding literal vert on leg-A side.
+        if (nextSpan.type === 'straight' && nextSpan.idxs.length > 0) {
+          const bIdx = nextSpan.idxs[0]
+          concreteOuter.push(offsetAt(bIdx, cw))
+          concreteInner.push(offsetAt(bIdx, cw + dA_stack))
+        }
+        const sidewalkRing = closeBandRingV2(concreteOuter, concreteInner)
+        const sidewalkRings = sidewalkRing ? [sidewalkRing] : []
+
+        const treelawnRings = []
+        if (W > swCD + 1e-9) {
+          const luOuter = []
+          const luInner = []
+          if (prevSpan.type === 'straight' && prevSpan.idxs.length > 0) {
+            const bIdx = prevSpan.idxs[prevSpan.idxs.length - 1]
+            luOuter.push(offsetAt(bIdx, cw + dB_stack))
+            luInner.push(offsetAt(bIdx, W))
+          }
+          for (const i of span.idxs) {
+            luOuter.push(offsetAt(i, swCD))
+            luInner.push(offsetAt(i, W))
+          }
+          if (nextSpan.type === 'straight' && nextSpan.idxs.length > 0) {
+            const bIdx = nextSpan.idxs[0]
+            luOuter.push(offsetAt(bIdx, cw + dA_stack))
+            luInner.push(offsetAt(bIdx, W))
+          }
+          const luRing = closeBandRingV2(luOuter, luInner)
+          if (luRing) treelawnRings.push(luRing)
+        }
+
+        if (!sidewalkRings.length && !treelawnRings.length) continue
+
+        const feA = corner.flankingFes?.A
+        const feB = corner.flankingFes?.B
+        out.push({
+          blockKey,
+          edgeOrd: feA?.edgeOrd ?? feB?.edgeOrd,
+          chainIdx: feA?.chainIdx ?? feB?.chainIdx,
+          side:    feA?.side    ?? feB?.side,
+          corner,                              // preserved for attributeFilletResidualToArcs
+          treelawnRings,
+          sidewalkRings,
+          asphaltRings: [],
+        })
+        continue
+      }
+
+      // Straight span. Resolve owning fe via bounding corners' flankingFes
+      // (C1 sidecar) with kink-split / non-corner fallback to chain probe.
+      const prevSpan = splitSpans[(si - 1 + Ns) % Ns]
+      const nextSpan = splitSpans[(si + 1) % Ns]
+      let fe = null
+      // CCW walk: prev-arc-end (tA) on leg A of corner X → this run → next-arc-start (tB) on leg B of corner Y.
+      // So this run's fe = X.flankingFes.A = Y.flankingFes.B (same fe).
+      if (prevSpan.type === 'arc' && prevSpan.corner?.flankingFes?.A) fe = prevSpan.corner.flankingFes.A
+      if (!fe && nextSpan.type === 'arc' && nextSpan.corner?.flankingFes?.B) fe = nextSpan.corner.flankingFes.B
+      if (!fe) fe = probeFeForRun(span.idxs)
+      if (!fe || !fe.measure) continue
+      const m = fe.measure
+      if (m.terminal !== 'sidewalk') continue
+      const tl = m.treelawn || 0
+      const sw = m.sidewalk || 0
+      const stack = tl + sw
+      if (stack <= 1e-9) continue
+
+      const pts = span.idxs.map(i => ring[i])
+      if (pts.length < 2) continue
+
+      const innerCurb = span.idxs.map(i => offsetAt(i, cw))
+      const tlOuter   = span.idxs.map(i => offsetAt(i, cw + tl))
+      const swOuter   = span.idxs.map(i => offsetAt(i, cw + tl + sw))
+      const wOuter    = span.idxs.map(i => offsetAt(i, W))
+
+      const treelawnRings = []
+      const sidewalkRings = []
+      if (tl > 1e-9) {
+        const r = closeBandRingV2(tlOuter, innerCurb)
+        if (r) treelawnRings.push(r)
+      }
+      if (sw > 1e-9) {
+        const r = closeBandRingV2(swOuter, tlOuter)
+        if (r) sidewalkRings.push(r)
+      }
+      if (W > cw + stack + 1e-9) {
+        const r = closeBandRingV2(wOuter, swOuter)
+        if (r) treelawnRings.push(r)  // LU-beyond-stack → routes per-LU via probe
+      }
+      if (!treelawnRings.length && !sidewalkRings.length) continue
+
+      out.push({
+        blockKey,
+        edgeOrd: fe.edgeOrd,
+        chainIdx: fe.chainIdx,
+        side: fe.side,
+        points: pts,
+        corner: null,
+        treelawnRings,
+        sidewalkRings,
+        asphaltRings: [],
+      })
+    }
+  }
+
+  return { frontageBands: out }
+}
+
 // Phase 2.1 — per-corner outer-face emission. The regime emitter's
 // arc-span branch handles INWARD geometry (bands + ramp + plug); this
 // pass handles OUTWARD geometry — the fillet area between the rounded
@@ -2096,7 +2375,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
     curbWidth = CURB_WIDTH, blockCustoms = null,
-    blockLandUse = null } = opts
+    blockLandUse = null,
+    useRingBandEmitter = false } = opts  // C4 flag — toy on, LS off until C5
   // Apply inner-edge anchor transform to all chains up front: every
   // downstream consumer (street.measure, segmentMeasures via
   // measureForSegment) sees the post-transform measure where inboard
@@ -2440,13 +2720,25 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   //    RAMP_MIN_M dCorner. Sub-B replaces this with concentric arc-
   //    span band emission.
   // Concat into one frontageBands array; downstream iterates by field.
-  const { frontageBands: straightBands } = silhouetteStraightEmitter(
-    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
-  )
-  const { frontageBands: arcBands, frontageCaps } = buildFrontageBandsV2(
-    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
-  )
-  const frontageBands = [...straightBands, ...arcBands]
+  let frontageBands, frontageCaps
+  if (useRingBandEmitter) {
+    // C4 — single-walk emitter. Replaces both legacy emitters under one
+    // loop; frontageCaps stays empty (caps were always empty from V2).
+    const r = emitBlockRingBands(
+      blockRoundedResults, blockSharp, frontageEdges, blockScalars, streets, chainIndex, curbWidth,
+    )
+    frontageBands = r.frontageBands
+    frontageCaps = []
+  } else {
+    const { frontageBands: straightBands } = silhouetteStraightEmitter(
+      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
+    )
+    const { frontageBands: arcBands, frontageCaps: caps } = buildFrontageBandsV2(
+      streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
+    )
+    frontageBands = [...straightBands, ...arcBands]
+    frontageCaps = caps
+  }
   __mark('frontageBands')
 
   // Phase 2.1 — per-corner outer-face emission. Compute the fillet
