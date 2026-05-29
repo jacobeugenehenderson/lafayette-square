@@ -312,15 +312,18 @@ export default function CornerEditHandles({ ribbons }) {
     }
 
     const flushCommit = (drag, baseR) => {
-      // Pass null to the store action to clear the override (vs. storing
-      // a sharp-corner override of 0). Anything smaller than the snap
-      // threshold counts as "drag onto origin → reset" — the dot snapped
-      // visually, so the persisted state should match the visible reset.
-      const clearing = drag.snapping || baseR < (SNAP_R / Math.max(0.0001, cornerRadiusScale))
+      // Snap-to-origin sets R=0 (sharp corner) as an explicit authored
+      // override — the operator-side dial for square corners. This is
+      // distinct from clearing the override entirely (right-click on the
+      // IX dot does that — falls back through per-IX → default-R rule).
+      // Anything between origin and SNAP_R counts as snap-to-zero per the
+      // visual snap behavior below.
+      const snapZero = drag.snapping || baseR < (SNAP_R / Math.max(0.0001, cornerRadiusScale))
+      const persistR = snapZero ? 0 : baseR
       if (drag.kind === 'ix') {
-        setIxCornerRadius(drag.V, clearing ? null : baseR)
+        setIxCornerRadius(drag.V, persistR)
       } else {
-        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, clearing ? null : baseR)
+        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, persistR)
       }
     }
 

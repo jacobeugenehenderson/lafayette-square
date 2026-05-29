@@ -2096,9 +2096,16 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
     // Three Clipper inward insets (uniform depth, jtRound). Handles any
     // topology including non-convex blocks; per-vertex perp folds at
     // re-entrant verts and is what caused the L-shape ribbon defect.
-    const ringOuterArr   = dilateRings([ring], -cw,                    { join: 'round' })
-    const ringDividerArr = dilateRings([ring], -(cw + TL_block),       { join: 'round' })
-    const ringWedgeArr   = dilateRings([ring], -WB,                    { join: 'round' })
+    // jtMiter preserves whatever shape blockRounded carries: already-
+    // rounded Bezier samples at R>0 produce concentric arcs naturally
+    // (Clipper miters at every Bezier vertex, but the dense sampling
+    // makes that visually equivalent to a smooth arc); a sharp vertex
+    // at R=0 stays sharp through the offset. jtRound would add a
+    // rounding of radius=offset-depth at every sharp vertex, corrupting
+    // operator-authored square-corner intent. Per Boz.
+    const ringOuterArr   = dilateRings([ring], -cw,                    { join: 'miter' })
+    const ringDividerArr = dilateRings([ring], -(cw + TL_block),       { join: 'miter' })
+    const ringWedgeArr   = dilateRings([ring], -WB,                    { join: 'miter' })
     if (!ringOuterArr.length || !ringDividerArr.length) continue
     // ringWedge may be empty if the block is too small for full ribbon
     // (W exceeds the block's largest inscribed circle). Treat as zero.
