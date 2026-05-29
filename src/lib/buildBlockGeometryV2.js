@@ -1951,18 +1951,24 @@ function attributeFilletResidualToArcs(asphaltRounded, perChainAsphalt, frontage
   return { attributed, orphans }
 }
 
-// Outward polygon offset (Minkowski sum with a disc of radius `delta`).
-// Uses miter joins so the result preserves the vertex structure of the
-// input — corners that are already smooth polyline arcs (asphaltRounded)
-// stay smooth. The clipping rounding lives in the input geometry, not in
-// the offset op.
-function dilateRings(rings, delta) {
-  if (delta <= 0 || !rings.length) return rings
+// Polygon offset (Minkowski sum with a disc of radius `delta`). Positive
+// delta = outward, negative = inward (Clipper handles both natively via
+// signed delta). Default `join: 'miter'` preserves vertex structure so
+// inputs that are already smooth polyline arcs (asphaltRounded) stay
+// smooth — the clipping rounding lives in the input geometry, not in
+// the offset op. The C4 ring-band emitter needs inward + jtRound to
+// inset `blockRounded` for the sidewalk-inner / ribbon-outer polylines
+// while keeping the inset corner radii honest. Existing call site
+// (curb stroke, dilateRings(asphaltRounded, cw)) passes positive delta
+// and no opts → byte-identical pre/post-C3.
+function dilateRings(rings, delta, { join = 'miter' } = {}) {
+  if (delta === 0 || !rings.length) return rings
   const { ClipperOffset, JoinType, EndType } = clipperLib
   const co = new ClipperOffset()
+  const jt = join === 'round' ? JoinType.jtRound : JoinType.jtMiter
   for (const r of rings) {
     if (!r || r.length < 3) continue
-    co.AddPath(r.map(toClipper), JoinType.jtMiter, EndType.etClosedPolygon)
+    co.AddPath(r.map(toClipper), jt, EndType.etClosedPolygon)
   }
   const out = []
   co.Execute(out, delta * SCALE)
