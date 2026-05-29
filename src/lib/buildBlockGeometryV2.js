@@ -3106,16 +3106,23 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
       const hw = eff.pavementHW || 0
       const tl = eff.treelawn || 0
       const sw = eff.sidewalk || 0
+      // V1.5: route each strip by its material tag. Defaults per V1.5
+      // doctrine: outer = 'LU' (TL strip → treelawn material), inner =
+      // 'SW' (SW strip → sidewalk material). Operator-flipped values
+      // (via ctrl-click in MeasureOverlay) swap which output slot the
+      // strip ring lands in. Same model as emitBlockRingBands V1.5a.
+      const matOuter = eff.materials?.outer || 'LU'
+      const matInner = eff.materials?.inner || 'SW'
       if (tl > 0) {
         const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
-        if (ring) out.treelawnRings.push(ring)
+        if (ring) (matOuter === 'LU' ? out.treelawnRings : out.sidewalkRings).push(ring)
         out.treelawnEdges.push(
           segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl)])
         )
       }
       if (sw > 0) {
         const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-        if (ring) out.sidewalkRings.push(ring)
+        if (ring) (matInner === 'LU' ? out.treelawnRings : out.sidewalkRings).push(ring)
         out.sidewalkEdges.push(
           segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl + sw), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl + sw)])
         )
