@@ -291,14 +291,14 @@ export default function BlockGeometryV2Debug({
     return -1
   }, [selectedStreet, liveStreets, liveRibbons])
   // V2 input snapshot. While a chain is selected, the operator's drag
-  // edits route exclusively through `liveSelectedRings` below — V2 stays
-  // frozen at the snapshot taken when the chain was first selected, so
-  // the heavy Clipper pass never runs during drag. When selectedStreet
-  // changes (deselect or pick a different chain), or any non-blockCustoms
-  // input changes (corner overrides, scale, curb width, etc.), we
-  // re-snapshot and let V2 rebuild. This makes drag effectively free:
-  // the selected chain's bands track handles via the live overlay,
-  // everything else stays cached at last V2 output.
+  // edits route through `liveSelectedRings` below, so V2 doesn't need to
+  // rebuild on every drag tick. The inputs (blockCustoms, corner overrides,
+  // scale, curb width, …) are DEBOUNCED: rapid edits reset the timer and
+  // the heavy Clipper pass fires once ~250ms after the edit settles. This
+  // makes drag effectively free — the selected chain tracks handles via the
+  // live overlay, and the rest of the map refreshes from the settled
+  // snapshot (which now MUST track blockCustoms, since post-redesign every
+  // measure edit, whole-chain included, writes per-fe blockCustoms).
   const v2DebounceMs = 250
   const [debouncedInputs, setDebouncedInputs] = useState({
     blockCustoms, cornerRadiusScale,
@@ -315,15 +315,16 @@ export default function BlockGeometryV2Debug({
       })
     }, v2DebounceMs)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-    // Note `blockCustoms` is intentionally NOT in this dep list — while a
-    // chain is selected, blockCustoms changes EVERY drag tick, but the
-    // selected chain's bands route through the live overlay, not V2.
-    // V2's snapshot only refreshes when the operator changes selection
-    // (which IS in deps via `selectedStreet`) or edits any non-blockCustoms
-    // input. On selection change the snapshot picks up whatever
-    // blockCustoms looks like at that moment, including the just-edited
-    // chain's customs.
-  }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, useRingBandEmitter])
+    // `blockCustoms` IS a refresh trigger. Post measure-authoring redesign
+    // ALL measure edits — including whole-chain — write per-fe blockCustoms
+    // (the data wall: chains carry no authored measure). The non-selected
+    // map render reads V2's snapshot, so it must track blockCustoms or
+    // whole-chain edits go invisible on the map (the live overlay only
+    // covers the selected chain). The 250ms debounce coalesces drag ticks:
+    // each tick resets the timer, so the full rebuild fires once ~250ms
+    // after the edit settles — during the drag the selected chain is still
+    // covered by the live overlay, so there's no mid-drag full rebuild.
+  }, [selectedStreet, blockCustoms, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, useRingBandEmitter])
 
   const { asphaltRounded, blockRounded, blockRoundedWithMeta, blockSharp, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockRoundedWithMeta: [], blockSharp: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
