@@ -2,38 +2,10 @@ import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
+import { sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
 import { polylineRibbon } from './overlayGeom.js'
-import ribbonsRaw from '../data/ribbons.json'
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
-
-// Lookup of survey-derived measure by street name — used when the operator
-// selects a street that has never been edited. Clicking it for the first
-// time adopts the pipeline's measure so handles sit on the rendered edges.
-const PIPELINE_MEASURE = (() => {
-  const m = new Map()
-  for (const st of (ribbonsRaw.streets || [])) {
-    if (st.name && st.measure) m.set(st.name, st.measure)
-  }
-  return m
-})()
-
-// Chain-level fallback used when a segment has no override. Order:
-// segment override → street.measure → pipeline-derived → type default.
-function chainMeasure(st) {
-  if (st.measure) return st.measure
-  const fromPipeline = PIPELINE_MEASURE.get(st.name)
-  if (fromPipeline) {
-    return {
-      left: { ...fromPipeline.left },
-      right: { ...fromPipeline.right },
-      symmetric: fromPipeline.left.terminal === fromPipeline.right.terminal
-        && Math.abs(fromPipeline.left.treelawn - fromPipeline.right.treelawn) < 0.01
-        && Math.abs(fromPipeline.left.sidewalk - fromPipeline.right.sidewalk) < 0.01,
-    }
-  }
-  return defaultMeasure(st.type || 'residential')
-}
+import { chainMeasure, findFeForSide as findFeForSidePure, feesForChainSide, applyKindToMeasure } from './measureModel.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
 // (block-customs model) the chain default is the single source for handle
@@ -251,25 +223,12 @@ export default function MeasureOverlay() {
   // fe.chainIdx is into liveRibbons.streets (different ordering). Match
   // by chain identity (skelId, with name as a fallback for legacy data
   // missing skelId) so the two indexings don't have to agree.
+  // streetIdx-keyed wrapper over the shared pure helper — resolves the
+  // street from the live store, then delegates to measureModel.findFeForSide.
   const findFeForSide = useCallback((streetIdx, segOrd, sideKey) => {
-    if (streetIdx == null || segOrd == null || !v2FrontageEdges?.length) return null
+    if (streetIdx == null) return null
     const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
-    if (!st) return null
-    // centerlineData chains carry carriageway identity on `.id`; some
-    // also carry `.skelId`. fes use chainSkelId built from the source
-    // chain's id. Prefer skelId, fall back to id — without this, divided
-    // roads (LS Park Avenue) fall through to name-match and pick a fe
-    // on the wrong carriageway.
-    const idKey = st.skelId || st.id || null
-    const nameKey = st.name || null
-    for (const fe of v2FrontageEdges) {
-      if (fe.side !== sideKey) continue
-      const feIdMatches = idKey && fe.chainSkelId === idKey
-      const feNameMatches = !idKey && nameKey && fe.chainName === nameKey
-      if (!feIdMatches && !feNameMatches) continue
-      if (fe.segOrds?.includes(segOrd)) return fe
-    }
-    return null
+    return findFeForSidePure(v2FrontageEdges, st, segOrd, sideKey)
   }, [v2FrontageEdges])
 
   const { camera, gl } = useThree()
@@ -412,156 +371,62 @@ export default function MeasureOverlay() {
     useCartographStore.getState().setSegmentOrdinal(selection.ordinal)
   }, [selection])
 
-  // Whole-chain measure write — global Measure-mode drags target chain.measure
-  // directly. Per-block divergence routes through setBlockEdgeCustom (D.6) on
-  // the custom branch in applyDrag, keyed by (blockKey, edgeOrd).
-  const modifyMeasure = useCallback((streetIdx, _ordinal, updater) => {
-    const cd = useCartographStore.getState().centerlineData
-    const st = cd.streets[streetIdx]
-    if (!st) return
-    const seed = chainMeasure(st)
-    useCartographStore.getState().setStreetMeasure(streetIdx, updater, seed)
-  }, [])
-
   // Apply a boundary drag. `r` = new radius (absolute, from centerline).
-  // Updates the named field on the given side. If symmetric, mirrors the
-  // same field on the other side.
   //
-  // Block-customs routing: when measureMode === 'custom', the drag writes
-  // to design.blockCustoms[blockId][chainIdx][side] instead of the chain's
-  // segment measure. blockId is resolved at drag time from the anchor
-  // point + dragged side using V2's stashed block rings. When in 'global'
-  // mode, the drag also clears any customs on this chain — globals are
-  // truth, customs are local deviations that don't survive a chain edit.
+  // Polygon-only authoring (RIBBONS §1 data wall): every write lands in
+  // blockCustoms[blockKey][edgeOrd] — NEVER chain.measure. The chain is a
+  // SELECTION criterion, not a write scope:
+  //   • Whole-chain mode  → SELECT every fe of the chain on the touched
+  //     side(s) and fan a per-fe write across them (writeBlockEdgeCustoms,
+  //     one store mutation / one V2 rebuild).
+  //   • Per-block mode    → write only the one fe at the click anchor.
+  // "Symmetric" is the transient `editSidesSeparately` toggle, not stored
+  // chain data: when it's false the edit mirrors to the opposite-side fe(s).
   const applyDrag = useCallback((streetIdx, ordinal, side, kind, r) => {
-    // Guard against non-finite r — if the pointer briefly leaves the canvas
-    // mid-drag, screenToWorld can return NaN, distToPolyline propagates it,
-    // and Math.max(0.3, NaN) is NaN. A persisted NaN in any measure field
-    // poisons the merged ribbon buffer's bounding box and drops every
-    // ribbon from the frame.
+    // Guard against non-finite r — a brief pointer-leave makes screenToWorld
+    // return NaN, which poisons the ribbon buffer's bbox and drops every
+    // ribbon. Cap r so a wild drag can't request a multi-million-vert buffer
+    // (subdivideGeo OOM). 60m is well past the widest real curb.
     if (!Number.isFinite(r)) return
-    // Sanity-cap r so a handle dragged very far doesn't explode ribbon
-    // geometry. subdivideGeo subdivides each ribbon up to 8× whenever an
-    // edge exceeds 30m; a 500m-wide ribbon would request a multi-million-
-    // vertex Float32Array and the OOM crashes the StreetRibbons render
-    // (RangeError: Array buffer allocation failed). 60m from centerline
-    // is well past the widest real curb in the neighborhood.
     if (r > 60) r = 60
-    const MAX_PAVEMENT_HW = 30
-    const MAX_STRIPE = 20
 
-    // D.6: Per-block mode (default) writes to blockCustoms keyed by
-    // (blockKey, edgeOrd). The operator clicks at point P on chain X;
-    // the click resolves to a (chainIdx, segOrd) tuple; the dragged
-    // side determines which block-edge (left or right of chain) we're
-    // authoring. blockCustoms[fe.blockKey][fe.edgeOrd] = next.
-    const mode = useCartographStore.getState().measureMode
-    if (window.__customDebug) console.log('[applyDrag] mode:', mode, 'side:', side, 'kind:', kind)
-    if (mode?.type !== 'global') {
-      const cd = useCartographStore.getState().centerlineData
-      const st = cd.streets[streetIdx]
-      if (!st) { if (window.__customDebug) console.log('  bail: no street'); return }
-      const anchor = useCartographStore.getState().selectedMeasurePoint
-      if (!anchor) { if (window.__customDebug) console.log('  bail: no anchor'); return }
-      const frame = frameAtPoint(st.points, anchor.x, anchor.z)
-      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-      // Find the block-edge for this side. If no fe is found (operator
-      // clicked on a chain segment that isn't asphalt-facing on this
-      // side, e.g. an internal edge), bail — there's nothing to author.
-      const fe = findFeForSide(streetIdx, segOrd, side)
-      if (!fe) {
-        if (window.__customDebug) {
-          const all = useCartographStore.getState()._v2FrontageEdges || []
-          const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
-          const idKey = st?.skelId || null
-          const nameKey = st?.name || null
-          const forChain = all.filter(f =>
-            (idKey && f.chainSkelId === idKey) ||
-            (!idKey && nameKey && f.chainName === nameKey)
-          ).map(f => ({ side: f.side, edgeOrd: f.edgeOrd, blockKey: f.blockKey, segOrds: f.segOrds }))
-          console.log('  bail: no fe for', { streetIdx, segOrd, side, skelId: idKey, name: nameKey },
-            '\n    npts:', st?.points?.length,
-            'ixs:', (st?.intersections || []).map(r => r.ix),
-            '\n    feCount(total):', all.length, 'feCount(thisChain):', forChain.length,
-            '\n    fesForChain:', JSON.stringify(forChain))
-        }
-        return
-      }
-      const existing = useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
-      const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
-      const next = { ...seed }
-      const cw = Number.isFinite(next.curb) ? next.curb : CURB_WIDTH
-      const STRIPE_MIN = 1.0
-      if (kind === 'pavementHW') {
-        next.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
-      } else if (kind === 'treelawnOuter') {
-        const curbEnd = next.pavementHW + cw
-        const total = next.treelawn + next.sidewalk
-        if (total >= STRIPE_MIN * 2) {
-          const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
-          next.treelawn = Math.min(MAX_STRIPE, newTl)
-          next.sidewalk = Math.min(MAX_STRIPE, total - newTl)
-        } else {
-          next.treelawn = total / 2
-          next.sidewalk = total / 2
-        }
-      } else if (kind === 'propertyLine') {
-        const curbEnd = next.pavementHW + cw
-        const inner = curbEnd + next.treelawn
-        next.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
-      }
-      if (window.__customDebug) console.log('  → write blockEdge[', fe.blockKey, '][', fe.edgeOrd, '] =', next)
-      useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
-      return
+    const store = useCartographStore.getState()
+    const st = store.centerlineData?.streets?.[streetIdx]
+    if (!st) return
+    const mode = store.measureMode
+    const editSep = store.editSidesSeparately
+    const blockCustoms = store.blockCustoms || {}
+    const fes = store._v2FrontageEdges || []
+    const otherSide = side === 'left' ? 'right' : 'left'
+    const sides = editSep ? [side] : [side, otherSide]
+
+    // Chain-default seed, innerEdge-resolved so divided carriageways match
+    // the bake: innerEdgeMeasure is applied to chain.measure at build time
+    // but NOT to blockCustoms, so the seed must pre-apply it or the median
+    // side would sprout a ped zone.
+    const chainSeed = innerEdgeMeasure(
+      chainMeasure(st), st.anchor === 'inner-edge' ? st.innerSign : 0
+    )
+    const FALLBACK = { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
+
+    const entries = []
+    const pushFe = (fe, s) => {
+      if (!fe) return
+      const seed = blockCustoms[fe.blockKey]?.[fe.edgeOrd] || chainSeed[s] || FALLBACK
+      entries.push({ blockKey: fe.blockKey, edgeOrd: fe.edgeOrd, measure: applyKindToMeasure(seed, kind, r) })
     }
 
-    // Whole-chain mode: write chain.measure. Per-block customs are
-    // already wiped at the moment the operator toggled INTO global mode
-    // (handled by ModeToggle in MeasurePanel) — toggling INTO global
-    // is the operator's commit to "this is the universal width now."
-    modifyMeasure(streetIdx, ordinal, (m) => {
-      // Symmetric is the default. measure.symmetric === true → drag mirrors
-      // both sides together; false → drag affects only the dragged side.
-      // Operator opts INTO asymmetric via the panel's "Asymmetric (edit
-      // sides separately)" checkbox.
-      const sides = m.symmetric === false ? [side] : ['left', 'right']
-      if (window.__measureDebug) {
-        console.log('[applyDrag]', { dragSide: side, kind, r: r.toFixed(2),
-          symmetric: m.symmetric, willUpdate: sides,
-          before_left: { ...m.left }, before_right: { ...m.right } })
-      }
-      // Pedestrian-stripe minimum width: ribbons can't be dragged thinner
-      // than this. To eliminate a stripe entirely, ctrl/right-click the
-      // boundary handle (existing delete gesture). Keeps handles from
-      // visually collapsing onto each other and forces explicit removal.
-      const STRIPE_MIN = 1.0  // meters
-      for (const s of sides) {
-        const sd = m[s]
-        if (!sd) continue
-        const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
-        if (kind === 'pavementHW') {
-          sd.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
-        } else if (kind === 'treelawnOuter') {
-          const curbEnd = sd.pavementHW + cw
-          const total = sd.treelawn + sd.sidewalk
-          // treelawn ∈ [STRIPE_MIN, total - STRIPE_MIN]; sidewalk picks up the rest
-          if (total >= STRIPE_MIN * 2) {
-            const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
-            sd.treelawn = Math.min(MAX_STRIPE, newTl)
-            sd.sidewalk = Math.min(MAX_STRIPE, total - newTl)
-          } else {
-            // Total too small to honor both minimums — split evenly so neither vanishes
-            sd.treelawn = total / 2
-            sd.sidewalk = total / 2
-          }
-        } else if (kind === 'propertyLine') {
-          const curbEnd = sd.pavementHW + cw
-          const inner = curbEnd + sd.treelawn
-          sd.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
-        }
-      }
-    })
-  }, [modifyMeasure, findFeForSide, ixByChain])
+    if (mode?.type === 'global') {
+      for (const s of sides) for (const fe of feesForChainSide(fes, st, s)) pushFe(fe, s)
+    } else {
+      const anchor = store.selectedMeasurePoint
+      if (!anchor) return
+      const frame = frameAtPoint(st.points, anchor.x, anchor.z)
+      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
+      for (const s of sides) pushFe(findFeForSide(streetIdx, segOrd, s), s)
+    }
+    if (entries.length) store.writeBlockEdgeCustoms(entries)
+  }, [findFeForSide, ixByChain])
 
   const onPointerDown = useCallback((e) => {
     if (!active || spaceDown || e.button !== 0) return
@@ -732,18 +597,24 @@ export default function MeasureOverlay() {
       if (!slot) return null
       return { slot, side, segOrd, sourceMeasure: sd, fe: customFe }
     }
-    // Try to flip the material of the strip whose body the click landed
-    // in. Routes the write per the active measureMode (same scope rules
-    // as drag — Edit-entire-row → chain.measure; Edit-block → blockCustoms).
+    // Try to flip the material of the strip whose body the click landed in.
+    // Polygon-only (same scope rules as drag): per-block flips the one fe at
+    // the click; whole-chain SELECTS every fe of the chain on the touched
+    // side(s) and fans the material write. Never writes chain.measure. When
+    // not editing sides separately, the flip mirrors to the opposite side.
     // Returns true if a flip was committed.
     const tryFlipStripMaterial = (p) => {
       const hit = resolveStripHit(p)
       if (!hit) return false
       const { slot, side, segOrd, sourceMeasure, fe } = hit
-      const mode = useCartographStore.getState().measureMode
-      // Defaults per V1.5 doctrine: outer=LU, inner=SW. The flip operates
-      // on the source measure's materials (cloned), so the write captures
-      // the previous slot's value and inverts the clicked slot only.
+      const store = useCartographStore.getState()
+      const mode = store.measureMode
+      const editSep = store.editSidesSeparately
+      const st = centerlineData.streets[selection.streetIdx]
+      const blockCustoms = store.blockCustoms || {}
+      const fes = store._v2FrontageEdges || []
+      // Defaults per V1.5 doctrine: outer=LU, inner=SW. Flip captures the
+      // previous slot values and inverts the clicked slot only.
       const seedMats = sourceMeasure.materials && typeof sourceMeasure.materials === 'object'
         ? {
             outer: (sourceMeasure.materials.outer === 'SW') ? 'SW' : 'LU',
@@ -752,27 +623,27 @@ export default function MeasureOverlay() {
         : { outer: 'LU', inner: 'SW' }
       const nextMats = { ...seedMats, [slot]: seedMats[slot] === 'LU' ? 'SW' : 'LU' }
 
-      if (mode?.type !== 'global') {
-        // Per-block mode (default). Mirror the applyDrag block path: write
-        // the full measure with flipped materials to blockCustoms[blockKey]
-        // [edgeOrd]. fe was resolved during the hit-test.
-        if (!fe) return false
-        const next = { ...sourceMeasure, materials: nextMats }
-        useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
-        useCartographStore.setState({ status: `Flipped ${slot} strip material (block)` })
-        return true
+      const otherSide = side === 'left' ? 'right' : 'left'
+      const sides = editSep ? [side] : [side, otherSide]
+      const chainSeed = innerEdgeMeasure(
+        chainMeasure(st), st.anchor === 'inner-edge' ? st.innerSign : 0
+      )
+      const entries = []
+      const pushFe = (feX, s) => {
+        if (!feX) return
+        // Seed each fe from its own custom (preserve its widths) else the
+        // chain default; only the materials change.
+        const seed = blockCustoms[feX.blockKey]?.[feX.edgeOrd] || chainSeed[s] || sourceMeasure
+        entries.push({ blockKey: feX.blockKey, edgeOrd: feX.edgeOrd, measure: { ...seed, materials: { ...nextMats } } })
       }
-      // Edit-entire-row mode: writes to chain.measure[side].materials.
-      // Symmetric mirrors to opposite side.
-      modifyMeasure(selection.streetIdx, segOrd, (m) => {
-        const sides = m.symmetric ? ['left', 'right'] : [side]
-        for (const s of sides) {
-          const sd = m[s]
-          if (!sd) continue
-          sd.materials = { ...nextMats }
-        }
-      })
-      useCartographStore.setState({ status: `Flipped ${slot} strip material (chain)` })
+      if (mode?.type === 'global') {
+        for (const s of sides) for (const feX of feesForChainSide(fes, st, s)) pushFe(feX, s)
+      } else {
+        for (const s of sides) pushFe(s === side ? fe : findFeForSide(selection.streetIdx, segOrd, s), s)
+      }
+      if (!entries.length) return false
+      store.writeBlockEdgeCustoms(entries)
+      useCartographStore.setState({ status: `Flipped ${slot} strip material (${mode?.type === 'global' ? 'chain' : 'block'})` })
       return true
     }
     // Unified ctrl/right gesture: handle hit = no-op (handles drag-only);
@@ -824,7 +695,7 @@ export default function MeasureOverlay() {
       dom.removeEventListener('dblclick', onDblClick, opts)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, modifyMeasure, centerlineData, findFeForSide, blockCustoms, ixByChain])
+  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, centerlineData, findFeForSide, blockCustoms, ixByChain])
 
   if (!active) return null
 

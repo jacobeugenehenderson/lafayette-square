@@ -353,6 +353,15 @@ const useCartographStore = create((set, get) => ({
   // set the universal cross-section first, then opt INTO per-block
   // (`{ type: 'block' }`) when a specific block diverges.
   measureMode: { type: 'global' },
+  // Mirror-edit toggle (transient — NOT persisted). When false (default),
+  // an edit mirrors to the opposite-side fe ("symmetric" authoring); when
+  // true, sides are edited independently. Post-redesign "symmetric" is a
+  // property of the operator's CURRENT SELECTION, not stored chain data:
+  // chain.measure.symmetric stays a read-only pipeline hint used only to
+  // initialize this toggle on selection (see selectStreet). No authoring
+  // path writes the chain flag.
+  editSidesSeparately: false,
+  setEditSidesSeparately: (v) => set({ editSidesSeparately: !!v }),
   // Transient cache of V2's rounded block rings — written by
   // BlockGeometryV2Debug on every recompute, read by MeasureOverlay so
   // the drag path can do block adjacency at drag time without
@@ -550,6 +559,25 @@ const useCartographStore = create((set, get) => ({
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
+  // Batched per-fe custom write. entries: [{ blockKey, edgeOrd, measure }].
+  // One store mutation → one V2 rebuild regardless of fan-out size. This is
+  // how a whole-chain edit lands: the chain SELECTS its fes, the write fans
+  // per-fe through here — never to chain.measure (data-wall doctrine). Also
+  // backs the symmetric mirror (two entries: dragged side + opposite fe).
+  writeBlockEdgeCustoms: (entries) => {
+    if (!Array.isArray(entries) || !entries.length) return
+    const next = { ...(get().blockCustoms || {}) }
+    let changed = false
+    for (const { blockKey, edgeOrd, measure } of entries) {
+      if (!blockKey || edgeOrd == null || !measure) continue
+      next[blockKey] = { ...(next[blockKey] || {}) }
+      next[blockKey][edgeOrd] = { ...measure }
+      changed = true
+    }
+    if (!changed) return
+    set({ blockCustoms: next })
+    get()._saveDesignDebounced()
+  },
   setBlockLandUse: (blockKey, lu) => {
     if (!blockKey) return
     const next = { ...(get().blockLandUse || {}) }
@@ -560,14 +588,6 @@ const useCartographStore = create((set, get) => ({
   },
   clearBlockLandUse: () => {
     set({ blockLandUse: {} })
-    get()._saveDesignDebounced()
-  },
-  clearBlockCustomsForChain: (chainIdx) => {
-    const cur = get().blockCustoms || {}
-    if (!cur[chainIdx]) return
-    const next = { ...cur }
-    delete next[chainIdx]
-    set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
   // D.7c: chain-wide wipe in the [blockKey][edgeOrd] shape. Walks the
@@ -1770,7 +1790,17 @@ const useCartographStore = create((set, get) => ({
   // selected street in measure mode. Ordinal keys are stable across coord
   // systems (skeleton vs. ribbons polylines), unlike point-index ranges.
   selectedSegmentOrdinal: null,
-  selectStreet: (idx) => set({ selectedStreet: idx, selectedNode: null, selectedSegmentOrdinal: null }),
+  selectStreet: (idx) => {
+    // Initialize the transient mirror toggle from the chain's pipeline
+    // symmetric hint (a READ, not a write): asymmetric chains (divided
+    // carriageways carry symmetric:false) open with sides editable
+    // separately, preserving the prior panel display.
+    const st = get().centerlineData?.streets?.[idx]
+    set({
+      selectedStreet: idx, selectedNode: null, selectedSegmentOrdinal: null,
+      editSidesSeparately: st?.measure?.symmetric === false,
+    })
+  },
   selectNode: (idx) => set({ selectedNode: idx }),
   deselectStreet: () => set({ selectedStreet: null, selectedNode: null, selectedMeasurePoint: null, selectedSegmentOrdinal: null }),
   setMeasurePoint: (pt) => set({ selectedMeasurePoint: pt }),
@@ -1870,50 +1900,11 @@ const useCartographStore = create((set, get) => ({
     get()._saveOverlay()
   },
 
-  // Write a per-segment measure override, keyed by ordinal segment index.
-  // Seeds from the supplied fallback measure on first edit so the segment
-  // forks cleanly from chain default.
-  // Whole-chain measure write — replaces V1's segmentMeasures path for the
-  // post-couplers world. Global Measure-mode drags target this. Updater is
-  // a (measure) => void mutator; the function deep-clones the chain's
-  // current measure (or seedFrom) so updater can mutate freely. Persists
-  // via _saveOverlay.
-  setStreetMeasure: (streetIdx, updater, seedFrom) => {
-    const { centerlineData } = get()
-    const st = centerlineData.streets[streetIdx]
-    if (!st) return
-    const seed = st.measure || seedFrom
-    if (!seed) return
-    const next = {
-      left: { ...(seed.left || {}) },
-      right: { ...(seed.right || {}) },
-      symmetric: !!seed.symmetric,
-    }
-    updater(next)
-    const streets = centerlineData.streets.map((s, i) =>
-      i === streetIdx ? { ...s, measure: next } : s
-    )
-    set({ centerlineData: { ...centerlineData, streets } })
-    get()._saveOverlay()
-  },
-
-  setSegmentMeasure: (streetIdx, ordinal, updater, seedFrom) => {
-    const { centerlineData } = get()
-    const st = centerlineData.streets[streetIdx]
-    if (!st) return
-    const key = String(ordinal)
-    const sm = st.segmentMeasures || {}
-    const cur = sm[key] || (seedFrom
-      ? { left: { ...seedFrom.left }, right: { ...seedFrom.right }, symmetric: !!seedFrom.symmetric }
-      : null)
-    if (!cur) return
-    updater(cur)
-    const streets = centerlineData.streets.map((s, i) =>
-      i === streetIdx ? { ...s, segmentMeasures: { ...sm, [key]: cur } } : s
-    )
-    set({ centerlineData: { ...centerlineData, streets } })
-    get()._saveOverlay()
-  },
+  // (Retired in the measure-authoring redesign: setStreetMeasure +
+  // setSegmentMeasure were the chain-scope write paths. All authoring now
+  // writes per-fe via setBlockEdgeCustom / writeBlockEdgeCustoms — the data
+  // wall holds at the authoring surface. chain.measure / segmentMeasures
+  // remain read-only pipeline inputs; no UI mutates them.)
 
   // ── Measurements ──────────────────────────────────────────
   measurements: [],

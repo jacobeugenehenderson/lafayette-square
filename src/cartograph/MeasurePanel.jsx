@@ -1,61 +1,15 @@
 import { useState, useEffect } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
-import ribbonsRaw from '../data/ribbons.json'
+import { CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
+import { chainMeasure, findFeForSide, feesForChainSide } from './measureModel.js'
 
 const FT_PER_M = 3.28084
 const M_PER_FT = 0.3048
 const fmtFt = (m) => (m * FT_PER_M).toFixed(1)
 
-const PIPELINE_MEASURE = (() => {
-  const m = new Map()
-  for (const st of (ribbonsRaw.streets || [])) {
-    if (st.name && st.measure) m.set(st.name, st.measure)
-  }
-  return m
-})()
-
-function chainMeasure(st) {
-  if (st.measure) return st.measure
-  const fromPipeline = PIPELINE_MEASURE.get(st.name)
-  if (fromPipeline) {
-    return {
-      left: { ...fromPipeline.left },
-      right: { ...fromPipeline.right },
-      symmetric: fromPipeline.left.terminal === fromPipeline.right.terminal
-        && Math.abs(fromPipeline.left.treelawn - fromPipeline.right.treelawn) < 0.01
-        && Math.abs(fromPipeline.left.sidewalk - fromPipeline.right.sidewalk) < 0.01,
-    }
-  }
-  return defaultMeasure(st.type || 'residential')
-}
-
-// D.7c: resolve (streetIdx, segOrd, sideKey) → fe in v2FrontageEdges.
-// streetIdx is centerlineData order; fe.chainIdx is liveRibbons order
-// (see feedback_index_mismatch_centerline_vs_ribbons). Match by chain
-// identity (skelId, name fallback) rather than index. Mirrors the helper
-// in MeasureOverlay.jsx — keep the two in sync until extracted.
-function findFeForSide(v2FrontageEdges, st, segOrd, sideKey) {
-  if (!st || segOrd == null || !v2FrontageEdges?.length) return null
-  // See MeasureOverlay's matching helper — centerlineData chains carry
-  // carriageway identity on .id (sometimes also .skelId); fall through
-  // both or divided roads' name-match picks the wrong carriageway.
-  const idKey = st.skelId || st.id || null
-  const nameKey = st.name || null
-  for (const fe of v2FrontageEdges) {
-    if (fe.side !== sideKey) continue
-    const idMatches = idKey && fe.chainSkelId === idKey
-    const nameMatches = !idKey && nameKey && fe.chainName === nameKey
-    if (!idMatches && !nameMatches) continue
-    if (fe.segOrds?.includes(segOrd)) return fe
-  }
-  return null
-}
-
-// Effective per-side measure for a segment. D.7c — block-edge customs are
-// keyed by (blockKey, edgeOrd); each side resolves through its own fe.
-// blockCustoms[fe.blockKey][fe.edgeOrd] wins over chain.measure[side].
-// Symmetric flag rides on chain.measure (per-side customs inherit it).
+// Effective per-side measure for a segment. Block-edge customs are keyed by
+// (blockKey, edgeOrd); each side resolves through its own fe.
+// blockCustoms[fe.blockKey][fe.edgeOrd] wins over the chain READ default.
 function effectiveMeasure(st, segOrd, v2FrontageEdges, blockCustoms) {
   const chain = chainMeasure(st)
   const feL = findFeForSide(v2FrontageEdges, st, segOrd, 'left')
@@ -65,7 +19,6 @@ function effectiveMeasure(st, segOrd, v2FrontageEdges, blockCustoms) {
   return {
     left:  customL || chain.left,
     right: customR || chain.right,
-    symmetric: chain.symmetric !== false,
     feL, feR,
   }
 }
@@ -176,8 +129,9 @@ export default function MeasurePanel() {
   const blockCustoms       = useCartographStore(s => s.blockCustoms)
   const v2FrontageEdges    = useCartographStore(s => s._v2FrontageEdges)
   const measureMode        = useCartographStore(s => s.measureMode)
-  const setStreetMeasure   = useCartographStore(s => s.setStreetMeasure)
-  const setBlockEdgeCustom = useCartographStore(s => s.setBlockEdgeCustom)
+  const editSidesSeparately = useCartographStore(s => s.editSidesSeparately)
+  const setEditSidesSeparately = useCartographStore(s => s.setEditSidesSeparately)
+  const writeBlockEdgeCustoms = useCartographStore(s => s.writeBlockEdgeCustoms)
   const clearCustomsForChain = useCartographStore(s => s.clearBlockEdgeCustomsForChain)
   const setStreetDisabled  = useCartographStore(s => s.setStreetDisabled)
 
@@ -196,49 +150,50 @@ export default function MeasurePanel() {
   const isWholeChain = measureMode?.type === 'global'
 
   const measure = effectiveMeasure(st, ordinal, v2FrontageEdges, blockCustoms)
-  const symmetric = measure.symmetric !== false
+  // "Symmetric" is the transient mirror toggle, not stored chain data.
+  const symmetric = !editSidesSeparately
   const { feL, feR } = measure
   const hasCustom = !!(
     (feL && blockCustoms?.[feL.blockKey]?.[feL.edgeOrd]) ||
     (feR && blockCustoms?.[feR.blockKey]?.[feR.edgeOrd])
   )
 
-  // Persist a side's new measure. Whole-chain mode targets chain.measure
-  // (every segment without a custom inherits it). Per-block mode writes
-  // blockCustoms[fe.blockKey][fe.edgeOrd] via setBlockEdgeCustom — the
-  // same identity the handle drag uses. Symmetric mirrors the value to
-  // the other side in the same write. If the resolved fe is missing for
-  // a side (no block adjacency on that side for this segment), the write
-  // for that side is a no-op — same bail semantics as MeasureOverlay.
+  // Persist a side's new measure — always per-fe (data-wall doctrine), never
+  // chain.measure. Whole-chain mode SELECTS every fe of the chain on the
+  // touched side(s) and fans the write; per-block mode writes the one fe at
+  // this segment. When not editing sides separately, the write mirrors to
+  // the opposite side. One batched store write → one V2 rebuild.
   function updateSide(sideKey, newSide) {
+    const otherSide = sideKey === 'left' ? 'right' : 'left'
+    const sides = editSidesSeparately ? [sideKey] : [sideKey, otherSide]
+    const entries = []
     if (isWholeChain) {
-      setStreetMeasure(selectedStreet, m => {
-        m[sideKey] = newSide
-        if (symmetric) {
-          const other = sideKey === 'left' ? 'right' : 'left'
-          m[other] = { ...newSide }
+      for (const s of sides) {
+        for (const fe of feesForChainSide(v2FrontageEdges, st, s)) {
+          entries.push({ blockKey: fe.blockKey, edgeOrd: fe.edgeOrd, measure: { ...newSide } })
         }
-      }, chainMeasure(st))
-      return
+      }
+    } else {
+      const feBySide = { left: feL, right: feR }
+      for (const s of sides) {
+        const fe = feBySide[s]
+        if (fe) entries.push({ blockKey: fe.blockKey, edgeOrd: fe.edgeOrd, measure: { ...newSide } })
+      }
     }
-    const fe = sideKey === 'left' ? feL : feR
-    if (fe) setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, newSide)
-    if (symmetric) {
-      const otherFe = sideKey === 'left' ? feR : feL
-      if (otherFe) setBlockEdgeCustom(otherFe.blockKey, otherFe.edgeOrd, { ...newSide })
-    }
+    writeBlockEdgeCustoms(entries)
   }
 
   function toggleAsymmetric() {
-    // Symmetric flag is a chain-level property; always write to chain.measure.
-    setStreetMeasure(selectedStreet, m => { m.symmetric = !symmetric }, chainMeasure(st))
+    // Mirror-edit is a property of the current selection, not the chain.
+    setEditSidesSeparately(!editSidesSeparately)
   }
 
   function resetToDefault() {
     // Per-block reset: drop the customs at THIS segment's resolved fes
-    // (one per side), leaving chain.measure as the visible value.
-    // Whole-chain reset wipes every custom on the chain (matches the
-    // "Edit whole chain" toggle's wipe).
+    // (one per side), leaving the chain READ default as the visible value.
+    // Whole-chain reset wipes every per-block custom on the chain (the
+    // explicit "Wipe per-block customs" button — the only wipe now that
+    // mode-switching no longer destroys customs).
     if (isWholeChain) {
       clearCustomsForChain(selectedStreet)
       return
@@ -306,35 +261,25 @@ export default function MeasurePanel() {
   )
 }
 
-// Measure-mode toggle — whole-chain (default) vs per-block.
-// "Edit whole chain" is the universal authoring mode and the default
-// on selection. Toggling OFF enters per-block mode (drag edits the
-// block at the click anchor without touching the chain default).
-// Toggling BACK ON wipes the chain's per-block customs — going
-// universal is the commit to "this is the chain default everywhere."
+// Measure-mode toggle — whole-chain (default) vs per-block. Both modes
+// author PER-FE; the mode only sets the SELECTION the edit fans across:
+// whole-chain → every fe of the chain; per-block → the one fe at the click
+// anchor. Switching modes is non-destructive (a pure selection-scope change)
+// — it no longer wipes customs. To clear per-block customs, use the explicit
+// "Wipe per-block customs" button.
 function ModeToggle() {
   const mode = useCartographStore(s => s.measureMode)
   const setMode = useCartographStore(s => s.setMeasureMode)
-  const selectedStreet = useCartographStore(s => s.selectedStreet)
-  const clearCustomsForChain = useCartographStore(s => s.clearBlockEdgeCustomsForChain)
   const isWholeChain = mode?.type === 'global'
-  const click = () => {
-    if (isWholeChain) {
-      setMode({ type: 'block' })
-    } else {
-      // Toggling INTO whole-chain wipes the chain's per-block customs.
-      if (selectedStreet != null) clearCustomsForChain(selectedStreet)
-      setMode({ type: 'global' })
-    }
-  }
+  const click = () => setMode({ type: isWholeChain ? 'block' : 'global' })
   return (
     <div className="carto-row">
       <button
         className={`carto-btn-sm carto-btn--grow${isWholeChain ? ' is-active' : ''}`}
         onClick={click}
         title={isWholeChain
-          ? 'Whole-chain mode (default): drag edits the chain default for every block. Click to switch to per-block authoring.'
-          : 'Per-block mode: drag edits the block at the click anchor. Click to switch back to whole-chain — that wipes any per-block customs on this chain.'}>
+          ? 'Whole-chain mode (default): an edit fans to every block-edge of the chain. Click to switch to per-block authoring.'
+          : 'Per-block mode: an edit writes only the block-edge at the click anchor. Click to switch back to whole-chain.'}>
         {isWholeChain ? '● Edit whole chain' : '○ Edit whole chain'}
       </button>
     </div>
