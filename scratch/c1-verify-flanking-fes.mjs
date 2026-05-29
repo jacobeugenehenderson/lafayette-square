@@ -1,6 +1,11 @@
-// C1 verification — dump corner records across the toy sampler, confirm
-// flankingFes populates per cornersAtIx's existing skip rules. Disposable;
-// delete by exact name after C1 lands.
+// C1+C2 verification — dump corner records across the toy sampler.
+// C1: flankingFes populates per cornersAtIx skip rules.
+// C2: swCornerDepth resolves via existing rightDepth_A/leftDepth_B
+//     (customs-aware transitively); blockScalars[blockKey].W is defined
+//     for every block with fes>0. STUB-N corner with null flankingFes.B
+//     resolves swCornerDepth via legRefs.B → chain.measure fallback.
+//
+// Disposable; delete by exact name after C5 sweep.
 //
 // Run: node scratch/c1-verify-flanking-fes.mjs
 
@@ -67,7 +72,7 @@ for (const k of ixKeys) {
   console.log(`IX (${k}): ${list.length} corners — ${[...streetNames].join(' × ') || '(no flanking fes resolved)'}`)
   for (const c of list) {
     const A = c.flankingFes?.A, B = c.flankingFes?.B
-    console.log(`    θ=${(c.theta*180/Math.PI).toFixed(1)}°  d_A=${c.rightDepth_A.toFixed(2)}  d_B=${c.leftDepth_B.toFixed(2)}  A:${fmt(A)}  B:${fmt(B)}`)
+    console.log(`    θ=${(c.theta*180/Math.PI).toFixed(1)}°  d_A=${c.rightDepth_A.toFixed(2)}  d_B=${c.leftDepth_B.toFixed(2)}  swCD=${(c.swCornerDepth ?? -1).toFixed(2)}  A:${fmt(A)}  B:${fmt(B)}  legRefs A:ch${c.legRefs?.A?.chainIdx}/${c.legRefs?.A?.side} B:ch${c.legRefs?.B?.chainIdx}/${c.legRefs?.B?.side}`)
   }
 }
 
@@ -150,6 +155,78 @@ console.log(`  sample fe[1]:`, JSON.stringify(fes[1] && { chainIdx: fes[1].chain
 const stubIdx = (ribbons.streets || []).findIndex(s => /stub/i.test(s.name || ''))
 const stubFes = fes.filter(fe => fe.chainIdx === stubIdx)
 console.log(`  STUB-N fes (chainIdx=${stubIdx}): ${stubFes.length} — sides: ${stubFes.map(f => `${f.side}(segOrds=[${f.segOrds.join(',')}])`).join(' ')}`)
+
+// --- C2 assertions ---
+console.log('\n--- C2: blockScalars + swCornerDepth assertions ---')
+const blockScalars = v2.blockScalars
+console.log(`blockScalars entries: ${blockScalars?.size}`)
+
+// Assertion 1: every block with fes>0 has blockScalars[blockKey].W defined.
+const blocksWithFes = new Map()
+for (const fe of fes) {
+  if (!fe.blockKey) continue
+  let arr = blocksWithFes.get(fe.blockKey)
+  if (!arr) { arr = []; blocksWithFes.set(fe.blockKey, arr) }
+  arr.push(fe)
+}
+let missingW = 0
+for (const [blockKey] of blocksWithFes) {
+  if (!blockScalars.has(blockKey)) missingW++
+}
+console.log(`Assertion 1 (blocks-with-fes have W): ${missingW === 0 ? 'PASS' : `FAIL — ${missingW} blocks missing W`}`)
+
+// Assertion 2: per-block W is internally consistent (max of fes-on-block
+// of cw + depthForSide(fe.measure)). Re-derive and compare.
+const cw = 6 * 0.0254 // CURB_WIDTH from src/cartograph/streetProfiles.js — 6"
+const depthForSide = (m) => m?.terminal === 'sidewalk' ? (m.treelawn || 0) + (m.sidewalk || 0) : 0
+let wMismatch = 0
+for (const [blockKey, blockFes] of blocksWithFes) {
+  let maxStack = 0
+  for (const fe of blockFes) {
+    const d = depthForSide(fe.measure)
+    if (d > maxStack) maxStack = d
+  }
+  const expectedW = maxStack > 0 ? cw + maxStack : 0
+  const actualW = blockScalars.get(blockKey)?.W
+  if (Math.abs(expectedW - actualW) > 1e-9) {
+    console.log(`  MISMATCH block ${blockKey}: expected W=${expectedW}, got W=${actualW}`)
+    wMismatch++
+  }
+}
+console.log(`Assertion 2 (W reproducible from fes): ${wMismatch === 0 ? 'PASS' : `FAIL — ${wMismatch} blocks`}`)
+
+// Assertion 3: every corner has swCornerDepth defined.
+const cornersMissingSwCD = corners.filter(c => c.swCornerDepth == null).length
+console.log(`Assertion 3 (corners have swCornerDepth): ${cornersMissingSwCD === 0 ? 'PASS' : `FAIL — ${cornersMissingSwCD} corners missing`}`)
+
+// Assertion 4: STUB-N x HW3 one-null corner still resolves swCornerDepth
+// > 0 via the legRefs fallback (B-side flankingFe is null, but legRef
+// gives chainIdx=14 side that points back to STUB-N's chain.measure).
+const stubIdx2 = (ribbons.streets || []).findIndex(s => /stub/i.test(s.name || ''))
+const oneNullCorners = corners.filter(c =>
+  ((!c.flankingFes?.A) ^ (!c.flankingFes?.B)) &&
+  (c.legRefs?.A?.chainIdx === stubIdx2 || c.legRefs?.B?.chainIdx === stubIdx2))
+console.log(`Assertion 4 (STUB-N null-fe corners resolve depth): ${oneNullCorners.length} candidate corners`)
+for (const c of oneNullCorners) {
+  const expected = cw + Math.max(c.rightDepth_A, c.leftDepth_B)
+  console.log(`  IX (${c.V[0]},${c.V[1]}): swCD=${c.swCornerDepth.toFixed(2)} (expected ${expected.toFixed(2)}) — ${Math.abs(expected - c.swCornerDepth) < 1e-9 ? 'PASS' : 'FAIL'}`)
+}
+
+// Assertion 5: swCornerDepth = cw + max(d_A, d_B) (transitively customs-aware).
+let swCDMismatch = 0
+for (const c of corners) {
+  const expected = Math.max(c.rightDepth_A, c.leftDepth_B) > 0
+    ? cw + Math.max(c.rightDepth_A, c.leftDepth_B) : 0
+  if (Math.abs(expected - c.swCornerDepth) > 1e-9) {
+    swCDMismatch++
+    if (swCDMismatch <= 3) console.log(`  MISMATCH at IX (${c.V[0]},${c.V[1]}): expected ${expected}, got ${c.swCornerDepth}`)
+  }
+}
+console.log(`Assertion 5 (swCD = cw + max(d_A,d_B)): ${swCDMismatch === 0 ? 'PASS' : `FAIL — ${swCDMismatch} corners`}`)
+
+// W-spread report: distribution of W across toy blocks.
+const ws = [...blockScalars.values()].map(s => s.W).sort((a, b) => a - b)
+console.log(`W distribution: min=${ws[0]?.toFixed(2)} max=${ws[ws.length-1]?.toFixed(2)} median=${ws[Math.floor(ws.length/2)]?.toFixed(2)} (n=${ws.length})`)
 
 console.log('\n--- Chain inventory ---')
 ;(ribbons.streets || []).forEach((s, i) => {

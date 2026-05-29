@@ -429,10 +429,15 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       // arcMeta[k].corner.flankingFes (corner record already exposed
       // per-Bezier-sample by applyRoundCornersToRing). null when the
       // probe didn't find an fe (parcel-only edge, segOrd unresolved);
-      // C2 must mirror the customs-lookup precedence (fe?.measure ??
-      // chain.measure[side]) when resolving swCornerDepth.
+      // bakeFeScalars mirrors the customs-lookup precedence (fe?.measure
+      // ?? chain.measure[side]) via the legRefs stamp below — chainSide
+      // tracked separately because it remains well-defined even when the
+      // fe lookup misses (STUB-N case: one side has a leg but no block-
+      // polygon adjacency → no fe but chain.measure[side] still valid).
       const leftFe  = isBack ? feR : feL
       const rightFe = isBack ? feL : feR
+      const leftFeChainSide  = isBack ? 'right' : 'left'
+      const rightFeChainSide = isBack ? 'left'  : 'right'
       return {
         T: [dx / L, dz / L],
         outerL: left?.pavementHW || 0,
@@ -441,6 +446,9 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
         rightDepth: depthForSide(right),
         leftFe,
         rightFe,
+        leftFeChainSide,
+        rightFeChainSide,
+        chainIdx,
         legKey: `${skel}:${dir === -1 ? 'b' : 'f'}`,
         skel,
         name: chain.name || null,
@@ -571,8 +579,18 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       // C1: the two fes flanking this corner's wedge. A's right side
       // and B's left side face the corner (matches d_A / d_B above).
       // Either may be null if the leg's segOrd didn't resolve an fe
-      // (parcel-only edge etc.) — C2 falls back to leg chain.measure.
+      // (parcel-only edge etc.) — bakeFeScalars falls back via legRefs.
       flankingFes: { A: A.rightFe || null, B: B.leftFe || null },
+      // C2: canonical (chainIdx, chain-side) per leg facing this corner,
+      // well-defined whether or not the fe lookup resolved. The chain
+      // side is what `chain.measure[side]` is keyed by — distinct from
+      // the leg's facing-side because of the isBack flip handled in
+      // buildLeg. bakeFeScalars uses these for the customs-precedence
+      // fallback when flankingFes are null.
+      legRefs: {
+        A: { chainIdx: A.chainIdx, side: A.rightFeChainSide },
+        B: { chainIdx: B.chainIdx, side: B.leftFeChainSide  },
+      },
     })
   }
   return corners
@@ -1237,6 +1255,76 @@ function assignSegOrdsToFes(fes, streets, ixByChain) {
       fe.segOrds = [...new Set(fe.segOrds)].sort((a, b) => a - b)
     }
   }
+}
+
+// C2 — bake-time scalar resolution. Single sanctioned site for the
+// customs ?? chain.measure precedence rule, so emission code never
+// reads `streets[*].measure` (wall doctrine, RIBBONS §1). Three outputs:
+//
+//   fe.measure (per fe)              — blockCustoms[blockKey][edgeOrd] ??
+//                                      streets[chainIdx].measure[side].
+//   blockScalars[blockKey].W         — per-block ribbon outer extent =
+//                                      cw + max-over-fes-on-block of
+//                                      depthForSide(fe.measure). Blocks
+//                                      with zero sidewalk-terminal fes
+//                                      get W = 0; blocks with NO fes
+//                                      get no entry (emitter checks for
+//                                      undefined and no-ops).
+//   corner.swCornerDepth (per corner) — cw + max(rightDepth_A, leftDepth_B).
+//                                      d_A / d_B are already customs-
+//                                      aware (depthForSide of A.right /
+//                                      B.left, which buildLeg resolved
+//                                      via customL/customR || m.left/m.right),
+//                                      so swCornerDepth inherits the
+//                                      customs-precedence transitively.
+//                                      The null-flankingFe path (STUB-N
+//                                      class topology) is also handled
+//                                      transitively — when buildLeg's fe
+//                                      lookup misses, customL/customR
+//                                      fall through to m.left/m.right,
+//                                      and depthForSide of that is what
+//                                      lands in rightDepth_A/leftDepth_B.
+//
+// Sanctioned streets reads inside this function: fe.measure fallback
+// (line below). bakeFeScalars runs ONCE at construction; emission code
+// retired in C5 (silhouetteStraightEmitter + buildFrontageBandsV2)
+// keeps its pre-wall signatures until deleted. The wall lands
+// structurally in C4's new emitter via fe.measure + corner.swCornerDepth
+// + blockScalars consumption.
+function bakeFeScalars(streets, frontageEdges, allCorners, blockCustoms, curbWidth) {
+  const cw = curbWidth
+  // Step 1: resolve fe.measure once per fe (customs precedence).
+  for (const fe of frontageEdges) {
+    if (fe.chainIdx == null) { fe.measure = null; continue }
+    const customs = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+    fe.measure = customs || streets[fe.chainIdx]?.measure?.[fe.side] || null
+  }
+  // Step 2: per-block W. Group fes by blockKey, take cw + max stack.
+  const blockScalars = new Map()
+  const fesByBlock = new Map()
+  for (const fe of frontageEdges) {
+    if (!fe.blockKey) continue
+    let arr = fesByBlock.get(fe.blockKey)
+    if (!arr) { arr = []; fesByBlock.set(fe.blockKey, arr) }
+    arr.push(fe)
+  }
+  for (const [blockKey, fes] of fesByBlock) {
+    let maxStack = 0
+    for (const fe of fes) {
+      const d = depthForSide(fe.measure)
+      if (d > maxStack) maxStack = d
+    }
+    blockScalars.set(blockKey, { W: maxStack > 0 ? cw + maxStack : 0 })
+  }
+  // Step 3: per-corner swCornerDepth from existing rightDepth_A / leftDepth_B
+  // (which are already customs-aware via buildLeg's m.left/m.right fallback).
+  for (const corner of allCorners) {
+    const dA = corner.rightDepth_A || 0
+    const dB = corner.leftDepth_B  || 0
+    const m = Math.max(dA, dB)
+    corner.swCornerDepth = m > 0 ? cw + m : 0
+  }
+  return { blockScalars }
 }
 
 // Probe outward from a block-edge midpoint and return the closest chain
@@ -2303,6 +2391,16 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   }
   __mark('cornersAtIx')
 
+  // C2 — bake fe.measure / blockScalars.W / corner.swCornerDepth ONCE
+  // at construction so the new C4 emitter can consume scalars without
+  // reading streets at emit time. Existing emitters (silhouetteStraight
+  // Emitter, buildFrontageBandsV2) retain their pre-wall signatures
+  // until C5 deletion — wall enforcement lands structurally in C4.
+  const { blockScalars } = bakeFeScalars(
+    streets, frontageEdges, allCorners, blockCustoms, curbWidth,
+  )
+  __mark('bakeFeScalars')
+
   // Phase 2 — round-block, derive asphalt as negative. Per FEATURES
   // line 23 "blocks are positive space; streets are the void around
   // them": the rounding op belongs on the positive geometry. Round
@@ -2522,6 +2620,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     // arc-span branch of frontageBands (ramp wedge / asym plug).
     byChain,
     corners: allCorners,
+    blockScalars,         // C2: Map<blockKey, { W }>. Per-block ribbon outer extent.
+                          //     Absent for blocks with zero fes; C4 emitter no-ops.
     frontageEdges,        // sharp fes — kept for cornersAtIx feLookup + MeasureOverlay consumer
     frontageBands,        // Phase 2: straight-span bands + arc-span regime emission; arc entries
                           //          also carry per-Phase-2.1 asphaltRings (corner outer face).
