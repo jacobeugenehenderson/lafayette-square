@@ -2175,14 +2175,13 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
         sectorIdxs = [...prepend, ...span.idxs, ...append]
       }
       const subPath = sectorIdxs.map(i => ring[i])
-      // Per-vertex perp inward at every span vert (clamp to safe depth per
-      // local arc radius if available, else use SECTOR_INNER_DEPTH).
-      const innerSide = span.idxs.map((i) => {
-        const arcR = arcMeta[i]?.R
-        const safe = Number.isFinite(arcR) ? Math.max(WB + 0.1, arcR * 0.85) : SECTOR_INNER_DEPTH
-        const d = Math.min(SECTOR_INNER_DEPTH, safe)
-        return offAt(i, d)
-      })
+      // Per-vertex perp inward at every sector vert at uniform depth.
+      // No per-vertex clamp — the construction has zero scaling or per-
+      // corner calculation. Clipper handles any sector shape (including
+      // self-intersecting / cusped at tight authored R) via the band
+      // intersection; the keystone doctrine accepts degenerate corners
+      // as the operator's intended design control.
+      const innerSide = sectorIdxs.map((i) => offAt(i, SECTOR_INNER_DEPTH))
       const sectorRaw = [...subPath, ...innerSide.slice().reverse()]
       const sector = ringSignedArea2D(sectorRaw) >= 0 ? sectorRaw : sectorRaw.slice().reverse()
 
