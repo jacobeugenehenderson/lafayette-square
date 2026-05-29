@@ -2225,6 +2225,22 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
         if (!fe || !fe.measure) continue
         if (fe.measure.terminal !== 'sidewalk') continue
         if (!outerSubPolys.length && !innerSubPolys.length) continue
+        // V1.5: per-leg material swap. Operator authors which strip is LU
+        // (parcel-matching) vs SW (concrete) via fe.measure.materials.
+        // Defaults preserve V1 (outer = LU, inner = SW). The 16-fields
+        // geometry is unchanged — only which output slot each sub-polygon
+        // routes to flips. Per-LU consumer (bake-ground.js:349 +
+        // BlockGeometryV2Debug treelawnByLuGeo) routes treelawnRings to
+        // `treelawn:<lu>` via fe.blockKey direct map — agnostic to which
+        // sub-polygon ends up there.
+        const matOuter = fe.measure?.materials?.outer || 'LU'
+        const matInner = fe.measure?.materials?.inner || 'SW'
+        const treelawnRings = []
+        const sidewalkRings = []
+        if (matOuter === 'LU') treelawnRings.push(...outerSubPolys)
+        else                   sidewalkRings.push(...outerSubPolys)
+        if (matInner === 'LU') treelawnRings.push(...innerSubPolys)
+        else                   sidewalkRings.push(...innerSubPolys)
         out.push({
           blockKey,
           edgeOrd: fe.edgeOrd,
@@ -2232,8 +2248,8 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
           side: fe.side,
           points: subPath,
           corner: null,
-          treelawnRings: outerSubPolys,   // per-LU material via centroid probe
-          sidewalkRings: innerSubPolys,   // concrete
+          treelawnRings,
+          sidewalkRings,
           asphaltRings: [],
         })
       }
