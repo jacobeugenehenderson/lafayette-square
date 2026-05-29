@@ -1951,38 +1951,36 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
 //     doesn't overlap the band — span topology bug).
 //   - A Bezier sample resolves to no flankingFes (degenerate corner
 //     topology — surface before patching around it).
-function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blockScalars, streets, chainIndex, curbWidth) {
-  if (!blockRoundedWithMeta?.length) return { frontageBands: [] }
-  const cw = curbWidth
+// Per-block keystone construction extracted as a shared helper. Called
+// by emitBlockRingBands (full V2 pass — iterating every block) AND by
+// buildChainBandsLive (live-drag preview path — only the blocks the
+// selected chain touches). Same construction, same byte output — the
+// pre-Path-A drift was that buildChainBandsLive used per-leg-width math
+// while the bake used per-block W. See
+// [[feedback_live_drag_preview_must_lockstep_keystone]].
+//
+// Inputs:
+//   ring       — blockRounded ring for this block
+//   arcMeta    — per-vertex arcMeta (corner identity or null) parallel to ring
+//   sharpRing  — corresponding blockSharp ring (sharp-keyed blockKey; see
+//                [[feedback_block_key_rounded_vs_sharp_diverges]])
+//   blockFes   — every fe on this block (ALL chains, not filtered to one)
+//   curbWidth, streets, chainIndex — same as the full emit. streets +
+//                chainIndex only used for the chain-probe fallback on
+//                non-corner-bounded sub-runs (kink-split or no-arcs blocks).
+//
+// Returns: array of frontageBands entries for this block.
+export function emitOneBlockRingBands({
+  ring, arcMeta, sharpRing, blockFes, curbWidth, streets, chainIndex,
+}) {
   const out = []
-
-  // fes grouped by block — keyed by blockSharp's blockKey (same key fes
-  // were built with). See [[feedback_block_key_rounded_vs_sharp_diverges]]:
-  // blockKeyFromRing(blockRounded) drifts from blockKeyFromRing(blockSharp)
-  // when corner Bezier samples push the bbox past a 0.5m bin. Looking up
-  // by the rounded key silently misses fes on divergent blocks (Benton/
-  // Waverly fixture class in toy). We have parallel arrays via the
-  // applyRoundCornersToRing call site, so use index parity.
-  const fesByBlock = new Map()
-  for (const fe of frontageEdges) {
-    if (!fe.blockKey) continue
-    let arr = fesByBlock.get(fe.blockKey)
-    if (!arr) { arr = []; fesByBlock.set(fe.blockKey, arr) }
-    arr.push(fe)
-  }
-
+  if (!ring || ring.length < 3 || !arcMeta) return out
+  if (!blockFes?.length) return out
+  const cw = curbWidth
   const KINK_THRESHOLD_RAD = 5 * Math.PI / 180
-
-  for (let bi = 0; bi < blockRoundedWithMeta.length; bi++) {
-    const { ring, arcMeta } = blockRoundedWithMeta[bi]
-    if (!ring || ring.length < 3 || !arcMeta) continue
+  {
     const N = ring.length
-    // Sharp-keyed blockKey for fe lookup; rounded ring drives geometry.
-    const sharpRing = blockSharp[bi]
     const blockKey = sharpRing ? blockKeyFromRing(sharpRing) : blockKeyFromRing(ring)
-    const blockScale = blockScalars?.get(blockKey)
-    const W = blockScale?.W
-    if (!W || W <= cw + 1e-9) continue   // no ribbon to draw on this block
 
     const ringCcw = ringSignedArea2D(ring) >= 0
     const inwardSign = ringCcw ? +1 : -1
@@ -2064,7 +2062,7 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
     splitSpans.push(...withSynth)
 
     const Ns = splitSpans.length
-    const blockFes = fesByBlock.get(blockKey) || []
+    // blockFes is the helper's parameter; no per-block-from-map lookup here.
 
     // Per-fe geometric probe fallback. Used when a straight sub-span isn't
     // bounded by corners on both sides (kink-split sub-runs, or rings
@@ -2091,7 +2089,7 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
       if (sw > SW_block) SW_block = sw
     }
     const WB = cw + TL_block + SW_block   // local; should equal blockScalars W
-    if (WB <= cw + 1e-9) continue
+    if (WB <= cw + 1e-9) return out
 
     // Three Clipper inward insets (uniform depth, jtRound). Handles any
     // topology including non-convex blocks; per-vertex perp folds at
@@ -2106,7 +2104,7 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
     const ringOuterArr   = dilateRings([ring], -cw,                    { join: 'miter' })
     const ringDividerArr = dilateRings([ring], -(cw + TL_block),       { join: 'miter' })
     const ringWedgeArr   = dilateRings([ring], -WB,                    { join: 'miter' })
-    if (!ringOuterArr.length || !ringDividerArr.length) continue
+    if (!ringOuterArr.length || !ringDividerArr.length) return out
     // ringWedge may be empty if the block is too small for full ribbon
     // (W exceeds the block's largest inscribed circle). Treat as zero.
 
@@ -2124,7 +2122,7 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
       ? differenceRings(ringOuterArr, ringWedgeArr)
       : ringOuterArr
 
-    if (!outerBand.length && !innerBand.length && !fullBand.length) continue
+    if (!outerBand.length && !innerBand.length && !fullBand.length) return out
 
     // Resolve owning fe per straight (real or synthetic) span via C1
     // sidecar + chain-probe fallback.
@@ -2256,6 +2254,45 @@ function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, blo
     }
   }
 
+  return out
+}
+
+// emitBlockRingBands — thin loop wrapper around emitOneBlockRingBands.
+// Groups fes by blockKey, iterates blocks in parallel-array index order
+// (blockRoundedWithMeta + blockSharp are 1:1 by index, per the
+// applyRoundCornersToRing call site at buildBlockGeometryV2). frontageEdges
+// + blockScalars are passed for compatibility with the bake-side signature
+// even though only frontageEdges is used; blockScalars is now ignored in
+// favor of the per-block TL/SW computation inside emitOneBlockRingBands.
+function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, _blockScalars, streets, chainIndex, curbWidth) {
+  if (!blockRoundedWithMeta?.length) return { frontageBands: [] }
+  const out = []
+  // fes grouped by block — keyed by blockSharp's blockKey (same key fes
+  // were built with). See [[feedback_block_key_rounded_vs_sharp_diverges]]:
+  // blockKeyFromRing(blockRounded) drifts from blockKeyFromRing(blockSharp)
+  // when corner Bezier samples push the bbox past a 0.5m bin. Looking up
+  // by the rounded key silently misses fes on divergent blocks (Benton/
+  // Waverly fixture class in toy). We have parallel arrays via the
+  // applyRoundCornersToRing call site, so use index parity.
+  const fesByBlock = new Map()
+  for (const fe of frontageEdges) {
+    if (!fe.blockKey) continue
+    let arr = fesByBlock.get(fe.blockKey)
+    if (!arr) { arr = []; fesByBlock.set(fe.blockKey, arr) }
+    arr.push(fe)
+  }
+  for (let bi = 0; bi < blockRoundedWithMeta.length; bi++) {
+    const { ring, arcMeta } = blockRoundedWithMeta[bi]
+    if (!ring || ring.length < 3 || !arcMeta) continue
+    const sharpRing = blockSharp[bi]
+    const blockKey = sharpRing ? blockKeyFromRing(sharpRing) : blockKeyFromRing(ring)
+    const blockFes = fesByBlock.get(blockKey) || []
+    if (!blockFes.length) continue
+    const entries = emitOneBlockRingBands({
+      ring, arcMeta, sharpRing, blockFes, curbWidth, streets, chainIndex,
+    })
+    out.push(...entries)
+  }
   return { frontageBands: out }
 }
 
@@ -2993,6 +3030,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     asphaltRounded,       // Phase 2: stencil − blockRounded (rounded mouths inherent)
     blockSharp,           // stencil − asphaltSharp; sharp-corner figure
     blockRounded,         // Phase 2: applyRoundCornersToRing on each blockSharp ring
+    blockRoundedWithMeta: blockRoundedResults,  // [{ ring, arcMeta }] per blockSharp index — for buildChainBandsLive's V1-keystone emit
     blockFill,            // stencil − all ribbons; the parcel fill
     blocks,               // per-block { ring, blockKey, lu } for LU-aware rendering
     curbBands,            // Phase 2: normalized stroke as final layer (dilate(asphalt,cw) − asphalt)
@@ -3106,26 +3144,120 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
       const hw = eff.pavementHW || 0
       const tl = eff.treelawn || 0
       const sw = eff.sidewalk || 0
-      // V1.5: route each strip by its material tag. Defaults per V1.5
-      // doctrine: outer = 'LU' (TL strip → treelawn material), inner =
-      // 'SW' (SW strip → sidewalk material). Operator-flipped values
-      // (via ctrl-click in MeasureOverlay) swap which output slot the
-      // strip ring lands in. Same model as emitBlockRingBands V1.5a.
-      const matOuter = eff.materials?.outer || 'LU'
-      const matInner = eff.materials?.inner || 'SW'
-      if (tl > 0) {
-        const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
-        if (ring) (matOuter === 'LU' ? out.treelawnRings : out.sidewalkRings).push(ring)
-        out.treelawnEdges.push(
-          segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl)])
-        )
+      // Edge polylines (decorative reference for the live overlay's
+      // colored boundary strokes — green = treelawn outer, white =
+      // sidewalk outer). NOT band geometry; the bands themselves come
+      // from emitOneBlockRingBands per-block below to stay V1-keystone-
+      // aligned with the bake.
+      if (tl > 0) out.treelawnEdges.push(
+        segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl)])
+      )
+      if (sw > 0) out.sidewalkEdges.push(
+        segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl + sw), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl + sw)])
+      )
+    }
+  }
+
+  // V1 keystone alignment (Path A): treelawn + sidewalk bands come from
+  // emitOneBlockRingBands per affected block, then filtered to this
+  // chain's fes (plus corner entries where this chain is a flanking
+  // fe). Mirrors the bake-side construction exactly — no per-leg-width
+  // drift; no snap on drag release; V1.5 materials respected; per-block
+  // W recomputation propagates to sibling legs visually. Requires
+  // opts.blockRoundedWithMeta + opts.blockSharp from the caller.
+  const blockRoundedWithMeta = opts.blockRoundedWithMeta
+  const blockSharp = opts.blockSharp
+  const streetsAll = opts.streets
+  if (blockRoundedWithMeta?.length && blockSharp?.length && frontageEdges?.length) {
+    // blockKey → block index (sharp-keyed for fe lookup).
+    const blockIdxByKey = new Map()
+    for (let bi = 0; bi < blockRoundedWithMeta.length; bi++) {
+      const sr = blockSharp[bi]
+      if (!sr) continue
+      const key = blockKeyFromRing(sr)
+      if (!blockIdxByKey.has(key)) blockIdxByKey.set(key, bi)
+    }
+    // Group ALL fes by blockKey (need every fe on a block to compute
+    // W_block, not just this chain's).
+    const fesByBlock = new Map()
+    for (const fe of frontageEdges) {
+      if (!fe.blockKey) continue
+      let arr = fesByBlock.get(fe.blockKey)
+      if (!arr) { arr = []; fesByBlock.set(fe.blockKey, arr) }
+      arr.push(fe)
+    }
+    // Live measure resolution: customs > chain.measure[side] > fe.measure
+    // snapshot. Mirror bakeFeScalars precedence so the live emit reads
+    // operator-edited values (chain.measure for global drags; blockCustoms
+    // for per-block drags) without staleness from the V2 snapshot.
+    const resolveLiveMeasure = (fe) => {
+      if (fe.chainIdx == null) return fe.measure
+      const customs = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+      if (customs) return customs
+      return streetsAll?.[fe.chainIdx]?.measure?.[fe.side] || fe.measure
+    }
+    // Which blocks does the selected chain touch?
+    const touchedKeys = new Set()
+    for (const fe of frontageEdges) {
+      if (fe.chainIdx === chainIdx && fe.blockKey) touchedKeys.add(fe.blockKey)
+    }
+    for (const bk of touchedKeys) {
+      const bi = blockIdxByKey.get(bk)
+      if (bi == null) continue
+      const baseFes = fesByBlock.get(bk) || []
+      // Shallow-copy fes with live-resolved measure for this emit call.
+      // Other fields (chainIdx, side, blockKey, edgeOrd, points,
+      // flankingFes references) are preserved.
+      const liveFes = baseFes.map(fe => ({ ...fe, measure: resolveLiveMeasure(fe) }))
+      // Re-stamp flankingFes references on each corner that touches one
+      // of these fes — corners hold references to the BAKED fe objects
+      // (with stale measure); we want them pointing at the live-copied
+      // fes so swCornerDepth-related calculations inside the emit see
+      // live values. Build a key→liveFe map.
+      const liveFeByKey = new Map()
+      for (const lfe of liveFes) {
+        if (lfe.chainIdx == null || !lfe.side) continue
+        liveFeByKey.set(`${lfe.chainIdx}|${lfe.side}`, lfe)
       }
-      if (sw > 0) {
-        const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-        if (ring) (matInner === 'LU' ? out.treelawnRings : out.sidewalkRings).push(ring)
-        out.sidewalkEdges.push(
-          segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl + sw), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl + sw)])
+      const remapFlanking = (fe) => fe && liveFeByKey.get(`${fe.chainIdx}|${fe.side}`) || fe
+      // Each baked corner record has .flankingFes pointing at the bake's
+      // fes. arcMeta entries reference these corner records. Walk arcMeta
+      // and patch flankingFes on each encountered corner record to point
+      // at live fes. Reuse a Set so we patch each corner only once.
+      const { ring, arcMeta } = blockRoundedWithMeta[bi]
+      const patched = new Set()
+      for (const am of arcMeta) {
+        const c = am?.corner
+        if (!c || patched.has(c)) continue
+        patched.add(c)
+        if (c.flankingFes) {
+          c.flankingFes = {
+            A: remapFlanking(c.flankingFes.A),
+            B: remapFlanking(c.flankingFes.B),
+          }
+        }
+      }
+      const sharpRing = blockSharp[bi]
+      const entries = emitOneBlockRingBands({
+        ring, arcMeta, sharpRing, blockFes: liveFes,
+        curbWidth: cw,
+        streets: streetsAll,
+        chainIndex: opts.chainIndex,
+      })
+      // Filter entries to this chain. Leg entries: chainIdx match.
+      // Corner entries: include if either flanking fe belongs to this
+      // chain (the corner pad geometrically wraps the IX, so the live
+      // overlay should show it whether the operator's chain is on the
+      // A-side or B-side flank).
+      for (const e of entries) {
+        const ownsLeg = !e.corner && e.chainIdx === chainIdx
+        const ownsCornerFlank = !!e.corner && (
+          e.corner.flankingFes?.A?.chainIdx === chainIdx ||
+          e.corner.flankingFes?.B?.chainIdx === chainIdx
         )
+        if (!ownsLeg && !ownsCornerFlank) continue
+        if (e.treelawnRings?.length) out.treelawnRings.push(...e.treelawnRings)
+        if (e.sidewalkRings?.length) out.sidewalkRings.push(...e.sidewalkRings)
       }
     }
   }

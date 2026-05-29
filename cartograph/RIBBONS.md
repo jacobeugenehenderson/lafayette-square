@@ -538,9 +538,20 @@ The Measure tool lets the operator author the ribbon's cross-section per block e
 
 This is the spec, not a defect. The operator authors one streetfront at a time; the opaque-vs-translucent visual contrast is the affordance. **If you find yourself hypothesizing "the non-selected ribbons should be translucent too" as a bug, stop — that's the operator model working correctly.** Past misdiagnoses of this pattern as a render bug (see §7's Stage 1 entry) cost a full diagnostic cycle.
 
-**Right-click / Ctrl-click gestures (covered in MeasureOverlay.jsx:674-773):**
-- On a handle → delete that boundary (collapse stripe). `treelawnOuter` collapses treelawn into sidewalk; `propertyLine` removes ped zone entirely (`terminal: 'none'`).
-- In an empty band → insert a boundary at click radius (split sidewalk into treelawn + sidewalk, or re-seed `terminal: 'sidewalk'` from `'none'`).
+**Right-click / Ctrl-click gestures (V1.5, covered in MeasureOverlay.jsx:674-773):**
+
+The two strips (TL + SW) are STRUCTURALLY FIXED in V1.5 (16-fields construction). Width is operator-authored via drag handles; material is operator-authored via in-strip modifier-click.
+
+- **In a strip's body** (the TL strip area between curb and `treelawnOuter`, or the SW strip area between `treelawnOuter` and `propertyLine`) → toggles that strip's material between LU and SW. Menu-free; binary toggle. Writes to `chain.measure[side].materials.<outer|inner>` (Edit-entire-row mode) or `blockCustoms[blockKey][edgeOrd].materials.<outer|inner>` (Edit-block mode), same scope rules as drag.
+- **On a handle** → handle-drag-only (no modifier gesture). Drag adjusts width; click does nothing.
+
+The dispatcher at `handleCtrlOrRight(e)` (lines 752-773) first tests for a handle-hit (no gesture); otherwise treats the click as in-strip and flips the material of the strip at the click radius.
+
+Default materials per leg: `{outer: 'LU', inner: 'SW'}` — preserves the V1 visual (cream sidewalk on the property-side, treelawn-blending-with-parcel on the curb-side). Swapped: `{outer: 'SW', inner: 'LU'}` — cream sidewalk on the curb-side, parcel-blending on the property-side.
+
+Corners are NOT operator-overridable in V1.5 (AASHTO doctrine: corners are structural, both sub-fields = SW always regardless of leg material assignment). V1.6+ may add per-corner overrides.
+
+Future affordance for >2 materials: same click target; opens a small material picker at the click location. V1.5 ships menu-free with the binary LU↔SW toggle.
 
 **Other gestures:**
 - Empty click on canvas → no action (operators pan a lot; silent deselect was too easy to trigger).
@@ -552,6 +563,17 @@ This is the spec, not a defect. The operator authors one streetfront at a time; 
 Up to 3 handles per side per click anchor: `pavementHW` (the asphalt edge — dragging this is also dragging the block-edge silhouette, since `block = stencil − asphalt`), `treelawnOuter`, `propertyLine`. Pill geometry 5m long × 1.2m wide, oriented with long axis along the street. White fill + black border, opacity 1, depthTest false, renderOrder 149/150 so they paint over the translucent ribbons.
 
 Anti-overlap pass (MeasureOverlay.jsx:381-405): when two handles on the same side have similar `r` (within `HANDLE_LONG + 0.5`), the staggers shift them along the street tangent in alternating fore/aft offsets. The `r` value (perp distance from centerline) is preserved — only the visible along-street position changes; drag still resolves to the correct boundary radius.
+
+### §5 archive — superseded pre-V1.5 gesture model
+
+Before V1.5 (the 16-fields + per-leg material swap doctrine), the right-click / ctrl-click gestures handled **boundary add/subtract** semantics inside the Measure tool:
+
+- **On a handle** → delete that boundary (collapse stripe). `treelawnOuter` collapsed treelawn into sidewalk; `propertyLine` removed ped zone entirely (`terminal: 'none'`).
+- **In an empty band** → insert a boundary at click radius (split sidewalk into treelawn + sidewalk, or re-seed `terminal: 'sidewalk'` from `'none'`).
+
+**Retired because:** V1.5's 16-fields construction has a FIXED two-strip layout (TL + SW always present, sized by drag). The add/subtract semantics are structurally unneeded — there's no "empty band" to insert into, and no "collapse to one stripe" state. Material flip replaces them as the in-band modifier-click action.
+
+Implementation trace: `tryDeleteHandle(p)` + `tryInsertBoundary(p)` in `MeasureOverlay.jsx:684-751` formerly did the add/subtract; V1.5 retires both in favor of `tryFlipStripMaterial(p)` invoked from the same `handleCtrlOrRight(e)` dispatcher.
 
 ---
 

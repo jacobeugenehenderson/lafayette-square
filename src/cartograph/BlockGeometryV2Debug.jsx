@@ -325,8 +325,8 @@ export default function BlockGeometryV2Debug({
     // chain's customs.
   }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, useRingBandEmitter])
 
-  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
+  const { asphaltRounded, blockRounded, blockRoundedWithMeta, blockSharp, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], blockRoundedWithMeta: [], blockSharp: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -538,9 +538,18 @@ export default function BlockGeometryV2Debug({
       selectedRibbonsChainIdx,
       blockCustoms,
       frontageEdges,
-      { curbWidth, ixByChain: liveIxByChain }
+      {
+        curbWidth,
+        ixByChain: liveIxByChain,
+        // V1-keystone alignment: emit the live ribbon via emitOneBlockRingBands
+        // per affected block. Requires blockRoundedWithMeta + blockSharp + the
+        // live streets array (for cross-chain measure resolution).
+        blockRoundedWithMeta,
+        blockSharp,
+        streets: liveRibbons?.streets,
+      }
     )
-  }, [selectedRibbonsChainIdx, liveRibbons, blockCustoms, frontageEdges, curbWidth, liveIxByChain])
+  }, [selectedRibbonsChainIdx, liveRibbons, blockCustoms, frontageEdges, curbWidth, liveIxByChain, blockRoundedWithMeta, blockSharp])
 
   // Per-chain BufferGeometries split into two passes for drag perf:
   //
