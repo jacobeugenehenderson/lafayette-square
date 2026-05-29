@@ -8,6 +8,37 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-28 EOD → 2026-05-29 — Ribbon-corner V1 (C1-C4) SHIPPED behind useRingBandEmitter flag. Toy on, LS off until C5 cutover.
+
+`HANDOFF-ribbon-corners.md` was dispatched cold to Quoin after the prior arc was reverted and the brief rewound to a "two bands sliced for materials" keystone construction. Through `a0057ac`, six commits landed C1 → C4:
+
+- `012ea2a` C1 — flankingFes sidecar on corner records via `cornersAtIx`. Each corner record carries `flankingFes: { A, B }` (the two fes flanking its wedge) and `legRefs: { A: {chainIdx, side}, B: {chainIdx, side} }` (canonical leg identity, always defined). Construction site moved from the brief's `applyRoundCornersToRing` framing to `cornersAtIx` (option (b) of §3 — the brief was over-prescriptive; `feLookup` was already in scope).
+- `9d9aec1` C2 — new `bakeFeScalars(streets, frontageEdges, allCorners, blockCustoms, curbWidth)`. Resolves `fe.measure` once per fe with customs precedence, computes per-block `blockScalars[blockKey].W = cw + max(depthForSide(fe.measure))`, stamps `corner.swCornerDepth = cw + max(d_A, d_B)`. Existing emitters (silhouetteStraightEmitter, buildFrontageBandsV2) retain pre-wall signatures until C5 deletion — wall enforcement lands structurally in the new C4 emitter.
+- `4b075e7` C3 — `dilateRings(rings, delta, { join })` generalized. Signed delta (positive = outward, negative = inward), optional `join: 'round'` (jtRound) or default `'miter'` (preserves curb call byte-identical). Module-internal helper; smoke-tested via the C4 first call.
+- `2fe6440` C4 first attempt — per-vertex perp construction with corner-pad-as-separate-bent-quad polygon. Several iterations through per-span vs whole-ring perps, boundary-literal extension trims, synth-straight injection. Closed-but-defective: notches at seam, slivers at asymmetric IXs.
+- `025ee40` C4 V1 (Boz reset #2) — **Clipper-3-rings + per-block-LU**. Per-block construction: three Clipper inward insets of `blockRounded` at uniform depths (`cw`, `cw + TL_block`, `WB`); two annular bands via `differenceRings`; per-span sectors via per-vertex perp wedges + endpoint inward extension; intersect bands ∩ sectors for per-fe / per-corner sub-polygons. Single-polygon corner emission (Boz expedient (a)): one Clipper call per corner from `fullBand ∩ sector`, tagged SW — avoids the outer/inner empty-slice bug. **Per-LU treelawn routing changed**: ring-band emitter's treelawn rings sit OUTSIDE the parcel polygon (between cw and divider), so centroid probe fails. Designer + bake-ground consumers now prefer `fe.blockKey` → `v2.blocks[k].lu` direct lookup, fall back to probe for legacy entries.
+- `a0057ac` — delete unauthorized `arcR * 0.85` clamp on sector inner-depth. Boz: construction has zero scaling, zero per-corner calculation; Clipper handles whatever the operator authored, including degenerate at tight R. The keystone doctrine: "concentric, degenerating with the authored radius." See `feedback_no_corner_radius_clamps_in_emit` in agent memory.
+
+**LS bake byte-identical** through every commit (flag-off path unchanged): shasum `9e52a0ad...` pre and post each commit. Toy bake post-`a0057ac`: 14 groups, 25145 verts, 36818 tris.
+
+**Ships correctly on toy** (per visual gates during the session): orthogonal 4+4 grid (reference-image-perfect), L-shape blocks (Clipper handles non-convex topology), per-block LU coloring on treelawn (matches each parcel's color via blockKey lookup), all 12 W>0 blocks emit, no overshoot into asphalt, AASHTO concrete corner pads at full `cw→W` depth.
+
+**Asymmetric-R defect**: a prior version (with the unauthorized clamp) produced sliver fragments on left-side corners of blocks where Jacob authored different per-corner radii. Per Boz's "zero clamps" doctrine, the clamp-delete in `a0057ac` should dissolve this. Untested visually post-`a0057ac` — Jacob did NOT re-bake after that commit. Next session: visual gate on toy with mixed-R authoring, then proceed to C5.
+
+### Open
+
+- **C5 — LS cutover + delete dead code.** Flip `useRingBandEmitter` default ON for LS (currently gated `scene === 'toy'` in both `cartograph/bake-ground.js` and `src/cartograph/CartographApp.jsx`'s `<BlockGeometryV2Debug>` mount). Bake LS via `node cartograph/bake-ground.js` (no flag); visual gate at operator's eye. If clean: delete `buildFrontageBands`, `buildFrontageBandsV2`, `silhouetteStraightEmitter`, `PHASE2_*` constants, `KINK_THRESHOLD_RAD`, `RAMP_MIN_M`, cusp-guard block. Test whether `attributeFilletResidualToArcs` is still needed (corner concrete from the C4 emitter may have made the per-corner fillet attribution redundant; if no orphan slivers, retire it).
+- **C6 — Docs sweep.** `RIBBONS.md §6.8/§6.9/§6.10 → RESOLVED`; `RIBBONS.md §1` status note + post-HANDOFF-C5 table row updated to reflect the actual landed construction (C4 V1 Clipper-3-rings, not the per-vertex-perp the brief's text implied). `HANDOFF-ribbon-corners.md` retired. MEMORY.md state + keystone memory status updated. **Side-surface banked**: `node cartograph/bake-ground.js --scene=toy` writes to `public/baked/default/` regardless of `--look`, clobbering LS. Document the convention or fix to scene-disambiguated paths.
+- **V1.5 deferred** (separate briefs): divider-polyline fillet at tA/tB seams; actual-SW<>SW case (both flanking legs TL=0) → corner inner sub-field flips to LU; per-corner operator slider for divider depth override; 3rd authored strip per leg.
+
+### Side-surfaces banked in agent memory
+
+- `feedback_no_corner_radius_clamps_in_emit.md` — the "zero clamps" doctrine.
+- `project_per_block_lu_via_blockkey.md` — why centroid probe fails on the new construction + the blockKey direct-lookup fix.
+- `feedback_bake_ground_scene_clobbers_default_look.md` — the `--scene=toy` output path collision.
+
+---
+
 ## 2026-05-27 EOD → 2026-05-28 — Ribbon-corner arc ATTEMPTED, REVERTED. Brief rewrite pending.
 
 `HANDOFF-ribbon-corners.md` was dispatched to Verge. C0 spike passed cleanly (118/126 LS blocks yielded valid pedBands; synthetic regime sweep confirmed arc→point→self-clip at R=d). C1 through C5 + two post-C5 buildPedBand attempts landed (13 commits, `b8db7b0` → `4509171`). **Operator-gated visual test failed; the entire code arc was reverted in `ea0bed6`.**
