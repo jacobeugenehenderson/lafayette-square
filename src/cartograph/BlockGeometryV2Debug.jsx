@@ -192,6 +192,7 @@ export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
   measureActive = false, surveyActive = false, hideLandUse = false,
   useBoundary = false,
+  useRingBandEmitter = false,  // C4: toy gets the new emitter; LS stays on legacy until C5
 }) {
   // Gate fade on the per-scene flag. LS turns on the soft-circle
   // silhouette; toy stays rectangular (its stencil is a 360×360 box).
@@ -322,20 +323,20 @@ export default function BlockGeometryV2Debug({
     // input. On selection change the snapshot picks up whatever
     // blockCustoms looks like at that moment, including the just-edited
     // chain's customs.
-  }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
+  }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, useRingBandEmitter])
 
   const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
-        stencil, ...debouncedInputs,
+        stencil, ...debouncedInputs, useRingBandEmitter,
       })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
       return empty
     }
-  }, [liveRibbons, stencil, debouncedInputs])
+  }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter])
 
   // Stash the rounded block rings into the store so MeasureOverlay's
   // drag path can resolve block adjacency at drag time without re-running
@@ -582,11 +583,22 @@ export default function BlockGeometryV2Debug({
   // — net draw-count REDUCTION while landing the per-parcel coloring.
   const treelawnByLuGeo = useMemo(() => {
     const buckets = new Map()
+    // Per-LU lookup: prefer entry.blockKey direct map (C4 ring-band
+    // emitter produces treelawn rings OUTSIDE the parcel polygon, so the
+    // centroid probe lands in the ribbon zone and fails); fall back to
+    // probe for legacy emitter entries.
+    const blockLuByKey = new Map()
+    for (const b of (blocks || [])) {
+      if (b?.blockKey && b.lu) blockLuByKey.set(b.blockKey, b.lu)
+    }
     for (const fe of frontageBands || []) {
       if (!fe.treelawnRings?.length) continue
       if (fe.chainIdx === selectedRibbonsChainIdx) continue
-      const probe = ringInteriorProbe(fe.treelawnRings[0])
-      const lu = probe ? blockLuAtPoint(probe, blocks) : null
+      let lu = fe.blockKey ? blockLuByKey.get(fe.blockKey) : null
+      if (!lu) {
+        const probe = ringInteriorProbe(fe.treelawnRings[0])
+        if (probe) lu = blockLuAtPoint(probe, blocks)
+      }
       const luKey = lu || '_unattributed'
       if (!buckets.has(luKey)) buckets.set(luKey, [])
       buckets.get(luKey).push(...fe.treelawnRings)

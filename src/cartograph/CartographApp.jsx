@@ -887,6 +887,7 @@ export default function CartographApp() {
                 stencil={sceneCfg.stencil}
                 flat={inDesigner}
                 useBoundary={sceneCfg.useBoundary}
+                useRingBandEmitter={scene === 'toy'}
                 measureActive={tool === 'measure' && inDesigner}
                 surveyActive={tool === 'surveyor' && inDesigner}
                 hideLandUse={toolAerialFocus} />

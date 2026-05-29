@@ -345,10 +345,20 @@ function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
   // uniform. Adjacent-block lookup is coordinate-based (point-in-
   // polygon) since pass-1 fe blockKeys can drift from pass-2 block
   // blockKeys under Measure customs.
+  // Per-LU lookup: prefer entry.blockKey direct map (C4 ring-band emitter
+  // produces treelawn rings outside the parcel polygon; centroid probe
+  // lands in the ribbon zone and fails). Fall back to probe for legacy.
+  const blockLuByKey = new Map()
+  for (const b of (v2.blocks || [])) {
+    if (b?.blockKey && b.lu) blockLuByKey.set(b.blockKey, b.lu)
+  }
   for (const fe of (v2.frontageBands || [])) {
     if (fe.treelawnRings?.length) {
-      const probe = ringInteriorProbe(fe.treelawnRings[0])
-      const lu = probe ? blockLuAtPoint(probe, v2.blocks) : null
+      let lu = fe.blockKey ? blockLuByKey.get(fe.blockKey) : null
+      if (!lu) {
+        const probe = ringInteriorProbe(fe.treelawnRings[0])
+        if (probe) lu = blockLuAtPoint(probe, v2.blocks)
+      }
       const key = lu ? `treelawn:${lu}` : 'treelawn'
       pushClipperRings(key, fe.treelawnRings)
     }
