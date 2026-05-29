@@ -669,9 +669,12 @@ export default function MeasureOverlay() {
     useCartographStore.setState({ status: '' })
   }, [applyDrag])
 
-  // Ctrl/Cmd-click or right-click on a handle → delete that boundary
-  // (collapse stripe). Same gesture in an empty band → insert a boundary
-  // (split sidewalk into treelawn + sidewalk, or re-seed a removed zone).
+  // V1.5: Ctrl/Cmd-click or right-click in a strip's body flips that
+  // strip's material between LU and SW. Handle hits are ignored (handles
+  // are drag-only; the pre-V1.5 add/subtract gesture model is retired
+  // per RIBBONS.md §5 since the 16-fields construction has a structurally
+  // fixed two-strip layout — no "empty band" to insert into, no "collapse"
+  // to express).
   useEffect(() => {
     if (!active) return
     const dom = gl.domElement
@@ -679,83 +682,106 @@ export default function MeasureOverlay() {
       if (e.target?.tagName === 'INPUT' || e.target?.tagName === 'SELECT' || e.target?.tagName === 'TEXTAREA') return
       if (e.key === 'Escape' || e.key === 'Enter') deselectStreet()
     }
-    // Try to delete a handle at world point p. Returns true if a handle
-    // was hit and removed.
-    const tryDeleteHandle = (p) => {
+    // Returns true if world point p sits on a drag handle (within the
+    // pill bounds). Handle clicks are NO-OP in V1.5 (drag-only).
+    const hitHandle = (p) => {
       if (!selection) return false
       const ax = -selection.mid.nz, az = selection.mid.nx
       const nx = selection.mid.nx, nz = selection.mid.nz
       for (const h of selection.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
         if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) {
-          modifyMeasure(selection.streetIdx, selection.ordinal, (m) => {
-            const sides = m.symmetric ? ['left', 'right'] : [h.side]
-            for (const s of sides) {
-              const sd = m[s]
-              if (!sd) continue
-              if (h.kind === 'treelawnOuter') {
-                // Collapse treelawn into sidewalk
-                sd.sidewalk += sd.treelawn
-                sd.treelawn = 0
-              } else if (h.kind === 'propertyLine') {
-                // Remove the pedestrian zone entirely
-                sd.treelawn = 0
-                sd.sidewalk = 0
-                sd.terminal = 'none'
-              }
-            }
-          })
-          useCartographStore.setState({ status: 'Removed boundary' })
           return true
         }
       }
       return false
     }
-    // Try to insert a boundary at world point p (in a band). Returns true
-    // if the click landed in an insertable band.
-    const tryInsertBoundary = (p) => {
-      if (!selection) return false
+    // Resolve (slot, side) for a click in a strip's body. Returns null
+    // if click falls outside the ribbon (in asphalt, on curb, past
+    // propertyLine, or on a non-sidewalk terminal side). Otherwise
+    // returns { slot: 'outer'|'inner', side, segOrd, sourceMeasure }.
+    //
+    // V1.5 doctrine: outer slot = TL strip (curb-side, between curbEnd
+    // and curbEnd+treelawn); inner slot = SW strip (property-side,
+    // between curbEnd+treelawn and curbEnd+treelawn+sidewalk).
+    const resolveStripHit = (p) => {
+      if (!selection) return null
       const st = centerlineData.streets[selection.streetIdx]
-      if (!st) return false
+      if (!st) return null
       const frame = frameAtPoint(st.points, p.x, p.z)
       const dx = p.x - frame.cx, dz = p.z - frame.cz
       const signedPerp = dx * frame.nx + dz * frame.nz
       const side = signedPerp >= 0 ? 'right' : 'left'
       const r = Math.abs(signedPerp)
-      const ord = resolveSegmentOrdinal(st, frame.segI ?? 0)
-      let inserted = false
-      modifyMeasure(selection.streetIdx, ord, (m) => {
+      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
+      // Resolve seed measure for the side from blockCustoms (per-block
+      // mode preference) → chain.measure → defaults; needed only to read
+      // strip-boundary depths, not yet to write.
+      const customFe = findFeForSide(selection.streetIdx, segOrd, side)
+      const existing = customFe ? blockCustoms?.[customFe.blockKey]?.[customFe.edgeOrd] : null
+      const sd = existing || st.measure?.[side] || null
+      if (!sd) return null
+      if (sd.terminal !== 'sidewalk') return null
+      const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
+      const curbEnd = sd.pavementHW + cw
+      const tlEnd   = curbEnd + (sd.treelawn || 0)
+      const swEnd   = tlEnd + (sd.sidewalk || 0)
+      let slot = null
+      if (r > curbEnd && r <= tlEnd && (sd.treelawn || 0) > 1e-6) slot = 'outer'
+      else if (r > tlEnd && r <= swEnd && (sd.sidewalk || 0) > 1e-6) slot = 'inner'
+      if (!slot) return null
+      return { slot, side, segOrd, sourceMeasure: sd, fe: customFe }
+    }
+    // Try to flip the material of the strip whose body the click landed
+    // in. Routes the write per the active measureMode (same scope rules
+    // as drag — Edit-entire-row → chain.measure; Edit-block → blockCustoms).
+    // Returns true if a flip was committed.
+    const tryFlipStripMaterial = (p) => {
+      const hit = resolveStripHit(p)
+      if (!hit) return false
+      const { slot, side, segOrd, sourceMeasure, fe } = hit
+      const mode = useCartographStore.getState().measureMode
+      // Defaults per V1.5 doctrine: outer=LU, inner=SW. The flip operates
+      // on the source measure's materials (cloned), so the write captures
+      // the previous slot's value and inverts the clicked slot only.
+      const seedMats = sourceMeasure.materials && typeof sourceMeasure.materials === 'object'
+        ? {
+            outer: (sourceMeasure.materials.outer === 'SW') ? 'SW' : 'LU',
+            inner: (sourceMeasure.materials.inner === 'LU') ? 'LU' : 'SW',
+          }
+        : { outer: 'LU', inner: 'SW' }
+      const nextMats = { ...seedMats, [slot]: seedMats[slot] === 'LU' ? 'SW' : 'LU' }
+
+      if (mode?.type !== 'global') {
+        // Per-block mode (default). Mirror the applyDrag block path: write
+        // the full measure with flipped materials to blockCustoms[blockKey]
+        // [edgeOrd]. fe was resolved during the hit-test.
+        if (!fe) return false
+        const next = { ...sourceMeasure, materials: nextMats }
+        useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
+        useCartographStore.setState({ status: `Flipped ${slot} strip material (block)` })
+        return true
+      }
+      // Edit-entire-row mode: writes to chain.measure[side].materials.
+      // Symmetric mirrors to opposite side.
+      modifyMeasure(selection.streetIdx, segOrd, (m) => {
         const sides = m.symmetric ? ['left', 'right'] : [side]
         for (const s of sides) {
           const sd = m[s]
           if (!sd) continue
-          const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
-          const curbEnd = sd.pavementHW + cw
-          const outerEnd = curbEnd + sd.treelawn + sd.sidewalk
-          if (r > curbEnd + 0.2 && r < outerEnd - 0.2 && sd.treelawn < 0.05) {
-            // Insert treelawn at click position; sidewalk = outer remainder.
-            sd.treelawn = r - curbEnd
-            sd.sidewalk = outerEnd - r
-            inserted = true
-          } else if (sd.terminal === 'none') {
-            // Re-seed pedestrian zone at this radius.
-            sd.terminal = 'sidewalk'
-            sd.sidewalk = Math.max(0.3, r - curbEnd)
-            sd.treelawn = 0
-            inserted = true
-          }
+          sd.materials = { ...nextMats }
         }
       })
-      if (inserted) useCartographStore.setState({ status: 'Inserted boundary' })
-      return inserted
+      useCartographStore.setState({ status: `Flipped ${slot} strip material (chain)` })
+      return true
     }
-    // Unified ctrl/right gesture: hit a handle → delete; otherwise → insert.
+    // Unified ctrl/right gesture: handle hit = no-op (handles drag-only);
+    // strip body = flip that strip's material.
     const handleCtrlOrRight = (e) => {
       if (!selection) return false
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
-      if (tryDeleteHandle(p)) return true
-      if (tryInsertBoundary(p)) return true
-      return false
+      if (hitHandle(p)) return false
+      return tryFlipStripMaterial(p)
     }
     const onContextMenu = (e) => {
       if (handleCtrlOrRight(e)) e.preventDefault()
@@ -798,7 +824,7 @@ export default function MeasureOverlay() {
       dom.removeEventListener('dblclick', onDblClick, opts)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, modifyMeasure])
+  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, modifyMeasure, centerlineData, findFeForSide, blockCustoms, ixByChain])
 
   if (!active) return null
 
