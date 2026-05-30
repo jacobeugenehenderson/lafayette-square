@@ -1077,7 +1077,8 @@ function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
   const FALLBACK_TURN_DEG = 30
   const FALLBACK_TURN_COS = Math.cos(FALLBACK_TURN_DEG * Math.PI / 180)
 
-  for (const ring of blockSharp) {
+  for (let blockRingIdx = 0; blockRingIdx < blockSharp.length; blockRingIdx++) {
+    const ring = blockSharp[blockRingIdx]
     if (!ring || ring.length < 4) continue
     const N = ring.length
     const blockKey = blockKeyFromRing(ring)
@@ -1142,7 +1143,7 @@ function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
       // closest fe per (chainIdx, side). See comment block above
       // assignSegOrdsToFes for why this is post-passed rather than
       // computed per-fe.
-      out.push({ points, blockKey, edgeOrd: k,
+      out.push({ points, blockKey, blockRingIdx, edgeOrd: k,
                  chainIdx: adj.chainIdx, side: adj.side, ringCcw: ccw,
                  segOrds: [] })
     }
@@ -2088,8 +2089,40 @@ export function emitOneBlockRingBands({
       if (tl > TL_block) TL_block = tl
       if (sw > SW_block) SW_block = sw
     }
-    const WB = cw + TL_block + SW_block   // local; should equal blockScalars W
+    let WB = cw + TL_block + SW_block   // local; clamped below to block capacity
     if (WB <= cw + 1e-9) return out
+
+    // Capacity guard (Boz, 2026-05-30). The three inward offsets below collapse
+    // when their depth exceeds the block's inscribed reach — the largest inward
+    // offset blockRounded still admits. Past the medial axis Clipper returns an
+    // EMPTY ringWedge, and the `ringWedgeArr.length ? diff : ringDivider/Outer`
+    // fallbacks below then take the WHOLE block interior as the band, which the
+    // sector slice paints entirely SW: the interior "flood" with an asphalt-
+    // colored hole seen on dense-customs small blocks. Bisect the largest
+    // non-empty inward offset (bounded above by the bbox half-min), then clamp
+    // all three depths to 90% of it so ringWedge stays non-empty and the proper
+    // thin-band difference is taken. In-spec blocks (WB well under capacity) are
+    // untouched; over-capacity blocks degrade to a clean truncated ribbon.
+    // NOT the retired corner-radius clamp [[feedback_no_corner_radius_clamps_in_emit]]:
+    // that was tight-R *corner* degeneracy Clipper handles natively; W-past-
+    // medial-axis is a distinct degeneracy Clipper does NOT handle.
+    {
+      let bx0 = Infinity, bx1 = -Infinity, bz0 = Infinity, bz1 = -Infinity
+      for (const p of ring) {
+        if (p[0] < bx0) bx0 = p[0]; if (p[0] > bx1) bx1 = p[0]
+        if (p[1] < bz0) bz0 = p[1]; if (p[1] > bz1) bz1 = p[1]
+      }
+      let lo = 0, hi = Math.min(bx1 - bx0, bz1 - bz0) / 2 + 0.01
+      for (let it = 0; it < 18; it++) {
+        const mid = (lo + hi) / 2
+        if (dilateRings([ring], -mid, { join: 'miter' }).length) lo = mid
+        else hi = mid
+      }
+      const safeMax = lo * 0.9
+      if (WB > safeMax) WB = safeMax
+    }
+    const dividerDepth = Math.min(cw + TL_block, WB)
+    const outerDepth = Math.min(cw, WB)
 
     // Three Clipper inward insets (uniform depth, jtRound). Handles any
     // topology including non-convex blocks; per-vertex perp folds at
@@ -2101,8 +2134,8 @@ export function emitOneBlockRingBands({
     // at R=0 stays sharp through the offset. jtRound would add a
     // rounding of radius=offset-depth at every sharp vertex, corrupting
     // operator-authored square-corner intent. Per Boz.
-    const ringOuterArr   = dilateRings([ring], -cw,                    { join: 'miter' })
-    const ringDividerArr = dilateRings([ring], -(cw + TL_block),       { join: 'miter' })
+    const ringOuterArr   = dilateRings([ring], -outerDepth,            { join: 'miter' })
+    const ringDividerArr = dilateRings([ring], -dividerDepth,          { join: 'miter' })
     const ringWedgeArr   = dilateRings([ring], -WB,                    { join: 'miter' })
     if (!ringOuterArr.length || !ringDividerArr.length) return out
     // ringWedge may be empty if the block is too small for full ribbon
@@ -2267,26 +2300,32 @@ export function emitOneBlockRingBands({
 function emitBlockRingBands(blockRoundedWithMeta, blockSharp, frontageEdges, _blockScalars, streets, chainIndex, curbWidth) {
   if (!blockRoundedWithMeta?.length) return { frontageBands: [] }
   const out = []
-  // fes grouped by block — keyed by blockSharp's blockKey (same key fes
-  // were built with). See [[feedback_block_key_rounded_vs_sharp_diverges]]:
-  // blockKeyFromRing(blockRounded) drifts from blockKeyFromRing(blockSharp)
-  // when corner Bezier samples push the bbox past a 0.5m bin. Looking up
-  // by the rounded key silently misses fes on divergent blocks (Benton/
-  // Waverly fixture class in toy). We have parallel arrays via the
-  // applyRoundCornersToRing call site, so use index parity.
-  const fesByBlock = new Map()
+  // fes grouped by block via RING-INDEX PARITY, not blockKey. See
+  // [[feedback_block_key_rounded_vs_sharp_diverges]]: blockKeyFromRing
+  // drifts across two axes — (1) rounded vs sharp (Bezier samples push the
+  // bbox past a 0.5m bin), and (2) pass-1 vs pass-2 (customs asphalt
+  // expansion shifts blockSharp bbox centers ≥0.5m). The fes carry their
+  // PASS-1 blockKey (backfilled for blockCustoms lookup), but this emitter
+  // walks the PASS-2 blockSharp/blockRounded rings; recomputing a key here
+  // (blockKeyFromRing(sharpRing)) drifts away from the fes' carried key and
+  // silently drops every fe on a drifted block (162→42 on dense toy
+  // customs). buildFrontageEdges stamps fe.blockRingIdx = the blockSharp
+  // array index it was walked from, and blockRoundedWithMeta is
+  // blockSharp.map(applyRoundCornersToRing) (unfiltered, index-aligned), so
+  // the array index `bi` is the drift-free join surface the doctrine
+  // prescribes.
+  const fesByRingIdx = new Map()
   for (const fe of frontageEdges) {
-    if (!fe.blockKey) continue
-    let arr = fesByBlock.get(fe.blockKey)
-    if (!arr) { arr = []; fesByBlock.set(fe.blockKey, arr) }
+    if (fe.blockRingIdx == null) continue
+    let arr = fesByRingIdx.get(fe.blockRingIdx)
+    if (!arr) { arr = []; fesByRingIdx.set(fe.blockRingIdx, arr) }
     arr.push(fe)
   }
   for (let bi = 0; bi < blockRoundedWithMeta.length; bi++) {
     const { ring, arcMeta } = blockRoundedWithMeta[bi]
     if (!ring || ring.length < 3 || !arcMeta) continue
     const sharpRing = blockSharp[bi]
-    const blockKey = sharpRing ? blockKeyFromRing(sharpRing) : blockKeyFromRing(ring)
-    const blockFes = fesByBlock.get(blockKey) || []
+    const blockFes = fesByRingIdx.get(bi) || []
     if (!blockFes.length) continue
     const entries = emitOneBlockRingBands({
       ring, arcMeta, sharpRing, blockFes, curbWidth, streets, chainIndex,
