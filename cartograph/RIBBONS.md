@@ -1,6 +1,6 @@
 # Ribbons & Corners — canonical reference
 
-**Status: v0.7 (2026-05-18) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
+**Status: v0.8 (2026-05-30) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed. (v0.8: §3.9 reworked to document the live **dual-emitter** state — the mono-width ring-band keystone on toy + the legacy per-leg split on LS — and the §1 status note brought current with the post-revert rebuild.)
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing. The pipeline walkthrough in §3 is the implementation. The failure-mode inventory in §6 is the live front of the work.
 >
@@ -25,7 +25,7 @@
 
 ## §1. The regime, in plain words
 
-> **2026-05-27 → 2026-05-28 status note.** The uniform-width-model arc (HANDOFF-ribbon-corners.md) was attempted (C0–C5 + two post-C5 buildPedBand attempts, 13 commits) and REVERTED (`ea0bed6`) after the operator visual gate failed at every IX corner. **§6.8/§6.9 remain OPEN**; **new §6.10** captures the architectural diagnostic that ended the attempt and names the path forward. Brief rewrite pending. The doctrine below describes the V2 architecture as it stood pre-arc and stands now post-revert. The "uniform-width ped ribbon" framing the previous note adopted was not implementable on a rounded silhouette without the C6.10 mechanism in place first.
+> **2026-05-30 status note (supersedes the 2026-05-27→28 revert note).** The uniform-width arc was first attempted (C0–C5 + two post-C5 buildPedBand attempts) and REVERTED (`ea0bed6`) after the operator visual gate failed at every IX corner. It was then **rebuilt cleaner** as the **mono-width ring-band emitter** (`emitBlockRingBands` → `emitOneBlockRingBands`) and **shipped on toy 2026-05-29** (Quoin's session): three uniform inward Clipper offsets of `blockRounded` (`cw` / `cw+TL` / `WB`) → 2 strips + sector slicing, with `jtMiter` (preserves operator R=0 squares), R=0 authorable, the per-block capacity guard, and the V1.5 per-leg material swap all landed. **The mono-width model now IS the doctrine below** — §3.9a documents it. **LS still runs the legacy per-leg split** (`silhouetteStraightEmitter` + `buildFrontageBandsV2`, §3.9b) until the **C5 cutover** flips `useRingBandEmitter` (`scene === 'toy'` today). The earlier "not implementable on a rounded silhouette" conclusion was wrong: the missing piece was *round the block first, offset the polygon* — exactly what the keystone does.
 
 ### The model in one sentence
 
@@ -237,7 +237,7 @@ asphaltRounded = differenceRings([stencil], blockRounded)         // negative of
 
 ### `frontageBands` (the ribbon's per-block-edge output)
 
-Concat of `straightBands` (from `buildFrontageBands`) + `arcBands` (from `buildFrontageBandsV2`).
+Two shapes by emitter (see §3.9): **toy** — single `emitBlockRingBands` output (mono-width entries); **LS-legacy** — concat of `straightBands` (from `silhouetteStraightEmitter`) + `arcBands` (from `buildFrontageBandsV2`).
 
 **Straight-span entry** (one per sharp fe with `terminal: 'sidewalk'` and some band depth):
 ```js
@@ -386,27 +386,56 @@ asphaltRounded = stencil ? differenceRings([stencil], blockRounded) : asphaltSha
 
 The rounded mouth at every IX emerges as the back side of the block's rounded corner.
 
-### 3.9 Band emission — split helpers (lines 2186-2202)
+### 3.9 Band emission — DUAL EMITTER (toy mono-width · LS legacy)
 
-**`buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms)` (line 1374; restored from ed29700, post-revert 2026-05-17):**
+Dispatch at **line 2884**: `if (useRingBandEmitter)`. The flag is `opts.useRingBandEmitter`, set `scene === 'toy'` in **both** consumers (`cartograph/bake-ground.js:594`, `src/cartograph/CartographApp.jsx:890`). Two complete, parallel band emitters coexist mid-cutover:
 
-For each fe:
-- Read `blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || streets[fe.chainIdx].measure[fe.side]`. Bail if `terminal !== 'sidewalk'` or both tl & sw ≤ 0.
-- `inwardSign = fe.ringCcw ? +1 : -1`.
-- Three offset polylines: `innerEdge = points + perps · inwardSign · cw`, `tlOuterEdge = +cw+tl`, `swOuterEdge = +cw+tl+sw`.
-- `closeRing(outer, inner) = [...outer, ...inner.reverse()]`, CCW-normalized.
-- Emit `tl = closeRing(tlOuterEdge, innerEdge)` if `tl > 0`; `sw = closeRing(swOuterEdge, tlOuterEdge)` if `sw > 0`.
-- Per-block `intersectRings` clip against `ringByKey.get(fe.blockKey)` (single rounded block ring).
+| | toy (V1 keystone, live) | LS (legacy, pre-C5) |
+|---|---|---|
+| Emitter | `emitBlockRingBands` → `emitOneBlockRingBands` | `silhouetteStraightEmitter` (straight) + `buildFrontageBandsV2` (arc pads) |
+| Model | **mono-width ring band** | per-leg cross-section + per-corner pad |
+| frontageBands | single emitter output | `[...straightBands, ...arcBands]` (line 2899) |
+| frontageCaps | `[]` | from `buildFrontageBandsV2` |
 
-Output: `{ blockKey, edgeOrd, chainIdx, side, points, treelawnRings, sidewalkRings }` per emitting fe.
+**C5 cutover:** flip `useRingBandEmitter` for LS, eyeball, delete `silhouetteStraightEmitter` + `buildFrontageBandsV2` + the dead `buildFrontageBands`. Until then the two paths stay behaviorally parallel; the live-drag preview (`buildChainBandsLive`, line 3114) is a third path that must track whichever emitter its scene uses ([[feedback_live_drag_preview_migrates_with_main_emitter]]).
 
-**`buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth)` (line 1449):**
+> ⚠️ **`buildFrontageBands` (line 1475) is DEAD in the bake path** — grep finds zero code call sites (only doc refs in RIBBONS/BACKLOG/NOTES). It was the post-revert straight emitter (restored from `ed29700`), then superseded by `silhouetteStraightEmitter`. Candidate for deletion in the C5 sweep. Flagged 2026-05-30.
 
-For each `{ ring, arcMeta }` of blockRoundedResults:
-- Partition into spans by `arcMeta[i]?.corner` identity (consecutive vertices same corner identity → one span). Wraparound merge.
-- `spanMeta[si]` for each span: if straight, probe chain adjacency (`findAdjacentChainForBlockEdge` on span pts), grab measure, compute `tl/sw/edgeOrd`. If arc, deferred until flanking metas read.
+---
 
-**Straight-span emission**: `if (meta.type === 'straight') continue` post-revert. The straight `spanMeta` is still BUILT (provides flanking-meta scaffolding for arc spans) but does not push output. Output comes from `buildFrontageBands` instead.
+#### 3.9a — Mono-width ring-band emitter (TOY · the V1 keystone)
+
+`emitBlockRingBands` (line 2300, thin wrapper) → `emitOneBlockRingBands` (line 1974, the construction). **This is THE model** — "ribbon monowidth, strips variable" ([[project_ribbon_corner_uniform_width]]). One uniform-width band wraps the *entire* block silhouette; **the corner is that band BENT around the arc, sliced from the same continuous Clipper offsets — never a constructed primitive.** 8 linear regions (legs + corners) × 2 strips = the 16-fields model. The two facts that don't come naturally and keep getting violated: (1) mono-width, not per-leg stitched; (2) corner = band bent, not a built shape.
+
+**`emitBlockRingBands` — block grouping by RING-INDEX PARITY, not blockKey.** Groups fes by `fe.blockRingIdx` (the `blockSharp` array index `buildFrontageEdges` stamped), because `blockRoundedResults[bi]` ↔ `blockSharp[bi]` are 1:1 by index. Recomputing `blockKeyFromRing` here would drift on two axes (rounded-vs-sharp Bezier bbox shift; pass-1-vs-pass-2 customs expansion) and silently drop every fe on a drifted block (162→42 fes on dense toy customs). [[feedback_block_key_rounded_vs_sharp_diverges]].
+
+**`emitOneBlockRingBands` — per-block construction:**
+
+1. **Span partition.** Walk the rounded ring; group consecutive verts by `arcMeta[i].corner` identity → arc spans (corners) + straight spans (legs). Wraparound merge.
+2. **Kink sub-split** (>5°) of straight spans — catches non-corner IXs (divided-pair endpoints, θ-skipped) that pass through as straight verts but cross fe boundaries.
+3. **Synthetic 2-vert straight spans** injected between adjacent arc spans. On a simple quad block, `applyRoundCornersToRing` consumes all 4 verts into Bezier spans, leaving NO literal straight span for leg emission; the synthetic span is the leg-edge between `tA`(corner N) and `tB`(corner N+1). Shares boundary verts with the flanking arcs (zero-area outer overlap); the inner seam to the corner pad is an honest polyline step.
+4. **Per-block mono-width `W`.** `TL_block = max(treelawn)`, `SW_block = max(sidewalk)` over the block's sidewalk-terminal fes. `WB = cw + TL_block + SW_block`. ONE width for the whole block — this IS the mono-width.
+5. **Capacity guard** (Boz 2026-05-30, [[feedback_render_guard_against_real_data_not_synthetic]]). When `WB` exceeds the block's inscribed reach the three inward offsets collapse past the medial axis → empty `ringWedge` → the difference fallback takes the WHOLE interior → an SW "flood" with an asphalt-colored hole on dense-customs small blocks. Bisect the largest non-empty inward offset (≤ bbox half-min), clamp `WB` to 90% of it. In-spec blocks untouched; over-capacity blocks degrade to a clean truncated ribbon. **Distinct from the retired corner-R clamp** — that was tight-R *corner* degeneracy Clipper handles natively; W-past-medial-axis is a different degeneracy Clipper does NOT handle. [[feedback_no_corner_radius_clamps_in_emit]].
+6. `dividerDepth = min(cw + TL_block, WB)`, `outerDepth = min(cw, WB)`.
+7. **Three Clipper inward insets, `jtMiter`** (line 2137): `ringOuter(−outerDepth)`, `ringDivider(−dividerDepth)`, `ringWedge(−WB)`. **jtMiter, not jtRound** — jtRound adds rounding of radius = depth at every sharp vertex, corrupting operator-authored R=0 squares (ADA ramps). Already-rounded Bezier samples produce concentric arcs naturally via dense-sample miters. Handles any topology incl. non-convex (per-vertex perp folds at re-entrant verts — the old L-shape defect).
+8. **Two strips + full band** (lines 2146-2156):
+   - `outerBand = ringOuter − ringDivider` — **outer strip** (default LU / parcel showing through).
+   - `innerBand = ringDivider − ringWedge` — **inner strip** (default SW / concrete).
+   - `fullBand = ringOuter − ringWedge` — the whole ribbon (cw→W), for single-polygon corner slicing.
+   - (`ringWedge` may be empty when the block is too small for full `W`; the difference fallbacks treat it as zero.)
+9. **fe-per-span resolution.** flankingFes sidecar (C1: `corner.flankingFes.{A,B}`) → `probeFeForRun` chain-adjacency fallback.
+10. **Sector slicing** (lines 2199-2287). Per span, build a sector polygon = sub-path along the ring outer edge + per-vertex perp inward at `SECTOR_INNER_DEPTH = WB + 1` (curved inner side follows band curvature; straight inner-lines would sliver on small/non-convex blocks). Leg sectors extend to include adjacent Bezier endpoints so the boundary band edge is covered.
+    - **Corner (arc span):** `fullBand ∩ sector` → ONE polygon, tagged SW (`sidewalkRings`). Single-polygon emission (Boz expedient (a)): V1 corners are all-SW, so emit the full band slice rather than outer+inner sub-polys that can independently return empty on tight curves (the partial-corner bug). **This is the "corner is the band, bent" made literal — a slice of the same `fullBand`.**
+    - **Leg (straight span):** `outerBand ∩ sector` = outer sub-polys, `innerBand ∩ sector` = inner sub-polys. **V1.5 per-leg material swap:** `matOuter = fe.measure.materials.outer || 'LU'`, `matInner = … || 'SW'`; route each sub-poly to `treelawnRings` (LU) or `sidewalkRings` (SW). Geometry unchanged — only the routing slot flips. Skip if `fe.measure.terminal !== 'sidewalk'`.
+11. **Output entry:** `{ blockKey, edgeOrd, chainIdx, side, points|corner, treelawnRings, sidewalkRings, asphaltRings: [] }`.
+
+---
+
+#### 3.9b — Legacy per-leg split (LS · pre-C5)
+
+Straight bands: **`silhouetteStraightEmitter` (line 1568)** walks each block's rounded ring, partitions into straight-vertex runs, emits tl + sw rings by per-vertex perp offset (geometrically exact for straight verts; no Clipper-precision selfints). Arc pads + caps: **`buildFrontageBandsV2` (line 1714).** Concat at line 2899: `frontageBands = [...straightBands, ...arcBands]`.
+
+**`buildFrontageBandsV2` arc-span emission** — the per-corner pad. (This is the part whose operator visual gate failed, motivating the mono-width rebuild; retained here as the live LS path until C5.) Per `{ ring, arcMeta }` of blockRoundedResults: partition into spans by `arcMeta[i]?.corner` identity (wraparound merge); `spanMeta[si]` built for every span (straight ones probe chain adjacency for flanking-meta scaffolding but do NOT push output — straight output comes from `silhouetteStraightEmitter`).
 
 **Arc-span emission:**
 - Read `prevMeta`, `nextMeta` (leg-B, leg-A by walk convention; see §3.7 reversal note).
@@ -419,7 +448,7 @@ For each `{ ring, arcMeta }` of blockRoundedResults:
   - SYM-NO-RAMP (else): single sw band at `cw + sw_avg`.
 - Push `{ blockKey, edgeOrd, chainIdx, side, corner: span.corner, treelawnRings, sidewalkRings, asphaltRings: [] }`. **Always pushes**, even with empty bands, so the per-corner fillet attribution slot is available.
 
-**Concat (line 2202):** `frontageBands = [...straightBands, ...arcBands]`.
+(Concat with the straight bands happens at the dispatch — line 2899, see §3.9 table.)
 
 ### 3.10 Per-corner fillet attribution (`attributeFilletResidualToArcs`, line 1691; called at 2213)
 
