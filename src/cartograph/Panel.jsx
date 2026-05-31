@@ -149,7 +149,7 @@ function CornersSubsection() {
           Corners
         </label>
         <input type="range" className="carto-input"
-          min="0" max="11" step="0.1"
+          min="0" max="11" step="0.01"
           value={draft}
           onPointerDown={() => { draggingRef.current = true }}
           onPointerUp={finalCommit}
@@ -162,7 +162,7 @@ function CornersSubsection() {
         <input type="number"
           className="carto-meta carto-meta--value carto-meta--editable"
           value={Number(draft).toFixed(2)}
-          min="0" max="11" step="0.1"
+          min="0" max="11" step="0.01"
           onFocus={() => { draggingRef.current = true }}
           onBlur={finalCommit}
           onChange={e => {
@@ -171,14 +171,14 @@ function CornersSubsection() {
             scheduleCommit(v)
           }}
           onKeyDown={e => {
-            // Shift+Arrow = ±1.0; plain Arrow uses the input's native step (0.1).
-            // Native handler fires the ±0.1 case on its own; we only intercept
+            // Shift+Arrow = ±0.1; plain Arrow uses the input's native step (0.01).
+            // Native handler fires the ±0.01 case on its own; we only intercept
             // shift to amplify, and Enter to commit immediately.
             if (e.key === 'Enter') { finalCommit(); e.currentTarget.blur(); return }
             if (!e.shiftKey) return
             if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
             e.preventDefault()
-            const delta = e.key === 'ArrowUp' ? 1 : -1
+            const delta = e.key === 'ArrowUp' ? 0.1 : -0.1
             const v = Math.max(0, Math.min(11, +(draft + delta).toFixed(2)))
             setDraft(v)
             scheduleCommit(v)
