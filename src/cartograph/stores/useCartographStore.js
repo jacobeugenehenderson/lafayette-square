@@ -6,6 +6,7 @@ import {
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
+import toyRibbonsData from '../../data/toy/toy-ribbons.json'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import {
   migrateLampGlow, resolveLampGlowAtMinute,
@@ -1559,7 +1560,16 @@ const useCartographStore = create((set, get) => ({
       // is fallback only, matched by name — used to seed the overlay on first
       // run. anchor + innerSign + pairId are auto-detected by derive.js for
       // divided carriageways and forwarded via ribbons.json.
-      const ribbonById = new Map((ribbonsData.streets || []).map(r => [r.skelId, r]))
+      // Scene-aware fixture: the third-tier measure/cap fallback (rb?.*)
+      // must read the SAME ribbon fixture the scene renders. Toy chains are
+      // skelId-keyed HW*/VW* and live in toy-ribbons.json; the LS import only
+      // has the 242 LS chains. Before the V1.6 overlay cleanup, toy's overlay
+      // carried measure so ov?.measure masked this — once the overlay went
+      // measure-free, a scene-blind LS lookup left every toy chain with
+      // `undefined` measure → MeasureOverlay rendered no handles. Mirror
+      // CartographApp's sceneCfg.ribbons keying.
+      const ribbonsFixture = scene === 'toy' ? toyRibbonsData : ribbonsData
+      const ribbonById = new Map((ribbonsFixture.streets || []).map(r => [r.skelId, r]))
       const streets = skelStreets.map((s) => {
         const ov = overlayById[s.id]
         const legacy = ov ? null : byName.get(s.name)
