@@ -146,7 +146,7 @@ Operator hardens widths, caps, couplers, anchors, parcels/land-use into `overlay
 ### P12 · Curb
 `curbBands = dilate(asphaltRounded, cw) − asphaltRounded`. One continuous stroke per block, painted OVER the bands so the band-to-asphalt seam hides under it.
 - **🔧 Optimize:** —
-- **🩺 Troubleshoot:** degenerate-W flood + customs band-collapse interplay (`HANDOFF-degenerate-W-flood-DESIGN.md`, `HANDOFF-pass2-customs-hardening-DIAG.md`); guard against real data, not synthetic worst-case (`memory/feedback_render_guard_against_real_data_not_synthetic`).
+- **🩺 Troubleshoot:** degenerate-W flood + customs band-collapse interplay — the per-block capacity guard (RIBBONS §3.9a step 5; design HANDOFFs retired to git `2854aa3`); guard against real data, not synthetic worst-case (`memory/feedback_render_guard_against_real_data_not_synthetic`).
 - **🗣 Explain:** "The curb is a single ribbon tracing the whole block edge — including every rounded corner."
 
 ### P13 · Parcel / Land Use

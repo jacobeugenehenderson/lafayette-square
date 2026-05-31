@@ -13,8 +13,8 @@
 - **The geometry wall-arc** (the through-line; `[[project_two_bakes_two_walls]]`, `[[project_skeleton_is_the_first_bake]]`, PIPELINE §Wall):
   1. **C5 cutover** — migrate LS off the legacy per-leg emitter onto the mono-width `emitBlockRingBands`. Flip `useRingBandEmitter` for LS, eyeball, then delete `silhouetteStraightEmitter` + `buildFrontageBandsV2` + the dead `buildFrontageBands`. (RIBBONS §3.9; HANDOFF-ls-migration.)
   2. **Chain-consumer census** — enumerate every chain read in Phase B (P4/P7/P8 + the probe fallback); state what each becomes post-wall (move-to-Survey-bake / eliminate / Survey-tool-only). The linchpin that scopes the wall-move *and* tells the Toy-skeleton tooling which chain-reads to preserve vs retire. **DONE 2026-05-31 (Plumb): `HANDOFF-chain-consumer-census.md`** — 33 sites mapped across the 3 paths. Headline: P9/P12/P13 already chain-free; keeper emitter P10 reads chains in *one* fallback; dependency is concentrated in P4–P8 producers + 2 metadata leaks + the P11 fillet residual (HARD §H1). Metadata freeze (`bakeFeScalars` pattern) is cheap; geometry freeze (corner Vc/tangents) is the project. 6 HARD residuals incl. dead-end caps (→ dead-end typology) + identity-id scheme.
-  3. **Wall-move** — run figure-ground + corner rounding as "the First Bake" at Survey-exit; freeze `blockRounded`; downstream consults no chains. Corners + curb + polygon-shaper authoring move into Survey. (Block-independence verified — re-bake is block-local; HANDOFF-block-independence-SURFACE.)
-- **Toy reset → skeleton bake, deploy editing tools from that state** (Jacob, in-flight; HANDOFF-toy-reset-to-defaults-DESIGN — the two-button reset shipped `ea7c754`).
+  3. **Wall-move** — run figure-ground + corner rounding as "the First Bake" at Survey-exit; freeze `blockRounded`; downstream consults no chains. Corners + curb + polygon-shaper authoring move into Survey. (Block-independence verified — re-bake is block-local; finding in the census H-bucket + git `2854aa3`.)
+- **Toy reset → skeleton bake, deploy editing tools from that state** (Jacob, in-flight; two-button reset shipped `ea7c754`, post-V1.6 baseline `8a1d9d1`; design HANDOFF retired to git `2854aa3`).
 - **Toy → Stage bake path** doesn't carry through (HANDOFF-toy-to-stage-bake). Reframed as Slab-Players: fold into render-conformance Phase 6 (Preview-inherits-Stage) rather than patching the path — unless it blocks the operator now, then patch tactically.
 
 ## NEXT
@@ -52,12 +52,12 @@
 |---|---|---|
 | ls-migration | C5 cutover conversation-starter | live → NOW |
 | toy-to-stage-bake | bake path Toy→Stage | live → NOW |
-| toy-reset-to-defaults-DESIGN | two-button reset | shipping (`ea7c754`) |
 | asphalt-as-ribbon | authored asphalt extent | live → NEXT |
 | dead-end-typology | endpoint typology | live → NEXT |
 | render-conformance | env parity (DRAFT) | cold-review gate |
 | audit-{cartograph,arborist,ls-app,docs} | forensic pathology | campaign |
-| **completed — pending P5 archive** | degenerate-W-flood · pass2-customs-hardening · block-independence · ribbon-corners · measure-authoring-redesign · neon · neon-roof-depth · hero-keyframes · preview-measurement · mobile-profile · sky-and-light · buildings-bake · tree-hero-lod · cloud-specialist | retire to outcome+commit refs |
+| **retired 2026-05-31 (`2854aa3`, in git)** | block-independence · degenerate-W-flood · pass2-customs-hardening · ribbon-corners · measure-authoring-redesign · toy-reset-to-defaults | done — recoverable via git |
+| **still tracked, pending P5 retire** | neon · neon-roof-depth · hero-keyframes · preview-measurement · mobile-profile · sky-and-light · buildings-bake · tree-hero-lod · cloud-specialist | retire to outcome+commit refs |
 
 ## §Triage (carried, not lost)
 
