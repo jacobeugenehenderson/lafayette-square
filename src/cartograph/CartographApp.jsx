@@ -887,7 +887,7 @@ export default function CartographApp() {
                 stencil={sceneCfg.stencil}
                 flat={inDesigner}
                 useBoundary={sceneCfg.useBoundary}
-                useRingBandEmitter={scene === 'toy'}
+                useRingBandEmitter={true /* C5: LS cutover — keeper for all scenes (legacy else-branch dead, removed in C5 commit 3) */}
                 measureActive={tool === 'measure' && inDesigner}
                 surveyActive={tool === 'surveyor' && inDesigner}
                 hideLandUse={toolAerialFocus} />

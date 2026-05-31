@@ -192,7 +192,7 @@ export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
   measureActive = false, surveyActive = false, hideLandUse = false,
   useBoundary = false,
-  useRingBandEmitter = false,  // C4: toy gets the new emitter; LS stays on legacy until C5
+  useRingBandEmitter = true,  // C5: keeper for all scenes (LS cutover); legacy else-branch removed in commit 3
 }) {
   // Gate fade on the per-scene flag. LS turns on the soft-circle
   // silhouette; toy stays rectangular (its stencil is a 360×360 box).

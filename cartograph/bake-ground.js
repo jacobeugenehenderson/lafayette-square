@@ -589,9 +589,10 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const designLayerColors = design.layerColors || {}
   const designLuColors    = design.luColors    || {}
-  // C4 — toy gets the new ring-band emitter (default on for toy only);
-  // LS stays on the legacy emitter until C5 cutover.
-  const useRingBandEmitter = scene === 'toy'
+  // C5 — LS cutover: the ring-band emitter (keeper) is now on for all
+  // scenes. Legacy per-leg emitter is dead (else-branch removed in C5
+  // commit 3).
+  const useRingBandEmitter = true
   const { byMaterial, byFaceUse } = buildV2BakeShape(ribbons, design, stencil.clipPolygon, { useRingBandEmitter })
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
