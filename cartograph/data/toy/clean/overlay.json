@@ -3,193 +3,46 @@
   "streets": {
     "HW1": {
       "name": "HW1",
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
     "HW2": {
       "name": "HW2",
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
     "HW3": {
       "name": "HW3",
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
     "HW4": {
       "name": "HW4",
-      "measure": {
-        "left": {
-          "pavementHW": 11.958703523098563,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 12.243080875826877,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "symmetric": false
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
     "VW1": {
       "name": "VW1",
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
     "VW2": {
       "name": "VW2",
-      "measure": {
-        "left": {
-          "pavementHW": 17.434450046086596,
-          "treelawn": 3.0818657342657296,
-          "sidewalk": 4.7244,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 1.7378727120418702,
-          "treelawn": 1,
-          "sidewalk": 4.7244,
-          "terminal": "sidewalk"
-        },
-        "symmetric": false
-      },
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 15.900076486013983,
-            "treelawn": 0,
-            "sidewalk": 0.3,
-            "terminal": "lawn",
-            "curb": 0.6096
-          },
-          "right": {
-            "pavementHW": 5,
-            "treelawn": 1.5,
-            "sidewalk": 1.5,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "capStart": null,
       "capEnd": "round"
     },
     "VW3": {
       "name": "VW3",
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
     "VW4": {
       "name": "VW4",
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
     "STUB-N": {
       "name": "STUB-N",
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "symmetric": false
-      },
       "capStart": "blunt",
       "capEnd": "round"
     }

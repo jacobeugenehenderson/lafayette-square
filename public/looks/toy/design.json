@@ -80,13 +80,9 @@
     "recreation": "#6EA03E",
     "industrial": "#8E7060"
   },
-  "cornerRadiusScale": 0.9,
-  "cornerRadiusOverrides": {
-    "-40.000,120.000": 4.079036645159051
-  },
-  "cornerCornerRadiusOverrides": {
-    "-40.000,-40.000|HW2:f|VW2:f": 9.895787440472738
-  },
+  "cornerRadiusScale": 1,
+  "cornerRadiusOverrides": {},
+  "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.3302,
   "alleyCap": "square",
   "labels": {

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "toy",
-  "generatedAt": 1778557857369,
+  "bakedAt": 1780202529801,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -113,6 +113,189 @@
         "trees": 0.06,
         "pool": 0.25
       }
+    }
+  },
+  "neon": {
+    "values": {
+      "core": 1,
+      "tube": 1,
+      "bleed": 1,
+      "emissive": 4,
+      "tubeRadius": 1
+    }
+  },
+  "sky": {
+    "overrides": []
+  },
+  "ambient": {
+    "values": {
+      "value": 1.58
+    }
+  },
+  "hemi": {
+    "values": {
+      "value": 1
+    }
+  },
+  "dirSun": {
+    "values": {
+      "value": 1
+    }
+  },
+  "dirMoon": {
+    "values": {
+      "value": 1
+    }
+  },
+  "constellations": {
+    "values": {
+      "value": 0
+    }
+  },
+  "milkyWay": {
+    "values": {
+      "value": 1
+    }
+  },
+  "bloom": {
+    "values": {
+      "intensity": 0.5,
+      "threshold": 0.85,
+      "smoothing": 0.4
+    }
+  },
+  "ao": {
+    "values": {
+      "radius": 15,
+      "intensity": 2.5,
+      "distanceFalloff": 0.3
+    }
+  },
+  "exposure": {
+    "values": {
+      "value": 0.95
+    }
+  },
+  "warmth": {
+    "values": {
+      "value": 0
+    }
+  },
+  "fill": {
+    "values": {
+      "value": 0.65
+    }
+  },
+  "mist": {
+    "values": {
+      "density": 0,
+      "color": "#9dc5e0"
+    }
+  },
+  "halo": {
+    "values": {
+      "strength": 0,
+      "color": "#b8c8d8"
+    }
+  },
+  "grade": {
+    "values": {
+      "contrast": 0.42,
+      "toe": 0.28,
+      "saturation": 1.1,
+      "vignette": 1
+    }
+  },
+  "grain": {
+    "values": {
+      "scale": 1
+    }
+  },
+  "shadow": {
+    "values": {
+      "size": 52,
+      "samples": 16
+    }
+  },
+  "shots": {
+    "values": {
+      "browse": {
+        "fov": 45,
+        "padding": 1.05,
+        "bounds": {
+          "cx": 95,
+          "cz": -158,
+          "w": 1292,
+          "h": 1025
+        }
+      },
+      "hero": {
+        "fov": 22
+      },
+      "street": {
+        "fov": 75,
+        "eyeHeight": 1.73
+      }
+    }
+  },
+  "browseHeading": {
+    "values": {
+      "value": 0
+    }
+  },
+  "heroSubject": null,
+  "heroKeyframes": [
+    {
+      "position": [
+        -540,
+        55,
+        362
+      ],
+      "fov": 22
+    },
+    {
+      "position": [
+        -260,
+        55,
+        98
+      ],
+      "fov": 22
+    }
+  ],
+  "heroMotion": {
+    "period": 720,
+    "easing": "sine"
+  },
+  "arch": {
+    "values": {
+      "distance": 1050,
+      "bearingX": 0.9487,
+      "bearingZ": -0.3163,
+      "scale": 1.3,
+      "rotation": 1.36,
+      "yOffset": 0,
+      "footFade": 30,
+      "uplightL_intensity": 0,
+      "uplightL_color": "#ffd6a8",
+      "uplightL_cone": 0.55,
+      "uplightL_reach": 200,
+      "uplightR_intensity": 0,
+      "uplightR_color": "#ffd6a8",
+      "uplightR_cone": 0.55,
+      "uplightR_reach": 200
+    }
+  },
+  "horizon": {
+    "values": {
+      "radius": 3750,
+      "fadeInner": 900,
+      "fadeOuter": 3750
+    }
+  },
+  "clouds": {
+    "values": {
+      "preset": "auto",
+      "overrides": null
     }
   }
 }
