@@ -43,6 +43,8 @@ new arc ──▶ STATE (BACKLOG now/next) + a HANDOFF
 
 Superseded content is neither deleted nor archived-in-place — it **migrates to where it belongs**. The diary is a clean, sanctioned downstream home, not a graveyard.
 
+**HANDOFF lifecycle (the State detail layer).** A `HANDOFF-*.md` is State — a dispatch-ready brief for a backlog item. (An item with *no* HANDOFF still needs one drafted before it can go to an Agent; "no HANDOFF" = not yet dispatchable, not "nothing to do.") Every live HANDOFF should appear in the backlog index; the two stay in sync. **When its arc lands:** capture outcome + commit-refs as a backlog one-liner (then *fact* → Reference, *narrative* → NOTES), **then retire the file.** ⚠️ **Commit an untracked HANDOFF *before* deleting it** — git is the archive only for *tracked* files, so raw-deleting (or `git clean`-ing) an untracked HANDOFF destroys the only record of work that often already shipped. Never let completed HANDOFFs pile up at root; never delete an uncommitted one. (This rule exists because the practice lapsed once — 24 accumulated, 8 of them untracked, some for shipped work.)
+
 **The repo↔memory test:** *would a dispatched agent need this to do a brief?* If yes → repo (one of the three kinds above). If it's continuity, the working relationship, or cross-arc plot that's *Boz's to carry* → coordinator memory. Every load-bearing decision earns a repo home; memory points to it.
 
 **Per-domain.** Cartograph is the canonical instance. ls / arborist / meteorologist each get the same three-kind structure — that consistency is what makes it a *kit*, not a one-off. (Stage & Preview are hybrid — they straddle authoring↔consuming — so their docs blend Reference-pipeline with State.)
