@@ -9,6 +9,25 @@
 
 Run figure-ground + corner rounding + per-edge measure resolution **once, at Survey-exit, as "the First Bake,"** freeze the result by value, and make every downstream consumer (Stage / Preview / production bake) read **that frozen artifact and zero chains.**
 
+## ⭐ THE EVENTUAL PICTURE — Feature Restoration Ledger (the definition of done)
+
+We are deliberately accepting a period of **severe regression** during this arc (Jacob, 2026-05-31: "we can accept a period of severe regression — but we're expecting all of these features to return"). This ledger is the blueprint Boz holds so the breakage stays *temporary*. **The governing invariant is WYSIWYG: the render shows what the authoring tools show, across all four surfaces — authoring handles ↔ live preview ↔ committed bake ↔ production.** No row is marked ✅ RESTORED until **Jacob's eye confirms it in the real app** ([[feedback_proxy_render_is_not_the_operator_eye]]). The arc is not done until every row is green.
+
+| # | Feature (eventual behavior) | Status (2026-05-31) | Restored by |
+|---|---|---|---|
+| F1 | **Ribbon band widths** — drag sidewalk/treelawn/pavement handle → bands render to match, live + bake | 🔴 BROKEN (bands don't follow the edit; polygon does) | live-band fix (current) + W2/W3 freeze |
+| F2 | **Block silhouette / polygon shape** — drag curb → block reshapes | 🟢 WORKING (must stay working) | hold through arc |
+| F3 | **Corner rounding** — per-corner radius (gold dots), per-IX, global scale → corners round to match | 🟠 REGRESSED by W1 | corner-regression fix (current) |
+| F4 | **Customs stick (no drift)** — edits persist + render, keyed by chain-anchored identity | 🟡 storage FIXED (W1); live application BROKEN | live-band fix + W2 |
+| F5 | **Per-block land-use coloring** — treelawn tinted per parcel LU | 🟢 was working — WATCH it stays | hold through arc |
+| F6 | **Per-leg material swap** (LU↔SW, V1.5) | ⚪ unverified — must return | verify; W3 |
+| F7 | **The four representations agree** (handles ↔ live preview ↔ bake ↔ production) — the WYSIWYG invariant itself | 🔴 BROKEN (they diverge) | the whole arc — this IS the purpose |
+| F8 | **LS at visual parity with toy** | 🔴 BROKEN (LS ~0%) | W5 (LS bring-across, post-wall) |
+| F9 | **Dead-end / endpoint caps** | ⏸ deferred (H3, stubbed) | separate dead-end-typology arc |
+| F10 | **Stage / Preview / production render = authored** (downstream consumes the frozen artifact) | ⚪ to-verify post-wall | W3 + W5 |
+
+**How we use this ledger:** every W-phase closes by re-checking the affected rows against Jacob's eye and updating status here. `FEATURES.md` (the Reference doc) tracks *current reality* and must never claim a row works before it does (stale-label rule); this ledger tracks the *target*. When all rows are 🟢, the wall-move is done and the ledger retires into `FEATURES.md`.
+
 ## Why now — the three convergent arguments
 
 1. **The standing debt** ([[project_skeleton_is_the_first_bake]]): chains read too late cause nearly every "back to the drawing board" moment. The wall-move pays it down structurally.
