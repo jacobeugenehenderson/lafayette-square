@@ -622,18 +622,67 @@ const useCartographStore = create((set, get) => ({
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
-  // Reset toy button (project_reset_toy_button_queued). Clears ALL per-block-
-  // edge customs to {} and re-bakes — the click-driven equivalent of the
-  // manual blockCustoms reset that shipped earlier this arc. Direct empty
-  // write, NOT git checkout
-  // (HEAD's design.json is not a guaranteed clean slate). V1 scope: blockCustoms
-  // only; cornerRadiusOverrides intentionally preserved (corner authoring, not
-  // the flood cause — a future "full pristine reset" can clear that too).
-  // bakeStale flips so the Stage button also reflects the change; runBake
-  // flushes the debounced save before baking so design.json is current.
-  resetToyBlockCustoms: async () => {
-    set({ blockCustoms: {}, bakeStale: true })
+  // Reset the toy's user-authored SESSION layer back to the fixture baseline
+  // (project_reset_toy_button_queued; Stadia's (a1) target). The toy bake reads
+  // its generic + test-feature baseline from the AUTHORED fixture
+  // (src/data/toy/toy-input.json → toy-ribbons.json), NOT from overlay/derive —
+  // so those files are never touched here. Benton's one-side asymmetry and
+  // Waverly's bare segment are fixture and MUST survive. Reset strips only the
+  // override layers stacked on top:
+  //   • overlay chain measures + segmentMeasures (Survey/Measure live edits) —
+  //     cleared on centerlineData so mergeLiveRibbons falls the live render back
+  //     to the toy-ribbons baseline (mergeLiveRibbons only overrides a measure
+  //     when the live entry has BOTH sides), then _saveOverlay strips them on disk.
+  //   • blockCustoms (per-fe authoring).
+  //   • corner-radius overrides (Neighborhood only).
+  // _saveOverlay is AWAITED so the /overlay POST lands before runBake's /bake POST
+  // reads it (the flush-before-dependent-POST hazard); runBake flushes the design
+  // debounce so design.json (blockCustoms + corners) is current too. Toy-only;
+  // both buttons are confirm()-gated in Panel.
+  //
+  // NOTE (finding #2, separate arc): because the toy bake never reads overlay,
+  // clearing overlay measures resets the LIVE render but the baked measures were
+  // already the fixture baseline. blockCustoms + corners are what the rebake
+  // actually changes in the artifact.
+
+  // Reset Selected — the currently-selected chain only.
+  resetToySelected: async () => {
+    const { selectedStreet, centerlineData } = get()
+    if (selectedStreet == null) return
+    const st = centerlineData.streets?.[selectedStreet]
+    if (!st) return
+    // Drop this chain's measure override (+ segmentMeasures) so the live render
+    // falls back to the toy-ribbons fixture baseline. id/name preserved, so the
+    // blockCustoms chain-wipe below still resolves the chain.
+    const streets = centerlineData.streets.map((s, i) =>
+      i === selectedStreet ? { ...s, measure: undefined, segmentMeasures: undefined } : s
+    )
+    set({ centerlineData: { ...centerlineData, streets }, bakeStale: true })
+    // Drop per-fe customs on this chain (existing chain-scoped wipe).
+    get().clearBlockEdgeCustomsForChain(selectedStreet)
+    // Persist the stripped overlay to disk and WAIT before the bake reads it.
+    await get()._saveOverlay()
+    await get().runBake()
+  },
+
+  // Reset Neighborhood — every chain, all three override layers, scene-wide.
+  resetToyNeighborhood: async () => {
+    const { centerlineData } = get()
+    const streets = (centerlineData.streets || []).map(s => ({
+      ...s, measure: undefined, segmentMeasures: undefined,
+    }))
+    set({
+      centerlineData: { ...centerlineData, streets },
+      blockCustoms: {},
+      cornerRadiusScale: 1,
+      cornerRadiusOverrides: {},
+      cornerCornerRadiusOverrides: {},
+      bakeStale: true,
+    })
+    // design.json carries blockCustoms + corner overrides.
     get()._saveDesignDebounced()
+    // Persist the stripped overlay to disk and WAIT before the bake reads it.
+    await get()._saveOverlay()
     await get().runBake()
   },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
@@ -1694,8 +1743,10 @@ const useCartographStore = create((set, get) => ({
       }
     }
     // overlay.json carries geometry only — design has moved to the active
-    // Look's design.json (see _saveDesignDebounced).
-    saveOverlay({ version: 1, streets: out }, get().scene)
+    // Look's design.json (see _saveDesignDebounced). Returned so callers that
+    // POST a dependent /bake (the toy reset path) can await the write landing
+    // first — the flush-before-dependent-POST hazard.
+    return saveOverlay({ version: 1, streets: out }, get().scene)
   },
 
   // Debounced save for design-panel edits. Writes the active Look's

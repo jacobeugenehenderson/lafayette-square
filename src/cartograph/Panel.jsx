@@ -108,9 +108,11 @@ function CornersSubsection() {
   const cornerOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
   const clearAllIxCornerRadii = useCartographStore(s => s.clearAllIxCornerRadii)
   const scene = useCartographStore(s => s.scene)
-  const blockCustoms = useCartographStore(s => s.blockCustoms)
-  const resetToyBlockCustoms = useCartographStore(s => s.resetToyBlockCustoms)
-  const hasBlockCustoms = !!blockCustoms && Object.keys(blockCustoms).length > 0
+  const resetToySelected = useCartographStore(s => s.resetToySelected)
+  const resetToyNeighborhood = useCartographStore(s => s.resetToyNeighborhood)
+  const selectedStreet = useCartographStore(s => s.selectedStreet)
+  const selectedName = useCartographStore(s =>
+    s.selectedStreet != null ? s.centerlineData?.streets?.[s.selectedStreet]?.name : null)
   const overrideCount = Object.keys(overrides).length + Object.keys(cornerOverrides).length
   // Local draft tracks the slider thumb at input rate so the UI feels
   // responsive even though the store→geometry rebuild is heavy (V2's
@@ -202,23 +204,37 @@ function CornersSubsection() {
           <span className="carto-btn-text">Revert{overrideCount ? ` (${overrideCount})` : ''}</span>
         </button>
       </div>
-      {/* Reset toy blocks — clears every per-block-edge custom back to a clean
-          slate + re-bakes. Toy-only authoring affordance; the click-driven form
-          of the manual blockCustoms reset shipped earlier this arc. Corner radii
-          are preserved (a future full reset can clear those too). */}
+      {/* Reset the toy's user-authored session layer back to the fixture
+          baseline. Selected: the picked chain's overlay measure + its per-block
+          customs. Neighborhood: every chain's measures + all blockCustoms +
+          corner radii. The authored fixture (toy-input.json → toy-ribbons.json:
+          convention-generic widths + test features like Benton's asymmetry and
+          Waverly's bare segment) is KEPT — only the override layers on top are
+          stripped, then re-baked. Toy-only authoring affordance. */}
       {scene === 'toy' && (
         <div className="carto-row carto-corner-buttons">
           <button
             className="carto-btn carto-btn--icon"
-            disabled={!hasBlockCustoms}
+            disabled={selectedStreet == null}
             onClick={() => {
-              if (confirm('Reset toy blocks? All per-block sidewalk/treelawn customs will be cleared and the map re-baked. This cannot be undone.')) {
-                resetToyBlockCustoms()
+              if (confirm(`Reset ${selectedName || 'the selected street'} to the fixture baseline? Its measure customs and per-block sidewalk/treelawn edits will be cleared and the map re-baked. This cannot be undone.`)) {
+                resetToySelected()
               }
             }}
-            title="Clear every per-block sidewalk/treelawn custom and re-bake. Corner radii are kept.">
+            title="Clear the selected chain's measure + per-block customs back to the toy fixture baseline, then re-bake.">
             <span className="carto-btn-glyph" aria-hidden="true">⟲</span>
-            <span className="carto-btn-text">Reset toy blocks</span>
+            <span className="carto-btn-text">Reset Selected</span>
+          </button>
+          <button
+            className="carto-btn carto-btn--icon"
+            onClick={() => {
+              if (confirm('Reset the whole toy neighborhood to the fixture baseline? Every street returns to its generic cross-section, all per-block customs clear, and all corner radii reset to default. Authored test features (Benton, Waverly) are kept. This cannot be undone.')) {
+                resetToyNeighborhood()
+              }
+            }}
+            title="Clear all measure customs, per-block customs, and corner radii scene-wide back to the toy fixture baseline, then re-bake. Authored test features are kept.">
+            <span className="carto-btn-glyph" aria-hidden="true">⟲</span>
+            <span className="carto-btn-text">Reset Neighborhood</span>
           </button>
         </div>
       )}
