@@ -66,19 +66,23 @@ The chain reads that live **inside the Survey authoring tool** forever — they 
 
 ---
 
-## Open design questions for Jacob (shape these before we decompose into sub-briefs)
+## Design decisions (Jacob + Boz, 2026-05-31)
 
-1. **Where does the First Bake physically live?** A persisted artifact file at Survey-exit (like the bake `ground.bin`), or an in-memory freeze the Designer holds? The census calls it "may run live inside the Survey tool" — is the frozen artifact a new on-disk slab, or the existing bake promoted to be the SSOT?
-2. **The id scheme (H4)** — what's the stable key? Block index at figure-ground time + fe id + corner id? This is the linchpin; it decides whether `blockCustoms` migration is mechanical or fraught.
-3. **Dead-end typology (H3)** — do we settle the Spike/Stub authoring model *in* this arc, or stub it (freeze caps as-is, defer the authoring UI)?
-4. **LS customs (H4 sub)** — clean-slate LS `blockCustoms` to `{}` as part of the migration (lose all LS authoring, like toy), or write a migrator from the two legacy regimes onto the new ids? My lean: clean-slate (the accumulated customs are mostly orphaned/drift-broken anyway), but it's your authoring intent to weigh.
-5. **The Survey · Section · Stage rename** — DECIDED but not built; does it ride *with* this arc (since the First Bake lives at "Survey-exit") or stay a separate follow-on? (Stale-label rule until built either way.)
+**✅ Q2 — the id scheme (H4): CHAIN-ANCHORED IDENTITY.** Key customs + all cross-links off the *stable authored input*, not the derived block. Ribbon fes → `(skelId, side, segOrd)`; corners → `(ixPoint, sorted leg-keys)` — *the scheme `CornerEditHandles` already uses, and why corners work while ribbons drift.* The block becomes an **ephemeral computed grouping** the First Bake recalculates each pour — never a stored key. `blockKey` is retired *as a key* (the polygon it named is kept — it's the frozen geometry). **Rationale:** the chain *name* is metadata (freezes trivially as a label, like the measure); the chain *geometry* is what dies at the wall — so chain-anchored identity is fully consistent with the wall-move (it's the metadata half), and it's what makes the freeze deliver WYSIWYG instead of freezing the drift in place. **Contract:** customs hold under width/shape edits; invalidate only under *topology* edits (add/remove IX, split chain) — rare, deliberate, and legible (streets are stable + mostly additive). See NOTES 2026-05-31 for the full reasoning.
 
-## Proposed decomposition (once the above are shaped)
+**✅ Q4 — LS customs: CLEAN-SLATE.** Clear LS `blockCustoms` → `{}`; LS falls back to pipeline-derived per-fe measure (toy's proven V1.6 baseline), re-author forward on the stable scheme. **Rationale:** both legacy regimes (integer/per-side + coordinate/per-fe) are keyed by the scheme we're abandoning and aren't rendering correctly anyway — there's no working authoring to preserve, and migrating the coordinate keys would mean running the drift-match we're abolishing. No migrator; just a wipe.
 
-- **W1 — metadata freeze** (the weekend half): persist `bakeFeScalars`' per-fe `measure` as the artifact; downstream reads the attribute. Low-risk, proves the pattern.
-- **W2 — id scheme (H4)** + `blockCustoms` migration. The linchpin; everything else joins through it.
-- **W3 — geometry freeze**: `blockRounded` + corner records + per-span ownership + fillet (H1) + asphalt tags (H2), frozen by value; downstream consults zero chains.
+## Open design questions — provisional leans (not gating the first sub-brief)
+
+1. **Where does the First Bake physically live?** (persisted on-disk slab vs in-memory freeze the Designer holds vs the existing bake promoted to SSOT). *Lean:* in-memory freeze at Survey-exit that can also persist to the slab — but this gates W3 (geometry freeze), not the identity keystone below, so defer the call.
+3. **Dead-end typology (H3)** — *Lean:* **stub it** — freeze caps as-is, defer the Spike/Stub authoring UI to its own arc (`HANDOFF-dead-end-typology`). Don't expand this arc's scope.
+5. **Survey · Section · Stage rename** — *Lean:* **separate follow-on.** Stale-label rule holds; don't rename mid-arc.
+
+## Decomposition (revised post-decisions)
+
+- **W1 — THE IDENTITY KEYSTONE** *(first; the linchpin — Q2 + Q4 fused).* Replace `blockKey`-based customs keying with chain-anchored `(skelId, side, segOrd)` across **all three representations** (store/`MeasureOverlay` write · `bakeFeScalars`/emitter read · `buildChainBandsLive` preview), unifying them on one stable key. Clean-slate LS `blockCustoms`. **Delivers an early, visible WYSIWYG win** (edits stop drifting → render follows the handles) AND validates the keystone in code before the heavy geometry freeze builds on it. Toy-first (no regression), then confirm LS edits-now-render through the production path. See `HANDOFF-wall-W1-identity.md`.
+- **W2 — metadata freeze**: persist `bakeFeScalars`' per-fe `measure` as the frozen artifact, keyed by the W1 identity; downstream reads the attribute. (Folds in once W1 lands.)
+- **W3 — geometry freeze**: `blockRounded` + corner records + per-span ownership + fillet (H1) + asphalt tags (H2), frozen by value; downstream consults zero chains. (Gated on Q1.)
 - **W4 — eliminate**: delete the two-pass machine, `probeFeForRun`, highway re-lookup, ring-index parity, legacy emitters + dead fns.
 - **W5 — LS bring-across**: re-bake LS on the post-wall architecture, evaluate through the production render path (Jacob's eye), re-catalog the surviving Axis-C riff-raff.
 
