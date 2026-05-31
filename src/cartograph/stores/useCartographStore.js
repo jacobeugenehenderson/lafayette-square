@@ -622,6 +622,20 @@ const useCartographStore = create((set, get) => ({
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
+  // Reset toy button (project_reset_toy_button_queued). Clears ALL per-block-
+  // edge customs to {} and re-bakes — the click-driven equivalent of the
+  // manual blockCustoms reset that shipped earlier this arc. Direct empty
+  // write, NOT git checkout
+  // (HEAD's design.json is not a guaranteed clean slate). V1 scope: blockCustoms
+  // only; cornerRadiusOverrides intentionally preserved (corner authoring, not
+  // the flood cause — a future "full pristine reset" can clear that too).
+  // bakeStale flips so the Stage button also reflects the change; runBake
+  // flushes the debounced save before baking so design.json is current.
+  resetToyBlockCustoms: async () => {
+    set({ blockCustoms: {}, bakeStale: true })
+    get()._saveDesignDebounced()
+    await get().runBake()
+  },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
   // generous upper bound to keep the slider sane.
   setCornerRadiusScale: (v) => {

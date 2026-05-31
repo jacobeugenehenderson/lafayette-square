@@ -107,6 +107,10 @@ function CornersSubsection() {
   const overrides = useCartographStore(s => s.cornerRadiusOverrides) || {}
   const cornerOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
   const clearAllIxCornerRadii = useCartographStore(s => s.clearAllIxCornerRadii)
+  const scene = useCartographStore(s => s.scene)
+  const blockCustoms = useCartographStore(s => s.blockCustoms)
+  const resetToyBlockCustoms = useCartographStore(s => s.resetToyBlockCustoms)
+  const hasBlockCustoms = !!blockCustoms && Object.keys(blockCustoms).length > 0
   const overrideCount = Object.keys(overrides).length + Object.keys(cornerOverrides).length
   // Local draft tracks the slider thumb at input rate so the UI feels
   // responsive even though the store→geometry rebuild is heavy (V2's
@@ -198,6 +202,26 @@ function CornersSubsection() {
           <span className="carto-btn-text">Revert{overrideCount ? ` (${overrideCount})` : ''}</span>
         </button>
       </div>
+      {/* Reset toy blocks — clears every per-block-edge custom back to a clean
+          slate + re-bakes. Toy-only authoring affordance; the click-driven form
+          of the manual blockCustoms reset shipped earlier this arc. Corner radii
+          are preserved (a future full reset can clear those too). */}
+      {scene === 'toy' && (
+        <div className="carto-row carto-corner-buttons">
+          <button
+            className="carto-btn carto-btn--icon"
+            disabled={!hasBlockCustoms}
+            onClick={() => {
+              if (confirm('Reset toy blocks? All per-block sidewalk/treelawn customs will be cleared and the map re-baked. This cannot be undone.')) {
+                resetToyBlockCustoms()
+              }
+            }}
+            title="Clear every per-block sidewalk/treelawn custom and re-bake. Corner radii are kept.">
+            <span className="carto-btn-glyph" aria-hidden="true">⟲</span>
+            <span className="carto-btn-text">Reset toy blocks</span>
+          </button>
+        </div>
+      )}
     </>
   )
 }
