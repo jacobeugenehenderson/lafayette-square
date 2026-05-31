@@ -1,6 +1,6 @@
 # Ribbons & Corners — canonical reference
 
-**Status: v0.8 (2026-05-30) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed. (v0.8: §3.9 reworked to document the live **dual-emitter** state — the mono-width ring-band keystone on toy + the legacy per-leg split on LS — and the §1 status note brought current with the post-revert rebuild.)
+**Status: v0.9 (2026-05-31) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed. (v0.9: §5 measure-tool model updated for V2-Measure polygon-only authoring; §6.8 / §6.9 / §6.10 marked RESOLVED by V1 keystone with historical context preserved; §7 history table appended with V1 keystone, V1.5 swap, V2-Measure, V1.6 entries. v0.8: §3.9 reworked to document the live **dual-emitter** state — the mono-width ring-band keystone on toy + the legacy per-leg split on LS — and the §1 status note brought current with the post-revert rebuild.)
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing. The pipeline walkthrough in §3 is the implementation. The failure-mode inventory in §6 is the live front of the work.
 >
@@ -544,12 +544,14 @@ Output shape matches `byChain[i]` + adds `treelawnEdges` / `sidewalkEdges` polyl
 - **Selected-adjacent block translucency** (~line 399): per-segment-midpoint probe at `max(hw + tl + sw) + cw + 10m`. Per-block mode narrows to two blocks at anchor.
 - **Edge strokes**: treelawn-outer (green) + sidewalk-outer (white) polylines drawn opaque at Y=0.06 only on selected chain. The curb stripe IS the asphalt|treelawn stroke.
 
-### Measure tool — operator model
+### Measure tool — operator model (V2-Measure, 2026-05-30)
 
-The Measure tool lets the operator author the ribbon's cross-section per block edge. Two write modes, selected by a 3-segment toggle in MeasurePanel (`ModeToggle`):
+The Measure tool authors the ribbon's cross-section per block edge. **All writes are polygon-scope (per-fe) under V2-Measure** — Datum's polygon-only redesign (commit `72cd0a7`) retired chain-scope authoring. Two operator modes, both writing per-fe via `blockCustoms[blockKey][edgeOrd]`:
 
-- **"Edit entire row" (global mode):** drag writes to `chain.measure[side]`. If `measure.symmetric === true`, mirrors to opposite side. The whole streetfront along the chain moves in tandem.
-- **"Edit block" (per-block mode, default):** drag writes to `blockCustoms[blockKey][edgeOrd]`. Only that one block edge of the chain's ribbon changes; the rest of the chain stays at its `chain.measure` default. **This decouples a single streetfront slice from the chain.**
+- **"Edit entire row" (global mode):** drag selects every fe along the chain and FANS the write per-fe. Chain becomes a *selection criterion*, never a write scope. Result: every block-edge along the chain materializes its own explicit `blockCustoms` entry with the new value (sparse → dense; the V0 "living chain default" is retired).
+- **"Edit block" (per-block mode, default):** drag writes to the anchored fe only. Sibling blocks along the same chain are unaffected.
+
+`chain.measure[side]` is now **read-only pipeline-derived input** — it provides the default a fe falls through to when no `blockCustoms` entry exists, and carries pipeline-side state like `innerEdgeMeasure` zeroing for divided carriageways. No operator-write path targets it. **Symmetric mirroring is a transient UI state** (`editSidesSeparately` in the store, not a persisted measure flag) — when OFF (default), drag writes mirror to the opposite-side fe; when ON, drag writes only the clicked side. The legacy persisted `chain.measure.symmetric` flag is vestigial pipeline state, never operator-authored after V2-Measure.
 
 **Click semantics:**
 
@@ -715,7 +717,13 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 
 `MeasureOverlay.jsx:777-783` reads double-click as deselect. NOTES:3549-3551 spec says double-click should insert a stripe split (treelawn/sidewalk boundary). Surface-only divergence; cosmetic. **Status:** deferred.
 
-### 6.8 Corner-interior regime emitter deviates from concentric doctrine — OPEN (attempted resolution 2026-05-27 reverted 2026-05-28 in `ea0bed6`; see §6.10)
+### 6.8 Corner-interior regime emitter deviates from concentric doctrine — RESOLVED 2026-05-29 (V1 keystone, `025ee40`)
+
+**Closed by:** the V1 keystone construction (`emitOneBlockRingBands` per §3.9a) retired the three-regime (ASYM / SYM-WITH-RAMP / SYM-NO-RAMP) arc-span emitter entirely. The corner is no longer constructed as a separate primitive — it's a slice of the two continuous Clipper-offset bands. Concentric-with-the-curb is literally true by construction (the rings are inset polygons of `blockRounded`). The historical text below is preserved for context; the diagnosis stands as instructive but the failure mode no longer exists in the live emitter.
+
+— Historical (pre-V1 keystone) record below —
+
+
 
 **2026-05-28 status update.** The HANDOFF-ribbon-corners.md uniform-width-model attempt aimed to resolve §6.8 by retiring the three-regime emitter and treating the corner as a single inward Clipper offset of `blockRounded` (`cw + W`, W = max-leg width). The arc landed (C0–C5 + post-C5 buildPedBand attempts) but the operator visual gate failed: the per-leg emitter's STRAIGHT-only partition continued to produce square outer corners at the rounded silhouette regardless of how the corner-emitter was shaped (see §6.10). Entire code arc reverted; §6.8 remains OPEN.
 
@@ -762,7 +770,13 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 
 **Doctrinal note:** the figure-ground inversion (RIBBONS §1) is preserved because the visible CORNER geometry derives from blockRounded (corner pad's outer edge is the rounded silhouette arc). The legs' source-from-sharp-fe is a pragmatic implementation choice — the visible result is bounded by blockRounded via the H1 clip, so from the operator's POV the bands appear inset from the rounded silhouette regardless of which ring they were emitted from.
 
-### 6.9 Corner-input-preparation produces non-uniform output across IX corners — OPEN (attempted resolution 2026-05-27 reverted 2026-05-28 in `ea0bed6`; see §6.10)
+### 6.9 Corner-input-preparation produces non-uniform output across IX corners — RESOLVED 2026-05-29 (V1 keystone + V2-Measure)
+
+**Closed by:** the V1 keystone's per-block scalar resolution (`bakeFeScalars` at fe-construction computes `blockScalars[blockKey].W` once per block from per-fe `fe.measure` resolved through `blockCustoms` precedence) replaced the four-corner-records-each-with-its-own-input-preparation path. Input variance across corners on the same IX no longer exists as a class — each block independently resolves its own scalars from its own fes. Datum's V2-Measure (`72cd0a7`) further hardened this by making `blockCustoms` the canonical per-fe authoring target (no chain.measure leakage). Historical text below preserved for context.
+
+— Historical (pre-V1 keystone) record below —
+
+
 
 **2026-05-28 status update.** The arc that aimed to retire §6.9 by structurally collapsing all per-corner construction to a single inward offset (HANDOFF §3) did land that machinery but was reverted along with §6.8's resolution attempt — the upstream per-leg straight-only partition is the actual blocker (§6.10). When the rewrite goes in, §6.9 should be re-evaluated: the input-preparation drift it documents may have already been structurally retired by C4.5's `fe.measure`-bake (which was the part of the arc that genuinely held; reverted with the rest, but the doctrinal insight is preserved).
 
@@ -861,7 +875,13 @@ This doctrine resolves the asymmetric-flanks question without tapering, without 
 - `cornersAtIx` has 3 docblocks referencing retired `buildCornerPadQuad`.
 - FEATURES corner-plugs subsection (was lines 76-104 pre-migration) carries `[PHASE 2 SUPERSEDED]` placeholder marker.
 
-### 6.10 Per-leg straight-only emission produces square outer corners at the rounded silhouette — OPEN, DOMINANT, BLOCKS §6.8 + §6.9 fixes (2026-05-28)
+### 6.10 Per-leg straight-only emission produces square outer corners at the rounded silhouette — RESOLVED 2026-05-29 (V1 keystone, `025ee40`)
+
+**Closed by:** the V1 keystone construction dissolves the per-leg-straight-only partition entirely. `emitOneBlockRingBands` (§3.9a) walks the FULL `blockRounded` ring (Bezier samples + literal verts treated uniformly) via Clipper offsets at three depths — there is no straight-only partition, no per-vertex-perp at the partition boundary, no square-overshoot failure mode by construction. The 13-month foundation fault is dissolved structurally. See `[[feedback_silhouette_straight_emitter_skipped_fes]]` for the lesson; the legacy `silhouetteStraightEmitter` lives on for LS until the C5 cutover, then retires. Historical text below preserved for context.
+
+— Historical (pre-V1 keystone) record below —
+
+
 
 **Symptom:** at every IX corner the visible cream sidewalk traces a SQUARE 90° outer corner instead of following `blockRounded`'s rounded silhouette concentrically. Operator zoomed-in screenshot (2026-05-28) shows the asphalt curb visibly rounded at IXs but the cream sidewalk strip terminating in a sharp rectangular outer edge that overshoots PAST the rounded curb. Small triangular slivers of cream are also visible in the asphalt area at IX corners where the per-leg's square edge sticks out beyond the rounded silhouette.
 
@@ -948,6 +968,11 @@ When the per-leg strip wraps the rounded corner concentrically via per-vertex-pe
 
 ---
 
+| 2026-05-29 | V1 keystone — `emitOneBlockRingBands` ships on toy (Quoin) | SHIPPED (commits `012ea2a` C1 → `e8d9b44` jtMiter+R=0) | Three Clipper inward insets of `blockRounded` at `cw` / `cw + TL_block` / `WB`; two annular bands via `differenceRings`; per-span sectors slice them for material tags. Single-polygon corner emission. Per-block-LU lookup via `fe.blockKey` → `v2.blocks[k].lu` direct map (centroid probe fails because treelawn rings now sit OUTSIDE the parcel polygon). `jtMiter` preserves operator R=0 squares. R=0 authorable. Capacity guard (`WB = min(WB, ~0.9·inscribed_capacity)`) protects against W-past-medial-axis Clipper inversions. LS bake byte-identical until C5 cutover. The keystone phrase: *"ribbon monowidth, strips variable."* Lesson: the construction the keystone memory described from day one was right; Boz's three brief rewrites of imagined per-fe-asymmetry machinery were overengineering — banked permanently as `[[feedback_boz_overengineered_for_imagined_authoring_complexity]]` |
+| 2026-05-29 | V1.5 per-leg material swap — ctrl-click flips strip material | SHIPPED (commits `404e949` emit + `1bfac2f` UX) | `m.measure[side].materials = {outer, inner}` per leg (defaults `{outer:'LU', inner:'SW'}` preserve V1). Emit routes leg sub-polygons by material tag; corners stay all-SW per AASHTO. UX: ctrl-click in a strip body flips material via `tryFlipStripMaterial`; the legacy collapse/insert gestures retired (V1.5's fixed 2-strip layout makes add/subtract structurally moot — see `§5 archive`). 16-fields geometry stays untouched; only material tags flip per sub-field. Toy bake byte-identical (additive emit, UX-only MeasureOverlay change). Doctrine: `[[project_corner_radius_is_design_control]]` (R as operator dial for visible LU-strip tab size + corner pad degeneracy threshold) |
+| 2026-05-29 | V2-Measure polygon-only authoring (Datum) | SHIPPED (commit `72cd0a7`, net −193 LOC) | Retired all chain-scope authoring writes. `chain.measure` becomes read-only pipeline-derived input; all operator writes target `blockCustoms[blockKey][edgeOrd]` per-fe. Whole-chain mode (formerly "Edit entire row") fans the write per-fe across every fe along the chain — chain becomes a *selection criterion*, never a write scope. Symmetric/asymmetric becomes a transient UI mirror toggle (`editSidesSeparately`); the persisted `chain.measure.symmetric` flag is now vestigial pipeline state. ModeToggle silent-customs-wipe bug (data-loss disguised as view switch) fixed in the same arc. `innerEdgeMeasure` baked-in nuance preserved: divided carriageways seed the whole-chain fan from the innerEdge-resolved measure, identity at `innerSign=0`. Doctrine: `[[feedback_vestigial_ux_is_a_wall_violation]]` distinguishes retired-data-flag from kept-useful-transient-toggle |
+| 2026-05-30 | V1.6 — pass-2 ring-index parity + per-block capacity guard + toy data cleanup + reset button (Trammel + Stadia) | SHIPPED (commits `2607763` ring+guard, `52d7f9e` data, `cf24cb7` button, `ea7c754` two-button) | Pass-2 customs re-emit grouped fes by `blockRingIdx` for per-block isolation. Per-block capacity guard clamps `WB ≤ 0.9·inscribed_capacity` to prevent W-past-medial-axis Clipper inversions (refined no-clamps doctrine distinguishes geometrically-meaningful degeneracy from geometrically-meaningless garbage — see `[[feedback_no_corner_radius_clamps_in_emit]]` refinement section). Toy `design.json.blockCustoms` cleared to `{}` directly (HEAD is now a real reset target). Reset toy button shipped (`setBlockEdgeCustoms({})` direct + re-bake; gated `scene==='toy'`). Lessons banked: `[[feedback_render_guard_against_real_data_not_synthetic]]`, `[[feedback_customs_resolver_wholesale_not_merge]]`, `[[feedback_verify_edits_applied_before_trusting_output]]`. The "ribbon monowidth, strips variable" keystone holds; `buildChainBandsLive` migrated to V1 keystone alignment (`67e02e0`) so live-drag preview matches post-release bake |
+
 ## §8. Glossary
 
 - **fe** — frontage edge. A polyline along one block-edge between two block-corner vertices. One emission unit for straight-span bands. Owns `chainIdx`, `side`, `blockKey`, `edgeOrd`.
@@ -967,4 +992,4 @@ When the per-leg strip wraps the rounded corner concentrically via per-vertex-pe
 
 ---
 
-*Updated: 2026-05-18 EOD. Coordinator-Claude session, post Stage 12 sub-B revert. Five commits this session (`44ca974` 11a, `e710441` 11a.1, `e000b75` 12-sub-A, `54d5e8b` 12-sub-A.1, `a7f2791` revert). Sub-B redo blocked on next-session dispatch with the AASHTO/ADA doctrine locked per §6.9. Pick-up checklist for tomorrow: (1) draft sub-B redo brief per §6.9 "Sub-B redo brief surface"; (2) cold or warm dispatch (recommend cold — fresh mental model on a doctrine that took a full session to settle); (3) visual gate after commit; (4) sub-C cleanup follows.*
+*Updated: 2026-05-31. Boz toy-reset session post the V1.6 close. §5 measure-tool model updated for V2-Measure polygon-only authoring (`72cd0a7`); §6.8/6.9/6.10 marked RESOLVED by V1 keystone (`025ee40`) with historical text preserved; §7 history table appended with V1 keystone, V1.5 swap, V2-Measure, V1.6 entries. **Next pickup:** C5 cutover (LS → mono-width ring-band emitter; flip `useRingBandEmitter` from `scene === 'toy'` default), then chain-consumer census, then the wall-move (corners + shape into Survey per `[[project_skeleton_is_the_first_bake]]`). See `HANDOFF-ls-migration.md` for the C5 brief.*
