@@ -204,7 +204,13 @@ export function extractFaces(streets) {
     do {
       h.used = true
       ring.push(h.from.p)
-      edges.push({ streetIdx: h.streetIdx, side: h.forward ? 'left' : 'right' })
+      // The CCW face interior is on the geometric LEFT of a forward half-edge,
+      // but that geometric side is the measure's RIGHT (production computePerps
+      // calls (-dz,dx) the "right-perp"). So a FORWARD half-edge's tile sits on
+      // the street's measure-RIGHT side; reversed → measure-LEFT. Label in the
+      // measure convention so edgeDepth / effectiveMeasure / median detection
+      // read the correct side's widths.
+      edges.push({ streetIdx: h.streetIdx, side: h.forward ? 'right' : 'left' })
       h = nextHE(h)
       if (++guard > 500000) break
     } while (h !== h0)
@@ -227,6 +233,11 @@ function effectiveMeasure(s) {
   if (!m || s.anchor !== 'inner-edge' || !s.innerSign) return m
   const inboard = s.innerSign === +1 ? 'right' : 'left'
   return { ...m, [inboard]: { ...(m[inboard] || {}), treelawn: 0, sidewalk: 0 } }
+}
+// Is this street-side the median-facing (inboard) side of a divided carriageway?
+function isMedianFacing(s, side) {
+  if (!s || s.anchor !== 'inner-edge' || !s.innerSign) return false
+  return side === (s.innerSign === +1 ? 'right' : 'left')
 }
 
 // Cumulative INWARD depth of a tile edge at each band level, from its own
@@ -393,7 +404,20 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     const aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
     const iA = openRound(differenceRings([tile.ring], aFill), R)   // rounded asphalt-inner (curb line)
-    const tl = repDepth(runs, 'treelawn'), sw = repDepth(runs, 'sidewalk')
+    // G3a — a divided-road MEDIAN tile (the thin tile between two carriageways)
+    // drops ALL ped: its bounding edges are median-facing (inner-edge street,
+    // inboard side). Detect by median-facing boundary fraction and zero the
+    // tile's ped, so no treelawn/sidewalk sliver leaks into the median.
+    let medLen = 0, totLen = 0
+    for (const run of runs) {
+      let L = 0
+      for (let i = 0; i < run.poly.length - 1; i++) L += Math.hypot(run.poly[i + 1][0] - run.poly[i][0], run.poly[i + 1][1] - run.poly[i][1])
+      totLen += L
+      if (isMedianFacing(streets[run.streetIdx], run.side)) medLen += L
+    }
+    const isMedianTile = totLen > 0 && medLen / totLen > 0.4
+    const tl = isMedianTile ? 0 : repDepth(runs, 'treelawn')
+    const sw = isMedianTile ? 0 : repDepth(runs, 'sidewalk')
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
