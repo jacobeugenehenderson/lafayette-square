@@ -43,6 +43,10 @@ function dist(a, b) { return Math.sqrt(dist2(a, b)) }
 
 function ptsEqual(a, b) { return dist2(a, b) < EPS * EPS }
 
+// Coord key at 1cm (matches fetch.js coord rounding). Used to detect shared
+// nodes / junctions across chains and to protect them during simplification.
+function vKey(p) { return `${p.x.toFixed(2)},${p.z.toFixed(2)}` }
+
 function reverse(coords) { return coords.slice().reverse() }
 
 function slugify(name) {
@@ -372,7 +376,13 @@ function resamplePolyline(coords, n) {
 // Collapse a point if its perpendicular deviation from the chord formed by
 // its neighbors < DEV_TOL AND the turn angle < ANGLE_TOL.
 
-function simplify(coords, devTol = 0.2, angleTolDeg = 2) {
+// `protectedKeys` (Set of `vKey(p)`) holds the coords that are junction /
+// shared nodes. A protected vertex is NEVER collapsed — this is the fix for
+// the Osteopathologist finding that junction-blind RDP deleted 79 real
+// T-junctions (the through-street's vertex at a T reads as "locally straight"
+// and gets removed, stranding the terminator on a segment interior). Keeping
+// junction vertices makes the frame's junction topology survive simplification.
+function simplify(coords, devTol = 0.2, angleTolDeg = 2, protectedKeys = null) {
   if (coords.length <= 2) return coords.slice()
   const angleTol = angleTolDeg * Math.PI / 180
   const out = [coords[0]]
@@ -380,6 +390,7 @@ function simplify(coords, devTol = 0.2, angleTolDeg = 2) {
     const prev = out[out.length - 1]
     const curr = coords[i]
     const next = coords[i + 1]
+    if (protectedKeys && protectedKeys.has(vKey(curr))) { out.push(curr); continue }
     const dev = perpDist(curr, prev, next)
     const v1x = curr.x - prev.x, v1z = curr.z - prev.z
     const v2x = next.x - curr.x, v2z = next.z - curr.z
@@ -391,6 +402,68 @@ function simplify(coords, devTol = 0.2, angleTolDeg = 2) {
   }
   out.push(coords[coords.length - 1])
   return out
+}
+
+// --- Standards-seeded cross-section (OSM-FORENSICS.md Part 4) --------------
+// Default/prior cross-section per street class. NACTO-by-class for the
+// pedestrian-zone dims + curb-return R (the 2026-06-01 decision: tight
+// pedestrian-scale radii are honest to LS; AASHTO truck radii deferred [U]).
+// width has 0% OSM coverage at LS, so it MUST be seeded from lanes; sidewalk
+// is too sparse (4/333) to trust, so PROWAG-seed it. The operator overrides
+// only genuine exceptions (the north-star). Values in meters (ft × 0.3048).
+const FT = 0.3048
+const STD_SECTION = {
+  residential: { lane: 10 * FT, parking: 8 * FT, sidewalk: 5 * FT, treelawn: 5 * FT, curb: 0.15, cornerR: 4.5 },
+  unclassified:{ lane: 10 * FT, parking: 8 * FT, sidewalk: 5 * FT, treelawn: 5 * FT, curb: 0.15, cornerR: 4.5 },
+  tertiary:    { lane: 10 * FT, parking: 8 * FT, sidewalk: 6 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 5.0 },
+  secondary:   { lane: 11 * FT, parking: 8 * FT, sidewalk: 6 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 6.0 },
+  primary:     { lane: 11 * FT, parking: 0,      sidewalk: 8 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 7.5 },
+}
+function seedSection(highway, lanes, oneway) {
+  const base = highway && highway.replace(/_link$/, '')
+  const cls = STD_SECTION[base] ? base : 'residential'
+  const s = STD_SECTION[cls]
+  const nLanes = Number.isFinite(lanes) && lanes > 0 ? lanes : (oneway ? 1 : 2)
+  // curb-to-curb carriageway: lanes + on-street parking (residential only)
+  const carriage = nLanes * s.lane + (cls === 'residential' || cls === 'unclassified' ? 2 * s.parking : 0)
+  const pavementHW = +(carriage / 2).toFixed(2)
+  return {
+    seededClass: cls,
+    lanesAssumed: nLanes,
+    pavementHW,                         // curb-to-curb half width (width residual — 0% OSM)
+    curb: s.curb,
+    treelawn: +s.treelawn.toFixed(2),   // PROWAG/NACTO furnishing zone (absent in OSM)
+    sidewalk: +s.sidewalk.toFixed(2),   // PROWAG min (sparse in OSM)
+    cornerR: s.cornerR,                 // NACTO-by-class curb-return radius
+    rowHalf: +(pavementHW + s.curb + s.treelawn + s.sidewalk).toFixed(2),
+  }
+}
+
+// --- Node typing: classify every shared coord by graph degree -------------
+// degree 1 = dead-end · 2 = through/bend/name-transition · 3 = T · 4 = cross
+// · 5+ = Y/complex. The cap decision becomes a NODE FACT (round at a true
+// dead-end, butt where the chain joins anything) instead of the downstream
+// operator-authored-or-blunt-and-pray guess (OSM-FORENSICS.md Part 1.1).
+function buildNodeGraph(streets) {
+  const degree = new Map()  // vKey -> incidence count
+  const pt = new Map()
+  for (const s of streets) {
+    const p = s.points
+    for (let i = 0; i < p.length; i++) {
+      const k = vKey(p[i])
+      pt.set(k, { x: p[i].x, z: p[i].z })
+      const inc = (i === 0 || i === p.length - 1) ? 1 : 2
+      degree.set(k, (degree.get(k) || 0) + inc)
+    }
+  }
+  const kindOf = (d) => d === 1 ? 'deadend' : d === 2 ? 'through' : d === 3 ? 'T' : d === 4 ? 'cross' : 'Y'
+  const junctions = []
+  for (const [k, d] of degree) {
+    if (d === 2) continue // bends/transitions are not junctions
+    const p = pt.get(k)
+    junctions.push({ x: p.x, z: p.z, degree: d, kind: kindOf(d) })
+  }
+  return { degree, junctions }
 }
 
 // --- Main pipeline --------------------------------------------------------
@@ -414,6 +487,7 @@ function main() {
   const phaseReports = []
   const signatureByOsmId = new Map()
   const pairKeyByOsmId = new Map()
+  const gapByPairKey = new Map()   // pairKey -> carriageway gap (= median width)
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
     const report = analyzePhases(name, fragments)
@@ -421,7 +495,12 @@ function main() {
     for (const c of report.classified) {
       const sig = c.kind === 'divided' ? c.role : c.kind
       signatureByOsmId.set(c.osmId, sig)
-      if (c.pairKey) pairKeyByOsmId.set(c.osmId, c.pairKey)
+      if (c.pairKey) {
+        pairKeyByOsmId.set(c.osmId, c.pairKey)
+        // The antiparallel-pair gap IS the median width — measured here in
+        // analyzePhases and, until now, discarded (Part 2 / Part 1.6).
+        if (Number.isFinite(c.gap)) gapByPairKey.set(c.pairKey, +c.gap.toFixed(2))
+      }
     }
   }
   console.log('\nPhase analysis (pre-weld):')
@@ -468,7 +547,11 @@ function main() {
         // derive, Phase 5 knit) consumes phase shape directly instead of
         // rediscovering it. pairKey ties carriageway-A to its B partner
         // through welding; startNode/endNode populated post-normalize.
-        { phase: { kind: ph.kind, role: ph.role, corridorName: name, pairKey: c.pairKey || null } },
+        { phase: {
+          kind: ph.kind, role: ph.role, corridorName: name, pairKey: c.pairKey || null,
+          // Median width = the paired-carriageway gap (Part 1.6); null for undivided.
+          ...(c.pairKey && gapByPairKey.has(c.pairKey) && { medianWidth: gapByPairKey.get(c.pairKey) }),
+        } },
       ))
     })
   }
@@ -495,14 +578,20 @@ function main() {
     const f = unnamedVehicular[i]
     const hw = f.tags?.highway
     const synthName = `${hw} ${i + 1}`
+    const oneway = f.tags?.oneway === 'yes'
+    const lanes = parseInt(f.tags?.lanes, 10)
     streets.push({
       id: slugify(synthName),
       name: synthName,
       highway: hw,
-      oneway: f.tags?.oneway === 'yes',
+      oneway,
+      ...(Number.isFinite(lanes) && { lanes }),
+      ...(f.tags?.surface && { surface: f.tags.surface }),
+      ...(f.tags?.maxspeed && { maxspeed: f.tags.maxspeed }),
       points: f.coords.map(c => ({ x: c.x, z: c.z })),
       osmIds: [f.osmId],
       tags: f.tags || {},
+      seed: seedSection(hw, lanes, oneway),
     })
   }
   const paths = unnamedNonVehicular.map((f, i) => ({
@@ -513,11 +602,31 @@ function main() {
     osmId: f.osmId,
   }))
 
+  // ── Junction-protected simplification ────────────────────────────────
+  // Build the set of shared-node / junction coords from the welded chains
+  // BEFORE simplifying. A coord touched by >=2 distinct streets is a junction
+  // (cross, T, or same-name severance/divided meeting point). Protecting these
+  // from RDP keeps every junction vertex alive — the fix for the 79 deleted
+  // T-junctions (Osteopathologist, OSM-FORENSICS.md Part 3.1). Endpoints are
+  // already preserved by simplify(); this protects INTERIOR junction vertices.
+  const coordOwners = new Map()
+  for (const s of streets) {
+    for (const p of s.points) {
+      const k = vKey(p)
+      let owners = coordOwners.get(k)
+      if (!owners) { owners = new Set(); coordOwners.set(k, owners) }
+      owners.add(s.id)
+    }
+  }
+  const junctionKeys = new Set()
+  for (const [k, owners] of coordOwners) if (owners.size >= 2) junctionKeys.add(k)
+  console.log(`  junction-protected simplify: ${junctionKeys.size} shared-node coords held`)
+
   // Simplify streets.
   let totalPtsBefore = 0, totalPtsAfter = 0
   for (const s of streets) {
     totalPtsBefore += s.points.length
-    s.points = simplify(s.points)
+    s.points = simplify(s.points, 0.2, 2, junctionKeys)
     totalPtsAfter += s.points.length
   }
 
@@ -551,6 +660,79 @@ function main() {
     s.phase.endNode   = { x: p[p.length - 1].x, z: p[p.length - 1].z }
   }
 
+  // ── Node typing → cap-as-fact (Part 1.1) ─────────────────────────────
+  // Classify every shared coord by graph degree, then stamp each chain's two
+  // endpoints with a cap decision: 'round' at a true dead-end (degree 1),
+  // 'butt' where the chain joins anything (degree >= 2). This turns the
+  // canonical cap failure (operator-authored-or-blunt-and-pray) into a frame
+  // fact. NOTE: among degree-1 dead-ends, map-boundary exits also read as
+  // 'round' here; the boundary-exit refinement rides with the deferred
+  // boundary-trio brief (caps are emitted, not yet consumed downstream).
+  const { degree, junctions } = buildNodeGraph(streets)
+  let capRound = 0, capButt = 0
+  for (const s of streets) {
+    const p = s.points
+    const dStart = degree.get(vKey(p[0])) || 1
+    const dEnd   = degree.get(vKey(p[p.length - 1])) || 1
+    s.caps = {
+      start: { cap: dStart === 1 ? 'round' : 'butt', degree: dStart },
+      end:   { cap: dEnd   === 1 ? 'round' : 'butt', degree: dEnd },
+    }
+    if (s.caps.start.cap === 'round') capRound++; else capButt++
+    if (s.caps.end.cap === 'round') capRound++; else capButt++
+  }
+  const jc = junctions.reduce((m, j) => (m[j.kind] = (m[j.kind] || 0) + 1, m), {})
+  console.log(`  node typing: ${junctions.length} junctions [${Object.entries(jc).map(([k,v])=>`${k} ${v}`).join(', ')}]`)
+  console.log(`  caps: ${capRound} round (dead-end), ${capButt} butt (joined)`)
+
+  // ── Name-transition understanding (Part 1.4 — the Dolman→18th 'U') ────
+  // A single physical road that changes name mid-run shows up as two chains
+  // of DIFFERENT names meeting at a degree-2 node (only those two endpoints —
+  // no third street, so it is NOT a junction). We do NOT physically merge them
+  // (that would re-key customs); instead the frame *understands* the situation:
+  // each chain records `continuesAs` and a top-level `nameTransitions` list
+  // marks the transition point. This is the "understand, don't split-tool"
+  // doctrine — and it removes the excuse for the per-name densify/extend hacks.
+  const endpointChains = new Map()  // vKey -> [{id, name, end}]
+  const addEnd = (k, rec) => {
+    let arr = endpointChains.get(k)
+    if (!arr) { arr = []; endpointChains.set(k, arr) }
+    arr.push(rec)
+  }
+  const byId = new Map(streets.map(s => [s.id, s]))
+  // Outward direction from the shared node into a chain (unit vector pointing
+  // away from the node along the chain's first/last segment).
+  const outwardTangent = (rec) => {
+    const p = byId.get(rec.id).points
+    const [n, a] = rec.end === 'start' ? [p[0], p[1]] : [p[p.length - 1], p[p.length - 2]]
+    const dx = a.x - n.x, dz = a.z - n.z
+    const L = Math.hypot(dx, dz) || 1
+    return { x: dx / L, z: dz / L }
+  }
+  for (const s of streets) {
+    const p = s.points
+    addEnd(vKey(p[0]),                { id: s.id, name: s.name, end: 'start' })
+    addEnd(vKey(p[p.length - 1]),     { id: s.id, name: s.name, end: 'end' })
+  }
+  const nameTransitions = []
+  for (const [k, ends] of endpointChains) {
+    if ((degree.get(k) || 0) !== 2 || ends.length !== 2) continue
+    const [a, b] = ends
+    if (a.name === b.name) continue   // same-name severance handled by weld, not a transition
+    // Tangent-continuity gate: a true name change runs roughly STRAIGHT through
+    // the node (the two chains' outward tangents point ~opposite). This rejects
+    // L-corners where two streets merely terminate together, and ramp Y-splits.
+    const ta = outwardTangent(a), tb = outwardTangent(b)
+    if (ta.x * tb.x + ta.z * tb.z > -0.6) continue   // not collinear → not one road
+    const [x, z] = k.split(',').map(Number)
+    nameTransitions.push({ x, z, from: a.name, to: b.name, fromId: a.id, toId: b.id })
+    byId.get(a.id).continuesAs = b.id
+    byId.get(b.id).continuesAs = a.id
+  }
+  if (nameTransitions.length) {
+    console.log(`  name-transitions: ${nameTransitions.length} [${nameTransitions.map(t => `${t.from}→${t.to}`).join(', ')}]`)
+  }
+
   console.log('\nSkeleton:')
   console.log(`  streets: ${streets.length}`)
   console.log(`  paths:   ${paths.length}`)
@@ -582,18 +764,31 @@ function main() {
   for (const [k, n] of byKindRole) console.log(`  ${k}: ${n}`)
 
   const outPath = join(CLEAN_DIR, 'skeleton.json')
-  writeFileSync(outPath, JSON.stringify({ streets, paths }, null, 2))
+  // `junctions` is additive frame metadata (typed nodes). Downstream consumers
+  // that read {streets, paths} are unaffected; the cap/corner consumers can
+  // start reading it in the Layer-2 follow-on.
+  writeFileSync(outPath, JSON.stringify({ streets, paths, junctions, nameTransitions }, null, 2))
   console.log(`\n→ ${outPath}`)
 }
 
 function makeStreet(id, name, sourceTags, chain, extras = {}) {
+  const highway = sourceTags?.highway || 'residential'
+  const oneway = sourceTags?.oneway === 'yes'
+  const lanes = parseInt(sourceTags?.lanes, 10)
   return {
     id,
     name,
-    highway: sourceTags?.highway || 'residential',
-    oneway: sourceTags?.oneway === 'yes',
+    highway,
+    oneway,
+    // Attributes present in OSM but dropped at P1 until now — carried so the
+    // frame holds the cross-section instead of re-deriving it (Part 2 bucket b).
+    ...(Number.isFinite(lanes) && { lanes }),
+    ...(sourceTags?.surface && { surface: sourceTags.surface }),
+    ...(sourceTags?.maxspeed && { maxspeed: sourceTags.maxspeed }),
     points: chain.coords.map(c => ({ x: c.x, z: c.z })),
     sources: chain.sources || [],
+    // Standards-seeded default cross-section (Part 2 bucket d / north-star).
+    seed: seedSection(highway, lanes, oneway),
     ...extras,
   }
 }

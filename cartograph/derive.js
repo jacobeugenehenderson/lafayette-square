@@ -1092,10 +1092,10 @@ export function deriveLayers(highways) {
   // Interior faces of the street grid = city blocks.
   // Boundary streets that exit the area don't form closed faces,
   // so edge parcels are handled by fallback below.
-  // ── Densify curved streets + extend LaSalle ──────────────────
-  // S 18th curve (labeled "West 18th Street" + connected "South 18th Street")
-  // has too few OSM points → faceted face boundaries. Catmull-Rom subdivision
-  // adds interpolated points so blocks follow a smooth arc.
+  // ── Densify curved streets (Goldilocks, offset-safe) ─────────
+  // Curved streets with too few OSM points → faceted face boundaries. Catmull-
+  // Rom subdivision adds interpolated points so blocks follow a smooth arc.
+  // (Formerly two per-name hacks here — see the [Vesalius P1] note below.)
   function catmullRomPt(p0, p1, p2, p3, t) {
     const t2 = t*t, t3 = t2*t
     return {
@@ -1119,23 +1119,33 @@ export function deriveLayers(highways) {
     }
     return result
   }
-  const CURVE_STREETS = new Set(['West 18th Street'])
+  // [Vesalius P1-frame-enrichment] Replaced two frame-thinness hacks here:
+  //   (a) the per-name `CURVE_STREETS=['West 18th Street']` densify, and
+  //   (b) the `Lasalle Street` magic-coordinate extend — which forensics found
+  //       was already a DEAD no-op (its guard never matched current raw OSM).
+  // (a) is generalized to a principled Goldilocks curve-densify: any vehicular
+  // street that actually bends (max interior turn > CURVE_TURN) is subdivided
+  // to CURVE_MAX_SEG so a wide ribbon offset of its block face stays kink-free
+  // (OSM-FORENSICS.md Part 3.3 — density target set by the widest ribbon, a
+  // frame-quality rule, not a per-street patch). Densify preserves the ring
+  // bbox, so blockKey stays stable. The deeper fix — routing the faces path
+  // through the enriched skeleton instead of raw OSM — is the Layer-2 unify.
+  const CURVE_TURN = 12 * Math.PI / 180   // a "real bend" threshold
+  const CURVE_MAX_SEG = 5                  // meters between samples on a bend
+  let densifiedCurves = 0
   for (const f of vehicularStreets) {
-    const name = f.tags?.name
-    if (name && CURVE_STREETS.has(name)) {
-      const before = f.coords.length
-      f.coords = densifyCoords(f.coords, 3)
-      console.log(`    Densified ${name}: ${before} → ${f.coords.length} points`)
+    const c = f.coords
+    if (c.length < 3) continue
+    let maxTurn = 0
+    for (let i = 1; i < c.length - 1; i++) {
+      const a1 = Math.atan2(c[i].z - c[i-1].z, c[i].x - c[i-1].x)
+      const a2 = Math.atan2(c[i+1].z - c[i].z, c[i+1].x - c[i].x)
+      let t = Math.abs(a2 - a1); if (t > Math.PI) t = 2 * Math.PI - t
+      if (t > maxTurn) maxTurn = t
     }
-    // Extend LaSalle to meet S 18th at the curve
-    if (name === 'Lasalle Street') {
-      const last = f.coords[f.coords.length - 1]
-      if (Math.abs(last.x - 492.1) < 1 && Math.abs(last.z - (-395.1)) < 1) {
-        f.coords.push({ x: 506.6, z: -391.1 })
-        console.log(`    Extended LaSalle to [506.6, -391.1]`)
-      }
-    }
+    if (maxTurn > CURVE_TURN) { f.coords = densifyCoords(c, CURVE_MAX_SEG); densifiedCurves++ }
   }
+  console.log(`    Densified ${densifiedCurves} curved streets (Goldilocks, max-seg ${CURVE_MAX_SEG}m)`)
 
   const streetPolylines = vehicularStreets.map(f =>
     f.coords.map(c => ({ x: c.x, z: c.z }))
@@ -2354,6 +2364,16 @@ export function deriveLayers(highways) {
       // when missing — matches mapHighwayToStreetType's default.
       highway: s.highway || 'residential',
       type: mapHighwayToStreetType(s.highway),
+      // [P1 frame-enrichment] Carry the enriched frame fields off the skeleton
+      // street so they survive into ribbons.json. These are PRESENT-but-not-yet-
+      // consumed (the consumers — caps→chainPavementRing, seed→computeStreetMeasure,
+      // medianWidth/continuesAs — wire up at the Wall / Layer-2). Plumbing only.
+      ...(Number.isFinite(s.lanes) ? { lanes: s.lanes } : {}),
+      ...(s.surface ? { surface: s.surface } : {}),
+      ...(s.maxspeed ? { maxspeed: s.maxspeed } : {}),
+      ...(s.seed ? { seed: s.seed } : {}),
+      ...(s.caps ? { caps: s.caps } : {}),
+      ...(s.continuesAs ? { continuesAs: s.continuesAs } : {}),
     }
     // Skel owns geometric couplers; overlay-authored couplers override.
     if (ov?.couplers) street.couplers = ov.couplers
@@ -2915,6 +2935,18 @@ export function deriveLayers(highways) {
       ...(st.couplers ? { couplers: st.couplers } : {}),
       ...(st.segmentMeasures ? { segmentMeasures: st.segmentMeasures } : {}),
       ...(st.disabled ? { disabled: true } : {}),
+      // [P1 frame-enrichment] Enriched frame fields surviving the serializer
+      // whitelist. PRESENT-but-not-yet-consumed: the consumer wiring is
+      // deferred to the Wall / Layer-2 (caps→chainPavementRing cap-as-fact,
+      // seed→computeStreetMeasure standards cross-section, lanes/surface/
+      // maxspeed cross-section priors, continuesAs→per-street name-transition).
+      // Without this the fields were stripped here and P1 was invisible.
+      ...(Number.isFinite(st.lanes) ? { lanes: st.lanes } : {}),
+      ...(st.surface ? { surface: st.surface } : {}),
+      ...(st.maxspeed ? { maxspeed: st.maxspeed } : {}),
+      ...(st.seed ? { seed: st.seed } : {}),
+      ...(st.caps ? { caps: st.caps } : {}),
+      ...(st.continuesAs ? { continuesAs: st.continuesAs } : {}),
       intersections: st.intersections.map(ix => ({
         ix: ix.ix,
         withStreets: ix.with.streets.filter(s => s.name !== st.name).map(s => s.name),
@@ -2933,6 +2965,13 @@ export function deriveLayers(highways) {
     faces: faceFills,
     medians: medians.map(m => ({ name: m.name, streets: m.streets, ring: m.ring })),
     corridors,
+    // [P1 frame-enrichment] Top-level frame metadata carried straight from the
+    // skeleton so the typed-node graph + name-transition stamps survive into
+    // ribbons.json. PRESENT-but-not-yet-consumed: the on-frame faces/intersection
+    // unify (which reads junctions) is the Wall (Phase 3); here we only stop the
+    // strip so the data is available when that consumer lands.
+    ...(skeleton.junctions ? { junctions: skeleton.junctions } : {}),
+    ...(skeleton.nameTransitions ? { nameTransitions: skeleton.nameTransitions } : {}),
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
