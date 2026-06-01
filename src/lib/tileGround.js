@@ -39,12 +39,15 @@ const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
-function offsetRings(rings, delta, join = 'round') {
-  if (delta === 0) return rings.map(r => r.slice())
+// Offset an OPEN polyline by `delta` (round join + round cap) → a stadium of
+// half-width delta straddling the line. Round join handles the polyline's own
+// bends correctly (no compounding), so this is robust on noisy 100-vertex LS
+// street runs where per-edge half-plane intersection collapses.
+function strokeOpen(polyline, delta) {
+  if (!(delta > 1e-9) || !polyline || polyline.length < 2) return []
   const { ClipperOffset, JoinType, EndType } = clipperLib
-  const co = new ClipperOffset(2, 0.05 * SCALE)   // arcTolerance for smooth round joins
-  const jt = join === 'round' ? JoinType.jtRound : JoinType.jtMiter
-  for (const r of rings) if (r && r.length >= 3) co.AddPath(r.map(toClipper), jt, EndType.etClosedPolygon)
+  const co = new ClipperOffset(2, 0.05 * SCALE)
+  co.AddPath(polyline.map(toClipper), JoinType.jtRound, EndType.etOpenRound)
   const out = []
   co.Execute(out, delta * SCALE)
   return out.map(p => p.map(fromClipper))
@@ -108,25 +111,29 @@ export function extractFaces(streets) {
   }
   const heList = []
   const edgeSet = new Set()
-  const addEdge = (a, b) => {
+  // Each half-edge carries (streetIdx, forward) so a face edge can resolve
+  // back to its street-side: the CCW face interior is on the LEFT of each
+  // directed half-edge, so a FORWARD half-edge (matching the street's point
+  // order) has the tile on the street's LEFT; a reversed one, the RIGHT.
+  const addEdge = (a, b, streetIdx) => {
     const na = nodeOf(a), nb = nodeOf(b)
     if (na.id === nb.id) return
     const ek = na.id < nb.id ? na.id + '_' + nb.id : nb.id + '_' + na.id
     if (edgeSet.has(ek)) return
     edgeSet.add(ek)
-    const h1 = { from: na, to: nb, used: false }
-    const h2 = { from: nb, to: na, used: false }
+    const h1 = { from: na, to: nb, used: false, streetIdx, forward: true }
+    const h2 = { from: nb, to: na, used: false, streetIdx, forward: false }
     h1.twin = h2; h2.twin = h1
     h1.angle = Math.atan2(nb.p[1] - na.p[1], nb.p[0] - na.p[0])
     h2.angle = Math.atan2(na.p[1] - nb.p[1], na.p[0] - nb.p[0])
     heList.push(h1, h2)
     na.edges.push(h1); nb.edges.push(h2)
   }
-  for (const s of streets) {
+  streets.forEach((s, si) => {
     const pts = s?.points
-    if (!pts || pts.length < 2) continue
-    for (let i = 0; i < pts.length - 1; i++) addEdge(pts[i], pts[i + 1])
-  }
+    if (!pts || pts.length < 2) return
+    for (let i = 0; i < pts.length - 1; i++) addEdge(pts[i], pts[i + 1], si)
+  })
   for (const n of nodes.values()) n.edges.sort((a, b) => a.angle - b.angle)
   const nextHE = (he) => {
     const out = he.to.edges
@@ -137,30 +144,85 @@ export function extractFaces(streets) {
   for (const h0 of heList) {
     if (h0.used) continue
     const ring = []
+    const edges = []   // edges[i] = the directed half-edge ring[i] → ring[i+1]
     let h = h0, guard = 0
-    do { h.used = true; ring.push(h.from.p); h = nextHE(h); if (++guard > 200000) break } while (h !== h0)
-    faces.push(ring)
+    do {
+      h.used = true
+      ring.push(h.from.p)
+      edges.push({ streetIdx: h.streetIdx, side: h.forward ? 'left' : 'right' })
+      h = nextHE(h)
+      if (++guard > 500000) break
+    } while (h !== h0)
+    faces.push({ ring, edges })
   }
   // Bounded faces = positive signed area (CCW). The single outer face is the
   // most-negative; drop everything with non-positive area. Pendant (dead-end)
   // edges are walked out-and-back inside their surrounding face — they leave a
   // zero-width spur that the inward Clipper offset collapses on its own.
-  return faces.filter(r => signedArea(r) > 1e-3)
+  return faces.filter(f => signedArea(f.ring) > 1e-3)
 }
 
-// Cumulative INWARD band depths from the grout. Symmetric (max of left/right)
-// — toy's measure is symmetric; per-side asymmetry is a real-build refinement.
-function bandDepths(measure, curbWidth) {
-  const side = (s) => ({
-    pavementHW: Number.isFinite(s?.pavementHW) ? s.pavementHW : 0,
-    treelawn:   Number.isFinite(s?.treelawn)   ? s.treelawn   : 0,
-    sidewalk:   Number.isFinite(s?.sidewalk)   ? s.sidewalk   : 0,
-  })
-  const L = side(measure?.left), R = side(measure?.right)
-  const pavementHW = Math.max(L.pavementHW, R.pavementHW)
-  const treelawn   = Math.max(L.treelawn,   R.treelawn)
-  const sidewalk   = Math.max(L.sidewalk,   R.sidewalk)
-  return { pavementHW, curb: pavementHW > 0 ? curbWidth : 0, treelawn, sidewalk }
+// Inboard-side ped zeroing for divided carriageways (anchor='inner-edge'):
+// the median-facing side keeps pavement but drops curb/treelawn/sidewalk, so
+// the thin tile between the two carriageways floods to a bare median. Mirrors
+// streetProfiles.innerEdgeMeasure — the median geometry falls out of honest
+// per-side widths + this transform, with no median-construction code.
+function effectiveMeasure(s) {
+  const m = s?.measure
+  if (!m || s.anchor !== 'inner-edge' || !s.innerSign) return m
+  const inboard = s.innerSign === +1 ? 'right' : 'left'
+  return { ...m, [inboard]: { ...(m[inboard] || {}), treelawn: 0, sidewalk: 0 } }
+}
+
+// Cumulative INWARD depth of a tile edge at each band level, from its own
+// street-side measure. level: 'A' asphalt | 'C' +curb | 'T' +treelawn |
+// 'W' +sidewalk. Returns 0 for edges with no resolvable street (e.g. a future
+// map-boundary edge → no road, LU floods to it).
+function edgeDepth(measure, side, curbWidth, level) {
+  const m = measure?.[side]
+  const a = Math.max(0, Number.isFinite(m?.pavementHW) ? m.pavementHW : 0)
+  if (level === 'A' || a <= 0) return a
+  const c = a + curbWidth
+  if (level === 'C') return c
+  const t = c + Math.max(0, Number.isFinite(m?.treelawn) ? m.treelawn : 0)
+  if (level === 'T') return t
+  return t + Math.max(0, Number.isFinite(m?.sidewalk) ? m.sidewalk : 0)
+}
+
+// Group a tile's cyclic edges into maximal RUNS of the same (streetIdx, side).
+// A run = a sub-polyline of the tile boundary that all carries the same
+// street-side widths. Offsetting the run polyline (not each edge) is what
+// keeps the variable-width inset robust: round join handles the run's internal
+// bends with no compounding. Handles the cyclic seam (rotate to a boundary);
+// a tile bounded entirely by one street-side (a loop interior) → one closed
+// run (polyline closed back to its start).
+function groupRuns(tile) {
+  const { ring, edges } = tile
+  const n = edges.length
+  const same = (a, b) => a.streetIdx === b.streetIdx && a.side === b.side
+  // find a seam: an edge whose predecessor differs
+  let seam = 0, found = false
+  for (let i = 0; i < n; i++) {
+    if (!same(edges[i], edges[(i - 1 + n) % n])) { seam = i; found = true; break }
+  }
+  if (!found) {
+    // whole ring is one street-side → one closed run
+    return [{ streetIdx: edges[0].streetIdx, side: edges[0].side, poly: [...ring, ring[0]] }]
+  }
+  const runs = []
+  let start = seam
+  for (let c = 0; c < n; ) {
+    const i0 = (start) % n
+    let len = 1
+    while (len < n && same(edges[(start + len) % n], edges[i0])) len++
+    // run covers edges i0 .. i0+len-1 → vertices ring[i0] .. ring[i0+len]
+    const poly = []
+    for (let k = 0; k <= len; k++) poly.push(ring[(i0 + k) % n])
+    runs.push({ streetIdx: edges[i0].streetIdx, side: edges[i0].side, poly })
+    start = (start + len) % n
+    c += len
+  }
+  return runs
 }
 
 export function buildTileGround(ribbons, opts = {}) {
@@ -180,37 +242,36 @@ export function buildTileGround(ribbons, opts = {}) {
     })
   }
 
-  // One global band profile for the spike. Toy's streets are uniform; using a
-  // single max profile keeps the tile insets consistent (per-tile-edge widths
-  // are a real-build refinement — they need the fe/grout-edge tagging).
-  let hwMax = 0, tlMax = 0, swMax = 0
-  for (const s of streets) {
-    const d = bandDepths(s.measure, curbWidth)
-    hwMax = Math.max(hwMax, d.pavementHW)
-    tlMax = Math.max(tlMax, d.treelawn)
-    swMax = Math.max(swMax, d.sidewalk)
-  }
-  const dA = hwMax
-  const dC = dA + curbWidth
-  const dT = dC + tlMax
-  const dW = dT + swMax
+  // Per-street effective measure (median-facing sides pre-zeroed), indexed by
+  // the street index the DCEL tags each edge with.
+  const measures = streets.map(effectiveMeasure)
 
   const tiles = extractFaces(streets)
 
-  // Per tile: inward offsets (round join → rounded convex curb corners), then
-  // successive differences are the strips. Union across tiles per material.
+  // Per tile: each band level's "filled-up-to" region = the union of every
+  // street-side run's inward stadium (the run polyline offset by that run's
+  // cumulative depth, round join+cap), clipped to the tile. Successive
+  // differences are the strips; the tile minus the sidewalk fill is LU.
+  // Asymmetric widths + divided medians fall out (each run uses its own side's
+  // measure); corners round via the offset's round join/cap. Robust on noisy
+  // LS runs where per-edge half-plane intersection collapses.
   const Aacc = [], Cacc = [], Tacc = [], Wacc = [], Lacc = []
   for (const tile of tiles) {
-    const ring = [tile]
-    const insA = offsetRings(ring, -dA, 'round')
-    const insC = offsetRings(ring, -dC, 'round')
-    const insT = offsetRings(ring, -dT, 'round')
-    const insW = offsetRings(ring, -dW, 'round')
-    Aacc.push(...differenceRings(ring,  insA))   // asphalt  = tile − inset(hw)
-    Cacc.push(...differenceRings(insA,  insC))   // curb
-    Tacc.push(...differenceRings(insC,  insT))   // treelawn
-    Wacc.push(...differenceRings(insT,  insW))   // sidewalk
-    Lacc.push(...insW)                           // land-use = innermost remainder
+    const runs = groupRuns(tile)
+    const fillUpTo = (level) => {
+      const stads = []
+      for (const run of runs) {
+        const d = edgeDepth(measures[run.streetIdx], run.side, curbWidth, level)
+        if (d > 1e-6) stads.push(...strokeOpen(run.poly, d))
+      }
+      return stads.length ? intersectRings(unionRings(stads), [tile.ring]) : []
+    }
+    const A = fillUpTo('A'), C = fillUpTo('C'), T = fillUpTo('T'), W = fillUpTo('W')
+    Aacc.push(...A)                              // asphalt = within asphalt-hw of the grout
+    Cacc.push(...differenceRings(C, A))          // curb
+    Tacc.push(...differenceRings(T, C))          // treelawn
+    Wacc.push(...differenceRings(W, T))          // sidewalk
+    Lacc.push(...differenceRings([tile.ring], W)) // land-use = the remainder
   }
   let asphalt  = unionRings(Aacc)
   let curb     = unionRings(Cacc)
@@ -218,12 +279,15 @@ export function buildTileGround(ribbons, opts = {}) {
   let sidewalk = unionRings(Wacc)
   let luInner  = unionRings(Lacc)
 
-  // Perimeter (outer face, beyond the outermost streets) fills as LU too:
-  // stencil − union(all tiles). Combined with the tile-center LU remainder,
-  // every non-hardscape pixel is land-use. No figure-ground, no block polygon.
+  // Perimeter (outer face, beyond the outermost streets) fills as LU:
+  // stencil − union(all tiles). NOTE — placeholder: the outermost streets are
+  // half-roaded on their outer (perimeter) side because the perimeter is not
+  // yet a per-edge-tagged tile. Proper perimeter tiles are the remaining T2
+  // edge-of-map piece. Combined with tile-center LU, every non-hardscape pixel
+  // is land-use — no figure-ground, no block polygon.
   let lu = luInner
   if (stencil) {
-    const tileUnion = unionRings(tiles)
+    const tileUnion = unionRings(tiles.map(t => t.ring))
     const perimeter = differenceRings([stencil], tileUnion)
     lu = unionRings([...luInner, ...perimeter])
     asphalt  = intersectRings(asphalt,  [stencil])
