@@ -33,6 +33,7 @@
 
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
+import { smoothChain } from './smoothCenterline.js'
 
 const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -165,7 +166,19 @@ function bandDepths(measure, curbWidth) {
 export function buildTileGround(ribbons, opts = {}) {
   const curbWidth = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
-  const streets = (ribbons?.streets || []).filter(s => s?.points?.length >= 2)
+  // Smooth centerlines BEFORE face extraction so the grout (shared tile edges)
+  // → tiles → strips all come out smooth — loops/curves round. smoothChain is
+  // INTERPOLATING (passes through every authored vertex), so intersection
+  // nodes survive exactly and the graph stays noded for the face walk. Default
+  // 0.5 matches the figure-ground path + the store default (WYSIWYG).
+  const smooth = Number.isFinite(opts.smooth) ? opts.smooth : 0.5
+  let streets = (ribbons?.streets || []).filter(s => s?.points?.length >= 2)
+  if (smooth > 0) {
+    streets = streets.map(s => {
+      const sm = smoothChain(s.points, smooth)
+      return sm ? { ...s, points: sm } : s
+    })
+  }
 
   // One global band profile for the spike. Toy's streets are uniform; using a
   // single max profile keeps the tile insets consistent (per-tile-edge widths

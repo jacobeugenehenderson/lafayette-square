@@ -539,7 +539,7 @@ export default function BlockGeometryV2Debug({
   const tileGeos = useMemo(() => {
     if (!isTileScene || !liveRibbons) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     return {
       lu:       ringsToFlatGeo(tg.lu,       0.010, true),
@@ -548,7 +548,7 @@ export default function BlockGeometryV2Debug({
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
     }
-  }, [isTileScene, liveRibbons, stencil, curbWidth])
+  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth])
 
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles

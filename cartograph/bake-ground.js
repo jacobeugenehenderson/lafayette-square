@@ -289,6 +289,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
+    smooth: Number.isFinite(design.streetSmooth) ? design.streetSmooth : 0.5,
   })
   const byMaterial = new Map()
   const byFaceUse = new Map()
