@@ -296,7 +296,13 @@ export function buildTileGround(ribbons, opts = {}) {
   // the street index the DCEL tags each edge with.
   const measures = streets.map(effectiveMeasure)
   const cw = curbWidth
-  const R = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5  // authored curb radius
+  // A2 — corner R reads the authored controls: base 4.5 m (AASHTO residential
+  // baseline, R_CLASS_DEFAULT) × the global Corners slider (cornerRadiusScale),
+  // clamped ≥ 0. Per-corner/per-IX cornerRadiusOverrides (empty on LS today)
+  // need the corner-identity mapping — folded in with the T3 UI migration.
+  const baseR = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5
+  const scale = Number.isFinite(opts.cornerRadiusScale) ? opts.cornerRadiusScale : 1
+  const R = Math.max(0, baseR * scale)
 
   const tiles = extractFaces(streets)
 
@@ -379,8 +385,16 @@ export function buildTileGround(ribbons, opts = {}) {
   let sidewalk = unionRings(Wacc)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
-    const perimeter = differenceRings([stencil], tileUnion)
-    for (const r of perimeter) if (r.length >= 3 && signedArea(r) > 0) pushLu(luByLu, luForRing(r), [r])
+    const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
+    if (perimeter.length) {
+      // Class from the largest outer; push the WHOLE holed region (keep the CW
+      // holes — dropping them turns the frame into the full stencil and paints
+      // over every per-class block centre). One class for the edge-of-map land
+      // is fine; proper per-edge perimeter tiles are G9.
+      let big = null, bigA = 0
+      for (const r of perimeter) { const a = signedArea(r); if (a > bigA) { bigA = a; big = r } }
+      pushLu(luByLu, big ? luForRing(big) : 'unknown', perimeter)
+    }
     asphalt  = intersectRings(asphalt,  [stencil])
     curb     = intersectRings(curb,     [stencil])
     sidewalk = intersectRings(sidewalk, [stencil])
