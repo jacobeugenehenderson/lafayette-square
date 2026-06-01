@@ -2,20 +2,21 @@ import { useState, useEffect } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
 import { chainMeasure, findFeForSide, feesForChainSide } from './measureModel.js'
+import { readFeCustom, feCustomKey } from '../lib/feCustomKey.js'
 
 const FT_PER_M = 3.28084
 const M_PER_FT = 0.3048
 const fmtFt = (m) => (m * FT_PER_M).toFixed(1)
 
 // Effective per-side measure for a segment. Block-edge customs are keyed by
-// (blockKey, edgeOrd); each side resolves through its own fe.
-// blockCustoms[fe.blockKey][fe.edgeOrd] wins over the chain READ default.
+// the fe's chain-anchored identity (skelId, side, segOrd) via feCustomKey;
+// each side resolves through its own fe and wins over the chain READ default.
 function effectiveMeasure(st, segOrd, v2FrontageEdges, blockCustoms) {
   const chain = chainMeasure(st)
   const feL = findFeForSide(v2FrontageEdges, st, segOrd, 'left')
   const feR = findFeForSide(v2FrontageEdges, st, segOrd, 'right')
-  const customL = feL ? blockCustoms?.[feL.blockKey]?.[feL.edgeOrd] : null
-  const customR = feR ? blockCustoms?.[feR.blockKey]?.[feR.edgeOrd] : null
+  const customL = readFeCustom(blockCustoms, feL)
+  const customR = readFeCustom(blockCustoms, feR)
   return {
     left:  customL || chain.left,
     right: customR || chain.right,
@@ -37,7 +38,7 @@ function hasAnyChainCustom(v2FrontageEdges, st, blockCustoms) {
     const idMatches = idKey && fe.chainSkelId === idKey
     const nameMatches = !idKey && nameKey && fe.chainName === nameKey
     if (!idMatches && !nameMatches) continue
-    if (blockCustoms[fe.blockKey]?.[fe.edgeOrd]) return true
+    if (readFeCustom(blockCustoms, fe)) return true
   }
   return false
 }
@@ -154,8 +155,7 @@ export default function MeasurePanel() {
   const symmetric = !editSidesSeparately
   const { feL, feR } = measure
   const hasCustom = !!(
-    (feL && blockCustoms?.[feL.blockKey]?.[feL.edgeOrd]) ||
-    (feR && blockCustoms?.[feR.blockKey]?.[feR.edgeOrd])
+    readFeCustom(blockCustoms, feL) || readFeCustom(blockCustoms, feR)
   )
 
   // Persist a side's new measure — always per-fe (data-wall doctrine), never
@@ -170,14 +170,14 @@ export default function MeasurePanel() {
     if (isWholeChain) {
       for (const s of sides) {
         for (const fe of feesForChainSide(v2FrontageEdges, st, s)) {
-          entries.push({ blockKey: fe.blockKey, edgeOrd: fe.edgeOrd, measure: { ...newSide } })
+          entries.push({ fe, measure: { ...newSide } })
         }
       }
     } else {
       const feBySide = { left: feL, right: feR }
       for (const s of sides) {
         const fe = feBySide[s]
-        if (fe) entries.push({ blockKey: fe.blockKey, edgeOrd: fe.edgeOrd, measure: { ...newSide } })
+        if (fe) entries.push({ fe, measure: { ...newSide } })
       }
     }
     writeBlockEdgeCustoms(entries)
@@ -201,11 +201,15 @@ export default function MeasurePanel() {
     const all = { ...(blockCustoms || {}) }
     let changed = false
     for (const fe of [feL, feR]) {
-      if (!fe) continue
-      if (!all[fe.blockKey]?.[fe.edgeOrd]) continue
-      all[fe.blockKey] = { ...all[fe.blockKey] }
-      delete all[fe.blockKey][fe.edgeOrd]
-      if (Object.keys(all[fe.blockKey]).length === 0) delete all[fe.blockKey]
+      const k = feCustomKey(fe)
+      if (!k) continue
+      const [skel, side, seg] = k
+      if (!all[skel]?.[side] || !(seg in all[skel][side])) continue
+      all[skel] = { ...all[skel] }
+      all[skel][side] = { ...all[skel][side] }
+      delete all[skel][side][seg]
+      if (Object.keys(all[skel][side]).length === 0) delete all[skel][side]
+      if (Object.keys(all[skel]).length === 0) delete all[skel]
       changed = true
     }
     if (!changed) return

@@ -6,6 +6,7 @@ import { sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment,
 import { polylineRibbon } from './overlayGeom.js'
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 import { chainMeasure, findFeForSide as findFeForSidePure, feesForChainSide, applyKindToMeasure } from './measureModel.js'
+import { readFeCustom } from '../lib/feCustomKey.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
 // (block-customs model) the chain default is the single source for handle
@@ -297,16 +298,21 @@ export default function MeasureOverlay() {
       : midAndPerp(st.points)
     const { cx, cz, nx, nz, segI } = anchor
     const ordinal = naturalSegmentOrdinal(st, segI ?? 0, ixByChain?.get(st))
-    // D.5/D.6: Per-side override from the block-edge containing this
-    // segOrd. Each side has its own fe (one block-edge per side per
-    // segOrd). blockCustoms[fe.blockKey][fe.edgeOrd] wins over
-    // chain.measure[side]. This is what makes handles stick to the
-    // band boundaries when the operator drags in per-block mode.
+    // Per-side override from the block-edge containing this segOrd. Each
+    // side has its own fe (one block-edge per side per segOrd). The fe's
+    // chain-anchored custom (feCustomKey: skelId/side/segOrd) wins over
+    // chain.measure[side]. This is what makes handles stick to the band
+    // boundaries when the operator drags in per-block mode.
     const feLeft = findFeForSide(selectedStreet, ordinal, 'left')
     const feRight = findFeForSide(selectedStreet, ordinal, 'right')
-    const customLeft = feLeft ? blockCustoms?.[feLeft.blockKey]?.[feLeft.edgeOrd] : null
-    const customRight = feRight ? blockCustoms?.[feRight.blockKey]?.[feRight.edgeOrd] : null
-    const chainM = st.measure || {}
+    const customLeft = readFeCustom(blockCustoms, feLeft)
+    const customRight = readFeCustom(blockCustoms, feRight)
+    // chainMeasure (not bare st.measure) is the purpose-built seeding fallback:
+    // street.measure → scene-fixture pipeline → type default. After "reset
+    // neighborhood" clears st.measure, this resolves to the SAME scene-fixture
+    // measure the bands render from, so handles sit on the bands instead of
+    // vanishing (feedback_scene_blind_fixture_latent_fault).
+    const chainM = chainMeasure(st)
     const baseMeasure = {
       left:  customLeft  || chainM.left,
       right: customRight || chainM.right,
@@ -374,8 +380,9 @@ export default function MeasureOverlay() {
   // Apply a boundary drag. `r` = new radius (absolute, from centerline).
   //
   // Polygon-only authoring (RIBBONS §1 data wall): every write lands in
-  // blockCustoms[blockKey][edgeOrd] — NEVER chain.measure. The chain is a
-  // SELECTION criterion, not a write scope:
+  // blockCustoms keyed by the fe's chain-anchored identity (skelId, side,
+  // segOrd) — NEVER chain.measure. The chain is a SELECTION criterion, not a
+  // write scope:
   //   • Whole-chain mode  → SELECT every fe of the chain on the touched
   //     side(s) and fan a per-fe write across them (writeBlockEdgeCustoms,
   //     one store mutation / one V2 rebuild).
@@ -389,6 +396,14 @@ export default function MeasureOverlay() {
     // (subdivideGeo OOM). 60m is well past the widest real curb.
     if (!Number.isFinite(r)) return
     if (r > 60) r = 60
+    // Mark the live drag: a real handle move is committing a measure write, so
+    // the live preview switches to silhouette-independent rect bands that
+    // follow in real time (W1b-F1). Set here (not on pointerdown) so a click
+    // with no drag never strands the flag. Cleared by BlockGeometryV2Debug when
+    // the rebuilt silhouette lands; re-set here if a mid-drag pause cleared it.
+    if (!useCartographStore.getState().measureDragging) {
+      useCartographStore.setState({ measureDragging: true })
+    }
 
     const store = useCartographStore.getState()
     const st = store.centerlineData?.streets?.[streetIdx]
@@ -412,8 +427,8 @@ export default function MeasureOverlay() {
     const entries = []
     const pushFe = (fe, s) => {
       if (!fe) return
-      const seed = blockCustoms[fe.blockKey]?.[fe.edgeOrd] || chainSeed[s] || FALLBACK
-      entries.push({ blockKey: fe.blockKey, edgeOrd: fe.edgeOrd, measure: applyKindToMeasure(seed, kind, r) })
+      const seed = readFeCustom(blockCustoms, fe) || chainSeed[s] || FALLBACK
+      entries.push({ fe, measure: applyKindToMeasure(seed, kind, r) })
     }
 
     if (mode?.type === 'global') {
@@ -583,7 +598,7 @@ export default function MeasureOverlay() {
       // mode preference) → chain.measure → defaults; needed only to read
       // strip-boundary depths, not yet to write.
       const customFe = findFeForSide(selection.streetIdx, segOrd, side)
-      const existing = customFe ? blockCustoms?.[customFe.blockKey]?.[customFe.edgeOrd] : null
+      const existing = readFeCustom(blockCustoms, customFe)
       const sd = existing || st.measure?.[side] || null
       if (!sd) return null
       if (sd.terminal !== 'sidewalk') return null
@@ -633,8 +648,8 @@ export default function MeasureOverlay() {
         if (!feX) return
         // Seed each fe from its own custom (preserve its widths) else the
         // chain default; only the materials change.
-        const seed = blockCustoms[feX.blockKey]?.[feX.edgeOrd] || chainSeed[s] || sourceMeasure
-        entries.push({ blockKey: feX.blockKey, edgeOrd: feX.edgeOrd, measure: { ...seed, materials: { ...nextMats } } })
+        const seed = readFeCustom(blockCustoms, feX) || chainSeed[s] || sourceMeasure
+        entries.push({ fe: feX, measure: { ...seed, materials: { ...nextMats } } })
       }
       if (mode?.type === 'global') {
         for (const s of sides) for (const feX of feesForChainSide(fes, st, s)) pushFe(feX, s)

@@ -7,6 +7,7 @@ import {
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
 import toyRibbonsData from '../../data/toy/toy-ribbons.json'
+import { feCustomKey } from '../../lib/feCustomKey.js'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import {
   migrateLampGlow, resolveLampGlowAtMinute,
@@ -321,12 +322,14 @@ const useCartographStore = create((set, get) => ({
   // (the stretch of chain between two IXs) IS one block edge. Real
   // block ids would require planar-subdivision face computation; per-
   // segment keying is functionally equivalent for ribbon widths and
-  // ships today. Shape:
-  //   blockCustoms[chainIdx][segOrd][side] = { pavementHW, treelawn, sidewalk, terminal }
-  // The chain's global measure is the default; the operator right-clicks
-  // (or panel-toggles) Custom mode and drags to write a per-segment-side
-  // override. Editing the chain's global measure clears the chain's
-  // customs (globals are truth; customs are local deviations).
+  // ships today. Shape (W1 chain-anchored, via feCustomKey):
+  //   blockCustoms[skelId][side][segOrd] = { pavementHW, treelawn, sidewalk, terminal }
+  // Keyed off the STABLE authored input (chain skelId + side + natural-
+  // segment ordinal), never the drift-prone derived block. The chain's
+  // global measure is the default; the operator right-clicks (or panel-
+  // toggles) Custom mode and drags to write a per-segment-side override.
+  // Editing the chain's global measure clears the chain's customs (globals
+  // are truth; customs are local deviations).
   blockCustoms: {},
   // Per-block land-use overrides. Keyed by stable centroid hash
   // (`${cx.toFixed(2)},${cy.toFixed(2)}` of the block's outer ring).
@@ -337,7 +340,7 @@ const useCartographStore = create((set, get) => ({
   blockLandUse: {},
   // Measure tool's edit mode.
   //   'block' (default) — drag writes a per-segment-per-side override in
-  //     blockCustoms keyed by (chainIdx, segOrd, side). Operator-time
+  //     blockCustoms keyed by (skelId, side, segOrd). Operator-time
   //     authoring is per-block; the segment is implicit in the click
   //     anchor's position along the chain.
   //   'global' — drag writes chain.measure (the universal default for
@@ -354,6 +357,12 @@ const useCartographStore = create((set, get) => ({
   // set the universal cross-section first, then opt INTO per-block
   // (`{ type: 'block' }`) when a specific block diverges.
   measureMode: { type: 'global' },
+  // Transient (NOT persisted): true while a measure handle is actively being
+  // dragged. Signals the live preview to emit silhouette-INDEPENDENT rect
+  // bands that follow the handle in real time (W1b-F1); cleared by
+  // BlockGeometryV2Debug once the debounced rebuild produces a fresh rounded
+  // silhouette, so the swap back to keystone bands never snaps.
+  measureDragging: false,
   // Mirror-edit toggle (transient — NOT persisted). When false (default),
   // an edit mirrors to the opposite-side fe ("symmetric" authoring); when
   // true, sides are edited independently. Post-redesign "symmetric" is a
@@ -546,33 +555,40 @@ const useCartographStore = create((set, get) => ({
     const t = mode?.type === 'global' ? 'global' : 'block'
     set({ measureMode: { type: t } })
   },
-  // D.5: Write a per-block-edge measure override. Called by the
-  // Measure UI's drag path. (blockKey, edgeOrd) uniquely identifies
-  // one block-edge in the polygon-walking architecture; side is
-  // implicit (each block-edge has one adjacent chain on one side).
-  // The measure shape mirrors chain.measure[side]:
-  //   { terminal, treelawn, sidewalk, pavementHW }
-  setBlockEdgeCustom: (blockKey, edgeOrd, measure) => {
-    if (!blockKey || edgeOrd == null) return
+  // W1: Write a per-block-edge measure override, keyed by the fe's
+  // CHAIN-ANCHORED identity (skelId, side, segOrd) via feCustomKey — the
+  // stable authored input, not the drift-prone derived (blockKey, edgeOrd).
+  // The caller passes the fe it already resolved (findFeForSide); the store
+  // is the SINGLE site that turns it into the storage key. The measure shape
+  // mirrors chain.measure[side]: { terminal, treelawn, sidewalk, pavementHW }.
+  setBlockEdgeCustom: (fe, measure) => {
+    const k = feCustomKey(fe)
+    if (!k || !measure) return
+    const [skel, side, seg] = k
     const next = { ...(get().blockCustoms || {}) }
-    next[blockKey] = { ...(next[blockKey] || {}) }
-    next[blockKey][edgeOrd] = { ...measure }
+    next[skel] = { ...(next[skel] || {}) }
+    next[skel][side] = { ...(next[skel][side] || {}) }
+    next[skel][side][seg] = { ...measure }
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
-  // Batched per-fe custom write. entries: [{ blockKey, edgeOrd, measure }].
+  // Batched per-fe custom write. entries: [{ fe, measure }].
   // One store mutation → one V2 rebuild regardless of fan-out size. This is
   // how a whole-chain edit lands: the chain SELECTS its fes, the write fans
   // per-fe through here — never to chain.measure (data-wall doctrine). Also
   // backs the symmetric mirror (two entries: dragged side + opposite fe).
+  // Keyed by feCustomKey (skelId, side, segOrd) — one slot per fe.
   writeBlockEdgeCustoms: (entries) => {
     if (!Array.isArray(entries) || !entries.length) return
     const next = { ...(get().blockCustoms || {}) }
     let changed = false
-    for (const { blockKey, edgeOrd, measure } of entries) {
-      if (!blockKey || edgeOrd == null || !measure) continue
-      next[blockKey] = { ...(next[blockKey] || {}) }
-      next[blockKey][edgeOrd] = { ...measure }
+    for (const { fe, measure } of entries) {
+      const k = feCustomKey(fe)
+      if (!k || !measure) continue
+      const [skel, side, seg] = k
+      next[skel] = { ...(next[skel] || {}) }
+      next[skel][side] = { ...(next[skel][side] || {}) }
+      next[skel][side][seg] = { ...measure }
       changed = true
     }
     if (!changed) return
@@ -591,12 +607,10 @@ const useCartographStore = create((set, get) => ({
     set({ blockLandUse: {} })
     get()._saveDesignDebounced()
   },
-  // D.7c: chain-wide wipe in the [blockKey][edgeOrd] shape. Walks the
-  // published v2FrontageEdges for any fe whose chain identity matches
-  // the given streetIdx (centerlineData order) and deletes the matching
-  // blockCustoms entry. Replaces clearBlockCustomsForChain at MeasurePanel
-  // call sites — that legacy setter operates on the old [chainIdx][segOrd]
-  // top-level key, which no consumer reads post-D.6.
+  // W1: chain-wide wipe in the chain-anchored (skelId, side, segOrd) shape.
+  // Walks the published v2FrontageEdges for any fe whose chain identity
+  // matches the given streetIdx (centerlineData order) and deletes the
+  // matching blockCustoms entry via feCustomKey, pruning empty parents.
   clearBlockEdgeCustomsForChain: (streetIdx) => {
     const st = get().centerlineData?.streets?.[streetIdx]
     if (!st) return
@@ -613,10 +627,15 @@ const useCartographStore = create((set, get) => ({
       const idMatches = idKey && fe.chainSkelId === idKey
       const nameMatches = !idKey && nameKey && fe.chainName === nameKey
       if (!idMatches && !nameMatches) continue
-      if (!next[fe.blockKey]?.[fe.edgeOrd]) continue
-      next[fe.blockKey] = { ...next[fe.blockKey] }
-      delete next[fe.blockKey][fe.edgeOrd]
-      if (Object.keys(next[fe.blockKey]).length === 0) delete next[fe.blockKey]
+      const k = feCustomKey(fe)
+      if (!k) continue
+      const [skel, side, seg] = k
+      if (!next[skel]?.[side] || !(seg in next[skel][side])) continue
+      next[skel] = { ...next[skel] }
+      next[skel][side] = { ...next[skel][side] }
+      delete next[skel][side][seg]
+      if (Object.keys(next[skel][side]).length === 0) delete next[skel][side]
+      if (Object.keys(next[skel]).length === 0) delete next[skel]
       changed = true
     }
     if (!changed) return

@@ -2,7 +2,8 @@
 //
 // Data-wall doctrine (RIBBONS.md §1): chains end forever at bake; polygons
 // are the surface. The Measure tool authors PER-FE (per block-edge); every
-// write lands in blockCustoms[blockKey][edgeOrd]. The chain is a topology +
+// write lands in blockCustoms keyed by the fe's chain-anchored identity
+// (skelId, side, segOrd) via feCustomKey. The chain is a topology +
 // SELECTION criterion, never an authoring scope — no path in this tool
 // writes to chain.measure. chain.measure stays a READ-ONLY inherited default
 // (pipeline-derived from skeleton.js → ribbons.json).
@@ -13,6 +14,7 @@
 
 import { defaultMeasure, CURB_WIDTH } from './streetProfiles.js'
 import ribbonsRaw from '../data/ribbons.json'
+import toyRibbonsRaw from '../data/toy/toy-ribbons.json'
 
 // Drag clamps — a handle dragged very far must not explode ribbon geometry
 // (subdivideGeo can request a multi-million-vert buffer). 30m past any real
@@ -21,12 +23,22 @@ export const MAX_PAVEMENT_HW = 30
 export const MAX_STRIPE = 20
 export const STRIPE_MIN = 1.0  // meters — thinnest a stripe can be dragged
 
-// Survey-derived measure by street name — adopted when an un-edited street
-// is first selected so handles sit on the rendered edges.
+// Survey-derived measure by street identity — adopted when an un-edited
+// street is first selected so handles sit on the rendered edges. Built from
+// BOTH scene fixtures (LS ribbons.json + toy-ribbons.json) and keyed by name
+// AND skelId: the render resolves a reset/un-edited street's measure from its
+// scene fixture via mergeLiveRibbons, so the seed must consult the same source
+// or toy streets fall to a generic default off the bands (the scene-blind
+// fixture fault — feedback_scene_blind_fixture_latent_fault). Toy and LS
+// identities are disjoint, so one merged map resolves each correctly.
 const PIPELINE_MEASURE = (() => {
   const m = new Map()
-  for (const st of (ribbonsRaw.streets || [])) {
-    if (st.name && st.measure) m.set(st.name, st.measure)
+  for (const src of [ribbonsRaw, toyRibbonsRaw]) {
+    for (const st of (src.streets || [])) {
+      if (!st.measure) continue
+      if (st.name) m.set(st.name, st.measure)
+      if (st.skelId) m.set(st.skelId, st.measure)
+    }
   }
   return m
 })()
@@ -36,7 +48,7 @@ const PIPELINE_MEASURE = (() => {
 // never a write target.
 export function chainMeasure(st) {
   if (st.measure) return st.measure
-  const fromPipeline = PIPELINE_MEASURE.get(st.name)
+  const fromPipeline = PIPELINE_MEASURE.get(st.skelId) || PIPELINE_MEASURE.get(st.name)
   if (fromPipeline) {
     return {
       left: { ...fromPipeline.left },

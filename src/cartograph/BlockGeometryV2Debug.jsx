@@ -209,6 +209,7 @@ export default function BlockGeometryV2Debug({
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
+  const measureDragging           = useCartographStore(s => s.measureDragging)
   const blockLandUse              = useCartographStore(s => s.blockLandUse)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
@@ -339,6 +340,19 @@ export default function BlockGeometryV2Debug({
     }
   }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter])
 
+  // W1b-F1: clear the drag flag once the debounced rebuild has produced a
+  // FRESH rounded silhouette. Releasing a handle keeps `measureDragging` true
+  // (rect bands hold at the release position) until this fires, so the live
+  // overlay swaps from rect → keystone only when the keystone silhouette is
+  // current — no snap back to a stale shape. During a continuous drag the
+  // rebuild is debounced away; `applyDrag` re-asserts the flag if a mid-drag
+  // pause let a rebuild clear it.
+  useEffect(() => {
+    if (useCartographStore.getState().measureDragging) {
+      useCartographStore.setState({ measureDragging: false })
+    }
+  }, [blockRoundedWithMeta])
+
   // Stash the rounded block rings into the store so MeasureOverlay's
   // drag path can resolve block adjacency at drag time without re-running
   // buildBlockGeometryV2 (Clipper booleans aren't free).
@@ -351,15 +365,21 @@ export default function BlockGeometryV2Debug({
   // Identity translation: V2's `chainIdx` indexes `liveRibbons.streets`
   // (ordered like the static ribbons artifact). MeasureOverlay's
   // `streetIdx` indexes `centerlineData.streets` (live-store order) —
-  // a different ordering on toy + LS. Enrich each fe with `chainSkelId`
-  // so consumers can match by identity instead of array index.
+  // a different ordering on toy + LS. Each fe carries `chainSkelId`/
+  // `chainName` so consumers match by identity instead of array index.
+  //
+  // buildFrontageEdges now stamps these at construction (the SINGLE source
+  // of the chain-anchored customs key, feCustomKey). This pass only DEFERS
+  // to that stamp, recomputing with the IDENTICAL formula (skelId || name)
+  // for any legacy fe that predates the stamp — never a second formula, so
+  // the live fe and bake fe can't diverge on the key.
   const enrichedFrontageEdges = useMemo(() => {
     const streets = liveRibbons?.streets || []
-    return frontageEdges.map(fe => ({
-      ...fe,
-      chainSkelId: streets[fe.chainIdx]?.skelId,
-      chainName:   streets[fe.chainIdx]?.name,
-    }))
+    return frontageEdges.map(fe => {
+      if (fe.chainSkelId != null) return fe  // already stamped at construction
+      const st = streets[fe.chainIdx]
+      return { ...fe, chainSkelId: st?.skelId || st?.name || null, chainName: st?.name || null }
+    })
   }, [frontageEdges, liveRibbons])
   useEffect(() => {
     useCartographStore.getState()._setV2FrontageEdges(enrichedFrontageEdges)
@@ -530,10 +550,10 @@ export default function BlockGeometryV2Debug({
     if (selectedRibbonsChainIdx < 0) return null
     const chain = liveRibbons?.streets?.[selectedRibbonsChainIdx]
     if (!chain) return null
-    // D.5/D.6: blockCustoms keyed by (blockKey, edgeOrd). Pass the full
-    // map + frontageEdges so buildChainBandsLive can resolve each
-    // segOrd-side → fe → customs entry. Falls through to chain.measure
-    // when no fe matches (chain endpoints, parcel-internal sides).
+    // blockCustoms keyed by chain-anchored (skelId, side, segOrd) via
+    // feCustomKey. Pass the full map + frontageEdges so buildChainBandsLive
+    // can resolve each segOrd-side → fe → customs entry. Falls through to
+    // chain.measure when no fe matches (chain endpoints, parcel-internal sides).
     return buildChainBandsLive(
       chain,
       selectedRibbonsChainIdx,
@@ -548,9 +568,16 @@ export default function BlockGeometryV2Debug({
         blockRoundedWithMeta,
         blockSharp,
         streets: liveRibbons?.streets,
+        // While a measure handle is actively dragged, the rounded silhouette
+        // (blockRoundedWithMeta) is stale — only the debounced full rebuild
+        // refreshes it. So emit silhouette-INDEPENDENT rect bands offset from
+        // the centerline by the LIVE measure, which follow the handle in real
+        // time (W1b-F1). At rest, use the keystone silhouette-relative bands
+        // (rounded, bake-matching). On release the full rebuild snaps to exact.
+        measureDragging,
       }
     )
-  }, [selectedRibbonsChainIdx, liveRibbons, blockCustoms, frontageEdges, curbWidth, liveIxByChain, blockRoundedWithMeta, blockSharp])
+  }, [selectedRibbonsChainIdx, liveRibbons, blockCustoms, frontageEdges, curbWidth, liveIxByChain, blockRoundedWithMeta, blockSharp, measureDragging])
 
   // Per-chain BufferGeometries split into two passes for drag perf:
   //

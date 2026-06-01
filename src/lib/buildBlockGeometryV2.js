@@ -16,6 +16,7 @@
  */
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH, innerEdgeMeasure } from '../cartograph/streetProfiles.js'
+import { readFeCustom } from './feCustomKey.js'
 
 const SCALE = 1000
 const ARC_N = 16          // half-cap arcs in chainPavementRing only
@@ -403,19 +404,21 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       const L = Math.hypot(dx, dz)
       if (L < 1e-6) return null
       const isBack = dir === -1
-      // D.5 customs lookup: the leg's left/right physical sides each
-      // belong to one block-edge (one frontage edge per side per
-      // segOrd). For each side, find the fe in feLookup, then resolve
-      // blockCustoms[fe.blockKey][fe.edgeOrd] (if present) or fall
-      // back to chain.measure[side]. Side orientation is in chain
-      // coordinates; the leg-side flip for back legs happens below.
+      // Customs lookup: the leg's left/right physical sides each belong to
+      // one block-edge (one frontage edge per side per segOrd). For each
+      // side, find the fe in feLookup, then resolve its chain-anchored
+      // custom (feCustomKey: skelId/side/segOrd) or fall back to
+      // chain.measure[side]. Side orientation is in chain coordinates; the
+      // leg-side flip for back legs happens below. (Ribbon-customs read —
+      // NOT the corner-override maps; re-keyed in W1 so corner depths follow
+      // the same stable key as the ribbon bands.)
       const segOrd = segmentForLeg(dir)
       const feL = (chainIdx != null && segOrd != null)
         ? feLookup?.[chainIdx]?.[segOrd]?.left : null
       const feR = (chainIdx != null && segOrd != null)
         ? feLookup?.[chainIdx]?.[segOrd]?.right : null
-      const customL = feL ? blockCustoms?.[feL.blockKey]?.[feL.edgeOrd] : null
-      const customR = feR ? blockCustoms?.[feR.blockKey]?.[feR.edgeOrd] : null
+      const customL = readFeCustom(blockCustoms, feL)
+      const customR = readFeCustom(blockCustoms, feR)
       const effL = customL || m.left
       const effR = customR || m.right
       // When walking BACK from V (dir=-1), the chain's "left" becomes
@@ -1143,8 +1146,19 @@ function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
       // closest fe per (chainIdx, side). See comment block above
       // assignSegOrdsToFes for why this is post-passed rather than
       // computed per-fe.
+      //
+      // chainSkelId/chainName: the STABLE chain identity, stamped HERE so the
+      // chain-anchored customs key (feCustomKey) resolves identically on the
+      // bake path and the Designer path. This is the single source of the
+      // stamp — the Designer's enrichment defers to this same formula
+      // (streets[idx].skelId || .name), it does not recompute it differently.
+      // (HANDOFF-wall-W1-identity; the bake builds fes without the Designer,
+      // so without this stamp bake-side customs resolution would silently miss.)
+      const adjStreet = streets[adj.chainIdx]
       out.push({ points, blockKey, blockRingIdx, edgeOrd: k,
                  chainIdx: adj.chainIdx, side: adj.side, ringCcw: ccw,
+                 chainSkelId: adjStreet?.skelId || adjStreet?.name || null,
+                 chainName: adjStreet?.name || null,
                  segOrds: [] })
     }
   }
@@ -1262,8 +1276,9 @@ function assignSegOrdsToFes(fes, streets, ixByChain) {
 // customs ?? chain.measure precedence rule, so emission code never
 // reads `streets[*].measure` (wall doctrine, RIBBONS §1). Three outputs:
 //
-//   fe.measure (per fe)              — blockCustoms[blockKey][edgeOrd] ??
-//                                      streets[chainIdx].measure[side].
+//   fe.measure (per fe)              — readFeCustom(blockCustoms, fe)
+//                                      [chain-anchored (skelId,side,segOrd)]
+//                                      ?? streets[chainIdx].measure[side].
 //   blockScalars[blockKey].W         — per-block ribbon outer extent =
 //                                      cw + max-over-fes-on-block of
 //                                      depthForSide(fe.measure). Blocks
@@ -1297,7 +1312,7 @@ function bakeFeScalars(streets, frontageEdges, allCorners, blockCustoms, curbWid
   // Step 1: resolve fe.measure once per fe (customs precedence).
   for (const fe of frontageEdges) {
     if (fe.chainIdx == null) { fe.measure = null; continue }
-    const customs = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+    const customs = readFeCustom(blockCustoms, fe)
     fe.measure = customs || streets[fe.chainIdx]?.measure?.[fe.side] || null
   }
   // Step 2: per-block W. Group fes by blockKey, take cw + max stack.
@@ -2796,7 +2811,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const chainsWithCustoms = new Set()
   if (blockCustoms) {
     for (const fe of frontageEdges) {
-      if (blockCustoms[fe.blockKey]?.[fe.edgeOrd]) chainsWithCustoms.add(fe.chainIdx)
+      if (readFeCustom(blockCustoms, fe)) chainsWithCustoms.add(fe.chainIdx)
     }
   }
   if (chainsWithCustoms.size > 0) {
@@ -2804,7 +2819,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     const customsResolver = (chainIdx, segOrd, sideKey) => {
       const fe = pass1Lookup[chainIdx]?.[segOrd]?.[sideKey]
       if (!fe) return null
-      return blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+      return readFeCustom(blockCustoms, fe)
     }
     for (const chainIdx of chainsWithCustoms) emitChain(chainIdx, customsResolver)
     asphaltSharp = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
@@ -2816,6 +2831,14 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     // Carry pass-1 (blockKey, edgeOrd) onto pass-2 fees by matching on
     // (chainIdx, segOrds[0], side). segOrd is coord-match-stable (see
     // resolveChainSegmentation) so the join is reliable.
+    //
+    // W1 NOTE: customs no longer depend on this carry — the chain-anchored
+    // key (chainSkelId, side, segOrd) is re-derived natively on the pass-2
+    // fees (buildFrontageEdges re-stamps chainSkelId; assignSegOrdsToFes
+    // re-derives identical segOrds), so readFeCustom resolves on pass-2 fees
+    // directly. The carry is kept only because blockKey still backs the
+    // per-block W grouping in bakeFeScalars (and dies with the two-pass
+    // machine in W4).
     for (const fe of frontageEdges) {
       if (!fe.segOrds?.length) continue
       const p1 = pass1Lookup[fe.chainIdx]?.[fe.segOrds[0]]?.[fe.side]
@@ -3105,11 +3128,11 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 // Use this for the SELECTED chain during interactive drag, where the
 // operator needs the bands to follow handles in real time. The full V2
 // pass is still authoritative on release.
-// D.5/D.6: blockCustoms is keyed by [blockKey][edgeOrd]. To resolve
-// per-segOrd customs for this chain during drag preview, pass in the
-// chain's index (so we can filter frontageEdges) and the full
-// frontageEdges list (so we can map each segOrd-side → fe → customs
-// entry). With empty blockCustoms or no matching fe, falls through
+// blockCustoms is keyed by chain-anchored (skelId, side, segOrd) via
+// feCustomKey. To resolve per-segOrd customs for this chain during drag
+// preview, pass in the chain's index (so we can filter frontageEdges) and
+// the full frontageEdges list (so we can map each segOrd-side → fe →
+// customs entry). With empty blockCustoms or no matching fe, falls through
 // to chain.measure[side].
 export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges, opts = {}) {
   const cw = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
@@ -3147,7 +3170,7 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
   const customForSegSide = (segOrd, sideKey) => {
     const fe = feBySegSide[segOrd]?.[sideKey]
     if (!fe) return null
-    return blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+    return readFeCustom(blockCustoms, fe)
   }
   const perps = computePerps(pts)
   // ixByChain (optional) lets the live-drag path use the same IX-by-
@@ -3185,15 +3208,31 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
       const sw = eff.sidewalk || 0
       // Edge polylines (decorative reference for the live overlay's
       // colored boundary strokes — green = treelawn outer, white =
-      // sidewalk outer). NOT band geometry; the bands themselves come
-      // from emitOneBlockRingBands per-block below to stay V1-keystone-
+      // sidewalk outer). NOT band geometry; at REST the bands themselves
+      // come from emitOneBlockRingBands per-block below to stay V1-keystone-
       // aligned with the bake.
-      if (tl > 0) out.treelawnEdges.push(
-        segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl)])
-      )
-      if (sw > 0) out.sidewalkEdges.push(
-        segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl + sw), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl + sw)])
-      )
+      const offsetEdge = (d) => segPts.map((p, i) =>
+        [p[0] + segPerps[i][0] * sideSign * d, p[1] + segPerps[i][1] * sideSign * d])
+      if (tl > 0) out.treelawnEdges.push(offsetEdge(hw + cw + tl))
+      if (sw > 0) out.sidewalkEdges.push(offsetEdge(hw + cw + tl + sw))
+      // W1b-F1: while a handle is actively dragged, the rounded silhouette the
+      // keystone path insets is STALE (the debounced rebuild hasn't run). Emit
+      // silhouette-INDEPENDENT filled bands offset straight off the centerline
+      // by the LIVE measure, so they follow the handle in real time. Square
+      // ends at IX are acceptable in a drag preview; the post-release rebuild
+      // snaps to the exact rounded bands. The keystone path below is skipped
+      // while dragging so the two don't double-emit.
+      if (opts.measureDragging) {
+        const curbEnd = hw + cw
+        if (tl > 0) {
+          const ring = [...offsetEdge(curbEnd), ...offsetEdge(curbEnd + tl).reverse()]
+          out.treelawnRings.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
+        }
+        if (sw > 0) {
+          const ring = [...offsetEdge(curbEnd + tl), ...offsetEdge(curbEnd + tl + sw).reverse()]
+          out.sidewalkRings.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
+        }
+      }
     }
   }
 
@@ -3207,7 +3246,9 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
   const blockRoundedWithMeta = opts.blockRoundedWithMeta
   const blockSharp = opts.blockSharp
   const streetsAll = opts.streets
-  if (blockRoundedWithMeta?.length && blockSharp?.length && frontageEdges?.length) {
+  // Skipped while a handle is actively dragged (rect bands above follow live);
+  // runs at rest to render the exact rounded, bake-matching bands.
+  if (!opts.measureDragging && blockRoundedWithMeta?.length && blockSharp?.length && frontageEdges?.length) {
     // blockKey → block index (sharp-keyed for fe lookup).
     const blockIdxByKey = new Map()
     for (let bi = 0; bi < blockRoundedWithMeta.length; bi++) {
@@ -3231,7 +3272,7 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
     // for per-block drags) without staleness from the V2 snapshot.
     const resolveLiveMeasure = (fe) => {
       if (fe.chainIdx == null) return fe.measure
-      const customs = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+      const customs = readFeCustom(blockCustoms, fe)
       if (customs) return customs
       return streetsAll?.[fe.chainIdx]?.measure?.[fe.side] || fe.measure
     }
