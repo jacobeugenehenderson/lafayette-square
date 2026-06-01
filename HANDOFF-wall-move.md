@@ -15,7 +15,7 @@ We are deliberately accepting a period of **severe regression** during this arc 
 
 | # | Feature (eventual behavior) | Status (2026-05-31) | Restored by |
 |---|---|---|---|
-| F1 | **Ribbon band widths** — drag sidewalk/treelawn/pavement handle → bands render to match, live + bake | 🔴 BROKEN (bands don't follow the edit; polygon does) | live-band fix (current) + W2/W3 freeze |
+| F1 | **Ribbon band widths** — drag sidewalk/treelawn/pavement handle → bands render to match, live + bake | 🔴 BROKEN (bands don't follow the edit; polygon does) — **PARKED** | **gather-to-center construction model** ([[project_gather_to_center_construction_model]]) — subsumes the per-edge live-band fix + the responsiveness lag (same root: construction fighting itself); not fixed in isolation |
 | F2 | **Block silhouette / polygon shape** — drag curb → block reshapes | 🟢 WORKING (must stay working) | hold through arc |
 | F3 | **Corner rounding** — per-corner radius (gold dots), per-IX, global scale → corners round to match | 🟠 REGRESSED by W1 | corner-regression fix (current) |
 | F4 | **Customs stick (no drift)** — edits persist + render, keyed by chain-anchored identity | 🟡 storage FIXED (W1); live application BROKEN | live-band fix + W2 |

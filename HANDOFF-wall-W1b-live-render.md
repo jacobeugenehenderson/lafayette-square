@@ -1,6 +1,8 @@
 # HANDOFF / BRIEF — W1b: live-render application (bands don't follow) + W1 corner regression
 
-**Status:** dispatch-ready. **Dispatch:** WARM — you are **Lodestar**, continuing from W1 (`HANDOFF-wall-W1-identity.md`). You have the full change context; keep your name, sign your commits.
+> ⛔ **SCOPE NARROWED (Jacob, 2026-05-31): do ONLY Task B (the corner regression). Task A (F1 live-band) and any responsiveness work are PARKED** — they share a root (the construction fighting itself) and are subsumed by the gather-to-center construction-model arc ([[project_gather_to_center_construction_model]]). Don't grind authoring on a model that's about to change. Drive to a clean, committable stopping point on the corner regression, then HOLD.
+
+**Status:** dispatch-ready (narrowed — corner regression only). **Dispatch:** WARM — you are **Lodestar**, continuing from W1 (`HANDOFF-wall-W1-identity.md`). You have the full change context; keep your name, sign your commits.
 **Parent:** `HANDOFF-wall-move.md` — this brief restores ledger rows **F1** (ribbon bands) and **F3** (corner rounding). Don't regress **F2** (polygon shape) or **F5** (per-block LU), which are 🟢.
 
 ---
