@@ -39,15 +39,39 @@ const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
-// Offset an OPEN polyline by `delta` (round join + round cap) → a stadium of
-// half-width delta straddling the line. Round join handles the polyline's own
-// bends correctly (no compounding), so this is robust on noisy 100-vertex LS
-// street runs where per-edge half-plane intersection collapses.
+// Offset CLOSED rings by `delta` (round join). Negative = erode/inset. Used to
+// build the concentric ped bands by uniform inward offset of the R-rounded
+// asphalt-inner region — eroding a rounded corner of radius r by d gives a
+// concentric corner of radius r+d, which is exactly the nested-arc curb wrap.
+function offsetRings(rings, delta) {
+  if (!rings.length) return []
+  if (delta === 0) return rings.map(r => r.slice())
+  const { ClipperOffset, JoinType, EndType } = clipperLib
+  const co = new ClipperOffset(2, 0.05 * SCALE)
+  for (const r of rings) if (r && r.length >= 3) co.AddPath(r.map(toClipper), JoinType.jtRound, EndType.etClosedPolygon)
+  const out = []
+  co.Execute(out, delta * SCALE)
+  return out.map(p => p.map(fromClipper))
+}
+// Morphological opening (erode R then dilate R, round join): rounds CONVEX
+// corners sharper than R up to radius R, leaves gentler ones. Used to round the
+// asphalt-inner region's sharp miter corners at the authored curb radius — the
+// one place a corner is rounded, so the bands wrap it concentrically.
+function openRound(rings, R) {
+  if (!rings.length || !(R > 1e-6)) return rings
+  const eroded = offsetRings(rings, -R)
+  if (!eroded.length) return rings                  // too thin to open → keep as-is
+  return offsetRings(eroded, R)
+}
+// Offset an OPEN polyline by `delta` with round JOIN (handles the run's own
+// bends, no compounding) and BUTT caps (so a run ends square at the tile
+// vertex — no round-cap-at-depth bulge, which distorted the corners). Robust
+// on noisy 100-vertex LS runs where per-edge half-plane intersection collapses.
 function strokeOpen(polyline, delta) {
   if (!(delta > 1e-9) || !polyline || polyline.length < 2) return []
   const { ClipperOffset, JoinType, EndType } = clipperLib
   const co = new ClipperOffset(2, 0.05 * SCALE)
-  co.AddPath(polyline.map(toClipper), JoinType.jtRound, EndType.etOpenRound)
+  co.AddPath(polyline.map(toClipper), JoinType.jtRound, EndType.etOpenButt)
   const out = []
   co.Execute(out, delta * SCALE)
   return out.map(p => p.map(fromClipper))
@@ -245,33 +269,52 @@ export function buildTileGround(ribbons, opts = {}) {
   // Per-street effective measure (median-facing sides pre-zeroed), indexed by
   // the street index the DCEL tags each edge with.
   const measures = streets.map(effectiveMeasure)
+  const cw = curbWidth
+  const R = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5  // authored curb radius
 
   const tiles = extractFaces(streets)
 
-  // Per tile: each band level's "filled-up-to" region = the union of every
-  // street-side run's inward stadium (the run polyline offset by that run's
-  // cumulative depth, round join+cap), clipped to the tile. Successive
-  // differences are the strips; the tile minus the sidewalk fill is LU.
-  // Asymmetric widths + divided medians fall out (each run uses its own side's
-  // measure); corners round via the offset's round join/cap. Robust on noisy
-  // LS runs where per-edge half-plane intersection collapses.
+  // Per tile (CONCENTRIC corners):
+  //  1. Asphalt = the union of per-street-side run stadiums (PER-EDGE widths,
+  //     butt caps → sharp miter corners, no cap-at-depth bulge), clipped to
+  //     the tile. The road between two tiles is each tile's half meeting at the
+  //     shared grout; asymmetric widths + divided medians fall out.
+  //  2. Round the asphalt-inner region's sharp corners ONCE at the authored
+  //     curb R → the curb line wraps every block corner at radius R.
+  //  3. The ped bands are CONCENTRIC inward offsets of that rounded region:
+  //     curb (R→R+cw), treelawn (→+tl), sidewalk (→+sw). Eroding a radius-R
+  //     corner by d gives radius R+d — the nested-arc wrap Jacob's eye wants.
+  //     (Curb width is global so it's exact; treelawn/sidewalk use a per-tile
+  //     representative — concentric corners trade per-edge ped width for the
+  //     clean wrap. Per-edge ASPHALT width, the dominant asymmetry, is kept.)
+  const repDepth = (runs, key) => {
+    let sum = 0, n = 0
+    for (const run of runs) {
+      const m = measures[run.streetIdx]?.[run.side]
+      const v = Math.max(0, Number.isFinite(m?.[key]) ? m[key] : 0)
+      sum += v; n++
+    }
+    return n ? sum / n : 0
+  }
   const Aacc = [], Cacc = [], Tacc = [], Wacc = [], Lacc = []
   for (const tile of tiles) {
     const runs = groupRuns(tile)
-    const fillUpTo = (level) => {
-      const stads = []
-      for (const run of runs) {
-        const d = edgeDepth(measures[run.streetIdx], run.side, curbWidth, level)
-        if (d > 1e-6) stads.push(...strokeOpen(run.poly, d))
-      }
-      return stads.length ? intersectRings(unionRings(stads), [tile.ring]) : []
+    const aStads = []
+    for (const run of runs) {
+      const d = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
+      if (d > 1e-6) aStads.push(...strokeOpen(run.poly, d))
     }
-    const A = fillUpTo('A'), C = fillUpTo('C'), T = fillUpTo('T'), W = fillUpTo('W')
-    Aacc.push(...A)                              // asphalt = within asphalt-hw of the grout
-    Cacc.push(...differenceRings(C, A))          // curb
-    Tacc.push(...differenceRings(T, C))          // treelawn
-    Wacc.push(...differenceRings(W, T))          // sidewalk
-    Lacc.push(...differenceRings([tile.ring], W)) // land-use = the remainder
+    const aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
+    const iA = openRound(differenceRings([tile.ring], aFill), R)   // rounded asphalt-inner (curb line)
+    const tl = repDepth(runs, 'treelawn'), sw = repDepth(runs, 'sidewalk')
+    const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
+    const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
+    const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
+    Aacc.push(...differenceRings([tile.ring], iA)) // asphalt = tile − rounded inner
+    Cacc.push(...differenceRings(iA, iC))          // curb
+    Tacc.push(...differenceRings(iC, iT))          // treelawn
+    Wacc.push(...differenceRings(iT, iW))          // sidewalk
+    Lacc.push(...iW)                               // land-use = innermost remainder
   }
   let asphalt  = unionRings(Aacc)
   let curb     = unionRings(Cacc)
