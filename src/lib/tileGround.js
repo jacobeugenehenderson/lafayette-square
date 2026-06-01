@@ -118,7 +118,7 @@ function signedArea(r) {
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
   return a / 2
 }
-function circlePoly(cx, cy, r, seg = 24) {
+function circlePoly(cx, cy, r, seg = 32) {
   const out = []
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
   return out
@@ -345,6 +345,24 @@ export function buildTileGround(ribbons, opts = {}) {
   const scale = Number.isFinite(opts.cornerRadiusScale) ? opts.cornerRadiusScale : 1
   const R = Math.max(0, baseR * scale)
 
+  // G8 — dead-end caps. A degree-1 street endpoint (caps.degree===1) is a real
+  // dead-end tip. Cap = authored capEnds ?? the geometric caps.cap ?? round.
+  //   round       → round the asphalt at the tip + the ped wraps it (cul-de-sac)
+  //   blunt/none  → flat asphalt, NO ped wrap (the street just ends, LU abuts)
+  const tipKey = (p) => Math.round(p[0] * 1000) + ',' + Math.round(p[1] * 1000)
+  const deadEndTips = new Map()
+  for (const s of streets) {
+    const caps = s.caps, ce = s.capEnds, pts = s.points
+    if (!caps || !pts) continue
+    for (const [k, idx] of [['start', 0], ['end', pts.length - 1]]) {
+      if (caps[k]?.degree !== 1) continue
+      const cap = (ce && ce[k]) || caps[k]?.cap || 'round'
+      const m = s.measure
+      const hw = Math.max(m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
+      deadEndTips.set(tipKey(pts[idx]), { cap, hw })
+    }
+  }
+
   const tiles = extractFaces(streets)
 
   // Per tile (CONCENTRIC corners):
@@ -397,11 +415,23 @@ export function buildTileGround(ribbons, opts = {}) {
   const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
   for (const tile of tiles) {
     const runs = groupRuns(tile)
+    // G8 — dead-end tips on this tile (a run boundary vertex that is a degree-1
+    // node). Round-capped tips get a round asphalt disk so the cul-de-sac rounds
+    // (the butt-capped runs alone end flat); blunt/none tips stay flat and later
+    // suppress the ped wrap so LU abuts the street's flat end.
+    const roundTips = [], bluntTips = []
+    if (runs.length > 1) {
+      for (const run of runs) {
+        const t = deadEndTips.get(tipKey(run.poly[0]))
+        if (t) (t.cap === 'round' ? roundTips : bluntTips).push({ p: run.poly[0], hw: t.hw })
+      }
+    }
     const aStads = []
     for (const run of runs) {
       const d = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
       if (d > 1e-6) aStads.push(...strokeOpen(run.poly, d))
     }
+    for (const t of roundTips) if (t.hw > 1e-6) aStads.push(circlePoly(t.p[0], t.p[1], t.hw))
     const aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
     const iA = openRound(differenceRings([tile.ring], aFill), R)   // rounded asphalt-inner (curb line)
     // G3a — a divided-road MEDIAN tile (the thin tile between two carriageways)
@@ -442,13 +472,24 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     const straightZone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
     const tlBand = differenceRings(iC, iT)
-    const treelawn = straightZone ? intersectRings(tlBand, straightZone) : tlBand
-    const sidewalk = differenceRings(differenceRings(iC, iW), treelawn)  // corner span = solid SW pad
+    let treelawn = straightZone ? intersectRings(tlBand, straightZone) : tlBand
+    let sidewalk = differenceRings(differenceRings(iC, iW), treelawn)  // corner span = solid SW pad
+    let luRemainder = iW                              // LU = innermost remainder (+ blunt-tip reclaim)
+    // G8 — at a blunt/none dead-end the street just ends: no ped wrap. Subtract
+    // a disk at the tip from the ped bands and reclaim that ped area as LU so it
+    // abuts the flat asphalt end.
+    if (bluntTips.length) {
+      const disks = bluntTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + tl + sw + 1))
+      const reclaimed = intersectRings(differenceRings(iC, iW), disks)   // ped zone at the tip → LU
+      treelawn = differenceRings(treelawn, disks)
+      sidewalk = differenceRings(sidewalk, disks)
+      luRemainder = unionRings([...iW, ...reclaimed])
+    }
     Aacc.push(...differenceRings([tile.ring], iA)) // asphalt = tile − rounded inner
     Cacc.push(...differenceRings(iA, iC))          // curb
     pushLu(tlByLu, lu, treelawn)                    // treelawn (straight legs only)
     Wacc.push(...sidewalk)                          // sidewalk (incl. the ADA corner annulus)
-    pushLu(luByLu, lu, iW)                          // land-use remainder (per class)
+    pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
   }
 
   // Perimeter (outer face, beyond the outermost streets) fills as LU, routed by
