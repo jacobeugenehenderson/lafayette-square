@@ -279,17 +279,18 @@ function ringsToHoledPolys(rings) {
   return outers.map((o, i) => ({ outer: o, holes: holesByOuter[i] }))
 }
 
-// T1 (TRANSITIONAL — HANDOFF-tile-T1-live-path.md). Adapter: take the tile
-// construction's raw ring lists and pack them into the same
-// { byMaterial, byFaceUse } shape buildV2BakeShape returns, reusing the
-// existing ringsToHoledPolys so annular bands keep their holes. The tile
-// land-use floods route to a single 'residential' face for now; per-LU
-// identity is a later step. Shares src/lib/tileGround.js with the live path.
+// Adapter: pack the tile construction's ring lists into the same
+// { byMaterial, byFaceUse } shape buildV2BakeShape returns, reusing
+// ringsToHoledPolys so annular bands keep their holes. Per-LU (M1/M2): the LU
+// remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
+// treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
+// Shares src/lib/tileGround.js with the live path.
 function buildTileBakeShape(ribbons, design, stencilPolygon) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
     smooth: Number.isFinite(design.streetSmooth) ? design.streetSmooth : 0.5,
+    blockLandUse: design.blockLandUse || null,
   })
   const byMaterial = new Map()
   const byFaceUse = new Map()
@@ -300,9 +301,12 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
   }
   pushClipperRings('asphalt',  pr.asphalt)
   pushClipperRings('curb',     pr.curb)
-  pushClipperRings('treelawn', pr.treelawn)
   pushClipperRings('sidewalk', pr.sidewalk)
-  byFaceUse.set('residential', ringsToHoledPolys(pr.lu))
+  for (const [lu, rings] of Object.entries(pr.treelawnByLu)) pushClipperRings(`treelawn:${lu}`, rings)
+  for (const [lu, rings] of Object.entries(pr.luByClass)) {
+    const polys = ringsToHoledPolys(rings)
+    if (polys.length) byFaceUse.set(lu, (byFaceUse.get(lu) || []).concat(polys))
+  }
   return { byMaterial, byFaceUse }
 }
 

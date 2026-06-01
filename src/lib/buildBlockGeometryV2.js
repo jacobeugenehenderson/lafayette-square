@@ -43,14 +43,14 @@ const LU_CUM = (() => {
   for (const [name, w] of LU_WEIGHTS) { acc += w; out.push([name, acc]) }
   return out
 })()
-function pickLuFromHash(h) {
+export function pickLuFromHash(h) {
   const r = (h % 100 + 100) % 100
   for (const [name, c] of LU_CUM) { if (r < c) return name }
   return 'residential'
 }
 // xmur3-style deterministic 32-bit hash from a key string. Stable across
 // runs; same key → same bucket.
-function hashKey(s) {
+export function hashKey(s) {
   let h = 1779033703 ^ s.length
   for (let i = 0; i < s.length; i++) {
     h = Math.imul(h ^ s.charCodeAt(i), 3432918353)
@@ -64,7 +64,7 @@ function hashKey(s) {
 // Bbox is more drift-tolerant than centroid when chain widths change —
 // the visible bbox of a block barely moves when a sidewalk widens by 1m,
 // whereas the centroid can shift several meters.
-function blockKeyFromRing(ring) {
+export function blockKeyFromRing(ring) {
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity
   for (const p of ring) {
     if (p[0]<minX)minX=p[0]; if (p[0]>maxX)maxX=p[0]

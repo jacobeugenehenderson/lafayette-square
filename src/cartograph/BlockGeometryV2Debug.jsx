@@ -531,26 +531,29 @@ export default function BlockGeometryV2Debug({
     return out
   }, [blocks, luColors, selectedAdjacentBlockKeys])
 
-  // T1 — TRANSITIONAL: the tile construction for toy. Same module the bake
-  // calls (src/lib/tileGround.js), same inputs → live == bake (WYSIWYG). The
-  // figure-ground memos above still run on toy (cheap, harmless); the render
-  // branches to these geos when isTileScene and skips the figure-ground meshes.
-  // Each band is annular (CW holes) → asPolygonWithHoles=true. yLift stacks
-  // them under the existing PRI order. Per-edge widths / median / boundary
-  // tagging are T2; this is the minimal uniform-inset the spike proved.
+  // The tile construction (all scenes). Same module the bake calls
+  // (src/lib/tileGround.js), same inputs → live == bake (WYSIWYG). The
+  // figure-ground memos above still run (cheap, harmless, and feed the
+  // authoring overlays); the render branches to these geos and skips the
+  // figure-ground meshes. M1/M2: LU faces + treelawn are grouped per land-use
+  // class so each paints its block's colour. Each band is annular (CW holes)
+  // → asPolygonWithHoles=true; yLift stacks them under the PRI order.
   const tileGeos = useMemo(() => {
     if (!isTileScene || !liveRibbons) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
+    const perLu = (byLu, yLift) => Object.entries(byLu)
+      .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
+      .filter(e => e.geo)
     return {
-      lu:       ringsToFlatGeo(tg.lu,       0.010, true),
-      treelawn: ringsToFlatGeo(tg.treelawn, 0.020, true),
+      lu:       perLu(tg.luByClass,    0.010),
+      treelawn: perLu(tg.treelawnByLu, 0.020),
       sidewalk: ringsToFlatGeo(tg.sidewalk, 0.030, true),
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
     }
-  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth])
+  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse])
 
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles
@@ -877,25 +880,35 @@ export default function BlockGeometryV2Debug({
     return out
   }, [makeMaterial, blockGroups, measureActive, surveyActive, faceFade])
 
-  // T1 — TRANSITIONAL: land-use material for the tile flood (toy = residential).
-  const tileLuMat = useMemo(() => {
-    const col = (luColors && luColors.residential) || residentialColor || DEFAULT_LU_COLORS.residential
-    return makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive })
-  }, [makeMaterial, luColors, residentialColor, faceFade, measureActive, surveyActive])
+  // Per-LU face materials for the tile land-use regions (M1) — one cached
+  // material per class, painted in its per-Look colour.
+  const tileLuMats = useMemo(() => {
+    const out = new Map()
+    const luSet = new Set([...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS)])
+    for (const lu of luSet) {
+      const col = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || DEFAULT_LU_COLORS.residential
+      out.set(lu, makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive }))
+    }
+    return out
+  }, [makeMaterial, luColors, faceFade, measureActive, surveyActive])
+  const tileLuFallback = tileLuMats.get('residential')
+  const tlLuFallback = bandMats.treelawn
 
-  // T1 — TRANSITIONAL: when toy, render the tile construction and skip the
-  // figure-ground meshes entirely. Bands reuse the existing band materials so
-  // colours/toggles match. live == bake (both call buildTileGround). Retired
-  // at T4 when LS adopts tiles and this branch + figure-ground both go.
+  // All scenes render the tile construction and skip the figure-ground meshes.
+  // M1/M2: LU faces + treelawn paint per land-use class. Bands reuse the cached
+  // materials so colours/toggles match. live == bake (both call buildTileGround).
+  // Retired at T4 when figure-ground is deleted.
   if (isTileScene) {
     return (
       <group>
-        {!hideLandUse && lotVisible && tileGeos?.lu && (
-          <mesh geometry={tileGeos.lu} renderOrder={PRI.residential} receiveShadow material={tileLuMat} />
-        )}
-        {treelawnVisible && tileGeos?.treelawn && (
-          <mesh geometry={tileGeos.treelawn} renderOrder={PRI.treelawn} receiveShadow material={bandMats.treelawn} />
-        )}
+        {!hideLandUse && lotVisible && tileGeos?.lu?.map(({ lu, geo }) => (
+          <mesh key={`lu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
+            material={tileLuMats.get(lu) || tileLuFallback} />
+        ))}
+        {treelawnVisible && tileGeos?.treelawn?.map(({ lu, geo }) => (
+          <mesh key={`tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
+            material={bandMats.treelawnByLu.get(lu) || tlLuFallback} />
+        ))}
         {sidewalkVisible && tileGeos?.sidewalk && (
           <mesh geometry={tileGeos.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalk} />
         )}

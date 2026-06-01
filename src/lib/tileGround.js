@@ -34,6 +34,7 @@
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain } from './smoothCenterline.js'
+import { pickLuFromHash, hashKey, blockKeyFromRing } from './buildBlockGeometryV2.js'
 
 const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -116,6 +117,31 @@ function signedArea(r) {
   let a = 0
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
   return a / 2
+}
+function pointInRing(px, py, r) {
+  let inside = false
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1]
+    if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) inside = !inside
+  }
+  return inside
+}
+// A robust interior point of a ring (midpoint nudged off the centroid toward
+// the first edge — handles non-convex tiles where the centroid falls outside).
+function ringInteriorPoint(r) {
+  let cx = 0, cy = 0
+  for (const p of r) { cx += p[0]; cy += p[1] }
+  cx /= r.length; cy /= r.length
+  if (pointInRing(cx, cy, r)) return [cx, cy]
+  // fallback: a point just inside the first edge's midpoint
+  const a = r[0], b = r[1 % r.length]
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2
+  for (let i = 0; i < r.length; i++) {
+    const t = i / r.length
+    const px = mx + (cx - mx) * t, py = my + (cy - my) * t
+    if (pointInRing(px, py, r)) return [px, py]
+  }
+  return [cx, cy]
 }
 
 // ── Planar face extraction (half-edge / DCEL face walk) ──────────────────
@@ -296,7 +322,32 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     return n ? sum / n : 0
   }
-  const Aacc = [], Cacc = [], Tacc = [], Wacc = [], Lacc = []
+
+  // M1 — each tile's land-use class. Reuse the figure-ground resolution:
+  // blockLandUse override (by bbox blockKey) → the OSM parcel (face.use) the
+  // tile's interior lands in → the deterministic hash palette. So a tile reads
+  // its real class (commercial / park / institutional / …), not all-residential.
+  const faceList = (ribbons?.faces || []).filter(f => f?.ring?.length >= 3 && f.use)
+  const blockLandUse = (opts.blockLandUse && typeof opts.blockLandUse === 'object') ? opts.blockLandUse : null
+  const luForRing = (ring) => {
+    if (blockLandUse) { const bk = blockKeyFromRing(ring); if (blockLandUse[bk]) return blockLandUse[bk] }
+    const [px, py] = ringInteriorPoint(ring)
+    let best = null, bestArea = Infinity
+    for (const f of faceList) {
+      if (pointInRing(px, py, f.ring)) {
+        const a = Math.abs(signedArea(f.ring))
+        if (a < bestArea) { best = f.use; bestArea = a }   // smallest containing face wins (donut-safe)
+      }
+    }
+    return best || pickLuFromHash(hashKey(blockKeyFromRing(ring)))
+  }
+
+  // Asphalt/curb/sidewalk are single-material (merged). Treelawn (M2) + the LU
+  // remainder (M1) are grouped by the tile's class so they paint that class's
+  // per-Look colour.
+  const Aacc = [], Cacc = [], Wacc = []
+  const tlByLu = {}, luByLu = {}
+  const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
   for (const tile of tiles) {
     const runs = groupRuns(tile)
     const aStads = []
@@ -310,35 +361,33 @@ export function buildTileGround(ribbons, opts = {}) {
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
+    const lu = luForRing(tile.ring)
     Aacc.push(...differenceRings([tile.ring], iA)) // asphalt = tile − rounded inner
     Cacc.push(...differenceRings(iA, iC))          // curb
-    Tacc.push(...differenceRings(iC, iT))          // treelawn
+    pushLu(tlByLu, lu, differenceRings(iC, iT))    // treelawn (per class)
     Wacc.push(...differenceRings(iT, iW))          // sidewalk
-    Lacc.push(...iW)                               // land-use = innermost remainder
+    pushLu(luByLu, lu, iW)                          // land-use remainder (per class)
   }
-  let asphalt  = unionRings(Aacc)
-  let curb     = unionRings(Cacc)
-  let treelawn = unionRings(Tacc)
-  let sidewalk = unionRings(Wacc)
-  let luInner  = unionRings(Lacc)
 
-  // Perimeter (outer face, beyond the outermost streets) fills as LU:
-  // stencil − union(all tiles). NOTE — placeholder: the outermost streets are
-  // half-roaded on their outer (perimeter) side because the perimeter is not
-  // yet a per-edge-tagged tile. Proper perimeter tiles are the remaining T2
-  // edge-of-map piece. Combined with tile-center LU, every non-hardscape pixel
+  // Perimeter (outer face, beyond the outermost streets) fills as LU, routed by
+  // its own class probe. NOTE — placeholder: the outermost streets are
+  // half-roaded on their outer side because the perimeter is not yet a per-edge-
+  // tagged tile (G9). Combined with tile-center LU, every non-hardscape pixel
   // is land-use — no figure-ground, no block polygon.
-  let lu = luInner
+  let asphalt = unionRings(Aacc)
+  let curb    = unionRings(Cacc)
+  let sidewalk = unionRings(Wacc)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
     const perimeter = differenceRings([stencil], tileUnion)
-    lu = unionRings([...luInner, ...perimeter])
+    for (const r of perimeter) if (r.length >= 3 && signedArea(r) > 0) pushLu(luByLu, luForRing(r), [r])
     asphalt  = intersectRings(asphalt,  [stencil])
     curb     = intersectRings(curb,     [stencil])
-    treelawn = intersectRings(treelawn, [stencil])
     sidewalk = intersectRings(sidewalk, [stencil])
-    lu       = intersectRings(lu,       [stencil])
   }
+  const treelawnByLu = {}, luByClass = {}
+  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
+  for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
-  return { asphalt, curb, treelawn, sidewalk, lu, _tiles: tiles }
+  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, _tiles: tiles }
 }
