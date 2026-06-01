@@ -639,14 +639,11 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // C5 — LS cutover: the ring-band emitter (keeper) is now on for all
   // scenes. Legacy per-leg emitter is dead (else-branch removed in C5
   // commit 3).
-  const useRingBandEmitter = true
-  // T1 (TRANSITIONAL — HANDOFF-tile-T1-live-path.md): TOY bakes from the tile
-  // construction (shared with the live Designer → WYSIWYG); LS stays on
-  // figure-ground until T2. This toy/LS split is temporary transition
-  // scaffolding, NOT a kept scene-flag — it dies at T4 when LS adopts tiles.
-  const { byMaterial, byFaceUse } = scene === 'toy'
-    ? buildTileBakeShape(ribbons, design, stencil.clipPolygon)
-    : buildV2BakeShape(ribbons, design, stencil.clipPolygon, { useRingBandEmitter })
+  // T2 — ALL scenes (LS included) bake from the tile construction; the
+  // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
+  // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
+  // conditional is gone — a scene is a dataset, not a code path.
+  const { byMaterial, byFaceUse } = buildTileBakeShape(ribbons, design, stencil.clipPolygon)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group

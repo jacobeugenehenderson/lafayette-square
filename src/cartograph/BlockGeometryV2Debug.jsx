@@ -193,11 +193,13 @@ export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
   measureActive = false, surveyActive = false, hideLandUse = false,
   useBoundary = false,
-  scene = null,  // T1 — TRANSITIONAL: 'toy' routes to the tile construction; all
-                 // other scenes stay on figure-ground below. Dies at T4 cleanup.
+  scene = null,
   useRingBandEmitter = true,  // C5: keeper for all scenes (LS cutover); legacy else-branch removed in commit 3
 }) {
-  const isTileScene = scene === 'toy'
+  // T2 — ALL scenes render from the tile construction; the figure-ground build
+  // below stays only to feed the Measure/Corner authoring overlays (their
+  // migration is T3). The figure-ground MESHES are skipped via the early return.
+  const isTileScene = true
   // Gate fade on the per-scene flag. LS turns on the soft-circle
   // silhouette; toy stays rectangular (its stencil is a 360×360 box).
   const faceFade = useBoundary ? FACE_FADE : null
