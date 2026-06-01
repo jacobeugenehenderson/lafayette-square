@@ -207,6 +207,7 @@ export default function BlockGeometryV2Debug({
   const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const streetSmooth              = useCartographStore(s => s.streetSmooth ?? 0.5)
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
   const measureDragging           = useCartographStore(s => s.measureDragging)
@@ -304,6 +305,7 @@ export default function BlockGeometryV2Debug({
   const [debouncedInputs, setDebouncedInputs] = useState({
     blockCustoms, cornerRadiusScale,
     cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse,
+    smooth: streetSmooth,
   })
   const debounceRef = useRef(null)
   useEffect(() => {
@@ -313,6 +315,7 @@ export default function BlockGeometryV2Debug({
       setDebouncedInputs({
         blockCustoms, cornerRadiusScale,
         cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse,
+        smooth: streetSmooth,
       })
     }, v2DebounceMs)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
@@ -325,7 +328,7 @@ export default function BlockGeometryV2Debug({
     // each tick resets the timer, so the full rebuild fires once ~250ms
     // after the edit settles — during the drag the selected chain is still
     // covered by the live overlay, so there's no mid-drag full rebuild.
-  }, [selectedStreet, blockCustoms, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, useRingBandEmitter])
+  }, [selectedStreet, blockCustoms, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, streetSmooth, useRingBandEmitter])
 
   const { asphaltRounded, blockRounded, blockRoundedWithMeta, blockSharp, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockRoundedWithMeta: [], blockSharp: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }

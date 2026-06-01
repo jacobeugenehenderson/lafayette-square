@@ -193,6 +193,12 @@ const DESIGN_FIELDS = [
   { key: 'cornerRadiusScale', hydrate: (d) => Number.isFinite(d.cornerRadiusScale) ? d.cornerRadiusScale : 1 },
   { key: 'cornerRadiusOverrides', hydrate: (d) => _isObj(d.cornerRadiusOverrides) ? d.cornerRadiusOverrides : {} },
   { key: 'cornerCornerRadiusOverrides', hydrate: (d) => _isObj(d.cornerCornerRadiusOverrides) ? d.cornerCornerRadiusOverrides : {} },
+  // Global street-smoothing tension (Phase 2 stroke construction). 0 = raw
+  // faceted polylines; up to 1 = max Catmull-Rom interpolation through chain
+  // mid-vertices. Default 0.5 = WYSIWYG-smooth with zero operator work; the
+  // per-street `smooth` field (centerlineData) can raise it for a specific
+  // chain. Consumed in buildBlockGeometryV2 so live + bake stroke identically.
+  { key: 'streetSmooth', hydrate: (d) => Number.isFinite(d.streetSmooth) ? d.streetSmooth : 0.5 },
   { key: 'curbWidth',    hydrate: (d) => Number.isFinite(d.curbWidth) ? d.curbWidth : 0.1524 },
   { key: 'alleyCap',     hydrate: (d) => ['square', 'rounded', 'round'].includes(d.alleyCap) ? d.alleyCap : 'square' },
   { key: 'labels',       hydrate: (d, get) => migrateLabels({ ...get().labels, ...(_isObj(d.labels) ? d.labels : {}) }) },
@@ -281,6 +287,8 @@ const useCartographStore = create((set, get) => ({
   // dial. Persists in design.json; consumed by `buildBlockGeometryV2`
   // (Designer live render + the bake) via the corner-radius authoring kit.
   cornerRadiusScale: 1,
+  // Global street-smoothing tension — see DESIGN_FIELDS streetSmooth.
+  streetSmooth: 0.5,
   // Look-level street-label style. Drives SceneLabel (drei <Text> / SDF)
   // for both Cartograph's Designer + Preview/LS via the shared
   // streetLabels module. World-space sizing — `size` is meters; the
@@ -720,6 +728,13 @@ const useCartographStore = create((set, get) => ({
     // baseline. With no baseline saved and no overrides, the slider acts
     // on AASHTO/data-table defaults (the original pre-baseline behavior).
     set({ cornerRadiusScale: n })
+    get()._saveDesignDebounced()
+  },
+  // Global street-smoothing tension (0..1). Drives the Catmull-Rom
+  // densification of every chain in buildBlockGeometryV2 (live + bake).
+  setStreetSmooth: (v) => {
+    const n = Math.max(0, Math.min(1, Number(v) || 0))
+    set({ streetSmooth: n })
     get()._saveDesignDebounced()
   },
   // Transient UI toggle — drives whether CornerEditHandles render.

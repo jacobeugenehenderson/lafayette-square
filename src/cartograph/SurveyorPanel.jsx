@@ -45,6 +45,28 @@ function HeroSubjectPicker() {
   )
 }
 
+// Global street-smoothing dial — Phase 2 stroke construction. Lives in
+// Survey because smoothing the centerline is a survey-shape concern (it
+// shapes the hardscape silhouette you stroke from the chain). One global
+// tension applied to every chain via interpolating Catmull-Rom; the same
+// value drives the live render and the bake, so the asphalt strokes
+// identically (WYSIWYG). Rendered regardless of selection.
+function SmoothingControl() {
+  const streetSmooth = useCartographStore(s => s.streetSmooth ?? 0.5)
+  const setStreetSmooth = useCartographStore(s => s.setStreetSmooth)
+  return (
+    <div className="carto-row">
+      <label className="carto-label-fixed">Smoothing</label>
+      <input type="range" className="carto-input" min="0" max="1" step="0.05"
+        value={streetSmooth}
+        onChange={e => setStreetSmooth(parseFloat(e.target.value))} />
+      <span className="carto-meta carto-meta--value">
+        {streetSmooth.toFixed(2)}
+      </span>
+    </div>
+  )
+}
+
 export default function SurveyorPanel() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectedNode = useCartographStore(s => s.selectedNode)
@@ -58,6 +80,7 @@ export default function SurveyorPanel() {
         <HeroSubjectPicker />
         <div className="carto-section">
           <h2>Survey</h2>
+          <SmoothingControl />
           <div className="carto-hint">
             Click a street to select it.
           </div>
@@ -74,6 +97,8 @@ export default function SurveyorPanel() {
       <HeroSubjectPicker />
       <div className="carto-section">
         <h2>Survey</h2>
+
+      <SmoothingControl />
 
       <div className="carto-row">
         <label className="carto-label-fixed">Name</label>
@@ -135,16 +160,6 @@ export default function SurveyorPanel() {
           <option value="round">Round (cul-de-sac)</option>
           <option value="blunt">Blunt (flat end)</option>
         </select>
-      </div>
-
-      <div className="carto-row">
-        <label className="carto-label-fixed">Smooth</label>
-        <input type="range" className="carto-input" min="0" max="1" step="0.05"
-          value={st.smooth || 0}
-          onChange={e => updateStreetField('smooth', parseFloat(e.target.value))} />
-        <span className="carto-meta carto-meta--value">
-          {(st.smooth || 0).toFixed(2)}
-        </span>
       </div>
 
         <div className="carto-meta">

@@ -287,6 +287,10 @@ function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
     blockCustoms:    design.blockCustoms    || null,
     blockLandUse:    design.blockLandUse    || null,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
+    // Phase 2 — global street-smoothing tension. Same field the live render
+    // reads from the store, so the bake strokes an identical smoothed
+    // polyline (WYSIWYG). Default 0.5 matches the store default.
+    smooth: Number.isFinite(design.streetSmooth) ? design.streetSmooth : 0.5,
     useRingBandEmitter: !!opts.useRingBandEmitter,  // C4: toy default on, LS off until C5 cutover
   })
 
@@ -568,7 +572,22 @@ function itemsToBuffers(items, { maxEdge = null } = {}) {
   return { positions, indices }
 }
 
-export async function bakeGround({ look = 'default', scene = 'lafayette-square' } = {}) {
+export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette-square' } = {}) {
+  // Bake-target guard (2026-06-01). The app reads `baked/<INSTANCE.lookId>` —
+  // for LS that's `baked/lafayette-square`. A bake into a look with no
+  // `looks/<look>/` directory silently produces a PHANTOM `baked/<look>/`
+  // that NOTHING reads, so every eval off it reads a stale ghost surface.
+  // (This is exactly what `look='default'` did: no `looks/default/` exists →
+  // empty design → phantom `baked/default/`.) Refuse it loudly. serve.js
+  // always passes an existing `--look=<id>`, so this only catches operator/
+  // agent CLI mistakes — the failure mode that cost a whole session.
+  if (!existsSync(join(ROOT, 'public', 'looks', look))) {
+    throw new Error(
+      `[bake-ground] no such look: public/looks/${look}/ does not exist. ` +
+      `Baking it would write a phantom baked/${look}/ that nothing reads. ` +
+      `Pass --look=lafayette-square (the real LS surface) or --look=toy.`
+    )
+  }
   // Ribbons input is scene-keyed. LS still publishes to the canonical
   // src/data/ribbons.json (promote-ribbons.js writes there); other scenes
   // author/derive their own ribbon fixture under src/data/<scene>/.
@@ -810,7 +829,7 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
 
 // CLI
 async function main() {
-  let look = 'default', scene = 'lafayette-square'
+  let look = 'lafayette-square', scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))   look  = m[1]

@@ -11,8 +11,6 @@
 // Returns a NEW ribbons object — does not mutate inputs. Streets that
 // don't have a live counterpart pass through unchanged.
 
-import { subdividePolyline } from '../cartograph/streetProfiles.js'
-
 const pointsNearlyEqual = (a, b, eps = 0.5) =>
   a && b && Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps
 
@@ -49,9 +47,12 @@ export function mergeLiveRibbons(staticRibbons, liveCenterlines) {
     }
     if (live.couplers && live.couplers.length) merged.couplers = live.couplers
     if (live.segmentMeasures) merged.segmentMeasures = live.segmentMeasures
-    if (live.smooth && live.smooth > 0) {
-      merged.points = subdividePolyline(st.points, live.smooth)
-    }
+    // Carry the per-street smoothing tension through. The actual Catmull-Rom
+    // densification is applied once, inside buildBlockGeometryV2, so the live
+    // render and the bake (which reads the same field off the chain) stroke
+    // an identical smoothed polyline. (Previously subdivided here, live-only —
+    // a latent WYSIWYG gap, since the bake never saw it.)
+    if (live.smooth && live.smooth > 0) merged.smooth = live.smooth
     if (live.anchor) merged.anchor = live.anchor
     if (live.capStart !== undefined || live.capEnd !== undefined) {
       // Caps apply only to the ribbon segment whose terminal actually
