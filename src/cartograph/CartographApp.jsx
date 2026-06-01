@@ -886,6 +886,7 @@ export default function CartographApp() {
                 ribbons={sceneCfg.ribbons}
                 stencil={sceneCfg.stencil}
                 flat={inDesigner}
+                scene={scene}
                 useBoundary={sceneCfg.useBoundary}
                 useRingBandEmitter={true /* C5: LS cutover — keeper for all scenes (legacy else-branch dead, removed in C5 commit 3) */}
                 measureActive={tool === 'measure' && inDesigner}

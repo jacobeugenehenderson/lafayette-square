@@ -27,6 +27,7 @@ import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
 import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
+import { buildTileGround } from '../src/lib/tileGround.js'  // T1 — toy tiles (transitional)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
@@ -276,6 +277,32 @@ function ringsToHoledPolys(rings) {
     if (bestIdx >= 0) holesByOuter[bestIdx].push(h)
   }
   return outers.map((o, i) => ({ outer: o, holes: holesByOuter[i] }))
+}
+
+// T1 (TRANSITIONAL — HANDOFF-tile-T1-live-path.md). Adapter: take the tile
+// construction's raw ring lists and pack them into the same
+// { byMaterial, byFaceUse } shape buildV2BakeShape returns, reusing the
+// existing ringsToHoledPolys so annular bands keep their holes. The tile
+// land-use floods route to a single 'residential' face for now; per-LU
+// identity is a later step. Shares src/lib/tileGround.js with the live path.
+function buildTileBakeShape(ribbons, design, stencilPolygon) {
+  const pr = buildTileGround(ribbons, {
+    stencil: stencilPolygon,
+    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
+  })
+  const byMaterial = new Map()
+  const byFaceUse = new Map()
+  const pushClipperRings = (key, rings) => {
+    if (!rings || !rings.length) return
+    if (!byMaterial.has(key)) byMaterial.set(key, [])
+    for (const p of ringsToHoledPolys(rings)) byMaterial.get(key).push(p)
+  }
+  pushClipperRings('asphalt',  pr.asphalt)
+  pushClipperRings('curb',     pr.curb)
+  pushClipperRings('treelawn', pr.treelawn)
+  pushClipperRings('sidewalk', pr.sidewalk)
+  byFaceUse.set('residential', ringsToHoledPolys(pr.lu))
+  return { byMaterial, byFaceUse }
 }
 
 function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
@@ -612,7 +639,13 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // scenes. Legacy per-leg emitter is dead (else-branch removed in C5
   // commit 3).
   const useRingBandEmitter = true
-  const { byMaterial, byFaceUse } = buildV2BakeShape(ribbons, design, stencil.clipPolygon, { useRingBandEmitter })
+  // T1 (TRANSITIONAL — HANDOFF-tile-T1-live-path.md): TOY bakes from the tile
+  // construction (shared with the live Designer → WYSIWYG); LS stays on
+  // figure-ground until T2. This toy/LS split is temporary transition
+  // scaffolding, NOT a kept scene-flag — it dies at T4 when LS adopts tiles.
+  const { byMaterial, byFaceUse } = scene === 'toy'
+    ? buildTileBakeShape(ribbons, design, stencil.clipPolygon)
+    : buildV2BakeShape(ribbons, design, stencil.clipPolygon, { useRingBandEmitter })
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group

@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation, differenceRings } from '../lib/buildBlockGeometryV2.js'
+import { buildTileGround } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
@@ -192,8 +193,11 @@ export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
   measureActive = false, surveyActive = false, hideLandUse = false,
   useBoundary = false,
+  scene = null,  // T1 — TRANSITIONAL: 'toy' routes to the tile construction; all
+                 // other scenes stay on figure-ground below. Dies at T4 cleanup.
   useRingBandEmitter = true,  // C5: keeper for all scenes (LS cutover); legacy else-branch removed in commit 3
 }) {
+  const isTileScene = scene === 'toy'
   // Gate fade on the per-scene flag. LS turns on the soft-circle
   // silhouette; toy stays rectangular (its stencil is a 360×360 box).
   const faceFade = useBoundary ? FACE_FADE : null
@@ -524,6 +528,28 @@ export default function BlockGeometryV2Debug({
     }
     return out
   }, [blocks, luColors, selectedAdjacentBlockKeys])
+
+  // T1 — TRANSITIONAL: the tile construction for toy. Same module the bake
+  // calls (src/lib/tileGround.js), same inputs → live == bake (WYSIWYG). The
+  // figure-ground memos above still run on toy (cheap, harmless); the render
+  // branches to these geos when isTileScene and skips the figure-ground meshes.
+  // Each band is annular (CW holes) → asPolygonWithHoles=true. yLift stacks
+  // them under the existing PRI order. Per-edge widths / median / boundary
+  // tagging are T2; this is the minimal uniform-inset the spike proved.
+  const tileGeos = useMemo(() => {
+    if (!isTileScene || !liveRibbons) return null
+    let tg
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth }) }
+    catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
+    return {
+      lu:       ringsToFlatGeo(tg.lu,       0.010, true),
+      treelawn: ringsToFlatGeo(tg.treelawn, 0.020, true),
+      sidewalk: ringsToFlatGeo(tg.sidewalk, 0.030, true),
+      curb:     ringsToFlatGeo(tg.curb,     0.035, true),
+      asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
+    }
+  }, [isTileScene, liveRibbons, stencil, curbWidth])
+
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles
   // have square ends at IXs; the fillet residual against asphaltRounded
@@ -848,6 +874,38 @@ export default function BlockGeometryV2Debug({
     }
     return out
   }, [makeMaterial, blockGroups, measureActive, surveyActive, faceFade])
+
+  // T1 — TRANSITIONAL: land-use material for the tile flood (toy = residential).
+  const tileLuMat = useMemo(() => {
+    const col = (luColors && luColors.residential) || residentialColor || DEFAULT_LU_COLORS.residential
+    return makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive })
+  }, [makeMaterial, luColors, residentialColor, faceFade, measureActive, surveyActive])
+
+  // T1 — TRANSITIONAL: when toy, render the tile construction and skip the
+  // figure-ground meshes entirely. Bands reuse the existing band materials so
+  // colours/toggles match. live == bake (both call buildTileGround). Retired
+  // at T4 when LS adopts tiles and this branch + figure-ground both go.
+  if (isTileScene) {
+    return (
+      <group>
+        {!hideLandUse && lotVisible && tileGeos?.lu && (
+          <mesh geometry={tileGeos.lu} renderOrder={PRI.residential} receiveShadow material={tileLuMat} />
+        )}
+        {treelawnVisible && tileGeos?.treelawn && (
+          <mesh geometry={tileGeos.treelawn} renderOrder={PRI.treelawn} receiveShadow material={bandMats.treelawn} />
+        )}
+        {sidewalkVisible && tileGeos?.sidewalk && (
+          <mesh geometry={tileGeos.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalk} />
+        )}
+        {curbVisible && tileGeos?.curb && (
+          <mesh geometry={tileGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
+        )}
+        {asphaltVisible && tileGeos?.asphalt && (
+          <mesh geometry={tileGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
+        )}
+      </group>
+    )
+  }
 
   return (
     <group>
