@@ -541,7 +541,7 @@ export default function BlockGeometryV2Debug({
   const tileGeos = useMemo(() => {
     if (!isTileScene || !liveRibbons) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -553,7 +553,7 @@ export default function BlockGeometryV2Debug({
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
     }
-  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse])
+  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale])
 
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles

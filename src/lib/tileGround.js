@@ -118,6 +118,11 @@ function signedArea(r) {
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
   return a / 2
 }
+function circlePoly(cx, cy, r, seg = 24) {
+  const out = []
+  for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
+  return out
+}
 function pointInRing(px, py, r) {
   let inside = false
   for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
@@ -246,6 +251,31 @@ function edgeDepth(measure, side, curbWidth, level) {
 // bends with no compounding. Handles the cyclic seam (rotate to a boundary);
 // a tile bounded entirely by one street-side (a loop interior) → one closed
 // run (polyline closed back to its start).
+// Remove `t0` arc-length from the start of a polyline and `t1` from the end.
+// Used to pull each street-side run back from its corners so the treelawn slab
+// ends at the tangent — the corner span then carries no treelawn and fills as
+// one solid sidewalk pad. Returns null if nothing survives (short leg → all SW).
+function trimPolyline(poly, t0, t1) {
+  const dropStart = (pts, t) => {
+    if (t <= 1e-6) return pts.slice()
+    let acc = 0
+    for (let i = 0; i < pts.length - 1; i++) {
+      const seg = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+      if (acc + seg <= t) { acc += seg; continue }
+      const r = (t - acc) / seg
+      const sx = pts[i][0] + (pts[i + 1][0] - pts[i][0]) * r
+      const sy = pts[i][1] + (pts[i + 1][1] - pts[i][1]) * r
+      return [[sx, sy], ...pts.slice(i + 1)]
+    }
+    return null
+  }
+  let p = dropStart(poly, t0)
+  if (!p || p.length < 2) return null
+  p = dropStart(p.slice().reverse(), t1)
+  if (!p || p.length < 2) return null
+  return p.reverse()
+}
+
 function groupRuns(tile) {
   const { ring, edges } = tile
   const n = edges.length
@@ -368,10 +398,32 @@ export function buildTileGround(ribbons, opts = {}) {
     const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
     const lu = luForRing(tile.ring)
+    // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
+    // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
+    // to tangent; treelawn lives only on the straight legs and ends at the
+    // tangents. Define the straight-leg zone as the union of each run's
+    // butt-capped slab (it ends square at the corner vertex, leaving the corner
+    // wedge uncovered). Treelawn = the concentric tl annulus ∩ that zone →
+    // clean tangent cuts; the uncovered corner wedge becomes sidewalk. Same
+    // per-run butt-cap construction as the asphalt, so the cuts stay consistent.
+    const tlSlabs = []
+    for (const run of runs) {
+      const td = edgeDepth(measures[run.streetIdx], run.side, cw, 'T')   // grout → treelawn-outer
+      if (td <= 1e-6) continue
+      const a = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
+      // Pull the run back from its corner ends by (asphalt-hw + R) so the slab
+      // ends at the tangent; closed-loop runs (no corners) aren't trimmed.
+      const poly = runs.length > 1 ? trimPolyline(run.poly, a + R, a + R) : run.poly
+      if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
+    }
+    const straightZone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
+    const tlBand = differenceRings(iC, iT)
+    const treelawn = straightZone ? intersectRings(tlBand, straightZone) : tlBand
+    const sidewalk = differenceRings(differenceRings(iC, iW), treelawn)  // corner span = solid SW pad
     Aacc.push(...differenceRings([tile.ring], iA)) // asphalt = tile − rounded inner
     Cacc.push(...differenceRings(iA, iC))          // curb
-    pushLu(tlByLu, lu, differenceRings(iC, iT))    // treelawn (per class)
-    Wacc.push(...differenceRings(iT, iW))          // sidewalk
+    pushLu(tlByLu, lu, treelawn)                    // treelawn (straight legs only)
+    Wacc.push(...sidewalk)                          // sidewalk (incl. the ADA corner annulus)
     pushLu(luByLu, lu, iW)                          // land-use remainder (per class)
   }
 
