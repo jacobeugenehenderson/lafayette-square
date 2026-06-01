@@ -15,9 +15,9 @@ We are deliberately accepting a period of **severe regression** during this arc 
 
 | # | Feature (eventual behavior) | Status (2026-05-31) | Restored by |
 |---|---|---|---|
-| F1 | **Ribbon band widths** — drag sidewalk/treelawn/pavement handle → bands render to match, live + bake | 🔴 BROKEN (bands don't follow the edit; polygon does) — **PARKED** | **gather-to-center construction model** ([[project_gather_to_center_construction_model]]) — subsumes the per-edge live-band fix + the responsiveness lag (same root: construction fighting itself); not fixed in isolation |
+| F1 | **Straight-leg ribbon bands** — drag sidewalk/treelawn/pavement handle → the straight-leg bands render to match, live + bake | 🔴 BROKEN — **PARKED**. *THE one persistent problem.* **Cause = mono-width** (per-edge band widths homogenized to one per-block W, so per-edge edits structurally can't show). **NOT a code bug — do not try to patch it in the current construction.** | **gather-to-center** ([[project_gather_to_center_construction_model]]) IS the fix: ribbon anchors at the curb, grows inward per-edge to the medial axis — no fixed outer W to homogenize against; corners stay clean from the outer rounded polygon. Subsumes the live-band fix + the responsiveness lag (same root). |
 | F2 | **Block silhouette / polygon shape** — drag curb → block reshapes | 🟢 WORKING (must stay working) | hold through arc |
-| F3 | **Corner rounding** — per-corner radius (gold dots), per-IX, global scale → corners round to match | 🟠 REGRESSED by W1 | corner-regression fix (current) |
+| F3 | **Corner rounding** — per-corner radius (gold dots), per-IX, global scale → corners round to match | 🟢 WORKING (Jacob confirmed 2026-05-31 — corners are FINE; the earlier "corners don't work" was the straight-leg ribbons, NOT corners. No corner regression existed.) | hold through arc |
 | F4 | **Customs stick (no drift)** — edits persist + render, keyed by chain-anchored identity | 🟡 storage FIXED (W1); live application BROKEN | live-band fix + W2 |
 | F5 | **Per-block land-use coloring** — treelawn tinted per parcel LU | 🟢 was working — WATCH it stays | hold through arc |
 | F6 | **Per-leg material swap** (LU↔SW, V1.5) | ⚪ unverified — must return | verify; W3 |
