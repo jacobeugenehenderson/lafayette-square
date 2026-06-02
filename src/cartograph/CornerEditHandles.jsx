@@ -52,14 +52,9 @@ function screenToWorld(clientX, clientY, camera, domElement) {
   return { x: intersectPt.x, z: intersectPt.z }
 }
 
-// Hit radius (world meters) for the per-corner dot.
-const HIT_R_CORNER = 1.2
-// Visual radius for the per-corner dot.
-const DOT_R_CORNER = 0.5
-// Per-IX dot is bigger so it reads as the bulk control. Hit + dot radii
-// scale together so the click target matches the visual.
-const HIT_R_IX = 1.9
-const DOT_R_IX = 0.95
+// Hit radius (world meters) around a corner apex Q — generous, because the
+// corner itself is the grab target now (no tiny dot to aim at).
+const HIT_R_CORNER = 3.0
 // Drag this close to the IX center and the gesture snaps + clears the
 // override on release. World meters.
 const SNAP_R = 0.7
@@ -72,15 +67,34 @@ const TAP_THRESHOLD = 0.25
 const Y_DOTS = 0.05
 // Color logic — corner + IX defaults + shared override / drag colors so the
 // modal state is unambiguous.
-const COLOR_CORNER_DEFAULT = '#22D3EE'  // cyan (per-corner)
-const COLOR_IX_DEFAULT = '#3b82f6'      // blue (per-IX bulk)
-const COLOR_OVERRIDE = '#ffaa00'        // gold (all layers)
+const COLOR_CORNER_DEFAULT = '#ff3df0'  // magenta = editable, default radius
+const COLOR_OVERRIDE = '#ffaa00'        // gold = operator-authored radius
 const COLOR_DRAG = '#ffffff'            // white
 
 const ixKey = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
 const sortedCornerKey = (V, legKeyA, legKeyB) => {
   const [a, b] = (legKeyA <= legKeyB) ? [legKeyA, legKeyB] : [legKeyB, legKeyA]
   return `${ixKey(V)}|${a}|${b}`
+}
+const DEFAULT_R = 4.5
+
+// The fillet circle a corner rounds to: tangent to both legs, centre along the
+// interior bisector (T_A+T_B) at r/sin(θ/2) from the apex Q. `rOverride` lets the
+// live drag pass its in-progress radius; otherwise resolve from the stores.
+// The circle IS the handle — its near arc is the rounded curb, and clicking
+// anywhere inside it grabs the corner. Returns { C:[x,z], r }.
+function cornerArc(c, V, ixOverrides, cornerOverrides, scale, rOverride) {
+  let r = rOverride
+  if (!Number.isFinite(r)) {
+    const co = cornerOverrides[sortedCornerKey(V, c.legKeyA, c.legKeyB)]
+    const ixo = ixOverrides[ixKey(V)]
+    const baseR = Number.isFinite(co) ? co : Number.isFinite(ixo) ? ixo : DEFAULT_R
+    r = baseR * scale
+  }
+  const bx = c.T_A[0] + c.T_B[0], bz = c.T_A[1] + c.T_B[1]
+  const bl = Math.hypot(bx, bz) || 1
+  const d = r / Math.max(0.08, Math.sin(c.theta / 2))
+  return { C: [c.Q[0] + (bx / bl) * d, c.Q[1] + (bz / bl) * d], r }
 }
 
 // Compute every corner's geometric anchor (Q = where leg-A's left curb-outer
@@ -235,82 +249,47 @@ export default function CornerEditHandles({ ribbons }) {
 
     const dom = gl.domElement
 
-    const onDown = (e) => {
-      const p = screenToWorld(e.clientX, e.clientY, camera, dom)
-
-      // Right-click on an IX dot → per-IX revert (clears the IX override
-      // AND any per-corner overrides at that IX). `setIxCornerRadius`
-      // with r=null already does the prefix-walk + delete on
-      // `cornerCornerRadiusOverrides`, so one call covers both maps.
-      // Cheap, common during authoring — the global Revert button stays
-      // for the "nuke everything" case.
-      if (e.button === 2) {
-        for (const entry of layout) {
-          const dx = p.x - entry.V[0], dz = p.z - entry.V[1]
-          if (Math.hypot(dx, dz) < HIT_R_IX) {
-            setIxCornerRadius(entry.V, null)
-            e.preventDefault()
-            e.stopPropagation()
-            return
-          }
-        }
-        return
-      }
-
-      if (e.button !== 0) return
-
-      // First-pass: per-corner dots win over IX dots when both are nearby.
-      // Per-corner dots cluster around the IX, so without this an IX dot
-      // could swallow a click meant for a corner sitting next to it.
+    // Find the corner whose apex Q is nearest the cursor, within HIT_R_CORNER.
+    // The corner IS the handle now — no IX dots, no per-corner controller dots.
+    const pickCorner = (p) => {
+      let best = null, bestD = HIT_R_CORNER
       for (const entry of layout) {
         for (let ci = 0; ci < entry.corners.length; ci++) {
           const c = entry.corners[ci]
-          const dx = p.x - c.Q[0], dz = p.z - c.Q[1]
-          if (Math.hypot(dx, dz) < HIT_R_CORNER) {
-            dragRef.current = {
-              kind: 'corner',
-              ixIdx: entry.ixIdx,
-              cornerIdx: ci,
-              V: entry.V.slice(),
-              legKeyA: c.legKeyA,
-              legKeyB: c.legKeyB,
-              downPos: p,
-            }
-            setDragState({
-              kind: 'corner',
-              ixIdx: entry.ixIdx, cornerIdx: ci,
-              cursor: p,
-              r: Math.hypot(p.x - entry.V[0], p.z - entry.V[1]),
-            })
-            dom.setPointerCapture?.(e.pointerId)
-            e.stopPropagation()
-            return
-          }
+          const d = Math.hypot(p.x - c.Q[0], p.z - c.Q[1])
+          if (d < bestD) { bestD = d; best = { entry, ci, c } }
         }
       }
-      // Second-pass: per-IX center dot. Drags the bulk radius for every
-      // corner at this IX; commit homogenizes the IX (clears per-corner
-      // overrides here — handled by `setIxCornerRadius`).
-      for (const entry of layout) {
-        const dx = p.x - entry.V[0], dz = p.z - entry.V[1]
-        if (Math.hypot(dx, dz) < HIT_R_IX) {
-          dragRef.current = {
-            kind: 'ix',
-            ixIdx: entry.ixIdx,
-            V: entry.V.slice(),
-            downPos: p,
-          }
-          setDragState({
-            kind: 'ix',
-            ixIdx: entry.ixIdx,
-            cursor: p,
-            r: Math.hypot(p.x - entry.V[0], p.z - entry.V[1]),
-          })
-          dom.setPointerCapture?.(e.pointerId)
-          e.stopPropagation()
-          return
-        }
+      return best
+    }
+
+    const onDown = (e) => {
+      const p = screenToWorld(e.clientX, e.clientY, camera, dom)
+      const hit = pickCorner(p)
+      if (!hit) return
+
+      // Right-click a corner → revert just THAT corner to default.
+      if (e.button === 2) {
+        setCornerCornerRadius(hit.entry.V, hit.c.legKeyA, hit.c.legKeyB, null)
+        e.preventDefault(); e.stopPropagation()
+        return
       }
+      if (e.button !== 0) return
+
+      // Left-click a corner → grab it. Drag tunes the radius (cursor → V).
+      dragRef.current = {
+        kind: 'corner',
+        ixIdx: hit.entry.ixIdx, cornerIdx: hit.ci,
+        V: hit.entry.V.slice(),
+        legKeyA: hit.c.legKeyA, legKeyB: hit.c.legKeyB,
+        downPos: p,
+      }
+      setDragState({
+        kind: 'corner', ixIdx: hit.entry.ixIdx, cornerIdx: hit.ci,
+        cursor: p, r: Math.hypot(p.x - hit.entry.V[0], p.z - hit.entry.V[1]),
+      })
+      dom.setPointerCapture?.(e.pointerId)
+      e.stopPropagation()
     }
 
     const flushCommit = (drag, baseR) => {
@@ -436,150 +415,49 @@ export default function CornerEditHandles({ ribbons }) {
   return (
     <group>
       {layout.map((entry) => {
-        const { V, ix, corners, ixIdx } = entry
-        const [vx, vz] = V
-
-        // ixBaseR is still the inheritance source for any per-corner dot
-        // without its own override (the center HANDLE retired; the value
-        // lives on, fed by the global slider + look-level overrides).
-        const ixOverrideR = ixOverrides[ixKey(V)]
-        const ixBaseR = Number.isFinite(ixOverrideR) ? ixOverrideR
-          : Number.isFinite(ix.cornerRadius) ? ix.cornerRadius
-          : 4.5
-
-        const ixHasOverride = Number.isFinite(ixOverrideR)
-        const draggingIx = dragState?.kind === 'ix' && dragState.ixIdx === ixIdx
-        const ixColor = draggingIx ? COLOR_DRAG : ixHasOverride ? COLOR_OVERRIDE : COLOR_IX_DEFAULT
-        const ixEffR = ixBaseR * cornerRadiusScale
-        const ixRingR = draggingIx ? dragState.r : ixEffR
-        const ixDotPos = draggingIx
-          ? [dragState.cursor.x, Y_DOTS + 0.001, dragState.cursor.z]
-          : [vx, Y_DOTS + 0.001, vz]
-        const showIxOriginMarker = (originHint?.kind === 'ix' && originHint.key === `${ixIdx}`) || draggingIx
-
+        const { V, corners, ixIdx } = entry
         return (
           <group key={ixIdx}>
-            {/* Per-IX center dot — big blue dot anchored at V. Drag to
-                tune all corners at this IX together; right-click to
-                clear this IX's overrides (per-IX + per-corner-at-IX). */}
-            {draggingIx && ixRingR > 0.05 && (
-              <mesh position={[vx, Y_DOTS, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={200}>
-                <ringGeometry args={[Math.max(0, ixRingR - 0.05), Math.max(0.05, ixRingR + 0.05), 64]} />
-                <meshBasicMaterial color={ixColor} transparent opacity={0.85}
-                  depthTest={false} depthWrite={false} />
-              </mesh>
-            )}
-            {showIxOriginMarker && (
-              <>
-                <mesh position={[vx, Y_DOTS + 0.0003, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={206}>
-                  <circleGeometry args={[0.22, 16]} />
-                  <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
-                    depthTest={false} depthWrite={false} />
-                </mesh>
-                <mesh position={[vx, Y_DOTS + 0.0006, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={207}>
-                  <circleGeometry args={[0.13, 16]} />
-                  <meshBasicMaterial color={ixHasOverride ? COLOR_OVERRIDE : COLOR_IX_DEFAULT}
-                    transparent opacity={1.0}
-                    depthTest={false} depthWrite={false} />
-                </mesh>
-              </>
-            )}
-            <mesh position={ixDotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={201}>
-              <circleGeometry args={[DOT_R_IX, 24]} />
-              <meshBasicMaterial color={ixColor} transparent opacity={1.0}
-                depthTest={false} depthWrite={false} />
-            </mesh>
-            <mesh position={ixDotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={202}>
-              <ringGeometry args={[DOT_R_IX - 0.10, DOT_R_IX, 24]} />
-              <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
-                depthTest={false} depthWrite={false} />
-            </mesh>
-
-            {/* Per-corner dots at each Q point. */}
             {corners.map((c, ci) => {
-              const ck = sortedCornerKey(V, c.legKeyA, c.legKeyB)
-              const cornerOverrideR = cornerOverrides[ck]
-              const hasOverride = Number.isFinite(cornerOverrideR)
+              const hasOverride = Number.isFinite(cornerOverrides[sortedCornerKey(V, c.legKeyA, c.legKeyB)])
               const draggingCorner = dragState?.kind === 'corner'
-                && dragState.ixIdx === ixIdx
-                && dragState.cornerIdx === ci
+                && dragState.ixIdx === ixIdx && dragState.cornerIdx === ci
               const color = draggingCorner ? COLOR_DRAG : hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT
-              const baseR = hasOverride ? cornerOverrideR : ixBaseR
-              const effR = baseR * cornerRadiusScale
-              const ringR = draggingCorner ? dragState.r : effR
-              const cornerDotPos = draggingCorner
-                ? [dragState.cursor.x, Y_DOTS + 0.002, dragState.cursor.z]
-                : [c.Q[0], Y_DOTS + 0.002, c.Q[1]]
-              const cornerKey = `${ixIdx}:${ci}`
-              const showOriginMarker = (originHint?.kind === 'corner' && originHint.key === cornerKey)
-                || draggingCorner
-              // Live fillet-circle preview — the circle the curb rounds to,
-              // tangent to both legs at radius ringR. Arc-centre sits along the
-              // interior bisector (T_A+T_B) at ringR / sin(θ/2) from the corner
-              // apex Q. Drawn during drag so the corner shape tracks the cursor
-              // at frame rate while the heavy bake is deferred to release.
-              let previewC = null
-              if (draggingCorner && ringR > 0.05 && c.T_A && Number.isFinite(c.theta)) {
-                const bx = c.T_A[0] + c.T_B[0], bz = c.T_A[1] + c.T_B[1]
-                const bl = Math.hypot(bx, bz) || 1
-                const sinH = Math.max(0.08, Math.sin(c.theta / 2))
-                const d = ringR / sinH
-                previewC = [c.Q[0] + (bx / bl) * d, c.Q[1] + (bz / bl) * d]
-              }
+              // The corner IS the handle: draw the fillet circle it rounds to
+              // (faint disc + bright ring) in magenta = editable. During a drag
+              // it resizes/moves with the cursor (the live preview); at rest it
+              // shows the corner's current roundness. A small apex tick keeps
+              // sharp (R≈0) corners locatable + grabbable.
+              const { C, r: rr } = cornerArc(
+                c, V, ixOverrides, cornerOverrides, cornerRadiusScale,
+                draggingCorner ? dragState.r : undefined,
+              )
               return (
                 <group key={ci}>
-                  {/* Live fillet-circle preview at the corner (tangent to both
-                      legs). A faint disc + a bright ring read as "the corner
-                      rounds to this circle" — it grows/moves with the drag. */}
-                  {previewC && (
+                  {rr > 0.3 && (
                     <>
-                      <mesh position={[previewC[0], Y_DOTS, previewC[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={203}>
-                        <circleGeometry args={[ringR, 64]} />
-                        <meshBasicMaterial color={color} transparent opacity={0.18}
+                      <mesh position={[C[0], Y_DOTS, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={203}>
+                        <circleGeometry args={[rr, 56]} />
+                        <meshBasicMaterial color={color} transparent opacity={draggingCorner ? 0.28 : 0.18}
                           depthTest={false} depthWrite={false} />
                       </mesh>
-                      <mesh position={[previewC[0], Y_DOTS + 0.001, previewC[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
-                        <ringGeometry args={[Math.max(0, ringR - 0.06), Math.max(0.06, ringR + 0.06), 80]} />
-                        <meshBasicMaterial color={color} transparent opacity={0.95}
+                      <mesh position={[C[0], Y_DOTS + 0.001, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
+                        <ringGeometry args={[Math.max(0, rr - 0.12), Math.max(0.12, rr + 0.12), 72]} />
+                        <meshBasicMaterial color={color} transparent opacity={0.92}
                           depthTest={false} depthWrite={false} />
                       </mesh>
                     </>
                   )}
-                  {/* Origin marker — appears on tap (toggle) or while
-                      dragging this corner. Tiny white-bordered dot at V
-                      (the IX center / radius origin). Drop the dot
-                      within SNAP_R of this marker to snap + clear the
-                      override. */}
-                  {showOriginMarker && (
-                    <>
-                      <mesh position={[vx, Y_DOTS + 0.0005, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={208}>
-                        <circleGeometry args={[0.18, 16]} />
-                        <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
-                          depthTest={false} depthWrite={false} />
-                      </mesh>
-                      <mesh position={[vx, Y_DOTS + 0.0008, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={209}>
-                        <circleGeometry args={[0.10, 16]} />
-                        <meshBasicMaterial color={hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT}
-                          transparent opacity={1.0}
-                          depthTest={false} depthWrite={false} />
-                      </mesh>
-                    </>
-                  )}
-                  {/* Corner dot itself, anchored at Q. */}
-                  <mesh position={cornerDotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
-                    <circleGeometry args={[DOT_R_CORNER, 20]} />
-                    <meshBasicMaterial color={color} transparent opacity={1.0}
-                      depthTest={false} depthWrite={false} />
-                  </mesh>
-                  <mesh position={cornerDotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={205}>
-                    <ringGeometry args={[DOT_R_CORNER - 0.08, DOT_R_CORNER, 20]} />
-                    <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
+                  {/* Apex tick at the corner — small, so the corner is findable
+                      and a sharp corner is still grabbable. */}
+                  <mesh position={[c.Q[0], Y_DOTS + 0.002, c.Q[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={205}>
+                    <circleGeometry args={[0.45, 18]} />
+                    <meshBasicMaterial color={color} transparent opacity={0.9}
                       depthTest={false} depthWrite={false} />
                   </mesh>
                 </group>
               )
             })}
-
           </group>
         )
       })}

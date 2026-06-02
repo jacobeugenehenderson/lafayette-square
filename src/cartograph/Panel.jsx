@@ -97,8 +97,10 @@ function Section({ name, open, onToggle, children, visState, onToggleVis }) {
 // Corner radius shapes the rounded-block-clip that derives every block
 // polygon, so it's a block-shape concern, not a streets one (despite
 // "corners" being intuitively about intersections). Exposes the
-// Look-level corner-radius controls: global scale, edit-mode toggle for
-// per-IX handles, and a Revert button that wipes per-IX overrides.
+// Look-level corner-radius controls: global "style" scale, an edit-mode toggle
+// (each corner becomes a draggable magenta handle), and a Revert button that
+// wipes every authored corner override + resets the scale. Individual corners
+// revert by right-clicking them in edit mode.
 function CornersSubsection() {
   const stored = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const setStored = useCartographStore(s => s.setCornerRadiusScale)
@@ -189,7 +191,7 @@ function CornersSubsection() {
         <button
           className={`carto-btn carto-btn--icon${cornerEditMode ? ' is-active' : ''}`}
           onClick={() => setCornerEditMode(!cornerEditMode)}
-          title="Edit corners: show per-IX center handles + per-corner cyan dots. Drag = world distance from cursor sets that radius.">
+          title="Edit corners: each corner becomes a magenta handle. Drag a corner to set its radius (distance from the intersection = radius; drag to centre for a square corner). Right-click a corner to revert just that one.">
           <span className="carto-btn-glyph" aria-hidden="true">{cornerEditMode ? '●' : '○'}</span>
           <span className="carto-btn-text">Edit</span>
         </button>
@@ -198,7 +200,7 @@ function CornersSubsection() {
           onClick={clearAllIxCornerRadii}
           disabled={overrideCount === 0 && draft === 1}
           title={overrideCount
-            ? `Revert: clear ${overrideCount} authored override${overrideCount === 1 ? '' : 's'} and reset scale to 1. Every corner returns to its AASHTO/data-table default.`
+            ? `Revert ALL: clear ${overrideCount} authored corner override${overrideCount === 1 ? '' : 's'} and reset scale to 1. Every corner returns to its default. (Right-click a single corner in edit mode to revert just that one.)`
             : 'Revert: reset scale to 1. (No authored overrides to clear.)'}>
           <span className="carto-btn-glyph" aria-hidden="true">↺</span>
           <span className="carto-btn-text">Revert{overrideCount ? ` (${overrideCount})` : ''}</span>
