@@ -335,7 +335,20 @@ export default function CornerEditHandles({ ribbons }) {
 
     const onMove = (e) => {
       const drag = dragRef.current
-      if (!drag) return
+      if (!drag) {
+        // HOVER feedback — when the cursor is over a grabbable corner, show the
+        // grab cursor (hoverTarget → 'pointer' in CartographApp). CornerEditHandles
+        // fires before SurveyorOverlay (registered first); stopImmediatePropagation
+        // when over a corner keeps SurveyorOverlay's move from clobbering
+        // hoverTarget back to false. Off a corner we don't stop, so Survey's own
+        // hover (centerlines / asphalt handles) still works.
+        const hp = screenToWorld(e.clientX, e.clientY, camera, dom)
+        if (pickCorner(hp)) {
+          useCartographStore.getState().setHoverTarget(true)
+          e.stopImmediatePropagation()
+        }
+        return
+      }
       const p = screenToWorld(e.clientX, e.clientY, camera, dom)
       // Corner drags measure cursor → V (IX point); store the base radius.
       const anchor = drag.V
