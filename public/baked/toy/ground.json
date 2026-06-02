@@ -28,7 +28,7 @@
       "vertexCount": 1270,
       "vertexByteOffset": 0,
       "indexCount": 5958,
-      "indexByteOffset": 222876
+      "indexByteOffset": 222612
     },
     {
       "kind": "face",
@@ -39,7 +39,7 @@
       "vertexCount": 1940,
       "vertexByteOffset": 15240,
       "indexCount": 10008,
-      "indexByteOffset": 246708
+      "indexByteOffset": 246444
     },
     {
       "kind": "face",
@@ -50,7 +50,7 @@
       "vertexCount": 9431,
       "vertexByteOffset": 38520,
       "indexCount": 53190,
-      "indexByteOffset": 286740
+      "indexByteOffset": 286476
     },
     {
       "kind": "face",
@@ -61,7 +61,7 @@
       "vertexCount": 451,
       "vertexByteOffset": 151692,
       "indexCount": 2334,
-      "indexByteOffset": 499500
+      "indexByteOffset": 499236
     },
     {
       "kind": "face",
@@ -72,7 +72,7 @@
       "vertexCount": 877,
       "vertexByteOffset": 157104,
       "indexCount": 3837,
-      "indexByteOffset": 508836
+      "indexByteOffset": 508572
     },
     {
       "kind": "mat",
@@ -83,7 +83,7 @@
       "vertexCount": 402,
       "vertexByteOffset": 167628,
       "indexCount": 1128,
-      "indexByteOffset": 524184
+      "indexByteOffset": 523920
     },
     {
       "kind": "mat",
@@ -94,7 +94,7 @@
       "vertexCount": 154,
       "vertexByteOffset": 172452,
       "indexCount": 390,
-      "indexByteOffset": 528696
+      "indexByteOffset": 528432
     },
     {
       "kind": "mat",
@@ -105,7 +105,7 @@
       "vertexCount": 166,
       "vertexByteOffset": 174300,
       "indexCount": 402,
-      "indexByteOffset": 530256
+      "indexByteOffset": 529992
     },
     {
       "kind": "mat",
@@ -116,7 +116,7 @@
       "vertexCount": 24,
       "vertexByteOffset": 176292,
       "indexCount": 48,
-      "indexByteOffset": 531864
+      "indexByteOffset": 531600
     },
     {
       "kind": "mat",
@@ -127,7 +127,7 @@
       "vertexCount": 384,
       "vertexByteOffset": 176580,
       "indexCount": 1044,
-      "indexByteOffset": 532056
+      "indexByteOffset": 531792
     },
     {
       "kind": "mat",
@@ -135,10 +135,10 @@
       "color": "#B8B2A4",
       "renderOrder": 10,
       "polygonOffsetUnits": -11,
-      "vertexCount": 1414,
+      "vertexCount": 1392,
       "vertexByteOffset": 181188,
-      "indexCount": 4086,
-      "indexByteOffset": 536232
+      "indexCount": 4014,
+      "indexByteOffset": 535968
     },
     {
       "kind": "mat",
@@ -147,9 +147,9 @@
       "renderOrder": 11,
       "polygonOffsetUnits": -12,
       "vertexCount": 1409,
-      "vertexByteOffset": 198156,
+      "vertexByteOffset": 197892,
       "indexCount": 4131,
-      "indexByteOffset": 552576
+      "indexByteOffset": 552024
     },
     {
       "kind": "mat",
@@ -158,9 +158,9 @@
       "renderOrder": 12,
       "polygonOffsetUnits": -13,
       "vertexCount": 651,
-      "vertexByteOffset": 215064,
+      "vertexByteOffset": 214800,
       "indexCount": 2037,
-      "indexByteOffset": 569100
+      "indexByteOffset": 568548
     }
   ]
 }

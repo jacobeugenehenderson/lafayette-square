@@ -344,6 +344,13 @@ export function buildTileGround(ribbons, opts = {}) {
   const baseR = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5
   const scale = Number.isFinite(opts.cornerRadiusScale) ? opts.cornerRadiusScale : 1
   const R = Math.max(0, baseR * scale)
+  // M3 — overridable ped-strip materials. Default {outer:'LU', inner:'SW'}
+  // (V1.5 model). T3 makes this per-fe (the ctrl-click LU↔SW swap); for now a
+  // single model proves the data path. 'LU' → land-use colour, 'SW' → sidewalk.
+  const stripMat = {
+    outer: opts.stripMaterials?.outer === 'SW' ? 'SW' : 'LU',
+    inner: opts.stripMaterials?.inner === 'LU' ? 'LU' : 'SW',
+  }
 
   // G8 — dead-end caps. A degree-1 street endpoint (caps.degree===1) is a real
   // dead-end tip. Cap = authored capEnds ?? the geometric caps.cap ?? round.
@@ -470,25 +477,40 @@ export function buildTileGround(ribbons, opts = {}) {
       const poly = runs.length > 1 ? trimPolyline(run.poly, a + R, a + R) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
     }
-    const straightZone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
-    const tlBand = differenceRings(iC, iT)
-    let treelawn = straightZone ? intersectRings(tlBand, straightZone) : tlBand
-    let sidewalk = differenceRings(differenceRings(iC, iW), treelawn)  // corner span = solid SW pad
+    const zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
+    const clipLeg = (rings) => zone ? intersectRings(rings, zone) : rings
+    // The two ped LEG strips + the structural corner pad. Outer = the strip
+    // nearer the curb (treelawn position); inner = the strip nearer the
+    // property line (sidewalk position). The corner span is always SW (G5 ADA).
+    let legOuter = clipLeg(differenceRings(iC, iT))   // R+cw .. R+cw+tl
+    let legInner = clipLeg(differenceRings(iT, iW))   // R+cw+tl .. R+cw+tl+sw
+    let cornerPad = zone ? differenceRings(differenceRings(iC, iW), zone) : []
     let luRemainder = iW                              // LU = innermost remainder (+ blunt-tip reclaim)
     // G8 — at a blunt/none dead-end the street just ends: no ped wrap. Subtract
     // a disk at the tip from the ped bands and reclaim that ped area as LU so it
     // abuts the flat asphalt end.
     if (bluntTips.length) {
       const disks = bluntTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + tl + sw + 1))
-      const reclaimed = intersectRings(differenceRings(iC, iW), disks)   // ped zone at the tip → LU
-      treelawn = differenceRings(treelawn, disks)
-      sidewalk = differenceRings(sidewalk, disks)
-      luRemainder = unionRings([...iW, ...reclaimed])
+      luRemainder = unionRings([...iW, ...intersectRings(differenceRings(iC, iW), disks)])
+      legOuter = differenceRings(legOuter, disks)
+      legInner = differenceRings(legInner, disks)
+      cornerPad = differenceRings(cornerPad, disks)
+    }
+    // M3 — the two leg strips carry DATA-DRIVEN materials from the overridable
+    // materials model (default {outer:'LU', inner:'SW'}). Don't hard-code
+    // treelawn=grass / sidewalk=concrete — route each strip through stripMat so
+    // T3's per-fe LU↔SW swap plugs in with no geometry rework. 'LU' → the tile's
+    // land-use colour (the treelawn look); 'SW' → the sidewalk material.
+    const routeStrip = (matTag, rings) => {
+      if (!rings.length) return
+      if (matTag === 'SW') Wacc.push(...rings)
+      else pushLu(tlByLu, lu, rings)
     }
     Aacc.push(...differenceRings([tile.ring], iA)) // asphalt = tile − rounded inner
     Cacc.push(...differenceRings(iA, iC))          // curb
-    pushLu(tlByLu, lu, treelawn)                    // treelawn (straight legs only)
-    Wacc.push(...sidewalk)                          // sidewalk (incl. the ADA corner annulus)
+    routeStrip(stripMat.outer, legOuter)           // outer ped strip (default LU)
+    routeStrip(stripMat.inner, legInner)           // inner ped strip (default SW)
+    Wacc.push(...cornerPad)                         // corner span — always SW (structural)
     pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
   }
 
