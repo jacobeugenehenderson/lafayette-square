@@ -117,3 +117,66 @@ export function clipPolylineToBoundary(points) {
   closePiece()
   return pieces
 }
+
+// Clip a polyline to a CIRCLE (center + radius) — same segment-walk structure
+// as clipPolylineToBoundary (keep in-radius runs, split at crossings), but
+// membership is an exact circle distance test instead of polygon PIP. Used to
+// stop the debug centerlines at the visible (feathered) map edge rather than
+// the hard 256-gon boundary, so they don't trail into faded canvas. A circle
+// is exact for the disc and cheaper than the 256-gon.
+// No-radius fallback: returns [points] unchanged.
+export function clipPolylineToRadius(points, centerXZ, R) {
+  if (!points || points.length < 2) return points ? [points] : []
+  if (!(R > 0)) return [points]
+  const cx = centerXZ[0], cz = centerXZ[1]
+  const R2 = R * R
+  const inside = (x, z) => (x - cx) ** 2 + (z - cz) ** 2 <= R2
+  const pieces = []
+  let current = null
+  const closePiece = () => {
+    if (current && current.length >= 2) pieces.push(current)
+    current = null
+  }
+  const extend = (pt) => {
+    if (!current) { current = [pt]; return }
+    const last = current[current.length - 1]
+    if (last[0] === pt[0] && last[1] === pt[1]) return
+    current.push(pt)
+  }
+  // Params t in (0,1) where segment a→b crosses the circle (0, 1 or 2 roots).
+  const crossings = (ax, az, bx, bz) => {
+    const dx = bx - ax, dz = bz - az
+    const A = dx * dx + dz * dz
+    if (A < 1e-12) return []
+    const fx = ax - cx, fz = az - cz
+    const B = 2 * (fx * dx + fz * dz)
+    const C = fx * fx + fz * fz - R2
+    const disc = B * B - 4 * A * C
+    if (disc <= 0) return []
+    const sq = Math.sqrt(disc)
+    const ts = []
+    for (const t of [(-B - sq) / (2 * A), (-B + sq) / (2 * A)]) {
+      if (t > 1e-9 && t < 1 - 1e-9) ts.push(t)
+    }
+    return ts
+  }
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i], b = points[i + 1]
+    const ax = a[0], az = a[1], bx = b[0], bz = b[1]
+    const ts = crossings(ax, az, bx, bz).sort((x, y) => x - y)
+    const stops = [0, ...ts, 1]
+    for (let s = 0; s < stops.length - 1; s++) {
+      const t0 = stops[s], t1 = stops[s + 1]
+      if (t1 - t0 < 1e-9) continue
+      const mt = (t0 + t1) / 2
+      const mx = ax + (bx - ax) * mt
+      const mz = az + (bz - az) * mt
+      const p0 = [ax + (bx - ax) * t0, az + (bz - az) * t0]
+      const p1 = [ax + (bx - ax) * t1, az + (bz - az) * t1]
+      if (inside(mx, mz)) { extend(p0); extend(p1) }
+      else closePiece()
+    }
+  }
+  closePiece()
+  return pieces
+}

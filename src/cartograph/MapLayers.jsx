@@ -7,7 +7,7 @@ import ribbonsData from '../data/ribbons.json'
 import parkTreeData from '../data/park_trees.json'
 import parkWaterData from '../data/park_water.json'
 import lampData from '../data/street_lamps.json'
-import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary } from './boundary.js'
+import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
 import SceneLabel from '../components/SceneLabel.jsx'
 import getStreetLabels from '../lib/streetLabels.js'
@@ -52,6 +52,13 @@ import { BOUNDARY_CENTER_XZ as _BC, FADE_INNER as _FI, FADE_OUTER as _FO } from 
 const FADE_CENTER = { x: _BC[0], z: _BC[1] }
 const FADE_INNER = _FI
 const FADE_OUTER = _FO
+
+// Centerlines are stopped here — a bit into the feather band (FADE_INNER→
+// FADE_OUTER) so the bare debug centerlines don't trail past the visibly
+// faded map edge. LineBasicMaterial can't take the radial-fade shader the
+// ground/aerial use (see the barrier-line note below), so we clip tighter
+// instead of fading. Nudge this one value by eye.
+const CENTERLINE_CLIP_R = FADE_INNER + 52   // ≈810m
 
 // `rigidCentroid=true` switches terrain displacement from per-vertex to
 // per-feature: the shader samples the heightmap at an `aCentroidXZ` vertex
@@ -437,14 +444,16 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return mergeGeos(geos)
   }, [])
 
-  // ── Centerlines (debug reference, hidden by default, boundary-clipped) ─
-  // Per-segment clip so chains that cross the soft-circle silhouette stop
-  // at the boundary instead of trailing off the canvas.
+  // ── Centerlines (debug reference, hidden by default, radius-clipped) ─
+  // Per-segment clip to CENTERLINE_CLIP_R (inside the feather band) so chains
+  // stop at the visible map edge instead of trailing into faded canvas. Uses
+  // the circle clip, not clipPolylineToBoundary (the hard 256-gon), which is
+  // what left them jutting past where the ground reads as gone.
   const centerlineLines = useMemo(() => {
     const lines = []
     for (const st of ribbonsData.streets) {
       if (st.points.length < 2) continue
-      const pieces = clipPolylineToBoundary(st.points)
+      const pieces = clipPolylineToRadius(st.points, _BC, CENTERLINE_CLIP_R)
       for (const piece of pieces) {
         if (!piece || piece.length < 2) continue
         const pts = piece.map(p => new THREE.Vector3(p[0], 0.25, p[1]))
