@@ -690,27 +690,34 @@ export function buildTileGround(ribbons, opts = {}) {
   const Aacc = [], Cacc = [], Wacc = []
   const tlByLu = {}, luByLu = {}
   const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
-  // ── THE WALL · Phase A ─────────────────────────────────────────────
-  // Freeze the per-run SECTION metadata here in the shape region, where the
-  // chain (streetsOrig) is legitimately available. The lone section-side
-  // reach-back into the chain is segOrd (runSegOrd probes streetsOrig); the
-  // minor one is anchor (street.anchor). Freezing both — plus the per-fe-
-  // resolved side measure — lets a later sectionPass consume THIS instead of
-  // the chain. perTileMeta[i] aligns 1:1 with tiles[i] (the loop never `continue`s).
-  // Additive: nothing reads it yet (byte-identical render).
+  // ── THE WALL · Phase B · SHAPE pass (this loop) ────────────────────
+  // The shape loop produces, per tile: the curb-line ring iA + cornerFillets
+  // (the hardscape), emits the asphalt + curb strokes, and FREEZES everything a
+  // later sectionPass needs into shapeTiles[] — the ring, iA, per-corner radii
+  // (vertR), the representative ped depths (tl/sw), the land-use class, the
+  // dead-end tips, and per-run { poly, side, measure } where `measure` is the
+  // per-fe-resolved side measure (it carries segOrd's effect — the sole chain
+  // reach-back, computed here where the chain is legitimately available). The
+  // section pass then strokes the ped strips off ONLY this frozen data.
+  // perTileMeta (= each tile's runMeta) is the freeze-receipt returned as
+  // `_perRunMeta`. perTileMeta[i] / shapeTiles[i] align 1:1 with tiles[i].
   const perTileMeta = []
+  const shapeTiles = []
   for (const tile of tiles) {
     const runs = groupRuns(tile)
-    perTileMeta.push(runs.map(run => {
+    const runMeta = runs.map(run => {
       const so = streetsOrig[run.streetIdx]
       return {
+        poly: run.poly,
         side: run.side,
         skelId: (so && (so.skelId || so.name)) || null,
         segOrd: runSegOrd(run),
         anchor: (so && so.anchor) || null,
-        measure: runMeasure(run),   // per-fe-resolved side measure (carries segOrd's effect)
+        measure: runMeasure(run),               // per-fe-resolved side measure (override pavementHW) — for the asphalt edge `a`
+        baseMeasure: measures[run.streetIdx],   // per-street base measure — for the treelawn slab depth `td` (uses base pavementHW)
       }
-    }))
+    })
+    perTileMeta.push(runMeta)
     // G8 — dead-end tips on this tile (a run boundary vertex that is a degree-1
     // node). Round-capped tips get a round asphalt disk so the cul-de-sac rounds
     // (the butt-capped runs alone end flat); blunt/none tips stay flat and later
@@ -776,10 +783,24 @@ export function buildTileGround(ribbons, opts = {}) {
         : nearestVertexIndex(f.apex, tile.ring)
       cornerFillets[cornerKeyAt(tile.ring[vi], tile.edges, vi)] = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
     }
+    const lu = luForRing(tile.ring)
+    Aacc.push(...differenceRings([tile.ring], iA))   // asphalt = tile − rounded inner (the shape silhouette)
+    Cacc.push(...differenceRings(iA, offsetRings(iA, -cw, 'miter')))   // curb stroke = iA − iC
+    // Freeze everything the section pass needs off this tile's shape.
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta })
+  }
+
+  // ── THE WALL · Phase B · SECTION pass (interior authored ped) ──────
+  // Strokes the ped strips off the FROZEN per-tile shape only — iA, per-run
+  // { poly, side, measure }, vertR, tl/sw, lu, tips. NO chain access: segOrd's
+  // effect rides in run.measure (frozen in the shape loop above), so there is no
+  // runSegOrd / streetsOrig / measures probe here. (Inlined this increment;
+  // lifted to a module-level sectionPass next.)
+  for (const st of shapeTiles) {
+    const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs } = st
     const iC = offsetRings(iA, -cw, 'miter')               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl), 'miter')        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw), 'miter')   // sidewalk/LU             (R+cw+tl+sw)
-    const lu = luForRing(tile.ring)
     // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
     // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
     // to tangent; treelawn lives only on the straight legs and ends at the
@@ -791,9 +812,9 @@ export function buildTileGround(ribbons, opts = {}) {
     const tlSlabs = []
     const wrapDisks = []   // round dead-end zone disks (treelawn wraps the cap)
     for (const run of runs) {
-      const td = edgeDepth(measures[run.streetIdx], run.side, cw, 'T')   // grout → treelawn-outer
+      const td = edgeDepth(run.baseMeasure, run.side, cw, 'T')   // grout → treelawn-outer (BASE measure — matches pre-Wall td)
       if (td <= 1e-6) continue
-      const a = edgeDepth(runMeasure(run), run.side, cw, 'A')   // per-fe asphalt edge (trim follows it)
+      const a = edgeDepth(run.measure, run.side, cw, 'A')   // per-fe asphalt edge, frozen (trim follows it)
       // Pull the run back from each CORNER end by (asphalt-hw + that corner's
       // resolved R) so the slab ends at the tangent and the corner wedge becomes
       // the ADA all-SW pad. A ROUND dead-end is NOT trimmed (treelawn runs to the
@@ -802,8 +823,8 @@ export function buildTileGround(ribbons, opts = {}) {
       // teardrop/notch artifacts).
       const last = run.poly[run.poly.length - 1]
       const k0 = tipKey(run.poly[0]), k1 = tipKey(last)
-      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], tile.ring, vertR)
-      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, tile.ring, vertR)
+      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], ring, vertR)
+      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, ring, vertR)
       const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
     }
@@ -856,8 +877,6 @@ export function buildTileGround(ribbons, opts = {}) {
       if (matTag === 'SW') Wacc.push(...rings)
       else pushLu(tlByLu, lu, rings)
     }
-    Aacc.push(...differenceRings([tile.ring], iA)) // asphalt = tile − rounded inner
-    Cacc.push(...differenceRings(iA, iC))          // curb
     routeStrip(stripMat.outer, legOuter)           // outer ped strip (default LU)
     routeStrip(stripMat.inner, legInner)           // inner ped strip (default SW)
     Wacc.push(...cornerPad)                         // corner span — always SW (structural)
