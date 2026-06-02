@@ -79,28 +79,12 @@ const sortedCornerKey = (V, legKeyA, legKeyB) => {
 }
 const DEFAULT_R = 4.5
 
-// The fillet circle a corner rounds to: tangent to both legs, centre along the
-// interior bisector (T_A+T_B) at r/sin(θ/2) from the apex Q. `rOverride` lets the
-// live drag pass its in-progress radius; otherwise resolve from the stores.
-// The circle IS the handle — its near arc is the rounded curb, and clicking
-// anywhere inside it grabs the corner. Returns { C:[x,z], r }.
-function cornerArc(c, V, ixOverrides, cornerOverrides, scale, rOverride) {
-  let r = rOverride
-  if (!Number.isFinite(r)) {
-    const co = cornerOverrides[sortedCornerKey(V, c.legKeyA, c.legKeyB)]
-    const ixo = ixOverrides[ixKey(V)]
-    const baseR = Number.isFinite(co) ? co : Number.isFinite(ixo) ? ixo : DEFAULT_R
-    r = baseR * scale
-  }
-  const bx = c.T_A[0] + c.T_B[0], bz = c.T_A[1] + c.T_B[1]
-  const bl = Math.hypot(bx, bz) || 1
-  const d = r / Math.max(0.08, Math.sin(c.theta / 2))
-  return { C: [c.Q[0] + (bx / bl) * d, c.Q[1] + (bz / bl) * d], r }
-}
-
 // Angular extent of a curb arc — between the two tangent points tA/tB, the side
 // that bulges toward the apex. Returns ringGeometry { thetaStart, thetaLength }
 // in the flat (rotation=[-π/2,0,0]) frame, where a world XZ angle ψ → local -ψ.
+// The handle reads the ACHIEVED fillet's tA/tB/apex directly (the live drag
+// drives the store, so the achieved geometry tracks the radius) — there is no
+// separate idealized preview to keep in sync.
 function arcExtentFrom(C, tA, tB, apex) {
   const norm = (a) => { a %= 2 * Math.PI; if (a < 0) a += 2 * Math.PI; return a }
   const psiA = Math.atan2(tA[1] - C[1], tA[0] - C[0])
@@ -111,15 +95,6 @@ function arcExtentFrom(C, tA, tB, apex) {
   const start = dAQ <= dAB ? psiA : psiB
   const length = dAQ <= dAB ? dAB : 2 * Math.PI - dAB
   return { thetaStart: -(start + length), thetaLength: length }
-}
-// Idealized extent for the drag preview (no achieved fillet yet) — tangent
-// points = foot of perpendicular from the arc centre onto each leg through Q.
-function curbArcExtent(c, C) {
-  const dotA = (C[0] - c.Q[0]) * c.T_A[0] + (C[1] - c.Q[1]) * c.T_A[1]
-  const dotB = (C[0] - c.Q[0]) * c.T_B[0] + (C[1] - c.Q[1]) * c.T_B[1]
-  const tA = [c.Q[0] + c.T_A[0] * dotA, c.Q[1] + c.T_A[1] * dotA]
-  const tB = [c.Q[0] + c.T_B[0] * dotB, c.Q[1] + c.T_B[1] * dotB]
-  return arcExtentFrom(C, tA, tB, c.Q)
 }
 
 // Compute every corner's geometric anchor (Q = where leg-A's left curb-outer
@@ -246,14 +221,19 @@ export default function CornerEditHandles({ ribbons }) {
   // per-tool handle split is honoured.
   const tool = useCartographStore(s => s.tool)
   const cornerEditMode = useCartographStore(s => s.cornerEditMode)
-  const ixOverrides = useCartographStore(s => s.cornerRadiusOverrides) || {}
   const cornerOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
   const cornerRadiusScale = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const setCornerCornerRadius = useCartographStore(s => s.setCornerCornerRadius)
   const setIxCornerRadius = useCartographStore(s => s.setIxCornerRadius)
   // The ACHIEVED fillets from the live tile build — the handle reads the real
-  // curb arc from here at rest (one corner truth, no drift).
+  // curb arc from here (one corner truth, no drift). The live drag commits to
+  // the store each frame, so this changes every frame mid-drag; route it through
+  // a ref so the pointer-listener effect below doesn't tear down / re-add its DOM
+  // handlers on every commit (which would churn pointer capture mid-drag). The
+  // effect's grabTarget reads the ref, so the hit-test still sees fresh fillets.
   const achievedFillets = useCartographStore(s => s.tileCornerFillets) || {}
+  const achievedFilletsRef = useRef(achievedFillets)
+  achievedFilletsRef.current = achievedFillets
   const { camera, gl } = useThree()
 
   const dragRef = useRef(null)
@@ -287,7 +267,7 @@ export default function CornerEditHandles({ ribbons }) {
     // HIT_R_CORNER. The grab target is the curb-arc midpoint (where the magenta
     // sits) — the achieved fillet's arc midpoint when known, else the apex Q.
     const grabTarget = (entry, c) => {
-      const f = achievedFillets[sortedCornerKey(entry.V, c.legKeyA, c.legKeyB)]
+      const f = achievedFilletsRef.current[sortedCornerKey(entry.V, c.legKeyA, c.legKeyB)]
       if (f && f.apex && f.C && Number.isFinite(f.r)) {
         const ax = f.apex[0] - f.C[0], az = f.apex[1] - f.C[1]
         const al = Math.hypot(ax, az) || 1
@@ -372,15 +352,32 @@ export default function CornerEditHandles({ ribbons }) {
       const cursorForVisual = snapping
         ? { x: anchor[0], z: anchor[1] }
         : p
-      // Visual update (cheap) — synchronous so the dot + the live fillet-circle
-      // preview track the cursor at frame rate.
+      // Visual update (cheap) — synchronous so the drag highlight tracks the
+      // cursor at frame rate. The ARC itself is the published achieved fillet
+      // (rendered below), not a re-derived preview.
       setDragState(prev => prev && { ...prev, cursor: cursorForVisual, r: snapping ? 0 : r, snapping })
-      // DEFER the heavy commit. The store write rebuilds the whole-neighborhood
-      // tile mesh (Clipper + triangulation across ~600 corners) — far too heavy
-      // to run per frame, which is exactly the "the corner doesn't move with
-      // you" lag. Stash the target; onUp flushes it ONCE on release. During the
-      // drag the cheap preview below shows the true rounded corner.
+      // DRIVE THE STORE LIVE (rAF-throttled). The handle reads the ACHIEVED
+      // fillet (tileCornerFillets) for its arc — the same one-corner-truth path
+      // as at rest — so the drag preview IS the bake and physically cannot
+      // detach. tileGround re-runs on commit (live == bake). rAF-throttle caps it
+      // to one rebuild per frame; on heavy scenes (LS) the rebuild can exceed a
+      // frame, so the arc lags the cursor slightly — correct over smooth, and
+      // toy (the authoring surface) keeps up.
       pendingCommitRef.current = baseR
+      // Only drive the store once the gesture is unambiguously a DRAG (moved past
+      // the tap threshold) — a tap commits nothing (it toggles the origin marker
+      // in onUp). Without this gate the live rAF would commit a radius before
+      // onUp's tap detection runs.
+      const movedFromDown = drag.downPos
+        ? Math.hypot(p.x - drag.downPos.x, p.z - drag.downPos.z)
+        : Infinity
+      if (movedFromDown > TAP_THRESHOLD && rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = null
+          const d = dragRef.current
+          if (d && pendingCommitRef.current != null) flushCommit(d, pendingCommitRef.current)
+        })
+      }
       e.stopPropagation()
     }
 
@@ -452,7 +449,11 @@ export default function CornerEditHandles({ ribbons }) {
       dom.removeEventListener('pointercancel', onUp, opts)
       dom.removeEventListener('contextmenu', onContextMenu, opts)
     }
-  }, [tool, cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale, achievedFillets])
+    // NOTE: achievedFillets is intentionally NOT a dep — it changes every frame
+    // during a live drag; the handlers read it via achievedFilletsRef so the
+    // listeners aren't torn down mid-drag.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tool, cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale])
 
   if (tool !== 'surveyor') return null
   if (!cornerEditMode) return null
@@ -470,32 +471,19 @@ export default function CornerEditHandles({ ribbons }) {
               const draggingCorner = dragState?.kind === 'corner'
                 && dragState.ixIdx === ixIdx && dragState.cornerIdx === ci
               const color = draggingCorner ? COLOR_DRAG : hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT
-              // The corner IS the handle: paint just the CURB ARC magenta. AT
-              // REST, read the ACHIEVED fillet the construction actually produced
-              // (one corner truth — the magenta IS the curb, never drifts). While
-              // DRAGGING, the achieved geometry isn't recomputed until release, so
-              // fall back to the idealized live preview tracking the cursor.
+              // The corner IS the handle: paint just the CURB ARC. ALWAYS read the
+              // ACHIEVED fillet the construction produced (one corner truth — the
+              // magenta IS the curb, never drifts). The drag drives the store live
+              // (rAF), so tileGround re-runs and the achieved fillet reflects the
+              // dragged radius — the preview is the bake and cannot detach. No
+              // achieved fillet → no real curb arc here (exterior phantom with no
+              // tile, an R=0 square, or a mid-drag rebuild not yet landed): draw
+              // nothing. The corner stays grabbable via grabTarget's apex fallback.
               if (!c.T_A) return <group key={ci} />
-              let C, rr, thetaStart, thetaLength
-              const fit = !draggingCorner ? achievedFillets[ck] : null
-              if (fit && fit.tA && fit.tB) {
-                C = fit.C; rr = fit.r
-                ;({ thetaStart, thetaLength } = arcExtentFrom(fit.C, fit.tA, fit.tB, fit.apex || c.Q))
-              } else if (draggingCorner) {
-                // Mid-drag: the achieved fillet isn't recomputed until release, so
-                // show the idealized fillet circle tracking the cursor.
-                const a = cornerArc(c, V, ixOverrides, cornerOverrides, cornerRadiusScale, dragState.r)
-                C = a.C; rr = a.r
-                if (!(rr > 0.05)) return <group key={ci} />
-                ;({ thetaStart, thetaLength } = curbArcExtent(c, C))
-              } else {
-                // AT REST with no achieved fillet → there is no real curb arc here
-                // (an exterior phantom corner with no tile, or an R=0 square). Draw
-                // nothing: the magenta only ever traces a curb the construction
-                // actually produced. The corner stays grabbable via grabTarget's
-                // apex fallback, so a squared corner can still be re-authored.
-                return <group key={ci} />
-              }
+              const fit = achievedFillets[ck]
+              if (!(fit && fit.tA && fit.tB)) return <group key={ci} />
+              const C = fit.C, rr = fit.r
+              const { thetaStart, thetaLength } = arcExtentFrom(fit.C, fit.tA, fit.tB, fit.apex || c.Q)
               // A band straddling the curb line (radius rr from the arc centre),
               // ~0.9 m wide so it reads + is grabbable; the apex hit-test stays
               // generous regardless.
