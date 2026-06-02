@@ -2426,6 +2426,16 @@ export function deriveLayers(highways) {
   // already within IX_VERTEX_SNAP, in which case we snap the vertex).
   const IX_SEG_SNAP = 3.0    // meters — how close an OSM-noded intersection must lie to a skeleton segment
   const IX_VERTEX_SNAP = 0.2 // meters — only "snap" (move) an existing vertex if it's already essentially at the intersection
+  // When ≥2 noded intersections land within this distance on the SAME chain,
+  // they represent effectively one junction location; merging their splice
+  // points into a single vertex avoids 0.2–0.8m micro-segments at junctions
+  // that collapse into needles/notches once offset inward by band depth.
+  // (IX_VERTEX_SNAP dedups a splice against EXISTING vertices; this dedups
+  // candidate splice points against EACH OTHER.) Tunable.
+  const IX_INTER_SPLICE_SNAP = 1.0 // meters — merge near-coincident NEW splice points on the same chain
+  const MICRO_SEG_COLLAPSE = 0.8   // meters — collapse residual micro-segments at intersection vertices post-splice
+                                   // (covers the 0.2–0.8m junction-clustering band; kept below ~1m so genuinely
+                                   //  distinct closely-noded junctions — e.g. motorway ramp nodes 1–2m apart — survive)
 
   // Apply splices in descending pointIdx order so earlier indices stay
   // valid. Collect first, sort, then mutate.
@@ -2492,7 +2502,31 @@ export function deriveLayers(highways) {
   for (const [streetIdx, list] of splicesByStreet) {
     const st = ribbonStreets[streetIdx]
     list.sort((a, b) => (b.afterIdx - a.afterIdx) || (b.t - a.t))
-    for (const { afterIdx, point, ixData } of list) {
+
+    // ── Inter-splice dedup ──────────────────────────────────────────
+    // Merge splice points that land within IX_INTER_SPLICE_SNAP of each
+    // other (by actual coords) into a SINGLE group. Each group becomes
+    // one spliced vertex; ALL its source intersections are recorded at
+    // that one index (so no genuine crossing is dropped — only the
+    // duplicate VERTEX is). Walk the sorted list (descending afterIdx,t,
+    // i.e. by decreasing position along the chain) and start a new group
+    // whenever the next splice is farther than the tolerance from the
+    // current group's representative point.
+    const groups = []
+    let cur = null
+    for (const sp of list) {
+      if (cur && Math.hypot(sp.point[0] - cur.point[0], sp.point[1] - cur.point[1]) <= IX_INTER_SPLICE_SNAP) {
+        cur.ixDatas.push(sp.ixData)
+      } else {
+        // Representative position = the LAST splice in chain order within
+        // the group (largest afterIdx/t); since the list is descending,
+        // that is the FIRST splice we see, so seed the group from it.
+        cur = { afterIdx: sp.afterIdx, point: sp.point, ixDatas: [sp.ixData] }
+        groups.push(cur)
+      }
+    }
+
+    for (const { afterIdx, point, ixDatas } of groups) {
       const newIdx = afterIdx + 1
       st.points.splice(newIdx, 0, point)
       // Shift any previously-recorded intersections on this street whose
@@ -2505,10 +2539,77 @@ export function deriveLayers(highways) {
           if (s.name === st.name && s.ix >= newIdx) s.ix += 1
         }
       }
-      st.intersections.push({ ix: newIdx, with: ixData })
-      ixData.streets.push({ name: st.name, ix: newIdx })
+      // Record every source intersection of this merged group at the one
+      // shared vertex index.
+      for (const ixData of ixDatas) {
+        st.intersections.push({ ix: newIdx, with: ixData })
+        ixData.streets.push({ name: st.name, ix: newIdx })
+      }
     }
   }
+
+  // ── Collapse residual micro-segments at intersection vertices ──────
+  // The inter-splice dedup above only merges NEW splice points against each
+  // other. A noded intersection can still land within ~IX_VERTEX_SNAP of an
+  // EXISTING skeleton vertex (snapped) while a second intersection splices a
+  // new vertex a fraction of a metre away — leaving a <MICRO_SEG_COLLAPSE
+  // segment between two vertices that offsets inward into a needle/notch.
+  // For each such short segment we either:
+  //   • drop the NON-intersection endpoint (merge it into the IX vertex), or
+  //   • if BOTH endpoints are intersection vertices (two distinct noded
+  //     crossings effectively coincident at this scale), merge them into the
+  //     LOWER vertex and re-point the upper vertex's intersection records to
+  //     it — so no genuine crossing is dropped, only the duplicate vertex.
+  // Segments with NEITHER endpoint at an intersection are left alone (real
+  // skeleton/RDP geometry, not a junction artifact). Never drop an endpoint
+  // of the chain.
+  let microCollapsed = 0
+  for (let si = 0; si < ribbonStreets.length; si++) {
+    const st = ribbonStreets[si]
+    if (!st.points || st.points.length < 3) continue
+    const isIx = () => new Set(st.intersections.map(x => x.ix))
+    let ix = isIx()
+    // Walk high→low so removals don't invalidate lower indices.
+    for (let i = st.points.length - 2; i >= 0; i--) {
+      const a = st.points[i], b = st.points[i + 1]
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1])
+      if (d >= MICRO_SEG_COLLAPSE || d < 1e-9) continue
+      const aIx = ix.has(i), bIx = ix.has(i + 1)
+      if (!aIx && !bIx) continue // real geometry — not a junction artifact
+      // Choose which vertex to drop. Prefer dropping a non-IX endpoint;
+      // for IX-to-IX, drop the upper (i+1) and keep the lower (i).
+      let dropIdx, keepIdx
+      if (aIx && !bIx) { dropIdx = i + 1; keepIdx = i }
+      else if (bIx && !aIx) { dropIdx = i; keepIdx = i + 1 }
+      else { dropIdx = i + 1; keepIdx = i } // both IX
+      const lastIdx = st.points.length - 1
+      // Never drop a chain endpoint. If the chosen drop is an endpoint
+      // (e.g. a terminal junction sliver), flip to drop the inner vertex so
+      // the geometric terminus is preserved — but only when the survivor is
+      // itself an intersection vertex (so we don't move a non-IX endpoint).
+      if (dropIdx === 0 || dropIdx === lastIdx) {
+        if ((keepIdx === 0 || keepIdx === lastIdx) || !ix.has(keepIdx)) continue
+        const tmp = dropIdx; dropIdx = keepIdx; keepIdx = tmp
+      }
+      st.points.splice(dropIdx, 1)
+      // Re-point records AT dropIdx onto the surviving vertex; shift records
+      // ABOVE dropIdx down by one. keepIdx itself shifts down if it was above.
+      const survivor = keepIdx > dropIdx ? keepIdx - 1 : keepIdx
+      const remap = (rec) => {
+        if (rec.ix === dropIdx) rec.ix = survivor
+        else if (rec.ix > dropIdx) rec.ix -= 1
+      }
+      for (const prev of st.intersections) remap(prev)
+      for (const isec of intersections) {
+        for (const s of isec.streets) {
+          if (s.name === st.name) remap(s)
+        }
+      }
+      microCollapsed++
+      ix = isIx()
+    }
+  }
+  if (microCollapsed) console.log(`    Collapsed ${microCollapsed} micro-segment(s) at junctions`)
 
   // ── Emit capEnds from operator-marked centerlines ──────────────
   // Per-chain emission: for each ribbon chain, scan all centerlines of the
