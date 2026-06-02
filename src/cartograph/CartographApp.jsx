@@ -8,7 +8,7 @@ import MapLayers from './MapLayers.jsx'
 import BakedGround from '../components/BakedGround.jsx'
 
 // Designer-only (aerial + authoring overlays)
-import AerialBase from './AerialTiles.jsx'
+import AerialBase, { AerialFocus } from './AerialTiles.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import MeasureOverlay from './MeasureOverlay.jsx'
 import CornerEditHandles from './CornerEditHandles.jsx'
@@ -946,7 +946,10 @@ export default function CartographApp() {
                 active or Aerial is toggled, so Designer pays nothing for the
                 photo unless it's being used. (Two-layer loader rework:
                 HANDOFF-aerial-focus-brief.md.) */}
-            {sceneCfg.hasAerial && (!!tool || aerialVisible) && <AerialBase />}
+            {sceneCfg.hasAerial && (!!tool || aerialVisible) && <>
+              <AerialBase />
+              {corridorSelected && <AerialFocus />}
+            </>}
             {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
