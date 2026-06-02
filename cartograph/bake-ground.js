@@ -742,8 +742,23 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // triangulation, while keeping the bin file under ~10 MB.
   const REFINE_MAX_EDGE_M = 15
 
+  // Bake only ACTIVATED layers: skip any group the operator has hidden
+  // (layerVis=false). The slab then carries only what renders — smaller
+  // ground.bin, less GPU, no dead groups. Mirrors BakedGround.isGroupVisible
+  // exactly (faces key off `lu-<id>`; materials off BAND_TO_LAYER, else self),
+  // so the bake omits precisely what the runtime would have hidden. (Re-showing
+  // a layer dirties the geometry → it re-bakes at the Section→Stage gate, which
+  // is the only place the slab/AO bake runs — not during design.)
+  const bakeLayerVis = design.layerVis || {}
+  const groupLayerId = (kind, key) => {
+    if (kind === 'face') return 'lu-' + key
+    const ci = key.indexOf(':')
+    const bare = ci < 0 ? key : key.slice(0, ci)
+    return BAND_TO_LAYER[bare] || bare
+  }
   let renderOrder = 0
   for (const [kind, key] of PAINT_ORDER) {
+    if (bakeLayerVis[groupLayerId(kind, key)] === false) continue
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
     // itemsToBuffers normalizes both — holes are honored at triangulation
     // time so the lawn ribbon underneath a clipped face fill stays visible.
