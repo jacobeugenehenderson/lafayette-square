@@ -296,6 +296,8 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
     cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : null,
     // Per-fe (per-block) asphalt-width overrides authored in Survey/Measure.
     blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : null,
+    // THE WALL · Phase D — emit the frozen per-tile shape artifact for bake serialization.
+    emitArtifact: true,
   })
   const byMaterial = new Map()
   const byFaceUse = new Map()
@@ -312,7 +314,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
     const polys = ringsToHoledPolys(rings)
     if (polys.length) byFaceUse.set(lu, (byFaceUse.get(lu) || []).concat(polys))
   }
-  return { byMaterial, byFaceUse }
+  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact }
 }
 
 function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
@@ -652,7 +654,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
   // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
   // conditional is gone — a scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse } = buildTileBakeShape(ribbons, design, stencil.clipPolygon)
+  const { byMaterial, byFaceUse, shapeArtifact } = buildTileBakeShape(ribbons, design, stencil.clipPolygon)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -874,6 +876,10 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // can skip its 25s pass when the geometry is unchanged.
   writeIfChanged(join(outDir, 'ground.json'), JSON.stringify(manifest, null, 2))
   writeIfChanged(join(outDir, 'ground.bin'), Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength))
+  // THE WALL · Phase D — serialize the frozen shape artifact: the per-tile shape
+  // sectionPass consumes (iA, runs+measure, vertR, tl/sw, lu, tips), the single
+  // source Section reads with no chain. Additive — ground.json/bin are unchanged.
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify(shapeArtifact))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

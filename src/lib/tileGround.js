@@ -484,10 +484,13 @@ function groupRuns(tile) {
 // (streets / streetsOrig / measures / centerlineData / ribbons), so it CANNOT
 // reach back. That impossibility is the wall: Section's shape input changes only
 // when the shape pass re-runs. Every helper below is module-level + pure.
-function sectionPass(shapeTiles, cw, stripMat) {
+export function sectionPass(shapeTiles, cw, stripMat) {
   const Wacc = [], tlByLu = {}, luByLu = {}
   for (const st of shapeTiles) {
-    const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs } = st
+    const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs } = st
+    // Tolerate the serialized artifact: roundTipKeys is a Set in-memory, an array
+    // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
+    const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
     const iC = offsetRings(iA, -cw, 'miter')               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl), 'miter')        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw), 'miter')   // sidewalk/LU             (R+cw+tl+sw)
@@ -999,5 +1002,12 @@ export function buildTileGround(ribbons, opts = {}) {
   for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
   for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
-  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta }
+  // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
+  // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
+  // single source Section reads, no chain. JSON-safe (roundTipKeys Set→array).
+  // Built ONLY when the bake asks (emitArtifact) so the live path pays nothing.
+  const _shapeArtifact = opts.emitArtifact
+    ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
+    : undefined
+  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _shapeArtifact }
 }
