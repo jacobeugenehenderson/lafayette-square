@@ -287,6 +287,20 @@ function trimPolyline(poly, t0, t1) {
   return p.reverse()
 }
 
+// Split a street polyline at interior JUNCTION nodes (graph degree ≥ 3) into
+// sub-segments between junctions — the perimeter analogue of a tile's runs, so
+// the treelawn slab can be trimmed back from each corner.
+function splitAtJunctions(pts, nodeDeg, key) {
+  const segs = []
+  let cur = [pts[0]]
+  for (let i = 1; i < pts.length; i++) {
+    cur.push(pts[i])
+    if (i < pts.length - 1 && nodeDeg.get(key(pts[i])) >= 3) { segs.push(cur); cur = [pts[i]] }
+  }
+  segs.push(cur)
+  return segs
+}
+
 function groupRuns(tile) {
   const { ring, edges } = tile
   const n = edges.length
@@ -583,27 +597,50 @@ export function buildTileGround(ribbons, opts = {}) {
       }
       return stads.length && perimeter.length ? intersectRings(unionRings(stads), perimeter) : []
     }
-    const pA = perimFill('A'), pC = perimFill('C'), pT = perimFill('T'), pW = perimFill('W')
-    // CONCENTRIC corners on the open perimeter walk (Jacob): a corner is a
-    // property of the walk, not the closed loop — so round it with the same G5
-    // construction. openRound the region beyond the perimeter asphalt at R (this
-    // rounds the convex block-outer corners where two exterior runs meet); the
-    // bands are concentric offsets of that rounded asphalt-inner, each clipped
-    // to its network-buffer zone (pC/pT/pW) so the ped stays on the STREET side
-    // and never sprouts along the stencil/map edge. No perimeter-as-a-face build.
-    let tlMaxP = 0, swMaxP = 0
+    const pA = perimFill('A')
+    // CONCENTRIC perimeter corners that MATCH the interior (Jacob): a corner is
+    // a property of the walk, so round it with the same G5 construction on the
+    // open perimeter contour. openRound the region beyond the perimeter asphalt
+    // at R (rounds the convex block-outer corners where two exterior runs meet);
+    // the bands are concentric offsets of that rounded asphalt-inner. To keep
+    // the ped on the STREET side (never on the stencil/map edge) WITHOUT
+    // re-hardening the corners, clip to a SMOOTH zone (the asphalt dilated by
+    // the full ped depth, round join) — not the hard network-buffer union.
+    // Representative ped (mean) matches the interior's per-tile representative.
+    let tlSum = 0, swSum = 0, nP = 0
     for (const m of measures) {
-      tlMaxP = Math.max(tlMaxP, m?.left?.treelawn || 0, m?.right?.treelawn || 0)
-      swMaxP = Math.max(swMaxP, m?.left?.sidewalk || 0, m?.right?.sidewalk || 0)
+      if (!m) continue
+      tlSum += Math.max(m.left?.treelawn || 0, m.right?.treelawn || 0)
+      swSum += Math.max(m.left?.sidewalk || 0, m.right?.sidewalk || 0); nP++
     }
+    const tlP = nP ? tlSum / nP : 0, swP = nP ? swSum / nP : 0
     const iAp = openRound(differenceRings(perimeter, pA), R)
     const iCp = offsetRings(iAp, -cw)
-    const iTp = offsetRings(iAp, -(cw + tlMaxP))
-    const iWp = offsetRings(iAp, -(cw + tlMaxP + swMaxP))
-    const pAsphalt  = differenceRings(perimeter, iAp)
-    const pCurb     = intersectRings(differenceRings(iAp, iCp), pC)
-    const pTree     = intersectRings(differenceRings(iCp, iTp), pT)
-    const pSide     = intersectRings(differenceRings(iTp, iWp), pW)
+    const iTp = offsetRings(iAp, -(cw + tlP))
+    const iWp = offsetRings(iAp, -(cw + tlP + swP))
+    const pedClip = offsetRings(pA, cw + tlP + swP + R + 3)        // smooth street-side zone
+    const pAsphalt = differenceRings(perimeter, iAp)
+    const pCurb    = intersectRings(differenceRings(iAp, iCp), pedClip)
+    // ADA all-SW corner plug — the SAME slab-trim as the interior (NOT disks,
+    // which curve backwards): the treelawn lives only on the straight legs and
+    // ends at the tangent. Build the leg zone from each street's treelawn slab,
+    // split at junctions (degree ≥ 3) and trimmed back from each junction/end by
+    // (asphalt-hw + R). The corner span carries no treelawn → fills as sidewalk.
+    const tlSlabsP = []
+    streets.forEach((s, i) => {
+      const m = measures[i]
+      const a = Math.max(0, m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
+      const td = a + cw + tlP
+      if (td <= 1e-6 || !s.points) return
+      for (const seg of splitAtJunctions(s.points, nodeDeg, tipKey)) {
+        const poly = trimPolyline(seg, a + R, a + R)
+        if (poly && poly.length >= 2) tlSlabsP.push(...strokeOpen(poly, td))
+      }
+    })
+    const zoneP = tlSlabsP.length ? unionRings(tlSlabsP) : []
+    const pPedZone = intersectRings(differenceRings(iCp, iWp), pedClip)   // curb-inner → LU, street side
+    const pTree = zoneP.length ? intersectRings(intersectRings(differenceRings(iCp, iTp), pedClip), zoneP) : []
+    const pSide = differenceRings(pPedZone, pTree)                        // sidewalk incl. the corner plug
     asphalt  = unionRings([...asphalt,  ...pAsphalt])
     curb     = unionRings([...curb,     ...pCurb])
     sidewalk = unionRings([...sidewalk, ...pSide])
