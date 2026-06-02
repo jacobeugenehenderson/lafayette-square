@@ -8,7 +8,7 @@ For the *publisher side* of the slab boundary (what cartograph emits, the bake c
 
 **Pasteable references:** [`reference/INVENTORY-DATA.md`](reference/INVENTORY-DATA.md) (data inventory), [`reference/INVENTORY-API.md`](reference/INVENTORY-API.md) (backend endpoints).
 
-Last verified: 2026-05-13 (Phase B plans landed; staging URL live; BASE_URL invariant codified — see SLAB-CONTRACT §10.6).
+Last verified: 2026-06-02 (forensic inventory pass §§1–6 — `scratch/ls-forensic-inventory.md`; corrected the buildings source, the meteorologist consumer chain, and the endpoint count below). Prior: 2026-05-13 (Phase B plans landed; staging URL live; BASE_URL invariant codified — see SLAB-CONTRACT §10.6).
 
 ---
 
@@ -29,7 +29,14 @@ index.html
         │       ├── SkyStateTicker          (drives useSkyState)
         │       ├── WeatherPoller           → fetches open-meteo.com every N min
         │       ├── CelestialBodies         (sun/moon/stars; live, no data fetch beyond bright_stars.json + planetarium/*)
-        │       ├── CloudDome               (procedural — does NOT consume meteorologist artifacts today)
+        │       ├── CloudDome               (cheap procedural sky-cloud backup, hero mode; does NOT itself read meteorologist artifacts)
+        │       ├── Atmosphere              (volumetric raymarched clouds; DOES consume the
+        │       │                             meteorologist directive — reads /clouds/{almanac,
+        │       │                             presets,modulators}.json + scene.json.sky channel.
+        │       │                             This is the live-weather cloud system as of 2026-06-02.)
+        │       ├── AtmosphereDirectiveDriver (per-frame: lerps useAtmosphere.rawDirective →
+        │       │                             tweenedDirective over 45s; the meteorologist
+        │       │                             store→scene-uniform bridge)
         │       ├── Terrain                 ← src/data/terrain.{json,bin} (kit-baked
         │       │                             pair via cartograph/bake-terrain.js;
         │       │                             metadata static-imported, .bin fetched
@@ -111,14 +118,14 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 | `/baked/default.json` (arborist tree placements) + GLB variants in `/baked/<look>/trees/` + tree atlas textures | `InstancedTrees.jsx` | ✅ Production |
 | `/baked/<look>/trees-atlas.json` | `treeAtlasMaterial.js` | ✅ Production |
 | `/baked/<look>/lamps.json` | `BakedLamps.jsx` | ✅ Production + Stage + Preview (production switched 2026-05-12, L1.1) |
-| `/baked/<look>/buildings.{json,bin}` | `src/preview/BakedBuildings.jsx` | ⚠ Preview-only — production `LafayetteScene` reads live `src/data/buildings.json` |
+| `/baked/<look>/buildings.{json,bin}` (v2 merged-mesh + render index) | `SlabBuildings.jsx` | ✅ **Production** (L1.3, 2026-05-26). Production mounts `SlabBuildings` off the slab; the live per-`<Building>` path in `LafayetteScene` is hidden (`hiddenLayers.building`). The slab index resolves raycast→building-id for selection/neon/place-card; `SceneNeon` reads slab `roofOutline`. Stage keeps the live `LafayetteScene` mount for authoring retint. `BakedBuildings` (old Preview consumer) is deleted. |
 
 ### Consumed live — load-bearing (won't bake; dynamic by nature)
 
 | Source | Consumer | Why live |
 |---|---|---|
 | Google Apps Script `getInit` batch | `hooks/useInit.js` | End-user-mutable: listings + events + handle hydrated on boot |
-| GAS individual endpoints (40+ in `lib/api.js`) | Various hooks + modals | Reviews, replies, claims, bulletins, comments, threads, qr designs, staff, residence, guardian, link tokens |
+| GAS individual endpoints (**59** routed via `?action=` in `lib/api.js` → `Code.js`) | Various hooks + modals | Reviews, replies, claims, bulletins, comments, threads, qr designs, staff, residence, guardian, link tokens, check-ins, init batch (full table in `reference/INVENTORY-API.md` / inventory §6) |
 | Supabase | `useCary`, `ChatModal`, `SmsInbox`, `ContactModal`, `CourierDots`, `useInit` | Cary realtime sessions + auth + chat |
 | open-meteo.com forecast | `hooks/useWeather.js` (called by `WeatherPoller`) | Live weather, 48-hour forecast; lat/lon/timezone templated from `INSTANCE.geography` |
 
@@ -155,7 +162,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 
 | Backend | Purpose | Auth | Status |
 |---|---|---|---|
-| Google Apps Script (`apps-script/Code.js`) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets (~40 endpoints in `lib/api.js`) | Device hash + admin passphrase (6h sessionStorage token) | Live |
+| Google Apps Script (`apps-script/Code.js`) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets, init batch (**59 endpoints**, one shared 14-tab Google Sheet) | Device hash (forgeable naming anchor) + admin passphrase → 6h token (localStorage client-side, Script Cache server-side). **Privileged writes re-verify device_hash → Guardians/Residents/Checkins sheet server-side** (25+ endpoints). See `OPERATIONS.md` + `project_ls_security_arc` for the gating verdict + the admin-token hotspot. | Live |
 | Supabase | Cary courier system (requests, sessions, phone OTP, profiles, courier_profiles, edge functions: `onboarding`, `dispatch`); also realtime channels for `CourierDots`, `ChatModal`, `SmsInbox`, `ContactModal` | Phone OTP | Hosted project live; LS UI behind "coming soon" placeholders |
 | Cloudflare Worker (`worker.js`) | Per-place OG meta tags for social previews on `/place/*` | None | Live |
 | open-meteo.com | 48-hour weather forecast for St. Louis | None (free) | Live |
@@ -211,7 +218,7 @@ All four HTML entries build into `dist/`. Authoring HTML files (`cartograph.html
 | `public/baked` | 201 MB | The slab — by design |
 | `public/photos` | 71 MB | Building photos served to PlaceCard |
 | `public/looks` | 508 KB | Per-Look design.json files |
-| `public/clouds` | 28 KB | Meteorologist `presets.json` + `almanac.json` — **published but not consumed by runtime today** |
+| `public/clouds` | 28 KB | Meteorologist `presets.json` + `almanac.json` + `modulators.json` — **consumed at runtime** by the volumetric `Atmosphere` (via `useAtmosphereDirective` → `AtmosphereDirectiveDriver`). `modulators.json` is optional (graceful 404 → empty). |
 
 **Staging URL** (auto-deploys on push to `cartograph-looks-pass-ab` via `.github/workflows/staging.yml`): [`https://jacobeugenehenderson.github.io/lafayette-square-staging/`](https://jacobeugenehenderson.github.io/lafayette-square-staging/). Slab renders end-to-end as of `a1ebe1b`. The staging build passes `--base=/lafayette-square-staging/` to Vite; all runtime asset fetches route through `import.meta.env.BASE_URL` (memory `project_kit_deploy_path_agnostic`, SLAB-CONTRACT §10.6, couplers plan CC.8). Production builds with default `BASE_URL='/'` for apex-domain deploy.
 
@@ -244,7 +251,7 @@ Authoring HTMLs (`/cartograph.html`, `/arborist.html`, `/preview.html`) bypass `
 
 ## 6. Conventions worth knowing
 
-- **Admin access via `?admin`.** Passphrase prompt → 6h `sessionStorage` token. `?logout` clears.
+- **Admin access via `?admin`.** Passphrase prompt → 6h token in `localStorage` (`lsq_admin_token`), re-verified async on reload; server caches it 6h. `?logout` clears all identity keys. ⚠️ The token is passed in request bodies and trusted for the session — a known security hotspot (`project_ls_security_arc`; fix = signed/ephemeral JWT or per-action re-verify).
 - **Device hash identity.** Every end-user action is keyed by `getDeviceHash()` (deterministic from browser fingerprint). Accounts are device-scoped, not email-scoped.
 - **Time-of-day is live, frame-by-frame.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute continuously from real time + `INSTANCE.geography.{lat,lon}`. No baked time-of-day data anywhere.
 - **Per-building neon stays live.** `LafayetteScene` reads `buildings.json` lazily; per-building `NeonBand` mount is gated on listing hours from `useListings` and ticks every 60s. The merged-mesh `bake-buildings` artifact is a perf proof in Preview but doesn't replace this consumer.
@@ -259,7 +266,7 @@ Items the inventory walk surfaced. Status reflects Phase B resolution where appl
 
 1. **`PlanetariumOverlay` mount** — RUNTIME-DELTA K.3 / RD.3. Phase C's Phase 3 staging walk confirms dead-or-live; strip if confirmed dead.
 2. **Vite's `copyPublicDir` selectivity** — RESOLVED by cleanout plan §S3: production build moves to `copyPublicDir: false` + named allow-list plugin. Phase C executes.
-3. **Meteorologist `clouds/{presets,almanac}.json` consumer** — RESOLVED by couplers plan §3 (strip in v1, defer wire to v1.1 concurrent track). Phase C executes the strip via cleanout §S3.
+3. **Meteorologist `clouds/{presets,almanac,modulators}.json` consumer** — ✅ **WIRED, not stripped.** The old plan (strip in v1, defer wire to v1.1) is obsolete: the volumetric `Atmosphere` consumes these artifacts at runtime today (confirmed inventory §5, 2026-06-02). Do not strip.
 4. **Cartograph trinity stale `StreetRibbons.jsx` claims** — partially addressed 2026-05-13 (`cartograph/FEATURES.md L286`). `cartograph/ARCHITECTURE.md L116, L136` still need rewriting; flagged for next cartograph session (ls/BACKLOG K.1).
 
 ---
