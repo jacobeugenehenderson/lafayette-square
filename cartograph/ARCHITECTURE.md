@@ -64,6 +64,22 @@ This same split shows up in every helper that has both kinds of editing:
 
 **Looks vary styling, never shape.** That rule is what lets the runtime swap Looks at zero cost — just a different `design.json` + `ground.svg`, the geometry is identical.
 
+### ⭐ 2.1 The three tools (target architecture): Survey · Section · Stage
+
+The "Designer = shape" role above is being **separated into two distinct tools**. The full target is **three tools** — each a genuinely different area with its own toolset, each freezing an artifact the next consumes:
+
+| Tool | Authors | Its own tools | Freezes |
+|---|---|---|---|
+| **Survey** | the **polygon / corner SHAPE** — block silhouette, corner *geometry* (radius), curb. Strokes the centerline chains **outward** into hardscape. | outward stroke, per-corner radius, footprints | the **hardscape shape** — **wall #1, chains die** |
+| **Section** | the **ribbons + the internal corners** — treelawn/sidewalk strips, the bent-rectangle corner *fills*, ADA pads, dead-end caps. Strokes **inward** off the frozen curb; LU is the remainder. | inward strokes off the frozen curb | the ped cross-section, authored *onto* Survey's frozen shape |
+| **Stage** | the **look / slab** — materials, color, visibility, shaders, sky, post-FX, neon, camera. | (exists today; works on LS) | the **slab** — **wall #2, store dies** |
+
+**The corner is TWO things, in TWO tools.** The corner *shape* (how round the curb silhouette is) is **Survey**. The corner *fill* (how the ped ribbons bend around it — the bent rectangles, the ADA pad) is **Section**. Conflating these two is the root of the corner mess: a fill cannot settle while the shape under it is still moving.
+
+**Where we actually are (2026-06-02 — vital to hold):** all three tabs **already exist** in the Designer panel — the `ToolPill` in `Panel.jsx` is the 3-part **Survey | Measure | Design** selector (`SurveyorPanel.jsx` / `MeasurePanel.jsx` / default Look editing). **Survey** (`SurveyorPanel.jsx`) already owns: hero-subject pick, the **Smoothing** dial (the Phase-2 stroke-construction silhouette control — live==bake WYSIWYG), street metadata (name/type/oneway), anchor, and **Caps** (round/blunt/none). **Measure** owns the ped widths (treelawn/sidewalk) — it is the future **Section**. So the separation is **consolidation, not from-scratch**: the corner-SHAPE authoring (the on-canvas `CornerEditHandles` radius editor — today it floats outside the panel) + curb width move *into* the existing Survey tab next to smoothing+caps; Measure refits to Section (ped widths + the ribbon corner FILLS + ADA). Section can only be clean once it strokes onto a **frozen** Survey shape — so **corner/ribbon/cap polish in the conflated surface is throwaway** until SHAPE is consolidated into Survey and frozen. (Doc spec: FEATURES.md §"Toolbar=views, Panel=tools" + L458 "Survey + Measure author the silhouette; the corner editor refines it; the curb traces it.")
+
+*(References: the bakes/walls model = memory `project_two_bakes_two_walls`; the outward/inward stroke construction = `project_stroke_construction_model`; the corner invariants that bind whatever builds the shape = `RIBBONS.md §3.9a` + its "invariants that survive the rewrite" block.)*
+
 ---
 
 ## 3. The Looks model

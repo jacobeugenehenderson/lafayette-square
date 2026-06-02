@@ -40,16 +40,24 @@ const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
-// Offset CLOSED rings by `delta` (round join). Negative = erode/inset. Used to
-// build the concentric ped bands by uniform inward offset of the R-rounded
-// asphalt-inner region — eroding a rounded corner of radius r by d gives a
-// concentric corner of radius r+d, which is exactly the nested-arc curb wrap.
-function offsetRings(rings, delta) {
+// Offset CLOSED rings by `delta`. Negative = erode/inset. `join` selects the
+// corner treatment:
+//   • 'round' (default) — for morphological openRound + smooth clip zones.
+//   • 'miter' — for the concentric ped bands. RIBBONS §3.9a step 7 (the V1
+//     keystone) is explicit: the band offsets MUST be jtMiter, NOT jtRound.
+//     The asphalt-inner ring (iA) is ALREADY rounded once (filletRing emits a
+//     dense arc per corner); jtMiter inherits those arcs as concentric nested
+//     arcs (r→r+d via dense-sample miters) AND passes operator-authored R=0
+//     square corners through SHARP. jtRound would re-round every corner by
+//     radius=d — a SECOND rounding stacked on the curb fillet, corrupting
+//     squares. "The corner is the band bent, never a separately-built shape."
+function offsetRings(rings, delta, join = 'round') {
   if (!rings.length) return []
   if (delta === 0) return rings.map(r => r.slice())
   const { ClipperOffset, JoinType, EndType } = clipperLib
-  const co = new ClipperOffset(2, 0.05 * SCALE)
-  for (const r of rings) if (r && r.length >= 3) co.AddPath(r.map(toClipper), JoinType.jtRound, EndType.etClosedPolygon)
+  const co = new ClipperOffset(2, 0.05 * SCALE)     // miterLimit 2 → 90° squares stay sharp; very-acute corners bevel
+  const jt = join === 'miter' ? JoinType.jtMiter : JoinType.jtRound
+  for (const r of rings) if (r && r.length >= 3) co.AddPath(r.map(toClipper), jt, EndType.etClosedPolygon)
   const out = []
   co.Execute(out, delta * SCALE)
   return out.map(p => p.map(fromClipper))
@@ -654,9 +662,9 @@ export function buildTileGround(ribbons, opts = {}) {
       const vi = nearestVertexIndex(f.apex, tile.ring)
       cornerFillets[cornerKeyAt(tile.ring[vi], tile.edges, vi)] = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
     }
-    const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
-    const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
-    const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
+    const iC = offsetRings(iA, -cw, 'miter')               // curb/treelawn boundary  (R+cw)
+    const iT = offsetRings(iA, -(cw + tl), 'miter')        // treelawn/sidewalk       (R+cw+tl)
+    const iW = offsetRings(iA, -(cw + tl + sw), 'miter')   // sidewalk/LU             (R+cw+tl+sw)
     const lu = luForRing(tile.ring)
     // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
     // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
@@ -796,9 +804,9 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     const tlP = nP ? tlSum / nP : 0, swP = nP ? swSum / nP : 0
     const iAp = openRound(differenceRings(perimeter, pA), R)
-    const iCp = offsetRings(iAp, -cw)
-    const iTp = offsetRings(iAp, -(cw + tlP))
-    const iWp = offsetRings(iAp, -(cw + tlP + swP))
+    const iCp = offsetRings(iAp, -cw, 'miter')
+    const iTp = offsetRings(iAp, -(cw + tlP), 'miter')
+    const iWp = offsetRings(iAp, -(cw + tlP + swP), 'miter')
     const pedClip = offsetRings(pA, cw + tlP + swP + R + 3)        // smooth street-side zone
     const pAsphalt = differenceRings(perimeter, iAp)
     const pCurb    = intersectRings(differenceRings(iAp, iCp), pedClip)

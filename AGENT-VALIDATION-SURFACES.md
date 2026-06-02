@@ -19,6 +19,26 @@ This is a one-page index: **if your work touches X, validate it via Y, here's th
 
 ---
 
+## ⭐ Live vs baked — which surface shows what (READ FIRST; the recurring confusion)
+
+Most "I changed it but nothing moved" / "it looks identical" scares are *surface ↔ live-vs-bake mismatch*, not a broken change. Match the surface to where the change lives:
+
+| Surface | Ground construction comes from | A `tileGround.js` change shows… |
+|---|---|---|
+| **Designer** (`BlockGeometryV2Debug`) | **LIVE** — calls `buildTileGround` every render. The code comment says it: *"live == bake (both call buildTileGround)."* | …on a **hard-refresh. No bake needed.** |
+| **LS production / Cartograph Preview** | **BAKED** — reads `public/baked/<look>/ground.*` | …only **after `node cartograph/bake-ground.js --look=<id>`** + refresh |
+| **LS Stage** | baked layers + live-wire authored channels (it auto-rebakes on authoring) | …after its re-bake |
+
+**Per-scene reality (verified 2026-06-02):**
+- **Toy → Designer is the only usable surface, and it's LIVE.** The `SCENE_REGISTRY` has a toy `StageEnvironment` *stub*, but `hasAerial:false / hasHero:false` and it is **not hooked up** (known flag). So to eyeball a toy construction change: **hard-refresh the Toy Designer** — the bake is irrelevant to what you see there. (Baking toy is harmless but does *not* drive the Designer.)
+- **LS → Designer (live) + Stage + production/Preview (baked).** A construction change wants the Designer for fast live eyeballing; the bake + Stage/Preview for the at-scale and frozen-slab check.
+
+**The construction file (tile era):** `src/lib/tileGround.js` (`buildTileGround`) — shared by Designer-live AND the bake, which is *why* "live == bake." (`buildBlockGeometryV2.js` is the **dead** figure-ground path, deleted at T4 — ignore it for tile work.)
+
+> This section exists because the distinction keeps biting (the "Design looks identical after T1" scare; the "is LS Stage fixed too?" mixup, 2026-06-02). When you tell Jacob *where* to look, name the surface AND whether it's live or baked.
+
+---
+
 ## Toy
 
 **What it is.** A 4+4 grid of 9 authored blocks in `src/data/toy/toy-input.json` (re-derived to `toy-ribbons.json` via `cartograph/derive-toy.js`), plus boundary stencil + lamps + buildings — the kit's design surface and the cleanest place in cartograph to develop emitter + geometry changes. Full V2 pipeline live (block fills, ribbons, corner authoring kit, smoothing, curb, bake). Three deliberate topology irregularities: VW3's bent chain, HW3's 45° saw-tooth jog, a dead-end stub. Plus Benton-toy teardrop (Type-A closed-chain) and Waverly-toy couplet (Type-B divided pair).

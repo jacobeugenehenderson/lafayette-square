@@ -79,6 +79,16 @@ The project is **four domains** + the runtime, each documented beside its code:
 
 Cartograph and LS are **standalone yet completely overlapped** — cartograph could pour slabs for other neighborhoods; LS could surface other operators' slabs. Read the domain relevant to your session; flag mid-session contradictions; update at session end.
 
+#### The cartograph tools — Survey · Section · Stage (first-class; not incidental)
+
+The cartograph authoring app is **three distinct tools**, each its own tab/area with its own toolset, each freezing the artifact the next consumes. They are the spine of the whole map pipeline — canon table in **[`cartograph/ARCHITECTURE.md §2.1`](cartograph/ARCHITECTURE.md)**:
+
+- **Survey** — the hardscape **SHAPE**: centerlines, smoothing, caps, anchor, road metadata, hero-pick *(target: + corner radius + curb)*. Strokes chains outward; **freezes wall #1 (chains die).** Tab: the `surveyor` pill in `src/cartograph/Panel.jsx` → `SurveyorPanel.jsx`. Docs: `ARCHITECTURE.md §2.1`, `FEATURES.md §"Toolbar = views, Panel = tools"`.
+- **Section** — the pedestrian **CROSS-SECTION + ribbon corner fills**: treelawn/sidewalk widths, the bent-rectangle corner fills, ADA pads, stroked inward off the frozen curb (LU = remainder). *Currently the `measure` pill → `MeasurePanel.jsx`; "Measure" is the vestigial name.* Geometry canon: **`RIBBONS.md`**.
+- **Stage** — the **LOOK / slab**: materials, color, visibility, shaders, sky, post-FX, neon, camera; **bakes the slab (wall #2, store dies).** Docs: `FEATURES.md §"Stage"`, `ARCHITECTURE.md`. *(The Designer's `design` pill is the 2D look-editing default; Stage is the 3D look environment + the slab pour.)*
+
+(`Preview` inherits Stage — a Slab Player, not a fourth tool.)
+
 ### Cross-domain / strategic (repo root)
 
 - **[`SLAB-CONTRACT.md`](SLAB-CONTRACT.md)** — the formal cartograph↔LS boundary (the slab format; owned by neither app).
