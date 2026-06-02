@@ -28,7 +28,7 @@
       "vertexCount": 1270,
       "vertexByteOffset": 0,
       "indexCount": 5958,
-      "indexByteOffset": 163080
+      "indexByteOffset": 222876
     },
     {
       "kind": "face",
@@ -39,7 +39,7 @@
       "vertexCount": 1940,
       "vertexByteOffset": 15240,
       "indexCount": 10008,
-      "indexByteOffset": 186912
+      "indexByteOffset": 246708
     },
     {
       "kind": "face",
@@ -47,10 +47,10 @@
       "color": "#8A7E5E",
       "renderOrder": 2,
       "polygonOffsetUnits": -3,
-      "vertexCount": 5008,
+      "vertexCount": 9431,
       "vertexByteOffset": 38520,
-      "indexCount": 28776,
-      "indexByteOffset": 226944
+      "indexCount": 53190,
+      "indexByteOffset": 286740
     },
     {
       "kind": "face",
@@ -59,9 +59,9 @@
       "renderOrder": 3,
       "polygonOffsetUnits": -4,
       "vertexCount": 451,
-      "vertexByteOffset": 98616,
+      "vertexByteOffset": 151692,
       "indexCount": 2334,
-      "indexByteOffset": 342048
+      "indexByteOffset": 499500
     },
     {
       "kind": "face",
@@ -70,9 +70,9 @@
       "renderOrder": 4,
       "polygonOffsetUnits": -5,
       "vertexCount": 877,
-      "vertexByteOffset": 104028,
+      "vertexByteOffset": 157104,
       "indexCount": 3837,
-      "indexByteOffset": 351384
+      "indexByteOffset": 508836
     },
     {
       "kind": "mat",
@@ -81,9 +81,9 @@
       "renderOrder": 5,
       "polygonOffsetUnits": -6,
       "vertexCount": 402,
-      "vertexByteOffset": 114552,
+      "vertexByteOffset": 167628,
       "indexCount": 1128,
-      "indexByteOffset": 366732
+      "indexByteOffset": 524184
     },
     {
       "kind": "mat",
@@ -92,64 +92,75 @@
       "renderOrder": 6,
       "polygonOffsetUnits": -7,
       "vertexCount": 154,
-      "vertexByteOffset": 119376,
+      "vertexByteOffset": 172452,
       "indexCount": 390,
-      "indexByteOffset": 371244
+      "indexByteOffset": 528696
+    },
+    {
+      "kind": "mat",
+      "id": "treelawn:vacant-commercial",
+      "color": "#8A7E5E",
+      "renderOrder": 7,
+      "polygonOffsetUnits": -8,
+      "vertexCount": 166,
+      "vertexByteOffset": 174300,
+      "indexCount": 402,
+      "indexByteOffset": 530256
     },
     {
       "kind": "mat",
       "id": "treelawn:parking",
       "color": "#6A6A62",
-      "renderOrder": 7,
-      "polygonOffsetUnits": -8,
+      "renderOrder": 8,
+      "polygonOffsetUnits": -9,
       "vertexCount": 24,
-      "vertexByteOffset": 121224,
+      "vertexByteOffset": 176292,
       "indexCount": 48,
-      "indexByteOffset": 372804
+      "indexByteOffset": 531864
     },
     {
       "kind": "mat",
       "id": "treelawn:institutional",
       "color": "#7E8AA8",
-      "renderOrder": 8,
-      "polygonOffsetUnits": -9,
+      "renderOrder": 9,
+      "polygonOffsetUnits": -10,
       "vertexCount": 384,
-      "vertexByteOffset": 121512,
+      "vertexByteOffset": 176580,
       "indexCount": 1044,
-      "indexByteOffset": 372996
+      "indexByteOffset": 532056
     },
     {
       "kind": "mat",
       "id": "sidewalk",
       "color": "#B8B2A4",
-      "renderOrder": 9,
-      "polygonOffsetUnits": -10,
-      "vertexCount": 1251,
-      "vertexByteOffset": 126120,
-      "indexCount": 3693,
-      "indexByteOffset": 377172
+      "renderOrder": 10,
+      "polygonOffsetUnits": -11,
+      "vertexCount": 1414,
+      "vertexByteOffset": 181188,
+      "indexCount": 4086,
+      "indexByteOffset": 536232
     },
     {
       "kind": "mat",
       "id": "curb",
       "color": "#A8826A",
-      "renderOrder": 10,
-      "polygonOffsetUnits": -11,
-      "vertexCount": 1241,
-      "vertexByteOffset": 141132,
-      "indexCount": 3723,
-      "indexByteOffset": 391944
+      "renderOrder": 11,
+      "polygonOffsetUnits": -12,
+      "vertexCount": 1409,
+      "vertexByteOffset": 198156,
+      "indexCount": 4131,
+      "indexByteOffset": 552576
     },
     {
       "kind": "mat",
       "id": "asphalt",
       "color": "#4A4A48",
-      "renderOrder": 11,
-      "polygonOffsetUnits": -12,
-      "vertexCount": 588,
-      "vertexByteOffset": 156024,
-      "indexCount": 1848,
-      "indexByteOffset": 406836
+      "renderOrder": 12,
+      "polygonOffsetUnits": -13,
+      "vertexCount": 651,
+      "vertexByteOffset": 215064,
+      "indexCount": 2037,
+      "indexByteOffset": 569100
     }
   ]
 }

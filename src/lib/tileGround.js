@@ -492,26 +492,45 @@ export function buildTileGround(ribbons, opts = {}) {
     pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
   }
 
-  // Perimeter (outer face, beyond the outermost streets) fills as LU, routed by
-  // its own class probe. NOTE — placeholder: the outermost streets are
-  // half-roaded on their outer side because the perimeter is not yet a per-edge-
-  // tagged tile (G9). Combined with tile-center LU, every non-hardscape pixel
-  // is land-use — no figure-ground, no block polygon.
   let asphalt = unionRings(Aacc)
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
     const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
-    if (perimeter.length) {
-      // Class from the largest outer; push the WHOLE holed region (keep the CW
-      // holes — dropping them turns the frame into the full stencil and paints
-      // over every per-class block centre). One class for the edge-of-map land
-      // is fine; proper per-edge perimeter tiles are G9.
-      let big = null, bigA = 0
-      for (const r of perimeter) { const a = signedArea(r); if (a > bigA) { bigA = a; big = r } }
-      pushLu(luByLu, big ? luForRing(big) : 'unknown', perimeter)
+    // G9 — road the EXTERIOR streets. A street segment whose outer side borders
+    // the perimeter (no tile there) was un-roaded → "roads don't reach their
+    // dead ends". Stroke every street at the four cumulative depths and clip to
+    // the perimeter, so only each street's exterior-facing side fills there;
+    // union with the per-tile interior bands gives the full-width road out to
+    // the tip. The perimeter is the edge of the map, so the bands use the
+    // street's max-side widths and the stroke's own (cap-at-depth) corners
+    // rather than the interior concentric construction.
+    const perimFill = (level) => {
+      const stads = []
+      for (let i = 0; i < streets.length; i++) {
+        const m = measures[i]
+        const a = Math.max(0, m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
+        if (a <= 1e-6) continue
+        const tlm = Math.max(0, m?.left?.treelawn || 0, m?.right?.treelawn || 0)
+        const swm = Math.max(0, m?.left?.sidewalk || 0, m?.right?.sidewalk || 0)
+        const d = level === 'A' ? a : level === 'C' ? a + cw : level === 'T' ? a + cw + tlm : a + cw + tlm + swm
+        stads.push(...strokeOpen(streets[i].points, d))
+      }
+      return stads.length && perimeter.length ? intersectRings(unionRings(stads), perimeter) : []
     }
+    const pA = perimFill('A'), pC = perimFill('C'), pT = perimFill('T'), pW = perimFill('W')
+    asphalt  = unionRings([...asphalt,  ...pA])
+    curb     = unionRings([...curb,     ...differenceRings(pC, pA)])
+    sidewalk = unionRings([...sidewalk, ...differenceRings(pW, pT)])
+    // Perimeter treelawn + the remaining perimeter LU route to one edge-of-map
+    // class (probe the largest perimeter outer). Keep the frame's holes so it
+    // doesn't paint over the per-class block centres.
+    let big = null, bigA = 0
+    for (const r of perimeter) { const a = signedArea(r); if (a > bigA) { bigA = a; big = r } }
+    const perimClass = big ? luForRing(big) : 'unknown'
+    pushLu(tlByLu, perimClass, differenceRings(pT, pC))           // perimeter treelawn
+    pushLu(luByLu, perimClass, differenceRings(perimeter, pW))    // perimeter LU (frame − roaded)
     asphalt  = intersectRings(asphalt,  [stencil])
     curb     = intersectRings(curb,     [stencil])
     sidewalk = intersectRings(sidewalk, [stencil])
