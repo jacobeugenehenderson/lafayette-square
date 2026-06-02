@@ -118,6 +118,37 @@ function signedArea(r) {
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
   return a / 2
 }
+// R-clamp (ported from figure-ground defaultR): a corner only has room for so
+// much rounding. Clamp R by the corner angle θ and the available depth d_min so
+// acute corners get a smaller R — past this the inward offsets self-intersect
+// and openRound over-erodes the sharp tip (the acute-corner breakage).
+const K_PINCH = 0.5
+function clampR(Rclass, dMin, theta) {
+  if (theta <= 0 || theta >= Math.PI - 1e-3) return 0
+  if (dMin <= 1e-6) return 0
+  const s = Math.sin(theta / 2)
+  const denom = 1 - s
+  if (denom < 1e-6) return Math.min(Rclass, dMin)
+  const Rmax = dMin * (1 - K_PINCH * s) / denom
+  return Math.max(0, Math.min(Rclass, Rmax))
+}
+// Smallest interior angle over a ring's CONVEX corners (turns > 30°). Straight
+// and reflex vertices are skipped. π if the ring has no real corners.
+function minCornerAngle(ring) {
+  const n = ring.length
+  let mn = Math.PI
+  for (let i = 0; i < n; i++) {
+    const a = ring[(i - 1 + n) % n], b = ring[i], c = ring[(i + 1) % n]
+    const v1x = b[0] - a[0], v1y = b[1] - a[1], v2x = c[0] - b[0], v2y = c[1] - b[1]
+    const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y)
+    if (l1 < 1e-6 || l2 < 1e-6) continue
+    const turn = Math.acos(Math.max(-1, Math.min(1, (v1x * v2x + v1y * v2y) / (l1 * l2))))
+    if (turn < 0.5236) continue                       // < 30° → not a corner
+    if (v1x * v2y - v1y * v2x <= 0) continue           // reflex (concave) — skip
+    mn = Math.min(mn, Math.PI - turn)                  // interior angle at a convex vertex
+  }
+  return mn
+}
 function circlePoly(cx, cy, r, seg = 32) {
   const out = []
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
@@ -474,7 +505,6 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     for (const t of roundTips) if (t.hw > 1e-6) aStads.push(circlePoly(t.p[0], t.p[1], t.hw))
     const aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
-    const iA = openRound(differenceRings([tile.ring], aFill), R)   // rounded asphalt-inner (curb line)
     // G3a — a divided-road MEDIAN tile (the thin tile between two carriageways)
     // drops ALL ped: its bounding edges are median-facing (inner-edge street,
     // inboard side). Detect by median-facing boundary fraction and zero the
@@ -489,9 +519,19 @@ export function buildTileGround(ribbons, opts = {}) {
     const isMedianTile = totLen > 0 && medLen / totLen > 0.4
     const tl = isMedianTile ? 0 : repDepth(runs, 'treelawn')
     const sw = isMedianTile ? 0 : repDepth(runs, 'sidewalk')
+    // R-CLAMP: acute corners can't hold the full R — the inward offsets self-
+    // intersect and openRound over-erodes the sharp tip. Clamp R per tile by its
+    // tightest corner angle and the ped depth (d_min), so the rounding fits.
+    const Rt = clampR(R, cw + tl + sw, minCornerAngle(tile.ring))
+    const iA = openRound(differenceRings([tile.ring], aFill), Rt)   // rounded asphalt-inner (curb line)
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
-    const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
-    const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
+    let iT = offsetRings(iA, -(cw + tl))          // treelawn/sidewalk       (R+cw+tl)
+    let iW = offsetRings(iA, -(cw + tl + sw))     // sidewalk/LU             (R+cw+tl+sw)
+    // THIN-TILE / degenerate guard: an acute or narrow tile where the full ped
+    // doesn't fit (LU collapses to empty) would emit a jagged sliver of ped
+    // tabs. Drop the ped there — the tile reads as asphalt + curb + a clean LU
+    // remainder, like a thin median/island. (Acute corners surface this.)
+    if (iW.length === 0 && iA.length > 0) { iT = iC; iW = iC }
     const lu = luForRing(tile.ring)
     // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
     // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
@@ -506,13 +546,17 @@ export function buildTileGround(ribbons, opts = {}) {
       const td = edgeDepth(measures[run.streetIdx], run.side, cw, 'T')   // grout → treelawn-outer
       if (td <= 1e-6) continue
       const a = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
-      // Pull the run back from its CORNER ends by (asphalt-hw + R) so the slab
-      // ends at the tangent. A ROUND dead-end end is NOT trimmed — the treelawn
-      // runs all the way to the tip and the wrap disk below rounds it, so there's
-      // no gap (the notch artifact). Closed-loop runs aren't trimmed.
+      // Pull the run back from its CORNER ends by (asphalt-hw + Rt) so the slab
+      // ends at the tangent. TRIM-CLAMP: cap the pull-back at 45% of the run
+      // length so a short/acute leg keeps some treelawn instead of losing it
+      // all. A ROUND dead-end end is NOT trimmed (treelawn runs to the tip + the
+      // wrap disk rounds it — no notch). Closed-loop runs aren't trimmed.
+      let runLen = 0
+      for (let k = 0; k < run.poly.length - 1; k++) runLen += Math.hypot(run.poly[k + 1][0] - run.poly[k][0], run.poly[k + 1][1] - run.poly[k][1])
+      const trim = Math.min(a + Rt, runLen * 0.45)
       const last = run.poly[run.poly.length - 1]
-      const t0 = roundTipKeys.has(tipKey(run.poly[0])) ? 0 : (a + R)
-      const t1 = roundTipKeys.has(tipKey(last)) ? 0 : (a + R)
+      const t0 = roundTipKeys.has(tipKey(run.poly[0])) ? 0 : trim
+      const t1 = roundTipKeys.has(tipKey(last)) ? 0 : trim
       const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
     }
@@ -633,7 +677,10 @@ export function buildTileGround(ribbons, opts = {}) {
       const td = a + cw + tlP
       if (td <= 1e-6 || !s.points) return
       for (const seg of splitAtJunctions(s.points, nodeDeg, tipKey)) {
-        const poly = trimPolyline(seg, a + R, a + R)
+        let segLen = 0
+        for (let k = 0; k < seg.length - 1; k++) segLen += Math.hypot(seg[k + 1][0] - seg[k][0], seg[k + 1][1] - seg[k][1])
+        const trim = Math.min(a + R, segLen * 0.45)   // trim-clamp: keep some treelawn on short legs
+        const poly = trimPolyline(seg, trim, trim)
         if (poly && poly.length >= 2) tlSlabsP.push(...strokeOpen(poly, td))
       }
     })
