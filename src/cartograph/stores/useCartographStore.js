@@ -401,6 +401,12 @@ const useCartographStore = create((set, get) => ({
   // legs is removed from the IX — the explicit point of leg-pair keys
   // over CCW-ordinal indices. Resolved before the per-IX map.
   cornerCornerRadiusOverrides: {},
+  // Transient: the ACHIEVED per-corner fillet from the live tile build
+  // ({ cornerKey → {C,r,tA,tB} }). Published by BlockGeometryV2Debug so the
+  // corner-edit handle draws the REAL curb arc (one corner truth, no drift).
+  // Not persisted — it's derived geometry, rebuilt every tile build.
+  tileCornerFillets: {},
+  setTileCornerFillets: (m) => set({ tileCornerFillets: m || {} }),
   // Transient UI mode — when true, the Corner-edit handles surface in the
   // 3D scene. Not persisted (operators don't want a Look to load in edit
   // mode); toggled from the Streets > Corners subsection in Panel.

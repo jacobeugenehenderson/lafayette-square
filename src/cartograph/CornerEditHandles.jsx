@@ -97,24 +97,28 @@ function cornerArc(c, V, ixOverrides, cornerOverrides, scale, rOverride) {
   return { C: [c.Q[0] + (bx / bl) * d, c.Q[1] + (bz / bl) * d], r }
 }
 
-// Angular extent of the curb arc at a corner — the stretch of curb between the
-// two tangent points (where the rounding meets the straight legs), the bit that
-// IS "the corner". Returns ringGeometry { thetaStart, thetaLength } in the flat
-// (rotation=[-π/2,0,0]) frame, where a world XZ angle ψ maps to local angle -ψ.
-function curbArcExtent(c, C) {
-  const dotA = (C[0] - c.Q[0]) * c.T_A[0] + (C[1] - c.Q[1]) * c.T_A[1]
-  const dotB = (C[0] - c.Q[0]) * c.T_B[0] + (C[1] - c.Q[1]) * c.T_B[1]
-  const tA = [c.Q[0] + c.T_A[0] * dotA, c.Q[1] + c.T_A[1] * dotA]
-  const tB = [c.Q[0] + c.T_B[0] * dotB, c.Q[1] + c.T_B[1] * dotB]
+// Angular extent of a curb arc — between the two tangent points tA/tB, the side
+// that bulges toward the apex. Returns ringGeometry { thetaStart, thetaLength }
+// in the flat (rotation=[-π/2,0,0]) frame, where a world XZ angle ψ → local -ψ.
+function arcExtentFrom(C, tA, tB, apex) {
   const norm = (a) => { a %= 2 * Math.PI; if (a < 0) a += 2 * Math.PI; return a }
   const psiA = Math.atan2(tA[1] - C[1], tA[0] - C[0])
   const psiB = Math.atan2(tB[1] - C[1], tB[0] - C[0])
-  const psiQ = Math.atan2(c.Q[1] - C[1], c.Q[0] - C[0])   // the arc bulges toward Q
+  const psiQ = Math.atan2(apex[1] - C[1], apex[0] - C[0])
   const dAB = norm(psiB - psiA)
   const dAQ = norm(psiQ - psiA)
   const start = dAQ <= dAB ? psiA : psiB
   const length = dAQ <= dAB ? dAB : 2 * Math.PI - dAB
   return { thetaStart: -(start + length), thetaLength: length }
+}
+// Idealized extent for the drag preview (no achieved fillet yet) — tangent
+// points = foot of perpendicular from the arc centre onto each leg through Q.
+function curbArcExtent(c, C) {
+  const dotA = (C[0] - c.Q[0]) * c.T_A[0] + (C[1] - c.Q[1]) * c.T_A[1]
+  const dotB = (C[0] - c.Q[0]) * c.T_B[0] + (C[1] - c.Q[1]) * c.T_B[1]
+  const tA = [c.Q[0] + c.T_A[0] * dotA, c.Q[1] + c.T_A[1] * dotA]
+  const tB = [c.Q[0] + c.T_B[0] * dotB, c.Q[1] + c.T_B[1] * dotB]
+  return arcExtentFrom(C, tA, tB, c.Q)
 }
 
 // Compute every corner's geometric anchor (Q = where leg-A's left curb-outer
@@ -241,6 +245,9 @@ export default function CornerEditHandles({ ribbons }) {
   const cornerRadiusScale = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const setCornerCornerRadius = useCartographStore(s => s.setCornerCornerRadius)
   const setIxCornerRadius = useCartographStore(s => s.setIxCornerRadius)
+  // The ACHIEVED fillets from the live tile build — the handle reads the real
+  // curb arc from here at rest (one corner truth, no drift).
+  const achievedFillets = useCartographStore(s => s.tileCornerFillets) || {}
   const { camera, gl } = useThree()
 
   const dragRef = useRef(null)
@@ -439,20 +446,29 @@ export default function CornerEditHandles({ ribbons }) {
         return (
           <group key={ixIdx}>
             {corners.map((c, ci) => {
-              const hasOverride = Number.isFinite(cornerOverrides[sortedCornerKey(V, c.legKeyA, c.legKeyB)])
+              const ck = sortedCornerKey(V, c.legKeyA, c.legKeyB)
+              const hasOverride = Number.isFinite(cornerOverrides[ck])
               const draggingCorner = dragState?.kind === 'corner'
                 && dragState.ixIdx === ixIdx && dragState.cornerIdx === ci
               const color = draggingCorner ? COLOR_DRAG : hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT
-              // The corner IS the handle: paint just the CURB ARC magenta — the
-              // stretch of curb between the two tangent points, the bit that is
-              // "the corner". No dot, no circle. During a drag it follows the
-              // live radius; at rest it traces the corner's current curb.
-              const { C, r: rr } = cornerArc(
-                c, V, ixOverrides, cornerOverrides, cornerRadiusScale,
-                draggingCorner ? dragState.r : undefined,
-              )
-              if (!c.T_A || !(rr > 0.05)) return <group key={ci} />
-              const { thetaStart, thetaLength } = curbArcExtent(c, C)
+              // The corner IS the handle: paint just the CURB ARC magenta. AT
+              // REST, read the ACHIEVED fillet the construction actually produced
+              // (one corner truth — the magenta IS the curb, never drifts). While
+              // DRAGGING, the achieved geometry isn't recomputed until release, so
+              // fall back to the idealized live preview tracking the cursor.
+              if (!c.T_A) return <group key={ci} />
+              let C, rr, thetaStart, thetaLength
+              const fit = !draggingCorner ? achievedFillets[ck] : null
+              if (fit && fit.tA && fit.tB) {
+                C = fit.C; rr = fit.r
+                ;({ thetaStart, thetaLength } = arcExtentFrom(fit.C, fit.tA, fit.tB, fit.apex || c.Q))
+              } else {
+                const a = cornerArc(c, V, ixOverrides, cornerOverrides, cornerRadiusScale,
+                  draggingCorner ? dragState.r : undefined)
+                C = a.C; rr = a.r
+                if (!(rr > 0.05)) return <group key={ci} />
+                ;({ thetaStart, thetaLength } = curbArcExtent(c, C))
+              }
               // A band straddling the curb line (radius rr from the arc centre),
               // ~0.9 m wide so it reads + is grabbable; the apex hit-test stays
               // generous regardless.

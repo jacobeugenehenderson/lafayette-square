@@ -552,8 +552,16 @@ export default function BlockGeometryV2Debug({
       sidewalk: ringsToFlatGeo(tg.sidewalk, 0.030, true),
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
+      cornerFillets: tg.cornerFillets || {},
     }
   }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
+
+  // Publish the achieved per-corner fillets so CornerEditHandles draws the REAL
+  // curb arc (one corner truth — the handle reads geometry, never re-derives).
+  const setTileCornerFillets = useCartographStore(s => s.setTileCornerFillets)
+  useEffect(() => {
+    setTileCornerFillets(tileGeos?.cornerFillets || {})
+  }, [tileGeos, setTileCornerFillets])
 
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles

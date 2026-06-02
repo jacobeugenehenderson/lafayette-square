@@ -76,7 +76,10 @@ function openRound(rings, R) {
 //   • inset is clamped to 45% of the arc-length to each NEIGHBOUR corner so
 //     adjacent fillets never overlap on a short leg.
 const FILLET_TURN_TOL = 18 * Math.PI / 180
-function filletRing(ring, Rfn) {
+// `sink` (optional) collects the ACHIEVED fillet per corner — { apex, C, r, tA,
+// tB } — so the authoring handle can draw the exact curb arc the construction
+// produced (one corner truth; no independent re-derivation → no drift).
+function filletRing(ring, Rfn, sink) {
   const n = ring.length
   if (n < 3) return ring.slice()
   const sign = signedArea(ring) >= 0 ? 1 : -1
@@ -129,6 +132,7 @@ function filletRing(ring, Rfn) {
     const pts = []
     for (let k = 0; k <= segs; k++) { const a = aA + delta * (k / segs); pts.push([cx + effR * Math.cos(a), cy + effR * Math.sin(a)]) }
     arcAt.set(c.i, pts)
+    if (sink) sink.push({ apex: [V[0], V[1]], C: [cx, cy], r: effR, tA: [tA[0], tA[1]], tB: [tB[0], tB[1]] })
     // mark intermediate vertices within the inset (back + forward) as dropped
     let w = 0, k = c.i
     while (true) { const p = (k - 1 + n) % n; const d = segLen(k, p); if (w + d > inset) break; w += d; drop[p] = true; k = p; if (k === c.i) break }
@@ -148,8 +152,8 @@ function filletRing(ring, Rfn) {
   return out
 }
 // Map filletRing over a ring SET (outer rings + holes), preserving the rest.
-function filletRings(rings, Rfn) {
-  return rings.map(r => (r && r.length >= 3) ? filletRing(r, Rfn) : r)
+function filletRings(rings, Rfn, sink) {
+  return rings.map(r => (r && r.length >= 3) ? filletRing(r, Rfn, sink) : r)
 }
 // Offset an OPEN polyline by `delta` with round JOIN (handles the run's own
 // bends, no compounding) and BUTT caps (so a run ends square at the tile
@@ -457,30 +461,40 @@ export function buildTileGround(ribbons, opts = {}) {
   // ixKey|sorted(legA,legB); per-corner wins over per-IX; both pre-scale).
   const ixKeyOf = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
   const skelOf = (si) => { const s = streets[si]; return (s && (s.skelId || s.name)) || '?' }
-  // Resolve a tile vertex's authored corner radius (PRE-scale). The leg from V
-  // along the OUTGOING edge runs in +index iff that edge is forward → 'f'; the
-  // leg along the INCOMING edge runs +index iff that edge is NOT forward → 'f'.
-  const resolveVertR = (V, edges, i) => {
+  // The corner key for tile vertex i = (IX point, the two bounding tile edges as
+  // legs) — MUST match CornerEditHandles exactly. The leg along the OUTGOING edge
+  // runs +index iff that edge is forward → 'f'; the INCOMING leg runs +index iff
+  // that edge is NOT forward → 'f'. Used for both override lookup AND tagging the
+  // achieved fillet so the handle can find it.
+  const cornerKeyAt = (V, edges, i) => {
     const n = edges.length
+    const eOut = edges[i], eIn = edges[(i - 1 + n) % n]
+    const legOut = `${skelOf(eOut.streetIdx)}:${eOut.forward ? 'f' : 'b'}`
+    const legIn  = `${skelOf(eIn.streetIdx)}:${eIn.forward ? 'b' : 'f'}`
+    const [a, b] = legOut <= legIn ? [legOut, legIn] : [legIn, legOut]
+    return `${ixKeyOf(V)}|${a}|${b}`
+  }
+  const resolveVertR = (V, edges, i) => {
     const ixk = ixKeyOf(V)
     if (cornerOverrides) {
-      const eOut = edges[i], eIn = edges[(i - 1 + n) % n]
-      const legOut = `${skelOf(eOut.streetIdx)}:${eOut.forward ? 'f' : 'b'}`
-      const legIn  = `${skelOf(eIn.streetIdx)}:${eIn.forward ? 'b' : 'f'}`
-      const [a, b] = legOut <= legIn ? [legOut, legIn] : [legIn, legOut]
-      const v = cornerOverrides[`${ixk}|${a}|${b}`]
+      const v = cornerOverrides[cornerKeyAt(V, edges, i)]
       if (Number.isFinite(+v)) return Math.max(0, +v)
     }
     if (ixOverrides && Number.isFinite(+ixOverrides[ixk])) return Math.max(0, +ixOverrides[ixk])
     return baseR
   }
-  // Nearest tile-vertex R for a curb-line corner point (the fillet operates on
-  // the asphalt-inner ring, whose corners sit inboard of the centerline node).
-  const nearestVertR = (pt, ring, vertR) => {
+  // Nearest tile-vertex INDEX for a curb-line corner point (the fillet operates
+  // on the asphalt-inner ring, whose corners sit inboard of the centerline node).
+  const nearestVertexIndex = (pt, ring) => {
     let bi = 0, bd = Infinity
     for (let i = 0; i < ring.length; i++) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
-    return vertR[bi]
+    return bi
   }
+  const nearestVertR = (pt, ring, vertR) => vertR[nearestVertexIndex(pt, ring)]
+  // The ACHIEVED fillet per corner key — what the construction actually rounded
+  // each corner to (after the geometric inset clamp). The authoring handle reads
+  // this so its magenta arc IS the curb, never a re-derived approximation.
+  const cornerFillets = {}
   // M3 — overridable ped-strip materials. Default {outer:'LU', inner:'SW'}
   // (V1.5 model). T3 makes this per-fe (the ctrl-click LU↔SW swap); for now a
   // single model proves the data path. 'LU' → land-use colour, 'SW' → sidewalk.
@@ -631,7 +645,15 @@ export function buildTileGround(ribbons, opts = {}) {
     // corner back to its nearest centerline node for the radius.
     const vertR = tile.ring.map((V, i) => resolveVertR(V, tile.edges, i) * scale)
     const cornerRfn = (pt) => nearestVertR(pt, tile.ring, vertR)
-    const iA = filletRings(differenceRings([tile.ring], aFill), cornerRfn)   // rounded asphalt-inner (curb line)
+    const fSink = []
+    const iA = filletRings(differenceRings([tile.ring], aFill), cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+    // Tag each achieved fillet with its corner key (nearest centerline node +
+    // that node's two tile-edge legs) so the authoring handle can read the true
+    // curb arc — one corner truth, no drift.
+    for (const f of fSink) {
+      const vi = nearestVertexIndex(f.apex, tile.ring)
+      cornerFillets[cornerKeyAt(tile.ring[vi], tile.edges, vi)] = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
+    }
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
@@ -822,5 +844,5 @@ export function buildTileGround(ribbons, opts = {}) {
   for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
   for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
-  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, _tiles: tiles }
+  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, cornerFillets, _tiles: tiles }
 }
