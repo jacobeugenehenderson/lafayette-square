@@ -366,7 +366,9 @@ export function buildTileGround(ribbons, opts = {}) {
       const cap = (ce && ce[k]) || caps[k]?.cap || 'round'
       const m = s.measure
       const hw = Math.max(m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
-      deadEndTips.set(tipKey(pts[idx]), { cap, hw })
+      const tlw = Math.max(m?.left?.treelawn || 0, m?.right?.treelawn || 0)
+      const sww = Math.max(m?.left?.sidewalk || 0, m?.right?.sidewalk || 0)
+      deadEndTips.set(tipKey(pts[idx]), { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1] })
     }
   }
 
@@ -430,7 +432,7 @@ export function buildTileGround(ribbons, opts = {}) {
     if (runs.length > 1) {
       for (const run of runs) {
         const t = deadEndTips.get(tipKey(run.poly[0]))
-        if (t) (t.cap === 'round' ? roundTips : bluntTips).push({ p: run.poly[0], hw: t.hw })
+        if (t) (t.cap === 'round' ? roundTips : bluntTips).push({ p: run.poly[0], hw: t.hw, tl: t.tl, sw: t.sw })
       }
     }
     const aStads = []
@@ -477,7 +479,15 @@ export function buildTileGround(ribbons, opts = {}) {
       const poly = runs.length > 1 ? trimPolyline(run.poly, a + R, a + R) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
     }
-    const zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
+    let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
+    // A ROUND dead-end cap is NOT an ADA intersection corner: the treelawn
+    // CONTINUES around the cap (Jacob). Add a wrap disk at each round tip to the
+    // straight-leg zone so the treelawn annulus wraps the round end (the cap
+    // becomes a normal bent road section, not an all-SW ramp). Blunt tips stay
+    // out of the zone → still all-SW / no wrap.
+    if (zone && roundTips.length) {
+      zone = unionRings([...zone, ...roundTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 2))])
+    }
     const clipLeg = (rings) => zone ? intersectRings(rings, zone) : rings
     // The two ped LEG strips + the structural corner pad. Outer = the strip
     // nearer the curb (treelawn position); inner = the strip nearer the
@@ -538,6 +548,15 @@ export function buildTileGround(ribbons, opts = {}) {
         const swm = Math.max(0, m?.left?.sidewalk || 0, m?.right?.sidewalk || 0)
         const d = level === 'A' ? a : level === 'C' ? a + cw : level === 'T' ? a + cw + tlm : a + cw + tlm + swm
         stads.push(...strokeOpen(streets[i].points, d))
+      }
+      // The perimeter strokes are butt-capped, so an exterior round cul-de-sac
+      // would end flat. Add a concentric fill disk at each round tip at this
+      // level's depth so the perimeter road rounds AND its ped bands wrap (the
+      // level differences give asphalt + curb + treelawn + sidewalk rings).
+      for (const [, t] of deadEndTips) {
+        if (t.cap !== 'round' || t.hw <= 1e-6) continue
+        const d = level === 'A' ? t.hw : level === 'C' ? t.hw + cw : level === 'T' ? t.hw + cw + t.tl : t.hw + cw + t.tl + t.sw
+        stads.push(circlePoly(t.px, t.py, d))
       }
       return stads.length && perimeter.length ? intersectRings(unionRings(stads), perimeter) : []
     }
