@@ -584,17 +584,37 @@ export function buildTileGround(ribbons, opts = {}) {
       return stads.length && perimeter.length ? intersectRings(unionRings(stads), perimeter) : []
     }
     const pA = perimFill('A'), pC = perimFill('C'), pT = perimFill('T'), pW = perimFill('W')
-    asphalt  = unionRings([...asphalt,  ...pA])
-    curb     = unionRings([...curb,     ...differenceRings(pC, pA)])
-    sidewalk = unionRings([...sidewalk, ...differenceRings(pW, pT)])
+    // CONCENTRIC corners on the open perimeter walk (Jacob): a corner is a
+    // property of the walk, not the closed loop — so round it with the same G5
+    // construction. openRound the region beyond the perimeter asphalt at R (this
+    // rounds the convex block-outer corners where two exterior runs meet); the
+    // bands are concentric offsets of that rounded asphalt-inner, each clipped
+    // to its network-buffer zone (pC/pT/pW) so the ped stays on the STREET side
+    // and never sprouts along the stencil/map edge. No perimeter-as-a-face build.
+    let tlMaxP = 0, swMaxP = 0
+    for (const m of measures) {
+      tlMaxP = Math.max(tlMaxP, m?.left?.treelawn || 0, m?.right?.treelawn || 0)
+      swMaxP = Math.max(swMaxP, m?.left?.sidewalk || 0, m?.right?.sidewalk || 0)
+    }
+    const iAp = openRound(differenceRings(perimeter, pA), R)
+    const iCp = offsetRings(iAp, -cw)
+    const iTp = offsetRings(iAp, -(cw + tlMaxP))
+    const iWp = offsetRings(iAp, -(cw + tlMaxP + swMaxP))
+    const pAsphalt  = differenceRings(perimeter, iAp)
+    const pCurb     = intersectRings(differenceRings(iAp, iCp), pC)
+    const pTree     = intersectRings(differenceRings(iCp, iTp), pT)
+    const pSide     = intersectRings(differenceRings(iTp, iWp), pW)
+    asphalt  = unionRings([...asphalt,  ...pAsphalt])
+    curb     = unionRings([...curb,     ...pCurb])
+    sidewalk = unionRings([...sidewalk, ...pSide])
     // Perimeter treelawn + the remaining perimeter LU route to one edge-of-map
     // class (probe the largest perimeter outer). Keep the frame's holes so it
     // doesn't paint over the per-class block centres.
     let big = null, bigA = 0
     for (const r of perimeter) { const a = signedArea(r); if (a > bigA) { bigA = a; big = r } }
     const perimClass = big ? luForRing(big) : 'unknown'
-    pushLu(tlByLu, perimClass, differenceRings(pT, pC))           // perimeter treelawn
-    pushLu(luByLu, perimClass, differenceRings(perimeter, pW))    // perimeter LU (frame − roaded)
+    pushLu(tlByLu, perimClass, pTree)
+    pushLu(luByLu, perimClass, differenceRings(perimeter, unionRings([...pAsphalt, ...pCurb, ...pTree, ...pSide])))
     asphalt  = intersectRings(asphalt,  [stencil])
     curb     = intersectRings(curb,     [stencil])
     sidewalk = intersectRings(sidewalk, [stencil])
