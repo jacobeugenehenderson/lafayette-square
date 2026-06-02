@@ -210,9 +210,9 @@ function signedArea(r) {
 // acute corners get a smaller R — past this the inward offsets self-intersect
 // and openRound over-erodes the sharp tip (the acute-corner breakage).
 const K_PINCH = 0.5
-// Tile corners tighter than this are treated as end-cap-like points (treelawn
-// wraps), not intersection corners (ADA all-SW plug).
-const ACUTE_DEG = 75 * Math.PI / 180
+// Clamp a target radius to what a corner of interior angle θ and depth d_min can
+// actually hold (figure-ground defaultR) — acute corners get a smaller R so the
+// fillet fits and the inward ped offsets don't self-intersect.
 function clampR(Rclass, dMin, theta) {
   if (theta <= 0 || theta >= Math.PI - 1e-3) return 0
   if (dMin <= 1e-6) return 0
@@ -221,23 +221,6 @@ function clampR(Rclass, dMin, theta) {
   if (denom < 1e-6) return Math.min(Rclass, dMin)
   const Rmax = dMin * (1 - K_PINCH * s) / denom
   return Math.max(0, Math.min(Rclass, Rmax))
-}
-// Smallest interior angle over a ring's CONVEX corners (turns > 30°). Straight
-// and reflex vertices are skipped. π if the ring has no real corners.
-function minCornerAngle(ring) {
-  const n = ring.length
-  let mn = Math.PI
-  for (let i = 0; i < n; i++) {
-    const a = ring[(i - 1 + n) % n], b = ring[i], c = ring[(i + 1) % n]
-    const v1x = b[0] - a[0], v1y = b[1] - a[1], v2x = c[0] - b[0], v2y = c[1] - b[1]
-    const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y)
-    if (l1 < 1e-6 || l2 < 1e-6) continue
-    const turn = Math.acos(Math.max(-1, Math.min(1, (v1x * v2x + v1y * v2y) / (l1 * l2))))
-    if (turn < 0.5236) continue                       // < 30° → not a corner
-    if (v1x * v2y - v1y * v2x <= 0) continue           // reflex (concave) — skip
-    mn = Math.min(mn, Math.PI - turn)                  // interior angle at a convex vertex
-  }
-  return mn
 }
 function circlePoly(cx, cy, r, seg = 32) {
   const out = []
@@ -331,7 +314,7 @@ export function extractFaces(streets) {
       // the street's measure-RIGHT side; reversed → measure-LEFT. Label in the
       // measure convention so edgeDepth / effectiveMeasure / median detection
       // read the correct side's widths.
-      edges.push({ streetIdx: h.streetIdx, side: h.forward ? 'right' : 'left' })
+      edges.push({ streetIdx: h.streetIdx, forward: h.forward, side: h.forward ? 'right' : 'left' })
       h = nextHE(h)
       if (++guard > 500000) break
     } while (h !== h0)
@@ -472,13 +455,45 @@ export function buildTileGround(ribbons, opts = {}) {
   // the street index the DCEL tags each edge with.
   const measures = streets.map(effectiveMeasure)
   const cw = curbWidth
-  // A2 — corner R reads the authored controls: base 4.5 m (AASHTO residential
-  // baseline, R_CLASS_DEFAULT) × the global Corners slider (cornerRadiusScale),
-  // clamped ≥ 0. Per-corner/per-IX cornerRadiusOverrides (empty on LS today)
-  // need the corner-identity mapping — folded in with the T3 UI migration.
+  // A2 / F3 — corner R reads the authored controls: base 4.5 m (AASHTO
+  // residential baseline, R_CLASS_DEFAULT) × the global Corners slider
+  // (cornerRadiusScale), with per-corner / per-IX overrides resolved per tile
+  // vertex (the gold-dot authoring). Each tile vertex IS a centerline node = an
+  // IX point; its two bounding tile edges are the corner's two legs.
   const baseR = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5
   const scale = Number.isFinite(opts.cornerRadiusScale) ? opts.cornerRadiusScale : 1
-  const R = Math.max(0, baseR * scale)
+  const R = Math.max(0, baseR * scale)   // uniform fallback (perimeter pass)
+  const ixOverrides = (opts.cornerRadiusOverrides && typeof opts.cornerRadiusOverrides === 'object') ? opts.cornerRadiusOverrides : null
+  const cornerOverrides = (opts.cornerCornerRadiusOverrides && typeof opts.cornerCornerRadiusOverrides === 'object') ? opts.cornerCornerRadiusOverrides : null
+  // Override-key helpers — MUST match CornerEditHandles / buildBlockGeometryV2
+  // exactly (ixKey = 3-dp point; legKey = `${skelId}:${f|b}`; per-corner key =
+  // ixKey|sorted(legA,legB); per-corner wins over per-IX; both pre-scale).
+  const ixKeyOf = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
+  const skelOf = (si) => { const s = streets[si]; return (s && (s.skelId || s.name)) || '?' }
+  // Resolve a tile vertex's authored corner radius (PRE-scale). The leg from V
+  // along the OUTGOING edge runs in +index iff that edge is forward → 'f'; the
+  // leg along the INCOMING edge runs +index iff that edge is NOT forward → 'f'.
+  const resolveVertR = (V, edges, i) => {
+    const n = edges.length
+    const ixk = ixKeyOf(V)
+    if (cornerOverrides) {
+      const eOut = edges[i], eIn = edges[(i - 1 + n) % n]
+      const legOut = `${skelOf(eOut.streetIdx)}:${eOut.forward ? 'f' : 'b'}`
+      const legIn  = `${skelOf(eIn.streetIdx)}:${eIn.forward ? 'b' : 'f'}`
+      const [a, b] = legOut <= legIn ? [legOut, legIn] : [legIn, legOut]
+      const v = cornerOverrides[`${ixk}|${a}|${b}`]
+      if (Number.isFinite(+v)) return Math.max(0, +v)
+    }
+    if (ixOverrides && Number.isFinite(+ixOverrides[ixk])) return Math.max(0, +ixOverrides[ixk])
+    return baseR
+  }
+  // Nearest tile-vertex R for a curb-line corner point (the fillet operates on
+  // the asphalt-inner ring, whose corners sit inboard of the centerline node).
+  const nearestVertR = (pt, ring, vertR) => {
+    let bi = 0, bd = Infinity
+    for (let i = 0; i < ring.length; i++) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
+    return vertR[bi]
+  }
   // M3 — overridable ped-strip materials. Default {outer:'LU', inner:'SW'}
   // (V1.5 model). T3 makes this per-fe (the ctrl-click LU↔SW swap); for now a
   // single model proves the data path. 'LU' → land-use colour, 'SW' → sidewalk.
@@ -515,7 +530,11 @@ export function buildTileGround(ribbons, opts = {}) {
     for (const [k, idx] of [['start', 0], ['end', pts.length - 1]]) {
       if (nodeDeg.get(tipKey(pts[idx])) !== 1) continue   // not a real dead-end tip
       const authored = ce?.[k] || (k === 'start' ? s.capStart : s.capEnd)
-      const cap = authored || caps?.[k]?.cap || 'round'
+      // 'none' / unspecified → the documented default 'round' cul-de-sac. (An
+      // explicit 'none' was being treated as blunt → the blunt ped→LU reclaim
+      // left a stray LU notch up the pendant centerline while the fillet still
+      // rounded the end — a broken-looking cap. Only an explicit 'blunt' is blunt.)
+      const cap = (authored && authored !== 'none') ? authored : (caps?.[k]?.cap || 'round')
       const m = s.measure
       const hw = Math.max(m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
       const tlw = Math.max(m?.left?.treelawn || 0, m?.right?.treelawn || 0)
@@ -576,34 +595,20 @@ export function buildTileGround(ribbons, opts = {}) {
   const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
   for (const tile of tiles) {
     const runs = groupRuns(tile)
-    // ACUTE corners are end-cap-like points (a thin island's tip, a sharp wedge),
-    // NOT intersection corners: the treelawn WRAPS around them (Jacob) instead of
-    // ending at an ADA all-SW plug. Collect each convex tile vertex tighter than
-    // ACUTE_DEG; downstream they're treated exactly like a round dead-end tip —
-    // the slab isn't trimmed there and a wrap disk joins the straight-leg zone, so
-    // the concentric treelawn annulus continues around the point.
-    const acuteKeys = new Set()
-    {
-      const ring = tile.ring, n = ring.length
-      for (let i = 0; i < n; i++) {
-        const a = ring[(i - 1 + n) % n], b = ring[i], c = ring[(i + 1) % n]
-        const v1x = b[0] - a[0], v1y = b[1] - a[1], v2x = c[0] - b[0], v2y = c[1] - b[1]
-        const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y)
-        if (l1 < 1e-6 || l2 < 1e-6) continue
-        if (v1x * v2y - v1y * v2x <= 0) continue   // convex (interior) corners only
-        const turn = Math.acos(Math.max(-1, Math.min(1, (v1x * v2x + v1y * v2y) / (l1 * l2))))
-        if (Math.PI - turn < ACUTE_DEG) acuteKeys.add(tipKey(b))
-      }
-    }
     // G8 — dead-end tips on this tile (a run boundary vertex that is a degree-1
     // node). Round-capped tips get a round asphalt disk so the cul-de-sac rounds
     // (the butt-capped runs alone end flat); blunt/none tips stay flat and later
     // suppress the ped wrap so LU abuts the street's flat end.
     const roundTips = [], bluntTips = []
+    const seenTip = new Set()
     if (runs.length > 1) {
       for (const run of runs) {
-        const t = deadEndTips.get(tipKey(run.poly[0]))
-        if (t) (t.cap === 'round' ? roundTips : bluntTips).push({ p: run.poly[0], hw: t.hw, tl: t.tl, sw: t.sw })
+        for (const p of [run.poly[0], run.poly[run.poly.length - 1]]) {   // tip may sit at EITHER run end
+          const tk = tipKey(p)
+          if (seenTip.has(tk)) continue
+          const t = deadEndTips.get(tk)
+          if (t) { seenTip.add(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, hw: t.hw, tl: t.tl, sw: t.sw }) }
+        }
       }
     }
     const roundTipKeys = new Set(roundTips.map(t => tipKey(t.p)))
@@ -631,11 +636,15 @@ export function buildTileGround(ribbons, opts = {}) {
     // R-CLAMP: acute corners can't hold the full R — the inward offsets self-
     // intersect and openRound over-erodes the sharp tip. Clamp R per tile by its
     // tightest corner angle and the ped depth (d_min), so the rounding fits.
-    const Rt = clampR(R, cw + tl + sw, minCornerAngle(tile.ring))
-    // Per-corner fillet of the curb line (uniform Rt for now — the per-corner /
-    // per-IX resolver lands next). Replaces the uniform openRound so authored
-    // radii can reshape individual corners.
-    const iA = filletRings(differenceRings([tile.ring], aFill), () => Rt)   // rounded asphalt-inner (curb line)
+    // Per-corner fillet of the curb line. Each tile vertex resolves to its
+    // authored radius (per-corner → per-IX → default 4.5), × the global scale,
+    // then clamped to that corner's own angle + ped depth (acute corners can't
+    // hold the full R). The fillet operates on the inboard curb ring, so map
+    // each curb corner back to its nearest centerline node for the radius.
+    const depth = cw + tl + sw
+    const vertR = tile.ring.map((V, i) => resolveVertR(V, tile.edges, i))
+    const cornerRfn = (pt, theta) => clampR(nearestVertR(pt, tile.ring, vertR) * scale, depth, theta)
+    const iA = filletRings(differenceRings([tile.ring], aFill), cornerRfn)   // rounded asphalt-inner (curb line)
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
@@ -649,28 +658,23 @@ export function buildTileGround(ribbons, opts = {}) {
     // clean tangent cuts; the uncovered corner wedge becomes sidewalk. Same
     // per-run butt-cap construction as the asphalt, so the cuts stay consistent.
     const tlSlabs = []
-    const wrapDisks = []   // round-tip + acute-corner zone disks (treelawn wraps these)
+    const wrapDisks = []   // round dead-end zone disks (treelawn wraps the cap)
     for (const run of runs) {
       const td = edgeDepth(measures[run.streetIdx], run.side, cw, 'T')   // grout → treelawn-outer
       if (td <= 1e-6) continue
       const a = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
-      // Pull the run back from its CORNER ends by (asphalt-hw + Rt) so the slab
-      // ends at the tangent and the corner wedge becomes the ADA all-SW pad.
-      // A ROUND dead-end OR an ACUTE corner is NOT trimmed: the treelawn runs to
-      // the point and a wrap disk continues the annulus around it (no notch, no
-      // ADA plug). Closed-loop runs aren't trimmed.
-      const trim = a + Rt
+      // Pull the run back from each CORNER end by (asphalt-hw + that corner's
+      // resolved R) so the slab ends at the tangent and the corner wedge becomes
+      // the ADA all-SW pad. A ROUND dead-end is NOT trimmed (treelawn runs to the
+      // tip + the wrap disk rounds it). Closed-loop runs aren't trimmed. Acute
+      // corners just get a small fillet now (no special wrap — that made the
+      // teardrop/notch artifacts).
       const last = run.poly[run.poly.length - 1]
       const k0 = tipKey(run.poly[0]), k1 = tipKey(last)
-      const wrap0 = roundTipKeys.has(k0) || acuteKeys.has(k0)
-      const wrap1 = roundTipKeys.has(k1) || acuteKeys.has(k1)
-      const poly = runs.length > 1 ? trimPolyline(run.poly, wrap0 ? 0 : trim, wrap1 ? 0 : trim) : run.poly
+      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], tile.ring, vertR) * scale
+      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, tile.ring, vertR) * scale
+      const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
-      // Acute-corner wrap disk (radius = asphalt-depth + full ped + margin): a
-      // CLIP zone, not the treelawn itself, so the concentric annulus (correct
-      // curvature) wraps the point — same construction the round tips use.
-      if (acuteKeys.has(k0)) wrapDisks.push(circlePoly(run.poly[0][0], run.poly[0][1], a + cw + tl + sw + 2))
-      if (acuteKeys.has(k1)) wrapDisks.push(circlePoly(last[0], last[1], a + cw + tl + sw + 2))
     }
     let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
     // A ROUND dead-end cap is NOT an ADA intersection corner: the treelawn
@@ -699,6 +703,17 @@ export function buildTileGround(ribbons, opts = {}) {
       legOuter = differenceRings(legOuter, disks)
       legInner = differenceRings(legInner, disks)
       cornerPad = differenceRings(cornerPad, disks)
+    }
+    // G8 round-tip cleanup — a cul-de-sac cap is road + ped wrap, NEVER land use.
+    // The zero-width pendant spur leaves a thin LU sliver up the stub centerline
+    // that pokes into the cap; reclaim any LU inside the cap radius as sidewalk.
+    if (roundTips.length) {
+      const caps = roundTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 1))
+      const stray = intersectRings(luRemainder, caps)
+      if (stray.length) {
+        luRemainder = differenceRings(luRemainder, caps)
+        cornerPad = unionRings([...cornerPad, ...stray])
+      }
     }
     // M3 — the two leg strips carry DATA-DRIVEN materials from the overridable
     // materials model (default {outer:'LU', inner:'SW'}). Don't hard-code
