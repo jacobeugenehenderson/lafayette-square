@@ -143,15 +143,16 @@ function midAndPerp(pts) {
   return { cx, cz, nx: -dz / len, nz: dx / len, segI }
 }
 
-// Boundaries on one side as draggable handles. Curb has fixed width, so only
-// one handle sits at the pavement/curb region (pavementHW) — the curb's outer
-// edge is implicitly pavementHW + CURB_WIDTH and tracks the pavementHW handle.
+// Boundaries on one side as draggable handles. Measure (→ Section) authors the
+// PED profile only — treelawn + sidewalk. The asphalt-edge handle (pavementHW)
+// moved to Survey (the 3-handle stack split across the two tools); pavementHW is
+// kept as a read-only REFERENCE here — it still defines where the asphalt ends,
+// so the ped handles position off it (curbEnd = pavementHW + cw) — but it is no
+// longer a draggable handle in Measure.
 function sideBoundaries(side) {
   const stripes = sideToStripes(side)
   if (!stripes.length) return []
   const out = []
-  const asph = stripes.find(s => s.material === 'asphalt')
-  if (asph) out.push({ r: asph.outerR, kind: 'pavementHW' })
   const tl = stripes.find(s => s.material === 'treelawn')
   if (tl) out.push({ r: tl.outerR, kind: 'treelawnOuter' })
   const last = stripes[stripes.length - 1]

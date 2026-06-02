@@ -107,9 +107,9 @@ function SideBlock({ sideKey, side, onChange, single }) {
           {sideKey === 'left' ? 'Left' : 'Right'}
         </div>
       )}
-      <NumberRow label="Asphalt" swatch={BAND_COLORS.asphalt}
-        valueM={side.pavementHW || 0}
-        onCommit={v => set({ pavementHW: v })} />
+      {/* Asphalt width is authored in Survey (the asphalt-edge handle), not here
+          — Measure (→ Section) owns the ped profile. pavementHW stays in the
+          measure as the reference the ped bands position off; just no editor. */}
       <NumberRow label="Curb" swatch={BAND_COLORS.curb}
         valueM={cw}
         onCommit={v => set({ curb: v })} />
