@@ -123,6 +123,9 @@ function signedArea(r) {
 // acute corners get a smaller R — past this the inward offsets self-intersect
 // and openRound over-erodes the sharp tip (the acute-corner breakage).
 const K_PINCH = 0.5
+// Tile corners tighter than this are treated as end-cap-like points (treelawn
+// wraps), not intersection corners (ADA all-SW plug).
+const ACUTE_DEG = 75 * Math.PI / 180
 function clampR(Rclass, dMin, theta) {
   if (theta <= 0 || theta >= Math.PI - 1e-3) return 0
   if (dMin <= 1e-6) return 0
@@ -486,6 +489,25 @@ export function buildTileGround(ribbons, opts = {}) {
   const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
   for (const tile of tiles) {
     const runs = groupRuns(tile)
+    // ACUTE corners are end-cap-like points (a thin island's tip, a sharp wedge),
+    // NOT intersection corners: the treelawn WRAPS around them (Jacob) instead of
+    // ending at an ADA all-SW plug. Collect each convex tile vertex tighter than
+    // ACUTE_DEG; downstream they're treated exactly like a round dead-end tip —
+    // the slab isn't trimmed there and a wrap disk joins the straight-leg zone, so
+    // the concentric treelawn annulus continues around the point.
+    const acuteKeys = new Set()
+    {
+      const ring = tile.ring, n = ring.length
+      for (let i = 0; i < n; i++) {
+        const a = ring[(i - 1 + n) % n], b = ring[i], c = ring[(i + 1) % n]
+        const v1x = b[0] - a[0], v1y = b[1] - a[1], v2x = c[0] - b[0], v2y = c[1] - b[1]
+        const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y)
+        if (l1 < 1e-6 || l2 < 1e-6) continue
+        if (v1x * v2y - v1y * v2x <= 0) continue   // convex (interior) corners only
+        const turn = Math.acos(Math.max(-1, Math.min(1, (v1x * v2x + v1y * v2y) / (l1 * l2))))
+        if (Math.PI - turn < ACUTE_DEG) acuteKeys.add(tipKey(b))
+      }
+    }
     // G8 — dead-end tips on this tile (a run boundary vertex that is a degree-1
     // node). Round-capped tips get a round asphalt disk so the cul-de-sac rounds
     // (the butt-capped runs alone end flat); blunt/none tips stay flat and later
@@ -525,13 +547,8 @@ export function buildTileGround(ribbons, opts = {}) {
     const Rt = clampR(R, cw + tl + sw, minCornerAngle(tile.ring))
     const iA = openRound(differenceRings([tile.ring], aFill), Rt)   // rounded asphalt-inner (curb line)
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
-    let iT = offsetRings(iA, -(cw + tl))          // treelawn/sidewalk       (R+cw+tl)
-    let iW = offsetRings(iA, -(cw + tl + sw))     // sidewalk/LU             (R+cw+tl+sw)
-    // THIN-TILE / degenerate guard: an acute or narrow tile where the full ped
-    // doesn't fit (LU collapses to empty) would emit a jagged sliver of ped
-    // tabs. Drop the ped there — the tile reads as asphalt + curb + a clean LU
-    // remainder, like a thin median/island. (Acute corners surface this.)
-    if (iW.length === 0 && iA.length > 0) { iT = iC; iW = iC }
+    const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
+    const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
     const lu = luForRing(tile.ring)
     // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
     // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
@@ -542,23 +559,28 @@ export function buildTileGround(ribbons, opts = {}) {
     // clean tangent cuts; the uncovered corner wedge becomes sidewalk. Same
     // per-run butt-cap construction as the asphalt, so the cuts stay consistent.
     const tlSlabs = []
+    const wrapDisks = []   // round-tip + acute-corner zone disks (treelawn wraps these)
     for (const run of runs) {
       const td = edgeDepth(measures[run.streetIdx], run.side, cw, 'T')   // grout → treelawn-outer
       if (td <= 1e-6) continue
       const a = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
       // Pull the run back from its CORNER ends by (asphalt-hw + Rt) so the slab
-      // ends at the tangent. TRIM-CLAMP: cap the pull-back at 45% of the run
-      // length so a short/acute leg keeps some treelawn instead of losing it
-      // all. A ROUND dead-end end is NOT trimmed (treelawn runs to the tip + the
-      // wrap disk rounds it — no notch). Closed-loop runs aren't trimmed.
-      let runLen = 0
-      for (let k = 0; k < run.poly.length - 1; k++) runLen += Math.hypot(run.poly[k + 1][0] - run.poly[k][0], run.poly[k + 1][1] - run.poly[k][1])
-      const trim = Math.min(a + Rt, runLen * 0.45)
+      // ends at the tangent and the corner wedge becomes the ADA all-SW pad.
+      // A ROUND dead-end OR an ACUTE corner is NOT trimmed: the treelawn runs to
+      // the point and a wrap disk continues the annulus around it (no notch, no
+      // ADA plug). Closed-loop runs aren't trimmed.
+      const trim = a + Rt
       const last = run.poly[run.poly.length - 1]
-      const t0 = roundTipKeys.has(tipKey(run.poly[0])) ? 0 : trim
-      const t1 = roundTipKeys.has(tipKey(last)) ? 0 : trim
-      const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
+      const k0 = tipKey(run.poly[0]), k1 = tipKey(last)
+      const wrap0 = roundTipKeys.has(k0) || acuteKeys.has(k0)
+      const wrap1 = roundTipKeys.has(k1) || acuteKeys.has(k1)
+      const poly = runs.length > 1 ? trimPolyline(run.poly, wrap0 ? 0 : trim, wrap1 ? 0 : trim) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
+      // Acute-corner wrap disk (radius = asphalt-depth + full ped + margin): a
+      // CLIP zone, not the treelawn itself, so the concentric annulus (correct
+      // curvature) wraps the point — same construction the round tips use.
+      if (acuteKeys.has(k0)) wrapDisks.push(circlePoly(run.poly[0][0], run.poly[0][1], a + cw + tl + sw + 2))
+      if (acuteKeys.has(k1)) wrapDisks.push(circlePoly(last[0], last[1], a + cw + tl + sw + 2))
     }
     let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
     // A ROUND dead-end cap is NOT an ADA intersection corner: the treelawn
@@ -567,8 +589,9 @@ export function buildTileGround(ribbons, opts = {}) {
     // becomes a normal bent road section, not an all-SW ramp). Blunt tips stay
     // out of the zone → still all-SW / no wrap.
     if (zone && roundTips.length) {
-      zone = unionRings([...zone, ...roundTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 2))])
+      for (const t of roundTips) wrapDisks.push(circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 2))
     }
+    if (zone && wrapDisks.length) zone = unionRings([...zone, ...wrapDisks])
     const clipLeg = (rings) => zone ? intersectRings(rings, zone) : rings
     // The two ped LEG strips + the structural corner pad. Outer = the strip
     // nearer the curb (treelawn position); inner = the strip nearer the
@@ -679,7 +702,7 @@ export function buildTileGround(ribbons, opts = {}) {
       for (const seg of splitAtJunctions(s.points, nodeDeg, tipKey)) {
         let segLen = 0
         for (let k = 0; k < seg.length - 1; k++) segLen += Math.hypot(seg[k + 1][0] - seg[k][0], seg[k + 1][1] - seg[k][1])
-        const trim = Math.min(a + R, segLen * 0.45)   // trim-clamp: keep some treelawn on short legs
+        const trim = a + R
         const poly = trimPolyline(seg, trim, trim)
         if (poly && poly.length >= 2) tlSlabsP.push(...strokeOpen(poly, td))
       }

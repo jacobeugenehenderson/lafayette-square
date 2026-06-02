@@ -25,10 +25,10 @@
       "color": "#5A8A3A",
       "renderOrder": 0,
       "polygonOffsetUnits": -1,
-      "vertexCount": 1486,
+      "vertexCount": 1428,
       "vertexByteOffset": 0,
-      "indexCount": 6903,
-      "indexByteOffset": 402492
+      "indexCount": 6708,
+      "indexByteOffset": 402588
     },
     {
       "kind": "face",
@@ -37,9 +37,9 @@
       "renderOrder": 1,
       "polygonOffsetUnits": -2,
       "vertexCount": 1940,
-      "vertexByteOffset": 17832,
+      "vertexByteOffset": 17136,
       "indexCount": 10008,
-      "indexByteOffset": 430104
+      "indexByteOffset": 429420
     },
     {
       "kind": "face",
@@ -48,9 +48,9 @@
       "renderOrder": 2,
       "polygonOffsetUnits": -3,
       "vertexCount": 22218,
-      "vertexByteOffset": 41112,
+      "vertexByteOffset": 40416,
       "indexCount": 122991,
-      "indexByteOffset": 470136
+      "indexByteOffset": 469452
     },
     {
       "kind": "face",
@@ -59,9 +59,9 @@
       "renderOrder": 3,
       "polygonOffsetUnits": -4,
       "vertexCount": 451,
-      "vertexByteOffset": 307728,
+      "vertexByteOffset": 307032,
       "indexCount": 2334,
-      "indexByteOffset": 962100
+      "indexByteOffset": 961416
     },
     {
       "kind": "face",
@@ -70,9 +70,9 @@
       "renderOrder": 4,
       "polygonOffsetUnits": -5,
       "vertexCount": 877,
-      "vertexByteOffset": 313140,
+      "vertexByteOffset": 312444,
       "indexCount": 3837,
-      "indexByteOffset": 971436
+      "indexByteOffset": 970752
     },
     {
       "kind": "mat",
@@ -80,10 +80,10 @@
       "color": "#5A8A3A",
       "renderOrder": 5,
       "polygonOffsetUnits": -6,
-      "vertexCount": 440,
-      "vertexByteOffset": 323664,
-      "indexCount": 1242,
-      "indexByteOffset": 986784
+      "vertexCount": 484,
+      "vertexByteOffset": 322968,
+      "indexCount": 1374,
+      "indexByteOffset": 986100
     },
     {
       "kind": "mat",
@@ -92,9 +92,9 @@
       "renderOrder": 6,
       "polygonOffsetUnits": -7,
       "vertexCount": 154,
-      "vertexByteOffset": 328944,
+      "vertexByteOffset": 328776,
       "indexCount": 390,
-      "indexByteOffset": 991752
+      "indexByteOffset": 991596
     },
     {
       "kind": "mat",
@@ -103,9 +103,9 @@
       "renderOrder": 7,
       "polygonOffsetUnits": -8,
       "vertexCount": 341,
-      "vertexByteOffset": 330792,
+      "vertexByteOffset": 330624,
       "indexCount": 753,
-      "indexByteOffset": 993312
+      "indexByteOffset": 993156
     },
     {
       "kind": "mat",
@@ -114,9 +114,9 @@
       "renderOrder": 8,
       "polygonOffsetUnits": -9,
       "vertexCount": 24,
-      "vertexByteOffset": 334884,
+      "vertexByteOffset": 334716,
       "indexCount": 48,
-      "indexByteOffset": 996324
+      "indexByteOffset": 996168
     },
     {
       "kind": "mat",
@@ -125,9 +125,9 @@
       "renderOrder": 9,
       "polygonOffsetUnits": -10,
       "vertexCount": 384,
-      "vertexByteOffset": 335172,
+      "vertexByteOffset": 335004,
       "indexCount": 1044,
-      "indexByteOffset": 996516
+      "indexByteOffset": 996360
     },
     {
       "kind": "mat",
@@ -135,10 +135,10 @@
       "color": "#B8B2A4",
       "renderOrder": 10,
       "polygonOffsetUnits": -11,
-      "vertexCount": 2358,
-      "vertexByteOffset": 339780,
-      "indexCount": 7020,
-      "indexByteOffset": 1000692
+      "vertexCount": 2380,
+      "vertexByteOffset": 339612,
+      "indexCount": 7062,
+      "indexByteOffset": 1000536
     },
     {
       "kind": "mat",
@@ -147,9 +147,9 @@
       "renderOrder": 11,
       "polygonOffsetUnits": -12,
       "vertexCount": 1975,
-      "vertexByteOffset": 368076,
+      "vertexByteOffset": 368172,
       "indexCount": 5925,
-      "indexByteOffset": 1028772
+      "indexByteOffset": 1028784
     },
     {
       "kind": "mat",
@@ -158,9 +158,9 @@
       "renderOrder": 12,
       "polygonOffsetUnits": -13,
       "vertexCount": 893,
-      "vertexByteOffset": 391776,
+      "vertexByteOffset": 391872,
       "indexCount": 2739,
-      "indexByteOffset": 1052472
+      "indexByteOffset": 1052484
     }
   ]
 }
