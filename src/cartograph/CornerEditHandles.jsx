@@ -191,7 +191,9 @@ function computeIxLayout(ribbons) {
       const dq = [B0[0] - A0[0], B0[1] - A0[1]]
       const sQ = (dq[0] * (-T_B[1]) - dq[1] * (-T_B[0])) / det
       const Q = [A0[0] + sQ * T_A[0], A0[1] + sQ * T_A[1]]
-      corners.push({ Q, legKeyA: A.legKey, legKeyB: B.legKey })
+      // T_A/T_B (unit leg tangents at the corner) + the interior wedge angle let
+      // the live preview draw the true fillet circle the curb rounds to.
+      corners.push({ Q, legKeyA: A.legKey, legKeyB: B.legKey, T_A, T_B, theta })
     }
     out.push({ ixIdx, V, ix, corners })
   }
@@ -346,22 +348,15 @@ export default function CornerEditHandles({ ribbons }) {
       const cursorForVisual = snapping
         ? { x: anchor[0], z: anchor[1] }
         : p
-      // Visual update (cheap) — synchronous so the dot tracks the cursor.
+      // Visual update (cheap) — synchronous so the dot + the live fillet-circle
+      // preview track the cursor at frame rate.
       setDragState(prev => prev && { ...prev, cursor: cursorForVisual, r: snapping ? 0 : r, snapping })
-      // Heavy store commit (rebuilds meshes useMemo across the whole
-      // neighborhood) — rAF-throttled so it doesn't choke pointer events
-      // at LS density (~252 IXs / ~600 corners).
+      // DEFER the heavy commit. The store write rebuilds the whole-neighborhood
+      // tile mesh (Clipper + triangulation across ~600 corners) — far too heavy
+      // to run per frame, which is exactly the "the corner doesn't move with
+      // you" lag. Stash the target; onUp flushes it ONCE on release. During the
+      // drag the cheap preview below shows the true rounded corner.
       pendingCommitRef.current = baseR
-      if (rafRef.current == null) {
-        rafRef.current = requestAnimationFrame(() => {
-          rafRef.current = null
-          const target = pendingCommitRef.current
-          if (target == null) return
-          pendingCommitRef.current = null
-          const liveDrag = dragRef.current
-          if (liveDrag) flushCommit(liveDrag, target)
-        })
-      }
       e.stopPropagation()
     }
 
@@ -518,19 +513,37 @@ export default function CornerEditHandles({ ribbons }) {
               const cornerKey = `${ixIdx}:${ci}`
               const showOriginMarker = (originHint?.kind === 'corner' && originHint.key === cornerKey)
                 || draggingCorner
+              // Live fillet-circle preview — the circle the curb rounds to,
+              // tangent to both legs at radius ringR. Arc-centre sits along the
+              // interior bisector (T_A+T_B) at ringR / sin(θ/2) from the corner
+              // apex Q. Drawn during drag so the corner shape tracks the cursor
+              // at frame rate while the heavy bake is deferred to release.
+              let previewC = null
+              if (draggingCorner && ringR > 0.05 && c.T_A && Number.isFinite(c.theta)) {
+                const bx = c.T_A[0] + c.T_B[0], bz = c.T_A[1] + c.T_B[1]
+                const bl = Math.hypot(bx, bz) || 1
+                const sinH = Math.max(0.08, Math.sin(c.theta / 2))
+                const d = ringR / sinH
+                previewC = [c.Q[0] + (bx / bl) * d, c.Q[1] + (bz / bl) * d]
+              }
               return (
                 <group key={ci}>
-                  {/* Drag-only preview ring — shows the live R while the
-                      operator is dragging the dot. Idle authored corners
-                      no longer paint a ring (was visual clutter at scale).
-                      The dot color (gold = override, cyan = default) is
-                      sufficient at-rest indicator. */}
-                  {draggingCorner && ringR > 0.05 && (
-                    <mesh position={[vx, Y_DOTS + 0.001, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={203}>
-                      <ringGeometry args={[Math.max(0, ringR - 0.04), Math.max(0.04, ringR + 0.04), 64]} />
-                      <meshBasicMaterial color={color} transparent opacity={0.95}
-                        depthTest={false} depthWrite={false} />
-                    </mesh>
+                  {/* Live fillet-circle preview at the corner (tangent to both
+                      legs). A faint disc + a bright ring read as "the corner
+                      rounds to this circle" — it grows/moves with the drag. */}
+                  {previewC && (
+                    <>
+                      <mesh position={[previewC[0], Y_DOTS, previewC[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={203}>
+                        <circleGeometry args={[ringR, 64]} />
+                        <meshBasicMaterial color={color} transparent opacity={0.18}
+                          depthTest={false} depthWrite={false} />
+                      </mesh>
+                      <mesh position={[previewC[0], Y_DOTS + 0.001, previewC[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
+                        <ringGeometry args={[Math.max(0, ringR - 0.06), Math.max(0.06, ringR + 0.06), 80]} />
+                        <meshBasicMaterial color={color} transparent opacity={0.95}
+                          depthTest={false} depthWrite={false} />
+                      </mesh>
+                    </>
                   )}
                   {/* Origin marker — appears on tap (toggle) or while
                       dragging this corner. Tiny white-bordered dot at V
