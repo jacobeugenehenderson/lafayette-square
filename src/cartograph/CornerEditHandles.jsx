@@ -97,6 +97,26 @@ function cornerArc(c, V, ixOverrides, cornerOverrides, scale, rOverride) {
   return { C: [c.Q[0] + (bx / bl) * d, c.Q[1] + (bz / bl) * d], r }
 }
 
+// Angular extent of the curb arc at a corner — the stretch of curb between the
+// two tangent points (where the rounding meets the straight legs), the bit that
+// IS "the corner". Returns ringGeometry { thetaStart, thetaLength } in the flat
+// (rotation=[-π/2,0,0]) frame, where a world XZ angle ψ maps to local angle -ψ.
+function curbArcExtent(c, C) {
+  const dotA = (C[0] - c.Q[0]) * c.T_A[0] + (C[1] - c.Q[1]) * c.T_A[1]
+  const dotB = (C[0] - c.Q[0]) * c.T_B[0] + (C[1] - c.Q[1]) * c.T_B[1]
+  const tA = [c.Q[0] + c.T_A[0] * dotA, c.Q[1] + c.T_A[1] * dotA]
+  const tB = [c.Q[0] + c.T_B[0] * dotB, c.Q[1] + c.T_B[1] * dotB]
+  const norm = (a) => { a %= 2 * Math.PI; if (a < 0) a += 2 * Math.PI; return a }
+  const psiA = Math.atan2(tA[1] - C[1], tA[0] - C[0])
+  const psiB = Math.atan2(tB[1] - C[1], tB[0] - C[0])
+  const psiQ = Math.atan2(c.Q[1] - C[1], c.Q[0] - C[0])   // the arc bulges toward Q
+  const dAB = norm(psiB - psiA)
+  const dAQ = norm(psiQ - psiA)
+  const start = dAQ <= dAB ? psiA : psiB
+  const length = dAQ <= dAB ? dAB : 2 * Math.PI - dAB
+  return { thetaStart: -(start + length), thetaLength: length }
+}
+
 // Compute every corner's geometric anchor (Q = where leg-A's left curb-outer
 // meets leg-B's right curb-outer) plus stable leg keys, for each IX in
 // `ribbons`. Same math as the V2 emitter's corner-Q derivation; if you
@@ -423,37 +443,27 @@ export default function CornerEditHandles({ ribbons }) {
               const draggingCorner = dragState?.kind === 'corner'
                 && dragState.ixIdx === ixIdx && dragState.cornerIdx === ci
               const color = draggingCorner ? COLOR_DRAG : hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT
-              // The corner IS the handle: draw the fillet circle it rounds to
-              // (faint disc + bright ring) in magenta = editable. During a drag
-              // it resizes/moves with the cursor (the live preview); at rest it
-              // shows the corner's current roundness. A small apex tick keeps
-              // sharp (R≈0) corners locatable + grabbable.
+              // The corner IS the handle: paint just the CURB ARC magenta — the
+              // stretch of curb between the two tangent points, the bit that is
+              // "the corner". No dot, no circle. During a drag it follows the
+              // live radius; at rest it traces the corner's current curb.
               const { C, r: rr } = cornerArc(
                 c, V, ixOverrides, cornerOverrides, cornerRadiusScale,
                 draggingCorner ? dragState.r : undefined,
               )
+              if (!c.T_A || !(rr > 0.05)) return <group key={ci} />
+              const { thetaStart, thetaLength } = curbArcExtent(c, C)
+              // A band straddling the curb line (radius rr from the arc centre),
+              // ~0.9 m wide so it reads + is grabbable; the apex hit-test stays
+              // generous regardless.
+              const inner = Math.max(0.05, rr - 0.6)
+              const outer = rr + 0.3
               return (
                 <group key={ci}>
-                  {rr > 0.3 && (
-                    <>
-                      <mesh position={[C[0], Y_DOTS, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={203}>
-                        <circleGeometry args={[rr, 56]} />
-                        <meshBasicMaterial color={color} transparent opacity={draggingCorner ? 0.28 : 0.18}
-                          depthTest={false} depthWrite={false} />
-                      </mesh>
-                      <mesh position={[C[0], Y_DOTS + 0.001, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
-                        <ringGeometry args={[Math.max(0, rr - 0.12), Math.max(0.12, rr + 0.12), 72]} />
-                        <meshBasicMaterial color={color} transparent opacity={0.92}
-                          depthTest={false} depthWrite={false} />
-                      </mesh>
-                    </>
-                  )}
-                  {/* Apex tick at the corner — small, so the corner is findable
-                      and a sharp corner is still grabbable. */}
-                  <mesh position={[c.Q[0], Y_DOTS + 0.002, c.Q[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={205}>
-                    <circleGeometry args={[0.45, 18]} />
-                    <meshBasicMaterial color={color} transparent opacity={0.9}
-                      depthTest={false} depthWrite={false} />
+                  <mesh position={[C[0], Y_DOTS, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
+                    <ringGeometry args={[inner, outer, 48, 1, thetaStart, thetaLength]} />
+                    <meshBasicMaterial color={color} transparent opacity={draggingCorner ? 1.0 : 0.85}
+                      side={THREE.DoubleSide} depthTest={false} depthWrite={false} />
                   </mesh>
                 </group>
               )
