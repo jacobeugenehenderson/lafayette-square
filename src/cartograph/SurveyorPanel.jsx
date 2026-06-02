@@ -2,10 +2,17 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import landmarksData from '../data/landmarks.json'
 
+// Roadway classes only. The dropdown writes st.type on a STREET
+// (ribbons.streets); paths/alleys render from ribbons.paths/ribbons.alleys keyed
+// off their own kind, never st.type — so footway/cycleway/steps/pedestrian on a
+// street were inert (mislabel, no reroute) and pedestrian rendered nowhere. They
+// were trimmed; we are NOT adding path/alley authoring (those stay OSM-default).
+// Service kept — LS has a real service road (relabeled from "Service/Alley":
+// alleys come from ribbons.alleys, not from typing a street). Highway classes
+// (motorway, etc.) route through the Highway toggle, not this dropdown.
 const TYPES = [
   ['residential', 'Residential'], ['secondary', 'Secondary'], ['primary', 'Primary'],
-  ['service', 'Service/Alley'], ['footway', 'Footway'], ['cycleway', 'Cycleway'],
-  ['pedestrian', 'Pedestrian'], ['steps', 'Steps'],
+  ['service', 'Service'],
 ]
 
 // Hero subject picker — lives in Survey because picking the scene's hero
