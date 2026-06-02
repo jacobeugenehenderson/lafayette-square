@@ -254,6 +254,21 @@ function circlePoly(cx, cy, r, seg = 32) {
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
   return out
 }
+// Pure ring/key helpers shared by the shape pass AND the chain-free sectionPass
+// (module scope so sectionPass can use them without closing over the chain).
+const tipKey = (p) => Math.round(p[0] * 1000) + ',' + Math.round(p[1] * 1000)
+const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
+const nearestVertexIndex = (pt, ring) => {
+  let bi = 0, bd = Infinity
+  for (let i = 0; i < ring.length; i++) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
+  return bi
+}
+const nearestCornerVertexIndex = (pt, ring, idxs) => {
+  let bi = idxs[0], bd = Infinity
+  for (const i of idxs) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
+  return bi
+}
+const nearestVertR = (pt, ring, vertR) => vertR[nearestVertexIndex(pt, ring)]
 function pointInRing(px, py, r) {
   let inside = false
   for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
@@ -461,6 +476,105 @@ function groupRuns(tile) {
   return runs
 }
 
+// ── THE WALL · sectionPass ─────────────────────────────────────────────────
+// The FILL side of the wall: the interior authored ped strips (treelawn/sidewalk
+// leg strips, the ADA all-SW corner pad, the LU flood) stroked off the FROZEN
+// per-tile shape. Its parameters carry ONLY the artifact (shapeTiles) + design
+// params (cw, stripMat) — there is NO lexical handle on the chain graph
+// (streets / streetsOrig / measures / centerlineData / ribbons), so it CANNOT
+// reach back. That impossibility is the wall: Section's shape input changes only
+// when the shape pass re-runs. Every helper below is module-level + pure.
+function sectionPass(shapeTiles, cw, stripMat) {
+  const Wacc = [], tlByLu = {}, luByLu = {}
+  for (const st of shapeTiles) {
+    const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs } = st
+    const iC = offsetRings(iA, -cw, 'miter')               // curb/treelawn boundary  (R+cw)
+    const iT = offsetRings(iA, -(cw + tl), 'miter')        // treelawn/sidewalk       (R+cw+tl)
+    const iW = offsetRings(iA, -(cw + tl + sw), 'miter')   // sidewalk/LU             (R+cw+tl+sw)
+    // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
+    // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
+    // to tangent; treelawn lives only on the straight legs and ends at the
+    // tangents. Define the straight-leg zone as the union of each run's
+    // butt-capped slab (it ends square at the corner vertex, leaving the corner
+    // wedge uncovered). Treelawn = the concentric tl annulus ∩ that zone →
+    // clean tangent cuts; the uncovered corner wedge becomes sidewalk. Same
+    // per-run butt-cap construction as the asphalt, so the cuts stay consistent.
+    const tlSlabs = []
+    const wrapDisks = []   // round dead-end zone disks (treelawn wraps the cap)
+    for (const run of runs) {
+      const td = edgeDepth(run.baseMeasure, run.side, cw, 'T')   // grout → treelawn-outer (BASE measure — matches pre-Wall td)
+      if (td <= 1e-6) continue
+      const a = edgeDepth(run.measure, run.side, cw, 'A')   // per-fe asphalt edge, frozen (trim follows it)
+      // Pull the run back from each CORNER end by (asphalt-hw + that corner's
+      // resolved R) so the slab ends at the tangent and the corner wedge becomes
+      // the ADA all-SW pad. A ROUND dead-end is NOT trimmed (treelawn runs to the
+      // tip + the wrap disk rounds it). Closed-loop runs aren't trimmed. Acute
+      // corners just get a small fillet now (no special wrap — that made the
+      // teardrop/notch artifacts).
+      const last = run.poly[run.poly.length - 1]
+      const k0 = tipKey(run.poly[0]), k1 = tipKey(last)
+      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], ring, vertR)
+      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, ring, vertR)
+      const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
+      if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
+    }
+    let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
+    // A ROUND dead-end cap is NOT an ADA intersection corner: the treelawn
+    // CONTINUES around the cap (Jacob). Add a wrap disk at each round tip to the
+    // straight-leg zone so the treelawn annulus wraps the round end (the cap
+    // becomes a normal bent road section, not an all-SW ramp). Blunt tips stay
+    // out of the zone → still all-SW / no wrap.
+    if (zone && roundTips.length) {
+      for (const t of roundTips) wrapDisks.push(circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 2))
+    }
+    if (zone && wrapDisks.length) zone = unionRings([...zone, ...wrapDisks])
+    const clipLeg = (rings) => zone ? intersectRings(rings, zone) : rings
+    // The two ped LEG strips + the structural corner pad. Outer = the strip
+    // nearer the curb (treelawn position); inner = the strip nearer the
+    // property line (sidewalk position). The corner span is always SW (G5 ADA).
+    let legOuter = clipLeg(differenceRings(iC, iT))   // R+cw .. R+cw+tl
+    let legInner = clipLeg(differenceRings(iT, iW))   // R+cw+tl .. R+cw+tl+sw
+    let cornerPad = zone ? differenceRings(differenceRings(iC, iW), zone) : []
+    let luRemainder = iW                              // LU = innermost remainder (+ blunt-tip reclaim)
+    // G8 — at a blunt/none dead-end the street just ends: no ped wrap. Subtract
+    // a disk at the tip from the ped bands and reclaim that ped area as LU so it
+    // abuts the flat asphalt end.
+    if (bluntTips.length) {
+      const disks = bluntTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + tl + sw + 1))
+      luRemainder = unionRings([...iW, ...intersectRings(differenceRings(iC, iW), disks)])
+      legOuter = differenceRings(legOuter, disks)
+      legInner = differenceRings(legInner, disks)
+      cornerPad = differenceRings(cornerPad, disks)
+    }
+    // G8 round-tip cleanup — a cul-de-sac cap is road + ped wrap, NEVER land use.
+    // The zero-width pendant spur leaves a thin LU sliver up the stub centerline
+    // that pokes into the cap; reclaim any LU inside the cap radius as sidewalk.
+    if (roundTips.length) {
+      const caps = roundTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 1))
+      const stray = intersectRings(luRemainder, caps)
+      if (stray.length) {
+        luRemainder = differenceRings(luRemainder, caps)
+        cornerPad = unionRings([...cornerPad, ...stray])
+      }
+    }
+    // M3 — the two leg strips carry DATA-DRIVEN materials from the overridable
+    // materials model (default {outer:'LU', inner:'SW'}). Don't hard-code
+    // treelawn=grass / sidewalk=concrete — route each strip through stripMat so
+    // T3's per-fe LU↔SW swap plugs in with no geometry rework. 'LU' → the tile's
+    // land-use colour (the treelawn look); 'SW' → the sidewalk material.
+    const routeStrip = (matTag, rings) => {
+      if (!rings.length) return
+      if (matTag === 'SW') Wacc.push(...rings)
+      else pushLu(tlByLu, lu, rings)
+    }
+    routeStrip(stripMat.outer, legOuter)           // outer ped strip (default LU)
+    routeStrip(stripMat.inner, legInner)           // inner ped strip (default SW)
+    Wacc.push(...cornerPad)                         // corner span — always SW (structural)
+    pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
+  }
+  return { Wacc, tlByLu, luByLu }
+}
+
 export function buildTileGround(ribbons, opts = {}) {
   const curbWidth = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
@@ -572,21 +686,8 @@ export function buildTileGround(ribbons, opts = {}) {
     if (ixOverrides && Number.isFinite(+ixOverrides[ixk])) return Math.max(0, +ixOverrides[ixk])
     return baseR
   }
-  // Nearest tile-vertex INDEX for a curb-line corner point (the fillet operates
-  // on the asphalt-inner ring, whose corners sit inboard of the centerline node).
-  const nearestVertexIndex = (pt, ring) => {
-    let bi = 0, bd = Infinity
-    for (let i = 0; i < ring.length; i++) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
-    return bi
-  }
-  // Like nearestVertexIndex but restricted to a candidate index set (the ring's
-  // sharp corner nodes) — for mapping an inset fillet apex back to its node.
-  const nearestCornerVertexIndex = (pt, ring, idxs) => {
-    let bi = idxs[0], bd = Infinity
-    for (const i of idxs) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
-    return bi
-  }
-  const nearestVertR = (pt, ring, vertR) => vertR[nearestVertexIndex(pt, ring)]
+  // (nearestVertexIndex / nearestCornerVertexIndex / nearestVertR are module-level
+  // now — shared with the chain-free sectionPass.)
   // The ACHIEVED fillet per corner key — what the construction actually rounded
   // each corner to (after the geometric inset clamp). The authoring handle reads
   // this so its magenta arc IS the curb, never a re-derived approximation.
@@ -603,7 +704,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // dead-end tip. Cap = authored capEnds ?? the geometric caps.cap ?? round.
   //   round       → round the asphalt at the tip + the ped wraps it (cul-de-sac)
   //   blunt/none  → flat asphalt, NO ped wrap (the street just ends, LU abuts)
-  const tipKey = (p) => Math.round(p[0] * 1000) + ',' + Math.round(p[1] * 1000)
+  // (tipKey is module-level now — shared with sectionPass.)
   // Dead-end DEGREE is computed GEOMETRICALLY (count segments incident to each
   // node), not from `caps.degree` — toy ribbons carry no `caps` field, so
   // gating on it skipped every toy dead-end. A street endpoint whose node has
@@ -687,9 +788,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // Asphalt/curb/sidewalk are single-material (merged). Treelawn (M2) + the LU
   // remainder (M1) are grouped by the tile's class so they paint that class's
   // per-Look colour.
-  const Aacc = [], Cacc = [], Wacc = []
-  const tlByLu = {}, luByLu = {}
-  const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
+  const Aacc = [], Cacc = []   // shape strokes (asphalt, curb); ped accumulators come from sectionPass
   // ── THE WALL · Phase B · SHAPE pass (this loop) ────────────────────
   // The shape loop produces, per tile: the curb-line ring iA + cornerFillets
   // (the hardscape), emits the asphalt + curb strokes, and FREEZES everything a
@@ -790,98 +889,13 @@ export function buildTileGround(ribbons, opts = {}) {
     shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta })
   }
 
-  // ── THE WALL · Phase B · SECTION pass (interior authored ped) ──────
-  // Strokes the ped strips off the FROZEN per-tile shape only — iA, per-run
-  // { poly, side, measure }, vertR, tl/sw, lu, tips. NO chain access: segOrd's
-  // effect rides in run.measure (frozen in the shape loop above), so there is no
-  // runSegOrd / streetsOrig / measures probe here. (Inlined this increment;
-  // lifted to a module-level sectionPass next.)
-  for (const st of shapeTiles) {
-    const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs } = st
-    const iC = offsetRings(iA, -cw, 'miter')               // curb/treelawn boundary  (R+cw)
-    const iT = offsetRings(iA, -(cw + tl), 'miter')        // treelawn/sidewalk       (R+cw+tl)
-    const iW = offsetRings(iA, -(cw + tl + sw), 'miter')   // sidewalk/LU             (R+cw+tl+sw)
-    // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
-    // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
-    // to tangent; treelawn lives only on the straight legs and ends at the
-    // tangents. Define the straight-leg zone as the union of each run's
-    // butt-capped slab (it ends square at the corner vertex, leaving the corner
-    // wedge uncovered). Treelawn = the concentric tl annulus ∩ that zone →
-    // clean tangent cuts; the uncovered corner wedge becomes sidewalk. Same
-    // per-run butt-cap construction as the asphalt, so the cuts stay consistent.
-    const tlSlabs = []
-    const wrapDisks = []   // round dead-end zone disks (treelawn wraps the cap)
-    for (const run of runs) {
-      const td = edgeDepth(run.baseMeasure, run.side, cw, 'T')   // grout → treelawn-outer (BASE measure — matches pre-Wall td)
-      if (td <= 1e-6) continue
-      const a = edgeDepth(run.measure, run.side, cw, 'A')   // per-fe asphalt edge, frozen (trim follows it)
-      // Pull the run back from each CORNER end by (asphalt-hw + that corner's
-      // resolved R) so the slab ends at the tangent and the corner wedge becomes
-      // the ADA all-SW pad. A ROUND dead-end is NOT trimmed (treelawn runs to the
-      // tip + the wrap disk rounds it). Closed-loop runs aren't trimmed. Acute
-      // corners just get a small fillet now (no special wrap — that made the
-      // teardrop/notch artifacts).
-      const last = run.poly[run.poly.length - 1]
-      const k0 = tipKey(run.poly[0]), k1 = tipKey(last)
-      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], ring, vertR)
-      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, ring, vertR)
-      const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
-      if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
-    }
-    let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
-    // A ROUND dead-end cap is NOT an ADA intersection corner: the treelawn
-    // CONTINUES around the cap (Jacob). Add a wrap disk at each round tip to the
-    // straight-leg zone so the treelawn annulus wraps the round end (the cap
-    // becomes a normal bent road section, not an all-SW ramp). Blunt tips stay
-    // out of the zone → still all-SW / no wrap.
-    if (zone && roundTips.length) {
-      for (const t of roundTips) wrapDisks.push(circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 2))
-    }
-    if (zone && wrapDisks.length) zone = unionRings([...zone, ...wrapDisks])
-    const clipLeg = (rings) => zone ? intersectRings(rings, zone) : rings
-    // The two ped LEG strips + the structural corner pad. Outer = the strip
-    // nearer the curb (treelawn position); inner = the strip nearer the
-    // property line (sidewalk position). The corner span is always SW (G5 ADA).
-    let legOuter = clipLeg(differenceRings(iC, iT))   // R+cw .. R+cw+tl
-    let legInner = clipLeg(differenceRings(iT, iW))   // R+cw+tl .. R+cw+tl+sw
-    let cornerPad = zone ? differenceRings(differenceRings(iC, iW), zone) : []
-    let luRemainder = iW                              // LU = innermost remainder (+ blunt-tip reclaim)
-    // G8 — at a blunt/none dead-end the street just ends: no ped wrap. Subtract
-    // a disk at the tip from the ped bands and reclaim that ped area as LU so it
-    // abuts the flat asphalt end.
-    if (bluntTips.length) {
-      const disks = bluntTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + tl + sw + 1))
-      luRemainder = unionRings([...iW, ...intersectRings(differenceRings(iC, iW), disks)])
-      legOuter = differenceRings(legOuter, disks)
-      legInner = differenceRings(legInner, disks)
-      cornerPad = differenceRings(cornerPad, disks)
-    }
-    // G8 round-tip cleanup — a cul-de-sac cap is road + ped wrap, NEVER land use.
-    // The zero-width pendant spur leaves a thin LU sliver up the stub centerline
-    // that pokes into the cap; reclaim any LU inside the cap radius as sidewalk.
-    if (roundTips.length) {
-      const caps = roundTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 1))
-      const stray = intersectRings(luRemainder, caps)
-      if (stray.length) {
-        luRemainder = differenceRings(luRemainder, caps)
-        cornerPad = unionRings([...cornerPad, ...stray])
-      }
-    }
-    // M3 — the two leg strips carry DATA-DRIVEN materials from the overridable
-    // materials model (default {outer:'LU', inner:'SW'}). Don't hard-code
-    // treelawn=grass / sidewalk=concrete — route each strip through stripMat so
-    // T3's per-fe LU↔SW swap plugs in with no geometry rework. 'LU' → the tile's
-    // land-use colour (the treelawn look); 'SW' → the sidewalk material.
-    const routeStrip = (matTag, rings) => {
-      if (!rings.length) return
-      if (matTag === 'SW') Wacc.push(...rings)
-      else pushLu(tlByLu, lu, rings)
-    }
-    routeStrip(stripMat.outer, legOuter)           // outer ped strip (default LU)
-    routeStrip(stripMat.inner, legInner)           // inner ped strip (default SW)
-    Wacc.push(...cornerPad)                         // corner span — always SW (structural)
-    pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
-  }
+  // ── THE WALL · Phase C · the cut ───────────────────────────────────
+  // The interior authored ped comes from the module-level sectionPass, handed
+  // ONLY the frozen shapeTiles + design params. It has no handle on the chain,
+  // so it physically cannot reach back — Section's shape input changes only when
+  // this shape pass re-runs. (The perimeter G9 below stays here on the shape
+  // side, where reading the chain is legitimate — Jacob's Option 1.)
+  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat)
 
   let asphalt = unionRings(Aacc)
   let curb    = unionRings(Cacc)
