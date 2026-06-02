@@ -209,19 +209,6 @@ function signedArea(r) {
 // much rounding. Clamp R by the corner angle θ and the available depth d_min so
 // acute corners get a smaller R — past this the inward offsets self-intersect
 // and openRound over-erodes the sharp tip (the acute-corner breakage).
-const K_PINCH = 0.5
-// Clamp a target radius to what a corner of interior angle θ and depth d_min can
-// actually hold (figure-ground defaultR) — acute corners get a smaller R so the
-// fillet fits and the inward ped offsets don't self-intersect.
-function clampR(Rclass, dMin, theta) {
-  if (theta <= 0 || theta >= Math.PI - 1e-3) return 0
-  if (dMin <= 1e-6) return 0
-  const s = Math.sin(theta / 2)
-  const denom = 1 - s
-  if (denom < 1e-6) return Math.min(Rclass, dMin)
-  const Rmax = dMin * (1 - K_PINCH * s) / denom
-  return Math.max(0, Math.min(Rclass, Rmax))
-}
 function circlePoly(cx, cy, r, seg = 32) {
   const out = []
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
@@ -637,13 +624,13 @@ export function buildTileGround(ribbons, opts = {}) {
     // intersect and openRound over-erodes the sharp tip. Clamp R per tile by its
     // tightest corner angle and the ped depth (d_min), so the rounding fits.
     // Per-corner fillet of the curb line. Each tile vertex resolves to its
-    // authored radius (per-corner → per-IX → default 4.5), × the global scale,
-    // then clamped to that corner's own angle + ped depth (acute corners can't
-    // hold the full R). The fillet operates on the inboard curb ring, so map
-    // each curb corner back to its nearest centerline node for the radius.
-    const depth = cw + tl + sw
-    const vertR = tile.ring.map((V, i) => resolveVertR(V, tile.edges, i))
-    const cornerRfn = (pt, theta) => clampR(nearestVertR(pt, tile.ring, vertR) * scale, depth, theta)
+    // authored radius (per-corner → per-IX → default 4.5) × the global scale —
+    // NO clamp: the operator's R is the dial, and filletRing's own 45%-of-gap
+    // inset bound handles overlap geometrically (doctrine: no corner-R clamps in
+    // emit). The fillet operates on the inboard curb ring, so map each curb
+    // corner back to its nearest centerline node for the radius.
+    const vertR = tile.ring.map((V, i) => resolveVertR(V, tile.edges, i) * scale)
+    const cornerRfn = (pt) => nearestVertR(pt, tile.ring, vertR)
     const iA = filletRings(differenceRings([tile.ring], aFill), cornerRfn)   // rounded asphalt-inner (curb line)
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
@@ -671,8 +658,8 @@ export function buildTileGround(ribbons, opts = {}) {
       // teardrop/notch artifacts).
       const last = run.poly[run.poly.length - 1]
       const k0 = tipKey(run.poly[0]), k1 = tipKey(last)
-      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], tile.ring, vertR) * scale
-      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, tile.ring, vertR) * scale
+      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], tile.ring, vertR)
+      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, tile.ring, vertR)
       const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
     }
