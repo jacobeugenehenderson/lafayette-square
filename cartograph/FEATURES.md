@@ -16,6 +16,8 @@ The architecture is the deliverable. Lafayette Square is the v1 instance. Other 
 
 ## The ribbon doctrine — see `RIBBONS.md`
 
+> ⚠️ **2026-06-01 — the construction is being re-poured figure-ground → TILES** (the map is tiles = faces of the centerline graph; strips painted inward; the corner is the inward-offset). LS runs tiles now. Figure-ground-era specifics in this doc (the corner-pad/treelawn-matches-parcel/V2 decisions below) are going stale; live State = [`HANDOFF-tile-feature-ledger.md`](../HANDOFF-tile-feature-ledger.md). This doc's tile rewrite + the engineer-internals→ARCHITECTURE / operator-knobs→OPERATIONS migration land at T4.
+
 The ribbon + corner + curb + intersection + block geometry doctrine lives in [`RIBBONS.md`](RIBBONS.md) — the living doc that evolves every session. Cartograph quintet: FEATURES / ARCHITECTURE / BACKLOG / NOTES / **RIBBONS**.
 
 Read `RIBBONS.md` §1 (regime) + §6 (active failure modes) before any work that touches ribbons, corners, curbs, intersections, or block geometry. Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem the polygon system already answers.

@@ -61,6 +61,8 @@ Doctrine memory: `memory/project_skeleton_is_the_first_bake.md`.
 
 ## §Ribbon — the mono-width model (novel; easy to forget)
 
+> ⚠️ **2026-06-01 — SUPERSEDED IN PROGRESS by the TILE model.** The mono-width / figure-ground pipeline (P4–P13 below: asphalt-rects → polygonize → round → ribbons) is being replaced by the tile construction (tiles = faces of the centerline graph; inward strips; corners = the inward-offset). LS runs tiles now, unflagged. **Live State: [`HANDOFF-tile-feature-ledger.md`](../HANDOFF-tile-feature-ledger.md).** The P-ladder + §Ribbon + §Wall rewrite lands at **T4** (figure-ground deletion). Read the ledger for the live pipeline.
+
 Two load-bearing, counter-intuitive facts. Both use techniques that don't match the obvious mental model, so they **drift every time someone (human or agent) reaches for the intuitive construction.** Hold them deliberately:
 
 **1. The ribbon is MONO-WIDTH.** It is one band of uniform width `W` wrapping the *entire* block silhouette — not a per-leg cross-section stitched together. Internally it is **2 adjustable horizontal strips** (inner / outer, divided by the `cw+TL` offset), and the continuous band is sliced into **8 linear regions** around the block → **16 fields** (8 regions × 2 strips), each tagged **SW** (concrete sidewalk) or **LU** (land-use / parcel showing through). "Treelawn" is *not* a special material — it's just an LU-tagged strip. Keystone phrase: ***"ribbon monowidth, strips variable."*** This is why the construction is three inward Clipper offsets of `blockRounded` (`cw` / `cw+TL` / `WB`) + difference into 2 bands — not per-leg rectangles.

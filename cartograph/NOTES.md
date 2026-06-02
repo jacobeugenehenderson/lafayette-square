@@ -8,6 +8,26 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-01 — THE PIVOT: figure-ground → the TILE model. The 13-month corner knot unwound; the construction re-poured on LS in a day.
+
+**The morning.** A bake-target ghost (unflagged `bake-ground.js` wrote a phantom `baked/default/` nothing reads — `feedback_bake_ground_scene_clobbers_default_look`, inverted then fixed) had us reading a stale May-28 bake the prior session. The first fresh `--look=lafayette-square` bake showed LS's *real* surface — **every ribbon wrong wall-to-wall.** That render was the decisive confirmation: figure-ground / mono-width was the doomed intermediate. Bake-target wiring fixed (unflagged → `lafayette-square`; missing-look *throws*, never writes a phantom).
+
+**The pivot (Jacob).** Reframed the construction figure-ground → **tiles**: *the map is tiles that fit together; tiles are the faces of the centerline graph; the centerlines are the grout; paint strips inward per tile (`asphalt | curb | treelawn | sidewalk | LU-flood`); round the **strips**, not the tile.* No figure-ground, no asphalt/block distinction, no complement boolean. Corners, open/3-point edge cases, and figure-ground's whole bug class dissolve into "inward-offset a graph face." The logical completion of the stroke model + wall-move, unified.
+
+**The arc, in order:**
+- **Phase 1 — frame** (`1f89b86`, Marrow). Recovered Vesalius's junction-aware enrichment from `scratch/` (the clean-tree snapshot had reverted it out; live `skeleton.js` was still junction-blind), re-applied, serializer-widened, committed. 79 interior-Ts→0, typed junctions, Dolman→18th. **Zero visible change — correct: the frame is invisible-until-a-consumer-reads-it** (`feedback_the_knot_lesson`). It's the prerequisite tile face-extraction needs.
+- **The spike** (`HANDOFF-spike-pure-ribbon.md`, Tessera) — validated tiles on toy: intersection fills as a cross with corners rounding from the inward join; interior floods; edge cases can't produce degenerate polygons (no subtraction).
+- **T1** (`74676fc`) — `tileGround.js` (DCEL face-walk + inward strips) wired into BOTH the live Designer render AND the bake → **live==bake by construction (WYSIWYG)**. (The spike was bake-only → invisible in Design, which renders live — the gap that *is* the WYSIWYG problem.)
+- **T2 + T2-finish** (`e4c978b`→`993b499`, `4ff9de0`) — **LS adopted, unflagged, all scenes→tiles, figure-ground dead-in-place.** Per-edge asymmetric widths, divided-road medians (`effectiveMeasure`), **concentric ADA corners** (the 13-month corner — "attractively rounded" on Jacob's eye), dead-end caps honor `capEnds`, exterior streets roaded, per-LU colour + matching treelawn, strip-material data-driven (swap-ready), smoothing (`smoothCenterline.js`). Corrected a **global side-convention inversion** (DCEL CCW-interior = measure's right-perp — `feedback_perp_side_convention`, twice-bitten). Round-cap regression (a degree-gate toy lacked + an M3 refactor dropping round-tip handling) found + fixed.
+
+**Doc-architecture (same day):** extended root `README.md` into the canonical doc-index (auto-pointed from memory → findable unprompted); added the **OPERATIONS** doc-kind (operator's-manual counterpoint to FEATURES — the three-audience model: user/operator/developer); codified the **per-touch doc-gate** (history-first → edits → fulsome-synthesis routed by maturity+outcome; the LiDAR lockstep — `BOZ.md §3`).
+
+**Lessons banked:** `feedback_the_knot_lesson` (recurring resets = fighting the construction; the long arc is the cost of *finding* the knot, not waste); `feedback_perp_side_convention`; the proxy-render gap recurred (agent render ≠ Jacob's eye — the eye is the gate); frame-invisible-until-consumed.
+
+**State at EOD:** construction side done on LS; **T3 (authoring → tiles)** next; docket = T4 (delete figure-ground + the RIBBONS/PIPELINE/FEATURES tile rewrite) → boundary-trio (circle-SSOT) → slab-content → polish → rebake/migrate → Arborist/Provincetown/Meteorologist/LS-app. **Live State = `HANDOFF-tile-feature-ledger.md`** (the dense point-cloud); this entry is the narrative; Reference rewrites land at T4.
+
+---
+
 ## 2026-05-29 → 2026-05-31 — V1.5 swap + V2-Measure (Datum) + V1.6 (Trammel/Stadia) CLOSED. Toy is at the V1.6 baseline; LS still on legacy until C5.
 
 Continuation of the V1-C1-C4 entry below. After V1 keystone shipped on toy, three further arcs landed in sequence:

@@ -54,28 +54,48 @@ The project is organized as a **public-facing runtime app** plus a small set of 
 | **Arborist** (`/arborist`)       | `src/arborist/` + `arborist/`          | `public/trees/<species>/{skeleton-N.glb, tips-N.json, manifest.json}` | Runtime `InstancedTrees` (planned) |
 | **Meteorologist** (in Stage)     | `meteorologist/` + `src/cartograph/` (UI inline) + `src/components/Atmosphere.jsx` (planned) | `public/clouds/{presets,almanac}.json` | Runtime `<Atmosphere />` (planned) |
 
-This codebase carries **two parallel trinities** — one per app — under `cartograph/` and `ls/`:
+---
 
-| Trinity | What it documents |
-|---|---|
-| [`cartograph/FEATURES.md`](cartograph/FEATURES.md) / [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) / [`cartograph/BACKLOG.md`](cartograph/BACKLOG.md) | Designer / Stage / Preview / bake pipeline. The map-making toolkit. |
-| [`ls/FEATURES.md`](ls/FEATURES.md) / [`ls/ARCHITECTURE.md`](ls/ARCHITECTURE.md) / [`ls/BACKLOG.md`](ls/BACKLOG.md) | The Lafayette Square consumer app. Runtime mount tree, slab consumption, place cards, residence, guardians, Cary. |
+## Documentation map
 
-Cartograph and LS are **standalone yet completely overlapped** — cartograph could pour slabs for other neighborhoods; LS could surface different operators' slabs. Read whichever trinity is relevant to your session; flag mid-session contradictions; update at session end.
+> **This section is the index — find any doc from here without being told where to look.** Docs live *next to their code* and follow **three kinds**, separated by tense (the architecture is codified in [`BOZ.md`](BOZ.md)): **Reference** (how it works / why — eternal-present) · **State** (where we are / what's next — the `BACKLOG` + the `HANDOFF-*.md` future-looking to-do layer) · **Diary** (how we got here — `NOTES` + git). *One kind per doc; content flows downstream as it ages.*
+>
+> **⭐ Audience note — three readers within Reference:** **FEATURES** = user/investor (*what it is, why it's special* — the brochure). **OPERATIONS** = operator (*here's the panel, here's the knob, here's when to turn it* — the manual; the engineering/"actuarial" counterpoint to FEATURES, **paired with it per domain**). **README · ARCHITECTURE · PIPELINE · RIBBONS** = developer (contract / build+rationale / execution / geometry). So **FEATURES is never subsumed** — distinct audience; engineer-internals migrate FEATURES→ARCHITECTURE, operator-knobs migrate FEATURES→OPERATIONS, keeping FEATURES the clean pitch. *(OPERATIONS is seeded in cartograph; other domains get one as they're touched.)*
 
-The boundary between them is formal: [`SLAB-CONTRACT.md`](SLAB-CONTRACT.md) at the repo root specifies what cartograph publishes and LS consumes (the slab format). It's owned by neither app.
+**Start here, any session:**
+- **[`BOZ.md`](BOZ.md)** — coordinator onboarding, the living doc Process, and "where to start." The front door.
+- **This `README.md`** — the doc index (you're in it) + dev setup.
 
-Partner-facing reference catalogs live under [`ls/reference/`](ls/reference/):
+### Per-domain docs
 
-- [`ls/reference/INVENTORY-DATA.md`](ls/reference/INVENTORY-DATA.md) — every data source LS touches (slab artifacts, bundled JSON, live backends, asset weights, bundle sizes)
-- [`ls/reference/INVENTORY-API.md`](ls/reference/INVENTORY-API.md) — every backend endpoint (50+ GAS endpoints, Supabase tables/RPCs/functions, Cloudflare Worker, open-meteo)
+The project is **four domains** + the runtime, each documented beside its code:
 
+| Domain | Reference | State | Diary |
+|---|---|---|---|
+| **Cartograph** — map-making toolkit (Designer / Stage / Preview / bake) | [README](cartograph/README.md) · [FEATURES](cartograph/FEATURES.md) *(user/pitch)* · [OPERATIONS](cartograph/OPERATIONS.md) *(operator manual — seed)* · [ARCHITECTURE](cartograph/ARCHITECTURE.md) · [PIPELINE](cartograph/PIPELINE.md) · **[RIBBONS](cartograph/RIBBONS.md)** (geometry canon — read before any ribbon/corner work) | [BACKLOG](cartograph/BACKLOG.md) + the root `HANDOFF-*.md` briefs | [NOTES](cartograph/NOTES.md) · [OSM-FORENSICS](cartograph/OSM-FORENSICS.md) · [RENDER-PATH-CENSUS](cartograph/RENDER-PATH-CENSUS.md) |
+| **LS app** — the consumer surface (place cards, residence, guardians, Cary) | [FEATURES](ls/FEATURES.md) · [ARCHITECTURE](ls/ARCHITECTURE.md) · [reference/INVENTORY-DATA](ls/reference/INVENTORY-DATA.md) (every data source) · [INVENTORY-API](ls/reference/INVENTORY-API.md) (every endpoint) · [RUNTIME-DELTA](ls/reference/RUNTIME-DELTA.md) | [BACKLOG](ls/BACKLOG.md) | — |
+| **Arborist** — tree library + bake | [README](arborist/README.md) · [SPEC](arborist/SPEC.md) · [FEATURES](arborist/FEATURES.md) · [ARCHITECTURE](arborist/ARCHITECTURE.md) · [ROSTER-COVERAGE](arborist/ROSTER-COVERAGE.md) | [BACKLOG](arborist/BACKLOG.md) | [NOTES](arborist/NOTES.md) |
+| **Meteorologist** — clouds + weather (UI lives inside Stage, no separate route) | [README](meteorologist/README.md) · [SPEC](meteorologist/SPEC.md) · [FEATURES](meteorologist/FEATURES.md) · [ARCHITECTURE](meteorologist/ARCHITECTURE.md) · [CANON](meteorologist/CANON.md) · [INTERFACE](meteorologist/INTERFACE.md) | [BACKLOG](meteorologist/BACKLOG.md) · [STAGE_MIGRATION](meteorologist/STAGE_MIGRATION.md) · [CLOUD-PHASE0](meteorologist/CLOUD-PHASE0.md) | [NOTES](meteorologist/NOTES.md) |
 
-Each helper also has its own README documenting its inputs, outputs, and command surface:
+Cartograph and LS are **standalone yet completely overlapped** — cartograph could pour slabs for other neighborhoods; LS could surface other operators' slabs. Read the domain relevant to your session; flag mid-session contradictions; update at session end.
 
-- [`cartograph/README.md`](cartograph/README.md)
-- [`arborist/README.md`](arborist/README.md) (scaffold — see [`arborist/SPEC.md`](arborist/SPEC.md) for the build plan)
-- [`meteorologist/README.md`](meteorologist/README.md) (scaffold — see [`meteorologist/SPEC.md`](meteorologist/SPEC.md) for the build plan; Meteorologist is unique in that it has no separate route — its UI lives inside Stage's `/cartograph`)
+### Cross-domain / strategic (repo root)
+
+- **[`SLAB-CONTRACT.md`](SLAB-CONTRACT.md)** — the formal cartograph↔LS boundary (the slab format; owned by neither app).
+- **[`AGENT-VALIDATION-SURFACES.md`](AGENT-VALIDATION-SURFACES.md)** — where to validate (toy vs LS); the guardrails.
+- **[`AUDIT-MATRIX.md`](AUDIT-MATRIX.md)** + the `HANDOFF-audit-*.md` set — the forensic-audit campaign.
+- **[`plans/`](plans/)** — forward/strategic: productization, basemap-swap, pre-public-cleanout, kit-couplers.
+- **[`PUBLISH.md`](PUBLISH.md)** — deploy procedures · `BUSINESS_LISTINGS.md` · `CARY-BRIEF.md`.
+
+### State layer & working dirs
+
+- **`HANDOFF-*.md`** (repo root) — dispatch-ready briefs = the **future-looking to-do**; live ones are indexed from the relevant `BACKLOG`.
+- **`scratch/`** — git-tracked working files (briefs, audits, journals); throwaway-ish, *not* canonical.
+- **`inventory/`** — the LS content corpus (narrative + page); data, not docs.
+- **`_archive/`** — retired docs (git keeps the rest).
+- **`memory/`** — the coordinator's continuity (auto-loaded; `MEMORY.md` is its index, and it points back here).
+
+> *Incomplete? This index is incorporated **a bit at a time** — if a doc isn't mapped here yet, add it to its domain×kind cell (or the right root bucket) when you touch it. The index is canonical; keep it honest.*
 
 URL routes during development:
 

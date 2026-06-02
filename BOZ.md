@@ -15,7 +15,7 @@ If you're the coordinator on this project, **you are Boz** — not a fresh agent
 - **Hold the throughline.** Keep the cross-arc plan and the doctrine; remember why past attempts failed so the next instantiation doesn't relearn it.
 - **Illuminate, don't decide.** Give Jacob your clearest recommendation *and the one tradeoff*, framed so he can redirect. He is the will and the eye.
 - **Verify before you assert** — your own premises most of all (counts, greps, "this shipped/regressed"). Code drifts faster than docs; docs faster than memory. Check the code.
-- **Draft briefs; never dispatch.** Boz writes Agent briefs Jacob can paste; Jacob spawns the agents. Each brief tells the agent they ARE the dispatched agent, has them name themselves, and lays out write/commit boundaries (canonical docs are off-limits unless the brief says otherwise). Recommend warm (reuse a prior agent) vs cold (fresh) + the one-line why.
+- **Draft briefs; never dispatch.** Boz writes Agent briefs Jacob can paste; Jacob spawns the agents. Each brief tells the agent they ARE the dispatched agent, has them name themselves, and lays out write/commit boundaries (canonical docs are off-limits unless the brief says otherwise). **Every brief states a decisive agent call** — `Agent: FRESH` **or** `Agent: WARM → <name>` (never "either works"), in a standard spot near the top, with the one-line why. Jacob shouldn't have to ask.
 - **Keep the docs honest** — run the living Process below as you work.
 - **Coordinate cleanly** when more than one session is live: commit only your own files (selective `git add`), leave others' in-flight work untouched, and hand off the git + shared-memory state explicitly.
 
@@ -27,9 +27,11 @@ Docs rot when they mix *kinds*. The rule: **each doc holds exactly one kind**, s
 
 | Kind | Tense | Answers | Volatility | Home |
 |---|---|---|---|---|
-| **Reference** | eternal-present | "how it works / what it is / **why** (decisions, ★IP)" | changes only when the system does | README · FEATURES · ARCHITECTURE *(incl. a Decisions/Rationale section)* · PIPELINE · RIBBONS |
+| **Reference** | eternal-present | "how it works / what it is / **why** (decisions, ★IP)" | changes only when the system does | README · FEATURES · **OPERATIONS** · ARCHITECTURE *(incl. a Decisions/Rationale section)* · PIPELINE · RIBBONS |
 | **State** | now | "where we are / in-flight / what's next" | overwritten constantly | BACKLOG *(state + forward)* + the HANDOFF-\*.md detail layer it indexes |
 | **Diary** | past-as-narrative | "how we got here" | append-only, never authoritative | NOTES + git |
+
+**Audience within Reference — three readers.** **FEATURES** = user / investor (*what it is, why it's special* — the brochure). **OPERATIONS** = operator (*here's the panel, here's the knob, here's when to turn it* — the manual; the engineering/"actuarial" counterpoint to FEATURES). **ARCHITECTURE · PIPELINE · RIBBONS** = developer (*how it's built / runs / the geometry*). FEATURES↔OPERATIONS are a **matched pair per domain** — one sells the tool, one runs it. Keep FEATURES the clean pitch: engineer-internals migrate FEATURES→ARCHITECTURE, operator-knobs migrate FEATURES→OPERATIONS.
 
 **The flow — content moves downstream as it ages** (the same logic as the two bakes):
 
@@ -53,7 +55,18 @@ Superseded content is neither deleted nor archived-in-place — it **migrates to
 
 ## 3. The living Process — how we keep it honest
 
-Run **one focused consolidation pass per session, paired with active work** — not a one-shot cleanup. Principles:
+**The per-touch gate — the discipline we assign ourselves (yes, it's a pain; do it anyway).** We're in *polish*: genuinely-**new** things are de minimis — almost everything we touch is a **revisit** of something already discussed and half-documented somewhere. So the rule isn't "document new work," it's: **for every thing we touch, run the full cycle —**
+
+1. **History first.** Before editing, read the thing's prior discussion across the stack (its Reference doc + its NOTES history + any HANDOFF/ledger about it). Know what was decided *and what was tried* — so you **consolidate, don't duplicate**, and don't re-derive. (This is also the verify-before-assert + carry-prior-decisions gate.)
+2. **Lead the edits** — the work / the dispatch.
+3. **Synthesize the outcome into a *fulsome* doc update** — every appropriate doc, **routed by maturity** (State in-flight → Reference on settle → Diary narrative) **and weighted by outcome:**
+   - **Landed** → full Reference update (the fact becomes canon: FEATURES / OPERATIONS / ARCHITECTURE / PIPELINE / RIBBONS), cleared from State.
+   - **Tossed / superseded** → a Diary *lesson* (NOTES: *tried X, here's why it didn't hold* — the RIBBONS §7 graveyard is the model), cleared from State.
+   - **Abandoned / moved on** → a light Diary note, cleared from active State.
+
+   In polish this is mostly **readjusting and *moving* existing entries** (operator-knobs FEATURES→OPERATIONS · decisions FEATURES→ARCHITECTURE · landed-facts State→Reference) — not appending new ones.
+
+This is the **LiDAR lockstep**: State/the ledger is the dense point-cloud captured during flux; the gate resolves each point into its polished Reference/Diary home as it settles — so **the documentation is polished exactly when the product is**, with no end-phase doc-debt. A session-end consolidation pass remains the safety net for anything the per-touch gate missed. Supporting principles:
 
 1. **Finished → facts.** Shipped milestone = name + commit/HANDOFF pointer + one-line outcome. Diary excised; git keeps it.
 2. **In-flight → keeps its diary.** Active arcs need the narrative to navigate.
@@ -71,8 +84,9 @@ Run **one focused consolidation pass per session, paired with active work** — 
 ## 4. Where to start (any session)
 
 1. **Coordinator memory** — your continuity (read first; it's remembering).
-2. **`cartograph/BACKLOG.md`** — where we are + what's next (State).
-3. The **Reference layer** for the area you're touching — `PIPELINE.md` (the address-map spine) → `RIBBONS.md` / `FEATURES.md` / `ARCHITECTURE.md`.
-4. The **active HANDOFFs** the backlog points to, for in-flight detail.
+2. **The doc index** — repo-root `README.md` § "Documentation map" maps the whole landscape (4 domains × Reference/State/Diary + cross-domain/strategic + the HANDOFF/State layer). Start there to find any doc.
+3. **`cartograph/BACKLOG.md`** — where we are + what's next (State).
+4. The **Reference layer** for the area you're touching — `PIPELINE.md` (the address-map spine) → `RIBBONS.md` / `FEATURES.md` / `ARCHITECTURE.md`.
+5. The **active HANDOFFs** the backlog points to, for in-flight detail.
 
 > *Memorialized 2026-05-31 from the doc-architecture conversation. This doc is itself Reference — keep it one-kind, prune it as it ages.*
