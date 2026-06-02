@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { BOUNDARY_CENTER_XZ, FADE_INNER, FADE_OUTER } from './boundary.js'
 import { INSTANCE } from '../instance.js'
@@ -67,7 +67,22 @@ function tileTouchesFade(x, z, w, h) {
   return d2 <= FADE_OUTER * FADE_OUTER
 }
 
-function buildTiles(z) {
+// Cheap AABB intersection between a tile rect {x,z,w,h} and a focus region
+// {minX,maxX,minZ,maxZ}. Tile w/h can be negative (web-mercator y grows
+// southward), so normalize before testing.
+function tileTouchesRegion(x, z, w, h, region) {
+  const tMinX = Math.min(x, x + w), tMaxX = Math.max(x, x + w)
+  const tMinZ = Math.min(z, z + h), tMaxZ = Math.max(z, z + h)
+  return tMaxX >= region.minX && tMinX <= region.maxX
+    && tMaxZ >= region.minZ && tMinZ <= region.maxZ
+}
+
+// Generate the ArcGIS World_Imagery tiles for zoom `z` across the WGS84
+// BBOX, culled to the neighborhood circle. When `regionBbox` is passed
+// (world-space {minX,maxX,minZ,maxZ}), additionally skip tiles that don't
+// intersect it — that's how the focus layer loads only a handful of hi-res
+// tiles over the activated block instead of the whole disc.
+function buildTiles(z, regionBbox = null) {
   const [xMin, yMin] = lonLatToTile(BBOX.minLon, BBOX.maxLat, z)
   const [xMax, yMax] = lonLatToTile(BBOX.maxLon, BBOX.minLat, z)
   const tiles = []
@@ -79,6 +94,7 @@ function buildTiles(z) {
       const [x1, z1] = wgs84ToLocal(seLon, seLat)
       const w = x1 - x0, h = z1 - z0
       if (!tileTouchesFade(x0, z0, w, h)) continue
+      if (regionBbox && !tileTouchesRegion(x0, z0, w, h, regionBbox)) continue
       tiles.push({
         x: x0, z: z0, w, h,
         url: `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`,
@@ -90,7 +106,7 @@ function buildTiles(z) {
 
 const loader = new THREE.TextureLoader()
 
-function TileMesh({ tile }) {
+function TileMesh({ tile, y = -0.05 }) {
   const texture = useMemo(() => {
     const tex = loader.load(tile.url)
     tex.minFilter = THREE.LinearFilter
@@ -103,9 +119,18 @@ function TileMesh({ tile }) {
     return injectCircleCrop(mat)
   }, [texture])
 
+  // Free GPU memory when this tile unmounts or its url changes. The focus
+  // layer churns tiles as the operator dollies / reselects, so without this
+  // the textures (several MB each) accumulate over a session. Base tiles are
+  // stable but disposal is harmless there too.
+  useEffect(() => () => {
+    texture.dispose()
+    material.dispose()
+  }, [texture, material])
+
   return (
     <mesh
-      position={[tile.x + tile.w / 2, -0.05, tile.z + tile.h / 2]}
+      position={[tile.x + tile.w / 2, y, tile.z + tile.h / 2]}
       rotation={[-Math.PI / 2, 0, 0]}
       material={material}
     >
@@ -114,17 +139,25 @@ function TileMesh({ tile }) {
   )
 }
 
-// z=18 is the default (~190 tiles after circle cull at LS). Measure
-// passes zoom=20 for its very-cropped-in views (~750 tiles). Each step
-// up in z = 4× tile count, so this is a load-time-vs-pixel-density
-// trade. ArcGIS World_Imagery serves z=20 in most areas including
-// St. Louis.
-export default function AerialTiles({ zoom = 18, visible = true }) {
-  const tiles = useMemo(() => buildTiles(zoom), [zoom])
+// ── Two-layer aerial loader ─────────────────────────────────────────────
+// Hi-res is a property of ATTENTION, not place. The base layer covers the
+// whole disc at a low fixed zoom (a handful of tiles, near-instant); the
+// focus layer (AerialFocus, below) loads hi-res only over the activated
+// block, at a resolution driven by camera distance. See
+// HANDOFF-aerial-focus-brief.md / memory project_neighborhood_disc.
 
+// Low fixed zoom for the always-on whole-disc base. z16 ≈ 1.9 m/px,
+// ~a dozen tiles after the circle cull at LS — fast + an acceptable
+// overview. (Tune by eye; pre-baking the base is a later Disc step.)
+export const BASE_Z = 16
+
+// Whole-disc low-res base. Always rendered while aerial is active; never
+// blank, never the 190/750-tile wave the old single-layer loader fired.
+export default function AerialBase() {
+  const tiles = useMemo(() => buildTiles(BASE_Z), [])
   return (
-    <group visible={visible}>
-      {tiles.map((t, i) => <TileMesh key={i} tile={t} />)}
+    <group>
+      {tiles.map((t) => <TileMesh key={t.url} tile={t} />)}
     </group>
   )
 }

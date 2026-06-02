@@ -8,7 +8,7 @@ import MapLayers from './MapLayers.jsx'
 import BakedGround from '../components/BakedGround.jsx'
 
 // Designer-only (aerial + authoring overlays)
-import AerialTiles from './AerialTiles.jsx'
+import AerialBase from './AerialTiles.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import MeasureOverlay from './MeasureOverlay.jsx'
 import CornerEditHandles from './CornerEditHandles.jsx'
@@ -939,12 +939,14 @@ export default function CartographApp() {
               64 aerial tiles or the gateway-arch decoration. Mounting
               only in Designer keeps these out of Stage shots. */}
           {inDesigner && <>
-            {/* Aerial tiles fetch + GPU-upload eagerly on mount (~64 tiles at
-                z=20, several MB). Mount only when needed — when a tool is
-                active or Aerial is toggled — so Designer pays nothing for
-                the photo unless it's actually being used. ~200ms cache hit
-                / 2-5s cold the first time the operator clicks Aerial. */}
-            {sceneCfg.hasAerial && (!!tool || aerialVisible) && <AerialTiles visible={true} zoom={tool === 'measure' ? 20 : 18} />}
+            {/* Two-layer aerial. AerialBase = whole-disc low-res, a dozen
+                tiles, near-instant. AerialFocus = hi-res only over the
+                activated block, resolution driven by camera distance,
+                released on deselect/zoom-out. Mounts only when a tool is
+                active or Aerial is toggled, so Designer pays nothing for the
+                photo unless it's being used. (Two-layer loader rework:
+                HANDOFF-aerial-focus-brief.md.) */}
+            {sceneCfg.hasAerial && (!!tool || aerialVisible) && <AerialBase />}
             {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
