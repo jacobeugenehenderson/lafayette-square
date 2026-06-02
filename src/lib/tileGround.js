@@ -690,8 +690,27 @@ export function buildTileGround(ribbons, opts = {}) {
   const Aacc = [], Cacc = [], Wacc = []
   const tlByLu = {}, luByLu = {}
   const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
+  // ── THE WALL · Phase A ─────────────────────────────────────────────
+  // Freeze the per-run SECTION metadata here in the shape region, where the
+  // chain (streetsOrig) is legitimately available. The lone section-side
+  // reach-back into the chain is segOrd (runSegOrd probes streetsOrig); the
+  // minor one is anchor (street.anchor). Freezing both — plus the per-fe-
+  // resolved side measure — lets a later sectionPass consume THIS instead of
+  // the chain. perTileMeta[i] aligns 1:1 with tiles[i] (the loop never `continue`s).
+  // Additive: nothing reads it yet (byte-identical render).
+  const perTileMeta = []
   for (const tile of tiles) {
     const runs = groupRuns(tile)
+    perTileMeta.push(runs.map(run => {
+      const so = streetsOrig[run.streetIdx]
+      return {
+        side: run.side,
+        skelId: (so && (so.skelId || so.name)) || null,
+        segOrd: runSegOrd(run),
+        anchor: (so && so.anchor) || null,
+        measure: runMeasure(run),   // per-fe-resolved side measure (carries segOrd's effect)
+      }
+    }))
     // G8 — dead-end tips on this tile (a run boundary vertex that is a degree-1
     // node). Round-capped tips get a round asphalt disk so the cul-de-sac rounds
     // (the butt-capped runs alone end flat); blunt/none tips stay flat and later
@@ -947,5 +966,5 @@ export function buildTileGround(ribbons, opts = {}) {
   for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
   for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
-  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, cornerFillets, _tiles: tiles }
+  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta }
 }
