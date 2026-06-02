@@ -292,6 +292,8 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
     smooth: Number.isFinite(design.streetSmooth) ? design.streetSmooth : 0.5,
     blockLandUse: design.blockLandUse || null,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
+    cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : null,
+    cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : null,
   })
   const byMaterial = new Map()
   const byFaceUse = new Map()
