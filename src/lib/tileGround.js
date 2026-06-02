@@ -64,6 +64,93 @@ function openRound(rings, R) {
   if (!eroded.length) return rings                  // too thin to open → keep as-is
   return offsetRings(eroded, R)
 }
+// ── Per-corner fillet ────────────────────────────────────────────────────
+// The per-VERTEX analogue of openRound (which rounds every convex corner by one
+// uniform radius). Replaces each SIGNIFICANT convex corner of a ring with a
+// circular arc tangent to both legs, radius resolved PER-CORNER by
+// `Rfn(point, interiorTheta) → metres` — so operator-authored per-corner /
+// per-IX radii reshape individual corners. Self-contained (no figure-ground
+// dependency); winding-aware so it rounds outer rings and holes correctly.
+//   • near-straight vertices (turn < TURN_TOL) are curve samples, not corners
+//     → passed through (keeps the rounding off the gentle smoothed runs).
+//   • inset is clamped to 45% of the arc-length to each NEIGHBOUR corner so
+//     adjacent fillets never overlap on a short leg.
+const FILLET_TURN_TOL = 18 * Math.PI / 180
+function filletRing(ring, Rfn) {
+  const n = ring.length
+  if (n < 3) return ring.slice()
+  const sign = signedArea(ring) >= 0 ? 1 : -1
+  // Pass 1 — find corner vertices (convex relative to interior, turning > tol).
+  const corners = []                                // { i, R, theta, inx,iny, outx,outy }
+  for (let i = 0; i < n; i++) {
+    const A = ring[(i - 1 + n) % n], V = ring[i], B = ring[(i + 1) % n]
+    let inx = V[0] - A[0], iny = V[1] - A[1], outx = B[0] - V[0], outy = B[1] - V[1]
+    const li = Math.hypot(inx, iny), lo = Math.hypot(outx, outy)
+    if (li < 1e-6 || lo < 1e-6) continue
+    inx /= li; iny /= li; outx /= lo; outy /= lo
+    if ((inx * outy - iny * outx) * sign <= 0) continue          // concave
+    const turn = Math.acos(Math.max(-1, Math.min(1, inx * outx + iny * outy)))
+    if (turn < FILLET_TURN_TOL) continue                          // curve sample
+    const theta = Math.PI - turn
+    const R = Rfn(V, theta)
+    if (!(R > 0.01)) continue
+    corners.push({ i, R, theta, inx, iny, outx, outy })
+  }
+  if (!corners.length) return ring.slice()
+  // Arc-length to the previous / next corner (cyclic), to clamp the inset.
+  const segLen = (a, b) => Math.hypot(ring[a][0] - ring[b][0], ring[a][1] - ring[b][1])
+  const gapAfter = (ci) => {                                       // dist corner ci → ci+1
+    const a = corners[ci].i, b = corners[(ci + 1) % corners.length].i
+    let d = 0, k = a
+    while (k !== b) { const nk = (k + 1) % n; d += segLen(k, nk); k = nk }
+    return d
+  }
+  const drop = new Array(n).fill(false)               // intermediate verts inside a fillet
+  const arcAt = new Map()                             // corner ring-index → arc points
+  for (let ci = 0; ci < corners.length; ci++) {
+    const c = corners[ci]
+    const V = ring[c.i]
+    const tanH = Math.tan(c.theta / 2)
+    if (!(tanH > 1e-6)) continue
+    const gPrev = corners.length > 1 ? gapAfter((ci - 1 + corners.length) % corners.length) : Infinity
+    const gNext = corners.length > 1 ? gapAfter(ci) : Infinity
+    const inset = Math.min(c.R / tanH, 0.45 * gPrev, 0.45 * gNext)
+    if (!(inset > 1e-4)) continue
+    const effR = inset * tanH
+    const tA = [V[0] - c.inx * inset, V[1] - c.iny * inset]
+    const tB = [V[0] + c.outx * inset, V[1] + c.outy * inset]
+    const px = -c.iny * sign, py = c.inx * sign       // interior-perp of inDir
+    const cx = tA[0] + px * effR, cy = tA[1] + py * effR
+    let aA = Math.atan2(tA[1] - cy, tA[0] - cx)
+    const aB = Math.atan2(tB[1] - cy, tB[0] - cx)
+    let delta = aB - aA
+    if (sign > 0) { while (delta <= 1e-9) delta += 2 * Math.PI } else { while (delta >= -1e-9) delta -= 2 * Math.PI }
+    const segs = Math.max(2, Math.round(Math.abs(delta) / (Math.PI / 24)))   // fine arc
+    const pts = []
+    for (let k = 0; k <= segs; k++) { const a = aA + delta * (k / segs); pts.push([cx + effR * Math.cos(a), cy + effR * Math.sin(a)]) }
+    arcAt.set(c.i, pts)
+    // mark intermediate vertices within the inset (back + forward) as dropped
+    let w = 0, k = c.i
+    while (true) { const p = (k - 1 + n) % n; const d = segLen(k, p); if (w + d > inset) break; w += d; drop[p] = true; k = p; if (k === c.i) break }
+    w = 0; k = c.i
+    while (true) { const q = (k + 1) % n; const d = segLen(k, q); if (w + d > inset) break; w += d; drop[q] = true; k = q; if (k === c.i) break }
+  }
+  // Pass 2 — rotate to a kept, non-corner start, then emit literals + arcs.
+  let i0 = 0
+  while (i0 < n && (drop[i0] || arcAt.has(i0))) i0++
+  if (i0 >= n) i0 = 0
+  const out = []
+  for (let k = 0; k < n; k++) {
+    const i = (i0 + k) % n
+    if (arcAt.has(i)) { for (const p of arcAt.get(i)) out.push(p) }
+    else if (!drop[i]) out.push(ring[i].slice())
+  }
+  return out
+}
+// Map filletRing over a ring SET (outer rings + holes), preserving the rest.
+function filletRings(rings, Rfn) {
+  return rings.map(r => (r && r.length >= 3) ? filletRing(r, Rfn) : r)
+}
 // Offset an OPEN polyline by `delta` with round JOIN (handles the run's own
 // bends, no compounding) and BUTT caps (so a run ends square at the tile
 // vertex — no round-cap-at-depth bulge, which distorted the corners). Robust
@@ -545,7 +632,10 @@ export function buildTileGround(ribbons, opts = {}) {
     // intersect and openRound over-erodes the sharp tip. Clamp R per tile by its
     // tightest corner angle and the ped depth (d_min), so the rounding fits.
     const Rt = clampR(R, cw + tl + sw, minCornerAngle(tile.ring))
-    const iA = openRound(differenceRings([tile.ring], aFill), Rt)   // rounded asphalt-inner (curb line)
+    // Per-corner fillet of the curb line (uniform Rt for now — the per-corner /
+    // per-IX resolver lands next). Replaces the uniform openRound so authored
+    // radii can reshape individual corners.
+    const iA = filletRings(differenceRings([tile.ring], aFill), () => Rt)   // rounded asphalt-inner (curb line)
     const iC = offsetRings(iA, -cw)               // curb/treelawn boundary  (R+cw)
     const iT = offsetRings(iA, -(cw + tl))        // treelawn/sidewalk       (R+cw+tl)
     const iW = offsetRings(iA, -(cw + tl + sw))   // sidewalk/LU             (R+cw+tl+sw)
