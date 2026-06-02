@@ -294,6 +294,8 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
     cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : null,
     cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : null,
+    // Per-fe (per-block) asphalt-width overrides authored in Survey/Measure.
+    blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : null,
   })
   const byMaterial = new Map()
   const byFaceUse = new Map()

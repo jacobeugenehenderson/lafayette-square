@@ -240,6 +240,11 @@ function computeIxLayout(ribbons) {
 }
 
 export default function CornerEditHandles({ ribbons }) {
+  // Corner SHAPE authoring is a Survey concern (the corner is two things in two
+  // tools — RIBBONS / ARCHITECTURE §2.1). The corner handles show ONLY under the
+  // Survey tool; Section shows its own (ped) handles. Gate by tool so the
+  // per-tool handle split is honoured.
+  const tool = useCartographStore(s => s.tool)
   const cornerEditMode = useCartographStore(s => s.cornerEditMode)
   const ixOverrides = useCartographStore(s => s.cornerRadiusOverrides) || {}
   const cornerOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
@@ -272,6 +277,7 @@ export default function CornerEditHandles({ ribbons }) {
   const layout = useMemo(() => computeIxLayout(ribbons), [ribbons])
 
   useEffect(() => {
+    if (tool !== 'surveyor') return
     if (!cornerEditMode) return
     if (!layout.length) return
 
@@ -446,8 +452,9 @@ export default function CornerEditHandles({ ribbons }) {
       dom.removeEventListener('pointercancel', onUp, opts)
       dom.removeEventListener('contextmenu', onContextMenu, opts)
     }
-  }, [cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale, achievedFillets])
+  }, [tool, cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale, achievedFillets])
 
+  if (tool !== 'surveyor') return null
   if (!cornerEditMode) return null
   if (!layout.length) return null
 
@@ -474,12 +481,20 @@ export default function CornerEditHandles({ ribbons }) {
               if (fit && fit.tA && fit.tB) {
                 C = fit.C; rr = fit.r
                 ;({ thetaStart, thetaLength } = arcExtentFrom(fit.C, fit.tA, fit.tB, fit.apex || c.Q))
-              } else {
-                const a = cornerArc(c, V, ixOverrides, cornerOverrides, cornerRadiusScale,
-                  draggingCorner ? dragState.r : undefined)
+              } else if (draggingCorner) {
+                // Mid-drag: the achieved fillet isn't recomputed until release, so
+                // show the idealized fillet circle tracking the cursor.
+                const a = cornerArc(c, V, ixOverrides, cornerOverrides, cornerRadiusScale, dragState.r)
                 C = a.C; rr = a.r
                 if (!(rr > 0.05)) return <group key={ci} />
                 ;({ thetaStart, thetaLength } = curbArcExtent(c, C))
+              } else {
+                // AT REST with no achieved fillet → there is no real curb arc here
+                // (an exterior phantom corner with no tile, or an R=0 square). Draw
+                // nothing: the magenta only ever traces a curb the construction
+                // actually produced. The corner stays grabbable via grabTarget's
+                // apex fallback, so a squared corner can still be re-authored.
+                return <group key={ci} />
               }
               // A band straddling the curb line (radius rr from the arc centre),
               // ~0.9 m wide so it reads + is grabbable; the apex hit-test stays

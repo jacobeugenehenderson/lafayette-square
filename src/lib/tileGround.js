@@ -34,7 +34,7 @@
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain } from './smoothCenterline.js'
-import { pickLuFromHash, hashKey, blockKeyFromRing } from './buildBlockGeometryV2.js'
+import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
 
 const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -162,6 +162,34 @@ function filletRing(ring, Rfn, sink) {
 // Map filletRing over a ring SET (outer rings + holes), preserving the rest.
 function filletRings(rings, Rfn, sink) {
   return rings.map(r => (r && r.length >= 3) ? filletRing(r, Rfn, sink) : r)
+}
+// Indices of a ring's SHARP convex corners — the centerline NODES (real
+// intersections / authored bends), excluding the dense intermediate vertices
+// smoothing inserts along curved runs (whose per-vertex turn is below the
+// fillet tolerance). Mirrors filletRing's pass-1 corner test exactly. Used to
+// map an achieved-fillet apex back to the node the fillet rounded: the apex
+// sits inboard along the bisector, so a nearest-of-ALL-vertices search snaps it
+// to whatever smoothed sample happens to lie nearest (frequently a sample on
+// the leg, within ~2× the inset, not the node) — which mis-keys the corner and
+// detaches the authoring handle. Restricting to sharp corners pins it to the
+// node every time.
+function sharpCornerIndices(ring) {
+  const n = ring.length
+  if (n < 3) return []
+  const sign = signedArea(ring) >= 0 ? 1 : -1
+  const out = []
+  for (let i = 0; i < n; i++) {
+    const A = ring[(i - 1 + n) % n], V = ring[i], B = ring[(i + 1) % n]
+    let inx = V[0] - A[0], iny = V[1] - A[1], outx = B[0] - V[0], outy = B[1] - V[1]
+    const li = Math.hypot(inx, iny), lo = Math.hypot(outx, outy)
+    if (li < 1e-6 || lo < 1e-6) continue
+    inx /= li; iny /= li; outx /= lo; outy /= lo
+    if ((inx * outy - iny * outx) * sign <= 0) continue          // concave
+    const turn = Math.acos(Math.max(-1, Math.min(1, inx * outx + iny * outy)))
+    if (turn < FILLET_TURN_TOL) continue                          // curve sample, not a node
+    out.push(i)
+  }
+  return out
 }
 // Offset an OPEN polyline by `delta` with round JOIN (handles the run's own
 // bends, no compounding) and BUTT caps (so a run ends square at the tile
@@ -443,6 +471,11 @@ export function buildTileGround(ribbons, opts = {}) {
   // 0.5 matches the figure-ground path + the store default (WYSIWYG).
   const smooth = Number.isFinite(opts.smooth) ? opts.smooth : 0.5
   let streets = (ribbons?.streets || []).filter(s => s?.points?.length >= 2)
+  // Pre-smooth originals (same index order — smoothing maps in place). The
+  // per-fe segment ordinals are defined on the ORIGINAL centerline (IX nodes
+  // survive interpolating smoothing exactly), so per-block width resolution
+  // reads segOrd off these, matching the authoring key.
+  const streetsOrig = streets
   if (smooth > 0) {
     streets = streets.map(s => {
       const sm = smoothChain(s.points, smooth)
@@ -454,6 +487,54 @@ export function buildTileGround(ribbons, opts = {}) {
   // the street index the DCEL tags each edge with.
   const measures = streets.map(effectiveMeasure)
   const cw = curbWidth
+  // Per-fe (per-block) asphalt-width overrides. blockCustoms is keyed
+  // (skelId → side → segOrd) — the SAME identity the Survey/Measure drag writes.
+  // Resolved per tile RUN: asphalt is stroked per run (strokeOpen below), so a
+  // per-block pavementHW steps the asphalt edge for that segment; the curb +
+  // concentric ped bands (offsets of the asphalt-inner) follow. segOrd is
+  // computed on the original chain so it matches the authoring key.
+  const blockCustoms = (opts.blockCustoms && typeof opts.blockCustoms === 'object') ? opts.blockCustoms : null
+  const ixIdxsByStreet = blockCustoms
+    ? (() => {
+        const seg = resolveChainSegmentation(streetsOrig)
+        return streetsOrig.map(s => {
+          const n = s?.points?.length || 0
+          return [...(seg.get(s) || [])].filter(i => i > 0 && i < n - 1).sort((a, b) => a - b)
+        })
+      })()
+    : null
+  // segOrd of a run = number of interior-IX vertices at/before the run's lower
+  // original-index boundary. (A run spanning a single natural segment — the
+  // common case — resolves exactly; on a through-junction's far side a run can
+  // span two segments and takes the lower one's width.)
+  const runSegOrd = (run) => {
+    const op = streetsOrig[run.streetIdx]?.points
+    const ixIdxs = ixIdxsByStreet?.[run.streetIdx]
+    if (!op || !ixIdxs?.length) return 0
+    const idxOf = (pt) => {
+      let bi = 0, bd = Infinity
+      for (let i = 0; i < op.length; i++) { const dx = op[i][0] - pt[0], dy = op[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
+      return bi
+    }
+    const a = Math.min(idxOf(run.poly[0]), idxOf(run.poly[run.poly.length - 1]))
+    let segOrd = 0
+    for (const i of ixIdxs) if (i <= a) segOrd++
+    return segOrd
+  }
+  // A run's effective side measure: per-fe pavementHW (if authored) over the
+  // per-chain default. Only pavementHW is per-fe here (the asphalt silhouette is
+  // Survey's concern); ped band depths stay the tile's representative value.
+  const runMeasure = (run) => {
+    const base = measures[run.streetIdx]
+    if (!blockCustoms) return base
+    const so = streetsOrig[run.streetIdx]
+    const sk = (so && (so.skelId || so.name)) || null
+    if (!sk) return base
+    const c = blockCustoms[sk]?.[run.side]?.[runSegOrd(run)]
+    if (!c || !Number.isFinite(c.pavementHW)) return base
+    const baseSide = base?.[run.side] || {}
+    return { ...base, [run.side]: { ...baseSide, pavementHW: c.pavementHW } }
+  }
   // A2 / F3 — corner R reads the authored controls: base 4.5 m (AASHTO
   // residential baseline, R_CLASS_DEFAULT) × the global Corners slider
   // (cornerRadiusScale), with per-corner / per-IX overrides resolved per tile
@@ -496,6 +577,13 @@ export function buildTileGround(ribbons, opts = {}) {
   const nearestVertexIndex = (pt, ring) => {
     let bi = 0, bd = Infinity
     for (let i = 0; i < ring.length; i++) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
+    return bi
+  }
+  // Like nearestVertexIndex but restricted to a candidate index set (the ring's
+  // sharp corner nodes) — for mapping an inset fillet apex back to its node.
+  const nearestCornerVertexIndex = (pt, ring, idxs) => {
+    let bi = idxs[0], bd = Infinity
+    for (const i of idxs) { const dx = ring[i][0] - pt[0], dy = ring[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } }
     return bi
   }
   const nearestVertR = (pt, ring, vertR) => vertR[nearestVertexIndex(pt, ring)]
@@ -623,7 +711,7 @@ export function buildTileGround(ribbons, opts = {}) {
     const roundTipKeys = new Set(roundTips.map(t => tipKey(t.p)))
     const aStads = []
     for (const run of runs) {
-      const d = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
+      const d = edgeDepth(runMeasure(run), run.side, cw, 'A')   // per-fe asphalt half-width
       if (d > 1e-6) aStads.push(...strokeOpen(run.poly, d))
     }
     for (const t of roundTips) if (t.hw > 1e-6) aStads.push(circlePoly(t.p[0], t.p[1], t.hw))
@@ -655,11 +743,18 @@ export function buildTileGround(ribbons, opts = {}) {
     const cornerRfn = (pt) => nearestVertR(pt, tile.ring, vertR)
     const fSink = []
     const iA = filletRings(differenceRings([tile.ring], aFill), cornerRfn, fSink)   // rounded asphalt-inner (curb line)
-    // Tag each achieved fillet with its corner key (nearest centerline node +
-    // that node's two tile-edge legs) so the authoring handle can read the true
-    // curb arc — one corner truth, no drift.
+    // Tag each achieved fillet with its corner key (the centerline NODE it
+    // rounded + that node's two tile-edge legs) so the authoring handle can read
+    // the true curb arc — one corner truth, no drift. The apex sits inboard of
+    // the node (the fillet rounds the curb ring, inset from the centerline), so
+    // map it back to the nearest SHARP corner of the tile ring — never a nearby
+    // smoothed curve sample, which would mis-key the corner (the handle-detach
+    // bug: read side queries the node key, find nothing, falls back to the apex).
+    const cornerIdxs = sharpCornerIndices(tile.ring)
     for (const f of fSink) {
-      const vi = nearestVertexIndex(f.apex, tile.ring)
+      const vi = cornerIdxs.length
+        ? nearestCornerVertexIndex(f.apex, tile.ring, cornerIdxs)
+        : nearestVertexIndex(f.apex, tile.ring)
       cornerFillets[cornerKeyAt(tile.ring[vi], tile.edges, vi)] = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
     }
     const iC = offsetRings(iA, -cw, 'miter')               // curb/treelawn boundary  (R+cw)
@@ -679,7 +774,7 @@ export function buildTileGround(ribbons, opts = {}) {
     for (const run of runs) {
       const td = edgeDepth(measures[run.streetIdx], run.side, cw, 'T')   // grout → treelawn-outer
       if (td <= 1e-6) continue
-      const a = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
+      const a = edgeDepth(runMeasure(run), run.side, cw, 'A')   // per-fe asphalt edge (trim follows it)
       // Pull the run back from each CORNER end by (asphalt-hw + that corner's
       // resolved R) so the slab ends at the tangent and the corner wedge becomes
       // the ADA all-SW pad. A ROUND dead-end is NOT trimmed (treelawn runs to the

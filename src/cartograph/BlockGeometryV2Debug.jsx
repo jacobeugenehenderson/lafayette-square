@@ -212,6 +212,7 @@ export default function BlockGeometryV2Debug({
   const cornerRadiusScale         = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
+  const cornerEditMode            = useCartographStore(s => s.cornerEditMode)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
   const streetSmooth              = useCartographStore(s => s.streetSmooth ?? 0.5)
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
@@ -252,6 +253,14 @@ export default function BlockGeometryV2Debug({
   // face rings) still comes from the static artifact.
   const liveStreets               = useCartographStore(s => s.centerlineData?.streets)
   const selectedStreet            = useCartographStore(s => s.selectedStreet)
+  // Survey is "editing" whenever there's something being authored — a street
+  // selected or corner-edit mode on. While editing, the map FILLS go translucent
+  // so the operator reads the grid backdrop through them (the curb stroke +
+  // handles + centerlines stay solid); Enter/Escape clears the selection → opaque
+  // again. (Section's translucency rides the §5 selected-corridor path; this is
+  // Survey's whole-map edit-state translucency.) Declared after selectedStreet /
+  // cornerEditMode so it doesn't reference them in their temporal dead zone.
+  const surveyEditing = surveyActive && (selectedStreet != null || cornerEditMode)
   // selectedStreet indexes centerlineData.streets (skeleton order, N
   // entries). V2's `byChain` and `frontageEdges.chainIdx` index
   // liveRibbons.streets (ribbons order, M entries — derive.js inserts
@@ -541,7 +550,7 @@ export default function BlockGeometryV2Debug({
   const tileGeos = useMemo(() => {
     if (!isTileScene || !liveRibbons) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -554,7 +563,7 @@ export default function BlockGeometryV2Debug({
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
       cornerFillets: tg.cornerFillets || {},
     }
-  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
+  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
 
   // Publish the achieved per-corner fillets so CornerEditHandles draws the REAL
   // curb arc (one corner truth — the handle reads geometry, never re-derives).
@@ -798,9 +807,9 @@ export default function BlockGeometryV2Debug({
   // selectedCorridor (opacity 0.55 in Measure) — lets us do an O(1) ref
   // lookup per chain instead of O(N) allocations per render.
   const bandMats = useMemo(() => ({
-    asphalt:           makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive }),
+    asphalt:           makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, selectedCorridor: true }),
-    treelawn:          makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive }),
+    treelawn:          makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     treelawnSelected:  makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
     // Per-LU treelawn materials — opaque variants keyed by LU so each
     // non-selected treelawn mesh paints in its adjacent parcel's color.
@@ -814,16 +823,19 @@ export default function BlockGeometryV2Debug({
       ])
       for (const lu of luSet) {
         const color = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || treelawnCol
-        out.push([lu, makeMaterial(color, PRI.treelawn, bandFade, { measureActive, surveyActive })])
+        out.push([lu, makeMaterial(color, PRI.treelawn, bandFade, { measureActive, surveyActive, editing: surveyEditing })])
       }
       return out
     })()),
-    sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive }),
+    sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     sidewalkSelected:  makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
+    // Curb is the silhouette STROKE — stays solid even while editing so the
+    // hardscape outline reads against the translucent fills (Jacob's "solid
+    // strokes"). No `editing` flag.
     curb:              makeMaterial(curbCol,     PRI.curb,     bandFade, { measureActive, surveyActive }),
-    cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, bandFade, { surveyActive }),
-    cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { surveyActive }),
-  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, luColors, measureActive, surveyActive, bandFade])
+    cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, bandFade, { surveyActive, editing: surveyEditing }),
+    cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { surveyActive, editing: surveyEditing }),
+  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade])
 
   // Non-street ribbons (alley/footway/cycleway/steps/path). Pavement-only
   // strips buffered from each ribbon's pavedWidth via the shared helper
@@ -895,10 +907,10 @@ export default function BlockGeometryV2Debug({
     const luSet = new Set([...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS)])
     for (const lu of luSet) {
       const col = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || DEFAULT_LU_COLORS.residential
-      out.set(lu, makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive }))
+      out.set(lu, makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive, editing: surveyEditing }))
     }
     return out
-  }, [makeMaterial, luColors, faceFade, measureActive, surveyActive])
+  }, [makeMaterial, luColors, faceFade, measureActive, surveyActive, surveyEditing])
   const tileLuFallback = tileLuMats.get('residential')
   const tlLuFallback = bandMats.treelawn
 

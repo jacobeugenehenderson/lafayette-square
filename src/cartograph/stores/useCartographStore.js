@@ -1935,6 +1935,35 @@ const useCartographStore = create((set, get) => ({
     get()._saveOverlay()
   },
 
+  // Survey asphalt-edge authoring — set a chain's per-side asphalt half-width
+  // (the outward stroke). Writes the per-STREET measure (centerlineData), the
+  // field the TILE construction consumes via mergeLiveRibbons → effectiveMeasure
+  // (blockCustoms are a figure-ground/Section concern and never reach tiles).
+  // Same flow as Survey's existing caps/anchor/smooth authoring — live edit
+  // rebuilds liveRibbons → the tile asphalt follows (WYSIWYG). mergeLiveRibbons
+  // only carries a measure when BOTH sides are present, so always write a full
+  // {left,right} seeded from the current measure. `mirror` writes both sides.
+  setStreetPavementHW: (streetIdx, side, hw, mirror) => {
+    const { centerlineData } = get()
+    const st = centerlineData?.streets?.[streetIdx]
+    if (!st) return
+    const v = Math.min(30, Math.max(0.5, Number.isFinite(+hw) ? +hw : 0))
+    const seedSide = (m) => ({ pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk', ...(m || {}) })
+    const base = {
+      left: seedSide(st.measure?.left),
+      right: seedSide(st.measure?.right),
+      symmetric: st.measure?.symmetric,
+    }
+    const other = side === 'left' ? 'right' : 'left'
+    base[side] = { ...base[side], pavementHW: v }
+    if (mirror) base[other] = { ...base[other], pavementHW: v }
+    const streets = centerlineData.streets.map((s, i) =>
+      i === streetIdx ? { ...s, measure: base } : s
+    )
+    set({ centerlineData: { ...centerlineData, streets } })
+    get()._saveOverlay()
+  },
+
   // Toggle a chain's `disabled` flag. Disabled chains stop contributing
   // ribbon geometry, edge strokes, silhouette, AND face-clip — but stay
   // selectable in Measure (dimmed) so the operator can re-enable.

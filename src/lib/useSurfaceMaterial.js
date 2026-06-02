@@ -17,8 +17,6 @@ import {
   TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_NORMAL,
 } from '../utils/terrainShader'
 
-const ARCH_BLUE = '#2250E8'
-
 const TERRAIN_CLIP_VARYING_DECL = `varying vec3 vWorldPos;`
 const TERRAIN_CLIP_VERTEX = `vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`
 
@@ -52,17 +50,19 @@ export default function useSurfaceMaterial(flat) {
     const fragShader = flat ? CARTOGRAPH_FLAT : SHADOW_TINTED_FLAT
     return (color, pri, fade = null, opts = {}) => {
       const mat = new THREE.MeshStandardMaterial({
-        color: opts.surveyActive ? ARCH_BLUE : color,
+        color,
         roughness: 0.9, metalness: 0, side: THREE.FrontSide,
-        transparent: !!fade || !!opts.measureActive || !!opts.surveyActive || !!opts.selectedCorridor,
-        // Translucency strategy:
-        //   Selected corridor in Measure → 0.55
-        //   Selected corridor in Survey  → 0.15
-        //   Survey, unselected           → 0.28
-        //   Default                      → 1.0
-        opacity: opts.selectedCorridor
-          ? (opts.measureActive ? 0.55 : 0.15)
-          : (opts.surveyActive ? 0.28 : 1),
+        // `transparent` stays set under a tool so the bands land in Designer's
+        // transparent draw queue (opaque ground is dropped from the Designer
+        // framebuffer) — opacity 1 then reads as a solid, real-colour map.
+        transparent: !!fade || !!opts.measureActive || !!opts.surveyActive || !!opts.selectedCorridor || !!opts.editing,
+        // Edit-state translucency (Jacob's model): WHILE EDITING the map fills go
+        // translucent so the operator sees the grid backdrop through them (the
+        // translucify test); the curb stroke + handles + centerlines stay solid
+        // for visibility. On ACCEPT (Enter → deselect) `editing` clears and the
+        // map returns to opaque. §5 selected-corridor focus (0.55, Measure) is
+        // preserved for the figure-ground path.
+        opacity: opts.editing ? 0.42 : (opts.selectedCorridor ? 0.55 : 1),
         polygonOffset: true, polygonOffsetFactor: -pri, polygonOffsetUnits: -pri * 4,
       })
       mat.onBeforeCompile = (shader) => {
