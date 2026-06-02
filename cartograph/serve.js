@@ -533,6 +533,15 @@ createServer(async (req, res) => {
         await runShell(cmd, opts)
         ranSteps.push(label)
       }
+      // Bake only ACTIVATED content: a hidden layer (layerVis=false) doesn't get
+      // its (often heavy) sub-bake run at all — the operator's visibility is a
+      // bake lever, not just a render toggle. Mirrors the ground-bake group prune.
+      // Render already mount-gates hidden decorations off the scene.json snapshot,
+      // so a stale artifact (if one exists from when it was last shown) is never
+      // fetched; re-showing flips design.json → the sub-bake is dirty → re-runs.
+      let bakeLayerVis = {}
+      try { bakeLayerVis = JSON.parse(readFileSync(DESIGN, 'utf-8')).layerVis || {} } catch {}
+      const layerOn = (layerId) => bakeLayerVis[layerId] !== false
 
       // pipeline.js is LS-specific (reads OSM ingest → derives map.json).
       // For toy we skip — the toy fixture is hand-authored centerlines +
@@ -557,16 +566,24 @@ createServer(async (req, res) => {
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 60000 })
-      await runIfDirty('buildings',
-        [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
-        [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
-        `node bake-buildings.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 60000 })
-      await runIfDirty('lamps',
-        [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
-        [join(LOOK_DIR, 'lamps.json')],
-        `node bake-lamps.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 30000 })
+      if (layerOn('building')) {
+        await runIfDirty('buildings',
+          [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
+          [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
+          `node bake-buildings.js --look=${id} ${sceneFlag}`,
+          { cwd: here, timeout: 60000 })
+      } else {
+        skipped.push('buildings (layer hidden)')
+      }
+      if (layerOn('lamp')) {
+        await runIfDirty('lamps',
+          [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
+          [join(LOOK_DIR, 'lamps.json')],
+          `node bake-lamps.js --look=${id} ${sceneFlag}`,
+          { cwd: here, timeout: 30000 })
+      } else {
+        skipped.push('lamps (layer hidden)')
+      }
       await runIfDirty('scene',
         [DESIGN, join(here, 'bake-scene.js')],
         [join(LOOK_DIR, 'scene.json')],
@@ -576,14 +593,16 @@ createServer(async (req, res) => {
       // hardcoded inputs, and tree placements are shared across LS Looks).
       // Toy has its own ToyTrees component fed by a static JSON; no bake
       // step is needed for it yet.
-      if (isDefaultScene) {
+      if (isDefaultScene && layerOn('tree')) {
         await runIfDirty('trees',
           [PARK_TREES, PARK_WATER, MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
           [join(REPO_ROOT, 'public', 'baked', 'default.json')],
           `node arborist/bake-trees.js --look default`,
           { cwd: REPO_ROOT, timeout: 60000 })
-      } else {
+      } else if (!isDefaultScene) {
         skipped.push('trees (LS-only today; toy uses its own static fixture)')
+      } else {
+        skipped.push('trees (layer hidden)')
       }
       // AO bake last — slowest, benefits from updated geometry.
       await runIfDirty('ground-ao',
