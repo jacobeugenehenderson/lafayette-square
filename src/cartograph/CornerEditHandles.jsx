@@ -52,9 +52,10 @@ function screenToWorld(clientX, clientY, camera, domElement) {
   return { x: intersectPt.x, z: intersectPt.z }
 }
 
-// Hit radius (world meters) around a corner apex Q — generous, because the
-// corner itself is the grab target now (no tiny dot to aim at).
-const HIT_R_CORNER = 3.0
+// Hit radius (world meters) around the corner's VISIBLE handle (the curb-arc
+// midpoint) — generous, because the corner itself is the grab target now and the
+// arc sits inboard of the apex; aiming at the magenta must land the grab.
+const HIT_R_CORNER = 5.0
 // Drag this close to the IX center and the gesture snaps + clears the
 // override on release. World meters.
 const SNAP_R = 0.7
@@ -276,14 +277,25 @@ export default function CornerEditHandles({ ribbons }) {
 
     const dom = gl.domElement
 
-    // Find the corner whose apex Q is nearest the cursor, within HIT_R_CORNER.
-    // The corner IS the handle now — no IX dots, no per-corner controller dots.
+    // Find the corner whose VISIBLE handle is nearest the cursor, within
+    // HIT_R_CORNER. The grab target is the curb-arc midpoint (where the magenta
+    // sits) — the achieved fillet's arc midpoint when known, else the apex Q.
+    const grabTarget = (entry, c) => {
+      const f = achievedFillets[sortedCornerKey(entry.V, c.legKeyA, c.legKeyB)]
+      if (f && f.apex && f.C && Number.isFinite(f.r)) {
+        const ax = f.apex[0] - f.C[0], az = f.apex[1] - f.C[1]
+        const al = Math.hypot(ax, az) || 1
+        return [f.C[0] + (ax / al) * f.r, f.C[1] + (az / al) * f.r]
+      }
+      return c.Q
+    }
     const pickCorner = (p) => {
       let best = null, bestD = HIT_R_CORNER
       for (const entry of layout) {
         for (let ci = 0; ci < entry.corners.length; ci++) {
           const c = entry.corners[ci]
-          const d = Math.hypot(p.x - c.Q[0], p.z - c.Q[1])
+          const t = grabTarget(entry, c)
+          const d = Math.hypot(p.x - t[0], p.z - t[1])
           if (d < bestD) { bestD = d; best = { entry, ci, c } }
         }
       }
@@ -434,7 +446,7 @@ export default function CornerEditHandles({ ribbons }) {
       dom.removeEventListener('pointercancel', onUp, opts)
       dom.removeEventListener('contextmenu', onContextMenu, opts)
     }
-  }, [cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale])
+  }, [cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale, achievedFillets])
 
   if (!cornerEditMode) return null
   if (!layout.length) return null
