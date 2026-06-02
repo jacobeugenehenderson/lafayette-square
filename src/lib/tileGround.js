@@ -357,13 +357,30 @@ export function buildTileGround(ribbons, opts = {}) {
   //   round       → round the asphalt at the tip + the ped wraps it (cul-de-sac)
   //   blunt/none  → flat asphalt, NO ped wrap (the street just ends, LU abuts)
   const tipKey = (p) => Math.round(p[0] * 1000) + ',' + Math.round(p[1] * 1000)
+  // Dead-end DEGREE is computed GEOMETRICALLY (count segments incident to each
+  // node), not from `caps.degree` — toy ribbons carry no `caps` field, so
+  // gating on it skipped every toy dead-end. A street endpoint whose node has
+  // exactly one incident segment is a real tip. The cap TYPE comes from the
+  // authored capEnds / capStart|End (the Survey end-cap assigner mirrors its
+  // capStart/capEnd into capEnds via mergeLiveRibbons) → caps.cap → round.
+  const nodeDeg = new Map()
+  for (const s of streets) {
+    const pts = s.points
+    if (!pts) continue
+    for (let i = 0; i < pts.length; i++) {
+      const inc = (i === 0 || i === pts.length - 1) ? 1 : 2
+      const k = tipKey(pts[i])
+      nodeDeg.set(k, (nodeDeg.get(k) || 0) + inc)
+    }
+  }
   const deadEndTips = new Map()
   for (const s of streets) {
     const caps = s.caps, ce = s.capEnds, pts = s.points
-    if (!caps || !pts) continue
+    if (!pts) continue
     for (const [k, idx] of [['start', 0], ['end', pts.length - 1]]) {
-      if (caps[k]?.degree !== 1) continue
-      const cap = (ce && ce[k]) || caps[k]?.cap || 'round'
+      if (nodeDeg.get(tipKey(pts[idx])) !== 1) continue   // not a real dead-end tip
+      const authored = ce?.[k] || (k === 'start' ? s.capStart : s.capEnd)
+      const cap = authored || caps?.[k]?.cap || 'round'
       const m = s.measure
       const hw = Math.max(m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
       const tlw = Math.max(m?.left?.treelawn || 0, m?.right?.treelawn || 0)
@@ -435,6 +452,7 @@ export function buildTileGround(ribbons, opts = {}) {
         if (t) (t.cap === 'round' ? roundTips : bluntTips).push({ p: run.poly[0], hw: t.hw, tl: t.tl, sw: t.sw })
       }
     }
+    const roundTipKeys = new Set(roundTips.map(t => tipKey(t.p)))
     const aStads = []
     for (const run of runs) {
       const d = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
@@ -474,9 +492,14 @@ export function buildTileGround(ribbons, opts = {}) {
       const td = edgeDepth(measures[run.streetIdx], run.side, cw, 'T')   // grout → treelawn-outer
       if (td <= 1e-6) continue
       const a = edgeDepth(measures[run.streetIdx], run.side, cw, 'A')
-      // Pull the run back from its corner ends by (asphalt-hw + R) so the slab
-      // ends at the tangent; closed-loop runs (no corners) aren't trimmed.
-      const poly = runs.length > 1 ? trimPolyline(run.poly, a + R, a + R) : run.poly
+      // Pull the run back from its CORNER ends by (asphalt-hw + R) so the slab
+      // ends at the tangent. A ROUND dead-end end is NOT trimmed — the treelawn
+      // runs all the way to the tip and the wrap disk below rounds it, so there's
+      // no gap (the notch artifact). Closed-loop runs aren't trimmed.
+      const last = run.poly[run.poly.length - 1]
+      const t0 = roundTipKeys.has(tipKey(run.poly[0])) ? 0 : (a + R)
+      const t1 = roundTipKeys.has(tipKey(last)) ? 0 : (a + R)
+      const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
       if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
     }
     let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
