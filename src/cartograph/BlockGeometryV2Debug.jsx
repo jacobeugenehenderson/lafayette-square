@@ -238,7 +238,7 @@ function ixMarkersGeo(intersections, R = 0.7, SEG = 12, y = 0.06) {
 // boundaries, so the blocks themselves read as a translucent blue fill; the
 // curb outline + IX node markers + centerline (MapLayers) frame them. Distinct
 // from Section's full per-LU paint. Jacob's eye tunes.
-const SURVEY_BLUE = { block: '#3b7dd8', curb: '#1f6fe0', ix: '#7ab8ff' }
+const SURVEY_BLUE = { block: '#3b7dd8', curbFill: '#27579e', curb: '#1f6fe0', ix: '#7ab8ff' }
 
 export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
@@ -978,6 +978,12 @@ export default function BlockGeometryV2Debug({
   const surveyCurbMat = useMemo(() => new THREE.LineBasicMaterial({
     color: SURVEY_BLUE.curb, transparent: true, opacity: 0.95, depthWrite: false,
   }), [])
+  // The curb band filled a touch darker than the block — it's the 'handle rail',
+  // where the corner-rounding controls live, so it reads slightly proud of the
+  // block interior.
+  const surveyCurbFillMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: SURVEY_BLUE.curbFill, transparent: true, opacity: 0.55, depthWrite: false,
+  }), [])
   const surveyIxMat = useMemo(() => new THREE.MeshBasicMaterial({
     color: SURVEY_BLUE.ix, transparent: true, opacity: 0.9, depthWrite: false,
   }), [])
@@ -1006,6 +1012,10 @@ export default function BlockGeometryV2Debug({
           {!hideLandUse && lotVisible && tileGeos?.block && (
             <mesh geometry={tileGeos.block} renderOrder={PRI.residential}
               material={surveyBlockMat} />
+          )}
+          {curbVisible && tileGeos?.curb && (
+            <mesh geometry={tileGeos.curb} renderOrder={PRI.sidewalk}
+              material={surveyCurbFillMat} />
           )}
           {curbVisible && tileGeos?.curbOutline && (
             <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
