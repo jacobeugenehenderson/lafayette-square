@@ -597,7 +597,13 @@ export function buildTileGround(ribbons, opts = {}) {
   // nodes survive exactly and the graph stays noded for the face walk. Default
   // 0.5 matches the figure-ground path + the store default (WYSIWYG).
   const smooth = Number.isFinite(opts.smooth) ? opts.smooth : 0.5
-  let streets = (ribbons?.streets || []).filter(s => s?.points?.length >= 2)
+  let streets = (ribbons?.streets || []).filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
+  // Grade-separated roads (freeway corridor + ramps; OSM bridge/tunnel/layer, flagged
+  // on the frame at 6854122) are EXCLUDED from the face graph: they cross other
+  // streets in 2D with no real junction, which bowties the DCEL face walk into the
+  // degenerate interchange polygons. They're stroked as flat asphalt strips after the
+  // union below (like alleys), so the highway/ramps still render. §HANDOFF-onframe-faces.
+  const gradeSep = (ribbons?.streets || []).filter(s => s?.points?.length >= 2 && s.gradeSeparated)
   // Pre-smooth originals (same index order — smoothing maps in place). The
   // per-fe segment ordinals are defined on the ORIGINAL centerline (IX nodes
   // survive interpolating smoothing exactly), so per-block width resolution
@@ -947,6 +953,14 @@ export function buildTileGround(ribbons, opts = {}) {
   // side, where reading the chain is legitimate — Jacob's Option 1.)
   const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat)
 
+  // Grade-separated roads paint as flat asphalt strips — excluded from faces above,
+  // stroked here off their own centerline at the frame's pavementHW half-width. One
+  // flat level (no z-separation yet); stencil-clipped with the rest below.
+  for (const s of gradeSep) {
+    const sm = smooth > 0 ? (smoothChain(s.points, smooth) || s.points) : s.points
+    const hw = Math.max(s.measure?.left?.pavementHW || 0, s.measure?.right?.pavementHW || 0)
+    if (hw > 1e-6) Aacc.push(...strokeOpen(sm, hw))
+  }
   let asphalt = unionRings(Aacc)
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
