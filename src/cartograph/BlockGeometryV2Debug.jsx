@@ -234,10 +234,11 @@ function ixMarkersGeo(intersections, R = 0.7, SEG = 12, y = 0.06) {
   return geo
 }
 
-// Survey's blue wireframe palette — curb outline + IX node markers read as a
-// coherent blue, distinct from Section's full paint. (Centerline blue lives in
-// MapLayers, which owns that geometry.) Jacob's eye tunes.
-const SURVEY_BLUE = { curb: '#1f6fe0', ix: '#7ab8ff' }
+// Survey's blue palette. Survey's job is to memorialize the BLOCK / land-use
+// boundaries, so the blocks themselves read as a translucent blue fill; the
+// curb outline + IX node markers + centerline (MapLayers) frame them. Distinct
+// from Section's full per-LU paint. Jacob's eye tunes.
+const SURVEY_BLUE = { block: '#3b7dd8', curb: '#1f6fe0', ix: '#7ab8ff' }
 
 export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
@@ -979,19 +980,31 @@ export default function BlockGeometryV2Debug({
   const surveyIxMat = useMemo(() => new THREE.MeshBasicMaterial({
     color: SURVEY_BLUE.ix, transparent: true, opacity: 0.9, depthWrite: false,
   }), [])
+  // The blocks / land-use spaces, filled translucent so their boundaries read
+  // while the aerial shows through. One flat blue for all of them — per-LU
+  // colour is Section's concern; Survey only memorializes the boundaries.
+  const surveyBlockMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: SURVEY_BLUE.block, transparent: true, opacity: 0.30, depthWrite: false,
+  }), [])
 
   // All scenes render the tile construction and skip the figure-ground meshes.
   // M1/M2: LU faces + treelawn paint per land-use class. Bands reuse the cached
   // materials so colours/toggles match. live == bake (both call buildTileGround).
   // Retired at T4 when figure-ground is deleted.
   if (isTileScene) {
-    // Survey wireframe: suppress every fill (LU / treelawn / sidewalk / curb-
-    // fill / asphalt — Section's concern), show the curb as a blue OUTLINE plus
-    // the IX node markers. Centerlines come from MapLayers; corner controls from
-    // CornerEditHandles (both already Survey-gated). The aerial shows through.
+    // Survey view: fill the BLOCKS / land-use spaces translucent blue to
+    // memorialize their boundaries; suppress the ped/road paint (treelawn /
+    // sidewalk / curb-fill / asphalt — Section's concern). The curb OUTLINE +
+    // IX node markers frame the blocks; centerlines come from MapLayers; corner
+    // controls from CornerEditHandles (both already Survey-gated). Aerial shows
+    // through. One flat blue for all blocks — per-LU colour is Section's.
     if (surveyActive) {
       return (
         <group>
+          {!hideLandUse && lotVisible && tileGeos?.lu?.map(({ lu, geo }) => (
+            <mesh key={`blk:${lu}`} geometry={geo} renderOrder={PRI.residential}
+              material={surveyBlockMat} />
+          ))}
           {curbVisible && tileGeos?.curbOutline && (
             <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
               material={surveyCurbMat} />
