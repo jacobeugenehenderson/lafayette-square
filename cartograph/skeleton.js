@@ -439,6 +439,69 @@ function seedSection(highway, lanes, oneway) {
   }
 }
 
+// --- Grade separation: carry layer/bridge/tunnel per chain (Part 2) -------
+// OSM marks elevated/buried roadway with `bridge`/`tunnel` and a signed
+// `layer`. fetch.js carries every tag verbatim, so these arrive on each source
+// way's tags. The *visible* degenerate polygons (interchange triangles,
+// slivers, false blocks) come from grade-separated centerlines that cross in
+// 2D WITHOUT sharing a vertex — the planar face walk (`tileGround.extractFaces`)
+// has no node there, so the crossing edge bowties the faces. We can't detect
+// that at the junction graph (it is shared-vertex only — verified: 0 false
+// junctions), so we instead mark each chain with the grade facts + an operative
+// `gradeSeparated` flag a face consumer reads to EXCLUDE it from ground-face
+// formation. (Measured on LS: 29 such crossings; every one has a limited-access
+// road on at least one side, so the flag below clears all 29 — see
+// HANDOFF-onframe-faces-brief.md for the extractFaces filter recipe.)
+//
+// WAY_TAGS_BY_ID maps osmId → tags so a welded chain (which may span several
+// source ways) can be summarized from ALL its sources, not just fragment[0].
+let WAY_TAGS_BY_ID = new Map()
+
+// Limited-access highway corridors abut frontage roads, never bound
+// neighborhood blocks — so they are excluded from ground faces regardless of
+// grade (an at-grade motorway segment still crosses elevated ramps at the
+// interchange). Class fact, kept here so the operative flag is self-contained.
+const LIMITED_ACCESS = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
+
+// Summarize bridge/tunnel/layer over all of a chain's source ways.
+//   bridge/tunnel — true if ANY source way is one (a chain can be part bridge,
+//     e.g. Mississippi Ave crossing the freeway: mostly at grade, one bridge way)
+//   layer         — the largest-magnitude signed layer among sources (0 = grade)
+//   entirelyOffGrade — every source way is bridge/tunnel/layer≠0 (a ramp or an
+//     elevated motorway segment): the chain touches no ground here.
+function gradeFacts(sources) {
+  let bridge = false, tunnel = false, layer = 0, n = 0, offGrade = 0
+  for (const id of sources || []) {
+    const t = WAY_TAGS_BY_ID.get(id)
+    if (!t) continue
+    n++
+    const b = !!t.bridge && t.bridge !== 'no'
+    const tu = !!t.tunnel && t.tunnel !== 'no'
+    const Lraw = t.layer !== undefined ? parseInt(t.layer, 10) : 0
+    const L = Number.isFinite(Lraw) ? Lraw : 0
+    if (b) bridge = true
+    if (tu) tunnel = true
+    if (Math.abs(L) > Math.abs(layer)) layer = L
+    if (b || tu || L !== 0) offGrade++
+  }
+  return { bridge, tunnel, layer, entirelyOffGrade: n > 0 && offGrade === n }
+}
+
+// The OPERATIVE "exclude from ground-face formation" flag a face consumer
+// (extractFaces) reads: a road that does NOT bound neighborhood blocks —
+// elevated/buried along its whole length OR a limited-access corridor. Carried
+// alongside the raw facts (layer/bridge/tunnel) so a finer downstream rule can
+// refine if ever needed; the basic filter is just `!s.gradeSeparated`.
+function gradeFields(highway, sources) {
+  const f = gradeFacts(sources)
+  return {
+    layer: f.layer,
+    bridge: f.bridge,
+    tunnel: f.tunnel,
+    gradeSeparated: f.entirelyOffGrade || LIMITED_ACCESS.has(highway),
+  }
+}
+
 // --- Node typing: classify every shared coord by graph degree -------------
 // degree 1 = dead-end · 2 = through/bend/name-transition · 3 = T · 4 = cross
 // · 5+ = Y/complex. The cap decision becomes a NODE FACT (round at a true
@@ -472,6 +535,10 @@ function main() {
   const osm = JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf8'))
   const highways = osm.ground?.highway || []
   console.log(`Input: ${highways.length} highway features`)
+
+  // osmId → tags, so a welded chain can be graded from ALL its source ways
+  // (Part 2 grade separation — see gradeFields/gradeFacts above).
+  WAY_TAGS_BY_ID = new Map(highways.map(f => [f.osmId, f.tags || {}]))
 
   const { groups, unnamed } = groupByName(highways)
   console.log(`       ${groups.size} unique names, ${unnamed.length} unnamed`)
@@ -590,8 +657,14 @@ function main() {
       ...(f.tags?.maxspeed && { maxspeed: f.tags.maxspeed }),
       points: f.coords.map(c => ({ x: c.x, z: c.z })),
       osmIds: [f.osmId],
+      sources: [f.osmId],
       tags: f.tags || {},
       seed: seedSection(hw, lanes, oneway),
+      // Grade separation (Part 2). These unnamed vehicular chains (ramps,
+      // motorway/trunk fragments) are exactly the interchange roads — every one
+      // is limited-access, so gradeSeparated is true here; the bridge/tunnel/
+      // layer facts come straight off the single source way.
+      ...gradeFields(hw, [f.osmId]),
     })
   }
   const paths = unnamedNonVehicular.map((f, i) => ({
@@ -789,6 +862,13 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
     sources: chain.sources || [],
     // Standards-seeded default cross-section (Part 2 bucket d / north-star).
     seed: seedSection(highway, lanes, oneway),
+    // Grade separation (Part 2): layer/bridge/tunnel summarized over ALL source
+    // ways + the operative `gradeSeparated` flag. Earlier this dropped on named
+    // streets (only fragments[0].tags reached here, no grade at all) — fixed by
+    // grading from chain.sources, so a partly-bridge street like Mississippi Ave
+    // is graded honestly (bridge:true, layer:1, but gradeSeparated:false — it
+    // still bounds blocks).
+    ...gradeFields(highway, chain.sources),
     ...extras,
   }
 }

@@ -119,13 +119,18 @@ out body;>;out skel qt;`
 
     return {
       osmId: way.id,
+      // Carry ALL OSM tags verbatim — no whitelist. Downstream relies on tags
+      // that are not in `tagPriority` below, notably `layer`/`bridge`/`tunnel`
+      // (grade separation, skeleton.js#gradeFields) and `lanes`/`surface`/
+      // `maxspeed` (frame enrichment). Do NOT prune this to a tag subset.
       tags: way.tags,
       isClosed,
       coords,
     }
   }
 
-  // Categorize ground features
+  // Categorize ground features (which BUCKET a way lands in — this is NOT a tag
+  // filter; every tag above is preserved regardless of category).
   const tagPriority = [
     'highway', 'landuse', 'leisure', 'natural',
     'amenity', 'barrier', 'waterway', 'surface',
