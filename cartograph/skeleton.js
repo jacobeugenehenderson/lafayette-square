@@ -612,6 +612,54 @@ function simplify(coords, devTol = 0.2, angleTolDeg = 2, protectedKeys = null) {
   return out
 }
 
+// Junction-protected GLOBAL Douglas-Peucker. The local single-pass `simplify`
+// above only collapses a vertex when BOTH its perp-deviation AND its turn fall
+// below tolerance — too weak to thin OSM's native curve OVER-SAMPLING (a smooth
+// loop digitized at ~30 vertices keeps them all, since each turns >2°). That
+// over-sampled line is the root of the downstream "too much line" thorns: the
+// render's `smoothChain` then ×4-interpolates every one of those vertices (29
+// → ~113 on Benton), and the inward ped-band offset of that rippled ring
+// bulges/pinches. RDP instead keeps the MINIMAL control set whose chords stay
+// within `eps` of every dropped vertex — a smooth curve collapses to its few
+// real control points, then ONE smoothing pass regenerates it cleanly
+// (PIPELINE P1: "the simpler the skeleton output, the healthier downstream").
+//
+// Topology is preserved byte-for-byte: sharp corners survive automatically
+// (any chord spanning a corner has large perp-deviation → the corner vertex is
+// kept), and every junction / shared-node coord is a FORCED split point + keep
+// — the SAME `protectedKeys` surface `simplify` uses (the 79-interior-T fix,
+// Osteopathologist / OSM-FORENSICS Part 3). So degree, caps, and the junction
+// graph are unchanged; only redundant curve/straight in-fill is removed.
+function rdpRange(coords, lo, hi, eps, keep) {
+  if (hi - lo < 2) return
+  const a = coords[lo], b = coords[hi]
+  let maxD = -1, maxI = -1
+  for (let i = lo + 1; i < hi; i++) {
+    const d = perpDist(coords[i], a, b)   // len2==0 (closed span) → radial dist; RDP still splits at the apex
+    if (d > maxD) { maxD = d; maxI = i }
+  }
+  if (maxD > eps) {
+    keep[maxI] = true
+    rdpRange(coords, lo, maxI, eps, keep)
+    rdpRange(coords, maxI, hi, eps, keep)
+  }
+}
+function simplifyRDP(coords, eps = 0.5, protectedKeys = null) {
+  if (coords.length <= 2) return coords.slice()
+  const n = coords.length
+  const keep = new Array(n).fill(false)
+  keep[0] = keep[n - 1] = true
+  // Forced split points: protected (junction / shared-node) interior vertices.
+  // Splitting the chain at each one guarantees it survives RDP exactly.
+  const splits = [0]
+  for (let i = 1; i < n - 1; i++) {
+    if (protectedKeys && protectedKeys.has(vKey(coords[i]))) { keep[i] = true; splits.push(i) }
+  }
+  splits.push(n - 1)
+  for (let s = 0; s < splits.length - 1; s++) rdpRange(coords, splits[s], splits[s + 1], eps, keep)
+  return coords.filter((_, i) => keep[i])
+}
+
 // --- Standards-seeded cross-section (OSM-FORENSICS.md Part 4) --------------
 // Default/prior cross-section per street class. NACTO-by-class for the
 // pedestrian-zone dims + curb-return R (the 2026-06-01 decision: tight
@@ -936,11 +984,18 @@ function main() {
   for (const [k, owners] of coordOwners) if (owners.size >= 2) junctionKeys.add(k)
   console.log(`  junction-protected simplify: ${junctionKeys.size} shared-node coords held`)
 
-  // Simplify streets.
+  // Simplify streets — junction-protected GLOBAL RDP (replaces the old local
+  // single-pass `simplify`, which barely thinned OSM's curve over-sampling and
+  // so fed the downstream double-densification thorns; see simplifyRDP above).
+  // eps = max chord deviation (m) of a dropped vertex. 0.5 m is well inside
+  // offset-safety (ped bands are meters wide) and invisible against the aerial,
+  // yet collapses smooth curves to their real control points. Junctions/caps
+  // are unchanged (protected); verify via the "node typing" log below.
+  const RDP_EPS = 1.0
   let totalPtsBefore = 0, totalPtsAfter = 0
   for (const s of streets) {
     totalPtsBefore += s.points.length
-    s.points = simplify(s.points, 0.2, 2, junctionKeys)
+    s.points = simplifyRDP(s.points, RDP_EPS, junctionKeys)
     totalPtsAfter += s.points.length
   }
 
