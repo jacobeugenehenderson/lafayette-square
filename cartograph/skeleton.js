@@ -987,15 +987,34 @@ function main() {
   // Simplify streets — junction-protected GLOBAL RDP (replaces the old local
   // single-pass `simplify`, which barely thinned OSM's curve over-sampling and
   // so fed the downstream double-densification thorns; see simplifyRDP above).
-  // eps = max chord deviation (m) of a dropped vertex. 0.5 m is well inside
+  // eps = max chord deviation (m) of a dropped vertex. 1.0 m is well inside
   // offset-safety (ped bands are meters wide) and invisible against the aerial,
   // yet collapses smooth curves to their real control points. Junctions/caps
   // are unchanged (protected); verify via the "node typing" log below.
+  //
+  // ⚠️ LOOP-STREET GUARD. A tight closed loop body (Benton Place teardrop;
+  // FEATURES §"Loop streets", NOTES 2026-05-10 L.0) concentrates its curvature
+  // into a few high-angle vertices — at eps=1.0 the loop tip collapses to turns
+  // of 40-48°, which exceeds smoothChain's 30° CORNER_TOL, so the render-smoother
+  // mistakes those curve samples for hard corners and FACETS the loop into a
+  // polygon. Normal streets never do this (their gentle curves stay <12° at
+  // eps=1.0). So a geometrically-closed chain (first==last — the doctrine's
+  // Type-A auto-detect rule, since the `loop` flag/L.x detection isn't live yet)
+  // gets a gentle eps that keeps the curve smooth. (Loop *thorns* — the inner-
+  // band collision across the thin emergent median — are a separate L.x concern,
+  // NOT over-densification.)
   const RDP_EPS = 1.0
+  const RDP_EPS_LOOP = 0.3
+  const isClosedLoop = (pts) => {
+    if (!pts || pts.length < 4) return false
+    const a = pts[0], b = pts[pts.length - 1]
+    return Math.hypot(a.x - b.x, a.z - b.z) < 1.0
+  }
   let totalPtsBefore = 0, totalPtsAfter = 0
   for (const s of streets) {
     totalPtsBefore += s.points.length
-    s.points = simplifyRDP(s.points, RDP_EPS, junctionKeys)
+    const eps = isClosedLoop(s.points) ? RDP_EPS_LOOP : RDP_EPS
+    s.points = simplifyRDP(s.points, eps, junctionKeys)
     totalPtsAfter += s.points.length
   }
 
