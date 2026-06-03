@@ -41,6 +41,7 @@
 
 ## NEXT
 
+- **Grade-separated roads render via path-ribbons** (Jacob, 2026-06-02) — after the `extractFaces` grade-sep filter excludes `gradeSeparated` streets from the tile face graph (kills the degenerate interchange polygons — `HANDOFF-onframe-faces.md`, branch `groma-onframe-faces`), those roads lose their tile asphalt → render **bare**. They **showed before** — the highway/ramps render like alleys via the **path-ribbon mechanism** (`buildPathRibbons`). Fix = route grade-separated streets (the `gradeSeparated` flag now on `ribbons.streets`) through `buildPathRibbons` so they paint again. Not a new build — re-routing. Sibling of ledger **S1** (alley/path ribbons). *Accepted as a temporary bare-render to move on; this restores it.*
 - **Survey · Section · Stage rename** — *decided, not yet built.* Tools: Survey = hardscape shape (footprints + corners + curb + polygon-shaper); Section (was "Measure") = ped-zone chop; Stage = look. Rides with the wall-move arc. ⚠️ Do NOT rename code/FEATURES/MeasurePanel until implemented (stale-label rule). (`[[project_two_bakes_two_walls]]`.)
 - **Story-Pass address-maps for Meteorologist + Arborist** — same template as PIPELINE.md (`[[project_story_pass_campaign]]`).
 - **Doc-consolidation Process** (the living Process, `BOZ.md`): P3 RIBBONS §5/§6/§7 freshness+archive (other Boz owns) · P4 NOTES (4,369-line diary) + this BACKLOG ✅ done · P5 archive completed HANDOFFs · P6 helper docs. ARCHITECTURE grows a Decisions section.
