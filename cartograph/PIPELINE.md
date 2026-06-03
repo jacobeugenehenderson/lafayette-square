@@ -57,6 +57,17 @@ It doesn't, yet. Chains stay alive and load-bearing through **P4–P8** (they bu
 
 Doctrine memory: `memory/project_skeleton_is_the_first_bake.md`.
 
+### ⭐ The proper way to a clean map (2026-06-02 — STOP per-symptom whack-a-mole on degenerate polygons)
+
+The **frame is already correct** — `skeleton.json` carries the marrow (329 typed junctions, name-transitions, seeds). The render breaks because the **consumers ignore the frame and re-derive from raw OSM**: `derive.js` re-nodes raw OSM for faces, re-derives intersections, and **3m-snaps** them (§Part 3 / `OSM-FORENSICS.md`); `tileGround.extractFaces` re-walks the chains. **The degenerate polygons — interchange triangles, slivers, false blocks — ARE those re-noding artifacts**, not separate bugs.
+
+**Two fixes — corrected 2026-06-02 by Groma against live code + data (the earlier draft of this note had two wrong premises; this supersedes it):**
+
+1. **Faces + intersections on-frame** (`OSM-FORENSICS-EVAL.md` item 1) — read blocks from skeleton chains, intersections from `skeleton.junctions`; **delete** the raw-OSM faces noding + 3m snap (`IX_SEG_SNAP`) + densify hacks. ⚠️ **This is correct HYGIENE but render-INERT** — the live render + bake drive geometry from **`tileGround.extractFaces(ribbons.streets)`** (builds its graph from *shared vertices* of `ribbons.streets[].points`); `ribbons.intersections` has **zero consumers**, `ribbons.faces` is read **only for LU coloring** (`tileGround.js:786`). So this cleanup removes ~220 lines of inert splice machinery + the raw-OSM bypass — but **does not clear a single visible degenerate polygon by itself.**
+2. **Grade separation — where the VISIBLE degenerates actually are.** NOT false junctions: `skeleton.junctions` (329) is shared-vertex-only and grade-separated roads don't share vertices → **0 false junctions.** The artifact is **~29 grade-separated 2D crossings** (motorway / Ozark Expressway / ramps × Mississippi, Nebraska, S. Tucker, S. Jefferson, S. 12th) that cross *without* a shared vertex; **`extractFaces` bowties them** (only a point-count filter at `tileGround.js:600`, no grade filter). **Detection is tag-free:** 0 same-layer crossings lack a shared node, so *any* no-shared-vertex 2D crossing IS a grade separation. **Fix: `extractFaces` must EXCLUDE grade-separated streets from the face graph** (construction-side, `tileGround`); the FRAME's job is to carry the grade flag (`layer`/`bridge`/`tunnel` + `gradeSeparated`) so the consumer can filter. **FRAME SIDE DONE (Groma, branch `groma-onframe-faces`, 2026-06-02):** `skeleton.js#gradeFields` grades every street from *all* of `chain.sources` (fixed the named-street `makeStreet` tag-drop — Mississippi-the-bridge now reads `bridge:true,layer:1` but `gradeSeparated:false`, still bounds blocks); `gradeSeparated` survives the serializer into `ribbons.streets`. Verified: the one-line filter `streets.filter(s => !s.gradeSeparated)` clears **29 → 0** crossings, 187/242 streets kept, junctions **329 → 329** (additive, nothing dropped). **Remaining step = Theodolite adds the one-line `extractFaces` filter at the merge — recipe + the consider-asphalt-rendering caveat in `HANDOFF-onframe-faces.md`.**
+
+⚠️ **Never patch faces downstream by hand** — but note the *consumer-side* filter in `extractFaces` IS the fix here (the frame can't fix a crossing it correctly refuses to false-node; the consumer must decline to bowtie it). Frame carries the flag; consumer filters on it. (Capacity guard for thin-feature degeneracy = the sibling fix, RIBBONS §3.9a item 5, already on tiles.)
+
 ---
 
 ## §Ribbon — the mono-width model (novel; easy to forget)
@@ -82,7 +93,7 @@ Doctrine memory: `memory/project_ribbon_corner_uniform_width.md` (V1 FINAL, 16-f
 ### P1 · Skeleton
 `osm.json → skeleton.json`. Derives canonical chains (skelId-keyed) from raw OSM. The First Bake.
 - **🔧 Optimize:** the simpler this output, the healthier everything downstream — chain/node minimization (Douglas-Peucker on OSM saw-tooth) is the lever that would let the Data Wall move to P2.
-- **🩺 Troubleshoot:** node-count blowups; OSM noise read as real bends; `blockKeyFromRing` rounded-vs-sharp divergence starts here (`memory/feedback_block_key_rounded_vs_sharp_diverges`).
+- **🩺 Troubleshoot:** node-count blowups; OSM noise read as real bends; `blockKeyFromRing` rounded-vs-sharp divergence starts here (`memory/feedback_block_key_rounded_vs_sharp_diverges`). **Grade separation (Groma 2026-06-02):** every street carries `layer`/`bridge`/`tunnel` + an operative `gradeSeparated` flag (`skeleton.js#gradeFields`, summarized over *all* `chain.sources`). It's the frame fact a face consumer reads to exclude elevated/buried + limited-access corridors from the planar walk — without it, grade-separated centerlines that cross in 2D with no shared vertex bowtie `extractFaces`. **Junctions are shared-vertex-only → carry NO false grade crossings** (don't look for grade bugs in `junctions[]`; look at street crossings).
 - **🗣 Explain:** "We trace the real street network from OSM + aerial photos — provable truth, not invention."
 
 ### P2 · Fortification (Survey / Measure)
