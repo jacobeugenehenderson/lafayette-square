@@ -300,7 +300,7 @@ function ringInteriorPoint(r) {
 // segments), then walk minimal cycles. next(he) at a node = the outgoing
 // edge just CLOCKWISE of the incoming edge's reverse → traces the face on
 // the left, yielding CCW bounded faces + one CW outer face.
-export function extractFaces(streets) {
+export function extractFaces(streets, stubsOut) {
   const Q = 1e4                                   // 0.1 mm quantization for node identity
   const key = (p) => Math.round(p[0] * Q) + ',' + Math.round(p[1] * Q)
   const nodes = new Map()
@@ -335,6 +335,36 @@ export function extractFaces(streets) {
     if (!pts || pts.length < 2) return
     for (let i = 0; i < pts.length - 1; i++) addEdge(pts[i], pts[i + 1], si)
   })
+  // ── Prune pendant (dead-end stub) edges before the face walk ──────────────────
+  // A dead-end tip is a degree-1 node. Remove it + its edge and repeat, walking the
+  // chain back to the first junction (degree ≥ 3). WITHOUT this the face walk detours
+  // out-and-back along the spur and the inward band-join opens it into a TRIANGLE of
+  // slack across the block — the old "collapses on its own" assumption was empirically
+  // false (Jacob's image). Pruned chains are returned as stub polylines (with streetIdx)
+  // and stroked separately as asphalt in buildTileGround — the grade-sep sibling, since
+  // asphalt is sourced from the tiles (pruning alone would delete the dead-end's road).
+  // Cycle (block-bounding) edges are never pruned: a cycle node keeps ≥2 cycle edges, so
+  // removing its stub edges never drops it to degree 1.
+  if (stubsOut) {
+    const liveDeg = (n) => { let d = 0; for (const h of n.edges) if (!h.pruned) d++; return d }
+    const q = []
+    for (const n of nodes.values()) if (liveDeg(n) === 1) q.push(n)
+    while (q.length) {
+      const tip = q.pop()
+      if (liveDeg(tip) !== 1) continue
+      const poly = [tip.p]
+      let cur = tip, streetIdx = -1
+      while (liveDeg(cur) === 1) {
+        const h = cur.edges.find(e => !e.pruned)
+        if (!h) break
+        if (streetIdx < 0) streetIdx = h.streetIdx
+        h.pruned = true; h.twin.pruned = true
+        cur = h.to; poly.push(cur.p)
+      }
+      if (poly.length >= 2) stubsOut.push({ points: poly, streetIdx })
+    }
+    for (const n of nodes.values()) n.edges = n.edges.filter(h => !h.pruned)
+  }
   for (const n of nodes.values()) n.edges.sort((a, b) => a.angle - b.angle)
   const nextHE = (he) => {
     const out = he.to.edges
@@ -343,7 +373,7 @@ export function extractFaces(streets) {
   }
   const faces = []
   for (const h0 of heList) {
-    if (h0.used) continue
+    if (h0.used || h0.pruned) continue
     const ring = []
     const edges = []   // edges[i] = the directed half-edge ring[i] → ring[i+1]
     let h = h0, guard = 0
@@ -363,9 +393,10 @@ export function extractFaces(streets) {
     faces.push({ ring, edges })
   }
   // Bounded faces = positive signed area (CCW). The single outer face is the
-  // most-negative; drop everything with non-positive area. Pendant (dead-end)
-  // edges are walked out-and-back inside their surrounding face — they leave a
-  // zero-width spur that the inward Clipper offset collapses on its own.
+  // most-negative; drop everything with non-positive area. Pendant (dead-end) edges
+  // were PRUNED above (degree-1 leaf removal) — they do NOT collapse on their own (the
+  // inward band-join opens the spur into a triangle), they're stroked as asphalt stubs
+  // instead. So the faces here are clean cycles.
   return faces.filter(f => signedArea(f.ring) > 1e-3)
 }
 
@@ -760,7 +791,8 @@ export function buildTileGround(ribbons, opts = {}) {
     }
   }
 
-  const tiles = extractFaces(streets)
+  const stubs = []   // pendant dead-end chains pruned from the face graph (stroked below)
+  const tiles = extractFaces(streets, stubs)
 
   // Per tile (CONCENTRIC corners):
   //  1. Asphalt = the union of per-street-side run stadiums (PER-EDGE widths,
@@ -968,6 +1000,21 @@ export function buildTileGround(ribbons, opts = {}) {
     const hw = Math.max(s.measure?.left?.pavementHW || 0, s.measure?.right?.pavementHW || 0)
     if (hw <= 1e-6) continue
     ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))
+  }
+  // Stroke the pruned dead-end stubs as asphalt (the grade-sep sibling). extractFaces
+  // pruned the pendant spurs so the blocks are clean rectangles; their road comes back
+  // here. The surrounding block face is now clean → its ped/LU covers that area, so the
+  // stub strokes on top with the cap per typology: round → asphalt disk (the block ped
+  // wraps the cul-de-sac bulb); blunt/none → flat butt (the block LU abuts). Points are
+  // already smoothed (extractFaces ran on the smoothed streets), so no re-smooth.
+  for (const stub of stubs) {
+    if (!stub.points || stub.points.length < 2) continue
+    const ti = deadEndTips.get(tipKey(stub.points[0]))
+    const st = streets[stub.streetIdx]
+    const hw = ti?.hw || Math.max(st?.measure?.left?.pavementHW || 0, st?.measure?.right?.pavementHW || 0)
+    if (hw <= 1e-6) continue
+    Aacc.push(...strokeOpen(stub.points, hw))
+    if (ti?.cap === 'round') Aacc.push(circlePoly(stub.points[0][0], stub.points[0][1], hw))
   }
   let asphalt = unionRings(Aacc)
   let highway = unionRings(Hacc)
