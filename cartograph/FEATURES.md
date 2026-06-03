@@ -366,7 +366,7 @@ This is the bug-magnet that's burned hours twice now. Survey + Measure tools sav
 
 ### Divided-road inner-edge anchor — opt-in "paired-with-median" authoring mode
 
-Divided roads stay as TWO separate centerlines per the locked positive-carriageway model — no pair synthesis, no median couplers, no collapse to a single spine. Each carriageway's chain carries `anchor` (`'center'` | `'inner-edge'`), `innerSign` (±1; which perpendicular side faces the median), and `pairId` (matches its mate). Skeleton emits these via the phase-aware welder; derive passes them through to ribbons.json untransformed.
+Divided roads stay as TWO separate centerlines per the locked positive-carriageway model — no pair synthesis, no median couplers, no collapse to a single spine. Each carriageway's chain carries `anchor` (`'center'` | `'inner-edge'`), `innerSign` (±1; which perpendicular side faces the median), and `pairId` (matches its mate). Skeleton emits these via the phase-aware welder; derive passes them through to ribbons.json untransformed. **As of 2026-06-03 the welder also (a) longitudinally welds each carriageway's staggered fragments into ONE continuous chain (D1, `5348fbc` — a corridor that read as 8 chains is now 2) and (b) gates pairing on longitudinal *station-overlap*, so offset stub-pairs no longer mis-pair into a skewed median wedge (`8392b3e`). See RIBBONS §3.1 / PIPELINE P1.**
 
 **`anchor: 'inner-edge'` is an authoring mode, not a geometry override.** The chain stays at carriageway center (skeleton's OSM way center). The flag does three things:
 1. Flips the chain's `measure.symmetric` to `false` (so dragging the outboard handle stops mirroring inboard — operator authors per side independently).
@@ -374,6 +374,8 @@ Divided roads stay as TWO separate centerlines per the locked positive-carriagew
 3. The runtime `innerEdgeMeasure` helper zeroes the inboard ped zone (`treelawn`, `sidewalk`, `terminal`) so no sidewalk renders along the median. Pavement + curb stay whatever the operator has authored.
 
 **Median emerges by construction**, never authored. The polygon between paired carriageways' chains, minus each carriageway's inboard pavement HW, IS the median (already produced by derive). If the gap can't accommodate one (operator drags inboard pavement wide enough to close the median, or the chains start too close), no median renders — free.
+
+> ⚠️ **Live mechanism = tile model (2026-06-03).** The "polygon between chains" description above is the pre-tile figure-ground mechanism. On the live tile pipeline the median is an emergent **geometric face** from `tileGround.extractFaces` (a shared-vertex walk of `ribbons.streets`), not a chain-pair difference. The **binding invariant holds across the rewrite**: *the median emerges by construction, never authored.* But because `extractFaces` is geometric, not chain-identity, the D1 weld (continuous carriageways) only *improves median coverage* — the median's per-tile LU/material tagging is REAL downstream work, not a free consequence of the weld (`TRUMAN-FORENSICS.md`, leads D3/D8).
 
 **Pair-aware authoring.** `useCartographStore.setAnchor` mirrors the anchor flip onto the pair mate (`pairId` carries the mate's `skelId`, not a shared pair-group identifier — look up via `s.skelId === st.pairId`). The flip transform applies to BOTH chains' `measure` AND every entry of `segmentMeasures`. Width authoring stays per-carriageway (asymmetric real-world cases like S Jefferson 7.72 / 9.16m).
 
