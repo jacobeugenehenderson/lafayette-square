@@ -348,12 +348,19 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // the dark slab wins the depth test and the grass disappears. The slab
   // is owned by BakedGround in shots; skip the MapLayers ground here.
   const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'lamp', 'centerline', 'labels', 'ground'])
-  // In Survey, roadway marking layers (stripes / edge lines / bike lanes) are
-  // Measure/Design-era surface paint — Survey only cares about roadway
-  // silhouettes, so hide them. Centerlines are the EXCEPTION: Survey is the
-  // skeleton tool, so it force-shows the same centerline geometry (recolored
-  // blue below), overriding the panel's default-hidden state.
-  const SURVEY_HIDE = new Set(['stripe', 'edgeline', 'bikelane'])
+  // Survey is a blue wireframe over the aerial photo. The aerial already shows
+  // every piece of CONTENT (buildings, trees, water, parking, lamps), so drawing
+  // MapLayers' flat versions of them on top is pure redundant overdraw — much of
+  // it past the circle — and the per-tree / per-lamp / per-label meshes are
+  // hundreds of draw calls. Suppress all of it in Survey; keep only the
+  // centerline skeleton (force-shown, recolored blue below). The roadway marking
+  // paint (stripe/edge/bike) is Measure/Design-era and also hidden. landscape /
+  // barriers are subtype-keyed (not single keys) and gated directly in the
+  // render below.
+  const SURVEY_HIDE = new Set([
+    'stripe', 'edgeline', 'bikelane',
+    'building', 'parking_lot', 'lamp', 'tree', 'water', 'labels',
+  ])
   const hide = new Proxy(hideIn, {
     get: (t, k) => {
       if (inShot && SHOT_SKIP.has(k)) return true
@@ -750,7 +757,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
 
       {/* Landscape overlays (leisure + natural subtypes) — per-vertex
           displacement (see parking_lot note above). */}
-      {Object.entries(landscapeByKind).map(([kind, geo]) => {
+      {!surveyActive && Object.entries(landscapeByKind).map(([kind, geo]) => {
         if (!geo || hide[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
         const mat = makeFlatMat(col, PRI.landscape)
@@ -758,7 +765,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       })}
 
       {/* Barriers (fence/wall/hedge/retaining_wall as thin lines) */}
-      {Object.entries(barriersByKind).map(([kind, geos]) => {
+      {!surveyActive && Object.entries(barriersByKind).map(([kind, geos]) => {
         if (hide[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
         const mat = makeLineMat(col, 1)

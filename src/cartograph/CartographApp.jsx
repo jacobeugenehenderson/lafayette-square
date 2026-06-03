@@ -804,6 +804,14 @@ export default function CartographApp() {
   // without an aerial photo can't enter focus mode.
   const toolAerialFocus = inDesigner && !!tool && aerialVisible && sceneCfg.hasAerial
 
+  // Survey is a blue wireframe over the aerial: we draw the block polygons but
+  // NOT the asphalt, so the aerial IS the road context — it's mandatory, not an
+  // "Aerial" toggle. So Survey ignores `aerialVisible`: aerial always mounts
+  // (the tool gate below), MapLayers always renders its centerline skeleton
+  // (decoration suppressed in-component), and the block faces always show. The
+  // toggle only governs the no-tool / Measure aerial-focus modes.
+  const surveyMode = inDesigner && tool === 'surveyor' && sceneCfg.hasAerial
+
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
   else if (markerActive && !spaceDown) cursor = 'crosshair'
@@ -891,7 +899,7 @@ export default function CartographApp() {
                 useRingBandEmitter={true /* C5: LS cutover — keeper for all scenes (legacy else-branch dead, removed in C5 commit 3) */}
                 measureActive={tool === 'measure' && inDesigner}
                 surveyActive={tool === 'surveyor' && inDesigner}
-                hideLandUse={toolAerialFocus} />
+                hideLandUse={toolAerialFocus && !surveyMode} />
             </R3FErrorBoundary>
           )}
 
@@ -926,7 +934,7 @@ export default function CartographApp() {
               In Designer, any time aerial is on (tool focus OR pure design
               with aerial), hide entirely so the photo isn't covered by
               buildings/parcels/water/parking-lots/etc. */}
-          {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && (
+          {scene === 'lafayette-square' && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner}
               measureActive={tool === 'measure' && inDesigner} />

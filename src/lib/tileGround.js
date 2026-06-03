@@ -1027,7 +1027,8 @@ export function buildTileGround(ribbons, opts = {}) {
   // Collected from the per-tile shape (already computed) — no extra Clipper op, so
   // it stays free on the live corner-drag rebuild path. The Survey view shades
   // these to memorialize the block boundaries; the rest of the app ignores it.
-  const block = shapeTiles.flatMap(st => st.iA || [])
+  const blockRaw = shapeTiles.flatMap(st => st.iA || [])
+  const block = stencil ? intersectRings(blockRaw, [stencil]) : blockRaw
 
   // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
