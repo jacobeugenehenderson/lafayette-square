@@ -77,6 +77,11 @@
 | toy-to-stage-bake | bake path Toy→Stage | live → NOW |
 | asphalt-as-ribbon | authored asphalt extent | live → NEXT |
 | dead-end-typology | endpoint typology | live → NEXT |
+| divided-pair-station-overlap | ✅ LANDED (Groma `8ffd795` → converged `8392b3e`, Theodolite) — dropped the offset #5/#6 pair, 28→27 medians | done |
+| truman-forensics | ✅ DONE (Galen, `TRUMAN-FORENSICS.md`) — 8 defects, 6 systemic. **ROOT = D1: `weldChains` won't fuse a carriageway's own colinear continuation → carriageways shatter into staggered fragments.** Median is emergent + free after D1; `medians[]` ring is vestigial decoy. **Docket: D1 weld (skeleton/Groma) → D6 oneway-serialize → D3/D8 median-tag → D4 vestigial-cleanup → D5 dead-end → D7 TBD.** | done → D1 docket |
+| divided-carriageway-longitudinal-weld (D1) | THE keystone: direction-strict tail-to-head same-heading never-flip weld so each carriageway = one continuous chain → median falls out free. Systemic all divided roads. | dispatch-ready (WARM→Groma) |
+| dead-end-spike-prune | prune pendant edges from `extractFaces` + stroke stubs as asphalt (the grade-sep pattern) — kills the dead-end "big triangle" slack | dispatch-ready (WARM→Theodolite) |
+| section-census | ✅ DONE (Stratum, `f652053`, `SECTION-CENSUS.md`) — Section is ~70% built (sectionPass exists + chain-incapable by closure = deep wall already satisfied). Remaining = wire + **D1 decision** + 3 FILL fixes. **Section build docket** = census §"ordered backlog" 1–7; **#3 (ADA/point-ramp/G12 guard) is schema-independent → startable now.** | done → docket |
 | render-conformance | env parity (DRAFT) | cold-review gate |
 | audit-{cartograph,arborist,ls-app,docs} | forensic pathology | campaign |
 | **retired 2026-05-31 (`2854aa3`, in git)** | block-independence · degenerate-W-flood · pass2-customs-hardening · ribbon-corners · measure-authoring-redesign · toy-reset-to-defaults | done — recoverable via git |
