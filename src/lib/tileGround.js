@@ -495,9 +495,15 @@ export function sectionPass(shapeTiles, cw, stripMat) {
     // so the ped strips cap cleanly instead of needling at the cap's ~180°
     // reversal; 'miter' on normal cornered tiles keeps authored R=0 squares sharp.
     const bandJoin = st.bandJoin || 'miter'
-    const iC = offsetRings(iA, -cw, bandJoin)               // curb/treelawn boundary  (R+cw)
-    const iT = offsetRings(iA, -(cw + tl), bandJoin)        // treelawn/sidewalk       (R+cw+tl)
-    const iW = offsetRings(iA, -(cw + tl + sw), bandJoin)   // sidewalk/LU             (R+cw+tl+sw)
+    // Capacity guard (RIBBONS §3.9a item 5): the shape pass froze cap = 90% of this
+    // tile's inscribed reach. Clamp each offset depth to it so a thin tile (loop
+    // interior, narrow median, sliver) can't drive the inward offsets past the
+    // medial axis into thorns — it degrades to a clean truncated ribbon. On the
+    // offset W, never the fillet radius.
+    const cap = Number.isFinite(st.cap) ? st.cap : (cw + tl + sw)
+    const iC = offsetRings(iA, -Math.min(cw, cap), bandJoin)             // curb/treelawn boundary  (R+cw)
+    const iT = offsetRings(iA, -Math.min(cw + tl, cap), bandJoin)        // treelawn/sidewalk       (R+cw+tl)
+    const iW = offsetRings(iA, -Math.min(cw + tl + sw, cap), bandJoin)   // sidewalk/LU             (R+cw+tl+sw)
     // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
     // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
     // to tangent; treelawn lives only on the straight legs and ends at the
@@ -911,10 +917,26 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     const thinTile = bandPerim > 1e-6 && (2 * bandArea / bandPerim) < (cw + tl + sw)   // mean width < deepest inset → bands collide
     const bandJoin = (roundTips.length || bluntTips.length || runs.length === 1 || thinTile) ? 'round' : 'miter'
+    // Capacity guard (RIBBONS §3.9a item 5, ported from emitOneBlockRingBands): when a
+    // tile's interior pinches below the band depth WB=cw+tl+sw, the inward offsets
+    // collapse past the medial axis and filletRing rounds the degenerate geometry into
+    // thorns (thin loops, narrow medians, slivers, tight wraps — ~the whole class).
+    // Bisect iA's largest non-empty inward offset (its inscribed reach), freeze
+    // cap = 90% of it; sectionPass + the curb clamp every depth to cap. Over-capacity
+    // tiles degrade to a clean truncated ribbon; in-spec tiles (reach ≫ WB) keep WB
+    // untouched. On the offset W, NOT the fillet radius [[feedback_no_corner_radius_clamps_in_emit]]
+    // — that degeneracy Clipper handles natively; W-past-medial-axis it does not.
+    const WBnom = cw + tl + sw
+    let cap = WBnom
+    if (WBnom > 1e-6 && !offsetRings(iA, -(WBnom / 0.9), bandJoin).length) {
+      let lo = 0, hi = WBnom / 0.9
+      for (let it = 0; it < 16; it++) { const mid = (lo + hi) / 2; if (offsetRings(iA, -mid, bandJoin).length) lo = mid; else hi = mid }
+      cap = lo * 0.9
+    }
     Aacc.push(...differenceRings([tile.ring], iA))   // asphalt = tile − rounded inner (the shape silhouette)
-    Cacc.push(...differenceRings(iA, offsetRings(iA, -cw, bandJoin)))   // curb stroke = iA − iC (shares the tile's join)
+    Cacc.push(...differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)))   // curb stroke = iA − iC (clamped, shares join)
     // Freeze everything the section pass needs off this tile's shape.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin })
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────
