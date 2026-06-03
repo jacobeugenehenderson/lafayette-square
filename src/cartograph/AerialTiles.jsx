@@ -164,10 +164,15 @@ function TileMesh({ tile, y = -0.05 }) {
     let tex = null, cancelled = false
     fetch(tile.url, { signal: ctrl.signal })
       .then(r => { if (!r.ok) throw new Error(`http ${r.status}`); return r.blob() })
-      .then(b => createImageBitmap(b))
+      // imageOrientation:'flipY' bakes the WebGL bottom-up flip into the bitmap;
+      // THREE can't apply texture.flipY to an ImageBitmap, so without this every
+      // tile loads upside-down (the "flipped strips"). With it pre-flipped, the
+      // texture must NOT flip again → flipY=false.
+      .then(b => createImageBitmap(b, { imageOrientation: 'flipY' }))
       .then(bitmap => {
         if (cancelled) { bitmap.close?.(); return }
         tex = new THREE.Texture(bitmap)
+        tex.flipY = false
         tex.minFilter = THREE.LinearFilter
         tex.magFilter = THREE.LinearFilter
         tex.generateMipmaps = false
