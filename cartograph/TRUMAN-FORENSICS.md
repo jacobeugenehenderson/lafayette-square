@@ -165,4 +165,19 @@ Trace: `SurveyorPanel.jsx:306-316` Anchor `<select>` → `setAnchor(idx, 'inner-
 
 ---
 
+## ADDENDUM — South-of-Park median fragmentation (Boz + Jacob, 2026-06-04, post-D1)
+
+**Symptom (Jacob's eye, clean build):** Truman renders **correct north of Park Ave** but **wrong south of Park** — the median "drops off and gets picked back up in the wrong place." Localized, real on a clean restart (not a session ghost).
+
+**Verified findings (read-only, on the post-D1 `ribbons.json`):**
+- **Carriageway geometry is fine.** Both welded chains span the full corridor (z +282 → −447), consistently **~13m apart** the whole way (the apparent "43m gap" was a vertex-*sampling* artifact — B has no vertex opposite A's, the lines stay 13m). D1's weld + the skeleton centerlines are **sound** here.
+- **The break is the emergent median FACE, fragmented by asymmetric cross-street junctions.** South of Park, **Grattan St (z−68)** and **secondary_link 29 (z−380)** T-junction **carriageway A only** (exact 0.1mm nodes); **carriageway B has no junction in that span.** The median is the face *between* A and B — where a cross-street meets one side's centerline but not the other, the strict face-walk fragments → drop-off + wrong-pickup. North of Park: no such asymmetry → continuous.
+- **NOT a snap artifact / NOT "tolerance too high."** Checked: in **raw OSM, Grattan's nearest vertex to Truman = 0.00m** → a *genuine* OSM junction, not fused by derive's 3–5m snap. (`extractFaces` node identity is `Q=1e4` = 0.1mm — strict; it merges nothing.)
+
+**Classification:** a **D3/D8 divided-road median-FORMATION** defect (the "median is a real geometric face, downstream work, not free" correction made concrete) — **systemic** (any divided road with one-sided cross-streets). **Fix = teach median-face formation to handle real one-sided cross-street T-junctions** — NOT snap-tightening, NOT the too-much-line/over-densification thread (which showed no change here). Its own brief.
+
+*Addendum: Boz + Jacob, 2026-06-04. Read-only; no code touched.*
+
+---
+
 *Galen, 2026-06-03. Read-only census; no code touched.*
