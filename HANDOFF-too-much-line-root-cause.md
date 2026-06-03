@@ -1,6 +1,6 @@
 # HANDOFF — "Too much line" — the over-densification root cause (thorns / bulge-bow / dead-end-triangles)
 
-**State:** IN-FLIGHT — fresh root-cause agent dispatched 2026-06-04 (STEP-1 diagnose-first running). **Domain:** cartograph SHAPE (Survey, 2D) — spans `skeleton.js` → `derive.js` → `tileGround.js`. **Drafted/diagnosed:** Boz + Jacob, 2026-06-04.
+**State:** IN-FLIGHT — STEP-1 diagnosis DONE; **fix placement DECIDED = Option 1, sequenced** (see below). Fresh agent to implement. **Domain:** cartograph SHAPE (Survey, 2D) — spans `skeleton.js` → `derive.js` → `tileGround.js`. **Drafted/diagnosed:** Boz + Jacob + the root-cause agent, 2026-06-04.
 
 ---
 
@@ -34,6 +34,29 @@ A cluster of artifacts is **one root cause**, not separate bugs:
 **STEP 1 — DIAGNOSE (read-only, the Stage-1-vs-Stage-2 fork):** vertex-count chain **raw OSM → skeleton → ribbons → post-`smoothChain`** for (a) Benton loop, (b) a straight street with rectangular artifacts, (c) a "dead-end triangle." Pin **where** the excess originates — frame over-dense (Stage-1) vs render re-smooth (Stage-2) vs both. ⚠️ skeleton points are NOT `[[x,y]]` (Boz's probe got NaN) — find the format first.
 **STEP 2 — FIX AT THE ROOT:** the right amount of line, **smoothed once** (single smoothing authority; `tileGround` must not re-densify already-dense input; minimal-sufficient control points). ⚠️ **No regression:** parcel/face curve boundaries (`derive.js:1581-1617`) or wide-ribbon kink-freeness (grade-sep, `tileGround:967`).
 **STEP 3 — WATCH live 2D Survey:** Benton + a straight run + the old "dead-end triangles." All clean → root confirmed.
+
+## STEP-1 DIAGNOSIS VERDICT (root-cause agent, 2026-06-04)
+
+**Both layers confirmed — the fork answer is "both."** The FRAME is noisy/over-sampled (Stage-1 — the skeleton is not yet perfected) AND the render ×4-multiplies via count-based `smoothChain` (Stage-2). Benton: frame 29 → render ~113. Neither alone is the whole story; the question was which is the *primary lever*.
+
+## FIX PLACEMENT — DECIDED: Option 1 (frame RDP + render arc-length), SEQUENCED (Boz + Jacob, 2026-06-04)
+
+**Chosen over the alternatives:**
+- **Option 2 (render-only) — rejected:** leaves the frame noisy → violates "Skeleton is the First Bake" + the ground-up order (Stage-1 must be *perfected*, not patched-around); and re-implements junction protection downstream = the palimpsest pattern.
+- **Option 3 (frame-RDP-only) — rejected:** **same re-bake cost as Option 1** (both touch `skeleton.js` → full skeleton+derive+ground re-bake), but leaves the count-based ×4 amplifier → uneven density on mixed straight/curve chains + the fragile wide-ribbon path (`tileGround:967`, samples=16). A latent flaw that fails the "perfected" bar and re-bites later.
+- **Option 1 dominates Option 3:** identical re-bake cost; the only marginal cost is the contained `smoothChain` arc-length change, which buys robustness to *any* input density (and fixes the wide-ribbon path). Fix it completely, once (the knot lesson).
+
+### Implement as TWO validated sub-steps — NOT one bundle (§7 history: validate each sub-step before bundling; avoids confounded regressions)
+1. **Frame RDP** (`skeleton.js`): junction-protected global RDP (Benton 29 → ~10). → **re-bake → verify.** *This IS Option 3's outcome as an intermediate checkpoint* — so we learn whether ×4-of-a-clean-frame already clears Benton / straights / the "dead-end triangles" live, before adding step 2.
+2. **Render arc-length** (`tileGround` / `smoothChain:614`): density by **arc-length, not ×input-count** — robust to any input density; fixes the wide-ribbon path too. → **re-bake → verify** even density on mixed chains + kink-free wide ribbons.
+   *If a regression appears, you know which sub-step caused it (no confound).*
+
+### ⛔ HARD GATE — junction-protected RDP (the real risk)
+`skeleton.js`'s junction-blind `simplify` (`:375`, devTol 0.2) is **what originally DELETED the 79 interior T-junctions** (Vesalius, `OSM-FORENSICS`). The RDP **MUST preserve all 338 junctions / the 79 interior Ts** — **verify against the OSM-FORENSICS north-star, not by eye.** **Build on Vesalius's existing junction-aware simplify in `skeleton.js` — do NOT re-derive junction protection from scratch.** If RDP would drop or move any junction node, **STOP and flag Boz.**
+
+### Fold-in
+- This **regenerates `ribbons.json`** → re-check Bollard's deferred **Missouri Ave +4231 m² flood** (`HANDOFF-dead-end-spike-prune`) on the fresh topology.
+- Report after **each** sub-step (frame-RDP verify, then arc-length verify) **before** proceeding.
 
 ## Coordination / boundaries
 
