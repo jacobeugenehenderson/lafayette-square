@@ -1021,13 +1021,13 @@ export function buildTileGround(ribbons, opts = {}) {
   for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
   for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
-  // The BLOCK contour: the entire land-use landmass to the curb/road edge —
-  // everything that isn't asphalt, as one filled region (roads cut it into block
-  // islands / become holes). No ped/LU subdivision. The Survey view shades this
-  // to memorialize the block boundaries; the rest of the app ignores it.
-  const block = stencil
-    ? differenceRings([stencil], asphalt)
-    : differenceRings(unionRings(tiles.map(t => t.ring)), asphalt)
+  // The BLOCK contours: each tile's asphalt-inner ring (iA) — the block polygon
+  // to the curb edge, exactly the polygon this step bakes into the shape artifact.
+  // No ped/LU subdivision (those are scalars here, geometry only in Section).
+  // Collected from the per-tile shape (already computed) — no extra Clipper op, so
+  // it stays free on the live corner-drag rebuild path. The Survey view shades
+  // these to memorialize the block boundaries; the rest of the app ignores it.
+  const block = shapeTiles.flatMap(st => st.iA || [])
 
   // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
