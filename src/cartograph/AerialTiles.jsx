@@ -42,6 +42,14 @@ function wgs84ToLocal(lon, lat) {
   ]
 }
 
+// Inverse of wgs84ToLocal — world (x,z) → (lon,lat). Lets the focus layer
+// derive the tile-index range directly from a small handle patch instead of
+// scanning the whole-BBOX tile grid (which at z21 is tens of thousands of
+// cells before culling).
+function localToWgs84(x, z) {
+  return [CENTER.lon + x / LON_TO_METERS, CENTER.lat - z / LAT_TO_METERS]
+}
+
 function lonLatToTile(lon, lat, z) {
   const n = 2 ** z
   const x = Math.floor((lon + 180) / 360 * n)
@@ -79,57 +87,108 @@ function tileTouchesRegion(x, z, w, h, region) {
     && tMaxZ >= region.minZ && tMinZ <= region.maxZ
 }
 
-// Generate the ArcGIS World_Imagery tiles for zoom `z` across the WGS84
-// BBOX, culled to the neighborhood circle. When `regionBbox` is passed
-// (world-space {minX,maxX,minZ,maxZ}), additionally skip tiles that don't
-// intersect it — that's how the focus layer loads only a handful of hi-res
-// tiles over the activated block instead of the whole disc.
-function buildTiles(z, regionBbox = null) {
+const TILE_URL = (tx, ty, z) =>
+  `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`
+
+// Build one tile record (world rect + url) for tile (tx,ty,z), or null if it
+// falls entirely outside the neighborhood fade circle.
+function makeTile(tx, ty, z) {
+  const [nwLon, nwLat] = tileToLonLat(tx, ty, z)
+  const [seLon, seLat] = tileToLonLat(tx + 1, ty + 1, z)
+  const [x0, z0] = wgs84ToLocal(nwLon, nwLat)
+  const [x1, z1] = wgs84ToLocal(seLon, seLat)
+  const w = x1 - x0, h = z1 - z0
+  if (!tileTouchesFade(x0, z0, w, h)) return null
+  return { x: x0, z: z0, w, h, url: TILE_URL(tx, ty, z) }
+}
+
+// Whole-disc tiles for zoom `z`, culled to the circle. Used only by the
+// low-res base (small grid at z16), so the whole-BBOX scan is cheap.
+function buildTiles(z) {
   const [xMin, yMin] = lonLatToTile(BBOX.minLon, BBOX.maxLat, z)
   const [xMax, yMax] = lonLatToTile(BBOX.maxLon, BBOX.minLat, z)
   const tiles = []
   for (let tx = xMin; tx <= xMax; tx++) {
     for (let ty = yMin; ty <= yMax; ty++) {
-      const [nwLon, nwLat] = tileToLonLat(tx, ty, z)
-      const [seLon, seLat] = tileToLonLat(tx + 1, ty + 1, z)
-      const [x0, z0] = wgs84ToLocal(nwLon, nwLat)
-      const [x1, z1] = wgs84ToLocal(seLon, seLat)
-      const w = x1 - x0, h = z1 - z0
-      if (!tileTouchesFade(x0, z0, w, h)) continue
-      if (regionBbox && !tileTouchesRegion(x0, z0, w, h, regionBbox)) continue
-      tiles.push({
-        x: x0, z: z0, w, h,
-        url: `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`,
-      })
+      const t = makeTile(tx, ty, z)
+      if (t) tiles.push(t)
     }
   }
   return tiles
 }
 
-const loader = new THREE.TextureLoader()
+// Hi-res tiles for the focus layer. The loop range is derived from each small
+// handle PATCH (world {minX,maxX,minZ,maxZ}) — not the whole BBOX — so we never
+// enumerate the full z21 grid. Tiles are deduped across patches, sorted nearest
+// the operator's anchor (cx,cz), and HARD-CAPPED at `maxTiles` so the hi-res
+// can never creep out to the whole disc.
+function buildFocusTiles(z, patches, cx, cz, maxTiles) {
+  const seen = new Set()
+  const tiles = []
+  for (const patch of patches) {
+    const [lonW, latN] = localToWgs84(patch.minX, patch.minZ)
+    const [lonE, latS] = localToWgs84(patch.maxX, patch.maxZ)
+    const [txA, tyA] = lonLatToTile(lonW, latN, z)
+    const [txB, tyB] = lonLatToTile(lonE, latS, z)
+    const txLo = Math.min(txA, txB), txHi = Math.max(txA, txB)
+    const tyLo = Math.min(tyA, tyB), tyHi = Math.max(tyA, tyB)
+    for (let tx = txLo; tx <= txHi; tx++) {
+      for (let ty = tyLo; ty <= tyHi; ty++) {
+        const url = TILE_URL(tx, ty, z)
+        if (seen.has(url)) continue
+        const t = makeTile(tx, ty, z)
+        if (!t || !tileTouchesRegion(t.x, t.z, t.w, t.h, patch)) continue
+        seen.add(url)
+        tiles.push(t)
+      }
+    }
+  }
+  tiles.sort((a, b) => {
+    const da = (a.x + a.w / 2 - cx) ** 2 + (a.z + a.h / 2 - cz) ** 2
+    const db = (b.x + b.w / 2 - cx) ** 2 + (b.z + b.h / 2 - cz) ** 2
+    return da - db
+  })
+  return tiles.length > maxTiles ? tiles.slice(0, maxTiles) : tiles
+}
 
+// Cancelable tile texture. THREE.TextureLoader can't abort an in-flight image
+// fetch, so dollying through LOD steps / moving the focus left a trail of
+// orphaned downloads that kept the network (and the whole-disc hi-res creep)
+// going. We fetch with an AbortController and createImageBitmap; on unmount
+// (focus moved, LOD changed) the fetch is aborted and the GPU texture freed.
 function TileMesh({ tile, y = -0.05 }) {
-  const texture = useMemo(() => {
-    const tex = loader.load(tile.url)
-    tex.minFilter = THREE.LinearFilter
-    tex.magFilter = THREE.LinearFilter
-    return tex
+  const [texture, setTexture] = useState(null)
+
+  useEffect(() => {
+    const ctrl = new AbortController()
+    let tex = null, cancelled = false
+    fetch(tile.url, { signal: ctrl.signal })
+      .then(r => { if (!r.ok) throw new Error(`http ${r.status}`); return r.blob() })
+      .then(b => createImageBitmap(b))
+      .then(bitmap => {
+        if (cancelled) { bitmap.close?.(); return }
+        tex = new THREE.Texture(bitmap)
+        tex.minFilter = THREE.LinearFilter
+        tex.magFilter = THREE.LinearFilter
+        tex.generateMipmaps = false
+        tex.needsUpdate = true
+        setTexture(tex)
+      })
+      .catch(err => { if (err.name !== 'AbortError') console.warn('[aerial] tile load failed', tile.url, err) })
+    return () => {
+      cancelled = true
+      ctrl.abort()
+      if (tex) { tex.image?.close?.(); tex.dispose() }
+    }
   }, [tile.url])
 
-  const material = useMemo(() => {
-    const mat = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
-    return injectCircleCrop(mat)
-  }, [texture])
+  const material = useMemo(
+    () => texture ? injectCircleCrop(new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })) : null,
+    [texture]
+  )
+  useEffect(() => () => material?.dispose(), [material])
 
-  // Free GPU memory when this tile unmounts or its url changes. The focus
-  // layer churns tiles as the operator dollies / reselects, so without this
-  // the textures (several MB each) accumulate over a session. Base tiles are
-  // stable but disposal is harmless there too.
-  useEffect(() => () => {
-    texture.dispose()
-    material.dispose()
-  }, [texture, material])
-
+  if (!material) return null
   return (
     <mesh
       position={[tile.x + tile.w / 2, y, tile.z + tile.h / 2]}
@@ -182,15 +241,18 @@ function cameraZoomToTileZ(camZoom) {
   return Math.max(BASE_Z + 1, Math.min(FOCUS_Z_MAX, Math.round(z)))
 }
 
-// Hi-res focus over the activated block. Mounted only while a centerline is
-// selected (CartographApp gates on `corridorSelected`). The focus region is
-// the selected street's own polyline bbox + a generous margin — enough to
-// cover the street and its flanking blocks without building a precise
-// street→block adjacency map. Resolution follows camera distance (closer →
-// higher zoom), debounced so a slow dolly snaps between discrete LOD steps
-// instead of thrashing tile loads every frame. Tiles load nearest-the-click
-// first so the spot under the operator's eye sharpens first.
-const FOCUS_MARGIN = 70          // ≈ a typical block depth; tune by eye
+// Hi-res focus around the EDITING HANDLES of the active layer — not the
+// selected street's whole bbox (that pulled hi-res across the entire disc for
+// a long street, with no cap, and never stopped). Hi-res is a property of
+// ATTENTION: the operator's handles. For Survey/Section the asphalt-edge / ped
+// handles cluster at the click anchor (`selectedMeasurePoint`), so one tight
+// patch there covers them; in corner-edit the corners sit at the selected
+// street's junction ends, so those get patches too. Resolution follows camera
+// distance (closer → higher zoom), debounced so a slow dolly snaps between LOD
+// steps instead of thrashing. Tiles load nearest the anchor first and are
+// hard-capped, so the load is small, bounded, and follows the handles.
+const FOCUS_R = 38               // patch half-extent (m) around each handle anchor
+const MAX_FOCUS_TILES = 64       // hard cap on hi-res tiles — never the whole disc
 const FOCUS_Z_DEBOUNCE_S = 0.2   // hold a new LOD step this long before loading
 
 export function AerialFocus() {
@@ -198,6 +260,7 @@ export function AerialFocus() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const streets = useCartographStore(s => s.centerlineData?.streets)
   const seed = useCartographStore(s => s.selectedMeasurePoint)
+  const cornerEditMode = useCartographStore(s => s.cornerEditMode)
 
   const [focusZ, setFocusZ] = useState(() => cameraZoomToTileZ(camera.zoom))
   // Debounce: only commit a new LOD once the camera has held it briefly.
@@ -215,37 +278,36 @@ export function AerialFocus() {
     }
   })
 
-  const focusBbox = useMemo(() => {
-    const st = streets?.[selectedStreet]
-    const pts = st?.points
-    if (!pts || pts.length < 1) return null
-    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
-    for (const p of pts) {
-      if (p[0] < minX) minX = p[0]
-      if (p[0] > maxX) maxX = p[0]
-      if (p[1] < minZ) minZ = p[1]
-      if (p[1] > maxZ) maxZ = p[1]
+  // The world points where the active layer's handles live.
+  const anchors = useMemo(() => {
+    const pts = streets?.[selectedStreet]?.points
+    if (!pts?.length) return []
+    const out = []
+    // Cross-section handles (Survey asphalt-edge / Section ped) anchor at the
+    // click point; before the first click the overlays park them at the chain
+    // midpoint, so mirror that fallback.
+    if (seed) out.push([seed.x, seed.z])
+    else { const m = pts[pts.length >> 1]; out.push([m[0], m[1]]) }
+    // Corner handles sit at this street's junction ends — add those so the
+    // hi-res follows the corner being rounded. Just this street's two ends,
+    // not all the disc's intersections.
+    if (cornerEditMode) {
+      out.push([pts[0][0], pts[0][1]])
+      out.push([pts[pts.length - 1][0], pts[pts.length - 1][1]])
     }
-    return {
-      minX: minX - FOCUS_MARGIN, maxX: maxX + FOCUS_MARGIN,
-      minZ: minZ - FOCUS_MARGIN, maxZ: maxZ + FOCUS_MARGIN,
-    }
-  }, [streets, selectedStreet])
+    return out
+  }, [streets, selectedStreet, seed, cornerEditMode])
 
   const tiles = useMemo(() => {
-    if (!focusBbox) return []
-    const t = buildTiles(focusZ, focusBbox)
-    // Nearest-the-click first → the tile under the operator's eye fetches
-    // first. Seed = the projected click point; fall back to bbox center.
-    const cx = seed ? seed.x : (focusBbox.minX + focusBbox.maxX) / 2
-    const cz = seed ? seed.z : (focusBbox.minZ + focusBbox.maxZ) / 2
-    t.sort((a, b) => {
-      const da = (a.x + a.w / 2 - cx) ** 2 + (a.z + a.h / 2 - cz) ** 2
-      const db = (b.x + b.w / 2 - cx) ** 2 + (b.z + b.h / 2 - cz) ** 2
-      return da - db
-    })
-    return t
-  }, [focusZ, focusBbox, seed])
+    if (!anchors.length) return []
+    const patches = anchors.map(([x, z]) => ({
+      minX: x - FOCUS_R, maxX: x + FOCUS_R, minZ: z - FOCUS_R, maxZ: z + FOCUS_R,
+    }))
+    // Sort/cap center = the click anchor (the operator's eye), else the first patch.
+    const cx = seed ? seed.x : anchors[0][0]
+    const cz = seed ? seed.z : anchors[0][1]
+    return buildFocusTiles(focusZ, patches, cx, cz, MAX_FOCUS_TILES)
+  }, [focusZ, anchors, seed])
 
   // y just above the base (-0.05) so the sharper focus draws on top.
   return (
