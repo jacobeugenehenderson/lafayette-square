@@ -962,7 +962,9 @@ export function buildTileGround(ribbons, opts = {}) {
   const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
   const Hacc = []
   for (const s of gradeSep) {
-    const sm = smooth > 0 ? (smoothChain(s.points, smooth) || s.points) : s.points
+    // Dense arc sampling (16/seg vs the default 4): the highway stroke is wide (W≈17 m),
+    // so coarse arcs facet and the offset gaps on tight ramp bends (RIBBONS §3.3).
+    const sm = smooth > 0 ? (smoothChain(s.points, smooth, 16) || s.points) : s.points
     const hw = Math.max(s.measure?.left?.pavementHW || 0, s.measure?.right?.pavementHW || 0)
     if (hw <= 1e-6) continue
     ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))

@@ -57,7 +57,10 @@ function centripetalRun(pts, samplesPerSeg) {
 }
 
 // Smooth a chain (returns null = "leave untouched", caller keeps raw points).
-export function smoothChain(pts, t) {
+// `samples` (optional) overrides the per-segment Catmull-Rom sample count — used by
+// wide ribbons (grade-separated highways, W≈17 m) that need denser arcs so the offset
+// stroke doesn't gap/facet on tight bends (RIBBONS §3.3). Default = round(t*8).
+export function smoothChain(pts, t, samples) {
   if (!Array.isArray(pts) || pts.length < 3) return null
   let anyBend = false
   const breaks = []   // interior corner vertices to preserve
@@ -67,7 +70,7 @@ export function smoothChain(pts, t) {
     if (a > CORNER_TOL_DEG) breaks.push(i)
   }
   if (!anyBend) return null                       // dead straight → untouched
-  const samplesPerSeg = Math.max(1, Math.round(t * 8))
+  const samplesPerSeg = (Number.isFinite(samples) && samples > 0) ? samples : Math.max(1, Math.round(t * 8))
   if (!breaks.length) return centripetalRun(pts, samplesPerSeg)   // one gentle curve
   // Split into runs at each corner; smooth each; stitch (drop the shared
   // corner vertex repeated at run seams) so the corner stays a hard vertex.
