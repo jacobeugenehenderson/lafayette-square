@@ -3037,6 +3037,13 @@ export function deriveLayers(highways) {
       anchor: st.anchor || 'center',
       innerSign: st.innerSign || 0,
       pairId: st.pairId || null,
+      // [D6] oneway was dropped here until now → Survey's One-way checkbox
+      // always rendered unchecked on divided carriageways. Carry it through
+      // (plus phase.role/pairKey, so the cross-section-origination half of the
+      // divided-road authoring goal can read the carriageway identity without
+      // re-deriving it). See HANDOFF-divided-carriageway-weld.md.
+      oneway: !!st.oneway,
+      ...(st.phase ? { phase: { role: st.phase.role || null, kind: st.phase.kind || null, pairKey: st.phase.pairKey || null, ...(st.phase.medianWidth != null ? { medianWidth: st.phase.medianWidth } : {}) } } : {}),
       highway: st.highway || 'residential',
       type: st.type || 'residential',
       // Operator-intent fields the V2 emitter consumes. Designer reads

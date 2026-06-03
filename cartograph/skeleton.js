@@ -184,6 +184,37 @@ function stationOverlapFracXZ(aCoords, bCoords) {
   return overlap / shorter
 }
 
+// The full 4-gate carriageway-pair test, in one place so every caller applies
+// the SAME gates — including the station-overlap gate (commit 8ffd795). Used by
+// analyzePhases (fragment level, pre-weld) AND repairDividedPairs (merged-chain
+// level, post-longitudinal-weld). Returns { paired, gap } — gap is the symmetric
+// mean perpendicular distance (= the median width) when the candidate pairs.
+//   1. antiparallel        — tangent dot < DIVIDED_MIN_TAN_DOT (oneway pairs run
+//                            opposite directions)
+//   2. length-ratio        — shorter/longer ≥ DIVIDED_MIN_LEN_RATIO (rejects stubs)
+//   3. symmetric gap        — max of the two directional means ≤ DIVIDED_MAX_GAP
+//                            (a short fragment can't claim a long partner cheaply)
+//   4. station-overlap      — the two must run BESIDE each other along the corridor
+//                            axis, not merely be near + antiparallel (drops the
+//                            longitudinally-staggered stub pair the gap clamp lets slip)
+function scoreOnewayPair(aCoords, bCoords) {
+  const aTan = avgTangentXZ(aCoords)
+  const bTan = avgTangentXZ(bCoords)
+  const dot = aTan.x * bTan.x + aTan.z * bTan.z
+  if (dot > DIVIDED_MIN_TAN_DOT) return { paired: false }
+  const aLen = polylineLengthXZ(aCoords)
+  const bLen = polylineLengthXZ(bCoords)
+  const lenRatio = Math.min(aLen, bLen) / Math.max(aLen, bLen)
+  if (lenRatio < DIVIDED_MIN_LEN_RATIO) return { paired: false }
+  const gap = Math.max(
+    meanPerpDistanceXZ(aCoords, bCoords),
+    meanPerpDistanceXZ(bCoords, aCoords),
+  )
+  if (gap > DIVIDED_MAX_GAP) return { paired: false }
+  if (stationOverlapFracXZ(aCoords, bCoords) < DIVIDED_MIN_STATION_OVERLAP) return { paired: false }
+  return { paired: true, gap, lenRatio }
+}
+
 function analyzePhases(name, fragments) {
   const oneway = fragments.filter(f => f.tags?.oneway === 'yes')
   const bidi = fragments.filter(f => f.tags?.oneway !== 'yes')
@@ -195,29 +226,11 @@ function analyzePhases(name, fragments) {
   const cand = []
   for (let i = 0; i < oneway.length; i++) {
     const A = oneway[i]
-    const aLen = polylineLengthXZ(A.coords)
-    const aTan = avgTangentXZ(A.coords)
     for (let j = i + 1; j < oneway.length; j++) {
       const B = oneway[j]
-      const bLen = polylineLengthXZ(B.coords)
-      const bTan = avgTangentXZ(B.coords)
-      const dot = aTan.x * bTan.x + aTan.z * bTan.z
-      if (dot > DIVIDED_MIN_TAN_DOT) continue
-      const lenRatio = Math.min(aLen, bLen) / Math.max(aLen, bLen)
-      if (lenRatio < DIVIDED_MIN_LEN_RATIO) continue
-      // Symmetric gap: take max of the two directional means so a short
-      // fragment can't claim a long partner cheaply (its sliver of
-      // overlap dominates the one-way mean).
-      const gap = Math.max(
-        meanPerpDistanceXZ(A.coords, B.coords),
-        meanPerpDistanceXZ(B.coords, A.coords),
-      )
-      if (gap > DIVIDED_MAX_GAP) continue
-      // 4th gate: the two must actually run BESIDE each other along the
-      // corridor, not merely be near + antiparallel. Drops longitudinally-
-      // staggered stub pairs (Truman #5/#6) that the gap clamp lets slip.
-      if (stationOverlapFracXZ(A.coords, B.coords) < DIVIDED_MIN_STATION_OVERLAP) continue
-      cand.push({ A, B, gap, lenRatio })
+      const r = scoreOnewayPair(A.coords, B.coords)
+      if (!r.paired) continue
+      cand.push({ A, B, gap: r.gap, lenRatio: r.lenRatio })
     }
   }
   cand.sort((a, b) => a.gap - b.gap)
@@ -382,6 +395,157 @@ function weldChains(fragments, signatureByOsmId, pairKeyByOsmId) {
     chains.push(chain)
   }
   return chains
+}
+
+// --- Step 2.5: longitudinal carriageway weld (D1) -------------------------
+//
+// weldChains gates on (signature, pairKey) equality. That gate is CORRECT —
+// it blocks LATERAL fusion (splicing opposing carriageways into one super-
+// chain: the Lafayette 22→1 / Park-Ave-bow bug). But it ALSO leaves a single
+// carriageway shattered into pieces whenever its own colinear continuation
+// carries a different signature — which is exactly what happens on a divided
+// road: the pairing turns on/off along the corridor (the two carriageways'
+// junctions are staggered), so one physical carriageway is
+//   [divided-A/pairK1] → [single-oneway/spine] → [divided-?/pairK2] → …
+// — three or four (signature,pairKey) values along one straight strand, so
+// weldChains leaves three or four chains. Truman: 8 chains for one road.
+//
+// This pass fuses those LONGITUDINAL continuations that weldChains can't:
+// tail-to-head, heading-continuous, at a degree-2 node, oneway-only, and
+// NEVER flipped. Because it never flips and requires heading continuity, it
+// cannot join the two opposing carriageways (they run antiparallel and meet
+// nowhere tail-to-head with continuous heading) — the lateral guard the
+// (signature,pairKey) gate provided stays in force. The longitudinal-vs-
+// lateral distinction is the whole point: weldChains owns lateral (keeps
+// carriageways apart), this owns longitudinal (makes each one continuous).
+//
+// Scope = oneway only. A carriageway is oneway end-to-end; bidi colinear
+// continuations are already fused by weldChains (same signature/pairKey), so
+// restricting here keeps undivided bidi corridors untouched and guarantees
+// never-flip is always meaningful.
+//
+// Returns { chains, didMerge }. didMerge gates repairDividedPairs (below):
+// the merge crosses the per-fragment A/B role labels, so a merged group's
+// pairing must be re-derived from geometry; an unmerged group keeps the
+// fragment-level pairing analyzePhases already assigned (zero regression).
+const LONGITUDINAL_MIN_HEADING_DOT = 0.85  // cos(~32°). The continuation must be
+                                           // a near-colinear extension, not a
+                                           // junction branch turning off the axis.
+
+// End tangents at a join, using the segment adjacent to the joined endpoint.
+function tailTangent(coords) {  // direction LEAVING the chain at its tail
+  for (let i = coords.length - 1; i > 0; i--) {
+    const dx = coords[i].x - coords[i - 1].x, dz = coords[i].z - coords[i - 1].z
+    const L = Math.hypot(dx, dz)
+    if (L > 1e-6) return { x: dx / L, z: dz / L }
+  }
+  return { x: 0, z: 0 }
+}
+function headTangent(coords) {  // direction ENTERING the chain at its head
+  for (let i = 1; i < coords.length; i++) {
+    const dx = coords[i].x - coords[i - 1].x, dz = coords[i].z - coords[i - 1].z
+    const L = Math.hypot(dx, dz)
+    if (L > 1e-6) return { x: dx / L, z: dz / L }
+  }
+  return { x: 0, z: 0 }
+}
+function headingDot(t1, t2) { return t1.x * t2.x + t1.z * t2.z }
+
+function weldLongitudinal(chains) {
+  // Vertex multiplicity across the whole group (endpoints AND interior). A
+  // continuation node where only the two joined endpoints sit reads 2; a
+  // third chain ending or passing through (a Y-branch / junction) reads ≥3
+  // and is excluded — that is the "degree-3+ is a junction, not a weld point"
+  // rule, scoped to this corridor's own chains.
+  const vCount = new Map()
+  for (const c of chains) for (const p of c.coords) {
+    const k = vKey(p); vCount.set(k, (vCount.get(k) || 0) + 1)
+  }
+  const deg2 = (p) => vCount.get(vKey(p)) === 2
+
+  const pool = chains.map(c => ({ ...c, coords: c.coords.slice(), sources: c.sources.slice() }))
+  const out = []
+  let didMerge = false
+  while (pool.length) {
+    let chain = pool.shift()
+    let extended = true
+    while (extended) {
+      extended = false
+      // Only oneway carriageways weld here (see scope note above).
+      if (!chain.oneway) break
+      for (let i = 0; i < pool.length; i++) {
+        const c = pool[i]
+        if (!c.oneway) continue
+        const chainHead = chain.coords[0]
+        const chainTail = chain.coords[chain.coords.length - 1]
+        const cHead = c.coords[0]
+        const cTail = c.coords[c.coords.length - 1]
+
+        // tail-to-head: chain → c. Direction preserved (no flip). Require the
+        // join node be degree-2 and the heading continuous across it.
+        if (ptsEqual(chainTail, cHead) && deg2(chainTail) &&
+            headingDot(tailTangent(chain.coords), headTangent(c.coords)) >= LONGITUDINAL_MIN_HEADING_DOT) {
+          chain.coords = chain.coords.concat(c.coords.slice(1))
+          chain.sources.push(...c.sources)
+          pool.splice(i, 1); extended = true; didMerge = true; break
+        }
+        // head-to-tail: c → chain (prepend). Also direction-preserving.
+        if (ptsEqual(chainHead, cTail) && deg2(chainHead) &&
+            headingDot(tailTangent(c.coords), headTangent(chain.coords)) >= LONGITUDINAL_MIN_HEADING_DOT) {
+          chain.coords = c.coords.slice(0, -1).concat(chain.coords)
+          chain.sources.unshift(...c.sources)
+          pool.splice(i, 1); extended = true; didMerge = true; break
+        }
+        // No tail-to-tail / head-to-head: those FLIP one chain, which is how
+        // opposing carriageways fuse. Never flip — the lateral guard.
+      }
+    }
+    out.push(chain)
+  }
+  return { chains: out, didMerge }
+}
+
+// Re-derive divided-carriageway pairing on a group's chains AFTER the
+// longitudinal weld. Necessary because the per-fragment A/B role labels do
+// NOT survive the merge: one physical strand can hold a carriageway-A piece
+// from one pair and a carriageway-B piece from another (Truman's east strand
+// = #0[A,K1] + spine + #3[B,K2] + spine), so the inherited signature/pairKey
+// is meaningless on a merged chain. We re-pair the merged oneway chains with
+// the SAME 4 gates analyzePhases uses (scoreOnewayPair) and stamp a fresh
+// shared pairKey + A/B signature + medianWidth on the two carriageways. The
+// emergent median then falls out of one continuous inner-edge chain per side.
+function repairDividedPairs(chains) {
+  const oneway = chains.filter(c => c.oneway)
+  const cand = []
+  for (let i = 0; i < oneway.length; i++) {
+    for (let j = i + 1; j < oneway.length; j++) {
+      const r = scoreOnewayPair(oneway[i].coords, oneway[j].coords)
+      if (!r.paired) continue
+      cand.push({ a: oneway[i], b: oneway[j], gap: r.gap })
+    }
+  }
+  cand.sort((x, y) => x.gap - y.gap)  // cleanest (tightest) pairs claim first
+  const partnered = new Set()
+  for (const { a, b, gap } of cand) {
+    if (partnered.has(a) || partnered.has(b)) continue
+    partnered.add(a); partnered.add(b)
+    // Fresh pairKey shared by both carriageways, stable across the bake:
+    // min/max over the union of source osmIds. Distinct from any fragment-
+    // level pairKey (which derive no longer sees for this corridor).
+    const ids = [...a.sources, ...b.sources]
+    const pairKey = `${Math.min(...ids)}-${Math.max(...ids)}`
+    const mw = +gap.toFixed(2)
+    a.signature = 'divided-A'; a.pairKey = pairKey; a.medianWidth = mw
+    b.signature = 'divided-B'; b.pairKey = pairKey; b.medianWidth = mw
+  }
+  // Any oneway chain that was divided at the fragment level but found no
+  // partner after the merge demotes to a plain one-way spine (no median).
+  for (const c of oneway) {
+    if (partnered.has(c)) continue
+    if (c.signature === 'divided-A' || c.signature === 'divided-B') {
+      c.signature = 'single-oneway'; c.pairKey = null; c.medianWidth = undefined
+    }
+  }
 }
 
 // Chain length in meters (used by shadow-drop and simplification metrics).
@@ -645,7 +809,36 @@ function main() {
   }
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
-    const chains = splitAtFolds(weldChains(fragments, signatureByOsmId, pairKeyByOsmId))
+    const preMerge = splitAtFolds(weldChains(fragments, signatureByOsmId, pairKeyByOsmId))
+    let chains = preMerge
+    // D1 longitudinal weld: fuse each carriageway's own colinear oneway
+    // continuation that weldChains' (signature,pairKey) gate left fragmented,
+    // then re-derive the A/B pairing on the merged carriageways (the per-
+    // fragment role labels don't survive the merge). weldLongitudinal copies
+    // its input, so preMerge stays intact as a fallback.
+    const lw = weldLongitudinal(preMerge)
+    if (lw.didMerge) {
+      const merged = lw.chains
+      repairDividedPairs(merged)
+      // SAFETY VALVE — accept the merge only if it didn't ORPHAN a carriageway.
+      // A complex interchange corridor (Officer David Haynes: two carriageways
+      // that splay 405m apart at an interchange) merges into long chains the
+      // re-pairing can't match (gap 85m > 60m) — leaving the fragments that
+      // WERE paired now unpaired = a median lost. In that case revert to the
+      // proven fragment-level pairing. A corridor can only improve (clean
+      // continuous carriageways, e.g. Truman 8→2) or stay identical, never
+      // regress below its pre-weld carriageway count.
+      const preDividedIds = new Set()
+      for (const c of preMerge) {
+        if (c.signature === 'divided-A' || c.signature === 'divided-B') {
+          for (const id of c.sources) preDividedIds.add(id)
+        }
+      }
+      const orphaned = merged.some(c =>
+        !(c.signature === 'divided-A' || c.signature === 'divided-B') &&
+        c.sources.some(id => preDividedIds.has(id)))
+      chains = orphaned ? preMerge : merged
+    }
     // One street per surviving chain. Divided roads emit two streets
     // (one per carriageway) — medians are emergent downstream.
     chains.forEach((c, i) => {
@@ -661,7 +854,11 @@ function main() {
         { phase: {
           kind: ph.kind, role: ph.role, corridorName: name, pairKey: c.pairKey || null,
           // Median width = the paired-carriageway gap (Part 1.6); null for undivided.
-          ...(c.pairKey && gapByPairKey.has(c.pairKey) && { medianWidth: gapByPairKey.get(c.pairKey) }),
+          // A re-paired (longitudinally-merged) carriageway carries its own fresh
+          // medianWidth; fragment-level pairs look up the pre-weld gapByPairKey.
+          ...(c.medianWidth != null
+            ? { medianWidth: c.medianWidth }
+            : (c.pairKey && gapByPairKey.has(c.pairKey) && { medianWidth: gapByPairKey.get(c.pairKey) })),
         } },
       ))
     })
@@ -890,7 +1087,13 @@ function main() {
 
 function makeStreet(id, name, sourceTags, chain, extras = {}) {
   const highway = sourceTags?.highway || 'residential'
-  const oneway = sourceTags?.oneway === 'yes'
+  // [D6] oneway is per-CHAIN, not per-group. sourceTags is the group's first
+  // fragment, which on a mixed corridor (e.g. Lafayette: bidi fragments + oneway
+  // carriageways) mis-reports every chain as the first fragment's direction —
+  // leaving divided carriageways flagged oneway=false. The welded chain carries
+  // its own oneway (the seed fragment's flag, true for any carriageway); prefer
+  // it so Survey's One-way checkbox reads the carriageway honestly.
+  const oneway = typeof chain?.oneway === 'boolean' ? chain.oneway : (sourceTags?.oneway === 'yes')
   const lanes = parseInt(sourceTags?.lanes, 10)
   return {
     id,
