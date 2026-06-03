@@ -1,7 +1,11 @@
 # HANDOFF — Dead-end spike → block-face slack (prune pendant edges + stroke stubs)
 
 **State:** dispatch-ready. **Agent: WARM → Theodolite** (built the grade-sep `extractFaces`-filter + separate-stroke pattern this fix REUSES, in this exact file). *If cold → FRESH, but read the grade-sep precedent first.* **Domain:** cartograph SHAPE — `src/lib/tileGround.js` (`extractFaces` + `buildTileGround`).
-**Drafted:** 2026-06-03 (Boz). **Re-bake ordering:** branch off current `cartograph-looks-pass-ab`; coordinate the LS re-bake with Boz.
+**Drafted:** 2026-06-03 (Boz). **Re-dispatch refresh:** 2026-06-04 (Boz), post-consolidation.
+
+**⚠️ Branch + bake (read before you start):**
+- **Branch off the now-D1-inclusive trunk `cartograph-looks-pass-ab` @ `49509d5`** (it carries the D1 carriageway weld + grade-sep + station-overlap) **in your OWN git worktree** — `isolation: "worktree"` ([[feedback_dispatch_agents_in_worktrees]]; shared-tree branch-switching + a stale base is exactly what stranded the last census). **Do NOT build on `theodolite-dead-end-prune` @ `804bdc4` in place** — that WIP forked *before* D1, off a stale base. Read `804bdc4` as **prior art** (it's the partial prune+stroke you may salvage), but rebase/re-apply your work onto the D1-inclusive trunk; don't extend the stale branch.
+- **This re-bake IS the integrated D1+D5 bake** — D1 is already in the base, so there is no fragile "merge two branches' `.bin`s" step. Bake once, clean, off your D1-inclusive branch. **Coordinate the final LS re-bake with Boz** (don't race ground artifacts with any other live session).
 
 ---
 
@@ -19,6 +23,13 @@ Jacob's eye on these two states (clean blocks + thin stubs, no triangles) IS the
 3. **`tileGround.js:600-606, 964`** — the grade-sep precedent you built: filter `!s.gradeSeparated` out of `extractFaces`, stroke the excluded streets separately as flat asphalt strips ("like alleys"). **This fix is the same pattern applied to pendant edges.** Mirror it.
 4. **Cap typology** — `sectionPass` `roundTips`/`bluntTips`/`wrapDisks` (≈520-560) + ledger row **G8** + `HANDOFF-dead-end-typology` (the **Spike / Stub-with-cap / Stub-no-cap** types). **Reconcile** the pruned-stub stroke with this: round cap → asphalt disk + ped wraps (cul-de-sac); blunt/none → flat asphalt, LU abuts, no wrap. Don't regress G8.
 5. `feedback`: `68b1905` (round-tip scallop fix) — adjacent prior art.
+
+## Scope — DECIDED: (b), with two carry-notes (Jacob, 2026-06-03/04)
+
+**(b) = prune the spikes-into-blocks; leave round-cap cul-de-sacs woven.** Prune + stroke only the *non-round* pendants (blunt / none — the slack-triangle offenders); a pendant whose `capEnds === 'round'` is **skipped** (stays woven as today). The uniform-ped-wrap unification (option a) stays deferred. This narrows the "stroke per typology" body below — round-cap cul-de-sacs are *out of scope this pass*, not re-stroked.
+
+- **Carry-note (i) — `capEnds==='round'`→skip is a PROXY, not the spec.** The real definition of done is the no-regression gate: **the Mackay cul-de-sac (and every round cul-de-sac) survives unchanged, AND the slack triangles clear.** Validate the discriminator against the *actual* dead-end population — if a slack-triangle offender happens to carry `capEnds:'round'`, or a clean cul-de-sac carries a non-round cap, the proxy is wrong and you **flag Boz** rather than trusting the flag. The eye on Mackay-survives + triangles-gone is the gate; the `capEnds` test is just the cheap first cut.
+- **Carry-note (ii) — true degree-1 pendants ONLY (the rule holds post-D1).** D1 welded Truman's carriageways, so the median tiles now *span* (lower hazard than yesterday) — but the rule is unchanged: prune triggers on **degree-1 topology**, never on triangular-sliver *shape*. A shape-based prune would still wrongly eat a divided-carriageway median. Verify on Truman: the (now more continuous) median survives your prune untouched.
 
 ## The fix (two parts — the grade-sep pattern)
 
