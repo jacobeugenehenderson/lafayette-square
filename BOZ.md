@@ -89,7 +89,9 @@ This is the **LiDAR lockstep**: State/the ledger is the dense point-cloud captur
 1. **Coordinator memory** — your continuity (read first; it's remembering).
 2. **The doc index** — repo-root `README.md` § "Documentation map" maps the whole landscape (4 domains × Reference/State/Diary + cross-domain/strategic + the HANDOFF/State layer). Start there to find any doc.
 3. **`cartograph/BACKLOG.md`** — where we are + what's next (State).
-4. The **Reference layer** for the area you're touching — `PIPELINE.md` (the address-map spine) → `RIBBONS.md` / `FEATURES.md` / `ARCHITECTURE.md`.
+4. The **Reference layer** for the area you're touching — `PIPELINE.md` (the address-map spine) → `RIBBONS.md` / `FEATURES.md` / `ARCHITECTURE.md`. **Read ALL of the relevant documentation, not a skim** — the full set above, end to end, before you form a plan.
 5. The **active HANDOFFs** the backlog points to, for in-flight detail.
 
-> *Memorialized 2026-05-31 from the doc-architecture conversation. This doc is itself Reference — keep it one-kind, prune it as it ages.*
+> ⛔ **THEN — STANDUP WITH JACOB BEFORE ANY CODING OR DISPATCH (added 2026-06-03, the Truman day).** After the full read, **meet Jacob and talk through the day's plan with fresh eyes FIRST.** Do NOT barrel into drafting briefs, diagnosing, or dispatching agents solo. The fresh-eyes sync is where feature-mislabelings, stale assumptions, and coordination tangles get caught *before* they cost a day — on 2026-06-03 Boz combed Truman symptom-by-symptom and mislabeled features repeatedly (median vs dead-end vs triangle) + let branch sprawl strand a census; a 5-minute standup first would have framed it right. **Read everything → align with Jacob → then code.** First thing, every day.
+
+> *Memorialized 2026-05-31 from the doc-architecture conversation; standup step added 2026-06-03. This doc is itself Reference — keep it one-kind, prune it as it ages.*
