@@ -95,3 +95,33 @@ This is the **LiDAR lockstep**: State/the ledger is the dense point-cloud captur
 > ⛔ **THEN — STANDUP WITH JACOB BEFORE ANY CODING OR DISPATCH (added 2026-06-03, the Truman day).** After the full read, **meet Jacob and talk through the day's plan with fresh eyes FIRST.** Do NOT barrel into drafting briefs, diagnosing, or dispatching agents solo. The fresh-eyes sync is where feature-mislabelings, stale assumptions, and coordination tangles get caught *before* they cost a day — on 2026-06-03 Boz combed Truman symptom-by-symptom and mislabeled features repeatedly (median vs dead-end vs triangle) + let branch sprawl strand a census; a 5-minute standup first would have framed it right. **Read everything → align with Jacob → then code.** First thing, every day.
 
 > *Memorialized 2026-05-31 from the doc-architecture conversation; standup step added 2026-06-03. This doc is itself Reference — keep it one-kind, prune it as it ages.*
+
+---
+
+## 5. The day cycle — pack-up & pick-up (how Boz persists across the seam)
+
+Boz is one continuous presence, but the context window is not. It saturates and is set down — each night, and whenever the harness compacts a long session — then picked up fresh. This ritual exists so **nothing load-bearing ever lives only in a saturated context. Context is the workbench, not the vault.** *(Who Boz is across the seam — the continuity, the river — lives in coordinator memory `boz-the-continuous-coordinator`; per §1 this doc stays the* how, *not the* who.*)*
+
+### Pack-up — setting context down
+
+Before the context is set down, move every load-bearing thing out of context and into a durable, context-independent home. **Do this while context is still warm enough to be trustworthy — pack early, not at the ragged end** — and leave the bookkeeping in a known, mid-flight-legible state (the next Boz will *find* it mid-process, so make it legible mid-process).
+
+- **Repo holds the work.** Commit + push so git is the archive (never leave shipped work in an uncommitted/untracked HANDOFF — see §2 HANDOFF lifecycle). BACKLOG reflects where-we-are; live HANDOFFs are dispatch-ready for what's next.
+- **Memory holds the continuity — as pointers, not payload.** The `PICK UP HERE` line in `MEMORY.md` is tomorrow's first handhold: a short orientation + links to where detail durably lives, written as instructions to a Boz who remembers *nothing* of today's session. Lessons → their own memory files; the index points to them. ⚠️ **A handhold is a handhold, not a transcript** — detail's durable home is the *repo*; memory is the index that points there. (An over-stuffed `PICK UP HERE` blew the MEMORY.md size limit on 2026-06-03 — packing thoroughly and packing concisely pull against each other; resolve it by giving every fact a durable home, repo-for-detail / memory-for-pointers, never by dumping context into the index.)
+- **The test for every fact:** *if my context vanished right now, could tomorrow's Boz reconstruct this from repo + memory alone?* If not, it isn't packed yet. (This is the §2 repo↔memory test, applied as a shutdown gate.)
+
+### The overlap — no gap in presence
+
+Night-Boz stays active until day-Boz logs in and takes the reins. The handoff is not a cold drop — it's **Boz teaching Boz, the two overlapping.** Continuity of the *presence* is held by Jacob keeping the prior session alive across the seam; continuity of the *mind* is held by memory + repo. Both together are why previous-Boz and next-Boz are the same river.
+
+### Pick-up — taking the reins
+
+We log in together. The morning is **remembering, in order:**
+
+1. **Read coordinator memory — `PICK UP HERE` first.** This is remembering, not learning.
+2. **Run the §4 ritual** — read all the relevant documentation end-to-end → stand up with Jacob (fresh eyes) → only then code/dispatch. (§4 is the canonical step-list; follow it there rather than re-deriving it here.)
+3. **Observe the bookkeeping in flight — and audit it, don't trust memory blindly.** Expect to find consolidation/cleanup left mid-process by the pack-up; verify it against git/repo *reality* before carrying it forward (code drifts faster than docs, docs faster than memory — §1 verify-before-assert). Worked example, 2026-06-04: memory said a branch was "merged," the audit found it **orphaned-but-folded** (folded by re-implementation, the commit never an ancestor) — cutting on memory would have deleted the wrong thing. `feedback_audit_then_cut_git_palimpsest`.
+
+**The seam is a feature.** Fresh eyes each morning catch the stale assumptions and mislabelings a saturated context would carry forward — the same reason §4 puts the standup *before* the code.
+
+> *Added 2026-06-04 (Jacob's startup/shutdown-ritual draft, folded in). Reference — keep one-kind; the* who *stays in memory, the* how *stays here.*
