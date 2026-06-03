@@ -326,6 +326,7 @@ export default function BlockGeometryV2Debug({
     return (layerColors && layerColors[layer]) || DEFAULT_LAYER_COLORS[layer] || BAND_COLORS[band]
   }
   const asphaltCol  = colorFor('asphalt')
+  const highwayCol  = colorFor('highway')
   const curbCol     = colorFor('curb')
   const treelawnCol = colorFor('treelawn')
   const sidewalkCol = colorFor('sidewalk')
@@ -613,6 +614,7 @@ export default function BlockGeometryV2Debug({
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
+      highway:  ringsToFlatGeo(tg.highway,  0.041, true),
       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
       cornerFillets: tg.cornerFillets || {},
     }
@@ -862,6 +864,7 @@ export default function BlockGeometryV2Debug({
   const bandMats = useMemo(() => ({
     asphalt:           makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, selectedCorridor: true }),
+    highway:           makeMaterial(highwayCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     treelawn:          makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     treelawnSelected:  makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
     // Per-LU treelawn materials — opaque variants keyed by LU so each
@@ -888,7 +891,7 @@ export default function BlockGeometryV2Debug({
     curb:              makeMaterial(curbCol,     PRI.curb,     bandFade, { measureActive, surveyActive }),
     cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, bandFade, { surveyActive, editing: surveyEditing }),
     cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { surveyActive, editing: surveyEditing }),
-  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade])
+  }), [makeMaterial, asphaltCol, highwayCol, treelawnCol, sidewalkCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade])
 
   // Non-street ribbons (alley/footway/cycleway/steps/path). Pavement-only
   // strips buffered from each ribbon's pavedWidth via the shared helper
@@ -1045,6 +1048,9 @@ export default function BlockGeometryV2Debug({
         )}
         {asphaltVisible && tileGeos?.asphalt && (
           <mesh geometry={tileGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
+        )}
+        {highwayVisible && tileGeos?.highway && (
+          <mesh geometry={tileGeos.highway} renderOrder={PRI.asphalt} receiveShadow material={bandMats.highway} />
         )}
       </group>
     )

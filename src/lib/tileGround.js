@@ -953,15 +953,22 @@ export function buildTileGround(ribbons, opts = {}) {
   // side, where reading the chain is legitimate — Jacob's Option 1.)
   const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat)
 
-  // Grade-separated roads paint as flat asphalt strips — excluded from faces above,
-  // stroked here off their own centerline at the frame's pavementHW half-width. One
-  // flat level (no z-separation yet); stencil-clipped with the rest below.
+  // Grade-separated roads paint as flat strips — excluded from faces above, stroked
+  // here off their own centerline at the frame's pavementHW half-width. One flat level
+  // (no z-separation yet); stencil-clipped with the rest below. HIGHWAY-class ones
+  // route to their OWN `highway` output (its own layer toggle + material, matching the
+  // figure-ground `highway` group) so the freeway can be toggled/shaded apart from
+  // local streets; local grade-sep bridges stay asphalt.
+  const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
+  const Hacc = []
   for (const s of gradeSep) {
     const sm = smooth > 0 ? (smoothChain(s.points, smooth) || s.points) : s.points
     const hw = Math.max(s.measure?.left?.pavementHW || 0, s.measure?.right?.pavementHW || 0)
-    if (hw > 1e-6) Aacc.push(...strokeOpen(sm, hw))
+    if (hw <= 1e-6) continue
+    ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))
   }
   let asphalt = unionRings(Aacc)
+  let highway = unionRings(Hacc)
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
   if (stencil) {
@@ -1056,6 +1063,7 @@ export function buildTileGround(ribbons, opts = {}) {
     pushLu(tlByLu, perimClass, pTree)
     pushLu(luByLu, perimClass, differenceRings(perimeter, unionRings([...pAsphalt, ...pCurb, ...pTree, ...pSide])))
     asphalt  = intersectRings(asphalt,  [stencil])
+    highway  = intersectRings(highway,  [stencil])
     curb     = intersectRings(curb,     [stencil])
     sidewalk = intersectRings(sidewalk, [stencil])
   }
@@ -1079,5 +1087,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _shapeArtifact }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _shapeArtifact }
 }

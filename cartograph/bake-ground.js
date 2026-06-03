@@ -307,6 +307,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
     for (const p of ringsToHoledPolys(rings)) byMaterial.get(key).push(p)
   }
   pushClipperRings('asphalt',  pr.asphalt)
+  pushClipperRings('highway',  pr.highway)   // grade-separated highway-class roads → own layer/material
   pushClipperRings('curb',     pr.curb)
   pushClipperRings('sidewalk', pr.sidewalk)
   for (const [lu, rings] of Object.entries(pr.treelawnByLu)) pushClipperRings(`treelawn:${lu}`, rings)
