@@ -2374,6 +2374,17 @@ export function deriveLayers(highways) {
       ...(s.seed ? { seed: s.seed } : {}),
       ...(s.caps ? { caps: s.caps } : {}),
       ...(s.continuesAs ? { continuesAs: s.continuesAs } : {}),
+      // [Part 2 grade separation] Carry the frame's grade flag through so the
+      // face consumer (tileGround.extractFaces) can exclude grade-separated
+      // roads from the planar face walk — the fix for the interchange-triangle /
+      // sliver / false-block degenerates, which are grade-separated centerlines
+      // crossing in 2D without a shared vertex. `gradeSeparated` is the operative
+      // one-field filter (`streets.filter(s => !s.gradeSeparated)`); layer/bridge/
+      // tunnel are the raw facts for any finer rule. See HANDOFF-onframe-faces.
+      gradeSeparated: !!s.gradeSeparated,
+      ...(s.layer ? { layer: s.layer } : {}),
+      ...(s.bridge ? { bridge: true } : {}),
+      ...(s.tunnel ? { tunnel: true } : {}),
     }
     // Skel owns geometric couplers; overlay-authored couplers override.
     if (ov?.couplers) street.couplers = ov.couplers
@@ -3048,6 +3059,15 @@ export function deriveLayers(highways) {
       ...(st.seed ? { seed: st.seed } : {}),
       ...(st.caps ? { caps: st.caps } : {}),
       ...(st.continuesAs ? { continuesAs: st.continuesAs } : {}),
+      // [Part 2 grade separation] The operative exclude-from-faces flag + raw
+      // facts, surviving the serializer whitelist so they reach ribbons.streets.
+      // CONSUMER: tileGround.extractFaces filters `streets.filter(s => !s.gradeSeparated)`
+      // before the planar walk — clears the interchange-triangle/sliver/false-block
+      // degenerates (grade-separated centerlines crossing without a shared vertex).
+      gradeSeparated: !!st.gradeSeparated,
+      ...(st.layer ? { layer: st.layer } : {}),
+      ...(st.bridge ? { bridge: true } : {}),
+      ...(st.tunnel ? { tunnel: true } : {}),
       intersections: st.intersections.map(ix => ({
         ix: ix.ix,
         withStreets: ix.with.streets.filter(s => s.name !== st.name).map(s => s.name),
