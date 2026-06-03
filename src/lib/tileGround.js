@@ -872,6 +872,12 @@ export function buildTileGround(ribbons, opts = {}) {
     // emit). The fillet operates on the inboard curb ring, so map each curb
     // corner back to its nearest centerline node for the radius.
     const vertR = tile.ring.map((V, i) => resolveVertR(V, tile.edges, i) * scale)
+    // Round dead-end cap: the asphalt cap is ALREADY a clean round disk (circlePoly,
+    // :849). Letting filletRing round the disk↔stadium seam corners there turns the
+    // smooth cap into multi-lobe scallops (trace: a simple stub goes aFill 20 → iA 33
+    // with 2 cap fillets; complex caps hit 5). Zero R at each round-tip node so the
+    // cap stays the disk arc — the curb/ped offsets then wrap it cleanly, no lobes.
+    for (const t of roundTips) { const ti = nearestVertexIndex(t.p, tile.ring); if (ti >= 0) vertR[ti] = 0 }
     const cornerRfn = (pt) => nearestVertR(pt, tile.ring, vertR)
     const fSink = []
     const iA = filletRings(differenceRings([tile.ring], aFill), cornerRfn, fSink)   // rounded asphalt-inner (curb line)
