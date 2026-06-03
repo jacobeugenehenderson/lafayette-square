@@ -1,70 +1,66 @@
-# HANDOFF — "Too much line" — the over-densification root cause (thorns / bulge-bow / dead-end-triangles)
+# HANDOFF — The §Wall / "better bones": simplify the skeleton to polygon-ready BEFORE Survey
 
-**State:** IN-FLIGHT — STEP-1 diagnosis DONE; **fix placement DECIDED = Option 1, sequenced** (see below). Fresh agent to implement. **Domain:** cartograph SHAPE (Survey, 2D) — spans `skeleton.js` → `derive.js` → `tileGround.js`. **Drafted/diagnosed:** Boz + Jacob + the root-cause agent, 2026-06-04.
+**State:** IN-FLIGHT — diagnosis DONE; **reframed 2026-06-04 from "too-much-line tweak" → the §Wall / better-bones program** (the documented highest-leverage item; the doctrine was in the canon all along). Fresh agent (Chord) on it. **Domain:** cartograph SHAPE — `skeleton.js` (the First Bake) → `derive.js` → `tileGround.js`. **Drafted/diagnosed:** Boz + Jacob + the root-cause agent, 2026-06-04.
 
 ---
 
-## The reframe (the knot — Jacob's eye on the live 2D Survey render)
+## The goal, in the canon's own words (read these FIRST — they are the brief)
 
-A cluster of artifacts is **one root cause**, not separate bugs:
-- **Arrowhead thorns** on smoothed curves/loops (Benton Place — inward spikes on the thin-loop inner edges).
-- **Rectangular / step artifacts** on straight sequences.
-- General **bulge-and-bow** in the band polygons.
-- The **"dead-end triangles."**
+This is not a new problem. It is the **Data Wall**, and the doctrine was written down:
 
-**Root = "too much line"** (Jacob's words): the centerlines are **over-densified**, so the tile-ring polygons carry far more vertices (+ tiny ripples) than the geometry warrants. When those rings are offset **inward** for the ped bands, the excess line has nowhere to go → **bulges, bows, and pinches into thorns** at thin spots. Classic `project_skeleton_is_the_first_bake` doctrine: the simpler the skeleton output, the healthier everything downstream.
+- **`PIPELINE.md §Wall` (L50) — "The Skeleton is The First Bake" (Jacob's words, memorialized):** *"By the time the operator leaves the Survey tool, we should be holding an **extremely simplified, polygon-ready dataset** — and chains should be **dead**. The Data Wall should sit at **P2**."*
+- **`PIPELINE.md` P1 §Optimize (L95) — the lever, named:** *"the simpler this output, the healthier everything downstream — **chain/node minimization (Douglas-Peucker on OSM saw-tooth) is the lever** that would let the Data Wall move to P2."*
+- **`FEATURES.md` (L23):** *"Most regressions in this repo trace to someone re-deriving a **points-and-chains framing for a problem the polygon system already answers**."*
+- **`cartograph/BACKLOG.md` — the "better bones" item** (boundary-trio): names the two failures verbatim — **over-noding** ("3M segments in a chain → Douglas-Peucker / Visvalingam") + **intersection consolidation** ("680 nodes in one IX → one logical node"); flags it *"possibly the highest-leverage item on the board"* (clean IX bones also relieve the corner saga); **survey prior art, don't reinvent: `osm2streets` (A/B Street) intersection-consolidation pass, OSRM/Valhalla/GraphHopper cluster+simplify, JOSM validator.**
+- **Doctrine memory:** `project_skeleton_is_the_first_bake`.
 
-**Consequence: the dead-end PRUNE was a symptom-patch on a misdiagnosis** — the "dead-end triangles" are over-densification artifacts, not degree-1 pendant weaving. The dead-end agent was **stood down** 2026-06-04 (its work committed/parked; may apply to genuine cul-de-sac residuals *after* the root clears). Do NOT prune by shape.
+**Operator's acceptance image (Jacob, 2026-06-04):** *the park block should be ~**4 corner points**; the whole map scrubbed of errant thorn-points* **before** it reaches Survey. That is "polygon-ready."
 
-## Evidence (confirmed)
+## Why the thorns exist — the §Wall debt, made visible
 
-- **Double-smoothing confirmed.** Benton's loop needs ~5–12 pts; `skeleton.json` already carries it at **29**; `tileGround.smoothChain` (`tileGround.js:614`, centripetal Catmull-Rom, +3 pts/seg @ smooth 0.5) re-samples that to **~113**. Two layers of densification on one curve.
-- **Smoking gun:** Benton's 29-pt frame chain sits at ~5m segment spacing — `derive.js:1146` Catmull-Rom-densifies curves >12° to `CURVE_MAX_SEG=5m`. So curves get densified to 5m AND re-smoothed at render.
-- **Park Avenue is sparse** (median seg 33–135m, never densified) yet shows a thorn → its thorn is a **different/secondary** class (corner/junction), not this root.
-- **`smoothChain` is not idempotent** (`smoothCenterline.js:63`): re-sampling an already-dense line through centripetal Catmull-Rom on tiny non-uniform segments injects ripple → offset crossings.
+The thorn / bulge-bow / "dead-end triangle" cluster is **one root: the skeleton is NOT simplified to polygon-ready**, so OSM saw-tooth noise propagates into Survey, and the inward band offsets wander/cross/pinch. Three layers compound — **and two of them put the noise BACK after any simplify** (the reconciliation is the crux):
 
-## Suspected densification sources (the agent pins which)
+1. **The frame is over-noded** — `skeleton.js` carries far more vertices than the geometry warrants (Benton's teardrop loop = **29 pts** where ~5–13 suffice; a clean block edge should be ~2). The existing `simplify` is a weak *local* filter (perp<0.2m AND turn<2°) — useless on curves.
+2. **`derive.js:1146` RE-DENSIFIES** every curve >12° back to **5m segments** (`densifyCoords`/`catmullRomPt`, `CURVE_MAX_SEG=5`). **This is pre-tile code** — its stated job (`derive.js:1128`) is the *figure-ground block-face offset*, the dying path. **It actively undoes a skeleton simplify.**
+3. **`tileGround.smoothChain` (`:614`) re-smooths ×4** (count-based, ~+3 pts/seg) → Benton 29 → ~113. Not idempotent (`smoothCenterline.js:63`): re-sampling an already-dense line injects ripple → offset crossings.
 
-1. `skeleton.js resamplePolyline` (`:558`) — does the FRAME emit the over-dense 29? (= Stage-1 skeleton defect)
-2. `derive.js:1146` — Catmull-Rom curve-densify to 5m (pre-tile; its stated job `derive.js:1128` is the *figure-ground* block-face offset = the dying path → likely redundant for tiles).
-3. `tileGround.js:614` — `smoothChain` re-smoothing an already-dense input (= Stage-2 render over-smooth).
+**Verified (read-only):** Benton frame **29 → render ~113**; the 29 sits at exactly `derive`'s 5m spacing (smoking gun). Diagnosis verdict = **both frame over-noding AND render ×4** (not one or the other).
 
-## The diagnose-first brief (dispatched 2026-06-04)
+**NOT this brief:** the **Truman south-of-Park median** (real one-sided cross-street junctions → `TRUMAN-FORENSICS.md` addendum, D3/D8) and **Park-Ave's single sparse-chain thorn** (corner/junction) are *separate* threads. The dead-end prune was a symptom-patch on this root → **stood down** (Bollard, parked + backed up). **Do NOT prune by shape.**
 
-**STEP 1 — DIAGNOSE (read-only, the Stage-1-vs-Stage-2 fork):** vertex-count chain **raw OSM → skeleton → ribbons → post-`smoothChain`** for (a) Benton loop, (b) a straight street with rectangular artifacts, (c) a "dead-end triangle." Pin **where** the excess originates — frame over-dense (Stage-1) vs render re-smooth (Stage-2) vs both. ⚠️ skeleton points are NOT `[[x,y]]` (Boz's probe got NaN) — find the format first.
-**STEP 2 — FIX AT THE ROOT:** the right amount of line, **smoothed once** (single smoothing authority; `tileGround` must not re-densify already-dense input; minimal-sufficient control points). ⚠️ **No regression:** parcel/face curve boundaries (`derive.js:1581-1617`) or wide-ribbon kink-freeness (grade-sep, `tileGround:967`).
-**STEP 3 — WATCH live 2D Survey:** Benton + a straight run + the old "dead-end triangles." All clean → root confirmed.
+## The fix — ONE simplification authority that survives to Survey
 
-## STEP-1 DIAGNOSIS VERDICT (root-cause agent, 2026-06-04)
+Polygon-ready means: **simplify aggressively, junction-protected, and don't let anything re-noise it downstream.** Implement as **validated sub-steps — NOT one bundle** (`RIBBONS §7` lesson: validate each before bundling, so a regression isn't confounded):
 
-**Both layers confirmed — the fork answer is "both."** The FRAME is noisy/over-sampled (Stage-1 — the skeleton is not yet perfected) AND the render ×4-multiplies via count-based `smoothChain` (Stage-2). Benton: frame 29 → render ~113. Neither alone is the whole story; the question was which is the *primary lever*.
+**1. Aggressive junction-protected simplify in `skeleton.js` (the First Bake).** Junction-protected global Douglas-Peucker / Visvalingam, tuned toward **polygon-ready** (block edges → near-essential points; the "4-corner park"), not the timid 0.2m local filter. → re-bake → verify.
+   - ⛔ **HARD GATE — junction protection.** The old junction-*blind* `simplify` (`:375`, devTol 0.2) **DELETED 79 interior T-junctions** (Osteopathologist/Vesalius, `OSM-FORENSICS`). Vesalius's junction-protected version landed but only 48%→37% (too timid). **Build on that `junctionKeys` protection surface — do NOT re-derive it.** Verify junctions are **preserved exactly (before==after at every eps)** against `OSM-FORENSICS` — the current production baseline is **329** junctions (note: the prototype's 338 was a re-runnable extractor; reconcile but invariance-before-after is the gate). If a node would move/drop, **STOP and flag Boz.**
 
-## FIX PLACEMENT — DECIDED: Option 1 (frame RDP + render arc-length), SEQUENCED (Boz + Jacob, 2026-06-04)
+**2. Neutralize the downstream re-noising (the reconciliation — without this, step 1 is undone).**
+   - **`derive.js:1146` curve-densify** — it re-adds 5m points after the simplify. It's pre-tile (figure-ground block-face). Neutralize for the tile path **without regressing** parcel/face curve boundaries (`derive.js:1581-1617`) which also consume densified curves — decouple "densify for parcel geometry" from "the street centerline points that reach `ribbons.streets`."
+   - **`tileGround.smoothChain` (`:614`)** — make smoothing a **single authority**: density by **arc-length, not ×input-count** (robust to any input density), so it neither re-densifies an already-clean frame nor under-samples a sparse one. Preserve wide-ribbon kink-freeness (grade-sep, `tileGround:967`).
 
-**Chosen over the alternatives:**
-- **Option 2 (render-only) — rejected:** leaves the frame noisy → violates "Skeleton is the First Bake" + the ground-up order (Stage-1 must be *perfected*, not patched-around); and re-implements junction protection downstream = the palimpsest pattern.
-- **Option 3 (frame-RDP-only) — rejected:** **same re-bake cost as Option 1** (both touch `skeleton.js` → full skeleton+derive+ground re-bake), but leaves the count-based ×4 amplifier → uneven density on mixed straight/curve chains + the fragile wide-ribbon path (`tileGround:967`, samples=16). A latent flaw that fails the "perfected" bar and re-bites later.
-- **Option 1 dominates Option 3:** identical re-bake cost; the only marginal cost is the contained `smoothChain` arc-length change, which buys robustness to *any* input density (and fixes the wide-ribbon path). Fix it completely, once (the knot lesson).
+**3. (Sibling, evidence-first) Intersection consolidation.** The other named "better-bones" failure — over-noded / multi-node IXs (the 680-node case; dual-carriageway multi-node junctions). **Survey `osm2streets` first** (don't reinvent); characterize before excising (`evidence before excision`). May be a follow-on brief rather than this pass — scope it after step 1/2 land, since clean IX bones are the lever on the corner saga.
 
-### Implement as TWO validated sub-steps — NOT one bundle (§7 history: validate each sub-step before bundling; avoids confounded regressions)
-1. **Frame RDP** (`skeleton.js`): junction-protected global RDP (Benton 29 → ~10). → **re-bake → verify.** *This IS Option 3's outcome as an intermediate checkpoint* — so we learn whether ×4-of-a-clean-frame already clears Benton / straights / the "dead-end triangles" live, before adding step 2.
-2. **Render arc-length** (`tileGround` / `smoothChain:614`): density by **arc-length, not ×input-count** — robust to any input density; fixes the wide-ribbon path too. → **re-bake → verify** even density on mixed chains + kink-free wide ribbons.
-   *If a regression appears, you know which sub-step caused it (no confound).*
+**Acceptance (Jacob's eye + metrics):** the **park renders as a ~4-corner block**; thorns/bulge-bow gone across the map (Benton + straights); junctions preserved (before==after); the simplified frame **survives to the Survey render** (not re-densified). Report after each sub-step **before** the next.
 
-### ⛔ HARD GATE — junction-protected RDP (the real risk)
-`skeleton.js`'s junction-blind `simplify` (`:375`, devTol 0.2) is **what originally DELETED the 79 interior T-junctions** (Vesalius, `OSM-FORENSICS`). The RDP **MUST preserve all 338 junctions / the 79 interior Ts** — **verify against the OSM-FORENSICS north-star, not by eye.** **Build on Vesalius's existing junction-aware simplify in `skeleton.js` — do NOT re-derive junction protection from scratch.** If RDP would drop or move any junction node, **STOP and flag Boz.**
-
-### Fold-in
-- This **regenerates `ribbons.json`** → re-check Bollard's deferred **Missouri Ave +4231 m² flood** (`HANDOFF-dead-end-spike-prune`) on the fresh topology.
-- Report after **each** sub-step (frame-RDP verify, then arc-length verify) **before** proceeding.
+## Build sequence
+```
+node cartograph/skeleton.js
+node cartograph/pipeline.js --skip-elevation
+node cartograph/promote-ribbons.js --scene=lafayette-square
+node cartograph/bake-ground.js --look=lafayette-square   # ⚠️ must pass --look
+```
+View live in the **2D Survey** (renders live from `ribbons.json` + `tileGround` — the bake is for 3D Stage/Preview, not needed to see this).
 
 ## Coordination / boundaries
-
-- **Branch off trunk `cartograph-looks-pass-ab` in its own worktree** (`isolation: "worktree"`).
-- **⚠️ HOLD THE BAKE / don't merge to trunk** — ONE integrated bake after the fix lands (joins D1 + grade-sep already in the base; + any genuine dead-end residual).
-- **Report STEP-1 diagnosis before committing any fix.**
-- Canon docs off-limits — Boz folds into `PIPELINE P1` / `RIBBONS §3.9a` / `project_skeleton_is_the_first_bake` after it lands.
+- **Branch off trunk `cartograph-looks-pass-ab` in its own worktree** (`isolation: "worktree"`; Chord is in `../lsq-chord-toomuchline`).
+- **⚠️ HOLD THE BAKE / don't merge to trunk** — ONE integrated bake after the fix (joins D1 + grade-sep already in base).
+- **Canon docs off-limits to the agent** — Boz folds into `PIPELINE §Wall`/P1 + `RIBBONS §3.9a` + `project_skeleton_is_the_first_bake` after it lands.
+- Report each sub-step before proceeding.
 
 ## On landing (Boz)
-
-- Fold the root cause + the single-smoothing-authority rule into canon; flip the ledger G12/thorn rows; re-evaluate whether the capacity-guard completion (full-collapse-only gap) is still needed or evaporates with the root fix (the knot test). Retire this HANDOFF → NOTES. Then resume the consolidated eyeball (`scratch/eyeball-checklist-post-deadend-bake.md`) on the integrated bake.
+- Fold into canon: `PIPELINE §Wall`/P1 (the wall reaches P2 — skeleton is polygon-ready; the single-simplify + single-smooth authority; derive's curve-densify retired-for-tiles) + `RIBBONS §3.9a` (thorns are upstream §Wall debt, not a corner-R/capacity clamp).
+- **Knot test:** does the polygon-ready frame **evaporate** G12's capacity-guard need + the dead-end residual? (one fix, N symptoms — flip those ledger rows).
+- Re-check Bollard's deferred **Missouri Ave +4231 m² flood** on the fresh topology.
+- Resume the consolidated eyeball (`scratch/eyeball-checklist-post-deadend-bake.md`) on the integrated bake. Retire this HANDOFF → NOTES.
+- Then scope **intersection consolidation** (osm2streets) as its own better-bones brief — the corner-saga lever.
