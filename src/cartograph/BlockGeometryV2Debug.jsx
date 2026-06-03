@@ -613,6 +613,7 @@ export default function BlockGeometryV2Debug({
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
+      block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
       cornerFillets: tg.cornerFillets || {},
     }
   }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
@@ -992,19 +993,20 @@ export default function BlockGeometryV2Debug({
   // materials so colours/toggles match. live == bake (both call buildTileGround).
   // Retired at T4 when figure-ground is deleted.
   if (isTileScene) {
-    // Survey view: fill the BLOCKS / land-use spaces translucent blue to
-    // memorialize their boundaries; suppress the ped/road paint (treelawn /
-    // sidewalk / curb-fill / asphalt — Section's concern). The curb OUTLINE +
-    // IX node markers frame the blocks; centerlines come from MapLayers; corner
-    // controls from CornerEditHandles (both already Survey-gated). Aerial shows
-    // through. One flat blue for all blocks — per-LU colour is Section's.
+    // Survey view: this step intakes the skeleton and bakes the block POLYGONS.
+    // The strips/bands (treelawn/sidewalk/LU subdivision) aren't in this scene —
+    // they're scalars in the artifact, geometry only downstream in Section. So
+    // fill the whole block polygon to the curb edge (tg.block = stencil−asphalt),
+    // one flat translucent blue, roads as gaps. The curb OUTLINE + IX markers
+    // frame the blocks; centerlines come from MapLayers; corner controls from
+    // CornerEditHandles (both already Survey-gated). Aerial shows through.
     if (surveyActive) {
       return (
         <group>
-          {!hideLandUse && lotVisible && tileGeos?.lu?.map(({ lu, geo }) => (
-            <mesh key={`blk:${lu}`} geometry={geo} renderOrder={PRI.residential}
+          {!hideLandUse && lotVisible && tileGeos?.block && (
+            <mesh geometry={tileGeos.block} renderOrder={PRI.residential}
               material={surveyBlockMat} />
-          ))}
+          )}
           {curbVisible && tileGeos?.curbOutline && (
             <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
               material={surveyCurbMat} />

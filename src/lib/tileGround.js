@@ -491,9 +491,13 @@ export function sectionPass(shapeTiles, cw, stripMat) {
     // Tolerate the serialized artifact: roundTipKeys is a Set in-memory, an array
     // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
     const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
-    const iC = offsetRings(iA, -cw, 'miter')               // curb/treelawn boundary  (R+cw)
-    const iT = offsetRings(iA, -(cw + tl), 'miter')        // treelawn/sidewalk       (R+cw+tl)
-    const iW = offsetRings(iA, -(cw + tl + sw), 'miter')   // sidewalk/LU             (R+cw+tl+sw)
+    // Band join frozen by the shape pass: 'round' at dead-end / loop / thin tiles
+    // so the ped strips cap cleanly instead of needling at the cap's ~180°
+    // reversal; 'miter' on normal cornered tiles keeps authored R=0 squares sharp.
+    const bandJoin = st.bandJoin || 'miter'
+    const iC = offsetRings(iA, -cw, bandJoin)               // curb/treelawn boundary  (R+cw)
+    const iT = offsetRings(iA, -(cw + tl), bandJoin)        // treelawn/sidewalk       (R+cw+tl)
+    const iW = offsetRings(iA, -(cw + tl + sw), bandJoin)   // sidewalk/LU             (R+cw+tl+sw)
     // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
     // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
     // to tangent; treelawn lives only on the straight legs and ends at the
@@ -886,10 +890,25 @@ export function buildTileGround(ribbons, opts = {}) {
       cornerFillets[cornerKeyAt(tile.ring[vi], tile.edges, vi)] = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
     }
     const lu = luForRing(tile.ring)
+    // Dead-end caps + loop reversals make iA turn ~180°; a jtMiter inward offset
+    // SELF-INTERSECTS there → needle spikes in the ped strips (the asphalt cap
+    // rounds clean, the strips spike). Round the band join on JUST those tiles —
+    // a dead-end tip, a single-run loop, or one too thin to inset without the
+    // offsets colliding — so the strips get a clean round cap like the asphalt.
+    // Keep jtMiter on normal cornered tiles (authored R=0 squares stay sharp — NOT
+    // a global revert). Curb (here) + ped bands (sectionPass) MUST share this
+    // frozen join or their common iA-inset edge diverges, so it rides on the tile.
+    let bandArea = 0, bandPerim = 0
+    for (const r of iA) {
+      bandArea += Math.abs(signedArea(r))
+      for (let i = 0; i < r.length; i++) { const j = (i + 1) % r.length; bandPerim += Math.hypot(r[j][0] - r[i][0], r[j][1] - r[i][1]) }
+    }
+    const thinTile = bandPerim > 1e-6 && (2 * bandArea / bandPerim) < (cw + tl + sw)   // mean width < deepest inset → bands collide
+    const bandJoin = (roundTips.length || bluntTips.length || runs.length === 1 || thinTile) ? 'round' : 'miter'
     Aacc.push(...differenceRings([tile.ring], iA))   // asphalt = tile − rounded inner (the shape silhouette)
-    Cacc.push(...differenceRings(iA, offsetRings(iA, -cw, 'miter')))   // curb stroke = iA − iC
+    Cacc.push(...differenceRings(iA, offsetRings(iA, -cw, bandJoin)))   // curb stroke = iA − iC (shares the tile's join)
     // Freeze everything the section pass needs off this tile's shape.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta })
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────
@@ -1002,6 +1021,14 @@ export function buildTileGround(ribbons, opts = {}) {
   for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
   for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
+  // The BLOCK contour: the entire land-use landmass to the curb/road edge —
+  // everything that isn't asphalt, as one filled region (roads cut it into block
+  // islands / become holes). No ped/LU subdivision. The Survey view shades this
+  // to memorialize the block boundaries; the rest of the app ignores it.
+  const block = stencil
+    ? differenceRings([stencil], asphalt)
+    : differenceRings(unionRings(tiles.map(t => t.ring)), asphalt)
+
   // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
   // single source Section reads, no chain. JSON-safe (roundTipKeys Set→array).
@@ -1009,5 +1036,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _shapeArtifact }
+  return { asphalt, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _shapeArtifact }
 }
