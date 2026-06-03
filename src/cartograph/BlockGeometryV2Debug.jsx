@@ -614,7 +614,7 @@ export default function BlockGeometryV2Debug({
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
-      highway:  ringsToFlatGeo(tg.highway,  0.041, true),
+      highway:  ringsToFlatGeo(tg.highway,  0.015, true),   // above LU faces, below the ribbon network — grade-sep shows in its corridor, occluded by local roads
       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
       cornerFillets: tg.cornerFillets || {},
     }
@@ -1050,7 +1050,7 @@ export default function BlockGeometryV2Debug({
           <mesh geometry={tileGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
         )}
         {highwayVisible && tileGeos?.highway && (
-          <mesh geometry={tileGeos.highway} renderOrder={PRI.asphalt} receiveShadow material={bandMats.highway} />
+          <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
         )}
       </group>
     )

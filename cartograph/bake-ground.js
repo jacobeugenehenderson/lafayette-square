@@ -109,6 +109,11 @@ const PAINT_ORDER = [
   ['mat', 'wood'],
   ['mat', 'scrub'],
   ['mat', 'tree_row'],
+  // Grade-separated roads sit ABOVE the land-use faces (so the freeway shows in its
+  // corridor, not buried under the LU perimeter fill) but BELOW the local ribbon
+  // network below (treelawn/sidewalk/curb/asphalt occlude them at crossings) —
+  // "behind everything else, cut off at the edge of everything else".
+  ['mat', 'highway'],
   // Ribbons stacked from outside → inside
   ['mat', 'lawn'],
   // Per-LU treelawn variants (treelawn:<lu>) — match adjacent parcel
@@ -117,7 +122,6 @@ const PAINT_ORDER = [
   ['mat', 'treelawn'],
   ['mat', 'sidewalk'],
   ['mat', 'curb'],
-  ['mat', 'highway'],
   ['mat', 'asphalt'],
   ['mat', 'median'],
   // Alley + path ribbons painted on top of streets where they cross.
