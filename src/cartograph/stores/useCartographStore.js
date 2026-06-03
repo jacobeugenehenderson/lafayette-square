@@ -1402,14 +1402,15 @@ const useCartographStore = create((set, get) => ({
   //   shot = which camera/environment preset is active
   //          ('designer' | 'browse' | 'hero' | 'street')
   // markerActive = overlay toggle, independent of tool
-  tool: null,
-  shot: (() => {
-    try {
-      const saved = localStorage.getItem('cartograph-shot')
-      if (saved && ['designer', 'browse', 'hero', 'street'].includes(saved)) return saved
-    } catch { /* ignore */ }
-    return 'designer'
-  })(),
+  // Cold-boot straight into Survey. The aerial + live tile construction render
+  // incrementally; we never touch the ~26MB baked ground on load.
+  tool: 'surveyor',
+  // Always cold-boot to Designer. Restoring the last shot from localStorage
+  // would land a hard refresh in a Stage browse shot (park-centered), which
+  // pulls the ~26MB baked ground and shows a ~10-15s black screen before it
+  // snaps on. Stage shots are reached via the toolbar's "Stage →" instead
+  // (lastStageShot below still remembers which one).
+  shot: 'designer',
   // Most-recent non-designer shot. Used by the Designer toolbar's
   // "Stage →" button so the operator returns to whichever Stage shot
   // they were last working in (preserves "linear-but-concurrent"
