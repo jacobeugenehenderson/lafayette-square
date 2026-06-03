@@ -1,0 +1,55 @@
+# HANDOFF — Dead-end spike → block-face slack (prune pendant edges + stroke stubs)
+
+**State:** dispatch-ready. **Agent: WARM → Theodolite** (built the grade-sep `extractFaces`-filter + separate-stroke pattern this fix REUSES, in this exact file). *If cold → FRESH, but read the grade-sep precedent first.* **Domain:** cartograph SHAPE — `src/lib/tileGround.js` (`extractFaces` + `buildTileGround`).
+**Drafted:** 2026-06-03 (Boz). **Re-bake ordering:** branch off current `cartograph-looks-pass-ab`; coordinate the LS re-bake with Boz.
+
+---
+
+## The spec (Jacob's two Photoshop images — the gate)
+
+- **Current (slack):** a dead-end street that pokes into a block is **woven into the block's face boundary** — the face walk detours *in* to the dead-end tip and *back out* (an out-and-back spur), then the `round` band-join opens that spur into a **big triangle / diagonal slack** across the block.
+- **Target (taut):** prune the slack → the block snaps to a **clean rectangle**, and the dead-end renders as a **clean thin asphalt stub** poking in (with its proper cap). Every long thin stub in the target image is a dead-end that should be a stub, not a face-distorter.
+
+Jacob's eye on these two states (clean blocks + thin stubs, no triangles) IS the definition of done.
+
+## Read first (aim — do not re-derive)
+
+1. **`tileGround.js` `extractFaces` (303-371)** — the DCEL face walk. **The bug is the comment at line 367:** *"Pendant (dead-end) edges are walked out-and-back … a zero-width spur that the inward Clipper offset collapses on its own."* **That assumption is empirically FALSE** (Jacob's Image 2 — it opens into a triangle). Likely culprit: the `bandJoin = 'round'` applied to dead-end tiles (line 925) *opens* the ~180° spur into a lens instead of pinching it.
+2. **`tileGround.js:942`** — `Aacc = tile.ring − iA`. **Asphalt is sourced from the TILES, not street strokes** — so pruning a pendant edge would *delete the dead-end's road*. That's why part 2 (separate stroke) is mandatory.
+3. **`tileGround.js:600-606, 964`** — the grade-sep precedent you built: filter `!s.gradeSeparated` out of `extractFaces`, stroke the excluded streets separately as flat asphalt strips ("like alleys"). **This fix is the same pattern applied to pendant edges.** Mirror it.
+4. **Cap typology** — `sectionPass` `roundTips`/`bluntTips`/`wrapDisks` (≈520-560) + ledger row **G8** + `HANDOFF-dead-end-typology` (the **Spike / Stub-with-cap / Stub-no-cap** types). **Reconcile** the pruned-stub stroke with this: round cap → asphalt disk + ped wraps (cul-de-sac); blunt/none → flat asphalt, LU abuts, no wrap. Don't regress G8.
+5. `feedback`: `68b1905` (round-tip scallop fix) — adjacent prior art.
+
+## The fix (two parts — the grade-sep pattern)
+
+**1. Prune pendant edges from the face graph** (in/before `extractFaces`): iterative degree-1 leaf-removal of the DCEL — remove each degree-1 node and its edge, repeat until only cycle-bounding edges remain (a degree-1 tip whose removal exposes a new degree-1 node keeps pruning back to the first junction, degree ≥ 3). Collect the pruned edge-chains as **stub polylines** carrying their `streetIdx` (→ measure/`pavementHW`) and the dead-end's `capEnds`. Faces extracted from the pruned graph are clean (Image 3). Remove the false line-367 comment; replace with the honest one.
+
+**2. Stroke the pruned stubs as asphalt** (in `buildTileGround`, alongside the gradeSep/alley stroke): `strokeOpen(stub, pavementHW)` → `Aacc`, capped per typology (round disk / blunt-flat / none). Preserve the round-cap ped-wrap vs blunt-abut behavior so cul-de-sacs still round and blunt ends still abut LU.
+
+## Acceptance gate (Jacob's eye + no-regression)
+
+- Blocks with dead-end stubs snap to **clean rectangles** (match Image 3); **the spike-dead-end triangles are gone** (the pathological exemplars — NOT Truman; Truman's right-side slim strip is a divided-carriageway median, a separate class, out of scope here).
+- Every dead-end still **renders its road** (no asphalt lost) as a thin stub with the **correct cap** (round/blunt/none per `capEnds`).
+- **No regression on the ~195 existing dead-ends** that already render fine (most are clean stubs or boundary crops) — spot-check cul-de-sacs (round caps + ped wrap) and blunt stubs (LU abuts).
+- Loops / medians / divided carriageways unaffected (they're closed runs, not pendants).
+
+> ⚠️ **HAZARD from the Truman census (`TRUMAN-FORENSICS.md` §3, Galen):** Truman's median artifacts — the ~80m carriageway-stagger overhang *tails* and the 15m `island` tile (#5/#6) — **visually look like dead-end triangles but are NOT degree-1 pendants** (they're faces bounded by carriageway edges). **Scope the prune to TRUE degree-1 pendant edges only** (a node with exactly one edge). A prune that triggers on "triangular sliver" shape rather than degree-1 topology would wrongly delete Truman's median. Verify on Truman: the median slivers must survive your prune; only genuine cul-de-sac/stub pendants get pruned.
+
+## Build sequence (skeleton.js unchanged here, but the bake chain still regenerates faces)
+
+`tileGround.js` is consumed live + at bake. Re-bake LS:
+```
+node cartograph/bake-ground.js --look=lafayette-square
+```
+(`extractFaces` runs inside the bake from `ribbons.json` — no re-skeleton needed for a `tileGround.js`-only change. Verify and state the sequence you ran.)
+
+## Write / commit boundaries
+
+- **Edit `src/lib/tileGround.js`** + re-baked artifacts only. **Canon docs off-limits** — Boz folds G8/extractFaces into RIBBONS/PIPELINE after it lands.
+- Branch off current `cartograph-looks-pass-ab`; commit with the `Co-Authored-By` trailer; **flag Boz for the LS re-bake/merge** (don't race the ground artifacts).
+- Final message: before/after on the dead-end population (Truman + a cul-de-sac + a blunt stub), and confirm no asphalt lost.
+
+## On landing (Boz)
+
+- Fold into canon: RIBBONS/PIPELINE `extractFaces` note (pendant edges are pruned + stroked, not woven into faces — the grade-sep sibling), flip ledger **G8** detail, retire this HANDOFF to NOTES.
+- Then reassess the **T-junction aberrations** (17 degree-3 faces) as the next SHAPE dispatch, and the **park curb bump** one-off last.
