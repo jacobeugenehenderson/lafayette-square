@@ -21,6 +21,7 @@ import {
 const STROKE_COLORS = {
   buildingStroke:     '#1a1a18',
   centerlineOutline:  '#000000',
+  surveyCenterline:   '#4ea3ff',   // Survey wireframe — skeleton spine in blue
 }
 
 // Park-local → world rotation. Tree GPS coords are in park-local meters;
@@ -347,10 +348,12 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // the dark slab wins the depth test and the grass disappears. The slab
   // is owned by BakedGround in shots; skip the MapLayers ground here.
   const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'lamp', 'centerline', 'labels', 'ground'])
-  // In Survey, roadway marking layers (stripes / edge lines / bike lanes /
-  // OSM centerlines) are Measure/Design-era surface paint — Survey only
-  // cares about roadway silhouettes, so hide them.
-  const SURVEY_HIDE = new Set(['stripe', 'edgeline', 'bikelane', 'centerline'])
+  // In Survey, roadway marking layers (stripes / edge lines / bike lanes) are
+  // Measure/Design-era surface paint — Survey only cares about roadway
+  // silhouettes, so hide them. Centerlines are the EXCEPTION: Survey is the
+  // skeleton tool, so it force-shows the same centerline geometry (recolored
+  // blue below), overriding the panel's default-hidden state.
+  const SURVEY_HIDE = new Set(['stripe', 'edgeline', 'bikelane'])
   const hide = new Proxy(hideIn, {
     get: (t, k) => {
       if (inShot && SHOT_SKIP.has(k)) return true
@@ -646,6 +649,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     edgelineFlat: makeFlatMat(color('edgeline'), PRI.edgeline),
     bikelaneFlat: makeFlatMat(color('bikelane'), PRI.bikelane),
     centerline: makeLineMat(color('centerline'), 0.9),
+    centerlineSurvey: makeLineMat(STROKE_COLORS.surveyCenterline, 1),
     centerlineOutline: makeLineMat(STROKE_COLORS.centerlineOutline, 0.5),
     // Designer lamp marker — flat dot at the lamp's world position. The
     // legacy shader-based "night pool" rendered a fake gradient halo here
@@ -725,9 +729,11 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           position={[0, 0.15, 0]} />
       )}
 
-      {/* Centerlines (hidden by default in panel) */}
-      {!hide.centerline && centerlineLines.map((geo, i) => (
-        <primitive key={`cl-${i}`} object={new THREE.Line(geo, mats.centerline)} />
+      {/* Centerlines — hidden by default in panel, but Survey force-shows them
+          (in blue) as the skeleton spine, reusing this same geometry so the two
+          tools' centerlines are visibly continuous. */}
+      {(surveyActive || !hide.centerline) && centerlineLines.map((geo, i) => (
+        <primitive key={`cl-${i}`} object={new THREE.Line(geo, surveyActive ? mats.centerlineSurvey : mats.centerline)} />
       ))}
 
 

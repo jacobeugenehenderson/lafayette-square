@@ -189,6 +189,56 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
   return out
 }
 
+// Build a LineSegments geometry (closed loops) from clipper-output rings.
+// The Survey view shows the curb as an OUTLINE rather than a filled band, so
+// it strokes the same `tg.curb` rings the tile fill uses — one geometry source,
+// no separate Survey curb construction. Each ring edge becomes a segment pair.
+function ringsToEdgeGeo(rings, yLift = 0) {
+  if (!rings || !rings.length) return null
+  const pos = []
+  for (const ring of rings) {
+    if (!ring || ring.length < 2) continue
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length]
+      pos.push(a[0], yLift, a[1], b[0], yLift, b[1])
+    }
+  }
+  if (!pos.length) return null
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  return geo
+}
+
+// Build a merged disc geometry for the Survey IX markers — one small flat
+// circle per canonical junction (ribbons.intersections), all in one mesh so
+// hundreds of nodes cost a single draw call.
+function ixMarkersGeo(intersections, R = 0.7, SEG = 12, y = 0.06) {
+  if (!intersections?.length) return null
+  const pos = [], idx = []
+  let off = 0
+  for (const ix of intersections) {
+    const p = ix?.point
+    if (!p) continue
+    pos.push(p[0], y, p[1])                       // fan center
+    for (let s = 0; s <= SEG; s++) {
+      const a = (s / SEG) * Math.PI * 2
+      pos.push(p[0] + Math.cos(a) * R, y, p[1] + Math.sin(a) * R)
+    }
+    for (let s = 0; s < SEG; s++) idx.push(off, off + 1 + s, off + 2 + s)
+    off += SEG + 2
+  }
+  if (!pos.length) return null
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  geo.setIndex(idx)
+  return geo
+}
+
+// Survey's blue wireframe palette — curb outline + IX node markers read as a
+// coherent blue, distinct from Section's full paint. (Centerline blue lives in
+// MapLayers, which owns that geometry.) Jacob's eye tunes.
+const SURVEY_BLUE = { curb: '#1f6fe0', ix: '#7ab8ff' }
+
 export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
   measureActive = false, surveyActive = false, hideLandUse = false,
@@ -560,6 +610,7 @@ export default function BlockGeometryV2Debug({
       treelawn: perLu(tg.treelawnByLu, 0.020),
       sidewalk: ringsToFlatGeo(tg.sidewalk, 0.030, true),
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
+      curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
       cornerFillets: tg.cornerFillets || {},
     }
@@ -914,11 +965,43 @@ export default function BlockGeometryV2Debug({
   const tileLuFallback = tileLuMats.get('residential')
   const tlLuFallback = bandMats.treelawn
 
+  // ── Survey wireframe (tool === 'surveyor') ──────────────────────────────
+  // Survey shows the skeleton + hardscape boundary only — no ped/LU fill (that
+  // is Section's domain). Curb as an outline, IXs as node markers, both blue, so
+  // skeleton-vs-ribbon problems are visually separable ("is this chains again?").
+  const surveyIxGeo = useMemo(
+    () => (surveyActive ? ixMarkersGeo(liveRibbons?.intersections) : null),
+    [surveyActive, liveRibbons]
+  )
+  const surveyCurbMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: SURVEY_BLUE.curb, transparent: true, opacity: 0.95, depthWrite: false,
+  }), [])
+  const surveyIxMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: SURVEY_BLUE.ix, transparent: true, opacity: 0.9, depthWrite: false,
+  }), [])
+
   // All scenes render the tile construction and skip the figure-ground meshes.
   // M1/M2: LU faces + treelawn paint per land-use class. Bands reuse the cached
   // materials so colours/toggles match. live == bake (both call buildTileGround).
   // Retired at T4 when figure-ground is deleted.
   if (isTileScene) {
+    // Survey wireframe: suppress every fill (LU / treelawn / sidewalk / curb-
+    // fill / asphalt — Section's concern), show the curb as a blue OUTLINE plus
+    // the IX node markers. Centerlines come from MapLayers; corner controls from
+    // CornerEditHandles (both already Survey-gated). The aerial shows through.
+    if (surveyActive) {
+      return (
+        <group>
+          {curbVisible && tileGeos?.curbOutline && (
+            <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
+              material={surveyCurbMat} />
+          )}
+          {surveyIxGeo && (
+            <mesh geometry={surveyIxGeo} renderOrder={PRI.curb + 1} material={surveyIxMat} />
+          )}
+        </group>
+      )
+    }
     return (
       <group>
         {!hideLandUse && lotVisible && tileGeos?.lu?.map(({ lu, geo }) => (
