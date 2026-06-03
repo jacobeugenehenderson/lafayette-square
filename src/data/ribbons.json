@@ -202,18 +202,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.94630261706773,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 7.524836729760599,
+          "treelawn": 1.524,
+          "sidewalk": 3.771508774121749,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.94630261706773,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 11.876374210124538,
+          "treelawn": 2.9144876422016814,
+          "sidewalk": 3.219995027327654,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -224,6 +224,46 @@
       "pairId": null,
       "highway": "residential",
       "type": "residential",
+      "couplers": [
+        {
+          "kind": "split",
+          "pointIdx": 14,
+          "x": 165.59,
+          "z": 218.47
+        }
+      ],
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 7.203172199626125,
+            "treelawn": 1.2026416547120755,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 12.663941234736832,
+            "treelawn": 1.7304098259152152,
+            "sidewalk": 1.4240582415582725,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        },
+        "1": {
+          "left": {
+            "pavementHW": 3.189557196749914,
+            "treelawn": 1.2026416547120755,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 5.51671319746067,
+            "treelawn": 1.7304098259152152,
+            "sidewalk": 1.4240582415582725,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -406,11 +446,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -490,11 +530,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "inner-edge",
       "innerSign": -1,
@@ -550,11 +590,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -659,11 +699,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -777,11 +817,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "inner-edge",
       "innerSign": -1,
@@ -845,11 +885,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "inner-edge",
       "innerSign": -1,
@@ -971,11 +1011,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "inner-edge",
       "innerSign": 1,
@@ -1095,11 +1135,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -1170,11 +1210,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -1238,18 +1278,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.462568635487003,
+          "pavementHW": 6.923359996955333,
           "treelawn": 0,
-          "sidewalk": 0.9144000000000001,
+          "sidewalk": 2.503758988587088,
           "terminal": "lawn"
         },
         "right": {
-          "pavementHW": 7.462568635487003,
+          "pavementHW": 5.701969753861978,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 2.310547022555059,
           "terminal": "sidewalk"
         },
-        "source": "default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -1736,7 +1776,7 @@
         "source": "survey-default"
       },
       "capEnds": {
-        "start": null,
+        "start": "round",
         "end": null
       },
       "anchor": "center",
@@ -1802,11 +1842,11 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2039,8 +2079,8 @@
         "source": "survey-default"
       },
       "capEnds": {
-        "start": null,
-        "end": null
+        "start": "blunt",
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2699,22 +2739,22 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 8.73105352144237,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
-        "start": null,
-        "end": null
+        "start": "blunt",
+        "end": "blunt"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2797,22 +2837,22 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 8.73105352144237,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2872,18 +2912,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 6.628525862907328,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -2969,18 +3009,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 3.674997715058554,
+          "treelawn": 1,
+          "sidewalk": 1.1215809834366155,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.6058083194128,
+          "pavementHW": 3.927777989962047,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -3052,22 +3092,22 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.6058083194128,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.6058083194128,
+          "pavementHW": 8.73105352144237,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 5.497889219678656,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -3339,7 +3379,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -3800,7 +3840,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -3877,7 +3917,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -4571,21 +4611,21 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 8.104483523047367,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 6.5526197941248405,
+          "treelawn": 1.326821815429419,
+          "sidewalk": 1.25354467209816,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 8.104483523047367,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 6.5526197941248405,
+          "treelawn": 1.326821815429419,
+          "sidewalk": 1.25354467209816,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": true
       },
       "capEnds": {
-        "start": null,
+        "start": "round",
         "end": null
       },
       "anchor": "center",
@@ -6124,7 +6164,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6199,7 +6239,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6276,7 +6316,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6363,7 +6403,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6438,7 +6478,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6545,7 +6585,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6626,7 +6666,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6772,18 +6812,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.286,
+          "pavementHW": 2.8088964682680597,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 2.286,
+          "pavementHW": 1.7064491230429406,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
-        "source": "default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -7095,18 +7135,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
@@ -7168,18 +7208,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
@@ -7263,28 +7303,45 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
       "highway": "residential",
       "type": "residential",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 4.430562030291696,
+            "treelawn": 0,
+            "sidewalk": 3.5883893575836754,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 4.430562030291696,
+            "treelawn": 0,
+            "sidewalk": 3.5883893575836754,
+            "terminal": "sidewalk"
+          },
+          "symmetric": true
+        }
+      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -7350,18 +7407,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
@@ -7435,18 +7492,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.914746117113385,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
@@ -7684,21 +7741,21 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.851906663572121,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 7.327361023241324,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.851906663572121,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 7.306144183072501,
+          "treelawn": 1.0330239630137168,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
-        "start": null,
+        "start": "round",
         "end": null
       },
       "anchor": "center",
@@ -8477,12 +8534,12 @@
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5,
+          "pavementHW": 5.997331895265273,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -8493,6 +8550,23 @@
       "pairId": null,
       "highway": "residential",
       "type": "residential",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 5,
+            "treelawn": 1.3756000000000004,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 2.0668687137866986,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -8590,16 +8664,16 @@
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5,
+          "pavementHW": 5.997331895265273,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -13572,7 +13646,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
+          "pavementHW": 4.025774546908343,
           "treelawn": 12.775599999999999,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
@@ -13583,7 +13657,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -13594,6 +13668,23 @@
       "pairId": "truman-parkway-4",
       "highway": "secondary",
       "type": "secondary",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 2,
+            "treelawn": 12.775599999999999,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 3.653654832258035,
+            "treelawn": 1.3928497159166802,
+            "sidewalk": 7.345507118045882,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 2,
       "surface": "asphalt",
       "maxspeed": "30 mph",
@@ -13695,6 +13786,23 @@
       "pairId": null,
       "highway": "secondary",
       "type": "secondary",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 2,
+            "treelawn": 12.775599999999999,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 3.914538405396091,
+            "treelawn": 1,
+            "sidewalk": 1.6841500461269705,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 2,
       "surface": "asphalt",
       "maxspeed": "30 mph",
@@ -13960,18 +14068,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
+          "pavementHW": 4.327086249282451,
           "treelawn": 12.775599999999999,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
+          "pavementHW": 3.216558707625585,
           "treelawn": 2.1256000000000004,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -14054,9 +14162,9 @@
         "start": null,
         "end": null
       },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "truman-parkway-6",
+      "anchor": "center",
+      "innerSign": 0,
+      "pairId": null,
       "highway": "secondary",
       "type": "secondary",
       "lanes": 2,
@@ -14125,9 +14233,9 @@
         "start": null,
         "end": null
       },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "truman-parkway-5",
+      "anchor": "center",
+      "innerSign": 0,
+      "pairId": null,
       "highway": "secondary",
       "type": "secondary",
       "lanes": 2,
@@ -14277,18 +14385,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -14391,18 +14499,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -14505,18 +14613,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -14592,18 +14700,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -14726,18 +14834,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -14827,18 +14935,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
-          "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5052000000000003,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
+          "pavementHW": 6.8580000000000005,
+          "treelawn": 1.0668,
+          "sidewalk": 1.6764000000000001,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -14925,18 +15033,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
-          "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "pavementHW": 6.704039023771476,
+          "treelawn": 1.5200585066011074,
+          "sidewalk": 1.5184476651648833,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 0,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15031,18 +15139,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15119,18 +15227,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15207,18 +15315,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15302,18 +15410,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15382,18 +15490,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15462,18 +15570,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
-          "sidewalk": 1.524,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.779587997802887,
+          "pavementHW": 7.899666800734073,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15900,18 +16008,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -15922,6 +16030,23 @@
       "pairId": "park-avenue-3",
       "highway": "residential",
       "type": "residential",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 10.658029338233407,
+            "treelawn": 1,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 6.06749156059035,
+            "treelawn": 1,
+            "sidewalk": 3.693069658822573,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "surface": "asphalt",
       "seed": {
         "seededClass": "residential",
@@ -16026,18 +16151,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 10.655044952056748,
+          "treelawn": 3.192626415453148,
+          "sidewalk": 1.7297401723922992,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 10.307048258732868,
+          "treelawn": 1.7258555231174242,
+          "sidewalk": 2.866669482870156,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16162,18 +16287,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16184,6 +16309,23 @@
       "pairId": "park-avenue-5",
       "highway": "residential",
       "type": "residential",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 5.645715395972545,
+            "treelawn": 1,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 6.06749156059035,
+            "treelawn": 2.108890869059252,
+            "sidewalk": 1.4410721984077526,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "surface": "asphalt",
       "seed": {
         "seededClass": "residential",
@@ -16262,18 +16404,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16367,18 +16509,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16480,18 +16622,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16584,18 +16726,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16662,18 +16804,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16745,18 +16887,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16833,18 +16975,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -16921,18 +17063,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
-          "treelawn": 0.07560000000000011,
-          "sidewalk": 1.524,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.9955999999999996,
-          "sidewalk": 1.524,
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -17542,9 +17684,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -17553,7 +17695,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -17644,9 +17786,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 4.807286407871595,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -17655,7 +17797,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -17666,6 +17808,23 @@
       "pairId": "south-jefferson-avenue-3",
       "highway": "primary",
       "type": "primary",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 17.326844270907745,
+            "treelawn": 1.3465742279243145,
+            "sidewalk": 13.076746307501956,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 58.5415576539413,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -17748,9 +17907,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -17759,7 +17918,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -17882,8 +18041,8 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
-          "treelawn": 2.002554538036364,
+          "pavementHW": 0,
+          "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
@@ -17893,7 +18052,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -17904,6 +18063,23 @@
       "pairId": "south-jefferson-avenue-1",
       "highway": "primary",
       "type": "primary",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 0,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 5.247069279339259,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -17994,9 +18170,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18005,7 +18181,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18108,9 +18284,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18119,7 +18295,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18224,9 +18400,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18235,7 +18411,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18298,9 +18474,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18309,7 +18485,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18386,9 +18562,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18397,7 +18573,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18494,9 +18670,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18505,7 +18681,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18516,6 +18692,23 @@
       "pairId": "south-jefferson-avenue-5",
       "highway": "primary",
       "type": "primary",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 7.716508745489069,
+            "treelawn": 1,
+            "sidewalk": 6.1114835070073115,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 9.163045461963636,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -18613,9 +18806,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18624,7 +18817,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18676,9 +18869,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18687,7 +18880,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18769,9 +18962,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18780,7 +18973,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18847,9 +19040,9 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
-          "sidewalk": 1.524,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -18858,7 +19051,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18967,6 +19160,23 @@
       "pairId": null,
       "highway": "residential",
       "type": "residential",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 1.872042185323237,
+            "treelawn": 3.8445590562926664,
+            "sidewalk": 1.7742262088979173,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 1.991465053681122,
+            "treelawn": 0,
+            "sidewalk": 1.8517267807718945,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -23772,12 +23982,8 @@
           -163
         ],
         [
-          255.9,
-          -207.2
-        ],
-        [
-          252.85,
-          -208.15
+          257.93,
+          -206.55
         ]
       ],
       "pavedWidth": 4.572
@@ -23786,12 +23992,8 @@
       "name": "Mississippi Alley",
       "points": [
         [
-          240.2,
-          -212.15
-        ],
-        [
-          236,
-          -213.5
+          235.12,
+          -213.78
         ],
         [
           129.9,
@@ -23874,7 +24076,7 @@
           -242.7
         ],
         [
-          -573.93,
+          -573.94,
           -242.67
         ]
       ],
@@ -24102,12 +24304,8 @@
           -289.6
         ],
         [
-          281.7,
-          -303.8
-        ],
-        [
-          278.74,
-          -304.73
+          283.83,
+          -303.12
         ]
       ],
       "pavedWidth": 4.572
@@ -24116,12 +24314,8 @@
       "name": null,
       "points": [
         [
-          266.11,
-          -308.78
-        ],
-        [
-          262.4,
-          -310
+          261.03,
+          -310.43
         ],
         [
           158.7,
@@ -24134,8 +24328,8 @@
       "name": null,
       "points": [
         [
-          223.57,
-          216.66
+          224.86,
+          208.49
         ],
         [
           230.2,
@@ -24172,8 +24366,8 @@
           -129.8
         ],
         [
-          283.66,
-          -134.44
+          282.88,
+          -130.21
         ]
       ],
       "pavedWidth": 4.572
@@ -24298,12 +24492,8 @@
           -345.96
         ],
         [
-          306.9,
-          -394.8
-        ],
-        [
-          303.18,
-          -395.86
+          308.31,
+          -394.41
         ]
       ],
       "pavedWidth": 4.572
@@ -24326,12 +24516,8 @@
       "name": null,
       "points": [
         [
-          -299.69,
-          -470.97
-        ],
-        [
-          -299.8,
-          -471
+          -301.75,
+          -471.53
         ],
         [
           -306.8,
@@ -24782,8 +24968,8 @@
       "name": null,
       "points": [
         [
-          -328.3,
-          -380.69
+          -330.33,
+          -381.34
         ],
         [
           -333.3,
@@ -24816,12 +25002,8 @@
           638.92
         ],
         [
-          119.2,
-          583.7
-        ],
-        [
-          118.72,
-          583.51
+          123.84,
+          585.32
         ]
       ],
       "pavedWidth": 4.572
@@ -24830,12 +25012,8 @@
       "name": null,
       "points": [
         [
-          106.03,
-          579
-        ],
-        [
-          104.2,
-          578.4
+          100.91,
+          577.24
         ],
         [
           -71.7,
@@ -24852,12 +25030,8 @@
           510.03
         ],
         [
-          -299,
-          436.4
-        ],
-        [
-          -300.03,
-          436.04
+          -292.26,
+          438.77
         ]
       ],
       "pavedWidth": 4.572
@@ -24878,8 +25052,8 @@
           712.5
         ],
         [
-          -206.25,
-          754.5
+          -206.24,
+          754.49
         ]
       ],
       "pavedWidth": 4.572
@@ -24906,8 +25080,8 @@
       "name": null,
       "points": [
         [
-          -316.8,
-          543.6
+          -309.07,
+          546.44
         ],
         [
           -106.86,
@@ -24920,20 +25094,12 @@
       "name": null,
       "points": [
         [
-          -470.57,
-          490.78
+          -468.49,
+          491.28
         ],
         [
-          -469.3,
-          491
-        ],
-        [
-          -332.1,
-          538.2
-        ],
-        [
-          -328.84,
-          539.32
+          -336.61,
+          536.65
         ]
       ],
       "pavedWidth": 4.572
@@ -24982,7 +25148,7 @@
       "name": null,
       "points": [
         [
-          -822.45,
+          -822.46,
           127.68
         ],
         [
@@ -25000,8 +25166,8 @@
       "name": null,
       "points": [
         [
-          -246.34,
-          -242.71
+          -244.98,
+          -246.78
         ],
         [
           -244.5,
@@ -25090,8 +25256,8 @@
           48.2
         ],
         [
-          -387.96,
-          46.98
+          -385.84,
+          47.33
         ]
       ],
       "pavedWidth": 4.572
@@ -25104,8 +25270,8 @@
           -399.5
         ],
         [
-          -287.65,
-          -423.96
+          -285.58,
+          -423.4
         ]
       ],
       "pavedWidth": 4.572
@@ -25128,12 +25294,8 @@
       "name": null,
       "points": [
         [
-          -354.13,
-          -160.56
-        ],
-        [
-          -353.1,
-          -160.4
+          -352.01,
+          -160.22
         ],
         [
           -233.8,
@@ -25150,16 +25312,16 @@
       "name": null,
       "points": [
         [
-          -253.69,
-          -531.11
+          -251.63,
+          -530.54
         ],
         [
           -135.8,
           -499
         ],
         [
-          -87.92,
-          -486.04
+          -95.75,
+          -488.16
         ]
       ],
       "pavedWidth": 4.572
@@ -25168,12 +25330,8 @@
       "name": null,
       "points": [
         [
-          -280.43,
-          322.92
-        ],
-        [
-          -278.9,
-          323
+          -272.57,
+          325.23
         ],
         [
           -234.6,
@@ -25198,12 +25356,8 @@
           756.8
         ],
         [
-          102,
-          693.9
-        ],
-        [
-          101.15,
-          693.59
+          106.26,
+          695.41
         ]
       ],
       "pavedWidth": 4.572
@@ -25212,12 +25366,8 @@
       "name": null,
       "points": [
         [
-          88.46,
-          689.08
-        ],
-        [
-          86.8,
-          688.5
+          83.34,
+          687.27
         ],
         [
           5.2,
@@ -25234,8 +25384,8 @@
           -36.4
         ],
         [
-          -371.06,
-          -56.7
+          -368.94,
+          -56.35
         ]
       ],
       "pavedWidth": 4.572
@@ -25258,7 +25408,7 @@
       "name": null,
       "points": [
         [
-          -939.66,
+          -939.65,
           122.84
         ],
         [
@@ -25469,7 +25619,7 @@
         ],
         [
           245.47,
-          293.65
+          293.66
         ]
       ],
       "pavedWidth": 4.572
@@ -25568,8 +25718,8 @@
           -193.1
         ],
         [
-          105.12,
-          -185.74
+          106.54,
+          -189.8
         ]
       ],
       "pavedWidth": 4.572
@@ -25600,8 +25750,8 @@
       "name": null,
       "points": [
         [
-          -12.04,
-          -204.73
+          -10.66,
+          -208.8
         ],
         [
           -9.6,
@@ -25626,8 +25776,8 @@
       "name": null,
       "points": [
         [
-          -321.29,
-          -317.77
+          -319.22,
+          -317.23
         ],
         [
           -313.4,
@@ -25660,8 +25810,8 @@
           -273.6
         ],
         [
-          -143.45,
-          -277.17
+          -135.39,
+          -275.74
         ]
       ],
       "pavedWidth": 4.572
@@ -25678,8 +25828,8 @@
           -280.7
         ],
         [
-          -157.51,
-          -274.67
+          -165.25,
+          -277.06
         ]
       ],
       "pavedWidth": 4.572
@@ -25738,12 +25888,8 @@
       "name": null,
       "points": [
         [
-          327.75,
-          -487.46
-        ],
-        [
-          331,
-          -486.6
+          332.9,
+          -486.1
         ],
         [
           509.6,
@@ -26008,12 +26154,8 @@
       "name": null,
       "points": [
         [
-          142.09,
-          355.35
-        ],
-        [
-          141.5,
-          355.3
+          136.86,
+          354.27
         ],
         [
           109,
@@ -26044,8 +26186,8 @@
       "name": null,
       "points": [
         [
-          151.7,
-          297.58
+          146.44,
+          296.7
         ],
         [
           143.5,
@@ -26092,12 +26234,8 @@
           269.7
         ],
         [
-          17.7,
-          211.9
-        ],
-        [
-          18.19,
-          208.84
+          16.91,
+          217
         ]
       ],
       "pavedWidth": 4.572
@@ -26220,24 +26358,16 @@
       "name": null,
       "points": [
         [
-          -348.78,
-          656.91
-        ],
-        [
-          -351.1,
-          656.1
+          -356.54,
+          654.17
         ],
         [
           -485.2,
           608.6
         ],
         [
-          -488.1,
-          607.6
-        ],
-        [
-          -489.76,
-          607.02
+          -487.71,
+          607.74
         ]
       ],
       "pavedWidth": 4.572
@@ -26246,12 +26376,8 @@
       "name": null,
       "points": [
         [
-          -281.94,
-          140.4
-        ],
-        [
-          -281.1,
-          135.6
+          -280.53,
+          132.26
         ],
         [
           -269.3,
@@ -26262,8 +26388,8 @@
           61.9
         ],
         [
-          -258.29,
-          24.14
+          -258.21,
+          23.64
         ]
       ],
       "pavedWidth": 4.572
@@ -26272,8 +26398,8 @@
       "name": null,
       "points": [
         [
-          -254.93,
-          4.87
+          -255.02,
+          5.35
         ],
         [
           -247.8,
@@ -26281,7 +26407,7 @@
         ],
         [
           -240.9,
-          -79.5
+          -79.53
         ]
       ],
       "pavedWidth": 4.572
@@ -26290,8 +26416,8 @@
       "name": null,
       "points": [
         [
-          -238.01,
-          -98.34
+          -238.02,
+          -98.31
         ],
         [
           -231.7,
@@ -26308,12 +26434,8 @@
           247
         ],
         [
-          -266.4,
-          235.8
-        ],
-        [
-          -268.65,
-          235.41
+          -260.14,
+          236.85
         ]
       ],
       "pavedWidth": 4.572
@@ -26450,7 +26572,7 @@
           74.7
         ],
         [
-          511.19,
+          511.18,
           69.01
         ]
       ],
@@ -26478,8 +26600,8 @@
       "name": null,
       "points": [
         [
-          -354.37,
-          -298.42
+          -356.43,
+          -298.98
         ],
         [
           -387.8,
@@ -26538,12 +26660,8 @@
           211.8
         ],
         [
-          -278.9,
-          218.8
-        ],
-        [
-          -277.77,
-          219
+          -285.76,
+          217.63
         ]
       ],
       "pavedWidth": 4.572
@@ -26552,8 +26670,8 @@
       "name": null,
       "points": [
         [
-          -271.13,
-          -561.09
+          -273.21,
+          -561.62
         ],
         [
           -311,
@@ -26578,8 +26696,8 @@
           -453.8
         ],
         [
-          -75.8,
-          -482.71
+          -67.98,
+          -480.56
         ]
       ],
       "pavedWidth": 4.572
@@ -26589,7 +26707,7 @@
       "points": [
         [
           -242.16,
-          385.55
+          385.54
         ],
         [
           -234.6,
@@ -26620,8 +26738,8 @@
           171.8
         ],
         [
-          534.43,
-          193.92
+          534.45,
+          193.77
         ]
       ],
       "pavedWidth": 4.572
@@ -26644,12 +26762,8 @@
       "name": null,
       "points": [
         [
-          155.52,
-          355.32
-        ],
-        [
-          155.8,
-          355.3
+          160.99,
+          355.01
         ],
         [
           173.7,
@@ -73166,31 +73280,6 @@
       ]
     },
     {
-      "name": "Truman Parkway",
-      "streets": [
-        "Truman Parkway",
-        "Truman Parkway"
-      ],
-      "ring": [
-        [
-          616.37,
-          -99.59
-        ],
-        [
-          598,
-          -31
-        ],
-        [
-          588.72,
-          55.39
-        ],
-        [
-          607,
-          -16.3
-        ]
-      ]
-    },
-    {
       "name": "Lafayette Avenue",
       "streets": [
         "Lafayette Avenue",
@@ -75231,10 +75320,9 @@
           ]
         },
         {
-          "kind": "divided",
+          "kind": "single",
           "chainIds": [
-            "truman-parkway-6",
-            "truman-parkway-5"
+            "truman-parkway-6"
           ]
         },
         {
@@ -75253,11 +75341,35 @@
         {
           "kind": "single",
           "chainIds": [
+            "truman-parkway-5"
+          ]
+        },
+        {
+          "kind": "single",
+          "chainIds": [
             "truman-parkway-7"
           ]
         }
       ],
       "transitions": [
+        {
+          "at": [
+            588.72,
+            55.39
+          ],
+          "from": "divided",
+          "to": "single",
+          "pinch": true
+        },
+        {
+          "at": [
+            607,
+            -16.3
+          ],
+          "from": "single",
+          "to": "divided",
+          "pinch": true
+        },
         {
           "at": [
             700.7,

@@ -104,6 +104,24 @@ const DIVIDED_MAX_GAP = 60           // meters — symmetric mean perp distance
                                      // length-ratio filter blocks stub abuse.
 const DIVIDED_MIN_TAN_DOT = -0.6     // -1 = exactly antiparallel
 const DIVIDED_MIN_LEN_RATIO = 0.5    // shorter / longer; rejects connector stubs
+const DIVIDED_MIN_STATION_OVERLAP = 0.4  // fraction of the shorter fragment that
+                                     // runs BESIDE its mate along the corridor
+                                     // axis. The tangent-dot + gap gates accept
+                                     // antiparallel fragments that are merely
+                                     // NEAR each other; neither tests that the
+                                     // two run side-by-side. A longitudinally-
+                                     // staggered stub pair (Truman #5/#6:
+                                     // z[-100,-31] vs z[-16,55], ~85m apart, zero
+                                     // overlap) passes all three — the gap helper
+                                     // clamps t∈[0,1], so a stub just past its
+                                     // mate's end still reads a small perp
+                                     // distance to that endpoint — and its
+                                     // emergent median ring draws a skewed
+                                     // diagonal wedge. Calibrated on all 28 LS
+                                     // pairs: #5/#6 = 0.0, every TRUE pair ≥ 0.669
+                                     // (clean gap; 0.4 is mid-gap). Unpaired stubs
+                                     // fall through to single-oneway → no median,
+                                     // the correct outcome.
 
 function avgTangentXZ(coords) {
   let dx = 0, dz = 0
@@ -144,6 +162,28 @@ function meanPerpDistanceXZ(aCoords, bCoords) {
   return n ? sum / n : Infinity
 }
 
+// Longitudinal station-overlap fraction of two fragments along the corridor.
+// Project every point of A and of B onto A's average tangent (UNCLAMPED — unlike
+// meanPerpDistanceXZ, which clamps t∈[0,1] and so can't tell "beside" from "just
+// past the end"), giving each fragment a 1D station interval [min,max]. Return
+// the overlap of those intervals as a fraction of the SHORTER interval. A true
+// carriageway pair runs the corridor together → ≈1; a staggered stub pair → 0.
+// Convention note (feedback_perp_side_convention): this is a STATION test (along
+// the axis), orthogonal to the perp-side/innerSign question (across the axis) —
+// it only decides WHETHER two fragments pair, never which side faces the median.
+function stationOverlapFracXZ(aCoords, bCoords) {
+  const tHat = avgTangentXZ(aCoords)
+  const o = aCoords[0]
+  const station = (p) => (p.x - o.x) * tHat.x + (p.z - o.z) * tHat.z
+  let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity
+  for (const p of aCoords) { const s = station(p); if (s < aMin) aMin = s; if (s > aMax) aMax = s }
+  for (const p of bCoords) { const s = station(p); if (s < bMin) bMin = s; if (s > bMax) bMax = s }
+  const shorter = Math.min(aMax - aMin, bMax - bMin)
+  if (shorter < 1e-6) return 0  // degenerate axis-extent — treat as no overlap
+  const overlap = Math.max(0, Math.min(aMax, bMax) - Math.max(aMin, bMin))
+  return overlap / shorter
+}
+
 function analyzePhases(name, fragments) {
   const oneway = fragments.filter(f => f.tags?.oneway === 'yes')
   const bidi = fragments.filter(f => f.tags?.oneway !== 'yes')
@@ -173,6 +213,10 @@ function analyzePhases(name, fragments) {
         meanPerpDistanceXZ(B.coords, A.coords),
       )
       if (gap > DIVIDED_MAX_GAP) continue
+      // 4th gate: the two must actually run BESIDE each other along the
+      // corridor, not merely be near + antiparallel. Drops longitudinally-
+      // staggered stub pairs (Truman #5/#6) that the gap clamp lets slip.
+      if (stationOverlapFracXZ(A.coords, B.coords) < DIVIDED_MIN_STATION_OVERLAP) continue
       cand.push({ A, B, gap, lenRatio })
     }
   }
