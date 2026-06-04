@@ -84,19 +84,29 @@ function centripetalRun(pts, spacing) {
   return out
 }
 
+// Key for matching a point against the caller's junction set (rounded 0.01 m —
+// junction coords are copied from the same skeleton vertex into each incident
+// street, so they coincide exactly). Consumed by tileGround to mark junctions.
+export const jKey = (x, z) => `${Math.round(x * 100)},${Math.round(z * 100)}`
+
 // Smooth a chain (returns null = "leave untouched", caller keeps raw points).
 // `spacingOverride` (optional, meters) overrides the t-derived target spacing —
 // used by wide ribbons (grade-separated highways, W≈17 m) that need a TIGHTER
 // arc-length so the offset stroke doesn't gap/facet on tight ramp bends
 // (RIBBONS §3.3). Default spacing comes from `t` via spacingFor().
-export function smoothChain(pts, t, spacingOverride) {
+// `breakKeys` (optional, Set of jKey) marks JUNCTION nodes as HARD vertices so
+// the centerline isn't rounded *through* an intersection. (NOTE: render-time
+// smoothing is currently OFF — smooth=0 — so this whole path is dormant; kept
+// consistent with tileGround's call signature.)
+export function smoothChain(pts, t, spacingOverride, breakKeys) {
   if (!Array.isArray(pts) || pts.length < 3) return null
   let anyBend = false
-  const breaks = []   // interior corner vertices to preserve
+  const breaks = []   // interior corner / junction vertices to preserve as hard
   for (let i = 1; i < pts.length - 1; i++) {
     const a = turnDeg(pts, i)
     if (a > STRAIGHT_TOL_DEG) anyBend = true
-    if (a > CORNER_TOL_DEG) breaks.push(i)
+    const isJunction = breakKeys && breakKeys.has(jKey(pts[i][0], pts[i][1]))
+    if (a > CORNER_TOL_DEG || isJunction) breaks.push(i)
   }
   if (!anyBend) return null                       // dead straight → untouched
   const spacing = (Number.isFinite(spacingOverride) && spacingOverride > 0) ? spacingOverride : spacingFor(t)
