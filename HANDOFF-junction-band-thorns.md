@@ -19,6 +19,22 @@ At street junctions the **ped-band rings** (curb / sidewalk / block outline — 
 
 **#1/#2 = a hard angle where the band should round; #3 = a rounded fillet where it should be hard; #4 = the band pulled off the corner.** That inconsistency is the tell.
 
+## ⭐ Refined characterization (Chord + Jacob's 2nd mark-set, 2026-06-04)
+
+A second set of 4 marks (the symmetry Jacob flagged) **unifies the whole thing to ONE case**: a **stem street dead-ending (T-ing) into a through-avenue.** Every marked instance is exactly this:
+
+| Mark | Stem (ends here) | Through (0°, straight) | Junction |
+|---|---|---|---|
+| #1 | Vail Place | Park Avenue | [340.0, −120.6] deg3 |
+| #2 | Kennett Place | Mississippi Avenue | [179.9, 115.9] deg3 |
+| #3 | Mackay Place | Park Avenue | [−48.0, −203.9] deg3 |
+| #4 | Waverly Place | Lafayette Avenue | [−25.3, 191.6] deg3 |
+
+- **The symmetry is NOT a separate clue — it's the street grid's symmetry around Lafayette Park.** Side streets T into the bounding avenues at mirror positions (#3/#4 = same x≈−34, mirrored z = N/S park edges; #1/#2 = diagonal). So the cause is **systematic** (fires at every stem-into-avenue T), not a per-site degenerate. Fix one → fix all.
+- **The spike shape** (sidewalk ring at the Vail/Park T): a tight wrap+out-and-back at ~[332.6,−119.2], ~6–8 m off the node — the band mis-forms right where the stem meets the avenue.
+- **RULED OUT: the dead-end / cul-de-sac wrap path.** `deadEndTips` gates on `nodeDeg === 1` (`tileGround.js:764`); a stem T-ing into an avenue is **degree-3**, so it's skipped — `roundTips`/`wrapDisks` are NOT involved. (Don't chase the cap/wrap logic; that's the true-cul-de-sac path, and Mackay's *actual* round end must keep its wrap.)
+- **So it's the NORMAL degree-3 tile construction**: the `extractFaces` face walk at the deg-3 node + the per-run asphalt-stadium union + the concentric `offsetRings` band, where the stem's butt-capped asphalt meets the through-street's. The spike is born in that interaction. **Pin which op.**
+
 ## Confirmed facts (don't re-derive — verify and extend)
 
 1. **Centerline-clean.** Through-streets at all four junctions turn **0–1°** — these are not bend/over-densification thorns (that arc is fixed). The spikes live in the **curb / sidewalk / block** ring lists out of `buildTileGround`, near the node.
