@@ -6,6 +6,27 @@
 
 ---
 
+## ⭐ START HERE — what's worked out, by topic (read this FIRST)
+
+> **The settled-state index.** Before diagnosing, deciding, or building *anything*, read this so you build on what's already worked out instead of re-deriving it (re-deriving settled doctrine is the recurring, expensive mistake). Each row = the **settled conclusion** + its **one authoritative home**. The full doc landscape is the "Documentation map" further down; this is the topic-first orientation. *(Boz/agents: this + `BOZ.md` are the first reads, every session.)*
+
+**Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. Currently **stuck on skeleton + survey**; intake skipped for now. Trunk = `cartograph-looks-pass-ab`.
+
+| Topic | Settled conclusion (don't re-derive) | Authoritative home |
+|---|---|---|
+| **Skeleton** | "The Skeleton is The First Bake" → polygon-ready frame. Centerline over-densification **FIXED** (junction-protected RDP, `smooth=0`). Remaining debt is at the **intersections**, not the lines. ⛔ never conflate clean-lines with clean-corners; junction-protected always. | `PIPELINE.md §skeleton` |
+| **Prebake** | `skeleton → pipeline.js → promote-ribbons.js → ribbons.json` (First Bake). 2D Survey renders **live** from `ribbons.json` via `buildTileGround` — the *ground bake* is irrelevant to the 2D view. | `PIPELINE.md §prebake` |
+| **Survey** | **SHAPE only — NO ped depth** (ped = Section). Smoothing/caps/anchor/corner-R/curb. live==bake. | `PIPELINE.md §survey` + `ARCHITECTURE.md §2.1` |
+| **WALL** | The freeze after Survey — chains die here; downstream is a pure consumer. *Should* be at P2 (standing debt). First diagnostic: "is this chains again?" | `PIPELINE.md §Wall` |
+| **Corners / thorns** | Cluster split into roots: **band-fold** (T-mouth `iW`-fold + thin-tile → **Option A local clamp**, Bollard) · **no-mouth-side dogleg** (through-vertex corner-treated, should be straight) · **intersection consolidation** (degenerate corners at over-noded complex IXs — highest-leverage, forensic-first). Tile corner = band *bent*, never a constructed primitive. | `HANDOFF-band-fold-fix.md` · `RIBBONS.md §3.9a` |
+| **Divided roads** | Carriageways stay 2 chains; **D1 longitudinal weld + station-overlap gate LANDED**; median = emergent geometric face (`extractFaces`), tagging is downstream. **Truman south-of-Park = separate D3/D8** (one-sided cross-streets). | `RIBBONS.md §3.1` · `TRUMAN-FORENSICS.md` |
+| **Grade separation** | LANDED — `gradeSeparated` excluded from faces, stroked as flat asphalt, own layer, renders behind local. | `PIPELINE.md §Wall` |
+| **The construction model** | **TILE model** (faces of the centerline graph; strips painted inward; round the strips). Figure-ground retired-in-place. | `NOTES.md` 2026-06-01 · `RIBBONS.md` |
+| **Section** | ped **FILL** off the frozen shape; ~70% built (`sectionPass` chain-incapable by closure). | `SECTION-CENSUS.md` |
+| **Doc process** | three kinds (Reference/State/Diary), one-kind-per-doc, content flows downstream as it ages; pack-up/pick-up day cycle. | `BOZ.md §2/§5` |
+
+---
+
 ## Local development
 
 ```bash
