@@ -116,7 +116,9 @@
 | render-conformance | env parity (DRAFT) | cold-review gate |
 | audit-{cartograph,arborist,ls-app,docs} | forensic pathology | campaign |
 | **retired 2026-05-31 (`2854aa3`, in git)** | block-independence · degenerate-W-flood · pass2-customs-hardening · ribbon-corners · measure-authoring-redesign · toy-reset-to-defaults | done — recoverable via git |
-| **still tracked, pending P5 retire** | neon · neon-roof-depth · hero-keyframes · preview-measurement · mobile-profile · sky-and-light · buildings-bake · tree-hero-lod · cloud-specialist | retire to outcome+commit refs |
+| **✅ P5 RETIRE-SWEEP — 2026-06-04 (32 files, git holds them)** | 6 superseded-into-tiles (wall-move/-brief/-W1/-W1b, stroke-construction, ls-bespoke-corners) + 26 landed (census/forensics/tile-build/shipped-features + the **Neighborhood-Disc trio** aerial-focus/disc-centerline-clip/survey-view) | retired → NOTES 2026-06-04(night) ledger; outcomes already in Reference/BACKLOG/memory |
+| **still tracked — NOT retired (held)** | QC-pending: `buildings-bake` · `tree-hero-lod` · parked: `cloud-specialist` · unclear-pending-Jacob: `p1-frame-enrichment` · `phase2-survey` · `survey-brief` | keep until QC confirmed / Jacob's call |
+| **disc arc — DONE + documented** | boundary.js SSOT (center/radius/256-gon + fade/streetFade + clip) → `ARCHITECTURE.md §7`; aerial base+focus loader; Survey wireframe view | ✅ COMPLETE (briefs retired above) |
 
 ## §Triage (carried, not lost)
 
