@@ -152,6 +152,20 @@ Jacob re-marked the two park corners (`marker_strokes.json` #0 north edge, #2 Pa
 
 **⭐ 2026-06-04 (later) — second lesson, the deeper one: this is a SURVEY problem, work it in POLYGONS.** The defect is in the **Survey block silhouette** (SHAPE, ahead of the wall) — a polygon. Boz then mis-diagnosed it by sliding back into chains/carriageway-centerlines/`pavementHW`/inner-edge measures (ribbon/Section concepts). Jacob: *"survey and section are not the same"* — the architecture's whole point is to leave nodes/chains behind and hand Survey clean polygons; reasoning a polygon defect through ribbons re-couples what the wall decouples. **Diagnose/fix the divided↔undivided transition as a polygon question** — *"the block outer silhouette should run straight through; the median opens inward"* (Jacob's rule) — without naming a carriageway. Home for this distinction: `ARCHITECTURE.md §2.1` (Survey ≠ Section, different data models). Next: trace the polygon construction (`tileGround` face/silhouette), verify-on-render.
 
+### 5d. ⭐ THE DISTINCTION THAT IS THE SPECIAL SAUCE — intersection (variable) vs. street/corner (simple)
+*(Jacob, 2026-06-04, naming the 5a–5c fix as core IP: "this is what the special sauce is made of, these distinctions and decisions." Operational + theoretical + marketing — write it down.)*
+
+**The principle.** Inside an intersection the geometry is **inherently variable** — many streets meet, divided roads transition, the median is opening from zero. We do **not** try to tame the intersection interior; that variability is legitimate. **Outside the intersection — the streets and their corners — must be simple and clean.** The hard, valuable move is **finding and declaring the boundary** between the two. We don't *model* the messy interior; we **declare that the block-facing edge at a transition belongs to the simple street**, and keep just that edge simple. *"There's a lot of variability inside the geometry of the intersections themselves but the streets and corners are simpler; the hard distinction to find is between them"* — that distinction, made operational, is the product.
+
+**The worked example + the decisions (the divided↔undivided transition):**
+- **Rule:** the **outer curb runs straight through** the transition (continuous spine→carriageway); the **median opens inward.** A carriageway's outer edge must never inherit the median-opening divergence. *(Jacob's call; matches a real divided avenue.)*
+- **It is a CONSTRUCTION fix, not a skeleton fix.** The centerlines are square (§5c). The asphalt is a **symmetric** `strokeOpen` that had **no side-awareness** — `isMedianFacing`/`innerSign` were wired only to *ped* zeroing, never to asphalt geometry. The fix teaches the asphalt the side it already knows.
+- **Reference = the corridor's outer edge** (the spine's outer-edge continuation — "option 1"): guarantees the outer curb is *continuous* spine→carriageway.
+- **The link is a FROZEN FRAME FACT** (`phase.spineAtStart/spineAtEnd`, computed once in `skeleton.js` from the endpoint nodes) — **never re-derived by node-matching at construction time** (that re-coupling violates the wall). **[Part 1 — LANDED, `61930d7`, geometry-neutral.]**
+- **The clamp is LOCAL / bounded to the transition.** It is **self-limiting** — a no-op where the carriageway has merged back to corridor width — and box-bounded near the transition node, so the simple street and any *curved* carriageway elsewhere are untouched. **This bound IS the operational form of the intersection/street distinction.** **[Part 2 — in progress, `tileGround.js`.]**
+
+**Why this is IP, not plumbing (the meta-lesson).** The recurring failure — in the code *and* in the agent diagnosing it (the E↔W axis mirror; the "deg-5 Y is complex" misread; sliding into chains) — is **applying a general rule without checking the specific structure in front of you.** The construction strokes every centerline the same way; the agent assumed the default axis. The special sauce is precisely the opposite reflex: **recognizing where a general rule must yield to a declared special case, and drawing the boundary.** Operational home for the construction specifics: `RIBBONS.md §3.1`.
+
 ---
 
 ## 6. The doctrine, in one place
@@ -161,6 +175,7 @@ Jacob re-marked the two park corners (`marker_strokes.json` #0 north edge, #2 Pa
 - **Junction-protected always.** Never the junction-*blind* simplify (it deleted 79 interior Ts).
 - **The two-carriageway divided model is locked.** Median emerges, never authored; no collapse to a single spine.
 - **First diagnostic on any head-scratcher:** *"is this chains again?"* — and the fix is always *move the wall earlier / make the skeleton cleaner*, never *patch chains deeper downstream.*
+- **⭐ Intersection variable, street/corner simple — the boundary is the IP (§5d).** Don't model the messy intersection interior; declare that the block-facing edge at a transition belongs to the simple street and keep it simple. Special cases (divided transitions) get *recognized*, not handled by a blanket general rule.
 
 ---
 
