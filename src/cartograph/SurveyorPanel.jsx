@@ -52,27 +52,10 @@ function HeroSubjectPicker() {
   )
 }
 
-// Global street-smoothing dial — Phase 2 stroke construction. Lives in
-// Survey because smoothing the centerline is a survey-shape concern (it
-// shapes the hardscape silhouette you stroke from the chain). One global
-// tension applied to every chain via interpolating Catmull-Rom; the same
-// value drives the live render and the bake, so the asphalt strokes
-// identically (WYSIWYG). Rendered regardless of selection.
-function SmoothingControl() {
-  const streetSmooth = useCartographStore(s => s.streetSmooth ?? 0.5)
-  const setStreetSmooth = useCartographStore(s => s.setStreetSmooth)
-  return (
-    <div className="carto-row">
-      <label className="carto-label-fixed">Smoothing</label>
-      <input type="range" className="carto-input" min="0" max="1" step="0.05"
-        value={streetSmooth}
-        onChange={e => setStreetSmooth(parseFloat(e.target.value))} />
-      <span className="carto-meta carto-meta--value">
-        {streetSmooth.toFixed(2)}
-      </span>
-    </div>
-  )
-}
+// (The global "Smoothing" slider was retired 2026-06-04. Street smoothing is
+// now always-on at fixed render quality — the clamped-Hermite smoother rounds
+// bends without overshoot and keeps junctions hard with no operator dial. The
+// control + its store wiring (streetSmooth / setStreetSmooth) were removed.)
 
 // Corner-radius kit — the corner SHAPE authoring, a Survey concern (the corner
 // is two things in two tools: SHAPE here, FILL in Section — ARCHITECTURE §2.1).
@@ -230,7 +213,6 @@ export default function SurveyorPanel() {
         <HeroSubjectPicker />
         <div className="carto-section">
           <h2>Survey</h2>
-          <SmoothingControl />
           <div className="carto-hint">
             Click a street to select it.
           </div>
@@ -248,8 +230,6 @@ export default function SurveyorPanel() {
       <HeroSubjectPicker />
       <div className="carto-section">
         <h2>Survey</h2>
-
-      <SmoothingControl />
 
       {/* Asymmetric authoring — when off (default) an asphalt-edge drag mirrors
           to both sides; when on, each side is set independently. Mirrors the

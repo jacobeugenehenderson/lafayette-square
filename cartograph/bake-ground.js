@@ -293,7 +293,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
-    smooth: Number.isFinite(design.streetSmooth) ? design.streetSmooth : 0.5,
+    smooth: 0,   // render-time smoothing retired (2026-06-04) — clean RDP frame, no band-scallop
     blockLandUse: design.blockLandUse || null,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
     cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : null,
@@ -334,7 +334,7 @@ function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
     // Phase 2 — global street-smoothing tension. Same field the live render
     // reads from the store, so the bake strokes an identical smoothed
     // polyline (WYSIWYG). Default 0.5 matches the store default.
-    smooth: Number.isFinite(design.streetSmooth) ? design.streetSmooth : 0.5,
+    smooth: 0,   // render-time smoothing retired (2026-06-04) — clean RDP frame, no band-scallop
     useRingBandEmitter: !!opts.useRingBandEmitter,  // C4: toy default on, LS off until C5 cutover
   })
 

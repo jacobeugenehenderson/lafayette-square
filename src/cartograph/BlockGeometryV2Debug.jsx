@@ -265,7 +265,12 @@ export default function BlockGeometryV2Debug({
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const cornerEditMode            = useCartographStore(s => s.cornerEditMode)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
-  const streetSmooth              = useCartographStore(s => s.streetSmooth ?? 0.5)
+  // Render-time street smoothing is OFF (the "Smoothing" slider was retired
+  // 2026-06-04). The skeleton RDP already gives a clean, polygon-ready frame, so
+  // re-smoothing at render only RE-ADDS line — and the inward ped-band offset
+  // scallops at every added sample (10× the band wiggles at the old 0.5 default).
+  // §Wall: the clean frame stands on its own; the band offsets straight off it.
+  const streetSmooth = 0
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
   const measureDragging           = useCartographStore(s => s.measureDragging)
