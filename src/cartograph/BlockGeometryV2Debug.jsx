@@ -265,7 +265,11 @@ export default function BlockGeometryV2Debug({
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const cornerEditMode            = useCartographStore(s => s.cornerEditMode)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
-  const streetSmooth              = useCartographStore(s => s.streetSmooth ?? 0.5)
+  // Street smoothing is always-on at fixed render quality — the "Smoothing"
+  // slider was retired 2026-06-04. The clamped-Hermite smoother (smoothCenterline)
+  // needs no operator dial: it rounds bends without overshoot and keeps junctions
+  // hard, at vector-quality density. 0.5 → ~1.5 m sample spacing (spacingFor).
+  const streetSmooth = 0.5
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
   const measureDragging           = useCartographStore(s => s.measureDragging)
