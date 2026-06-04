@@ -33,7 +33,7 @@
 
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
-import { smoothChain } from './smoothCenterline.js'
+import { smoothChain, jKey } from './smoothCenterline.js'
 import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
 
 const SCALE = 1000
@@ -596,7 +596,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // INTERPOLATING (passes through every authored vertex), so intersection
   // nodes survive exactly and the graph stays noded for the face walk. Default
   // 0.5 matches the figure-ground path + the store default (WYSIWYG).
-  const smooth = Number.isFinite(opts.smooth) ? opts.smooth : 0.5
+  const smooth = Number.isFinite(opts.smooth) ? opts.smooth : 0
   let streets = (ribbons?.streets || []).filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
   // Grade-separated roads (freeway corridor + ramps; OSM bridge/tunnel/layer, flagged
   // on the frame at 6854122) are EXCLUDED from the face graph: they cross other
@@ -609,9 +609,25 @@ export function buildTileGround(ribbons, opts = {}) {
   // survive interpolating smoothing exactly), so per-block width resolution
   // reads segOrd off these, matching the authoring key.
   const streetsOrig = streets
+  // Junction nodes = coords shared by ≥2 streets. The smoother must keep these
+  // HARD (not round the centerline through an intersection) or the inward ped
+  // band notches on the far side — the "thorn opposite a T" / complex-IX corner.
+  // Built over ALL ribbon streets so a shared node is seen even if one incident
+  // street is grade-separated; matched by jKey (0.01 m).
+  const coordStreets = new Map()
+  for (const s of (ribbons?.streets || [])) {
+    if (!s?.points) continue
+    for (const p of s.points) {
+      const k = jKey(p[0], p[1])
+      let set = coordStreets.get(k); if (!set) { set = new Set(); coordStreets.set(k, set) }
+      set.add(s)
+    }
+  }
+  const junctionKeys = new Set()
+  for (const [k, set] of coordStreets) if (set.size >= 2) junctionKeys.add(k)
   if (smooth > 0) {
     streets = streets.map(s => {
-      const sm = smoothChain(s.points, smooth)
+      const sm = smoothChain(s.points, smooth, undefined, junctionKeys)
       return sm ? { ...s, points: sm } : s
     })
   }
@@ -967,7 +983,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // (RIBBONS §3.3). The 3rd arg is now a spacing override (meters), not a sample
     // count — see smoothChain. 1.5 m keeps ramp bends kink-free post-RDP.
     const WIDE_SPACING = 1.5
-    const sm = smooth > 0 ? (smoothChain(s.points, smooth, WIDE_SPACING) || s.points) : s.points
+    const sm = smooth > 0 ? (smoothChain(s.points, smooth, WIDE_SPACING, junctionKeys) || s.points) : s.points
     const hw = Math.max(s.measure?.left?.pavementHW || 0, s.measure?.right?.pavementHW || 0)
     if (hw <= 1e-6) continue
     ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))
