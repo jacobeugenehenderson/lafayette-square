@@ -43,6 +43,44 @@ PHASE C — PUBLISH (the slab)
 
 ---
 
+## The stages, in order (READ THIS FIRST — the authoritative spine)
+
+> ⭐ **This is the one place to learn what each pipeline stage is, whether it's working, and its doctrine — without hunting across files.** (Doctrine being diffuse is what kept causing mistakes: re-deriving the Wall, conflating clean-lines with polygon-ready. It lives consolidated *here*; §Wall + the P1–P15 ladder + RIBBONS are the deeper detail this points into.) Indexed from the repo-root README "Documentation map".
+
+**Jacob's order:** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage/preview/production`. *(Formal intake is skipped for now; we are currently STUCK on **skeleton** + **survey**.)*
+
+### intake — onboard a place *(skipped for now)*
+Author a place: center+radius circle → fetch OSM → freeze the protoslab container. Deferred; LS already has its `osm.json`. Refs: BACKLOG "Onboarding/Intake", `[[project_intake_onboard_process]]`, `[[project_neighborhood_disc]]`.
+
+### skeleton — the frame  (`skeleton.js`: `osm.json → skeleton.json`)
+- **What / job:** trace the real street network from OSM into canonical chains (skelId-keyed) and produce an **extremely simplified, polygon-ready** frame. *"The Skeleton is The First Bake."*
+- **⚠️ STATUS (2026-06-04):** **centerlines are now polygon-ready** — the old timid local `simplify` (passed OSM saw-tooth through; Benton 29 pts where ~5 suffice) was replaced with **aggressive junction-protected RDP** (merged `d1d70a2`, baked `13d8195` at `smooth=0`; Benton fixed on Jacob's eye). **The remaining debt is at the INTERSECTIONS, not the lines.** ⛔ **Do NOT conflate "clean straight centerlines" with "clean corners"** — the lines can be straight while the junctions degenerate.
+- **Doctrine:** simpler output = healthier everything downstream; chain/node minimization is the lever that moves the Wall to P2. ⛔ **junction-protected always** (the junction-*blind* simplify deleted 79 interior Ts — `OSM-FORENSICS.md`). Carry tags / grade-sep / divided-pair facts as frame truth (don't drop them at P1).
+- **In-flight — the "better bones" program (4 prongs):** ① over-densification simplify ✅ **LANDED** · ② **band-fold** (downstream tile `sectionPass`; Bollard, `HANDOFF-band-fold-fix.md`) · ③ **name-logic dog-legs** (weld same-name + straighten kinks; `HANDOFF-name-logic-skeleton-pass.md`) · ④ **intersection consolidation** (over-noded complex IXs degenerate `cornersAtIx` — the *highest-leverage* prong, forensic-first, survey `osm2streets`).
+- **Refs:** P1 below · §Wall · `[[project_skeleton_is_the_first_bake]]` · `OSM-FORENSICS.md`.
+
+### prebake — the First Bake  (`pipeline.js` + `promote-ribbons.js` → `ribbons.json`)
+- **What / job:** compile the skeleton (+ operator `overlay.json`) into the single geometry artifact downstream consumes — **`ribbons.json {streets, intersections, faces}`**, the protoslab/First-Bake container the Survey tool authors against and the live 2D render reads.
+- **STATUS:** working. ⭐ **The 2D Survey/Design view renders LIVE from `ribbons.json` via `buildTileGround`** — so the *ground bake* is irrelevant to what's on the 2D screen; only `ribbons.json` + `tileGround.js` matter there (the bake feeds 3D Stage/Preview).
+- **Doctrine / gotchas:** **two-step** — run `skeleton.js` **then** `pipeline.js` (pipeline does NOT re-run the extractor), then `promote-ribbons.js` (`[[feedback_skeleton_pipeline_two_step]]`). `ribbons.json` is a **bundled vite import** — the dev server serves the copy in *its working directory*, fixed at server start (so to view a worktree's frame you run the dev server *from that worktree*, or restart).
+- **Refs:** P3 below · `[[project_two_bakes_two_walls]]`.
+
+### survey — the SHAPE tool  (`surveyor` pill → `SurveyorPanel.jsx`)
+- **What / job:** author the **hardscape SHAPE** off the prebaked frame — asphalt/curb silhouette, **smoothing, caps, anchor, road metadata, corner radius**, hero-pick. Strokes chains outward; its output freezes at the WALL (chains die).
+- **⛔ STATUS / scope (Jacob, 2026-06-04):** **Survey = SHAPE ONLY. There is NO notion of ped depth in Survey** (treelawn/sidewalk = Section). The handles here are SHAPE controls (asphalt-edge / curb / corner-R), *not* ped. If a ped control leaks in, that's tool-conflation to remove. STUCK: the corner-SHAPE + curb authoring isn't fully consolidated into the tab yet; the authoring channel is mid-migration onto the tile construction.
+- **Doctrine:** **SHAPE = Survey · FILL = Section** (ped ribbons + ADA, stroked inward off the *frozen* curb). Renders **live == bake** from `buildTileGround` (WYSIWYG). 3-S taxonomy is canon in `ARCHITECTURE.md §2.1`.
+- **Refs:** `ARCHITECTURE.md §2.1` · `FEATURES.md §"Toolbar = views, Panel = tools"` · `SECTION-CENSUS.md` (the SHAPE/FILL split) · P2 below · `[[project_two_bakes_two_walls]]`.
+
+### ⟦WALL⟧ — the freeze  (after Survey)
+The freeze point: by the time the operator leaves Survey, hold an extremely-simplified, polygon-ready frozen dataset and **chains die here** — downstream (Section, bake) is a pure consumer; *no geometry derived from chains past the Wall.* It *should* sit at P2; today chains stay load-bearing through P4–P8 = the standing architectural debt. First diagnostic on any head-scratcher: **"is this chains again?"** — and the fix is always *move the Wall earlier*, never patch chains deeper. **Deep-dive: §Wall (immediately below).**
+
+### section · bake · stage *(downstream — brief)*
+- **section** — the ped **FILL** off the frozen Survey shape (treelawn/sidewalk, ribbon corner fills, ADA). ~70% built (`sectionPass` exists + is chain-incapable by closure). `SECTION-CENSUS.md`.
+- **bake** — freezes the **slab** (ground/buildings/lamps/scene → `public/baked/<id>/`) = wall #2.
+- **stage / preview / production** — the **LOOK** + the slab players. `FEATURES.md`.
+
+---
+
 ## §Wall — the Data Wall (read this once)
 
 The single most expensive truth in this codebase: **chains (the nodes that make up centerlines) are the recurring root problem.** Almost every "we have to go back to the drawing board" episode traces to a chain/node issue that would have been a one-step solve if the data were already a polygon.

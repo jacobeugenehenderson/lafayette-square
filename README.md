@@ -89,6 +89,18 @@ The cartograph authoring app is **three distinct tools**, each its own tab/area 
 
 (`Preview` inherits Stage — a Slab Player, not a fourth tool.)
 
+#### The cartograph pipeline stages — where each is authoritatively documented
+
+The build pipeline (Jacob's order: **intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage**) has ONE authoritative home per stage in **[`cartograph/PIPELINE.md` → "The stages, in order"](cartograph/PIPELINE.md)** (read that first — it carries what each stage is, its current STATUS, and its doctrine; deep-dives below). *Diffuse-doctrine across many files is what caused repeated mistakes — this is the de-diffusion index.*
+
+| Stage | Authoritative home | Deep-dive / detail |
+|---|---|---|
+| **skeleton** (the frame) | `PIPELINE.md §skeleton` + `§Wall` + ladder `P1` | `OSM-FORENSICS.md` · `[[project_skeleton_is_the_first_bake]]` · the "better bones" 4 prongs (BACKLOG NOW) |
+| **prebake** (First Bake → `ribbons.json`) | `PIPELINE.md §prebake` + ladder `P3` | `[[project_two_bakes_two_walls]]` · `[[feedback_skeleton_pipeline_two_step]]` |
+| **survey** (SHAPE tool — *no ped depth*) | `PIPELINE.md §survey` + `ARCHITECTURE.md §2.1` | `FEATURES.md §Toolbar` · `SECTION-CENSUS.md` (SHAPE/FILL split) |
+| **⟦WALL⟧** (the freeze; chains die) | `PIPELINE.md §Wall` | `[[project_skeleton_is_the_first_bake]]` · `[[project_two_bakes_two_walls]]` |
+| section · bake · stage | `PIPELINE.md` (downstream) · `SECTION-CENSUS.md` · `FEATURES.md` | `RIBBONS.md` (FILL geometry) |
+
 ### Cross-domain / strategic (repo root)
 
 - **[`SLAB-CONTRACT.md`](SLAB-CONTRACT.md)** — the formal cartograph↔LS boundary (the slab format; owned by neither app).
