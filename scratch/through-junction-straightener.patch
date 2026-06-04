@@ -1,0 +1,61 @@
+diff --git a/cartograph/skeleton.js b/cartograph/skeleton.js
+index 03233a3..07019ed 100644
+--- a/cartograph/skeleton.js
++++ b/cartograph/skeleton.js
+@@ -1018,6 +1018,56 @@ function main() {
+     totalPtsAfter += s.points.length
+   }
+ 
++  // ── Through-junction straightener (the dog-leg fix; SKELETON.md §5a) ──────
++  // Junction-protected RDP keeps each junction vertex EXACTLY — but it drops the
++  // through-NEIGHBOURS around it, so a junction node that sat slightly off the
++  // OSM line becomes a visible KINK against its surviving neighbours: the "flat
++  // side of a T should be flat" dog-leg (the through-road bows 3–4 m AT the node;
++  // Lafayette Park's north edge bowed 3.33 m; 46 such junctions measured).
++  // Fix: at a clean degree-3 T — exactly ONE street passes THROUGH (the node is
++  // an interior vertex of just that one street) and the through-pair is
++  // near-collinear — PROJECT the node onto the chord of its two surviving
++  // through-neighbours and drag EVERY street sharing the node (the branch
++  // endpoint) onto the projected point. The through-road straightens; the graph
++  // stays noded (the branch still meets it, now on the straight line). Runs AFTER
++  // RDP (the kink is RDP's creation) and BEFORE buildNodeGraph (so junctions[]
++  // pick up the corrected coords). Conservative guards leave real corners/bends
++  // and complex degree-4+ intersections alone — those are the separate
++  // intersection-consolidation prong (SKELETON.md §5b).
++  const STRAIGHTEN_TURN_MAX = 25 * Math.PI / 180   // through-pair must be ~collinear (skip real bends)
++  const STRAIGHTEN_OFFCHORD_MAX = 4.5              // m; a real designed curve deviates far more → skipped
++  {
++    const sharers = new Map()                       // vKey → [{ s, i }] for every street touching the node
++    for (const s of streets) {
++      for (let i = 0; i < s.points.length; i++) {
++        const k = vKey(s.points[i])
++        if (!junctionKeys.has(k)) continue
++        let arr = sharers.get(k); if (!arr) { arr = []; sharers.set(k, arr) }
++        arr.push({ s, i })
++      }
++    }
++    let straightened = 0
++    for (const [, arr] of sharers) {
++      // through-streets = those where the node is INTERIOR (a real pass-through)
++      const through = arr.filter(({ s, i }) => i > 0 && i < s.points.length - 1)
++      if (through.length !== 1) continue            // only clean degree-3 Ts; skip crosses / complex IXs
++      const { s, i } = through[0]
++      const A = s.points[i - 1], V = s.points[i], B = s.points[i + 1]
++      const a1 = Math.atan2(V.z - A.z, V.x - A.x), a2 = Math.atan2(B.z - V.z, B.x - V.x)
++      let turn = Math.abs(a2 - a1); if (turn > Math.PI) turn = 2 * Math.PI - turn
++      if (turn > STRAIGHTEN_TURN_MAX) continue        // a real bend/corner — leave it
++      const dx = B.x - A.x, dz = B.z - A.z, len2 = dx * dx + dz * dz
++      if (len2 < 1e-9) continue
++      const t = ((V.x - A.x) * dx + (V.z - A.z) * dz) / len2
++      if (t < 0.05 || t > 0.95) continue              // node must sit genuinely BETWEEN its neighbours
++      const px = A.x + t * dx, pz = A.z + t * dz
++      if (Math.hypot(V.x - px, V.z - pz) > STRAIGHTEN_OFFCHORD_MAX) continue   // far off chord → real curve, skip
++      for (const { s: ss, i: ii } of arr) ss.points[ii] = { x: px, z: pz }     // move ALL sharers together → stays noded
++      straightened++
++    }
++    if (straightened) console.log(`  through-junction straightener: ${straightened} dog-leg node(s) projected onto the through-chord`)
++  }
++
+   // Canonical direction pass. Non-oneway chains are oriented so the
+   // dominant component of (last - first) is positive (+X if E-W, +Z if N-S).
+   // Without this, "left/right" of a chain in Measure has no stable

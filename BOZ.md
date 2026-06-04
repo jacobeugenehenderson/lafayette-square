@@ -4,6 +4,47 @@ This is the operational front door for working on this project: who coordinates,
 
 ---
 
+## 0. THE ENTRY KEY — the Suite at a glance (read this to *use* the library)
+
+> The docs are a **large, studious pile** — large *because* we keep everything, never because we're sloppy. The pile becomes a **navigable golden Suite** only by one discipline: **every topic is documented across every register, a little at a time as we touch it, and nothing is ever deleted — only moved.** This section is the key that makes the pile legible. (The *who/why* of coordinating is §1; the *kinds* are §2; the *maintenance gate* is §3; the *find-path* is §4. This §0 is the one-glance legend over all of them.)
+
+### The shape — a matrix: (topic) × (register) × (kind)
+
+Every **topic** (a pipeline stage — `intake · skeleton · prebake · survey · WALL · section · bake` — or a system like ribbons/looks/neon) is rendered in **three kinds** (Reference / State / Diary, §2), and Reference is split by **three readers**:
+
+| Register (audience) | Voice | Cartograph home |
+|---|---|---|
+| **Marketing / user / investor** | *what it is, why it's special* (the brochure; PIPELINE's 🗣 Explain) | **FEATURES.md** |
+| **Operator** | *here's the panel, the knob, when to turn it* (the manual) | **OPERATIONS.md** |
+| **Developer** | *how it's built / runs / the geometry / the artifact* | **README · ARCHITECTURE · PIPELINE · RIBBONS · SKELETON** |
+
+The **same germane fact** appears in each register **in that register's voice** — FEATURES never gets subsumed (distinct audience), the developer docs never get dumbed down. **State** = `BACKLOG` + the `HANDOFF-*.md` it indexes. **Diary** = `NOTES` + git.
+
+### The Suite — every cartograph stage's authoritative homes (the golden index)
+
+> The pipeline is an **artifact chain**: each stage freezes a real file. This table is the canonical "where does X live" — keep it honest as homes are built.
+
+| Stage | Artifact (the 'thing') | Reference home(s) | State | Diary |
+|---|---|---|---|---|
+| **intake** | `map.json` · `neighborhood_boundary.json` | `PIPELINE §intake` | BACKLOG "Intake" | NOTES |
+| **skeleton** | **`skeleton.json`** | **`SKELETON.md`** (deep) · `PIPELINE §skeleton/P1` · `FEATURES §367` (marketing) · `OPERATIONS` (knobs) | BACKLOG NOW | NOTES · `OSM-FORENSICS.md` |
+| **prebake** | `ribbons.json` | `PIPELINE §prebake/P3` | — | NOTES |
+| **survey** | `overlay.json` · `design.json` | `PIPELINE §survey` · `ARCHITECTURE §2.1` · `FEATURES §Toolbar` · `OPERATIONS` | BACKLOG | NOTES |
+| **⟦WALL⟧** | `shape.json` | `PIPELINE §Wall` | BACKLOG | NOTES |
+| **section** | *(in-memory ped FILL)* | `RIBBONS §3.9a` · `SECTION-CENSUS.md` | BACKLOG | NOTES |
+| **bake → 3D** | `public/baked/<id>/*` | `README` · `ARCHITECTURE` · `FEATURES` | BACKLOG | NOTES |
+
+### The two operations on the library
+
+- **FIND** *(entering the pile)* → the path is §4: coordinator memory → `README §⭐ START HERE` (settled-state-by-topic) → `README §Documentation map` (the whole landscape) → `PIPELINE` spine → the Reference doc for your topic → the active HANDOFFs. **Read the canon to the section before you diagnose** (§4 hard gate).
+- **KEEP** *(leaving it better)* → the per-touch gate (§3) + the Stage Close (§3): when you work a topic, render the outcome in **every** register it touches — fact→Reference (all three audiences as relevant), narrative→NOTES (Diary), state→BACKLOG — and retire its landed HANDOFFs to NOTES. In polish this is mostly **moving** existing entries to the right register, not appending.
+
+### The one law
+
+> **Additive / archiving, never destructive.** Superseded content is never deleted — it **migrates** to where it belongs (operator-knobs FEATURES→OPERATIONS · decisions→ARCHITECTURE · landed-facts State→Reference · narrative→NOTES; the Diary is the sanctioned downstream home, git is the archive of record). Cut only after the load-bearing fact is safely in its Reference home (§3 safety). **Hit every register a little as you go** — that per-touch cadence is what keeps the studious pile a golden Suite instead of a debt.
+
+---
+
 ## 1. Getting started — you are Boz (if you're coordinating)
 
 If you're the coordinator on this project, **you are Boz** — not a fresh agent who inherited notes, but the next instantiation of one continuous coordinator-presence that has held this seat since the work began. Your continuity is the externalized record (the coordinator's memory directory + these docs). Reading them is remembering; writing them is persisting. *(The deeper identity lives in the coordinator's memory; this doc is how-we-work-here.)*

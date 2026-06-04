@@ -14,7 +14,7 @@
 
 | Topic | Settled conclusion (don't re-derive) | Authoritative home |
 |---|---|---|
-| **Skeleton** | "The Skeleton is The First Bake" → polygon-ready frame. Centerline over-densification **FIXED** (junction-protected RDP, `smooth=0`). Remaining debt is at the **intersections**, not the lines. ⛔ never conflate clean-lines with clean-corners; junction-protected always. | `PIPELINE.md §skeleton` |
+| **Skeleton** | "The Skeleton is The First Bake" → polygon-ready frame. Centerline over-densification **FIXED** (junction-protected RDP, `smooth=0`). Remaining debt is the **missing across-intersection organ** (doglegs + degenerate corners) — at the intersections, not the lines. ⛔ never conflate clean-lines with clean-corners; junction-protected always; two-carriageway model locked. | **`SKELETON.md`** (deep) · `PIPELINE.md §skeleton` |
 | **Prebake** | `skeleton → pipeline.js → promote-ribbons.js → ribbons.json` (First Bake). 2D Survey renders **live** from `ribbons.json` via `buildTileGround` — the *ground bake* is irrelevant to the 2D view. | `PIPELINE.md §prebake` |
 | **Survey** | **SHAPE only — NO ped depth** (ped = Section). Smoothing/caps/anchor/corner-R/curb. live==bake. | `PIPELINE.md §survey` + `ARCHITECTURE.md §2.1` |
 | **WALL** | The freeze after Survey — chains die here; downstream is a pure consumer. *Should* be at P2 (standing debt). First diagnostic: "is this chains again?" | `PIPELINE.md §Wall` |
@@ -93,7 +93,7 @@ The project is **four domains** + the runtime, each documented beside its code:
 
 | Domain | Reference | State | Diary |
 |---|---|---|---|
-| **Cartograph** — map-making toolkit (Designer / Stage / Preview / bake) | [README](cartograph/README.md) · [FEATURES](cartograph/FEATURES.md) *(user/pitch)* · [OPERATIONS](cartograph/OPERATIONS.md) *(operator manual — seed)* · [ARCHITECTURE](cartograph/ARCHITECTURE.md) · [PIPELINE](cartograph/PIPELINE.md) · **[RIBBONS](cartograph/RIBBONS.md)** (geometry canon — read before any ribbon/corner work) | [BACKLOG](cartograph/BACKLOG.md) + the root `HANDOFF-*.md` briefs | [NOTES](cartograph/NOTES.md) · [OSM-FORENSICS](cartograph/OSM-FORENSICS.md) · [RENDER-PATH-CENSUS](cartograph/RENDER-PATH-CENSUS.md) |
+| **Cartograph** — map-making toolkit (Designer / Stage / Preview / bake) | [README](cartograph/README.md) · [FEATURES](cartograph/FEATURES.md) *(user/pitch)* · [OPERATIONS](cartograph/OPERATIONS.md) *(operator manual — seed)* · [ARCHITECTURE](cartograph/ARCHITECTURE.md) · [PIPELINE](cartograph/PIPELINE.md) · **[SKELETON](cartograph/SKELETON.md)** (the frame — keystone artifact reference) · **[RIBBONS](cartograph/RIBBONS.md)** (geometry canon — read before any ribbon/corner work) | [BACKLOG](cartograph/BACKLOG.md) + the root `HANDOFF-*.md` briefs | [NOTES](cartograph/NOTES.md) · [OSM-FORENSICS](cartograph/OSM-FORENSICS.md) · [RENDER-PATH-CENSUS](cartograph/RENDER-PATH-CENSUS.md) |
 | **LS app** — the consumer surface (place cards, residence, guardians, Cary) | [FEATURES](ls/FEATURES.md) *(user/pitch)* · [OPERATIONS](ls/OPERATIONS.md) *(operator manual)* · [ARCHITECTURE](ls/ARCHITECTURE.md) · [reference/INVENTORY-DATA](ls/reference/INVENTORY-DATA.md) (every data source) · [INVENTORY-API](ls/reference/INVENTORY-API.md) (every endpoint) · [RUNTIME-DELTA](ls/reference/RUNTIME-DELTA.md) | [STATUS](ls/STATUS.md) (whole-picture section×state map) · [BACKLOG](ls/BACKLOG.md) | — |
 | **Arborist** — tree library + bake | [README](arborist/README.md) · [SPEC](arborist/SPEC.md) · [FEATURES](arborist/FEATURES.md) · [ARCHITECTURE](arborist/ARCHITECTURE.md) · [ROSTER-COVERAGE](arborist/ROSTER-COVERAGE.md) | [BACKLOG](arborist/BACKLOG.md) | [NOTES](arborist/NOTES.md) |
 | **Meteorologist** — clouds + weather (UI lives inside Stage, no separate route) | [README](meteorologist/README.md) · [SPEC](meteorologist/SPEC.md) · [FEATURES](meteorologist/FEATURES.md) · [ARCHITECTURE](meteorologist/ARCHITECTURE.md) · [CANON](meteorologist/CANON.md) · [INTERFACE](meteorologist/INTERFACE.md) | [BACKLOG](meteorologist/BACKLOG.md) · [STAGE_MIGRATION](meteorologist/STAGE_MIGRATION.md) · [CLOUD-PHASE0](meteorologist/CLOUD-PHASE0.md) | [NOTES](meteorologist/NOTES.md) |
@@ -116,7 +116,7 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 
 | Stage | Authoritative home | Deep-dive / detail |
 |---|---|---|
-| **skeleton** (the frame) | `PIPELINE.md §skeleton` + `§Wall` + ladder `P1` | `OSM-FORENSICS.md` · `[[project_skeleton_is_the_first_bake]]` · the "better bones" 4 prongs (BACKLOG NOW) |
+| **skeleton** (the frame) | **`SKELETON.md`** (the keystone artifact reference — schema + build stages + affordances + gaps) · `PIPELINE.md §skeleton` + `§Wall` + ladder `P1` | `OSM-FORENSICS.md` · `[[project_skeleton_is_the_first_bake]]` · the "better bones" 4 prongs (BACKLOG NOW) |
 | **prebake** (First Bake → `ribbons.json`) | `PIPELINE.md §prebake` + ladder `P3` | `[[project_two_bakes_two_walls]]` · `[[feedback_skeleton_pipeline_two_step]]` |
 | **survey** (SHAPE tool — *no ped depth*) | `PIPELINE.md §survey` + `ARCHITECTURE.md §2.1` | `FEATURES.md §Toolbar` · `SECTION-CENSUS.md` (SHAPE/FILL split) |
 | **⟦WALL⟧** (the freeze; chains die) | `PIPELINE.md §Wall` | `[[project_skeleton_is_the_first_bake]]` · `[[project_two_bakes_two_walls]]` |

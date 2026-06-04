@@ -10,11 +10,29 @@
 
 ## 🔥 NOW — the active front
 
+### 📊 AT A GLANCE (the quick status view)
+
+**Pipeline:** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. **Stuck on: skeleton + survey.** Trunk: `cartograph-looks-pass-ab`.
+
+| Stage | Status |
+|---|---|
+| intake | ⏭️ deferred (LS has `osm.json`); designed, no code. Provincetown = first run. |
+| **skeleton** | ⚠️ **THE LIVE FRONT.** Centerlines polygon-ready ✅ (junction-protected RDP, `smooth=0`). **Remaining = the missing across-intersection organ** (doglegs + degenerate corners) — `SKELETON.md §5`. |
+| prebake | ✅ working (`ribbons.json` via two-step skeleton→pipeline). |
+| survey | 🔧 SHAPE-only; corner/curb authoring mid-migration onto tiles. |
+| WALL | 🔧 stands but load-bearing chains persist P4–P8 (standing debt). |
+| section | 🔧 ~70% (`sectionPass` chain-incapable by closure). |
+| bake → 3D | ✅ working; LS visual correctness gated on the skeleton front. |
+
+**Tonight's live target (2026-06-04 night):** fix the **doglegs (prong 3)** + **degenerate corners (prong 4)** in `skeleton.js` — both confirmed as the across-intersection organ (`SKELETON.md §5`, forensic numbers). New keystone doc: **`SKELETON.md`**.
+
+---
+
 - 🦴 **THE "BETTER BONES" / §WALL PROGRAM — the active front (2026-06-04).** Ground-up order (Jacob): *perfected skeleton (+prebake) → Survey (+wall) → Section (+bake)*. The thorn/bulge-bow/degenerate-corner cluster on the live 2D Survey is the **§Wall debt** (`PIPELINE §Wall`/P1): the skeleton isn't yet polygon-ready. **Four prongs, separated:**
   1. **§Wall over-densification** (aggressive junction-protected RDP) — ✅ **LANDED** (Chord, merged `d1d70a2`, baked `13d8195` at `smooth=0`; Benton fixed on Jacob's eye; centerlines now polygon-ready). Brief: `HANDOFF-too-much-line-root-cause.md`.
   2. **Band-fold thorns** (Roots A T-mouth `iW`-fold + B thin-tile) — 🔧 **in-flight (Bollard), Option A = LOCAL capacity clamp** ("G12 made local"). Brief: `HANDOFF-band-fold-fix.md` + forensic `HANDOFF-junction-band-thorns-FINDINGS.md`. **+ 2nd facet (added 2026-06-04):** the **no-mouth side** of a degree-3 T doglegs even though the through-centerline is straight — a through-vertex corner-treated when it should pass straight (distinct from the `iW` fold).
-  3. **Name-logic dog-legs** (weld same-name fragments + straighten within-name kinks; St Vincent/Benton also broke the dead-end prune) — 📝 **brief drafted**: `HANDOFF-name-logic-skeleton-pass.md` (dispatch off the merged trunk; skeleton.js).
-  4. **Intersection consolidation** (the *degenerate corners* at complex IXs — over-noded junctions doom `cornersAtIx`) — ⏭️ **highest-leverage, not started, forensic-first** (survey `osm2streets`; the 2 marked exemplars at ~`382,−72` Vail/Park-deg5 + ~`202,172` Kennett). Relieves the 13-month corner saga.
+  3. **Name-logic / through-junction dog-legs** (weld same-name fragments + straighten within-name kinks) — 📝 brief drafted: `HANDOFF-name-logic-skeleton-pass.md`. **🔬 FORENSICALLY CONFIRMED 2026-06-04 (night), `SKELETON.md §5a`:** the "flat side of a T should be flat" dogleg = junction-protected RDP *pinning the junction node* (the 79-T fix) where it sits **3–4 m off the through-chord** (S 18th 3.32 m / S Jefferson 4.13 m / Geyer 3.07 m; **46** such junctions; Lafayette Park north edge bows 3.33 m). Fix = straighten the through-pair *through* the protected node (project onto the chord, drag the shared branch endpoint with it). `skeleton.js`, after welding / before RDP.
+  4. **Intersection consolidation** (the *degenerate corners* at complex IXs) — ⏭️ **highest-leverage, forensic-first** (survey `osm2streets`; two-carriageway model stays LOCKED). **🔬 FORENSICALLY CONFIRMED 2026-06-04 (night), `SKELETON.md §5b`:** both marked exemplars are **divided↔undivided transitions landing on a cross-street** → a **degree-5 "Y" node** where the avenue arrives as 3 short fragments → DCEL+fillet build the corner from stub-ends (not parallel to either street): **(a)** park NW corner = **Lafayette Ave × Mississippi Ave** (junction `166.5,221.9`; true corner ≈ `180,210.5`); **(b) Park Ave × South 18th** (junction `424.4,-88.7`; true corner ≈ `417,-82`). These are LS's 4 park-corner IXs — *skipped* in figure-ground (FEATURES §437), now degenerating in the tile path. Relieves the 13-month corner saga.
   - **Sequencing:** §Wall landed → band-fold (`tileGround`, Bollard) ∥ name-logic (`skeleton.js`) run parallel (different files) → IX-consolidation forensic. **Separate thread (NOT better-bones):** Truman south-of-Park median = D3/D8 divided-road (`TRUMAN-FORENSICS.md` addendum).
   - **Trunk:** `cartograph-looks-pass-ab` (consolidated 2026-06-04; D1 weld + grade-sep + station-overlap + §Wall-RDP all in; branch sprawl 9→5, worktrees 3→1). Dead-end prune PARKED (`bollard-dead-end-prune` on origin). Lessons: `feedback_audit_then_cut_git_palimpsest`, `feedback_read_canon_before_forensics`. Narrative: NOTES 2026-06-04.
 
@@ -86,11 +104,15 @@
 | toy-to-stage-bake | bake path Toy→Stage | live → NOW |
 | asphalt-as-ribbon | authored asphalt extent | live → NEXT |
 | dead-end-typology | endpoint typology | live → NEXT |
-| divided-pair-station-overlap | ✅ LANDED (Groma `8ffd795` → converged `8392b3e`, Theodolite) — dropped the offset #5/#6 pair, 28→27 medians | done |
-| truman-forensics | ✅ DONE (Galen, `TRUMAN-FORENSICS.md`) — 8 defects, 6 systemic. **ROOT = D1: `weldChains` won't fuse a carriageway's own colinear continuation → carriageways shatter into staggered fragments.** Median is emergent + free after D1; `medians[]` ring is vestigial decoy. **Docket: D1 weld (skeleton/Groma) → D6 oneway-serialize → D3/D8 median-tag → D4 vestigial-cleanup → D5 dead-end → D7 TBD.** | done → D1 docket |
-| divided-carriageway-longitudinal-weld (D1) | THE keystone: direction-strict tail-to-head same-heading never-flip weld so each carriageway = one continuous chain → median falls out free. Systemic all divided roads. | dispatch-ready (WARM→Groma) |
-| dead-end-spike-prune | prune pendant edges from `extractFaces` + stroke stubs as asphalt (the grade-sep pattern) — kills the dead-end "big triangle" slack | dispatch-ready (WARM→Theodolite) |
-| section-census | ✅ DONE (Stratum, `f652053`, `SECTION-CENSUS.md`) — Section is ~70% built (sectionPass exists + chain-incapable by closure = deep wall already satisfied). Remaining = wire + **D1 decision** + 3 FILL fixes. **Section build docket** = census §"ordered backlog" 1–7; **#3 (ADA/point-ramp/G12 guard) is schema-independent → startable now.** | done → docket |
+| **🦴 better-bones program** | §Wall thorns reframe → 4 prongs (see NOW front + NOTES 2026-06-04) | ACTIVE |
+| too-much-line-root-cause (prong 1) | aggressive junction-protected RDP → centerlines polygon-ready | ✅ LANDED (Chord `d1d70a2`/`13d8195`, `smooth=0`; Benton fixed) |
+| junction-band-thorns (+FINDINGS) | Bollard forensic — Roots A (T-mouth `iW`-fold) / B (thin-tile) + name-logic split | ✅ done (forensic) |
+| band-fold-fix (prong 2) | Option A = LOCAL capacity clamp (Roots A+B) **+ no-mouth-side through-vertex dogleg** facet | 🔧 in-flight (Bollard) |
+| name-logic-skeleton-pass (prong 3) | weld same-name fragments + straighten within-name kinks (St Vincent/Benton) | 📝 drafted (dispatch off merged trunk) |
+| intersection-consolidation (prong 4) | degenerate corners at complex IXs; `osm2streets`; forensic-first | ⏭️ not started — highest-leverage |
+| divided-carriageway-weld (D1) · station-overlap · truman-forensics | ✅ LANDED + folded to canon (RIBBONS §3.1 / PIPELINE P1 / FEATURES §367). Truman SOUTH median = separate D3/D8 (`TRUMAN-FORENSICS.md` addendum) | HANDOFF pointers retired → NOTES (`TRUMAN-FORENSICS.md` kept) |
+| dead-end-spike-prune | prune pendant edges + stroke stubs (scope b) | ⏸ PARKED (Bollard, `bollard-dead-end-prune` on origin) — symptom-patch; re-check Missouri Ave post-band-fix |
+| section-census | ✅ DONE (Stratum, `f652053`, `SECTION-CENSUS.md`) — Section ~70% built; **#3 (ADA/point-ramp/G12 guard) schema-independent → startable** | done → docket |
 | render-conformance | env parity (DRAFT) | cold-review gate |
 | audit-{cartograph,arborist,ls-app,docs} | forensic pathology | campaign |
 | **retired 2026-05-31 (`2854aa3`, in git)** | block-independence · degenerate-W-flood · pass2-customs-hardening · ribbon-corners · measure-authoring-redesign · toy-reset-to-defaults | done — recoverable via git |

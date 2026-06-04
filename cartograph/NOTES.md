@@ -8,6 +8,25 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-04 (night) — THE SKELETON GETS A HOME DOC: the two marks are ONE missing organ; the library reframed as a matrix.
+
+**The ask.** Jacob had Boz go in **cold** ("forensic gunslinger, fresh context") on two polygon-silhouette problems on the live 2D Survey render — a **dog-leg** ("the flat side of a T should be flat") and **degenerate corners** he traced on the project's `marker_strokes.json` (a corner whose edges aren't parallel to the streets that build it, even though *we edit polygons, so every line should be inherently parallel to a chain segment*). Then: *command-master the library* with the context acquired.
+
+**Forensic verdict — the two marks are ONE disease.** The skeleton cleans **along** chains (weld, longitudinal-weld, RDP) but has **no pass that consolidates geometry *at* an intersection** — it preserves OSM's intersection representation verbatim. That single gap throws both symptoms:
+- **Dog-leg** = junction-protected RDP is *forced to keep* the junction node exactly (the 79-T fix), and that node sits **3–4 m off the chord** its own through-neighbours define (South 18th 3.32 m / S. Jefferson 4.13 m / Geyer 3.07 m). **46** through-junctions carry the kink; the re-marked **north edge of Lafayette Park bows 3.33 m** over 358 m — same mechanism. The protection that saved the Ts freezes an excursion the through-road should ignore. *(Prong 3.)*
+- **Degenerate corner** = the park's **NW corner** (traced true point ≈ `(180, 210.5)`) is the **Lafayette Ave × Mississippi Ave** junction, stored as a **degree-5 "Y"** where the partially-divided avenue arrives as **3 short fragments** (90/15.6/15.2 m) because the **divided↔undivided transition lands on the cross-street**. DCEL + fillet build the corner from stub-ends → not parallel. Identical at **Park Ave × South 18th**. ⭐ **Not a new bug — the oldest corner:** FEATURES §437 records these as "LS's four park-corner IXs," *skipped entirely* in figure-ground; the tile path no longer skips them, it degenerates them. *(Prong 4 — the highest-leverage; the two-carriageway model stays LOCKED, what's missing is the consolidation.)*
+
+**The library reframe (Jacob, in five corrections).** Boz first over-reached — floated "strike Survey" and "collapse divided roads to single centerlines" **without reading the canon** (FEATURES §367's *locked* two-carriageway model + the actual `SurveyorPanel`/`MeasurePanel`). Same lesson as the morning, re-learned: `feedback_read_canon_before_forensics`. Jacob redirected to what the night was really for:
+1. **The skeleton is "THE most important document"** — meant *literally*: both the *idea* (a stage) and the *thing* (`skeleton.json`, the keystone file, the IP, a black box the user fortifies but never edits). It had **no home doc** → created **`cartograph/SKELETON.md`** (the frame's deep-reference: artifact chain, schema, the `skeleton.js` build stages in order, the affordance catalog, the across-intersection gap with tonight's numbers).
+2. **The pipeline is an artifact chain** — every stage freezes a real document: `Intake(map.json) → Skeleton(skeleton.json) → Prebake(ribbons.json) → Survey(overlay/design) → ⟦WALL⟧(shape.json) → Section → Bake(slab)`.
+3. **The doc suite is a MATRIX, not a pile** — the same germane info rendered per **register/audience**, in three **kinds**: Reference {**FEATURES = marketing-facing**, ARCHITECTURE = engineer, OPERATIONS = operator, RIBBONS = geometry, **SKELETON = frame**, PIPELINE = the index} · State {BACKLOG, HANDOFFs} · **Diary {NOTES}**. PIPELINE's 🔧/🩺/🗣 contours are this same multi-audience idea in miniature. "Documentation is additive/archiving, **never destructive**."
+4. **The pile is studious, not sloppy** — it's a pile *because* we kept everything. The discipline now: keep everything, and **hit every register a little at a time as we go** (the per-touch cadence), so the Suite stays the golden version.
+5. **Backlogs must stay current + crisp** — the quick project-status view, always.
+
+**Tonight's deliverables:** SKELETON.md (the engineer cell) + this diary entry now; then the **library-process how-to entry-key** (the procedural guide to the matrix itself) + a backlog refresh; then **fix the doglegs + corners** (prong 3 surgical first, prong 4 consolidation — both in `skeleton.js`, after welding / before RDP). The marketing (FEATURES) + operator (OPERATIONS) cells of the skeleton row follow per the per-touch cadence.
+
+---
+
 ## 2026-06-04 — THE §WALL / "BETTER BONES" DAY: the thorns reframed to the skeleton's polygon-readiness debt; four prongs separated.
 
 **The frame.** Jacob set the ground-up order: *perfected skeleton (+prebake) → perfected Survey (+wall) → perfected Section (+bake to slab)*, working in the **2D Survey/Design** tool (NOT 3D Stage/Preview — the 2D view renders **live** from `buildTileGround`, so the bake is irrelevant to what's on screen there).
