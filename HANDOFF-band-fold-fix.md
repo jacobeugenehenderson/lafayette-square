@@ -23,6 +23,14 @@ Per your own written fix-direction: **detect the local neck (local inscribed rea
 - **The hard part = a LOCAL reach measure** (the construction question you flagged). A per-tile `cap` over-clamps the in-spec rest of the block, so the clamp must be local/variable. Starting candidate (you prototype + pick): per-vertex **distance to the nearest non-adjacent `iA` edge** (a cheap local-width proxy) → where `local_half_width < WB`, clamp that region's offset depth to `~0.9 × local_half_width` (mirrors §3.9a item 5's 90% rule, applied locally). A medial-axis measure is the rigorous version if the proxy is too coarse — your call after prototyping.
 - The deep offset should **truncate to a clean edge** in the clamped region, not fold; shallower offsets (`iC`/`iT`) are untouched where they're in-spec.
 
+## 2nd facet (added 2026-06-04, Jacob's eye + image) — the no-mouth-side dogleg
+
+**Distinct from the `iW` fold above — same T-node, the opposite (no-street) side.** At a degree-3 T, the polygon/ped-band edge on the side **with no cross-street, no protrusion** doglegs *at the node*, even though the avenue centerline runs **dead straight** through it. Tell: between nodes that same edge is drawn perfectly straight, so the straight-offset capability exists — the construction only mis-fires *at the node*. **This is NOT a capacity/fold problem** (Option A's clamp won't touch it); it's the construction **putting a corner where the centerline is straight**.
+
+- **The rule:** at a degree-3 node, the **through / no-mouth side offsets STRAIGHT** — *a through-vertex on a straight run creates no corner.* Only the mouth side gets corner treatment.
+- **Mechanism — PIN IT, don't assume:** the through-avenue carries an inserted node-vertex (the cross-street's join); something (the **per-vertex fillet pass** / the offset / the deg-3 face-walk) corner-treats that collinear/near-collinear vertex. Confirm *which op* doglegs the straight through-line.
+- **Together the two facets fully resolve the T-node:** mouth side = Option A `iW` clamp · no-mouth side = straight pass-through. Same file (`tileGround.js`/the fillet pass) → do as one pass, two clean commits if natural. Validate: the no-mouth edge runs straight through the node (no dogleg), against the marked degenerate corners + Jacob's eye.
+
 ## ⛔ No-regress gates
 
 - **Only the local neck is treated** — in-spec blocks + legit 90° corners untouched (the global guard's full-collapse path stays; you ADD the local/partial case).

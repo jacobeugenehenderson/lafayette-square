@@ -1,6 +1,6 @@
 # HANDOFF — The §Wall / "better bones": simplify the skeleton to polygon-ready BEFORE Survey
 
-**State:** IN-FLIGHT — diagnosis DONE; **reframed 2026-06-04 from "too-much-line tweak" → the §Wall / better-bones program** (the documented highest-leverage item; the doctrine was in the canon all along). Fresh agent (Chord) on it. **Domain:** cartograph SHAPE — `skeleton.js` (the First Bake) → `derive.js` → `tileGround.js`. **Drafted/diagnosed:** Boz + Jacob + the root-cause agent, 2026-06-04.
+**State:** ✅ **PRONG 1 (centerline simplify) LANDED** — Chord's aggressive junction-protected RDP merged `d1d70a2`, baked `13d8195` at `smooth=0`; **Benton fixed on Jacob's eye**, 64/66 curvy chains coarsened, junctions held. The centerlines are now polygon-ready. **The remaining "better-bones" prongs are at the INTERSECTIONS, with their own briefs:** band-fold (`HANDOFF-band-fold-fix.md`, Bollard), name-logic dog-legs (`HANDOFF-name-logic-skeleton-pass.md`), intersection-consolidation (degenerate corners — forensic-first, not started). This file documents prong 1 (done) + the program framing; the rest live in their own briefs. **Reframed 2026-06-04 from "too-much-line tweak" → the §Wall / better-bones program** (the doctrine was in the canon all along). **Domain:** cartograph SHAPE — `skeleton.js` (the First Bake). **On landing (Boz):** fold prong-1 into `PIPELINE P1`/§Wall (done), retire this file → NOTES once the other prongs have their own State homes (they do).
 
 ---
 

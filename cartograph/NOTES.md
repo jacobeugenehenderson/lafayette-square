@@ -8,6 +8,30 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-04 — THE §WALL / "BETTER BONES" DAY: the thorns reframed to the skeleton's polygon-readiness debt; four prongs separated.
+
+**The frame.** Jacob set the ground-up order: *perfected skeleton (+prebake) → perfected Survey (+wall) → perfected Section (+bake to slab)*, working in the **2D Survey/Design** tool (NOT 3D Stage/Preview — the 2D view renders **live** from `buildTileGround`, so the bake is irrelevant to what's on screen there).
+
+**Morning: consolidation + canon folds.** Ran the BOZ §4 ritual (read all docs → standup). Consolidated the scattered branches onto trunk `cartograph-looks-pass-ab` (9→5 branches, 3→1 worktrees; retired groma×2 + agent — verified folded-by-reimplementation, not just merged → `feedback_audit_then_cut_git_palimpsest`). Folded the landed divided-road + grade-sep work into canon (RIBBONS §3.1 / PIPELINE P1 / FEATURES §367). Added **BOZ.md §5** (the day-cycle pack-up/pick-up ritual). D1 carriageway weld + station-overlap + grade-sep all confirmed landed.
+
+**The reframe (Jacob's eye on the live 2D render).** The thorns / bulge-bow / "dead-end triangles" are not separate bugs — and they are not all one thing either. The day's central move was *separating* them, driven by Jacob repeatedly questioning the substrate ("are we sure the skeleton is working?", "the lines on screen are clean — why can't we pick up that simplicity?"). The doctrine that answered it (`PIPELINE §Wall`: "The Skeleton is The First Bake → extremely simplified, polygon-ready, chains dead, wall at P2") **was in the canon the whole time** — Boz forensically "re-discovered" it instead of reading it, and wrongly answered "the skeleton's fine" by conflating *geometrically-correct centerlines* with *polygon-ready* → `feedback_read_canon_before_forensics`.
+
+**The four "better bones" prongs, separated:**
+1. **§Wall over-densification** — the skeleton passed OSM saw-tooth through (Benton loop 29 pts where ~5 suffice; the `simplify` was a timid local filter). Fix = aggressive **junction-protected** RDP. **LANDED** (Chord, merged `d1d70a2` + baked `13d8195` at `smooth=0`; Benton fixed on Jacob's eye). Note: `smooth=0` (no render smoothing on the clean frame) replaced the planned arc-length pass — simpler.
+2. **Band-fold thorns** (Bollard's forensic, `HANDOFF-junction-band-thorns-FINDINGS.md`): **Root A** (T-mouth — the deep `iW` offset folds where a wide avenue necks the tile; the per-tile G12 guard sleeps because the tile is globally in-spec) + **Root B** (genuinely thin tile, Waverly). One fix: **Option A — a LOCAL capacity clamp** ("G12 made local"; the per-tile clamp would over-clamp). In-flight (Bollard).
+3. **Name-logic dog-legs** — 35/113 streets fragmented + 5 within-name kinks (St Vincent, Benton, Papin×2, Park Place); St Vincent + Benton are the same chains that broke the dead-end prune. Fix = name-aware skeleton weld/straighten. Brief drafted.
+4. **Intersection consolidation** (the *degenerate corners* Jacob marked at complex IXs) — over-noded complex junctions doom `cornersAtIx` derivation. The highest-leverage prong (relieves the corner saga); forensic-first (survey `osm2streets`). **+ a distinct sub-finding:** at a degree-3 T, the **no-mouth side** doglegs even though the through-centerline is straight (a through-vertex is corner-treated when it should pass straight) — mechanically separate from Root A's `iW` fold.
+
+**Corrections logged (the proxy-vs-truth discipline, several times today):**
+- "G12 capacity guard is done" → **wrong** (Jacob's eye: thorns persist). The guard is *partial* — fires only on full-collapse, not the local partial-degeneracy.
+- "derive.js:1146 re-densifies, undoing the simplify" → **wrong** (verified: Chord's RDP survived derive — 64/66 curvy chains coarsened in `ribbons.json`). The over-densification is skeleton + render-smooth only; derive's curve-densify is inert post-RDP.
+- The "differently wrong" eyeball was tangled with **dev-server/session churn** (a swapped `ribbons.json` + a stale backend + the separate Truman-south thread) — a clean restart + the two-source-join (skeleton via backend, ribbons via vite bundle) being desync-prone was the real noise. The frame *is* what's rendered (proven: a ribbons-only swap markedly changed the render).
+- **Truman south-of-Park median** = a *separate* D3/D8 thread (real one-sided cross-street T-junctions fragment the emergent median face; Grattan = 0.00m in raw OSM, a genuine junction, not a snap). `TRUMAN-FORENSICS.md` addendum.
+
+**Lesson banked, broadly:** read the canon to the section *first*; judge "is X working?" against the *documented* standard, not a narrower correctness; doctrine **and** current status both belong in Reference so the answer is findable, not re-discovered (`PIPELINE P1` now carries a plain STATUS line). And the substrate-questioning instinct ("why are we even having this problem — the simplicity is on screen") is the one to honor — it's the Wall's whole thesis.
+
+---
+
 ## 2026-06-01 — THE PIVOT: figure-ground → the TILE model. The 13-month corner knot unwound; the construction re-poured on LS in a day.
 
 **The morning.** A bake-target ghost (unflagged `bake-ground.js` wrote a phantom `baked/default/` nothing reads — `feedback_bake_ground_scene_clobbers_default_look`, inverted then fixed) had us reading a stale May-28 bake the prior session. The first fresh `--look=lafayette-square` bake showed LS's *real* surface — **every ribbon wrong wall-to-wall.** That render was the decisive confirmation: figure-ground / mono-width was the doomed intermediate. Bake-target wiring fixed (unflagged → `lafayette-square`; missing-look *throws*, never writes a phantom).
