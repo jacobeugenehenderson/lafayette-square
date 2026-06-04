@@ -117,7 +117,8 @@
 | audit-{cartograph,arborist,ls-app,docs} | forensic pathology | campaign |
 | **retired 2026-05-31 (`2854aa3`, in git)** | block-independence · degenerate-W-flood · pass2-customs-hardening · ribbon-corners · measure-authoring-redesign · toy-reset-to-defaults | done — recoverable via git |
 | **✅ P5 RETIRE-SWEEP — 2026-06-04 (32 files, git holds them)** | 6 superseded-into-tiles (wall-move/-brief/-W1/-W1b, stroke-construction, ls-bespoke-corners) + 26 landed (census/forensics/tile-build/shipped-features + the **Neighborhood-Disc trio** aerial-focus/disc-centerline-clip/survey-view) | retired → NOTES 2026-06-04(night) ledger; outcomes already in Reference/BACKLOG/memory |
-| **still tracked — NOT retired (held)** | QC-pending: `buildings-bake` · `tree-hero-lod` · parked: `cloud-specialist` · unclear-pending-Jacob: `p1-frame-enrichment` · `phase2-survey` · `survey-brief` | keep until QC confirmed / Jacob's call |
+| **still tracked — NOT retired (held)** | QC-pending: `buildings-bake` · `tree-hero-lod` · parked: `cloud-specialist`, `dead-end-spike-prune` | keep until QC confirmed |
+| **abandoned-on-pivot — retired 2026-06-04** | `p1-frame-enrichment` · `phase2-survey` · `survey-brief` — pre-tile-pivot framings, abandoned when the plan changed to the tile model; content shipped elsewhere | retired → NOTES (git holds them) |
 | **disc arc — DONE + documented** | boundary.js SSOT (center/radius/256-gon + fade/streetFade + clip) → `ARCHITECTURE.md §7`; aerial base+focus loader; Survey wireframe view | ✅ COMPLETE (briefs retired above) |
 
 ## §Triage (carried, not lost)
