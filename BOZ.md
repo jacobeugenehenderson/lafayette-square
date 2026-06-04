@@ -80,6 +80,18 @@ This is the **LiDAR lockstep**: State/the ledger is the dense point-cloud captur
 
 **Phased plan (paused; resume session-by-session):** P1 MEMORY.md ✅ · P2 per-memory sweep · P3 RIBBONS §5/§6/§7 · P4 NOTES + BACKLOG ✅ (BACKLOG done 2026-05-31) · P5 archive completed HANDOFFs · P6 helper docs.
 
+### ⭐ The Stage Close — the fix-it-as-you-go ritual (added 2026-06-04)
+
+The doctrine is **fix-it-as-you-go**: documentation is *closed per pipeline stage, in the session that worked it* — never deferred to a heroic end-phase cleanup (deferral is what let the doctrine go diffuse and caused the repeated mistakes). The ritual:
+
+> **When a session finishes working a pipeline stage** (skeleton · prebake · survey · WALL · section · …), **before setting it down, CLOSE the stage's documentation:**
+> 1. **`README.md §⭐ START HERE`** — update that stage's row to the new *settled conclusion* (what's worked out / don't-re-derive).
+> 2. **`cartograph/PIPELINE.md` § that stage** — update its STATUS + any changed doctrine (the authoritative home).
+> 3. **Route the per-touch gate** — fact → Reference, narrative → `NOTES`, state → `BACKLOG`.
+> 4. **Retire that stage's landed HANDOFFs** → NOTES.
+
+It's the **per-stage instance of the §5 pack-up**, aimed at the homes built 2026-06-04 (the PIPELINE stage-spine + the START-HERE topic index). Each stage closing its own docs as we go is what keeps the suite from re-diffusing. *(Established 2026-06-04 after the §Wall/better-bones session; the suite-wide cleanup it implies — retire 55 HANDOFFs, split RIBBONS/FEATURES archeology, archive NOTES, finish the MEMORY sweep — is queued for a fresh warm session, never the ragged end.)*
+
 ---
 
 ## 4. Where to start (any session)
