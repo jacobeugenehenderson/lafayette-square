@@ -510,7 +510,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "28522831-166624144",
-        "medianWidth": 3.21
+        "medianWidth": 3.21,
+        "spineAtStart": "south-18th-street-7"
       },
       "highway": "residential",
       "type": "residential",
@@ -792,7 +793,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "28522831-166624144",
-        "medianWidth": 3.21
+        "medianWidth": 3.21,
+        "spineAtEnd": "south-18th-street-7"
       },
       "highway": "residential",
       "type": "residential",
@@ -883,7 +885,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "301606663-1297584456",
-        "medianWidth": 11
+        "medianWidth": 11,
+        "spineAtStart": "south-18th-street-2"
       },
       "highway": "residential",
       "type": "residential",
@@ -1006,7 +1009,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "301606663-1297584456",
-        "medianWidth": 11
+        "medianWidth": 11,
+        "spineAtEnd": "south-18th-street-2"
       },
       "highway": "residential",
       "type": "residential",
@@ -1262,8 +1266,8 @@
         "source": "survey-default"
       },
       "capEnds": {
-        "start": null,
-        "end": null
+        "start": "blunt",
+        "end": "blunt"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -8975,7 +8979,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "238257778-301606661",
-        "medianWidth": 8.33
+        "medianWidth": 8.33,
+        "spineAtStart": "papin-street-4"
       },
       "highway": "residential",
       "type": "residential",
@@ -9052,7 +9057,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "238257778-301606661",
-        "medianWidth": 8.33
+        "medianWidth": 8.33,
+        "spineAtEnd": "papin-street-4"
       },
       "highway": "residential",
       "type": "residential",
@@ -9193,7 +9199,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "1279099240-1279099241",
-        "medianWidth": 5.75
+        "medianWidth": 5.75,
+        "spineAtEnd": "papin-street-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -9269,7 +9276,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "1279099240-1279099241",
-        "medianWidth": 5.75
+        "medianWidth": 5.75,
+        "spineAtStart": "papin-street-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -9811,7 +9819,9 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "624166453-1448498459",
-        "medianWidth": 4.97
+        "medianWidth": 4.97,
+        "spineAtStart": "russell-boulevard-0",
+        "spineAtEnd": "russell-boulevard-2"
       },
       "highway": "secondary",
       "type": "secondary",
@@ -10004,7 +10014,9 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "624166453-1448498459",
-        "medianWidth": 4.97
+        "medianWidth": 4.97,
+        "spineAtStart": "russell-boulevard-2",
+        "spineAtEnd": "russell-boulevard-0"
       },
       "highway": "secondary",
       "type": "secondary",
@@ -10940,7 +10952,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "1098235552-1098277792",
-        "medianWidth": 36.45
+        "medianWidth": 36.45,
+        "spineAtEnd": "officer-david-haynes-memorial-highway-8"
       },
       "highway": "motorway",
       "type": "motorway",
@@ -11104,7 +11117,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "123680973-1098246220",
-        "medianWidth": 32.29
+        "medianWidth": 32.29,
+        "spineAtEnd": "officer-david-haynes-memorial-highway-10"
       },
       "highway": "motorway",
       "type": "motorway",
@@ -11189,7 +11203,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "1098235552-1098277792",
-        "medianWidth": 36.45
+        "medianWidth": 36.45,
+        "spineAtStart": "officer-david-haynes-memorial-highway-3"
       },
       "highway": "motorway",
       "type": "motorway",
@@ -11584,7 +11599,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "180345148-612660796",
-        "medianWidth": 6.7
+        "medianWidth": 6.7,
+        "spineAtEnd": "geyer-avenue-6"
       },
       "highway": "residential",
       "type": "residential",
@@ -11854,7 +11870,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "180345148-612660796",
-        "medianWidth": 6.7
+        "medianWidth": 6.7,
+        "spineAtStart": "geyer-avenue-6"
       },
       "highway": "residential",
       "type": "residential",
@@ -13385,7 +13402,9 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "1350829601-1350829602",
-        "medianWidth": 6.05
+        "medianWidth": 6.05,
+        "spineAtStart": "chouteau-avenue-1",
+        "spineAtEnd": "chouteau-avenue-0"
       },
       "highway": "secondary",
       "type": "secondary",
@@ -13480,7 +13499,9 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "1350829601-1350829602",
-        "medianWidth": 6.05
+        "medianWidth": 6.05,
+        "spineAtStart": "chouteau-avenue-0",
+        "spineAtEnd": "chouteau-avenue-1"
       },
       "highway": "secondary",
       "type": "secondary",
@@ -14123,7 +14144,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "172189149-1413275236",
-        "medianWidth": 11.53
+        "medianWidth": 11.53,
+        "spineAtEnd": "lafayette-avenue-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -14353,7 +14375,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "172189149-1413275236",
-        "medianWidth": 11.53
+        "medianWidth": 11.53,
+        "spineAtStart": "lafayette-avenue-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -14469,7 +14492,9 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "1349812898-1488940913",
-        "medianWidth": 7.92
+        "medianWidth": 7.92,
+        "spineAtStart": "lafayette-avenue-3",
+        "spineAtEnd": "lafayette-avenue-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -14584,7 +14609,9 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "1349812898-1488940913",
-        "medianWidth": 7.92
+        "medianWidth": 7.92,
+        "spineAtStart": "lafayette-avenue-1",
+        "spineAtEnd": "lafayette-avenue-3"
       },
       "highway": "residential",
       "type": "residential",
@@ -14689,7 +14716,9 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "1349901208-1349901209",
-        "medianWidth": 5.14
+        "medianWidth": 5.14,
+        "spineAtStart": "lafayette-avenue-3",
+        "spineAtEnd": "lafayette-avenue-0"
       },
       "highway": "residential",
       "type": "residential",
@@ -14776,7 +14805,9 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "1349901208-1349901209",
-        "medianWidth": 5.14
+        "medianWidth": 5.14,
+        "spineAtStart": "lafayette-avenue-0",
+        "spineAtEnd": "lafayette-avenue-3"
       },
       "highway": "residential",
       "type": "residential",
@@ -15187,7 +15218,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "163871018-1349812859",
-        "medianWidth": 8.44
+        "medianWidth": 8.44,
+        "spineAtEnd": "park-avenue-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -15478,7 +15510,9 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "354388956-1349901204",
-        "medianWidth": 8.22
+        "medianWidth": 8.22,
+        "spineAtStart": "park-avenue-1",
+        "spineAtEnd": "park-avenue-5"
       },
       "highway": "residential",
       "type": "residential",
@@ -15626,7 +15660,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "163871018-1349812859",
-        "medianWidth": 8.44
+        "medianWidth": 8.44,
+        "spineAtStart": "park-avenue-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -15759,7 +15794,9 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "354388956-1349901204",
-        "medianWidth": 8.22
+        "medianWidth": 8.22,
+        "spineAtStart": "park-avenue-5",
+        "spineAtEnd": "park-avenue-1"
       },
       "highway": "residential",
       "type": "residential",
@@ -16471,7 +16508,8 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "624010923-1350829669",
-        "medianWidth": 10.4
+        "medianWidth": 10.4,
+        "spineAtStart": "south-jefferson-avenue-2"
       },
       "highway": "primary",
       "type": "primary",
@@ -16560,7 +16598,9 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "627340928-627340930",
-        "medianWidth": 12.61
+        "medianWidth": 12.61,
+        "spineAtStart": "south-jefferson-avenue-2",
+        "spineAtEnd": "south-jefferson-avenue-6"
       },
       "highway": "primary",
       "type": "primary",
@@ -16804,7 +16844,9 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "627340928-627340930",
-        "medianWidth": 12.61
+        "medianWidth": 12.61,
+        "spineAtStart": "south-jefferson-avenue-6",
+        "spineAtEnd": "south-jefferson-avenue-2"
       },
       "highway": "primary",
       "type": "primary",
@@ -17064,7 +17106,9 @@
         "role": "carriageway-A",
         "kind": "divided",
         "pairKey": "712305126-1350036707",
-        "medianWidth": 14.03
+        "medianWidth": 14.03,
+        "spineAtStart": "south-jefferson-avenue-4",
+        "spineAtEnd": "south-jefferson-avenue-6"
       },
       "highway": "primary",
       "type": "primary",
@@ -17299,7 +17343,9 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "712305126-1350036707",
-        "medianWidth": 14.03
+        "medianWidth": 14.03,
+        "spineAtStart": "south-jefferson-avenue-6",
+        "spineAtEnd": "south-jefferson-avenue-4"
       },
       "highway": "primary",
       "type": "primary",
@@ -17439,7 +17485,8 @@
         "role": "carriageway-B",
         "kind": "divided",
         "pairKey": "624010923-1350829669",
-        "medianWidth": 10.4
+        "medianWidth": 10.4,
+        "spineAtEnd": "south-jefferson-avenue-2"
       },
       "highway": "primary",
       "type": "primary",

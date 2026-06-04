@@ -3043,7 +3043,7 @@ export function deriveLayers(highways) {
       // divided-road authoring goal can read the carriageway identity without
       // re-deriving it). See HANDOFF-divided-carriageway-weld.md.
       oneway: !!st.oneway,
-      ...(st.phase ? { phase: { role: st.phase.role || null, kind: st.phase.kind || null, pairKey: st.phase.pairKey || null, ...(st.phase.medianWidth != null ? { medianWidth: st.phase.medianWidth } : {}) } } : {}),
+      ...(st.phase ? { phase: { role: st.phase.role || null, kind: st.phase.kind || null, pairKey: st.phase.pairKey || null, ...(st.phase.medianWidth != null ? { medianWidth: st.phase.medianWidth } : {}), ...(st.phase.spineAtStart ? { spineAtStart: st.phase.spineAtStart } : {}), ...(st.phase.spineAtEnd ? { spineAtEnd: st.phase.spineAtEnd } : {}) } } : {}),
       highway: st.highway || 'residential',
       type: st.type || 'residential',
       // Operator-intent fields the V2 emitter consumes. Designer reads

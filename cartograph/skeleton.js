@@ -1048,6 +1048,41 @@ function main() {
     s.phase.endNode   = { x: p[p.length - 1].x, z: p[p.length - 1].z }
   }
 
+  // ── Corridor spine-link (carriageway → spine continuation) ───────────
+  // A divided carriageway needs to know its SPINE continuation across a
+  // divided↔undivided transition, so the tile construction can hold the
+  // carriageway's OUTER edge to the spine's straight outer-edge line (the
+  // median opens inward; the outer curb stays continuous). We compute this
+  // ONCE here, as a frozen frame fact, from the just-stamped endpoint nodes
+  // + corridorName — NEVER re-derived by node-matching at construction time
+  // (that re-coupling is the wall violation we're avoiding; carry it as
+  // frame truth). Stamped per-end (a carriageway may meet a spine at its
+  // start, end, both, or neither). The value is the spine street's `id`
+  // (== ribbons skelId), so the consumer looks it up directly.
+  {
+    const nkey = (n) => `${n.x.toFixed(2)},${n.z.toFixed(2)}`
+    const spinesByNode = new Map()   // nodeKey -> [{ id, corridor }]
+    for (const s of streets) {
+      if (s.phase?.role !== 'spine') continue
+      for (const n of [s.phase.startNode, s.phase.endNode]) {
+        if (!n) continue
+        const k = nkey(n)
+        if (!spinesByNode.has(k)) spinesByNode.set(k, [])
+        spinesByNode.get(k).push({ id: s.id, corridor: s.phase.corridorName })
+      }
+    }
+    let linked = 0
+    for (const s of streets) {
+      if (s.phase?.kind !== 'divided') continue
+      for (const [field, n] of [['spineAtStart', s.phase.startNode], ['spineAtEnd', s.phase.endNode]]) {
+        if (!n) continue
+        const cand = (spinesByNode.get(nkey(n)) || []).find(sp => sp.corridor === s.phase.corridorName)
+        if (cand) { s.phase[field] = cand.id; linked++ }
+      }
+    }
+    console.log(`  corridor spine-link: stamped ${linked} carriageway→spine link(s)`)
+  }
+
   // ── Node typing → cap-as-fact (Part 1.1) ─────────────────────────────
   // Classify every shared coord by graph degree, then stamp each chain's two
   // endpoints with a cap decision: 'round' at a true dead-end (degree 1),
