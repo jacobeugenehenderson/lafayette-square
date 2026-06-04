@@ -139,6 +139,17 @@ The park's **NW corner** (operator-traced true point ≈ `(180, 210.5)`) sits at
 ### Both gaps are one organ
 Doglegs (5a) and degenerate corners (5b) are the same missing capability: **across-intersection consolidation.** The two-carriageway divided model is correct and locked; what's absent is the pass that makes intersections clean. That pass belongs **in `skeleton.js`, after welding, before RDP** — consolidate the intersection, *then* simplify the now-clean chains.
 
+### 5c. ⭐ CORRECTION (2026-06-04 day) — the centerlines are square; the defect is **construction**, not skeleton-consolidation
+Jacob re-marked the two park corners (`marker_strokes.json` #0 north edge, #2 Park×S-18th corner) and pushed back on the "consolidate the intersection geometry" framing in 5b: *"I don't care about the mathematical reality of the corners — there are visible centerlines we've drawn that are in fact square and simple."* **He is right; measured and confirmed:**
+
+- **Heading audit at both nodes** (every street touching, first-segment heading away from the node):
+  - **NW (166.5,221.9):** Lafayette E–W (west frag @ −171°, east carriageways @ −6°/23°) × Mississippi N–S (@ −81°) → **crossing ≈ 90°.**
+  - **Park×S-18th (424.4,−88.7):** Park E–W (west @ −159°, east carriageways @ 13°/36°) × South-18th N–S (@ −81°) → **crossing ≈ 90–100°.**
+- The "degree-5 Y / three fragments" is **bookkeeping, not geometry**: a divided avenue splitting into two carriageways (which diverge ~25–29° as the median opens — *normal divided-road behavior*) plus a separate west fragment, all sharing one crossing node. **Visually a plain square crossing.**
+- The marked **#2 corner spikes 32 m** off the centerline crossing — *far* bigger than a band-fold's sidewalk-offset fold. A square centerline crossing offset cleanly **cannot** produce a 32 m spike. **∴ the defect is in `tileGround` corner construction** (the DCEL face-walk / fillet picking divergent-carriageway stub edges at the divided-road split node), **not** in the centerline graph.
+
+**Conclusion (supersedes 5b's "fix direction = skeleton intersection-consolidation" and refines 5a's band-fold framing):** ⛔ **do NOT consolidate the skeleton at these corners — the centerlines are already a clean square crossing.** The fix is **construction-layer**: make `tileGround` offset the park-facing carriageway cleanly through the divided-road split so the block corner is the simple offset-intersection it should be. The "across-intersection organ" still belongs to construction here, not `skeleton.js`. **Lesson (again): chasing the corner *math* is the trap — verify the rendered centerline is square first, then the bug is downstream of it.** `[[feedback_read_canon_before_forensics]]`. Next: trace `tileGround`'s corner build at node `(424.4,−88.7)`, verify-on-render.
+
 ---
 
 ## 6. The doctrine, in one place
