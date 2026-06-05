@@ -3,11 +3,9 @@
 // live-path.md). ONE module shared by the LIVE Designer (BlockGeometryV2Debug)
 // and the bake (bake-ground) so live == bake by construction (WYSIWYG).
 //
-// ⚠️ TRANSITIONAL: wired for TOY only right now; LS stays on figure-ground
-// until T2 (per-edge widths / median / boundary tagging). The toy=tiles /
-// LS=figure-ground split is temporary transition scaffolding, retired at T4
-// cleanup when LS adopts tiles and figure-ground is deleted. NOT a kept
-// scene-flag.
+// This is THE live ground construction for every scene: LS runs tiles
+// unflagged (`isTileScene = true`), same as toy. Figure-ground
+// (buildBlockGeometryV2) is the dead predecessor path, deleted at T4.
 //
 // The construction:
 //   1. TILES = bounded faces of the street centerline graph. Centerlines are
@@ -245,10 +243,6 @@ function signedArea(r) {
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
   return a / 2
 }
-// R-clamp (ported from figure-ground defaultR): a corner only has room for so
-// much rounding. Clamp R by the corner angle θ and the available depth d_min so
-// acute corners get a smaller R — past this the inward offsets self-intersect
-// and openRound over-erodes the sharp tip (the acute-corner breakage).
 function circlePoly(cx, cy, r, seg = 32) {
   const out = []
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
@@ -890,9 +884,6 @@ export function buildTileGround(ribbons, opts = {}) {
     const isMedianTile = totLen > 0 && medLen / totLen > 0.4
     const tl = isMedianTile ? 0 : repDepth(runs, 'treelawn')
     const sw = isMedianTile ? 0 : repDepth(runs, 'sidewalk')
-    // R-CLAMP: acute corners can't hold the full R — the inward offsets self-
-    // intersect and openRound over-erodes the sharp tip. Clamp R per tile by its
-    // tightest corner angle and the ped depth (d_min), so the rounding fits.
     // Per-corner fillet of the curb line. Each tile vertex resolves to its
     // authored radius (per-corner → per-IX → default 4.5) × the global scale —
     // NO clamp: the operator's R is the dial, and filletRing's own 45%-of-gap
