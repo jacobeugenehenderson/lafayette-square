@@ -137,6 +137,7 @@ At a transition (a divided avenue meeting a cross-street — LS's four park corn
 - **The Skeleton is a black box.** Fortify on top; fix the bones and Survey shrinks.
 - **Intersection variable, street/corner simple** — the boundary is the IP (§6).
 - **Polygon-first is the target; chain-derived-then-frozen is today's reality (§5.1).** Artifacts like the false corner are symptoms of the wall sitting too late — cure by moving the wall earlier, never by patching the corner.
+- **A circled Survey issue may root in DATA or SKELETON, not our polygonization** — keep that door open when diagnosing (the false corner was partly scrambled carriageway measures; `[[feedback_geometry_bugs_may_be_data_bugs]]`). The operator points at issues and fortifies *shape*; they do **not** want or need to control the Skeleton or the OSM classifications (the black box — that messiness is ours to absorb). When the root is data/skeleton, fix it **systemically in the frame, invisibly — never add a user control for it.**
 
 ---
 
