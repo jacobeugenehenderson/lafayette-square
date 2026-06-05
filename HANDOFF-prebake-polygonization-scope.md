@@ -4,6 +4,8 @@
 
 **Agent: FRESH** (name yourself). **`isolation: worktree`**. General-purpose. **Forensic-first** — read, design, spike, report; do not land a production change.
 
+> **Push back if the framing is wrong.** This brief asserts an approach (freeze at prebake; pair corridor outer-edge legs via `spineAt*`). If the forensics contradict it — the freeze belongs elsewhere, `spineAt*` is insufficient, the granularity is wrong — **say so and flag Boz**, don't force the brief's path. (The prior hygiene agent caught a wrong instruction in its brief this way; that's the job, not a deviation.)
+
 **Read first (to the section):** `cartograph/PREBAKE.md §4` (the gap — two-source seam; block re-derived in Survey) + **`§5`** (the target) · `cartograph/SURVEY.md §5.1` (why Survey isn't polygon-first) + **`§6`** (the divided transition: corner the corridor outer-edge legs, not the carriageway stubs) · `cartograph/SKELETON.md §5d/§5e` (the IP + the leg-pairing root) · `cartograph/WALL.md §1,§5` (frozen-wrong-data is odious; the DoD). Code: `tileGround.js extractFaces (:303)` + the per-tile build/`filletRing` (`:840-961`) — where the block polygon is born today; `derive.js:1056-1178` — the raw-OSM face derivation (the seam to retire). Frame fact: `phase.spineAtStart/spineAtEnd` in `ribbons.json` (the divided-transition link, already frozen).
 
 **The questions to answer (the deliverable is a report):**
