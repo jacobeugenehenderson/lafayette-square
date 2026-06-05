@@ -84,6 +84,12 @@ Survey authors a thin **fortification overlay** keyed to Skeleton identities (`s
 
 > ⚠️ **Migration state (not yet consolidated).** The asphalt-edge / corner-SHAPE / curb controls are mid-move *into* the Survey tab — some still live in the `Measure` surface, and the authoring overlay still *computes* (dead) figure-ground each frame to feed handles. Consolidating SHAPE into Survey and freezing it is what lets Section finally stroke onto a stable shape (`HANDOFF-survey-section-tool-design.md`, the T3 authoring migration). Until then, corner/cap/ribbon polish on the conflated surface is throwaway.
 
+### 4.1 The editing model — activate, then reshape (and the perf requirement)
+
+The operator edits **whole blocks in strips**: click a **centerline** to **activate** the blocks adjacent to it, then drag a strip (asphalt-edge, corner-R) — **symmetric** (mirror both sides) or **asymmetric** (one side).
+
+> ⚠️ **Perf is a first-class constraint here, not a footnote.** The Designer runs over a **high-res aerial** backdrop, and the bake architecture exists precisely to **minimize live vector drawing**. Today every edit re-runs `buildTileGround` over the **entire map** (debounced) **plus** a dead figure-ground compute *every frame* (`HANDOFF-tile-feature-ledger` A-note) — that full-map redraw is why the tools feel **sticky**. **Target: recompute only the *activated* blocks.** The frozen polygon substrate (`PREBAKE.md §5`) + already-verified **block-independence** (the re-pour is block-local) make it possible — the activated block(s) reshape live, everything else stays the frozen render. (Killing figure-ground at T4 removes the other per-frame drag.) **Freezing the substrate is as much a perf move as a correctness one.**
+
 ---
 
 ## 5. The Data Wall — what freezes, and where it's enforced
@@ -140,6 +146,6 @@ At a transition (a divided avenue meeting a cross-street — LS's four park corn
 - `ARCHITECTURE.md §2.1` — the three tools; Survey ≠ Section (different data models).
 - `RIBBONS.md` — the ribbon/corner geometry canon (the tile construction's invariants).
 - `SECTION-CENSUS.md` — the FILL side, past the wall.
-- `HANDOFF-divided-false-corner.md` · `HANDOFF-survey-section-tool-design.md` — the open work.
+- `HANDOFF-survey-section-tool-design.md` — the open authoring-migration work. *(The divided-false-corner patch brief is killed → `_archive/handoffs/`.)*
 - `src/lib/tileGround.js` — the live construction + bake.
 - Memory: `[[project_two_bakes_two_walls]]`, `[[feedback_survey_polygon_not_ribbon_concepts]]`, `[[project_special_sauce_intersection_street_distinction]]`.
