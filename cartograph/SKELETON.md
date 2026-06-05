@@ -91,7 +91,7 @@ Non-vehicular unnamed ways (footway/cycleway/steps/service) — `{ id, highway, 
 11. **Corridor spine-link** — stamp `phase.spineAtStart`/`spineAtEnd` (carriageway→spine link at divided transitions; the frozen frame fact, §2).
 12. **`buildNodeGraph`** → `junctions[]` **+ cap-as-fact** — stamp each chain's `caps.{start,end}` (`round` at a degree-1 dead-end, `butt` where it joins).
 13. **`nameTransitions`** (+ per-chain `continuesAs`).
-14. **Write** `skeleton.json` — plain `writeFileSync` (⚠️ *not* `writeIfChanged`; rewrites every run — a known inconsistency with the bake-chain dirty-skip discipline).
+14. **Write** `skeleton.json` via `writeIfChanged(…, {touch:false})` — content-aware, and (unlike chain *outputs*) it leaves mtime **alone** on a no-op run: `skeleton.json` is a needsRebuild **input**, so an mtime bump would force a spurious full downstream rebuild. (`e3ec84a`; `ARCHITECTURE §7`.)
 
 *(`seed` + `gradeFields` are stamped earlier, at `makeStreet` / the unnamed-vehicular emit — steps 6–7 — **not** at the end.)*
 
