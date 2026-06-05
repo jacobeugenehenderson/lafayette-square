@@ -56,9 +56,11 @@
 
 | HANDOFF | what | bucket |
 |---|---|---|
-| **skeleton-tile-hygiene** | excise the no-geometry corpse-lies (writeFileSync drift gremlin C10, dead `simplify` C9, stale comments) | NOW — **dispatch-ready** (FRESH) |
-| **prebake-polygonization-scope** | forensic scope + spike of the polygon-first cure (false corner dissolves) | NOW — **dispatch-ready** (FRESH, forensic) |
-| **wall-phase-d** | the Wall as a real freeze — Section opens the frozen Survey data (Jacob's milestone, plumbing) | NOW — **dispatch-ready** (FRESH) |
+| skeleton-tile-hygiene | ✅ DONE (Lye, merged `06c394b`) — C1/C2/C9/C10/C11 excised; the writeFileSync drift gremlin killed via `io.js {touch:false}` | done |
+| prebake-polygonization-scope | ✅ DONE (Mercator) → `PREBAKE-POLYGONIZATION-PLAN.md` (D1–D5 decomposition + validated spike; false corner is partly a DATA bug) | done |
+| **d1-carriageway-measure-hygiene** | the "parcel touches the centerline" DATA bug — systemic per-side measure fix (all divided corridors) + operator override | NOW — **dispatch-ready** (FRESH) |
+| D2–D5 *(in the plan doc)* | prebake face-freeze · corner cure (D3) · C5/LU retire · activated-block perf | queued — Boz drafts each after the prior lands |
+| **wall-phase-d** | the Wall as a real freeze — Section opens the frozen Survey data (Jacob's milestone, plumbing) | dispatch-ready (FRESH) — after the data cure for "correct data" |
 | pipeline-reconception | tile re-pour umbrella (T1–T4) | NOW (context) |
 | tile-feature-ledger | re-pour definition-of-done | NOW (reference) |
 | tile-T3-authoring · survey-section-tool-design | polygonize Survey / authoring migration | NOW |
