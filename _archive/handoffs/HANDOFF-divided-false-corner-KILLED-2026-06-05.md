@@ -1,3 +1,7 @@
+> ⛔ KILLED 2026-06-05 (Jacob): the divided false-corner PATCH is retired. The false corner is a SYMPTOM of Survey not being polygon-first; the cure is the prebake polygon-ization (cartograph/SURVEY.md §5.1/§6 + PREBAKE.md). Preserved for the forensic trail; do NOT resurrect the patch. Operator ground-truth target: scratch/correct-target-mississippi-lafayette.json.
+
+---
+
 # HANDOFF — Divided-transition false-corner fix
 
 **Status: WIP, approach validated, 3 isolated bugs from landing (2026-06-04).** Self-contained pick-up brief. Deep doc home: `cartograph/SKELETON.md §5e` (read it). Construction doctrine: `RIBBONS.md §3.1`. The "why it's IP" framing: `SKELETON.md §5d`.
