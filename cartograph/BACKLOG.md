@@ -56,6 +56,9 @@
 
 | HANDOFF | what | bucket |
 |---|---|---|
+| **skeleton-tile-hygiene** | excise the no-geometry corpse-lies (writeFileSync drift gremlin C10, dead `simplify` C9, stale comments) | NOW — **dispatch-ready** (FRESH) |
+| **prebake-polygonization-scope** | forensic scope + spike of the polygon-first cure (false corner dissolves) | NOW — **dispatch-ready** (FRESH, forensic) |
+| **wall-phase-d** | the Wall as a real freeze — Section opens the frozen Survey data (Jacob's milestone, plumbing) | NOW — **dispatch-ready** (FRESH) |
 | pipeline-reconception | tile re-pour umbrella (T1–T4) | NOW (context) |
 | tile-feature-ledger | re-pour definition-of-done | NOW (reference) |
 | tile-T3-authoring · survey-section-tool-design | polygonize Survey / authoring migration | NOW |
