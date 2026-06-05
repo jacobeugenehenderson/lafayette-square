@@ -22,17 +22,17 @@
 
 | # | Corpse-lie (code) | The truth it contradicts | Locus | Status |
 |---|---|---|---|---|
-| C1 | Header: *"TRANSITIONAL: wired for TOY only; LS stays on figure-ground… NOT a kept scene-flag"* | LS runs tiles unflagged (`isTileScene=true`) | `tileGround.js:6-10` | 🔎 |
-| C2 | Import comment *"T1 — toy tiles (transitional)"* | same as C1 | `bake-ground.js:30` | 🔎 |
+| C1 | Header: *"TRANSITIONAL: wired for TOY only; LS stays on figure-ground… NOT a kept scene-flag"* | LS runs tiles unflagged (`isTileScene=true`) | `tileGround.js:6-10` | ✅ excised 2026-06-05 (`e3ec84a`, Lye) — header now states LS runs tiles unflagged |
+| C2 | Import comment *"T1 — toy tiles (transitional)"* | same as C1 | `bake-ground.js:30` | ✅ excised 2026-06-05 (`e3ec84a`, Lye) |
 | C3 | Figure-ground (`buildBlockGeometryV2`/`fbMemo`) **still computed every Designer frame** to feed overlays | tiles are the live path; this is dead + a per-frame perf drag | `BlockGeometryV2Debug.jsx` | 🔎 (T4 / authoring-migration first) |
 | C4 | `buildBlockGeometryV2.js` + `cornersAtIx` — the whole dead module | the dead figure-ground path | `src/lib/buildBlockGeometryV2.js` | 🔎 (delete at T4) |
 | C5 | Two-source seam: faces polygonized from **raw OSM** (`nodeEdges`/`polygonize`/3 m-snap), used only for LU | one source for faces = the skeleton (`PREBAKE.md §5`) | `derive.js:1056-1178` | 🔎 (Layer-2 / prebake polygon-ization) |
 | C6 | `ribbons.intersections` emitted with near-zero live consumers | legacy | `derive.js` serializer · `ribbons.json` | ⚠️ re-verify consumers |
 | C7 | `useRingBandEmitter` flag (default-true; "legacy else removed") — likely vestigial plumbing | LS=tiles, no scene branch | `BlockGeometryV2Debug` · `bake-ground` | ⚠️ re-verify |
 | C8 | Vestigial `medians[]` ring (`A.points + B.points.reversed`) — the median is an emergent face | `[[project_truman_divided_road_knot]]` | `derive.js` · `ribbons.json` | ⚠️ re-verify (may be addressed) |
-| C9 | The old `simplify()` (junction-blind local filter) is **dead** — replaced by `simplifyRDP`, only referenced in a comment. The forensics *blame this function*; it still sits in the file (landmine). | replaced by `simplifyRDP` (`SKELETON §3.8`) | `skeleton.js:593-632` | 🔎 (excise) |
-| C10 | `skeleton.js` writes `skeleton.json` via plain `writeFileSync`, **not** `writeIfChanged` | the dirty-skip discipline (`ARCHITECTURE §7`) | `skeleton.js:1193` | 🔎 **real teeth** — `skeleton.json` is a `needsRebuild` input (`serve.js:57,532`), so every run forces a full downstream rebuild even byte-identical → drift/stale-bake confusion |
-| C11 | stale comment header `R-CLAMP:` describes a per-tile corner-R clamp the code explicitly does **not** do (`:898` "NO clamp — the operator's R is the dial") | the no-corner-R-clamp doctrine | `tileGround.js:893-895` | 🔎 (minor; trim comment) |
+| C9 | The old `simplify()` (junction-blind local filter) is **dead** — replaced by `simplifyRDP`, only referenced in a comment. The forensics *blame this function*; it still sits in the file (landmine). | replaced by `simplifyRDP` (`SKELETON §3.8`) | `skeleton.js:593-632` | ✅ excised 2026-06-05 (`e3ec84a`, Lye) — function deleted (no caller existed); Step-4 header + `:973` comment rewritten to name `simplifyRDP`/protected-keys |
+| C10 | `skeleton.js` writes `skeleton.json` via plain `writeFileSync`, **not** `writeIfChanged` | the dirty-skip discipline (`ARCHITECTURE §7`) | `skeleton.js:1193` | ✅ excised 2026-06-05 (`e3ec84a`, Lye) — `writeIfChanged(…, {touch:false})`: plain `writeIfChanged` would NOT have fixed it (io.js job-2 bumps mtime even on identical content — right for chain OUTPUTS, but `skeleton.json` is a chain INPUT, so the bump itself forces the rebuild); added the `touch` opt-out to `io.js`, default unchanged for every other caller. Verified: output byte-identical (sha256 `f102a906…`), mtime frozen across re-run, serve's `needsRebuild` predicate skips |
+| C11 | stale comment header `R-CLAMP:` describes a per-tile corner-R clamp the code explicitly does **not** do (`:898` "NO clamp — the operator's R is the dial") | the no-corner-R-clamp doctrine | `tileGround.js:893-895` | ✅ excised 2026-06-05 (`e3ec84a`, Lye) — also caught + trimmed a SECOND orphaned R-clamp comment at `:246-249` (above `circlePoly`; described a clamp helper that no longer exists) |
 
 ## Doc corpse-lies (→ fix in the doc campaign)
 

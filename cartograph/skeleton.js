@@ -13,9 +13,10 @@
  * Run: node skeleton.js
  */
 
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR } from './config.js'
+import { writeIfChanged } from './io.js'
 
 // --- Operator-reviewable manifests ----------------------------------------
 
@@ -580,54 +581,24 @@ function resamplePolyline(coords, n) {
   return out
 }
 
-// --- Step 4: angular-tolerance simplification -----------------------------
-// Collapse a point if its perpendicular deviation from the chord formed by
-// its neighbors < DEV_TOL AND the turn angle < ANGLE_TOL.
-
-// `protectedKeys` (Set of `vKey(p)`) holds the coords that are junction /
-// shared nodes. A protected vertex is NEVER collapsed — this is the fix for
-// the Osteopathologist finding that junction-blind RDP deleted 79 real
-// T-junctions (the through-street's vertex at a T reads as "locally straight"
-// and gets removed, stranding the terminator on a segment interior). Keeping
-// junction vertices makes the frame's junction topology survive simplification.
-function simplify(coords, devTol = 0.2, angleTolDeg = 2, protectedKeys = null) {
-  if (coords.length <= 2) return coords.slice()
-  const angleTol = angleTolDeg * Math.PI / 180
-  const out = [coords[0]]
-  for (let i = 1; i < coords.length - 1; i++) {
-    const prev = out[out.length - 1]
-    const curr = coords[i]
-    const next = coords[i + 1]
-    if (protectedKeys && protectedKeys.has(vKey(curr))) { out.push(curr); continue }
-    const dev = perpDist(curr, prev, next)
-    const v1x = curr.x - prev.x, v1z = curr.z - prev.z
-    const v2x = next.x - curr.x, v2z = next.z - curr.z
-    const a1 = Math.atan2(v1z, v1x), a2 = Math.atan2(v2z, v2x)
-    let turn = Math.abs(a2 - a1)
-    if (turn > Math.PI) turn = 2 * Math.PI - turn
-    if (dev < devTol && turn < angleTol) continue // collapse
-    out.push(curr)
-  }
-  out.push(coords[coords.length - 1])
-  return out
-}
-
-// Junction-protected GLOBAL Douglas-Peucker. The local single-pass `simplify`
-// above only collapses a vertex when BOTH its perp-deviation AND its turn fall
-// below tolerance — too weak to thin OSM's native curve OVER-SAMPLING (a smooth
-// loop digitized at ~30 vertices keeps them all, since each turns >2°). That
-// over-sampled line is the root of the downstream "too much line" thorns: the
-// render's `smoothChain` then ×4-interpolates every one of those vertices (29
-// → ~113 on Benton), and the inward ped-band offset of that rippled ring
-// bulges/pinches. RDP instead keeps the MINIMAL control set whose chords stay
-// within `eps` of every dropped vertex — a smooth curve collapses to its few
-// real control points, then ONE smoothing pass regenerates it cleanly
-// (PIPELINE P1: "the simpler the skeleton output, the healthier downstream").
+// --- Step 4: simplification ------------------------------------------------
+// Junction-protected GLOBAL Douglas-Peucker. (Replaces the old local
+// single-pass `simplify`, which only collapsed a vertex when BOTH its
+// perp-deviation AND its turn fell below tolerance — too weak to thin OSM's
+// native curve OVER-SAMPLING: a smooth loop digitized at ~30 vertices keeps
+// them all, since each turns >2°.) That over-sampled line is the root of the
+// downstream "too much line" thorns: the render's `smoothChain` then
+// ×4-interpolates every one of those vertices (29 → ~113 on Benton), and the
+// inward ped-band offset of that rippled ring bulges/pinches. RDP instead
+// keeps the MINIMAL control set whose chords stay within `eps` of every
+// dropped vertex — a smooth curve collapses to its few real control points,
+// then ONE smoothing pass regenerates it cleanly (PIPELINE P1: "the simpler
+// the skeleton output, the healthier downstream").
 //
 // Topology is preserved byte-for-byte: sharp corners survive automatically
 // (any chord spanning a corner has large perp-deviation → the corner vertex is
-// kept), and every junction / shared-node coord is a FORCED split point + keep
-// — the SAME `protectedKeys` surface `simplify` uses (the 79-interior-T fix,
+// kept), and every junction / shared-node coord in `protectedKeys` (Set of
+// `vKey(p)`) is a FORCED split point + keep (the 79-interior-T fix,
 // Osteopathologist / OSM-FORENSICS Part 3). So degree, caps, and the junction
 // graph are unchanged; only redundant curve/straight in-fill is removed.
 function rdpRange(coords, lo, hi, eps, keep) {
@@ -970,7 +941,8 @@ function main() {
   // (cross, T, or same-name severance/divided meeting point). Protecting these
   // from RDP keeps every junction vertex alive — the fix for the 79 deleted
   // T-junctions (Osteopathologist, OSM-FORENSICS.md Part 3.1). Endpoints are
-  // already preserved by simplify(); this protects INTERIOR junction vertices.
+  // already preserved by simplifyRDP (keep[0]/keep[n-1]); the protected-keys
+  // mechanism protects INTERIOR junction vertices.
   const coordOwners = new Map()
   for (const s of streets) {
     for (const p of s.points) {
@@ -1190,8 +1162,13 @@ function main() {
   // `junctions` is additive frame metadata (typed nodes). Downstream consumers
   // that read {streets, paths} are unaffected; the cap/corner consumers can
   // start reading it in the Layer-2 follow-on.
-  writeFileSync(outPath, JSON.stringify({ streets, paths, junctions, nameTransitions }, null, 2))
-  console.log(`\n→ ${outPath}`)
+  //
+  // Content-aware: skeleton.json is a needsRebuild INPUT (serve.js RAW_PATHS),
+  // not an output of the bake chain, so a no-op run must leave its mtime alone
+  // (touch:false) — a plain write (or the default mtime bump) would make every
+  // byte-identical run force a full ribbons+bake rebuild downstream.
+  const wrote = writeIfChanged(outPath, JSON.stringify({ streets, paths, junctions, nameTransitions }, null, 2), { touch: false })
+  console.log(`\n→ ${outPath}${wrote ? '' : ' [unchanged]'}`)
 }
 
 function makeStreet(id, name, sourceTags, chain, extras = {}) {

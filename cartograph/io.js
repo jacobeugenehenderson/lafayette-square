@@ -14,16 +14,25 @@
 //      rerun pipeline on every bake — exact failure the operator hit.
 //
 // Returns true if it wrote new content, false if it touched mtime only.
+//
+// `touch: false` skips (2) on identical content. Job (2) is for artifacts that
+// are OUTPUTS inside the needsRebuild graph (their own freshness is re-checked
+// against upstream sources every bake). For an artifact that is only an INPUT
+// to the chain — e.g. skeleton.json, produced by a manual `node skeleton.js`
+// run outside serve's dirty graph — the bump is the bug: it makes every no-op
+// run look like new input and forces a full downstream rebuild.
 import { readFileSync, writeFileSync, existsSync, utimesSync } from 'fs'
 
-export function writeIfChanged(path, content) {
+export function writeIfChanged(path, content, { touch = true } = {}) {
   const incoming = Buffer.isBuffer(content) ? content : Buffer.from(content)
   if (existsSync(path)) {
     try {
       const existing = readFileSync(path)
       if (existing.equals(incoming)) {
-        const now = new Date()
-        utimesSync(path, now, now)
+        if (touch) {
+          const now = new Date()
+          utimesSync(path, now, now)
+        }
         return false
       }
     } catch {

@@ -27,7 +27,7 @@ import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
 import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
-import { buildTileGround } from '../src/lib/tileGround.js'  // T1 — toy tiles (transitional)
+import { buildTileGround } from '../src/lib/tileGround.js'
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
