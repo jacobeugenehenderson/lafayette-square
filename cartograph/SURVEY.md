@@ -57,10 +57,10 @@ The SHAPE pass, in execution order:
 
 1. **`extractFaces(streets)` (`:303`) → the Tiles.** A half-edge DCEL planar walk over the **shared-vertex graph** of `ribbons.streets[].points` (nodes keyed to 0.1 mm). Each bounded face = one tile, tagged per-edge with its owning `(street, side)`. **Grade-separated streets are filtered out first** (`:600`) so a 2D crossing with no shared vertex can't bowtie the faces; they're stroked separately as flat asphalt and rendered behind the local network.
 2. **Outward stroke → the asphalt silhouette.** `groupRuns` (`:450`) collects each tile's boundary into maximal runs of one `(street, side)`; `strokeOpen` (`:198`) offsets each run **outward** by the asphalt half-width `edgeDepth(runMeasure(run), side, 'A')`. Dead-end **round** tips get a circle cap; **blunt/none** tips stay flat.
-3. **`filletRing` (`:90`) rounds the convex corners ONCE → the curb line (`iA`).** Per-vertex radius via `resolveVertR` (`:692`), 3-tier: **per-corner** override → **per-IX** override → default (4.5 m AASHTO × `cornerRadiusScale`). The achieved arcs are tagged into **`cornerFillets`** (`:920`) — the *one* corner truth the magenta authoring handle reads (no re-derivation). `jtMiter`, never `jtRound` (jtRound re-rounds and corrupts operator R=0 squares).
-4. **Capacity guard (`:927`).** Where a thin tile's inward offset would collapse past the medial axis, a binary search clamps the band depth (`cap = 0.9 × inscribed reach`) so the corner doesn't thorn.
-5. **Block = `tile.ring − iA`; asphalt = the stroked region.** The block polygon is the Survey view's positive geometry.
-6. **Freeze → `shapeTiles[]`.** Per tile: `{ ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs[], bandJoin, cap }`. The JSON-safe `_shapeArtifact` (`:1108`) is the frozen hand-off across the wall.
+3. **`filletRing` (`:90`) rounds the convex corners ONCE → the curb line (`iA`).** Per-vertex radius via `resolveVertR` (`:715`), 3-tier: **per-corner** override → **per-IX** override → default (4.5 m AASHTO × `cornerRadiusScale`). The achieved arcs are tagged into **`cornerFillets`** (`:920`) — the *one* corner truth the magenta authoring handle reads (no re-derivation). `jtMiter`, never `jtRound` (jtRound re-rounds and corrupts operator R=0 squares).
+4. **Capacity guard (`:951`).** Engages **only on FULL collapse** — `if (!offsetRings(iA, −(WB/0.9)).length)` then bisects to `cap = 0.9 × inscribed reach`. ⚠️ A tile that pinches to a thin *non-empty* sliver keeps `cap = WB` (no clamp) → the inward offsets still run past the medial axis and `filletRing` thorns them. So this catches *full* degeneracy, **not** the partial-degeneracy thorn class (the persistent ~100 thorns — `HANDOFF-band-fold-fix.md`).
+5. **Asphalt = `tile.ring − iA` (`:958`); Block = `iA`** (the rounded inner region = `tile − aFill`, rounded). The `block` output is the union of per-tile `iA` (`:1101`) — the positive polygon to the curb edge (consistent with §1: *block = tile − asphalt*).
+6. **Freeze → `shapeTiles[]` (`:961`).** Per tile: `{ ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta[], bandJoin, cap }`. The JSON-safe `_shapeArtifact` (`:1108`, built **only** when `emitArtifact` — bake-side) is the frozen hand-off across the wall.
 
 > **The only chain reach-back in the SHAPE pass** is `runMeasure`/`runSegOrd` (`:659`–`:686`), which resolve a run's authored `pavementHW` from `blockCustoms[skelId][side][segOrd]`. That is **authoring identity, not geometry** — it answers "which width did the operator type for this edge," nothing about node positions.
 
@@ -82,7 +82,7 @@ Survey authors a thin **fortification overlay** keyed to Skeleton identities (`s
 
 **What is NOT Survey** (→ Section): treelawn/sidewalk depths, the ribbon corner *fills*, ADA pads. **The corner is two things in two tools** — its *shape* (curb roundness) is Survey; its *fill* (how ped bends around it) is Section.
 
-> ⚠️ **Migration state (not yet consolidated).** The asphalt-edge / corner-SHAPE / curb controls are mid-move *into* the Survey tab — some still live in the `Measure` surface, and the authoring overlay still *computes* (dead) figure-ground each frame to feed handles. Consolidating SHAPE into Survey and freezing it is what lets Section finally stroke onto a stable shape (`HANDOFF-survey-section-tool-design.md`, the T3 authoring migration). Until then, corner/cap/ribbon polish on the conflated surface is throwaway.
+> ⚠️ **Migration state.** The SHAPE controls have **largely consolidated into Survey already**: the asphalt-edge handle (`pavementHW`) **moved to `SurveyorOverlay`** (`:114/:424`; `MeasureOverlay:147` confirms — *"moved to Survey"*), and corner-SHAPE lives in `CornersSubsection` + `CornerEditHandles`. Ped widths (treelawn/sidewalk) stay in `Measure` (→ Section). Corner-R authoring **is wired live to the tile render** (`buildTileGround`, `BlockGeometryV2Debug.jsx:610`) — moving the Corners slider reshapes tile corners (so the tile-ledger's old "A2 no work" likely predates this wiring; confirm on the live tool). **The real remaining gap (T3/T4):** the authoring overlays still *compute* the **dead figure-ground** (`buildBlockGeometryV2`, `:409`) every authoring frame to position handles — a per-frame perf drag, and why strip-swap/translucency misbehave. Retiring it (T3 migrate handles onto tiles → T4 delete figure-ground) is the consolidation that remains. `HANDOFF-survey-section-tool-design.md`.
 
 ### 4.1 The editing model — activate, then reshape (and the perf requirement)
 
@@ -92,7 +92,7 @@ The operator edits **whole blocks in strips**: click a **centerline** to **activ
 
 ---
 
-## 5. The Data Wall — what freezes, and where it's enforced
+## 5. The Data Wall — what freezes, and where it's enforced  *(deep: `WALL.md`)*
 
 By the time the operator leaves Survey we hold an extremely-simplified, polygon-ready frozen dataset, and **chains are dead.** The wall is enforced **at a function signature**, not by convention:
 

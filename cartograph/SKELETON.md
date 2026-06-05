@@ -46,7 +46,7 @@ Top level: `{ streets[], paths[], junctions[], nameTransitions[] }`.
 ### `streets[]` — the canonical chains (the centerline graph)
 | field | meaning |
 |---|---|
-| `id` | slug, unique. Divided roads emit two: `<slug>-0`, `<slug>-1` (one per carriageway). |
+| `id` | slug, unique. A name group with >1 surviving chain suffixes each by **index**: `<slug>-0`, `<slug>-1`, …`-N` — per *surviving chain* (divided carriageways **and** any unwelded same-name fragments; **not** capped at 2). A single-chain name stays bare `<slug>`. (So `lafayette-6`, `park-avenue-3` are real ids.) |
 | `name` | street name (the welder groups OSM fragments by it). |
 | `highway` | OSM class (`residential` / `secondary` / `primary` / `service` / `motorway` / `…_link`). |
 | `oneway` | bool. Oneway chains keep OSM direction; bidi chains are canonical-oriented (dominant axis positive). |
@@ -56,13 +56,14 @@ Top level: `{ streets[], paths[], junctions[], nameTransitions[] }`.
 | `lanes` / `surface` / `maxspeed` | raw OSM tags, carried through *verbatim* on named streets when present (conditional — the marrow the forensics said to stop dropping). Distinct from `seed`, which *interprets* them into widths. |
 | `layer` / `bridge` / `tunnel` | raw OSM grade tags, summarized over `sources`. |
 | `gradeSeparated` | operative flag = `entirelyOffGrade ‖ isLimitedAccess(highway)`. Consumers **exclude these from the face graph** (else the 2D crossing bowties `extractFaces`). Folds in motorway/trunk + links. Surface bridges (Mississippi) stay `false` and keep bounding blocks. (`gradeFields`; `HANDOFF-onframe-faces.md`; FEATURES §"Grade separation".) |
-| `phase` | `{ kind: 'divided'|'single', role: 'carriageway-A'|'carriageway-B'|'spine', corridorName, pairKey, medianWidth?, startNode?, endNode? }`. Carries the divided-road structure downstream so derive/knit don't rediscover it. `medianWidth` = the paired-carriageway gap. `startNode`/`endNode` are stamped post-normalize (the endpoint node keys, after the canonical-direction flip). |
-| `caps` | per-endpoint geometric cap info (degree, cap type) — Survey's Cap Start/End authors over it. |
+| `phase` | `{ kind: 'divided'|'single', role: 'carriageway-A'|'carriageway-B'|'spine', corridorName, pairKey, medianWidth?, startNode?, endNode?, spineAtStart?, spineAtEnd? }`. Carries the divided-road structure downstream so derive/knit don't rediscover it. `medianWidth` = the paired-carriageway gap. `startNode`/`endNode` = endpoint node coords, stamped post-normalize (after the canonical-direction flip). **`spineAtStart`/`spineAtEnd`** = the spine street's `id` at that endpoint's divided↔undivided transition (matched by shared endpoint-node + `corridorName`), stamped once as a **frozen frame fact** (commit `61930d7`) — the link the prebake/corner work reads *without* node-matching (`PREBAKE.md §5`, `§5d/§5e`). |
+| `caps` | per-endpoint geometric cap info `{start,end}` = `{cap:'round'|'butt', degree}` — `round` at a degree-1 dead-end, `butt` where it joins; Survey's Cap Start/End authors over it. |
+| `continuesAs` | *(when present)* the `id` of the differently-named chain this one continues into at a name-transition node (the Dolman→18th "understand, don't split" link). |
 
-> **Note — unnamed vehicular streets** (motorway/trunk/`*_link`, §3 step 7) are built *inline*, not via `makeStreet`, so they carry a slightly different field set: synthetic `name`, `gradeSeparated:true`, plus `osmIds` + raw `tags` (and no `seed`/`phase`). Named streets are the `makeStreet` shape above.
+> **Note — unnamed vehicular streets** (motorway/trunk/`*_link`, §3 step 7) are built *inline*, not via `makeStreet`, so they carry a slightly different field set: synthetic `name` (`<highway> <n>`), `osmIds` + `sources` + raw `tags`, **a `seed`** (they *are* standards-seeded), grade fields (`gradeSeparated:true` — limited-access), and **no `phase`**. Named streets are the `makeStreet` shape above.
 
 ### `junctions[]` — the node typology
-`{ x, z, degree, kind }`. Built by `buildNodeGraph`: a coord touched by ≥2 distinct streets, degree ≥ 3 (`d===2` bends/transitions are NOT junctions). `kind = kindOf(degree)` (T / cross / Y …). **Shared-vertex only** — grade-separated crossings share no vertex, so junctions carry **zero false grade crossings** (don't hunt grade bugs here). 329 on LS.
+`{ x, z, degree, kind }`. Built by `buildNodeGraph` from **incidence degree** (endpoint +1, interior +2): every coord with **degree ≠ 2** is emitted — through-bends/name-transitions (degree 2) are skipped, **but dead-ends (degree 1) ARE included.** `kind = kindOf(degree)` = `deadend`(1) / `T`(3) / `cross`(4) / `Y`(5+). ~329 typed nodes on LS *including* dead-ends (≈103 dead-end / 141 T / 84 cross per the forensics). **Shared-vertex only** — grade-separated crossings share no vertex, so junctions carry **zero false grade crossings** (don't hunt grade bugs here). ⚠️ **Distinct from the RDP-protection set** (`junctionKeys`, §3 step 8) = coords owned by **≥2 distinct streets** — a different test that *excludes* dead-ends.
 
 ### `nameTransitions[]`
 `{ x, z, from, to, fromId, toId }` — where one named street becomes another at a shared node (21 on LS). Marrow the figure-ground path used to drop.
@@ -86,7 +87,13 @@ Non-vehicular unnamed ways (footway/cycleway/steps/service) — `{ id, highway, 
 7. **Unnamed vehicular** (`motorway`/`trunk`/`*_link`) → streets with synthetic names + `gradeSeparated:true`. Everything else → `paths[]`.
 8. **Junction-protected RDP simplify** — build `junctionKeys` (coords owned by ≥2 streets), then `simplifyRDP(points, eps, junctionKeys)` per street. `eps = 1.0 m`; **closed loops auto-detected** (`hypot(first, last) < 1 m`, no OSM tag yet) get the tighter `0.3 m`. Junction/shared-node vertices are **forced split-points + forced keeps** — the fix for the **79 deleted interior T-junctions** the old junction-*blind* local `simplify()` removed (Osteopathologist; `OSM-FORENSICS.md` Part 3.1). **Why `1.0 m`, not more aggressive:** the density floor is *offset-safety* — the widest ribbon the centerline must support sets how coarse RDP may go (over-thin a curve and the inward offset self-intersects). The forensics' "Goldilocks" target (48 curved streets, ≤5 m max-seg) is offset-safe everywhere at this eps. ⚠️ **This protection is also the dogleg's cause — see §5.**
 9. **Canonical direction pass** — orient bidi chains so the dominant axis component of `(last−first)` is positive (stable left/right + winding). Oneway left alone.
-10. **`buildNodeGraph`** → `junctions[]`; **`gradeFields`** per street; **nameTransitions**; write `skeleton.json` (via `io.js writeIfChanged`).
+10. **Phase endpoint stamp** — `phase.startNode`/`endNode` = each chain's first/last point (post-normalize, so final).
+11. **Corridor spine-link** — stamp `phase.spineAtStart`/`spineAtEnd` (carriageway→spine link at divided transitions; the frozen frame fact, §2).
+12. **`buildNodeGraph`** → `junctions[]` **+ cap-as-fact** — stamp each chain's `caps.{start,end}` (`round` at a degree-1 dead-end, `butt` where it joins).
+13. **`nameTransitions`** (+ per-chain `continuesAs`).
+14. **Write** `skeleton.json` — plain `writeFileSync` (⚠️ *not* `writeIfChanged`; rewrites every run — a known inconsistency with the bake-chain dirty-skip discipline).
+
+*(`seed` + `gradeFields` are stamped earlier, at `makeStreet` / the unnamed-vehicular emit — steps 6–7 — **not** at the end.)*
 
 **Doctrine:** simpler output = healthier everything downstream; chain/node minimization is the lever that moves the Data Wall to P2. ⛔ **Junction-protected always.** Carry tags / grade-sep / divided-pair facts as frame truth — never drop them at P1.
 

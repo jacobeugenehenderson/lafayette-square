@@ -30,7 +30,7 @@ The **same germane fact** appears in each register **in that register's voice** 
 | **skeleton** | **`skeleton.json`** | **`SKELETON.md`** (deep) · `PIPELINE §skeleton/P1` · `FEATURES §367` (marketing) · `OPERATIONS` (knobs) | BACKLOG NOW | NOTES · `OSM-FORENSICS.md` |
 | **prebake** | `ribbons.json` | **`PREBAKE.md`** · `PIPELINE §prebake/P3` | BACKLOG · `DOC-CODE-COHERENCE` | NOTES |
 | **survey** | `overlay.json` · `design.json` | **`SURVEY.md`** · `PIPELINE §survey` · `ARCHITECTURE §2.1` · `FEATURES §Toolbar` · `OPERATIONS` | BACKLOG | NOTES |
-| **⟦WALL⟧** | `shape.json` | `PIPELINE §Wall` | BACKLOG | NOTES |
+| **⟦WALL⟧** | `shape.json` | **`WALL.md`** · `PIPELINE §Wall` | BACKLOG | NOTES |
 | **section** | *(in-memory ped FILL)* | `RIBBONS §3.9a` · `SECTION-CENSUS.md` | BACKLOG | NOTES |
 | **bake → 3D** | `public/baked/<id>/*` | `README` · `ARCHITECTURE` · `FEATURES` | BACKLOG | NOTES |
 
