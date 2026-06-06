@@ -39,6 +39,7 @@
 
 ## LATER / PARKED
 - **Onboarding / Intake** — Provincetown first run; designed, no code. `[[project_intake_onboard_process]]` · `[[project_real_tiny_town_spike_surface]]`.
+- **⭐ Custom street data — import + manage (KIT)** — operator-measured per-street width/ROW/lanes is the **base-width source** (priority: custom → OSM → AASHTO; baked into the skeleton so the frame is born accurate, operator only tweaks). LS already has it: `raw/survey.json` (68 streets, 61 measured). The kit needs: **(a)** import it at onboarding *if the place has it*; **(b)** a canonical home/format; **(c)** a way to view/manage/edit it (it's operator authoring — existing tools, no new control class). Generalizes the LS `survey.json` into the Intake/Onboard flow. Docs: `SKELETON.md` (seed width-sourcing). *(The LS base-load fix — survey.json wins + propagates through divided splits — is **E1** in the divided-corridor/width build, NOW; this backlog item is the kit generalization, LATER.)*
 - **Tile-bake footprint (P1) / curve-fineness (P3)** — parked; profile before cutting (`HANDOFF-tile-feature-ledger` E-rows).
 - **Hosted bake service w/ auth** (v2+).
 - **Hero keyframe FOV regression · TAA post-pass** — not urgent.
