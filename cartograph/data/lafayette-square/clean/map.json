@@ -674872,10 +674872,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 2,
-              "treelawn": 1.2456,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 2,
@@ -674897,7 +674897,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "28522831-166624144",
-            "medianWidth": 3.21,
+            "chainGap": 3.21,
             "spineAtStart": "south-18th-street-7"
           },
           "highway": "residential",
@@ -675155,10 +675155,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 2,
-              "treelawn": 1.2456,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 2,
@@ -675180,7 +675180,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "28522831-166624144",
-            "medianWidth": 3.21,
+            "chainGap": 3.21,
             "spineAtEnd": "south-18th-street-7"
           },
           "highway": "residential",
@@ -675247,10 +675247,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 2,
-              "treelawn": 1.2456,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 2,
@@ -675272,7 +675272,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "301606663-1297584456",
-            "medianWidth": 11,
+            "chainGap": 11,
             "spineAtStart": "south-18th-street-2"
           },
           "highway": "residential",
@@ -675377,10 +675377,10 @@
               "terminal": "sidewalk"
             },
             "right": {
-              "pavementHW": 2,
-              "treelawn": 4.3856,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "symmetric": false
           },
@@ -675396,7 +675396,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "301606663-1297584456",
-            "medianWidth": 11,
+            "chainGap": 11,
             "spineAtEnd": "south-18th-street-2"
           },
           "highway": "residential",
@@ -683341,10 +683341,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.247379159036182,
-              "treelawn": 5.448220840963817,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 5.247379159036182,
@@ -683352,7 +683352,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -683366,7 +683367,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "238257778-301606661",
-            "medianWidth": 8.33,
+            "chainGap": 8.33,
             "spineAtStart": "papin-street-4"
           },
           "highway": "residential",
@@ -683419,10 +683420,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.247379159036182,
-              "treelawn": 5.448220840963817,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 5.247379159036182,
@@ -683430,7 +683431,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -683444,7 +683446,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "238257778-301606661",
-            "medianWidth": 8.33,
+            "chainGap": 8.33,
             "spineAtEnd": "papin-street-4"
           },
           "highway": "residential",
@@ -683561,10 +683563,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.247379159036182,
-              "treelawn": 5.448220840963817,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 5.247379159036182,
@@ -683572,7 +683574,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -683586,7 +683589,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "1279099240-1279099241",
-            "medianWidth": 5.75,
+            "chainGap": 5.75,
             "spineAtEnd": "papin-street-1"
           },
           "highway": "residential",
@@ -683638,10 +683641,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.247379159036182,
-              "treelawn": 5.448220840963817,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 5.247379159036182,
@@ -683649,7 +683652,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -683663,7 +683667,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "1279099240-1279099241",
-            "medianWidth": 5.75,
+            "chainGap": 5.75,
             "spineAtStart": "papin-street-1"
           },
           "highway": "residential",
@@ -684181,10 +684185,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 7.746914576747607,
-              "treelawn": 0.07868542325239236,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 7.746914576747607,
@@ -684192,7 +684196,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -684206,7 +684211,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "624166453-1448498459",
-            "medianWidth": 4.97,
+            "chainGap": 4.97,
             "spineAtStart": "russell-boulevard-0",
             "spineAtEnd": "russell-boulevard-2"
           },
@@ -684376,10 +684381,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 7.746914576747607,
-              "treelawn": 0.07868542325239236,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 7.746914576747607,
@@ -684387,7 +684392,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -684401,7 +684407,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "624166453-1448498459",
-            "medianWidth": 4.97,
+            "chainGap": 4.97,
             "spineAtStart": "russell-boulevard-2",
             "spineAtEnd": "russell-boulevard-0"
           },
@@ -684484,11 +684490,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -684497,7 +684502,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -684511,7 +684517,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "28522849-28522855",
-            "medianWidth": 20.39
+            "chainGap": 20.39
           },
           "highway": "motorway",
           "type": "motorway",
@@ -684583,11 +684589,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -684596,7 +684601,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -684610,7 +684616,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "28522850-123680975",
-            "medianWidth": 20.71
+            "chainGap": 20.71
           },
           "highway": "motorway",
           "type": "motorway",
@@ -684670,11 +684676,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -684683,7 +684688,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -684697,7 +684703,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "28522849-28522855",
-            "medianWidth": 20.39
+            "chainGap": 20.39
           },
           "highway": "motorway",
           "type": "motorway",
@@ -684875,11 +684881,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -684888,7 +684893,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -684902,7 +684908,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "123680973-1098246220",
-            "medianWidth": 32.29
+            "chainGap": 32.29
           },
           "highway": "motorway",
           "type": "motorway",
@@ -684961,11 +684967,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -684974,7 +684979,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -684988,7 +684994,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "123680974-711142584",
-            "medianWidth": 23.66
+            "chainGap": 23.66
           },
           "highway": "motorway",
           "type": "motorway",
@@ -685052,11 +685058,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -685065,7 +685070,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -685079,7 +685085,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "28522850-123680975",
-            "medianWidth": 20.71
+            "chainGap": 20.71
           },
           "highway": "motorway",
           "type": "motorway",
@@ -685131,11 +685137,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -685144,7 +685149,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -685158,7 +685164,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "123680974-711142584",
-            "medianWidth": 23.66
+            "chainGap": 23.66
           },
           "highway": "motorway",
           "type": "motorway",
@@ -685312,11 +685318,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -685325,7 +685330,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -685339,7 +685345,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "1098235552-1098277792",
-            "medianWidth": 36.45,
+            "chainGap": 36.45,
             "spineAtEnd": "officer-david-haynes-memorial-highway-8"
           },
           "highway": "motorway",
@@ -685477,11 +685483,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -685490,7 +685495,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -685504,7 +685510,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "123680973-1098246220",
-            "medianWidth": 32.29,
+            "chainGap": 32.29,
             "spineAtEnd": "officer-david-haynes-memorial-highway-10"
           },
           "highway": "motorway",
@@ -685563,11 +685569,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.534400000000002,
+              "pavementHW": 0,
               "treelawn": 0,
               "sidewalk": 0,
-              "terminal": "none",
-              "material": "highway"
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.534400000000002,
@@ -685576,7 +685581,8 @@
               "terminal": "none",
               "material": "highway"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -685590,7 +685596,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "1098235552-1098277792",
-            "medianWidth": 36.45,
+            "chainGap": 36.45,
             "spineAtStart": "officer-david-haynes-memorial-highway-3"
           },
           "highway": "motorway",
@@ -685961,10 +685967,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 6.397571175714624,
+              "pavementHW": 0,
               "treelawn": 0,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 6.397571175714624,
@@ -685972,7 +685978,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -685986,7 +685993,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "180345148-612660796",
-            "medianWidth": 6.7,
+            "chainGap": 6.7,
             "spineAtEnd": "geyer-avenue-6"
           },
           "highway": "residential",
@@ -686232,10 +686239,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 6.397571175714624,
+              "pavementHW": 0,
               "treelawn": 0,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 6.397571175714624,
@@ -686243,7 +686250,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -686257,7 +686265,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "180345148-612660796",
-            "medianWidth": 6.7,
+            "chainGap": 6.7,
             "spineAtStart": "geyer-avenue-6"
           },
           "highway": "residential",
@@ -687764,10 +687772,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.626597585052725,
-              "treelawn": 0.47900241494727425,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.626597585052725,
@@ -687775,7 +687783,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "survey-default"
+            "source": "survey-default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -687789,7 +687798,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "1350829601-1350829602",
-            "medianWidth": 6.05,
+            "chainGap": 6.05,
             "spineAtStart": "chouteau-avenue-1",
             "spineAtEnd": "chouteau-avenue-0"
           },
@@ -687861,10 +687870,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 8.626597585052725,
-              "treelawn": 0.47900241494727425,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 8.626597585052725,
@@ -687872,7 +687881,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "survey-default"
+            "source": "survey-default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -687886,7 +687896,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "1350829601-1350829602",
-            "medianWidth": 6.05,
+            "chainGap": 6.05,
             "spineAtStart": "chouteau-avenue-0",
             "spineAtEnd": "chouteau-avenue-1"
           },
@@ -688003,7 +688013,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "151115548-1433086589",
-            "medianWidth": 12.75
+            "chainGap": 12.75
           },
           "highway": "secondary",
           "type": "secondary",
@@ -688148,7 +688158,8 @@
               "treelawn": 2.1256000000000004,
               "sidewalk": 1.524,
               "terminal": "sidewalk"
-            }
+            },
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -688162,7 +688173,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "151115548-1433086589",
-            "medianWidth": 12.75
+            "chainGap": 12.75
           },
           "highway": "secondary",
           "type": "secondary",
@@ -688506,10 +688517,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 10.555325676754327,
-              "treelawn": 3.5560120021971127,
-              "sidewalk": 4.213893953647322,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 7.899666800734073,
@@ -688531,7 +688542,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "172189149-1413275236",
-            "medianWidth": 11.53,
+            "chainGap": 11.53,
             "spineAtEnd": "lafayette-avenue-1"
           },
           "highway": "residential",
@@ -688737,10 +688748,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 10.555325676754327,
-              "treelawn": 3.5560120021971127,
-              "sidewalk": 4.213893953647322,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 7.899666800734073,
@@ -688762,7 +688773,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "172189149-1413275236",
-            "medianWidth": 11.53,
+            "chainGap": 11.53,
             "spineAtStart": "lafayette-avenue-1"
           },
           "highway": "residential",
@@ -688854,10 +688865,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 10.555325676754327,
-              "treelawn": 3.5052000000000003,
-              "sidewalk": 4.213893953647322,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 6.8580000000000005,
@@ -688879,7 +688890,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "1349812898-1488940913",
-            "medianWidth": 7.92,
+            "chainGap": 7.92,
             "spineAtStart": "lafayette-avenue-3",
             "spineAtEnd": "lafayette-avenue-1"
           },
@@ -688971,15 +688982,15 @@
           ],
           "measure": {
             "left": {
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
+            },
+            "right": {
               "pavementHW": 6.704039023771476,
               "treelawn": 1.5200585066011074,
               "sidewalk": 1.5184476651648833,
-              "terminal": "sidewalk"
-            },
-            "right": {
-              "pavementHW": 0,
-              "treelawn": 3.756012002197112,
-              "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
             "symmetric": false
@@ -688996,7 +689007,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "1349812898-1488940913",
-            "medianWidth": 7.92,
+            "chainGap": 7.92,
             "spineAtStart": "lafayette-avenue-1",
             "spineAtEnd": "lafayette-avenue-3"
           },
@@ -689078,10 +689089,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 10.555325676754327,
-              "treelawn": 3.5560120021971127,
-              "sidewalk": 4.213893953647322,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 7.899666800734073,
@@ -689103,7 +689114,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "1349901208-1349901209",
-            "medianWidth": 5.14,
+            "chainGap": 5.14,
             "spineAtStart": "lafayette-avenue-3",
             "spineAtEnd": "lafayette-avenue-0"
           },
@@ -689167,10 +689178,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 10.555325676754327,
-              "treelawn": 3.5560120021971127,
-              "sidewalk": 4.213893953647322,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 7.899666800734073,
@@ -689192,7 +689203,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "1349901208-1349901209",
-            "medianWidth": 5.14,
+            "chainGap": 5.14,
             "spineAtStart": "lafayette-avenue-0",
             "spineAtEnd": "lafayette-avenue-3"
           },
@@ -689260,10 +689271,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.346010234957402,
-              "treelawn": 2.4595897650425984,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 5.346010234957402,
@@ -689271,7 +689282,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -689285,7 +689297,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "152503839-301606668",
-            "medianWidth": 8.92
+            "chainGap": 8.92
           },
           "highway": "residential",
           "type": "residential",
@@ -689355,10 +689367,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.346010234957402,
-              "treelawn": 2.4595897650425984,
-              "sidewalk": 1.524,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 5.346010234957402,
@@ -689366,7 +689378,8 @@
               "sidewalk": 1.524,
               "terminal": "sidewalk"
             },
-            "source": "default"
+            "source": "default",
+            "symmetric": false
           },
           "capEnds": {
             "start": null,
@@ -689380,7 +689393,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "152503839-301606668",
-            "medianWidth": 8.92
+            "chainGap": 8.92
           },
           "highway": "residential",
           "type": "residential",
@@ -689580,10 +689593,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.645715395972545,
-              "treelawn": 1,
-              "sidewalk": 1,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 6.06749156059035,
@@ -689605,7 +689618,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "163871018-1349812859",
-            "medianWidth": 8.44,
+            "chainGap": 8.44,
             "spineAtEnd": "park-avenue-1"
           },
           "highway": "residential",
@@ -689872,10 +689885,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.645715395972545,
-              "treelawn": 1,
-              "sidewalk": 1,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 6.06749156059035,
@@ -689897,7 +689910,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "354388956-1349901204",
-            "medianWidth": 8.22,
+            "chainGap": 8.22,
             "spineAtStart": "park-avenue-1",
             "spineAtEnd": "park-avenue-5"
           },
@@ -689906,10 +689919,10 @@
           "segmentMeasures": {
             "0": {
               "left": {
-                "pavementHW": 5.645715395972545,
-                "treelawn": 1,
-                "sidewalk": 1,
-                "terminal": "sidewalk"
+                "pavementHW": 0,
+                "treelawn": 0,
+                "sidewalk": 0,
+                "terminal": "none"
               },
               "right": {
                 "pavementHW": 6.06749156059035,
@@ -690022,10 +690035,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.645715395972545,
-              "treelawn": 1,
-              "sidewalk": 1,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 6.06749156059035,
@@ -690047,7 +690060,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "163871018-1349812859",
-            "medianWidth": 8.44,
+            "chainGap": 8.44,
             "spineAtStart": "park-avenue-1"
           },
           "highway": "residential",
@@ -690156,10 +690169,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.645715395972545,
-              "treelawn": 1,
-              "sidewalk": 1,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 6.06749156059035,
@@ -690181,7 +690194,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "354388956-1349901204",
-            "medianWidth": 8.22,
+            "chainGap": 8.22,
             "spineAtStart": "park-avenue-5",
             "spineAtEnd": "park-avenue-1"
           },
@@ -690870,10 +690883,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 7.716508745489069,
-              "treelawn": 2.002554538036364,
-              "sidewalk": 5.108928968970948,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 9.163045461963636,
@@ -690895,7 +690908,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "624010923-1350829669",
-            "medianWidth": 10.4,
+            "chainGap": 10.4,
             "spineAtStart": "south-jefferson-avenue-2"
           },
           "highway": "primary",
@@ -690985,7 +690998,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "627340928-627340930",
-            "medianWidth": 12.61,
+            "chainGap": 12.61,
             "spineAtStart": "south-jefferson-avenue-2",
             "spineAtEnd": "south-jefferson-avenue-6"
           },
@@ -691231,7 +691244,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "627340928-627340930",
-            "medianWidth": 12.61,
+            "chainGap": 12.61,
             "spineAtStart": "south-jefferson-avenue-6",
             "spineAtEnd": "south-jefferson-avenue-2"
           },
@@ -691468,10 +691481,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 7.716508745489069,
-              "treelawn": 2.002554538036364,
-              "sidewalk": 5.108928968970948,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 9.163045461963636,
@@ -691493,7 +691506,7 @@
             "role": "carriageway-A",
             "kind": "divided",
             "pairKey": "712305126-1350036707",
-            "medianWidth": 14.03,
+            "chainGap": 14.03,
             "spineAtStart": "south-jefferson-avenue-4",
             "spineAtEnd": "south-jefferson-avenue-6"
           },
@@ -691705,10 +691718,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 7.716508745489069,
-              "treelawn": 2.002554538036364,
-              "sidewalk": 5.108928968970948,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 9.163045461963636,
@@ -691730,7 +691743,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "712305126-1350036707",
-            "medianWidth": 14.03,
+            "chainGap": 14.03,
             "spineAtStart": "south-jefferson-avenue-6",
             "spineAtEnd": "south-jefferson-avenue-4"
           },
@@ -691847,10 +691860,10 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 7.716508745489069,
-              "treelawn": 2.002554538036364,
-              "sidewalk": 5.108928968970948,
-              "terminal": "sidewalk"
+              "pavementHW": 0,
+              "treelawn": 0,
+              "sidewalk": 0,
+              "terminal": "none"
             },
             "right": {
               "pavementHW": 9.163045461963636,
@@ -691872,7 +691885,7 @@
             "role": "carriageway-B",
             "kind": "divided",
             "pairKey": "624010923-1350829669",
-            "medianWidth": 10.4,
+            "chainGap": 10.4,
             "spineAtEnd": "south-jefferson-avenue-2"
           },
           "highway": "primary",

@@ -513,7 +513,7 @@ function weldLongitudinal(chains) {
 // = #0[A,K1] + spine + #3[B,K2] + spine), so the inherited signature/pairKey
 // is meaningless on a merged chain. We re-pair the merged oneway chains with
 // the SAME 4 gates analyzePhases uses (scoreOnewayPair) and stamp a fresh
-// shared pairKey + A/B signature + medianWidth on the two carriageways. The
+// shared pairKey + A/B signature + chainGap on the two carriageways. The
 // emergent median then falls out of one continuous inner-edge chain per side.
 function repairDividedPairs(chains) {
   const oneway = chains.filter(c => c.oneway)
@@ -535,16 +535,21 @@ function repairDividedPairs(chains) {
     // level pairKey (which derive no longer sees for this corridor).
     const ids = [...a.sources, ...b.sources]
     const pairKey = `${Math.min(...ids)}-${Math.max(...ids)}`
+    // chainGap = perpendicular distance between the two carriageway CHAINS
+    // (formerly misnamed `medianWidth`). The chains sit at the carriageways'
+    // median-facing edges (anchor='inner-edge'), so the gap approximates the
+    // physical median only when both inboard pavementHWs are 0 — it is a
+    // frame fact about the chains, not a measured median. (Mercator, D1.)
     const mw = +gap.toFixed(2)
-    a.signature = 'divided-A'; a.pairKey = pairKey; a.medianWidth = mw
-    b.signature = 'divided-B'; b.pairKey = pairKey; b.medianWidth = mw
+    a.signature = 'divided-A'; a.pairKey = pairKey; a.chainGap = mw
+    b.signature = 'divided-B'; b.pairKey = pairKey; b.chainGap = mw
   }
   // Any oneway chain that was divided at the fragment level but found no
   // partner after the merge demotes to a plain one-way spine (no median).
   for (const c of oneway) {
     if (partnered.has(c)) continue
     if (c.signature === 'divided-A' || c.signature === 'divided-B') {
-      c.signature = 'single-oneway'; c.pairKey = null; c.medianWidth = undefined
+      c.signature = 'single-oneway'; c.pairKey = null; c.chainGap = undefined
     }
   }
 }
@@ -872,12 +877,14 @@ function main() {
         // through welding; startNode/endNode populated post-normalize.
         { phase: {
           kind: ph.kind, role: ph.role, corridorName: name, pairKey: c.pairKey || null,
-          // Median width = the paired-carriageway gap (Part 1.6); null for undivided.
-          // A re-paired (longitudinally-merged) carriageway carries its own fresh
-          // medianWidth; fragment-level pairs look up the pre-weld gapByPairKey.
-          ...(c.medianWidth != null
-            ? { medianWidth: c.medianWidth }
-            : (c.pairKey && gapByPairKey.has(c.pairKey) && { medianWidth: gapByPairKey.get(c.pairKey) })),
+          // chainGap = the paired-carriageway chain gap (Part 1.6); null for
+          // undivided. Formerly `medianWidth` — renamed because it measures the
+          // distance between the two CHAINS, not the median (D1/Mercator). A
+          // re-paired (longitudinally-merged) carriageway carries its own fresh
+          // chainGap; fragment-level pairs look up the pre-weld gapByPairKey.
+          ...(c.chainGap != null
+            ? { chainGap: c.chainGap }
+            : (c.pairKey && gapByPairKey.has(c.pairKey) && { chainGap: gapByPairKey.get(c.pairKey) })),
         } },
       ))
     })

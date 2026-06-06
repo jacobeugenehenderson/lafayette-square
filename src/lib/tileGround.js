@@ -368,11 +368,19 @@ export function extractFaces(streets) {
 // the thin tile between the two carriageways floods to a bare median. Mirrors
 // streetProfiles.innerEdgeMeasure — the median geometry falls out of honest
 // per-side widths + this transform, with no median-construction code.
+// RECLAIM guard (D1, mirrors innerEdgeMeasure): left/right keys are
+// point-order-relative; a weld that reverses a chain swaps the physical sides
+// under the persisted keys. Outer pavementHW 0 with inboard > 0 is an
+// impossible road (zero-width carriageway) → the width is misfiled on the
+// median key; swap the sides back. Fires only on that impossible state.
 function effectiveMeasure(s) {
   const m = s?.measure
   if (!m || s.anchor !== 'inner-edge' || !s.innerSign) return m
   const inboard = s.innerSign === +1 ? 'right' : 'left'
-  return { ...m, [inboard]: { ...(m[inboard] || {}), treelawn: 0, sidewalk: 0 } }
+  const outboard = inboard === 'left' ? 'right' : 'left'
+  let inb = m[inboard] || {}, out = m[outboard] || {}
+  if (!(out.pavementHW > 0) && inb.pavementHW > 0) { const t = out; out = inb; inb = t }
+  return { ...m, [outboard]: out, [inboard]: { ...inb, treelawn: 0, sidewalk: 0 } }
 }
 // Is this street-side the median-facing (inboard) side of a divided carriageway?
 function isMedianFacing(s, side) {

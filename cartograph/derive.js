@@ -2347,7 +2347,14 @@ export function deriveLayers(highways) {
     const points = s.points.map(p => [p.x, p.z])
     const ov = overlayById[s.id] || null
     // Measure: overlay override → computeStreetMeasure default fallback.
-    const measure = (ov?.measure?.left && ov?.measure?.right)
+    // `_measureAuthored` distinguishes operator-authored overlay measures from
+    // name-keyed/default fallbacks — the divided-pair pass below normalizes
+    // NON-authored carriageway measures to the inner-edge model (corridor
+    // facts must not land verbatim on a carriageway's sides — that is the
+    // broadcast smear that flooded every LS median, D1). Underscore-prefixed,
+    // so the serializer whitelist drops it from the artifact.
+    const ovAuthored = !!(ov?.measure?.left && ov?.measure?.right)
+    const measure = ovAuthored
       ? ov.measure
       : computeStreetMeasure(s.name, { highway: s.highway })
     const street = {
@@ -2364,10 +2371,11 @@ export function deriveLayers(highways) {
       // when missing — matches mapHighwayToStreetType's default.
       highway: s.highway || 'residential',
       type: mapHighwayToStreetType(s.highway),
+      _measureAuthored: ovAuthored,
       // [P1 frame-enrichment] Carry the enriched frame fields off the skeleton
       // street so they survive into ribbons.json. These are PRESENT-but-not-yet-
       // consumed (the consumers — caps→chainPavementRing, seed→computeStreetMeasure,
-      // medianWidth/continuesAs — wire up at the Wall / Layer-2). Plumbing only.
+      // chainGap/continuesAs — wire up at the Wall / Layer-2). Plumbing only.
       ...(Number.isFinite(s.lanes) ? { lanes: s.lanes } : {}),
       ...(s.surface ? { surface: s.surface } : {}),
       ...(s.maxspeed ? { maxspeed: s.maxspeed } : {}),
@@ -2851,6 +2859,11 @@ export function deriveLayers(highways) {
     // is where the inner edge lies. Return +1 or -1 (left of tangent
     // vs right of tangent, consistent across all segments of a well-
     // behaved carriageway).
+    // CONVENTION (pin it here, it has bitten twice — see tileGround.js:347):
+    // the perp used below, (-dz, dx), is what production's measure calls the
+    // RIGHT-perp. So innerSign === +1 means the partner (the median) lies on
+    // the measure-RIGHT side → inboard key 'right'; -1 → 'left'. This matches
+    // tileGround.isMedianFacing and streetProfiles.innerEdgeMeasure exactly.
     let votes = 0
     for (let i = 0; i < aPoints.length - 1; i++) {
       const dx = aPoints[i + 1][0] - aPoints[i][0]
@@ -3010,6 +3023,40 @@ export function deriveLayers(highways) {
   }
   console.log(`    ${medians.length} emergent medians from carriageway pairs`)
 
+  // D1 (carriageway measure hygiene): canonicalize a divided carriageway's
+  // per-side measure to the anchor='inner-edge' model — the chain sits at the
+  // carriageway's median-facing edge, so the OUTER side carries the full
+  // carriageway width and the median-facing (inboard) side is effectively 0.
+  //
+  // Why this must be re-resolved EVERY bake, through innerSign: the measure's
+  // left/right keys are point-order-relative, and a longitudinal weld can
+  // REVERSE a chain's stored direction (commit 5348fbc reversed
+  // lafayette-avenue-6, silently swapping which physical side every persisted
+  // key referred to — the false-corner's data root: outer pavementHW became 0,
+  // the block ran flush to the chain). innerSign is recomputed from current
+  // geometry each bake, so sides resolved through it are reversal-proof.
+  //
+  //   1. RECLAIM a misfiled width: outer pavementHW <= 0 with inboard > 0 is
+  //      an impossible road (a zero-width carriageway) — the width datum is
+  //      sitting on the median key because the chain reversed under it.
+  //      Swap the two side sections back.
+  //   2. NON-authored measures (name-keyed centerlines fallback / class
+  //      default) are CORRIDOR facts, not carriageway facts — landing them
+  //      verbatim on a carriageway puts corridor half-widths on the median
+  //      side and floods the gap with asphalt (the broadcast smear; 42/44 LS
+  //      carriageways). Zero the inboard side outright. Authored (overlay)
+  //      inboard values are preserved: inboard pavement > 0 is the operator's
+  //      documented "eat into the median" control (streetProfiles.js).
+  function innerEdgeAssign(m, innerSign, authored) {
+    if (!m || !innerSign || !m.left || !m.right) return m
+    const inbKey = innerSign === +1 ? 'right' : 'left'   // measure-RIGHT = (-dz,dx) perp; see innerSideSign
+    const outKey = inbKey === 'left' ? 'right' : 'left'
+    let inb = m[inbKey], out = m[outKey]
+    if (!(out?.pavementHW > 0) && inb?.pavementHW > 0) { const t = out; out = inb; inb = t }   // (1) reclaim
+    if (!authored) inb = { ...inb, pavementHW: 0, treelawn: 0, sidewalk: 0, terminal: 'none' } // (2) corridor facts
+    return { ...m, symmetric: false, [outKey]: out, [inbKey]: inb }
+  }
+
   // Anchor + innerSign for paired carriageways. Runtime uses these to
   // render the visible centerline at the inner edge and emit ribbons
   // outward. Operator can override `anchor` per chain in Survey.
@@ -3022,6 +3069,18 @@ export function deriveLayers(highways) {
     B.anchor = 'inner-edge'
     B.innerSign = innerSideSign(B.points, chainCenter(A.points))
     B.pairId = A.skelId
+    // Normalize measures into the inner-edge model (see innerEdgeAssign).
+    // segmentMeasures are overlay-only → authored by definition (reclaim only).
+    for (const st of [A, B]) {
+      st.measure = innerEdgeAssign(st.measure, st.innerSign, st._measureAuthored)
+      if (st.segmentMeasures) {
+        const sm = {}
+        for (const k of Object.keys(st.segmentMeasures)) {
+          sm[k] = innerEdgeAssign(st.segmentMeasures[k], st.innerSign, true)
+        }
+        st.segmentMeasures = sm
+      }
+    }
   }
   const innerEdgeCount = ribbonStreets.filter(s => s.anchor === 'inner-edge').length
   if (innerEdgeCount) console.log(`    ${innerEdgeCount} chains marked anchor=inner-edge (divided carriageways)`)
@@ -3043,7 +3102,10 @@ export function deriveLayers(highways) {
       // divided-road authoring goal can read the carriageway identity without
       // re-deriving it). See HANDOFF-divided-carriageway-weld.md.
       oneway: !!st.oneway,
-      ...(st.phase ? { phase: { role: st.phase.role || null, kind: st.phase.kind || null, pairKey: st.phase.pairKey || null, ...(st.phase.medianWidth != null ? { medianWidth: st.phase.medianWidth } : {}), ...(st.phase.spineAtStart ? { spineAtStart: st.phase.spineAtStart } : {}), ...(st.phase.spineAtEnd ? { spineAtEnd: st.phase.spineAtEnd } : {}) } } : {}),
+      // phase.chainGap: the paired-carriageway CHAIN gap (formerly mislabeled
+      // `medianWidth` — it measures chain-to-chain, not the median; D1). The
+      // `?? medianWidth` read is back-compat for a pre-rename skeleton.json.
+      ...(st.phase ? { phase: { role: st.phase.role || null, kind: st.phase.kind || null, pairKey: st.phase.pairKey || null, ...((st.phase.chainGap ?? st.phase.medianWidth) != null ? { chainGap: st.phase.chainGap ?? st.phase.medianWidth } : {}), ...(st.phase.spineAtStart ? { spineAtStart: st.phase.spineAtStart } : {}), ...(st.phase.spineAtEnd ? { spineAtEnd: st.phase.spineAtEnd } : {}) } } : {}),
       highway: st.highway || 'residential',
       type: st.type || 'residential',
       // Operator-intent fields the V2 emitter consumes. Designer reads

@@ -21,3 +21,26 @@
 **Done:** A/B over **all** divided corridors (LS + Truman); on **Jacob's live Survey eye**: the Lafayette park-side curb sits ~7 m south of the chain, **the park block no longer touches the centerline**, and **the median strip stops rendering as solid asphalt.** The fix is in the *logic* (systemic, frame-side, invisible to the operator — no new controls). Report origin + which corridors changed. Don't touch canonical docs (Boz conforms). Sync to trunk, commit, report refs.
 
 **Out of scope:** D2 prebake face-freeze · D3 the corner cure (needs D1+D2) · D4 C5/LU · D5 perf · the band-fold thorns. D1 is the data hygiene alone.
+
+---
+
+## REPORT (Gunter, 2026-06-05) — DONE, pending Jacob's live eye
+
+**Origin pinned — three stacked causes, all data-level, none in our polygonization:**
+1. **Broadcast smear.** `migrate-overlay.js` ("Broadcast primary's measure + caps to every new chain of this name", :84) fanned one name-keyed corridor `{left,right}` verbatim onto every chain of that name — carriageways included. Corridor half-widths landed on median-facing sides → **42/44 carriageways flooded their median with asphalt** (Lafayette pair: inboard 10.56+6.70 > the 7.92 gap).
+2. **Direction-flip scramble.** The longitudinal weld (`5348fbc`, Truman 8→2) **reversed lafayette-avenue-6's point order**. Its overlay measure had been authored CORRECTLY under the old order (outer 6.70 / inboard 0, verified across ribbons.json history: `1f89b86`→`8392b3e` era). left/right keys are point-order-relative; the flip silently swapped the physical sides → outer became 0 = *"the parcel touches the centerline."* The operator never mis-authored; the frame moved under their data.
+3. **No inner-edge form at assignment.** Nothing in skeleton/derive ever constructed the documented model (outer = carriageway width, median-facing ≈ 0; `streetProfiles.js` had it in comments only).
+
+**The fix (systemic, frame-side, zero operator controls):**
+- `derive.js innerEdgeAssign` (divided-pair pass): per bake, sides resolved through `innerSign` (recomputed from current geometry — reversal-proof). (1) **Reclaim** a misfiled width: outer pavementHW ≤ 0 with inboard > 0 is an impossible road → swap the side sections back (auto-heals any future weld flip). (2) Non-authored (name-fallback/default) carriageway measures = corridor facts → inboard zeroed outright. Authored inboard > 0 is preserved (the "eat into the median" affordance).
+- Same reclaim guard at both consumption choke points (`streetProfiles.innerEdgeMeasure`, `tileGround.effectiveMeasure`) so live render + bake agree even on stale-scrambled data. Side convention pinned in code comments at all three sites.
+- `repair-carriageway-measures.js` (new, one-shot): re-derives the 44 carriageway overlay entries by rule (reclaim + per-field broadcast-residue detection — exact-float pavementHW repeated across same-name entries). **40 re-derived, 0 hand-edited.** Backup + `--root` for main-tree delivery. 3 survivors with authored inboard > 0, all < their gap (no flood): truman-parkway-0/-1, south-jefferson-avenue-1.
+- `medianWidth` → **`chainGap`** (skeleton.js + ribbons `phase`; it measures chain-to-chain, not the median). Back-compat read in derive. Zero src/ consumers existed.
+
+**Corridors changed (re-derive):** all 22 divided pairs except Truman (authored, kept): south-18th, papin, russell, officer-david-haynes (10 chains), geyer, chouteau, lafayette (×3 pairs incl. the park pair: -6 RECLAIM outer 0→6.70, -5 inboard 10.56→0), south-14th, park-avenue (×2), south-jefferson (×3 pairs).
+
+**Verified (proxy — Jacob's live eye is the gate):** A/B all 44 carriageways: 41 inboard→0, 0 non-carriageway/structural diffs; park-side curb 6.75 m off the chain along the ENTIRE -6 run (was flush); median bare-ground rings appear between the chains; map-wide +17 block rings / +18.3k m² ground / +19 asphalt rings (medians un-flooding, nothing vanished). Baseline pipeline reproduced HEAD byte-identically before any change. ⚠️ **Expectation: the false CORNER at the transition node remains** (>15 m wedge at station 315) — that is D3, which can now land on correct data.
+
+**Class-level hazard noted (not fixed, out of scope):** `capStart`/`capEnd` are also point-order-keyed — a future weld flip would swap a chain's caps the same way. Same cure shape if it ever bites.
+
+**Delivery:** the live app reads `overlay.json` from the main tree (live store measure overrides ribbons — `mergeLiveRibbons.js:41`), so the eye-gate needs the migration run there: `node cartograph/repair-carriageway-measures.js --root <main-tree>` (timestamped backup automatic), then reload Survey.

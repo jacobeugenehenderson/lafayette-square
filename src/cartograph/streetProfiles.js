@@ -399,12 +399,32 @@ export function innerEdgeOffsetPolyline(pts, innerSign, pavementHW) {
 // operator has authored. The polygon between paired carriageways'
 // chains, minus the two inboard pavement HWs, IS the emergent median;
 // if the gap can't accommodate one, no median renders (free).
+// CONVENTION: innerSign === +1 → inboard key 'right' (the measure-RIGHT is
+// the (-dz,dx) perp of point order). Must match tileGround.isMedianFacing and
+// derive.js innerSideSign — this side-mapping has bitten twice; don't re-derive
+// it from "CCW = left" intuition.
+//
+// RECLAIM guard (D1): measure left/right keys are point-order-relative, so a
+// skeleton weld that reverses a chain's direction silently swaps which
+// physical side a persisted key refers to (lafayette-avenue-6: the authored
+// carriageway width ended up on the median key, outer pavementHW 0 — the
+// block ran flush to the chain). An outer pavementHW of 0 with inboard > 0 is
+// an impossible road (zero-width carriageway), so the width datum is misfiled:
+// swap the sides back before zeroing the inboard ped zone. Fires only on that
+// impossible state — authored "eat into the median" (inboard > 0 WITH a real
+// outer width) passes through untouched.
 export function innerEdgeMeasure(baseMeasure, innerSign) {
   if (!innerSign) return baseMeasure
   const inboardKey = innerSign === +1 ? 'right' : 'left'
-  const inboardSide = baseMeasure?.[inboardKey] || {}
+  const outboardKey = inboardKey === 'left' ? 'right' : 'left'
+  let inboardSide = baseMeasure?.[inboardKey] || {}
+  let outboardSide = baseMeasure?.[outboardKey] || {}
+  if (!(outboardSide.pavementHW > 0) && inboardSide.pavementHW > 0) {
+    const t = outboardSide; outboardSide = inboardSide; inboardSide = t
+  }
   return {
     ...baseMeasure,
+    [outboardKey]: outboardSide,
     [inboardKey]: {
       ...inboardSide,
       treelawn: 0,
