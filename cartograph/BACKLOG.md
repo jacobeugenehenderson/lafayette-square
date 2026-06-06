@@ -59,8 +59,10 @@
 |---|---|---|
 | skeleton-tile-hygiene | ✅ DONE (Lye, merged `06c394b`) — C1/C2/C9/C10/C11 excised; the writeFileSync drift gremlin killed via `io.js {touch:false}` | done |
 | prebake-polygonization-scope | ✅ DONE (Mercator) → `PREBAKE-POLYGONIZATION-PLAN.md` (D1–D5 decomposition + validated spike; false corner is partly a DATA bug) | done |
-| **d1-carriageway-measure-hygiene** | the "parcel touches the centerline" DATA bug — systemic per-side measure fix (all divided corridors) + operator override | NOW — **dispatch-ready** (FRESH) |
-| D2–D5 *(in the plan doc)* | prebake face-freeze · corner cure (D3) · C5/LU retire · activated-block perf | queued — Boz drafts each after the prior lands |
+| d1-carriageway-measure-hygiene | ✅ DONE (Gunter, `bbc3401`) — divided per-side measure hygiene | done |
+| divided-corridor-model-scope | ✅ DONE (Alidade) → `DIVIDED-CORRIDOR-PLAN.md` (chains=inner-edge, constructed median, fold-at-join, rip-out ledger) | done |
+| **e1-custom-width-base** | bake custom `survey.json` widths into the skeleton seed (custom→OSM→AASHTO), propagate through the divided splits | NOW — **dispatch-ready** (FRESH) |
+| build sequence (D+E, in the plans) | **E1** → D2+E2 (prebake freeze + constructed median) → D3+E3 (transition/fold/corner cure) → E4+D4 (rip-out inner-edge + retire C5) → D5 (perf). Parallel: brief F (north-void) ∥ T-bumps (band-fold). | queued — Boz drafts each after the prior lands |
 | **wall-phase-d** | the Wall as a real freeze — Section opens the frozen Survey data (Jacob's milestone, plumbing) | dispatch-ready (FRESH) — after the data cure for "correct data" |
 | pipeline-reconception | tile re-pour umbrella (T1–T4) | NOW (context) |
 | tile-feature-ledger | re-pour definition-of-done | NOW (reference) |
