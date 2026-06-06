@@ -864,6 +864,23 @@ export function buildTileGround(ribbons, opts = {}) {
   // perimeter clip keeps these out of tile territory and vice versa.
   const jPerimPolys = []      // perimeter-datum window polys
   const jPerimCuts = new Map()// skelId → keep-out quads (cut from that chain's perimeter stroke only)
+  // ── [E3.3] THE CORNER IDENTITIES — consume ribbons.junctionMap corners
+  // (SKELETON.md §5e: the corner-builder cornered the WRONG LEGS — a
+  // carriageway STUB rounded against the cross street instead of the
+  // corridor's clean outer-edge legs). Per stamped stub with an identified
+  // outer side, the corner is CONSTRUCTED from the identified curb LINES
+  // (the as-built E3.2 window curb where one exists, else the de-tapered
+  // body ⊕ per-fe width — the same probe the E3.2 windows use): the
+  // keep-out quadrant beyond BOTH lines at their intersection P (the true
+  // corner) is asserted BLOCK before the constructed coverage unions in, so
+  // the stub's diagonal curl stroke can never invade the corner again (the
+  // false-corner class). filletRing then rounds the corner that falls out
+  // at P — both legs ARE the identified outer legs, so the fillet corners
+  // the right legs by construction. A pairing whose P lies outside a line's
+  // physically-valid span is a PHANTOM (the leg doesn't reach that
+  // quadrant) and is skipped — those corners stay emergent, exactly as
+  // today. Nodes without junctionMap stamps are untouched.
+  const jCornerCuts = []
   if (consumeJM) {
     const jm = ribbons.junctionMap
     const idxBySkel = new Map(streets.map((s, i) => [(s.skelId || s.name), i]))
@@ -915,7 +932,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // Non-absorbed median rings (for the defensive apron subtract) with bboxes.
     const medRings = (ribbons?.medians || []).filter(m => m?.kind === 'median' && !m.absorbedBy && Array.isArray(m.ring) && m.ring.length >= 3).map(m => m.ring)
     const medBoxes = medRings.map(ringBBox)
-    let nPairs = 0, nWindows = 0, nAprons = 0, nAbsorbed = 0, nTipSkip = 0, nSkip = 0
+    let nPairs = 0, nWindows = 0, nAprons = 0, nAbsorbed = 0, nTipSkip = 0, nSkip = 0, nCorners = 0
     for (const nd of jm.nodes) {
       const legByChain = new Map(nd.legs.map(l => [l.chain, l]))
       const noseOf = (chain, end) => { for (const w of (nd.deTaper || [])) if (w.chain === chain && w.end === end) return w.nose; return 0 }
@@ -925,6 +942,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // vertex can poke through a miter-tightened curb — the needle class).
       const fanAnchors = []
       const pairedSides = new Set()
+      const nodeCurbs = new Map()   // `${chain}|${side}` → the window's as-built curb (cp→X) for E3.3's corners
       // ── continuity pairs → window polys + stroke trims ──
       for (const pr of (nd.continuity || [])) {
         if (pr.source === 'tip-wrap') { nTipSkip++; continue }   // pendant tips stay G8's (round-cap canon)
@@ -1102,6 +1120,29 @@ export function buildTileGround(ribbons, opts = {}) {
           pushPoly(ring)
           const sk = (streetsOrig[h.idx] && (streetsOrig[h.idx].skelId || streetsOrig[h.idx].name)) || h.half.chain
           jTrims.set(`${sk}|${h.half.side}|${k3(h.seam[0])}`, h.W)
+          // [E3.3] the as-built constructed curb (cp→X) — the ONE curb truth
+          // the corner pass must corner against (a straight-datum line would
+          // disagree with the blend by |wA−wB| and tooth the boundary). The
+          // line stays valid past cp along the trimmed stroke until the
+          // chain's next bend — extend farPt there so a corner falling just
+          // body-ward of a short window still constructs.
+          {
+            const dx = X[0] - h.cp[0], dz = X[1] - h.cp[1]
+            const L = Math.hypot(dx, dz)
+            if (L > 0.5) {
+              let ext = 0
+              {
+                const pn = h.pts.length
+                const at = (i) => h.leg.end === 'start' ? h.pts[i] : h.pts[pn - 1 - i]
+                let acc = 0
+                for (let i = 1; i < pn; i++) {
+                  acc += Math.hypot(at(i)[0] - at(i - 1)[0], at(i)[1] - at(i - 1)[1])
+                  if (acc > h.W + 0.05) { ext = Math.min(acc - h.W, 20); break }
+                }
+              }
+              nodeCurbs.set(`${h.half.chain}|${h.half.side}`, { p0: [h.cp[0], h.cp[1]], u: [dx / L, dz / L], nb: [h.nhWs[0], h.nhWs[1]], w: h.w, farPt: [h.cp[0] - dx / L * ext, h.cp[1] - dz / L * ext] })
+            }
+          }
           // Perimeter variant: same window, the perimeter's width datum. The
           // keep-out quad (constructed curb → outward) cuts the chain's OWN
           // perimeter stroke so the wider butt cap can't tooth past the curb.
@@ -1169,8 +1210,197 @@ export function buildTileGround(ribbons, opts = {}) {
           if (m?.ring?.length >= 3) { pushPoly(m.ring.map(p => [p[0], p[1]])); nAbsorbed++ }
         }
       }
+      // ── [E3.3] corner identities → the constructed corner (§5e at last).
+      // Only nodes with stamped STUBS fire — a stub is the one leg that must
+      // never corner; every corner here is built from identified curb lines.
+      // Scope: DIVIDED-TRANSITION nodes (the 24-node sweep class, incl. the
+      // park corners). Terminus/continuation/join stubs sit on the E3.4
+      // datum-repair rows (Truman↔Lafayette w=2 scramble, Chouteau 6.70 m) —
+      // constructing a corner from a scrambled width reshapes one artifact
+      // into another; they pick this construction up once the datums hold.
+      const stubRecs = nd.kinds?.includes('divided-transition') ? (nd.corners?.stub || []) : []
+      if (stubRecs.length) {
+        const stubChains = new Set(stubRecs.map(c => c.chain))
+        // An identified curb LINE at this node: the leg's de-tapered body
+        // tangent (the same window-snapped probe the E3.2 halves use) offset
+        // by the per-fe width on the stamped side. nb = unit normal toward
+        // the BLOCK side of the curb.
+        const lineCache = new Map()
+        const lineFor = (chain, side, halfDir) => {
+          const ck0 = `${chain}|${side}`
+          const ck = `${ck0}|${halfDir ? halfDir.map(v => v.toFixed(2)) : ''}`
+          if (lineCache.has(ck)) return lineCache.get(ck)
+          let out = null
+          const leg = legByChain.get(chain)
+          const idx = idxBySkel.get(chain)
+          const s = idx != null ? streets[idx] : null
+          if (leg && s?.points && s.points.length >= 2) {
+            const pts = s.points, len = chainLen(pts)
+            if (leg.end === 'through') {
+              const vi = viAt(pts, nd.at)
+              if (vi >= 0) {
+                // The half of the through chain facing the corner — the one
+                // pointing toward the stub's BLOCK side (halfDir = A.nb).
+                // Segment tangent + per-fe segOrd resolved on that half
+                // (point-order-forward keyed, the E3.2 convention).
+                const fdir = nrm(pts[vi + 1][0] - pts[vi][0], pts[vi + 1][1] - pts[vi][1])
+                const fwd = !halfDir || (fdir[0] * halfDir[0] + fdir[1] * halfDir[1]) >= 0
+                const t = fwd ? fdir : nrm(pts[vi][0] - pts[vi - 1][0], pts[vi][1] - pts[vi - 1][1])
+                const w = feWidthAt(idx, side, segOrdAtVertex(idx, fwd ? vi : vi - 1))
+                if (w > 0.01) {
+                  const nh = sidePerp(t, side)
+                  // the straight-line model holds only to the half's far
+                  // vertex — the chain may bend there
+                  const fv = fwd ? pts[vi + 1] : pts[vi - 1]
+                  out = { chain, side, u: t, nb: nh, p0: [nd.at[0] + nh[0] * w, nd.at[1] + nh[1] * w], w, farPt: [fv[0] + nh[0] * w, fv[1] + nh[1] * w] }
+                }
+              }
+            } else if (nodeCurbs.has(ck0)) {
+              // This curb was CONSTRUCTED by an E3.2 window — corner against
+              // the as-built cp→X line (one curb truth; a fresh straight-
+              // datum line would tooth against the blend).
+              out = { ...nodeCurbs.get(ck0), chain, side, fromWindow: true }
+            } else {
+              const nose = noseOf(chain, leg.end)
+              let W0 = 0
+              if (nose > 0) {
+                const np = pts.length
+                const at = (i) => leg.end === 'start' ? pts[i] : pts[np - 1 - i]
+                let acc = 0
+                for (let i = 1; i < np - 1; i++) {
+                  acc += Math.hypot(at(i)[0] - at(i - 1)[0], at(i)[1] - at(i - 1)[1])
+                  if (acc >= nose) { W0 = acc; break }
+                }
+                if (!W0) W0 = nose
+                W0 = Math.min(W0, 0.45 * len)
+              }
+              const probe = walkIn(pts, leg.end, W0 > 0 ? W0 + 1.5 : Math.min(8, 0.4 * len))
+              const w = feWidthAt(idx, side, segOrdAtEnd(idx, leg.end))
+              if (w > 0.01) {
+                const tPO = leg.end === 'start' ? probe.tIn : [-probe.tIn[0], -probe.tIn[1]]
+                const nh = sidePerp(tPO, side)
+                // body line projected to the node's longitudinal station
+                const toNode = [-probe.tIn[0], -probe.tIn[1]]
+                const Lp = (nd.at[0] - probe.ws[0]) * toNode[0] + (nd.at[1] - probe.ws[1]) * toNode[1]
+                const ax = [probe.ws[0] + toNode[0] * Lp, probe.ws[1] + toNode[1] * Lp]
+                // curl magnitude — how far the pinned endpoint sits off the
+                // body axis. ≈0 → the stub IS its body, nothing to construct.
+                const latOff = Math.hypot(nd.at[0] - ax[0], nd.at[1] - ax[1])
+                out = { chain, side, u: tPO, nb: nh, p0: [ax[0] + nh[0] * w, ax[1] + nh[1] * w], w, latOff, farPt: [probe.ws[0] + nh[0] * w, probe.ws[1] + nh[1] * w] }
+              }
+            }
+          }
+          lineCache.set(ck, out)
+          return out
+        }
+        // Chains transitively linked by the node's continuity stamps are ONE
+        // corridor — its curbs continue through the node and never corner
+        // each other (a pure transition node constructs no corners at all).
+        const grp = new Map()
+        const find = (x) => { let r = x; while (grp.get(r) !== r) r = grp.get(r); grp.set(x, r); return r }
+        for (const pr of (nd.continuity || [])) {
+          for (const c of [pr.a.chain, pr.b.chain]) if (!grp.has(c)) grp.set(c, c)
+          grp.set(find(pr.a.chain), find(pr.b.chain))
+        }
+        const grpOf = (c) => grp.has(c) ? find(c) : c
+        // Continuity-linked sides are ONE physical curb — a corner pairs
+        // against it ONCE (two stamped lines of one curb differ by the blend
+        // kink at X and would stair-step the cut).
+        const sameCurb = new Set()
+        for (const pr of (nd.continuity || [])) {
+          sameCurb.add(`${pr.a.chain}|${pr.a.side}~${pr.b.chain}|${pr.b.side}`)
+          sameCurb.add(`${pr.b.chain}|${pr.b.side}~${pr.a.chain}|${pr.a.side}`)
+        }
+        const seenP = new Set()
+        // The cut's two critical edges sit 1 cm BLOCK-ward of the exact curb
+        // lines: where the emergent stroke edge already equals the line (the
+        // no-op zones beyond the curl) an exact-coincident cut edge would
+        // leave zero-width retrace needles in the difference boundary (the
+        // spur-hygiene class) — the nudge keeps the stroke edge the boundary
+        // there, invisibly.
+        const NUDGE = 0.01
+        const cornerAt = (A, B) => {
+          const det = A.u[0] * B.u[1] - A.u[1] * B.u[0]
+          if (Math.abs(det) < 0.34) return                  // near-parallel (<~20°): same curb, not a corner
+          const pA = [A.p0[0] + A.nb[0] * NUDGE, A.p0[1] + A.nb[1] * NUDGE]
+          const pB = [B.p0[0] + B.nb[0] * NUDGE, B.p0[1] + B.nb[1] * NUDGE]
+          const t = ((pB[0] - pA[0]) * B.u[1] - (pB[1] - pA[1]) * B.u[0]) / det
+          const P = [pA[0] + A.u[0] * t, pA[1] + A.u[1] * t]
+          const lim = 2.5 * Math.max(A.w, B.w) + 4
+          if (Math.hypot(P[0] - nd.at[0], P[1] - nd.at[1]) > lim) return
+          const pk = Math.round(P[0] * 2) + ',' + Math.round(P[1] * 2)
+          if (seenP.has(pk)) return
+          seenP.add(pk)
+          // e1 = along A toward the block side of B; e2 = along B toward the
+          // block side of A → the quadrant beyond BOTH curbs from P = block.
+          // Each extent is bounded by its line's REACH (where the chain may
+          // bend, the straight-line model — and so the cut — must stop).
+          const e1 = (A.u[0] * B.nb[0] + A.u[1] * B.nb[1]) > 0 ? A.u : [-A.u[0], -A.u[1]]
+          const e2 = (B.u[0] * A.nb[0] + B.u[1] * A.nb[1]) > 0 ? B.u : [-B.u[0], -B.u[1]]
+          // distance from P to the line's far valid point — past it the chain
+          // may bend and the straight-line cut would bite the real curb. A
+          // corner with no usable span (P at/beyond the far point) isn't one
+          // this construction can build — skip, never emit a micro-cut.
+          const spanTo = (L, e) => L.farPt ? (L.farPt[0] - P[0]) * e[0] + (L.farPt[1] - P[1]) * e[1] + 1 : lim + 8
+          const S1 = Math.min(lim + 8, spanTo(A, e1))
+          const S2 = Math.min(lim + 8, spanTo(B, e2))
+          if (S1 < 3 || S2 < 3) return
+          let cut = [
+            [P[0], P[1]],
+            [P[0] + e1[0] * S1, P[1] + e1[1] * S1],
+            [P[0] + e1[0] * S1 + e2[0] * S2, P[1] + e1[1] * S1 + e2[1] * S2],
+            [P[0] + e2[0] * S2, P[1] + e2[1] * S2],
+          ]
+          if (signedArea(cut) < 0) cut = cut.slice().reverse()
+          jCornerCuts.push(cut)
+          nCorners++
+        }
+        for (const oc of (nd.corners?.outer || [])) {
+          if (!stubChains.has(oc.chain)) continue
+          const A = lineFor(oc.chain, oc.side)
+          // negligible curl → the stub IS its straight body; the emergent
+          // corner already rides the identified legs (any residual is datum,
+          // E3.4's) and a construction here would only manufacture
+          // coincident-edge needles. Window-built curbs always corner.
+          if (!A || (!A.fromWindow && (A.latOff || 0) < 0.4)) continue
+          // partners: the node's other identified outer curbs OUTSIDE the
+          // stub's own corridor group + the cross legs.
+          const gA = grpOf(oc.chain)
+          const cands = []
+          for (const o2 of (nd.corners?.outer || [])) {
+            if (o2.chain === oc.chain && o2.side === oc.side) continue
+            if (grpOf(o2.chain) === gA) continue
+            cands.push(o2)
+          }
+          for (const leg of nd.legs) if (leg.role === 'cross') for (const side of ['left', 'right']) cands.push({ chain: leg.chain, side })
+          // resolve lines; sameCurb-linked cands collapse to ONE (prefer the
+          // as-built window line over a straight-datum one)
+          const lines = []
+          for (const c2 of cands) {
+            const B = lineFor(c2.chain, c2.side, A.nb)   // through partners: the half facing the stub's block side
+            if (B) lines.push({ c2, B })
+          }
+          const drop = new Set()
+          for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+            if (drop.has(i) || drop.has(j)) continue
+            const a = lines[i], b = lines[j]
+            if (!sameCurb.has(`${a.c2.chain}|${a.c2.side}~${b.c2.chain}|${b.c2.side}`)) continue
+            drop.add(!a.B.fromWindow && b.B.fromWindow ? i : j)
+          }
+          lines.forEach(({ B }, i) => { if (!drop.has(i)) cornerAt(A, B) })
+        }
+        // branch apexes (the Grattan class): the stamped pair IS the corner
+        for (const ap of (nd.corners?.apex || [])) {
+          if (!stubChains.has(ap.legA.chain)) continue
+          const A = lineFor(ap.legA.chain, ap.legA.side)
+          if (!A || (!A.fromWindow && (A.latOff || 0) < 0.4)) continue
+          const B = lineFor(ap.legB.chain, ap.legB.side, A.nb)
+          if (B) cornerAt(A, B)
+        }
+      }
     }
     if (nPairs || nAprons) console.log(`    [E3.2] junction construction: ${nPairs} pairs (${nWindows} windows), ${nAprons} aprons, ${nAbsorbed} absorbed median ring(s)${nTipSkip ? `, ${nTipSkip} tip-wraps left to G8` : ''}${nSkip ? `, ${nSkip} pairs skipped (unresolvable)` : ''}`)
+    if (nCorners) console.log(`    [E3.3] corner identities: ${nCorners} corners constructed`)
   }
   const jBoxes = jPolys.map(ringBBox)
   const junctionClipFor = (tileRing) => {
@@ -1178,6 +1408,14 @@ export function buildTileGround(ribbons, opts = {}) {
     const tb = ringBBox(tileRing)
     const cand = jPolys.filter((_, i) => { const mb = jBoxes[i]; return mb[0] <= tb[2] && mb[2] >= tb[0] && mb[1] <= tb[3] && mb[3] >= tb[1] })
     return cand.length ? intersectRings(cand, [tileRing]) : []
+  }
+  // [E3.3] per-tile corner-identity pieces. Cuts subtract from aFill (which
+  // is already tile-clipped).
+  const jcBoxes = jCornerCuts.map(ringBBox)
+  const cornerCutFor = (tileRing) => {
+    if (!jCornerCuts.length) return []
+    const tb = ringBBox(tileRing)
+    return jCornerCuts.filter((_, i) => { const mb = jcBoxes[i]; return mb[0] <= tb[2] && mb[2] >= tb[0] && mb[1] <= tb[3] && mb[3] >= tb[1] })
   }
   // Window-trimmed stroke source for a run: each run end sitting at a
   // constructed node pulls back by its window (the window poly supplies the
@@ -1306,6 +1544,13 @@ export function buildTileGround(ribbons, opts = {}) {
     // into the median") still wins — the per-run strokes union over it.
     const mergeClip = mergeClipFor(tile.ring)
     if (mergeClip.length) aFill = aFill.length ? unionRings([...aFill, ...mergeClip]) : mergeClip
+    // [E3.3] corner identities — FIRST the corner quadrant beyond the two
+    // identified curb lines is asserted BLOCK on the emergent strokes (the
+    // stub's curl stroke can never corner); the constructed coverage below
+    // (windows / aprons) then unions OVER the cut, so a window's wA→wB blend
+    // curb survives where it legitimately tops the straight line.
+    const cCut = cornerCutFor(tile.ring)
+    if (cCut.length && aFill.length) aFill = differenceRings(aFill, cCut)
     // [E3.2] junction construction — window polys + node aprons land as
     // positive asphalt in whatever tile they fall, same as the merge patches.
     const jClip = junctionClipFor(tile.ring)
@@ -1548,5 +1793,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _shapeArtifact }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact }
 }
