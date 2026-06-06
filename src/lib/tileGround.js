@@ -806,9 +806,14 @@ export function buildTileGround(ribbons, opts = {}) {
     for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1] }
     return [x0, y0, x1, y1]
   }
-  const collectKind = (kind) => {
+  // [E3.2] When the junction map is consumed, a median fragment ABSORBED by a
+  // node's apron (m.absorbedBy — the 69 m² S-18th nose piece) stops painting
+  // as median: its ring rides the apron as junction asphalt instead (the trim
+  // E3.1 specified). Without a junctionMap (toy / old data) nothing changes.
+  const consumeJM = !!(ribbons?.junctionMap?.nodes?.length)
+  const collectKind = (kind, excludeAbsorbed) => {
     const polys = (ribbons?.medians || [])
-      .filter(m => m?.kind === kind && Array.isArray(m.ring) && m.ring.length >= 3)
+      .filter(m => m?.kind === kind && !(excludeAbsorbed && m.absorbedBy) && Array.isArray(m.ring) && m.ring.length >= 3)
       .map(m => m.ring)
     const boxes = polys.map(ringBBox)
     return (tileRing) => {
@@ -821,8 +826,373 @@ export function buildTileGround(ribbons, opts = {}) {
       return cand.length ? intersectRings(cand, [tileRing]) : []
     }
   }
-  const medianClipFor = collectKind('median')
-  const mergeClipFor = collectKind('merge')
+  const medianClipFor = collectKind('median', consumeJM)
+  const mergeClipFor = collectKind('merge', false)
+
+  // ── [E3.2] THE JUNCTION CONSTRUCTION — consume ribbons.junctionMap by
+  // identity (the E2 pattern; JUNCTION-CURE-PLAN §3/§6, SKELETON.md §5e).
+  // The junction silhouette was never constructed: independent constant-width
+  // butt-capped run strokes meet at the node, so every width discontinuity
+  // manufactures spurious geometry (step / dip / scoop / tooth / spur). Per
+  // CONTINUITY PAIR the prebake stamped, the curb is ONE physical curb through
+  // the node; here the shape pass constructs it:
+  //   1. The stroked run polyline is TRIMMED back by a window W from the node
+  //      (the E3.1 de-taper nose for a tapering carriageway end — the straight
+  //      body ends there; a short blend window for un-tapered joins).
+  //   2. A WINDOW POLYGON replaces the emergent coverage in the window: chain
+  //      seam (window-start → node) → node → X → the constructed curb back to
+  //      the window-start curb point. X is the pair's SHARED curb point at the
+  //      node, so the two halves weld — no step, the width transitions
+  //      monotonically across the window (correct datums degenerate it to a
+  //      straight line; datum repair itself is E3.4).
+  //   3. ONE APRON per node (the junctionMap's apron spec): a fan of the legs'
+  //      curb points around the node, positively asphalt — kills the deg-6
+  //      inter-pair slivers and the zero-width chain-retrace spurs. A median
+  //      fragment the apron absorbed (absorbsMedians) rides it as asphalt
+  //      (the S-18th 69 m² trim).
+  // Everything lands in aFill via the same bbox-filtered per-tile clip the E2
+  // merge patches use. No junctionMap (toy / old data) → no-op by construction.
+  const k3 = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
+  const jPolys = []           // window polys + aprons + absorbed median rings
+  const jTrims = new Map()    // `${skelId}|${side}|${k3(runEndpoint)}` → trim distance
+  // The PERIMETER variant: streets outside the tile network are filled by the
+  // G9 perimeter pass (max-side widths, whole-chain butt-capped strokes) — the
+  // same emergent-junction defect at a second construction site (the north
+  // Lafayette curb, mark #2, lives there). Same windows, but the constructed
+  // curb uses the perimeter's width datum (max side): additive window polys +
+  // per-chain keep-out cuts (a whole-chain stroke can't be run-trimmed). The
+  // perimeter clip keeps these out of tile territory and vice versa.
+  const jPerimPolys = []      // perimeter-datum window polys
+  const jPerimCuts = new Map()// skelId → keep-out quads (cut from that chain's perimeter stroke only)
+  if (consumeJM) {
+    const jm = ribbons.junctionMap
+    const idxBySkel = new Map(streets.map((s, i) => [(s.skelId || s.name), i]))
+    const nrm = (x, z) => { const L = Math.hypot(x, z) || 1; return [x / L, z / L] }
+    const sidePerp = (t, side) => side === 'right' ? [-t[1], t[0]] : [t[1], -t[0]]   // measure convention: right = (-dz,dx) of point order
+    const chainLen = (p) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L }
+    // Walk `dist` inward from the chain's `end` endpoint. Returns the seam
+    // (endpoint → window-start, the chain's own vertices), the window-start
+    // point ws, the inward unit tangent tIn there, and the achieved distance
+    // (clamped early at an interior junction — a window never crosses another
+    // intersection — or at the chain's far end).
+    const walkIn = (pts, end, dist) => {
+      const n = pts.length
+      const at = (i) => end === 'start' ? pts[i] : pts[n - 1 - i]
+      const seam = [[at(0)[0], at(0)[1]]]
+      let acc = 0, t = null
+      for (let i = 1; i < n; i++) {
+        const a = at(i - 1), b = at(i)
+        const L = Math.hypot(b[0] - a[0], b[1] - a[1])
+        if (L < 1e-9) continue
+        t = [(b[0] - a[0]) / L, (b[1] - a[1]) / L]
+        if (acc + L >= dist) {
+          const f = (dist - acc) / L
+          const ws = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]
+          seam.push(ws)
+          return { seam, ws, tIn: t, d: dist }
+        }
+        acc += L
+        seam.push([b[0], b[1]])
+        if (i < n - 1 && nodeDeg.get(tipKey(b)) >= 3) return { seam, ws: seam[seam.length - 1], tIn: t, d: acc }
+      }
+      return { seam, ws: seam[seam.length - 1], tIn: t || [1, 0], d: acc }
+    }
+    // Per-fe width at a chain end's node-adjacent segment — mirrors runMeasure
+    // (blockCustoms pavementHW over the effective per-chain base) so the window
+    // poly's curb meets the trimmed stroke's butt cap exactly.
+    const feWidthAt = (idx, side, segOrd) => {
+      const base = Math.max(0, measures[idx]?.[side]?.pavementHW || 0)
+      if (!blockCustoms) return base
+      const so = streetsOrig[idx]
+      const sk = (so && (so.skelId || so.name)) || null
+      const c = sk ? blockCustoms[sk]?.[side]?.[segOrd] : null
+      return (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
+    }
+    const segOrdAtEnd = (idx, end) => end === 'start' ? 0 : (ixIdxsByStreet?.[idx] || []).length
+    const segOrdAtVertex = (idx, lower) => { let so = 0; for (const i of (ixIdxsByStreet?.[idx] || [])) if (i <= lower) so++; return so }
+    const viAt = (pts, at) => { for (let i = 1; i < pts.length - 1; i++) if (Math.abs(pts[i][0] - at[0]) < 5e-3 && Math.abs(pts[i][1] - at[1]) < 5e-3) return i; return -1 }
+    const pushPoly = (ring) => { if (ring.length >= 3) jPolys.push(signedArea(ring) >= 0 ? ring : ring.slice().reverse()) }
+    // Non-absorbed median rings (for the defensive apron subtract) with bboxes.
+    const medRings = (ribbons?.medians || []).filter(m => m?.kind === 'median' && !m.absorbedBy && Array.isArray(m.ring) && m.ring.length >= 3).map(m => m.ring)
+    const medBoxes = medRings.map(ringBBox)
+    let nPairs = 0, nWindows = 0, nAprons = 0, nAbsorbed = 0, nTipSkip = 0, nSkip = 0
+    for (const nd of jm.nodes) {
+      const legByChain = new Map(nd.legs.map(l => [l.chain, l]))
+      const noseOf = (chain, end) => { for (const w of (nd.deTaper || [])) if (w.chain === chain && w.end === end) return w.nose; return 0 }
+      // Apron-fan anchors: each constructed pair contributes its X (ON the
+      // constructed curb, pulled a hair inboard); leg-sides a constructed
+      // pair covers are excluded from the width-based fan below (a w-based
+      // vertex can poke through a miter-tightened curb — the needle class).
+      const fanAnchors = []
+      const pairedSides = new Set()
+      // ── continuity pairs → window polys + stroke trims ──
+      for (const pr of (nd.continuity || [])) {
+        if (pr.source === 'tip-wrap') { nTipSkip++; continue }   // pendant tips stay G8's (round-cap canon)
+        // Resolve both halves: geometry probe + curb extrapolation at the node.
+        const halves = []
+        let bad = false
+        for (const half of [pr.a, pr.b]) {
+          const leg = legByChain.get(half.chain)
+          const idx = idxBySkel.get(half.chain)
+          const s = idx != null ? streets[idx] : null
+          if (!leg || !s || !s.points || s.points.length < 2) { bad = true; break }
+          const pts = s.points, len = chainLen(pts)
+          const wP = Math.max(0, measures[idx]?.left?.pavementHW || 0, measures[idx]?.right?.pavementHW || 0)
+          if (leg.end === 'through') {
+            const vi = viAt(pts, nd.at)
+            if (vi < 0) { bad = true; break }
+            const tPO = nrm(pts[vi + 1][0] - pts[vi - 1][0], pts[vi + 1][1] - pts[vi - 1][1])
+            const nh = sidePerp(tPO, half.side)
+            halves.push({ half, leg, idx, pts, len, through: true, vi, tPO, nh, w: 0, wP, axisAtNode: [nd.at[0], nd.at[1]], tDir: tPO })
+          } else {
+            // The E2 nose is where the MEDIAN starts; the taper RUN — the
+            // chain segment angling into the node — ends at the first chain
+            // VERTEX at/past the nose (SKELETON §5e: follow the straight
+            // section, not the taper; chains carry sparse authored vertices,
+            // so the node-side segment IS the taper). The window snaps there.
+            const nose = noseOf(half.chain, leg.end)
+            let W0 = 0
+            if (nose > 0) {
+              const n = pts.length
+              const at = (i) => leg.end === 'start' ? pts[i] : pts[n - 1 - i]
+              let acc = 0
+              for (let i = 1; i < n - 1; i++) {
+                acc += Math.hypot(at(i)[0] - at(i - 1)[0], at(i)[1] - at(i - 1)[1])
+                if (acc >= nose) { W0 = acc; break }
+              }
+              if (!W0) W0 = nose
+              W0 = Math.min(W0, 0.45 * len)
+            }
+            // Probe the BODY tangent just past the window (past the taper).
+            const probe = walkIn(pts, leg.end, W0 > 0 ? W0 + 1.5 : Math.min(8, 0.4 * len))
+            const tPO = leg.end === 'start' ? probe.tIn : [-probe.tIn[0], -probe.tIn[1]]
+            const nh = sidePerp(tPO, half.side)
+            const w = feWidthAt(idx, half.side, segOrdAtEnd(idx, leg.end))
+            if (!(w > 0.01)) { bad = true; break }
+            // Extrapolate the de-tapered straight-body curb to the node's
+            // longitudinal station: E = (node projected onto the body axis) + w·n̂.
+            const toNode = [-probe.tIn[0], -probe.tIn[1]]
+            const Lp = (nd.at[0] - probe.ws[0]) * toNode[0] + (nd.at[1] - probe.ws[1]) * toNode[1]
+            const axisAtNode = [probe.ws[0] + toNode[0] * Lp, probe.ws[1] + toNode[1] * Lp]
+            const E = [axisAtNode[0] + nh[0] * w, axisAtNode[1] + nh[1] * w]
+            // Alternate candidate: extrapolate along the nose-station tangent
+            // (the chain's own node-side segment). When the first authored
+            // vertex is FAR and the chain genuinely bends there, the snap
+            // extrapolation can miss the mate's curb by meters — the
+            // self-check below keeps whichever lands on the continuity.
+            let alt = null
+            if (nose > 0 && W0 > nose + 1) {
+              const pl = walkIn(pts, leg.end, nose + 0.05)
+              const tPOl = leg.end === 'start' ? pl.tIn : [-pl.tIn[0], -pl.tIn[1]]
+              const nhl = sidePerp(tPOl, half.side)
+              const toN = [-pl.tIn[0], -pl.tIn[1]]
+              const Lpl = (nd.at[0] - pl.ws[0]) * toN[0] + (nd.at[1] - pl.ws[1]) * toN[1]
+              const axl = [pl.ws[0] + toN[0] * Lpl, pl.ws[1] + toN[1] * Lpl]
+              alt = { W0: Math.min(Math.max(nose, 2), 0.45 * len), nh: nhl, E: [axl[0] + nhl[0] * w, axl[1] + nhl[1] * w], axisAtNode: axl, tDir: pl.tIn }
+            }
+            halves.push({ half, leg, idx, pts, len, through: false, nh, w, wP, E, nose, W0, axisAtNode, tDir: probe.tIn, alt })
+          }
+        }
+        if (bad) { nSkip++; continue }
+        // Per-fe width for a through mate: the segment the curb continues onto
+        // (the half beyond the node along the ender's axis).
+        for (const h of halves) {
+          if (!h.through) continue
+          const mate = halves.find(o => o !== h)
+          // The curb continues onto the through chain's segment AWAY from the
+          // ender's body (tIn points node→body, so away = −tIn).
+          let fwd = true
+          if (mate && !mate.through) {
+            const mProbe = walkIn(mate.pts, mate.leg.end, Math.min(8, 0.4 * mate.len))
+            const away = [-mProbe.tIn[0], -mProbe.tIn[1]]
+            fwd = (h.tPO[0] * away[0] + h.tPO[1] * away[1]) > 0
+          }
+          h.w = feWidthAt(h.idx, h.half.side, segOrdAtVertex(h.idx, fwd ? h.vi : h.vi - 1))
+          if (!(h.w > 0.01)) { bad = true; break }
+          // The blend lands on the CONTINUING segment's curb, not the chord
+          // tangent — a bend at the through vertex would otherwise leave a
+          // small jog where the blend tops out off the as-stroked curb.
+          const tSeg = fwd
+            ? nrm(h.pts[h.vi + 1][0] - h.pts[h.vi][0], h.pts[h.vi + 1][1] - h.pts[h.vi][1])
+            : nrm(h.pts[h.vi][0] - h.pts[h.vi - 1][0], h.pts[h.vi][1] - h.pts[h.vi - 1][1])
+          h.tDir = tSeg
+          h.nh = sidePerp(tSeg, h.half.side)
+          h.E = [nd.at[0] + h.nh[0] * h.w, nd.at[1] + h.nh[1] * h.w]
+        }
+        if (bad || halves.every(h => h.through)) { nSkip++; continue }
+        // Extrapolation self-check: keep the candidate that lands nearer the
+        // mate's curb (the continuity identity is the arbiter; 0.3 m
+        // hysteresis keeps the snap default on ties).
+        for (const h of halves) {
+          if (!h.alt) continue
+          const o = halves.find(x => x !== h)
+          if (!o?.E) continue
+          if (Math.hypot(h.alt.E[0] - o.E[0], h.alt.E[1] - o.E[1]) + 0.3 < Math.hypot(h.E[0] - o.E[0], h.E[1] - o.E[1])) Object.assign(h, h.alt)
+        }
+        // Sanity: the two halves' curbs must sit on the same world side.
+        const [A, B] = halves
+        if ((A.nh[0] * B.nh[0] + A.nh[1] * B.nh[1]) < 0.1) { nSkip++; continue }
+        const dlt = Math.hypot(A.E[0] - B.E[0], A.E[1] - B.E[1])
+        // Window length per ending half: the de-taper nose where the prebake
+        // stamped one (the taper region IS the window), else a short blend
+        // window scaled to the curb mismatch (nothing to do when it vanishes).
+        for (const h of halves) {
+          if (h.through) { h.W = 0; continue }
+          h.W = h.W0 > 0 ? h.W0 : (dlt < 0.05 ? 0 : Math.min(8, Math.max(2, 2.5 * dlt)))
+          h.W = Math.min(h.W, 0.45 * h.len)
+        }
+        const winHalves = halves.filter(h => h.W > 0.01)
+        if (!winHalves.length) continue   // datums already perfect, no taper — nothing to construct
+        // Final window-start geometry per windowed half. The curb point cp uses
+        // the tangent just BODY-ward of ws (the trimmed stroke's butt cap is ⊥
+        // to that segment — a window snapped to a vertex must not read the
+        // taper segment's tangent).
+        for (const h of winHalves) {
+          const fin = walkIn(h.pts, h.leg.end, h.W)
+          h.W = fin.d
+          const tBody = walkIn(h.pts, h.leg.end, h.W + 0.05).tIn
+          const tPO = h.leg.end === 'start' ? tBody : [-tBody[0], -tBody[1]]
+          h.nhWs = sidePerp(tPO, h.half.side)
+          // The poly seam runs ~0.6 m PAST the window start, into the trimmed
+          // stroke: the closing edge (cp → seam end) then lies interior to the
+          // stroke instead of edge-kissing its butt cap — an exact-coincident
+          // seam leaves hairline retrace needles in the union boundary.
+          h.seam = walkIn(h.pts, h.leg.end, h.W + 0.6).seam
+          h.ws = fin.ws
+          h.cp = [fin.ws[0] + h.nhWs[0] * h.w, fin.ws[1] + h.nhWs[1] * h.w]
+        }
+        // X — the pair's shared curb point at the node (per width datum: the
+        // tile side resolves per-fe widths; the perimeter side max-side).
+        // When the two legs genuinely CROSS (an angled join — the Papin stub
+        // class), the shared curb point is the MITER intersection of the two
+        // body curb lines; near-parallel legs (the common transition) fall
+        // back to the through-curb / window-weighted blend point.
+        const thr = halves.find(h => h.through)
+        const other = halves.find(h => !h.through && h.W <= 0.01)
+        for (const h of halves) h.EP = [h.axisAtNode[0] + h.nh[0] * h.wP, h.axisAtNode[1] + h.nh[1] * h.wP]
+        for (const h of winHalves) h.cpP = [h.ws[0] + h.nhWs[0] * h.wP, h.ws[1] + h.nhWs[1] * h.wP]
+        const [hA, hB] = halves
+        const miter = (Ea, Eb) => {
+          const det = hA.tDir[0] * hB.tDir[1] - hA.tDir[1] * hB.tDir[0]
+          if (Math.abs(det) < 0.14) return null   // < ~8° — near-collinear legs, no stable miter
+          const t = ((Eb[0] - Ea[0]) * hB.tDir[1] - (Eb[1] - Ea[1]) * hB.tDir[0]) / det
+          const P = [Ea[0] + hA.tDir[0] * t, Ea[1] + hA.tDir[1] * t]
+          const lim = 2.5 * Math.max(hA.w || hA.wP, hB.w || hB.wP) + 2
+          return Math.hypot(P[0] - nd.at[0], P[1] - nd.at[1]) <= lim ? P : null
+        }
+        let X = miter(hA.E, hB.E), XP = miter(hA.EP, hB.EP)
+        if (!X || !XP) {
+          let fb, fbP
+          if (thr) { fb = thr.E; fbP = thr.EP }
+          else if (other) { fb = other.E; fbP = other.EP }
+          else {
+            const t = winHalves[0].W / (winHalves[0].W + winHalves[1].W)
+            fb = [winHalves[0].cp[0] + (winHalves[1].cp[0] - winHalves[0].cp[0]) * t,
+                  winHalves[0].cp[1] + (winHalves[1].cp[1] - winHalves[0].cp[1]) * t]
+            fbP = [winHalves[0].cpP[0] + (winHalves[1].cpP[0] - winHalves[0].cpP[0]) * t,
+                   winHalves[0].cpP[1] + (winHalves[1].cpP[1] - winHalves[0].cpP[1]) * t]
+          }
+          if (!X) X = fb
+          if (!XP) XP = fbP
+        }
+        for (const h of winHalves) {
+          // [node…ws] seam reversed → ws…node, then node→X→cp closes the window.
+          const ring = h.seam.slice().reverse()
+          ring.push([X[0], X[1]], [h.cp[0], h.cp[1]])
+          pushPoly(ring)
+          const sk = (streetsOrig[h.idx] && (streetsOrig[h.idx].skelId || streetsOrig[h.idx].name)) || h.half.chain
+          jTrims.set(`${sk}|${h.half.side}|${k3(h.seam[0])}`, h.W)
+          // Perimeter variant: same window, the perimeter's width datum. The
+          // keep-out quad (constructed curb → outward) cuts the chain's OWN
+          // perimeter stroke so the wider butt cap can't tooth past the curb.
+          const ringP = h.seam.slice().reverse()
+          ringP.push([XP[0], XP[1]], [h.cpP[0], h.cpP[1]])
+          if (ringP.length >= 3) jPerimPolys.push(signedArea(ringP) >= 0 ? ringP : ringP.slice().reverse())
+          const K = h.wP + 4
+          const cut = [
+            [h.cpP[0], h.cpP[1]], [XP[0], XP[1]],
+            [XP[0] + h.nhWs[0] * K, XP[1] + h.nhWs[1] * K],
+            [h.cpP[0] + h.nhWs[0] * K, h.cpP[1] + h.nhWs[1] * K],
+          ]
+          if (!jPerimCuts.has(sk)) jPerimCuts.set(sk, [])
+          jPerimCuts.get(sk).push(signedArea(cut) >= 0 ? cut : cut.slice().reverse())
+          nWindows++
+        }
+        {
+          const dX = Math.hypot(X[0] - nd.at[0], X[1] - nd.at[1]) || 1
+          const s = Math.max(0, 1 - 0.25 / dX)
+          fanAnchors.push([nd.at[0] + (X[0] - nd.at[0]) * s, nd.at[1] + (X[1] - nd.at[1]) * s])
+        }
+        for (const h of halves) pairedSides.add(`${h.half.chain}|${h.half.side}`)
+        nPairs++
+      }
+      // ── the node apron ──
+      if (nd.apron) {
+        const fan = [...fanAnchors]
+        for (const leg of nd.legs) {
+          const idx = idxBySkel.get(leg.chain)
+          const s = idx != null ? streets[idx] : null
+          if (!s?.points || s.points.length < 2) continue
+          const pts = s.points, len = chainLen(pts)
+          let tPO = null, segL = 0, segR = 0
+          if (leg.end === 'through') {
+            const vi = viAt(pts, nd.at)
+            if (vi < 0) continue
+            tPO = nrm(pts[vi + 1][0] - pts[vi - 1][0], pts[vi + 1][1] - pts[vi - 1][1])
+            segL = segR = segOrdAtVertex(idx, vi)
+          } else {
+            const probe = walkIn(pts, leg.end, Math.min(6, 0.4 * len))
+            tPO = leg.end === 'start' ? probe.tIn : [-probe.tIn[0], -probe.tIn[1]]
+            segL = segR = segOrdAtEnd(idx, leg.end)
+          }
+          for (const side of ['left', 'right']) {
+            if (pairedSides.has(`${leg.chain}|${side}`)) continue   // covered by a constructed pair's X anchor
+            const w = feWidthAt(idx, side, side === 'left' ? segL : segR)
+            if (!(w > 0.01)) continue
+            const nh = sidePerp(tPO, side)
+            // A hair inboard of the curb — a fan vertex exactly ON the curb
+            // makes a degenerate Clipper touch point (the spur-hygiene class).
+            const r = Math.max(0.3, Math.min(w, 15) - 0.25)
+            fan.push([nd.at[0] + nh[0] * r, nd.at[1] + nh[1] * r])
+          }
+        }
+        if (fan.length >= 3) {
+          fan.sort((p, q) => Math.atan2(p[1] - nd.at[1], p[0] - nd.at[0]) - Math.atan2(q[1] - nd.at[1], q[0] - nd.at[0]))
+          // Defensive: never let the apron eat a real (non-absorbed) median tip.
+          const fb = ringBBox(fan)
+          const near = medRings.filter((_, i) => { const mb = medBoxes[i]; return mb[0] <= fb[2] && mb[2] >= fb[0] && mb[1] <= fb[3] && mb[3] >= fb[1] })
+          for (const r of (near.length ? differenceRings([fan], near) : [fan])) pushPoly(r)
+          nAprons++
+        }
+        for (const mi of (nd.apron.absorbsMedians || [])) {
+          const m = (ribbons?.medians || [])[mi]
+          if (m?.ring?.length >= 3) { pushPoly(m.ring.map(p => [p[0], p[1]])); nAbsorbed++ }
+        }
+      }
+    }
+    if (nPairs || nAprons) console.log(`    [E3.2] junction construction: ${nPairs} pairs (${nWindows} windows), ${nAprons} aprons, ${nAbsorbed} absorbed median ring(s)${nTipSkip ? `, ${nTipSkip} tip-wraps left to G8` : ''}${nSkip ? `, ${nSkip} pairs skipped (unresolvable)` : ''}`)
+  }
+  const jBoxes = jPolys.map(ringBBox)
+  const junctionClipFor = (tileRing) => {
+    if (!jPolys.length) return []
+    const tb = ringBBox(tileRing)
+    const cand = jPolys.filter((_, i) => { const mb = jBoxes[i]; return mb[0] <= tb[2] && mb[2] >= tb[0] && mb[1] <= tb[3] && mb[3] >= tb[1] })
+    return cand.length ? intersectRings(cand, [tileRing]) : []
+  }
+  // Window-trimmed stroke source for a run: each run end sitting at a
+  // constructed node pulls back by its window (the window poly supplies the
+  // constructed coverage there). Null → the run is entirely inside windows.
+  const jTrimmed = (run) => {
+    if (!jTrims.size) return run.poly
+    const so = streetsOrig[run.streetIdx]
+    const sk = (so && (so.skelId || so.name)) || null
+    if (!sk) return run.poly
+    const p = run.poly
+    const t0 = jTrims.get(`${sk}|${run.side}|${k3(p[0])}`) || 0
+    const t1 = jTrims.get(`${sk}|${run.side}|${k3(p[p.length - 1])}`) || 0
+    if (!t0 && !t1) return p
+    return trimPolyline(p, t0, t1)
+  }
 
   // Per tile (CONCENTRIC corners):
   //  1. Asphalt = the union of per-street-side run stadiums (PER-EDGE widths,
@@ -918,7 +1288,12 @@ export function buildTileGround(ribbons, opts = {}) {
     const aStads = []
     for (const run of runs) {
       const d = edgeDepth(runMeasure(run), run.side, cw, 'A')   // per-fe asphalt half-width
-      if (d > 1e-6) aStads.push(...strokeOpen(run.poly, d))
+      if (d > 1e-6) {
+        // [E3.2] a run end at a constructed junction node strokes only its
+        // body — the window poly supplies the constructed coverage beyond.
+        const sp = jTrimmed(run)
+        if (sp) aStads.push(...strokeOpen(sp, d))
+      }
     }
     for (const t of roundTips) if (t.hw > 1e-6) aStads.push(circlePoly(t.p[0], t.p[1], t.hw))
     let aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
@@ -931,6 +1306,10 @@ export function buildTileGround(ribbons, opts = {}) {
     // into the median") still wins — the per-run strokes union over it.
     const mergeClip = mergeClipFor(tile.ring)
     if (mergeClip.length) aFill = aFill.length ? unionRings([...aFill, ...mergeClip]) : mergeClip
+    // [E3.2] junction construction — window polys + node aprons land as
+    // positive asphalt in whatever tile they fall, same as the merge patches.
+    const jClip = junctionClipFor(tile.ring)
+    if (jClip.length) aFill = aFill.length ? unionRings([...aFill, ...jClip]) : jClip
     const medClip = medianClipFor(tile.ring)
     let medArea = 0
     for (const r of medClip) medArea += Math.abs(signedArea(r))
@@ -952,7 +1331,13 @@ export function buildTileGround(ribbons, opts = {}) {
     for (const t of roundTips) { const ti = nearestVertexIndex(t.p, tile.ring); if (ti >= 0) vertR[ti] = 0 }
     const cornerRfn = (pt) => nearestVertR(pt, tile.ring, vertR)
     const fSink = []
-    const iA = filletRings(differenceRings([tile.ring], aFill), cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+    // [E3.2] drop degenerate (≈zero-area) rings before filleting: a coincident
+    // fill seam can leave a zero-width needle ring in the difference, which
+    // filletRing turns into an unbounded arc (θ→0 ⇒ inset→∞) and which poisons
+    // the band ClipperOffsets downstream (erode returns empty → the whole
+    // block paints as curb). No legitimate block fragment is < 0.5 m².
+    const blockRings = differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
+    const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
     // Tag each achieved fillet with its corner key (the centerline NODE it
     // rounded + that node's two tile-edge legs) so the authoring handle can read
     // the true curb arc — one corner truth, no drift. The apex sits inboard of
@@ -1056,8 +1441,19 @@ export function buildTileGround(ribbons, opts = {}) {
         const tlm = Math.max(0, m?.left?.treelawn || 0, m?.right?.treelawn || 0)
         const swm = Math.max(0, m?.left?.sidewalk || 0, m?.right?.sidewalk || 0)
         const d = level === 'A' ? a : level === 'C' ? a + cw : level === 'T' ? a + cw + tlm : a + cw + tlm + swm
-        stads.push(...strokeOpen(streets[i].points, d))
+        let pieces = strokeOpen(streets[i].points, d)
+        // [E3.2] junction keep-outs cut the chain's OWN stroke back to the
+        // constructed curb within a window (the tooth class on the perimeter).
+        if (level === 'A' && jPerimCuts.size) {
+          const so = streetsOrig[i]
+          const cuts = jPerimCuts.get((so && (so.skelId || so.name)) || '')
+          if (cuts?.length) pieces = differenceRings(pieces, cuts)
+        }
+        stads.push(...pieces)
       }
+      // [E3.2] perimeter-datum window polys — the constructed junction
+      // coverage (dips, wedges, the de-tapered curb) for perimeter joins.
+      if (level === 'A' && jPerimPolys.length) stads.push(...jPerimPolys)
       // The perimeter strokes are butt-capped, so an exterior round cul-de-sac
       // would end flat. Add a concentric fill disk at each round tip at this
       // level's depth so the perimeter road rounds AND its ped bands wrap (the
@@ -1152,5 +1548,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _shapeArtifact }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _shapeArtifact }
 }
