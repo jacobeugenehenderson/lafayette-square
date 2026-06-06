@@ -72,7 +72,7 @@ LS has exactly two, of two different topologies — and **the standing problem i
 
 - **L.0** ✅ architecture lock (2026-05-10; this doc consolidates it).
 - **L.1–L.4** ⏸ toy fixtures · V2/tile emitter for the role cross-sections · Survey loop card (detect + override) · Measure inner/outer relabel — **status mostly unverified** (some role-handling rides the tile path; the explicit loop model isn't fully built).
-- **L.5** 🔧 LS: Benton + Waverly both working — **the open goal** (the Benton-guard brief is the current step).
+- **L.5** 🔧 LS: Benton + Waverly both **render at sane widths now** (the bad-data guard, Stadia `8cdc0d4`) — collapse fixed, Waverly pills gone. **BUT the role cross-sections (§2) are NOT modeled** — `chain.loop{loopId,role}` doesn't exist; `isMedianTile` ped-zeroing fires only for inner-edge divided carriageways, never loops. So **Benton's body renders symmetric** (a sidewalk ring inside the teardrop median where §2 says inner = no sidewalk) and **Waverly's cut-thru renders full ROW** (§2 says curb+asphalt only). → the **L.3 role-model follow-up brief** (after the joints E2/E3).
 - **L.6** ⏭ cleanup: delete `LOOP_STREET_NAMES` + dead V1 loop paths.
 
 ---

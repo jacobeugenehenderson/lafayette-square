@@ -830,6 +830,44 @@ function chainSidewalkDistances(points, sidewalks) {
 // values land on their median-facing side are zeroed downstream by
 // derive.js's inner-edge normalization (innerEdgeAssign), so only the outer
 // assignment is load-bearing there.
+// [Benton guard] Sanity floor for the CUSTOM width tier. The narrowest
+// functioning street is ~1.5 standard 10-ft lanes curb-to-curb (a NACTO
+// yield/alley street, ~4.6 m). A custom datum that would clamp the asphalt
+// below HALF of that is bad data, not a narrow street — Benton's assessor
+// `rowWidth: 4` (a real loop ROW is ~12–18 m; the loop body collapsed to
+// pavementHW 0.5) and Park Ave's contaminated `sidewalkLeft: 2.99` are the
+// class. The datum (not the street) is rejected, so the side falls back to
+// the next width tier (OSM lanes → AASHTO seed) — the custom→OSM→AASHTO
+// ladder just skips a rung that fails physics. Deliberately ABSOLUTE, not
+// lanes-scaled: OSM `lanes` is itself often inflated (S Jefferson tags 7,
+// S 18th 4), and a lanes-scaled floor would reject those streets' plausible
+// survey clamps along with the garbage.
+const MIN_CUSTOM_PAV_HW = 1.5 * 10 * FT / 2   // 2.29 m asphalt half-width
+// And the symmetric LARGE bound: the implied TREELAWN (curb → walk gap, after
+// the asphalt takes its lanes/AASHTO seed) can't exceed ~6 m — even a grand
+// avenue's furnishing zone tops out around 15–20 ft. More grass than that
+// means the survey matched a FOREIGN sidewalk (across a median — Waverly's
+// 12.8 is the far carriageway's walk; a parking lot — Gratiot's 16), not this
+// street's. Seed-relative on purpose: a 14 m datum is honest on 6-lane Tucker
+// (treelawn 3.1) and garbage on 1-lane Waverly (treelawn 7.9).
+const MAX_CUSTOM_TREELAWN = 6
+// `maxPav` = the street's most generous lanes/AASHTO asphalt half-width over
+// ALL its same-name chains — NOT the current chain's. A divided corridor's
+// carriageway fragment can seed 1 lane (pav 1.68) while the corridor's outer
+// walk honestly sits 9–12 m out (Russell 8.74, Chouteau 10.02); judging that
+// datum against the fragment's own seed would reject real data. The name is
+// the survey's key, so the name's best lane evidence is the fair yardstick.
+const plausibleSwDist = (maxPav, swDist) => {
+  const room = swDist - SV_SIDEWALK / 2 - CURB_WIDTH
+  if (room < MIN_CUSTOM_PAV_HW) return false
+  return room - Math.min(maxPav, room) <= MAX_CUSTOM_TREELAWN
+}
+const plausibleRowHalf = (maxPav, rowHalf) => {
+  const room = rowHalf - SV_SIDEWALK - CURB_WIDTH
+  if (room < MIN_CUSTOM_PAV_HW) return false
+  return room - Math.min(maxPav, room) <= MAX_CUSTOM_TREELAWN
+}
+
 function stampCustomWidths(streets, survey, sidewalks) {
   // One survey side, from a sidewalk-centerline distance. The block edge is
   // the back of sidewalk; treelawn is the natural gap; the asphalt keeps its
@@ -869,11 +907,27 @@ function stampCustomWidths(streets, survey, sidewalks) {
   })
 
   let stamped = 0, geomSided = 0, symmetricFallback = 0, rowTier = 0
+  const rejected = []   // [Benton guard] rejected datum log: `${name} ${tier} ${value}`
+  // [Benton guard] name-level max seed asphalt (see plausibleSwDist header)
+  const nameMaxPav = new Map()
+  for (const s of streets) {
+    if (!s.seed || !s.name) continue
+    nameMaxPav.set(s.name, Math.max(nameMaxPav.get(s.name) || 0, s.seed.pavementHW || 0))
+  }
   for (const s of streets) {
     if (!s.seed || !s.name) continue
     const sv = survey[s.name]
     if (!sv) continue
-    const svVals = [sv.sidewalkLeft, sv.sidewalkRight].filter(Number.isFinite)
+    // [Benton guard] drop implausibly-small custom data BEFORE tier selection:
+    // a rejected sidewalk datum demotes the street to single-sided (park-edge
+    // handling) or, with none left, to the assessor-row tier; a rejected
+    // rowWidth falls through to the AASHTO seed (`continue` below).
+    const maxPav = nameMaxPav.get(s.name) || s.seed.pavementHW || 0
+    const svValsRaw = [sv.sidewalkLeft, sv.sidewalkRight].filter(Number.isFinite)
+    const svVals = svValsRaw.filter(v => plausibleSwDist(maxPav, v))
+    for (const v of svValsRaw) if (!plausibleSwDist(maxPav, v)) rejected.push(`${s.name} sidewalk ${v}`)
+    const rowHalfOk = Number.isFinite(sv.rowWidth) && plausibleRowHalf(maxPav, sv.rowWidth / 2)
+    if (Number.isFinite(sv.rowWidth) && !rowHalfOk) rejected.push(`${s.name} rowWidth ${sv.rowWidth}`)
     let left = null, right = null
     if (svVals.length) {
       const { minLeft, minRight } = chainSidewalkDistances(s.points, sidewalks)
@@ -921,12 +975,13 @@ function stampCustomWidths(streets, survey, sidewalks) {
         else if (minRight != null) { right = fromSurveyDist(s.seed, v); geomSided++ }
         else { left = fromSurveyDist(s.seed, v); right = fromSurveyDist(s.seed, v); symmetricFallback++ }
       }
-    } else if (Number.isFinite(sv.rowWidth)) {
+    } else if (rowHalfOk) {
       left = fromRowHalf(s.seed, sv.rowWidth / 2)
       right = fromRowHalf(s.seed, sv.rowWidth / 2)
       rowTier++
     } else {
-      // survey source:'default' — not custom data; the AASHTO seed stands
+      // survey source:'default', or every custom datum guard-rejected —
+      // not (usable) custom data; the AASHTO seed stands
       continue
     }
     s.seed.left = left || standardSide(s.seed)
@@ -936,6 +991,11 @@ function stampCustomWidths(streets, survey, sidewalks) {
   }
   console.log(`  custom width base: ${stamped} street(s) seeded from survey.json `
     + `(${geomSided} geometry-sided, ${symmetricFallback} symmetric-fallback, ${rowTier} assessor-row)`)
+  if (rejected.length) {
+    const uniq = [...new Set(rejected)]
+    console.log(`  custom width guard: rejected ${uniq.length} implausible datum(s) `
+      + `(asphalt < ${MIN_CUSTOM_PAV_HW.toFixed(2)} m half-width or treelawn > ${MAX_CUSTOM_TREELAWN} m): ${uniq.join(' · ')}`)
+  }
 }
 
 // --- Node typing: classify every shared coord by graph degree -------------
