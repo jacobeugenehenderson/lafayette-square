@@ -747208,6 +747208,7 @@
             "south-18th-street-6"
           ],
           "pairKey": "301606663-1297584456",
+          "absorbedBy": "658.300,-726.700",
           "ring": [
             [
               655.7003476311296,
@@ -752859,6 +752860,5275 @@
           "transitions": []
         }
       ],
+      "junctionMap": {
+        "nodes": [
+          {
+            "key": "-1003.540,249.840",
+            "at": [
+              -1003.54,
+              249.84
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "geyer-avenue-0",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "geyer-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "geyer-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-1050.300,1476.870",
+            "at": [
+              -1050.3,
+              1476.87
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "california-avenue-1",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "california-avenue-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "california-avenue-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-1085.100,443.400",
+            "at": [
+              -1085.1,
+              443.4000000000001
+            ],
+            "kinds": [
+              "corridor-terminus",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "russell-boulevard-1",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "russell-boulevard-2",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "russell-boulevard-3",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "nebraska-avenue",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "russell-boulevard-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "russell-boulevard-2",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "russell-boulevard-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "russell-boulevard-2",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "russell-boulevard-1",
+                "end": "end",
+                "nose": 4.3
+              },
+              {
+                "chain": "russell-boulevard-3",
+                "end": "start",
+                "nose": 3.8
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "russell-boulevard-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "russell-boulevard-2",
+                  "side": "left"
+                },
+                {
+                  "chain": "russell-boulevard-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "russell-boulevard-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "nebraska-avenue",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "russell-boulevard-1",
+                  "end": "end"
+                },
+                {
+                  "chain": "russell-boulevard-3",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "russell-boulevard-1",
+                "russell-boulevard-2",
+                "russell-boulevard-3",
+                "nebraska-avenue"
+              ]
+            }
+          },
+          {
+            "key": "-1096.790,-325.910",
+            "at": [
+              -1096.79,
+              -325.91
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "pennsylvania-avenue",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "pennsylvania-avenue",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "pennsylvania-avenue",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-1135.570,-78.300",
+            "at": [
+              -1135.57,
+              -78.3
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "pennsylvania-avenue",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "pennsylvania-avenue",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "pennsylvania-avenue",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-1267.100,1567.380",
+            "at": [
+              -1267.1,
+              1567.38
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "nebraska-avenue",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "nebraska-avenue",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "nebraska-avenue",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-1417.110,-22.920",
+            "at": [
+              -1417.11,
+              -22.92
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-0",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-1464.930,277.320",
+            "at": [
+              -1464.93,
+              277.32
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "allen-avenue-1",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "allen-avenue-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "allen-avenue-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-1587.150,-254.210",
+            "at": [
+              -1587.15,
+              -254.21
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "eads-avenue-0",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "eads-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "eads-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-174.880,-854.240",
+            "at": [
+              -174.88,
+              -854.24
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-jefferson-avenue-0",
+                "end": "end",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-175.800,-786.580",
+            "at": [
+              -175.8,
+              -786.58
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "papin-street-0",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "papin-street-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "papin-street-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-189.360,-855.520",
+            "at": [
+              -189.36,
+              -855.52
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-jefferson-avenue-8",
+                "end": "start",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-8",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-8",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-217.300,-691.900",
+            "at": [
+              -217.3,
+              -691.9000000000001
+            ],
+            "kinds": [
+              "corridor-terminus",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "south-jefferson-avenue-0",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "south-jefferson-avenue-2",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "south-jefferson-avenue-8",
+                "end": "end",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "chouteau-avenue-0",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-8",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "south-jefferson-avenue-0",
+                "end": "start",
+                "nose": 3.74
+              },
+              {
+                "chain": "south-jefferson-avenue-8",
+                "end": "end",
+                "nose": 3.16
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "south-jefferson-avenue-0",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "left"
+                },
+                {
+                  "chain": "south-jefferson-avenue-8",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-0",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "south-jefferson-avenue-0",
+                  "end": "start"
+                },
+                {
+                  "chain": "south-jefferson-avenue-8",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "south-jefferson-avenue-0",
+                "south-jefferson-avenue-2",
+                "south-jefferson-avenue-8",
+                "chouteau-avenue-0"
+              ]
+            }
+          },
+          {
+            "key": "-297.100,374.600",
+            "at": [
+              -297.1,
+              374.5999999999999
+            ],
+            "kinds": [
+              "corridor-terminus",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "geyer-avenue-5",
+                "end": "end",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "missouri-avenue-0",
+                "end": "through",
+                "role": "spine"
+              },
+              {
+                "chain": "geyer-avenue-4",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "geyer-avenue-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "missouri-avenue-0",
+                  "side": "left"
+                }
+              ],
+              "apex": [
+                {
+                  "legA": {
+                    "chain": "geyer-avenue-5",
+                    "side": "right"
+                  },
+                  "legB": {
+                    "chain": "geyer-avenue-4",
+                    "side": "right"
+                  }
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "geyer-avenue-5",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "geyer-avenue-5",
+                "missouri-avenue-0",
+                "geyer-avenue-4"
+              ]
+            }
+          },
+          {
+            "key": "-297.550,377.140",
+            "at": [
+              -297.55,
+              377.14
+            ],
+            "kinds": [
+              "branch"
+            ],
+            "legs": [
+              {
+                "chain": "geyer-avenue-4",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "missouri-avenue-0",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "geyer-avenue-4",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "missouri-avenue-0",
+                  "side": "right"
+                },
+                "source": "branch-envelope"
+              }
+            ],
+            "corners": {
+              "outer": [],
+              "apex": [
+                {
+                  "legA": {
+                    "chain": "geyer-avenue-4",
+                    "side": "left"
+                  },
+                  "legB": {
+                    "chain": "missouri-avenue-0",
+                    "side": "left"
+                  }
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "geyer-avenue-4",
+                "missouri-avenue-0"
+              ]
+            }
+          },
+          {
+            "key": "-298.500,382.900",
+            "at": [
+              -298.5,
+              382.90000000000015
+            ],
+            "kinds": [
+              "corridor-terminus"
+            ],
+            "legs": [
+              {
+                "chain": "geyer-avenue-2",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "missouri-avenue-0",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "geyer-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "missouri-avenue-0",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "geyer-avenue-2",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "geyer-avenue-2",
+                "missouri-avenue-0"
+              ]
+            }
+          },
+          {
+            "key": "-351.150,-334.710",
+            "at": [
+              -351.15,
+              -334.71
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "caroline-street-0",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "caroline-street-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "caroline-street-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-354.800,138.900",
+            "at": [
+              -354.8,
+              138.9
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-7",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "lafayette-avenue-3",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "lafayette-avenue-8",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-7",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-3",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "lafayette-avenue-8",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-3",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "lafayette-avenue-7",
+                "end": "start",
+                "nose": 7.82
+              },
+              {
+                "chain": "lafayette-avenue-8",
+                "end": "end",
+                "nose": 7.56
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "lafayette-avenue-7",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-3",
+                  "side": "left"
+                },
+                {
+                  "chain": "lafayette-avenue-8",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-3",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "lafayette-avenue-7",
+                  "end": "start"
+                },
+                {
+                  "chain": "lafayette-avenue-8",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "lafayette-avenue-7",
+                "lafayette-avenue-3",
+                "lafayette-avenue-8"
+              ]
+            }
+          },
+          {
+            "key": "-355.000,-253.900",
+            "at": [
+              -355,
+              -253.9
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "park-avenue-2",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "park-avenue-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "park-avenue-4",
+                "end": "end",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "south-jefferson-avenue-1",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "south-jefferson-avenue-2",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "south-jefferson-avenue-3",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "park-avenue-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "park-avenue-1",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "park-avenue-4",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "park-avenue-1",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "park-avenue-2",
+                "end": "start",
+                "nose": 2.96
+              },
+              {
+                "chain": "park-avenue-4",
+                "end": "end",
+                "nose": 2.18
+              },
+              {
+                "chain": "south-jefferson-avenue-1",
+                "end": "start",
+                "nose": 4.88
+              },
+              {
+                "chain": "south-jefferson-avenue-3",
+                "end": "end",
+                "nose": 4.45
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "park-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "park-avenue-1",
+                  "side": "left"
+                },
+                {
+                  "chain": "park-avenue-4",
+                  "side": "right"
+                },
+                {
+                  "chain": "park-avenue-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-2",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "park-avenue-2",
+                  "end": "start"
+                },
+                {
+                  "chain": "park-avenue-4",
+                  "end": "end"
+                },
+                {
+                  "chain": "south-jefferson-avenue-1",
+                  "end": "start"
+                },
+                {
+                  "chain": "south-jefferson-avenue-3",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "park-avenue-2",
+                "park-avenue-1",
+                "park-avenue-4",
+                "south-jefferson-avenue-1",
+                "south-jefferson-avenue-2",
+                "south-jefferson-avenue-3"
+              ]
+            }
+          },
+          {
+            "key": "-391.320,344.500",
+            "at": [
+              -391.32,
+              344.5
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "geyer-avenue-1",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "geyer-avenue-4",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "geyer-avenue-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "geyer-avenue-4",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "geyer-avenue-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "geyer-avenue-4",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "geyer-avenue-1",
+                "geyer-avenue-4"
+              ]
+            }
+          },
+          {
+            "key": "-426.400,134.100",
+            "at": [
+              -426.40000000000003,
+              134.1
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-7",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "lafayette-avenue-0",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "lafayette-avenue-8",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "south-jefferson-avenue-1",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "south-jefferson-avenue-6",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "south-jefferson-avenue-3",
+                "end": "start",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-7",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-0",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "lafayette-avenue-8",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-0",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "lafayette-avenue-7",
+                "end": "end",
+                "nose": 5.64
+              },
+              {
+                "chain": "lafayette-avenue-8",
+                "end": "start",
+                "nose": 5.28
+              },
+              {
+                "chain": "south-jefferson-avenue-1",
+                "end": "end",
+                "nose": 2.97
+              },
+              {
+                "chain": "south-jefferson-avenue-3",
+                "end": "start",
+                "nose": 2.2
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "lafayette-avenue-7",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-0",
+                  "side": "left"
+                },
+                {
+                  "chain": "lafayette-avenue-8",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-0",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "lafayette-avenue-7",
+                  "end": "end"
+                },
+                {
+                  "chain": "lafayette-avenue-8",
+                  "end": "start"
+                },
+                {
+                  "chain": "south-jefferson-avenue-1",
+                  "end": "end"
+                },
+                {
+                  "chain": "south-jefferson-avenue-3",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "lafayette-avenue-7",
+                "lafayette-avenue-0",
+                "lafayette-avenue-8",
+                "south-jefferson-avenue-1",
+                "south-jefferson-avenue-6",
+                "south-jefferson-avenue-3"
+              ]
+            }
+          },
+          {
+            "key": "-430.900,157.500",
+            "at": [
+              -430.90000000000003,
+              157.5
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "south-jefferson-avenue-5",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "south-jefferson-avenue-6",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "south-jefferson-avenue-7",
+                "end": "start",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-7",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "south-jefferson-avenue-5",
+                "end": "end",
+                "nose": 3.38
+              },
+              {
+                "chain": "south-jefferson-avenue-7",
+                "end": "start",
+                "nose": 2.73
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "south-jefferson-avenue-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "left"
+                },
+                {
+                  "chain": "south-jefferson-avenue-7",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-6",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "south-jefferson-avenue-5",
+                  "end": "end"
+                },
+                {
+                  "chain": "south-jefferson-avenue-7",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "south-jefferson-avenue-5",
+                "south-jefferson-avenue-6",
+                "south-jefferson-avenue-7"
+              ]
+            }
+          },
+          {
+            "key": "-442.700,-655.700",
+            "at": [
+              -442.70000000000005,
+              -655.7
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "lasalle-street-3",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "lasalle-street-4",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lasalle-street-3",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "lasalle-street-4",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "lasalle-street-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lasalle-street-4",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "lasalle-street-3",
+                "lasalle-street-4"
+              ]
+            }
+          },
+          {
+            "key": "-465.300,362.500",
+            "at": [
+              -465.3,
+              362.5
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "south-jefferson-avenue-5",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "south-jefferson-avenue-4",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "south-jefferson-avenue-7",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-4",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-7",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-4",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "south-jefferson-avenue-5",
+                "end": "start",
+                "nose": 2.48
+              },
+              {
+                "chain": "south-jefferson-avenue-7",
+                "end": "end",
+                "nose": 1.47
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "south-jefferson-avenue-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-4",
+                  "side": "left"
+                },
+                {
+                  "chain": "south-jefferson-avenue-7",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-jefferson-avenue-4",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "south-jefferson-avenue-5",
+                  "end": "start"
+                },
+                {
+                  "chain": "south-jefferson-avenue-7",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "south-jefferson-avenue-5",
+                "south-jefferson-avenue-4",
+                "south-jefferson-avenue-7"
+              ]
+            }
+          },
+          {
+            "key": "-524.740,428.440",
+            "at": [
+              -524.74,
+              428.44
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "allen-avenue-0",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "allen-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "allen-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-525.470,327.620",
+            "at": [
+              -525.47,
+              327.62
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "geyer-avenue-0",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "geyer-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "geyer-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-541.260,426.830",
+            "at": [
+              -541.26,
+              426.83
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "allen-avenue-2",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "allen-avenue-2",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "allen-avenue-2",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-556.600,528.300",
+            "at": [
+              -556.6000000000001,
+              528.3
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "russell-boulevard-1",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "russell-boulevard-0",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "russell-boulevard-3",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "russell-boulevard-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "russell-boulevard-0",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "russell-boulevard-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "russell-boulevard-0",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "russell-boulevard-1",
+                "end": "start",
+                "nose": 2.37
+              },
+              {
+                "chain": "russell-boulevard-3",
+                "end": "end",
+                "nose": 1.27
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "russell-boulevard-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "russell-boulevard-0",
+                  "side": "left"
+                },
+                {
+                  "chain": "russell-boulevard-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "russell-boulevard-0",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "russell-boulevard-1",
+                  "end": "start"
+                },
+                {
+                  "chain": "russell-boulevard-3",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "russell-boulevard-1",
+                "russell-boulevard-0",
+                "russell-boulevard-3"
+              ]
+            }
+          },
+          {
+            "key": "-597.870,1203.630",
+            "at": [
+              -597.87,
+              1203.63
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-jefferson-avenue-4",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-jefferson-avenue-4",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-jefferson-avenue-4",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-625.950,-410.990",
+            "at": [
+              -625.95,
+              -410.99
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "caroline-street-0",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "caroline-street-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "caroline-street-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-638.400,-412.340",
+            "at": [
+              -638.4,
+              -412.34
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "caroline-street-1",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "caroline-street-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "caroline-street-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-657.800,-714.100",
+            "at": [
+              -657.8000000000001,
+              -714.1
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "lasalle-street-2",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "lasalle-street-3",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lasalle-street-2",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "lasalle-street-3",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "lasalle-street-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lasalle-street-3",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "lasalle-street-2",
+                "lasalle-street-3"
+              ]
+            }
+          },
+          {
+            "key": "-705.100,610.200",
+            "at": [
+              -705.1,
+              610.2
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "ann-avenue-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "ann-avenue-2",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "ann-avenue-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "ann-avenue-2",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "ann-avenue-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "ann-avenue-2",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "ann-avenue-1",
+                "ann-avenue-2"
+              ]
+            }
+          },
+          {
+            "key": "-723.710,-11.840",
+            "at": [
+              -723.71,
+              -11.84
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "henrietta-place",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "henrietta-place",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "henrietta-place",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-73.100,462.600",
+            "at": [
+              -73.10000000000001,
+              462.6
+            ],
+            "kinds": [
+              "continuation"
+            ],
+            "legs": [
+              {
+                "chain": "waverly-place-2",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "serbian-drive",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "waverly-place-2",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "serbian-drive",
+                  "side": "left"
+                },
+                "source": "collinear"
+              },
+              {
+                "a": {
+                  "chain": "waverly-place-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "serbian-drive",
+                  "side": "right"
+                },
+                "source": "collinear"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "waverly-place-2",
+                "serbian-drive"
+              ]
+            }
+          },
+          {
+            "key": "-812.000,-657.400",
+            "at": [
+              -812,
+              -657.4000000000001
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "south-ewing-avenue-0",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "south-ewing-avenue-2",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-ewing-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-ewing-avenue-2",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "south-ewing-avenue-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-ewing-avenue-2",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "south-ewing-avenue-0",
+                "south-ewing-avenue-2"
+              ]
+            }
+          },
+          {
+            "key": "-837.860,177.540",
+            "at": [
+              -837.86,
+              177.54
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "california-avenue-0",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "california-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "california-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-848.490,251.150",
+            "at": [
+              -848.49,
+              251.15
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "california-avenue-1",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "california-avenue-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "california-avenue-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-861.600,-469.100",
+            "at": [
+              -861.6,
+              -469.1
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "south-ewing-avenue-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "south-ewing-avenue-2",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-ewing-avenue-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-ewing-avenue-2",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "south-ewing-avenue-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-ewing-avenue-2",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "south-ewing-avenue-1",
+                "south-ewing-avenue-2"
+              ]
+            }
+          },
+          {
+            "key": "-88.400,566.600",
+            "at": [
+              -88.4,
+              566.6
+            ],
+            "kinds": [
+              "continuation"
+            ],
+            "legs": [
+              {
+                "chain": "mcnair-avenue",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "serbian-drive",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "mcnair-avenue",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "serbian-drive",
+                  "side": "left"
+                },
+                "source": "collinear"
+              },
+              {
+                "a": {
+                  "chain": "mcnair-avenue",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "serbian-drive",
+                  "side": "right"
+                },
+                "source": "collinear"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "mcnair-avenue",
+                "serbian-drive"
+              ]
+            }
+          },
+          {
+            "key": "-940.700,-691.500",
+            "at": [
+              -940.7,
+              -691.5
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "montrose-avenue-0",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "montrose-avenue-1",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "montrose-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "montrose-avenue-1",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "montrose-avenue-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "montrose-avenue-1",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "montrose-avenue-0",
+                "montrose-avenue-1"
+              ]
+            }
+          },
+          {
+            "key": "-954.300,-357.500",
+            "at": [
+              -954.3000000000001,
+              -357.5
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "park-avenue-2",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "park-avenue-5",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "park-avenue-4",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "nebraska-avenue",
+                "end": "start",
+                "role": "cross"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "park-avenue-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "park-avenue-5",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "park-avenue-4",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "park-avenue-5",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "park-avenue-2",
+                "end": "end",
+                "nose": 3.29
+              },
+              {
+                "chain": "park-avenue-4",
+                "end": "start",
+                "nose": 2.62
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "park-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "park-avenue-5",
+                  "side": "left"
+                },
+                {
+                  "chain": "park-avenue-4",
+                  "side": "right"
+                },
+                {
+                  "chain": "park-avenue-5",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "park-avenue-2",
+                  "end": "end"
+                },
+                {
+                  "chain": "park-avenue-4",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "park-avenue-2",
+                "park-avenue-5",
+                "park-avenue-4",
+                "nebraska-avenue"
+              ]
+            }
+          },
+          {
+            "key": "-959.410,-150.430",
+            "at": [
+              -959.41,
+              -150.43
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "eads-avenue-1",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "eads-avenue-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "eads-avenue-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "-99.100,-431.600",
+            "at": [
+              -99.10000000000001,
+              -431.6
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "missouri-avenue-3",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "missouri-avenue-4",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "missouri-avenue-3",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "missouri-avenue-4",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "missouri-avenue-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "missouri-avenue-4",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "missouri-avenue-3",
+                "missouri-avenue-4"
+              ]
+            }
+          },
+          {
+            "key": "1035.990,-478.420",
+            "at": [
+              1035.99,
+              -478.42
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "papin-street-1",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "papin-street-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "papin-street-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "121.200,526.100",
+            "at": [
+              121.2,
+              526.1
+            ],
+            "kinds": [
+              "corridor-terminus",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "geyer-avenue-2",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "geyer-avenue-6",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "geyer-avenue-5",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "mississippi-avenue",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "geyer-avenue-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "geyer-avenue-6",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "geyer-avenue-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "geyer-avenue-6",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "geyer-avenue-2",
+                "end": "end",
+                "nose": 2.55
+              },
+              {
+                "chain": "geyer-avenue-5",
+                "end": "start",
+                "nose": 1.58
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "geyer-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "geyer-avenue-6",
+                  "side": "right"
+                },
+                {
+                  "chain": "geyer-avenue-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "geyer-avenue-6",
+                  "side": "left"
+                },
+                {
+                  "chain": "mississippi-avenue",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "geyer-avenue-2",
+                  "end": "end"
+                },
+                {
+                  "chain": "geyer-avenue-5",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "geyer-avenue-2",
+                "geyer-avenue-6",
+                "geyer-avenue-5",
+                "mississippi-avenue"
+              ]
+            }
+          },
+          {
+            "key": "129.900,-247.490",
+            "at": [
+              129.9,
+              -247.49
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "mississippi-alley",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "mississippi-alley",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "mississippi-alley",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "140.600,-874.370",
+            "at": [
+              140.6,
+              -874.37
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-22nd-street",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-22nd-street",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-22nd-street",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "166.500,221.900",
+            "at": [
+              166.5,
+              221.9
+            ],
+            "kinds": [
+              "corridor-terminus",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-5",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "lafayette-avenue-3",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "lafayette-avenue-6",
+                "end": "end",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "mississippi-avenue",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-3",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "lafayette-avenue-6",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-3",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "lafayette-avenue-5",
+                "end": "start",
+                "nose": 4.04
+              },
+              {
+                "chain": "lafayette-avenue-6",
+                "end": "end",
+                "nose": 3.51
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "lafayette-avenue-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-6",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-3",
+                  "side": "left"
+                },
+                {
+                  "chain": "mississippi-avenue",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "lafayette-avenue-5",
+                  "end": "start"
+                },
+                {
+                  "chain": "lafayette-avenue-6",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "lafayette-avenue-5",
+                "lafayette-avenue-3",
+                "lafayette-avenue-6",
+                "mississippi-avenue"
+              ]
+            }
+          },
+          {
+            "key": "18.400,-402.000",
+            "at": [
+              18.400000000000002,
+              -402
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "mackay-place-0",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "mackay-place-1",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "mackay-place-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "mackay-place-1",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "mackay-place-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "mackay-place-1",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "mackay-place-0",
+                "mackay-place-1"
+              ]
+            }
+          },
+          {
+            "key": "259.410,582.980",
+            "at": [
+              259.41,
+              582.98
+            ],
+            "kinds": [
+              "continuation"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-0",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "geyer-avenue-6",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "geyer-avenue-6",
+                  "side": "left"
+                },
+                "source": "continuesAs"
+              },
+              {
+                "a": {
+                  "chain": "south-18th-street-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "geyer-avenue-6",
+                  "side": "right"
+                },
+                "source": "continuesAs"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "south-18th-street-0",
+                "geyer-avenue-6"
+              ]
+            }
+          },
+          {
+            "key": "297.300,-554.300",
+            "at": [
+              297.3,
+              -554.3000000000001
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "chouteau-avenue-2",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "chouteau-avenue-0",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "chouteau-avenue-3",
+                "end": "start",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "chouteau-avenue-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "chouteau-avenue-0",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "chouteau-avenue-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "chouteau-avenue-0",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "chouteau-avenue-2",
+                "end": "end",
+                "nose": 6.13
+              },
+              {
+                "chain": "chouteau-avenue-3",
+                "end": "start",
+                "nose": 5.79
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "chouteau-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-0",
+                  "side": "left"
+                },
+                {
+                  "chain": "chouteau-avenue-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-0",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "chouteau-avenue-2",
+                  "end": "end"
+                },
+                {
+                  "chain": "chouteau-avenue-3",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "chouteau-avenue-2",
+                "chouteau-avenue-0",
+                "chouteau-avenue-3"
+              ]
+            }
+          },
+          {
+            "key": "367.410,266.030",
+            "at": [
+              367.41,
+              266.03
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-1",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "south-18th-street-7",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "south-18th-street-4",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-18th-street-7",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-18th-street-4",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-18th-street-7",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "south-18th-street-1",
+                "end": "start",
+                "nose": 3.46
+              },
+              {
+                "chain": "south-18th-street-4",
+                "end": "end",
+                "nose": 2.83
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "south-18th-street-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-18th-street-7",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-18th-street-4",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-18th-street-7",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "south-18th-street-1",
+                  "end": "start"
+                },
+                {
+                  "chain": "south-18th-street-4",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "south-18th-street-1",
+                "south-18th-street-7",
+                "south-18th-street-4"
+              ]
+            }
+          },
+          {
+            "key": "373.540,228.740",
+            "at": [
+              373.54,
+              228.74
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-3",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-3",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-18th-street-3",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "424.400,-88.700",
+            "at": [
+              424.40000000000003,
+              -88.7
+            ],
+            "kinds": [
+              "corridor-terminus",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "park-avenue-0",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "park-avenue-1",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "park-avenue-3",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "south-18th-street-3",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "park-avenue-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "park-avenue-1",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "park-avenue-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "park-avenue-1",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "park-avenue-0",
+                "end": "end",
+                "nose": 5.08
+              },
+              {
+                "chain": "park-avenue-3",
+                "end": "start",
+                "nose": 4.67
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "park-avenue-0",
+                  "side": "right"
+                },
+                {
+                  "chain": "park-avenue-1",
+                  "side": "left"
+                },
+                {
+                  "chain": "park-avenue-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "park-avenue-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-18th-street-3",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "park-avenue-0",
+                  "end": "end"
+                },
+                {
+                  "chain": "park-avenue-3",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "park-avenue-0",
+                "park-avenue-1",
+                "park-avenue-3",
+                "south-18th-street-3"
+              ]
+            }
+          },
+          {
+            "key": "475.370,242.800",
+            "at": [
+              475.37,
+              242.8
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "dolman-street-1",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "dolman-street-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "dolman-street-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "481.900,272.100",
+            "at": [
+              481.90000000000003,
+              272.1
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-5",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "lafayette-avenue-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "lafayette-avenue-6",
+                "end": "start",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-1",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "lafayette-avenue-6",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-1",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "lafayette-avenue-5",
+                "end": "end",
+                "nose": 5.4
+              },
+              {
+                "chain": "lafayette-avenue-6",
+                "end": "start",
+                "nose": 5.01
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "lafayette-avenue-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-6",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-1",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "lafayette-avenue-5",
+                  "end": "end"
+                },
+                {
+                  "chain": "lafayette-avenue-6",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "lafayette-avenue-5",
+                "lafayette-avenue-1",
+                "lafayette-avenue-6"
+              ]
+            }
+          },
+          {
+            "key": "509.710,-570.120",
+            "at": [
+              509.71,
+              -570.12
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "papin-street-3",
+                "end": "end",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "papin-street-4",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "papin-street-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "papin-street-4",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "papin-street-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "papin-street-4",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "papin-street-3",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "papin-street-3",
+                "papin-street-4"
+              ]
+            }
+          },
+          {
+            "key": "515.910,-413.690",
+            "at": [
+              515.91,
+              -413.69
+            ],
+            "kinds": [
+              "continuation"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-3",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "west-18th-street",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-3",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "west-18th-street",
+                  "side": "left"
+                },
+                "source": "continuesAs"
+              },
+              {
+                "a": {
+                  "chain": "south-18th-street-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "west-18th-street",
+                  "side": "right"
+                },
+                "source": "continuesAs"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "south-18th-street-3",
+                "west-18th-street"
+              ]
+            }
+          },
+          {
+            "key": "521.720,-560.140",
+            "at": [
+              521.72,
+              -560.14
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "papin-street-2",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "papin-street-4",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "papin-street-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "papin-street-4",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "papin-street-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "papin-street-4",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "papin-street-2",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "papin-street-2",
+                "papin-street-4"
+              ]
+            }
+          },
+          {
+            "key": "536.400,279.900",
+            "at": [
+              536.4,
+              279.90000000000003
+            ],
+            "kinds": [
+              "corridor-terminus"
+            ],
+            "legs": [
+              {
+                "chain": "truman-parkway-1",
+                "end": "end",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "lafayette-avenue-1",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "truman-parkway-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-1",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "truman-parkway-1",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "truman-parkway-1",
+                "lafayette-avenue-1"
+              ]
+            }
+          },
+          {
+            "key": "545.200,-488.100",
+            "at": [
+              545.2,
+              -488.1
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "chouteau-avenue-2",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "chouteau-avenue-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "chouteau-avenue-3",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "chouteau-avenue-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "chouteau-avenue-1",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "chouteau-avenue-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "chouteau-avenue-1",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "chouteau-avenue-2",
+                "end": "start",
+                "nose": 6.09
+              },
+              {
+                "chain": "chouteau-avenue-3",
+                "end": "end",
+                "nose": 5.75
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "chouteau-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-1",
+                  "side": "left"
+                },
+                {
+                  "chain": "chouteau-avenue-3",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-1",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "chouteau-avenue-2",
+                  "end": "start"
+                },
+                {
+                  "chain": "chouteau-avenue-3",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "chouteau-avenue-2",
+                "chouteau-avenue-1",
+                "chouteau-avenue-3"
+              ]
+            }
+          },
+          {
+            "key": "549.700,282.000",
+            "at": [
+              549.7,
+              282
+            ],
+            "kinds": [
+              "corridor-terminus"
+            ],
+            "legs": [
+              {
+                "chain": "truman-parkway-0",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "lafayette-avenue-1",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "truman-parkway-0",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-1",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "truman-parkway-0",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "truman-parkway-0",
+                "lafayette-avenue-1"
+              ]
+            }
+          },
+          {
+            "key": "57.790,331.580",
+            "at": [
+              57.79,
+              331.58
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "nicholson-place",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "nicholson-place",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "nicholson-place",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "58.700,-234.000",
+            "at": [
+              58.7,
+              -234
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "benton-place-0",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "benton-place-1",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "benton-place-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "benton-place-1",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "benton-place-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "benton-place-1",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "benton-place-0",
+                "benton-place-1"
+              ]
+            }
+          },
+          {
+            "key": "608.600,-391.220",
+            "at": [
+              608.6,
+              -391.22
+            ],
+            "kinds": [
+              "continuation"
+            ],
+            "legs": [
+              {
+                "chain": "dolman-street-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "west-18th-street",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "dolman-street-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "west-18th-street",
+                  "side": "left"
+                },
+                "source": "continuesAs"
+              },
+              {
+                "a": {
+                  "chain": "dolman-street-1",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "west-18th-street",
+                  "side": "right"
+                },
+                "source": "continuesAs"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "dolman-street-1",
+                "west-18th-street"
+              ]
+            }
+          },
+          {
+            "key": "615.710,-404.630",
+            "at": [
+              615.71,
+              -404.63
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "dolman-street-0",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "dolman-street-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "dolman-street-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "621.000,-67.900",
+            "at": [
+              621,
+              -67.9
+            ],
+            "kinds": [
+              "branch"
+            ],
+            "legs": [
+              {
+                "chain": "grattan-street",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "truman-parkway-0",
+                "end": "through",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "grattan-street",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "truman-parkway-0",
+                  "side": "right"
+                },
+                "source": "branch-envelope"
+              }
+            ],
+            "corners": {
+              "outer": [],
+              "apex": [
+                {
+                  "legA": {
+                    "chain": "grattan-street",
+                    "side": "left"
+                  },
+                  "legB": {
+                    "chain": "truman-parkway-0",
+                    "side": "right"
+                  }
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "grattan-street",
+                "truman-parkway-0"
+              ]
+            }
+          },
+          {
+            "key": "626.130,-547.940",
+            "at": [
+              626.13,
+              -547.94
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "papin-street-3",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "papin-street-6",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "papin-street-3",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "papin-street-6",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "papin-street-3",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "papin-street-6",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": [],
+              "stub": [
+                {
+                  "chain": "papin-street-3",
+                  "end": "start"
+                },
+                {
+                  "chain": "papin-street-6",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "papin-street-3",
+                "papin-street-6"
+              ]
+            }
+          },
+          {
+            "key": "627.570,-539.070",
+            "at": [
+              627.57,
+              -539.07
+            ],
+            "kinds": [
+              "same-corridor-join"
+            ],
+            "legs": [
+              {
+                "chain": "papin-street-2",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "papin-street-5",
+                "end": "start",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "papin-street-2",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "papin-street-5",
+                  "side": "left"
+                },
+                "source": "same-corridor"
+              },
+              {
+                "a": {
+                  "chain": "papin-street-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "papin-street-5",
+                  "side": "right"
+                },
+                "source": "same-corridor"
+              }
+            ],
+            "corners": {
+              "outer": [],
+              "stub": [
+                {
+                  "chain": "papin-street-2",
+                  "end": "end"
+                },
+                {
+                  "chain": "papin-street-5",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "papin-street-2",
+                "papin-street-5"
+              ]
+            }
+          },
+          {
+            "key": "649.900,651.900",
+            "at": [
+              649.9000000000002,
+              651.9000000000002
+            ],
+            "kinds": [
+              "continuation"
+            ],
+            "legs": [
+              {
+                "chain": "south-12th-street-0",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "south-tucker-boulevard",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "south-12th-street-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "gravois-avenue-0",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "gravois-avenue-1",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-12th-street-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-tucker-boulevard",
+                  "side": "right"
+                },
+                "source": "collinear"
+              },
+              {
+                "a": {
+                  "chain": "south-12th-street-0",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-tucker-boulevard",
+                  "side": "left"
+                },
+                "source": "collinear"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "south-12th-street-0",
+                "south-tucker-boulevard",
+                "south-12th-street-1",
+                "gravois-avenue-0",
+                "gravois-avenue-1"
+              ]
+            }
+          },
+          {
+            "key": "658.200,-552.300",
+            "at": [
+              658.2,
+              -552.3000000000001
+            ],
+            "kinds": [
+              "corridor-terminus",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "papin-street-5",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "papin-street-1",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "papin-street-6",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "south-18th-street-5",
+                "end": "through",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "papin-street-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "papin-street-1",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "papin-street-6",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "papin-street-1",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "papin-street-5",
+                "end": "end",
+                "nose": 4.88
+              },
+              {
+                "chain": "papin-street-6",
+                "end": "start",
+                "nose": 4.45
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "papin-street-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "papin-street-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "papin-street-6",
+                  "side": "right"
+                },
+                {
+                  "chain": "papin-street-1",
+                  "side": "left"
+                },
+                {
+                  "chain": "south-18th-street-5",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "papin-street-5",
+                  "end": "end"
+                },
+                {
+                  "chain": "papin-street-6",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "papin-street-5",
+                "papin-street-1",
+                "papin-street-6",
+                "south-18th-street-5"
+              ]
+            }
+          },
+          {
+            "key": "658.300,-726.700",
+            "at": [
+              658.3000000000001,
+              -726.7
+            ],
+            "kinds": [
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-5",
+                "end": "start",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "south-18th-street-2",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "south-18th-street-6",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-18th-street-2",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "south-18th-street-6",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "south-18th-street-2",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "south-18th-street-5",
+                "end": "start",
+                "nose": 6.44
+              },
+              {
+                "chain": "south-18th-street-6",
+                "end": "end",
+                "nose": 6.13
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "south-18th-street-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-18th-street-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-18th-street-6",
+                  "side": "right"
+                },
+                {
+                  "chain": "south-18th-street-2",
+                  "side": "left"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "south-18th-street-5",
+                  "end": "start"
+                },
+                {
+                  "chain": "south-18th-street-6",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "south-18th-street-5",
+                "south-18th-street-2",
+                "south-18th-street-6"
+              ],
+              "absorbsMedians": [
+                3
+              ]
+            }
+          },
+          {
+            "key": "677.570,-796.180",
+            "at": [
+              677.57,
+              -796.18
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-2",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-2",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-18th-street-2",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "690.900,-449.900",
+            "at": [
+              690.9000000000001,
+              -449.90000000000003
+            ],
+            "kinds": [
+              "continuation",
+              "corridor-terminus"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-5",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "truman-parkway-1",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "chouteau-avenue-1",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-5",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "truman-parkway-1",
+                  "side": "left"
+                },
+                "source": "collinear"
+              },
+              {
+                "a": {
+                  "chain": "south-18th-street-5",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "truman-parkway-1",
+                  "side": "right"
+                },
+                "source": "collinear"
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "south-18th-street-5",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-1",
+                  "side": "left"
+                },
+                {
+                  "chain": "truman-parkway-1",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-1",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "south-18th-street-5",
+                  "end": "end"
+                },
+                {
+                  "chain": "truman-parkway-1",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "south-18th-street-5",
+                "truman-parkway-1",
+                "chouteau-avenue-1"
+              ]
+            }
+          },
+          {
+            "key": "704.000,-379.700",
+            "at": [
+              704,
+              -379.70000000000005
+            ],
+            "kinds": [
+              "branch"
+            ],
+            "legs": [
+              {
+                "chain": "secondary-link-29",
+                "end": "start",
+                "role": "single"
+              },
+              {
+                "chain": "truman-parkway-0",
+                "end": "through",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "secondary-link-29",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "truman-parkway-0",
+                  "side": "right"
+                },
+                "source": "branch-envelope"
+              }
+            ],
+            "corners": {
+              "outer": [],
+              "apex": [
+                {
+                  "legA": {
+                    "chain": "secondary-link-29",
+                    "side": "left"
+                  },
+                  "legB": {
+                    "chain": "truman-parkway-0",
+                    "side": "right"
+                  }
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "secondary-link-29",
+                "truman-parkway-0"
+              ]
+            }
+          },
+          {
+            "key": "704.500,-446.500",
+            "at": [
+              704.5,
+              -446.5
+            ],
+            "kinds": [
+              "continuation",
+              "corridor-terminus"
+            ],
+            "legs": [
+              {
+                "chain": "south-18th-street-6",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "truman-parkway-0",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "chouteau-avenue-1",
+                "end": "through",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-18th-street-6",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "truman-parkway-0",
+                  "side": "left"
+                },
+                "source": "collinear"
+              },
+              {
+                "a": {
+                  "chain": "south-18th-street-6",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "truman-parkway-0",
+                  "side": "right"
+                },
+                "source": "collinear"
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "south-18th-street-6",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-1",
+                  "side": "left"
+                },
+                {
+                  "chain": "truman-parkway-0",
+                  "side": "right"
+                },
+                {
+                  "chain": "chouteau-avenue-1",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "south-18th-street-6",
+                  "end": "start"
+                },
+                {
+                  "chain": "truman-parkway-0",
+                  "end": "end"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "south-18th-street-6",
+                "truman-parkway-0",
+                "chouteau-avenue-1"
+              ]
+            }
+          },
+          {
+            "key": "714.700,13.100",
+            "at": [
+              714.7,
+              13.100000000000001
+            ],
+            "kinds": [
+              "continuation"
+            ],
+            "legs": [
+              {
+                "chain": "dillon-street",
+                "end": "start",
+                "role": "spine"
+              },
+              {
+                "chain": "dillon-drive",
+                "end": "end",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "dillon-street",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "dillon-drive",
+                  "side": "left"
+                },
+                "source": "collinear"
+              },
+              {
+                "a": {
+                  "chain": "dillon-street",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "dillon-drive",
+                  "side": "right"
+                },
+                "source": "collinear"
+              }
+            ],
+            "corners": {
+              "outer": []
+            },
+            "apron": {
+              "chains": [
+                "dillon-street",
+                "dillon-drive"
+              ]
+            }
+          },
+          {
+            "key": "719.800,310.100",
+            "at": [
+              719.8000000000001,
+              310.1
+            ],
+            "kinds": [
+              "continuation",
+              "divided-transition"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-2",
+                "end": "end",
+                "role": "carriageway-A"
+              },
+              {
+                "chain": "lafayette-avenue-1",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "lafayette-avenue-4",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "south-14th-street-1",
+                "end": "start",
+                "role": "carriageway-B"
+              },
+              {
+                "chain": "south-14th-street-0",
+                "end": "end",
+                "role": "cross"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-2",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-1",
+                  "side": "left"
+                },
+                "source": "spine-link"
+              },
+              {
+                "a": {
+                  "chain": "lafayette-avenue-4",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-1",
+                  "side": "right"
+                },
+                "source": "spine-link"
+              }
+            ],
+            "deTaper": [
+              {
+                "chain": "lafayette-avenue-2",
+                "end": "end",
+                "nose": 4.81
+              },
+              {
+                "chain": "lafayette-avenue-4",
+                "end": "start",
+                "nose": 4.38
+              },
+              {
+                "chain": "south-14th-street-1",
+                "end": "start",
+                "nose": 4.07
+              }
+            ],
+            "corners": {
+              "outer": [
+                {
+                  "chain": "lafayette-avenue-2",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-1",
+                  "side": "left"
+                },
+                {
+                  "chain": "lafayette-avenue-4",
+                  "side": "right"
+                },
+                {
+                  "chain": "lafayette-avenue-1",
+                  "side": "right"
+                }
+              ],
+              "stub": [
+                {
+                  "chain": "lafayette-avenue-2",
+                  "end": "end"
+                },
+                {
+                  "chain": "lafayette-avenue-4",
+                  "end": "start"
+                },
+                {
+                  "chain": "south-14th-street-1",
+                  "end": "start"
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "lafayette-avenue-2",
+                "lafayette-avenue-1",
+                "lafayette-avenue-4",
+                "south-14th-street-1",
+                "south-14th-street-0"
+              ]
+            }
+          },
+          {
+            "key": "724.400,-417.800",
+            "at": [
+              724.4000000000001,
+              -417.8
+            ],
+            "kinds": [
+              "branch"
+            ],
+            "legs": [
+              {
+                "chain": "grattan-street",
+                "end": "end",
+                "role": "spine"
+              },
+              {
+                "chain": "secondary-link-29",
+                "end": "through",
+                "role": "single"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "grattan-street",
+                  "side": "right"
+                },
+                "b": {
+                  "chain": "secondary-link-29",
+                  "side": "right"
+                },
+                "source": "branch-envelope"
+              }
+            ],
+            "corners": {
+              "outer": [],
+              "apex": [
+                {
+                  "legA": {
+                    "chain": "grattan-street",
+                    "side": "left"
+                  },
+                  "legB": {
+                    "chain": "secondary-link-29",
+                    "side": "right"
+                  }
+                }
+              ]
+            },
+            "apron": {
+              "chains": [
+                "grattan-street",
+                "secondary-link-29"
+              ]
+            }
+          },
+          {
+            "key": "806.580,332.840",
+            "at": [
+              806.58,
+              332.84
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-4",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-4",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-4",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "838.010,343.620",
+            "at": [
+              838.01,
+              343.62
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "lafayette-avenue-2",
+                "end": "start",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "lafayette-avenue-2",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "lafayette-avenue-2",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "868.800,81.490",
+            "at": [
+              868.8,
+              81.49
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "park-avenue-3",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "park-avenue-3",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "park-avenue-3",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "871.530,72.440",
+            "at": [
+              871.53,
+              72.44
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "park-avenue-0",
+                "end": "start",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "park-avenue-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "park-avenue-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "872.610,88.590",
+            "at": [
+              872.61,
+              88.59
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-14th-street-0",
+                "end": "start",
+                "role": "carriageway-A"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-14th-street-0",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-14th-street-0",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          },
+          {
+            "key": "882.650,90.910",
+            "at": [
+              882.65,
+              90.91
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "south-14th-street-1",
+                "end": "end",
+                "role": "carriageway-B"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "south-14th-street-1",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "south-14th-street-1",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
+          }
+        ],
+        "unpaired": [
+          {
+            "key": "-416.400,-164.200",
+            "chains": [
+              "saint-vincent-avenue-0",
+              "saint-vincent-avenue-2"
+            ],
+            "reason": "same-corridor L-corner — not a continuation"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-12th-street-0",
+              "south-12th-street-1"
+            ],
+            "reason": "doubles back (parallel strands?) — not pairable"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-12th-street-0",
+              "gravois-avenue-0"
+            ],
+            "reason": "doubles back (parallel strands?) — not pairable"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-12th-street-1",
+              "south-tucker-boulevard"
+            ],
+            "reason": "curb already claimed at this node (fork) — south-tucker-boulevard|left kept its first partner"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-12th-street-1",
+              "south-tucker-boulevard"
+            ],
+            "reason": "curb already claimed at this node (fork) — south-tucker-boulevard|right kept its first partner"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-12th-street-1",
+              "gravois-avenue-0"
+            ],
+            "reason": "doubles back (parallel strands?) — not pairable"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-12th-street-1",
+              "gravois-avenue-1"
+            ],
+            "reason": "doubles back (parallel strands?) — not pairable"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-tucker-boulevard",
+              "gravois-avenue-0"
+            ],
+            "reason": "curb already claimed at this node (fork) — south-tucker-boulevard|left kept its first partner"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-tucker-boulevard",
+              "gravois-avenue-0"
+            ],
+            "reason": "curb already claimed at this node (fork) — south-tucker-boulevard|right kept its first partner"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-tucker-boulevard",
+              "gravois-avenue-1"
+            ],
+            "reason": "curb already claimed at this node (fork) — south-tucker-boulevard|left kept its first partner"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "south-tucker-boulevard",
+              "gravois-avenue-1"
+            ],
+            "reason": "curb already claimed at this node (fork) — south-tucker-boulevard|right kept its first partner"
+          },
+          {
+            "key": "649.900,651.900",
+            "chains": [
+              "gravois-avenue-0",
+              "gravois-avenue-1"
+            ],
+            "reason": "doubles back (parallel strands?) — not pairable"
+          },
+          {
+            "key": "638.510,672.900",
+            "chains": [
+              "south-12th-street-1",
+              "gravois-avenue-0"
+            ],
+            "reason": "doubles back (parallel strands?) — not pairable"
+          },
+          {
+            "key": "719.800,310.100",
+            "chains": [
+              "south-14th-street-1",
+              "lafayette-avenue-1"
+            ],
+            "reason": "curb already claimed at this node (fork) — lafayette-avenue-1|right kept its first partner"
+          },
+          {
+            "key": "719.800,310.100",
+            "chains": [
+              "lafayette-avenue-2",
+              "south-14th-street-1"
+            ],
+            "reason": "doubles back (parallel strands?) — not pairable"
+          }
+        ]
+      },
       "junctions": [
         {
           "x": -920.61,
