@@ -93,8 +93,19 @@ export const SNAP_RADIUS = 0.25
 
 // ── Default measure per side, using survey data when available.
 //
+// ⚠ LEGACY FALLBACK — superseded by the skeleton seed path (measureFromSeed
+// below). Kept only for streets that reach derive without a seed.
+//
 // Survey fields (per street):
-//   pavementHalfWidth   — centerline → curb-inner, shared both sides
+//   pavementHalfWidth   — centerline → *sidewalk centerline*, averaged over
+//                         both sides — a BLOCK-EDGE datum, NOT an asphalt
+//                         half-width (survey.js: "Block edge goes here. Street
+//                         pavement is rendered independently from lane/parking
+//                         tags."). This function nevertheless feeds it in as
+//                         asphalt `pavementHW` — the block-edge/asphalt
+//                         conflation (E1) — which floods the asphalt out to
+//                         the sidewalk and zeroes the treelawn. The seed path
+//                         wires the quantities correctly; do not extend this one.
 //   sidewalkLeft/Right  — centerline → *sidewalk centerline* on that side
 //                         (OSM footway distance). Present only where
 //                         cartograph/survey.js found a sidewalk.
@@ -153,6 +164,55 @@ export function defaultMeasure(type, survey) {
   // If survey produced different terminals L vs R (park-edge case), start
   // asymmetric so the operator doesn't accidentally overwrite one side.
   const symmetric = left.terminal === right.terminal
+    && Math.abs(left.treelawn - right.treelawn) < 0.01
+    && Math.abs(left.sidewalk - right.sidewalk) < 0.01
+  return { left, right, symmetric }
+}
+
+// ── Measure from the skeleton seed — the width BASE (E1). ──────────────────
+//
+// The skeleton bakes width sourcing as custom (survey.json) → OSM lanes →
+// AASHTO into `street.seed` (skeleton.js stampCustomWidths/seedSection):
+//   seed.left/right (when survey data exists) — per-side
+//     { pavementHW, treelawn, sidewalk, blockEdgeHW, source:'survey'|'survey-row'|'standard' }
+//     with side identity already geometry-resolved (reversal-proof).
+//   seed scalars (always) — the symmetric lanes/AASHTO tier.
+// This builder turns the seed into the render measure shape. The operator's
+// overlay still wins upstream (overlay = tweaks only); this is what a chain
+// renders when untouched.
+export function measureFromSeed(seed, type) {
+  const isHighway = type === 'motorway' || type === 'motorway_link' || type === 'trunk' || type === 'trunk_link'
+  const material = isHighway ? 'highway' : undefined
+  const buildSide = (sd, other) => {
+    // Highway classes keep their established profiles: seedSection has no
+    // motorway/trunk/link rows and falls back to residential LANE+PARKING
+    // widths — parking on a ramp inflates a 2.4 m link to 8.5 m.
+    const pavementHW = isHighway ? (TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential)
+      : Number.isFinite(sd?.pavementHW) ? sd.pavementHW
+      : (Number.isFinite(seed.pavementHW) ? seed.pavementHW : TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential)
+    if (!SIDEWALK_ELIGIBLE.has(type)) {
+      return { pavementHW, treelawn: 0, sidewalk: 0, terminal: 'none', ...(material ? { material } : {}) }
+    }
+    // Survey-pinned side → sidewalk sits where the survey put it.
+    if (sd && sd.source !== 'standard') {
+      return { pavementHW, treelawn: sd.treelawn, sidewalk: sd.sidewalk, terminal: 'sidewalk' }
+    }
+    // Unsurveyed side of a street whose OTHER side is surveyed: likely faces
+    // open space / park — modest grass strip (mirrors defaultSideMeasure).
+    if (other && other.source !== 'standard') {
+      return { pavementHW, treelawn: 0, sidewalk: 3 * FT, terminal: 'lawn' }
+    }
+    return {
+      pavementHW,
+      treelawn: Number.isFinite(sd?.treelawn) ? sd.treelawn : (Number.isFinite(seed.treelawn) ? seed.treelawn : SV_TREELAWN),
+      sidewalk: Number.isFinite(sd?.sidewalk) ? sd.sidewalk : (Number.isFinite(seed.sidewalk) ? seed.sidewalk : SV_SIDEWALK),
+      terminal: 'sidewalk',
+    }
+  }
+  const left = buildSide(seed.left, seed.right)
+  const right = buildSide(seed.right, seed.left)
+  const symmetric = left.terminal === right.terminal
+    && Math.abs(left.pavementHW - right.pavementHW) < 0.01
     && Math.abs(left.treelawn - right.treelawn) < 0.01
     && Math.abs(left.sidewalk - right.sidewalk) < 0.01
   return { left, right, symmetric }

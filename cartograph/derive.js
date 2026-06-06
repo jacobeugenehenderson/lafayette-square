@@ -22,7 +22,7 @@ import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { defaultMeasure, defaultSideMeasure, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -2288,21 +2288,32 @@ export function deriveLayers(highways) {
   /**
    * Resolve the cross-section measure for a street. Returns {left, right, source}
    * where each side is {pavementHW, treelawn, sidewalk, terminal}.
-   * Authority: centerlines.measure → survey-driven default.
+   *
+   * Authority: skeleton seed → survey-driven default. The seed IS the width
+   * base (E1): skeleton.js bakes custom (survey.json) → OSM lanes → AASHTO
+   * into it, per side, name-propagated to every chain (divided carriageways
+   * included; their median sides are zeroed by the divided-pair pass below).
+   * The operator's overlay wins upstream of this call (overlay = tweaks only).
+   *
+   * The legacy centerlines.json measure tier was REMOVED here (E1): its 11
+   * measured names are all carried by overlay.json already (migrate-overlay
+   * broadcast them), so the tier could only re-shadow the seed base with
+   * stale machine values — South 18th's pavementHW=2 lived there.
    */
-  function computeStreetMeasure(name, tags) {
+  function computeStreetMeasure(name, tags, seed) {
     const type = mapHighwayToStreetType(tags?.highway)
-    const survey = correctedSurvey[name]
-    const centerline = centerlineByName.get(name)
 
-    if (centerline?.measure?.left && centerline?.measure?.right) {
+    if (seed) {
+      const m = measureFromSeed(seed, type)
       return {
-        left: { ...centerline.measure.left },
-        right: { ...centerline.measure.right },
-        source: 'measured',
+        left: m.left,
+        right: m.right,
+        symmetric: m.symmetric,
+        source: seed.widthSource === 'survey' ? 'seed-survey' : 'seed',
       }
     }
 
+    const survey = correctedSurvey[name]
     const d = defaultMeasure(type, survey)
     return {
       left: d.left,
@@ -2356,7 +2367,7 @@ export function deriveLayers(highways) {
     const ovAuthored = !!(ov?.measure?.left && ov?.measure?.right)
     const measure = ovAuthored
       ? ov.measure
-      : computeStreetMeasure(s.name, { highway: s.highway })
+      : computeStreetMeasure(s.name, { highway: s.highway }, s.seed)
     const street = {
       name: s.name,
       points,

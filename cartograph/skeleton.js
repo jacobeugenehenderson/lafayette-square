@@ -13,10 +13,11 @@
  * Run: node skeleton.js
  */
 
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR } from './config.js'
 import { writeIfChanged } from './io.js'
+import { CURB_WIDTH, SV_SIDEWALK } from '../src/cartograph/streetProfiles.js'
 
 // --- Operator-reviewable manifests ----------------------------------------
 
@@ -734,6 +735,209 @@ function gradeFields(highway, sources) {
   }
 }
 
+// [E1] Per-chain lanes vote across all source ways (same WAY_TAGS_BY_ID
+// pattern as gradeFacts). Mode wins; ties go to the larger count; falls back
+// to the group's first-fragment tag (the old behavior) when no source carries
+// a usable lanes value.
+function chainLanes(sources, sourceTags) {
+  const votes = new Map()
+  for (const id of sources || []) {
+    const n = parseInt(WAY_TAGS_BY_ID.get(id)?.lanes, 10)
+    if (Number.isFinite(n) && n > 0) votes.set(n, (votes.get(n) || 0) + 1)
+  }
+  let best = 0, bestCount = 0
+  for (const [n, c] of votes) {
+    if (c > bestCount || (c === bestCount && n > best)) { best = n; bestCount = c }
+  }
+  if (bestCount > 0) return best
+  return parseInt(sourceTags?.lanes, 10)
+}
+
+// ── [E1] Custom width base — survey.json → per-side seed enrichment ───────
+//
+// raw/survey.json is the CUSTOM width source (a kit input: operator-supplied
+// where a place has one; LS: 61/68 streets measured). Its semantics, per its
+// generator (survey.js): `sidewalkLeft/Right` = centerline → SIDEWALK
+// CENTERLINE on that side — i.e. where the BLOCK EDGE goes (back-of-sidewalk
+// = swDist + SV_SIDEWALK/2); `pavementHalfWidth` = their average; `rowWidth`
+// = assessor ROW. It is NOT an asphalt half-width — the asphalt is
+// lanes-driven (seedSection). Feeding the survey float in as asphalt is the
+// block-edge/asphalt conflation that flooded streets out to their sidewalks
+// (E1 forensics; streetProfiles.defaultSideMeasure carries that legacy).
+//
+// Width-sourcing priority, per QUANTITY (custom → OSM → AASHTO):
+//   block edge / ped section — survey sidewalk position → AASHTO defaults
+//   asphalt                  — OSM lanes → AASHTO assumption, CLAMPED so it
+//                              never crosses a survey-pinned sidewalk (the
+//                              impossible-road guard, D1's reclaim spirit)
+//
+// ⚠ Side identity: survey's sidewalkLeft/Right keys are point-order-relative
+// to the ORIGINAL OSM segment directions, aggregated per name — they survive
+// neither welding nor the canonical-direction flip (the persisted-side-key
+// class; see the perp-side convention note in tileGround.js:347). So the
+// VALUES are taken as name-keyed survey facts, but WHICH physical side each
+// lands on is re-resolved per chain from current geometry on every bake
+// (parallel-sidewalk perp test below; measure-RIGHT = (-dz,dx) of
+// point-order-forward — production's right-perp convention). Reversal-proof
+// by construction.
+
+function loadSurveyStreets() {
+  const p = join(RAW_DIR, 'survey.json')
+  if (!existsSync(p)) return {}
+  try { return JSON.parse(readFileSync(p, 'utf8')).streets || {} } catch { return {} }
+}
+
+// Min perpendicular distance from a chain to roughly-parallel OSM sidewalks,
+// per physical side of the chain's CURRENT point order. Mirrors survey.js's
+// measurement (parallel within ~30°, alongside the edge, 2–20 m window) but
+// runs per chain edge so welded/curved chains bin honestly.
+function chainSidewalkDistances(points, sidewalks) {
+  let minLeft = null, minRight = null
+  for (let i = 0; i + 1 < points.length; i++) {
+    const a = points[i], b = points[i + 1]
+    const dx = b.x - a.x, dz = b.z - a.z
+    const len = Math.hypot(dx, dz)
+    if (len < 10) continue
+    // measure-RIGHT = (-dz, dx) of point-order-forward (production right-perp).
+    const nx = -dz / len, nz = dx / len
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2
+    for (const sw of sidewalks) {
+      const sc = sw.coords
+      if (!sc || sc.length < 2) continue
+      const sdx = sc[sc.length - 1].x - sc[0].x, sdz = sc[sc.length - 1].z - sc[0].z
+      const slen = Math.hypot(sdx, sdz)
+      if (slen < 3) continue
+      const dot = Math.abs(dx * sdx + dz * sdz) / (len * slen)
+      if (dot < 0.85) continue                   // parallel within ~30° only
+      const smx = (sc[0].x + sc[sc.length - 1].x) / 2
+      const smz = (sc[0].z + sc[sc.length - 1].z) / 2
+      const along = ((smx - mx) * dx + (smz - mz) * dz) / len
+      if (Math.abs(along) > len / 2 + 10) continue
+      const perp = (smx - mx) * nx + (smz - mz) * nz
+      const d = Math.abs(perp)
+      if (d <= 2 || d >= 20) continue
+      if (perp > 0) { if (minRight == null || d < minRight) minRight = d }
+      else { if (minLeft == null || d < minLeft) minLeft = d }
+    }
+  }
+  return { minLeft, minRight }
+}
+
+// Stamp seed.left/right (+ widthSource) on every named street with survey
+// data. Runs AFTER the canonical-direction pass — side identity must be
+// resolved against final point order. Divided carriageways get the same
+// name-keyed treatment (the brief's propagation requirement); whichever
+// values land on their median-facing side are zeroed downstream by
+// derive.js's inner-edge normalization (innerEdgeAssign), so only the outer
+// assignment is load-bearing there.
+function stampCustomWidths(streets, survey, sidewalks) {
+  // One survey side, from a sidewalk-centerline distance. The block edge is
+  // the back of sidewalk; treelawn is the natural gap; the asphalt keeps its
+  // lanes/AASHTO seed unless that would cross the sidewalk.
+  const fromSurveyDist = (seed, swDist) => {
+    const swInner = swDist - SV_SIDEWALK / 2
+    const pav = Math.min(seed.pavementHW, Math.max(0.5, swInner - CURB_WIDTH))
+    const treelawn = Math.max(0, swInner - (pav + CURB_WIDTH))
+    return {
+      pavementHW: +pav.toFixed(2),
+      treelawn: +treelawn.toFixed(2),
+      sidewalk: +SV_SIDEWALK.toFixed(2),
+      blockEdgeHW: +(swDist + SV_SIDEWALK / 2).toFixed(2),
+      source: 'survey',
+    }
+  }
+  // Assessor tier: ROW/2 IS the block edge; work the ped section back from it.
+  const fromRowHalf = (seed, rowHalf) => {
+    const pav = Math.min(seed.pavementHW, Math.max(0.5, rowHalf - CURB_WIDTH - SV_SIDEWALK))
+    const treelawn = Math.max(0, rowHalf - SV_SIDEWALK - (pav + CURB_WIDTH))
+    return {
+      pavementHW: +pav.toFixed(2),
+      treelawn: +treelawn.toFixed(2),
+      sidewalk: +SV_SIDEWALK.toFixed(2),
+      blockEdgeHW: +rowHalf.toFixed(2),
+      source: 'survey-row',
+    }
+  }
+  // No survey datum on this side — AASHTO seed stands (measure construction
+  // downstream may render it as lawn when the other side IS surveyed: the
+  // park-edge asymmetry).
+  const standardSide = (seed) => ({
+    pavementHW: seed.pavementHW,
+    treelawn: seed.treelawn,
+    sidewalk: seed.sidewalk,
+    source: 'standard',
+  })
+
+  let stamped = 0, geomSided = 0, symmetricFallback = 0, rowTier = 0
+  for (const s of streets) {
+    if (!s.seed || !s.name) continue
+    const sv = survey[s.name]
+    if (!sv) continue
+    const svVals = [sv.sidewalkLeft, sv.sidewalkRight].filter(Number.isFinite)
+    let left = null, right = null
+    if (svVals.length) {
+      const { minLeft, minRight } = chainSidewalkDistances(s.points, sidewalks)
+      if (svVals.length === 2) {
+        const [vA, vB] = svVals
+        if (minLeft != null && minRight != null) {
+          // Both sides geometrically evidenced → the pairing that best
+          // matches the chain's OWN measured distances wins (not near-rank:
+          // a name-aggregated survey value contaminated from another chain —
+          // e.g. a median-side path on a divided corridor — then lands on
+          // the side it actually resembles, which for a carriageway is the
+          // median side that innerEdgeAssign zeroes downstream).
+          const costAB = Math.abs(minLeft - vA) + Math.abs(minRight - vB)
+          const costBA = Math.abs(minLeft - vB) + Math.abs(minRight - vA)
+          const [vL, vR] = costAB <= costBA ? [vA, vB] : [vB, vA]
+          left = fromSurveyDist(s.seed, vL)
+          right = fromSurveyDist(s.seed, vR)
+          geomSided++
+        } else if (minLeft != null || minRight != null) {
+          // one side evidenced → it takes the survey value it best matches
+          const d = minLeft != null ? minLeft : minRight
+          const detA = Math.abs(d - vA) <= Math.abs(d - vB)
+          const detVal = detA ? vA : vB
+          const othVal = detA ? vB : vA
+          if (minLeft != null) { left = fromSurveyDist(s.seed, detVal); right = fromSurveyDist(s.seed, othVal) }
+          else { right = fromSurveyDist(s.seed, detVal); left = fromSurveyDist(s.seed, othVal) }
+          geomSided++
+        } else {
+          // no geometric side evidence → symmetric on the average; never
+          // trust the raw L/R labels (direction-mushy, see header note)
+          const avg = (vA + vB) / 2
+          left = fromSurveyDist(s.seed, avg)
+          right = fromSurveyDist(s.seed, avg)
+          symmetricFallback++
+        }
+      } else {
+        // single-sided survey (park-edge class) → the geometrically-evidenced
+        // side carries it; the other side stays standard (→ lawn downstream)
+        const v = svVals[0]
+        if (minLeft != null && minRight != null) {
+          if (Math.abs(minLeft - v) <= Math.abs(minRight - v)) left = fromSurveyDist(s.seed, v)
+          else right = fromSurveyDist(s.seed, v)
+          geomSided++
+        } else if (minLeft != null) { left = fromSurveyDist(s.seed, v); geomSided++ }
+        else if (minRight != null) { right = fromSurveyDist(s.seed, v); geomSided++ }
+        else { left = fromSurveyDist(s.seed, v); right = fromSurveyDist(s.seed, v); symmetricFallback++ }
+      }
+    } else if (Number.isFinite(sv.rowWidth)) {
+      left = fromRowHalf(s.seed, sv.rowWidth / 2)
+      right = fromRowHalf(s.seed, sv.rowWidth / 2)
+      rowTier++
+    } else {
+      // survey source:'default' — not custom data; the AASHTO seed stands
+      continue
+    }
+    s.seed.left = left || standardSide(s.seed)
+    s.seed.right = right || standardSide(s.seed)
+    s.seed.widthSource = 'survey'
+    stamped++
+  }
+  console.log(`  custom width base: ${stamped} street(s) seeded from survey.json `
+    + `(${geomSided} geometry-sided, ${symmetricFallback} symmetric-fallback, ${rowTier} assessor-row)`)
+}
+
 // --- Node typing: classify every shared coord by graph degree -------------
 // degree 1 = dead-end · 2 = through/bend/name-transition · 3 = T · 4 = cross
 // · 5+ = Y/complex. The cap decision becomes a NODE FACT (round at a true
@@ -1062,6 +1266,12 @@ function main() {
     console.log(`  corridor spine-link: stamped ${linked} carriageway→spine link(s)`)
   }
 
+  // ── [E1] Custom width base (survey.json → per-side seed) ─────────────
+  // After the canonical-direction pass: per-side identity is resolved
+  // against FINAL point order (see stampCustomWidths header).
+  stampCustomWidths(streets, loadSurveyStreets(),
+    highways.filter(f => f.tags?.footway === 'sidewalk'))
+
   // ── Node typing → cap-as-fact (Part 1.1) ─────────────────────────────
   // Classify every shared coord by graph degree, then stamp each chain's two
   // endpoints with a cap decision: 'round' at a true dead-end (degree 1),
@@ -1187,7 +1397,12 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
   // its own oneway (the seed fragment's flag, true for any carriageway); prefer
   // it so Survey's One-way checkbox reads the carriageway honestly.
   const oneway = typeof chain?.oneway === 'boolean' ? chain.oneway : (sourceTags?.oneway === 'yes')
-  const lanes = parseInt(sourceTags?.lanes, 10)
+  // [E1] lanes summarized over ALL of the chain's source ways — sourceTags is
+  // the group's FIRST fragment, and on a multi-way chain the lanes tag often
+  // lives on other fragments (South 18th: lanes sit mid-corridor; fragment[0]
+  // carries none), so a first-fragment read silently drops the OSM width
+  // marrow. Mode across sources, ties to the larger count.
+  const lanes = chainLanes(chain?.sources, sourceTags)
   return {
     id,
     name,

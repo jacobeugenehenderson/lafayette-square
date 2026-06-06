@@ -1646,6 +1646,14 @@ const useCartographStore = create((set, get) => ({
           // does this fallback inside mergeLiveRibbons; this keeps the
           // live store's per-chain measure consistent with what V2 sees.
           measure: ov?.measure ?? legacy?.measure ?? rb?.measure,
+          // [E1] Provenance for the save guard: only persist a measure that
+          // the operator actually owns (came from overlay) or that diverges
+          // from the baked baseline. Without this, every chain loads a truthy
+          // measure (rb?.measure) and _saveOverlay re-broadcasts the BASELINE
+          // into overlay.json wholesale — the shadow that buried the
+          // survey/seed width base (all 220 LS chains had overlay measures).
+          _measureFromOverlay: !!ov?.measure,
+          _baselineMeasure: rb?.measure,
           segmentMeasures: ov?.segmentMeasures ?? legacy?.segmentMeasures,
           // Effective cap = overlay (operator) > legacy (centerlines.json) >
           // ribbons.json (what derive.js actually rendered). The fallback
@@ -1749,10 +1757,26 @@ const useCartographStore = create((set, get) => ({
     // change the SVG geometry). Stage button shows it; the modal re-runs on
     // next click. Cheap to flip; doesn't auto-bake.
     if (!get().bakeStale) set({ bakeStale: true })
+    // [E1] Measure equality vs the baked baseline (epsilon on numbers; exact
+    // on terminal/material). Used so untouched chains don't persist their
+    // baseline measure — overlay.json carries TWEAKS ONLY, the width base
+    // lives in the skeleton seed (custom → OSM lanes → AASHTO).
+    const sideEq = (a, b) => {
+      if (!a || !b) return a === b
+      const num = (k) => Math.abs((a[k] || 0) - (b[k] || 0)) < 1e-6
+      return num('pavementHW') && num('treelawn') && num('sidewalk')
+        && (a.terminal || 'sidewalk') === (b.terminal || 'sidewalk')
+        && (a.material || null) === (b.material || null)
+    }
+    const measureEq = (a, b) => !!a && !!b && sideEq(a.left, b.left) && sideEq(a.right, b.right)
     const out = {}
     for (const st of centerlineData.streets || []) {
       if (!st.id) continue
+      // Persist a measure the operator owns (loaded from overlay) or that
+      // diverges from the baked baseline (a fresh edit). A chain whose live
+      // measure merely echoes ribbons.json stays measure-free on disk.
       const hasMeasure = !!st.measure
+        && (st._measureFromOverlay || !measureEq(st.measure, st._baselineMeasure))
       const hasSegM = st.segmentMeasures && Object.keys(st.segmentMeasures).length > 0
       const capStart = st.capStart ?? null
       const capEnd = st.capEnd ?? null
