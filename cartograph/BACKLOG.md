@@ -61,7 +61,8 @@
 | prebake-polygonization-scope | ✅ DONE (Mercator) → `PREBAKE-POLYGONIZATION-PLAN.md` (D1–D5 decomposition + validated spike; false corner is partly a DATA bug) | done |
 | d1-carriageway-measure-hygiene | ✅ DONE (Gunter, `bbc3401`) — divided per-side measure hygiene | done |
 | divided-corridor-model-scope | ✅ DONE (Alidade) → `DIVIDED-CORRIDOR-PLAN.md` (chains=inner-edge, constructed median, fold-at-join, rip-out ledger) | done |
-| **e1-custom-width-base** | bake custom `survey.json` widths into the skeleton seed (custom→OSM→AASHTO), propagate through the divided splits | NOW — **dispatch-ready** (FRESH) |
+| e1-custom-width-base | ✅ DONE (Lye, `2afeb0e`) — custom-width base baked into skeleton; major corner + many improvements (Jacob's eye) | done |
+| **benton-loop-guard** | bad-custom-data sanity-guard (Benton `rowWidth:4`→collapse; Park `2.99`) + both loops working; canon **`LOOP-STREETS.md`** | NOW — **dispatch-ready** (FRESH) |
 | build sequence (D+E, in the plans) | **E1** → D2+E2 (prebake freeze + constructed median) → D3+E3 (transition/fold/corner cure) → E4+D4 (rip-out inner-edge + retire C5) → D5 (perf). Parallel: brief F (north-void) ∥ T-bumps (band-fold). | queued — Boz drafts each after the prior lands |
 | **wall-phase-d** | the Wall as a real freeze — Section opens the frozen Survey data (Jacob's milestone, plumbing) | dispatch-ready (FRESH) — after the data cure for "correct data" |
 | pipeline-reconception | tile re-pour umbrella (T1–T4) | NOW (context) |
