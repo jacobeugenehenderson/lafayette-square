@@ -3015,24 +3015,209 @@ export function deriveLayers(highways) {
   const pinchCount = corridors.reduce((a, c) => a + c.transitions.filter(t => t.pinch).length, 0)
   console.log(`    ${corridors.length} corridors, ${pinchCount} pinch transitions`)
 
-  // Emergent medians: for each pair, ring = A forward + B reversed,
-  // picking the larger-area orientation as a figure-eight guard.
-  // Inner-offset is applied at render time, not here — pre-offsetting
-  // self-intersects when the gap is less than 2×pavementHW.
+  // [E2] CONSTRUCTED medians — the median is a real polygon decided here at
+  // prebake, not a residual face re-derived per render. Per divided pair:
+  // the polygon between the pair's two inner-edge chains (D9: the chains ARE
+  // the median's edges; phase.chainGap = its width), with two refinements:
+  //   1. Mutual-overlap window — each edge spans only the stations where its
+  //      mate runs alongside (project B's endpoints onto A). Where one chain
+  //      overhangs its mate (map-edge clips, interchange fragments) the
+  //      median must not wedge across the overhang.
+  //   2. Blunt ~2 m NOSE — where the gap pinches below NOSE_GAP (a divided↔
+  //      undivided transition: both chains taper into the shared spine node)
+  //      the median is trimmed back to the first station ≥ NOSE_GAP apart and
+  //      closed with a blunt cut. The merge region (node → nose) is corridor
+  //      asphalt — lanes joining — and is filled positively by tileGround.
+  // Tagged kind:'median' so downstream consumes it by IDENTITY (tileGround
+  // median tiles, material/LU), replacing the emergent >40%-median-facing
+  // heuristic + the vestigial A+B.reversed ring this block used to emit
+  // (TRUMAN-FORENSICS §2a — that decoy had zero consumers).
+  const NOSE_GAP = 2.0   // m — median trimmed back to where the chains are ≥ this apart
+  const NOSE_STEP = 0.5  // m — gap-profile sampling step for the trim search
+  const arcLengths = (pts) => {
+    const s = [0]
+    for (let i = 1; i < pts.length; i++) s.push(s[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
+    return s
+  }
+  const pointAtS = (pts, cum, s) => {
+    const t = Math.max(0, Math.min(cum[cum.length - 1], s))
+    for (let i = 1; i < pts.length; i++) {
+      if (cum[i] >= t) {
+        const f = cum[i] === cum[i - 1] ? 0 : (t - cum[i - 1]) / (cum[i] - cum[i - 1])
+        return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f]
+      }
+    }
+    return [pts[pts.length - 1][0], pts[pts.length - 1][1]]
+  }
+  // closest point on polyline → { d: distance, s: arclength station of the foot }
+  const closestOnPolyline = (p, pts, cum) => {
+    let best = { d: Infinity, s: 0 }
+    for (let i = 0; i < pts.length - 1; i++) {
+      const ax = pts[i][0], az = pts[i][1]
+      const dx = pts[i + 1][0] - ax, dz = pts[i + 1][1] - az
+      const L2 = dx * dx + dz * dz
+      const t = L2 > 0 ? Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - az) * dz) / L2)) : 0
+      const d = Math.hypot(p[0] - (ax + dx * t), p[1] - (az + dz * t))
+      if (d < best.d) best = { d, s: cum[i] + Math.sqrt(L2) * t }
+    }
+    return best
+  }
+  const cutPolylineAt = (pts, cum, s0, s1) => {
+    const out = [pointAtS(pts, cum, s0)]
+    for (let i = 0; i < pts.length; i++) {
+      if (cum[i] > s0 + 1e-9 && cum[i] < s1 - 1e-9) out.push([pts[i][0], pts[i][1]])
+    }
+    out.push(pointAtS(pts, cum, s1))
+    const ded = [out[0]]
+    for (const p of out.slice(1)) if (Math.hypot(p[0] - ded[ded.length - 1][0], p[1] - ded[ded.length - 1][1]) > 1e-6) ded.push(p)
+    return ded
+  }
+  // Shared-vertex index over all ribbon streets (junction = exact shared
+  // coordinate, the same identity extractFaces uses) — drives the crossing
+  // detection below.
+  const NOSE_SETBACK = 1.5  // m — median nose set back from a crossing street's curb line
+  const MIN_SEG = 4.0       // m — a median segment shorter than this folds into the adjacent merge
+  const vKey = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
+  const vertexStreets = new Map()
+  ribbonStreets.forEach((s, i) => {
+    for (const p of s.points) {
+      const k = vKey(p)
+      let set = vertexStreets.get(k)
+      if (!set) { set = new Set(); vertexStreets.set(k, set) }
+      set.add(i)
+    }
+  })
   const medians = []
+  let medianSkips = 0, mergeCount = 0, crossingCount = 0
   for (const { aIdx, bIdx } of dividedPairs) {
     const A = ribbonStreets[aIdx]
     const B = ribbonStreets[bIdx]
-    const ringFwd = [...A.points.map(p => [p[0], p[1]]), ...B.points.map(p => [p[0], p[1]])]
-    const ringRev = [...A.points.map(p => [p[0], p[1]]), ...B.points.slice().reverse().map(p => [p[0], p[1]])]
-    const ring = Math.abs(polygonArea(ringRev)) >= Math.abs(polygonArea(ringFwd)) ? ringRev : ringFwd
-    medians.push({
-      name: A.phase?.corridorName || A.name,
-      streets: [A.name, B.name],
-      ring,
-    })
+    const a = A.points.map(p => [p[0], p[1]])
+    const b = B.points.map(p => [p[0], p[1]])
+    // Orient B co-directional with A so stations correspond end-to-end.
+    const dot = (a[a.length - 1][0] - a[0][0]) * (b[b.length - 1][0] - b[0][0]) +
+                (a[a.length - 1][1] - a[0][1]) * (b[b.length - 1][1] - b[0][1])
+    const eb = dot > 0 ? b : b.slice().reverse()
+    const cumA = arcLengths(a)
+    const cumB = arcLengths(eb)
+    const lenA = cumA[cumA.length - 1]
+    const gapAt = (s) => closestOnPolyline(pointAtS(a, cumA, s), eb, cumB).d
+    // (1) mutual-overlap window on A
+    const vb0 = closestOnPolyline(eb[0], a, cumA).s
+    const vb1 = closestOnPolyline(eb[eb.length - 1], a, cumA).s
+    const winLo = Math.max(0, Math.min(vb0, vb1))
+    const winHi = Math.min(lenA, Math.max(vb0, vb1))
+    // (2) nose trim from each pinching end (a transition: the chains taper
+    // into the shared spine node; gap → 0)
+    let s0 = 0
+    if (gapAt(0) < NOSE_GAP) {
+      while (s0 < lenA && gapAt(s0) < NOSE_GAP) s0 += NOSE_STEP
+      const g1 = gapAt(s0), g0 = gapAt(s0 - NOSE_STEP)
+      if (g1 > g0) s0 = s0 - NOSE_STEP + NOSE_STEP * (NOSE_GAP - g0) / (g1 - g0)
+    }
+    let s1 = lenA
+    if (gapAt(lenA) < NOSE_GAP) {
+      while (s1 > 0 && gapAt(s1) < NOSE_GAP) s1 -= NOSE_STEP
+      const g0 = gapAt(s1), g1 = gapAt(s1 + NOSE_STEP)
+      if (g0 > g1) s1 = s1 + NOSE_STEP - NOSE_STEP * (NOSE_GAP - g1) / (g0 - g1)
+    }
+    s0 = Math.max(s0, winLo)
+    s1 = Math.min(s1, winHi)
+    if (!(s1 - s0 > 1)) { medianSkips++; continue }   // window collapsed — pair too short
+    // (3) CROSSING cuts — a street that junctions BOTH carriageways (shared
+    // vertex on each, not the corridor itself, not grade-separated) crosses
+    // the median: the median OPENS there. Cut halfwidth = the crossing
+    // street's asphalt halfwidth + NOSE_SETBACK. One-sided T's (junction on
+    // one carriageway only) do NOT cut — the median runs over them (the
+    // Truman addendum fragmentation cure).
+    const corridorName = A.phase?.corridorName || A.name
+    const crossersA = new Map(), crossersB = new Map()   // street idx → junction point
+    const collect = (pts, self, into) => {
+      for (const p of pts) {
+        for (const j of vertexStreets.get(vKey(p)) || []) {
+          if (j === aIdx || j === bIdx) continue
+          const S = ribbonStreets[j]
+          if (S.gradeSeparated) continue
+          if ((S.phase?.corridorName || S.name) === corridorName) continue
+          if (!into.has(j)) into.set(j, p)
+        }
+      }
+    }
+    collect(a, aIdx, crossersA)
+    collect(eb, bIdx, crossersB)
+    const cuts = []   // [lo, hi] station intervals on A
+    for (const [j, pA] of crossersA) {
+      if (!crossersB.has(j)) continue
+      const S = ribbonStreets[j]
+      const sOnA = closestOnPolyline(pA, a, cumA).s
+      const sOfB = closestOnPolyline(crossersB.get(j), a, cumA).s
+      const c = (sOnA + sOfB) / 2
+      const hw = Math.max(S.measure?.left?.pavementHW || 0, S.measure?.right?.pavementHW || 0)
+      const w = hw + NOSE_SETBACK
+      cuts.push([c - w, c + w])
+      crossingCount++
+    }
+    // Merge overlapping/near cut intervals; fold sub-MIN_SEG median slivers
+    // between cuts into the cuts (a divided×divided crossing's central box
+    // must be merge-asphalt, not a 1 m median crumb).
+    cuts.sort((p, q) => p[0] - q[0])
+    let merged = []
+    for (const c of cuts) {
+      const last = merged[merged.length - 1]
+      if (last && c[0] - last[1] < MIN_SEG) last[1] = Math.max(last[1], c[1])
+      else merged.push([c[0], c[1]])
+    }
+    merged = merged.map(c => [Math.max(c[0], s0), Math.min(c[1], s1)]).filter(c => c[1] - c[0] > 0.1)
+    // (4) emit — median segments between cuts (kind:'median') + the merge
+    // regions (kind:'merge': the nose-trimmed transition tapers AND the
+    // crossing windows — corridor asphalt, lanes joining, constructed
+    // positively per DIVIDED-CORRIDOR-PLAN §4.4). Both are polygons between
+    // the chains: cut A at the window, follow the feet on B, blunt closes.
+    const stamp = (kind, w0, w1, minArea) => {
+      if (!(w1 - w0 > 0.25)) return false
+      const P0 = pointAtS(a, cumA, w0)
+      const P1 = pointAtS(a, cumA, w1)
+      const u0 = closestOnPolyline(P0, eb, cumB).s
+      const u1 = closestOnPolyline(P1, eb, cumB).s
+      if (!(u1 - u0 > 0.25)) return false
+      const ta = cutPolylineAt(a, cumA, w0, w1)
+      const tb = cutPolylineAt(eb, cumB, u0, u1)
+      const ring = [...ta, ...tb.reverse()]
+      if (Math.abs(polygonArea(ring)) < minArea) return false
+      medians.push({
+        kind,
+        name: corridorName,
+        streets: [A.name, B.name],
+        chains: [A.skelId, B.skelId],
+        pairKey: A.phase?.pairKey || null,
+        ring,
+      })
+      return true
+    }
+    // A median segment must clear MIN_MED_AREA (25 m²) to stamp as median —
+    // below that it's an intersection crumb (the divided×divided central
+    // box), which stamps as merge ASPHALT instead so the region never falls
+    // through to a parcel-LU pill.
+    const stampMedianOrMerge = (w0, w1) => {
+      if (stamp('median', w0, w1, 25)) { emitted++; return }
+      if (stamp('merge', w0, w1, 1)) mergeCount++
+    }
+    let cursor = s0
+    let emitted = 0
+    for (const [lo, hi] of merged) {
+      stampMedianOrMerge(cursor, lo)
+      if (stamp('merge', lo, hi, 1)) mergeCount++
+      cursor = hi
+    }
+    stampMedianOrMerge(cursor, s1)
+    if (!emitted) medianSkips++
+    // Transition tapers (node → nose) as merge patches, so the taper needle
+    // is positively asphalt even when its face doesn't match a median tile.
+    if (stamp('merge', winLo, s0, 1)) mergeCount++
+    if (stamp('merge', s1, winHi, 1)) mergeCount++
   }
-  console.log(`    ${medians.length} emergent medians from carriageway pairs`)
+  const medCount = medians.filter(m => m.kind === 'median').length
+  console.log(`    ${medCount} constructed median segments + ${mergeCount} merge patches from ${dividedPairs.length} pairs (${crossingCount} crossings cut${medianSkips ? `, ${medianSkips} pairs degenerate` : ''})`)
 
   // D1 (carriageway measure hygiene): canonicalize a divided carriageway's
   // per-side measure to the anchor='inner-edge' model — the chain sits at the
@@ -3164,7 +3349,9 @@ export function deriveLayers(highways) {
       streets: ix.streets.map(s => ({ name: s.name, ix: s.ix })),
     })),
     faces: faceFills,
-    medians: medians.map(m => ({ name: m.name, streets: m.streets, ring: m.ring })),
+    // [E2] constructed medians (kind:'median') — consumed by identity in
+    // tileGround (median-tile detection + the merge-region asphalt fill).
+    medians: medians.map(m => ({ kind: m.kind, name: m.name, streets: m.streets, chains: m.chains, pairKey: m.pairKey, ring: m.ring })),
     corridors,
     // [P1 frame-enrichment] Top-level frame metadata carried straight from the
     // skeleton so the typed-node graph + name-transition stamps survive into

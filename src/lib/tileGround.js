@@ -382,11 +382,10 @@ function effectiveMeasure(s) {
   if (!(out.pavementHW > 0) && inb.pavementHW > 0) { const t = out; out = inb; inb = t }
   return { ...m, [outboard]: out, [inboard]: { ...inb, treelawn: 0, sidewalk: 0 } }
 }
-// Is this street-side the median-facing (inboard) side of a divided carriageway?
-function isMedianFacing(s, side) {
-  if (!s || s.anchor !== 'inner-edge' || !s.innerSign) return false
-  return side === (s.innerSign === +1 ? 'right' : 'left')
-}
+// (isMedianFacing + the G3a >40%-median-facing tile heuristic retired at E2 —
+// the median is now a CONSTRUCTED polygon frozen at prebake (ribbons.medians,
+// kind:'median', DIVIDED-CORRIDOR-PLAN §4.2); median tiles are detected by
+// IDENTITY against it in the shape loop below.)
 
 // Cumulative INWARD depth of a tile edge at each band level, from its own
 // street-side measure. level: 'A' asphalt | 'C' +curb | 'T' +treelawn |
@@ -585,6 +584,19 @@ export function sectionPass(shapeTiles, cw, stripMat) {
     routeStrip(stripMat.outer, legOuter)           // outer ped strip (default LU)
     routeStrip(stripMat.inner, legInner)           // inner ped strip (default SW)
     Wacc.push(...cornerPad)                         // corner span — always SW (structural)
+    // E2 — the constructed median paints positively: route this tile's frozen
+    // median region (med, clipped at the shape pass) to the 'median' class and
+    // keep it out of the parcel-LU remainder. Covers both the true median tile
+    // (whole interior → bare median ground) and a block face that absorbed
+    // median area through a one-sided junction (it stops mis-painting as the
+    // block's parcel LU — the Truman drop-off/pill class).
+    if (st.med?.length) {
+      const medGround = intersectRings(luRemainder, st.med)
+      if (medGround.length) {
+        luRemainder = differenceRings(luRemainder, st.med)
+        pushLu(luByLu, 'median', medGround)
+      }
+    }
     pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
   }
   return { Wacc, tlByLu, luByLu }
@@ -780,6 +792,38 @@ export function buildTileGround(ribbons, opts = {}) {
 
   const tiles = extractFaces(streets)
 
+  // E2 — the CONSTRUCTED medians (prebake artifact: ribbons.medians[]; the
+  // divided pair's inter-chain lens partitioned into kind:'median' segments +
+  // kind:'merge' asphalt patches — transition tapers and crossing windows,
+  // DIVIDED-CORRIDOR-PLAN §4.2/§4.4). Both are positive identity-carrying
+  // objects, not leftover faces: merge patches fill as asphalt in WHATEVER
+  // tile they land (the taper needle, the divided×divided crossing box — the
+  // pill class — die here); median segments paint as median ground via
+  // sectionPass, even in a block face that absorbed median area through a
+  // one-sided junction (TRUMAN-FORENSICS addendum). bbox-prefiltered per tile.
+  const ringBBox = (r) => {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity
+    for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1] }
+    return [x0, y0, x1, y1]
+  }
+  const collectKind = (kind) => {
+    const polys = (ribbons?.medians || [])
+      .filter(m => m?.kind === kind && Array.isArray(m.ring) && m.ring.length >= 3)
+      .map(m => m.ring)
+    const boxes = polys.map(ringBBox)
+    return (tileRing) => {
+      if (!polys.length) return []
+      const tb = ringBBox(tileRing)
+      const cand = polys.filter((_, i) => {
+        const mb = boxes[i]
+        return mb[0] <= tb[2] && mb[2] >= tb[0] && mb[1] <= tb[3] && mb[3] >= tb[1]
+      })
+      return cand.length ? intersectRings(cand, [tileRing]) : []
+    }
+  }
+  const medianClipFor = collectKind('median')
+  const mergeClipFor = collectKind('merge')
+
   // Per tile (CONCENTRIC corners):
   //  1. Asphalt = the union of per-street-side run stadiums (PER-EDGE widths,
   //     butt caps → sharp miter corners, no cap-at-depth bulge), clipped to
@@ -877,19 +921,20 @@ export function buildTileGround(ribbons, opts = {}) {
       if (d > 1e-6) aStads.push(...strokeOpen(run.poly, d))
     }
     for (const t of roundTips) if (t.hw > 1e-6) aStads.push(circlePoly(t.p[0], t.p[1], t.hw))
-    const aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
-    // G3a — a divided-road MEDIAN tile (the thin tile between two carriageways)
-    // drops ALL ped: its bounding edges are median-facing (inner-edge street,
-    // inboard side). Detect by median-facing boundary fraction and zero the
-    // tile's ped, so no treelawn/sidewalk sliver leaks into the median.
-    let medLen = 0, totLen = 0
-    for (const run of runs) {
-      let L = 0
-      for (let i = 0; i < run.poly.length - 1; i++) L += Math.hypot(run.poly[i + 1][0] - run.poly[i][0], run.poly[i + 1][1] - run.poly[i][1])
-      totLen += L
-      if (isMedianFacing(streets[run.streetIdx], run.side)) medLen += L
-    }
-    const isMedianTile = totLen > 0 && medLen / totLen > 0.4
+    let aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
+    // E2 — constructed-median consumption (replaces the G3a >40%-median-facing
+    // heuristic). merge patches (transition tapers, crossing windows) are
+    // corridor asphalt in whatever tile they land; a tile mostly covered by a
+    // median segment IS the median tile — all ped zeroed so no treelawn/
+    // sidewalk sliver leaks into the median. The median region itself paints
+    // via sectionPass (med, frozen below). Authored inboard pavement ("eat
+    // into the median") still wins — the per-run strokes union over it.
+    const mergeClip = mergeClipFor(tile.ring)
+    if (mergeClip.length) aFill = aFill.length ? unionRings([...aFill, ...mergeClip]) : mergeClip
+    const medClip = medianClipFor(tile.ring)
+    let medArea = 0
+    for (const r of medClip) medArea += Math.abs(signedArea(r))
+    const isMedianTile = medArea > 0.5 && medArea > 0.5 * Math.abs(signedArea(tile.ring))
     const tl = isMedianTile ? 0 : repDepth(runs, 'treelawn')
     const sw = isMedianTile ? 0 : repDepth(runs, 'sidewalk')
     // Per-corner fillet of the curb line. Each tile vertex resolves to its
@@ -957,7 +1002,7 @@ export function buildTileGround(ribbons, opts = {}) {
     Aacc.push(...differenceRings([tile.ring], iA))   // asphalt = tile − rounded inner (the shape silhouette)
     Cacc.push(...differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)))   // curb stroke = iA − iC (clamped, shares join)
     // Freeze everything the section pass needs off this tile's shape.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap })
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, ...(medClip.length ? { med: medClip } : {}) })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────

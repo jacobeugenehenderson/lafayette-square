@@ -82,6 +82,7 @@ export const DEFAULT_LU_COLORS = {
   recreation:         '#6EA03E',  // athletic-turf green
   industrial:         '#8E7060',  // warm rust
   island:             '#7A7A6E',  // road-island concrete
+  median:             '#6E8A4E',  // divided-road median — bare ground/grass (E2 constructed median)
   unknown:            '#888888',  // neutral fallback
 }
 
