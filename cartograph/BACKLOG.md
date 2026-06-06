@@ -64,7 +64,8 @@
 | divided-corridor-model-scope | ✅ DONE (Alidade) → `DIVIDED-CORRIDOR-PLAN.md` (chains=inner-edge, constructed median, fold-at-join, rip-out ledger) | done |
 | e1-custom-width-base | ✅ DONE (Lye, `2afeb0e`) — custom-width base baked into skeleton; major corner + many improvements (Jacob's eye) | done |
 | benton-loop-guard | ✅ DONE (Stadia, `1bd711b`) — bad-data guard; both loops at sane widths (collapse fixed; Waverly pills gone). Role cross-sections = L.3 (later). | done |
-| **e2-constructed-median** | constructed median polygon at prebake (between inner-edge chains, blunt-nose transitions) — replaces the emergent residual; foundation for E3 | NOW — **dispatch-ready** (FRESH) |
+| e2-constructed-median | ✅ DONE (Esplanade, `2d98861`) — constructed median (40 median + 60 merge); crossings-open rule; isMedianFacing/G3a retired; new `'median'` LU; Truman drop-off + island-pill cured; 43k m² reclaimed. Pending Jacob's live eye. | done |
+| **e3-junction-cure** | clean junction construction GENERALLY (divided folds + corners + perpendicular-join protrusions / T-bulges / Benton-stem) on the constructed-median edge; **spike confirms shared code root first** (false-corner discipline); validate vs the 8 marks | NEXT — Boz drafts |
 | build sequence (D+E, in the plans) | **E1** ✅ → D2+E2 (prebake freeze + constructed median) → **D3+E3 (clean junction construction GENERALLY: divided folds + corners + perpendicular-join protrusions / T-bulges / Benton-stem — confirm shared code root in the spike)** → E4+D4 (rip-out inner-edge + retire C5) → D5 (perf). Parallel: brief F (north-void). | queued — Boz drafts each after the prior lands |
 | **wall-phase-d** | the Wall as a real freeze — Section opens the frozen Survey data (Jacob's milestone, plumbing) | dispatch-ready (FRESH) — after the data cure for "correct data" |
 | pipeline-reconception | tile re-pour umbrella (T1–T4) | NOW (context) |
