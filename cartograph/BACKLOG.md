@@ -25,7 +25,7 @@
 - **(2) Prebake polygon-ization + freeze** — derive the block substrate from skeleton chains, resolve corner *identities* (divided transition via `phase.spineAt*`), freeze it; kill the two-source raw-OSM face seam (coherence **C5**). This is **the cure for the false corner.** `PREBAKE.md §5`.
 - **(3) Polygonize Survey / connect authoring (T3)** — migrate handles / corner-R / cap-selector / strip-swap / translucency off the dead figure-ground onto tiles; **activated-block live redraw** (perf, the sticky-tools fix). `HANDOFF-tile-T3-authoring.md` · `HANDOFF-survey-section-tool-design.md` · `SURVEY.md §4.1`.
 - **Skeleton fortification — name-logic doglegs** — weld same-name fragments + straighten within-name kinks. `HANDOFF-name-logic-skeleton-pass.md`.
-- **Band-fold thorns** — local capacity clamp (thin-tile / T-mouth `iW` fold; ~100 instances). Distinct thorn-class; re-confirm scope once prebake-freeze lands. `HANDOFF-band-fold-fix.md` (+ `HANDOFF-junction-band-thorns-FINDINGS.md`).
+- **Band-fold thorns** — local capacity clamp (thin-tile / T-mouth `iW` fold; ~100 instances). Distinct thorn-class; re-confirm scope once prebake-freeze lands. **+ a similar-looking artifact at the BASE of *some* T intersections (Jacob, 2026-06-05) — likely this same class; HELD (don't add on mid-arc); re-mark + re-assess AFTER E2/E3, since the prebake-freeze/capacity work may dissolve some.** `HANDOFF-band-fold-fix.md` (+ `HANDOFF-junction-band-thorns-FINDINGS.md`).
 - **T4 — delete figure-ground** (`buildBlockGeometryV2` / `cornersAtIx`; coherence **C3/C4**) — after T3 migrates authoring off it.
 - **Corpse-lie excision** — the code-side of every landed truth; via briefs at the code phase. `DOC-CODE-COHERENCE.md`.
 
