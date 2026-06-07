@@ -48,6 +48,8 @@ Make the Wall a **real boundary** (your near-term target: "open Section and see 
 
 The **plumbing** can be built and proven on current data. But proving the plumbing is a **checkpoint, not done** — see §5.
 
+> ✅ **MECHANISM LANDED — checkpoint (Hadrian, `ef460d1`, 2026-06-07).** Chose the **load** path: `BlockGeometryV2Debug` fetches `public/baked/<scene>/shape.json` when `tool === 'measure'`, cache-busted on `bakeLastMs`, and renders every layer via the new **chain-free `sectionOpen(shapeTiles, cw, stripMat, stencil)`** (`tileGround.js:644`, the open-side mate of `sectionPass`): block from frozen `iA`, curb = `iA − iC`, asphalt = `ring − iA`, ped FILL via `sectionPass`. When the frozen geos compose, `tileGeos` returns `null` — **the live `buildTileGround` does not run** (verified). Chain-freeness proven at both levels (signature + the `sectionGeos` closure; `frozenShape` is `fetch`-sourced) and machine-scanned (`scratch/hadrian-wall-open-proof.mjs`). **This is §5(a) only.** The view shows the shape *exactly as frozen* (defects + bake-staleness included) — so **§5(b) stays open** on the prebake cure; do not call the Wall done.
+
 ---
 
 ## 5. ⭐ Definition of done

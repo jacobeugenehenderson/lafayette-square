@@ -8,6 +8,20 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-07 — THE DATA WALL: Phase-D mechanism LANDS; the prebake cure scoped to D2; a HARDENING category is born.
+
+**The frame.** Jacob: "DataWall. Let's roll." Boz ran the entry ritual, read `HANDOFF-wall-phase-d.md` + `WALL.md` + the PREBAKE plan, and corrected the handoff's drifted code anchors (intersection-everywhere had shifted `tileGround.js` — `sectionPass` `:487→:515`, `_shapeArtifact` `:1108→:1972`).
+
+**Phase-D landed (mechanism / §5(a) checkpoint).** Hadrian (FRESH, worktree, off the tresaguet branch) built the freeze→open: `sectionOpen(shapeTiles, cw, stripMat, stencil)` (`tileGround.js:644`) — the chain-free open-side mate of `sectionPass` — and `BlockGeometryV2Debug` fetches `baked/<scene>/shape.json` on `tool === 'measure'`, cache-busted on `bakeLastMs`; when the frozen geos compose, `tileGeos` returns `null` so **the live `buildTileGround` genuinely doesn't run.** Boz verified the chain-free invariant at both levels (signature + the `sectionGeos` closure; `frozenShape` is `fetch`-sourced), not on report. **Landed `ef460d1`** by targeted checkout — trunk's two src files were byte-identical to Hadrian's tresaguet base, so the checkout applied exactly his diff with no Tresaguet double-apply. Hadrian was rigorous + honest: labeled it §5(a)-only, flagged §5(b) "correct data" as still gated on the prebake cure (frozen-wrong-data is odious — `WALL.md §1`).
+
+**The prebake cure, re-scoped against what actually landed.** Mercator's D-plan (`PREBAKE-POLYGONIZATION-PLAN.md`, D1–D5) predates intersection-everywhere. Reconciling: **D1 ✅** (Gunter `bbc3401`), **the corner cure ✅ but LIVE** (Tresaguet `9c275ce` fixed it at the *construction* layer, not the prebake-freeze layer the plan envisioned). So the live prebake brief is **D2 only** — `HANDOFF-prebake-d2-face-freeze.md`: move `extractFaces` upstream, freeze the **tile topology** (`tiles[]`, L1) into `ribbons.json`, byte-identical, moving the Wall to ~P3 + unlocking D5 perf. Drafted, dispatched (Ashlar, worktree off clean trunk). **Parallel-safe with Phase-D** — opposite ends of `buildTileGround` (input sourcing vs output consumption) with the byte-identical shape artifact between them, no semantic dependency.
+
+**⭐ A HARDENING category (Jacob's framing).** Asked where superseded-but-completeness-relevant work goes, Jacob coined it: **D3 (corner identity → prebake) is *hardening*, not the long-tail.** The distinction, now a BACKLOG section: long-tail = still *wrong* on the eye (open defects); **hardening = already correct, but the fix lives at the wrong layer / isn't correct-by-construction** — make the architecture *guarantee* what a live fix *achieves*. D3 filed there (relocating it risks regressing the working live cure → deliberate, not routine). D4 (retire C5 two-source seam) flagged as a second candidate.
+
+**Coordination snapshot.** Worktrees live: `ashlar-d2-face-freeze` (off trunk, clean), plus older `stadia-e34-datums` / `bollard-dead-end-prune`. Trunk `cartograph-looks-pass-ab` at `ef460d1`. The uncommitted baked/`map.json` churn = Jacob's fiddling (left untouched across all commits).
+
+---
+
 ## 2026-06-04 (night) — THE SKELETON GETS A HOME DOC: the two marks are ONE missing organ; the library reframed as a matrix.
 
 **The ask.** Jacob had Boz go in **cold** ("forensic gunslinger, fresh context") on two polygon-silhouette problems on the live 2D Survey render — a **dog-leg** ("the flat side of a T should be flat") and **degenerate corners** he traced on the project's `marker_strokes.json` (a corner whose edges aren't parallel to the streets that build it, even though *we edit polygons, so every line should be inherently parallel to a chain segment*). Then: *command-master the library* with the context acquired.
