@@ -146,7 +146,7 @@ At a transition (a divided avenue meeting a cross-street — LS's four park corn
 - `PIPELINE.md §survey` + `§Wall` — the execution spine (this doc is the deep chapter it points into).
 - `ARCHITECTURE.md §2.1` — the three tools; Survey ≠ Section (different data models).
 - `RIBBONS.md` — the ribbon/corner geometry canon (the tile construction's invariants).
-- `SECTION-CENSUS.md` — the FILL side, past the wall.
+- `SECTION.md` — the FILL tool, past the wall (the downstream consumer of this doc's frozen `iA`); `SECTION-CENSUS.md` — its forensic state/backlog.
 - `HANDOFF-survey-section-tool-design.md` — the open authoring-migration work. *(The divided-false-corner patch brief is killed → `_archive/handoffs/`.)*
 - `src/lib/tileGround.js` — the live construction + bake.
 - Memory: `[[project_two_bakes_two_walls]]`, `[[feedback_survey_polygon_not_ribbon_concepts]]`, `[[project_special_sauce_intersection_street_distinction]]`.

@@ -22,7 +22,7 @@
 | **Divided roads** | Carriageways stay 2 chains; **D1 longitudinal weld + station-overlap gate LANDED**; median = emergent geometric face (`extractFaces`), tagging is downstream. **Truman south-of-Park = separate D3/D8** (one-sided cross-streets). | `RIBBONS.md §3.1` · `TRUMAN-FORENSICS.md` |
 | **Grade separation** | LANDED — `gradeSeparated` excluded from faces, stroked as flat asphalt, own layer, renders behind local. | `PIPELINE.md §Wall` |
 | **The construction model** | **TILE model** (faces of the centerline graph; strips painted inward; round the strips). Figure-ground retired-in-place. | `NOTES.md` 2026-06-01 · `RIBBONS.md` |
-| **Section** | ped **FILL** off the frozen shape; ~70% built (`sectionPass` chain-incapable by closure). | `SECTION-CENSUS.md` |
+| **Section** | ped **FILL** off the frozen shape — strokes inward off the frozen curb; ~70% built (`sectionPass` chain-incapable by closure). **Freeze the silhouette, author the FILL live.** | **`SECTION.md`** (deep) · `SECTION-CENSUS.md` (state/backlog) |
 | **Doc process** | three kinds (Reference/State/Diary), one-kind-per-doc, content flows downstream as it ages; pack-up/pick-up day cycle. | `BOZ.md §2/§5` |
 
 ---
