@@ -2860,35 +2860,40 @@ export function deriveLayers(highways) {
     }
     return a / 2
   }
-  function chainCenter(pts) {
-    let cx = 0, cz = 0
-    for (const p of pts) { cx += p[0]; cz += p[1] }
-    return [cx / pts.length, cz / pts.length]
-  }
-  function innerSideSign(aPoints, bCenter) {
-    // For each segment of A, the perpendicular side pointing toward B
-    // is where the inner edge lies. Return +1 or -1 (left of tangent
-    // vs right of tangent, consistent across all segments of a well-
-    // behaved carriageway).
+  function innerSideSign(aPoints, bPoints) {
+    // FACE ADJACENCY, not a centroid vote: which side of A is the inner
+    // (median-facing) side = which side of A bounds the inter-carriageway
+    // face = which side faces the MATE LOCALLY. Per segment of A, drop the
+    // midpoint's FOOT on B's polyline and vote toward the foot, weighted by
+    // segment length. The old form voted every segment, unweighted, toward
+    // B's global CENTROID — on a snaking corridor a segment's perp can point
+    // away from the centroid while the mate runs right alongside (s18-6
+    // verified flipped; the E3.4 foot-vote bug class). The local foot is the
+    // operational half-edge adjacency until the D2 face freeze carries it as
+    // a frozen face fact (OSM2STREETS-GROUNDING §2 'innerSign' row).
     // CONVENTION (pin it here, it has bitten twice — see tileGround.js:347):
     // the perp used below, (-dz, dx), is what production's measure calls the
     // RIGHT-perp. So innerSign === +1 means the partner (the median) lies on
     // the measure-RIGHT side → inboard key 'right'; -1 → 'left'. This matches
     // tileGround.isMedianFacing and streetProfiles.innerEdgeMeasure exactly.
-    let votes = 0
+    const bPts = bPoints.map(p => [p[0], p[1]])
+    const bCum = arcLengths(bPts)
+    let acc = 0
     for (let i = 0; i < aPoints.length - 1; i++) {
       const dx = aPoints[i + 1][0] - aPoints[i][0]
       const dz = aPoints[i + 1][1] - aPoints[i][1]
-      const L = Math.hypot(dx, dz) || 1
-      // Left perpendicular (counter-clockwise) of tangent.
+      const L = Math.hypot(dx, dz)
+      if (L < 1e-9) continue
+      // measure-RIGHT perpendicular of the point-order tangent.
       const px = -dz / L, pz = dx / L
-      // Does bCenter lie on the +perpendicular side?
       const mx = (aPoints[i][0] + aPoints[i + 1][0]) / 2
       const mz = (aPoints[i][1] + aPoints[i + 1][1]) / 2
-      const dot = (bCenter[0] - mx) * px + (bCenter[1] - mz) * pz
-      votes += dot > 0 ? 1 : -1
+      const foot = pointAtS(bPts, bCum, closestOnPolyline([mx, mz], bPts, bCum).s)
+      const dot = (foot[0] - mx) * px + (foot[1] - mz) * pz
+      if (Math.abs(dot) < 1e-6) continue                 // foot on-axis — no information
+      acc += (dot > 0 ? 1 : -1) * L
     }
-    return votes >= 0 ? +1 : -1
+    return acc >= 0 ? +1 : -1
   }
   // Build corridors + divided pairs from phase metadata. One pass per
   // corridor name: cluster endpoints into nodes, look up which chains
@@ -3279,10 +3284,10 @@ export function deriveLayers(highways) {
     const A = ribbonStreets[aIdx]
     const B = ribbonStreets[bIdx]
     A.anchor = 'inner-edge'
-    A.innerSign = innerSideSign(A.points, chainCenter(B.points))
+    A.innerSign = innerSideSign(A.points, B.points)
     A.pairId = B.skelId
     B.anchor = 'inner-edge'
-    B.innerSign = innerSideSign(B.points, chainCenter(A.points))
+    B.innerSign = innerSideSign(B.points, A.points)
     B.pairId = A.skelId
     // Normalize measures into the inner-edge model (see innerEdgeAssign).
     // segmentMeasures are overlay-only → authored by definition (reclaim only).
@@ -3675,6 +3680,80 @@ export function deriveLayers(highways) {
       }
     }
 
+    // ── Source 0: EVERY junction node — the standard's invariant (a
+    // first-class Intersection at every node; OSM2STREETS-GROUNDING §4.2
+    // item 2 / HANDOFF-intersection-everywhere). The construction sources
+    // above reach only the divided/joined/branched population; every OTHER
+    // node of degree ≥ 3 now gets a record too: kind 'plain' + its full leg
+    // set. IDENTITY ONLY — no continuity pairs, no de-taper windows, and
+    // (below) no apron spec — so the stamp is geometry-neutral; the
+    // shape-side through-node construction (tileGround) and the future
+    // apron-everywhere / fillet-identity gates consume these records as they
+    // land. Existing nodes' leg sets are NOT extended here: the E3.2 apron
+    // fans over nd.legs, so enriching legs would move built geometry — leg
+    // completeness for constructed nodes travels with the apron-everywhere
+    // phase, deliberately.
+    let plainCount = 0
+    {
+      const allKeys = new Set([...endsAt.keys(), ...interiorAt.keys()])
+      for (const k of allKeys) {
+        if (jnodes.has(k)) continue
+        const ends = endsAt.get(k) || []
+        const thrs = interiorAt.get(k) || []
+        if (ends.length + thrs.length * 2 < 3) continue   // not a junction
+        const pt = ends.length ? ptOf(ends[0].s, ends[0].end) : thrs[0].points[[...thrs[0].points.keys()].find(i => vKey(thrs[0].points[i]) === k)]
+        const n = nodeFor(pt)
+        n.kinds.add('plain')
+        for (const { s, end } of ends) addLeg(n, s, end, s.phase?.role || 'single')
+        for (const s of thrs) addLeg(n, s, 'through', s.phase?.role || 'single')
+        plainCount++
+      }
+    }
+
+    // ── Corner pairs by CLOCKWISE LEG ADJACENCY — the standard's corner
+    // assembly, stamped as frozen identity at EVERY node (the only legal
+    // corner locations; subsumes corner identities — OSM2STREETS-GROUNDING
+    // §4.2: "filletRing corners identified legs only, everywhere"). Computed
+    // from ALL incident curbed chains (not the node's stamped legs — a
+    // partial leg set would fabricate false adjacencies). Sides are
+    // point-order measure keys resolved per directed leg: the CCW-wedge side
+    // of a leg is measure-RIGHT iff the leg points along point order.
+    // PRESENT-but-not-yet-consumed: the fillet-identity gate flips on these
+    // once the through-node construction is blessed.
+    let adjacentPairs = 0
+    for (const n of jnodes.values()) {
+      const dirs = []
+      for (const { s, end } of endsAt.get(n.key) || []) {
+        if (!curbed(s)) continue
+        const u = outward(s, end)
+        dirs.push({ chain: s.skelId, end, half: null, u, alongPO: end === 'start' })
+      }
+      for (const s of interiorAt.get(n.key) || []) {
+        if (!curbed(s)) continue
+        const p = s.points
+        let vi = -1
+        for (let i = 1; i < p.length - 1; i++) if (vKey(p[i]) === n.key) { vi = i; break }
+        if (vi < 0) continue
+        const fwd = norm(p[vi + 1][0] - p[vi][0], p[vi + 1][1] - p[vi][1])
+        const back = norm(p[vi - 1][0] - p[vi][0], p[vi - 1][1] - p[vi][1])
+        dirs.push({ chain: s.skelId, end: 'through', half: 'fwd', u: fwd, alongPO: true })
+        dirs.push({ chain: s.skelId, end: 'through', half: 'back', u: back, alongPO: false })
+      }
+      if (dirs.length < 3) continue
+      dirs.sort((a, b) => Math.atan2(a.u[1], a.u[0]) - Math.atan2(b.u[1], b.u[0]))
+      n.cornersAdjacent = []
+      for (let i = 0; i < dirs.length; i++) {
+        const A = dirs[i], B = dirs[(i + 1) % dirs.length]
+        if (A.chain === B.chain && A.end === B.end && A.half === B.half) continue
+        // wedge runs CCW from A to B: A bounds it on its CCW side, B on its CW
+        n.cornersAdjacent.push({
+          a: { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.alongPO ? 'right' : 'left' },
+          b: { chain: B.chain, end: B.end, ...(B.half ? { half: B.half } : {}), side: B.alongPO ? 'left' : 'right' },
+        })
+        adjacentPairs++
+      }
+    }
+
     // ── The node APRON spec — ONE junction-interior polygon per NODE (not
     // per pair; multi-corridor deg-6 nodes get one apron), bounded by the
     // constructed curbs/corners and spanning all incident merge windows.
@@ -3683,10 +3762,13 @@ export function deriveLayers(highways) {
     // (the 69 m² S-18th piece at the (658.3,-726.7) nose —
     // JUNCTION-CURE-PLAN §4.2); it stays in medians[] untouched this pass
     // (geometry-neutral) and E3.2 folds it into the apron interior.
+    // 'plain' nodes carry no construction yet → no apron spec (the apron-
+    // everywhere phase lands it deliberately, with the leg completeness).
     const ABSORB_R = 10, ABSORB_AREA = 100
     let apronCount = 0, absorbed = 0
     for (const n of jnodes.values()) {
       if (n.kinds.has('pendant-tip') && n.kinds.size === 1) continue
+      if (n.kinds.has('plain') && n.kinds.size === 1) continue
       const chains = [...n.legs.values()].map(l => l.chain)
       const absorbsMedians = []
       medians.forEach((m, mi) => {
@@ -3715,6 +3797,7 @@ export function deriveLayers(highways) {
         continuity: n.continuity,
         ...(n.deTaper.length ? { deTaper: n.deTaper } : {}),
         corners: { outer: n.corners.outer, ...(n.corners.apex.length ? { apex: n.corners.apex } : {}), ...(n.corners.stub.length ? { stub: n.corners.stub } : {}) },
+        ...(n.cornersAdjacent?.length ? { cornersAdjacent: n.cornersAdjacent } : {}),
         ...(n.apron ? { apron: n.apron } : {}),
       }))
     const kindCounts = {}
@@ -3723,6 +3806,7 @@ export function deriveLayers(highways) {
     const windowCount = nodes.reduce((a, n) => a + (n.deTaper?.length || 0), 0)
     console.log(`    [E3.1] junction map: ${nodes.length} nodes [${Object.entries(kindCounts).map(([k, v]) => `${k} ${v}`).join(', ')}]`)
     console.log(`    [E3.1]   ${pairCount} continuity pairs (${spineLinkPairs} spine-link), ${windowCount} de-taper windows, ${apronCount} aprons, ${absorbed} median fragment(s) absorbed, ${tipCount} pendant tips`)
+    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs`)
     if (unpaired.length) console.log(`    [E3.1]   unpaired: ${unpaired.map(u => `${u.chains.join('+')}@${u.key} (${u.reason})`).join('; ')}`)
     return { nodes, unpaired }
   })()

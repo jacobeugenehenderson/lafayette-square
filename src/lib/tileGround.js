@@ -82,10 +82,37 @@ function openRound(rings, R) {
 //   • inset is clamped to 45% of the arc-length to each NEIGHBOUR corner so
 //     adjacent fillets never overlap on a short leg.
 const FILLET_TURN_TOL = 18 * Math.PI / 180
+// A corner exists only where two REAL legs meet (the osm2streets doctrine:
+// corners come from leg adjacency, never from whatever stroke geometry falls
+// at a vertex). Clipper's union/difference leaves near-duplicate vertices
+// (sub-cm micro-edges) exactly at junction stations — where a tile-ring chain
+// vertex meets coincident stroke edges — and the micro-edge's direction is
+// quantization NOISE. Reading that noise as a corner leg extrapolated a 4.5 m
+// tangent into a multi-meter bite (the Lafayette-park 105 m diagonal at the
+// Waverly station; θ→0 made the Mackay wedge unbounded) and minted a spurious
+// magenta corner handle on a straight run — "the initial thing".
+// Cure at the ring layer: collapse micro-edges BEFORE corner detection, and
+// never corner-test a vertex whose leg is shorter than MIN_CORNER_LEG.
+const RING_DUP_EPS = 0.02      // m — collapse consecutive verts closer than this
+const MIN_CORNER_LEG = 0.05    // m — a leg shorter than this is residue, not a leg
+function dedupeRing(ring) {
+  const n = ring.length
+  if (n < 3) return ring
+  const out = []
+  for (let i = 0; i < n; i++) {
+    const p = ring[i], q = out[out.length - 1]
+    if (q && Math.hypot(p[0] - q[0], p[1] - q[1]) < RING_DUP_EPS) continue
+    out.push(p)
+  }
+  // close-seam dup (last ≈ first)
+  while (out.length >= 3 && Math.hypot(out[0][0] - out[out.length - 1][0], out[0][1] - out[out.length - 1][1]) < RING_DUP_EPS) out.pop()
+  return out.length >= 3 ? out : ring
+}
 // `sink` (optional) collects the ACHIEVED fillet per corner — { apex, C, r, tA,
 // tB } — so the authoring handle can draw the exact curb arc the construction
 // produced (one corner truth; no independent re-derivation → no drift).
-function filletRing(ring, Rfn, sink) {
+function filletRing(ring0, Rfn, sink) {
+  const ring = dedupeRing(ring0)
   const n = ring.length
   if (n < 3) return ring.slice()
   const sign = signedArea(ring) >= 0 ? 1 : -1
@@ -95,7 +122,7 @@ function filletRing(ring, Rfn, sink) {
     const A = ring[(i - 1 + n) % n], V = ring[i], B = ring[(i + 1) % n]
     let inx = V[0] - A[0], iny = V[1] - A[1], outx = B[0] - V[0], outy = B[1] - V[1]
     const li = Math.hypot(inx, iny), lo = Math.hypot(outx, outy)
-    if (li < 1e-6 || lo < 1e-6) continue
+    if (li < MIN_CORNER_LEG || lo < MIN_CORNER_LEG) continue   // residue, not a leg
     inx /= li; iny /= li; outx /= lo; outy /= lo
     if ((inx * outy - iny * outx) * sign <= 0) continue          // concave
     const turn = Math.acos(Math.max(-1, Math.min(1, inx * outx + iny * outy)))
@@ -180,7 +207,7 @@ function sharpCornerIndices(ring) {
     const A = ring[(i - 1 + n) % n], V = ring[i], B = ring[(i + 1) % n]
     let inx = V[0] - A[0], iny = V[1] - A[1], outx = B[0] - V[0], outy = B[1] - V[1]
     const li = Math.hypot(inx, iny), lo = Math.hypot(outx, outy)
-    if (li < 1e-6 || lo < 1e-6) continue
+    if (li < MIN_CORNER_LEG || lo < MIN_CORNER_LEG) continue   // mirror filletRing's leg guard
     inx /= li; iny /= li; outx /= lo; outy /= lo
     if ((inx * outy - iny * outx) * sign <= 0) continue          // concave
     const turn = Math.acos(Math.max(-1, Math.min(1, inx * outx + iny * outy)))
@@ -698,6 +725,19 @@ export function buildTileGround(ribbons, opts = {}) {
     const baseSide = base?.[run.side] || {}
     return { ...base, [run.side]: { ...baseSide, pavementHW: c.pavementHW } }
   }
+  // Per-fe width at a (chain, side, segOrd) — mirrors runMeasure (blockCustoms
+  // pavementHW over the effective per-chain base). Shared by the E3.2 window
+  // construction and the through-node construction below.
+  const feWidthAt = (idx, side, segOrd) => {
+    const base = Math.max(0, measures[idx]?.[side]?.pavementHW || 0)
+    if (!blockCustoms) return base
+    const so = streetsOrig[idx]
+    const sk = (so && (so.skelId || so.name)) || null
+    const c = sk ? blockCustoms[sk]?.[side]?.[segOrd] : null
+    return (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
+  }
+  const segOrdAtEnd = (idx, end) => end === 'start' ? 0 : (ixIdxsByStreet?.[idx] || []).length
+  const segOrdAtVertex = (idx, lower) => { let so = 0; for (const i of (ixIdxsByStreet?.[idx] || [])) if (i <= lower) so++; return so }
   // A2 / F3 — corner R reads the authored controls: base 4.5 m (AASHTO
   // residential baseline, R_CLASS_DEFAULT) × the global Corners slider
   // (cornerRadiusScale), with per-corner / per-IX overrides resolved per tile
@@ -914,19 +954,6 @@ export function buildTileGround(ribbons, opts = {}) {
       }
       return { seam, ws: seam[seam.length - 1], tIn: t || [1, 0], d: acc }
     }
-    // Per-fe width at a chain end's node-adjacent segment — mirrors runMeasure
-    // (blockCustoms pavementHW over the effective per-chain base) so the window
-    // poly's curb meets the trimmed stroke's butt cap exactly.
-    const feWidthAt = (idx, side, segOrd) => {
-      const base = Math.max(0, measures[idx]?.[side]?.pavementHW || 0)
-      if (!blockCustoms) return base
-      const so = streetsOrig[idx]
-      const sk = (so && (so.skelId || so.name)) || null
-      const c = sk ? blockCustoms[sk]?.[side]?.[segOrd] : null
-      return (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
-    }
-    const segOrdAtEnd = (idx, end) => end === 'start' ? 0 : (ixIdxsByStreet?.[idx] || []).length
-    const segOrdAtVertex = (idx, lower) => { let so = 0; for (const i of (ixIdxsByStreet?.[idx] || [])) if (i <= lower) so++; return so }
     const viAt = (pts, at) => { for (let i = 1; i < pts.length - 1; i++) if (Math.abs(pts[i][0] - at[0]) < 5e-3 && Math.abs(pts[i][1] - at[1]) < 5e-3) return i; return -1 }
     const pushPoly = (ring) => { if (ring.length >= 3) jPolys.push(signedArea(ring) >= 0 ? ring : ring.slice().reverse()) }
     // Non-absorbed median rings (for the defensive apron subtract) with bboxes.
@@ -1432,6 +1459,155 @@ export function buildTileGround(ribbons, opts = {}) {
     return trimPolyline(p, t0, t1)
   }
 
+  // ── THE THROUGH-NODE CONSTRUCTION — intersections at EVERY node ──────────
+  // The osm2streets generalization (OSM2STREETS-GROUNDING §4.2 item 2 /
+  // HANDOFF-intersection-everywhere): a Road runs between exactly two
+  // intersections and is trimmed back at each; our chains run THROUGH
+  // junction nodes, so a tile run can span several fe's — and it took ONE
+  // width for the whole run ("takes the lower one's width", runSegOrd above):
+  // the curb drew off the authored handle for every fe past the first, and the
+  // discontinuity surfaced wherever the run ended. Likewise a centerline
+  // dogleg at a through node (junction-protected RDP keeps the off-chord
+  // OSM vertex, SKELETON §5a) kinked the stroked curb where the physical curb
+  // runs straight. Both are DRAWING defects — the data (handles, node
+  // positions) is right (Jacob, 2026-06-06).
+  // Per junction node (degree ≥ 3), per chain THROUGH it, per side, this pass
+  //   1. SPLITS the run at the node (the fe boundary) so each span strokes at
+  //      its own per-fe width — the standard's road granularity, recovered;
+  //   2. TRIMS each span back W from the node (trim_start/trim_end — the
+  //      edge-collision trim, sized to the discontinuity + the cross width);
+  //   3. CONSTRUCTS the window: seam along the chain, curb = the straight
+  //      blend cpA→cpB (monotonic wA→wB; equal datums + straight chain
+  //      degenerate to today's geometry — the construction self-gates).
+  // W keeps the blend under the fillet turn-tol (atan(Δw/2W) < 18°), so no
+  // spurious corner can be minted at a blend kink — corners only where real
+  // legs meet. Toy data (no customs, straight chains) → zero stations → no-op.
+  const thruWins = []                    // window polys (positive asphalt)
+  const thruSplits = new Map()           // `${streetIdx}|${side}` → [{ vi, W }]
+  {
+    const sidePerpT = (t, side) => side === 'right' ? [-t[1], t[0]] : [t[1], -t[0]]
+    // Already-CONSTRUCTED nodes are the E3 machinery's domain (continuity
+    // pairs, noses, aprons) — constructing here too would double-build with a
+    // different curb model. The through-pass owns the rest. NOTE: since the
+    // intersection-everywhere stamps, EVERY junction node has a junctionMap
+    // record — the gate is whether the node carries E3 CONSTRUCTION, not
+    // whether it is mapped ('plain' identity-only records stay ours).
+    const jmNodeKeys = new Set(consumeJM
+      ? ribbons.junctionMap.nodes.filter(n => (n.continuity?.length || n.deTaper?.length || n.apron)).map(n => tipKey(n.at))
+      : [])
+    for (let idx = 0; idx < streets.length; idx++) {
+      const s = streets[idx]
+      const pts = s?.points
+      if (!pts || pts.length < 3) continue
+      // Divided carriageways are the E2/E3 construction's domain end-to-end
+      // (inner-edge anchored, median constructed at prebake, junctions
+      // stamped) — a chord window on their snaking bodies reshapes the median.
+      const role = streetsOrig[idx]?.phase?.role || s.phase?.role || ''
+      if (s.anchor === 'inner-edge' || /^carriageway/.test(role)) continue
+      // arc positions + junction stations on this chain
+      const cum = [0]
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
+      const stations = []
+      for (let vi = 1; vi < pts.length - 1; vi++) {
+        const k = tipKey(pts[vi])
+        if ((nodeDeg.get(k) || 0) >= 3 && !jmNodeKeys.has(k)) stations.push(vi)
+      }
+      if (!stations.length) continue
+      // point + unit tangent at arc position sPos
+      const at = (sPos) => {
+        let i = 1
+        while (i < cum.length - 1 && cum[i] < sPos) i++
+        const a = pts[i - 1], b = pts[i]
+        const L = cum[i] - cum[i - 1] || 1
+        const f = Math.min(1, Math.max(0, (sPos - cum[i - 1]) / L))
+        return { p: [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], t: [(b[0] - a[0]) / L, (b[1] - a[1]) / L] }
+      }
+      for (let si = 0; si < stations.length; si++) {
+        const vi = stations[si]
+        // off-chord kink of the node vertex against its chain neighbors
+        const a = pts[vi - 1], v = pts[vi], b = pts[vi + 1]
+        const cdx = b[0] - a[0], cdz = b[1] - a[1]
+        const cL = Math.hypot(cdx, cdz) || 1
+        const kink = Math.abs(((v[0] - a[0]) * cdz - (v[1] - a[1]) * cdx) / cL)
+        // room to the neighboring stations / chain ends
+        const sPrev = si > 0 ? cum[stations[si - 1]] : 0
+        const sNext = si < stations.length - 1 ? cum[stations[si + 1]] : cum[cum.length - 1]
+        const roomA = 0.45 * (cum[vi] - sPrev)
+        const roomB = 0.45 * (sNext - cum[vi])
+        for (const side of ['left', 'right']) {
+          const wA = feWidthAt(idx, side, segOrdAtVertex(idx, vi - 1))
+          const wB = feWidthAt(idx, side, segOrdAtVertex(idx, vi))
+          const dw = Math.abs(wA - wB)
+          if (dw < 0.02 && kink < 0.3) continue            // nothing to construct
+          if (!(Math.min(wA, wB) > 0.01)) continue         // a zero side (inner-edge carriageway) carries no curb
+          const Wn = Math.min(8, Math.max(2, 1.7 * dw, 2.5 * kink))
+          const WA = Math.min(Wn, roomA), WB = Math.min(Wn, roomB)
+          if (WA < 0.5 || WB < 0.5) continue               // no room — leave emergent
+          const A = at(cum[vi] - WA), B = at(cum[vi] + WB)
+          const nhA = sidePerpT(A.t, side), nhB = sidePerpT(B.t, side)
+          const cpA = [A.p[0] + nhA[0] * wA, A.p[1] + nhA[1] * wA]
+          const cpB = [B.p[0] + nhB[0] * wB, B.p[1] + nhB[1] * wB]
+          // seam: 0.6 m past each window start, into the trimmed strokes (the
+          // E3.2 hygiene — an exact-coincident seam leaves retrace needles)
+          const s0 = Math.max(0, cum[vi] - WA - 0.6), s1 = Math.min(cum[cum.length - 1], cum[vi] + WB + 0.6)
+          const seam = [at(s0).p]
+          for (let i = 0; i < pts.length; i++) if (cum[i] > s0 && cum[i] < s1) seam.push(pts[i])
+          seam.push(at(s1).p)
+          let ring = [...seam, [cpB[0], cpB[1]], [cpA[0], cpA[1]]]
+          if (ring.length >= 3) {
+            if (signedArea(ring) < 0) ring = ring.slice().reverse()
+            thruWins.push(ring)
+          }
+          const key = `${idx}|${side}`
+          if (!thruSplits.has(key)) thruSplits.set(key, [])
+          thruSplits.get(key).push({ vi, W: { A: WA, B: WB } })
+        }
+      }
+    }
+    if (thruWins.length) console.log(`    [THRU] through-node construction: ${thruWins.length} windows at ${new Set([...thruSplits.keys()].map(k => k.split('|')[0])).size} chains`)
+  }
+  const thruBoxes = thruWins.map(ringBBox)
+  const thruClipFor = (tileRing) => {
+    if (!thruWins.length) return []
+    const tb = ringBBox(tileRing)
+    const cand = thruWins.filter((_, i) => { const mb = thruBoxes[i]; return mb[0] <= tb[2] && mb[2] >= tb[0] && mb[1] <= tb[3] && mb[3] >= tb[1] })
+    return cand.length ? intersectRings(cand, [tileRing]) : []
+  }
+  // Split a tile run at its through-construction stations; each span strokes
+  // at its own per-fe width (runSegOrd resolves per span) and is trimmed back
+  // by the station's window so the window poly supplies the node coverage.
+  const splitRunAtStations = (run) => {
+    const stations = thruSplits.get(`${run.streetIdx}|${run.side}`)
+    if (!stations?.length) return [run]
+    const op = streetsOrig[run.streetIdx]?.points
+    if (!op) return [run]
+    const p = run.poly
+    // indices of run-poly interior vertices that are stations of this chain
+    const cuts = []
+    for (let k = 1; k < p.length - 1; k++) {
+      for (const st of stations) {
+        const q = op[st.vi]
+        if (Math.abs(p[k][0] - q[0]) < 5e-3 && Math.abs(p[k][1] - q[1]) < 5e-3) { cuts.push({ k, st }); break }
+      }
+    }
+    if (!cuts.length) return [run]
+    // run direction vs chain order: does the run walk the chain forward?
+    const idxOf = (pt) => { let bi = 0, bd = Infinity; for (let i = 0; i < op.length; i++) { const dx = op[i][0] - pt[0], dy = op[i][1] - pt[1]; const d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = i } } return bi }
+    const fwd = idxOf(p[0]) <= idxOf(p[p.length - 1])
+    const out = []
+    let lo = 0, tPrev = 0
+    for (const { k, st } of cuts) {
+      // trim at the cut: chain-side A is BEFORE the node in chain order — in
+      // run order that's the incoming side iff the run walks forward
+      const tCut = fwd ? st.W.A : st.W.B
+      out.push({ ...run, poly: p.slice(lo, k + 1), _thruT0: tPrev, _thruT1: tCut })
+      tPrev = fwd ? st.W.B : st.W.A
+      lo = k
+    }
+    out.push({ ...run, poly: p.slice(lo), _thruT0: tPrev, _thruT1: 0 })
+    return out.filter(r => r.poly.length >= 2)
+  }
+
   // Per tile (CONCENTRIC corners):
   //  1. Asphalt = the union of per-street-side run stadiums (PER-EDGE widths,
   //     butt caps → sharp miter corners, no cap-at-depth bulge), clipped to
@@ -1492,7 +1668,8 @@ export function buildTileGround(ribbons, opts = {}) {
   const perTileMeta = []
   const shapeTiles = []
   for (const tile of tiles) {
-    const runs = groupRuns(tile)
+    // [THRU] runs split at through-construction stations → per-fe spans
+    const runs = thruSplits.size ? groupRuns(tile).flatMap(splitRunAtStations) : groupRuns(tile)
     const runMeta = runs.map(run => {
       const so = streetsOrig[run.streetIdx]
       return {
@@ -1529,7 +1706,9 @@ export function buildTileGround(ribbons, opts = {}) {
       if (d > 1e-6) {
         // [E3.2] a run end at a constructed junction node strokes only its
         // body — the window poly supplies the constructed coverage beyond.
-        const sp = jTrimmed(run)
+        // [THRU] span ends at a through-construction station likewise.
+        let sp = jTrimmed(run)
+        if (sp && (run._thruT0 || run._thruT1)) sp = trimPolyline(sp, run._thruT0 || 0, run._thruT1 || 0)
         if (sp) aStads.push(...strokeOpen(sp, d))
       }
     }
@@ -1555,6 +1734,10 @@ export function buildTileGround(ribbons, opts = {}) {
     // positive asphalt in whatever tile they fall, same as the merge patches.
     const jClip = junctionClipFor(tile.ring)
     if (jClip.length) aFill = aFill.length ? unionRings([...aFill, ...jClip]) : jClip
+    // [THRU] through-node windows — the constructed blend coverage at every
+    // split station (same positive-asphalt landing as the E3.2 windows).
+    const tClip = thruClipFor(tile.ring)
+    if (tClip.length) aFill = aFill.length ? unionRings([...aFill, ...tClip]) : tClip
     const medClip = medianClipFor(tile.ring)
     let medArea = 0
     for (const r of medClip) medArea += Math.abs(signedArea(r))
