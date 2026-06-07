@@ -517,37 +517,37 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 2.4384,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "material": "highway"
         },
         "right": {
-          "pavementHW": 3.96,
-          "treelawn": 0.86,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
         },
-        "symmetric": false,
+        "symmetric": true,
         "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
         "end": "round"
       },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "south-18th-street-4",
+      "anchor": "center",
+      "innerSign": 0,
+      "pairId": null,
       "oneway": true,
       "phase": {
-        "role": "carriageway-A",
-        "kind": "divided",
-        "pairKey": "28522831-166624144",
-        "chainGap": 3.21,
-        "spineAtStart": "south-18th-street-7"
+        "role": "spine",
+        "kind": "single",
+        "pairKey": null
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "motorway_link",
+      "type": "motorway_link",
       "lanes": 1,
       "seed": {
         "seededClass": "residential",
@@ -584,7 +584,7 @@
           "degree": 3
         }
       },
-      "gradeSeparated": false,
+      "gradeSeparated": true,
       "intersections": []
     },
     {
@@ -629,18 +629,18 @@
         "kind": "single",
         "pairKey": null
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "secondary",
+      "type": "secondary",
       "lanes": 4,
       "seed": {
-        "seededClass": "residential",
+        "seededClass": "secondary",
         "lanesAssumed": 4,
-        "pavementHW": 8.53,
+        "pavementHW": 6.71,
         "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 11.73,
+        "treelawn": 1.22,
+        "sidewalk": 1.83,
+        "cornerR": 6,
+        "rowHalf": 9.91,
         "left": {
           "pavementHW": 6.39,
           "treelawn": 0,
@@ -722,7 +722,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.25,
+          "pavementHW": 30,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -733,8 +733,7 @@
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -851,7 +850,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 3.96,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
@@ -859,8 +858,8 @@
         "right": {
           "pavementHW": 3.25,
           "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -869,19 +868,17 @@
         "start": null,
         "end": "round"
       },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "south-18th-street-1",
+      "anchor": "center",
+      "innerSign": 0,
+      "pairId": null,
       "oneway": true,
       "phase": {
-        "role": "carriageway-B",
-        "kind": "divided",
-        "pairKey": "28522831-166624144",
-        "chainGap": 3.21,
-        "spineAtEnd": "south-18th-street-7"
+        "role": "spine",
+        "kind": "single",
+        "pairKey": null
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "service",
+      "type": "service",
       "seed": {
         "seededClass": "residential",
         "lanesAssumed": 1,
@@ -988,21 +985,21 @@
         "chainGap": 11,
         "spineAtStart": "south-18th-street-2"
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "secondary",
+      "type": "secondary",
       "lanes": 3,
       "seed": {
-        "seededClass": "residential",
+        "seededClass": "secondary",
         "lanesAssumed": 3,
-        "pavementHW": 7.01,
+        "pavementHW": 5.03,
         "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 10.21,
+        "treelawn": 1.22,
+        "sidewalk": 1.83,
+        "cornerR": 6,
+        "rowHalf": 8.23,
         "left": {
-          "pavementHW": 6.39,
-          "treelawn": 0,
+          "pavementHW": 5.03,
+          "treelawn": 1.36,
           "sidewalk": 1.52,
           "blockEdgeHW": 8.06,
           "source": "survey"
@@ -1129,18 +1126,18 @@
         "chainGap": 11,
         "spineAtEnd": "south-18th-street-2"
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "secondary",
+      "type": "secondary",
       "lanes": 2,
       "seed": {
-        "seededClass": "residential",
+        "seededClass": "secondary",
         "lanesAssumed": 2,
-        "pavementHW": 5.49,
+        "pavementHW": 3.35,
         "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69,
+        "treelawn": 1.22,
+        "sidewalk": 1.83,
+        "cornerR": 6,
+        "rowHalf": 6.55,
         "left": {
           "pavementHW": 3.25,
           "treelawn": 0,
@@ -1149,8 +1146,8 @@
           "source": "survey"
         },
         "right": {
-          "pavementHW": 5.49,
-          "treelawn": 0.9,
+          "pavementHW": 3.35,
+          "treelawn": 3.04,
           "sidewalk": 1.52,
           "blockEdgeHW": 8.06,
           "source": "survey"
@@ -1213,16 +1210,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.82,
+          "pavementHW": 2.4384,
           "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
         },
         "right": {
-          "pavementHW": 4.82,
+          "pavementHW": 2.4384,
           "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -1240,8 +1239,8 @@
         "kind": "single",
         "pairKey": null
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "motorway_link",
+      "type": "motorway_link",
       "lanes": 2,
       "seed": {
         "seededClass": "residential",
@@ -1278,7 +1277,7 @@
           "degree": 3
         }
       },
-      "gradeSeparated": false,
+      "gradeSeparated": true,
       "intersections": [
         {
           "ix": 1,
@@ -1668,15 +1667,15 @@
       "measure": {
         "left": {
           "pavementHW": 3.96,
-          "treelawn": 1.52,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
           "pavementHW": 3.96,
-          "treelawn": 1.52,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": true,
         "source": "seed"
@@ -1694,8 +1693,8 @@
         "kind": "single",
         "pairKey": null
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "service",
+      "type": "service",
       "lanes": 1,
       "surface": "asphalt",
       "seed": {
@@ -8048,12 +8047,12 @@
         "kind": "single",
         "pairKey": null
       },
-      "highway": "unclassified",
+      "highway": "residential",
       "type": "residential",
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
-        "seededClass": "unclassified",
+        "seededClass": "residential",
         "lanesAssumed": 2,
         "pavementHW": 5.49,
         "curb": 0.15,
@@ -10215,102 +10214,12 @@
       "name": "Papin Street",
       "points": [
         [
-          521.72,
-          -560.14
+          658.2,
+          -552.3000000000001
         ],
         [
-          599.51,
-          -539.43
-        ],
-        [
-          616.88,
-          -537.8
-        ],
-        [
-          627.57,
-          -539.07
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
-        },
-        "symmetric": false,
-        "source": "seed-survey"
-      },
-      "capEnds": {
-        "start": null,
-        "end": null
-      },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "papin-street-3",
-      "oneway": true,
-      "phase": {
-        "role": "carriageway-A",
-        "kind": "divided",
-        "pairKey": "238257778-301606661",
-        "chainGap": 8.33,
-        "spineAtStart": "papin-street-4"
-      },
-      "highway": "residential",
-      "type": "residential",
-      "lanes": 2,
-      "surface": "asphalt",
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69,
-        "left": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "widthSource": "survey"
-      },
-      "caps": {
-        "start": {
-          "cap": "butt",
-          "degree": 2
-        },
-        "end": {
-          "cap": "butt",
-          "degree": 2
-        }
-      },
-      "gradeSeparated": false,
-      "intersections": []
-    },
-    {
-      "skelId": "papin-street-3",
-      "name": "Papin Street",
-      "points": [
-        [
-          626.13,
-          -547.94
+          621.07,
+          -547.16
         ],
         [
           604.98,
@@ -10327,102 +10236,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
         "right": {
           "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
-        },
-        "symmetric": false,
-        "source": "seed-survey"
-      },
-      "capEnds": {
-        "start": null,
-        "end": null
-      },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "papin-street-2",
-      "oneway": true,
-      "phase": {
-        "role": "carriageway-B",
-        "kind": "divided",
-        "pairKey": "238257778-301606661",
-        "chainGap": 8.33,
-        "spineAtEnd": "papin-street-4"
-      },
-      "highway": "residential",
-      "type": "residential",
-      "lanes": 2,
-      "surface": "asphalt",
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69,
-        "left": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "widthSource": "survey"
-      },
-      "caps": {
-        "start": {
-          "cap": "butt",
-          "degree": 2
-        },
-        "end": {
-          "cap": "butt",
-          "degree": 2
-        }
-      },
-      "gradeSeparated": false,
-      "intersections": []
-    },
-    {
-      "skelId": "papin-street-4",
-      "name": "Papin Street",
-      "points": [
-        [
-          509.71,
-          -570.12
-        ],
-        [
-          521.72,
-          -560.14
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -10434,197 +10257,14 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "oneway": false,
+      "oneway": true,
       "phase": {
         "role": "spine",
         "kind": "single",
         "pairKey": null
       },
-      "highway": "residential",
-      "type": "residential",
-      "lanes": 2,
-      "surface": "asphalt",
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69,
-        "left": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "widthSource": "survey"
-      },
-      "caps": {
-        "start": {
-          "cap": "butt",
-          "degree": 2
-        },
-        "end": {
-          "cap": "butt",
-          "degree": 2
-        }
-      },
-      "gradeSeparated": false,
-      "intersections": []
-    },
-    {
-      "skelId": "papin-street-5",
-      "name": "Papin Street",
-      "points": [
-        [
-          627.57,
-          -539.07
-        ],
-        [
-          644.48,
-          -543.74
-        ],
-        [
-          658.2,
-          -552.3000000000001
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
-        },
-        "symmetric": false,
-        "source": "seed-survey"
-      },
-      "capEnds": {
-        "start": null,
-        "end": null
-      },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "papin-street-6",
-      "oneway": true,
-      "phase": {
-        "role": "carriageway-A",
-        "kind": "divided",
-        "pairKey": "1279099240-1279099241",
-        "chainGap": 5.75,
-        "spineAtEnd": "papin-street-1"
-      },
-      "highway": "residential",
-      "type": "residential",
-      "lanes": 2,
-      "surface": "asphalt",
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69,
-        "left": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 8.54,
-          "source": "survey"
-        },
-        "widthSource": "survey"
-      },
-      "caps": {
-        "start": {
-          "cap": "butt",
-          "degree": 2
-        },
-        "end": {
-          "cap": "butt",
-          "degree": 5
-        }
-      },
-      "gradeSeparated": false,
-      "intersections": [
-        {
-          "ix": 2,
-          "withStreets": [
-            "South 18th Street"
-          ]
-        }
-      ]
-    },
-    {
-      "skelId": "papin-street-6",
-      "name": "Papin Street",
-      "points": [
-        [
-          658.2,
-          -552.3000000000001
-        ],
-        [
-          626.13,
-          -547.94
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 5.49,
-          "treelawn": 1.38,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
-        },
-        "symmetric": false,
-        "source": "seed-survey"
-      },
-      "capEnds": {
-        "start": null,
-        "end": null
-      },
-      "anchor": "inner-edge",
-      "innerSign": -1,
-      "pairId": "papin-street-5",
-      "oneway": true,
-      "phase": {
-        "role": "carriageway-B",
-        "kind": "divided",
-        "pairKey": "1279099240-1279099241",
-        "chainGap": 5.75,
-        "spineAtStart": "papin-street-1"
-      },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "service",
+      "type": "service",
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -10666,6 +10306,113 @@
       "intersections": [
         {
           "ix": 0,
+          "withStreets": [
+            "South 18th Street"
+          ]
+        }
+      ]
+    },
+    {
+      "skelId": "papin-street-3",
+      "name": "Papin Street",
+      "points": [
+        [
+          509.71,
+          -570.12
+        ],
+        [
+          521.72,
+          -560.14
+        ],
+        [
+          608.59,
+          -537.92
+        ],
+        [
+          627.57,
+          -539.07
+        ],
+        [
+          644.48,
+          -543.74
+        ],
+        [
+          658.2,
+          -552.3000000000001
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5.49,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "right": {
+          "pavementHW": 5.49,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "symmetric": true,
+        "source": "seed-survey"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
+      "anchor": "center",
+      "innerSign": 0,
+      "pairId": null,
+      "oneway": true,
+      "phase": {
+        "role": "spine",
+        "kind": "single",
+        "pairKey": null
+      },
+      "highway": "service",
+      "type": "service",
+      "lanes": 2,
+      "surface": "asphalt",
+      "seed": {
+        "seededClass": "residential",
+        "lanesAssumed": 2,
+        "pavementHW": 5.49,
+        "curb": 0.15,
+        "treelawn": 1.52,
+        "sidewalk": 1.52,
+        "cornerR": 4.5,
+        "rowHalf": 8.69,
+        "left": {
+          "pavementHW": 5.49,
+          "treelawn": 1.38,
+          "sidewalk": 1.52,
+          "blockEdgeHW": 8.54,
+          "source": "survey"
+        },
+        "right": {
+          "pavementHW": 5.49,
+          "treelawn": 1.38,
+          "sidewalk": 1.52,
+          "blockEdgeHW": 8.54,
+          "source": "survey"
+        },
+        "widthSource": "survey"
+      },
+      "caps": {
+        "start": {
+          "cap": "butt",
+          "degree": 2
+        },
+        "end": {
+          "cap": "butt",
+          "degree": 5
+        }
+      },
+      "gradeSeparated": false,
+      "intersections": [
+        {
+          "ix": 5,
           "withStreets": [
             "South 18th Street"
           ]
@@ -13292,14 +13039,14 @@
         "left": {
           "pavementHW": 5.48,
           "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
           "pavementHW": 5.48,
           "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -13317,8 +13064,8 @@
         "kind": "single",
         "pairKey": null
       },
-      "highway": "residential",
-      "type": "residential",
+      "highway": "service",
+      "type": "service",
       "seed": {
         "seededClass": "residential",
         "lanesAssumed": 2,
@@ -19898,85 +19645,6 @@
       "name": "Gravois Avenue",
       "points": [
         [
-          638.51,
-          672.9
-        ],
-        [
-          649.9000000000002,
-          651.9000000000002
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 3.35,
-          "treelawn": 1.22,
-          "sidewalk": 2.44,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 3.35,
-          "treelawn": 1.22,
-          "sidewalk": 2.44,
-          "terminal": "sidewalk"
-        },
-        "symmetric": true,
-        "source": "seed"
-      },
-      "capEnds": {
-        "start": null,
-        "end": null
-      },
-      "anchor": "center",
-      "innerSign": 0,
-      "pairId": null,
-      "oneway": true,
-      "phase": {
-        "role": "spine",
-        "kind": "single",
-        "pairKey": null
-      },
-      "highway": "primary",
-      "type": "primary",
-      "lanes": 2,
-      "surface": "asphalt",
-      "maxspeed": "35 mph",
-      "seed": {
-        "seededClass": "primary",
-        "lanesAssumed": 2,
-        "pavementHW": 3.35,
-        "curb": 0.15,
-        "treelawn": 1.22,
-        "sidewalk": 2.44,
-        "cornerR": 7.5,
-        "rowHalf": 7.16
-      },
-      "caps": {
-        "start": {
-          "cap": "butt",
-          "degree": 2
-        },
-        "end": {
-          "cap": "butt",
-          "degree": 5
-        }
-      },
-      "gradeSeparated": false,
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "South 12th Street",
-            "South 12th Street",
-            "South Tucker Boulevard"
-          ]
-        }
-      ]
-    },
-    {
-      "skelId": "gravois-avenue-1",
-      "name": "Gravois Avenue",
-      "points": [
-        [
           649.9000000000002,
           651.9000000000002
         ],
@@ -20065,6 +19733,85 @@
           "ix": 2,
           "withStreets": [
             "motorway 4"
+          ]
+        }
+      ]
+    },
+    {
+      "skelId": "gravois-avenue-1",
+      "name": "Gravois Avenue",
+      "points": [
+        [
+          638.51,
+          672.9
+        ],
+        [
+          649.9000000000002,
+          651.9000000000002
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 3.35,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.35,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true,
+        "source": "seed"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
+      "anchor": "center",
+      "innerSign": 0,
+      "pairId": null,
+      "oneway": true,
+      "phase": {
+        "role": "spine",
+        "kind": "single",
+        "pairKey": null
+      },
+      "highway": "primary",
+      "type": "primary",
+      "lanes": 2,
+      "surface": "asphalt",
+      "maxspeed": "35 mph",
+      "seed": {
+        "seededClass": "primary",
+        "lanesAssumed": 2,
+        "pavementHW": 3.35,
+        "curb": 0.15,
+        "treelawn": 1.22,
+        "sidewalk": 2.44,
+        "cornerR": 7.5,
+        "rowHalf": 7.16
+      },
+      "caps": {
+        "start": {
+          "cap": "butt",
+          "degree": 2
+        },
+        "end": {
+          "cap": "butt",
+          "degree": 5
+        }
+      },
+      "gradeSeparated": false,
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "South 12th Street",
+            "South 12th Street",
+            "South Tucker Boulevard"
           ]
         }
       ]
@@ -39318,11 +39065,11 @@
         },
         {
           "name": "Gravois Avenue",
-          "ix": 1
+          "ix": 0
         },
         {
           "name": "Gravois Avenue",
-          "ix": 0
+          "ix": 1
         }
       ]
     },
@@ -40806,11 +40553,11 @@
         },
         {
           "name": "Papin Street",
-          "ix": 2
+          "ix": 0
         },
         {
           "name": "Papin Street",
-          "ix": 0
+          "ix": 5
         }
       ]
     },
@@ -72704,115 +72451,6 @@
         "South 18th Street"
       ],
       "chains": [
-        "south-18th-street-1",
-        "south-18th-street-4"
-      ],
-      "pairKey": "28522831-166624144",
-      "ring": [
-        [
-          365.7754913111828,
-          269.08453433702044
-        ],
-        [
-          362.99,
-          274.29
-        ],
-        [
-          356.6097141726574,
-          319.0537154929933
-        ],
-        [
-          358.11910983308655,
-          320.36586058416185
-        ],
-        [
-          360.68,
-          317.42
-        ],
-        [
-          362.34,
-          311.33
-        ],
-        [
-          368.56,
-          275.25
-        ],
-        [
-          367.76011322521214,
-          268.836994727353
-        ]
-      ]
-    },
-    {
-      "kind": "merge",
-      "name": "South 18th Street",
-      "streets": [
-        "South 18th Street",
-        "South 18th Street"
-      ],
-      "chains": [
-        "south-18th-street-1",
-        "south-18th-street-4"
-      ],
-      "pairKey": "28522831-166624144",
-      "ring": [
-        [
-          367.41,
-          266.03
-        ],
-        [
-          365.7754913111828,
-          269.08453433702044
-        ],
-        [
-          367.76011322521214,
-          268.836994727353
-        ],
-        [
-          367.41,
-          266.03
-        ]
-      ]
-    },
-    {
-      "kind": "merge",
-      "name": "South 18th Street",
-      "streets": [
-        "South 18th Street",
-        "South 18th Street"
-      ],
-      "chains": [
-        "south-18th-street-1",
-        "south-18th-street-4"
-      ],
-      "pairKey": "28522831-166624144",
-      "ring": [
-        [
-          356.6097141726574,
-          319.0537154929933
-        ],
-        [
-          356.09,
-          322.7
-        ],
-        [
-          356.09,
-          322.7
-        ],
-        [
-          358.11910983308655,
-          320.36586058416185
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "South 18th Street",
-      "streets": [
-        "South 18th Street",
-        "South 18th Street"
-      ],
-      "chains": [
         "south-18th-street-5",
         "south-18th-street-6"
       ],
@@ -73068,150 +72706,6 @@
         [
           658.3000000000001,
           -726.7
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Papin Street",
-      "streets": [
-        "Papin Street",
-        "Papin Street"
-      ],
-      "chains": [
-        "papin-street-2",
-        "papin-street-3"
-      ],
-      "pairKey": "238257778-301606661",
-      "ring": [
-        [
-          521.72,
-          -560.14
-        ],
-        [
-          599.51,
-          -539.43
-        ],
-        [
-          616.88,
-          -537.8
-        ],
-        [
-          627.189154509919,
-          -539.0247545582412
-        ],
-        [
-          626.13,
-          -547.94
-        ],
-        [
-          604.98,
-          -547.25
-        ],
-        [
-          524.05,
-          -568.61
-        ],
-        [
-          522.62766080195,
-          -568.759772119181
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Papin Street",
-      "streets": [
-        "Papin Street",
-        "Papin Street"
-      ],
-      "chains": [
-        "papin-street-5",
-        "papin-street-6"
-      ],
-      "pairKey": "1279099240-1279099241",
-      "ring": [
-        [
-          628.5080646906488,
-          -539.3290634006701
-        ],
-        [
-          644.48,
-          -543.74
-        ],
-        [
-          651.506006234858,
-          -548.1235724030893
-        ],
-        [
-          651.069994704348,
-          -551.330657215808
-        ],
-        [
-          627.3154741894748,
-          -548.101168302654
-        ]
-      ]
-    },
-    {
-      "kind": "merge",
-      "name": "Papin Street",
-      "streets": [
-        "Papin Street",
-        "Papin Street"
-      ],
-      "chains": [
-        "papin-street-5",
-        "papin-street-6"
-      ],
-      "pairKey": "1279099240-1279099241",
-      "ring": [
-        [
-          651.506006234858,
-          -548.1235724030893
-        ],
-        [
-          654.0635484839725,
-          -549.7192401620119
-        ],
-        [
-          653.794121797952,
-          -551.7010093869371
-        ],
-        [
-          651.069994704348,
-          -551.330657215808
-        ]
-      ]
-    },
-    {
-      "kind": "merge",
-      "name": "Papin Street",
-      "streets": [
-        "Papin Street",
-        "Papin Street"
-      ],
-      "chains": [
-        "papin-street-5",
-        "papin-street-6"
-      ],
-      "pairKey": "1279099240-1279099241",
-      "ring": [
-        [
-          654.0635484839725,
-          -549.7192401620119
-        ],
-        [
-          658.2,
-          -552.3000000000001
-        ],
-        [
-          658.2,
-          -552.3000000000001
-        ],
-        [
-          653.794121797952,
-          -551.7010093869371
         ]
       ]
     },
@@ -74678,74 +74172,8 @@
           255.67
         ],
         [
-          361.91599834298046,
-          257.93911210896385
-        ],
-        [
-          363.28069110183685,
-          249.629349270383
-        ],
-        [
-          253.76895966477548,
-          231.64449581486556
-        ]
-      ]
-    },
-    {
-      "kind": "merge",
-      "name": "Lafayette Avenue",
-      "streets": [
-        "Lafayette Avenue",
-        "Lafayette Avenue"
-      ],
-      "chains": [
-        "lafayette-avenue-5",
-        "lafayette-avenue-6"
-      ],
-      "pairKey": "1349812898-1488940913",
-      "ring": [
-        [
-          361.91599834298046,
-          257.93911210896385
-        ],
-        [
           368.4,
           259.49999999999994
-        ],
-        [
-          374.12896439489606,
-          261.18197613382193
-        ],
-        [
-          375.69409019873643,
-          251.66980986209464
-        ],
-        [
-          369.8,
-          250.70000000000002
-        ],
-        [
-          363.28069110183685,
-          249.629349270383
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Lafayette Avenue",
-      "streets": [
-        "Lafayette Avenue",
-        "Lafayette Avenue"
-      ],
-      "chains": [
-        "lafayette-avenue-5",
-        "lafayette-avenue-6"
-      ],
-      "pairKey": "1349812898-1488940913",
-      "ring": [
-        [
-          374.12896439489606,
-          261.18197613382193
         ],
         [
           388.53,
@@ -74776,8 +74204,12 @@
           263.72
         ],
         [
-          375.69409019873643,
-          251.66980986209464
+          369.8,
+          250.70000000000002
+        ],
+        [
+          253.76895966477548,
+          231.64449581486556
         ]
       ]
     },
@@ -75340,20 +74772,12 @@
           -57.922268656669566
         ],
         [
-          440.82,
-          -84.93
+          454.6163801762785,
+          -79.99406647267325
         ],
         [
-          431.2127384397818,
-          -87.13580853118287
-        ],
-        [
-          429.59105163586605,
-          -84.9129194612856
-        ],
-        [
-          437.23,
-          -79.34
+          452.34518826547855,
+          -73.79877590928956
         ],
         [
           513.8618219981396,
@@ -75375,8 +74799,12 @@
       "pairKey": "163871018-1349812859",
       "ring": [
         [
-          431.2127384397818,
-          -87.13580853118287
+          454.6163801762785,
+          -79.99406647267325
+        ],
+        [
+          440.82,
+          -84.93
         ],
         [
           429.35190275952283,
@@ -75387,8 +74815,12 @@
           -85.94732503148971
         ],
         [
-          429.59105163586605,
-          -84.9129194612856
+          437.23,
+          -79.34
+        ],
+        [
+          452.34518826547855,
+          -73.79877590928956
         ]
       ]
     },
@@ -76437,10 +75869,9 @@
           ]
         },
         {
-          "kind": "divided",
+          "kind": "single",
           "chainIds": [
-            "south-18th-street-1",
-            "south-18th-street-4"
+            "south-18th-street-1"
           ]
         },
         {
@@ -76453,6 +75884,12 @@
           "kind": "single",
           "chainIds": [
             "south-18th-street-3"
+          ]
+        },
+        {
+          "kind": "single",
+          "chainIds": [
+            "south-18th-street-4"
           ]
         },
         {
@@ -77237,23 +76674,15 @@
           ]
         },
         {
-          "kind": "divided",
+          "kind": "single",
           "chainIds": [
-            "papin-street-2",
-            "papin-street-3"
+            "papin-street-2"
           ]
         },
         {
           "kind": "single",
           "chainIds": [
-            "papin-street-4"
-          ]
-        },
-        {
-          "kind": "divided",
-          "chainIds": [
-            "papin-street-5",
-            "papin-street-6"
+            "papin-street-3"
           ]
         }
       ],
@@ -81524,103 +80953,69 @@
         }
       },
       {
+        "key": "356.090,322.700",
+        "at": [
+          356.09,
+          322.7
+        ],
+        "kinds": [
+          "pendant-tip"
+        ],
+        "legs": [
+          {
+            "chain": "south-18th-street-4",
+            "end": "start",
+            "role": "spine"
+          }
+        ],
+        "continuity": [
+          {
+            "a": {
+              "chain": "south-18th-street-4",
+              "side": "left"
+            },
+            "b": {
+              "chain": "south-18th-street-4",
+              "side": "right"
+            },
+            "source": "tip-wrap"
+          }
+        ],
+        "corners": {
+          "outer": []
+        }
+      },
+      {
         "key": "367.410,266.030",
         "at": [
           367.41,
           266.03
         ],
         "kinds": [
-          "divided-transition"
+          "pendant-tip"
         ],
         "legs": [
           {
-            "chain": "south-18th-street-1",
-            "end": "start",
-            "role": "carriageway-A"
-          },
-          {
-            "chain": "south-18th-street-7",
-            "end": "end",
-            "role": "spine"
-          },
-          {
             "chain": "south-18th-street-4",
             "end": "end",
-            "role": "carriageway-B"
+            "role": "spine"
           }
         ],
         "continuity": [
           {
             "a": {
-              "chain": "south-18th-street-1",
-              "side": "right"
+              "chain": "south-18th-street-4",
+              "side": "left"
             },
             "b": {
-              "chain": "south-18th-street-7",
-              "side": "right"
-            },
-            "source": "spine-link"
-          },
-          {
-            "a": {
               "chain": "south-18th-street-4",
               "side": "right"
             },
-            "b": {
-              "chain": "south-18th-street-7",
-              "side": "left"
-            },
-            "source": "spine-link"
-          }
-        ],
-        "deTaper": [
-          {
-            "chain": "south-18th-street-1",
-            "end": "start",
-            "nose": 3.46
-          },
-          {
-            "chain": "south-18th-street-4",
-            "end": "end",
-            "nose": 2.83
+            "source": "tip-wrap"
           }
         ],
         "corners": {
-          "outer": [
-            {
-              "chain": "south-18th-street-1",
-              "side": "right"
-            },
-            {
-              "chain": "south-18th-street-7",
-              "side": "right"
-            },
-            {
-              "chain": "south-18th-street-4",
-              "side": "right"
-            },
-            {
-              "chain": "south-18th-street-7",
-              "side": "left"
-            }
-          ],
-          "stub": [
-            {
-              "chain": "south-18th-street-1",
-              "end": "start"
-            },
-            {
-              "chain": "south-18th-street-4",
-              "end": "end"
-            }
-          ]
-        },
-        "apron": {
-          "chains": [
-            "south-18th-street-1",
-            "south-18th-street-7",
-            "south-18th-street-4"
-          ]
+          "outer": []
         }
       },
       {
@@ -81901,65 +81296,6 @@
         }
       },
       {
-        "key": "509.710,-570.120",
-        "at": [
-          509.71,
-          -570.12
-        ],
-        "kinds": [
-          "divided-transition"
-        ],
-        "legs": [
-          {
-            "chain": "papin-street-3",
-            "end": "end",
-            "role": "carriageway-B"
-          },
-          {
-            "chain": "papin-street-4",
-            "end": "start",
-            "role": "spine"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "papin-street-3",
-              "side": "right"
-            },
-            "b": {
-              "chain": "papin-street-4",
-              "side": "left"
-            },
-            "source": "spine-link"
-          }
-        ],
-        "corners": {
-          "outer": [
-            {
-              "chain": "papin-street-3",
-              "side": "right"
-            },
-            {
-              "chain": "papin-street-4",
-              "side": "left"
-            }
-          ],
-          "stub": [
-            {
-              "chain": "papin-street-3",
-              "end": "end"
-            }
-          ]
-        },
-        "apron": {
-          "chains": [
-            "papin-street-3",
-            "papin-street-4"
-          ]
-        }
-      },
-      {
         "key": "515.910,-413.690",
         "at": [
           515.91,
@@ -82011,65 +81347,6 @@
           "chains": [
             "south-18th-street-3",
             "west-18th-street"
-          ]
-        }
-      },
-      {
-        "key": "521.720,-560.140",
-        "at": [
-          521.72,
-          -560.14
-        ],
-        "kinds": [
-          "divided-transition"
-        ],
-        "legs": [
-          {
-            "chain": "papin-street-2",
-            "end": "start",
-            "role": "carriageway-A"
-          },
-          {
-            "chain": "papin-street-4",
-            "end": "end",
-            "role": "spine"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "papin-street-2",
-              "side": "right"
-            },
-            "b": {
-              "chain": "papin-street-4",
-              "side": "right"
-            },
-            "source": "spine-link"
-          }
-        ],
-        "corners": {
-          "outer": [
-            {
-              "chain": "papin-street-2",
-              "side": "right"
-            },
-            {
-              "chain": "papin-street-4",
-              "side": "right"
-            }
-          ],
-          "stub": [
-            {
-              "chain": "papin-street-2",
-              "end": "start"
-            }
-          ]
-        },
-        "apron": {
-          "chains": [
-            "papin-street-2",
-            "papin-street-4"
           ]
         }
       },
@@ -82500,136 +81777,6 @@
         }
       },
       {
-        "key": "626.130,-547.940",
-        "at": [
-          626.13,
-          -547.94
-        ],
-        "kinds": [
-          "same-corridor-join"
-        ],
-        "legs": [
-          {
-            "chain": "papin-street-3",
-            "end": "start",
-            "role": "carriageway-B"
-          },
-          {
-            "chain": "papin-street-6",
-            "end": "end",
-            "role": "carriageway-B"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "papin-street-3",
-              "side": "left"
-            },
-            "b": {
-              "chain": "papin-street-6",
-              "side": "left"
-            },
-            "source": "same-corridor"
-          },
-          {
-            "a": {
-              "chain": "papin-street-3",
-              "side": "right"
-            },
-            "b": {
-              "chain": "papin-street-6",
-              "side": "right"
-            },
-            "source": "same-corridor"
-          }
-        ],
-        "corners": {
-          "outer": [],
-          "stub": [
-            {
-              "chain": "papin-street-3",
-              "end": "start"
-            },
-            {
-              "chain": "papin-street-6",
-              "end": "end"
-            }
-          ]
-        },
-        "apron": {
-          "chains": [
-            "papin-street-3",
-            "papin-street-6"
-          ]
-        }
-      },
-      {
-        "key": "627.570,-539.070",
-        "at": [
-          627.57,
-          -539.07
-        ],
-        "kinds": [
-          "same-corridor-join"
-        ],
-        "legs": [
-          {
-            "chain": "papin-street-2",
-            "end": "end",
-            "role": "carriageway-A"
-          },
-          {
-            "chain": "papin-street-5",
-            "end": "start",
-            "role": "carriageway-A"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "papin-street-2",
-              "side": "left"
-            },
-            "b": {
-              "chain": "papin-street-5",
-              "side": "left"
-            },
-            "source": "same-corridor"
-          },
-          {
-            "a": {
-              "chain": "papin-street-2",
-              "side": "right"
-            },
-            "b": {
-              "chain": "papin-street-5",
-              "side": "right"
-            },
-            "source": "same-corridor"
-          }
-        ],
-        "corners": {
-          "outer": [],
-          "stub": [
-            {
-              "chain": "papin-street-2",
-              "end": "end"
-            },
-            {
-              "chain": "papin-street-5",
-              "end": "start"
-            }
-          ]
-        },
-        "apron": {
-          "chains": [
-            "papin-street-2",
-            "papin-street-5"
-          ]
-        }
-      },
-      {
         "key": "649.900,651.900",
         "at": [
           649.9000000000002,
@@ -82656,12 +81803,12 @@
           },
           {
             "chain": "gravois-avenue-0",
-            "end": "end",
+            "end": "start",
             "role": "spine"
           },
           {
             "chain": "gravois-avenue-1",
-            "end": "start",
+            "end": "end",
             "role": "spine"
           }
         ],
@@ -82709,107 +81856,57 @@
           -552.3000000000001
         ],
         "kinds": [
-          "corridor-terminus",
-          "divided-transition"
+          "same-corridor-join"
         ],
         "legs": [
-          {
-            "chain": "papin-street-5",
-            "end": "end",
-            "role": "carriageway-A"
-          },
           {
             "chain": "papin-street-1",
             "end": "start",
             "role": "spine"
           },
           {
-            "chain": "papin-street-6",
+            "chain": "papin-street-2",
             "end": "start",
-            "role": "carriageway-B"
+            "role": "spine"
           },
           {
-            "chain": "south-18th-street-5",
-            "end": "through",
-            "role": "carriageway-A"
+            "chain": "papin-street-3",
+            "end": "end",
+            "role": "spine"
           }
         ],
         "continuity": [
           {
             "a": {
-              "chain": "papin-street-5",
-              "side": "right"
+              "chain": "papin-street-1",
+              "side": "left"
             },
             "b": {
-              "chain": "papin-street-1",
+              "chain": "papin-street-2",
               "side": "right"
             },
-            "source": "spine-link"
+            "source": "same-corridor"
           },
           {
             "a": {
-              "chain": "papin-street-6",
+              "chain": "papin-street-1",
               "side": "right"
             },
             "b": {
-              "chain": "papin-street-1",
+              "chain": "papin-street-2",
               "side": "left"
             },
-            "source": "spine-link"
-          }
-        ],
-        "deTaper": [
-          {
-            "chain": "papin-street-5",
-            "end": "end",
-            "nose": 4.88
-          },
-          {
-            "chain": "papin-street-6",
-            "end": "start",
-            "nose": 4.45
+            "source": "same-corridor"
           }
         ],
         "corners": {
-          "outer": [
-            {
-              "chain": "papin-street-5",
-              "side": "right"
-            },
-            {
-              "chain": "papin-street-1",
-              "side": "right"
-            },
-            {
-              "chain": "papin-street-6",
-              "side": "right"
-            },
-            {
-              "chain": "papin-street-1",
-              "side": "left"
-            },
-            {
-              "chain": "south-18th-street-5",
-              "side": "right"
-            }
-          ],
-          "stub": [
-            {
-              "chain": "papin-street-5",
-              "end": "end"
-            },
-            {
-              "chain": "papin-street-6",
-              "end": "start"
-            }
-          ]
+          "outer": []
         },
         "apron": {
           "chains": [
-            "papin-street-5",
             "papin-street-1",
-            "papin-street-6",
-            "south-18th-street-5"
+            "papin-street-2",
+            "papin-street-3"
           ]
         }
       },
@@ -82912,7 +82009,7 @@
             "south-18th-street-6"
           ],
           "absorbsMedians": [
-            3
+            0
           ]
         }
       },
@@ -83625,6 +82722,38 @@
         "reason": "same-corridor L-corner — not a continuation"
       },
       {
+        "key": "658.200,-552.300",
+        "chains": [
+          "papin-street-1",
+          "papin-street-3"
+        ],
+        "reason": "curb already claimed at this node (fork) — papin-street-1|left kept its first partner"
+      },
+      {
+        "key": "658.200,-552.300",
+        "chains": [
+          "papin-street-1",
+          "papin-street-3"
+        ],
+        "reason": "curb already claimed at this node (fork) — papin-street-1|right kept its first partner"
+      },
+      {
+        "key": "658.200,-552.300",
+        "chains": [
+          "papin-street-2",
+          "papin-street-3"
+        ],
+        "reason": "doubles back (parallel strands?) — not pairable"
+      },
+      {
+        "key": "509.710,-570.120",
+        "chains": [
+          "papin-street-2",
+          "papin-street-3"
+        ],
+        "reason": "doubles back (parallel strands?) — not pairable"
+      },
+      {
         "key": "649.900,651.900",
         "chains": [
           "south-12th-street-0",
@@ -83636,7 +82765,7 @@
         "key": "649.900,651.900",
         "chains": [
           "south-12th-street-0",
-          "gravois-avenue-0"
+          "gravois-avenue-1"
         ],
         "reason": "doubles back (parallel strands?) — not pairable"
       },
@@ -83716,7 +82845,7 @@
         "key": "638.510,672.900",
         "chains": [
           "south-12th-street-1",
-          "gravois-avenue-0"
+          "gravois-avenue-1"
         ],
         "reason": "doubles back (parallel strands?) — not pairable"
       },

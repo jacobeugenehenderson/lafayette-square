@@ -186,10 +186,111 @@ function stationOverlapFracXZ(aCoords, bCoords) {
   return overlap / shorter
 }
 
+// ── Data-first carriageway gates (OSM2STREETS-GROUNDING §4.2 item 1) ──────
+//
+// The geometric gates below (scoreOnewayPair) used to be the WHOLE detector —
+// any two same-name oneway fragments that ran antiparallel within 60 m were
+// declared a divided road. That fabricated the South 18th pair: a motorway_link
+// ramp + a service drive, both carrying the street name, 3.2 m apart, sailed
+// through. The standard (osm2streets dual_carriageways.rs) detects from the
+// DATA MODEL + TOPOLOGY first — class compatibility, ramp dispatch, a
+// split/rejoin trace — and uses geometry as at most a check. These gates port
+// that, in front of BOTH pairing call sites (analyzePhases, repairDividedPairs):
+//
+//   (a) SAME drivable class — every osm2streets collapse/merge gate requires
+//       matching highway class; a ramp and a service drive are never the two
+//       halves of one road.
+//   (b) carriageway ELIGIBILITY — `*_link` (ramps: their on_off_ramp dispatch,
+//       never carriageway candidates) and `service` (drives/alleys: never
+//       carriageways) classes are excluded outright, as are non-drivable ways.
+//   (c) SPLIT/REJOIN connectivity — a real divided road diverges from a node
+//       and rejoins (their MultiConnection trace). Measured on all live LS
+//       pairs: every real pair rejoins within a ≤24 m bridge — EXCEPT the
+//       clip-truncated arterial corridors (Truman, Officer-David-Haynes, one
+//       Jefferson pair) whose split/rejoin lies OUTSIDE the disc extract; a
+//       hard topological gate would kill those real corridors. Hence the
+//       tier: clip-scale classes (tertiary and up — corridors big enough to
+//       cross the whole extract unbroken) are exempt; everything local
+//       (residential/unclassified/living_street) must demonstrably rejoin.
+//
+// Geometry is thereby DEMOTED to confirmation. DIVIDED_MAX_GAP stays 60 — not
+// tightened, because real staggered fragment pairs reach 53.8 m (Truman) — but
+// it is no longer the trigger: class + topology are.
+const CARRIAGEWAY_CLASSES = new Set([
+  'motorway', 'trunk', 'primary', 'secondary', 'tertiary',
+  'unclassified', 'residential', 'living_street',
+])
+// Corridors that plausibly cross the whole clipped extract without a rejoin
+// inside it (gate (c)'s clip-truncation exemption).
+const CLIP_SCALE_CLASSES = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
+const REJOIN_BRIDGE_MAX = 35  // m — longest live real-pair bridge is 23.3 (Park Ave)
+
+// Node-adjacency over ALL highway fragments (every consecutive coord pair is
+// an edge tagged with its way). Built once in main(), threaded to both pairing
+// call sites for the rejoin trace.
+function buildRejoinGraph(highways) {
+  const adj = new Map()
+  const push = (k, e) => { let a = adj.get(k); if (!a) { a = []; adj.set(k, a) } a.push(e) }
+  for (const f of highways) {
+    for (let i = 0; i < f.coords.length - 1; i++) {
+      const a = vKey(f.coords[i]), b = vKey(f.coords[i + 1])
+      const len = dist(f.coords[i], f.coords[i + 1])
+      push(a, { to: b, len, osmId: f.osmId })
+      push(b, { to: a, len, osmId: f.osmId })
+    }
+  }
+  return adj
+}
+
+// Gate (c): does some endpoint of A reach some endpoint of B — a shared node
+// (direct rejoin, 0 m), or a short path through OTHER ways (the corridor's own
+// bidi spine, or a cross-street stub between the carriageway ends — osm2streets'
+// "bridge" roads), never traveling along A or B themselves, capped at
+// REJOIN_BRIDGE_MAX. Dijkstra over a tiny neighborhood; cheap.
+function pairRejoins(adj, aCoords, bCoords, bannedIds) {
+  const endsOf = (c) => [vKey(c[0]), vKey(c[c.length - 1])]
+  const targets = new Set(endsOf(bCoords))
+  for (const k of endsOf(aCoords)) if (targets.has(k)) return true
+  const banned = new Set(bannedIds)
+  for (const start of endsOf(aCoords)) {
+    const seen = new Map([[start, 0]])
+    const q = [[0, start]]
+    while (q.length) {
+      q.sort((x, y) => x[0] - y[0])
+      const [d, n] = q.shift()
+      if (targets.has(n)) return true
+      for (const e of adj.get(n) || []) {
+        if (banned.has(e.osmId)) continue
+        const nd = d + e.len
+        if (nd > REJOIN_BRIDGE_MAX) continue
+        if (nd >= (seen.get(e.to) ?? Infinity)) continue
+        seen.set(e.to, nd); q.push([nd, e.to])
+      }
+    }
+  }
+  return false
+}
+
+// Gates (a)+(b)+(c) bundled — `cls` per candidate from its tags (fragment
+// level) or dominant-class vote (chain level). Returns false-with-reason for
+// the rejection log.
+function carriagewayGates(clsA, clsB, aCoords, bCoords, bannedIds, rejoinAdj) {
+  if (!CARRIAGEWAY_CLASSES.has(clsA) || !CARRIAGEWAY_CLASSES.has(clsB)) {
+    return { pass: false, reason: `ineligible-class ${clsA}+${clsB}` }
+  }
+  if (clsA !== clsB) return { pass: false, reason: `class-mismatch ${clsA}+${clsB}` }
+  if (!CLIP_SCALE_CLASSES.has(clsA) &&
+      !pairRejoins(rejoinAdj, aCoords, bCoords, bannedIds)) {
+    return { pass: false, reason: `no-split-rejoin (${clsA})` }
+  }
+  return { pass: true }
+}
+
 // The full 4-gate carriageway-pair test, in one place so every caller applies
 // the SAME gates — including the station-overlap gate (commit 8ffd795). Used by
 // analyzePhases (fragment level, pre-weld) AND repairDividedPairs (merged-chain
-// level, post-longitudinal-weld). Returns { paired, gap } — gap is the symmetric
+// level, post-longitudinal-weld) as geometric CONFIRMATION behind the data-first
+// carriagewayGates above. Returns { paired, gap } — gap is the symmetric
 // mean perpendicular distance (= the median width) when the candidate pairs.
 //   1. antiparallel        — tangent dot < DIVIDED_MIN_TAN_DOT (oneway pairs run
 //                            opposite directions)
@@ -217,7 +318,7 @@ function scoreOnewayPair(aCoords, bCoords) {
   return { paired: true, gap, lenRatio }
 }
 
-function analyzePhases(name, fragments) {
+function analyzePhases(name, fragments, rejoinAdj) {
   const oneway = fragments.filter(f => f.tags?.oneway === 'yes')
   const bidi = fragments.filter(f => f.tags?.oneway !== 'yes')
 
@@ -225,6 +326,9 @@ function analyzePhases(name, fragments) {
   // the cleanest matches claim partners first. Greedy first-match was
   // letting connector stubs lock out same-length carriageway mates
   // (Truman: 361m main pair lost to a 12m stub at 12.4m one-way gap).
+  // Data-first gates run FIRST (class/eligibility/rejoin — see
+  // carriagewayGates); geometry confirms. Rejections of geometric matches
+  // are logged so a refused pair is visible, never silent.
   const cand = []
   for (let i = 0; i < oneway.length; i++) {
     const A = oneway[i]
@@ -232,6 +336,13 @@ function analyzePhases(name, fragments) {
       const B = oneway[j]
       const r = scoreOnewayPair(A.coords, B.coords)
       if (!r.paired) continue
+      const g = carriagewayGates(
+        A.tags?.highway, B.tags?.highway,
+        A.coords, B.coords, [A.osmId, B.osmId], rejoinAdj)
+      if (!g.pass) {
+        console.log(`  carriageway gates REFUSED ${name} ${A.osmId}+${B.osmId} (gap ${r.gap.toFixed(1)}m): ${g.reason}`)
+        continue
+      }
       cand.push({ A, B, gap: r.gap, lenRatio: r.lenRatio })
     }
   }
@@ -276,6 +387,19 @@ function analyzePhases(name, fragments) {
 // turning loops), and the welder preserves it as one chain. Without
 // splitting, clicking the chain highlights both arms of the fold.
 //
+// Sources are PER-SLICE: the welder carries `segSources` (the source osmId of
+// every segment, parallel to coords) precisely so each slice here can claim
+// only the ways its own segments came from. Before this, every slice was
+// stamped with the UNION of the folded chain's sources — so two antiparallel
+// drives fused-then-split at a gradual U (Papin's service pairs once the
+// carriageway gates un-paired them) each claimed BOTH ways, polluting the
+// class/lanes/grade summaries and the osmId-keyed lookups downstream.
+function sliceSources(chain, from, to) {  // coords[from..to] → segments [from..to-1]
+  const seg = chain.segSources
+  if (!seg) return chain.sources
+  return [...new Set(seg.slice(from, to))]
+}
+//
 // For divided chains (carriageway-A/-B), splitting is signature-aware:
 // keep ONLY the longest sub-chain with the original (signature, pairKey).
 // Shorter sub-chains demote to single-bidi (no pairKey) so derive's
@@ -301,7 +425,11 @@ function splitAtFolds(chains) {
     const slices = []
     for (let i = 0; i < cuts.length - 1; i++) {
       const slice = coords.slice(cuts[i], cuts[i + 1] + 1)
-      if (slice.length >= 2) slices.push(slice)
+      if (slice.length >= 2) slices.push({
+        coords: slice,
+        sources: sliceSources(chain, cuts[i], cuts[i + 1]),
+        segSources: chain.segSources ? chain.segSources.slice(cuts[i], cuts[i + 1]) : undefined,
+      })
     }
     const isDivided = chain.signature === 'divided-A' || chain.signature === 'divided-B'
     if (isDivided && slices.length > 1) {
@@ -309,18 +437,19 @@ function splitAtFolds(chains) {
       let bestIdx = 0, bestLen = 0
       for (let i = 0; i < slices.length; i++) {
         let L = 0
-        for (let j = 1; j < slices[i].length; j++) L += Math.hypot(slices[i][j].x - slices[i][j-1].x, slices[i][j].z - slices[i][j-1].z)
+        const c = slices[i].coords
+        for (let j = 1; j < c.length; j++) L += Math.hypot(c[j].x - c[j-1].x, c[j].z - c[j-1].z)
         if (L > bestLen) { bestLen = L; bestIdx = i }
       }
       for (let i = 0; i < slices.length; i++) {
         if (i === bestIdx) {
-          out.push({ ...chain, coords: slices[i] })
+          out.push({ ...chain, ...slices[i] })
         } else {
-          out.push({ ...chain, coords: slices[i], signature: 'single-bidi', pairKey: null, oneway: false })
+          out.push({ ...chain, ...slices[i], signature: 'single-bidi', pairKey: null, oneway: false })
         }
       }
     } else {
-      for (const slice of slices) out.push({ ...chain, coords: slice })
+      for (const slice of slices) out.push({ ...chain, ...slice })
     }
   }
   return out
@@ -334,9 +463,20 @@ function splitAtFolds(chains) {
 // same corridor (e.g. Lafayette's three A carriageways) from welding into
 // each other when their endpoints happen to coincide.
 function weldChains(fragments, signatureByOsmId, pairKeyByOsmId) {
+  // [Data-first detection] ramp-dispatch boundary: a *_link fragment never
+  // fuses with a non-link fragment of the same name group. This is the
+  // standard's collapse class-gate ported at the link boundary only — a named
+  // ramp (South 18th's I-44 motorway_link carries the street name) is its own
+  // road, never a continuation of the surface street. Full class equality is
+  // NOT enforced: 5 live chains legitimately mix classes (residential+service
+  // continuations etc.) and splitting them is out of scope here.
+  const isLink = (t) => /_link$/.test(t?.highway || '')
   const pool = fragments.map(f => ({
     coords: f.coords.slice(),
     sources: [f.osmId],
+    // Source osmId per SEGMENT (parallel to coords, length-1): carried through
+    // every weld so splitAtFolds can attribute each slice to its real ways.
+    segSources: new Array(Math.max(0, f.coords.length - 1)).fill(f.osmId),
     tags: f.tags,
     oneway: f.tags?.oneway === 'yes',
     isClosed: f.isClosed,
@@ -354,6 +494,9 @@ function weldChains(fragments, signatureByOsmId, pairKeyByOsmId) {
         const c = pool[i]
         if (c.signature !== chain.signature) continue
         if (c.pairKey !== chain.pairKey) continue
+        // Ramp-dispatch boundary (see header): link welds link, street welds
+        // street, never across.
+        if (isLink(chain.tags) !== isLink(c.tags)) continue
         const chainHead = chain.coords[0]
         const chainTail = chain.coords[chain.coords.length - 1]
         const cHead = c.coords[0]
@@ -368,28 +511,45 @@ function weldChains(fragments, signatureByOsmId, pairKeyByOsmId) {
         // propagating its oneway flag.
         const anyOneway = chain.oneway || c.oneway
 
+        // [Data-first detection] …and forbid U-TURN welds (joint heading
+        // reverses, cos < -0.5 — the same fold threshold splitAtFolds cuts
+        // at). An UN-PAIRED antiparallel oneway couple sharing an endpoint
+        // (Papin's service drives; 18th's ramp+service once the carriageway
+        // gates refuse them) would otherwise fuse tail-to-head into a folded
+        // chain — splitAtFolds re-cuts the coords but stamps BOTH slices with
+        // the union of sources, polluting class/lanes/grade summaries. A
+        // genuine oneway continuation never U-turns at the join. Bidi U-welds
+        // stay legal (a crescent street digitized in two ways is one road).
+        const uTurn = (tOut, tIn) => headingDot(tOut, tIn) < -0.5
+
         // tail-to-head
-        if (ptsEqual(chainTail, cHead)) {
+        if (ptsEqual(chainTail, cHead) &&
+            !(anyOneway && uTurn(tailTangent(chain.coords), headTangent(c.coords)))) {
           chain.coords = chain.coords.concat(c.coords.slice(1))
           chain.sources.push(...c.sources)
+          chain.segSources = chain.segSources.concat(c.segSources)
           pool.splice(i, 1); extended = true; break
         }
         // tail-to-tail (flip c) — forbidden for oneway pairs
         if (!anyOneway && ptsEqual(chainTail, cTail)) {
           chain.coords = chain.coords.concat(reverse(c.coords).slice(1))
           chain.sources.push(...c.sources)
+          chain.segSources = chain.segSources.concat(reverse(c.segSources))
           pool.splice(i, 1); extended = true; break
         }
         // head-to-tail (prepend c)
-        if (ptsEqual(chainHead, cTail)) {
+        if (ptsEqual(chainHead, cTail) &&
+            !(anyOneway && uTurn(tailTangent(c.coords), headTangent(chain.coords)))) {
           chain.coords = c.coords.slice(0, -1).concat(chain.coords)
           chain.sources.unshift(...c.sources)
+          chain.segSources = c.segSources.concat(chain.segSources)
           pool.splice(i, 1); extended = true; break
         }
         // head-to-head (flip c, prepend) — forbidden for oneway pairs
         if (!anyOneway && ptsEqual(chainHead, cHead)) {
           chain.coords = reverse(c.coords).slice(0, -1).concat(chain.coords)
           chain.sources.unshift(...c.sources)
+          chain.segSources = reverse(c.segSources).concat(chain.segSources)
           pool.splice(i, 1); extended = true; break
         }
       }
@@ -489,6 +649,7 @@ function weldLongitudinal(chains) {
             headingDot(tailTangent(chain.coords), headTangent(c.coords)) >= LONGITUDINAL_MIN_HEADING_DOT) {
           chain.coords = chain.coords.concat(c.coords.slice(1))
           chain.sources.push(...c.sources)
+          if (chain.segSources && c.segSources) chain.segSources = chain.segSources.concat(c.segSources)
           pool.splice(i, 1); extended = true; didMerge = true; break
         }
         // head-to-tail: c → chain (prepend). Also direction-preserving.
@@ -496,6 +657,7 @@ function weldLongitudinal(chains) {
             headingDot(tailTangent(c.coords), headTangent(chain.coords)) >= LONGITUDINAL_MIN_HEADING_DOT) {
           chain.coords = c.coords.slice(0, -1).concat(chain.coords)
           chain.sources.unshift(...c.sources)
+          if (chain.segSources && c.segSources) chain.segSources = c.segSources.concat(chain.segSources)
           pool.splice(i, 1); extended = true; didMerge = true; break
         }
         // No tail-to-tail / head-to-head: those FLIP one chain, which is how
@@ -516,14 +678,25 @@ function weldLongitudinal(chains) {
 // the SAME 4 gates analyzePhases uses (scoreOnewayPair) and stamp a fresh
 // shared pairKey + A/B signature + chainGap on the two carriageways. The
 // emergent median then falls out of one continuous inner-edge chain per side.
-function repairDividedPairs(chains) {
+function repairDividedPairs(chains, rejoinAdj) {
   const oneway = chains.filter(c => c.oneway)
   const cand = []
   for (let i = 0; i < oneway.length; i++) {
     for (let j = i + 1; j < oneway.length; j++) {
-      const r = scoreOnewayPair(oneway[i].coords, oneway[j].coords)
+      const a = oneway[i], b = oneway[j]
+      const r = scoreOnewayPair(a.coords, b.coords)
       if (!r.paired) continue
-      cand.push({ a: oneway[i], b: oneway[j], gap: r.gap })
+      // Same data-first gates as analyzePhases, at chain granularity: class
+      // from the dominant-class vote over each chain's own sources; the
+      // rejoin trace banned from traveling along either chain's ways.
+      const g = carriagewayGates(
+        chainHighway(a.sources, a.tags), chainHighway(b.sources, b.tags),
+        a.coords, b.coords, [...(a.sources || []), ...(b.sources || [])], rejoinAdj)
+      if (!g.pass) {
+        console.log(`  carriageway gates REFUSED (chain-level) ${a.sources?.[0]}+${b.sources?.[0]} (gap ${r.gap.toFixed(1)}m): ${g.reason}`)
+        continue
+      }
+      cand.push({ a, b, gap: r.gap })
     }
   }
   cand.sort((x, y) => x.gap - y.gap)  // cleanest (tightest) pairs claim first
@@ -688,7 +861,10 @@ function seedSection(highway, lanes, oneway) {
 //
 // WAY_TAGS_BY_ID maps osmId → tags so a welded chain (which may span several
 // source ways) can be summarized from ALL its sources, not just fragment[0].
+// WAY_LEN_BY_ID maps osmId → polyline length (m) for length-weighted summaries
+// (chainHighway's class vote).
 let WAY_TAGS_BY_ID = new Map()
+let WAY_LEN_BY_ID = new Map()
 
 // Limited-access highway corridors abut frontage roads, never bound
 // neighborhood blocks — so they are excluded from ground faces regardless of
@@ -751,6 +927,38 @@ function chainLanes(sources, sourceTags) {
   }
   if (bestCount > 0) return best
   return parseInt(sourceTags?.lanes, 10)
+}
+
+// Per-chain dominant highway CLASS across all source ways (same WAY_TAGS_BY_ID
+// pattern as chainLanes; the same first-fragment flattening the D6 comment
+// fixed for `oneway` was still live for `highway` — the whole name group got
+// fragments[0]'s class, so South 18th's motorway_link ramp and service drive
+// were stamped 'residential', which also defeated gradeSeparated for named
+// ramps: isLimitedAccess saw 'residential', not 'motorway_link'). The vote is
+// LENGTH-weighted (class is a physical-majority question — count-mode let a
+// 42 m primary stub at the Jefferson junction outvote 54 m of residential
+// Geyer); ties go to the higher-rank class; falls back to the group's
+// first-fragment tag (the old behavior) when no source carries a class.
+const CLASS_RANK = [
+  'motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link',
+  'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified',
+  'residential', 'living_street', 'service', 'pedestrian', 'footway',
+  'cycleway', 'path', 'steps', 'track',
+]
+function chainHighway(sources, sourceTags) {
+  const votes = new Map()
+  for (const id of sources || []) {
+    const h = WAY_TAGS_BY_ID.get(id)?.highway
+    if (h) votes.set(h, (votes.get(h) || 0) + (WAY_LEN_BY_ID.get(id) || 1))
+  }
+  let best = null, bestLen = 0
+  const rank = (x) => { const r = CLASS_RANK.indexOf(x); return r === -1 ? CLASS_RANK.length : r }
+  for (const [h, L] of votes) {
+    if (L > bestLen || (L === bestLen && best !== null && rank(h) < rank(best))) {
+      best = h; bestLen = L
+    }
+  }
+  return best || sourceTags?.highway || 'residential'
 }
 
 // ── [E1] Custom width base — survey.json → per-side seed enrichment ───────
@@ -1035,9 +1243,14 @@ function main() {
   // osmId → tags, so a welded chain can be graded from ALL its source ways
   // (Part 2 grade separation — see gradeFields/gradeFacts above).
   WAY_TAGS_BY_ID = new Map(highways.map(f => [f.osmId, f.tags || {}]))
+  WAY_LEN_BY_ID = new Map(highways.map(f => [f.osmId, polylineLengthXZ(f.coords)]))
 
   const { groups, unnamed } = groupByName(highways)
   console.log(`       ${groups.size} unique names, ${unnamed.length} unnamed`)
+
+  // Node graph over ALL fragments for the split/rejoin trace (gate (c) of the
+  // data-first carriageway gates). Built once, threaded to both pairing sites.
+  const rejoinAdj = buildRejoinGraph(highways)
 
   // ── Phase analyzer (Path B, phases 1+2) ───────────────────────────
   // Pre-weld: classify each named OSM fragment as divided-A / divided-B
@@ -1053,7 +1266,7 @@ function main() {
   const gapByPairKey = new Map()   // pairKey -> carriageway gap (= median width)
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
-    const report = analyzePhases(name, fragments)
+    const report = analyzePhases(name, fragments, rejoinAdj)
     phaseReports.push(report)
     for (const c of report.classified) {
       const sig = c.kind === 'divided' ? c.role : c.kind
@@ -1107,7 +1320,7 @@ function main() {
     const lw = weldLongitudinal(preMerge)
     if (lw.didMerge) {
       const merged = lw.chains
-      repairDividedPairs(merged)
+      repairDividedPairs(merged, rejoinAdj)
       // SAFETY VALVE — accept the merge only if it didn't ORPHAN a carriageway.
       // A complex interchange corridor (Officer David Haynes: two carriageways
       // that splay 405m apart at an interchange) merges into long chains the
@@ -1449,7 +1662,12 @@ function main() {
 }
 
 function makeStreet(id, name, sourceTags, chain, extras = {}) {
-  const highway = sourceTags?.highway || 'residential'
+  // Per-chain dominant class over the chain's OWN sources (chainHighway) —
+  // sourceTags is the group's first fragment, and stamping ITS class on every
+  // chain flattened the whole group (South 18th's ramp + service drive read
+  // 'residential'; gradeSeparated defeated for named ramps). Same pattern as
+  // the D6 oneway fix and the E1 lanes vote below.
+  const highway = chainHighway(chain?.sources, sourceTags)
   // [D6] oneway is per-CHAIN, not per-group. sourceTags is the group's first
   // fragment, which on a mixed corridor (e.g. Lafayette: bidi fragments + oneway
   // carriageways) mis-reports every chain as the first fragment's direction —
