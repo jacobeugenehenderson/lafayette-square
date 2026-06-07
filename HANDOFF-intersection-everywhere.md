@@ -4,6 +4,8 @@
 
 **The standard, in our terms (`OSM2STREETS-GROUNDING.md`, Macadam — read it first):** at every node, **trim each road back** (`trim_start`/`trim_end`) to where its casing edges **collide** with the neighbors' casings, then assemble the **intersection polygon** from the trimmed ends with **corners by clockwise leg adjacency**. The mapping is exact: **apron = intersection polygon · de-taper window = trim distance · corner identity = corner pair.** The two deltas that fix the marks: **(1) every node**, not just the 86; **(2) trim from edge-collision**, not from median-nose stations (nose-stations only existed for divided roads — that's why plain Ts were never reached).
 
+> 🔑 **What the corner editor revealed (Jacob, 2026-06-06):** the artifact isn't just a stray shape — **it's a constructed CORNER.** `filletRing` (E3.3) rounds convex vertices *per-vertex, blind*, so it fillets a vertex where a side-street Ts in and the through-road should run **straight past** — a **spurious corner on the opposite side of the straight run** (it shows a magenta handle in the corner editor). The standard cure is structural: corners come **only from clockwise leg-adjacency at the trimmed intersection**, so a corner exists *only* where two real legs meet — the spurious one **can't be built**. (Not all artifacts are corners — some are slivers/steps; trim + the intersection polygon handle those. The corner ones are the clearest tell.)
+
 **Agent: FRESH** (name yourself). **`isolation: worktree` — sync to trunk tip FIRST.** Forensic-then-build (the trim is an algorithm change — validate before the full rollout). **Push back** if the framing's wrong. Web access useful (the osm2streets `intersection`/`trim` source).
 
 > ⚠️ **Data access (worktree trap).** `overlay.json`/`skeleton.json`/`marker_strokes.json` gitignored — read main-tree absolute paths. `src/data/ribbons.json` tracked (carries `junctionMap`). Harnesses: `scratch/voussoir-*.mjs`, `trammel-*.mjs`, `chamfer-*.mjs` (git-tracked).
@@ -21,6 +23,7 @@
 - **The 8 marks** — project each; the opposite-side artifact is **gone** (≤ datum residual).
 - **The divided junctions** (E3.2/E3.3's good ones) and **Benton/Waverly/E2 medians** — no regression.
 - **The 84 previously-untouched plain cross-nodes** — now constructed, and **clean / better, not worse** (sweep them; flag any that the trim degrades).
+- **Corner-editor acceptance test** (the sharp one): with the corner editor ON, **only REAL corners have magenta handles** — no spurious corner on the straight-through side of a T (the thing Jacob caught). Sweep the marked Ts this way.
 - **Jacob's live eye** on the marked spots + a node sweep (the gate).
 
 **If the rollout is risky**, phase it (a subset of nodes, verify, expand) and say so — don't blast all nodes blind.
