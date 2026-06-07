@@ -2,6 +2,8 @@
 
 **The two enclosed-face streets — Benton Place (teardrop) and Waverly Place (couplet) — and why we've never gotten both rendering well at once.** This is their single home: the topologies, the per-role cross-sections, what's live vs dead, the "never both at once" tension, and the current Benton collapse.
 
+> ⚠️ **UNDER REVIEW (2026-06-06).** Whether "loop street" is a real concept or **our reinvention** is a question for the **osm2streets grounding pass** (`HANDOFF-osm2streets-grounding.md`). 18th surfaced that our divided-detection is *geometric* (pairs parallel chains) where the standard is *data-model* (a road is divided because it's tagged so). Treat the framing here as **provisional** pending that grounding — several of these "loop"/"divided"/"junction" concepts may collapse into standard road-casing + intersection-dissolve + the OSM dual-carriageway model.
+
 > **Status: v0.1 (2026-06-05) — consolidated.** Moves the **L.0 architecture lock (2026-05-10)** up from `_archive/notes/NOTES-2026-04-07_to_2026-05-18.md` (it was the authoritative spec, stranded in the archive), augments it with the live tile handling + the bad-data collapse, and flags the dead figure-ground paths. The archive copy stays in git. Loop work is a **skeleton + construction** concern (detect in the frame, render in tiles), so it cross-refs `SKELETON.md` and `RIBBONS.md` rather than living inside either.
 
 ---
@@ -10,7 +12,11 @@
 
 A **loop street** = a set of same-named OSM chains that bound an **enclosed face** the operator wants painted as **median** (grass, no sidewalk). Identified by a `loopId`; each member chain carries a `role`. The median is **emergent** (the enclosed face, painted `lu='park'`), never a separately-authored polygon — and both LS loops **emit from the centerline** (the ribbon strokes off the chain, like any street).
 
-LS has exactly two, of two different topologies — and **the standing problem is getting both right simultaneously** (each has opposing demands; §5).
+LS has (at least) **three** — Benton (teardrop), Waverly (couplet), and **South 18th**, a **U/horseshoe dead-end** discovered **2026-06-06** *mis-detected as a DIVIDED corridor*: its two parallel legs read as carriageways, so E1 gave it divided widths (the "weird width all the way down") and E2 split its block with a constructed median (the "big polygon split"). 18th doesn't even reach Lafayette — it's a dead-end U with an arc at the Dolman end. **The fix is in the SKELETON: loop detection must catch the U and take PRECEDENCE over divided detection** (a loop's legs are not divided carriageways). This was latent before the E-series and lit up by E1/E2.
+
+> ⚠️ **18th is a NEW loop SUBTYPE — interior = REGULAR BLOCK, not median.** Benton/Waverly enclose a **grass median** (inner side zeroed, no sidewalk). 18th encloses a **normal city block** (treelawns, sidewalks, parcels) — so its legs are **normal streets with sidewalks on BOTH sides** (the inner side faces the block), the *opposite* cross-section from Benton's body. The mis-detection did the worst thing: a **median where a normal block belongs**. Also: **18th's loop crosses a NAME-SHIFT** (chains change names around the U), so same-name grouping won't detect it — needs `continuesAs`/collinearity. ⇒ **This broadens the loop definition:** the enclosed face is *either* a median *or* a regular block; the loop's job is just to (a) be detected (incl. across name-shifts) and (b) NOT be mis-paired as divided.
+
+The standing problem: get **all of them** right simultaneously (each has opposing demands; §5).
 
 ---
 
