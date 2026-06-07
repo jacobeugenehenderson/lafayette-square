@@ -9,16 +9,16 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": false,
+    "building": true,
     "parking_lot": true,
-    "garden": false,
+    "garden": true,
     "playground": false,
     "swimming_pool": false,
     "pitch": false,
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": false,
+    "tree_row": true,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -26,8 +26,8 @@
     "path": false,
     "park": true,
     "water": false,
-    "tree": false,
-    "lamp": false,
+    "tree": true,
+    "lamp": true,
     "fence": false,
     "wall": false,
     "retaining_wall": false,
@@ -87,7 +87,7 @@
     "229.000,-158.900|mississippi-avenue:f|park-avenue-1:f": 19.3228102729572
   },
   "curbWidth": 0.381,
-  "alleyCap": "rounded",
+  "alleyCap": "square",
   "labels": {
     "size": 3.75,
     "weight": 500,
@@ -113,13 +113,13 @@
     "park-avenue-1": {
       "right": {
         "0": {
-          "pavementHW": 13.822054607665162,
+          "pavementHW": 8.161398835447049,
           "treelawn": 1.7258555231174242,
           "sidewalk": 2.866669482870156,
           "terminal": "sidewalk"
         },
         "2": {
-          "pavementHW": 18.28698264857365,
+          "pavementHW": 11.617586633146859,
           "treelawn": 1.2048320255566942,
           "sidewalk": 3.387692980430886,
           "terminal": "sidewalk"
@@ -137,7 +137,7 @@
           "terminal": "sidewalk"
         },
         "6": {
-          "pavementHW": 13.822054607665162,
+          "pavementHW": 9.992264409631261,
           "treelawn": 1.7258555231174242,
           "sidewalk": 2.866669482870156,
           "terminal": "sidewalk"
@@ -148,6 +148,18 @@
           "pavementHW": 10.300541536821855,
           "treelawn": 1.2048320255566942,
           "sidewalk": 1.689660472381732,
+          "terminal": "sidewalk"
+        },
+        "3": {
+          "pavementHW": 11.617586633146859,
+          "treelawn": 3.192626415453148,
+          "sidewalk": 1.7297401723922992,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 9.992264409631261,
+          "treelawn": 3.192626415453148,
+          "sidewalk": 1.7297401723922992,
           "terminal": "sidewalk"
         }
       }
@@ -182,6 +194,44 @@
           "pavementHW": 6.961665831871115,
           "treelawn": 4.210752735261818,
           "sidewalk": 1.0900301143604647,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "benton-place-0": {
+      "right": {
+        "0": {
+          "pavementHW": 4.706988143943851,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        }
+      },
+      "left": {
+        "0": {
+          "pavementHW": 4.706988143943851,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "park-avenue-3": {
+      "right": {
+        "0": {
+          "pavementHW": 4.243915153033243,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "dolman-street-1": {
+      "left": {
+        "1": {
+          "pavementHW": 3.7803193778698607,
+          "treelawn": 1.3756000000000004,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         }
       }
@@ -415,7 +465,7 @@
   "openSections": {
     "Streets": false,
     "Blocks": true,
-    "Paths": false,
+    "Paths": true,
     "Features": false,
     "Labels": true,
     "HeroSubject": false,
