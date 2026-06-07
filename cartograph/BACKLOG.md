@@ -10,6 +10,12 @@
 
 **The committed arc (Jacob, 2026-06-05):** **(1) fortify the Skeleton + its Prebake → (2) polygonize Survey (all authoring tools connected + rendering live) → (3) a DataWall with prepared artifacts behind it.** The false corner / thorns are **symptoms** of Survey not being polygon-first — the corner-patch is **KILLED** (`_archive/handoffs/`). Cure = move the chain→polygon conversion into **prebake** + freeze (wall → ~P3). Doctrine: `SURVEY.md §5.1` · `PREBAKE.md §5`. Trunk: `cartograph-looks-pass-ab`.
 
+> 🔄 **PIVOT (2026-06-07, Jacob).** Survey fortification reached good-enough — the osm2streets grounding + intersection-everywhere (`9c275ce`) cured the marks/artifact family (corners, spurs, the perpendicular-join). **Survey fortification is PAUSED** (residuals deferred, not abandoned — below). **Focus → finish the (3) DataWall** (`HANDOFF-wall-phase-d.md`, now freezing GOOD data) → then **RIBBONS / Section** (first thing tomorrow). Standard road model is canon: `OSM2STREETS-GROUNDING.md`.
+>
+> **Deferred Survey residuals** (revisit after the wall/ribbons; `[[feedback_accept_the_long_tail]]`):
+> - **(a) intersection-everywhere FINISH** — places it made *much better but not totally fixed* (the smoothed-but-not-perfect corners/junctions; includes the E3.2-window marks #0 missY ~2m, #6 park-4 ~2.7m, the Mackay-join 8m). **Same fix, incomplete at some nodes — NOT a new class.** (Phase-next: fillet gate → `cornersAdjacent`, apron-everywhere + leg-completeness, perimeter through-steps, edge-collision window sizing.)
+> - **(b) the curve-and-cut class** — a genuinely **NEW, separate** class: a block edge **curving in then cutting** near a junction; recurs map-wide; was optimistically folded into intersection-everywhere but it's distinct.
+
 | Stage | Status |
 |---|---|
 | intake | ⏭️ deferred (LS has `osm.json`); Provincetown = first run |

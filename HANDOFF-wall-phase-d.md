@@ -2,7 +2,7 @@
 
 **Goal:** make the Data Wall a **real artifact boundary** — Survey freezes the per-tile shape to an artifact, and a **Section surface LOADS it and renders** (via `sectionPass`), instead of re-running the whole Survey build. This delivers Jacob's milestone: *"open Section and see the frozen Survey data."*
 
-> ⚠️ **This is the PLUMBING — a labeled checkpoint, NOT "done."** Per `WALL.md §5`, the wall is only *done* when the freeze is real **and** the frozen data is correct on Jacob's eye. The data cure (false corner) rides `HANDOFF-prebake-polygonization-scope.md`. Ship the mechanism; expect it to display the current (still-imperfect) shape until the cure lands. **Do not** present frozen-wrong-data as the milestone met.
+> ✅ **The data cure has LARGELY LANDED (2026-06-07) — Phase-D now freezes GOOD data.** E1 (custom widths) + E2 (constructed median) + data-first divided detection (`870a1fd`) + intersection-everywhere (`9c275ce`, the two drawing bugs) cured the marks/artifacts; the Survey shape is good on Jacob's eye. So this is the **real** milestone now, not a frozen-wrong-data stopgap. Small **deferred** residuals remain — smoothed-but-not-fully-fixed corners, the **curve-and-cut** class, the E3.2-window marks (#0/#6) — Survey fortification is **paused, not done**; they're acceptable to freeze now and revisit later (`[[feedback_accept_the_long_tail]]` — deferred ≠ abandoned). Per `WALL.md §5` the wall is "done" when the freeze is real AND the data is right; both halves now substantially hold.
 
 **Agent: FRESH** (name yourself). **`isolation: worktree`**. General-purpose. Can run parallel to the other briefs (different layer).
 
