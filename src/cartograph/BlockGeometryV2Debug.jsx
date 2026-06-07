@@ -22,7 +22,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation, differenceRings } from '../lib/buildBlockGeometryV2.js'
-import { buildTileGround } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG)
+import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
@@ -604,8 +604,63 @@ export default function BlockGeometryV2Debug({
   // figure-ground meshes. M1/M2: LU faces + treelawn are grouped per land-use
   // class so each paints its block's colour. Each band is annular (CW holes)
   // → asPolygonWithHoles=true; yLift stacks them under the PRI order.
+  // ── THE WALL · Phase D — Section OPENS the frozen Survey shape ──────────
+  // The Measure/Section tab renders the ground from the bake's frozen
+  // `shape.json` artifact (the `_shapeArtifact` Survey froze), NOT from a live
+  // re-run of the Survey build. Fetched once per scene when the tool first
+  // activates; `sectionOpen` (chain-free signature — artifact + design params
+  // only) composes block/curb/asphalt off the frozen iA and the ped FILL via
+  // sectionPass. Note what this is: the freeze→open MECHANISM (WALL.md §4) —
+  // the §5(b) "correct data" half stays gated on the prebake cure; this view
+  // shows the shape exactly as frozen, defects included.
+  const bakeLastMs = useCartographStore(s => s.bakeLastMs)
+  const [frozenShape, setFrozenShape] = useState(null)
+  const frozenKeyRef = useRef(null)
+  useEffect(() => {
+    if (!measureActive || !scene) return
+    // One fetch per (scene, bake): a fresh Survey bake (bakeLastMs bumps)
+    // re-opens the new freeze; otherwise the loaded artifact is kept.
+    const key = `${scene}|${bakeLastMs ?? 0}`
+    if (frozenKeyRef.current === key) return
+    frozenKeyRef.current = key
+    let dead = false, done = false
+    fetch(`${import.meta.env.BASE_URL}baked/${scene}/shape.json${bakeLastMs ? `?t=${bakeLastMs}` : ''}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { done = true; if (!dead) setFrozenShape(Array.isArray(d) && d.length ? d : null) })
+      .catch(e => { done = true; console.warn('[BlockGeometryV2Debug] no frozen shape artifact (Section falls back to live build):', e); if (!dead) setFrozenShape(null) })
+    // Abort mid-flight (tool flipped / re-mount): clear the key so the next
+    // activation refetches instead of silently falling back to the live build.
+    return () => { dead = true; if (!done && frozenKeyRef.current === key) frozenKeyRef.current = null }
+  }, [measureActive, scene, bakeLastMs])
+  const sectionFrozen = measureActive && !!frozenShape
+  const sectionGeos = useMemo(() => {
+    if (!sectionFrozen) return null
+    // ⛔ wall assertion: this memo's closure must hold NO chain handle — it
+    // reads only the fetched artifact + design params (curbWidth, stencil).
+    // liveRibbons / streets / blockCustoms are deliberately absent.
+    let sg
+    try { sg = sectionOpen(frozenShape, curbWidth, { outer: 'LU', inner: 'SW' }, stencil) }
+    catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
+    const perLu = (byLu, yLift) => Object.entries(byLu)
+      .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
+      .filter(e => e.geo)
+    return {
+      lu:       perLu(sg.luByClass,    0.010),
+      treelawn: perLu(sg.treelawnByLu, 0.020),
+      sidewalk: ringsToFlatGeo(sg.sidewalk, 0.030, true),
+      curb:     ringsToFlatGeo(sg.curb,     0.035, true),
+      asphalt:  ringsToFlatGeo(sg.asphalt,  0.040, true),
+      block:    ringsToFlatGeo(sg.block,    0.008, true),   // frozen block silhouette, under the LU paint
+    }
+  }, [sectionFrozen, frozenShape, curbWidth, stencil])
+
   const tileGeos = useMemo(() => {
     if (!isTileScene || !liveRibbons) return null
+    // Section-frozen mode renders from `sectionGeos` (the artifact) — skip the
+    // live Survey build entirely so the Section path provably never runs it.
+    // (Gated on the composed geos, not the flag: if sectionOpen ever failed,
+    // the live build remains as the visible fallback.)
+    if (sectionGeos) return null
     let tg
     try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
@@ -623,7 +678,7 @@ export default function BlockGeometryV2Debug({
       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
       cornerFillets: tg.cornerFillets || {},
     }
-  }, [isTileScene, liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
+  }, [isTileScene, liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
 
   // Publish the achieved per-corner fillets so CornerEditHandles draws the REAL
   // curb arc (one corner truth — the handle reads geometry, never re-derives).
@@ -1014,6 +1069,40 @@ export default function BlockGeometryV2Debug({
     // one flat translucent blue, roads as gaps. The curb OUTLINE + IX markers
     // frame the blocks; centerlines come from MapLayers; corner controls from
     // CornerEditHandles (both already Survey-gated). Aerial shows through.
+    // ── THE WALL · Phase D — the Section (Measure) ground = the FROZEN
+    // artifact. Everything below comes from sectionGeos (shape.json via
+    // sectionOpen) — the live tileGeos build is skipped entirely in this mode
+    // (its memo returns null), so the Section render provably cannot reach the
+    // chain graph. Same band materials as the live view (WYSIWYG, just frozen).
+    // No highway/perimeter mesh: those aren't in the artifact (not tile-shaped);
+    // they stay Survey/Stage concerns until the artifact grows.
+    if (sectionFrozen && sectionGeos) {
+      return (
+        <group>
+          {!hideLandUse && lotVisible && sectionGeos.block && (
+            <mesh geometry={sectionGeos.block} renderOrder={PRI.residential} receiveShadow
+              material={tileLuFallback} />
+          )}
+          {!hideLandUse && lotVisible && sectionGeos.lu?.map(({ lu, geo }) => (
+            <mesh key={`flu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
+              material={tileLuMats.get(lu) || tileLuFallback} />
+          ))}
+          {treelawnVisible && sectionGeos.treelawn?.map(({ lu, geo }) => (
+            <mesh key={`ftl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
+              material={bandMats.treelawnByLu.get(lu) || tlLuFallback} />
+          ))}
+          {sidewalkVisible && sectionGeos.sidewalk && (
+            <mesh geometry={sectionGeos.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalk} />
+          )}
+          {curbVisible && sectionGeos.curb && (
+            <mesh geometry={sectionGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
+          )}
+          {asphaltVisible && sectionGeos.asphalt && (
+            <mesh geometry={sectionGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
+          )}
+        </group>
+      )
+    }
     if (surveyActive) {
       return (
         <group>

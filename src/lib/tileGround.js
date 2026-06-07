@@ -629,6 +629,42 @@ export function sectionPass(shapeTiles, cw, stripMat) {
   return { Wacc, tlByLu, luByLu }
 }
 
+// ── THE WALL · Phase D · sectionOpen ───────────────────────────────────────
+// Section OPENS the frozen artifact: compose the whole Section ground render
+// off shapeTiles ALONE — block silhouette (the frozen iA), curb stroke
+// (iA − iC), asphalt silhouette (ring − iA), and the ped FILL via sectionPass.
+// Same chain-free contract as sectionPass: parameters carry only the artifact
+// + design params (cw, stripMat, an optional boundary stencil polygon) — there
+// is NO handle on streets / chains / measures / ribbons, so a Section surface
+// rendering through here physically cannot re-derive the shape. The per-tile
+// compositions mirror the shape loop's emit lines (Aacc / Cacc / blockRaw in
+// buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
+// Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
+// already tolerates the serialized roundTipKeys array).
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null) {
+  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat)
+  const Aacc = [], Cacc = [], blockRaw = []
+  for (const st of shapeTiles) {
+    const iA = st.iA || []
+    const bandJoin = st.bandJoin || 'miter'
+    const cap = Number.isFinite(st.cap) ? st.cap : (cw + (st.tl || 0) + (st.sw || 0))
+    Aacc.push(...differenceRings([st.ring], iA))                                      // asphalt = tile − rounded inner
+    Cacc.push(...differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)))  // curb = iA − iC (frozen join + cap)
+    blockRaw.push(...iA)                                                              // block silhouette = the frozen curb ring
+  }
+  const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
+  const treelawnByLu = {}, luByClass = {}
+  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = clip(unionRings(tlByLu[k]))
+  for (const k of Object.keys(luByLu)) luByClass[k]   = clip(unionRings(luByLu[k]))
+  return {
+    asphalt:  clip(unionRings(Aacc)),
+    curb:     clip(unionRings(Cacc)),
+    sidewalk: clip(unionRings(Wacc)),
+    treelawnByLu, luByClass,
+    block:    clip(blockRaw),
+  }
+}
+
 export function buildTileGround(ribbons, opts = {}) {
   const curbWidth = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
