@@ -39,6 +39,10 @@
 - **Corpse-lie excision** — the code-side of every landed truth; via briefs at the code phase. `DOC-CODE-COHERENCE.md`.
 
 ## NEXT
+- **⭐ "Revert to Data" buttons — Survey + Section (Jacob 2026-06-08).** The operator-facing version of the datum-repair: instead of a forensic dropping deviating overrides, a button **strips the authoring overlay back to the base.** The clean inverse of "always populate best-effort, then override" (`SECTION.md §8`). Scoped (edge / block / chain / whole-neighborhood):
+  - **Survey · "Revert to Data"** → the **sterile Skeleton**: discard the SHAPE overrides (per-fe `pavementHW`, corner-R, caps) → the skeleton's surveyed base widths. The skeleton/`survey.json` is the truth ([[project_skeleton_is_the_first_bake]]).
+  - **Section · "Revert to Data"** → the **calculated best-effort**: discard the FILL overrides (treelawn Y/N, ped depths, strip materials) → the gleaned treelawn-Y/N × ADA defaults + default strip ordering (`SECTION.md §3.1`).
+  Mechanism partly exists (`MeasurePanel` reset/wipe-customs); generalize + surface as a first-class per-tool control. *(Motivation: deviating overrides cause artifacts — the no-mouth doglegs were exactly this; reverting to data cured them. Give the operator the button, not the forensic.)*
 - **Survey · Section · Stage rename** — decided; rides with T3 (⚠️ don't rename code until implemented).
 - **Boundary-trio** — circle-SSOT, crop-to-circle-last, bake-time stencil-cull. `HANDOFF-boundary-trio.md`.
 - **Asphalt-as-ribbon** — Survey-owns-SHAPE capability. `HANDOFF-asphalt-as-ribbon.md`.
