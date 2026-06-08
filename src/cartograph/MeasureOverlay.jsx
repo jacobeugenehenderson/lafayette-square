@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
 import { sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
+import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 import { chainMeasure, findFeForSide as findFeForSidePure, feesForChainSide, applyKindToMeasure } from './measureModel.js'
@@ -314,9 +315,18 @@ export default function MeasureOverlay() {
     // measure the bands render from, so handles sit on the bands instead of
     // vanishing (feedback_scene_blind_fixture_latent_fault).
     const chainM = chainMeasure(st)
+    // ⭐ One depth truth (SECTION.md §5): the handle is POSITIONED from the
+    // SAME per-edge resolution the FILL strokes — blockCustoms override else
+    // best-effort (gleaned-Y × ADA) — merged over the chain reference fields
+    // (pavementHW etc.). Never the raw chain depths: those are the surveyed
+    // natural-gap inputs the best-effort GLEANS from, not what renders.
+    const resolveSide = (custom, sideKey) => {
+      const ped = resolvePedDepths(chainM, sideKey, custom)
+      return { ...(chainM[sideKey] || {}), ...(custom || {}), treelawn: ped.tl, sidewalk: ped.sw }
+    }
     const baseMeasure = {
-      left:  customLeft  || chainM.left,
-      right: customRight || chainM.right,
+      left:  resolveSide(customLeft, 'left'),
+      right: resolveSide(customRight, 'right'),
       symmetric: chainM.symmetric,
     }
     // For inner-edge chains, zero out the inboard ped zone so its handles
@@ -428,7 +438,14 @@ export default function MeasureOverlay() {
     const entries = []
     const pushFe = (fe, s) => {
       if (!fe) return
-      const seed = readFeCustom(blockCustoms, fe) || chainSeed[s] || FALLBACK
+      // ⭐ One depth truth (SECTION.md §5): seed the drag from the SAME
+      // resolution the FILL renders, so the drag redistributes within the
+      // depths on screen — and the write carries the resolved depths as
+      // intent, never surveyed-depth baggage (the FILL reads
+      // .treelawn/.sidewalk off blockCustoms now).
+      const existing = readFeCustom(blockCustoms, fe)
+      const ped = resolvePedDepths(chainSeed, s, existing)
+      const seed = { ...(chainSeed[s] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
       entries.push({ fe, measure: applyKindToMeasure(seed, kind, r) })
     }
 
@@ -580,11 +597,13 @@ export default function MeasureOverlay() {
     // Resolve (slot, side) for a click in a strip's body. Returns null
     // if click falls outside the ribbon (in asphalt, on curb, past
     // propertyLine, or on a non-sidewalk terminal side). Otherwise
-    // returns { slot: 'outer'|'inner', side, segOrd, sourceMeasure }.
+    // returns { slot: 'outer'|'inner', side, segOrd, sourceMeasure, hasTL }.
     //
-    // V1.5 doctrine: outer slot = TL strip (curb-side, between curbEnd
-    // and curbEnd+treelawn); inner slot = SW strip (property-side,
-    // between curbEnd+treelawn and curbEnd+treelawn+sidewalk).
+    // ⭐ One depth truth (SECTION.md §5): the hit-test reads the SAME
+    // per-edge resolution the FILL strokes. Slots are POSITIONAL per the
+    // §3.1 ordering (outer = the curb-side strip): treelawn-Y → outer=TL,
+    // inner=SW; treelawn-N → outer=SW (the walk hugs the curb), inner=TL
+    // (0-deep until authored).
     const resolveStripHit = (p) => {
       if (!selection) return null
       const st = centerlineData.streets[selection.streetIdx]
@@ -595,23 +614,25 @@ export default function MeasureOverlay() {
       const side = signedPerp >= 0 ? 'right' : 'left'
       const r = Math.abs(signedPerp)
       const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-      // Resolve seed measure for the side from blockCustoms (per-block
-      // mode preference) → chain.measure → defaults; needed only to read
-      // strip-boundary depths, not yet to write.
       const customFe = findFeForSide(selection.streetIdx, segOrd, side)
       const existing = readFeCustom(blockCustoms, customFe)
-      const sd = existing || st.measure?.[side] || null
-      if (!sd) return null
+      const chainM = chainMeasure(st)
+      const chainSide = chainM?.[side] || null
+      if (!chainSide && !existing) return null
+      const ped = resolvePedDepths(chainM, side, existing)
+      const sd = { ...(chainSide || {}), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
       if (sd.terminal !== 'sidewalk') return null
       const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
-      const curbEnd = sd.pavementHW + cw
-      const tlEnd   = curbEnd + (sd.treelawn || 0)
-      const swEnd   = tlEnd + (sd.sidewalk || 0)
+      const curbEnd = (sd.pavementHW || 0) + cw
+      const oD = ped.hasTL ? ped.tl : ped.sw     // outer (curb-side) slot depth
+      const iD = ped.hasTL ? ped.sw : ped.tl     // inner slot depth
+      const oEnd = curbEnd + oD
+      const iEnd = oEnd + iD
       let slot = null
-      if (r > curbEnd && r <= tlEnd && (sd.treelawn || 0) > 1e-6) slot = 'outer'
-      else if (r > tlEnd && r <= swEnd && (sd.sidewalk || 0) > 1e-6) slot = 'inner'
+      if (r > curbEnd && r <= oEnd && oD > 1e-6) slot = 'outer'
+      else if (r > oEnd && r <= iEnd && iD > 1e-6) slot = 'inner'
       if (!slot) return null
-      return { slot, side, segOrd, sourceMeasure: sd, fe: customFe }
+      return { slot, side, segOrd, sourceMeasure: sd, hasTL: ped.hasTL, fe: customFe }
     }
     // Try to flip the material of the strip whose body the click landed in.
     // Polygon-only (same scope rules as drag): per-block flips the one fe at
@@ -622,21 +643,24 @@ export default function MeasureOverlay() {
     const tryFlipStripMaterial = (p) => {
       const hit = resolveStripHit(p)
       if (!hit) return false
-      const { slot, side, segOrd, sourceMeasure, fe } = hit
+      const { slot, side, segOrd, sourceMeasure, hasTL, fe } = hit
       const store = useCartographStore.getState()
       const mode = store.measureMode
       const editSep = store.editSidesSeparately
       const st = centerlineData.streets[selection.streetIdx]
       const blockCustoms = store.blockCustoms || {}
       const fes = store._v2FrontageEdges || []
-      // Defaults per V1.5 doctrine: outer=LU, inner=SW. Flip captures the
+      // Slot defaults follow the §3.1 ordering (treelawn-Y → {LU, SW};
+      // treelawn-N → {SW, LU}, the walk hugging the curb). Flip captures the
       // previous slot values and inverts the clicked slot only.
-      const seedMats = sourceMeasure.materials && typeof sourceMeasure.materials === 'object'
+      const defMats = hasTL ? { outer: 'LU', inner: 'SW' } : { outer: 'SW', inner: 'LU' }
+      const m = sourceMeasure.materials
+      const seedMats = m && typeof m === 'object'
         ? {
-            outer: (sourceMeasure.materials.outer === 'SW') ? 'SW' : 'LU',
-            inner: (sourceMeasure.materials.inner === 'LU') ? 'LU' : 'SW',
+            outer: (m.outer === 'SW' || m.outer === 'LU') ? m.outer : defMats.outer,
+            inner: (m.inner === 'SW' || m.inner === 'LU') ? m.inner : defMats.inner,
           }
-        : { outer: 'LU', inner: 'SW' }
+        : { ...defMats }
       const nextMats = { ...seedMats, [slot]: seedMats[slot] === 'LU' ? 'SW' : 'LU' }
 
       const otherSide = side === 'left' ? 'right' : 'left'
@@ -647,9 +671,12 @@ export default function MeasureOverlay() {
       const entries = []
       const pushFe = (feX, s) => {
         if (!feX) return
-        // Seed each fe from its own custom (preserve its widths) else the
-        // chain default; only the materials change.
-        const seed = readFeCustom(blockCustoms, feX) || chainSeed[s] || sourceMeasure
+        // Seed each fe from its own custom (preserve authored fields) over the
+        // chain reference, with depths from the ONE resolution (§5) — a swap
+        // changes materials only, never bakes surveyed depths.
+        const existing = readFeCustom(blockCustoms, feX)
+        const ped = resolvePedDepths(chainSeed, s, existing)
+        const seed = { ...(chainSeed[s] || sourceMeasure), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
         entries.push({ fe: feX, measure: { ...seed, materials: { ...nextMats } } })
       }
       if (mode?.type === 'global') {

@@ -3,6 +3,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import { CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
 import { chainMeasure, findFeForSide, feesForChainSide } from './measureModel.js'
 import { readFeCustom, feCustomKey } from '../lib/feCustomKey.js'
+import { resolvePedDepths } from '../lib/tileGround.js'
 
 const FT_PER_M = 3.28084
 const M_PER_FT = 0.3048
@@ -17,9 +18,18 @@ function effectiveMeasure(st, segOrd, v2FrontageEdges, blockCustoms) {
   const feR = findFeForSide(v2FrontageEdges, st, segOrd, 'right')
   const customL = readFeCustom(blockCustoms, feL)
   const customR = readFeCustom(blockCustoms, feR)
+  // ⭐ One depth truth (SECTION.md §5): the panel SHOWS the same per-edge
+  // resolution the FILL strokes — blockCustoms override else best-effort
+  // (gleaned-Y × ADA) — merged over the chain reference fields. The raw chain
+  // depths are the surveyed inputs the best-effort gleans from, not what
+  // renders; a commit writes the displayed (resolved) depths as intent.
+  const resolve = (custom, sideKey) => {
+    const ped = resolvePedDepths(chain, sideKey, custom)
+    return { ...(chain[sideKey] || {}), ...(custom || {}), treelawn: ped.tl, sidewalk: ped.sw }
+  }
   return {
-    left:  customL || chain.left,
-    right: customR || chain.right,
+    left:  resolve(customL, 'left'),
+    right: resolve(customR, 'right'),
     feL, feR,
   }
 }

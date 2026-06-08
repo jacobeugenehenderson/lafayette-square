@@ -479,6 +479,22 @@ const ADA_SIDEWALK = 1.5            // ADA-standard sidewalk depth — the Rever
 const gleanTreelawn = (measure, side) =>
   Math.max(0, Number.isFinite(measure?.[side]?.treelawn) ? measure[side].treelawn : 0) >= TREELAWN_YN_THRESHOLD
 
+// ⭐ THE ONE PER-EDGE DEPTH RESOLUTION (SECTION.md §3.3 step 1 / §5 one-depth-truth).
+// override (blockCustoms[skelId][side][segOrd].{treelawn,sidewalk}) else the
+// best-effort default (gleaned-Y ? STD_TREELAWN : 0; ADA_SIDEWALK). Exported so
+// the FILL stroke (sectionPass) and the authoring-handle placement (Measure
+// overlay) read the SAME resolution — if they read different depths they
+// diverge, which was the root of both handle symptoms (don't match + don't
+// respond). Pure data-in/data-out: no chain handle, the wall holds.
+// `hasTL` = treelawn presence at the RESOLVED depth — it drives the §3.1 strip
+// ordering (Y reads TL→SW→LU; N reads SW→TL→LU, the walk hugging the curb).
+export function resolvePedDepths(baseMeasure, side, custom = null) {
+  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn)
+    : (gleanTreelawn(baseMeasure, side) ? STD_TREELAWN : 0)
+  const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : ADA_SIDEWALK
+  return { tl, sw, hasTL: tl > 1e-6 }
+}
+
 // Group a tile's cyclic edges into maximal RUNS of the same (streetIdx, side).
 // A run = a sub-polyline of the tile boundary that all carries the same
 // street-side widths. Offsetting the run polyline (not each edge) is what
@@ -564,24 +580,17 @@ function groupRuns(tile) {
 // when the shape pass re-runs. Every helper below is module-level + pure.
 export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
   const Wacc = [], tlByLu = {}, luByLu = {}
-  // Per-edge ped-strip material OVERRIDE (the ctrl-click LU↔SW swap — SECTION.md §8
-  // "always best-effort, then override"): blockCustoms[skelId][side][segOrd].materials
-  // wins over the default {outer:'LU', inner:'SW'}, keyed by the FROZEN run identity
-  // (skelId/side/segOrd) — design intent, NOT chain geometry, so the wall holds.
-  // Returns null when there's no real override → the common case stays default-routed,
-  // byte-identical to pre-override.
-  const runMatOverride = (run) => {
-    const c = blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd]?.materials
-    if (!c) return null
-    const outer = c.outer === 'SW' ? 'SW' : 'LU'
-    const inner = c.inner === 'LU' ? 'LU' : 'SW'
-    return (outer === 'LU' && inner === 'SW') ? null : { outer, inner }
-  }
+  // Per-edge OVERRIDE read (SECTION.md §3.2/§3.3): blockCustoms[skelId][side][segOrd]
+  // keyed by the FROZEN run identity — design intent, NOT chain geometry, so the
+  // wall holds. Carries the depth override (.treelawn/.sidewalk → resolvePedDepths)
+  // and the material override (.materials over the §3.1 ordering default).
+  const runCustom = (run) => blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null
   for (const st of shapeTiles) {
     const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs } = st
     // Tolerate the serialized artifact: roundTipKeys is a Set in-memory, an array
     // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
     const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
+    const roundTipByKey = new Map(roundTips.map(t => [tipKey(t.p), t]))
     // Band join frozen by the shape pass: 'round' at dead-end / loop / thin tiles
     // so the ped strips cap cleanly instead of needling at the cap's ~180°
     // reversal; 'miter' on normal cornered tiles keeps authored R=0 squares sharp.
@@ -592,73 +601,175 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
     // medial axis into thorns — it degrades to a clean truncated ribbon. On the
     // offset W, never the fillet radius.
     const cap = Number.isFinite(st.cap) ? st.cap : (cw + tl + sw)
-    const iC = offsetRings(iA, -Math.min(cw, cap), bandJoin)             // curb/treelawn boundary  (R+cw)
-    const iT = offsetRings(iA, -Math.min(cw + tl, cap), bandJoin)        // treelawn/sidewalk       (R+cw+tl)
-    const iW = offsetRings(iA, -Math.min(cw + tl + sw, cap), bandJoin)   // sidewalk/LU             (R+cw+tl+sw)
-    // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
-    // ramp → the corner ped is a uniform concentric all-SW annulus from tangent
-    // to tangent; treelawn lives only on the straight legs and ends at the
-    // tangents. Define the straight-leg zone as the union of each run's
-    // butt-capped slab (it ends square at the corner vertex, leaving the corner
-    // wedge uncovered). Treelawn = the concentric tl annulus ∩ that zone →
-    // clean tangent cuts; the uncovered corner wedge becomes sidewalk. Same
-    // per-run butt-cap construction as the asphalt, so the cuts stay consistent.
-    const tlSlabs = []
-    const overrideRuns = []   // per-edge material-override runs: { zone (full ped depth), mat }
-    const wrapDisks = []   // round dead-end zone disks (treelawn wraps the cap)
+    // Median tile: the shape pass froze ped at zero (tl = sw = 0) — no per-edge
+    // resolution can re-grow strips into the median.
+    const pedOff = (tl + sw) <= 1e-6
+    // ── §3.3 step 1 · per-edge resolution ──
+    // One resolved depth pair per qualifying run (the one-depth-truth wire —
+    // resolvePedDepths, shared with the handle placement), plus the §3.1 strip
+    // ORDERING (two strips always): treelawn-Y reads TL→SW→LU off the curb;
+    // treelawn-N reads SW→TL→LU (the walk hugs the curb; the TL slot is 0-deep
+    // until authored). Materials default by that ordering through stripMat
+    // ({outer:'LU', inner:'SW'} = TL-position LU / SW-position SW), then the
+    // per-edge .materials override (§3.2) flips slots; both-LU = open field.
+    const rr = []
     for (const run of runs) {
-      // Best-effort fill (SECTION.md §3.1): treelawn is Y/N off the natural gap at
-      // a STANDARD depth — not the noisy surveyed gap. A treelawn-N run gets no
-      // slab → it stays out of the zone → that straight section fills all-SW.
       const aBase = edgeDepth(run.baseMeasure, run.side, cw, 'A')   // base asphalt edge (grout)
       if (aBase <= 1e-6) continue                                   // median-facing / no street → no ped
-      const hasTL = gleanTreelawn(run.baseMeasure, run.side)
-      const td = hasTL ? aBase + cw + STD_TREELAWN : 0
+      const c = runCustom(run)
+      const ped = pedOff ? { tl: 0, sw: 0, hasTL: false } : resolvePedDepths(run.baseMeasure, run.side, c)
+      const o = ped.hasTL ? ped.tl : ped.sw                         // outer (curb-side) strip depth
+      const inn = ped.hasTL ? ped.sw : ped.tl                       // inner strip depth
+      const defMat = ped.hasTL
+        ? { outer: stripMat.outer, inner: stripMat.inner }          // TL→SW (Y ordering)
+        : { outer: stripMat.inner, inner: stripMat.outer }          // SW→TL (N ordering)
+      const cm = c?.materials
+      const mat = cm
+        ? { outer: cm.outer === 'SW' ? 'SW' : 'LU', inner: cm.inner === 'LU' ? 'LU' : 'SW' }
+        : defMat
       const a = edgeDepth(run.measure, run.side, cw, 'A')   // per-fe asphalt edge, frozen (trim follows it)
-      // Pull the run back from each CORNER end by (asphalt-hw + that corner's
-      // resolved R) so the slab ends at the tangent and the corner wedge becomes
-      // the ADA all-SW pad. A ROUND dead-end is NOT trimmed (treelawn runs to the
-      // tip + the wrap disk rounds it). Closed-loop runs aren't trimmed. Acute
-      // corners just get a small fillet now (no special wrap — that made the
-      // teardrop/notch artifacts).
-      const last = run.poly[run.poly.length - 1]
-      const k0 = tipKey(run.poly[0]), k1 = tipKey(last)
-      const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], ring, vertR)
-      const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, ring, vertR)
-      const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
-      if (!poly || poly.length < 2) continue
-      if (td > 1e-6) tlSlabs.push(...strokeOpen(poly, td))   // treelawn zone (Y runs only)
-      // Capture an overridden run's FULL-depth ped zone (treelawn + sidewalk) so its
-      // strips route by the authored material even when treelawn-N (sidewalk-only).
-      const mat = runMatOverride(run)
-      if (mat) overrideRuns.push({ zone: strokeOpen(poly, a + cw + tl + sw), mat })
+      rr.push({ run, aBase, a, hasTL: ped.hasTL, tlD: ped.tl, swD: ped.sw, o, inn, total: o + inn, mat })
     }
-    let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
-    // A ROUND dead-end cap is NOT an ADA intersection corner: the treelawn
-    // CONTINUES around the cap (Jacob). Add a wrap disk at each round tip to the
-    // straight-leg zone so the treelawn annulus wraps the round end (the cap
-    // becomes a normal bent road section, not an all-SW ramp). Blunt tips stay
-    // out of the zone → still all-SW / no wrap.
-    if (zone && roundTips.length) {
-      for (const t of roundTips) wrapDisks.push(circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 2))
+    // Peel treelawn-Y runs first: where two legs' slabs graze near a corner the
+    // treelawn claims the overlap (matching the old zone-union semantics — the
+    // grass ends at its tangent, the walk yields).
+    rr.sort((x, y) => (y.hasTL ? 1 : 0) - (x.hasTL ? 1 : 0))
+    // ── §3.3 step 2 · THE MONO-WIDTH BAND (sacrosanct — RIBBONS §3.9a) ──
+    // ONE uniform outer depth per tile: WB = cw + max(TL) + max(SW) over the
+    // tile's edges, floored at the frozen tile depths so an unauthored tile
+    // reproduces the frozen geometry exactly. All per-edge variation below is
+    // SLICING inside this band — the uniform offsets are never re-architected.
+    let TLmax = tl, SWmax = sw
+    for (const e of rr) { if (e.tlD > TLmax) TLmax = e.tlD; if (e.swD > SWmax) SWmax = e.swD }
+    // Concentric ring at ped depth d off the frozen iA (cap-clamped, shared
+    // join) — cached per distinct depth, so the default tile costs the same
+    // three offsets as ever and an authored depth adds one. EVERY depth bound
+    // below is one of these rings: the divider stays concentric to the frozen
+    // curb (a slice of the band), never a centerline-datum slab edge.
+    const offCache = new Map()
+    const ringAt = (d) => {
+      const key = Math.min(cw + d, cap)
+      let r = offCache.get(key)
+      if (!r) { r = offsetRings(iA, -key, bandJoin); offCache.set(key, r) }
+      return r
     }
-    if (zone && wrapDisks.length) zone = unionRings([...zone, ...wrapDisks])
-    const clipLeg = (rings) => zone ? intersectRings(rings, zone) : rings
-    // The two ped LEG strips + the structural corner pad. Outer = the strip
-    // nearer the curb (treelawn position); inner = the strip nearer the
-    // property line (sidewalk position). The corner span is always SW (G5 ADA).
-    let legOuter = clipLeg(differenceRings(iC, iT))   // R+cw .. R+cw+tl
-    let legInner = clipLeg(differenceRings(iT, iW))   // R+cw+tl .. R+cw+tl+sw
-    let cornerPad = zone ? differenceRings(differenceRings(iC, iW), zone) : []
-    let luRemainder = iW                              // LU = innermost remainder (+ blunt-tip reclaim)
+    const iC = ringAt(0)                  // curb inner (R+cw)
+    const iW = ringAt(TLmax + SWmax)      // band inner (R+WB)
+    const fullBand = differenceRings(iC, iW)   // the whole ribbon, cw → WB
+    const SECTOR_D = TLmax + SWmax + 2    // sector slabs always out-reach the band
+    // Single closed run (a loop interior): the strips are whole concentric
+    // annuli at that one edge's depths — no corners, no slicing.
+    const single = (runs.length === 1 && rr.length) ? rr[0] : null
+    // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
+    // ramp → an all-SW slice of the SAME fullBand from tangent to tangent;
+    // treelawn lives only on the straight legs and ends at the tangents. Each
+    // run is pulled back from its corner ends by (asphalt-hw + that corner's
+    // resolved R) so its slabs end at the tangent; the uncovered corner wedge
+    // becomes the bent pad below.
+    const pieces = []        // leg strips: { mat, rings }
+    const luExtra = []       // authored-shallower band residual along legs → LU
+    const cornerT = new Map()   // corner vertex → { p, T: max-adjacent ped total, trim }
+    let bandRem = fullBand
+    if (single) {
+      const iMid = ringAt(single.o)
+      const iWrun = ringAt(single.total)
+      pieces.push({ mat: single.mat.outer, rings: differenceRings(iC, iMid) })
+      pieces.push({ mat: single.mat.inner, rings: differenceRings(iMid, iWrun) })
+      bandRem = differenceRings(iWrun, iW)   // authored-shallower residual → LU
+    } else {
+      // Group legs by identical (depths, materials) and peel ONCE per group —
+      // a default tile has 1-2 groups (Y, N), so the live re-stroke costs what
+      // the old uniform construction did; an authored depth adds one group.
+      const groups = new Map()
+      for (const e of rr) {
+        const { run } = e
+        const last = run.poly[run.poly.length - 1]
+        const ends = [[run.poly[0], tipKey(run.poly[0])], [last, tipKey(last)]]
+        const tipped = ends.map(([, k]) => roundTipKeys.has(k))
+        // §3.3 step 3 — corner depth = cw + MAX-ADJACENT: each non-tip run end
+        // bids its own ped total at its corner vertex; the bent pad takes the
+        // deeper of the two adjacent legs (SW↔SW corner → sidewalk-deep).
+        ends.forEach(([p, k], i) => {
+          if (tipped[i]) return
+          const trim = e.a + nearestVertR(p, ring, vertR)
+          const prev = cornerT.get(k)
+          if (!prev) cornerT.set(k, { p, T: e.total, trim })
+          else { if (e.total > prev.T) prev.T = e.total; if (trim > prev.trim) prev.trim = trim }
+        })
+        const t0 = tipped[0] ? 0 : e.a + nearestVertR(run.poly[0], ring, vertR)
+        const t1 = tipped[1] ? 0 : e.a + nearestVertR(last, ring, vertR)
+        const poly = trimPolyline(run.poly, t0, t1)
+        if (!poly || poly.length < 2) continue
+        // This leg's claim SECTOR: a constant-depth slab (butt-capped at the
+        // tangents, same construction as the asphalt strokes) that out-reaches
+        // the band. The depth split inside the claim uses the CONCENTRIC rings
+        // (ringAt) — the divider is a slice of the band at cw + this edge's
+        // outer depth, the §3.3 per-edge divider inside the mono-width.
+        const sector = strokeOpen(poly, e.aBase + cw + SECTOR_D)
+        // A ROUND dead-end cap is NOT an ADA corner: the ped wraps the cap (iA
+        // is the cap disk there, so the concentric rings follow it). The disk
+        // just extends this leg's claim around the cap; the depths stay rings.
+        ends.forEach(([p, k], i) => {
+          if (!tipped[i]) return
+          const t = roundTipByKey.get(k)
+          if (t) sector.push(circlePoly(p[0], p[1], t.hw + cw + SECTOR_D))
+        })
+        if (!sector.length) continue
+        const gk = `${e.o.toFixed(4)}|${e.total.toFixed(4)}|${e.mat.outer}|${e.mat.inner}`
+        let g = groups.get(gk)
+        if (!g) { g = { o: e.o, inn: e.inn, total: e.total, mat: e.mat, hasTL: e.hasTL, sectors: [] }; groups.set(gk, g) }
+        g.sectors.push(...sector)
+      }
+      // Peel treelawn-Y groups first (rr is Y-sorted, but make it explicit):
+      // where two legs' sectors graze near a corner the treelawn claims the
+      // overlap — the grass ends at its tangent, the walk yields.
+      const ordered = [...groups.values()].sort((x, y) => (y.hasTL ? 1 : 0) - (x.hasTL ? 1 : 0) || y.total - x.total)
+      for (const g of ordered) {
+        const claim = intersectRings(bandRem, g.sectors)
+        bandRem = differenceRings(bandRem, g.sectors)
+        if (!claim.length) continue
+        const oRing = ringAt(g.o)        // divider at this group's outer depth
+        const wRing = ringAt(g.total)    // this group's band inner
+        const outerStrip = g.o > 1e-6 ? differenceRings(claim, oRing) : []
+        const innerStrip = g.inn > 1e-6 ? differenceRings(intersectRings(claim, oRing), wRing) : []
+        if (outerStrip.length) pieces.push({ mat: g.mat.outer, rings: outerStrip })
+        if (innerStrip.length) pieces.push({ mat: g.mat.inner, rings: innerStrip })
+        // deeper-than-this-group's-total band within the claim → LU (the §3.1
+        // remainder flows to the block center; no hard property line)
+        if (g.total < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(claim, wRing))
+      }
+    }
+    // ── §3.3 steps 3+4 · the bent corner = a SLICE of the fullBand ──
+    // Never a constructed primitive: pad = (un-zoned band) ∩ (depth ≤ cw+T_c)
+    // ∩ corner disk. Bounded inward at the deeper adjacent leg's total, so an
+    // SW↔SW corner comes out sidewalk-deep and a TL-adjacent corner full-depth.
+    let cornerPad = []
+    if (bandRem.length && cornerT.size) {
+      const shallowByT = new Map()   // distinct depth → band region above it (one offset per depth)
+      for (const [, c] of cornerT) {
+        if (c.T <= 1e-6) continue
+        let shallow = shallowByT.get(c.T)
+        if (!shallow) {
+          shallow = (c.T >= TLmax + SWmax - 1e-9)
+            ? bandRem
+            : differenceRings(bandRem, ringAt(c.T))
+          shallowByT.set(c.T, shallow)
+        }
+        const disk = circlePoly(c.p[0], c.p[1], c.trim + cw + c.T + 1)
+        cornerPad.push(...intersectRings(shallow, [disk]))
+      }
+    }
+    // Whatever the legs + pads didn't claim flows to LU — the remainder runs
+    // curb → block-center (§3.3: no hard property line; both-strips-LU = open
+    // field falls out for free).
+    let luRemainder = unionRings([...iW, ...luExtra, ...differenceRings(bandRem, cornerPad)])
     // G8 — at a blunt/none dead-end the street just ends: no ped wrap. Subtract
     // a disk at the tip from the ped bands and reclaim that ped area as LU so it
     // abuts the flat asphalt end.
     if (bluntTips.length) {
-      const disks = bluntTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + tl + sw + 1))
-      luRemainder = unionRings([...iW, ...intersectRings(differenceRings(iC, iW), disks)])
-      legOuter = differenceRings(legOuter, disks)
-      legInner = differenceRings(legInner, disks)
+      const disks = bluntTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + TLmax + SWmax + 1))
+      luRemainder = unionRings([...luRemainder, ...intersectRings(fullBand, disks)])
+      for (const pc of pieces) pc.rings = differenceRings(pc.rings, disks)
       cornerPad = differenceRings(cornerPad, disks)
     }
     // G8 round-tip cleanup — a cul-de-sac cap is road + ped wrap, NEVER land use.
@@ -672,29 +783,15 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
         cornerPad = unionRings([...cornerPad, ...stray])
       }
     }
-    // M3 — the two leg strips carry DATA-DRIVEN materials from the overridable
-    // materials model (default {outer:'LU', inner:'SW'}). Don't hard-code
-    // treelawn=grass / sidewalk=concrete — route each strip through stripMat so
-    // T3's per-fe LU↔SW swap plugs in with no geometry rework. 'LU' → the tile's
-    // land-use colour (the treelawn look); 'SW' → the sidewalk material.
-    const routeStrip = (matTag, rings) => {
-      if (!rings.length) return
-      if (matTag === 'SW') Wacc.push(...rings)
-      else pushLu(tlByLu, lu, rings)
+    // Route the leg strips by their per-edge materials ('LU' → the tile's
+    // land-use colour, 'SW' → the sidewalk material); the corner pad is always
+    // SW (the ADA ramp — structural, regardless of leg ordering/overrides).
+    for (const pc of pieces) {
+      if (!pc.rings.length) continue
+      if (pc.mat === 'SW') Wacc.push(...pc.rings)
+      else pushLu(tlByLu, lu, pc.rings)
     }
-    // Per-edge OVERRIDE first: route each overridden run's portion of the strips by
-    // its authored materials, peeling it off the default remainder. No overrides →
-    // the loop is empty and routing is byte-identical to before.
-    let outerRem = legOuter, innerRem = legInner
-    for (const orun of overrideRuns) {
-      routeStrip(orun.mat.outer, intersectRings(outerRem, orun.zone))
-      routeStrip(orun.mat.inner, intersectRings(innerRem, orun.zone))
-      outerRem = differenceRings(outerRem, orun.zone)
-      innerRem = differenceRings(innerRem, orun.zone)
-    }
-    routeStrip(stripMat.outer, outerRem)           // outer ped strip (default LU)
-    routeStrip(stripMat.inner, innerRem)           // inner ped strip (default SW)
-    Wacc.push(...cornerPad)                         // corner span — always SW (structural)
+    Wacc.push(...cornerPad)
     // E2 — the constructed median paints positively: route this tile's frozen
     // median region (med, clipped at the shape pass) to the 'median' class and
     // keep it out of the parcel-LU remainder. Covers both the true median tile

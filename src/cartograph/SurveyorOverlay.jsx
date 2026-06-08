@@ -6,6 +6,7 @@ import { polylineRibbon } from './overlayGeom.js'
 import { innerEdgeMeasure } from './streetProfiles.js'
 import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
+import { resolvePedDepths } from '../lib/tileGround.js'
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 
 const raycaster = new THREE.Raycaster()
@@ -227,7 +228,12 @@ export default function SurveyorOverlay() {
     for (const s of sides) {
       const fe = findFeForSide(fes, st, segOrd, s)
       if (!fe) continue
-      const seed = readFeCustom(store.blockCustoms, fe) || chainSeed[s] || FALLBACK
+      // Depths come from the ONE per-edge resolution (SECTION.md §5), so a
+      // Survey pavementHW drag never bakes surveyed-depth baggage into
+      // blockCustoms — the FILL reads .treelawn/.sidewalk as ped intent now.
+      const existing = readFeCustom(store.blockCustoms, fe)
+      const ped = resolvePedDepths(chainSeed, s, existing)
+      const seed = { ...(chainSeed[s] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
       entries.push({ fe, measure: applyKindToMeasure(seed, 'pavementHW', r) })
     }
     if (entries.length) store.writeBlockEdgeCustoms(entries)
