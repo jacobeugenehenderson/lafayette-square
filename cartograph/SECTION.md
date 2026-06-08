@@ -79,7 +79,16 @@ Before the operator authors anything, Section draws a **best-effort default** of
 - **Strip depths default to ADA-standard — also the Revert state** (Jacob). Treelawn-Y → standard treelawn + ADA sidewalk; treelawn-N → ADA sidewalk abuts the curb. Reset/revert returns here.
 - **∴ default fill = (gleaned treelawn Y/N) × (ADA depths).**
 
-> **Landed in code** (uncommitted on trunk, 2026-06-07): constants + `gleanTreelawn` at `tileGround.js:441-445`; the per-run treelawn slab `td` at `:565`; the dead-end tip model at `:886`; the per-tile `tl`/`sw` seed at `:1798` (replacing the dead `repDepth`). Tunables: `TREELAWN_YN_THRESHOLD=0.6`, `STD_TREELAWN=1.5`, `ADA_SIDEWALK=1.5` — tune on Jacob's eye.
+**⭐ The default strip *ordering* (the best-effort material assignment).** Every edge has **two strips** (outer = curb-side, inner) **plus** the LU remainder — *always two, even sidewalk-only*. Their default **materials** follow treelawn presence, reading from the curb inward:
+
+| edge | outer strip | inner strip | remainder | reads (curb → block) |
+|---|---|---|---|---|
+| **treelawn-Y** | **TL** (treelawn, LU-colour) | **SW** (sidewalk) | LU | **TL → SW → LU** — grass buffers the curb, the walk sits back |
+| **treelawn-N** (sidewalk-only) | **SW** (the walk hugs the curb) | **TL** (LU-colour) | LU | **SW → TL → LU** |
+
+So the default is `{outer: Y?'LU':'SW', inner: Y?'SW':'LU'}` — the **same two strips, materials reordered.** The operator's ctrl-click swap (§3.2) flips any strip off this default; because strips are just **LU/SW tags**, swapping *both* to LU paints an **open field** (no sidewalk at all). ⚠️ **Construction consequence:** a treelawn-N edge must still emit **two strips** (SW outer, LU inner) — it does **not** collapse to all-SW. The bent corner stays SW (the ADA ramp) regardless of leg ordering.
+
+> **Landed in code** (uncommitted on trunk, 2026-06-07): constants + `gleanTreelawn` at `tileGround.js:441-445`; the per-run treelawn slab `td` at `:565`; the dead-end tip model at `:886`; the per-tile `tl`/`sw` seed at `:1798` (replacing the dead `repDepth`). Tunables: `TREELAWN_YN_THRESHOLD=0.6`, `STD_TREELAWN=1.5`, `ADA_SIDEWALK=1.5`. *(The treelawn-presence-dependent strip ordering above is part of the §3.3 build — today's code still collapses treelawn-N to all-SW.)*
 
 ### 3.2 ✅/🔜 The override layer — best-effort, then the operator corrects
 
@@ -93,7 +102,8 @@ Authoring is **override on top of the best-effort default**, keyed by the **froz
 Today the depths are **per-tile** (mono-width, uniform `tl`/`sw`). The model is **per-edge**: each leg's strips at *its own* depth, the divider varying inside the mono-width ribbon, corners taking the **max of their two adjacent legs** so the bent quad is clean. This is `RIBBONS §3.9a` step 10 (sector slicing) realized on `sectionPass`. What the build must do:
 
 1. **Resolve a single per-edge depth** = `blockCustoms[run].{treelawn,sidewalk}` (override) **else** the best-effort (gleaned-Y ? `STD_TREELAWN` : 0; `ADA_SIDEWALK`). Use this **one** resolution everywhere — the FILL *and* the handle placement (§5) read it, so they cannot diverge.
-2. **Mono-width per block, divider per edge.** Keep the ribbon's *outer* depth `WB = cw + max(TL) + max(SW)` uniform per block (clean corners), but slice each leg's **divider** at `cw + that edge's treelawn`. Treelawn = `outerBand ∩ leg-sector` to the per-edge divider; sidewalk = the rest. (`RIBBONS §3.9a` steps 6–10.)
+2. **Mono-width per block, divider per edge.** Keep the ribbon's *outer* depth `WB = cw + max(TL) + max(SW)` uniform per block (clean corners), but slice each leg's **divider** at `cw + that edge's treelawn`. Outer strip = `outerBand ∩ leg-sector` to the per-edge divider; inner strip = the rest. (`RIBBONS §3.9a` steps 6–10.)
+   - **Two strips always, default ordering per §3.1.** Even a treelawn-N (sidewalk-only) edge emits both strips — it does **not** collapse to all-SW. Each strip's default material follows treelawn presence (`{outer: Y?'LU':'SW', inner: Y?'SW':'LU'}`), then the per-edge `blockCustoms.materials` override (§3.2) flips it. All-LU on both → an open field.
 3. **⭐ Corner depth = `cw + max-adjacent`.** A corner's bent pad is the `fullBand` slice at the **deeper** of its two adjacent legs' totals. So an **SW↔SW corner (no treelawn either side) comes out sidewalk-deep**, a TL-adjacent corner full-depth (Jacob's rule). The corner is always SW (the ADA ramp); only the **legs** carry treelawn + the material override.
 4. **The bent quad is a slice, never a built shape** — `fullBand ∩ corner-sector` (one polygon). Don't construct a corner primitive (the saga's lesson; `RIBBONS §3.9a` step 10a, `§6.10`).
 
@@ -168,6 +178,7 @@ So "author the corners in Section" means the **fill**, not the radius. Two facts
 
 - **⭐ Always populate best-effort, then override.** Sane default with no action (§3.1); authoring is pure override (§3.2). Never start from blank.
 - **Ribbon monowidth, strips variable.** One uniform outer depth per block (clean corners); the **divider + materials** vary per edge. The corner is the band **bent**, a slice — never a built shape.
+- **Two strips always; the *ordering* is the best-effort.** Every edge has an outer + inner strip + LU remainder. Treelawn-Y reads `TL → SW → LU`; treelawn-N reads `SW → TL → LU` (the walk hugs the curb). Strips are just LU/SW tags — the operator swaps any of them, and both→LU is an open field.
 - **Corner depth = `cw + max-adjacent`** — SW↔SW corners come out sidewalk-deep.
 - **One depth truth** — the FILL stroke and the handle placement read the *same* per-edge depth, or they diverge (§5).
 - **Section = FILL; Survey = SHAPE.** Section never authors the silhouette or the corner radius.
