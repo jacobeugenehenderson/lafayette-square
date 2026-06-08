@@ -615,5 +615,33 @@
       "species": "oak_bur",
       "variantId": 1
     }
-  ]
+  ],
+  "skyGain": {
+    "animated": "tod",
+    "transitionIn": 0,
+    "transitionOut": 0,
+    "values": {
+      "dawn": {
+        "value": 0.55
+      },
+      "sunrise": {
+        "value": 0.9
+      },
+      "noon": {
+        "value": 1
+      },
+      "golden": {
+        "value": 1
+      },
+      "sunset": {
+        "value": 0.95
+      },
+      "dusk": {
+        "value": 0.5
+      },
+      "night": {
+        "value": 0.2
+      }
+    }
+  }
 }

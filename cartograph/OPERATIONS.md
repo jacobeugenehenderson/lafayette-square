@@ -21,6 +21,10 @@
 ### Stage — the look tool
 *Surfaces (color/visibility per material) · Sky & Light · Post-FX · shots/Hero keyframes · the bake buttons (Stage→ / ↻). From FEATURES §Stage.*
 
+**Make the night sky darker → Sky & Light ▸ Sky Layer Gain.** It's a gain on the sky dome only (lower = darker dome; 1.0 = unchanged). Scrub the clock to Night, then drag it down (LS sits ~0.2 at Night) until the dome reads right; lamps and lit windows are unaffected, so you can go dark without losing the city. Animate it across the day by filling TOD slots like any channel (LS holds ~1.0 daytime, eases down through Dusk to Night). Don't reach for the global **Exposure** knob to darken night — that dims the whole frame (buildings + ground), not just the sky. Reach for Sky Layer Gain when the *sky* is too bright; Exposure when the *whole image* is. Stars are intentionally not dimmed by it. Changes show live in Stage and reach Preview/production after a bake.
+
+> Note (2026-06-07): bloom no longer auto-boosts at night — it's whatever you author in the Post-FX **Bloom** channel at that TOD. If you want a soft night haze, author it there; otherwise night relies on lamp glow (cheaper, intentional).
+
 ### Preview — the slab inspector
 *GPU profiler · phone-mode · layer-toggle matrix · TOD scrub. From FEATURES §Preview.*
 

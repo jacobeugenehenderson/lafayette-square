@@ -720,6 +720,7 @@ export default function CartographApp() {
   const dirMoonOverride        = useCartographStore(s => s.dirMoon)
   const constellationsOverride = useCartographStore(s => s.constellations)
   const milkyWayOverride       = useCartographStore(s => s.milkyWay)
+  const skyGainOverride        = useCartographStore(s => s.skyGain)
 
   // SC.2 + SC.3 — post-FX channels threaded as overrides into the shared
   // PostProcessing + StageFog consumers. Production passes no overrides
@@ -998,6 +999,7 @@ export default function CartographApp() {
               dirMoonOverride={dirMoonOverride}
               constellationsOverride={constellationsOverride}
               milkyWayOverride={milkyWayOverride}
+              skyGainOverride={skyGainOverride}
             /></R3FErrorBoundary>
             {/* Atmosphere driver chain — production feeds <Atmosphere> via
                 these; without them useAtmosphere.tweenedDirective stays empty

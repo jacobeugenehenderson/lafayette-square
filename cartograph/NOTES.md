@@ -8,6 +8,29 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-07 — DEEP-NIGHT SKY too bright: the "Sky Layer Gain" channel + the bloom night-hardwire comes out.
+
+**The ask.** At the Stage clock set to deep night, the sky dome rendered as a bright lavender wash (screenshot: arch silhouetted against a too-bright purple sky, faint stars, lit buildings). "Discover everything emitting light in the sky in the middle of the night and let's either clamp it or parameterize it." It had been troubleshot the night before without resolution.
+
+**Why it was whack-a-mole (the real diagnosis).** "Night brightness" was not one value — it was the **emergent sum of ~4 independent hardwired floors**, all pushing the same direction ("night should never go truly black"), laid down at different times before the channel/TOD layer matured:
+1. the sky dome bands themselves — authored dark (`skyGrid.js` hours 0–5 ≈ `#191722`) but pushed into the shader as **linear** radiance, then lifted by **ACES + sRGB output** (the gamma curve lifts shadows hardest → `#191722` displays ≈ `#55556a` lavender);
+2. the **bloom night `dk` boost** (`PostProcessing.jsx`): below sunAlt −0.15, intensity +0.5 and threshold −0.5. With LS's authored bloom threshold already low (0.3), the night boost drove the luminance threshold **negative** → the *entire frame incl. the dark sky bloomed* and washed out;
+3. the hardcoded `<ambientLight 0.45>` floor (ground layer — flagged, left alone this pass);
+4. the additive horizon-glow `vec3(0.03,0.018,0.04)` at full strength all night.
+Turn any one down and the others held the floor up. That's why the prior night didn't converge.
+
+**The fix (Jacob's call: consolidate + parameterize, full scope).** Make the **sky dome** the single owner of "how dark is night," expose it as a slider, and remove the hidden bloom hardwire so lamps (cheap, independent geometry) carry night legibility instead of a global bloom pass.
+- **New channel `skyGain` — "Sky Layer Gain"** (Sky & Light card, Atmosphere group). A single gain/exposure multiplier applied **last** in the GradientSky fragment shader (`finalColor *= uSkyGain`), so it scales the whole composed dome (bands + sun/moon glow + horizon scatter + haze) uniformly. It is **exposure scoped to the sky layer** — distinct from global `exposure`, which dims the *whole frame*; this dims only the dome, so deep night goes dark while lamps + lit windows stay put. Generalizes the planetarium `dimFactor` already in `CelestialBodies`. **Stars are a separate object (own `astronomyAlpha`) — deliberately NOT scaled**, so dimming the dome makes them read better. Default `1.0` (no-op → unauthored Looks unchanged). Wired the standard way (skyLightChannels → store → CartographSkyLight slider → CelestialBodies consumer → CartographApp `skyGainOverride` for live Stage feedback → bake-scene → scene.json → Preview/production). LS authored a best-effort TOD curve: day `1.0`, sunset `0.95`, dusk `0.5`, **night `0.2`**, dawn `0.55` (operator-overridable; future = promote a generic base once stable).
+- **Bloom night `dk` boost REMOVED** in both `PostProcessing.jsx` and `PreviewPostFx.jsx` (Stage/Preview parity). Bloom is now **operator-authored only** via its existing TOD channel — author it per-TOD if you want night haze. This is "hardwires-come-out" applied to bloom.
+
+**Perf note (the gratifying part).** A gain is a single multiply folded into the dome draw — essentially free. Bloom is a full-screen multi-pass mipmap blur and is *most* expensive at night (lower threshold = more pixels). So night now drops its heaviest pass; lamp glow (glow orb + "bloom-substitute" halo + ground pool, all in `StreetLights.jsx`, independent of bloom) carries the night look. "Use lamps instead of bloom at night" is now real.
+
+**Touched:** `skyLightChannels.js` · `stores/useCartographStore.js` · `CartographSkyLight.jsx` · `components/CelestialBodies.jsx` · `CartographApp.jsx` · `cartograph/bake-scene.js` · `components/PostProcessing.jsx` · `preview/PreviewPostFx.jsx` · `public/looks/lafayette-square/design.json` (+ re-baked `scene.json`). Docs: this entry + FEATURES/ARCHITECTURE/OPERATIONS. Build clean.
+
+---
+
+---
+
 ## 2026-06-07 — THE DATA WALL: Phase-D mechanism LANDS; the prebake cure scoped to D2; a HARDENING category is born.
 
 **The frame.** Jacob: "DataWall. Let's roll." Boz ran the entry ritual, read `HANDOFF-wall-phase-d.md` + `WALL.md` + the PREBAKE plan, and corrected the handoff's drifted code anchors (intersection-everywhere had shifted `tileGround.js` — `sectionPass` `:487→:515`, `_shapeArtifact` `:1108→:1972`).

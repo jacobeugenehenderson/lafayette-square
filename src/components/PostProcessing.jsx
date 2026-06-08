@@ -289,7 +289,6 @@ export function PostProcessing({
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
     const slotMins = getTodSlotMinutes(tod.currentTime)
-    const alt = tod.getLightingPhase().sunAltitude
 
     // Exposure / Warmth / Fill → module refs consumed by FilmGrade.update().
     _exposureRef.current = resolveGroupAtMinute(exposureChannel, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
@@ -332,9 +331,19 @@ export function PostProcessing({
       ao.configuration.distanceFalloff = aoTriple.distanceFalloff
     }
 
-    // Bloom — base values from `bloom` channel; sun-altitude `dk` adaptive
-    // bump rides on top. Planetarium viewMode preserves Scene.jsx's old
-    // dramatic bump (intensity 1.8 / threshold 0.15 / smoothing 0.9).
+    // Bloom — operator-authored only (via the `bloom` channel). Planetarium
+    // viewMode preserves Scene.jsx's old dramatic bump (intensity 1.8 /
+    // threshold 0.15 / smoothing 0.9).
+    //
+    // Removed 2026-06-07: the hardcoded sun-altitude `dk` night boost
+    // (intensity +0.5, threshold -0.5, smoothing +0.4 below sunAlt -0.15).
+    // It was a hidden hardwire that overrode the authored bloom channel; with
+    // a low authored threshold (LS = 0.3) it drove the luminance threshold
+    // NEGATIVE at night, so the entire frame — including the dark sky dome —
+    // bloomed and washed out, a primary cause of the too-bright deep-night
+    // sky. Night darkness now lives in the Sky Layer Gain channel (sky dome),
+    // and lamp glow (independent geometry, not bloom) carries night
+    // legibility. Author the bloom channel per-TOD if you want night haze.
     const bloom = bloomRef.current
     if (bloom) {
       const lm = bloom.luminanceMaterial
@@ -342,12 +351,11 @@ export function PostProcessing({
         bloom.intensity = 1.8
         if (lm) { lm.threshold = 0.15; lm.smoothing = 0.9 }
       } else {
-        const dk = alt > 0.1 ? 0 : alt < -0.15 ? 1 : 1 - (alt + 0.15) / 0.25
         const base = resolveGroupAtMinute(bloomChannel, minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS)
-        bloom.intensity = base.intensity + dk * 0.5
+        bloom.intensity = base.intensity
         if (lm) {
-          lm.threshold = base.threshold - dk * 0.5
-          lm.smoothing = base.smoothing + dk * 0.4
+          lm.threshold = base.threshold
+          lm.smoothing = base.smoothing
         }
       }
     }

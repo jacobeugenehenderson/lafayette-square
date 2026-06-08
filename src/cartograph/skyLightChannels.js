@@ -91,6 +91,26 @@ export const HALO_FIELDS = [
 export const HALO_FLAT_DEFAULTS = { strength: 0.12, color: '#b8c8d8' }
 export const HALO_FIELD_KEYS = HALO_FIELDS.map(f => f.key)
 
+// Sky Layer Gain (Sky & Light, ATMOSPHERE group) — a single exposure/gain
+// multiplier on the GradientSky dome's composed color (bands + sun/moon
+// glow + horizon scatter). Think of it as exposure scoped to the sky layer
+// only: global `exposure` dims the whole frame (buildings + ground + sky),
+// this dims JUST the dome, so deep night can go dark while lamps + lit
+// windows stay where you authored them. 1.0 = unchanged (the default, so
+// unauthored Looks render identically). The canonical use is a TOD curve
+// that holds 1.0 through the day and dips toward ~0.2 at Night — it owns
+// "how dark is the night sky." Generalizes the planetarium `dimFactor`
+// (0.4) already in CelestialBodies. Stars are a SEPARATE object (their own
+// astronomyAlpha) and are intentionally NOT scaled here — dimming the dome
+// makes them read better. Range allows >1 so an operator can also lift a
+// flat/overcast dome. See HANDOFF-sky-and-light.md + the deep-night thread
+// in cartograph/NOTES.md (2026-06-07).
+export const SKY_GAIN_FIELDS = [
+  { key: 'value', label: 'Sky layer gain', min: 0, max: 2, step: 0.02 },
+]
+export const SKY_GAIN_FLAT_DEFAULTS = { value: 1.0 }
+export const SKY_GAIN_FIELD_KEYS = ['value']
+
 // Constellations (Sky & Light, CELESTIAL group) — binary on/off; the
 // resolver lerps between slots so animator-driven fade still works.
 // Runtime also multiplies by nightFactor (no stars in daytime).

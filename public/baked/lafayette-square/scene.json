@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1780929646302,
+  "bakedAt": 1780933274862,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -197,6 +197,34 @@
     "values": {
       "strength": 0,
       "color": "#b8c8d8"
+    }
+  },
+  "skyGain": {
+    "animated": "tod",
+    "transitionIn": 0,
+    "transitionOut": 0,
+    "values": {
+      "dawn": {
+        "value": 0.55
+      },
+      "sunrise": {
+        "value": 0.9
+      },
+      "noon": {
+        "value": 1
+      },
+      "golden": {
+        "value": 1
+      },
+      "sunset": {
+        "value": 0.95
+      },
+      "dusk": {
+        "value": 0.5
+      },
+      "night": {
+        "value": 0.2
+      }
     }
   },
   "grade": {

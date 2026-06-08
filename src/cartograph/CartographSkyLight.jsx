@@ -17,6 +17,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import {
   MIST_FIELDS, MIST_FLAT_DEFAULTS,
   HALO_FIELDS, HALO_FLAT_DEFAULTS,
+  SKY_GAIN_FIELDS, SKY_GAIN_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELDS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELDS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELDS, NEON_FLAT_DEFAULTS,
@@ -100,6 +101,8 @@ export default function CartographSkyLight() {
         fields={MIST_FIELDS} flatDefaults={MIST_FLAT_DEFAULTS} />
       <StoreChannel name="halo" label="Halo"
         fields={HALO_FIELDS} flatDefaults={HALO_FLAT_DEFAULTS} />
+      <StoreChannel name="skyGain" label="Sky Layer Gain"
+        fields={SKY_GAIN_FIELDS} flatDefaults={SKY_GAIN_FLAT_DEFAULTS} />
       <StoreChannel name="neon" label="Neon"
         fields={NEON_FIELDS} flatDefaults={NEON_FLAT_DEFAULTS} />
       <NeonForceOnToggle />

@@ -12,7 +12,8 @@
  *
  * Channels baked as of 015d8e0 (SC.1 + SC.2 + SC.3): sky, ambient, hemi,
  * dirSun, dirMoon, constellations, milkyWay (SC.1); bloom, ao, exposure,
- * warmth, fill, mist, halo, grade, grain, shadow (SC.2/SC.3). Channels
+ * warmth, fill, mist, halo, grade, grain, shadow (SC.2/SC.3); skyGain
+ * (sky-layer night-dim gain, 2026-06-07). Channels
  * still pending bake: per-shot camera tuning (SC.5), arch tuning (SC.7),
  * meteorologist clouds consumer-side decision (SC.6). Time-of-day defaults
  * & sun-curve overrides (SC.4) were audited empty — DawnTimeline doesn't
@@ -34,6 +35,7 @@ import {
   BLOOM_FLAT_DEFAULTS, AO_FLAT_DEFAULTS, EXPOSURE_FLAT_DEFAULTS,
   WARMTH_FLAT_DEFAULTS, FILL_FLAT_DEFAULTS,
   MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
+  SKY_GAIN_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
@@ -104,6 +106,9 @@ export async function bakeScene({ look = 'default' } = {}) {
     fill:     design.fill     || { values: { ...FILL_FLAT_DEFAULTS } },
     mist:     design.mist     || { values: { ...MIST_FLAT_DEFAULTS } },
     halo:     design.halo     || { values: { ...HALO_FLAT_DEFAULTS } },
+    // Sky Layer Gain — exposure scoped to the sky dome (owns "how dark is
+    // night"). Unauthored Looks emit 1.0 (no-op); LS authors a TOD curve.
+    skyGain:  design.skyGain  || { values: { ...SKY_GAIN_FLAT_DEFAULTS } },
     grade:    design.grade    || { values: { ...GRADE_FLAT_DEFAULTS } },
     grain:    design.grain    || { values: { ...GRAIN_FLAT_DEFAULTS } },
     shadow:   design.shadow   || { values: { ...SHADOW_FLAT_DEFAULTS } },

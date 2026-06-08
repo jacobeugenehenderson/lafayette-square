@@ -16,6 +16,7 @@ import {
   DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
+  SKY_GAIN_FIELD_KEYS, SKY_GAIN_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 
 // Inline-default channel envelopes used for the ~100ms first-paint window
@@ -32,6 +33,7 @@ const DIRSUN_DEFAULT_CHANNEL         = { values: DIRSUN_FLAT_DEFAULTS }
 const DIRMOON_DEFAULT_CHANNEL        = { values: DIRMOON_FLAT_DEFAULTS }
 const CONSTELLATIONS_DEFAULT_CHANNEL = { values: CONSTELLATIONS_FLAT_DEFAULTS }
 const MILKYWAY_DEFAULT_CHANNEL       = { values: MILKYWAY_FLAT_DEFAULTS }
+const SKY_GAIN_DEFAULT_CHANNEL       = { values: SKY_GAIN_FLAT_DEFAULTS }
 import brightStars from '../data/bright_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
@@ -418,7 +420,7 @@ function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
   )
 }
 
-function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constellationsChannel }) {
+function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constellationsChannel, skyGainChannel }) {
   const materialRef = useRef()
   // 4-band sky color authoring lives in `skyChannel` (operator's grid).
   // The legacy procedural keyframe ladder + JS-side weather color
@@ -441,6 +443,15 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       const tod = useTimeOfDay.getState()
       const slotMinutes = getTodSlotMinutes(tod.currentTime)
       const resolved = resolveSkyAtMinute(skyChannel, tod.getMinuteOfDay(), slotMinutes)
+      // Sky Layer Gain — exposure scoped to the dome (bands + glow). 1.0 =
+      // unchanged; LS authors a TOD curve dipping toward ~0.2 at Night so
+      // deep night goes dark without touching lamps/stars. See skyLightChannels.
+      const sg = resolveGroupAtMinute(
+        skyGainChannel, tod.getMinuteOfDay(),
+        skyGainChannel?.animated ? slotMinutes : null,
+        SKY_GAIN_FIELD_KEYS, SKY_GAIN_FLAT_DEFAULTS,
+      ).value
+      u.uSkyGain.value = (sg == null ? 1 : sg)
       u.bandHorizon.value.setRGB(resolved.horizon[0], resolved.horizon[1], resolved.horizon[2]).multiplyScalar(dimFactor)
       u.bandLow.value.setRGB(resolved.low[0], resolved.low[1], resolved.low[2]).multiplyScalar(dimFactor)
       u.bandMid.value.setRGB(resolved.mid[0], resolved.mid[1], resolved.mid[2]).multiplyScalar(dimFactor)
@@ -486,6 +497,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uTurbidity: { value: 0.0 },
       uSunsetPotential: { value: 0.0 },
       uBeautyBias: { value: 0.6 },
+      uSkyGain: { value: 1.0 },
     },
     vertexShader: `
       varying vec3 vWorldPosition;
@@ -511,6 +523,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uniform float uTurbidity;
       uniform float uSunsetPotential;
       uniform float uBeautyBias;
+      uniform float uSkyGain;
       varying vec3 vWorldPosition;
 
       void main() {
@@ -627,6 +640,12 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         finalColor += sunGlowColor * (haloGlow * 0.15 + wideScatter * 0.1) * sunsetBoost;
         // Warm offset during sunset
         finalColor += vec3(0.08, 0.03, 0.0) * uSunsetPotential * uBeautyBias * smoothstep(0.0, 0.2, max(0.0, sunDot));
+
+        // ── Sky Layer Gain ── exposure scoped to the dome. Applied LAST so
+        // it scales the whole composed sky (bands + sun/moon glow + horizon
+        // scatter + haze) uniformly. Stars are a separate object (their own
+        // opacity) and are deliberately untouched. 1.0 = no change.
+        finalColor *= uSkyGain;
 
         // Opaque sky — no transparent fade, no stencil portal
         gl_FragColor = vec4(finalColor, 1.0);
@@ -958,6 +977,7 @@ function CelestialBodies({
   skyOverride, ambientOverride, hemiOverride,
   dirSunOverride, dirMoonOverride,
   constellationsOverride, milkyWayOverride,
+  skyGainOverride,
 } = {}) {
   // debugLevel: 0 = full, 1 = lights only (no sky/moon/orbs), 2 = ambient only, 3 = nothing (just compute)
   const { currentTime } = useTimeOfDay()
@@ -973,6 +993,7 @@ function CelestialBodies({
   const dirMoonChannel        = dirMoonOverride        ?? scene?.dirMoon        ?? DIRMOON_DEFAULT_CHANNEL
   const constellationsChannel = constellationsOverride ?? scene?.constellations ?? CONSTELLATIONS_DEFAULT_CHANNEL
   const milkyWayChannel       = milkyWayOverride       ?? scene?.milkyWay       ?? MILKYWAY_DEFAULT_CHANNEL
+  const skyGainChannel        = skyGainOverride        ?? scene?.skyGain        ?? SKY_GAIN_DEFAULT_CHANNEL
 
   // Per-frame multiplier refs. useFrame resolves each channel against the
   // live TOD minute; PrimaryOrb / SecondaryOrb + the ambient + hemi
@@ -1186,7 +1207,7 @@ function CelestialBodies({
 
   return (
     <>
-      {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} skyChannel={skyChannel} constellationsChannel={constellationsChannel} />}
+      {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} skyChannel={skyChannel} constellationsChannel={constellationsChannel} skyGainChannel={skyGainChannel} />}
       {debugLevel < 1 && <Suspense fallback={null}><Moon {...lighting.moon} /></Suspense>}
       {/* Milky Way mount hidden from runtime 2026-05-02 — see comment in
           CartographSkyLight.jsx. MilkyWaySphere component preserved; takes

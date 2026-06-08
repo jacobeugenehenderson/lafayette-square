@@ -97,6 +97,8 @@ What the operator does: takes Designer's fortified data as truth and dresses it 
 
 Output: `public/looks/<id>/design.json` per Look.
 
+**Sky Layer Gain — "how dark is the night sky" (Sky & Light panel, added 2026-06-07).** A single slider that dims (or lifts) *just the sky dome* on a time-of-day curve — bands, sun/moon glow, and horizon scatter together. It is exposure scoped to the sky layer: the global Exposure knob darkens the whole frame (buildings, ground, sky), whereas Sky Layer Gain touches only the dome, so the operator can take deep night genuinely dark while street lamps and lit windows stay where they were authored. Stars are not affected (a darker dome makes them read better). The LS Look authors it ~1.0 by day, dipping to ~0.2 at Night; it shows live in Stage and bakes through to Preview and production. It replaced a cluster of hidden "never let night go black" hardwires — including a bloom auto-boost at night, now removed, so night leans on lamp glow (cheaper, and the look the artist actually wants) instead of a global bloom wash. Authored per-Look like every other channel; default 1.0 leaves any unauthored Look unchanged.
+
 **Stage drag semantics:** Browse uses LEFT-drag = pan, ⌥/Alt+LEFT-drag (or RIGHT-drag) = orbit (3D-easter-egg). `mouseButtons` is passed as a prop to OrbitControls (not mutated imperatively in a useEffect) to avoid ref-timing races where drei's defaults would clobber ours. Hero/Street keep their rotate-by-default (LEFT=ROTATE, ⌥+LEFT=PAN) since they're 3D-inspection shots. Designer's "Stage →" always lands on Browse so the camera transition is continuous with Designer's overhead view.
 
 **Two bake-related buttons; both always run, neither gates on `bakeStale`:**

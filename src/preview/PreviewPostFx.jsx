@@ -61,21 +61,22 @@ function FxDriver({ aoRef, bloomRef, lookId }) {
       ao.configuration.distanceFalloff = aoTriple.distanceFalloff
     }
 
-    // Bloom — base values from `bloom` channel; sun-altitude `dk` adaptive
-    // bump rides on top. postprocessing v6: `intensity` is a real setter
-    // on BloomEffect; threshold/smoothing live on `luminanceMaterial`.
+    // Bloom — operator-authored only (via the `bloom` channel). The
+    // hardcoded sun-altitude `dk` night boost was removed 2026-06-07 for
+    // parity with PostProcessing.jsx: it overrode the authored channel and
+    // drove the luminance threshold negative at night, blooming the whole
+    // frame (incl. the dark sky). Night darkness lives in Sky Layer Gain;
+    // lamp glow (independent geometry) carries night legibility.
     const bloom = bloomRef.current
     if (bloom) {
-      const alt = tod.getLightingPhase().sunAltitude
-      const dk = alt > 0.1 ? 0 : alt < -0.15 ? 1 : 1 - (alt + 0.15) / 0.25
       const base = resolveGroupAtMinute(
         scene?.bloom ?? _ch(BLOOM_FLAT_DEFAULTS), minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
       )
-      bloom.intensity = base.intensity + dk * 0.5
+      bloom.intensity = base.intensity
       const lm = bloom.luminanceMaterial
       if (lm) {
-        lm.threshold = base.threshold - dk * 0.5
-        lm.smoothing = base.smoothing + dk * 0.4
+        lm.threshold = base.threshold
+        lm.smoothing = base.smoothing
       }
     }
 
