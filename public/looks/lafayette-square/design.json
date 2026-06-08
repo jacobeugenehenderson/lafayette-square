@@ -113,53 +113,41 @@
     "park-avenue-1": {
       "right": {
         "0": {
-          "pavementHW": 8.161398835447049,
           "terminal": "sidewalk"
         },
         "2": {
-          "pavementHW": 11.617586633146859,
           "terminal": "sidewalk"
         },
         "3": {
-          "pavementHW": 13.822054607665162,
           "terminal": "sidewalk"
         },
         "4": {
-          "pavementHW": 13.822054607665162,
           "terminal": "sidewalk"
         },
         "5": {
-          "pavementHW": 8.25859101071366,
           "terminal": "sidewalk"
         },
         "6": {
-          "pavementHW": 9.992264409631261,
           "terminal": "sidewalk"
         }
       },
       "left": {
         "0": {
-          "pavementHW": 10.655044952056748,
           "terminal": "sidewalk"
         },
         "1": {
-          "pavementHW": 10.655044952056748,
           "terminal": "sidewalk"
         },
         "2": {
-          "pavementHW": 10.300541536821855,
           "terminal": "sidewalk"
         },
         "3": {
-          "pavementHW": 11.617586633146859,
           "terminal": "sidewalk"
         },
         "4": {
-          "pavementHW": 10.655044952056748,
           "terminal": "sidewalk"
         },
         "5": {
-          "pavementHW": 9.992264409631261,
           "terminal": "sidewalk"
         }
       }
@@ -167,11 +155,9 @@
     "lafayette-avenue-3": {
       "left": {
         "0": {
-          "pavementHW": 10.555325676754327,
           "terminal": "sidewalk"
         },
         "2": {
-          "pavementHW": 11.260539626751909,
           "terminal": "sidewalk"
         }
       }
@@ -179,13 +165,11 @@
     "missouri-avenue-2": {
       "left": {
         "0": {
-          "pavementHW": 8.98477502061614,
           "terminal": "sidewalk"
         }
       },
       "right": {
         "2": {
-          "pavementHW": 6.961665831871115,
           "terminal": "sidewalk"
         }
       }
@@ -215,7 +199,6 @@
     "dolman-street-1": {
       "left": {
         "1": {
-          "pavementHW": 3.7803193778698607,
           "terminal": "sidewalk"
         }
       }
