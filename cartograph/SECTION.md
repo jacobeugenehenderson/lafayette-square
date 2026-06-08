@@ -107,7 +107,11 @@ Today the depths are **per-tile** (mono-width, uniform `tl`/`sw`). The model is 
 3. **⭐ Corner depth = `cw + max-adjacent`.** A corner's bent pad is the `fullBand` slice at the **deeper** of its two adjacent legs' totals. So an **SW↔SW corner (no treelawn either side) comes out sidewalk-deep**, a TL-adjacent corner full-depth (Jacob's rule). The corner is always SW (the ADA ramp); only the **legs** carry treelawn + the material override.
 4. **The bent quad is a slice, never a built shape** — `fullBand ∩ corner-sector` (one polygon). Don't construct a corner primitive (the saga's lesson; `RIBBONS §3.9a` step 10a, `§6.10`).
 
-**Boundaries for the build:** stroke off the **frozen `iA`** + **frozen `runs[]`** + `blockCustoms` (design intent) — never a chain. The silhouette/`vertR` are Survey's, frozen; do not touch them. Material-swap (§3.2) already works — extend the same per-run resolution to depths. Keep it **byte-identical when no edge is overridden and all gleaned-Y depths equal the standard** (so the no-author render is unchanged).
+**Boundaries for the build:**
+- ⛔ **The mono-width ribbon is SACROSANCT** — it was the hardest-won step (`RIBBONS §3.9a`, the V1 keystone; the corner saga ended on it). The per-edge work **varies the divider + materials + depths INSIDE the mono-width band**; it must **never** re-architect or abandon the uniform outer offset that gives the clean bent corners. Build *on* the mono-width, never replace it.
+- **The FILL spans curb → block-center.** The ped strips (TL/SW) are slices near the curb; the **LU remainder fills the interior continuously to the polygon center** — there is no hard "property line" cap, the ribbon's inner edge was collapsed to center (so the open-field case, all-LU curb→center, falls out for free).
+- Stroke off the **frozen `iA`** + **frozen `runs[]`** + `blockCustoms` (design intent) — never a chain. The silhouette/`vertR` are Survey's, frozen; do not touch them. Material-swap (§3.2) already works — extend the same per-run resolution to depths.
+- Keep it **byte-identical when no edge is overridden and all gleaned-Y depths equal the standard** (so the no-author render is unchanged).
 
 ---
 
@@ -177,7 +181,8 @@ So "author the corners in Section" means the **fill**, not the radius. Two facts
 ## 8. The doctrine, in one place
 
 - **⭐ Always populate best-effort, then override.** Sane default with no action (§3.1); authoring is pure override (§3.2). Never start from blank.
-- **Ribbon monowidth, strips variable.** One uniform outer depth per block (clean corners); the **divider + materials** vary per edge. The corner is the band **bent**, a slice — never a built shape.
+- **⛔ Ribbon monowidth, strips variable — and the mono-width is SACROSANCT.** One uniform outer depth per block (clean corners); the **divider + materials** vary per edge. The corner is the band **bent**, a slice — never a built shape. The mono-width was the hardest-won step (the corner saga ended on it); the per-edge work builds *inside* it, never re-architects it.
+- **The FILL is curb → center.** Strips near the curb; the LU remainder flows to the polygon center (no hard property line). Both-strips-LU → an open field.
 - **Two strips always; the *ordering* is the best-effort.** Every edge has an outer + inner strip + LU remainder. Treelawn-Y reads `TL → SW → LU`; treelawn-N reads `SW → TL → LU` (the walk hugs the curb). Strips are just LU/SW tags — the operator swaps any of them, and both→LU is an open field.
 - **Corner depth = `cw + max-adjacent`** — SW↔SW corners come out sidewalk-deep.
 - **One depth truth** — the FILL stroke and the handle placement read the *same* per-edge depth, or they diverge (§5).
