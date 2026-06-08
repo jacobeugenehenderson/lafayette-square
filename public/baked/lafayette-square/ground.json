@@ -253,5 +253,11 @@
       "indexCount": 8859,
       "indexByteOffset": 22941348
     }
-  ]
+  ],
+  "lightmap": {
+    "image": "ground.lightmap.png",
+    "size": 1024,
+    "rays": 24,
+    "floor": 0.35
+  }
 }
