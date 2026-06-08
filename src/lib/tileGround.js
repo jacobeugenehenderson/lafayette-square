@@ -270,6 +270,53 @@ function signedArea(r) {
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
   return a / 2
 }
+// True iff ring has a transversal self-crossing or self-touch (non-adjacent edges).
+function ringSelfIntersects(r) {
+  const n = r.length; if (n < 4) return false
+  const xx = (o, a, b) => (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])
+  for (let i = 0; i < n; i++) { const a = r[i], b = r[(i+1)%n]
+    for (let j = i+2; j < n; j++) { if (i===0 && j===n-1) continue
+      const c = r[j], d = r[(j+1)%n]; const d1=xx(c,d,a),d2=xx(c,d,b),d3=xx(a,b,c),d4=xx(a,b,d)
+      if (((d1>0)!==(d2>0)) && ((d3>0)!==(d4>0))) return true } }
+  return false
+}
+// Resolve self-intersections into proper simple polygons (Clipper scanline,
+// NonZero) — drops the inverted micro-loop a degenerate fold/pinch leaves.
+function simplifyRings(rings) {
+  if (!rings.length) return rings
+  const { Clipper, PolyFillType } = clipperLib
+  const out = Clipper.SimplifyPolygons(rings.map(r => r.map(toClipper)), PolyFillType.pftNonZero)
+  return out.map(p => p.map(fromClipper))
+}
+// Boolean hygiene for a unioned layer (asphalt / curb / sidewalk): the union of
+// legitimately-overlapping contributions can leave a LOCAL ring whose boundary
+// self-crosses at a junction — a fold that triangulates as an opaque blob (the
+// asphalt finger / sidewalk teardrop class; RIBBONS §6.3). Resolve the self-
+// intersections into proper simple polygons with Clipper's scanline.
+//   • The WHOLE layer is resolved together, NOT ring-by-ring: a fold ring's
+//     inverted lobe is cancelled by an overlapping neighbour in the layer's
+//     NonZero winding, so resolving any ring in isolation would fill that lobe
+//     (a several-thousand-m² phantom blob). Whole-layer keeps the winding intact
+//     — the footprint is preserved to the metre, only the topology is cleaned.
+//   • SKIPPED entirely when no LOCAL ring self-intersects (≤ DECLUMP_MAXPTS):
+//     the in-spec map pays nothing; the map-spanning silhouette rings self-touch
+//     at every junction (legit, invisible) but never trip this on their own.
+const DECLUMP_MAXPTS = 300
+const DECLUMP_RHO = 0.5   // m — morphological-open radius for the irreducible residual
+function declumpLayer(rings) {
+  if (!rings.some(r => r.length <= DECLUMP_MAXPTS && ringSelfIntersects(r))) return rings
+  // Resolve the self-intersections (whole-layer, winding-preserving).
+  let out = simplifyRings(rings)
+  // A few NonZero-valid folds survive (a doubled-back finger covering already-
+  // filled area can't be resolved by re-winding). These ARE isolated (no
+  // cancelling neighbour, unlike the structural rings the whole-layer pass kept
+  // intact), so shedding each with a tiny morphological open is footprint-safe —
+  // Jacob's sanctioned last-resort patch, reached only here. [[band-fold-fix]]
+  if (out.some(r => r.length <= DECLUMP_MAXPTS && ringSelfIntersects(r)))
+    out = out.flatMap(r => (r.length <= DECLUMP_MAXPTS && ringSelfIntersects(r))
+      ? offsetRings(offsetRings([r], -DECLUMP_RHO, 'round'), DECLUMP_RHO, 'round') : [r])
+  return out
+}
 function circlePoly(cx, cy, r, seg = 32) {
   const out = []
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
@@ -835,14 +882,14 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
   const treelawnByLu = {}, luByClass = {}
-  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = clip(unionRings(tlByLu[k]))
-  for (const k of Object.keys(luByLu)) luByClass[k]   = clip(unionRings(luByLu[k]))
+  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = declumpLayer(clip(unionRings(tlByLu[k])))
+  for (const k of Object.keys(luByLu)) luByClass[k]   = declumpLayer(clip(unionRings(luByLu[k])))
   return {
-    asphalt:  clip(unionRings(Aacc)),
-    curb:     clip(unionRings(Cacc)),
-    sidewalk: clip(unionRings(Wacc)),
+    asphalt:  declumpLayer(clip(unionRings(Aacc))),    // boolean hygiene — match buildTileGround
+    curb:     declumpLayer(clip(unionRings(Cacc))),
+    sidewalk: declumpLayer(clip(unionRings(Wacc))),
     treelawnByLu, luByClass,
-    block:    clip(blockRaw),
+    block:    declumpLayer(clip(blockRaw)),
   }
 }
 
@@ -1992,7 +2039,16 @@ export function buildTileGround(ribbons, opts = {}) {
     // the band ClipperOffsets downstream (erode returns empty → the whole
     // block paints as curb). No legitimate block fragment is < 0.5 m².
     const blockRings = differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
-    const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+    let iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+    // Regularize a degenerate self-touching curb line before it feeds the
+    // asphalt/curb/ped offsets. A sliver / acute-junction-wedge tile leaves iA
+    // self-intersecting (its inward construction folds past the medial axis);
+    // every downstream difference then inherits a self-touching ring that
+    // triangulates as an opaque blob (the asphalt finger + curb needle classes).
+    // Resolve it at the source (Clipper scanline, NonZero) — but ONLY when it
+    // actually self-intersects, so the in-spec map passes through byte-identical
+    // and the live corner-drag rebuild pays nothing. [[RIBBONS §3.9a / §6.3]]
+    if (iA.some(ringSelfIntersects)) iA = simplifyRings(iA).filter(r => Math.abs(signedArea(r)) > 0.5)
     // Tag each achieved fillet with its corner key (the centerline NODE it
     // rounded + that node's two tile-edge legs) so the authoring handle can read
     // the true curb arc — one corner truth, no drift. The apex sits inboard of
@@ -2184,8 +2240,8 @@ export function buildTileGround(ribbons, opts = {}) {
     sidewalk = intersectRings(sidewalk, [stencil])
   }
   const treelawnByLu = {}, luByClass = {}
-  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
-  for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
+  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = declumpLayer(stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k]))
+  for (const k of Object.keys(luByLu)) luByClass[k]   = declumpLayer(stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k]))
 
   // The BLOCK contours: each tile's asphalt-inner ring (iA) — the block polygon
   // to the curb edge, exactly the polygon this step bakes into the shape artifact.
@@ -2194,7 +2250,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // it stays free on the live corner-drag rebuild path. The Survey view shades
   // these to memorialize the block boundaries; the rest of the app ignores it.
   const blockRaw = shapeTiles.flatMap(st => st.iA || [])
-  const block = stencil ? intersectRings(blockRaw, [stencil]) : blockRaw
+  const block = declumpLayer(stencil ? intersectRings(blockRaw, [stencil]) : blockRaw)
 
   // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
@@ -2203,5 +2259,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
+  // Boolean hygiene — resolve the local union-fold blobs (see declumpLayer).
+  asphalt = declumpLayer(asphalt); curb = declumpLayer(curb); sidewalk = declumpLayer(sidewalk)
   return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact }
 }
