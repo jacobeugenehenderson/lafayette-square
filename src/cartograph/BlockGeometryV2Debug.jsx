@@ -654,6 +654,7 @@ export default function BlockGeometryV2Debug({
       curb:     ringsToFlatGeo(sg.curb,     0.035, true),
       asphalt:  ringsToFlatGeo(sg.asphalt,  0.040, true),
       block:    ringsToFlatGeo(sg.block,    0.008, true),   // frozen block silhouette, under the LU paint
+      blockRings: sg.block,   // raw iA rings — handle anchoring (one geometry truth)
     }
   }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms])
 
@@ -679,12 +680,25 @@ export default function BlockGeometryV2Debug({
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
       highway:  ringsToFlatGeo(tg.highway,  0.015, true),   // above LU faces, below the ribbon network — grade-sep shows in its corridor, occluded by local roads
       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
+      blockRings: tg.block,   // raw iA rings — handle anchoring (one geometry truth)
       cornerFillets: tg.cornerFillets || {},
     }
   }, [isTileScene, liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
 
   // Publish the achieved per-corner fillets so CornerEditHandles draws the REAL
   // curb arc (one corner truth — the handle reads geometry, never re-derives).
+  // Publish the frozen curb (iA) rings so MeasureOverlay anchors handles to the
+  // SAME geometry the FILL strokes (Plumb forensic: "one geometry truth").
+  const setSectionCurbRings = useCartographStore(s => s.setSectionCurbRings)
+  useEffect(() => {
+    // Curb (iA) rings from whichever FILL path actually renders — frozen Section
+    // (sectionGeos) OR the live tile build (tileGeos) — so handle anchoring works
+    // regardless of mode, not only when the frozen artifact is loaded.
+    const rings = sectionGeos?.blockRings?.length ? sectionGeos.blockRings
+      : tileGeos?.blockRings?.length ? tileGeos.blockRings
+      : []
+    setSectionCurbRings(rings)
+  }, [sectionGeos, tileGeos, setSectionCurbRings])
   const setTileCornerFillets = useCartographStore(s => s.setTileCornerFillets)
   useEffect(() => {
     setTileCornerFillets(tileGeos?.cornerFillets || {})

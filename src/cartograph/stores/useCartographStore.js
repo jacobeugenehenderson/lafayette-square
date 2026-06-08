@@ -401,6 +401,11 @@ const useCartographStore = create((set, get) => ({
   // Not persisted — it's derived geometry, rebuilt every tile build.
   tileCornerFillets: {},
   setTileCornerFillets: (m) => set({ tileCornerFillets: m || {} }),
+  // The frozen curb (iA) rings the Section FILL strokes off — published so the
+  // Measure handles anchor to the SAME geometry the FILL uses (one *geometry*
+  // truth, SECTION.md §5), not a centreline ruler. Empty outside frozen Section.
+  sectionCurbRings: [],
+  setSectionCurbRings: (r) => set({ sectionCurbRings: r || [] }),
   // Transient UI mode — when true, the Corner-edit handles surface in the
   // 3D scene. Not persisted (operators don't want a Look to load in edit
   // mode); toggled from the Streets > Corners subsection in Panel.

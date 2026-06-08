@@ -163,6 +163,28 @@ function sideBoundaries(side) {
   return out
 }
 
+// Cast the side-perpendicular ray from the centreline click outward to the frozen
+// curb (iA) rings; return the nearest curb-crossing point. The handle then sits at
+// that REAL curb + the ped depth — ONE geometry truth with the FILL, instead of a
+// centreline ruler that drifts from the rounded iA at corners (Plumb forensic 2a).
+function rayHitCurb(cx, cz, dx, dz, rings) {
+  let bestT = Infinity, hit = null
+  for (const ring of rings) {
+    if (!ring || ring.length < 3) continue
+    for (let i = 0; i < ring.length; i++) {
+      const A = ring[i], B = ring[(i + 1) % ring.length]
+      const ex = B[0] - A[0], ez = B[1] - A[1]
+      const denom = dx * ez - dz * ex
+      if (Math.abs(denom) < 1e-9) continue
+      const ax = A[0] - cx, az = A[1] - cz
+      const t = (ax * ez - az * ex) / denom   // ray param (distance along D)
+      const u = (ax * dz - az * dx) / denom    // segment param
+      if (t > 0.05 && u >= 0 && u <= 1 && t < bestT) { bestT = t; hit = { x: cx + dx * t, z: cz + dz * t } }
+    }
+  }
+  return hit
+}
+
 // Handle pill dimensions (meters). Long axis runs along the street; short
 // axis is the perpendicular "ruler" direction. Used for hit-testing AND
 // for the anti-overlap stagger pass.
@@ -204,6 +226,7 @@ function naturalSegmentOrdinal(street, segI, ixSet) {
 export default function MeasureOverlay() {
   const tool = useCartographStore(s => s.tool)
   const spaceDown = useCartographStore(s => s.spaceDown)
+  const sectionCurbRings = useCartographStore(s => s.sectionCurbRings)
   const centerlineData = useCartographStore(s => s.centerlineData)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectStreet = useCartographStore(s => s.selectStreet)
@@ -342,13 +365,24 @@ export default function MeasureOverlay() {
     const handles = []
     for (const [sideKey, sign] of [['left', -1], ['right', +1]]) {
       const bounds = sideBoundaries(measure[sideKey])
+      const pavHW = Math.max(0, measure[sideKey]?.pavementHW || 0)
+      // ⭐ One GEOMETRY truth (Plumb fix): anchor to the REAL frozen curb (iA)
+      // along this side's perpendicular, then offset inward by the PED depth
+      // (b.r − pavementHW). This rides the rounded iA at corners and uses the
+      // actual curb position, not the chainMeasure ruler. Falls back to the
+      // centreline ruler when no frozen curb is published (non-Section modes).
+      const curb = sectionCurbRings.length
+        ? rayHitCurb(cx, cz, sign * nx, sign * nz, sectionCurbRings)
+        : null
+      const base = curb || { x: cx + sign * nx * pavHW, z: cz + sign * nz * pavHW }
       for (const b of bounds) {
+        const dPed = Math.max(0, b.r - pavHW)   // curb → this boundary (cw + treelawn[+sidewalk])
         handles.push({
           side: sideKey,
           kind: b.kind,
           r: b.r,
-          x: cx + sign * nx * b.r,
-          z: cz + sign * nz * b.r,
+          x: base.x + sign * nx * dPed,
+          z: base.z + sign * nz * dPed,
           alongOffset: 0,
           rotY,
         })
@@ -380,7 +414,7 @@ export default function MeasureOverlay() {
       }
     }
     return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, ixByChain])
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, ixByChain, sectionCurbRings])
 
   // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
   useEffect(() => {
