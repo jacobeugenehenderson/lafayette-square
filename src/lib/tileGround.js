@@ -390,6 +390,41 @@ export function extractFaces(streets) {
   return faces.filter(f => signedArea(f.ring) > 1e-3)
 }
 
+// [D2 — THE PREBAKE FACE FREEZE] Rehydrate the frozen tile topology.
+// ribbons.tiles is the prebake artifact (derive.js runs extractFaces once
+// over the serialized skeleton chains and freezes per tile the ring +
+// per-edge (skelId, side)). Here each frozen edge resolves skelId → the
+// CURRENT streets index, so every downstream lookup (measures[streetIdx],
+// groupRuns, cornerKeyAt) reads exactly what a live walk would have tagged;
+// `forward` is recovered from `side` (forward ⇔ 'right' — the convention
+// documented in the walk above, bijective). Rings are copied: the parsed
+// artifact arrays live for the session and downstream must never alias them
+// across rebuilds. Returns null (caller falls back to the live walk) when
+// the artifact carries no tiles (toy / pre-D2 data) or a skelId no longer
+// resolves (stale artifact — topology must then be re-frozen, not papered).
+export function tilesFromFrozen(frozen, streets) {
+  if (!Array.isArray(frozen) || !frozen.length) return null
+  const idxBySkelId = new Map()
+  streets.forEach((s, i) => {
+    const k = s?.skelId || s?.name
+    if (k != null && !idxBySkelId.has(k)) idxBySkelId.set(k, i)
+  })
+  const tiles = []
+  for (const t of frozen) {
+    const ring = t?.ring, fe = t?.edges
+    if (!Array.isArray(ring) || !Array.isArray(fe) || ring.length !== fe.length || ring.length < 3) return null
+    const edges = []
+    for (const e of fe) {
+      const si = idxBySkelId.get(e?.skelId)
+      if (si === undefined) return null
+      const forward = e.side === 'right'
+      edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
+    }
+    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
+  }
+  return tiles
+}
+
 // Inboard-side ped zeroing for divided carriageways (anchor='inner-edge'):
 // the median-facing side keeps pavement but drops curb/treelawn/sidewalk, so
 // the thin tile between the two carriageways floods to a bare median. Mirrors
@@ -919,7 +954,18 @@ export function buildTileGround(ribbons, opts = {}) {
     }
   }
 
-  const tiles = extractFaces(streets)
+  // [D2] Consume the FROZEN tile topology (prebake artifact) instead of
+  // re-walking the chain graph per build; extractFaces stays as the fallback
+  // for artifacts that carry no tiles (toy / pre-D2). SMOOTHING WRINKLE
+  // (PREBAKE-POLYGONIZATION-PLAN §1, decided): the frozen topology is
+  // UNSMOOTHED. Render-time smoothing is retired (smooth=0 everywhere since
+  // 2026-06-04 — see streetSmooth above); if the dormant smooth>0 knob is
+  // ever revived, smoothed geometry belongs at reshape over the frozen
+  // rings' edge runs (the D5 reshape) — until then a smooth>0 call falls
+  // back to the live walk over the smoothed streets, so the dormant knob's
+  // semantics stay bit-for-bit what they were (rings AND strokes smoothed
+  // together, never mixed).
+  const tiles = (smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)) || extractFaces(streets)
 
   // E2 — the CONSTRUCTED medians (prebake artifact: ribbons.medians[]; the
   // divided pair's inter-chain lens partitioned into kind:'median' segments +

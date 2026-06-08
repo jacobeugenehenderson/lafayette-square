@@ -35,3 +35,4 @@ console.log(`  streets: ${ribbons.streets?.length || 0}`)
 console.log(`  corridors: ${ribbons.corridors?.length || 0}`)
 console.log(`  medians: ${ribbons.medians?.length || 0}`)
 console.log(`  faces: ${ribbons.faces?.length || 0}`)
+console.log(`  tiles: ${ribbons.tiles?.length || 0}`)   // [D2] the frozen block-face topology

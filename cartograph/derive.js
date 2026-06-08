@@ -23,6 +23,10 @@ import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
 import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+// [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
+// tileGround consumes the frozen result and keeps this same function only as
+// its fallback for pre-D2 artifacts.
+import { extractFaces } from '../src/lib/tileGround.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -3895,6 +3899,31 @@ export function deriveLayers(highways) {
     // strip so the data is available when that consumer lands.
     ...(skeleton.junctions ? { junctions: skeleton.junctions } : {}),
     ...(skeleton.nameTransitions ? { nameTransitions: skeleton.nameTransitions } : {}),
+  }
+
+  // [D2 — THE PREBAKE FACE FREEZE] The block-face TOPOLOGY is decided here,
+  // once, and frozen into the artifact. extractFaces — the same pure DCEL
+  // walk Survey used to re-run on every render and bake — walks the
+  // SERIALIZED chains (exactly the consumer's input: ≥2 points, not
+  // grade-separated, UNSMOOTHED — smoothing is an interpolating,
+  // junction-pinned geometric map that cannot change topology and must never
+  // bake into the artifact) and the result freezes as ribbons.tiles[]:
+  // per tile { ring, edges:[{ skelId, side }] }. The walk's per-edge
+  // streetIdx (an array index) is resolved to the stable skelId so frozen
+  // tiles survive array-order shifts across builds; `side` is the
+  // measure-side tag ('right' ⇔ forward half-edge — the extractFaces
+  // convention), from which the consumer recovers `forward` bijectively.
+  // Chains die at this boundary for block-shape topology (WALL.md §6 — the
+  // wall at ~P3). L1 ONLY: corner construction stays live in Survey
+  // (L2 = D3, deferred to §HARDENING); the raw-OSM LU faces
+  // (ribbons.faces) are untouched (C5 = D4).
+  {
+    const faceStreets = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
+    ribbonsLayer.tiles = extractFaces(faceStreets).map(f => ({
+      ring: f.ring.map(p => [p[0], p[1]]),
+      edges: f.edges.map(e => ({ skelId: faceStreets[e.streetIdx].skelId || faceStreets[e.streetIdx].name, side: e.side })),
+    }))
+    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology)`)
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
