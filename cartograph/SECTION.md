@@ -2,6 +2,11 @@
 
 **The third tool — the ped **FILL**. Section reads the **frozen Survey SHAPE** (the hardscape silhouette) and strokes the pedestrian cross-section **inward** off it: treelawn, sidewalk, the ribbon corner fills, the ADA pad, the dead-end cap wraps. It is the first **consumer** past the Data Wall.** This is its single-source-of-truth reference: what it is, the document it reads, how it builds, the authoring panel it powers, what stays live versus frozen, and where it is today.
 
+> ⚠️ **FORENSIC CORRECTION (2026-06-07, Plumb — `scratch/SECTION-FORENSIC.md`).** This doc was written fast from machine shape-proofs and is partly **wrong vs. the code/render** (the proxy-vs-eye gap). Until reconciled section-by-section, the corrections override the body:
+> 1. **The per-edge FILL is LANDED, not "the next build"** (§3.2/§3.3/§7 say otherwise — stale). `resolvePedDepths:491`, the per-edge stroke is live.
+> 2. **The corner is currently a CONSTRUCTED DISK PRIMITIVE** (`circlePoly` ∩ wedge, `tileGround.js:746-760`) — it **violates** §3/§3.3/§6's "tangent-to-tangent bent slice, never a primitive." The doc states the *target*; the code states the *bug*. The disk dwarfs a block and cross-claims adjacent corners → **"corners draw wrong."**
+> 3. **§5 "one depth truth" is overstated** — it unifies the depth *scalar* but NOT the *anchor*. Handles live in centerline-ruler space; the FILL lives on the frozen rounded `iA`. The fix is **one *geometry* truth** (anchor the handles to the same frozen `iA` the FILL strokes), not one scalar. The anchor bug pre-dates every recent commit → **"handles not on the ribbon."**
+
 > **Status: v0.2 (2026-06-07) — the dispatch-ready seed.** The SSOT for the Section stage; completes the front-half rebuild spec `SKELETON → PREBAKE → SURVEY → WALL → ⟦this⟧`. **Grounded in code** (`src/lib/tileGround.js` `sectionPass`/`sectionOpen`, the Measure panel/overlay) and in the ribbon construction canon (`RIBBONS §3.9a`, the V1 keystone), verified against the live path 2026-06-07. Reference-kind (how it works / what it is / why). Its **State/forensic companion is `SECTION-CENSUS.md`**. Today's tool is still labelled **"Measure"** (the rename rides T3; don't rename code first). **§3.3 is the dispatch target for the per-edge FILL build** — an agent pointed here has the whole model.
 
 ---
