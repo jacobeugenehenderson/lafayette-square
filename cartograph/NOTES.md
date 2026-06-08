@@ -8,6 +8,14 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-08 — Datum repair DONE + confirmed on Jacob's eye; the junction-finish/datum arc retires.
+
+**The close.** Jacob confirmed: the no-mouth-side park-perimeter doglegs (Vail→Park, Mackay→Park, Albion→Missouri, + the unmarked worst park-avenue-1 `[-154,-220.9]`) are gone. The fix had landed earlier (Vernier `c49a4e6` → `8452c31`) as a **pure upstream datum reconciliation**: drop the 17 deviating per-fe `pavementHW` overrides in `design.json` (park-avenue-1, lafayette-avenue-3, missouri-avenue-2, dolman-street-1) so each continuous avenue carries its surveyed base width through the plain stem-Ts → `dw→0` → the existing `[THRU]` self-gates (`tileGround.js:1773`; 134→120 windows). **Zero tileGround surgery** (the thing that regressed 18th in the reverted E3.4); 18th byte-identical. Root = Sextant's forensic (`scratch/JUNCTION-FINISH-FORENSIC.md`): the 5 nodes are `kind:"plain"` (no junction construction), the dogleg is `[THRU]` rendering a per-fe width step as a Z-jog sized just under the 18° fillet tol — NOT junction-construction, NOT fillet, NOT skeleton off-chord. **Forensic-first beat guessing again** (Sextant pinned the datum root; the previous E3.4 guess did tileGround corner-gate surgery and regressed 18th).
+
+**Retired to git (P5-style):** `HANDOFF-junction-datum-repair.md` (dispatch brief, landed) · `HANDOFF-e3.4-datum-repair.md` (the reverted predecessor, superseded) · `HANDOFF-junction-finish-forensic.md` (the forensic dispatch brief, complete). The Sextant deliverable `scratch/JUNCTION-FINISH-FORENSIC.md` stays on disk. BACKLOG rows → DONE; `SKELETON.md §5a`'s stale "take the park doglegs to band-fold" pointer corrected (they were the datum class, neither band-fold nor skeleton). The **"Revert to Data" buttons** (BACKLOG NEXT) remain the operator-facing generalization of this exact move — drop deviating overrides → back to the surveyed base.
+
+---
+
 ## 2026-06-07 — DEEP-NIGHT SKY too bright: the "Sky Layer Gain" channel + the bloom night-hardwire comes out.
 
 **The ask.** At the Stage clock set to deep night, the sky dome rendered as a bright lavender wash (screenshot: arch silhouetted against a too-bright purple sky, faint stars, lit buildings). "Discover everything emitting light in the sky in the middle of the night and let's either clamp it or parameterize it." It had been troubleshot the night before without resolution.
