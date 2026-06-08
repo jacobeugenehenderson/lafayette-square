@@ -55,7 +55,10 @@ So **OSM models each divided avenue as one bidirectional way (undivided side) + 
 
 ## Coordination
 
-- This is **frame** work (`skeleton.js` / `derive.js` / `promote-ribbons.js`) — **different files** from the two in-flight branches (`band-fold-fix` = `tileGround.js`; the T3 corner-handles work = `CornerEditHandles.jsx` + store + a small `tileGround.js` emit), so low collision. Branch off trunk `cartograph-looks-pass-ab`, own worktree.
+- **Branch off trunk `cartograph-looks-pass-ab` @ `11482d7`** (clean, pushed — post-bookkeeping), **own worktree** (`isolation: worktree`).
+- This is **frame** work (`skeleton.js` / `derive.js` / `promote-ribbons.js`). Two other fixes are parked on their own branches and touch **different files** — no collision: `band-fold-fix@8e1e414` (`tileGround.js`, the SELFINT hygiene — landed-and-confirmed) and `t3-corner-handles` (`CornerEditHandles.jsx` + store + a small `tileGround.js` corner-set emit — implemented, pending eye). You won't touch `tileGround.js` as the cure, so even the `tileGround` overlap with those is moot.
+- ⚠️ **The 3 protrusions are CLEAN geometry, not self-intersections** — `band-fold-fix` (SELFINT 59→0) does **not** address them; they persisted past it on Jacob's eye (hard-refreshed). Don't expect the band-fold work to have helped here.
+- Do **not** merge or rebase the other branches; ignore them. Re-baked artifacts as needed on your branch.
 - **Report:** which wedge (step 1), the frame intervention chosen + why, the 3-node before/after, and the 18th-corridor check.
 
 ## On landing (Boz)
