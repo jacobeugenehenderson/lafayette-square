@@ -429,6 +429,21 @@ function edgeDepth(measure, side, curbWidth, level) {
   return t + Math.max(0, Number.isFinite(m?.sidewalk) ? m.sidewalk : 0)
 }
 
+// ── Best-effort first fill (SECTION.md §3.1) ───────────────────────────────
+// The default ped cross-section before any authoring. The system needs only two
+// things per edge: treelawn Y/N + strip depths (ADA). Treelawn Y/N is GLEANED,
+// not guessed: `measure.treelawn` is the surveyed "natural gap" (centerline→
+// sidewalk minus the asphalt+curb), and its LS distribution is cleanly bimodal
+// (~391 edges ≈0 = N · ~508 ≥0.75m = Y · ~50 in the 0.25–0.75 valley). Threshold
+// the gap → Y/N for ~95% of edges; the strips then default to ADA-standard depths
+// (also the Revert state). This replaces the old per-tile AVERAGED measures, which
+// drew noisy sub-meter treelawn slivers everywhere.
+const TREELAWN_YN_THRESHOLD = 0.6   // natural gap below this → no treelawn (the bimodal valley)
+const STD_TREELAWN = 1.5            // standard treelawn depth where present (m) — tunable
+const ADA_SIDEWALK = 1.5            // ADA-standard sidewalk depth — the Revert default (m) — tunable
+const gleanTreelawn = (measure, side) =>
+  Math.max(0, Number.isFinite(measure?.[side]?.treelawn) ? measure[side].treelawn : 0) >= TREELAWN_YN_THRESHOLD
+
 // Group a tile's cyclic edges into maximal RUNS of the same (streetIdx, side).
 // A run = a sub-polyline of the tile boundary that all carries the same
 // street-side widths. Offsetting the run polyline (not each edge) is what
@@ -512,8 +527,21 @@ function groupRuns(tile) {
 // (streets / streetsOrig / measures / centerlineData / ribbons), so it CANNOT
 // reach back. That impossibility is the wall: Section's shape input changes only
 // when the shape pass re-runs. Every helper below is module-level + pure.
-export function sectionPass(shapeTiles, cw, stripMat) {
+export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
   const Wacc = [], tlByLu = {}, luByLu = {}
+  // Per-edge ped-strip material OVERRIDE (the ctrl-click LU↔SW swap — SECTION.md §8
+  // "always best-effort, then override"): blockCustoms[skelId][side][segOrd].materials
+  // wins over the default {outer:'LU', inner:'SW'}, keyed by the FROZEN run identity
+  // (skelId/side/segOrd) — design intent, NOT chain geometry, so the wall holds.
+  // Returns null when there's no real override → the common case stays default-routed,
+  // byte-identical to pre-override.
+  const runMatOverride = (run) => {
+    const c = blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd]?.materials
+    if (!c) return null
+    const outer = c.outer === 'SW' ? 'SW' : 'LU'
+    const inner = c.inner === 'LU' ? 'LU' : 'SW'
+    return (outer === 'LU' && inner === 'SW') ? null : { outer, inner }
+  }
   for (const st of shapeTiles) {
     const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs } = st
     // Tolerate the serialized artifact: roundTipKeys is a Set in-memory, an array
@@ -541,10 +569,16 @@ export function sectionPass(shapeTiles, cw, stripMat) {
     // clean tangent cuts; the uncovered corner wedge becomes sidewalk. Same
     // per-run butt-cap construction as the asphalt, so the cuts stay consistent.
     const tlSlabs = []
+    const overrideRuns = []   // per-edge material-override runs: { zone (full ped depth), mat }
     const wrapDisks = []   // round dead-end zone disks (treelawn wraps the cap)
     for (const run of runs) {
-      const td = edgeDepth(run.baseMeasure, run.side, cw, 'T')   // grout → treelawn-outer (BASE measure — matches pre-Wall td)
-      if (td <= 1e-6) continue
+      // Best-effort fill (SECTION.md §3.1): treelawn is Y/N off the natural gap at
+      // a STANDARD depth — not the noisy surveyed gap. A treelawn-N run gets no
+      // slab → it stays out of the zone → that straight section fills all-SW.
+      const aBase = edgeDepth(run.baseMeasure, run.side, cw, 'A')   // base asphalt edge (grout)
+      if (aBase <= 1e-6) continue                                   // median-facing / no street → no ped
+      const hasTL = gleanTreelawn(run.baseMeasure, run.side)
+      const td = hasTL ? aBase + cw + STD_TREELAWN : 0
       const a = edgeDepth(run.measure, run.side, cw, 'A')   // per-fe asphalt edge, frozen (trim follows it)
       // Pull the run back from each CORNER end by (asphalt-hw + that corner's
       // resolved R) so the slab ends at the tangent and the corner wedge becomes
@@ -557,7 +591,12 @@ export function sectionPass(shapeTiles, cw, stripMat) {
       const t0 = roundTipKeys.has(k0) ? 0 : a + nearestVertR(run.poly[0], ring, vertR)
       const t1 = roundTipKeys.has(k1) ? 0 : a + nearestVertR(last, ring, vertR)
       const poly = runs.length > 1 ? trimPolyline(run.poly, t0, t1) : run.poly
-      if (poly && poly.length >= 2) tlSlabs.push(...strokeOpen(poly, td))
+      if (!poly || poly.length < 2) continue
+      if (td > 1e-6) tlSlabs.push(...strokeOpen(poly, td))   // treelawn zone (Y runs only)
+      // Capture an overridden run's FULL-depth ped zone (treelawn + sidewalk) so its
+      // strips route by the authored material even when treelawn-N (sidewalk-only).
+      const mat = runMatOverride(run)
+      if (mat) overrideRuns.push({ zone: strokeOpen(poly, a + cw + tl + sw), mat })
     }
     let zone = runs.length > 1 ? (tlSlabs.length ? unionRings(tlSlabs) : []) : null
     // A ROUND dead-end cap is NOT an ADA intersection corner: the treelawn
@@ -608,8 +647,18 @@ export function sectionPass(shapeTiles, cw, stripMat) {
       if (matTag === 'SW') Wacc.push(...rings)
       else pushLu(tlByLu, lu, rings)
     }
-    routeStrip(stripMat.outer, legOuter)           // outer ped strip (default LU)
-    routeStrip(stripMat.inner, legInner)           // inner ped strip (default SW)
+    // Per-edge OVERRIDE first: route each overridden run's portion of the strips by
+    // its authored materials, peeling it off the default remainder. No overrides →
+    // the loop is empty and routing is byte-identical to before.
+    let outerRem = legOuter, innerRem = legInner
+    for (const orun of overrideRuns) {
+      routeStrip(orun.mat.outer, intersectRings(outerRem, orun.zone))
+      routeStrip(orun.mat.inner, intersectRings(innerRem, orun.zone))
+      outerRem = differenceRings(outerRem, orun.zone)
+      innerRem = differenceRings(innerRem, orun.zone)
+    }
+    routeStrip(stripMat.outer, outerRem)           // outer ped strip (default LU)
+    routeStrip(stripMat.inner, innerRem)           // inner ped strip (default SW)
     Wacc.push(...cornerPad)                         // corner span — always SW (structural)
     // E2 — the constructed median paints positively: route this tile's frozen
     // median region (med, clipped at the shape pass) to the 'median' class and
@@ -641,8 +690,8 @@ export function sectionPass(shapeTiles, cw, stripMat) {
 // buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
 // Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
 // already tolerates the serialized roundTipKeys array).
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null) {
-  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat)
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null) {
+  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat, blockCustoms)
   const Aacc = [], Cacc = [], blockRaw = []
   for (const st of shapeTiles) {
     const iA = st.iA || []
@@ -860,8 +909,12 @@ export function buildTileGround(ribbons, opts = {}) {
       const cap = (authored && authored !== 'none') ? authored : (caps?.[k]?.cap || 'round')
       const m = s.measure
       const hw = Math.max(m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
-      const tlw = Math.max(m?.left?.treelawn || 0, m?.right?.treelawn || 0)
-      const sww = Math.max(m?.left?.sidewalk || 0, m?.right?.sidewalk || 0)
+      // Best-effort fill (SECTION.md §3.1): the dead-end tip's ped wrap uses the
+      // STANDARD model too (treelawn Y/N × ADA), so the cap wrap (sectionPass)
+      // matches the straight-section bands. (The round-cap FILL bug — ② — is the
+      // wrap geometry, separate from these depths.)
+      const tlw = (gleanTreelawn(m, 'left') || gleanTreelawn(m, 'right')) ? STD_TREELAWN : 0
+      const sww = ADA_SIDEWALK
       deadEndTips.set(tipKey(pts[idx]), { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1] })
     }
   }
@@ -1654,18 +1707,9 @@ export function buildTileGround(ribbons, opts = {}) {
   //  3. The ped bands are CONCENTRIC inward offsets of that rounded region:
   //     curb (R→R+cw), treelawn (→+tl), sidewalk (→+sw). Eroding a radius-R
   //     corner by d gives radius R+d — the nested-arc wrap Jacob's eye wants.
-  //     (Curb width is global so it's exact; treelawn/sidewalk use a per-tile
-  //     representative — concentric corners trade per-edge ped width for the
-  //     clean wrap. Per-edge ASPHALT width, the dominant asymmetry, is kept.)
-  const repDepth = (runs, key) => {
-    let sum = 0, n = 0
-    for (const run of runs) {
-      const m = measures[run.streetIdx]?.[run.side]
-      const v = Math.max(0, Number.isFinite(m?.[key]) ? m[key] : 0)
-      sum += v; n++
-    }
-    return n ? sum / n : 0
-  }
+  //     (Curb width is global so it's exact; treelawn/sidewalk are now the
+  //     STANDARD best-effort depths — SECTION.md §3.1 — replacing the old per-tile
+  //     averaged measure. Per-edge ASPHALT width, the dominant asymmetry, is kept.)
 
   // M1 — each tile's land-use class. Reuse the figure-ground resolution:
   // blockLandUse override (by bbox blockKey) → the OSM parcel (face.use) the
@@ -1778,8 +1822,12 @@ export function buildTileGround(ribbons, opts = {}) {
     let medArea = 0
     for (const r of medClip) medArea += Math.abs(signedArea(r))
     const isMedianTile = medArea > 0.5 && medArea > 0.5 * Math.abs(signedArea(tile.ring))
-    const tl = isMedianTile ? 0 : repDepth(runs, 'treelawn')
-    const sw = isMedianTile ? 0 : repDepth(runs, 'sidewalk')
+    // Best-effort fill (SECTION.md §3.1): per-tile band depths are STANDARD, not
+    // the old per-edge averaged measures. The treelawn band is present iff any of
+    // the tile's runs gleans treelawn-Y; the sidewalk band is always ADA.
+    const tileHasTreelawn = runs.some(run => gleanTreelawn(measures[run.streetIdx], run.side))
+    const tl = isMedianTile ? 0 : (tileHasTreelawn ? STD_TREELAWN : 0)
+    const sw = isMedianTile ? 0 : ADA_SIDEWALK
     // Per-corner fillet of the curb line. Each tile vertex resolves to its
     // authored radius (per-corner → per-IX → default 4.5) × the global scale —
     // NO clamp: the operator's R is the dial, and filletRing's own 45%-of-gap
@@ -1860,7 +1908,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // so it physically cannot reach back — Section's shape input changes only when
   // this shape pass re-runs. (The perimeter G9 below stays here on the shape
   // side, where reading the chain is legitimate — Jacob's Option 1.)
-  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat)
+  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat, blockCustoms)
 
   // Grade-separated roads paint as flat strips — excluded from faces above, stroked
   // here off their own centerline at the frame's pavementHW half-width. One flat level

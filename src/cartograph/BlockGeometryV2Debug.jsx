@@ -635,11 +635,14 @@ export default function BlockGeometryV2Debug({
   const sectionFrozen = measureActive && !!frozenShape
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
-    // ⛔ wall assertion: this memo's closure must hold NO chain handle — it
-    // reads only the fetched artifact + design params (curbWidth, stencil).
-    // liveRibbons / streets / blockCustoms are deliberately absent.
+    // ⛔ wall: the SHAPE stays frozen — every vertex of geometry comes from the
+    // fetched silhouette (frozenShape). blockCustoms is passed for MATERIAL routing
+    // ONLY (the per-edge LU↔SW override, keyed by the frozen run identity — design
+    // intent, not chain geometry; it cannot move a vertex). liveRibbons / streets
+    // stay absent. So the FILL re-strokes live off the frozen curb when you swap a
+    // strip, while the curb sits still — SECTION.md §4.
     let sg
-    try { sg = sectionOpen(frozenShape, curbWidth, { outer: 'LU', inner: 'SW' }, stencil) }
+    try { sg = sectionOpen(frozenShape, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -652,7 +655,7 @@ export default function BlockGeometryV2Debug({
       asphalt:  ringsToFlatGeo(sg.asphalt,  0.040, true),
       block:    ringsToFlatGeo(sg.block,    0.008, true),   // frozen block silhouette, under the LU paint
     }
-  }, [sectionFrozen, frozenShape, curbWidth, stencil])
+  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms])
 
   const tileGeos = useMemo(() => {
     if (!isTileScene || !liveRibbons) return null
