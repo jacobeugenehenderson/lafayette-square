@@ -403,6 +403,14 @@ const useCartographStore = create((set, get) => ({
   // Not persisted — it's derived geometry, rebuilt every tile build.
   tileCornerFillets: {},
   setTileCornerFillets: (m) => set({ tileCornerFillets: m || {} }),
+  // Transient: the INJECTIVE corner set from the live tile build — one entry per
+  // sharp tile corner ({ key, V, legA, legB, vertR, fillet }). Published by
+  // BlockGeometryV2Debug so the corner-edit handle sources its corner LIST from
+  // the corners actually drawn (the tile graph), not the legacy
+  // `ribbons.intersections` (T3, HANDOFF-tile-T3-corner-handles.md). Not
+  // persisted — derived geometry, rebuilt every tile build.
+  tileCorners: [],
+  setTileCorners: (c) => set({ tileCorners: c || [] }),
   // The frozen curb (iA) rings the Section FILL strokes off — published so the
   // Measure handles anchor to the SAME geometry the FILL uses (one *geometry*
   // truth, SECTION.md §5), not a centreline ruler. Empty outside frozen Section.

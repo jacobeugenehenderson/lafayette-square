@@ -682,6 +682,7 @@ export default function BlockGeometryV2Debug({
       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
       blockRings: tg.block,   // raw iA rings — handle anchoring (one geometry truth)
       cornerFillets: tg.cornerFillets || {},
+      cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
     }
   }, [isTileScene, liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
 
@@ -703,6 +704,12 @@ export default function BlockGeometryV2Debug({
   useEffect(() => {
     setTileCornerFillets(tileGeos?.cornerFillets || {})
   }, [tileGeos, setTileCornerFillets])
+  // Publish the injective corner SET so CornerEditHandles sources its corner LIST
+  // from the corners actually drawn (the tile graph), not legacy ribbons.intersections.
+  const setTileCorners = useCartographStore(s => s.setTileCorners)
+  useEffect(() => {
+    setTileCorners(tileGeos?.cornerSet || [])
+  }, [tileGeos, setTileCorners])
 
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles

@@ -998,6 +998,14 @@ export function buildTileGround(ribbons, opts = {}) {
   // each corner to (after the geometric inset clamp). The authoring handle reads
   // this so its magenta arc IS the curb, never a re-derived approximation.
   const cornerFillets = {}
+  // T3 — the authoritative, INJECTIVE corner set the Survey corner-handle rides
+  // (one corner truth). One entry per SHARP tile-ring corner, keyed identically
+  // to `cornerKeyAt` (= the write-path key `resolveVertR` reads overrides off),
+  // each carrying its resolved radius + the fSink arc that rounds THIS corner
+  // (or null when R=0 / unfilleted). Sourced here, not off `ribbons.intersections`
+  // (the legacy raw-OSM list the render no longer matches) — so every drawn
+  // corner gets a handle. See HANDOFF-tile-T3-corner-handles.md.
+  const cornerSet = []
   // M3 — overridable ped-strip materials. Default {outer:'LU', inner:'SW'}
   // (V1.5 model). T3 makes this per-fe (the ctrl-click LU↔SW swap); for now a
   // single model proves the data path. 'LU' → land-use colour, 'SW' → sidewalk.
@@ -1995,17 +2003,49 @@ export function buildTileGround(ribbons, opts = {}) {
     const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
     // Tag each achieved fillet with its corner key (the centerline NODE it
     // rounded + that node's two tile-edge legs) so the authoring handle can read
-    // the true curb arc — one corner truth, no drift. The apex sits inboard of
-    // the node (the fillet rounds the curb ring, inset from the centerline), so
-    // map it back to the nearest SHARP corner of the tile ring — never a nearby
-    // smoothed curve sample, which would mis-key the corner (the handle-detach
-    // bug: read side queries the node key, find nothing, falls back to the apex).
+    // the true curb arc — one corner truth, no drift. CORNER-DRIVEN injective
+    // claim (was fillet-driven `nearestCornerVertexIndex`, which collided 93× and
+    // orphaned 77× — Caliper's bucket-B; subsumed here): every SHARP tile-ring
+    // corner is the unit of identity, and each claims at most ONE fSink arc by
+    // nearest apex→corner distance, globally greedy so the matching doesn't depend
+    // on corner order. The apex sits inboard of the node (the fillet rounds the
+    // curb ring, inset from the centerline), so the apex→corner gap ≈ the inset.
     const cornerIdxs = sharpCornerIndices(tile.ring)
-    for (const f of fSink) {
-      const vi = cornerIdxs.length
-        ? nearestCornerVertexIndex(f.apex, tile.ring, cornerIdxs)
-        : nearestVertexIndex(f.apex, tile.ring)
-      cornerFillets[cornerKeyAt(tile.ring[vi], tile.edges, vi)] = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
+    const pairs = []
+    for (let ci = 0; ci < cornerIdxs.length; ci++) {
+      const V = tile.ring[cornerIdxs[ci]]
+      for (let k = 0; k < fSink.length; k++) {
+        const f = fSink[k]
+        pairs.push({ ci, k, d: Math.hypot(f.apex[0] - V[0], f.apex[1] - V[1]) })
+      }
+    }
+    pairs.sort((a, b) => a.d - b.d)
+    const filletForCorner = new Array(cornerIdxs.length).fill(-1)
+    const filletClaimed = new Array(fSink.length).fill(false)
+    for (const p of pairs) {
+      if (filletForCorner[p.ci] >= 0 || filletClaimed[p.k]) continue
+      filletForCorner[p.ci] = p.k
+      filletClaimed[p.k] = true
+    }
+    for (let ci = 0; ci < cornerIdxs.length; ci++) {
+      const vi = cornerIdxs[ci]
+      const V = tile.ring[vi]
+      const key = cornerKeyAt(V, tile.edges, vi)
+      // Split the key's two legs for the write path (legOut/legIn at this corner)
+      // — same derivation as cornerKeyAt, so setCornerCornerRadius(V, legA, legB)
+      // round-trips to exactly this key.
+      const ne = tile.edges.length
+      const eOut = tile.edges[vi], eIn = tile.edges[(vi - 1 + ne) % ne]
+      const legA = `${skelOf(eOut.streetIdx)}:${eOut.forward ? 'f' : 'b'}`
+      const legB = `${skelOf(eIn.streetIdx)}:${eIn.forward ? 'b' : 'f'}`
+      const k = filletForCorner[ci]
+      let fillet = null
+      if (k >= 0) {
+        const f = fSink[k]
+        fillet = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
+        cornerFillets[key] = fillet
+      }
+      cornerSet.push({ key, V, legA, legB, vertR: vertR[vi], fillet })
     }
     const lu = luForRing(tile.ring)
     // Dead-end caps + loop reversals make iA turn ~180°; a jtMiter inward offset
@@ -2203,5 +2243,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact }
 }
