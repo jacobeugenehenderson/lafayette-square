@@ -1,3 +1,7 @@
+> ⛔ **SUPERSEDED 2026-06-09 → `HANDOFF-freeze-the-curb-in-the-first-bake.md`.** This brief's premise — "it's a DATA/FRAME issue, fix the transition in the frame, NOT in `tileGround`" — was right that the bug is architectural and wrong about the artifact. A long session proved the curb is **re-stroked live from the chains** (`buildTileGround`, the Survey-live engine), and the "tongue" is a symptom of the curb **not being frozen** in the First Bake — not a transition/median/corner-leg defect. Every lever this brief implies (frame de-taper, median-wedge, stub corner) was ruled out with evidence. Do not act on the determination below; read the successor brief. Kept for the forensic trail only.
+
+---
+
 # HANDOFF — The divided-transition block tongue (the 3 marked "weird protrusions")
 
 **State:** dispatch-ready. **Goal:** kill the thin **blue block-silhouette tongues** at the 3 marked corners — where a divided avenue meets a cross-street and the carriageway stub extrudes a thin spike into the block. **It is a DATA/FRAME issue, determined — fix it in the frame, invisibly, NOT downstream in `tileGround` construction** (`SURVEY §7`: when the root is data/skeleton, fix it in the frame; never a user control).
