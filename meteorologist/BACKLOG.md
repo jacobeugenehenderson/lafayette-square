@@ -8,6 +8,27 @@ Punchlist for the cloud + weather authoring track. Items are independently shipp
 
 ## In flight — phase queue (next up first)
 
+### 🔭 2026-06-08 — make Conditions *feel* like the LS install (the staging-area pass)
+
+Framing locked this session: **the Meteorologist is the staging area for the slab** — same stage/elements as LS, different audiences ([[project_meteorologist_is_slab_staging_area]], `ARCHITECTURE.md §2`). Conditions must *be* the slab, not a stand-in.
+
+**Done (2026-06-08):**
+- ✅ **Hero tree → production atlas material** (`useTreeAtlas`): lit, bark/leaf-textured, foliage-sway via the directive (breeze fallback). Resolves the `KNOWN-PENDING` unlit-white tree.
+- ✅ **Rain + snow fall down** (inverted-gravity sign fix in the particle shaders); rain opacity reduced (was white stripes).
+
+- ✅ **Environment wiring (Conditions → the canary).** Selecting a Condition now drives the canary through the same shared stores: directive → `useAtmosphere` (clouds/wind/precip), `deriveSkyScalars` → `useSkyState` (the real sun-dim + sky-desat darkening), `<WeatherEffects>` mounted in the Ground slot (rain/snow/wetness), lightning synthesized for stormy Conditions. `ConditionEnvironmentDriver` in `CanaryScene.jsx`.
+- ✅ **Degree-driven continuous response.** `src/lib/condition-degrees.js#applyDegrees` scales the Condition by its Degrees (precip/wind/cover); a Degrees scrubber in the Condition editor previews drizzle→downpour. The driver pushes the *effective* directive. (v1 = multipliers; `WEATHER-MODEL.md §7`.)
+
+See `STATUS.md` → "Environment wiring" for the full wired/gap matrix (remaining gaps: runtime adopts `applyDegrees` from the live feed; wet-surface look on canary ground/tree).
+
+**Queued (small, deferred this session):**
+- 📖 **Weather nomenclature SETTLED 2026-06-08 → `WEATHER-MODEL.md` (new canon).** Spine word = **Condition** (Conditions = Condition × Degrees; tier-3 derived named apart); model = continuous response (a Condition's look is a continuous function of its Degrees) on two clocks (poll ~15min + tween · computed per-frame). **Retrofit to canon** (see `WEATHER-MODEL.md §7`): ✅ degree-driven `ConditionEnvironmentDriver` done; **remaining** — runtime (`almanac-eval`) feeds `applyDegrees` from the live feed so the slab uses the same function; reconcile the 16 poetic almanac rules to the WMO-grounded Conditions (poetic names → variants); author absolute response curves per field (Phase 3b).
+- 📐 **Slot code reconciliation** — code says "Browse"/overhead; `INTERFACE.md §7` intent is "Cloud Chamber"/isolated-cloud thumbnail. Rename + reframe the code to match the doc. Default flow: Cloud-Chamber thumbnail (gestalt) → Ground (in situ).
+- 🎥 **Calm the Ground camera** — default to a static in-situ framing (tree still, weather animates around it), drag-to-orbit optional; it auto-orbits today.
+- 🎨 **Cloud color in drama** + **cloud vertical variation** (towering height-field, inverted lobes/mammatus, erosion/fractus) — overlaps the tabled cloud-realism arc.
+
+---
+
 Updated 2026-05-27. Phases 1–4b.1 shipped (see `NOTES.md` for commits). Next:
 
 ### ⏸ TABLED (2026-05-27) — Cloud realism — morphology + scattering (`HANDOFF-cloud-specialist.md`)

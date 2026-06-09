@@ -249,23 +249,28 @@ For tuning the cloud's intrinsic shape against atmospheric lighting without scen
 └──────────────────────────────────────────────────┘
 ```
 
-For verifying the cloud reads at LS scale, with a real-world reference object (the tree) anchoring scale + perspective. The hero tree is intentionally a fancy high-LOD asset we wouldn't ship in a populated LS scene — Meteorologist's authoring scene has one tree, so we can spend the GPU budget here that we can't elsewhere.
+For verifying the cloud reads at LS scale, with a real-world reference object (the tree) anchoring scale + perspective. **The in-situ model: the tree sits still, the weather animates around it.** You're standing under the tree while the sky performs — leaves sway with wind (shader sway, no whole-tree translation), clouds drift and darken, precip falls. The hero tree is intentionally a fancy high-LOD asset we wouldn't ship in a populated LS scene — Meteorologist's authoring scene has one tree, so we can spend the GPU budget here that we can't elsewhere.
 
 ### What the viewport composes (the publish-loop consumed-not-reproduced)
 
 ```
 useSceneJson(activeLook)         ← Cartograph's per-Look published scene.json
   → <CelestialBodies>            ← same shared consumer Stage + Preview mount
-  → <ArchHorizon>                ← (Ground slot only)
   + (Ground slot only)
-    <InstancedTrees> with        ← Arborist's per-Look bake
-    one-tree placement override
+    <HeroTree>                   ← Arborist's per-Look hero GLB via useGLTF,
+      via useTreeAtlas             rendered through the SHARED treeAtlasMaterial
+                                   (lit, bark/leaf atlas, foliage sway) — same
+                                   material the LS runtime mounts
+  + (Ground slot only)
+    flat GroundPlane             ← lit MeshStandardMaterial
   + (always)
     <Atmosphere> with current    ← Meteorologist's own runtime
-    Teapot/Conditions state
+      Teapot/Conditions state
 ```
 
-No new render code beyond `<Atmosphere />` itself. Everything else is mounting existing consumers with the active Look's published artifacts.
+No new render code beyond `<Atmosphere />` itself. Everything else mounts existing consumers / shared materials with the active Look's published artifacts. (NB: the canary mounts a single `HeroTree` — not `<InstancedTrees>` — since it places exactly one tree as a scale reference; it pulls the *same* `treeAtlasMaterial` the population path uses, so parity holds.)
+
+> **Doc↔code drift (2026-06-08):** the code currently labels the first slot **"Browse"** and frames it as a **90° overhead** view. The canonical intent above (Cloud Chamber = isolated-cloud thumbnail, the gestalt "fluffy vs wispy" read) is correct; the code drifted. Reconcile the code to this doc (rename Browse→Cloud Chamber, reframe overhead→isolated thumbnail). Tracked in `STATUS.md` + `BACKLOG.md`.
 
 ---
 

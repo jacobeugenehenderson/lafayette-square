@@ -4,7 +4,21 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 **This README is the orientation card.** Open this first when starting work; it points at the rest.
 
-> Part of the **meteorologist quartet** (`README.md` / `ARCHITECTURE.md` / `SPEC.md` / `BACKLOG.md` / `NOTES.md`, with `CANON.md` + `STAGE_MIGRATION.md` as topical addenda). Read at session start; flag contradictions during work; update at session end. Stale claims actively mistrain readers.
+> Part of the **meteorologist doc suite** — Reference: `README` · `FEATURES` · `OPERATIONS` · `ARCHITECTURE` · `INTERFACE` · `SPEC` · `CANON`; State: `STATUS` · `BACKLOG`; Diary: `NOTES`; addenda: `STAGE_MIGRATION` · `CLOUD-PHASE0`. Read at session start; flag contradictions during work; update at session end. Stale claims actively mistrain readers.
+
+---
+
+## Status (as of 2026-06-08)
+
+**The Meteorologist is the staging area for the slab** — same stage/elements as the LS install, shown to different audiences (a thumbnail glance, an in-situ standee, the live skymap). Rehearsal *is* the performance; never build meteorologist-only stand-ins. ([[project_meteorologist_is_slab_staging_area]], `ARCHITECTURE.md §2`.)
+
+This session (2026-06-08):
+- ✅ **Hero tree now renders like the real install** — swapped the raw unlit GLB for the production atlas material (`useTreeAtlas`): lit by the scene sun, bark/leaf-textured, and swaying via the shared foliage-sway shader driven by the directive (breeze fallback until a Condition supplies wind). Resolves the long-standing `KNOWN-PENDING` white-tree note.
+- ✅ **Rain (and snow) fall down** — the particle shaders had an inverted-gravity sign (drops rose). Fixed; rain opacity reduced (was reading as white stripes).
+- 🔭 **Environment wiring — IN PROGRESS** (the active build): make a Condition *feel* like its weather in the canary by bridging the active Condition → `useAtmosphere` (clouds/wind/precip) **and** → `useSkyState` (`cloudCover`/`storminess` = the real LS scene-darkening path), plus mounting `<WeatherEffects>` in `CanaryScene`. See `STATUS.md` → "Environment wiring" + `BACKLOG.md`.
+- 📐 **Slot reconciliation (doc↔code)** — `INTERFACE.md §7` documents the first slot as **"Cloud Chamber"** (isolated-cloud thumbnail); the code drifted to **"Browse"/overhead**. Reconcile the code to the doc (deferred); intent = thumbnail (gestalt: fluffy vs wispy) → Ground (in situ).
+
+See **`STATUS.md`** for the full wired/scaffolded/gap matrix.
 
 ---
 
@@ -64,6 +78,13 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ## Start here in the morning
 
+**Current (2026-06-08/09) — two tracks in flight.**
+- **Build/wiring (this track):** the Condition→canary **environment wiring** + **degree-driven** continuous response landed (`STATUS.md`); the Condition editor defaults to the in-situ Ground slot. **NEXT: verify it by eye** in the running app (it's code-complete + build-verified, not yet eye-verified — see `STATUS.md` caveat). Remaining: runtime adopts `applyDegrees` from the live feed (paused), wet-surface look on canary ground/tree, slot rename Browse→Cloud Chamber.
+- **Design/fidelity (other track):** **`TUNER.md`** — the agentic cloud-fidelity loop + bake/tween runtime (design-only, decisions resolved). Build starts at the **capture primitive** (also the fix for "can't verify by eye").
+- **Settled canon:** **`WEATHER-MODEL.md`** (Conditions = Condition × Degrees; continuous response; two clocks) and the staging-area doctrine (`ARCHITECTURE.md §2`).
+
+Older roadmap (still valid, longer-horizon):
+
 **Phase 5b — Preview Studio + driver coverage + fixtures.** Phase 6 (Modulators, Halo, 2026-05-20) + Phase 7b/c/d (Tempest, 2026-05-20) shipped both the continuous-phenomena layer and the visible weather consumers. Production now responds to weather *visibly* — rain you can see, snow that accumulates on roofs and ground, lightning that briefly washes the scene, modulators composing atmospheric texture on top. The remaining v1 gap is *previewing* this machinery against any scenario without waiting for real weather to occur. See `NOTES.md` 2026-05-21 Preview Studio ADR.
 
 Open priorities:
@@ -79,14 +100,18 @@ Open priorities:
 
 In reading order:
 
-1. **[`FEATURES.md`](./FEATURES.md)** — operator-facing surface. What an operator can do with Meteorologist today, what's queued, what each card / pulldown / slot is for. (Introduced 2026-05-20.)
-2. **[`INTERFACE.md`](./INTERFACE.md)** — layout model. Teapot ⎮ Conditions, Teacup workstage, slot tabs, right-rail composition. The canonical reference for what the UI is. (Introduced 2026-05-19.)
-3. **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** — publish-loop placement, consume-from-Stage pattern, directory layout, runtime contract. Where Meteorologist sits in the kit and what it composes from other helpers.
-4. **[`SPEC.md`](./SPEC.md)** — full work order. Decisions locked, acceptance criteria. Some rows patched 2026-05-19 (standalone-shell reversal); patches noted in `NOTES.md`.
-5. **[`BACKLOG.md`](./BACKLOG.md)** — punchlist + roadmap.
-6. **[`NOTES.md`](./NOTES.md)** — historical decisions + EOD records. Read the top entry first; it has the latest context.
-7. **[`CANON.md`](./CANON.md)** — what's in the Teapot, what's not, why. Inclusion principles.
-8. **[`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md)** — historical, kept for archive. Phase 4b.3 (2026-05-20) executed it.
+1. **[`FEATURES.md`](./FEATURES.md)** — the brochure. What the Meteorologist is + why it's special; what an operator can do today. (Introduced 2026-05-20.)
+2. **[`OPERATIONS.md`](./OPERATIONS.md)** — the operator's manual. Here's the panel, the knob, when to turn it. The procedural counterpart to FEATURES. (Introduced 2026-06-08.)
+3. **[`INTERFACE.md`](./INTERFACE.md)** — layout model. Teapot ⎮ Conditions, Teacup workstage, slot tabs, right-rail composition. The canonical reference for what the UI is. (Introduced 2026-05-19.)
+4. **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** — publish-loop placement, consume-from-Stage + staging-area doctrine, directory layout, runtime contract. Where Meteorologist sits in the kit and what it composes from other helpers.
+5. **[`WEATHER-MODEL.md`](./WEATHER-MODEL.md)** — the settled weather **nomenclature + model** (Conditions = Condition × Degrees; continuous response; two clocks). The shared vocabulary the sky/environment code and the Meteorologist both speak. (Introduced 2026-06-08.)
+6. **[`SPEC.md`](./SPEC.md)** — full work order. Decisions locked, acceptance criteria. Some rows patched 2026-05-19 (standalone-shell reversal); patches noted in `NOTES.md`.
+7. **[`STATUS.md`](./STATUS.md)** — live wiring matrix. Wired vs scaffolded vs gap, per surface. Answers "is X actually hooked up right now?" (Introduced 2026-06-08.)
+8. **[`BACKLOG.md`](./BACKLOG.md)** — punchlist + roadmap.
+9. **[`NOTES.md`](./NOTES.md)** — historical decisions + EOD records. Read the top entry first; it has the latest context.
+10. **[`CANON.md`](./CANON.md)** — what's in the Teapot, what's not, why. Inclusion principles.
+11. **[`TUNER.md`](./TUNER.md)** — **design proposal (2026-06-08, not yet canon)**: the agentic cloud-fidelity loop ("the Tuner"), growing the procedural instrument until every cloud is generable, and a bake-and-tween runtime to afford it live. Open decisions for Jacob in its §7. Read its §6 (reconcile-with-canon) before acting.
+12. **[`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md)** / **[`CLOUD-PHASE0.md`](./CLOUD-PHASE0.md)** — historical addenda, kept for archive.
 
 ---
 
@@ -152,7 +177,7 @@ src/tokens/design.css                 # transitively imported via src/index.css
 
 ## Convention reminders
 
-- **Math, not bakes.** No KTX2, no GLB, no texture memory. Procedural raymarch using preset params as uniforms.
+- **Math for the library; bake only the Hero swath.** *(Narrowed 2026-06-08 — originally a blanket "Math, not bakes.")* The preset **library + authoring stay procedural** — no KTX2/GLB texture assets, no preset bakes; presets are params, rendered by raymarch. What's permitted now: the **runtime** may bake the **Hero-keyframe-visible sky swath** as a relightable impostor — a bounded, refresh-on-change *cache*, not a shipped texture asset. The keyframe-bounded swath makes the texture-memory cost negligible, which is what justified narrowing the rule. See `TUNER.md §4.1` + decision D1.
 - **No bake ceremony.** Saves write directly to `public/clouds/*.json` after validation. No drafts/published split.
 - **Mirror existing UX.** Stage's `TodChannel.jsx` slot system is the canonical TOD authoring primitive. Don't invent a new timeline; add the Clouds row using the existing chip-row UX.
 - **Toy stays as developer's separate door.** The existing Cartograph toolbar's Toy toggle stays untouched. The Meteorologist mode entrance is the new "launch meteorologist" button inside the Clouds row.

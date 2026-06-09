@@ -52,7 +52,7 @@ vec2 curl(vec3 p) {
 
 void main() {
   float colH = TOP_Y_DEF - BOTTOM_Y_DEF;
-  float yLocal = mod(aPhase * colH - uTime * aSpeed, colH);
+  float yLocal = mod(aPhase * colH + uTime * aSpeed, colH);
 
   float ang = aPhase * 6.2831853;
   float radius = RADIUS_DEF * (0.2 + 0.8 * aRadius);

@@ -22,6 +22,36 @@ import WhenCard from './WhenCard.jsx'
 import DirectiveCard from './DirectiveCard.jsx'
 import CloudsInConditionCard from './CloudsInConditionCard.jsx'
 import DawnTimeline from '../components/DawnTimeline.jsx'
+import { DEFAULT_DEGREES } from '../lib/condition-degrees.js'
+
+// Degrees scrubber — preview the Condition across its continuous range
+// (WEATHER-MODEL.md §4). Ephemeral preview state, not authored data: it's
+// "where along the range am I looking," the same axes the slab reads live
+// from the weather feed. Multipliers 0..1 on the Condition's full expression.
+const DEGREE_AXES = [['precip', 'Precip'], ['wind', 'Wind'], ['cover', 'Cloud']]
+function DegreesCard({ degrees, onChange }) {
+  return (
+    <div className="glass-panel rounded-xl p-3">
+      <div className="section-heading mb-2">Degrees · live preview</div>
+      <div style={{ fontSize: 11, color: '#777', marginBottom: 8, lineHeight: 1.4 }}>
+        Scrub the Condition across its range — drizzle to downpour is one
+        continuous Condition. The slab plays these from live weather.
+      </div>
+      {DEGREE_AXES.map(([k, label]) => (
+        <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: '#bbb' }}>
+          <span style={{ width: 52 }}>{label}</span>
+          <input
+            type="range" min={0} max={1} step={0.01}
+            value={degrees[k] ?? 1}
+            onChange={(e) => onChange({ ...degrees, [k]: Number(e.target.value) })}
+            style={{ flex: 1 }}
+          />
+          <span style={{ width: 30, textAlign: 'right', color: '#888' }}>{Math.round((degrees[k] ?? 1) * 100)}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
 
 export default function ConditionEditor() {
   const conditions          = useMeteorologistStore(s => s.conditions)
@@ -30,7 +60,11 @@ export default function ConditionEditor() {
   const revertToDefault     = useMeteorologistStore(s => s.revertConditionToDefault)
 
   const rule = conditions.find(c => c.id === activeConditionId) || null
-  const [slot, setSlot] = useState('browse')
+  // Default to the in-situ Ground slot: opening a Condition drops you under
+  // the hero tree with the weather playing (the overhead "browse" slot shows
+  // no ground/tree/<WeatherEffects>, so it can't preview the weather).
+  const [slot, setSlot] = useState('ground')
+  const [degrees, setDegrees] = useState(DEFAULT_DEGREES)
 
   if (!rule) {
     return (
@@ -93,7 +127,7 @@ export default function ConditionEditor() {
       {/* ── Body: viewport + right rail ─────────────────────── */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         <main style={{ flex: 1, minWidth: 0, minHeight: 0, background: '#0a0a0a' }}>
-          <CanaryScene slot={slot} />
+          <CanaryScene slot={slot} directive={rule.directive} degrees={degrees} />
         </main>
 
         <aside style={{
@@ -109,6 +143,8 @@ export default function ConditionEditor() {
             <div className="section-heading mb-2">Time of Day</div>
             <DawnTimeline />
           </div>
+
+          <DegreesCard degrees={degrees} onChange={setDegrees} />
 
           <WhenCard rule={rule} />
           <DirectiveCard rule={rule} />

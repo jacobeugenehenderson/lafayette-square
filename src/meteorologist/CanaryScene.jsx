@@ -26,23 +26,37 @@
  * GLB paths route through import.meta.env.BASE_URL so the same build
  * runs at apex or any subpath (project_kit_deploy_path_agnostic).
  */
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
+import useAtmosphere from '../hooks/useAtmosphere.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
+import { applyDegrees, DEFAULT_DEGREES } from '../lib/condition-degrees.js'
 import CelestialBodies from '../components/CelestialBodies.jsx'
 import Atmosphere from '../components/Atmosphere.jsx'
+import WeatherEffects from '../components/WeatherEffects.jsx'
+import {
+  useTreeAtlas,
+  applyBarkUniforms,
+  applyDeformerUniforms,
+  stampTreeVertexAttrs,
+  treeSwayUniforms,
+} from '../components/treeAtlasMaterial.js'
 import { CANARY_CAMERAS } from './canaryCamera.js'
 
-// Wind defaults for the interim whole-tree sway (no Almanac directive
-// wired yet). Phase 5+ will replace these with the active Condition's
-// directive.wind values.
-const DEFAULT_WIND_SCALE = 1.0     // 0 = still, 5 = gale
-const DEFAULT_WIND_DIR_DEG = 0     // 0 = blowing toward +X
+// Gentle authoring breeze used when the active Condition's directive
+// carries no wind yet (Phase 5 directive→viewport wiring still pending).
+// Keeps the canopy reading as alive; once a Condition supplies real wind
+// the resolved directive overrides this. m/s.
+const HERO_BREEZE_MPS = 3.0
+// Module-scoped wind state, reused per frame (mirrors InstancedTrees'
+// SwayDriver — one allocation, mutated in place).
+const _heroWindState = defaultWindState()
 
 const HERO_TREE_SPECIES = 'platanus_acerifolia'
 const HERO_TREE_SKELETON = 'skeleton-1-lod0.glb'
@@ -53,7 +67,7 @@ const HERO_TREE_SKELETON = 'skeleton-1-lod0.glb'
 // real baseAlt. Keep in sync with CANARY_CAMERAS framing in canaryCamera.js.
 const CANARY_DISPLAY_BASE_ALT = 1200
 
-export default function CanaryScene({ slot = 'browse' }) {
+export default function CanaryScene({ slot = 'browse', directive = null, degrees = DEFAULT_DEGREES }) {
   const activeLookId = useMeteorologistStore(s => s.activeLookId)
   const cam = CANARY_CAMERAS[slot] || CANARY_CAMERAS.browse
 
@@ -97,9 +111,14 @@ export default function CanaryScene({ slot = 'browse' }) {
       <SceneCamera cam={cam} />
       <TimeTicker />
       <SkyStateTicker />
-      {/* Defaults give a visible cloud envelope; brief flagged that
-          useSkyState defaults are the driver in Phase 4a — disclosed. */}
-      <CloudCoverSeed />
+      {/* Environment wiring (Conditions context): the active Condition's
+          directive drives the canary the way it drives the LS install —
+          clouds/wind/precip via useAtmosphere, scene darkening via
+          useSkyState. When no directive is supplied (Teapot), seed a mild
+          envelope so the placeholder cloud is visible. */}
+      {directive
+        ? <ConditionEnvironmentDriver directive={directive} degrees={degrees} />
+        : <CloudCoverSeed />}
       <CanaryFog lookId={activeLookId} />
 
       <Suspense fallback={null}>
@@ -112,6 +131,12 @@ export default function CanaryScene({ slot = 'browse' }) {
           <HeroTree lookId={activeLookId} />
         </Suspense>
       )}
+
+      {/* In-situ weather: rain/snow particles, wetness, lightning. Ground
+          slot only — the Cloud Chamber reads the cloud's shape/light under
+          the condition, not the full precip scene. Driven by the directive
+          the ConditionEnvironmentDriver pushed into useAtmosphere. */}
+      {directive && cam.showGround && <WeatherEffects />}
 
       {/* Authoring normalize: the Canary cameras frame the ~1200m band, so
           place EVERY selected preset there regardless of its real baseAlt
@@ -219,6 +244,98 @@ function CloudCoverSeed() {
   return null
 }
 
+// ── Condition → environment bridge ────────────────────────────────────
+// The staging-area doctrine in action: a selected Condition drives the
+// canary the same way it drives the LS install, through the SAME shared
+// stores — no canary-only effects. Two stores carry "weather":
+//   • useAtmosphere (the directive) → cloud blend + color, wind, precip,
+//     lightning. Consumed by <Atmosphere>, HeroTree sway, <WeatherEffects>.
+//   • useSkyState (cloudCover/storminess) → the actual scene DARKENING:
+//     CelestialBodies dims the sun by (1 − cloudCover·0.6); GradientSky
+//     desaturates + darkens by storminess. The directive alone does NOT
+//     darken the ground — that's why both stores are driven here.
+const clamp01 = (v) => Math.max(0, Math.min(1, v))
+
+// The almanac authors no cloudCover/storminess; derive them from the
+// directive's own darkness signals so the scene reads as overcast/stormy.
+function deriveSkyScalars(directive) {
+  const precipI = directive?.precip?.intensity ?? 0
+  const sunI = directive?.sun?.intensity ?? 1.2          // ~1.2 = "normal" day
+  const darkness = clamp01((1.2 - sunI) / 1.2)           // dim sun ⇒ dark sky
+  const cloudWeight = (directive?.clouds ?? [])
+    .reduce((s, c) => s + (c.weight ?? 0), 0)            // blend total ≈ coverage
+  return {
+    cloudCover: clamp01(Math.max(cloudWeight, precipI, darkness)),
+    storminess: clamp01(Math.max(precipI * 0.9, darkness)),
+    turbidity:  clamp01(darkness * 0.3),
+  }
+}
+
+// The almanac has no `lightning` field (see STATUS.md); synthesize a rate
+// for visibly-stormy conditions so a thunderstorm actually flashes. An
+// authored field (Phase 3b) wins if present.
+function augmentDirective(directive) {
+  if (!directive || directive.lightning) return directive
+  const precip = directive.precip || {}
+  const precipI = precip.intensity ?? 0
+  const sunI = directive.sun?.intensity ?? 1.2
+  const darkness = clamp01((1.2 - sunI) / 1.2)
+  const stormy = precip.kind === 'rain' && precipI >= 0.6 && darkness >= 0.45
+  if (!stormy) return directive
+  return {
+    ...directive,
+    lightning: { rate: 0.12 + precipI * 0.15, kind: 'cloud_to_ground' },
+  }
+}
+
+function ConditionEnvironmentDriver({ directive, degrees = DEFAULT_DEGREES }) {
+  const setActivePreset = useMeteorologistStore(s => s.setActivePreset)
+
+  // Force <Atmosphere>'s directive render path: clear any stale active
+  // preset so getActivePreset() returns null (in Conditions you author a
+  // condition, not a preset). Routing keys on mode+activeConditionId, so
+  // this doesn't unmount the editor. Reset the shared stores on unmount so
+  // leaving the editor doesn't leave the canary frozen in the last weather.
+  useEffect(() => {
+    setActivePreset(null)
+    return () => {
+      useAtmosphere.getState().setRawDirective(null)
+      useAtmosphere.getState().setTweenedDirective(null)
+      useSkyState.setState({
+        cloudCover: 0, _targetCloudCover: 0,
+        storminess: 0, _targetStorminess: 0,
+        turbidity: 0,  _targetTurbidity: 0,
+      })
+    }
+  }, [setActivePreset])
+
+  // Push the EFFECTIVE directive (Condition × Degrees) + derived darkening
+  // every time the condition or the scrubbed Degrees change. applyDegrees is
+  // the continuous-response core (WEATHER-MODEL.md §4): the look is a function
+  // of the Degrees, so scrubbing precip/wind/cover previews drizzle→downpour
+  // continuously. Deriving skyState from the EFFECTIVE directive (not the
+  // base) makes the darkening track cover/precip automatically. Current +
+  // target are set together so the authoring view updates instantly rather
+  // than tweening over ~90s.
+  const dp = degrees?.precip, dw = degrees?.wind, dc = degrees?.cover
+  useEffect(() => {
+    if (!directive) return
+    const eff = applyDegrees(directive, degrees)
+    const aug = augmentDirective(eff)
+    useAtmosphere.getState().setRawDirective(aug)
+    useAtmosphere.getState().setTweenedDirective(aug)
+    const { cloudCover, storminess, turbidity } = deriveSkyScalars(eff)
+    useSkyState.setState({
+      cloudCover, _targetCloudCover: cloudCover,
+      storminess, _targetStorminess: storminess,
+      turbidity,  _targetTurbidity: turbidity,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [directive, dp, dw, dc])
+
+  return null
+}
+
 // ── Ground ────────────────────────────────────────────────────────────
 function GroundPlane() {
   return (
@@ -233,14 +350,16 @@ function GroundPlane() {
 // Direct GLB via useGLTF — bypasses InstancedTrees because Meteorologist
 // places exactly one tree as a scale reference, not a population.
 //
-// ⚠ KNOWN-PENDING (2026-05-20): renders with embedded GLB materials only;
-// Arborist's runtime `applyBarkUniforms` + atlas tinting are not applied,
-// so the tree appears unlit white/grayscale instead of properly bark-
-// and-leaf-textured. Fix path: Arborist coordinator exports
-// `applyBarkUniforms` + an atlas-loader from `treeAtlasMaterial.js`; this
-// component consumes them. Tracked in a follow-up coordinator brief
-// dated 2026-05-20. Until then, the tree silhouette + scale are
-// correct, just color/texture wrong.
+// Renders through the SAME shared atlas material the LS runtime mounts
+// (treeAtlasMaterial.js#useTreeAtlas), so the canary tree picks up bark
+// gradient + leaf atlas tinting, is lit by the scene's sun (lit
+// MeshStandardMaterial, not the GLB's flat embedded materials), and sways
+// via the shared injectFoliageSway vertex path driven by the atmosphere
+// directive — exactly like the trees in the LS skymap install, so
+// Conditions "feels" like production. Mirrors SpecimenViewport's Skeleton
+// (Salon's single-tree authoring surface): stamp per-vertex attrs →
+// replace material → per-frame applyBarkUniforms/applyDeformerUniforms;
+// wind via treeSwayUniforms (SwayDriver pattern).
 //
 // Tree selection: reads `meteorologist-canary-tree` from localStorage (set
 // by Arborist's Grove/Workstage canary-picker button per the 2026-05-20
@@ -273,56 +392,115 @@ function useCanaryTreePref() {
 
 function HeroTree({ lookId }) {
   const pref = useCanaryTreePref()
-  const species  = pref?.species ?? HERO_TREE_SPECIES
-  const variant  = pref?.variantId != null ? `skeleton-${pref.variantId}-lod0.glb` : HERO_TREE_SKELETON
-  const treeLook = pref?.lookId ?? lookId
+  const species   = pref?.species ?? HERO_TREE_SPECIES
+  const variantId = pref?.variantId ?? 1
+  const variant   = pref?.variantId != null ? `skeleton-${pref.variantId}-lod0.glb` : HERO_TREE_SKELETON
+  const treeLook  = pref?.lookId ?? lookId
   const url = `${import.meta.env.BASE_URL}baked/${treeLook}/trees/${species}/${variant}`
   const { scene } = useGLTF(url)
   const groupRef = useRef()
 
-  // Once the scene loads: (a) tag every mesh castShadow, (b) compute the
-  // GLB's bounding box and shift the scene so its base-center sits at
-  // (0, 0, 0) inside the rotating group. Without the shift, the GLB's
-  // authored origin may be at the canopy center or other offset point;
-  // rotating from world-zero then swings the visible trunk away from
-  // the ground. The shift makes the rotation pivot exactly at the
-  // trunk-meets-ground point regardless of where Arborist's
-  // publish-glb pipeline put the GLB origin.
+  // Shared per-Look atlas — the same path the LS runtime uses
+  // (InstancedTrees#ParkPopulation). Yields the lit MeshStandardMaterial
+  // (bark + leaf atlas + normal map) and the per-species/-variant bark
+  // manifest. Status flows idle → loading → ready as the atlas bakes.
+  const atlas = useTreeAtlas(treeLook)
+
+  // Anchor the GLB base at the group origin so the trunk meets the ground
+  // plane regardless of where Arborist's publish-glb pipeline put the GLB
+  // origin. Geometry-local; independent of the material swap below.
   useEffect(() => {
     if (!scene) return
-    scene.traverse((obj) => {
-      if (obj.isMesh) {
-        obj.castShadow = true
-        obj.receiveShadow = false
-      }
-    })
     const box = new THREE.Box3().setFromObject(scene)
     const center = new THREE.Vector3()
     box.getCenter(center)
     scene.position.set(-center.x, -box.min.y, -center.z)
   }, [scene])
 
-  // Interim wind sway. Subtle whole-tree rotation around an axis
-  // perpendicular to wind direction; pivots from the group origin which
-  // is now anchored to the tree base by the bbox shift above. This is a
-  // PLACEHOLDER for the proper per-vertex sway shader (Arborist will
-  // own it via applyAtlasToGltfScene). Keeping amplitude small so it
-  // reads as breeze, not pantomime — actual leaves/branches don't move
-  // in this implementation, only the rigid tree as a unit.
-  // TODO (Phase 5+): replace with wind uniform from active Condition.
-  const windDirRad = (DEFAULT_WIND_DIR_DEG * Math.PI) / 180
-  const windAxisX = Math.cos(windDirRad)
-  const windAxisZ = Math.sin(windDirRad)
-  useFrame(({ clock }) => {
-    if (!groupRef.current) return
-    const t = clock.elapsedTime
-    // ~0.4 Hz primary sway + small 1.3 Hz overlay → breeze, not
-    // metronome. ±0.8° at scale=1 (smaller now that the base is
-    // genuinely anchored; rigid-body sway shouldn't pretend to be
-    // shader sway).
-    const sway = (Math.sin(t * 0.4) * 0.014 + Math.sin(t * 1.3) * 0.004) * DEFAULT_WIND_SCALE
-    groupRef.current.rotation.x = sway * windAxisZ
-    groupRef.current.rotation.z = -sway * windAxisX
+  // Replace the GLB's embedded materials with the shared atlas material and
+  // stamp the per-vertex signals (aBark / aBarkRegion / aWindTier /
+  // aTreeHeightNorm) the shared shader reads. Mirrors SpecimenViewport's
+  // Skeleton. aTreeHeightNorm normalizes against the chassis-wide local-Y
+  // range, pre-scanned over all meshes to match the LS runtime axis.
+  useEffect(() => {
+    if (!scene || !atlas.treeMaterial) return
+    let chMinY = Infinity, chMaxY = -Infinity
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes?.position) return
+      o.geometry.computeBoundingBox()
+      const bb = o.geometry.boundingBox
+      if (bb) { chMinY = Math.min(chMinY, bb.min.y); chMaxY = Math.max(chMaxY, bb.max.y) }
+    })
+    const chassisMinY = Number.isFinite(chMinY) ? chMinY : 0
+    const chassisYRange = Math.max(1e-4, chMaxY - chMinY)
+    scene.traverse((o) => {
+      if (!o.isMesh) return
+      o.castShadow = true
+      o.receiveShadow = false
+      if (o.geometry) {
+        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+        // Vertex colors flip USE_COLOR and compile a parallel program; the
+        // shared material expects none.
+        if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+      }
+      o.material = atlas.treeMaterial
+    })
+  }, [scene, atlas.treeMaterial])
+
+  // Per-species/-variant bark slots, resolved from the atlas manifest (same
+  // lookups as InstancedTrees#ParkPopulation; variantId keys may be numeric
+  // or string).
+  const barkUniforms = useMemo(() => {
+    const m = atlas.manifest
+    if (!m) return null
+    return {
+      barkSettings:   m.barkBySpecies?.[species] || null,
+      gradientSlot:   m.barkGradientByVariant?.[species]?.[variantId]
+                        || m.barkGradientByVariant?.[species]?.[String(variantId)] || null,
+      detailSlot:     m.barkDetailBySpecies?.[species] || null,
+      posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
+      deformerRange:  m.deformerBySpecies?.[species]?.range || null,
+    }
+  }, [atlas.manifest, species, variantId])
+
+  // Bark/deformer uniforms applied per frame: material.userData.shader
+  // doesn't exist until three compiles the program on first render, so a
+  // pre-paint effect would early-return forever (matches Skeleton).
+  useFrame(() => {
+    if (!atlas.treeMaterial || !barkUniforms) return
+    applyBarkUniforms(
+      atlas.treeMaterial,
+      barkUniforms.barkSettings,
+      barkUniforms.gradientSlot,
+      barkUniforms.detailSlot,
+      barkUniforms.posterizedSlot,
+    )
+    applyDeformerUniforms(atlas.treeMaterial, barkUniforms.deformerRange, null)
+  })
+
+  // Wind → shared foliage-sway uniforms (SwayDriver pattern). Sourced from
+  // the active Condition's directive when present; falls back to a gentle
+  // authoring breeze so the canopy reads as alive before the Phase 5
+  // directive→viewport wiring lands. The vertex shader synthesises its own
+  // per-tree advected gusts from these uniforms.
+  useFrame((_, delta) => {
+    treeSwayUniforms.uTime.value += delta
+    const directive = useAtmosphere.getState().tweenedDirective
+    resolveWindState(directive, _heroWindState)
+    const ws = _heroWindState
+    if (ws.baseSpeedMps < 0.5) {
+      treeSwayUniforms.uWindForce.value.set(HERO_BREEZE_MPS, 0, 0)
+      treeSwayUniforms.uWindIntensity.value = HERO_BREEZE_MPS
+      treeSwayUniforms.uGustFrontVelocity.value.set(HERO_BREEZE_MPS * 2.5, 0, 0)
+      treeSwayUniforms.uGustsScale.value   = 1.5
+      treeSwayUniforms.uGustEnvelope.value = 1.0
+    } else {
+      treeSwayUniforms.uWindForce.value.copy(ws.baseDirection).multiplyScalar(ws.baseSpeedMps)
+      treeSwayUniforms.uWindIntensity.value = ws.baseSpeedMps
+      treeSwayUniforms.uGustFrontVelocity.value.copy(ws.gustFrontVelocity)
+      treeSwayUniforms.uGustsScale.value   = ws.gustsScale
+      treeSwayUniforms.uGustEnvelope.value = ws.gustEnvelope
+    }
   })
 
   return (

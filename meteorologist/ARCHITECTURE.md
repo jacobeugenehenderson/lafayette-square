@@ -7,6 +7,8 @@ How Meteorologist fits into the kit and what it publishes. Read top to bottom; i
 > Sibling docs live in `../cartograph/` (the publish-loop pattern lives there) and `../arborist/` (the helper-app template Meteorologist borrows shape from).
 >
 > See [`INTERFACE.md`](./INTERFACE.md) for the operator-facing layout (Teapot/Conditions libraries, Teacup workstage, slot tabs, right-rail composition).
+>
+> See [`WEATHER-MODEL.md`](./WEATHER-MODEL.md) for the settled **nomenclature + weather model** (Conditions = Condition × Degrees; the live-service → emulator → slab pipeline; continuous response; two clocks). Read it before touching directive/skyState/Condition vocabulary — it's the SSOT for what the words mean.
 
 ---
 
@@ -28,6 +30,8 @@ Meteorologist is one of the kit's helper apps. Each helper authors a specific ki
 ---
 
 ## 2. Consume-from-Stage pattern (the standalone-shell rationale)
+
+> **The staging-area doctrine (load-bearing — a recurring stumbler).** The Meteorologist is a **staging area for the slab**, not a separate authoring sandbox. Jacob's framing: *rehearsing the play and presenting it on the same stage with different audiences.* Rehearsal (authoring) and performance (the LS skymap install) happen on the **same stage** — same slab, same environment elements, same rendering pipeline; only the *framing/audience* changes (Cloud-Chamber thumbnail · Ground in-situ · the live skymap). The trap, hit repeatedly, is building meteorologist-only stand-ins (a flat unlit tree, a decorative cloud, fake weather) that don't match what ships, so authoring lies about the result. **Always mount the real LS elements driven by the real shared stores** — production tree atlas material (`useTreeAtlas`), production `<Atmosphere>`, production `<WeatherEffects>` + `<CelestialBodies>`, fed by `useAtmosphere` (directive) and `useSkyState` (darkening). What you stage = what ships. The consume-from-Stage pattern below is the *mechanism* of this doctrine; see [[project_meteorologist_is_slab_staging_area]].
 
 The original "no app shell — live inside Stage" decision was driven by one concern: *the Teapot author needs clouds rendered against a real sun + real sky gradient + real post-FX, and reproducing that stack outside Stage would be duplication + parity-drift risk.* Valid concern; wrong solution.
 
@@ -69,7 +73,7 @@ This dovetails with `feedback_preview_uses_production_pipeline` (which Preview a
 - **Authoring against multiple Looks comes free.** Operator can tune a cloud preset under `lafayette-square`'s sky envelope, then switch to `valentines`'s and verify it still reads. Same Teapot edit, two visual contexts.
 - **The Almanac evaluator works the same against any sky.** `selectDirective(weather, almanac, presets, override)` is pure — it doesn't care which sky the result will render against. The sky just colors what it renders.
 
-**Composed-not-reproduced extends to trees.** The Ground slot mounts one tree from Arborist's per-Look bake (`public/baked/<look>/trees/<species>.glb`), again via the existing `<InstancedTrees>` consumer. Arborist's substitution pipeline + LOD tiers + bark/leaf atlas all apply unchanged.
+**Composed-not-reproduced extends to trees.** The Ground slot mounts one tree from Arborist's per-Look bake (`public/baked/<look>/trees/<species>/<variant>.glb`) via a single `HeroTree` (direct `useGLTF`, not `<InstancedTrees>` — it places exactly one tree as a scale reference, not a population). The key point is that `HeroTree` renders through the **same shared `treeAtlasMaterial`** the LS population path uses (`useTreeAtlas`): lit `MeshStandardMaterial`, bark gradient + leaf atlas + normal map, and the shared foliage-sway vertex shader driven by `treeSwayUniforms`. Parity holds because it's the same material, not a re-implementation. (Fixed 2026-06-08 — previously the tree used its raw embedded GLB materials, rendering unlit/white; the atlas-material swap closed that gap. See `STATUS.md`.)
 
 **Composed-not-reproduced extends to time + calendar.** The kit clock + calendar primitives (`useTimeOfDay` + `useCalendar`, shipped 2026-05-20) are shared singletons under `src/hooks/`, bidirectionally synced. CanaryScene's `<CelestialBodies>` reads `useTimeOfDay.currentTime` for `SunCalc(currentTime, lat, lon)` — so scrubbing the year-strip in Meteorologist's unified time card moves the sun position seasonally (winter lower, summer higher) without any consumer-side changes. Same anchor, multiple consumers; the kit primitive does the routing. Sky color responds to TOD but not yet year — 4-anchor seasonal sky matrix is queued; see `NOTES.md` 2026-05-20 ADR + `BACKLOG.md`.
 
@@ -121,6 +125,8 @@ As of 2026-05-20 the runtime renderer everywhere is `<Atmosphere />` (Phase 4b.3
 ---
 
 ## 5. Directory layout
+
+> **Stale markers (flagged 2026-06-08):** the `# NOT YET WRITTEN` annotations below predate the ship — `serve.js`, `meteorologist.html`, the whole `src/meteorologist/` tree, `Atmosphere.jsx`, and `atmosphere-materials.js` all shipped in May 2026. For the **current, accurate** file map see `README.md` → "What lives where". Left here pending a rewrite; trust the README.
 
 ```
 meteorologist/                        # THIS DIR — backend + docs
@@ -279,6 +285,8 @@ Wind belongs to Meteorologist; consumers subscribe but don't author.
 **Opt-in surfaces.** BakedGround FadeMesh (asphalt/sidewalks/LU fills, both fade + non-fade variants), BakedGround GrassMesh, LafayetteScene buildings (mobile + desktop branches). Skipped: water (already wet), GatewayArch (steel reads dry), vegetation (deferred with 7a). Full table in `FEATURES.md`.
 
 **Doctrine.** Per `project_authoring_is_live_production_is_static` — modulators (and one day per-Look authoring) shape the directive's `precip.{kind, intensity}` and `lightning.{rate, kind, distance}`; the consumer layer composes the visible scene in real time. This commit ships the consumer; authoring of the lightning block (and any per-Look wet/snow tuning) belongs with Phase 3b / future Cartograph extension.
+
+> **Canary gap (2026-06-08) — the active "environment wiring" build.** `<WeatherEffects>` mounts in **production** (`Scene.jsx`) but **not yet in `CanaryScene.jsx`**, and the canary does not push the active Condition's directive into `useAtmosphere` or derive `useSkyState` (`cloudCover`/`storminess`) from it. So selecting a thunderstorm Condition does not yet darken/wet/rain/flash the canary the way it does in production. Per the staging-area doctrine (§2), the fix is to mount the *same* `<WeatherEffects>` + bridge the Condition → the *same* stores — not to build canary-only effects. The two-store split is essential: `useAtmosphere` (directive) drives clouds/wind/precip/lightning; `useSkyState` (`cloudCover`/`storminess`) is what actually dims the sun (`×(1−cc·0.6)` in `CelestialBodies`) and desaturates the sky. The almanac authors no `lightning` field, so a stormy Condition's lightning rate must be synthesized (or added in Phase 3b). Tracked in `STATUS.md` → "Environment wiring" + `BACKLOG.md`.
 
 ---
 

@@ -48,7 +48,7 @@ varying float vActive;
 void main() {
   // Wrap (aPhase + t*aSpeed) into a column-height envelope per particle.
   float colH = TOP_Y_DEF - BOTTOM_Y_DEF;
-  float yLocal = mod(aPhase - uTime * aSpeed, colH);
+  float yLocal = mod(aPhase + uTime * aSpeed, colH);
   // Lateral drift via accumulated wind (≈ tilt while falling).
   float fallTime = yLocal / aSpeed;
   vec3 windOffset = uWindDir * uWindStrength * fallTime * 8.0;
@@ -102,8 +102,8 @@ varying float vActive;
 void main() {
   if (vActive < 0.5) discard;
   // Greyish tint; hail = bluer + brighter.
-  vec3 col = mix(vec3(0.78, 0.82, 0.90), vec3(0.85, 0.90, 1.00), uHail);
-  float alpha = vAlphaGrad * 0.55;
+  vec3 col = mix(vec3(0.74, 0.78, 0.86), vec3(0.85, 0.90, 1.00), uHail);
+  float alpha = vAlphaGrad * 0.28;
   gl_FragColor = vec4(col, alpha);
   #include <logdepthbuf_fragment>
 }

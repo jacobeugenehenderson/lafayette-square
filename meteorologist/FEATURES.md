@@ -1,6 +1,20 @@
 # Meteorologist Features
 
-> Part of the **meteorologist quartet** (`README.md` / `FEATURES.md` / `INTERFACE.md` / `ARCHITECTURE.md` / `SPEC.md` / `BACKLOG.md` / `NOTES.md`). This doc is the operator-facing surface — what an operator can do with the helper today, organized by what's shippable now vs. what's queued. Mirrors `../cartograph/FEATURES.md` and `../arborist/FEATURES.md` in shape and intent. Read at session start; flag mid-session contradictions explicitly; update at session end. Stale claims actively mistrain readers.
+> Part of the **meteorologist doc suite** (`README` · `FEATURES` · `OPERATIONS` · `ARCHITECTURE` · `INTERFACE` · `WEATHER-MODEL` · `SPEC` · `CANON` · `STATUS` · `BACKLOG` · `NOTES`). This doc is the product-facing surface — *what the Meteorologist is, why it's special,* and what an operator can do today, organized by what's shippable now vs. queued. Mirrors `../cartograph/FEATURES.md` and `../arborist/FEATURES.md` in shape and intent. Read at session start; flag mid-session contradictions explicitly; update at session end. Stale claims actively mistrain readers.
+
+---
+
+## The idea — the neighborhood breathes with the real weather
+
+Lafayette Square's sky is not a backdrop. It's the **actual sky over the actual place** — the installation reads a live weather feed for the real neighborhood and renders what's happening overhead *right now*: the overcast that rolled in this afternoon, golden hour at the true sunset minute, the season's first snow as it falls. The Meteorologist is the studio that makes that possible — and, just as importantly, the **emulator** that lets you author and preview it on the same stage the installation runs on.
+
+**Author once, on the stage that ships.** Rehearsal and performance happen in the same place. The Meteorologist composes the *real* installation elements — the actual sky, sun, clouds, the hero tree, the weather effects — driven by the *real* runtime stores. What you tune in the studio is, to the pixel, what the slab plays; there's no separate "preview look" that can drift from production. (The formal statement is the staging-area doctrine; see `ARCHITECTURE.md §2`.)
+
+**Continuous, not a slideshow.** Weather isn't a dozen fixed pictures. Every kind of weather — a **Condition** (clear, overcast, rain, thunderstorm…) — is authored as a *continuous look across its **Degrees*** (how much cloud, how hard the rain, how strong the wind, how bright the light). A drizzle and a downpour are the same Condition at different Degrees, and everything between is real and interpolated. The studio is a live scrubber over (Condition × Degrees); the slab is the same function fed by the live feed.
+
+**It moves at the right speed.** The installation tracks the live weather at its true cadence — refreshing as the feed does, tweening smoothly so nothing snaps — while the fast, living detail (the sun climbing, gusts travelling through the canopy, clouds drifting) animates every frame. The result is a neighborhood that feels *weathered*: it dims under a building storm, warms at golden hour, glistens after rain — all on Lafayette Square's own clock.
+
+> **The model in one line:** the live service reports the **Conditions** (a **Condition** × its **Degrees**) → the Meteorologist authors + previews each Condition's look, live → the slab plays the real Conditions, faithfully and continuously. Full nomenclature + model: [`WEATHER-MODEL.md`](./WEATHER-MODEL.md).
 
 ---
 
@@ -100,7 +114,7 @@ The viewport in both workstages mounts `src/meteorologist/CanaryScene.jsx`. Comp
 
 - **Sky / sun / moon / celestials** via the shared `<CelestialBodies />` consumer reading `useSceneJson(activeLookId)`. Same consumer Stage and Preview mount; no fork. The active Look's published `scene.json` provides per-TOD-slot keyframes for sky gradient, sun direction, moon, ambient, hemi, constellations.
 - **Flat ground plane** (GROUND slot only) — 200m × 200m mesh, neutral grey-tan, high roughness. No `BakedGround` import; this is the canary, not the production scene.
-- **One hero tree** (GROUND slot only) — `platanus_acerifolia/skeleton-1-lod0.glb` loaded directly via `useGLTF` from Arborist's per-Look bake (`public/baked/<look>/trees/`). Wrapped in `<Suspense fallback={null}>` so missing-bake gracefully falls back. The hero tree is intentionally a high-LOD asset we wouldn't ship in a populated LS scene — there's exactly one in the canary, so the GPU budget allows it.
+- **One hero tree** (GROUND slot only) — `platanus_acerifolia/skeleton-1-lod0.glb` loaded directly via `useGLTF` from Arborist's per-Look bake (`public/baked/<look>/trees/`), and rendered through the **shared production atlas material** (`useTreeAtlas`): lit by the scene sun, bark/leaf-textured, and swaying via the shared foliage-sway shader driven by the directive (2026-06-08; replaced the earlier raw-GLB placeholder that rendered unlit). The tree sits still and the weather animates around it — leaves sway, no whole-tree translation. Wrapped in `<Suspense fallback={null}>` so a missing bake falls back gracefully. It's intentionally a high-LOD asset we wouldn't ship in a populated LS scene — there's exactly one in the canary, so the GPU budget allows it.
 - **`<Atmosphere />` cloud renderer** — Phase 4b.1's volumetric raymarched shader. BoxGeometry slab at cloud altitude (y ∈ [1200, 1700] for cumulus_humilis defaults), 8km × 8km × 500m, BackSide-rendered. Post-Phase 4b.2 + 5a, uniforms read from one of two sources per frame: the active Meteorologist preset (when authoring) or the resolved live directive (in production). Sky/sun coloring routes through `useSceneJson` (per Look) + the sky-light coupling amendment + directive overrides where applicable.
 
 Two camera framings driven by the slot tab:
