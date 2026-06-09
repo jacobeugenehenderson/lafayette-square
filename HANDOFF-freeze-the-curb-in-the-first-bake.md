@@ -39,6 +39,16 @@ PREBAKE.md §4/§5 already names this program ("do the chain→polygon conversio
 
 ---
 
+## Authoring integration — the live re-stroke exists FOR the tools, so freeze must serve them (NOT optional)
+
+The live re-stroke isn't only a perf wart; **it's how the authoring tools work.** Today `buildTileGround(liveRibbons, {blockCustoms, cornerRadiusOverrides, measures})` recomputes the curb from chains **+ the authoring overlay** every frame, and the Survey/Measure handles anchor to the resulting curb rings (`setSectionCurbRings` → "one geometry truth" — the handle reads the achieved geometry, never re-derives). Drag a width/radius handle → the overlay updates in the store → re-stroke → curb + handle move in real time. So freezing the curb must be designed **around** the tools, not bolt them on after. Three requirements:
+
+1. **The frozen curb is a function of the AUTHORED state, not bare defaults.** Freeze `chain ⊕ authored-halfWidth` with authored corner radii / `blockCustoms` applied — i.e. run the freeze *with* the current overlay. The frozen body *is* the authored curb materialized; "parallel offset" means parallel-to-chain at the *authored* width.
+2. **Handle anchoring stays "one geometry truth."** Handles read the governing curb rings. With a freeze, that source is the **frozen** rings for inactive elements and the **live re-stroke** for the one under the operator's hand. The handle code (`CornerEditHandles`, `MeasureOverlay`, `setSectionCurbRings`) must read whichever governs the element it's on — no second geometry truth.
+3. **The edit→commit→re-freeze loop.** During a drag, re-stroke **only the active element + its adjacent blocks live** (block-independence is already verified — PREBAKE §5 — so this is scoped, not a full-map redraw). On **accept**, persist the authoring change AND **re-freeze the affected blocks** so the frozen body stays the authored state and the edit survives reload. The frozen body is not static — it's the live authored state, materialized; editing just defers its re-freeze to commit.
+
+**Net:** frozen base = the authored curb; live re-stroke = only the element under the operator's hand; commit re-freezes. The tools keep working *better* (everything else is the clean frozen render, no full-map re-derive on every drag over the high-res aerial). If a step here can't be made block-local, that's the real risk to surface early — flag it before building.
+
 ## Where the curb is re-stroked live (the seam to cut)
 
 - **Survey draws the curb live:** `src/cartograph/BlockGeometryV2Debug.jsx:661–686` — `tileGeos = buildTileGround(liveRibbons, …)`, then `curb: tg.curb`, `curbOutline: …` ("Survey wireframe stroke"). It reads `centerlineData.streets` from the store (i.e. `ribbons.json`), **not** the baked `shape.json`. (`buildBlockGeometryV2` is imported too but is the *non-tile* path — NOT what draws LS's curb. Don't chase it; I did, it's a dead end.)
