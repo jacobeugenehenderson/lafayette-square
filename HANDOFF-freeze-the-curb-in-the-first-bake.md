@@ -69,6 +69,28 @@ The live re-stroke isn't only a perf wart; **it's how the authoring tools work.*
 
 ---
 
+## Refined by investigation (2026-06-09 PM) — three corrections that sharpen the scope
+
+A three-path code trace (curb construction / bake-freeze-consume / block-locality) confirmed the diagnosis and tightened the scope:
+
+1. **The curb is already a frozen artifact: the per-tile `iA` ring in `shape.json` — and the chain-free consumer already exists.** In Measure/Section mode the app opens it via `sectionOpen` (`tileGround.js:825`) and composes block + curb + asphalt from `iA` alone, with **no chain in scope** (the wall, physically enforced). So "freeze the curb + a chain-free consumer" is *half-built*. The remaining halves: (a) produce `iA` **correctly + once, upstream**; (b) extend the frozen consumer to **Survey** (today only Section reads it; Survey always live-strokes via `tileGeos`, `BlockGeometryV2Debug.jsx:661`).
+
+2. **⭐ Freezing today's `iA` as-is would freeze the bulge — because `iA` is built the wrong way.** Today `iA = filletRings(tile.ring − aFill)` (`tileGround.js:1994`): the tile face minus the asphalt **union** (`aFill` = every per-edge stroke + junction windows/aprons/keep-out cuts). For a normal straight run, `tile.ring − (pavementHW strip)` *equals* the parallel offset — so the two constructions **agree everywhere except where `aFill` swells** (junctions/transitions, where the tapering stub + windows pile asphalt in and the curb carved from it bows). **Cure = build `iA` directly as the per-edge parallel offset (`chain ⊕ pavementHW`), cornered at offset-intersections — never carved from the asphalt union.** A strict improvement that converges to today's geometry everywhere but the bug sites → **low-regression by construction.**
+
+3. **Block-locality does not exist today — one edit rebuilds the whole map** (`tileGeos` = one whole-map `useMemo`). The per-tile shape loop *is* local, but it's bookended by whole-map passes: the **junction builder reads every leg at a shared node** (a corner is co-built by two streets), a **final `unionRings` melts every tile's curb into one un-addressable blob** (`:2075`), + a map-wide perimeter pass + stencil clip. **The true unit of locality is not "one block" — it's "the tiles around the junction you touched" (~3–4).** This is the Authoring-section risk, surfaced *before* building. Raw material is on our side: the per-tile shape loop and the frozen `_shapeArtifact` are already per-tile; the head (junction passes) and tail (the union/perimeter melt) are what aren't.
+
+---
+
+## The plan — Phase 1 (visible fix → freeze+consume), Phase 2 (block-local edit loop)
+
+**Phase 1a — the bulge fix (correctness; fast, visible, low-regression).** Switch `iA` construction from *tile − asphalt-union* to the **per-edge parallel offset** (`chain ⊕ pavementHW`, cornered at offset-intersections; at a divided transition corner the corridor outer-edge legs via the frozen `phase.spineAt*` link — §5d/§5e's "right legs," now a clean offset, not a keep-out cut). Survey runs `buildTileGround` live, so **the "d" dies on Jacob's eye immediately**, before any freeze. Converges to today's curb everywhere but the bug sites → safe map-wide. *The de-risking step: prove the geometry first.*
+
+**Phase 1b — freeze + Survey-consume (the architecture move).** Factor the offset-`iA` construction so prebake (`derive.js`) produces it **once** and freezes it into `ribbons.tiles[]` beside the D2 topology — with its load-bearing companions (`ring`, `vertR`, `bandJoin`, `cap`, `runs[].measure`, `med`, tips; freeze the **authored** state per the Authoring section). Survey's `tileGeos` **consumes the frozen `iA`** for inactive tiles (the Section pattern, extended to Survey); the active element live-strokes its own tiles. Wall moves to the prebake→Survey boundary (~P3). *(Editing still re-strokes whole-map on commit here — accepted; that's Phase 2.)*
+
+**Phase 2 — the block-local edit loop.** Build (a) the edit-key→tile index (`tiles[].edges[].skelId` is the raw material), (b) junction construction that re-runs **per-node, not per-map**, (c) a **per-tile-addressable** output model (stop melting tiles into one `unionRings` blob; union on demand for render). Then edit → re-freeze only the touched junction's incident tiles — the perf/authoring-fluidity win, an independently large restructure.
+
+---
+
 ## Verification (Jacob's eye is the gate — proxies misled me repeatedly)
 
 - The gate is **Jacob's eye on the live Survey (`:5173`)**, reloaded. Survey is live JS — a `buildTileGround`/prebake code change shows on reload (no bake needed for Survey).
