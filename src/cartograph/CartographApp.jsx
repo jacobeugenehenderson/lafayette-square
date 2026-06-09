@@ -911,7 +911,7 @@ export default function CartographApp() {
               so the toggle takes effect without a re-mount. */}
           {inDesigner && (
             <R3FErrorBoundary name="CornerEditHandles">
-              <CornerEditHandles ribbons={sceneCfg.ribbons} />
+              <CornerEditHandles />
             </R3FErrorBoundary>
           )}
 
