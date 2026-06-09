@@ -8,7 +8,7 @@
 
 ## 0. What the Wall is
 
-By the time the operator leaves Survey we hold an extremely-simplified, polygon-ready **frozen** dataset, and **chains are dead.** Past the Wall, Section / bake / slab are **pure consumers** — they read the frozen shape and never derive geometry from chains. It is **wall #1** of the project's two (`[[project_two_bakes_two_walls]]`; the slab is wall #2).
+By the time the operator leaves Survey we hold an extremely-simplified, polygon-ready **frozen** dataset, and **chains are dead.** Past the Wall, Section / bake / slab are **pure consumers** — they read the frozen shape and never derive geometry from chains. *(⚠️ TARGET, not current: this holds for Section by closure, but the **curb geometry is still re-stroked live in Survey** — the wall's producer side is unenforced. The enforcement checks live in `POLYGON-FIRST.md`; the gap in `PREBAKE.md §4.1`.)* It is **wall #1** of the project's two (`[[project_two_bakes_two_walls]]`; the slab is wall #2).
 
 ---
 
