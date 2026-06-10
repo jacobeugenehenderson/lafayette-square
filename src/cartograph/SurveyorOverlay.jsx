@@ -22,6 +22,27 @@ function screenToWorld(clientX, clientY, camera, domElement) {
   return { x: intersectPt.x, z: intersectPt.z }
 }
 
+// First hit distance of ray O+t·D (D unit) against the edges of a set of rings,
+// t>eps. Used to anchor the asphalt-edge handle ON the achieved curb ("one
+// geometry truth"), so it can't drift from a per-segment measure value.
+function rayHitRings(O, D, rings) {
+  let best = Infinity
+  for (const ring of rings || []) {
+    if (!ring || ring.length < 2) continue
+    for (let i = 0; i < ring.length; i++) {
+      const A = ring[i], B = ring[(i + 1) % ring.length]
+      const ex = B[0] - A[0], ez = B[1] - A[1]
+      const den = ex * D[1] - ez * D[0]
+      if (Math.abs(den) < 1e-12) continue
+      const wx = A[0] - O[0], wz = A[1] - O[1]
+      const t = (ex * wz - ez * wx) / den          // distance along the ray
+      const s = (D[0] * wz - D[1] * wx) / den       // param along the segment
+      if (t > 1e-3 && s >= -1e-9 && s <= 1 + 1e-9 && t < best) best = t
+    }
+  }
+  return best
+}
+
 function distToPolyline(pts, px, pz) {
   let best = Infinity
   for (let i = 0; i < pts.length - 1; i++) {
@@ -133,6 +154,7 @@ export default function SurveyorOverlay() {
   const selectedMeasurePoint = useCartographStore(s => s.selectedMeasurePoint)
   const blockCustoms = useCartographStore(s => s.blockCustoms)
   const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
+  const sectionCurbRings = useCartographStore(s => s.sectionCurbRings)
 
   // Coord-match IX identity per chain — shared with the tile per-fe resolution +
   // the walker, so a per-block write resolves the same segOrd the tile reads.
@@ -189,12 +211,18 @@ export default function SurveyorOverlay() {
     const rotY = Math.atan2(ax, az)
     const handles = []
     for (const [sideKey, sign] of [['left', -1], ['right', +1]]) {
-      const hw = measure[sideKey]?.pavementHW || 0
-      if (hw <= 0) continue   // median-facing inner edge has no curb to drag
+      const meas = measure[sideKey]?.pavementHW || 0
+      if (meas <= 0) continue   // median-facing inner edge has no curb to drag
+      // Ride the achieved CURB: raycast from the anchor along this side's normal
+      // to the curb rings and sit ON the first hit, so the handle is on the
+      // rendered curb edge (one geometry truth) and a drag visibly pulls it. The
+      // measure value is a fallback (curb not published yet / a stray no-hit).
+      const hit = rayHitRings([cx, cz], [sign * nx, sign * nz], sectionCurbRings)
+      const hw = (Number.isFinite(hit) && hit > 0.2 && hit < 40) ? hit : meas
       handles.push({ side: sideKey, r: hw, x: cx + sign * nx * hw, z: cz + sign * nz * hw, rotY })
     }
     return { streetIdx: selectedStreet, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, v2FrontageEdges, ixByChain])
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, v2FrontageEdges, ixByChain, sectionCurbRings])
 
   // rAF-throttle the asphalt-edge drag write — each write rebuilds the whole
   // tile mesh, far heavier than one frame. Buffer the latest, flush ≤1×/frame;
