@@ -72,7 +72,23 @@ function offsetRings(rings, delta, join = 'round') {
 // At a non-corner — a THROUGH-node where one street continues (a T's far side, a
 // centerline dogleg) — the curb runs continuous, never an offset-intersection
 // corner (osm2streets doctrine: corners come from leg adjacency; "T-sensitivity").
-function offsetRingVariable(ring, depthAt, cornerAt = () => true) {
+// capAt(i) = null | 'round' | 'blunt' — a dead-end TIP vertex; the cap is built
+// INTO the polygon (a semicircle / flat butt spanning the two legs' offset
+// endpoints), tangent to the legs by construction → no graft, and it matches the
+// authored per-fe leg width automatically.
+function capArc(PL, PR, bx, bz, N = 16) {
+  const Cx = (PL[0] + PR[0]) / 2, Cy = (PL[1] + PR[1]) / 2
+  const r = Math.hypot(PL[0] - PR[0], PL[1] - PR[1]) / 2
+  if (!(r > 1e-6)) return [PL]
+  const aL = Math.atan2(PL[1] - Cy, PL[0] - Cx)
+  const target = Math.atan2(-bz, -bx)            // tip side = away from the street body
+  const adiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return Math.abs(d) }
+  const ccw = adiff(aL + Math.PI / 2, target) < adiff(aL - Math.PI / 2, target)   // sweep through the tip side
+  const out = []
+  for (let k = 0; k <= N; k++) { const a = aL + (ccw ? 1 : -1) * Math.PI * (k / N); out.push([Cx + r * Math.cos(a), Cy + r * Math.sin(a)]) }
+  return out
+}
+function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null) {
   const n = ring.length
   if (n < 3) return []
   const ccw = signedArea(ring) > 0
@@ -87,6 +103,18 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true) {
   const W = []
   for (let i = 0; i < n; i++) {
     const A = seg[(i - 1 + n) % n], B = seg[i]              // vertex i: between edge i-1 and edge i
+    const capT = capAt(i)
+    if (capT) {
+      // DEAD-END cap built INTO the offset (no graft). PL/PR = the two legs'
+      // offset endpoints at the tip (using the offset depths A.d/B.d, so the cap
+      // matches the legs' authored width + is tangent). Round → a semicircle on
+      // the tip side; blunt → a flat butt segment. bodyDir = −A.dir + B.dir.
+      const PL = [ring[i][0] + A.nrm[0] * A.d, ring[i][1] + A.nrm[1] * A.d]
+      const PR = [ring[i][0] + B.nrm[0] * B.d, ring[i][1] + B.nrm[1] * B.d]
+      if (capT === 'blunt') W.push(PL, PR)
+      else W.push(...capArc(PL, PR, -A.dir[0] + B.dir[0], -A.dir[1] + B.dir[1]))
+      continue
+    }
     const det = A.dir[0] * B.dir[1] - A.dir[1] * B.dir[0]
     // Through-node (same street both sides) or collinear → offset the vertex by
     // the AVERAGED normal at the averaged depth: the curb runs straight/smooth
@@ -2083,14 +2111,14 @@ export function buildTileGround(ribbons, opts = {}) {
     const ringArea = Math.abs(signedArea(tile.ring))
     let blockRings
     if (opts.iaOffset !== false && !isMedianTile && ringArea > 1500) {
-      let off = offsetRingVariable(tile.ring, depthAt, cornerAt)
-      // Dead-end caps are per-EDGE, not per-tile: a block can have a cul-de-sac
-      // on one corner and the parallel offset on its other edges (e.g. the d-tile).
-      // Subtract the round-tip asphalt disk so the cap stays round, like legacy.
-      if (off.length && roundTips.length) {
-        const disks = roundTips.filter(t => t.hw > 1e-6).map(t => circlePoly(t.p[0], t.p[1], t.hw))
-        if (disks.length) off = differenceRings(off, disks).filter(r => Math.abs(signedArea(r)) > 0.5)
-      }
+      // Dead-end caps are built INTO the offset polygon (capArc), tangent to the
+      // legs — no graft, so a tile that's both a d-block and a cul-de-sac (tile 11)
+      // keeps its d AND gets a clean cap. Map each round/blunt tip to its ring
+      // vertex so offsetRingVariable emits the semicircle / flat butt there.
+      const capByVertex = new Map()
+      for (const t of roundTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'round') }
+      for (const t of bluntTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'blunt') }
+      const off = offsetRingVariable(tile.ring, depthAt, cornerAt, (i) => capByVertex.get(i) || null)
       const offArea = off.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
       blockRings = (off.length && offArea > 0.05 * ringArea && offArea <= 1.01 * ringArea) ? off : legacyBlock()
     } else {
