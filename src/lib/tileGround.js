@@ -350,6 +350,42 @@ function circlePoly(cx, cy, r, seg = 32) {
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
   return out
 }
+// The bent-corner SECTOR (RIBBONS §3.9a step 10): the annular wedge swept from
+// the frozen curb arc inward, bounded laterally by the two tangent radii — the
+// band BENT around the arc, NEVER a disk. Built from the achieved fillet
+// {C, r, tA, tB}: outer edge = the curb arc itself (radius r about C), inner
+// edge = the concentric arc at radius r−depth (the band bottom), closed into
+// one annular-sector polygon. `fullBand ∩ sector` (clipped to the corner depth)
+// is the bent pad — a slice of the same continuous offsets, not a primitive.
+// `margin` extends the sector straight OUTWARD along each leg's tangent beyond
+// the arc, so it laps onto the leg slabs and the gap between them (the legs are
+// pulled back by ~asphalt-hw+R) tiles seamlessly. The lap is harmless: bandRem
+// already has the leg sectors subtracted, so the corner only reclaims leftover.
+function arcSectorPoly(C, r, tA, tB, depth, margin = 0) {
+  const [cx, cy] = C
+  const aA = Math.atan2(tA[1] - cy, tA[0] - cx)
+  const aB = Math.atan2(tB[1] - cy, tB[0] - cx)
+  let delta = aB - aA
+  while (delta > Math.PI) delta -= 2 * Math.PI        // a fillet corner is the MINOR arc (< π)
+  while (delta < -Math.PI) delta += 2 * Math.PI
+  const sgn = delta >= 0 ? 1 : -1
+  const rin = Math.max(0.05, r - depth)
+  const segs = Math.max(2, Math.round(Math.abs(delta) / (Math.PI / 24)))
+  // radial (outward / curb-side) + tangent at each end; into-arc = +sgn·tangent,
+  // so the leg continues OUTWARD = −sgn·tangent at A, +sgn·tangent at B.
+  const uA = [Math.cos(aA), Math.sin(aA)], tgA = [-Math.sin(aA), Math.cos(aA)]
+  const uB = [Math.cos(aB), Math.sin(aB)], tgB = [-Math.sin(aB), Math.cos(aB)]
+  const oA = [cx + r * uA[0] - sgn * tgA[0] * margin, cy + r * uA[1] - sgn * tgA[1] * margin]
+  const oB = [cx + r * uB[0] + sgn * tgB[0] * margin, cy + r * uB[1] + sgn * tgB[1] * margin]
+  const iAx = [oA[0] - uA[0] * depth, oA[1] - uA[1] * depth]   // inner of the leg-A extension
+  const iBx = [oB[0] - uB[0] * depth, oB[1] - uB[1] * depth]
+  const out = [oA]
+  for (let k = 0; k <= segs; k++) { const a = aA + delta * (k / segs); out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
+  out.push(oB, iBx)
+  for (let k = segs; k >= 0; k--) { const a = aA + delta * (k / segs); out.push([cx + rin * Math.cos(a), cy + rin * Math.sin(a)]) }
+  out.push(iAx)
+  return signedArea(out) >= 0 ? out : out.reverse()
+}
 // Pure ring/key helpers shared by the shape pass AND the chain-free sectionPass
 // (module scope so sectionPass can use them without closing over the chain).
 const tipKey = (p) => Math.round(p[0] * 1000) + ',' + Math.round(p[1] * 1000)
@@ -658,6 +694,9 @@ function groupRuns(tile) {
 // reach back. That impossibility is the wall: Section's shape input changes only
 // when the shape pass re-runs. Every helper below is module-level + pure.
 export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
+  // PROTOTYPE C (env-gated, off in the browser): slope the SW↔(TL|SW) corner
+  // treelawn band. Keys on the RESOLVED outer material (e.mat.outer) so a flipped
+  // strip moves the taper too; the FILL re-strokes on blockCustoms change.
   const Wacc = [], tlByLu = {}, luByLu = {}
   // Per-edge OVERRIDE read (SECTION.md §3.2/§3.3): blockCustoms[skelId][side][segOrd]
   // keyed by the FROZEN run identity — design intent, NOT chain geometry, so the
@@ -666,10 +705,17 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
   const runCustom = (run) => blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null
   for (const st of shapeTiles) {
     const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs } = st
+    const fillets = st.fillets || []   // achieved curb arcs → the bent-corner sectors
     // Tolerate the serialized artifact: roundTipKeys is a Set in-memory, an array
     // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
     const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
     const roundTipByKey = new Map(roundTips.map(t => [tipKey(t.p), t]))
+    // Blunt dead-end tips: like round tips, they are NOT junction corners — the
+    // curb caps flat at the tip node, so the leg must run TO the tip (no e.a+R
+    // junction pullback) and bid NO corner pad. Without this the band squares off
+    // ~e.a short of the cap ("the corner slides down the arm"). G8 (below) then
+    // abuts LU to the flat end.
+    const bluntTipKeys = new Set((bluntTips || []).map(t => tipKey(t.p)))
     // Band join frozen by the shape pass: 'round' at dead-end / loop / thin tiles
     // so the ped strips cap cleanly instead of needling at the cap's ~180°
     // reversal; 'miter' on normal cornered tiles keeps authored R=0 squares sharp.
@@ -713,6 +759,24 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
     // treelawn claims the overlap (matching the old zone-union semantics — the
     // grass ends at its tangent, the walk yields).
     rr.sort((x, y) => (y.hasTL ? 1 : 0) - (x.hasTL ? 1 : 0))
+    // THROUGH-NODE detection (the continuous side of a T must not split). The
+    // [THRU] station split breaks one street's frontage into two runs that meet
+    // at the node; both being trimmed back by e.a+R opens a gap in the band and
+    // each bids a spurious corner. A vertex where two run-ENDS of the SAME
+    // skelId+SIDE meet is exactly that continuation (a real corner joins
+    // DIFFERENT streets; an authored bend stays one run; a dead-end tip is
+    // same-skelId but DIFFERENT side, handled by `tipped`) — there, bid no
+    // corner and don't trim.
+    const endSkelCount = new Map()   // tipKey(end) → Map(skelId|side → #run-ends)
+    for (const e of rr) {
+      const last = e.run.poly[e.run.poly.length - 1]
+      for (const p of [e.run.poly[0], last]) {
+        const k = tipKey(p), key = `${e.run.skelId}|${e.run.side}`
+        let m = endSkelCount.get(k); if (!m) { m = new Map(); endSkelCount.set(k, m) }
+        m.set(key, (m.get(key) || 0) + 1)
+      }
+    }
+    const isThrough = (p, run) => (endSkelCount.get(tipKey(p))?.get(`${run.skelId}|${run.side}`) || 0) >= 2
     // ── §3.3 step 2 · THE MONO-WIDTH BAND (sacrosanct — RIBBONS §3.9a) ──
     // ONE uniform outer depth per tile: WB = cw + max(TL) + max(SW) over the
     // tile's edges, floored at the frozen tile depths so an unauthored tile
@@ -764,19 +828,46 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
         const { run } = e
         const last = run.poly[run.poly.length - 1]
         const ends = [[run.poly[0], tipKey(run.poly[0])], [last, tipKey(last)]]
-        const tipped = ends.map(([, k]) => roundTipKeys.has(k))
+        // round OR blunt — both are dead-end tips, not junction corners (no
+        // corner bid, no junction trim); the round-cap circle below stays
+        // round-only (guarded by roundTipByKey.get).
+        const tipped = ends.map(([, k]) => roundTipKeys.has(k) || bluntTipKeys.has(k))
         // §3.3 step 3 — corner depth = cw + MAX-ADJACENT: each non-tip run end
         // bids its own ped total at its corner vertex; the bent pad takes the
         // deeper of the two adjacent legs (SW↔SW corner → sidewalk-deep).
+        const through = ends.map(([p]) => isThrough(p, run))
+        // Per-leg corner input: the treelawn-OUTER depth (0 if the outer strip is
+        // SW), used as the slide distance on a set-back leg. Reads the RESOLVED
+        // material so per-edge strip flips carry through.
+        const tloThis = e.mat.outer === 'LU' ? e.o : 0
+        const nP = run.poly.length
+        const legDirAt = (i) => { const a = i === 0 ? run.poly[0] : run.poly[nP - 1]; const b = i === 0 ? run.poly[1] : run.poly[nP - 2]; const dx = b[0] - a[0], dy = b[1] - a[1]; const L = Math.hypot(dx, dy) || 1; return [dx / L, dy / L] }
+        // EXACT trim — the along-leg distance from the node to where the curb
+        // fillet's TANGENT begins, so the leg strips end PRECISELY at the corner
+        // arc (no cream step / green sliver). dot(tangent − node, legDir) reads the
+        // frozen fillet directly; falls back to the e.a+R approximation only when
+        // no fillet rounds this corner. Tips / through-continuations → 0.
+        const tangentTrim = (p, dir) => {
+          let best = null, bestD = Infinity
+          for (const f of fillets) { const d = Math.hypot(f.apex[0] - p[0], f.apex[1] - p[1]); if (d < bestD) { bestD = d; best = f } }
+          if (!best || bestD > best.r + e.a + 4) return e.a + nearestVertR(p, ring, vertR)
+          const proj = (t) => (t[0] - p[0]) * dir[0] + (t[1] - p[1]) * dir[1]
+          return Math.max(0, Math.max(proj(best.tA), proj(best.tB)))
+        }
+        const legTrim = ends.map(([p], i) => (tipped[i] || through[i]) ? 0 : tangentTrim(p, legDirAt(i)))
         ends.forEach(([p, k], i) => {
-          if (tipped[i]) return
-          const trim = e.a + nearestVertR(p, ring, vertR)
+          if (tipped[i] || through[i]) return   // tip or T-continuation → no corner bid
+          // conD = how deep the ramp CONCRETE runs before LU on this leg: a
+          // set-back sidewalk (mat.inner === 'SW', a treelawn-Y leg) → the full
+          // total; a curb-side sidewalk (SW leg) → its one strip width.
+          const conD = e.mat.inner === 'SW' ? e.total : e.o
+          const leg = { dir: legDirAt(i), tlo: tloThis, conD }
           const prev = cornerT.get(k)
-          if (!prev) cornerT.set(k, { p, T: e.total, trim })
-          else { if (e.total > prev.T) prev.T = e.total; if (trim > prev.trim) prev.trim = trim }
+          if (!prev) cornerT.set(k, { p, T: e.total, trim: legTrim[i], legs: [leg] })
+          else { if (e.total > prev.T) prev.T = e.total; if (legTrim[i] > prev.trim) prev.trim = legTrim[i]; prev.legs.push(leg) }
         })
-        const t0 = tipped[0] ? 0 : e.a + nearestVertR(run.poly[0], ring, vertR)
-        const t1 = tipped[1] ? 0 : e.a + nearestVertR(last, ring, vertR)
+        const t0 = legTrim[0]
+        const t1 = legTrim[1]
         const poly = trimPolyline(run.poly, t0, t1)
         if (!poly || poly.length < 2) continue
         // This leg's claim SECTOR: a constant-depth slab (butt-capped at the
@@ -819,14 +910,27 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
       }
     }
     // ── §3.3 steps 3+4 · the bent corner = a SLICE of the fullBand ──
-    // Never a constructed primitive: pad = (un-zoned band) ∩ (depth ≤ cw+T_c)
-    // ∩ corner disk. Bounded inward at the deeper adjacent leg's total, so an
-    // SW↔SW corner comes out sidewalk-deep and a TL-adjacent corner full-depth.
+    // Never a constructed primitive: the pad is the un-zoned band, bent around
+    // the curb arc as an annular SECTOR (RIBBONS §3.9a step 10) — outer edge the
+    // curb arc, inner edge its concentric offset, sides the two tangent radii —
+    // bounded inward at the deeper adjacent leg's total (cw + c.T), so an SW↔SW
+    // corner comes out sidewalk-deep and a TL-adjacent corner full-depth. The
+    // arc comes from the FROZEN fillet the curb actually rounded here; a corner
+    // with no fillet (R=0 / sharp) has no arc to bend — the legs meet at a miter.
+    const sectorDepth = cw + TLmax + SWmax + 2   // the sector inner clears the band bottom (iW)
     let cornerPad = []
-    if (bandRem.length && cornerT.size) {
+    const cornerTreelawn = []   // corner LU strips (SW↔SW inner) + ramp wedges → tlByLu[lu]
+    const swCarve = []          // Idea A — LU wedges to carve from the deep leg's SW strip
+    if (bandRem.length && cornerT.size && fillets.length) {
       const shallowByT = new Map()   // distinct depth → band region above it (one offset per depth)
       for (const [, c] of cornerT) {
         if (c.T <= 1e-6) continue
+        // Pair this corner with the arc the curb rounded here (nearest fillet
+        // apex → the sharp node). No nearby fillet ⇒ a sharp R=0 corner: skip,
+        // the legs already meet at the miter with no wedge to slice.
+        let best = null, bestD = Infinity
+        for (const f of fillets) { const d = Math.hypot(f.apex[0] - c.p[0], f.apex[1] - c.p[1]); if (d < bestD) { bestD = d; best = f } }
+        if (!best || bestD > best.r + c.trim + 1) continue
         let shallow = shallowByT.get(c.T)
         if (!shallow) {
           shallow = (c.T >= TLmax + SWmax - 1e-9)
@@ -834,8 +938,52 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
             : differenceRings(bandRem, ringAt(c.T))
           shallowByT.set(c.T, shallow)
         }
-        const disk = circlePoly(c.p[0], c.p[1], c.trim + cw + c.T + 1)
-        cornerPad.push(...intersectRings(shallow, [disk]))
+        // margin = c.trim (asphalt-hw + R) extends the sector up each leg to the
+        // leg slab's pulled-back end, closing the leg↔corner seam (the LU notch).
+        const sector = arcSectorPoly(best.C, best.r, best.tA, best.tB, sectorDepth, c.trim)
+        const pad = intersectRings(shallow, [sector])
+        if (!pad.length) continue
+        // ── Idea A: CONCENTRIC arc at the shallow (ADA) depth; ramp the deep leg ──
+        // The corner arc is a clean concentric ring at cMin = min(both legs'
+        // concrete depths). The DEEPER leg's set-back sidewalk SLIDES to the curb
+        // over a short ramp on its own straight leg (the treelawn tapering out, the
+        // walk's deep tail becoming parcel) — so the arc reads concentric and the
+        // transition lives on the leg, where a real curb ramp puts it.
+        let concrete = pad, luInner = []
+        if (c.legs?.length === 2) {
+          const ap = best.apex
+          const dot = (u, v) => u[0] * v[0] + u[1] * v[1]
+          const aFirst = dot(c.legs[0].dir, [best.tA[0] - ap[0], best.tA[1] - ap[1]]) >= dot(c.legs[1].dir, [best.tA[0] - ap[0], best.tA[1] - ap[1]])
+          const legA = aFirst ? c.legs[0] : c.legs[1]      // the tA leg
+          const legB = aFirst ? c.legs[1] : c.legs[0]      // the tB leg
+          const cMin = Math.min(legA.conD, legB.conD)
+          // concentric ring at cMin → the arc is a constant-offset band
+          if (cMin < c.T - 1e-6) {
+            const ring = ringAt(cMin)
+            concrete = differenceRings(pad, ring)
+            luInner = intersectRings(pad, ring)
+          }
+          // slide the deeper leg's walk to the curb over a ramp on that leg
+          const deep = legA.conD >= legB.conD ? legA : legB
+          const T = legA.conD >= legB.conD ? best.tA : best.tB
+          if (deep.conD > cMin + 1e-6) {
+            const perp = (() => { const dx = best.C[0] - T[0], dy = best.C[1] - T[1]; const L = Math.hypot(dx, dy) || 1; return [dx / L, dy / L] })()
+            const dir = deep.dir
+            const tloD = deep.tlo                           // treelawn width on the deep leg (the slide distance)
+            const conMax = deep.conD
+            const rampLen = Math.max(2, (conMax - cMin) * 2)
+            const pt = (s, d) => [T[0] + dir[0] * s + perp[0] * (cw + d), T[1] + dir[1] * s + perp[1] * (cw + d)]
+            // the slid walk: [0,cMin] at the tangent → [tloD,conMax] up the leg (concrete, covers the tapering treelawn)
+            const slidQuad = [pt(0, 0), pt(rampLen, tloD), pt(rampLen, conMax), pt(0, cMin)]
+            cornerPad.push(...intersectRings(fullBand, [slidQuad]))
+            // the walk's deep tail near the tangent → LU (carved from the SW strip below)
+            const luWedge = [pt(0, cMin), pt(0, conMax), pt(rampLen, conMax)]
+            const w = intersectRings(fullBand, [luWedge])
+            if (w.length) { cornerTreelawn.push(...w); swCarve.push(...w) }
+          }
+        }
+        cornerPad.push(...concrete)
+        if (luInner.length) cornerTreelawn.push(...luInner)   // inner LU → parcel-matched (tlByLu[lu])
       }
     }
     // Whatever the legs + pads didn't claim flows to LU — the remainder runs
@@ -867,10 +1015,13 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
     // SW (the ADA ramp — structural, regardless of leg ordering/overrides).
     for (const pc of pieces) {
       if (!pc.rings.length) continue
+      if (pc.mat === 'SW' && swCarve.length) pc.rings = differenceRings(pc.rings, swCarve)   // Idea A — the deep walk's tail slid to LU
+      if (!pc.rings.length) continue
       if (pc.mat === 'SW') Wacc.push(...pc.rings)
       else pushLu(tlByLu, lu, pc.rings)
     }
     Wacc.push(...cornerPad)
+    if (cornerTreelawn.length) pushLu(tlByLu, lu, cornerTreelawn)   // PROTOTYPE C — tapered corner treelawn
     // E2 — the constructed median paints positively: route this tile's frozen
     // median region (med, clipped at the shape pass) to the 'median' class and
     // keep it out of the parcel-LU remainder. Covers both the true median tile
@@ -2210,7 +2361,10 @@ export function buildTileGround(ribbons, opts = {}) {
     Aacc.push(...differenceRings([tile.ring], iA))   // asphalt = tile − rounded inner (the shape silhouette)
     Cacc.push(...differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)))   // curb stroke = iA − iC (clamped, shares join)
     // Freeze everything the section pass needs off this tile's shape.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, ...(medClip.length ? { med: medClip } : {}) })
+    // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
+    // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
+    // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(medClip.length ? { med: medClip } : {}) })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────

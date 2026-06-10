@@ -2,7 +2,7 @@
 
 **The third tool — the ped **FILL**. Section reads the **frozen Survey SHAPE** (the hardscape silhouette) and strokes the pedestrian cross-section **inward** off it: treelawn, sidewalk, the ribbon corner fills, the ADA pad, the dead-end cap wraps. It is the first **consumer** past the Data Wall.** This is its single-source-of-truth reference: what it is, the document it reads, how it builds, the authoring panel it powers, what stays live versus frozen, and where it is today.
 
-> **Status: v0.3 (2026-06-10).** Most of Section is built: the per-edge FILL (`resolvePedDepths` → `sectionPass`), the **mono-width strip swap** (two equal strips; sidewalk-only = "sidewalk then lawn", never collapse), the dead-end caps built into the curb offset (D6a, `[[project_d6a_curb_offset]]`), the live material + depth overrides, the handles riding the achieved curb, **two handles always** (`sideBoundaries`), the **freeze-on-Survey-exit** (the wall auto-saves the SHAPE; no manual sub-bake — `WALL.md §4`), and the **Revert to Default** UI (`[[project_revert_buttons]]`). ⚠️ **The CORNER construction is OPEN** — a bent-polygon/fillet-wedge attempt (2026-06-10) was reverted; the corner is back to the pre-session `sectionPass` build and is not yet correct on LS (the target + the proven reference to port are in §6). **Grounded in code** (`src/lib/tileGround.js`; `MeasurePanel.jsx`/`MeasureOverlay.jsx`). Reference-kind. The pre-build forensic census is **archived** (`_archive/`); its open-tail is folded into §7. Today's tool is still labelled **"Measure"** (the rename rides T3).
+> **Status: v0.4 (2026-06-10).** Most of Section is built: the per-edge FILL (`resolvePedDepths` → `sectionPass`), the **mono-width strip swap** (two equal strips; sidewalk-only = "sidewalk then lawn", never collapse), the dead-end caps built into the curb offset (D6a, `[[project_d6a_curb_offset]]`), the live material + depth overrides, the handles riding the achieved curb, **two handles always** (`sideBoundaries`), the **freeze-on-Survey-exit** (the wall auto-saves the SHAPE; no manual sub-bake — `WALL.md §4`), and the **Revert to Default** UI (`[[project_revert_buttons]]`). ✅ **The CORNER construction LANDED** (2026-06-10) — the bent SECTOR off the frozen fillet, EXACT tangent-trimmed legs, street-edge always concrete (ADA), a **concentric arc at the shallow depth with the set-back walk sliding to the curb on its leg** (Idea A). Full construction + a **"how to change the corners" guide** in §6. Verified neighborhood-wide on the lit app. Open tail (T-junctions, SW↔SW residuals) in §7. **Grounded in code** (`src/lib/tileGround.js`; `MeasurePanel.jsx`/`MeasureOverlay.jsx`). Reference-kind. The pre-build forensic census is **archived** (`_archive/`); its open-tail is folded into §7. Today's tool is still labelled **"Measure"** (the rename rides T3).
 
 ---
 
@@ -167,11 +167,41 @@ The line that resolves the long corner saga (`ARCHITECTURE §2.1`, "conflating t
 - **The corner *shape*** — how round the curb silhouette is (the radius) — is **Survey**, frozen into `vertR`.
 - **The corner *fill*** — how the ribbon bends around it: the bent all-SW pad, treelawn ending at the tangents, the cap wrap — is **Section**, stroked live off the frozen arc.
 
-So "author the corners in Section" means the **fill**, not the radius. Two facts of the fill:
-- **The bent quad is a *slice* of the ribbon**, not a constructed primitive (`RIBBONS §3.9a` step 10a). Bending the band around the arc IS the corner.
-- **⭐ Corner depth = `cw + max-adjacent`** (§3.3 step 3): the pad goes as deep as the **deeper** of its two adjacent legs. **SW↔SW corner (no treelawn) → sidewalk-deep**; TL-adjacent → full-depth. A Section corner defect (point-ramp collapse, ADA-tangent glitch) is a `sectionPass` FILL bug; a too-round/too-square corner is a Survey SHAPE concern Section inherits.
+So "author the corners in Section" means the **fill**, not the radius. The fill is a **slice of the ribbon bent around the arc**, never a constructed primitive — bending the band around the arc IS the corner.
 
-> ⚠️ **The corner construction is OPEN (2026-06-10).** A bent-polygon/fillet-wedge attempt this session was **reverted** — it didn't hold on real LS geometry. The corner is back to the pre-session `sectionPass` construction. The **target** (Jacob's rule): the corner is the band BENT around the arc — **all concrete UNLESS SW↔SW, where it's concrete→LU**. The proven reference to port is **`emitOneBlockRingBands`** (RIBBONS §3.9a step 10 — the arc-span *sector* slice). Strips (mono-width swap) are done; the corner is not.
+### 6.1 ✅ The corner construction — LANDED (2026-06-10)
+
+The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **frozen fillet** the curb actually rounded there (`shapeTiles[].fillets[] = {apex, C, r, tA, tB}`, frozen by `filletRing` in the shape pass). The pipeline, in order:
+
+1. **The bent SECTOR** (`arcSectorPoly`). The corner region is the mono-width band bent around the arc — a wedge whose **outer edge is the curb arc itself** (radius `r` about the fillet centre `C`), **inner edge its concentric offset**, and **sides the two tangent radii** (`tA`/`tB`). Extended up each leg by `c.trim` so it laps the leg slabs (closes the leg↔corner seam). `pad = shallow ∩ sector`. **No disk, ever** — `circlePoly` is only a dead-end-cap helper.
+2. **EXACT leg trim** (`tangentTrim`). Each leg strip is trimmed to **where its fillet tangent actually begins** — `dot(tangent − node, legDir)` off the frozen fillet — not the old `e.a + R` approximation. This is what makes the leg strips meet the arc with no cream step / green sliver. (Falls back to `e.a + R` only where no fillet rounds the corner.)
+3. **Street-edge ALWAYS concrete (ADA).** The curb side of the corner is the ADA ramp — concrete — *always*. Treelawn never wraps the curb.
+4. **CONCENTRIC arc at the shallow depth** (Idea A). The arc is a clean constant-offset ring at `cMin = min(both legs' concrete depth conD)`, where `conD = mat.inner==='SW' ? total : outerWidth` (a set-back-sidewalk leg → full `total`; a curb-side SW leg → its one strip width). The band shallower than `cMin` → concrete; deeper → **LU (parcel-matched, via `tlByLu[lu]`)**.
+5. **The deep leg SLIDES to the curb** (Idea A). The deeper (set-back) leg's sidewalk slides to the curb over a short **ramp on its own straight leg** — the treelawn taper out, the walk's deep tail becomes parcel — so by the tangent it's a curb-side walk matching the concentric ring. Built as two polygons in a local `(along-leg, depth)` frame at the tangent (`pt(s,d) = T + dir·s + perp·(cw+d)`, `perp = C→T`): a **slid-walk quad** (`[0,cMin]` at the tangent → `[tloD, conMax]` up the leg) added as concrete, and an **LU wedge** (`[cMin,conMax]` at the tangent, tapering to zero up the leg) carved from the SW strip (`swCarve`) and routed to LU. `rampLen = max(2, 2·(conMax−cMin))`.
+
+**What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
+- **TL↔TL** (both set back) → all concrete to `c.T` (cMin = both, no carve, no slide).
+- **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
+- **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.
+
+### 6.2 ⭐ How to change the corners
+
+The corner is a small, legible pipeline — each knob is one spot in `sectionPass`:
+
+| To change… | Edit |
+|---|---|
+| **how round / how deep the arc reads** | `cMin` (step 4) — currently `min(conD)`. Use `max` → concentric at the deeper depth (Idea C: shallow walk fattens). Use a constant → fixed ADA width everywhere. |
+| **what's concrete vs parcel at the corner** | the `conD` rule (step 4, recorded per leg) — it decides how deep concrete runs before LU. |
+| **the ramp gentleness** | `rampLen` (step 5) — bigger = gentler slide, less perceptible. |
+| **the leg↔arc seam tightness** | `tangentTrim` (step 2) and the sector `margin` (`c.trim`, step 1). |
+| **whether the corner wraps treelawn at all** | step 3 doctrine — today the curb is always concrete; to let treelawn wrap, route part of `concrete` to `cornerTreelawn` instead (this is the *reverted* "wrap" experiment — see history). |
+| **a smooth S vs straight transition** | a `smoothstep(u)=u²(3−2u)` on any of the depth interpolations (we used it on the earlier divider-taper; the slide is currently linear). |
+
+**Alternatives tried + rejected this session** (so we don't re-walk them): the **disk-masked** pad (a forbidden primitive); **treelawn wrapping the curb** (violates "street-edge always concrete"); the **divider-taper** with a straight then S-curve inner edge (the scoop dipped deeper than the adjoining walk — didn't read concentric). Idea A (concentric arc + slide the deep leg) is the keeper.
+
+**Two facts the construction must never lose:** the corner is a **slice of the band, bent** (never a built primitive); and the **street-edge is always concrete** (the ADA ramp).
+
+> ⚠️ Verify corner changes **on a render / the lit app**, never on shape-byte proofs — the EYE is the gate (`[[feedback_shape_proofs_dont_gate_fill_geometry]]`). The flat scratch proxy (`scratch/section-open.mjs`, `sectionOpen` on the frozen artifact) is the fast loop; the lit 5173 app is the final say.
 
 ---
 
