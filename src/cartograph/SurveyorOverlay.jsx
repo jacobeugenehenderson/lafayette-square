@@ -228,13 +228,29 @@ export default function SurveyorOverlay() {
     for (const s of sides) {
       const fe = findFeForSide(fes, st, segOrd, s)
       if (!fe) continue
+      // §5d "street simple": author the CONTINUOUS FRONTAGE, not one junction-cut
+      // segment. The fe spans block-corner→block-corner (the block-ring walker
+      // already cuts only at REAL corners = different-street adjacency; a side
+      // street T'ing in on the FAR side is a through-node and does NOT break the
+      // ring), so fe.segOrds holds EVERY chain natural-segment of this frontage.
+      // The curb offset reads pavementHW PER RUN (= per segOrd), so writing only
+      // the fe's representative (min) segOrd leaves the far-side run on the chain
+      // default → the offset draws a width STEP at the through-node (Jacob's "bend
+      // in the middle"). Fan the dragged width across ALL of the fe's segOrds so
+      // every run reads the same depth → one uniform curb, no step. Real corners
+      // (different streets) own separate fes and stay independent. (See the curb
+      // offset's cornerAt in tileGround.js — the same different-/same-street test.)
+      const runSegOrds = (fe.segOrds && fe.segOrds.length) ? fe.segOrds : [segOrd]
       // Depths come from the ONE per-edge resolution (SECTION.md §5), so a
       // Survey pavementHW drag never bakes surveyed-depth baggage into
       // blockCustoms — the FILL reads .treelawn/.sidewalk as ped intent now.
       const existing = readFeCustom(store.blockCustoms, fe)
       const ped = resolvePedDepths(chainSeed, s, existing)
       const seed = { ...(chainSeed[s] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-      entries.push({ fe, measure: applyKindToMeasure(seed, 'pavementHW', r) })
+      const measure = applyKindToMeasure(seed, 'pavementHW', r)
+      // One entry per owned segOrd — each shim carries a single-segOrd fe so
+      // feCustomKey stores it under (skelId, side, THAT segOrd), not just min().
+      for (const seg of runSegOrds) entries.push({ fe: { ...fe, segOrds: [seg] }, measure })
     }
     if (entries.length) store.writeBlockEdgeCustoms(entries)
   }, [ixByChain])
@@ -253,7 +269,13 @@ export default function SurveyorOverlay() {
     const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
     for (const s of sides) {
       const fe = findFeForSide(fes, st, segOrd, s)
-      if (fe) store.revertFeSurveyToDefault(fe)
+      if (!fe) continue
+      // Mirror the drag's frontage-run fan-out (above): revert EVERY segOrd the
+      // fe owns, not just its representative, so a revert clears the whole
+      // continuous frontage and can't leave a far-side run stranded at the
+      // dragged width (which would re-introduce the through-node step).
+      const runSegOrds = (fe.segOrds && fe.segOrds.length) ? fe.segOrds : [segOrd]
+      for (const seg of runSegOrds) store.revertFeSurveyToDefault({ ...fe, segOrds: [seg] })
     }
   }, [ixByChain])
 
