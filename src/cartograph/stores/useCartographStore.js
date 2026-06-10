@@ -722,10 +722,21 @@ const useCartographStore = create((set, get) => ({
     get()._saveDesignDebounced()
   },
   hasSurveyDefault: () => !!get().surveyDefault,
-  // SURVEY · Revert to Skeleton — clear every Survey edit → the surveyed/AASHTO frame.
+  // SURVEY · Revert to Skeleton — clear EVERY Survey edit → the frame as delivered
+  // (surveyed widths + AASHTO radii). Survey edits live in TWO places: blockCustoms
+  // (per-block mode) AND the chain measure / segmentMeasures on centerlineData
+  // (global mode → overlay). Both must clear (mirrors resetToyNeighborhood). No
+  // rebake — Survey re-renders live off centerlineData.
   revertSurveyToSkeleton: () => {
-    set({ blockCustoms: get()._blockCustomsStripped(get()._SURVEY_FE_FIELDS), cornerRadiusOverrides: {}, cornerCornerRadiusOverrides: {}, cornerRadiusScale: 1 })
+    const cd = get().centerlineData
+    const streets = (cd?.streets || []).map(s => (s.measure || s.segmentMeasures) ? { ...s, measure: undefined, segmentMeasures: undefined } : s)
+    set({
+      blockCustoms: get()._blockCustomsStripped(get()._SURVEY_FE_FIELDS),
+      cornerRadiusOverrides: {}, cornerCornerRadiusOverrides: {}, cornerRadiusScale: 1,
+      ...(cd ? { centerlineData: { ...cd, streets } } : {}),
+    })
     get()._saveDesignDebounced()
+    get()._saveOverlay()   // persist the cleared chain measures
   },
   // SURVEY · Revert to Default — restore the blessed surveyDefault (Survey fields only).
   revertSurveyToDefault: () => {
@@ -766,6 +777,9 @@ const useCartographStore = create((set, get) => ({
       const m = bc[skel][side][seg]; if (get()._SURVEY_FE_FIELDS.some(f => m[f] !== undefined)) n++
     }
     n += Object.keys(get().cornerRadiusOverrides || {}).length + Object.keys(get().cornerCornerRadiusOverrides || {}).length
+    // global-mode width edits live on the chain measure (centerlineData → overlay),
+    // not blockCustoms — count them too so Revert to Skeleton enables.
+    n += (get().centerlineData?.streets || []).filter(s => s.measure || s.segmentMeasures).length
     return n
   },
   sectionOverrideCount: () => {
