@@ -142,6 +142,7 @@ export default function CornerEditHandles() {
   const cornerRadiusScale = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const setCornerCornerRadius = useCartographStore(s => s.setCornerCornerRadius)
   const setIxCornerRadius = useCartographStore(s => s.setIxCornerRadius)
+  const revertCornerToDefault = useCartographStore(s => s.revertCornerToDefault)
   // The TILE corner set from the live build — the handle's corner LIST AND each
   // corner's achieved curb arc (`fillet`), one corner truth. The live drag commits
   // to the store each frame, so this whole array is rebuilt every frame mid-drag;
@@ -217,9 +218,10 @@ export default function CornerEditHandles() {
       const hit = pickCorner(p)
       if (!hit) return
 
-      // Right-click a corner → revert just THAT corner to default.
-      if (e.button === 2) {
-        setCornerCornerRadius(hit.entry.V, hit.c.legKeyA, hit.c.legKeyB, null)
+      // ⌃/⌘-click (or right-click — the same gesture on macOS) a corner → revert
+      // just THAT corner to the blessed Default (or AASHTO if none is set).
+      if (e.button === 2 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {
+        revertCornerToDefault(hit.entry.V, hit.c.legKeyA, hit.c.legKeyB)
         e.preventDefault(); e.stopPropagation()
         return
       }
@@ -393,7 +395,7 @@ export default function CornerEditHandles() {
     // aren't torn down mid-drag. `hasLayout` (empty→non-empty) is the only
     // layout-shaped dep, so the effect re-binds once when corners first arrive.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool, cornerEditMode, hasLayout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale])
+  }, [tool, cornerEditMode, hasLayout, camera, gl, setCornerCornerRadius, setIxCornerRadius, revertCornerToDefault, cornerRadiusScale])
 
   if (tool !== 'surveyor') return null
   if (!cornerEditMode) return null

@@ -75,6 +75,11 @@ function CornersSubsection() {
   const scene = useCartographStore(s => s.scene)
   const resetToySelected = useCartographStore(s => s.resetToySelected)
   const resetToyNeighborhood = useCartographStore(s => s.resetToyNeighborhood)
+  const revertSurveyToSkeleton = useCartographStore(s => s.revertSurveyToSkeleton)
+  const revertSurveyToDefault = useCartographStore(s => s.revertSurveyToDefault)
+  const setSurveyDefault = useCartographStore(s => s.setSurveyDefault)
+  const surveyDefault = useCartographStore(s => s.surveyDefault)
+  const surveyOverrideCount = useCartographStore(s => s.surveyOverrideCount)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectedName = useCartographStore(s =>
     s.selectedStreet != null ? s.centerlineData?.streets?.[s.selectedStreet]?.name : null)
@@ -163,6 +168,41 @@ function CornersSubsection() {
           <span className="carto-btn-text">Revert{overrideCount ? ` (${overrideCount})` : ''}</span>
         </button>
       </div>
+      {/* SURVEY revert (real scene). Skeleton = clear all your edits → surveyed
+          widths + AASHTO radii (the frame as delivered). Default = the state you
+          blessed with Set Default. ⌃-click any handle reverts just that one to
+          Default. Field-scoped: leaves Section's ped edits intact. */}
+      {scene !== 'toy' && (
+        <div className="carto-row carto-corner-buttons">
+          <button
+            className="carto-btn carto-btn--icon"
+            onClick={() => setSurveyDefault()}
+            title="Bless the current Survey state (widths + corner radii) as the Default — the state Revert to Default and ⌃-click return to. Persisted with the Look.">
+            <span className="carto-btn-glyph" aria-hidden="true">★</span>
+            <span className="carto-btn-text">Set Default</span>
+          </button>
+          <button
+            className="carto-btn carto-btn--icon"
+            disabled={!surveyDefault}
+            onClick={() => revertSurveyToDefault()}
+            title={surveyDefault
+              ? 'Revert Survey (widths + corner radii) to the blessed Default. Section ped edits are untouched.'
+              : 'No Default set yet — use Set Default first.'}>
+            <span className="carto-btn-glyph" aria-hidden="true">↺</span>
+            <span className="carto-btn-text">Revert to Default</span>
+          </button>
+          <button
+            className="carto-btn carto-btn--icon"
+            disabled={(surveyOverrideCount?.() || 0) === 0}
+            onClick={() => {
+              if (confirm('Revert to Skeleton? This clears EVERY Survey edit (widths + corner radii) back to the frame as delivered — surveyed widths + AASHTO radii. Section ped edits are kept.')) revertSurveyToSkeleton()
+            }}
+            title="Clear every Survey width + corner-radius edit → the frame as delivered (surveyed widths, AASHTO radii). Section ped edits are kept.">
+            <span className="carto-btn-glyph" aria-hidden="true">⤓</span>
+            <span className="carto-btn-text">Revert to Skeleton</span>
+          </button>
+        </div>
+      )}
       {/* Reset the toy's user-authored session layer back to the fixture
           baseline. Toy-only authoring affordance. */}
       {scene === 'toy' && (

@@ -538,7 +538,7 @@ export default function MeasureOverlay() {
     // Empty click does NOT deselect — operators pan the map constantly and
     // the gesture used to silently throw away their selection. Accept
     // explicitly via double-click (handler below), Enter, or Escape.
-  }, [active, spaceDown, camera, gl, selection, streetData, selectStreet])
+  }, [active, spaceDown, camera, gl, selection, streetData, selectStreet, findFeForSide])
 
   const onPointerMove = useCallback((e) => {
     if (dragRef.current) {
@@ -617,16 +617,16 @@ export default function MeasureOverlay() {
     // Returns true if world point p sits on a drag handle (within the
     // pill bounds). Handle clicks are NO-OP in V1.5 (drag-only).
     const hitHandle = (p) => {
-      if (!selection) return false
+      if (!selection) return null
       const ax = -selection.mid.nz, az = selection.mid.nx
       const nx = selection.mid.nx, nz = selection.mid.nz
       for (const h of selection.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
         if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) {
-          return true
+          return h
         }
       }
-      return false
+      return null
     }
     // Resolve (slot, side) for a click in a strip's body. Returns null
     // if click falls outside the ribbon (in asphalt, on curb, past
@@ -723,12 +723,18 @@ export default function MeasureOverlay() {
       useCartographStore.setState({ status: `Flipped ${slot} strip material (${mode?.type === 'global' ? 'chain' : 'block'})` })
       return true
     }
-    // Unified ctrl/right gesture: handle hit = no-op (handles drag-only);
-    // strip body = flip that strip's material.
+    // Unified ctrl/right gesture: handle hit = revert THAT edge's ped to Default
+    // (clears its overrides → the calculation re-seeds); strip body = flip that
+    // strip's material. Both return true so the context menu is suppressed.
     const handleCtrlOrRight = (e) => {
       if (!selection) return false
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
-      if (hitHandle(p)) return false
+      const h = hitHandle(p)
+      if (h) {
+        const fe = findFeForSide(selection.streetIdx, selection.ordinal, h.side)
+        if (fe) useCartographStore.getState().revertFeSectionToDefault(fe)
+        return true
+      }
       return tryFlipStripMaterial(p)
     }
     const onContextMenu = (e) => {

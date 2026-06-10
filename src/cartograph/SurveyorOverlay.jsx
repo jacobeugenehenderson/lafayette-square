@@ -239,26 +239,50 @@ export default function SurveyorOverlay() {
     if (entries.length) store.writeBlockEdgeCustoms(entries)
   }, [ixByChain])
 
+  // ⌃/⌘-click (or right-click) a width handle → revert just that fe's width to
+  // the blessed Default (mirrors the drag's fe resolution + mirror behavior).
+  const revertAsphaltHandle = useCallback((streetIdx, side) => {
+    const store = useCartographStore.getState()
+    const mirror = !store.editSidesSeparately
+    const sides = mirror ? [side, side === 'left' ? 'right' : 'left'] : [side]
+    const st = store.centerlineData?.streets?.[streetIdx]
+    const fes = store._v2FrontageEdges || []
+    const anchor = store.selectedMeasurePoint
+    if (!st || !anchor) return
+    const frame = frameAtPoint(st.points, anchor.x, anchor.z)
+    const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
+    for (const s of sides) {
+      const fe = findFeForSide(fes, st, segOrd, s)
+      if (fe) store.revertFeSurveyToDefault(fe)
+    }
+  }, [ixByChain])
+
   const onPointerDown = useCallback((e) => {
-    if (!active || spaceDown || e.button !== 0) return
+    if (!active || spaceDown) return
+    // ⌃/⌘-click (= right-click on macOS) reverts the handle under it to Default.
+    const isRevert = e.button === 2 || (e.button === 0 && (e.ctrlKey || e.metaKey))
+    if (e.button !== 0 && !isRevert) return
     const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
     const nodeThresh = 5 / (camera.zoom || 1)
     const lineThresh = 8 / (camera.zoom || 1)
 
     // Priority 1: grab an asphalt-edge handle (hit-test in its local frame —
-    // long axis along street, short axis across).
+    // long axis along street, short axis across). On a revert-click, revert that
+    // handle's fe instead of grabbing it.
     if (asphaltHandles) {
       const ax = -asphaltHandles.mid.nz, az = asphaltHandles.mid.nx
       const nx = asphaltHandles.mid.nx, nz = asphaltHandles.mid.nz
       for (const h of asphaltHandles.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
         if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) {
+          if (isRevert) { revertAsphaltHandle(asphaltHandles.streetIdx, h.side); e.preventDefault(); e.stopPropagation(); return }
           dragRef.current = { streetIdx: asphaltHandles.streetIdx, side: h.side }
           e.stopPropagation()
           return
         }
       }
     }
+    if (isRevert) return   // a revert-click that missed a handle does nothing (no select)
 
     // Priority 2: select a node of the already-selected street.
     if (selectedStreet !== null) {
@@ -291,7 +315,7 @@ export default function SurveyorOverlay() {
     }
 
     deselectStreet()
-  }, [active, spaceDown, camera, gl, asphaltHandles, selectedStreet, centerlineData, selectStreet, selectNode, deselectStreet])
+  }, [active, spaceDown, camera, gl, asphaltHandles, selectedStreet, centerlineData, selectStreet, selectNode, deselectStreet, revertAsphaltHandle])
 
   const onPointerMove = useCallback((e) => {
     // Asphalt-edge drag in progress.
@@ -370,13 +394,18 @@ export default function SurveyorOverlay() {
     if (!active) return
     const dom = gl.domElement
     const opts = { capture: true }
+    // Suppress the browser context menu over the canvas so ⌃/right-click can be
+    // the "revert this handle to Default" gesture without a menu popping.
+    const onContextMenu = (e) => e.preventDefault()
     dom.addEventListener('pointerdown', onPointerDown, opts)
     dom.addEventListener('pointermove', onPointerMove, opts)
     dom.addEventListener('pointerup', onPointerUp, opts)
+    dom.addEventListener('contextmenu', onContextMenu, opts)
     return () => {
       dom.removeEventListener('pointerdown', onPointerDown, opts)
       dom.removeEventListener('pointermove', onPointerMove, opts)
       dom.removeEventListener('pointerup', onPointerUp, opts)
+      dom.removeEventListener('contextmenu', onContextMenu, opts)
     }
   }, [active, gl, onPointerDown, onPointerMove, onPointerUp])
 

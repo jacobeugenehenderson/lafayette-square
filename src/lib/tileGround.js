@@ -60,6 +60,53 @@ function offsetRings(rings, delta, join = 'round') {
   co.Execute(out, delta * SCALE)
   return out.map(p => p.map(fromClipper))
 }
+// ── D6a · the per-edge variable offset (the curb, as a polygon) ────────────
+// POLYGON-FIRST §3 / SKELETON §5f: the curb is `chain ⊕ pavementHW`, a PARALLEL
+// OFFSET of the frozen frame, with corners as the INTERSECTION of adjacent
+// offset lines — NOT carved from the asphalt union (which bows where junction
+// windows swell it). Offset each ring edge inward by its own depth; each vertex
+// is where its two neighbour offset lines cross. Acute spikes are miter-clamped
+// to a bevel; the result is Clipper-cleaned of any self-intersection (pinched/
+// non-convex tiles). depthAt(i) = inward depth for edge i (ring[i]→ring[i+1]).
+// cornerAt(i) = whether vertex i is a REAL corner (two DIFFERENT streets meet).
+// At a non-corner — a THROUGH-node where one street continues (a T's far side, a
+// centerline dogleg) — the curb runs continuous, never an offset-intersection
+// corner (osm2streets doctrine: corners come from leg adjacency; "T-sensitivity").
+function offsetRingVariable(ring, depthAt, cornerAt = () => true) {
+  const n = ring.length
+  if (n < 3) return []
+  const ccw = signedArea(ring) > 0
+  const seg = []
+  for (let i = 0; i < n; i++) {
+    const a = ring[i], b = ring[(i + 1) % n]
+    let dx = b[0] - a[0], dy = b[1] - a[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L
+    const nx = ccw ? -dy : dy, ny = ccw ? dx : -dx          // inward normal (winding-aware)
+    const d = Math.max(0, depthAt(i) || 0)
+    seg.push({ dir: [dx, dy], P: [a[0] + nx * d, a[1] + ny * d], nrm: [nx, ny], d })
+  }
+  const W = []
+  for (let i = 0; i < n; i++) {
+    const A = seg[(i - 1 + n) % n], B = seg[i]              // vertex i: between edge i-1 and edge i
+    const det = A.dir[0] * B.dir[1] - A.dir[1] * B.dir[0]
+    // Through-node (same street both sides) or collinear → offset the vertex by
+    // the AVERAGED normal at the averaged depth: the curb runs straight/smooth
+    // through, no spurious corner from an off-chord vertex or a per-fe width step.
+    if (!cornerAt(i) || Math.abs(det) < 1e-9) {
+      let mx = A.nrm[0] + B.nrm[0], my = A.nrm[1] + B.nrm[1]; const mL = Math.hypot(mx, my) || 1; mx /= mL; my /= mL
+      W.push([ring[i][0] + mx * ((A.d + B.d) / 2), ring[i][1] + my * ((A.d + B.d) / 2)]); continue
+    }
+    const t = ((B.P[0] - A.P[0]) * A.dir[1] - (B.P[1] - A.P[1]) * A.dir[0]) / det
+    const X = [B.P[0] + B.dir[0] * t, B.P[1] + B.dir[1] * t]
+    const lim = 2.5 * Math.max(A.d, B.d, 0.5) + 1           // miter clamp (acute-corner spike → bevel)
+    if (Math.hypot(X[0] - ring[i][0], X[1] - ring[i][1]) > lim) {
+      const pA = (ring[i][0] - A.P[0]) * A.dir[0] + (ring[i][1] - A.P[1]) * A.dir[1]
+      const pB = (ring[i][0] - B.P[0]) * B.dir[0] + (ring[i][1] - B.P[1]) * B.dir[1]
+      W.push([A.P[0] + A.dir[0] * pA, A.P[1] + A.dir[1] * pA])
+      W.push([B.P[0] + B.dir[0] * pB, B.P[1] + B.dir[1] * pB])
+    } else W.push(X)
+  }
+  return unionRings([W]).filter(r => Math.abs(signedArea(r)) > 0.5)   // clean self-intersections
+}
 // Morphological opening (erode R then dilate R, round join): rounds CONVEX
 // corners sharper than R up to radius R, leaves gentler ones. Used to round the
 // asphalt-inner region's sharp miter corners at the authored curb radius — the
@@ -1999,7 +2046,56 @@ export function buildTileGround(ribbons, opts = {}) {
     // filletRing turns into an unbounded arc (θ→0 ⇒ inset→∞) and which poisons
     // the band ClipperOffsets downstream (erode returns empty → the whole
     // block paints as curb). No legitimate block fragment is < 0.5 m².
-    const blockRings = differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
+    // [D6a · POLYGON-FIRST §3 / SKELETON §5f] DEFAULT: iA = the per-edge parallel
+    // OFFSET polygon (offsetRingVariable) — chain ⊕ pavementHW, corners as
+    // offset-intersections — rounded at the authored radius by filletRing/vertR.
+    // NOT carved from the junction-swelled asphalt (that bows the curb where the
+    // windows pile in). Per-edge depth = the run covering that ring edge.
+    // opts.iaCarveLegacy = today's swelled carve, kept for A/B on Jacob's eye.
+    const edgeKey = (p, q) => `${Math.round(p[0] * 50)},${Math.round(p[1] * 50)}|${Math.round(q[0] * 50)},${Math.round(q[1] * 50)}`
+    const depthByEdge = new Map(), streetByEdge = new Map()
+    for (const run of runs) {
+      const dd = edgeDepth(runMeasure(run), run.side, cw, 'A')
+      const so = streetsOrig[run.streetIdx]
+      const sk = (so && (so.skelId || so.name)) || run.streetIdx
+      for (let i = 0; i < run.poly.length - 1; i++) {
+        const k1 = edgeKey(run.poly[i], run.poly[i + 1]), k2 = edgeKey(run.poly[i + 1], run.poly[i])
+        depthByEdge.set(k1, dd); depthByEdge.set(k2, dd)
+        streetByEdge.set(k1, sk); streetByEdge.set(k2, sk)
+      }
+    }
+    const nRing = tile.ring.length
+    const depthAt = (i) => depthByEdge.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing])) || 0
+    // A real corner = the two edges at this vertex belong to DIFFERENT streets.
+    // Same street both sides = a through-node (T far-side / dogleg) → run straight
+    // through, no corner (Jacob's T-intersection sensitivity; osm2streets doctrine).
+    const streetAtEdge = (i) => streetByEdge.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing]))
+    const cornerAt = (i) => { const a = streetAtEdge((i - 1 + nRing) % nRing), b = streetAtEdge(i); return a == null || b == null || a !== b }
+    // opts.iaOffset = the per-edge parallel-offset curb (D6a). It owns the "street
+    // simple" tiles (§5d); the "intersection variable" / degenerate tiles keep the
+    // legacy carve that already handles them: MEDIAN tiles (offsetting both inner
+    // edges collapses the thin gap), DEAD-END tiles (the round cap is a disk, not
+    // an edge offset), and tiny/sliver tiles (the offset of a sub-block fragment
+    // blows up past the tile). A post-check also rejects any offset that came out
+    // degenerate (vanished or larger than its tile). The d-tile is a large clean
+    // block → it takes the offset. Falling back to legacy is never a regression.
+    const legacyBlock = () => differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
+    const ringArea = Math.abs(signedArea(tile.ring))
+    let blockRings
+    if (opts.iaOffset !== false && !isMedianTile && ringArea > 1500) {
+      let off = offsetRingVariable(tile.ring, depthAt, cornerAt)
+      // Dead-end caps are per-EDGE, not per-tile: a block can have a cul-de-sac
+      // on one corner and the parallel offset on its other edges (e.g. the d-tile).
+      // Subtract the round-tip asphalt disk so the cap stays round, like legacy.
+      if (off.length && roundTips.length) {
+        const disks = roundTips.filter(t => t.hw > 1e-6).map(t => circlePoly(t.p[0], t.p[1], t.hw))
+        if (disks.length) off = differenceRings(off, disks).filter(r => Math.abs(signedArea(r)) > 0.5)
+      }
+      const offArea = off.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
+      blockRings = (off.length && offArea > 0.05 * ringArea && offArea <= 1.01 * ringArea) ? off : legacyBlock()
+    } else {
+      blockRings = legacyBlock()
+    }
     const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
     // Tag each achieved fillet with its corner key (the centerline NODE it
     // rounded + that node's two tile-edge legs) so the authoring handle can read

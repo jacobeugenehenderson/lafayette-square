@@ -145,6 +145,8 @@ export default function MeasurePanel() {
   const writeBlockEdgeCustoms = useCartographStore(s => s.writeBlockEdgeCustoms)
   const clearCustomsForChain = useCartographStore(s => s.clearBlockEdgeCustomsForChain)
   const setStreetDisabled  = useCartographStore(s => s.setStreetDisabled)
+  const revertSectionToDefault = useCartographStore(s => s.revertSectionToDefault)
+  const sectionOverrideCount = useCartographStore(s => s.sectionOverrideCount)
 
   if (selectedStreet === null) {
     return (
@@ -271,6 +273,19 @@ export default function MeasurePanel() {
           </button>
         </div>
       )}
+      {/* SECTION · Revert to Default — clears the ped overrides so the calculation
+          re-seeds (gleaned treelawn + ADA). Survey widths + corners untouched.
+          ⌃-click a ped handle reverts just that edge. */}
+      <div className="carto-actions carto-section-revert">
+        <button className="carto-btn-sm"
+          disabled={(sectionOverrideCount?.() || 0) === 0}
+          onClick={() => {
+            if (confirm('Revert ALL Section ped (treelawn/sidewalk depths + materials) to Default? The calculation re-seeds (gleaned treelawn + ADA). Survey widths + corners are kept.')) revertSectionToDefault()
+          }}
+          title="Clear every authored Section ped depth + material → the calculated default (gleaned treelawn + ADA). Survey widths + corners are kept.">
+          ↺ Revert to Default
+        </button>
+      </div>
     </div>
   )
 }

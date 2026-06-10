@@ -200,6 +200,9 @@ const DESIGN_FIELDS = [
   { key: 'alleyCap',     hydrate: (d) => ['square', 'rounded', 'round'].includes(d.alleyCap) ? d.alleyCap : 'square' },
   { key: 'labels',       hydrate: (d, get) => migrateLabels({ ...get().labels, ...(_isObj(d.labels) ? d.labels : {}) }) },
   { key: 'blockCustoms', hydrate: (d) => _isObj(d.blockCustoms) ? d.blockCustoms : {} },
+  // The blessed Survey "Default" (Set Default snapshots the curated state here;
+  // Revert to Default restores it). null until the operator blesses one.
+  { key: 'surveyDefault', hydrate: (d) => _isObj(d.surveyDefault) ? d.surveyDefault : null },
   { key: 'blockLandUse', hydrate: (d) => _isObj(d.blockLandUse) ? d.blockLandUse : {} },
   { key: 'materialColors',  hydrate: (d) => d.materialColors || {} },
   { key: 'materialPhysics', hydrate: (d) => d.materialPhysics || {} },
@@ -335,6 +338,10 @@ const useCartographStore = create((set, get) => ({
   // Editing the chain's global measure clears the chain's customs (globals
   // are truth; customs are local deviations).
   blockCustoms: {},
+  // The blessed Survey "Default" (deep copy of blockCustoms + corner maps +
+  // scale). Set by Set Default; Revert to Default restores it. Persisted via
+  // DESIGN_FIELDS so it survives reload. null until the operator blesses one.
+  surveyDefault: null,
   // Per-block land-use overrides. Keyed by stable centroid hash
   // (`${cx.toFixed(2)},${cy.toFixed(2)}` of the block's outer ring).
   // Empty by default → buildBlockGeometryV2 falls through to a weighted
@@ -665,6 +672,108 @@ const useCartographStore = create((set, get) => ({
     if (!changed) return
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
+  },
+  // ── REVERT (Survey/Section · Skeleton/Default) ────────────────────────────
+  // Authoring overrides live in blockCustoms (per-fe — Survey owns pavementHW +
+  // terminal; Section owns treelawn/sidewalk/materials) + the corner-radius maps
+  // (Survey). Every drag autosaves, so there is no commit step — these are the
+  // way back. Layers, matching the pipeline:
+  //   • SKELETON  = zero of YOUR edits → the frame as delivered (surveyed widths,
+  //     AASHTO radii). Survey only.
+  //   • DEFAULT   = the blessed state. Survey: surveyDefault (Set Default). Section:
+  //     the calculation re-seeds (gleaned treelawn + ADA) — clearing the override
+  //     IS reverting to default, no snapshot needed.
+  // Field-SCOPED so reverting Survey never wipes Section and vice-versa.
+  _SURVEY_FE_FIELDS: ['pavementHW', 'terminal'],
+  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials'],
+  // blockCustoms with `fields` stripped from every fe slot (empty slots pruned).
+  _blockCustomsStripped: (fields) => {
+    const cur = get().blockCustoms || {}
+    const next = {}
+    for (const skel of Object.keys(cur)) for (const side of Object.keys(cur[skel])) for (const seg of Object.keys(cur[skel][side])) {
+      const kept = { ...cur[skel][side][seg] }
+      for (const f of fields) delete kept[f]
+      if (Object.keys(kept).length) { (next[skel] ||= {})[side] ||= {}; next[skel][side][seg] = kept }
+    }
+    return next
+  },
+  // blockCustoms with `fields` restored from surveyDefault (live values of those
+  // fields dropped, the blessed default's re-applied; other fields untouched).
+  _blockCustomsFieldsFromDefault: (fields) => {
+    const next = get()._blockCustomsStripped(fields)
+    const base = get().surveyDefault?.blockCustoms || {}
+    for (const skel of Object.keys(base)) for (const side of Object.keys(base[skel])) for (const seg of Object.keys(base[skel][side])) {
+      const m = base[skel][side][seg], add = {}
+      for (const f of fields) if (m[f] !== undefined) add[f] = m[f]
+      if (!Object.keys(add).length) continue
+      ;(next[skel] ||= {})[side] ||= {}; next[skel][side][seg] = { ...(next[skel][side][seg] || {}), ...add }
+    }
+    return next
+  },
+  // Bless the current Survey state as the Default (persisted).
+  setSurveyDefault: () => {
+    const s = get()
+    set({ surveyDefault: {
+      blockCustoms: JSON.parse(JSON.stringify(s.blockCustoms || {})),
+      cornerRadiusOverrides: { ...(s.cornerRadiusOverrides || {}) },
+      cornerCornerRadiusOverrides: { ...(s.cornerCornerRadiusOverrides || {}) },
+      cornerRadiusScale: Number.isFinite(s.cornerRadiusScale) ? s.cornerRadiusScale : 1,
+    } })
+    get()._saveDesignDebounced()
+  },
+  hasSurveyDefault: () => !!get().surveyDefault,
+  // SURVEY · Revert to Skeleton — clear every Survey edit → the surveyed/AASHTO frame.
+  revertSurveyToSkeleton: () => {
+    set({ blockCustoms: get()._blockCustomsStripped(get()._SURVEY_FE_FIELDS), cornerRadiusOverrides: {}, cornerCornerRadiusOverrides: {}, cornerRadiusScale: 1 })
+    get()._saveDesignDebounced()
+  },
+  // SURVEY · Revert to Default — restore the blessed surveyDefault (Survey fields only).
+  revertSurveyToDefault: () => {
+    const b = get().surveyDefault; if (!b) return
+    set({ blockCustoms: get()._blockCustomsFieldsFromDefault(get()._SURVEY_FE_FIELDS), cornerRadiusOverrides: { ...b.cornerRadiusOverrides }, cornerCornerRadiusOverrides: { ...b.cornerCornerRadiusOverrides }, cornerRadiusScale: b.cornerRadiusScale })
+    get()._saveDesignDebounced()
+  },
+  // SECTION · Revert to Default — clear the ped overrides → the calculation re-seeds.
+  revertSectionToDefault: () => {
+    set({ blockCustoms: get()._blockCustomsStripped(get()._SECTION_FE_FIELDS) })
+    get()._saveDesignDebounced()
+  },
+  // ── per-element revert to Default (⌃-click a handle) ──────────────────────
+  // One fe's Survey fields → surveyDefault's value (or cleared → surveyed if the
+  // default has none for this fe). Section variant just clears → recalc.
+  _revertFeFields: (fe, fields, fromDefault) => {
+    const k = feCustomKey(fe); if (!k) return
+    const [skel, side, seg] = k
+    const def = fromDefault ? (get().surveyDefault?.blockCustoms?.[skel]?.[side]?.[seg] || null) : null
+    const cur = get().blockCustoms || {}
+    const slot = { ...(cur[skel]?.[side]?.[seg] || {}) }
+    for (const f of fields) { delete slot[f]; if (def && def[f] !== undefined) slot[f] = def[f] }
+    const next = { ...cur }
+    next[skel] = { ...(next[skel] || {}) }; next[skel][side] = { ...(next[skel][side] || {}) }
+    if (Object.keys(slot).length) next[skel][side][seg] = slot
+    else { delete next[skel][side][seg]; if (!Object.keys(next[skel][side]).length) delete next[skel][side]; if (!Object.keys(next[skel]).length) delete next[skel] }
+    set({ blockCustoms: next }); get()._saveDesignDebounced()
+  },
+  revertFeSurveyToDefault: (fe) => get()._revertFeFields(fe, get()._SURVEY_FE_FIELDS, true),
+  revertFeSectionToDefault: (fe) => get()._revertFeFields(fe, get()._SECTION_FE_FIELDS, false),
+  // Corner → surveyDefault's radius (or cleared → AASHTO). Reuses the setters.
+  revertIxToDefault: (point) => { const d = get().surveyDefault?.cornerRadiusOverrides?.[get().ixPointKey(point)]; get().setIxCornerRadius(point, d != null ? d : null) },
+  revertCornerToDefault: (point, legKeyA, legKeyB) => { const d = get().surveyDefault?.cornerCornerRadiusOverrides?.[get().cornerKey(point, legKeyA, legKeyB)]; get().setCornerCornerRadius(point, legKeyA, legKeyB, d != null ? d : null) },
+  // Counts for button enable/label (how much there is to revert).
+  surveyOverrideCount: () => {
+    const bc = get().blockCustoms || {}; let n = 0
+    for (const skel of Object.keys(bc)) for (const side of Object.keys(bc[skel])) for (const seg of Object.keys(bc[skel][side])) {
+      const m = bc[skel][side][seg]; if (get()._SURVEY_FE_FIELDS.some(f => m[f] !== undefined)) n++
+    }
+    n += Object.keys(get().cornerRadiusOverrides || {}).length + Object.keys(get().cornerCornerRadiusOverrides || {}).length
+    return n
+  },
+  sectionOverrideCount: () => {
+    const bc = get().blockCustoms || {}; let n = 0
+    for (const skel of Object.keys(bc)) for (const side of Object.keys(bc[skel])) for (const seg of Object.keys(bc[skel][side])) {
+      const m = bc[skel][side][seg]; if (get()._SECTION_FE_FIELDS.some(f => m[f] !== undefined)) n++
+    }
+    return n
   },
   // Reset the toy's user-authored SESSION layer back to the fixture baseline
   // (project_reset_toy_button_queued; Stadia's (a1) target). The toy bake reads
