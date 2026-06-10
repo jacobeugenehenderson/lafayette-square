@@ -820,7 +820,7 @@ export default function CartographApp() {
   if (!inDesigner) cursor = 'default'
 
   return (
-    <div className="cartograph"
+    <div className={`cartograph${inDesigner ? ' carto-flat' : ''}`}
       style={!inDesigner ? { background: '#000' }
         : bgColor !== '#1a1a18' ? { background: bgColor } : undefined}>
       <div className="carto-canvas-wrap" style={{ cursor }}>

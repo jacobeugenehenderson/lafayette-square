@@ -36,7 +36,7 @@ So the Wall has **two inseparable halves**, and both must hold:
 
 The frozen artifact: **`shapeTiles[]` / `_shapeArtifact`** → `public/baked/<id>/shape.json`. Per tile: block silhouette (`ring`), curb line (`iA`), per-vertex radius (`vertR`), the run's *frozen* measure, dead-end tip typology — everything Section needs, nothing chain-shaped. Field list + how it's built: **`SURVEY.md §5`/§3**.
 
-> ⚠️ **Do not over-specify this schema.** It is **still settling** (Survey isn't at "0" yet — `SECTION-CENSUS.md`). The contract is "whatever Survey freezes, Section loads and renders." Pin the *mechanism*, not the field set, until Survey's SHAPE is correct.
+> ⚠️ **Do not over-specify this schema.** It is **still settling** (Survey isn't at "0" yet — `SURVEY.md`). The contract is "whatever Survey freezes, Section loads and renders." Pin the *mechanism*, not the field set, until Survey's SHAPE is correct.
 
 ---
 
@@ -79,7 +79,7 @@ Today it sits at `sectionPass` — *after* Survey has re-derived the polygon fro
 ## Cross-references
 - `SURVEY.md §5` (what freezes + the wall enforcement) · `§5.1` (polygon-first) · `§4.1` (activated-block perf).
 - `PREBAKE.md §5` — the polygon-ization that makes the frozen data correct (the cure).
-- `SECTION.md` — the consumer side (the FILL tool that opens the freeze); `SECTION-CENSUS.md` — its forensic state + the settling shape contract (do-not-over-specify).
+- `SECTION.md` — the consumer side (the FILL tool that opens the freeze; built — `§7` for the open tail). The pre-build forensic census is archived: `_archive/SECTION-CENSUS-2026-06-03.md`.
 - `SLAB-CONTRACT.md` — wall #2 (the analogous freeze, cartograph→LS).
 - `src/lib/tileGround.js:487` (`sectionPass`, the wall) · `:492` (the Phase-D load stub) · `:1108` (`_shapeArtifact`).
 - Memory: `[[project_two_bakes_two_walls]]`, `[[project_skeleton_is_the_first_bake]]`.

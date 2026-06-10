@@ -10,7 +10,7 @@ This is the operational front door for working on this project: who coordinates,
 
 ### The shape — a matrix: (topic) × (register) × (kind)
 
-Every **topic** (a pipeline stage — `intake · skeleton · prebake · survey · WALL · section · bake` — or a system like ribbons/looks/neon) is rendered in **three kinds** (Reference / State / Diary, §2), and Reference is split by **three readers**:
+Every **topic** (a pipeline stage — `intake · skeleton · prebake · survey · WALL · section · bake · stage` — or a system like ribbons/looks/neon) is rendered in **three kinds** (Reference / State / Diary, §2), and Reference is split by **three readers**:
 
 | Register (audience) | Voice | Cartograph home |
 |---|---|---|
@@ -31,8 +31,9 @@ The **same germane fact** appears in each register **in that register's voice** 
 | **prebake** | `ribbons.json` | **`PREBAKE.md`** · `PIPELINE §prebake/P3` | BACKLOG · `DOC-CODE-COHERENCE` | NOTES |
 | **survey** | `overlay.json` · `design.json` | **`SURVEY.md`** · `PIPELINE §survey` · `ARCHITECTURE §2.1` · `FEATURES §Toolbar` · `OPERATIONS` | BACKLOG | NOTES |
 | **⟦WALL⟧** | `shape.json` | **`WALL.md`** · `PIPELINE §Wall` | BACKLOG | NOTES |
-| **section** | *(ped FILL → ground bake)* | **`SECTION.md`** (deep) · `RIBBONS §3.9a` · `SECTION-CENSUS.md` (state) | BACKLOG | NOTES |
-| **bake → 3D** | `public/baked/<id>/*` | `README` · `ARCHITECTURE` · `FEATURES` | BACKLOG | NOTES |
+| **section** | *(ped FILL → ground bake)* | **`SECTION.md`** (deep, the SSOT) · `RIBBONS §3.9a` | BACKLOG | NOTES |
+| **bake** | `public/baked/<id>/*` | **`BAKE.md`** (the chain) · `SLAB-CONTRACT.md` (format) · `ARCHITECTURE §3/§7` | BACKLOG | NOTES |
+| **stage** | `scene.json` (the look) | **`STAGE.md`** (the Look tool) · `SLAB-CONTRACT §4` · `FEATURES §Stage` | BACKLOG | NOTES |
 
 ### The two operations on the library
 

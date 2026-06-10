@@ -83,9 +83,7 @@
   },
   "cornerRadiusScale": 1,
   "cornerRadiusOverrides": {},
-  "cornerCornerRadiusOverrides": {
-    "229.000,-158.900|mississippi-avenue:f|park-avenue-1:f": 19.3228102729572
-  },
+  "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.381,
   "alleyCap": "square",
   "labels": {
@@ -110,202 +108,28 @@
     "bgAlpha": 1
   },
   "blockCustoms": {
-    "park-avenue-1": {
+    "park-avenue-0": {
       "right": {
-        "0": {
-          "terminal": "sidewalk"
-        },
-        "2": {
-          "terminal": "sidewalk"
-        },
-        "3": {
-          "terminal": "sidewalk"
-        },
         "4": {
-          "terminal": "sidewalk"
-        },
-        "5": {
-          "terminal": "sidewalk"
-        },
-        "6": {
-          "terminal": "sidewalk"
-        }
-      },
-      "left": {
-        "0": {
-          "terminal": "sidewalk"
-        },
-        "1": {
-          "terminal": "sidewalk"
-        },
-        "2": {
-          "terminal": "sidewalk"
-        },
-        "3": {
-          "terminal": "sidewalk"
-        },
-        "4": {
-          "terminal": "sidewalk"
-        },
-        "5": {
+          "pavementHW": 5.969279086936281,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       }
     },
-    "lafayette-avenue-3": {
-      "left": {
-        "0": {
-          "terminal": "sidewalk"
-        },
-        "2": {
-          "terminal": "sidewalk"
-        }
-      }
-    },
-    "missouri-avenue-2": {
-      "left": {
-        "0": {
-          "terminal": "sidewalk"
-        }
-      },
+    "mississippi-alley": {
       "right": {
-        "2": {
-          "terminal": "sidewalk"
-        }
-      }
-    },
-    "benton-place-0": {
-      "right": {
-        "0": {
-          "pavementHW": 4.706988143943851,
-          "terminal": "sidewalk"
-        }
-      },
-      "left": {
-        "0": {
-          "pavementHW": 4.706988143943851,
-          "terminal": "sidewalk"
-        }
-      }
-    },
-    "park-avenue-3": {
-      "right": {
-        "0": {
-          "pavementHW": 4.243915153033243,
-          "terminal": "sidewalk"
-        }
-      }
-    },
-    "dolman-street-1": {
-      "left": {
         "1": {
-          "terminal": "sidewalk"
-        }
-      }
-    },
-    "mississippi-avenue": {
-      "left": {
-        "0": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "1": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "2": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "3": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "4": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "5": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "6": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "7": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "8": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "10": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "12": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "14": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        },
-        "15": {
-          "pavementHW": 7.524836729760599,
-          "terminal": "sidewalk"
-        }
-      },
-      "right": {
-        "0": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "1": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "3": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "4": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "5": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "6": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "8": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "10": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "12": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "14": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
-        },
-        "15": {
-          "pavementHW": 11.876374210124538,
-          "terminal": "sidewalk"
+          "pavementHW": 1.7064491230429406,
+          "treelawn": 0.75,
+          "sidewalk": 0.75,
+          "terminal": "none"
         }
       }
     }
   },
+  "surveyDefault": null,
   "blockLandUse": {},
   "materialColors": {},
   "materialPhysics": {},

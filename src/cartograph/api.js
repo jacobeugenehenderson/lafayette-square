@@ -92,6 +92,21 @@ export async function saveLookDesign(lookId, design) {
   return res.json()
 }
 
+// Autosave the frozen SHAPE artifact — the Section-enabling freeze (the
+// per-tile curb/corner silhouette). Written on Survey-exit (WALL.md §4
+// "freeze at Survey-exit"), decoupled from the heavy slab bake. Section
+// opens it via shape.json. `artifact` = the `_shapeArtifact` from the live
+// Survey build (WYSIWYG: freeze exactly what Survey rendered).
+export async function saveShapeFreeze(artifact, scene) {
+  const res = await fetch(sceneUrl(scene, 'shape'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(artifact),
+  })
+  if (!res.ok) throw new Error(`freeze shape failed: ${res.status}`)
+  return res.json()
+}
+
 // Re-bake a specific Look's bundle (ground.json + bin + lightmap +
 // buildings + lamps + scene) from its design.json. Pass `force: true`
 // to bypass the server's dirty-check and rebuild every step (the

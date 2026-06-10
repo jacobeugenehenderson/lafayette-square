@@ -599,7 +599,7 @@ The dispatcher at `handleCtrlOrRight(e)` (lines 752-773) first tests for a handl
 
 Default materials per leg: `{outer: 'LU', inner: 'SW'}` — preserves the V1 visual (cream sidewalk on the property-side, treelawn-blending-with-parcel on the curb-side). Swapped: `{outer: 'SW', inner: 'LU'}` — cream sidewalk on the curb-side, parcel-blending on the property-side.
 
-Corners are NOT operator-overridable in V1.5 (AASHTO doctrine: corners are structural, both sub-fields = SW always regardless of leg material assignment). V1.6+ may add per-corner overrides.
+Corners are NOT operator-overridable in V1.5 (AASHTO doctrine: corners are structural, both sub-fields = SW always regardless of leg material assignment). V1.6+ may add per-corner overrides. **(Target, not yet built — `SECTION.md §6`: the corner material refinement is SW↔SW → concrete→LU; a bent-polygon attempt was reverted 2026-06-10.)**
 
 Future affordance for >2 materials: same click target; opens a small material picker at the click location. V1.5 ships menu-free with the binary LU↔SW toggle.
 

@@ -561,13 +561,17 @@ const gleanTreelawn = (measure, side) =>
 // overlay) read the SAME resolution — if they read different depths they
 // diverge, which was the root of both handle symptoms (don't match + don't
 // respond). Pure data-in/data-out: no chain handle, the wall holds.
-// `hasTL` = treelawn presence at the RESOLVED depth — it drives the §3.1 strip
-// ordering (Y reads TL→SW→LU; N reads SW→TL→LU, the walk hugging the curb).
+// ⭐ MONO-WIDTH, STRIPS SWAP — NOT COLLAPSE (Jacob 2026-06-10). The ribbon is two
+// strips of EQUAL width; the gleaned treelawn Y/N is a MATERIAL decision (which
+// strip is grass vs walk), NOT a width. A sidewalk-only edge is "sidewalk then
+// LU/lawn" — the strips swap materials, they never collapse one to zero. So BOTH
+// widths default to the same standard (STD_TREELAWN == ADA_SIDEWALK), and the
+// ribbon total is uniform whether the edge is Y or N. `hasTL` carries the
+// surveyed Y/N to drive the strip ORDERING / default materials downstream.
 export function resolvePedDepths(baseMeasure, side, custom = null) {
-  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn)
-    : (gleanTreelawn(baseMeasure, side) ? STD_TREELAWN : 0)
+  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn) : STD_TREELAWN
   const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : ADA_SIDEWALK
-  return { tl, sw, hasTL: tl > 1e-6 }
+  return { tl, sw, hasTL: gleanTreelawn(baseMeasure, side) }
 }
 
 // Group a tile's cyclic edges into maximal RUNS of the same (streetIdx, side).

@@ -16,7 +16,7 @@ The architecture is the deliverable. Lafayette Square is the v1 instance. Other 
 
 ## The ribbon doctrine — see `RIBBONS.md`
 
-> ⚠️ **2026-06-01 — the construction is being re-poured figure-ground → TILES** (the map is tiles = faces of the centerline graph; strips painted inward; the corner is the inward-offset). LS runs tiles now. Figure-ground-era specifics in this doc (the corner-pad/treelawn-matches-parcel/V2 decisions below) are going stale; live State = [`HANDOFF-tile-feature-ledger.md`](../HANDOFF-tile-feature-ledger.md). This doc's tile rewrite + the engineer-internals→ARCHITECTURE / operator-knobs→OPERATIONS migration land at T4.
+> ⚠️ **2026-06-01 (updated 2026-06-10) — the construction is TILES** (the map is tiles = faces of the centerline graph; strips painted inward; the corner is the inward-offset). LS runs tiles. The pedestrian cross-section (treelawn/sidewalk/corner fills/caps) is now **built** as the Section FILL off the frozen curb — **`SECTION.md` is its live SSOT** (and `SURVEY.md` for the SHAPE). The **figure-ground-era mechanism passages below** (`cornersAtIx` corner-Q, the "V2 curb" boundary-stroke, `innerEdgeMeasure`-on-`buildBlockGeometryV2`, the per-LU-probe lookup) describe the **superseded** path — kept for the trail, excised at **T4** (the figure-ground deletion). The treelawn-matches-the-abutting-LU *behaviour* (below) is still true; only its figure-ground *plumbing* is superseded. This doc's tile rewrite + the engineer-internals→ARCHITECTURE / operator-knobs→OPERATIONS migration land at T4.
 
 The ribbon + corner + curb + intersection + block geometry doctrine lives in [`RIBBONS.md`](RIBBONS.md) — the living doc that evolves every session. Cartograph quintet: FEATURES / ARCHITECTURE / BACKLOG / NOTES / **RIBBONS**.
 

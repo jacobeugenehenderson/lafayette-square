@@ -69,13 +69,13 @@ Author a place: center+radius circle → fetch OSM → freeze the protoslab cont
 - **What / job:** author the **hardscape SHAPE** off the prebaked frame — asphalt/curb silhouette, **smoothing, caps, anchor, road metadata, corner radius**, hero-pick. Strokes chains outward; its output freezes at the WALL (chains die).
 - **⛔ STATUS / scope (Jacob, 2026-06-04):** **Survey = SHAPE ONLY. There is NO notion of ped depth in Survey** (treelawn/sidewalk = Section). The handles here are SHAPE controls (asphalt-edge / curb / corner-R), *not* ped. If a ped control leaks in, that's tool-conflation to remove. STUCK: the corner-SHAPE + curb authoring isn't fully consolidated into the tab yet; the authoring channel is mid-migration onto the tile construction.
 - **Doctrine:** **SHAPE = Survey · FILL = Section** (ped ribbons + ADA, stroked inward off the *frozen* curb). Renders **live == bake** from `buildTileGround` (WYSIWYG). 3-S taxonomy is canon in `ARCHITECTURE.md §2.1`.
-- **Refs:** `ARCHITECTURE.md §2.1` · `FEATURES.md §"Toolbar = views, Panel = tools"` · `SECTION-CENSUS.md` (the SHAPE/FILL split) · P2 below · `[[project_two_bakes_two_walls]]`.
+- **Refs:** `ARCHITECTURE.md §2.1` · `FEATURES.md §"Toolbar = views, Panel = tools"` · `SECTION.md §7.1` (the SHAPE/FILL split) · P2 below · `[[project_two_bakes_two_walls]]`.
 
 ### ⟦WALL⟧ — the freeze  (after Survey)
 The freeze point: by the time the operator leaves Survey, hold an extremely-simplified, polygon-ready frozen dataset and **chains die here** — downstream (Section, bake) is a pure consumer; *no geometry derived from chains past the Wall.* It *should* sit at P2; today chains stay load-bearing through P4–P8 = the standing architectural debt. First diagnostic on any head-scratcher: **"is this chains again?"** — and the fix is always *move the Wall earlier*, never patch chains deeper. **Deep-dive: §Wall (immediately below).**
 
 ### section · bake · stage *(downstream — brief)*
-- **section** — the ped **FILL** off the frozen Survey shape (treelawn/sidewalk, ribbon corner fills, ADA). ~70% built (`sectionPass` exists + is chain-incapable by closure). `SECTION-CENSUS.md`.
+- **section** — the ped **FILL** off the frozen Survey shape (treelawn/sidewalk, ribbon corner fills, ADA). **Built** (`sectionPass`, chain-incapable by closure; per-edge FILL + caps + Revert UI landed); the FILL tail (perf/caps/thorns) + Measure→Section rename remain. `SECTION.md`.
 - **bake** — freezes the **slab** (ground/buildings/lamps/scene → `public/baked/<id>/`) = wall #2.
 - **stage / preview / production** — the **LOOK** + the slab players. `FEATURES.md`.
 

@@ -4,6 +4,7 @@ import {
   fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
   fetchLooks, fetchLookDesign, saveLookDesign, bakeLook,
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
+  saveShapeFreeze,
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
 import toyRibbonsData from '../../data/toy/toy-ribbons.json'
@@ -1500,6 +1501,23 @@ const useCartographStore = create((set, get) => ({
   bakeLastMs: null,
   bakeError: null,
   markBakeStale: () => set({ bakeStale: true }),
+  // ── The SHAPE freeze (the Data Wall, autosaved on Survey-exit) ────────────
+  // `shapeFrozenMs` bumps when the frozen `shape.json` is rewritten, so the
+  // Section surface re-opens the fresh freeze (cache-bust). This is the LIGHT
+  // freeze (the per-tile curb/corner silhouette only) — decoupled from the
+  // heavy slab bake, so leaving Survey re-freezes the eye-gated shape WITHOUT
+  // the operator ever running a bake (WALL.md §4; "autosave on exit").
+  shapeFrozenMs: null,
+  freezeShape: async (artifact) => {
+    if (!artifact || !artifact.length) return
+    const scene = get().scene
+    try {
+      await saveShapeFreeze(artifact, scene)
+      set({ shapeFrozenMs: Date.now() })
+    } catch (err) {
+      console.warn('[freeze] shape freeze failed:', err)
+    }
+  },
   runBake: async ({ force = false, navigateTo = null } = {}) => {
     if (get().bakeRunning) return
     set({ bakeRunning: true, bakeError: null })

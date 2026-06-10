@@ -35,6 +35,10 @@
   --carto-stage:           #75b;
   --carto-stage-border:    #a7d;
 
+  /* Flat mode (2D Designer) — opaque card surfaces; glass is Stage-only */
+  --carto-flat-surface:    #1b1b19;
+  --carto-flat-border:     #3a3a36;
+
   /* Shared values */
   --carto-accent-color:    #666;
   --carto-radius:          4px;
@@ -552,6 +556,37 @@
 .carto-btn-sm.danger { color: #c66; }
 .carto-btn-sm.accent { color: #88f; }
 
+/* SECTION · Revert to Default — the way back from autosaved ped edits, so it
+   reads as the panel's primary footer action, not a ghost link. On-brand with
+   the Measure accent (teal/cyan); full-width; legible even when disabled (the
+   default .carto-btn-sm goes to 0.4 opacity → invisible on the green canvas). */
+.carto-section-revert {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--carto-border-subtle);
+}
+.carto-section-revert .carto-btn-sm {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 7px 10px;
+  color: var(--carto-measure-border);
+  background: rgba(0, 136, 136, 0.16);
+  border-color: var(--carto-measure);
+}
+.carto-section-revert .carto-btn-sm:hover:not(:disabled) {
+  background: rgba(0, 136, 136, 0.28);
+  border-color: var(--carto-measure-border);
+  color: #fff;
+}
+.carto-section-revert .carto-btn-sm:disabled {
+  opacity: 0.6;
+  color: var(--carto-text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--carto-border);
+}
+
 .carto-btn-reset {
   font-size: 8px;
   color: var(--carto-text-ghost);
@@ -591,6 +626,24 @@
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- Flat mode — the 2D Designer (Survey · Section · Marker) ----------
+   The 2D tools drop the glass: opaque, crisp-bordered cards on a solid canvas.
+   Glass is reserved for the 3D Stage, so crossing into Stage reads as a
+   deliberate shift in depth/material (Jacob, 2026-06-10 — "these are flatter
+   interfaces; that makes the 2D→3D transition more sensationally different").
+   Scoped to `.carto-flat` (set on the root only inDesigner) so the SHARED
+   toolbar/status glass flattens here but stays glass in Stage. Stage's own
+   panel uses `.glass-panel`, untouched. */
+.cartograph.carto-flat .carto-glass,
+.cartograph.carto-flat .carto-section,
+.cartograph.carto-flat .carto-panel h1 {
+  background: var(--carto-flat-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--carto-flat-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 /* ---------- Toolbar ----------

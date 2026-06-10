@@ -614,24 +614,28 @@ export default function BlockGeometryV2Debug({
   // the §5(b) "correct data" half stays gated on the prebake cure; this view
   // shows the shape exactly as frozen, defects included.
   const bakeLastMs = useCartographStore(s => s.bakeLastMs)
+  const shapeFrozenMs = useCartographStore(s => s.shapeFrozenMs)
+  const freezeShape = useCartographStore(s => s.freezeShape)
   const [frozenShape, setFrozenShape] = useState(null)
   const frozenKeyRef = useRef(null)
   useEffect(() => {
     if (!measureActive || !scene) return
-    // One fetch per (scene, bake): a fresh Survey bake (bakeLastMs bumps)
-    // re-opens the new freeze; otherwise the loaded artifact is kept.
-    const key = `${scene}|${bakeLastMs ?? 0}`
+    // One fetch per (scene, freeze): a fresh slab bake (bakeLastMs) OR the
+    // light Survey-exit freeze (shapeFrozenMs) re-opens the new shape; take
+    // whichever is newer as the cache-bust + key.
+    const freezeTag = Math.max(bakeLastMs || 0, shapeFrozenMs || 0)
+    const key = `${scene}|${freezeTag}`
     if (frozenKeyRef.current === key) return
     frozenKeyRef.current = key
     let dead = false, done = false
-    fetch(`${import.meta.env.BASE_URL}baked/${scene}/shape.json${bakeLastMs ? `?t=${bakeLastMs}` : ''}`)
+    fetch(`${import.meta.env.BASE_URL}baked/${scene}/shape.json${freezeTag ? `?t=${freezeTag}` : ''}`)
       .then(r => (r.ok ? r.json() : null))
       .then(d => { done = true; if (!dead) setFrozenShape(Array.isArray(d) && d.length ? d : null) })
       .catch(e => { done = true; console.warn('[BlockGeometryV2Debug] no frozen shape artifact (Section falls back to live build):', e); if (!dead) setFrozenShape(null) })
     // Abort mid-flight (tool flipped / re-mount): clear the key so the next
     // activation refetches instead of silently falling back to the live build.
     return () => { dead = true; if (!done && frozenKeyRef.current === key) frozenKeyRef.current = null }
-  }, [measureActive, scene, bakeLastMs])
+  }, [measureActive, scene, bakeLastMs, shapeFrozenMs])
   const sectionFrozen = measureActive && !!frozenShape
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
@@ -666,7 +670,7 @@ export default function BlockGeometryV2Debug({
     // the live build remains as the visible fallback.)
     if (sectionGeos) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, emitArtifact: true }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -683,8 +687,29 @@ export default function BlockGeometryV2Debug({
       blockRings: tg.block,   // raw iA rings — handle anchoring (one geometry truth)
       cornerFillets: tg.cornerFillets || {},
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
+      _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
     }
   }, [isTileScene, liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
+
+  // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
+  // While in Survey, keep the latest live `_shapeArtifact` (exactly what the
+  // operator sees). When they LEAVE Survey — the deliberate "this shape is done,
+  // now I'll do the FILL" moment, their eye just on it (WALL.md §5b) — persist it
+  // so Section opens the current, eye-gated curb. No manual bake, no per-edit
+  // churn: a discrete freeze at the boundary keeps Section's substrate stable
+  // ("autosave on exit"). Going to Stage re-freezes via the full bake instead.
+  const latestShapeArtifactRef = useRef(null)
+  useEffect(() => {
+    const art = tileGeos?._shapeArtifact
+    if (surveyActive && art && art.length) latestShapeArtifactRef.current = art
+  }, [surveyActive, tileGeos])
+  const wasSurveyRef = useRef(surveyActive)
+  useEffect(() => {
+    if (wasSurveyRef.current && !surveyActive && latestShapeArtifactRef.current) {
+      freezeShape(latestShapeArtifactRef.current)
+    }
+    wasSurveyRef.current = surveyActive
+  }, [surveyActive, freezeShape])
 
   // Publish the achieved per-corner fillets so CornerEditHandles draws the REAL
   // curb arc (one corner truth — the handle reads geometry, never re-derives).

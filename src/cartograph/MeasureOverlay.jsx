@@ -2,7 +2,7 @@ import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
-import { sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
+import { CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
@@ -144,23 +144,27 @@ function midAndPerp(pts) {
   return { cx, cz, nx: -dz / len, nz: dx / len, segI }
 }
 
-// Boundaries on one side as draggable handles. Measure (→ Section) authors the
-// PED profile only — treelawn + sidewalk. The asphalt-edge handle (pavementHW)
-// moved to Survey (the 3-handle stack split across the two tools); pavementHW is
-// kept as a read-only REFERENCE here — it still defines where the asphalt ends,
-// so the ped handles position off it (curbEnd = pavementHW + cw) — but it is no
-// longer a draggable handle in Measure.
+// The two ped boundaries on one side, as draggable handles — ALWAYS two (the
+// divider + the ribbon outer), mirroring the FILL's two-strips-always model
+// (SECTION.md §3.1/§8: "ribbon monowidth, strips variable"). Read off the SAME
+// per-edge depths the FILL strokes — `side.treelawn/.sidewalk` already carry
+// the resolvePedDepths resolution merged upstream — NOT the old figure-ground
+// stripe gating, which dropped the treelawn handle whenever treelawn==0 and so
+// left every treelawn-N edge with a single handle (the "only one handle" bug).
+// `r` is absolute from centerline (curbEnd = pavementHW + cw), matching
+// applyKindToMeasure's drag math. pavementHW (the asphalt edge) is Survey's,
+// kept read-only as the reference the ped boundaries position off.
 function sideBoundaries(side) {
-  const stripes = sideToStripes(side)
-  if (!stripes.length) return []
-  const out = []
-  const tl = stripes.find(s => s.material === 'treelawn')
-  if (tl) out.push({ r: tl.outerR, kind: 'treelawnOuter' })
-  const last = stripes[stripes.length - 1]
-  if (last.material !== 'asphalt' && last.material !== 'curb') {
-    out.push({ r: last.outerR, kind: 'propertyLine' })
-  }
-  return out
+  if (!side || !(side.pavementHW > 0)) return []
+  const tl = Math.max(0, side.treelawn || 0)
+  const sw = Math.max(0, side.sidewalk || 0)
+  if (tl <= 0 && sw <= 0) return []   // median / zero-ped side → no ped handles
+  const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
+  const curbEnd = Math.max(0, side.pavementHW) + cw
+  return [
+    { r: curbEnd + tl,      kind: 'treelawnOuter' },   // the divider (treelawn depth)
+    { r: curbEnd + tl + sw, kind: 'propertyLine' },     // the ribbon outer (sidewalk depth)
+  ]
 }
 
 // Cast the side-perpendicular ray from the centreline click outward to the frozen

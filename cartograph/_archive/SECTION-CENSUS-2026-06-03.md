@@ -1,3 +1,7 @@
+> 📦 **ARCHIVED 2026-06-10.** A pre-build forensic census (Stratum, 2026-06-03) that proved Section was a *wiring* job, not a from-scratch build — and set the build direction. **Section is now built** (`SECTION.md` v0.3 is the live SSOT). Kept for the forensic trail; do not read it as current state — its D1 (per-fe dropped), §3.3 "dispatch target," and most of the §6 gap list are **resolved in code**. The two enduring pieces — the still-open FILL tail (perf/D6d, cap-wrap G8, thorns G12, delete figure-ground T4) and the SHAPE/FILL defect-attribution frame — are folded into `SECTION.md §7`.
+
+---
+
 # SECTION-CENSUS — the Measure→Section tool, forensically mapped
 
 **A State/forensic doc** (the `RENDER-PATH-CENSUS.md` precedent). Read-only census of the cartograph **Section** tool (the FILL tool; today's "Measure" surface) **before** it gets built/consolidated. Measures the tool-as-it-exists against the 3-S doctrine target: **Survey = SHAPE · Section = FILL · Stage = LOOK** (`ARCHITECTURE.md §2.1`).

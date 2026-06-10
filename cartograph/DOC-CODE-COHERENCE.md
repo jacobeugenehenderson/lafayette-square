@@ -2,7 +2,7 @@
 
 **State doc.** Tracks where the **docs and the code disagree** — so the two can be driven back into sync. The campaign rule (Jacob, 2026-06-05): **if a truth lives in only ONE place, that's a smell.** Code must reflect the docs; the docs must reflect the code.
 
-> Sibling to `RENDER-PATH-CENSUS.md` / `SECTION-CENSUS.md` — the same census discipline, aimed at divergence. The deep "why": `[[project_the_palimpsest_code_path_multiplicity]]` (the code-side palimpsest). Method memory: `[[feedback_docs_effluvium_buried_the_answer]]`.
+> Sibling to `RENDER-PATH-CENSUS.md` / `_archive/SECTION-CENSUS-2026-06-03.md` (archived — Section is built) — the same census discipline, aimed at divergence. The deep "why": `[[project_the_palimpsest_code_path_multiplicity]]` (the code-side palimpsest). Method memory: `[[feedback_docs_effluvium_buried_the_answer]]`.
 
 ---
 
@@ -41,7 +41,7 @@
 |---|---|---|---|
 | D1 | Body describes dead figure-ground as the primary construction | `RIBBONS.md` §1 / §3.1-3.8 / §6 / §7 | 🔎 |
 | D2 | prong-4 "skeleton-consolidation / `osm2streets`" red herring for the false corner | `BACKLOG.md` ✅ (reshaped 2026-06-05) · `PIPELINE.md §Wall` 🔎 | 🔎 partial |
-| D3 | figure-ground-as-live passages (`cornersAtIx` / "V2 curb" / treelawn-LU) | `FEATURES.md` | 🔎 |
+| D3 | figure-ground-as-live passages (`cornersAtIx` / "V2 curb" / treelawn-LU) | `FEATURES.md` | 📝 MARKED 2026-06-10 — the §17 banner now names them **superseded** (Section is built; SSOT = `SECTION.md`); prose excision rides **T4** (the figure-ground deletion). The treelawn-matches-abutting-LU *behaviour* is kept (still true); only its figure-ground *plumbing* is superseded. |
 | D4 | `SURVEY.md` cross-ref still lists the killed `HANDOFF-divided-false-corner.md` as open work | `SURVEY.md` §Cross-references | ✅ fixed 2026-06-05 |
 | D5 | `SKELETON.md` §2/§3 drift (junctions "degree ≥3" / divided-id "-0/-1" / `spineAt*` missing from schema / unnamed "no seed" / `continuesAs` missing / write "via writeIfChanged") | `SKELETON.md` §2, §3 | ✅ conformed 2026-06-05 (the skeleton audit) |
 | D6 | `SURVEY.md` §3 **block/asphalt INVERTED** ("Block = tile − iA" — that's asphalt; block = iA), contradicting §1; + §3 overstated the capacity guard (it's full-collapse only) + line-ref drift | `SURVEY.md` §3 | ✅ conformed 2026-06-05 (the survey audit) |
@@ -50,6 +50,19 @@
 | D9 | **Divided-carriageway CHAIN POSITION contradiction** — `FEATURES §371` said the chain stays at the carriageway **center**; `PREBAKE-PLAN §2` + D1 assumed the **inner edge**. | `FEATURES §371` | ✅ **RESOLVED 2026-06-05 (Alidade, measured vs the operator's traces): chains sit at the INNER edge** (`chainGap` = median width; a center reading → negative medians; spike matches traces <1m). `FEATURES §371` was the corpse-lie → **corrected**; D1's inner-edge emit was right. (The "emits from the left of the lane" symptom is a *different* defect — the north-void, C13.) |
 | C13 | **North-void** — a street edging the **unbounded outer face** (e.g. I-44, grade-sep-excluded from `extractFaces`) emits **nothing outboard** → "asphalt emits from the left of the lane, not center." Pre-dates D1; NOT the chain-position issue. | the outer-face/boundary handling | `tileGround.extractFaces` outer face | 🔎 flagged by Alidade — its own brief (F); meshes with G9 perimeter / boundary-trio |
 
+## Bake / Stage divergences (seeded 2026-06-10, the BAKE.md/STAGE.md keystone session)
+
+> Found while writing the two missing keystones (`BAKE.md`, `STAGE.md`) against the live bake chain (`serve.js:461`, `bake-scene.js`, `bake-ground.js`). The bake **mechanism** is mature and honest; the divergences are mostly **aspiration** (roadmap artifacts that never shipped) + two now-cured **landmines** (the stages had no Reference home).
+
+| # | Divergence | Type | The truth | Locus | Status |
+|---|---|---|---|---|---|
+| B1 | `ARCHITECTURE.md §1` publish-loop diagram shows **`stage-config.json (future)`** as a planned slab artifact; §3 layer-3 implies a runtime shader-param layer to come | **Aspiration** (presented as roadmap; never shipped) | every Stage channel folded into `scene.json` field-by-field; there is **no** `stage-config.json` and none is pending | `ARCHITECTURE.md §1` diagram · `§3` layer 3 | 🔎 retire the placeholder from the diagram; noted as dead intent in `BAKE.md §5` |
+| B2 | `STAGE_MIGRATION.md` describes Meteorologist cloud-authoring living **inside a Stage right-panel card** | **Aspiration / historical** | Meteorologist shipped **standalone** (`/meteorologist.html`); the Stage's only cloud surface is the forward-compat `scene.json.clouds` ref | `STAGE_MIGRATION.md` | 🔎 mark historical (corrected in `STAGE.md §5`); doc itself is a Diary-grade plan, retire-or-stamp |
+| B3 | SC.4 time defaults persist nothing; SC.5 bakes only Browse heading (Hero keyframes/altitude stay live) | **Aspiration — correctly marked** (not a lie) | `bake-scene.js` header + `:115`/`:139` honestly note "pending"; tracked as "Slab completeness" in `BACKLOG.md` | `bake-scene.js` · `BACKLOG.md` | ⚠️ honest gap, not divergence; track to close, don't excise |
+| B4 | `bake-ground.js:28` imports dead `buildBlockGeometryV2` alongside live `buildTileGround` | **Corpse-lie** (= C3/C4) | tiles are the live path; figure-ground is dead weight | `bake-ground.js:28` | 🔎 excise at T4 (cross-ref C3/C4) |
+| B5 | The bake **chain + `shape.json` emission** had no keystone Reference doc — its home was "README · ARCHITECTURE · FEATURES" (BOZ §0 Suite) | **Landmine** (truth lived only in code/orchestration) | now documented | → **`BAKE.md`** | ✅ documented 2026-06-10 |
+| B6 | The Stage tool + the SC.1–SC.7 channel inventory had no keystone Reference doc | **Landmine** | now documented | → **`STAGE.md`** | ✅ documented 2026-06-10 |
+
 ---
 
-*Seeded 2026-06-05 from the front-half spec session (Skeleton/Prebake/Survey), all code rows code-verified except ⚠️. Add a row whenever a landed truth exposes a contradiction; clear a row only when both places agree.*
+*Seeded 2026-06-05 from the front-half spec session (Skeleton/Prebake/Survey), all code rows code-verified except ⚠️. Bake/Stage rows added 2026-06-10 (the keystone session). Add a row whenever a landed truth exposes a contradiction; clear a row only when both places agree.*

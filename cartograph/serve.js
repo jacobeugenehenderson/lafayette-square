@@ -330,6 +330,34 @@ createServer(async (req, res) => {
     }
   }
 
+  // ── The SHAPE freeze (the Data Wall, autosaved) ──────────────────────────
+  // POST /<scene>/shape — write the frozen SHAPE artifact (the per-tile
+  // curb/corner silhouette Section opens). The client autosaves this on
+  // Survey-exit (WALL.md §4) with the live `_shapeArtifact` it just rendered,
+  // so the freeze always tracks the eye-gated Survey shape WITHOUT the heavy
+  // slab bake. Lands at public/baked/<scene>/shape.json — exactly where the
+  // Section surface fetches it. Scene-keyed; reserved prefixes excluded.
+  const shapeMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/shape$/)
+  if (req.method === 'POST' && shapeMatch && !RESERVED_PREFIXES.has(shapeMatch[1])) {
+    const scene = shapeMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        JSON.parse(body)   // validate — never persist non-JSON as the freeze
+        const dir = join(PUBLIC_DIR, 'baked', scene)
+        mkdirSync(dir, { recursive: true })
+        writeFileSync(join(dir, 'shape.json'), body)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('{"ok":true}')
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
   // ── Looks ───────────────────────────────────────────────────────────────
   // Each Look is a styling snapshot: design.json (material palette + shader
   // params) + the per-Look bake bundle (public/baked/<id>/). The default
