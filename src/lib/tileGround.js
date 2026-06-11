@@ -468,14 +468,30 @@ export function extractFaces(streets) {
     for (let i = 0; i < pts.length - 1; i++) addEdge(pts[i], pts[i + 1], si)
   })
   for (const n of nodes.values()) n.edges.sort((a, b) => a.angle - b.angle)
+  // ⭐ PRUNE DEAD-END PENDANTS (formal polygon-first: blocks are clean enclosed
+  // faces; a dead-ending street owns its OWN footprint, it does not slit the
+  // block). Iteratively remove degree-1 nodes + their edge — the pendant chain
+  // peels back to its junction (which then drops to degree-2 and walks straight
+  // through). The peeled edges are recorded as `deadEndChains` for the dead-end's
+  // own ped stroke. Topology op (node degree), not a geometric spur excision.
+  const deadEndChains = []
+  const liveDeg = (n) => { let d = 0; for (const h of n.edges) if (!h.removed) d++; return d }
+  let peeling = true
+  while (peeling) {
+    peeling = false
+    for (const n of nodes.values()) {
+      if (liveDeg(n) !== 1) continue
+      for (const h of n.edges) if (!h.removed) { h.removed = true; h.twin.removed = true; deadEndChains.push(h); peeling = true }
+    }
+  }
   const nextHE = (he) => {
-    const out = he.to.edges
+    const out = he.to.edges.filter(h => !h.removed)
     const idx = out.indexOf(he.twin)
     return out[(idx - 1 + out.length) % out.length]
   }
   const faces = []
   for (const h0 of heList) {
-    if (h0.used) continue
+    if (h0.used || h0.removed) continue
     const ring = []
     const edges = []   // edges[i] = the directed half-edge ring[i] → ring[i+1]
     let h = h0, guard = 0
@@ -535,6 +551,7 @@ export function tilesFromFrozen(frozen, streets) {
   }
   return tiles
 }
+
 
 // Inboard-side ped zeroing for divided carriageways (anchor='inner-edge'):
 // the median-facing side keeps pavement but drops curb/treelawn/sidewalk, so
