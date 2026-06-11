@@ -76,8 +76,10 @@ The freeze point: by the time the operator leaves Survey, hold an extremely-simp
 
 ### section · bake · stage *(downstream — brief)*
 - **section** — the ped **FILL** off the frozen Survey shape (treelawn/sidewalk, ribbon corner fills, ADA). **Built** (`sectionPass`, chain-incapable by closure; per-edge FILL + caps + Revert UI landed); the FILL tail (perf/caps/thorns) + Measure→Section rename remain. `SECTION.md`.
-- **bake** — freezes the **slab** (ground/buildings/lamps/scene → `public/baked/<id>/`) = wall #2.
-- **stage / preview / production** — the **LOOK** + the slab players. `FEATURES.md`.
+- **bake** — freezes the **slab** (ground/buildings/lamps/scene → `public/baked/<id>/`) = wall #2. `BAKE.md`.
+- **stage** — the **LOOK** authoring tool; freezes `design.json` → `scene.json`. `STAGE.md`.
+- **preview** — the slab inspection surface (GPU profiler · phone-aspect · layer cost), production's render tree + bolt-ons. `PREVIEW.md`.
+- **production** — the deployed LS runtime; trusts the slab cold. (LS app, downstream of this repo.)
 
 ---
 

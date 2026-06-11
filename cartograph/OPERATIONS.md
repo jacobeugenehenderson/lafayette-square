@@ -26,7 +26,7 @@
 > Note (2026-06-07): bloom no longer auto-boosts at night — it's whatever you author in the Post-FX **Bloom** channel at that TOD. If you want a soft night haze, author it there; otherwise night relies on lamp glow (cheaper, intentional).
 
 ### Preview — the slab inspector
-*GPU profiler · phone-mode · layer-toggle matrix · TOD scrub. From FEATURES §Preview.*
+*GPU profiler · phone-mode · layer-toggle matrix · TOD scrub. Keystone Reference: `PREVIEW.md` (the model — what it inspects + how to read the numbers); `FEATURES.md §3` for the user-voiced summary.*
 
 ### CLI / bake operations
 *The bake commands · the two-step `skeleton.js` → `pipeline.js` → `promote-ribbons.js` → `bake-ground.js` · dirty-skip discipline · the bake-target guard (unflagged → `lafayette-square`). From README + ARCHITECTURE.*

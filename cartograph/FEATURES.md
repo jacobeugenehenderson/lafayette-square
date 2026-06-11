@@ -114,6 +114,8 @@ The **Browse shot** is the public-facing overhead view. Its `up` vector is the c
 
 ### 3. **Preview** (`/preview.html`)
 
+> Keystone Reference: **`PREVIEW.md`** (the model + how to read the cost numbers). This section is the user/investor re-voicing.
+
 **Owns: slab inspection — GPU profiling + phone-mode QA + post-bake verification.**
 
 Reads the same baked artifacts the LS app will read, *plus* a substantial QA toolkit:

@@ -108,6 +108,7 @@ Where channels persist (verified in `bake-scene.js`):
 ## Cross-references
 
 - **`BAKE.md`** — the publish stage that runs `bake-scene.js` (the paired keystone).
+- **`PREVIEW.md`** — the inspection surface that reads the baked Look back (closes `stage → bake → preview`).
 - **`SLAB-CONTRACT.md §4`** — the `scene.json` byte format + the `neon`/`lampGlow`/channel fields (the SSOT this doc points to).
 - **`ARCHITECTURE.md §2` / §2.1 / §3 / §5 / §7** — the Designer/Stage split, the three tools, the Looks model, live-edit rendering, the single-owner-channel doctrine.
 - **`SECTION.md` / `SURVEY.md`** — the two upstream tools whose frozen shape the Stage styles.

@@ -26,7 +26,7 @@ Two load-bearing facts:
 | **Input (per Look)** | `public/looks/<id>/design.json` — the operator's authored styling/shape intent (live autosave; see `STAGE.md §4`) |
 | **Who builds it** | the `/looks/:id/bake` handler (`serve.js:461`), running each `bake-*.js` via `runIfDirty` |
 | **Outputs (the slab)** | everything under `public/baked/<id>/` — see §2 for what each step writes, and **`SLAB-CONTRACT.md`** for the byte format |
-| **Who consumes it** | the **runtime** (LS app) and the cartograph **Stage/Preview** players — read-only, cache-busted by `?t=<bakedAt>` |
+| **Who consumes it** | the **runtime** (LS app) and the cartograph **Stage** / **Preview** players — read-only, cache-busted by `?t=<bakedAt>` (Preview is the inspection surface — `PREVIEW.md`) |
 
 ⚠️ **Two-step rebuild discipline (inherited from prebake).** `pipeline.js` + `promote-ribbons.js` run *inside* the bake for the LS scene, so a Survey/Measure edit (which writes `overlay.json`) re-derives `map.json` → `ribbons.json` before the geometry bakes. For non-default scenes (toy) these two steps are skipped — toy centerlines are hand-authored, no OSM pipeline yet (`serve.js:560`).
 
@@ -121,7 +121,8 @@ The bake's outputs **are** the slab. Their byte-level format — top-level field
 
 ## Cross-references
 
-- **`STAGE.md`** — the Look-authoring tool whose `design.json` this stage freezes into `scene.json` (the paired keystone).
+- **`STAGE.md`** — the Look-authoring tool whose `design.json` this stage freezes into `scene.json` (the upstream keystone).
+- **`PREVIEW.md`** — the inspection surface that reads this stage's slab (the downstream keystone; completes `stage → bake → preview`).
 - **`SLAB-CONTRACT.md`** — the slab's byte format + producer/consumer contracts (the SSOT this doc points to for §3).
 - **`WALL.md`** — the freeze doctrine; `shape.json` schema; why frozen-wrong-data is odious.
 - **`SECTION.md`** — the FILL construction `bake-ground.js` runs (`buildTileGround`).
