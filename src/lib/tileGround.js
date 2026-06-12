@@ -462,10 +462,32 @@ export function extractFaces(streets) {
     heList.push(h1, h2)
     na.edges.push(h1); nb.edges.push(h2)
   }
+  // ⭐ WELD NEAR-COINCIDENT CHAIN ENDPOINTS. A loop body that closes within a few
+  // cm — above the 0.1 mm node quantization (Benton 3.2 cm, Saint Vincent 2.2 cm)
+  // — would otherwise read as an OPEN pendant and peel away entirely, so its
+  // enclosed face never forms. LOOP-STREETS §0/§1: a loop median IS the emergent
+  // enclosed face — it only exists if the ring closes. Park Place (gap 0.000)
+  // closes on its own and renders right; this gives the near-closed loops the same
+  // footing. ENDPOINTS only (mid-chain geometry untouched) within a tolerance well
+  // below junction separation, so only true gap artifacts merge — general, so any
+  // near-miss endpoint slit closes, not just the named loops.
+  const ENDPOINT_SNAP = 0.15   // m
+  const endReps = []
+  const snapEnd = (p) => {
+    for (const q of endReps) if (Math.hypot(p[0] - q[0], p[1] - q[1]) < ENDPOINT_SNAP) return q
+    endReps.push(p); return p
+  }
+  // Pre-register every endpoint so the chosen rep is stable before any edge reads it.
+  streets.forEach((s) => { const pts = s?.points; if (pts && pts.length >= 2) { snapEnd(pts[0]); snapEnd(pts[pts.length - 1]) } })
   streets.forEach((s, si) => {
     const pts = s?.points
     if (!pts || pts.length < 2) return
-    for (let i = 0; i < pts.length - 1; i++) addEdge(pts[i], pts[i + 1], si)
+    const last = pts.length - 1
+    for (let i = 0; i < last; i++) {
+      const A = i === 0 ? snapEnd(pts[0]) : pts[i]
+      const B = i === last - 1 ? snapEnd(pts[last]) : pts[i + 1]
+      addEdge(A, B, si)
+    }
   })
   for (const n of nodes.values()) n.edges.sort((a, b) => a.angle - b.angle)
   // ⭐ PRUNE DEAD-END PENDANTS (formal polygon-first: blocks are clean enclosed

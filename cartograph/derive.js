@@ -2347,11 +2347,13 @@ export function deriveLayers(highways) {
   // edits, otherwise pipeline reads stale defaults and Stage diverges
   // from Designer Preview.
   let overlayById = {}
+  let overlayLoops = {}   // [E2-loop] per-loop interior override: { <bodySkelId>: { interior: 'median'|'block' } }
   try {
     const overlayPath = join(CLEAN_DIR, 'overlay.json')
     if (existsSync(overlayPath)) {
       const overlay = JSON.parse(readFileSync(overlayPath, 'utf-8'))
       overlayById = overlay.streets || {}
+      overlayLoops = overlay.loops || {}
     }
   } catch { /* no overlay; bake from defaults */ }
 
@@ -3247,6 +3249,46 @@ export function deriveLayers(highways) {
   const medCount = medians.filter(m => m.kind === 'median').length
   console.log(`    ${medCount} constructed median segments + ${mergeCount} merge patches from ${dividedPairs.length} pairs (${crossingCount} crossings cut${medianSkips ? `, ${medianSkips} pairs degenerate` : ''})`)
 
+  // [E2-loop] CLOSED LOOP-BODY medians — a teardrop / cul-de-sac body (Benton
+  // Place, Park Place, Saint Vincent) closes on itself, so its interior is a
+  // green island. But the body ring closes within ~3 cm — ABOVE the 0.1 mm
+  // node-quantization — so polygonize reads it as a pendant, not a face: the
+  // street is walked out-and-back inside the block, slitting it, and the
+  // ribbon follows the slit (the disrupted-ribbon root, BENTON forensics).
+  // Decide the interior here as a real polygon instead, the [E2] way: snap the
+  // body ring closed, inset by the cross-section (pavement + curb + sidewalk)
+  // to the inner sidewalk's grass edge, and emit kind:'median'. tileGround's
+  // medianClipFor paints it grass and the outer sidewalk stays contiguous —
+  // ONE root, the three Benton defects (base overlap/pill · grass interior ·
+  // sidewalk contiguity) dissolve together. Per-loop override:
+  // overlay.loops[bodySkelId].interior = 'median' (default) | 'block' (the
+  // 18th-St subtype: interior is a buildable block — emit nothing here).
+  const LOOP_SNAP = 2.0    // m — body endpoints within this read as a closed loop
+  const LOOP_MIN_MED = 20  // m² — below this the inset island collapsed (a paved turning circle); skip
+  let loopMedians = 0
+  for (const S of ribbonStreets) {
+    const pts = S.points.map(p => [p[0], p[1]])
+    if (pts.length < 4) continue
+    const gap = Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1])
+    if (gap > LOOP_SNAP) continue                     // not a closed body
+    const loopId = S.skelId || S.name
+    const interior = overlayLoops[loopId]?.interior || 'median'
+    if (interior !== 'median') continue               // 'block' → interior is a block, not grass
+    pts[pts.length - 1] = [pts[0][0], pts[0][1]]       // SNAP closed (kill the quantization gap)
+    const hw = S.measure?.left?.pavementHW || S.measure?.right?.pavementHW || defaultHalfWidth
+    const inset = hw + STANDARDS.curb.width + STANDARDS.sidewalk.width  // grass edge = inner sidewalk's inner edge
+    const co = new ClipperOffset(); co.ArcTolerance = ARC_TOL
+    const lp = new Paths(); lp.push(pts.map(p => toClipper(p[0], p[1])))
+    co.AddPaths(lp, JoinType.jtRound, EndType.etClosedPolygon)
+    const out = new Paths(); co.Execute(out, -inset * SCALE)
+    let best = null, bestA = 0                          // largest surviving ring = the island
+    for (let i = 0; i < out.length; i++) { const a = Math.abs(Clipper.Area(out[i])); if (a > bestA) { bestA = a; best = out[i] } }
+    if (!best || bestA / (SCALE * SCALE) < LOOP_MIN_MED) continue  // collapsed → paved turning circle
+    medians.push({ kind: 'median', name: S.name, loopId, ring: best.map(p => [p.X / SCALE, p.Y / SCALE]) })
+    loopMedians++
+  }
+  if (loopMedians) console.log(`    ${loopMedians} closed loop-body median island${loopMedians > 1 ? 's' : ''}`)
+
   // D1 (carriageway measure hygiene): canonicalize a divided carriageway's
   // per-side measure to the anchor='inner-edge' model — the chain sits at the
   // carriageway's median-facing edge, so the OUTER side carries the full
@@ -3777,6 +3819,7 @@ export function deriveLayers(highways) {
       const absorbsMedians = []
       medians.forEach((m, mi) => {
         if (m.kind !== 'median') return
+        if (!Array.isArray(m.chains)) return   // [E2-loop] loop-body island — no divided-pair chains; never apron-absorbed
         if (!chains.includes(m.chains[0]) && !chains.includes(m.chains[1])) return
         const area = Math.abs(polygonArea(m.ring))
         if (area > ABSORB_AREA) return
@@ -3885,7 +3928,7 @@ export function deriveLayers(highways) {
     faces: faceFills,
     // [E2] constructed medians (kind:'median') — consumed by identity in
     // tileGround (median-tile detection + the merge-region asphalt fill).
-    medians: medians.map(m => ({ kind: m.kind, name: m.name, streets: m.streets, chains: m.chains, pairKey: m.pairKey, ...(m.absorbedBy ? { absorbedBy: m.absorbedBy } : {}), ring: m.ring })),
+    medians: medians.map(m => ({ kind: m.kind, name: m.name, streets: m.streets, chains: m.chains, pairKey: m.pairKey, ...(m.loopId ? { loopId: m.loopId } : {}), ...(m.absorbedBy ? { absorbedBy: m.absorbedBy } : {}), ring: m.ring })),
     corridors,
     // [E3.1] The junction map — frozen per-node junction identity (continuity
     // pairs, de-taper windows, corner identities, apron specs). PRESENT-but-

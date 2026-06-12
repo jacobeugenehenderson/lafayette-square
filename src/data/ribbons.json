@@ -169,18 +169,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.524836729760599,
-          "treelawn": 1.524,
-          "sidewalk": 3.771508774121749,
+          "pavementHW": 3.33,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 11.876374210124538,
-          "treelawn": 2.9144876422016814,
-          "sidewalk": 3.219995027327654,
+          "pavementHW": 4.74,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -205,38 +206,6 @@
           "z": 218.47
         }
       ],
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 7.203172199626125,
-            "treelawn": 1.2026416547120755,
-            "sidewalk": 1,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 12.663941234736832,
-            "treelawn": 1.7304098259152152,
-            "sidewalk": 1.4240582415582725,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        },
-        "1": {
-          "left": {
-            "pavementHW": 3.189557196749914,
-            "treelawn": 1.2026416547120755,
-            "sidewalk": 1,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 5.51671319746067,
-            "treelawn": 1.7304098259152152,
-            "sidewalk": 1.4240582415582725,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -722,7 +691,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.668124338525812,
+          "pavementHW": 3.25,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -733,7 +702,8 @@
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -1308,18 +1278,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 6.923359996955333,
-          "treelawn": 0,
-          "sidewalk": 2.503758988587088,
-          "terminal": "lawn"
-        },
-        "right": {
-          "pavementHW": 5.701969753861978,
-          "treelawn": 0,
-          "sidewalk": 2.310547022555059,
+          "pavementHW": 5.49,
+          "treelawn": 1.06,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "right": {
+          "pavementHW": 5.49,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -1747,18 +1718,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.64460464411919,
-          "treelawn": 1.3716000000000002,
-          "sidewalk": 1.524,
+          "pavementHW": 5.49,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2.64460464411919,
-          "treelawn": 1.3716000000000002,
-          "sidewalk": 1.524,
+          "pavementHW": 5.49,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "source": "default"
+        "symmetric": true,
+        "source": "seed"
       },
       "capEnds": {
         "start": null,
@@ -1917,19 +1889,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.5,
+          "pavementHW": 3.4910521036695594,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.49,
+          "pavementHW": 5.662190716857673,
           "treelawn": 0.57,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -3057,18 +3028,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 8.385853030132012,
-          "treelawn": 3.020838982094821,
-          "sidewalk": 2.263884048165316,
+          "pavementHW": 4.11,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 8.73105352144237,
-          "treelawn": 3.1519828488643356,
-          "sidewalk": 2.345906370814321,
+          "pavementHW": 3.28,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": "blunt",
@@ -3176,18 +3148,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 8.385853030132012,
-          "treelawn": 3.020838982094821,
-          "sidewalk": 2.263884048165316,
+          "pavementHW": 4.11,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 8.73105352144237,
-          "treelawn": 3.1519828488643356,
-          "sidewalk": 2.345906370814321,
+          "pavementHW": 3.28,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -3279,7 +3252,7 @@
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.628525862907328,
+          "pavementHW": 8.73105352144237,
           "treelawn": 3.1519828488643356,
           "sidewalk": 2.345906370814321,
           "terminal": "sidewalk"
@@ -3288,7 +3261,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -3388,22 +3361,22 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.674997715058554,
-          "treelawn": 1,
-          "sidewalk": 1.1215809834366155,
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.927777989962047,
-          "treelawn": 0,
-          "sidewalk": 1,
+          "pavementHW": 8.73105352144237,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
           "terminal": "sidewalk"
         },
         "symmetric": false
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -3493,18 +3466,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 8.385853030132012,
-          "treelawn": 3.020838982094821,
-          "sidewalk": 2.263884048165316,
+          "pavementHW": 4.11,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 8.73105352144237,
+          "pavementHW": 3.28,
           "treelawn": 0,
-          "sidewalk": 5.497889219678656,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -3606,18 +3580,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.3694720900446784,
-          "treelawn": 1.3716000000000002,
-          "sidewalk": 1.524,
+          "pavementHW": 5.49,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.3694720900446784,
-          "treelawn": 1.3716000000000002,
-          "sidewalk": 1.524,
+          "pavementHW": 5.49,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "source": "default"
+        "symmetric": true,
+        "source": "seed"
       },
       "capEnds": {
         "start": null,
@@ -5252,18 +5227,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 6.5526197941248405,
-          "treelawn": 1.326821815429419,
-          "sidewalk": 1.25354467209816,
+          "pavementHW": 5.49,
+          "treelawn": 1.53,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.5526197941248405,
-          "treelawn": 1.326821815429419,
-          "sidewalk": 1.25354467209816,
+          "pavementHW": 5.49,
+          "treelawn": 1.88,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": true
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": "round",
@@ -7850,18 +7826,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.8088964682680597,
+          "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 1.7064491230429406,
+          "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
-        "symmetric": false
+        "symmetric": true,
+        "source": "seed"
       },
       "capEnds": {
         "start": "blunt",
@@ -8225,18 +8202,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 5.07,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 4.94,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": true
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -8319,13 +8297,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 6.728659055786228,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 6.728659055786228,
           "treelawn": 0,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
@@ -8419,18 +8397,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 4.94,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 5.07,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": true
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -8447,23 +8426,6 @@
       },
       "highway": "residential",
       "type": "residential",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 4.430562030291696,
-            "treelawn": 0,
-            "sidewalk": 3.5883893575836754,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 4.430562030291696,
-            "treelawn": 0,
-            "sidewalk": 3.5883893575836754,
-            "terminal": "sidewalk"
-          },
-          "symmetric": true
-        }
-      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -8544,18 +8506,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 4.94,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 5.07,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": true
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -8646,18 +8609,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 4.94,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2.1901709234175555,
+          "pavementHW": 5.07,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": true
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -8956,18 +8920,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.327361023241324,
-          "treelawn": 1,
-          "sidewalk": 1,
+          "pavementHW": 5.49,
+          "treelawn": 1.31,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.306144183072501,
-          "treelawn": 1.0330239630137168,
-          "sidewalk": 1,
+          "pavementHW": 5.49,
+          "treelawn": 1.6,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": "round",
@@ -9764,18 +9729,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5,
-          "treelawn": 1.3756000000000004,
-          "sidewalk": 1.524,
+          "pavementHW": 5.07,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.997331895265273,
+          "pavementHW": 5.07,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": true,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -9792,23 +9758,6 @@
       },
       "highway": "residential",
       "type": "residential",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 5,
-            "treelawn": 1.3756000000000004,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 2.0668687137866986,
-            "treelawn": 0,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -9895,18 +9844,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5,
-          "treelawn": 1.3756000000000004,
-          "sidewalk": 1.524,
+          "pavementHW": 3.76,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.563939701798672,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 5.49,
+          "treelawn": 0.89,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -15119,18 +15069,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.025774546908343,
-          "treelawn": 12.775599999999999,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 0,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
-          "pavementHW": 2,
-          "treelawn": 2.1256000000000004,
-          "sidewalk": 1.524,
+          "pavementHW": 4.13,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -15148,23 +15099,6 @@
       },
       "highway": "secondary",
       "type": "secondary",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 2,
-            "treelawn": 12.775599999999999,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 3.653654832258035,
-            "treelawn": 1.3928497159166802,
-            "sidewalk": 7.345507118045882,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 3,
       "surface": "asphalt",
       "maxspeed": "30 mph",
@@ -15293,18 +15227,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.1233032956067115,
-          "treelawn": 12.775599999999999,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 0,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
-          "pavementHW": 4.1233032956067115,
-          "treelawn": 2.1256000000000004,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 6.71,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -15322,23 +15257,6 @@
       },
       "highway": "secondary",
       "type": "secondary",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 2,
-            "treelawn": 12.775599999999999,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 3.914538405396091,
-            "treelawn": 1,
-            "sidewalk": 1.6841500461269705,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 4,
       "surface": "asphalt",
       "maxspeed": "30 mph",
@@ -15444,18 +15362,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
-          "treelawn": 3.5560120021971127,
-          "sidewalk": 4.213893953647322,
+          "pavementHW": 7.01,
+          "treelawn": 1.33,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
+          "pavementHW": 7.01,
+          "treelawn": 1.53,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -15579,18 +15498,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
-          "treelawn": 3.5560120021971127,
-          "sidewalk": 4.213893953647322,
+          "pavementHW": 8.34,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
+          "pavementHW": 8.54,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -15706,10 +15626,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 7.899666800734073,
@@ -15824,7 +15744,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.592019584600921,
+          "pavementHW": 10.555325676754327,
           "treelawn": 3.5560120021971127,
           "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
@@ -15967,10 +15887,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 7.899666800734073,
@@ -16099,15 +16019,15 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.8580000000000005,
-          "treelawn": 1.0668,
-          "sidewalk": 1.6764000000000001,
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "symmetric": false
@@ -16231,15 +16151,15 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.704039023771476,
-          "treelawn": 1.5200585066011074,
-          "sidewalk": 1.5184476651648833,
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "symmetric": false
@@ -16353,10 +16273,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 7.899666800734073,
@@ -16457,10 +16377,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 7.899666800734073,
@@ -16571,13 +16491,13 @@
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 5.346010234957402,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 3.96,
+          "treelawn": 1.11,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "source": "default",
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -16682,13 +16602,13 @@
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 5.346010234957402,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 3.96,
+          "treelawn": 1.11,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "source": "default",
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -16918,10 +16838,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 6.06749156059035,
@@ -16948,23 +16868,6 @@
       },
       "highway": "residential",
       "type": "residential",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 10.658029338233407,
-            "treelawn": 1,
-            "sidewalk": 1,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 6.06749156059035,
-            "treelawn": 1,
-            "sidewalk": 3.693069658822573,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 1,
       "surface": "asphalt",
       "seed": {
@@ -17079,15 +16982,15 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.655044952056748,
-          "treelawn": 3.192626415453148,
-          "sidewalk": 1.7297401723922992,
+          "pavementHW": 10.71006841320356,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 8.25859101071366,
-          "treelawn": 1.7258555231174242,
-          "sidewalk": 2.866669482870156,
+          "pavementHW": 11.127155094035231,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
           "terminal": "sidewalk"
         },
         "symmetric": false
@@ -17240,10 +17143,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 6.06749156059035,
@@ -17271,23 +17174,6 @@
       },
       "highway": "residential",
       "type": "residential",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 0,
-            "treelawn": 0,
-            "sidewalk": 0,
-            "terminal": "none"
-          },
-          "right": {
-            "pavementHW": 6.06749156059035,
-            "treelawn": 2.108890869059252,
-            "sidewalk": 1.4410721984077526,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 1,
       "surface": "asphalt",
       "seed": {
@@ -17405,10 +17291,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 6.06749156059035,
@@ -17554,10 +17440,10 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
         },
         "right": {
           "pavementHW": 6.06749156059035,
@@ -17682,18 +17568,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.645715395972545,
-          "treelawn": 1,
-          "sidewalk": 1,
+          "pavementHW": 5,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.06749156059035,
-          "treelawn": 1,
-          "sidewalk": 3.693069658822573,
-          "terminal": "sidewalk"
+          "pavementHW": 5.49,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -18361,18 +18248,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
-          "treelawn": 2.002554538036364,
-          "sidewalk": 5.108928968970948,
-          "terminal": "sidewalk"
+          "pavementHW": 0,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 5.03,
+          "treelawn": 3.22,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -18466,7 +18354,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.807286407871595,
+          "pavementHW": 7.716508745489069,
           "treelawn": 2.002554538036364,
           "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
@@ -18497,23 +18385,6 @@
       },
       "highway": "primary",
       "type": "primary",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 17.326844270907745,
-            "treelawn": 1.3465742279243145,
-            "sidewalk": 13.076746307501956,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 58.5415576539413,
-            "treelawn": 0,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -18603,18 +18474,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
-          "treelawn": 2.002554538036364,
-          "sidewalk": 5.108928968970948,
+          "pavementHW": 5.34,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 11.17,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -18742,19 +18614,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 5.03,
-          "treelawn": 0.31,
-          "sidewalk": 1.52,
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "right": {
+          "pavementHW": 4.679089669041289,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -18774,23 +18645,6 @@
       },
       "highway": "primary",
       "type": "primary",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 0,
-            "treelawn": 0,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 5.247069279339259,
-            "treelawn": 0,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -18884,18 +18738,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
-          "treelawn": 2.002554538036364,
-          "sidewalk": 5.108928968970948,
+          "pavementHW": 11.17,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 5.34,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -19035,18 +18890,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
-          "treelawn": 2.002554538036364,
-          "sidewalk": 5.108928968970948,
-          "terminal": "sidewalk"
+          "pavementHW": 0,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 5.34,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -19173,18 +19029,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
-          "treelawn": 2.002554538036364,
-          "sidewalk": 5.108928968970948,
+          "pavementHW": 11.17,
+          "treelawn": 0,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 5.34,
           "treelawn": 0,
-          "sidewalk": 1.524,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -19302,18 +19159,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
-          "treelawn": 2.002554538036364,
-          "sidewalk": 5.108928968970948,
-          "terminal": "sidewalk"
+          "pavementHW": 0,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 5.03,
+          "treelawn": 0.31,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -19459,18 +19317,19 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
-          "treelawn": 2.002554538036364,
-          "sidewalk": 5.108928968970948,
-          "terminal": "sidewalk"
+          "pavementHW": 0,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
-          "treelawn": 0,
-          "sidewalk": 1.524,
+          "pavementHW": 6.71,
+          "treelawn": 1.54,
+          "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false
+        "symmetric": false,
+        "source": "seed-survey"
       },
       "capEnds": {
         "start": null,
@@ -19593,23 +19452,6 @@
       },
       "highway": "residential",
       "type": "residential",
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 1.872042185323237,
-            "treelawn": 3.8445590562926664,
-            "sidewalk": 1.7742262088979173,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 1.991465053681122,
-            "treelawn": 0,
-            "sidewalk": 1.8517267807718945,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -73056,6 +72898,37 @@
       ]
     },
     {
+      "kind": "median",
+      "name": "Officer David Haynes Memorial Highway",
+      "streets": [
+        "Officer David Haynes Memorial Highway",
+        "Officer David Haynes Memorial Highway"
+      ],
+      "chains": [
+        "officer-david-haynes-memorial-highway-0",
+        "officer-david-haynes-memorial-highway-2"
+      ],
+      "pairKey": "28522849-28522855",
+      "ring": [
+        [
+          -469.7014477856848,
+          262.9703377357372
+        ],
+        [
+          -465.38740545634977,
+          263.4954916712288
+        ],
+        [
+          -462.97810507213126,
+          243.2573684437939
+        ],
+        [
+          -467.24,
+          242.75
+        ]
+      ]
+    },
+    {
       "kind": "merge",
       "name": "Officer David Haynes Memorial Highway",
       "streets": [
@@ -73069,8 +72942,8 @@
       "pairKey": "28522849-28522855",
       "ring": [
         [
-          -469.49016432605384,
-          262.99605754371754
+          -465.38740545634977,
+          263.4954916712288
         ],
         [
           -459.6,
@@ -73081,12 +72954,12 @@
           266.40000000000003
         ],
         [
-          -429.46,
-          267.65
+          -430.00038719287124,
+          267.5876859786818
         ],
         [
-          -427.2009661968111,
-          247.3927624533721
+          -427.74157935345175,
+          247.3324746973299
         ],
         [
           -437,
@@ -73097,8 +72970,39 @@
           244.10000000000002
         ],
         [
-          -467.0821563929448,
-          242.7687909056018
+          -462.97810507213126,
+          243.2573684437939
+        ]
+      ]
+    },
+    {
+      "kind": "merge",
+      "name": "Officer David Haynes Memorial Highway",
+      "streets": [
+        "Officer David Haynes Memorial Highway",
+        "Officer David Haynes Memorial Highway"
+      ],
+      "chains": [
+        "officer-david-haynes-memorial-highway-0",
+        "officer-david-haynes-memorial-highway-2"
+      ],
+      "pairKey": "28522849-28522855",
+      "ring": [
+        [
+          -430.00038719287124,
+          267.5876859786818
+        ],
+        [
+          -429.46,
+          267.65
+        ],
+        [
+          -427.2009661968111,
+          247.3927624533721
+        ],
+        [
+          -427.74157935345175,
+          247.3324746973299
         ]
       ]
     },
@@ -73268,12 +73172,12 @@
           382.90000000000015
         ],
         [
-          -288.8550102243542,
-          386.3130087000047
+          -293.21135670163665,
+          384.77145720300445
         ],
         [
-          -286.0825447715904,
-          378.5192048885201
+          -290.4363278333624,
+          376.9704472575153
         ],
         [
           -295.7218591225385,
@@ -73295,8 +73199,8 @@
       "pairKey": "180345148-612660796",
       "ring": [
         [
-          -288.8550102243542,
-          386.3130087000047
+          -293.21135670163665,
+          384.77145720300445
         ],
         [
           -209.2000000000001,
@@ -73323,8 +73227,8 @@
           406.9000000000002
         ],
         [
-          -286.0825447715904,
-          378.5192048885201
+          -290.4363278333624,
+          376.9704472575153
         ]
       ]
     },
@@ -73385,12 +73289,20 @@
           463.0826161297849
         ],
         [
-          108.30888697595815,
-          526.6002267420298
+          112.56,
+          528.1
         ],
         [
-          110.84409265503027,
-          519.4610845833087
+          115.12074902575617,
+          527.5072340218157
+        ],
+        [
+          118.1761711432298,
+          523.683657000512
+        ],
+        [
+          114.53,
+          520.77
         ],
         [
           -69.06520877322296,
@@ -73412,12 +73324,8 @@
       "pairKey": "180345148-612660796",
       "ring": [
         [
-          108.30888697595815,
-          526.6002267420298
-        ],
-        [
-          112.56,
-          528.1
+          115.12074902575617,
+          527.5072340218157
         ],
         [
           118.71584409386327,
@@ -73428,12 +73336,8 @@
           525.1126131066374
         ],
         [
-          114.53,
-          520.77
-        ],
-        [
-          110.84409265503027,
-          519.4610845833087
+          118.1761711432298,
+          523.683657000512
         ]
       ]
     },
@@ -73490,12 +73394,12 @@
           -495.7
         ],
         [
-          349.77541418107137,
-          -543.7552297245303
+          342.88151225100466,
+          -545.5996681337901
         ],
         [
-          347.96811007952317,
-          -536.9716399551598
+          341.0722815579959,
+          -538.8088470378761
         ],
         [
           521.12,
@@ -73521,28 +73425,28 @@
       "pairKey": "1350829601-1350829602",
       "ring": [
         [
-          349.77541418107137,
-          -543.7552297245303
+          342.88151225100466,
+          -545.5996681337901
         ],
         [
           336.90000000000003,
           -547.2
         ],
         [
-          323.87671259852294,
-          -550.457400048067
+          330.7998150691952,
+          -548.7257854698474
         ],
         [
-          322.06474107838727,
-          -544.1370708171177
+          328.9207759742904,
+          -542.1715181507153
         ],
         [
           335.1,
           -540.4
         ],
         [
-          347.96811007952317,
-          -536.9716399551598
+          341.0722815579959,
+          -538.8088470378761
         ]
       ]
     },
@@ -73560,8 +73464,8 @@
       "pairKey": "1350829601-1350829602",
       "ring": [
         [
-          323.87671259852294,
-          -550.457400048067
+          330.7998150691952,
+          -548.7257854698474
         ],
         [
           316.27,
@@ -73580,8 +73484,8 @@
           -546.28
         ],
         [
-          322.06474107838727,
-          -544.1370708171177
+          328.9207759742904,
+          -542.1715181507153
         ]
       ]
     },
@@ -73665,12 +73569,12 @@
           282
         ],
         [
-          551.6606010253469,
-          270.1051725194511
+          551.3328413534641,
+          272.0936672217002
         ],
         [
-          538.4545960239037,
-          267.85292425994913
+          538.1157850980219,
+          269.8395342008656
         ],
         [
           536.4278883302244,
@@ -73692,8 +73596,8 @@
       "pairKey": "151115548-1433086589",
       "ring": [
         [
-          551.6606010253469,
-          270.1051725194511
+          551.3328413534641,
+          272.0936672217002
         ],
         [
           575.1,
@@ -73716,8 +73620,8 @@
           63.01
         ],
         [
-          538.4545960239037,
-          267.85292425994913
+          538.1157850980219,
+          269.8395342008656
         ]
       ]
     },
@@ -73888,12 +73792,12 @@
           308.98
         ],
         [
-          726.6410882267866,
-          309.8404465171409
+          725.2560744778798,
+          309.8929944642539
         ],
         [
-          725.5580821825968,
-          312.47079915410137
+          724.3923286173956,
+          311.99081858442094
         ],
         [
           739.06,
@@ -73927,8 +73831,8 @@
       "pairKey": "172189149-1413275236",
       "ring": [
         [
-          726.6410882267866,
-          309.8404465171409
+          725.2560744778798,
+          309.8929944642539
         ],
         [
           724.6099044845819,
@@ -73939,8 +73843,8 @@
           311.76688648140873
         ],
         [
-          725.5580821825968,
-          312.47079915410137
+          724.3923286173956,
+          311.99081858442094
         ]
       ]
     },
@@ -73993,12 +73897,12 @@
           223.50414223142874
         ],
         [
-          178.77565433088336,
-          227.21372729427748
+          172.22652064164996,
+          224.37882257145546
         ],
         [
-          178.0507550612977,
-          220.62849778502957
+          171.88835939024068,
+          221.3068516851592
         ],
         [
           169.9870163583049,
@@ -74020,8 +73924,8 @@
       "pairKey": "1349812898-1488940913",
       "ring": [
         [
-          178.77565433088336,
-          227.21372729427748
+          172.22652064164996,
+          224.37882257145546
         ],
         [
           180.8,
@@ -74040,8 +73944,8 @@
           220.24
         ],
         [
-          178.0507550612977,
-          220.62849778502957
+          171.88835939024068,
+          221.3068516851592
         ]
       ]
     },
@@ -74239,12 +74143,12 @@
           130.15
         ],
         [
-          -415.9688384511554,
-          131.88834739034158
+          -414.0055281490357,
+          131.47207923718148
         ],
         [
-          -416.5465696603531,
-          135.6239048679946
+          -414.6919975490439,
+          135.91072797132537
         ],
         [
           -403.64,
@@ -74270,8 +74174,8 @@
       "pairKey": "1349901208-1349901209",
       "ring": [
         [
-          -415.9688384511554,
-          131.88834739034158
+          -414.0055281490357,
+          131.47207923718148
         ],
         [
           -420.8808211358562,
@@ -74282,8 +74186,8 @@
           134.90630555849586
         ],
         [
-          -416.5465696603531,
-          135.6239048679946
+          -414.6919975490439,
+          135.91072797132537
         ]
       ]
     },
@@ -74554,12 +74458,12 @@
           11.035766402128345
         ],
         [
-          615.3535223383141,
-          -24.273198739396165
+          616.2934395455038,
+          -23.919610837643816
         ],
         [
-          611.6821277518292,
-          -14.534824598744905
+          612.6217929232765,
+          -14.180568172186021
         ],
         [
           705.5162341194755,
@@ -74581,8 +74485,8 @@
       "pairKey": "163871018-1349812859",
       "ring": [
         [
-          615.3535223383141,
-          -24.273198739396165
+          616.2934395455038,
+          -23.919610837643816
         ],
         [
           609.7,
@@ -74593,12 +74497,12 @@
           -31
         ],
         [
-          593.289299848408,
-          -32.797076536959445
+          590.872494573326,
+          -33.71905923899617
         ],
         [
-          589.5371935908521,
-          -22.83224361381287
+          587.1164403841864,
+          -23.74374141059285
         ],
         [
           595.2,
@@ -74609,8 +74513,8 @@
           -16.3
         ],
         [
-          611.6821277518292,
-          -14.534824598744905
+          612.6217929232765,
+          -14.180568172186021
         ]
       ]
     },
@@ -74628,24 +74532,24 @@
       "pairKey": "163871018-1349812859",
       "ring": [
         [
-          593.289299848408,
-          -32.797076536959445
+          590.872494573326,
+          -33.71905923899617
         ],
         [
           570.45,
           -41.51
         ],
         [
-          532.0706012239389,
-          -52.85870364647855
+          530.0817878339119,
+          -53.44679138342461
         ],
         [
-          529.3043180029783,
-          -45.51201668646381
+          527.368523114272,
+          -46.24091080554015
         ],
         [
-          589.5371935908521,
-          -22.83224361381287
+          587.1164403841864,
+          -23.74374141059285
         ]
       ]
     },
@@ -74663,28 +74567,28 @@
       "pairKey": "163871018-1349812859",
       "ring": [
         [
-          532.0706012239389,
-          -52.85870364647855
+          530.0817878339119,
+          -53.44679138342461
         ],
         [
           522.8000000000001,
           -55.6
         ],
         [
-          514.8340023775304,
-          -58.44999646580917
+          516.7867300037169,
+          -57.75136873616717
         ],
         [
-          512.3909840258091,
-          -51.78600278538898
+          514.3381396910673,
+          -51.07217602443922
         ],
         [
           521.9,
           -48.300000000000004
         ],
         [
-          529.3043180029783,
-          -45.51201668646381
+          527.368523114272,
+          -46.24091080554015
         ]
       ]
     },
@@ -74702,28 +74606,28 @@
       "pairKey": "163871018-1349812859",
       "ring": [
         [
-          514.8340023775304,
-          -58.44999646580917
+          516.7867300037169,
+          -57.75136873616717
         ],
         [
           440.82,
           -84.93
         ],
         [
-          431.38634566841347,
-          -87.09594864982226
+          431.2127384397818,
+          -87.13580853118287
         ],
         [
-          429.7233338445774,
-          -84.81641428018365
+          429.59105163586605,
+          -84.9129194612856
         ],
         [
           437.23,
           -79.34
         ],
         [
-          512.3909840258091,
-          -51.78600278538898
+          514.3381396910673,
+          -51.07217602443922
         ]
       ]
     },
@@ -74741,8 +74645,8 @@
       "pairKey": "163871018-1349812859",
       "ring": [
         [
-          431.38634566841347,
-          -87.09594864982226
+          431.2127384397818,
+          -87.13580853118287
         ],
         [
           429.35190275952283,
@@ -74753,8 +74657,8 @@
           -85.94732503148971
         ],
         [
-          429.7233338445774,
-          -84.81641428018365
+          429.59105163586605,
+          -84.9129194612856
         ]
       ]
     },
@@ -74807,12 +74711,12 @@
           -255.75025000338596
         ],
         [
-          -363.316245686127,
-          -260.57387415313457
+          -364.8814952275206,
+          -261.8300032830061
         ],
         [
-          -362.83477815558507,
-          -253.37593457153278
+          -364.3094078596362,
+          -253.2772971331347
         ],
         [
           -357.17209644297697,
@@ -74834,8 +74738,8 @@
       "pairKey": "354388956-1349901204",
       "ring": [
         [
-          -363.316245686127,
-          -260.57387415313457
+          -364.8814952275206,
+          -261.8300032830061
         ],
         [
           -366.95,
@@ -74862,8 +74766,8 @@
           -252.5
         ],
         [
-          -362.83477815558507,
-          -253.37593457153278
+          -364.3094078596362,
+          -253.2772971331347
         ]
       ]
     },
@@ -75383,12 +75287,12 @@
           -249.5621159438971
         ],
         [
-          -360.5621962898424,
-          -243.09226711008347
+          -360.7782357442802,
+          -242.67248747707927
         ],
         [
-          -355.58621539025773,
-          -242.8287912202334
+          -355.6089843912952,
+          -242.39877800600792
         ],
         [
           -355.23528841994363,
@@ -75410,8 +75314,8 @@
       "pairKey": "627340928-627340930",
       "ring": [
         [
-          -360.5621962898424,
-          -243.09226711008347
+          -360.7782357442802,
+          -242.67248747707927
         ],
         [
           -371.16,
@@ -75450,8 +75354,8 @@
           -225.76
         ],
         [
-          -355.58621539025773,
-          -242.8287912202334
+          -355.6089843912952,
+          -242.39877800600792
         ]
       ]
     },
@@ -75764,6 +75668,263 @@
         [
           -432.201346005279,
           159.8972163255139
+        ]
+      ]
+    },
+    {
+      "kind": "median",
+      "name": "Saint Vincent Avenue",
+      "loopId": "saint-vincent-avenue-2",
+      "ring": [
+        [
+          -407.94,
+          -162.38
+        ],
+        [
+          -407.28,
+          -161.88
+        ],
+        [
+          -406.8,
+          -161.14
+        ],
+        [
+          -406.59,
+          -160.3
+        ],
+        [
+          -406.68,
+          -159.44
+        ],
+        [
+          -407.04,
+          -158.67
+        ],
+        [
+          -407.69,
+          -158
+        ],
+        [
+          -408.39,
+          -157.65
+        ],
+        [
+          -409.21,
+          -157.53
+        ],
+        [
+          -410,
+          -157.67
+        ],
+        [
+          -410.74,
+          -158.08
+        ],
+        [
+          -411.31,
+          -158.69
+        ],
+        [
+          -411.65,
+          -159.43
+        ],
+        [
+          -411.72,
+          -160.07
+        ],
+        [
+          -411.38,
+          -161.26
+        ],
+        [
+          -410.24,
+          -162.4
+        ],
+        [
+          -409.63,
+          -162.64
+        ],
+        [
+          -408.81,
+          -162.66
+        ]
+      ]
+    },
+    {
+      "kind": "median",
+      "name": "Benton Place",
+      "loopId": "benton-place-1",
+      "ring": [
+        [
+          106.98,
+          -380.82
+        ],
+        [
+          108.08,
+          -380.24
+        ],
+        [
+          108.33,
+          -379.87
+        ],
+        [
+          108.79,
+          -375.37
+        ],
+        [
+          108.62,
+          -373.75
+        ],
+        [
+          100.58,
+          -344
+        ],
+        [
+          92.5,
+          -317.27
+        ],
+        [
+          92.51,
+          -317.27
+        ],
+        [
+          82.23,
+          -286.08
+        ],
+        [
+          71.06,
+          -255.02
+        ],
+        [
+          69.45,
+          -251.49
+        ],
+        [
+          64.55,
+          -244.36
+        ],
+        [
+          61.84,
+          -242.36
+        ],
+        [
+          61.45,
+          -244.83
+        ],
+        [
+          62.1,
+          -254.15
+        ],
+        [
+          73.16,
+          -294.65
+        ],
+        [
+          84.43,
+          -330.03
+        ],
+        [
+          100.7,
+          -375.7
+        ],
+        [
+          101.63,
+          -377.28
+        ],
+        [
+          105.1,
+          -380.61
+        ],
+        [
+          106,
+          -380.97
+        ]
+      ]
+    },
+    {
+      "kind": "median",
+      "name": "Park Place",
+      "loopId": "park-place-2",
+      "ring": [
+        [
+          773.69,
+          93.76
+        ],
+        [
+          774.77,
+          94.35
+        ],
+        [
+          775.51,
+          95.17
+        ],
+        [
+          776.01,
+          96.21
+        ],
+        [
+          776.19,
+          97.35
+        ],
+        [
+          776.02,
+          98.48
+        ],
+        [
+          775.53,
+          99.52
+        ],
+        [
+          774.74,
+          100.37
+        ],
+        [
+          773.71,
+          100.97
+        ],
+        [
+          772.53,
+          101.24
+        ],
+        [
+          771.37,
+          101.14
+        ],
+        [
+          770.27,
+          100.7
+        ],
+        [
+          769.36,
+          99.94
+        ],
+        [
+          768.72,
+          98.94
+        ],
+        [
+          768.4,
+          97.77
+        ],
+        [
+          768.45,
+          96.61
+        ],
+        [
+          768.83,
+          95.54
+        ],
+        [
+          769.49,
+          94.63
+        ],
+        [
+          770.42,
+          93.93
+        ],
+        [
+          771.25,
+          93.63
         ]
       ]
     }
@@ -79357,39 +79518,6 @@
         ]
       },
       {
-        "key": "-1417.110,-22.920",
-        "at": [
-          -1417.11,
-          -22.92
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "lafayette-avenue-0",
-            "end": "start",
-            "role": "spine"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "lafayette-avenue-0",
-              "side": "left"
-            },
-            "b": {
-              "chain": "lafayette-avenue-0",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
         "key": "-145.100,428.600",
         "at": [
           -145.10000000000002,
@@ -80750,6 +80878,72 @@
             }
           }
         ]
+      },
+      {
+        "key": "-273.360,231.310",
+        "at": [
+          -273.36,
+          231.31
+        ],
+        "kinds": [
+          "pendant-tip"
+        ],
+        "legs": [
+          {
+            "chain": "missouri-avenue-1",
+            "end": "end",
+            "role": "spine"
+          }
+        ],
+        "continuity": [
+          {
+            "a": {
+              "chain": "missouri-avenue-1",
+              "side": "left"
+            },
+            "b": {
+              "chain": "missouri-avenue-1",
+              "side": "right"
+            },
+            "source": "tip-wrap"
+          }
+        ],
+        "corners": {
+          "outer": []
+        }
+      },
+      {
+        "key": "-286.740,322.620",
+        "at": [
+          -286.74,
+          322.62
+        ],
+        "kinds": [
+          "pendant-tip"
+        ],
+        "legs": [
+          {
+            "chain": "missouri-avenue-0",
+            "end": "start",
+            "role": "spine"
+          }
+        ],
+        "continuity": [
+          {
+            "a": {
+              "chain": "missouri-avenue-0",
+              "side": "left"
+            },
+            "b": {
+              "chain": "missouri-avenue-0",
+              "side": "right"
+            },
+            "source": "tip-wrap"
+          }
+        ],
+        "corners": {
+          "outer": []
+        }
       },
       {
         "key": "-297.100,374.600",
@@ -85628,39 +85822,6 @@
         ]
       },
       {
-        "key": "-723.710,-11.840",
-        "at": [
-          -723.71,
-          -11.84
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "henrietta-place",
-            "end": "start",
-            "role": "spine"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "henrietta-place",
-              "side": "left"
-            },
-            "b": {
-              "chain": "henrietta-place",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
         "key": "-727.500,89.400",
         "at": [
           -727.5,
@@ -89108,39 +89269,6 @@
         }
       },
       {
-        "key": "129.900,-247.490",
-        "at": [
-          129.9,
-          -247.49
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "mississippi-alley",
-            "end": "start",
-            "role": "spine"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "mississippi-alley",
-              "side": "left"
-            },
-            "b": {
-              "chain": "mississippi-alley",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
         "key": "140.600,-874.370",
         "at": [
           140.6,
@@ -90741,6 +90869,39 @@
             },
             "b": {
               "chain": "south-18th-street-4",
+              "side": "right"
+            },
+            "source": "tip-wrap"
+          }
+        ],
+        "corners": {
+          "outer": []
+        }
+      },
+      {
+        "key": "373.540,228.740",
+        "at": [
+          373.54,
+          228.74
+        ],
+        "kinds": [
+          "pendant-tip"
+        ],
+        "legs": [
+          {
+            "chain": "south-18th-street-3",
+            "end": "end",
+            "role": "spine"
+          }
+        ],
+        "continuity": [
+          {
+            "a": {
+              "chain": "south-18th-street-3",
+              "side": "left"
+            },
+            "b": {
+              "chain": "south-18th-street-3",
               "side": "right"
             },
             "source": "tip-wrap"
@@ -92775,39 +92936,6 @@
             }
           }
         ]
-      },
-      {
-        "key": "615.710,-404.630",
-        "at": [
-          615.71,
-          -404.63
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "dolman-street-0",
-            "end": "end",
-            "role": "spine"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "dolman-street-0",
-              "side": "left"
-            },
-            "b": {
-              "chain": "dolman-street-0",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
       },
       {
         "key": "621.000,-67.900",
@@ -96101,72 +96229,6 @@
         ]
       },
       {
-        "key": "868.800,81.490",
-        "at": [
-          868.8,
-          81.49
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "park-avenue-3",
-            "end": "end",
-            "role": "carriageway-B"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "park-avenue-3",
-              "side": "left"
-            },
-            "b": {
-              "chain": "park-avenue-3",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
-        "key": "871.530,72.440",
-        "at": [
-          871.53,
-          72.44
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "park-avenue-0",
-            "end": "start",
-            "role": "carriageway-A"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "park-avenue-0",
-              "side": "left"
-            },
-            "b": {
-              "chain": "park-avenue-0",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
         "key": "872.610,88.590",
         "at": [
           872.61,
@@ -98622,444 +98684,6 @@
     {
       "ring": [
         [
-          -920.6,
-          58.5
-        ],
-        [
-          -936.97,
-          155.44
-        ],
-        [
-          -920.6,
-          58.5
-        ],
-        [
-          -822,
-          74.7
-        ],
-        [
-          -837.86,
-          177.54
-        ],
-        [
-          -822,
-          74.7
-        ],
-        [
-          -727.5,
-          89.4
-        ],
-        [
-          -739.93,
-          167.71
-        ],
-        [
-          -727.5,
-          89.4
-        ],
-        [
-          -623.3000000000001,
-          105.60000000000001
-        ],
-        [
-          -633.75,
-          171.78
-        ],
-        [
-          -623.3000000000001,
-          105.60000000000001
-        ],
-        [
-          -457.82,
-          131.44
-        ],
-        [
-          -426.40000000000003,
-          134.1
-        ],
-        [
-          -430.90000000000003,
-          157.5
-        ],
-        [
-          -442.3,
-          178.5
-        ],
-        [
-          -448.5,
-          206.3
-        ],
-        [
-          -450.5,
-          215.70000000000002
-        ],
-        [
-          -455.90000000000003,
-          244.10000000000002
-        ],
-        [
-          -459.6,
-          264.2
-        ],
-        [
-          -465,
-          293.90000000000003
-        ],
-        [
-          -467.1,
-          311.90000000000003
-        ],
-        [
-          -470.1,
-          342.70000000000005
-        ],
-        [
-          -465.3,
-          362.5
-        ],
-        [
-          -474.1,
-          432.8
-        ],
-        [
-          -474.4000000000001,
-          435.1
-        ],
-        [
-          -524.74,
-          428.44
-        ],
-        [
-          -474.4000000000001,
-          435.1
-        ],
-        [
-          -492.40000000000003,
-          542.5
-        ],
-        [
-          -518.14,
-          535.62
-        ],
-        [
-          -556.6000000000001,
-          528.3
-        ],
-        [
-          -562.73,
-          524.38
-        ],
-        [
-          -687.6,
-          504
-        ],
-        [
-          -671.5,
-          403.20000000000005
-        ],
-        [
-          -541.26,
-          426.83
-        ],
-        [
-          -671.5,
-          403.20000000000005
-        ],
-        [
-          -656,
-          306.5
-        ],
-        [
-          -525.47,
-          327.62
-        ],
-        [
-          -656,
-          306.5
-        ],
-        [
-          -852.4000000000001,
-          275.40000000000003
-        ],
-        [
-          -848.49,
-          251.15
-        ],
-        [
-          -852.4000000000001,
-          275.40000000000003
-        ],
-        [
-          -955.1,
-          258.7
-        ],
-        [
-          -953.17,
-          244.42
-        ],
-        [
-          -955.1,
-          258.7
-        ],
-        [
-          -1003.54,
-          249.84
-        ],
-        [
-          -955.1,
-          258.7
-        ],
-        [
-          -986.7,
-          456.20000000000005
-        ],
-        [
-          -1071.11,
-          442.79
-        ],
-        [
-          -1085.1,
-          443.4000000000001
-        ],
-        [
-          -1068.7,
-          341.40000000000003
-        ],
-        [
-          -1045.3,
-          197.9
-        ],
-        [
-          -1042.1000000000001,
-          177.70000000000002
-        ],
-        [
-          -1020.2,
-          42.2
-        ]
-      ],
-      "edges": [
-        {
-          "skelId": "oregon-place",
-          "side": "right"
-        },
-        {
-          "skelId": "oregon-place",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "iowa-avenue",
-          "side": "right"
-        },
-        {
-          "skelId": "iowa-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-4",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-6",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-7",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "allen-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "allen-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "allen-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "russell-boulevard-0",
-          "side": "left"
-        },
-        {
-          "skelId": "russell-boulevard-0",
-          "side": "left"
-        },
-        {
-          "skelId": "russell-boulevard-1",
-          "side": "right"
-        },
-        {
-          "skelId": "russell-boulevard-1",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-1",
-          "side": "left"
-        },
-        {
-          "skelId": "allen-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "allen-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "ohio-avenue-1",
-          "side": "left"
-        },
-        {
-          "skelId": "geyer-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "geyer-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "geyer-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-1",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "geyer-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "oregon-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "oregon-avenue",
-          "side": "right"
-        },
-        {
-          "skelId": "geyer-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "geyer-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "oregon-avenue",
-          "side": "right"
-        },
-        {
-          "skelId": "russell-boulevard-1",
-          "side": "right"
-        },
-        {
-          "skelId": "russell-boulevard-1",
-          "side": "right"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "right"
-        }
-      ]
-    },
-    {
-      "ring": [
-        [
           336.90000000000003,
           -547.2
         ],
@@ -99168,28 +98792,12 @@
           -434.90000000000003
         ],
         [
-          44.68,
-          -483.01
-        ],
-        [
-          29.3,
-          -434.90000000000003
-        ],
-        [
           18.400000000000002,
           -402
         ],
         [
           -99.10000000000001,
           -431.6
-        ],
-        [
-          -64.4,
-          -538
-        ],
-        [
-          45.64,
-          -508.62
         ],
         [
           -64.4,
@@ -99231,14 +98839,6 @@
         },
         {
           "skelId": "mackay-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "mackay-place-1",
-          "side": "right"
-        },
-        {
-          "skelId": "mackay-place-1",
           "side": "right"
         },
         {
@@ -99247,14 +98847,6 @@
         },
         {
           "skelId": "missouri-avenue-4",
-          "side": "left"
-        },
-        {
-          "skelId": "lasalle-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "lasalle-street-0",
           "side": "left"
         },
         {
@@ -99306,14 +98898,6 @@
           -465.20000000000005
         ],
         [
-          615.71,
-          -404.63
-        ],
-        [
-          631.7,
-          -465.20000000000005
-        ],
-        [
           646.5999999999999,
           -461.29999999999995
         ],
@@ -99358,14 +98942,6 @@
           -261.40000000000003
         ],
         [
-          632.33,
-          -243.68
-        ],
-        [
-          576.6,
-          -261.40000000000003
-        ],
-        [
           609.18,
           -381.26
         ],
@@ -99404,14 +98980,6 @@
         [
           284.8,
           -353.90000000000003
-        ],
-        [
-          309.1,
-          -444.3
-        ],
-        [
-          492.13,
-          -395.13
         ]
       ],
       "edges": [
@@ -99432,14 +99000,6 @@
           "side": "right"
         },
         {
-          "skelId": "dolman-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "dolman-street-0",
-          "side": "left"
-        },
-        {
           "skelId": "chouteau-avenue-1",
           "side": "right"
         },
@@ -99481,14 +99041,6 @@
         },
         {
           "skelId": "dolman-street-1",
-          "side": "left"
-        },
-        {
-          "skelId": "hickory-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "hickory-street-0",
           "side": "left"
         },
         {
@@ -99534,14 +99086,6 @@
         {
           "skelId": "mississippi-avenue",
           "side": "left"
-        },
-        {
-          "skelId": "lasalle-street-1",
-          "side": "right"
-        },
-        {
-          "skelId": "lasalle-street-1",
-          "side": "left"
         }
       ]
     },
@@ -99554,22 +99098,6 @@
         [
           259.6,
           -258.7
-        ],
-        [
-          146.26,
-          -294.78
-        ],
-        [
-          259.6,
-          -258.7
-        ],
-        [
-          246.63,
-          -210.15
-        ],
-        [
-          129.9,
-          -247.49
         ],
         [
           246.63,
@@ -99590,94 +99118,6 @@
         [
           58.7,
           -234
-        ],
-        [
-          56.65,
-          -239.21
-        ],
-        [
-          55.78,
-          -244.58
-        ],
-        [
-          56.52,
-          -255.12
-        ],
-        [
-          67.72,
-          -296.13
-        ],
-        [
-          79.12,
-          -331.92
-        ],
-        [
-          95.57,
-          -378.1
-        ],
-        [
-          97.16,
-          -380.79
-        ],
-        [
-          102,
-          -385.44
-        ],
-        [
-          105.33,
-          -386.77
-        ],
-        [
-          108.78,
-          -386.25
-        ],
-        [
-          111.93,
-          -384.58
-        ],
-        [
-          113.8,
-          -381.86
-        ],
-        [
-          114.46,
-          -375.36
-        ],
-        [
-          114.19,
-          -372.75
-        ],
-        [
-          105.98,
-          -342.37
-        ],
-        [
-          97.9,
-          -315.64
-        ],
-        [
-          87.53,
-          -284.17
-        ],
-        [
-          76.26,
-          -252.84
-        ],
-        [
-          74.37,
-          -248.7
-        ],
-        [
-          68.66,
-          -240.38
-        ],
-        [
-          63.48,
-          -236.56
-        ],
-        [
-          58.69,
-          -233.97
         ],
         [
           63.48,
@@ -99790,23 +99230,7 @@
           "side": "right"
         },
         {
-          "skelId": "rutger-street-1",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-street-1",
-          "side": "right"
-        },
-        {
           "skelId": "mississippi-avenue",
-          "side": "right"
-        },
-        {
-          "skelId": "mississippi-alley",
-          "side": "left"
-        },
-        {
-          "skelId": "mississippi-alley",
           "side": "right"
         },
         {
@@ -99823,94 +99247,6 @@
         },
         {
           "skelId": "benton-place-0",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "benton-place-1",
           "side": "left"
         },
         {
@@ -100306,22 +99642,6 @@
           -120.60000000000001
         ],
         [
-          318.62,
-          -59.87
-        ],
-        [
-          295.26,
-          84.58
-        ],
-        [
-          318.62,
-          -59.87
-        ],
-        [
-          340,
-          -120.60000000000001
-        ],
-        [
           424.40000000000003,
           -88.7
         ],
@@ -100349,22 +99669,6 @@
         },
         {
           "skelId": "park-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "vail-place",
-          "side": "left"
-        },
-        {
-          "skelId": "vail-place",
-          "side": "left"
-        },
-        {
-          "skelId": "vail-place",
-          "side": "right"
-        },
-        {
-          "skelId": "vail-place",
           "side": "right"
         },
         {
@@ -100404,32 +99708,8 @@
           149.1
         ],
         [
-          373.54,
-          228.74
-        ],
-        [
-          386.3,
-          149.1
-        ],
-        [
           394.5,
           98.80000000000001
-        ],
-        [
-          495.8,
-          115.4
-        ],
-        [
-          475.37,
-          242.8
-        ],
-        [
-          495.8,
-          115.4
-        ],
-        [
-          548.48,
-          123.96
         ],
         [
           495.8,
@@ -100487,35 +99767,11 @@
         },
         {
           "skelId": "south-18th-street-3",
-          "side": "right"
-        },
-        {
-          "skelId": "south-18th-street-3",
-          "side": "left"
-        },
-        {
-          "skelId": "south-18th-street-3",
           "side": "left"
         },
         {
           "skelId": "carroll-street-1",
           "side": "right"
-        },
-        {
-          "skelId": "dolman-street-1",
-          "side": "right"
-        },
-        {
-          "skelId": "dolman-street-1",
-          "side": "left"
-        },
-        {
-          "skelId": "carroll-street-1",
-          "side": "right"
-        },
-        {
-          "skelId": "carroll-street-1",
-          "side": "left"
         },
         {
           "skelId": "dolman-street-1",
@@ -100610,52 +99866,12 @@
           452.40000000000015
         ],
         [
-          -69,
-          397.6
-        ],
-        [
-          -34.78,
-          408.78
-        ],
-        [
-          -69,
-          397.6
-        ],
-        [
-          -121.11,
-          387.29
-        ],
-        [
-          -69,
-          397.6
-        ],
-        [
-          -77.99999999999997,
-          452.40000000000015
-        ],
-        [
           -145.10000000000002,
           428.6
         ],
         [
           -206.29999999999995,
           406.9000000000002
-        ],
-        [
-          -297.1,
-          374.5999999999999
-        ],
-        [
-          -288.47,
-          323.91
-        ],
-        [
-          -286.74,
-          322.62
-        ],
-        [
-          -288.47,
-          323.91
         ],
         [
           -297.1,
@@ -100722,24 +99938,8 @@
           154.20000000000002
         ],
         [
-          -273.36,
-          231.31
-        ],
-        [
-          -260.90000000000003,
-          154.20000000000002
-        ],
-        [
           -217.10000000000002,
           161.3
-        ],
-        [
-          -147,
-          172.4
-        ],
-        [
-          -162.87,
-          270.86
         ],
         [
           -147,
@@ -100776,14 +99976,6 @@
         [
           -25.300000000000004,
           191.60000000000002
-        ],
-        [
-          76.9,
-          207.70000000000002
-        ],
-        [
-          57.79,
-          331.58
         ],
         [
           76.9,
@@ -100832,30 +100024,6 @@
           "side": "right"
         },
         {
-          "skelId": "waverly-place-2",
-          "side": "left"
-        },
-        {
-          "skelId": "waverly-place-1",
-          "side": "right"
-        },
-        {
-          "skelId": "waverly-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "waverly-place-1",
-          "side": "left"
-        },
-        {
-          "skelId": "waverly-place-1",
-          "side": "right"
-        },
-        {
-          "skelId": "waverly-place-2",
-          "side": "right"
-        },
-        {
           "skelId": "geyer-avenue-5",
           "side": "right"
         },
@@ -100865,22 +100033,6 @@
         },
         {
           "skelId": "geyer-avenue-5",
-          "side": "right"
-        },
-        {
-          "skelId": "missouri-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "missouri-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "missouri-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "missouri-avenue-0",
           "side": "right"
         },
         {
@@ -100944,28 +100096,12 @@
           "side": "right"
         },
         {
-          "skelId": "missouri-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "missouri-avenue-1",
-          "side": "left"
-        },
-        {
           "skelId": "lafayette-avenue-3",
           "side": "right"
         },
         {
           "skelId": "lafayette-avenue-3",
           "side": "right"
-        },
-        {
-          "skelId": "simpson-place",
-          "side": "right"
-        },
-        {
-          "skelId": "simpson-place",
-          "side": "left"
         },
         {
           "skelId": "lafayette-avenue-3",
@@ -101002,14 +100138,6 @@
         {
           "skelId": "lafayette-avenue-3",
           "side": "right"
-        },
-        {
-          "skelId": "nicholson-place",
-          "side": "right"
-        },
-        {
-          "skelId": "nicholson-place",
-          "side": "left"
         },
         {
           "skelId": "lafayette-avenue-3",
@@ -101726,572 +100854,6 @@
     {
       "ring": [
         [
-          -723.71,
-          -11.84
-        ],
-        [
-          -606.65,
-          7.74
-        ],
-        [
-          -623.3000000000001,
-          105.60000000000001
-        ],
-        [
-          -727.5,
-          89.4
-        ],
-        [
-          -822,
-          74.7
-        ],
-        [
-          -805.6,
-          -25.3
-        ],
-        [
-          -789,
-          -126.5
-        ],
-        [
-          -772.9000000000001,
-          -225
-        ],
-        [
-          -686.1,
-          -210.9
-        ],
-        [
-          -694.7,
-          -157.00000000000006
-        ],
-        [
-          -710.88,
-          -157.86
-        ],
-        [
-          -694.7,
-          -157.00000000000006
-        ],
-        [
-          -692.66,
-          -151.61
-        ],
-        [
-          -689.22,
-          -149.99
-        ],
-        [
-          -684.95,
-          -149.96
-        ],
-        [
-          -680.18,
-          -153.61
-        ],
-        [
-          -671.3000000000001,
-          -208.5
-        ],
-        [
-          -575.2,
-          -192.3
-        ],
-        [
-          -424.5,
-          -166.81
-        ],
-        [
-          -416.40000000000003,
-          -164.20000000000002
-        ],
-        [
-          -417.44,
-          -160.55
-        ],
-        [
-          -417.15,
-          -157.92
-        ],
-        [
-          -416.05,
-          -155.5
-        ],
-        [
-          -414.24,
-          -153.57
-        ],
-        [
-          -411.92,
-          -152.29
-        ],
-        [
-          -409.3,
-          -151.83
-        ],
-        [
-          -406.68,
-          -152.2
-        ],
-        [
-          -404.31,
-          -153.39
-        ],
-        [
-          -402.35,
-          -155.39
-        ],
-        [
-          -401.16,
-          -157.92
-        ],
-        [
-          -400.89,
-          -160.71
-        ],
-        [
-          -401.56,
-          -163.43
-        ],
-        [
-          -403.09,
-          -165.77
-        ],
-        [
-          -405.31,
-          -167.45
-        ],
-        [
-          -407.98,
-          -168.32
-        ],
-        [
-          -410.78,
-          -168.24
-        ],
-        [
-          -413.39,
-          -167.23
-        ],
-        [
-          -416.39,
-          -164.22
-        ],
-        [
-          -413.39,
-          -167.23
-        ],
-        [
-          -410.78,
-          -168.24
-        ],
-        [
-          -407.98,
-          -168.32
-        ],
-        [
-          -405.31,
-          -167.45
-        ],
-        [
-          -403.09,
-          -165.77
-        ],
-        [
-          -401.56,
-          -163.43
-        ],
-        [
-          -400.89,
-          -160.71
-        ],
-        [
-          -401.16,
-          -157.92
-        ],
-        [
-          -402.35,
-          -155.39
-        ],
-        [
-          -404.31,
-          -153.39
-        ],
-        [
-          -406.68,
-          -152.2
-        ],
-        [
-          -409.3,
-          -151.83
-        ],
-        [
-          -411.92,
-          -152.29
-        ],
-        [
-          -414.24,
-          -153.57
-        ],
-        [
-          -416.05,
-          -155.5
-        ],
-        [
-          -417.15,
-          -157.92
-        ],
-        [
-          -417.44,
-          -160.55
-        ],
-        [
-          -416.40000000000003,
-          -164.20000000000002
-        ],
-        [
-          -424.5,
-          -166.81
-        ],
-        [
-          -575.2,
-          -192.3
-        ],
-        [
-          -558.5,
-          -288.5
-        ],
-        [
-          -538.8000000000001,
-          -285.1
-        ],
-        [
-          -435.74,
-          -267.42
-        ],
-        [
-          -375.93,
-          -252.5
-        ],
-        [
-          -355,
-          -253.9
-        ],
-        [
-          -371.16,
-          -222.5
-        ],
-        [
-          -383.6,
-          -164.7
-        ],
-        [
-          -429.05,
-          115.87
-        ],
-        [
-          -426.40000000000003,
-          134.1
-        ],
-        [
-          -457.82,
-          131.44
-        ],
-        [
-          -623.3000000000001,
-          105.60000000000001
-        ],
-        [
-          -606.65,
-          7.74
-        ]
-      ],
-      "edges": [
-        {
-          "skelId": "henrietta-place",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "st-vincent-court-0",
-          "side": "right"
-        },
-        {
-          "skelId": "st-vincent-court-1",
-          "side": "left"
-        },
-        {
-          "skelId": "st-vincent-court-1",
-          "side": "right"
-        },
-        {
-          "skelId": "st-vincent-court-0",
-          "side": "right"
-        },
-        {
-          "skelId": "st-vincent-court-0",
-          "side": "right"
-        },
-        {
-          "skelId": "st-vincent-court-0",
-          "side": "right"
-        },
-        {
-          "skelId": "st-vincent-court-0",
-          "side": "right"
-        },
-        {
-          "skelId": "st-vincent-court-0",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "ohio-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "park-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "park-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "park-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "park-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "south-jefferson-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "ohio-avenue-4",
-          "side": "left"
-        },
-        {
-          "skelId": "henrietta-place",
-          "side": "left"
-        }
-      ]
-    },
-    {
-      "ring": [
-        [
           -53.83,
           258.54
         ],
@@ -102692,14 +101254,6 @@
         [
           575.1,
           127.9
-        ],
-        [
-          693.6,
-          147
-        ],
-        [
-          790.82,
-          162.73
         ]
       ],
       "edges": [
@@ -102806,14 +101360,6 @@
         {
           "skelId": "carroll-street-0",
           "side": "right"
-        },
-        {
-          "skelId": "carroll-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "carroll-street-0",
-          "side": "left"
         }
       ]
     },
@@ -102960,76 +101506,6 @@
     {
       "ring": [
         [
-          -259.97,
-          -474.76
-        ],
-        [
-          -99.10000000000001,
-          -431.6
-        ],
-        [
-          -134.20000000000002,
-          -325.6
-        ],
-        [
-          -316.1,
-          -373.6
-        ],
-        [
-          -272.8,
-          -513.1
-        ],
-        [
-          -249.20000000000002,
-          -587.8000000000001
-        ],
-        [
-          -64.4,
-          -538
-        ],
-        [
-          -99.10000000000001,
-          -431.6
-        ]
-      ],
-      "edges": [
-        {
-          "skelId": "hickory-street-1",
-          "side": "right"
-        },
-        {
-          "skelId": "missouri-avenue-3",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-street-2",
-          "side": "left"
-        },
-        {
-          "skelId": "south-jefferson-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "south-jefferson-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "lasalle-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "missouri-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "hickory-street-1",
-          "side": "left"
-        }
-      ]
-    },
-    {
-      "ring": [
-        [
           -99.10000000000001,
           -431.6
         ],
@@ -103052,14 +101528,6 @@
         [
           -162.21,
           -240.38
-        ],
-        [
-          -134.20000000000002,
-          -325.6
-        ],
-        [
-          -87.25,
-          -314.13
         ],
         [
           -134.20000000000002,
@@ -103090,14 +101558,6 @@
         {
           "skelId": "missouri-avenue-3",
           "side": "right"
-        },
-        {
-          "skelId": "rutger-street-2",
-          "side": "right"
-        },
-        {
-          "skelId": "rutger-street-2",
-          "side": "left"
         },
         {
           "skelId": "missouri-avenue-3",
@@ -103140,46 +101600,6 @@
           -382.3
         ],
         [
-          -360.61,
-          -341.26
-        ],
-        [
-          -351.15,
-          -334.71
-        ],
-        [
-          -360.61,
-          -341.26
-        ],
-        [
-          -514.3000000000001,
-          -382.3
-        ],
-        [
-          -490.40000000000003,
-          -475.20000000000005
-        ],
-        [
-          -332.69,
-          -432.43
-        ],
-        [
-          -325.03,
-          -431.55
-        ],
-        [
-          -320.68,
-          -433.26
-        ],
-        [
-          -325.03,
-          -431.55
-        ],
-        [
-          -332.69,
-          -432.43
-        ],
-        [
           -490.40000000000003,
           -475.20000000000005
         ]
@@ -103214,47 +101634,7 @@
           "side": "left"
         },
         {
-          "skelId": "caroline-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "caroline-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "caroline-street-0",
-          "side": "left"
-        },
-        {
-          "skelId": "caroline-street-0",
-          "side": "left"
-        },
-        {
           "skelId": "ohio-avenue-3",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "rutger-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "rutger-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "rutger-street-0",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-street-0",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-street-0",
           "side": "left"
         },
         {
@@ -103486,14 +101866,6 @@
         [
           -836.6,
           -563.5
-        ],
-        [
-          -720.42,
-          -533.31
-        ],
-        [
-          -836.6,
-          -563.5
         ]
       ],
       "edges": [
@@ -103515,14 +101887,6 @@
         },
         {
           "skelId": "south-ewing-avenue-2",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-street-3",
-          "side": "right"
-        },
-        {
-          "skelId": "rutger-street-3",
           "side": "left"
         },
         {
@@ -103566,434 +101930,6 @@
         {
           "skelId": "california-avenue-0",
           "side": "right"
-        }
-      ]
-    },
-    {
-      "ring": [
-        [
-          -682.1,
-          -622.7
-        ],
-        [
-          -474.45,
-          -567.27
-        ],
-        [
-          -682.1,
-          -622.7
-        ],
-        [
-          -657.8000000000001,
-          -714.1
-        ],
-        [
-          -442.70000000000005,
-          -655.7
-        ],
-        [
-          -466.6,
-          -565.2
-        ],
-        [
-          -490.40000000000003,
-          -475.20000000000005
-        ],
-        [
-          -514.3000000000001,
-          -382.3
-        ],
-        [
-          -625.95,
-          -410.99
-        ],
-        [
-          -514.3000000000001,
-          -382.3
-        ],
-        [
-          -537.3000000000002,
-          -292.6
-        ],
-        [
-          -557.3000000000001,
-          -295.7
-        ],
-        [
-          -755.4000000000001,
-          -327.8
-        ],
-        [
-          -744.5,
-          -388.54
-        ],
-        [
-          -732.3000000000001,
-          -434.5
-        ],
-        [
-          -638.4,
-          -412.34
-        ],
-        [
-          -732.3000000000001,
-          -434.5
-        ],
-        [
-          -706.9000000000001,
-          -529.5
-        ],
-        [
-          -500.78,
-          -475.92
-        ],
-        [
-          -706.9000000000001,
-          -529.5
-        ]
-      ],
-      "edges": [
-        {
-          "skelId": "hickory-street-3",
-          "side": "right"
-        },
-        {
-          "skelId": "hickory-street-3",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "lasalle-street-3",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-3",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-3",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-3",
-          "side": "right"
-        },
-        {
-          "skelId": "caroline-street-0",
-          "side": "left"
-        },
-        {
-          "skelId": "caroline-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "ohio-avenue-3",
-          "side": "right"
-        },
-        {
-          "skelId": "park-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "park-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "caroline-street-1",
-          "side": "right"
-        },
-        {
-          "skelId": "caroline-street-1",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-street-4",
-          "side": "right"
-        },
-        {
-          "skelId": "rutger-street-4",
-          "side": "left"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "left"
-        }
-      ]
-    },
-    {
-      "ring": [
-        [
-          -988.17,
-          -53.65
-        ],
-        [
-          -805.6,
-          -25.3
-        ],
-        [
-          -822,
-          74.7
-        ],
-        [
-          -920.6,
-          58.5
-        ],
-        [
-          -1020.2,
-          42.2
-        ],
-        [
-          -1004.8000000000001,
-          -56.2
-        ],
-        [
-          -987.4000000000001,
-          -158
-        ],
-        [
-          -970.9000000000001,
-          -256.7
-        ],
-        [
-          -954.3000000000001,
-          -357.5
-        ],
-        [
-          -943.66,
-          -351.07
-        ],
-        [
-          -894.8000000000001,
-          -342.70000000000005
-        ],
-        [
-          -756.7,
-          -320.20000000000005
-        ],
-        [
-          -772.9000000000001,
-          -225
-        ],
-        [
-          -935.15,
-          -249.18
-        ],
-        [
-          -941.91,
-          -248.25
-        ],
-        [
-          -945.28,
-          -253.14
-        ],
-        [
-          -950.52,
-          -255.12
-        ],
-        [
-          -956.46,
-          -254.3
-        ],
-        [
-          -958.78,
-          -249.54
-        ],
-        [
-          -958.31,
-          -244.41
-        ],
-        [
-          -955.75,
-          -240.58
-        ],
-        [
-          -950.17,
-          -239.18
-        ],
-        [
-          -944.47,
-          -241.97
-        ],
-        [
-          -941.91,
-          -248.25
-        ],
-        [
-          -935.15,
-          -249.18
-        ],
-        [
-          -772.9000000000001,
-          -225
-        ],
-        [
-          -789,
-          -126.5
-        ],
-        [
-          -950.14,
-          -153.27
-        ],
-        [
-          -959.41,
-          -150.43
-        ],
-        [
-          -950.14,
-          -153.27
-        ],
-        [
-          -789,
-          -126.5
-        ],
-        [
-          -805.6,
-          -25.3
-        ]
-      ],
-      "edges": [
-        {
-          "skelId": "henrietta-street-0",
-          "side": "right"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "lafayette-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "nebraska-avenue",
-          "side": "left"
-        },
-        {
-          "skelId": "park-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "park-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "park-avenue-4",
-          "side": "right"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "left"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "saint-vincent-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "eads-avenue-1",
-          "side": "left"
-        },
-        {
-          "skelId": "eads-avenue-1",
-          "side": "left"
-        },
-        {
-          "skelId": "eads-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "eads-avenue-1",
-          "side": "right"
-        },
-        {
-          "skelId": "california-avenue-0",
-          "side": "right"
-        },
-        {
-          "skelId": "henrietta-street-0",
-          "side": "left"
         }
       ]
     },
@@ -104386,22 +102322,6 @@
           -78.7
         ],
         [
-          -361.18,
-          -108.99
-        ],
-        [
-          -177.5,
-          -78.7
-        ],
-        [
-          -194.60000000000002,
-          24.700000000000003
-        ],
-        [
-          -377.01,
-          -5.26
-        ],
-        [
           -194.60000000000002,
           24.700000000000003
         ],
@@ -104464,23 +102384,7 @@
           "side": "right"
         },
         {
-          "skelId": "albion-place",
-          "side": "left"
-        },
-        {
-          "skelId": "albion-place",
-          "side": "right"
-        },
-        {
           "skelId": "missouri-avenue-2",
-          "side": "right"
-        },
-        {
-          "skelId": "whittemore-place",
-          "side": "left"
-        },
-        {
-          "skelId": "whittemore-place",
           "side": "right"
         },
         {
@@ -104584,6 +102488,60 @@
         {
           "skelId": "missouri-avenue-3",
           "side": "left"
+        }
+      ]
+    },
+    {
+      "ring": [
+        [
+          -99.10000000000001,
+          -431.6
+        ],
+        [
+          -134.20000000000002,
+          -325.6
+        ],
+        [
+          -316.1,
+          -373.6
+        ],
+        [
+          -272.8,
+          -513.1
+        ],
+        [
+          -249.20000000000002,
+          -587.8000000000001
+        ],
+        [
+          -64.4,
+          -538
+        ]
+      ],
+      "edges": [
+        {
+          "skelId": "missouri-avenue-3",
+          "side": "left"
+        },
+        {
+          "skelId": "rutger-street-2",
+          "side": "left"
+        },
+        {
+          "skelId": "south-jefferson-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "south-jefferson-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "lasalle-street-0",
+          "side": "right"
+        },
+        {
+          "skelId": "missouri-avenue-4",
+          "side": "right"
         }
       ]
     },
@@ -104708,6 +102666,594 @@
         {
           "skelId": "saint-vincent-avenue-0",
           "side": "right"
+        }
+      ]
+    },
+    {
+      "ring": [
+        [
+          -944.47,
+          -241.97
+        ],
+        [
+          -941.91,
+          -248.25
+        ],
+        [
+          -935.15,
+          -249.18
+        ],
+        [
+          -772.9000000000001,
+          -225
+        ],
+        [
+          -789,
+          -126.5
+        ],
+        [
+          -805.6,
+          -25.3
+        ],
+        [
+          -822,
+          74.7
+        ],
+        [
+          -920.6,
+          58.5
+        ],
+        [
+          -1020.2,
+          42.2
+        ],
+        [
+          -1004.8000000000001,
+          -56.2
+        ],
+        [
+          -987.4000000000001,
+          -158
+        ],
+        [
+          -970.9000000000001,
+          -256.7
+        ],
+        [
+          -954.3000000000001,
+          -357.5
+        ],
+        [
+          -943.66,
+          -351.07
+        ],
+        [
+          -894.8000000000001,
+          -342.70000000000005
+        ],
+        [
+          -756.7,
+          -320.20000000000005
+        ],
+        [
+          -772.9000000000001,
+          -225
+        ],
+        [
+          -935.15,
+          -249.18
+        ],
+        [
+          -941.91,
+          -248.25
+        ],
+        [
+          -945.28,
+          -253.14
+        ],
+        [
+          -950.52,
+          -255.12
+        ],
+        [
+          -956.46,
+          -254.3
+        ],
+        [
+          -958.78,
+          -249.54
+        ],
+        [
+          -958.31,
+          -244.41
+        ],
+        [
+          -955.75,
+          -240.58
+        ],
+        [
+          -950.17,
+          -239.18
+        ]
+      ],
+      "edges": [
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "park-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "park-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "park-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        }
+      ]
+    },
+    {
+      "ring": [
+        [
+          -772.9000000000001,
+          -225
+        ],
+        [
+          -686.1,
+          -210.9
+        ],
+        [
+          -694.7,
+          -157.00000000000006
+        ],
+        [
+          -692.66,
+          -151.61
+        ],
+        [
+          -689.22,
+          -149.99
+        ],
+        [
+          -684.95,
+          -149.96
+        ],
+        [
+          -680.18,
+          -153.61
+        ],
+        [
+          -671.3000000000001,
+          -208.5
+        ],
+        [
+          -575.2,
+          -192.3
+        ],
+        [
+          -424.5,
+          -166.81
+        ],
+        [
+          -416.40000000000003,
+          -164.20000000000002
+        ],
+        [
+          -417.44,
+          -160.55
+        ],
+        [
+          -417.15,
+          -157.92
+        ],
+        [
+          -416.05,
+          -155.5
+        ],
+        [
+          -414.24,
+          -153.57
+        ],
+        [
+          -411.92,
+          -152.29
+        ],
+        [
+          -409.3,
+          -151.83
+        ],
+        [
+          -406.68,
+          -152.2
+        ],
+        [
+          -404.31,
+          -153.39
+        ],
+        [
+          -402.35,
+          -155.39
+        ],
+        [
+          -401.16,
+          -157.92
+        ],
+        [
+          -400.89,
+          -160.71
+        ],
+        [
+          -401.56,
+          -163.43
+        ],
+        [
+          -403.09,
+          -165.77
+        ],
+        [
+          -405.31,
+          -167.45
+        ],
+        [
+          -407.98,
+          -168.32
+        ],
+        [
+          -410.78,
+          -168.24
+        ],
+        [
+          -413.39,
+          -167.23
+        ],
+        [
+          -416.40000000000003,
+          -164.20000000000002
+        ],
+        [
+          -424.5,
+          -166.81
+        ],
+        [
+          -575.2,
+          -192.3
+        ],
+        [
+          -558.5,
+          -288.5
+        ],
+        [
+          -538.8000000000001,
+          -285.1
+        ],
+        [
+          -435.74,
+          -267.42
+        ],
+        [
+          -375.93,
+          -252.5
+        ],
+        [
+          -355,
+          -253.9
+        ],
+        [
+          -371.16,
+          -222.5
+        ],
+        [
+          -383.6,
+          -164.7
+        ],
+        [
+          -429.05,
+          115.87
+        ],
+        [
+          -426.40000000000003,
+          134.1
+        ],
+        [
+          -457.82,
+          131.44
+        ],
+        [
+          -623.3000000000001,
+          105.60000000000001
+        ],
+        [
+          -727.5,
+          89.4
+        ],
+        [
+          -822,
+          74.7
+        ],
+        [
+          -805.6,
+          -25.3
+        ],
+        [
+          -789,
+          -126.5
+        ]
+      ],
+      "edges": [
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "st-vincent-court-0",
+          "side": "right"
+        },
+        {
+          "skelId": "st-vincent-court-0",
+          "side": "right"
+        },
+        {
+          "skelId": "st-vincent-court-0",
+          "side": "right"
+        },
+        {
+          "skelId": "st-vincent-court-0",
+          "side": "right"
+        },
+        {
+          "skelId": "st-vincent-court-0",
+          "side": "right"
+        },
+        {
+          "skelId": "st-vincent-court-0",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "ohio-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "park-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "park-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "park-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "park-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-1",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-1",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-1",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-1",
+          "side": "right"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
         }
       ]
     },
@@ -104868,6 +103414,156 @@
     {
       "ring": [
         [
+          -417.44,
+          -160.55
+        ],
+        [
+          -416.40000000000003,
+          -164.20000000000002
+        ],
+        [
+          -413.39,
+          -167.23
+        ],
+        [
+          -410.78,
+          -168.24
+        ],
+        [
+          -407.98,
+          -168.32
+        ],
+        [
+          -405.31,
+          -167.45
+        ],
+        [
+          -403.09,
+          -165.77
+        ],
+        [
+          -401.56,
+          -163.43
+        ],
+        [
+          -400.89,
+          -160.71
+        ],
+        [
+          -401.16,
+          -157.92
+        ],
+        [
+          -402.35,
+          -155.39
+        ],
+        [
+          -404.31,
+          -153.39
+        ],
+        [
+          -406.68,
+          -152.2
+        ],
+        [
+          -409.3,
+          -151.83
+        ],
+        [
+          -411.92,
+          -152.29
+        ],
+        [
+          -414.24,
+          -153.57
+        ],
+        [
+          -416.05,
+          -155.5
+        ],
+        [
+          -417.15,
+          -157.92
+        ]
+      ],
+      "edges": [
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        },
+        {
+          "skelId": "saint-vincent-avenue-2",
+          "side": "left"
+        }
+      ]
+    },
+    {
+      "ring": [
+        [
           -572.86,
           632.7
         ],
@@ -105004,14 +103700,6 @@
           -29.1
         ],
         [
-          630.94,
-          -53.52
-        ],
-        [
-          725.6,
-          -29.1
-        ],
-        [
           714.7,
           13.100000000000001
         ],
@@ -105043,14 +103731,6 @@
         },
         {
           "skelId": "dillon-drive",
-          "side": "right"
-        },
-        {
-          "skelId": "rutger-lane",
-          "side": "left"
-        },
-        {
-          "skelId": "rutger-lane",
           "side": "right"
         },
         {
@@ -105188,6 +103868,284 @@
         {
           "skelId": "hickory-lane",
           "side": "left"
+        }
+      ]
+    },
+    {
+      "ring": [
+        [
+          -474.1,
+          432.8
+        ],
+        [
+          -474.4000000000001,
+          435.1
+        ],
+        [
+          -492.40000000000003,
+          542.5
+        ],
+        [
+          -518.14,
+          535.62
+        ],
+        [
+          -556.6000000000001,
+          528.3
+        ],
+        [
+          -562.73,
+          524.38
+        ],
+        [
+          -687.6,
+          504
+        ],
+        [
+          -671.5,
+          403.20000000000005
+        ],
+        [
+          -656,
+          306.5
+        ],
+        [
+          -852.4000000000001,
+          275.40000000000003
+        ],
+        [
+          -955.1,
+          258.7
+        ],
+        [
+          -986.7,
+          456.20000000000005
+        ],
+        [
+          -1071.11,
+          442.79
+        ],
+        [
+          -1085.1,
+          443.4000000000001
+        ],
+        [
+          -1068.7,
+          341.40000000000003
+        ],
+        [
+          -1045.3,
+          197.9
+        ],
+        [
+          -1042.1000000000001,
+          177.70000000000002
+        ],
+        [
+          -1020.2,
+          42.2
+        ],
+        [
+          -920.6,
+          58.5
+        ],
+        [
+          -822,
+          74.7
+        ],
+        [
+          -727.5,
+          89.4
+        ],
+        [
+          -623.3000000000001,
+          105.60000000000001
+        ],
+        [
+          -457.82,
+          131.44
+        ],
+        [
+          -426.40000000000003,
+          134.1
+        ],
+        [
+          -430.90000000000003,
+          157.5
+        ],
+        [
+          -442.3,
+          178.5
+        ],
+        [
+          -448.5,
+          206.3
+        ],
+        [
+          -450.5,
+          215.70000000000002
+        ],
+        [
+          -455.90000000000003,
+          244.10000000000002
+        ],
+        [
+          -459.6,
+          264.2
+        ],
+        [
+          -465,
+          293.90000000000003
+        ],
+        [
+          -467.1,
+          311.90000000000003
+        ],
+        [
+          -470.1,
+          342.70000000000005
+        ],
+        [
+          -465.3,
+          362.5
+        ]
+      ],
+      "edges": [
+        {
+          "skelId": "allen-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "south-jefferson-avenue-4",
+          "side": "right"
+        },
+        {
+          "skelId": "russell-boulevard-0",
+          "side": "left"
+        },
+        {
+          "skelId": "russell-boulevard-0",
+          "side": "left"
+        },
+        {
+          "skelId": "russell-boulevard-1",
+          "side": "right"
+        },
+        {
+          "skelId": "russell-boulevard-1",
+          "side": "right"
+        },
+        {
+          "skelId": "ohio-avenue-1",
+          "side": "left"
+        },
+        {
+          "skelId": "ohio-avenue-1",
+          "side": "left"
+        },
+        {
+          "skelId": "geyer-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "geyer-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "oregon-avenue",
+          "side": "right"
+        },
+        {
+          "skelId": "russell-boulevard-1",
+          "side": "right"
+        },
+        {
+          "skelId": "russell-boulevard-1",
+          "side": "right"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "nebraska-avenue",
+          "side": "left"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "lafayette-avenue-0",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-6",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-7",
+          "side": "right"
+        },
+        {
+          "skelId": "south-jefferson-avenue-4",
+          "side": "right"
         }
       ]
     },
@@ -105508,6 +104466,108 @@
         {
           "skelId": "lasalle-street-4",
           "side": "left"
+        }
+      ]
+    },
+    {
+      "ring": [
+        [
+          -442.70000000000005,
+          -655.7
+        ],
+        [
+          -466.6,
+          -565.2
+        ],
+        [
+          -490.40000000000003,
+          -475.20000000000005
+        ],
+        [
+          -514.3000000000001,
+          -382.3
+        ],
+        [
+          -537.3000000000002,
+          -292.6
+        ],
+        [
+          -557.3000000000001,
+          -295.7
+        ],
+        [
+          -755.4000000000001,
+          -327.8
+        ],
+        [
+          -744.5,
+          -388.54
+        ],
+        [
+          -732.3000000000001,
+          -434.5
+        ],
+        [
+          -706.9000000000001,
+          -529.5
+        ],
+        [
+          -682.1,
+          -622.7
+        ],
+        [
+          -657.8000000000001,
+          -714.1
+        ]
+      ],
+      "edges": [
+        {
+          "skelId": "ohio-avenue-3",
+          "side": "right"
+        },
+        {
+          "skelId": "ohio-avenue-3",
+          "side": "right"
+        },
+        {
+          "skelId": "ohio-avenue-3",
+          "side": "right"
+        },
+        {
+          "skelId": "ohio-avenue-3",
+          "side": "right"
+        },
+        {
+          "skelId": "park-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "park-avenue-2",
+          "side": "right"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "california-avenue-0",
+          "side": "left"
+        },
+        {
+          "skelId": "lasalle-street-3",
+          "side": "right"
         }
       ]
     },
@@ -106044,6 +105104,188 @@
         {
           "skelId": "south-ewing-avenue-2",
           "side": "right"
+        }
+      ]
+    },
+    {
+      "ring": [
+        [
+          63.48,
+          -236.56
+        ],
+        [
+          58.7,
+          -234
+        ],
+        [
+          56.65,
+          -239.21
+        ],
+        [
+          55.78,
+          -244.58
+        ],
+        [
+          56.52,
+          -255.12
+        ],
+        [
+          67.72,
+          -296.13
+        ],
+        [
+          79.12,
+          -331.92
+        ],
+        [
+          95.57,
+          -378.1
+        ],
+        [
+          97.16,
+          -380.79
+        ],
+        [
+          102,
+          -385.44
+        ],
+        [
+          105.33,
+          -386.77
+        ],
+        [
+          108.78,
+          -386.25
+        ],
+        [
+          111.93,
+          -384.58
+        ],
+        [
+          113.8,
+          -381.86
+        ],
+        [
+          114.46,
+          -375.36
+        ],
+        [
+          114.19,
+          -372.75
+        ],
+        [
+          105.98,
+          -342.37
+        ],
+        [
+          97.9,
+          -315.64
+        ],
+        [
+          87.53,
+          -284.17
+        ],
+        [
+          76.26,
+          -252.84
+        ],
+        [
+          74.37,
+          -248.7
+        ],
+        [
+          68.66,
+          -240.38
+        ]
+      ],
+      "edges": [
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
+        },
+        {
+          "skelId": "benton-place-1",
+          "side": "left"
         }
       ]
     },
