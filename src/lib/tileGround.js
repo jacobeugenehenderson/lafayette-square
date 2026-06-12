@@ -1022,23 +1022,24 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
     // curb → block-center (§3.3: no hard property line; both-strips-LU = open
     // field falls out for free).
     let luRemainder = unionRings([...iW, ...luExtra, ...differenceRings(bandRem, cornerPad)])
-    // G8 — at a blunt/none dead-end the street just ends: no ped wrap. Subtract
-    // a disk at the tip from the ped bands and reclaim that ped area as LU so it
-    // abuts the flat asphalt end.
-    if (bluntTips.length) {
-      const disks = bluntTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + TLmax + SWmax + 1))
-      luRemainder = unionRings([...luRemainder, ...intersectRings(fullBand, disks)])
-      for (const pc of pieces) pc.rings = differenceRings(pc.rings, disks)
-      cornerPad = differenceRings(cornerPad, disks)
-    }
+    // G8 — at a blunt/none dead-end the street just ends FLAT. The side
+    // treelawn/sidewalk run TO the end (the concentric rings already follow the
+    // blunt cap in iA), and the band caps flat across the end. The earlier
+    // full-width tip-DISK subtraction was wrong (Jacob 2026-06-11): it scooped a
+    // circular bite out of the SIDE bands, leaving them pointy + short of the end.
+    // Nothing to subtract — the bands run to the end by construction.
     // G8 round-tip cleanup — a cul-de-sac cap is road + ped wrap, NEVER land use.
     // The zero-width pendant spur leaves a thin LU sliver up the stub centerline
-    // that pokes into the cap; reclaim any LU inside the cap radius as sidewalk.
+    // that pokes into the cap; reclaim it. But reclaim ONLY the sliver INSIDE the
+    // ped band (within iC), NOT the LU beyond the band — the old cap-radius reclaim
+    // (hw+cw+tl+sw+1) swept the legitimate beyond-band LU into the sidewalk too,
+    // ballooning the bulb into a fat all-sidewalk pad (Jacob 2026-06-11). Clipping
+    // the reclaim to fullBand keeps the wrap at the regular treelawn+sidewalk width.
     if (roundTips.length) {
       const caps = roundTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 1))
-      const stray = intersectRings(luRemainder, caps)
+      const stray = intersectRings(intersectRings(luRemainder, caps), fullBand)
       if (stray.length) {
-        luRemainder = differenceRings(luRemainder, caps)
+        luRemainder = differenceRings(luRemainder, stray)
         cornerPad = unionRings([...cornerPad, ...stray])
       }
     }
