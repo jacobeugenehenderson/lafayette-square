@@ -1,6 +1,8 @@
 # HANDOFF — Band-fold fix RESULT (dispatched agent → Boz)
 
-**Status: fix complete + committed, pending Jacob's live :5173 eye-confirm.** Branch `band-fold-fix` @ **`8e1e414`** (off trunk `cartograph-looks-pass-ab` @ `5658d43`). The main-tree **working copy** also carries the fix (uncommitted, **unstaged** on trunk) so Jacob can validate live right now — see §Git state.
+> ⚠️ **STRANDED — never landed (2026-06-11 audit, `SECTION-CAP-CLAMP-FORENSIC.md`).** `8e1e414` is **NOT an ancestor of the live `curb-offset-draw` branch** — its helpers (`declumpLayer`/`simplifyRings`/`ringSelfIntersects`) are **absent from the current code**. The "What's left for Boz" below (land it · flip the G12 ledger → DONE · retire the HANDOFFs) was **never executed**. So this addressed only **G12 subclass (1)** (self-int blobs), and even that **isn't in the tree**. The **band-neck / partial-degeneracy subclass (2)** — the Albion cul-de-sac notch — was explicitly deferred here (§"Distinct, NOT fixed", which names "Albion 1") and remains open. **Before reusing any of this: decide whether to land `8e1e414` (do the self-int blobs still occur on this branch?) — don't assume DONE.**
+
+**Status (original, now superseded by the banner above): fix complete + committed, pending Jacob's live :5173 eye-confirm.** Branch `band-fold-fix` @ **`8e1e414`** (off trunk `cartograph-looks-pass-ab` @ `5658d43`). The main-tree **working copy** also carries the fix (uncommitted, **unstaged** on trunk) so Jacob can validate live right now — see §Git state.
 
 Supersedes the dispatch brief `HANDOFF-band-fold-fix.md` and its FINDINGS companion (both retire to NOTES on landing).
 
