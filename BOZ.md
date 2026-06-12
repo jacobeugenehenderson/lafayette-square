@@ -35,6 +35,21 @@ The **same germane fact** appears in each register **in that register's voice** 
 | **bake** | `public/baked/<id>/*` | **`BAKE.md`** (the chain) · `SLAB-CONTRACT.md` (format) · `ARCHITECTURE §3/§7` | BACKLOG | NOTES |
 | **stage** | `scene.json` (the look) | **`STAGE.md`** (the Look tool) · `SLAB-CONTRACT §4` · `FEATURES §Stage` | BACKLOG | NOTES |
 
+### The feature index — where each cross-cutting CONSTRUCTION lives (the "where is X" map)
+
+> The Suite table above is keyed by *pipeline stage*. Several **constructions cut across stages** (a loop touches skeleton + prebake + section) and live in a **dedicated topic doc or a State HANDOFF** — index them here so they're *found before re-derived*. **The recurring failure is hunting topic docs when the plan is a HANDOFF** (dead-ends, 2026-06-11): **plans live in `BACKLOG.md` + the `HANDOFF-*.md` it indexes** — grep BACKLOG for the feature name first, then read its HANDOFF. This table maps the construction → its home.
+
+| Construction / feature | Home doc(s) | One-line |
+|---|---|---|
+| **Loop streets** (Benton teardrop · Waverly couplet · Park/Saint-Vincent bulbs · 18th U) | **`LOOP-STREETS.md`** (the L.0 lock + live/dead) · `SKELETON.md §3 step 8` (RDP guard) | median = the **emergent enclosed face**; the endpoint-weld (`e8cc310`) closes near-coincident bodies |
+| **Dead-ends** (cul-de-sac · stub · spike) | **`HANDOFF-dead-end-spike-prune.md`** (prune + stroke, the grade-sep pattern) · **`HANDOFF-dead-end-typology.md`** (3 cap types) · `OSM-FORENSICS §1` (node typology) · `SECTION.md §6`/D6a + G8 (cap *fill*) | part 1 (prune pendant edges) is in `extractFaces`; part 2 (stroke the stubs) is the open build |
+| **Divided roads / carriageways / medians** | **`DIVIDED-CORRIDOR-PLAN.md`** · `TRUMAN-FORENSICS.md` (the parkway knot) · `FEATURES §367–387` (inner-edge anchor, **LOCKED**) | median emergent / E2-constructed; two-carriageway model locked |
+| **Divided↔undivided transition** (false corner · the "d" bulge) | **`PREBAKE-POLYGONIZATION-PLAN.md`** · `SKELETON.md §5b/5d/5e/5f` · `HANDOFF-freeze-the-curb-in-the-first-bake.md` · `HANDOFF-divided-transition-block-tongue.md` | false corner resolved (`9c275ce`); the "d" bulge = the unfrozen curb |
+| **Junction / corner construction** (width-step family · aprons · de-taper) | **`JUNCTION-CURE-PLAN.md`** (E3) · `SKELETON.md §5e` · `OSM2STREETS-GROUNDING.md` (the standard) | E3.2/.3 landed; the corner **FILL** → `SECTION.md §6` |
+| **Band-fold / thorns** (thin-tile sidewalk fold) | **`HANDOFF-band-fold-fix.md`** + `-RESULT.md` · `HANDOFF-junction-band-thorns-FINDINGS.md` | local `iW` clamp in `sectionPass` |
+| **Polygon-first / the Data Wall** | **`POLYGON-FIRST.md`** · `PREBAKE.md §4–5` · `WALL.md` | freeze topology (D2 done) + curb (open) |
+| **Frame forensics** (the evidence base) | `OSM-FORENSICS.md` + `-EVAL.md` · `OSM2STREETS-GROUNDING.md` | "OSM or us" = 100% us; the standard gets us correct |
+
 ### The two operations on the library
 
 - **FIND** *(entering the pile)* → the path is §4: coordinator memory → `README §⭐ START HERE` (settled-state-by-topic) → `README §Documentation map` (the whole landscape) → `PIPELINE` spine → the Reference doc for your topic → the active HANDOFFs. **Read the canon to the section before you diagnose** (§4 hard gate).
