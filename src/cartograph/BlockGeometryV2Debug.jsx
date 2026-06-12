@@ -1175,6 +1175,12 @@ export default function BlockGeometryV2Debug({
           {asphaltVisible && sectionGeos.asphalt && (
             <mesh geometry={sectionGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
           )}
+          {PATH_KINDS.map(kind => (
+            PATH_VISIBLE[kind] && pathGeoByKind[kind] && (
+              <mesh key={`path-${kind}`} geometry={pathGeoByKind[kind]}
+                renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
+            )
+          ))}
         </group>
       )
     }
@@ -1221,6 +1227,16 @@ export default function BlockGeometryV2Debug({
         {highwayVisible && tileGeos?.highway && (
           <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
         )}
+        {/* Non-street ribbons (alley/footway/cycleway/steps/path). These were
+            ONLY in the non-tile V2 return below, so on a tile scene (LS) the
+            render returned here and never drew them — toggled-on-but-invisible.
+            Same geometry the bake emits (buildPathRibbons, tile-clipped). */}
+        {PATH_KINDS.map(kind => (
+          PATH_VISIBLE[kind] && pathGeoByKind[kind] && (
+            <mesh key={`path-${kind}`} geometry={pathGeoByKind[kind]}
+              renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
+          )
+        ))}
       </group>
     )
   }
