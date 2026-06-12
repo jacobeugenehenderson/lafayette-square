@@ -319,6 +319,30 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
     const polys = ringsToHoledPolys(rings)
     if (polys.length) byFaceUse.set(lu, (byFaceUse.get(lu) || []).concat(polys))
   }
+  // Non-street ribbons (alleys + footway/cycleway/steps/path). The Designer
+  // renders these live (BlockGeometryV2Debug → buildPathRibbons), but the bake
+  // dropped them: the call lived ONLY in the dead figure-ground path
+  // (buildV2BakeShape) and the tile migration never carried it here, so the slab
+  // shipped with no alley/footway/path groups (DOC-CODE-COHERENCE C13). Mirror it
+  // on the tile path. Clip to PARCEL INTERIORS (block − curb − treelawn −
+  // sidewalk) so paths stop at the sidewalk's inner edge; exclude park (its paths
+  // render gravel-shaded via LafayettePark.jsx — a baked duplicate pokes through).
+  // layerVis gating happens downstream at PAINT_ORDER, same as every other group.
+  {
+    const subtract = []
+    for (const r of (pr.curb || [])) if (r?.length >= 3) subtract.push(r)
+    for (const rings of Object.values(pr.treelawnByLu || {})) for (const r of rings) if (r?.length >= 3) subtract.push(r)
+    for (const r of (pr.sidewalk || [])) if (r?.length >= 3) subtract.push(r)
+    for (const r of (pr.luByClass?.park || [])) if (r?.length >= 3) subtract.push(r)
+    const blockRings = (pr.block || []).filter(r => r?.length >= 3)
+    const parcelInteriors = (subtract.length && blockRings.length) ? differenceRings(blockRings, subtract) : blockRings
+    for (const [kind, rings] of buildPathRibbons(ribbons, {
+      intersect: parcelInteriors,
+      alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
+    })) {
+      pushClipperRings(kind, rings)
+    }
+  }
   return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact }
 }
 
