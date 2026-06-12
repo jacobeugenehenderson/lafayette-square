@@ -659,6 +659,10 @@ export default function BlockGeometryV2Debug({
       asphalt:  ringsToFlatGeo(sg.asphalt,  0.040, true),
       block:    ringsToFlatGeo(sg.block,    0.008, true),   // frozen block silhouette, under the LU paint
       blockRings: sg.block,   // raw iA rings — handle anchoring (one geometry truth)
+      curbRings: sg.curb || [],
+      sidewalkRings: sg.sidewalk || [],
+      treelawnRings: Object.values(sg.treelawnByLu || {}).flat(),
+      parkRings: (sg.luByClass && sg.luByClass.park) || [],
     }
   }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms])
 
@@ -685,6 +689,14 @@ export default function BlockGeometryV2Debug({
       highway:  ringsToFlatGeo(tg.highway,  0.015, true),   // above LU faces, below the ribbon network — grade-sep shows in its corridor, occluded by local roads
       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
       blockRings: tg.block,   // raw iA rings — handle anchoring (one geometry truth)
+      // Raw band rings for the path-ribbon parcel clip (mirrors bake-ground's
+      // buildTileBakeShape): paths clip to block − curb − treelawn − sidewalk,
+      // park excluded. Exposed off the TILE geometry so the Designer's path clip
+      // matches the slab and doesn't depend on the dead figure-ground V2 path.
+      curbRings: tg.curb || [],
+      sidewalkRings: tg.sidewalk || [],
+      treelawnRings: Object.values(tg.treelawnByLu || {}).flat(),
+      parkRings: (tg.luByClass && tg.luByClass.park) || [],
       cornerFillets: tg.cornerFillets || {},
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
       _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
@@ -1012,17 +1024,31 @@ export default function BlockGeometryV2Debug({
   // Y-lift 0.05 sits paths above asphalt (0.04) — Designer stacks
   // ground layers by tiny Y increments.
   const parcelInteriors = useMemo(() => {
-    const blockRings = (blocks || []).map(b => b.ring).filter(r => r?.length >= 3)
+    // Prefer the TILE geometry (tileGeos live, or sectionGeos when frozen) so the
+    // Designer's path clip matches bake-ground's buildTileBakeShape EXACTLY. The
+    // old figure-ground V2 bands (blocks/curbBands/frontageBands) are the dead
+    // path — fragile on the tile scene — so they're a fallback only.
+    const tg = tileGeos || sectionGeos
+    let blockRings
     const subtract = []
-    for (const r of (curbBands || [])) if (r?.length >= 3) subtract.push(r)
-    for (const fb of (frontageBands || [])) {
-      for (const r of (fb.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
-      for (const r of (fb.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
+    if (tg?.blockRings?.length) {
+      blockRings = tg.blockRings.filter(r => r?.length >= 3)
+      for (const r of (tg.curbRings || [])) if (r?.length >= 3) subtract.push(r)
+      for (const r of (tg.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
+      for (const r of (tg.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
+      for (const r of (tg.parkRings || [])) if (r?.length >= 3) subtract.push(r)
+    } else {
+      blockRings = (blocks || []).map(b => b.ring).filter(r => r?.length >= 3)
+      for (const r of (curbBands || [])) if (r?.length >= 3) subtract.push(r)
+      for (const fb of (frontageBands || [])) {
+        for (const r of (fb.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
+        for (const r of (fb.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
+      }
     }
     if (!blockRings.length) return []
     if (!subtract.length) return blockRings
     return differenceRings(blockRings, subtract)
-  }, [blocks, curbBands, frontageBands])
+  }, [tileGeos, sectionGeos, blocks, curbBands, frontageBands])
   const pathGeoByKind = useMemo(() => {
     const ringsByKind = buildPathRibbons(liveRibbons, { intersect: parcelInteriors, alleyCap })
     const out = {}
