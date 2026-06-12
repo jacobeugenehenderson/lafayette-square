@@ -2241,7 +2241,14 @@ export function buildTileGround(ribbons, opts = {}) {
     const medClip = medianClipFor(tile.ring)
     let medArea = 0
     for (const r of medClip) medArea += Math.abs(signedArea(r))
-    const isMedianTile = medArea > 0.5 && medArea > 0.5 * Math.abs(signedArea(tile.ring))
+    // A single-run tile (groupRuns found no seam) is bounded entirely by ONE
+    // street-side → a loop interior (LOOP-STREETS §2). When its emergent median
+    // ring covers it, it IS the §2 body interior: ped-zero so the inner side is
+    // curb + grass (no inner sidewalk ring), treelawn flowing into the median —
+    // independent of the >50% area ratio the divided-median heuristic uses.
+    const isLoopInterior = runs.length === 1
+    const isMedianTile = (medArea > 0.5 && medArea > 0.5 * Math.abs(signedArea(tile.ring)))
+      || (isLoopInterior && medArea > 0.5)
     // Best-effort fill (SECTION.md §3.1): per-tile band depths are STANDARD, not
     // the old per-edge averaged measures. The treelawn band is present iff any of
     // the tile's runs gleans treelawn-Y; the sidewalk band is always ADA.

@@ -3276,7 +3276,12 @@ export function deriveLayers(highways) {
     if (interior !== 'median') continue               // 'block' → interior is a block, not grass
     pts[pts.length - 1] = [pts[0][0], pts[0][1]]       // SNAP closed (kill the quantization gap)
     const hw = S.measure?.left?.pavementHW || S.measure?.right?.pavementHW || defaultHalfWidth
-    const inset = hw + STANDARDS.curb.width + STANDARDS.sidewalk.width  // grass edge = inner sidewalk's inner edge
+    // LOOP-STREETS §2 body cross-section: the inner (median-facing) side is curb +
+    // treelawn only, NO sidewalk — the treelawn flows into the median (all grass
+    // from the curb inward). So inset to the CURB's inner edge (hw + curb), not past
+    // a sidewalk: the grass ring then covers the interior face → isMedianTile fires
+    // → the inner ped band zeros, no sidewalk ring.
+    const inset = hw + STANDARDS.curb.width
     const co = new ClipperOffset(); co.ArcTolerance = ARC_TOL
     const lp = new Paths(); lp.push(pts.map(p => toClipper(p[0], p[1])))
     co.AddPaths(lp, JoinType.jtRound, EndType.etClosedPolygon)
