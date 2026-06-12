@@ -464,13 +464,14 @@ export function extractFaces(streets) {
   }
   // ⭐ WELD NEAR-COINCIDENT CHAIN ENDPOINTS. A loop body that closes within a few
   // cm — above the 0.1 mm node quantization (Benton 3.2 cm, Saint Vincent 2.2 cm)
-  // — would otherwise read as an OPEN pendant and peel away entirely, so its
-  // enclosed face never forms. LOOP-STREETS §0/§1: a loop median IS the emergent
-  // enclosed face — it only exists if the ring closes. Park Place (gap 0.000)
-  // closes on its own and renders right; this gives the near-closed loops the same
-  // footing. ENDPOINTS only (mid-chain geometry untouched) within a tolerance well
-  // below junction separation, so only true gap artifacts merge — general, so any
-  // near-miss endpoint slit closes, not just the named loops.
+  // — would otherwise read as an OPEN chain whose two endpoints are distinct nodes,
+  // so its ring never closes and the enclosed interior face never forms.
+  // LOOP-STREETS §0/§1: a loop median IS the emergent enclosed face — it only
+  // exists if the ring closes. Park Place (gap 0.000) closes on its own and renders
+  // right; this gives the near-closed loops the same footing. ENDPOINTS only
+  // (mid-chain geometry untouched) within a tolerance well below junction
+  // separation, so only true gap artifacts merge — general, so any near-miss
+  // endpoint gap closes, not just the named loops.
   const ENDPOINT_SNAP = 0.15   // m
   const endReps = []
   const snapEnd = (p) => {
@@ -490,30 +491,22 @@ export function extractFaces(streets) {
     }
   })
   for (const n of nodes.values()) n.edges.sort((a, b) => a.angle - b.angle)
-  // ⭐ PRUNE DEAD-END PENDANTS (formal polygon-first: blocks are clean enclosed
-  // faces; a dead-ending street owns its OWN footprint, it does not slit the
-  // block). Iteratively remove degree-1 nodes + their edge — the pendant chain
-  // peels back to its junction (which then drops to degree-2 and walks straight
-  // through). The peeled edges are recorded as `deadEndChains` for the dead-end's
-  // own ped stroke. Topology op (node degree), not a geometric spur excision.
-  const deadEndChains = []
-  const liveDeg = (n) => { let d = 0; for (const h of n.edges) if (!h.removed) d++; return d }
-  let peeling = true
-  while (peeling) {
-    peeling = false
-    for (const n of nodes.values()) {
-      if (liveDeg(n) !== 1) continue
-      for (const h of n.edges) if (!h.removed) { h.removed = true; h.twin.removed = true; deadEndChains.push(h); peeling = true }
-    }
-  }
+  // NOTE (2026-06-11): dead-end pendants are NOT pruned. A dead-ending street's
+  // out-and-back spur reads as a degenerate (zero-width) face the inward Clipper
+  // offset collapses on its own, so the street renders woven with its proper cap
+  // (round bulb + ped wrap / flat abut) — verified clean map-wide on the render.
+  // A prior pendant-prune (28f8856, now reverted) deleted the dead-ends' footprints
+  // (asphalt is tile-sourced) to solve a slit pathology that the forensic + render
+  // showed mostly isn't real (HANDOFF-dead-end-spike-prune, bollard). LOOPS are the
+  // real enclosed-face case — handled above by the endpoint weld, not by pruning.
   const nextHE = (he) => {
-    const out = he.to.edges.filter(h => !h.removed)
+    const out = he.to.edges
     const idx = out.indexOf(he.twin)
     return out[(idx - 1 + out.length) % out.length]
   }
   const faces = []
   for (const h0 of heList) {
-    if (h0.used || h0.removed) continue
+    if (h0.used) continue
     const ring = []
     const edges = []   // edges[i] = the directed half-edge ring[i] → ring[i+1]
     let h = h0, guard = 0
