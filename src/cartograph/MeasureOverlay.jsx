@@ -171,7 +171,17 @@ function sideBoundaries(side) {
 // curb (iA) rings; return the nearest curb-crossing point. The handle then sits at
 // that REAL curb + the ped depth — ONE geometry truth with the FILL, instead of a
 // centreline ruler that drifts from the rounded iA at corners (Plumb forensic 2a).
-function rayHitCurb(cx, cz, dx, dz, rings) {
+//
+// `maxT` (meters) caps the ray distance to the street's OWN curb. Without it the
+// nearest crossing is taken with no street-identity filter, so where this street's
+// curb is interrupted (a junction opening) or absent (the disrupted weird streets —
+// S 18th / Dolman / Carroll), the ray sails through and latches onto a FAR curb
+// 100–217 m away → the handle floats out into the grass (proven, `scratch/handle-diag.mjs`;
+// = Caliper's "corner-registration gap"). Capping → no hit in range → caller falls
+// back to the centreline ruler, keeping the handle ON the ribbon. The real curb
+// absence is the upstream skeleton fix (HANDOFF-18th-loop-skeleton.md); this is the
+// defensive cap. NOTE: the deeper skeleton fix is what makes the curb EXIST.
+function rayHitCurb(cx, cz, dx, dz, rings, maxT = Infinity) {
   let bestT = Infinity, hit = null
   for (const ring of rings) {
     if (!ring || ring.length < 3) continue
@@ -183,11 +193,16 @@ function rayHitCurb(cx, cz, dx, dz, rings) {
       const ax = A[0] - cx, az = A[1] - cz
       const t = (ax * ez - az * ex) / denom   // ray param (distance along D)
       const u = (ax * dz - az * dx) / denom    // segment param
-      if (t > 0.05 && u >= 0 && u <= 1 && t < bestT) { bestT = t; hit = { x: cx + dx * t, z: cz + dz * t } }
+      if (t > 0.05 && t <= maxT && u >= 0 && u <= 1 && t < bestT) { bestT = t; hit = { x: cx + dx * t, z: cz + dz * t } }
     }
   }
   return hit
 }
+// The legitimate curb sits at ~pavementHW + curb from the centreline; a corner
+// fillet / densified curve can push the perpendicular hit a little past that, so
+// allow a generous margin. Anything beyond is a DIFFERENT street's curb (the floats
+// were 100 m+, so the threshold is not delicate).
+const RAY_CURB_MARGIN = 8   // m
 
 // Handle pill dimensions (meters). Long axis runs along the street; short
 // axis is the perpendicular "ruler" direction. Used for hit-testing AND
@@ -375,8 +390,9 @@ export default function MeasureOverlay() {
       // (b.r − pavementHW). This rides the rounded iA at corners and uses the
       // actual curb position, not the chainMeasure ruler. Falls back to the
       // centreline ruler when no frozen curb is published (non-Section modes).
+      const cwSide = Number.isFinite(measure[sideKey]?.curb) ? measure[sideKey].curb : CURB_WIDTH
       const curb = sectionCurbRings.length
-        ? rayHitCurb(cx, cz, sign * nx, sign * nz, sectionCurbRings)
+        ? rayHitCurb(cx, cz, sign * nx, sign * nz, sectionCurbRings, pavHW + cwSide + RAY_CURB_MARGIN)
         : null
       const base = curb || { x: cx + sign * nx * pavHW, z: cz + sign * nz * pavHW }
       for (const b of bounds) {
