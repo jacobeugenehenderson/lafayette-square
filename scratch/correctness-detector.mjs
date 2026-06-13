@@ -62,6 +62,8 @@ const JUNC_THROAT_R     = 14   // m — the throat radius around a junction node
 const JUNC_TILE_REACH   = 12   // m — a tile whose curb (iA) passes within this of the node is incident to the junction
 const SLIVER_AREA       = 8    // m² — a ped (treelawn/sidewalk) fragment smaller than this at the throat is a junction-band SLIVER (a fragmented ped band). The legitimate leg strips are >100 m²; the slivers are the 2–6 m² wedges the independently-stroked legs leave behind.
 const JUNC_SLIVER_FLAG  = 2    // a junction with this many throat slivers is flagged (1 may be a single corner notch; ≥2 = the band is fragmenting)
+// name-transition smoothness invariant (Boz, 2026-06-13 — the through-road-simplify gate)
+const NT_FACET_DEG      = 30   // ° — a name-transition is "one road through" (it's DETECTED via a collinear-tangent gate in skeleton.js), so a seam exterior-turn above this is a simplification FACET, not a real bend. The genuine U-corners sit ~20°. RED before c4cb191 (W18↔Dolman 46.5°), GREEN after (15.6°). First-principles, not fit.
 
 // ── geometry helpers ────────────────────────────────────────────────────────
 const sub   = (a, b) => [a[0] - b[0], a[1] - b[1]]
@@ -357,6 +359,50 @@ function junctionBandReport(streets, tiles, asphalt, cw) {
   return { junctions, flaggedNames }
 }
 
+// ── INVARIANT: name-transition smoothness (topological — the seam, not the chain)
+// A name-transition keeps a road CONTINUOUS, so its seam should carry the road's
+// own gentle curvature, not a hard kink. Per-chain RDP used to pin the seam node
+// and drop the dense rounding, facetting it (W18↔Dolman 46.5°). Reads skeleton.json
+// (it carries nameTransitions[] + {x,z} points); flags any seam whose exterior turn
+// exceeds NT_FACET_DEG. This is the RED-until-true gate for the through-road fix
+// (c4cb191) and the regression guard for every future town's name-transitions.
+function nameTransitionReport(skOverride) {
+  let sk = skOverride
+  if (!sk) {
+    const skPath = path.join(ROOT, 'cartograph/data/lafayette-square/clean/skeleton.json')
+    if (!fs.existsSync(skPath)) return {}
+    sk = JSON.parse(fs.readFileSync(skPath, 'utf8'))
+  }
+  const vk = (p) => `${p.x.toFixed(2)},${p.z.toFixed(2)}`
+  const ang = (u, v) => {
+    const l1 = Math.hypot(u.x, u.z), l2 = Math.hypot(v.x, v.z)
+    if (l1 < 1e-6 || l2 < 1e-6) return 0
+    return Math.acos(Math.max(-1, Math.min(1, (u.x * v.x + u.z * v.z) / (l1 * l2)))) * 180 / Math.PI
+  }
+  const flagged = {}
+  for (const t of (sk.nameTransitions || [])) {
+    const k = vk(t)
+    const arms = []
+    for (const s of sk.streets) {
+      const p = s.points; if (!p || p.length < 2) continue
+      if (vk(p[0]) === k) arms.push(p[1])
+      if (vk(p[p.length - 1]) === k) arms.push(p[p.length - 2])
+    }
+    if (arms.length !== 2) continue
+    const n = { x: t.x, z: t.z }
+    const v1 = { x: n.x - arms[0].x, z: n.z - arms[0].z }   // into the node
+    const v2 = { x: arms[1].x - n.x, z: arms[1].z - n.z }   // out of the node
+    const seam = ang(v1, v2)
+    if (seam > NT_FACET_DEG) {
+      for (const nm of [t.from, t.to]) {
+        if (!nm) continue
+        if (!flagged[nm] || seam > flagged[nm].turn) flagged[nm] = { turn: +seam.toFixed(1), why: `${t.from}→${t.to} seam kink ${seam.toFixed(1)}° (facet, not a bend)` }
+      }
+    }
+  }
+  return flagged
+}
+
 // ── load the frame (same as corner-guard) ───────────────────────────────────
 const ribbons = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/ribbons.json')))
 const bnd = JSON.parse(fs.readFileSync(path.join(ROOT, 'cartograph/data/lafayette-square/neighborhood_boundary.json')))
@@ -500,6 +546,31 @@ const loopFlags = loopClosureReport(streets, faces, ribbons.medians)
 const capFlags  = capTangentReport(streets, tiles, clip)
 const junc      = junctionBandReport(streets, tiles, pr.asphalt, design.curbWidth)
 const juncFlags = junc.flaggedNames   // name -> {slivers, worstA}
+const ntFlags   = nameTransitionReport()   // name -> {turn, why}  (the through-road-simplify gate)
+
+// SELF-TEST (--simNT): prove name-transition smoothness is a LIVE gate, not dead-
+// green. Re-pin every transition seam the way per-chain RDP did (drop the rounding
+// shoulders → reconnect the seam node to its far neighbours), and the invariant MUST
+// fire (e.g. W18↔Dolman back to its ~46° facet). If it stays green, the oracle is dead.
+if (process.argv.includes('--simNT')) {
+  const skPath = path.join(ROOT, 'cartograph/data/lafayette-square/clean/skeleton.json')
+  const sk = JSON.parse(fs.readFileSync(skPath, 'utf8'))
+  const vk = (p) => `${p.x.toFixed(2)},${p.z.toFixed(2)}`
+  // facet each transition seam: on each incident chain, delete the vertex adjacent
+  // to the seam node (the rounding shoulder) so the node joins its far neighbour.
+  const keyset = new Set((sk.nameTransitions || []).map(vk))
+  const sim = { ...sk, streets: sk.streets.map(s => {
+    if (!s.points || s.points.length < 4) return s
+    const p = s.points
+    if (keyset.has(vk(p[0]))) return { ...s, points: [p[0], ...p.slice(2)] }
+    if (keyset.has(vk(p[p.length - 1]))) return { ...s, points: [...p.slice(0, -2), p[p.length - 1]] }
+    return s
+  }) }
+  const simNT = nameTransitionReport(sim)
+  console.log('\n[SELF-TEST --simNT] transition shoulders deleted (re-facetted):')
+  console.log('  name-transition now flags:', Object.keys(simNT).length ? Object.entries(simNT).map(([n, f]) => `${n} (${f.turn}°)`).join('; ') : 'NONE — ORACLE DEAD')
+  console.log('  (expected: Dolman/West 18th + the U-corners fire — the gate is live)\n')
+}
 
 // SELF-TEST (--simweld): prove loop-closure is a LIVE guard, not a dead-green
 // check. Pull the welded loop bodies' endpoints apart past the weld tol (and
@@ -572,6 +643,7 @@ const allFlagged = new Set([
   ...Object.keys(turnFlags), ...Object.keys(stepFlags),
   ...Object.keys(curbFlags), ...Object.keys(selfIntFlags), ...Object.keys(faceFlags),
   ...Object.keys(loopFlags), ...Object.keys(capFlags), ...Object.keys(juncFlags),
+  ...Object.keys(ntFlags),
 ])
 // the geometric-only set (Sieve v1) for the before/after comparison
 const geomFlagged = new Set([
@@ -605,6 +677,7 @@ console.log('  · TOPOLOGICAL (graph-level):')
 pr2('  loop-closure',flaggedNames(loopFlags))
 pr2('  cap-tangent', flaggedNames(capFlags))
 pr2('  junction-band', flaggedNames(juncFlags))
+pr2('  name-transition', flaggedNames(ntFlags))
 console.log('  ' + '─'.repeat(60))
 pr2('GEOMETRIC only', geomFlagged)
 pr2('+ TOPOLOGICAL',  allFlagged)

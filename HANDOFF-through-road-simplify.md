@@ -1,5 +1,7 @@
 # HANDOFF — Simplify the through-ROAD, not the named chain
 
+> ✅ **LANDED `c4cb191` (2026-06-13), eye-approved.** Built by Boz (the dispatched agent Throughstone designed + round-trip-validated it but was write-blocked in its sandbox). **Implementation:** `skeleton.js` — `rdpKeep()` helper + the transition-aware pass replacing the per-chain RDP loop; `RDP_EPS_TRANSITION = 0.3`. **Key correction vs the spec below:** un-pinning the joint was NOT the lever (it left node B at 46.5°); the lever is the finer **tolerance** that preserves the densely-sampled rounding (46.5° → 15.6°). The through-road structure is kept because it's the *robust, principled unit* (Jacob: "industrially fortified, least patchy"), and the finer eps rides inside it. **Remaining fortification:** the regression-gate invariant (name-transition-smoothness) in the detector; re-bake is Jacob's call (frame re-frozen, bakes stale-but-untouched).
+
 **Agent: FRESH. A scoped `skeleton.js` build + its detector gate. Name yourself.** Branch `curb-offset-draw`.
 
 **The principle (one line):** RDP today simplifies the **named street**; it must simplify the **road** — the continuous through-path that follows `continuesAs` across name-transitions. A name is a label; the road is the line on the ground. Simplify the road, attribute the names afterward.
