@@ -35,7 +35,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
 const RUN_RAW = process.argv.includes('--raw')
 
-const { buildTileGround } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
+const { buildTileGround, extractFaces } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
 
 // ── tunables (first-principles, not fit to 35) ──────────────────────────────
 const MAX_TURN_DEG       = 50   // ° — exterior angle at a vertex above this = a jag on a road
@@ -50,6 +50,12 @@ const STEP               = 0.5  // m — chain sampling interval
 const MIN_RUN            = 22   // m — runs shorter are all-corner; skip
 const RAY_CAP            = 4.5  // m — a hit beyond hw+this is the opposite curb; ignore
 const MAX_TILE_SPAN      = 250  // m — skip the perimeter megatile
+// topological invariants (Loom, 2026-06-13)
+const WELD_TOL           = 0.15 // m — the extractFaces ENDPOINT_SNAP; a loop body gapping > this does NOT close (no emergent face)
+const LOOP_GAP_CAND      = 8.0  // m — a single chain whose endpoints sit within this is a LOOP-BODY candidate to test for closure
+const TIP_CAP_TOL        = 3.0  // m — an authored cul-de-sac tip with no shape cap (round/blunt) within this = a missing/degenerate cap
+const NODE_DEG_SNAP      = 2.0  // m — two chain endpoints/vertices within this are the same graph node (for degree)
+const COUPLET_FACE_MAX   = 2500 // m² — a couplet median is a THIN enclosed face; a larger bounded face is an ordinary city block (no median expected)
 
 // ── geometry helpers ────────────────────────────────────────────────────────
 const sub   = (a, b) => [a[0] - b[0], a[1] - b[1]]
@@ -124,6 +130,156 @@ function widthStepReport(streets) {
     }
   }
   return flagged   // name -> detail
+}
+
+// ── signed area (CCW positive) ───────────────────────────────────────────────
+function signedArea(ring) {
+  let a = 0
+  for (let i = 0; i < ring.length; i++) { const p = ring[i], q = ring[(i + 1) % ring.length]; a += p[0] * q[1] - q[0] * p[1] }
+  return a / 2
+}
+const centroid = (ring) => { let x = 0, y = 0; for (const p of ring) { x += p[0]; y += p[1] } return [x / ring.length, y / ring.length] }
+function inPoly(p, poly) {
+  let c = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i], b = poly[j]
+    if (((a[1] > p[1]) !== (b[1] > p[1])) && (p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0])) c = !c
+  }
+  return c
+}
+
+// ── INVARIANT 6 (TOPOLOGICAL): loop-closure ──────────────────────────────────
+// A loop street's body should enclose a FACE → the emergent median (LOOP-STREETS
+// §0/§1). The face exists ONLY if the body's two endpoints meet within the
+// extractFaces endpoint-weld (ENDPOINT_SNAP = 0.15 m). This is a GRAPH check, not
+// a per-chain shape check: a loop body gapping > WELD_TOL reads as an open chain
+// whose ends are distinct nodes → no ring closes → no median. FAIL = a loop-body
+// candidate whose gap exceeds the weld tol AND/OR has no enclosed face / median
+// near its interior. Oracle = extractFaces (the same walk the producer runs) +
+// the frozen medians.
+//
+// Candidate detection (independent of the answer):
+//   (A) single self-closing chain — points[0]≈points[-1] within LOOP_GAP_CAND
+//       (Benton body 3.2cm, Park Place 0.0, Saint Vincent 2.2cm; the teardrop bodies)
+//   (B) same-name multi-chain CYCLE — ≥2 same-name chains whose endpoints form a
+//       closed planar walk (Waverly couplet). Reported as a candidate; closure is
+//       judged by whether the group bounds an enclosed face.
+function loopClosureReport(streets, faces, medians) {
+  const flagged = {}   // name -> {reason, gap, faceArea}
+  const facesCen = faces.map(f => ({ c: centroid(f.ring), a: signedArea(f.ring), ring: f.ring }))
+  const medCens = (medians || []).filter(m => m.kind === 'median' && Array.isArray(m.ring) && m.ring.length >= 3)
+                                 .map(m => ({ c: centroid(m.ring), a: Math.abs(signedArea(m.ring)) }))
+  // nearest SMALL enclosed face to a point (the loop interior is a small bounded face)
+  const nearFace = (c) => {
+    let best = null, bd = Infinity
+    for (const f of facesCen) { const d = Math.hypot(f.c[0] - c[0], f.c[1] - c[1]); if (d < bd) { bd = d; best = f } }
+    return { d: bd, f: best }
+  }
+  const nearMed = (c) => { let bd = Infinity; for (const m of medCens) { const d = Math.hypot(m.c[0] - c[0], m.c[1] - c[1]); if (d < bd) bd = d } return bd }
+
+  // (A) single self-closing chains
+  for (const s of streets) {
+    const pts = s?.points; if (!pts || pts.length < 4) continue
+    const gap = dist(pts[0], pts[pts.length - 1])
+    if (gap > LOOP_GAP_CAND) continue     // not a loop-body candidate
+    const c = centroid(pts)
+    const nf = nearFace(c)
+    const md = nearMed(c)
+    // closes? gap ≤ weld tol AND an enclosed face sits at the interior AND a median was emitted
+    const closes = gap <= WELD_TOL && nf.d < 12 && Math.abs(nf.f?.a || 0) > 1
+    const hasMedian = md < 12
+    if (!closes || !hasMedian) {
+      flagged[s.name] = {
+        kind: 'A', gap: +gap.toFixed(3),
+        faceD: +nf.d.toFixed(1), faceA: +Math.abs(nf.f?.a || 0).toFixed(0), medD: +md.toFixed(1),
+        why: gap > WELD_TOL ? `gap ${gap.toFixed(2)}m > weld ${WELD_TOL}m → no face`
+            : !hasMedian      ? 'no median emitted at interior'
+            :                   'no enclosed face at interior',
+      }
+    }
+  }
+  // (B) GENUINE COUPLET (type B — LOOP-STREETS §1): ≥1 same-name ONEWAY
+  // carriageway, all CENTER-anchored (NOT divided/inner-edge), the group forming
+  // a cycle whose interior should be an emergent median (Waverly). We EXCLUDE
+  // divided carriageways (anchor:'inner-edge' / pairId) — those carry a
+  // CONSTRUCTED E2 median already (NOT the emergent-face case), so flagging them
+  // is redundant with width-step/curb and pure noise. FAIL = the couplet interior
+  // has no enclosed face / median (the open Waverly cut-thru — LOOP-STREETS §6
+  // says it still renders full ROW, not curb+median).
+  const byName = {}
+  for (const s of streets) if (s?.points?.length >= 2) (byName[s.name] = byName[s.name] || []).push(s)
+  for (const [name, group] of Object.entries(byName)) {
+    if (group.length < 2 || !name || flagged[name]) continue
+    const divided = group.some(s => s.anchor === 'inner-edge' || s.pairId)
+    const oneways = group.filter(s => s.oneway).length
+    if (divided || oneways < 1) continue   // divided avenue (constructed median) or not a oneway couplet
+    const ends = []
+    for (const s of group) { ends.push(s.points[0], s.points[s.points.length - 1]) }
+    const reps = []
+    const nodeOf = (p) => { for (const q of reps) if (dist(p, q.p) < NODE_DEG_SNAP) { q.deg++; return q } reps.push({ p, deg: 1 }); return reps[reps.length - 1] }
+    for (const e of ends) nodeOf(e)
+    const interiorNodes = reps.filter(r => r.deg >= 2).length
+    if (interiorNodes < 2) continue   // not a cycle — same-name street split at through-nodes
+    const c = centroid(ends)
+    const md = nearMed(c)
+    const nf = nearFace(c)
+    // A genuine couplet's enclosed face is a THIN median (the carriageways run a
+    // few m apart) — a large face is an ordinary city block the cycle bounds, and
+    // it correctly has no median. Only flag when the bounded face is median-sized
+    // (< COUPLET_FACE_MAX m²) AND no median was emitted there.
+    const faceA = nf.d < 30 ? Math.abs(nf.f?.a || 0) : 0
+    const couplet = faceA > 1 && faceA < COUPLET_FACE_MAX
+    const hasMed = md < 25
+    if (couplet && !hasMed) flagged[name] = { kind: 'B', cyclicNodes: interiorNodes, faceD: +nf.d.toFixed(1), faceA: +faceA.toFixed(0), medD: +md.toFixed(1), why: 'oneway couplet encloses no emergent median' }
+  }
+  return flagged
+}
+
+// ── INVARIANT 7 (TOPOLOGICAL): cul-de-sac-cap-tangent ────────────────────────
+// A degree-1 dead-end TIP that the operator authored a cap on (capEnds = round|
+// blunt) must materialize a proper cap in the rendered tile geometry — a round
+// semicircle or a blunt flat, tangent to the chain (SECTION §6, HANDOFF-dead-end
+// -typology). FAIL = an authored tip with NO shape-tip (roundTips/bluntTips)
+// within TIP_CAP_TOL → the cap is missing/degenerate (the ribbon just stops or
+// thorns). This is GRAPH-level: we key on the graph DEGREE of the endpoint (a
+// true tip is degree 1) so a coincidental same-name endpoint elsewhere doesn't
+// fire, then read the authored intent (capEnds) and the realized shape (tips).
+//
+// Note on `caps[].degree`: it is computed in the seed but defaults `cap:'round'`
+// on EVERY degree-1 end incl. chains that exit the rendered clip — too loose. We
+// rebuild the graph degree from the live chains and require capEnds to be the
+// AUTHORED signal, so we test the operator's intent, not a default.
+function capTangentReport(streets, tiles, clip) {
+  // graph degree over all chain endpoints + interior touches (snap NODE_DEG_SNAP)
+  const reps = []
+  const node = (p) => { for (const q of reps) if (dist(p, q.p) < NODE_DEG_SNAP) return q; const q = { p, deg: 0 }; reps.push(q); return q }
+  for (const s of streets) { if (!s?.points?.length) continue; node(s.points[0]).deg++; node(s.points[s.points.length - 1]).deg++ }
+  for (const s of streets) for (let i = 1; i < (s.points?.length || 0) - 1; i++) {
+    for (const q of reps) if (dist(s.points[i], q.p) < NODE_DEG_SNAP) { q.deg += 2; break }   // a chain passing through an endpoint-node
+  }
+  const degAt = (p) => { for (const q of reps) if (dist(p, q.p) < NODE_DEG_SNAP) return q.deg; return 0 }
+  // collect realized shape tips
+  const tips = []
+  for (const t of tiles) { for (const rt of (t.roundTips || [])) tips.push({ p: rt.p, kind: 'round' }); for (const bt of (t.bluntTips || [])) tips.push({ p: bt.p, kind: 'blunt' }) }
+  const nearTip = (p) => { let bd = Infinity, bk = null; for (const t of tips) { const d = dist(t.p, p); if (d < bd) { bd = d; bk = t.kind } } return { d: bd, kind: bk } }
+
+  const flagged = {}   // name -> {end, capEnd, dist}
+  for (const s of streets) {
+    if (!s?.capEnds || !s.points?.length) continue
+    for (const [end, idx] of [['start', 0], ['end', s.points.length - 1]]) {
+      const ce = s.capEnds[end]
+      if (ce !== 'round' && ce !== 'blunt') continue   // only AUTHORED caps (operator intent)
+      const p = s.points[idx]
+      if (degAt(p) !== 1) continue                       // must be a TRUE graph tip
+      if (clip && !inPoly(p, clip)) continue             // tip is rendered
+      const nt = nearTip(p)
+      if (!(nt.d < TIP_CAP_TOL)) {
+        const prev = flagged[s.name]
+        if (!prev || nt.d < prev.dist) flagged[s.name] = { end, capEnd: ce, dist: +nt.d.toFixed(1) }
+      }
+    }
+  }
+  return flagged
 }
 
 // ── load the frame (same as corner-guard) ───────────────────────────────────
@@ -260,6 +416,35 @@ for (let ti = 0; ti < tiles.length; ti++) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// B2. TOPOLOGICAL INVARIANTS (graph-level) on the CURRENT frame
+// ════════════════════════════════════════════════════════════════════════════
+// Oracle = extractFaces (the same face walk the producer runs, incl. the
+// endpoint-weld) + the frozen medians + the shape-tip artifacts.
+const faces = extractFaces(streets)
+const loopFlags = loopClosureReport(streets, faces, ribbons.medians)
+const capFlags  = capTangentReport(streets, tiles, clip)
+
+// SELF-TEST (--simweld): prove loop-closure is a LIVE guard, not a dead-green
+// check. Pull the welded loop bodies' endpoints apart past the weld tol (and
+// drop the medians) — the invariant MUST then fire on Benton/Park Place/Saint
+// Vincent. If it stays green here, the oracle is broken.
+if (process.argv.includes('--simweld')) {
+  const sim = streets.map(s => {
+    if (!s?.points || s.points.length < 4) return s
+    const gap = dist(s.points[0], s.points[s.points.length - 1])
+    if (gap >= WELD_TOL) return s
+    const pts = s.points.map(p => [p[0], p[1]])
+    pts[pts.length - 1] = [pts[pts.length - 1][0] + 1.0, pts[pts.length - 1][1] + 1.0]  // open the loop 1.4 m
+    return { ...s, points: pts }
+  })
+  const simFaces = extractFaces(sim)
+  const simFlags = loopClosureReport(sim, simFaces, [])   // no medians → must flag every opened loop
+  console.log('\n[SELF-TEST --simweld] loops opened past the weld tol + medians dropped:')
+  console.log('  loop-closure now flags:', Object.keys(simFlags).length ? Object.entries(simFlags).map(([n, f]) => `${n} (${f.why})`).join('; ') : 'NONE — ORACLE BROKEN')
+  console.log('  (expected: Benton Place / Park Place / Saint Vincent Avenue fire — the guard is live)\n')
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // C. RAW-OSM chain invariants on the 35 (their pre-hand-fix geometry)
 // ════════════════════════════════════════════════════════════════════════════
 // Stitch each curated street's raw OSM fragments (osm.json ground.highway, by
@@ -309,6 +494,12 @@ if (RUN_RAW) {
 const allFlagged = new Set([
   ...Object.keys(turnFlags), ...Object.keys(stepFlags),
   ...Object.keys(curbFlags), ...Object.keys(selfIntFlags), ...Object.keys(faceFlags),
+  ...Object.keys(loopFlags), ...Object.keys(capFlags),
+])
+// the geometric-only set (Sieve v1) for the before/after comparison
+const geomFlagged = new Set([
+  ...Object.keys(turnFlags), ...Object.keys(stepFlags),
+  ...Object.keys(curbFlags), ...Object.keys(selfIntFlags), ...Object.keys(faceFlags),
 ])
 const flaggedNames = (obj) => new Set(Object.keys(obj))
 
@@ -327,13 +518,18 @@ console.log(`(4 names carry 2 curated chains each — Lasalle, Rutger, South 18t
 console.log(` measured per-NAME against ${curatedNames.size}, not per-chain against 35.)\n`)
 
 console.log('PER-INVARIANT (current frame):')
-pr2('max-turn',   flaggedNames(turnFlags))
-pr2('width-step', flaggedNames(stepFlags))
-pr2('curb∥chain', flaggedNames(curbFlags))
-pr2('iA self-int',flaggedNames(selfIntFlags))
-pr2('face-closure',flaggedNames(faceFlags))
+console.log('  · GEOMETRIC (per-chain shape):')
+pr2('  max-turn',   flaggedNames(turnFlags))
+pr2('  width-step', flaggedNames(stepFlags))
+pr2('  curb∥chain', flaggedNames(curbFlags))
+pr2('  iA self-int',flaggedNames(selfIntFlags))
+pr2('  face-closure',flaggedNames(faceFlags))
+console.log('  · TOPOLOGICAL (graph-level):')
+pr2('  loop-closure',flaggedNames(loopFlags))
+pr2('  cap-tangent', flaggedNames(capFlags))
 console.log('  ' + '─'.repeat(60))
-pr2('ANY invariant', allFlagged)
+pr2('GEOMETRIC only', geomFlagged)
+pr2('+ TOPOLOGICAL',  allFlagged)
 
 // confusion matrix vs the 35
 const gridNames = new Set(streets.map(s => s.name).filter(n => !isCurated(n)))
@@ -341,10 +537,17 @@ const TP = [...allFlagged].filter(isCurated)
 const FN = [...curatedNames].filter(n => !allFlagged.has(n))
 const FP = [...allFlagged].filter(n => !isCurated(n))
 const ND = curatedNames.size   // 31 distinct curated names
-console.log('\nCONFUSION (current frame, ANY invariant) — measured per curated NAME:')
-console.log(`  recall    = ${TP.length}/${ND}  (${(100*TP.length/ND).toFixed(0)}%)  curated names flagged`)
-console.log(`  precision = ${TP.length}/${allFlagged.size}  (${allFlagged.size?(100*TP.length/allFlagged.size).toFixed(0):0}%)  of flags are curated`)
-console.log(`  grid FP   = ${FP.length}/${gridNames.size} clean-grid names flagged`)
+const TPg = [...geomFlagged].filter(isCurated)
+const FPg = [...geomFlagged].filter(n => !isCurated(n))
+console.log('\nCONFUSION — measured per curated NAME:')
+console.log(`  GEOMETRIC only (Sieve v1):`)
+console.log(`    recall    = ${TPg.length}/${ND}  (${(100*TPg.length/ND).toFixed(0)}%)`)
+console.log(`    precision = ${TPg.length}/${geomFlagged.size}  (${geomFlagged.size?(100*TPg.length/geomFlagged.size).toFixed(0):0}%)`)
+console.log(`    grid FP   = ${FPg.length}/${gridNames.size}`)
+console.log(`  + TOPOLOGICAL (loop-closure + cap-tangent):`)
+console.log(`    recall    = ${TP.length}/${ND}  (${(100*TP.length/ND).toFixed(0)}%)  curated names flagged   [+${TP.length-TPg.length}]`)
+console.log(`    precision = ${TP.length}/${allFlagged.size}  (${allFlagged.size?(100*TP.length/allFlagged.size).toFixed(0):0}%)  of flags are curated`)
+console.log(`    grid FP   = ${FP.length}/${gridNames.size} clean-grid names flagged   [+${FP.length-FPg.length}]`)
 
 console.log('\nFLAGGED CURATED (true positives):')
 for (const n of [...curatedNames].filter(n=>allFlagged.has(n)).sort()) {
@@ -354,6 +557,8 @@ for (const n of [...curatedNames].filter(n=>allFlagged.has(n)).sort()) {
   if (curbFlags[n])   tags.push(`curb(${curbFlags[n]}m)`)
   if (selfIntFlags[n])tags.push(`selfint(${selfIntFlags[n]})`)
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
+  if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
+  if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
   console.log(`  ✔ ${n.padEnd(26)} ${tags.join('  ')}`)
 }
 console.log('\nMISSED CURATED (false negatives — no invariant fired):')
@@ -367,6 +572,8 @@ for (const n of FP.sort()) {
   if (curbFlags[n])   tags.push(`curb(${curbFlags[n]}m)`)
   if (selfIntFlags[n])tags.push(`selfint(${selfIntFlags[n]})`)
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
+  if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
+  if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
   console.log(`  ? ${n.padEnd(26)} ${tags.join('  ')}`)
 }
 
