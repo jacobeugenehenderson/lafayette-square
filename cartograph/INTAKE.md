@@ -8,7 +8,7 @@
 
 ## 0. What intake is
 
-The neighborhood frame is **assembled from many open + measured sources**, not one. Intake fetches each, normalizes to the local metric frame (`config.py`: `CENTER 38.6160,-90.2161`; `x = (lon−CENTER_LON)·86774`, `z = (CENTER_LAT−lat)·111000`), and lands raw + merged artifacts that `skeleton.js` and `derive.js` consume. *"Lean on the industry/cartographer's data as the primary source — before getting creative"* (Jacob, 2026-06-13) is the governing doctrine: prefer authoritative data; invent geometry only where the sources genuinely have nothing.
+The neighborhood frame is **assembled from many open + measured sources**, not one. Intake fetches each, normalizes to the local metric frame (`config.py`: `CENTER 38.6160,-90.2161`; `x = (lon−CENTER_LON)·86774`, `z = (CENTER_LAT−lat)·111000`), and lands raw + merged artifacts that `skeleton.js` and `derive.js` consume. The neighborhood **extent is a center + radius** (`neighborhood_boundary.json`), **not a bounding box** — `config.py`'s `BBOX` is a legacy fetch convenience; clipping is to the radius/boundary. *"Lean on the industry/cartographer's data as the primary source — before getting creative"* (Jacob, 2026-06-13) is the governing doctrine: prefer authoritative data; invent geometry only where the sources genuinely have nothing.
 
 ---
 
@@ -73,7 +73,14 @@ We use **OSM for street geometry** when **St. Louis publishes official street ce
 - **City ArcGIS `STREETS` folder** (`maps8.stlouis-mo.gov`, the *same server we already hit for parcels*) — but it holds only *operational* layers (snow routes, sweeping, `Street_Volumes`, permitting), **no clean centerline geometry.**
 - **Regional "Street Centerlines (with address ranges)"** — StLCoGIS / Regional Data Exchange (`data-stlcogis.opendata.arcgis.com` · `rdx.stldata.org` · ArcGIS Hub `7bdfd2d…`). **This is the authoritative centerline geometry**, downloadable (GeoJSON/shapefile/API), free.
 
-**The cheap experiment before any spend:** fetch the regional centerlines for the LS bbox, overlay on OSM. If the geometry is **cleaner** → it can obviate the corner-rounding at the source. If it carries **functional class / divided / lane** attributes → it lifts the highways/frontage + divided-roads tasks directly. (`Street_Volumes` may add AADT; address ranges suggest it's geocoding-oriented, so verify attribute richness.) This is the *"industry data as primary source"* doctrine, made actionable.
+### 5.1 PROBED 2026-06-13 — and it is NOT the unlock
+
+Fetched the County `StreetsCenterlines/MapServer` (`maps.stlouisco.com` — covers the City; same ArcGIS pattern as our parcels) over the LS extent and inspected fields + geometry:
+
+- **Geometry is COARSER than OSM, not finer.** It's an addressing layer — HICKORY returns as **15 block-segments of 2 vertices each** (straight chords between intersections, no curve points). On a curved street like West 18th that is *worse* than OSM; it would **increase** the geometry bugs, not reduce them. ✗
+- **The attributes we wanted aren't there.** Fields: `STRNAME`/`ONEWAY`/`SPEED`/address-ranges (`LEFTADD1…`)/`HWYCLASS`/ramp-links (`RAMPFROM/TO`). **NO lanes, NO divided/median, NO width/ROW** — and `HWYCLASS` is **null on residential streets** (Hickory). ✗ nothing for divided-roads, nothing OSM doesn't already give.
+
+**Conclusion (proven, not inferred): no authoritative external street source closes our gaps.** OSM geometry + the operator's corrections is the best available; the 35 bugs and the SHAPE tasks are **skeleton-interpretation** problems, not data-acquisition ones. This **closes the "get more geometry data" thread** — the lever is `SKELETON.md`, per the kit invariant (§6.1). *(The buildings stack is the counter-example where stacking DID win — five complementary sources; streets have only competing geometry, and OSM's is the best of them.)*
 
 ---
 
@@ -85,19 +92,21 @@ A pass over every input — what it *carries* vs. what we *consume*. **(Correcte
 
 **The gaps — all on the SHAPE/geometry side** (where the remaining visible tasks live):
 
-1. **Authoritative street *geometry* — the one real gap.** The centerline *shape* is OSM-digitized + the 35 hand-fixes (§6.1). The regional **Street Centerlines** GIS (§5) is free and **unused**, and may carry functional-class/divided. *Value on the table.*
+1. **Street *geometry* — the one real gap, and it is NOT closeable by external data.** The centerline *shape* is OSM-digitized + the 35 hand-fixes (§6.1). The regional Street Centerlines GIS was **probed (§5.1) and rejected** — coarser geometry, no divided/lanes/ROW. So this is a **skeleton-interpretation** problem (`SKELETON.md`), not a data-acquisition one.
 2. **Divided-road *geometry* leans on inference** — detection is class-gated (good), but median/carriageway *geometry* isn't from data.
 3. **Minor enrichment left on the table** (opportunities, not gaps): OSM `architect`/`heritage`/`start_date` extracted but not propagated to `buildings.json`; parcel building-counts + fine-grained historic flags simplified to booleans; Mapillary timestamps unused; the stories *count* (not the height) falls back to `building:levels`→`/3.5` where parcels lack it.
 4. **Cleanup, not gaps:** `elevation.js` (EPQS point-query) is superseded by the GeoTIFF bake; `enrich-*.mjs` / `match-facades.py` invocation is unclear — confirm or archive. No curb/pavement-edge dataset exists locally (osm2streets notes the same) — not pursuable.
 
-### ⭐ 6.1 The 35 hand-fixes = the metric for the whole SHAPE campaign
+### ⭐ 6.1 The 35 curated centerlines are 35 BUGS — the kit invariant
 
-`centerlines.json` carries **35 `source:'curated'`** chains — operator hand-corrections to geometry OSM got wrong. They are **not random**: they are the **problem streets**, mapping almost 1:1 to the remaining visible tasks —
+`centerlines.json` carries **35 `source:'curated'`** chains — streets where the automated pipeline produced wrong geometry and a human hand-drew the correction. They are **not random**: they are the **problem streets**, mapping almost 1:1 to the remaining visible tasks —
 - **loops + cul-de-sacs** — Benton · Waverly · Mackay · Vail · Albion · Whittemore · Nicholson · Simpson · Preston · Kennett Place (the LS "Places")
 - **weird junctions** — Dolman · South 18th · Hickory · Carroll · Kennett
 - **divided / perimeter** — Truman Pkwy · Lafayette · Park · Mississippi · Chouteau · S. Jefferson
 
-**The hand-fixes are the operator papering over the skeleton's geometry gaps.** So **`# curated streets` is the honest metric of how far the automated pipeline is from correct**, and **0 hand-fixes is the north star**: intake + skeleton produce correct geometry **by construction** (better interpretation — `SKELETON.md`) and/or from authoritative source geometry (§5), so no one ever hand-draws a centerline. Driving that count to 0 *is* the remaining SHAPE campaign — and `Survey shows the perfected map straight from the skeleton` (`README §⭐ START HERE`) is the same goal stated from the other end.
+> ⛔ **THE KIT INVARIANT (Jacob, 2026-06-13): the SHAPE layer must be 100% automated from fetchable sources. Hand-authoring SHAPE is a literal *bug*, not a fix.** Cartograph is a **kit** — it onboards *any* neighborhood — and a human drawing a centerline doesn't scale, so each curated chain is a place the pipeline **failed**: a logged **defect**. So `# curated streets` is a **defect count**, and the target is **0 by construction**, never by effort. The boundary: **SHAPE/data = automated** (geometry, widths, class, land-use, heights — the bug surface) vs. **LOOK/Stage = authored** (materials, sky, neon, camera — the *creative product*, not a bug). Fortification (a width/cap/corner-R nudge) must **default to automated**; if a neighborhood *requires* the nudge to be correct, that's still a bug. (`SKELETON.md §6`.)
+
+The two levers that take the defect count to 0: **stack every free authoritative source** (§5) + a **more sophisticated skeleton** interpretation. That *is* the remaining SHAPE campaign — and equals `Survey shows the perfected map straight from the skeleton` (`README §⭐ START HERE`).
 
 ## Cross-references
 - `SKELETON.md` — the frame built from this intake (`seedSection`, the RDP + corner-round, width-sourcing).

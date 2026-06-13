@@ -215,6 +215,7 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 
 ## 6. The doctrine, in one place
 
+- **⛔⛔ THE KIT INVARIANT — no hand-authored SHAPE; hand-authoring is a *bug* (Jacob, 2026-06-13).** Cartograph is a **kit**: it onboards *any* neighborhood, so the **SHAPE layer** (geometry, widths, class, land-use, building heights) must be **100% automated from fetchable sources**. A human drawing or correcting geometry doesn't scale — so every hand-authored chain (LS's **35 `source:'curated'`** centerlines, `INTAKE.md §6.1`) is a **logged defect**, and the target is **0 by construction**. The boundary: **SHAPE/data = automated** (the bug surface) vs. **LOOK/Stage = authored** (materials, sky, neon, camera — the *creative product*, not a bug). Fortification (a width/cap/corner-R nudge) must **default to automated**; if a neighborhood *requires* the nudge to be correct, that's still a bug. The two levers to 0: **stack every free authoritative source** + a **more sophisticated skeleton** interpretation.
 - **The skeleton is the First Bake.** The frame should be born polygon-ready; everything downstream is a pure consumer (`[[project_two_bakes_two_walls]]`).
 - **The skeleton is a black box.** The user fortifies (widths/caps/corner-R) — they do not edit the graph. Fix the bones and Survey shrinks.
 - **Junction-protected always.** Never the junction-*blind* simplify (it deleted 79 interior Ts).
