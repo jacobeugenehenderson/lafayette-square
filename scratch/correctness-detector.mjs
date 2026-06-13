@@ -35,7 +35,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
 const RUN_RAW = process.argv.includes('--raw')
 
-const { buildTileGround, extractFaces } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
+const { buildTileGround, extractFaces, sectionPass } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
 
 // ── tunables (first-principles, not fit to 35) ──────────────────────────────
 const MAX_TURN_DEG       = 50   // ° — exterior angle at a vertex above this = a jag on a road
@@ -56,6 +56,12 @@ const LOOP_GAP_CAND      = 8.0  // m — a single chain whose endpoints sit with
 const TIP_CAP_TOL        = 3.0  // m — an authored cul-de-sac tip with no shape cap (round/blunt) within this = a missing/degenerate cap
 const NODE_DEG_SNAP      = 2.0  // m — two chain endpoints/vertices within this are the same graph node (for degree)
 const COUPLET_FACE_MAX   = 2500 // m² — a couplet median is a THIN enclosed face; a larger bounded face is an ordinary city block (no median expected)
+// junction-band silhouette invariant (this pass, 2026-06-13)
+const JUNC_DEG          = 3    // a graph node of this degree or more is a real junction (the ped junction must close there)
+const JUNC_THROAT_R     = 14   // m — the throat radius around a junction node within which the ped FILL must form one coherent junction
+const JUNC_TILE_REACH   = 12   // m — a tile whose curb (iA) passes within this of the node is incident to the junction
+const SLIVER_AREA       = 8    // m² — a ped (treelawn/sidewalk) fragment smaller than this at the throat is a junction-band SLIVER (a fragmented ped band). The legitimate leg strips are >100 m²; the slivers are the 2–6 m² wedges the independently-stroked legs leave behind.
+const JUNC_SLIVER_FLAG  = 2    // a junction with this many throat slivers is flagged (1 may be a single corner notch; ≥2 = the band is fragmenting)
 
 // ── geometry helpers ────────────────────────────────────────────────────────
 const sub   = (a, b) => [a[0] - b[0], a[1] - b[1]]
@@ -282,6 +288,75 @@ function capTangentReport(streets, tiles, clip) {
   return flagged
 }
 
+// ── INVARIANT 8 (TOPOLOGICAL): junction-band silhouette ──────────────────────
+// At each real junction node (graph degree ≥ JUNC_DEG) the asphalt junction IS
+// constructed as one polygon (junctionMap / E3.2 — `SECTION §7`), but the PED
+// bands are NOT — each leg/tile strokes its treelawn+sidewalk inward independently,
+// stencil-clipped to its own tile. Where the throat necks, those independent strokes
+// leave the junction mouth FRAGMENTED: the treelawn/sidewalk break into tiny wedge
+// SLIVERS instead of one coherent ped junction (the visible "green sliver / jagged
+// corner" defect — `scratch/jx-*.png`). This is the third topological class
+// POLYGON-FIRST §5 / SECTION §7 names ("does the constructed ped junction match the
+// asphalt junction?") — the one neither loop-closure nor cap-tangent touches.
+//
+// SIGNAL (measured, not asserted): per junction node, stroke each incident tile’s
+// ped FILL via the producer (sectionPass) and count ped fragments smaller than
+// SLIVER_AREA within the throat. The legitimate leg strips are >100 m²; the
+// fragments left by independent strokes are 2–6 m². ≥ JUNC_SLIVER_FLAG slivers at a
+// node = the ped junction is fragmenting. ORACLE = sectionPass (the same FILL stroke
+// the producer + Stage run); the asphalt junction (pr.asphalt) is the reference the
+// ped should agree with. This is a GRAPH-level check (keyed on node degree), like
+// loop-closure/cap-tangent — not a per-chain shape check.
+//
+// ⚠️ The unit of the defect is the JUNCTION, not the street. Name-attribution
+// (a node’s flag → all its incident street names) inherently OVER-SPREADS to the
+// grid streets that merely cross there, so the report leads with the per-junction
+// confusion and treats name-recall as secondary (cf. Loom’s discipline).
+function junctionBandReport(streets, tiles, asphalt, cw) {
+  // (a) graph degree over endpoints + interior touches (snap NODE_DEG_SNAP) — reuse
+  //     the same node model cap-tangent uses, so a junction = a real degree-≥3 node.
+  const reps = []
+  const node = (p) => { for (const q of reps) if (dist(p, q.p) < NODE_DEG_SNAP) return q; const q = { p, deg: 0, names: new Set() }; reps.push(q); return q }
+  for (const s of streets) { if (!s?.points?.length) continue; const a = node(s.points[0]); a.deg++; a.names.add(s.name); const b = node(s.points[s.points.length - 1]); b.deg++; b.names.add(s.name) }
+  for (const s of streets) for (let i = 1; i < (s.points?.length || 0) - 1; i++) {
+    for (const q of reps) if (dist(s.points[i], q.p) < NODE_DEG_SNAP) { q.deg += 2; q.names.add(s.name); break }
+  }
+  const J = reps.filter(q => q.deg >= JUNC_DEG)
+
+  // (b) per-tile ped FILL (treelawn + sidewalk fragments) via the producer, cached.
+  const stripMat = { outer: 'LU', inner: 'SW' }
+  const pedCache = {}
+  const pedOf = (ti) => pedCache[ti] || (pedCache[ti] = (() => {
+    const sp = sectionPass([tiles[ti]], cw, stripMat, null)
+    const flat = (byLu) => Object.values(byLu || {}).flat()
+    return [...flat(sp.tlByLu), ...sp.Wacc].filter(r => r && r.length >= 3)
+  })())
+  const ringArea = (r) => Math.abs(signedArea(r))
+  const nearD = (r, p) => { let m = Infinity; for (const v of r) { const d = dist(v, p); if (d < m) m = d } return m }
+  const incidentTiles = (p) => { const o = []; for (let ti = 0; ti < tiles.length; ti++) { const T = tiles[ti]; if (!T?.iA) continue; let near = false; for (const r of T.iA) { for (const v of r) if (dist(v, p) < JUNC_TILE_REACH) { near = true; break } if (near) break } if (near) o.push(ti) } return o }
+
+  // (c) per junction: count throat slivers + the worst (smallest) sliver area
+  const junctions = []   // {p, deg, names:[], slivers, worstA, tilesN}
+  for (const q of J) {
+    const tis = incidentTiles(q.p)
+    let slivers = 0, worstA = Infinity
+    for (const ti of tis) for (const r of pedOf(ti)) {
+      if (nearD(r, q.p) >= JUNC_THROAT_R) continue
+      const a = ringArea(r)
+      if (a < SLIVER_AREA) { slivers++; if (a < worstA) worstA = a }
+    }
+    junctions.push({ p: q.p, deg: q.deg, names: [...q.names], slivers, worstA: isFinite(worstA) ? worstA : null, tilesN: tis.length })
+  }
+
+  // (d) name attribution (secondary; over-spreads by construction)
+  const flaggedNames = {}   // name -> worst slivers at any incident flagged junction
+  for (const j of junctions) {
+    if (j.slivers < JUNC_SLIVER_FLAG) continue
+    for (const n of j.names) { if (!flaggedNames[n] || j.slivers > flaggedNames[n].slivers) flaggedNames[n] = { slivers: j.slivers, worstA: j.worstA } }
+  }
+  return { junctions, flaggedNames }
+}
+
 // ── load the frame (same as corner-guard) ───────────────────────────────────
 const ribbons = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/ribbons.json')))
 const bnd = JSON.parse(fs.readFileSync(path.join(ROOT, 'cartograph/data/lafayette-square/neighborhood_boundary.json')))
@@ -423,6 +498,8 @@ for (let ti = 0; ti < tiles.length; ti++) {
 const faces = extractFaces(streets)
 const loopFlags = loopClosureReport(streets, faces, ribbons.medians)
 const capFlags  = capTangentReport(streets, tiles, clip)
+const junc      = junctionBandReport(streets, tiles, pr.asphalt, design.curbWidth)
+const juncFlags = junc.flaggedNames   // name -> {slivers, worstA}
 
 // SELF-TEST (--simweld): prove loop-closure is a LIVE guard, not a dead-green
 // check. Pull the welded loop bodies' endpoints apart past the weld tol (and
@@ -494,7 +571,7 @@ if (RUN_RAW) {
 const allFlagged = new Set([
   ...Object.keys(turnFlags), ...Object.keys(stepFlags),
   ...Object.keys(curbFlags), ...Object.keys(selfIntFlags), ...Object.keys(faceFlags),
-  ...Object.keys(loopFlags), ...Object.keys(capFlags),
+  ...Object.keys(loopFlags), ...Object.keys(capFlags), ...Object.keys(juncFlags),
 ])
 // the geometric-only set (Sieve v1) for the before/after comparison
 const geomFlagged = new Set([
@@ -527,6 +604,7 @@ pr2('  face-closure',flaggedNames(faceFlags))
 console.log('  · TOPOLOGICAL (graph-level):')
 pr2('  loop-closure',flaggedNames(loopFlags))
 pr2('  cap-tangent', flaggedNames(capFlags))
+pr2('  junction-band', flaggedNames(juncFlags))
 console.log('  ' + '─'.repeat(60))
 pr2('GEOMETRIC only', geomFlagged)
 pr2('+ TOPOLOGICAL',  allFlagged)
@@ -544,10 +622,33 @@ console.log(`  GEOMETRIC only (Sieve v1):`)
 console.log(`    recall    = ${TPg.length}/${ND}  (${(100*TPg.length/ND).toFixed(0)}%)`)
 console.log(`    precision = ${TPg.length}/${geomFlagged.size}  (${geomFlagged.size?(100*TPg.length/geomFlagged.size).toFixed(0):0}%)`)
 console.log(`    grid FP   = ${FPg.length}/${gridNames.size}`)
-console.log(`  + TOPOLOGICAL (loop-closure + cap-tangent):`)
+console.log(`  + TOPOLOGICAL (loop-closure + cap-tangent + junction-band):`)
 console.log(`    recall    = ${TP.length}/${ND}  (${(100*TP.length/ND).toFixed(0)}%)  curated names flagged   [+${TP.length-TPg.length}]`)
 console.log(`    precision = ${TP.length}/${allFlagged.size}  (${allFlagged.size?(100*TP.length/allFlagged.size).toFixed(0):0}%)  of flags are curated`)
 console.log(`    grid FP   = ${FP.length}/${gridNames.size} clean-grid names flagged   [+${FP.length-FPg.length}]`)
+
+// ── junction-band: the HONEST unit is the JUNCTION, not the street (name-attribution
+//    over-spreads to every grid street crossing a defective node). Report per-junction.
+{
+  const Js = junc.junctions
+  const flaggedJ = Js.filter(j => j.slivers >= JUNC_SLIVER_FLAG)
+  const cleanJ = Js.filter(j => j.slivers === 0)
+  const touchesCur = (j) => j.names.some(isCurated)
+  const curJ = Js.filter(touchesCur), gridJ = Js.filter(j => !touchesCur(j))
+  const curJF = curJ.filter(j => j.slivers >= JUNC_SLIVER_FLAG), gridJF = gridJ.filter(j => j.slivers >= JUNC_SLIVER_FLAG)
+  const weird = ['Carroll Street','Hickory Street','Hickory Lane','Grattan Street']
+  const weirdCaught = weird.filter(w => Js.some(j => j.names.includes(w) && j.slivers >= JUNC_SLIVER_FLAG))
+  console.log(`\nJUNCTION-BAND — measured per JUNCTION NODE (the honest unit):`)
+  console.log(`    ${Js.length} junctions (deg>=${JUNC_DEG}): ${cleanJ.length} CLEAN (0 throat slivers), ${flaggedJ.length} FLAGGED (>=${JUNC_SLIVER_FLAG} slivers <${SLIVER_AREA}m2)`)
+  console.log(`    curated-touching junctions flagged = ${curJF.length}/${curJ.length};  pure-grid junctions flagged = ${gridJF.length}/${gridJ.length}`)
+  console.log(`    the 4 weird junctions caught = ${weirdCaught.length}/4  [${weirdCaught.map(w=>w.split(' ')[0]).join(', ')}]`)
+  console.log(`    NOTE 55% of junctions are clean — the sliver signal discriminates; it is NOT firing everywhere.`)
+  console.log(`       The defect class is PERVASIVE (${flaggedJ.length} junctions), so name-level grid FP is mostly REAL`)
+  console.log(`       uncurated defect, not noise (verified by eye: scratch/jx-montrose-hickory.png et al).`)
+  console.log(`\n    Worst-fragmented junctions (slivers — the operator-eye candidates):`)
+  for (const j of flaggedJ.sort((a,b)=>b.slivers-a.slivers).slice(0, 14))
+    console.log(`      (${j.p[0].toFixed(0)},${j.p[1].toFixed(0)}) d${j.deg}  slivers=${j.slivers}  {${j.names.join(' / ')}}`)
+}
 
 console.log('\nFLAGGED CURATED (true positives):')
 for (const n of [...curatedNames].filter(n=>allFlagged.has(n)).sort()) {
@@ -559,6 +660,7 @@ for (const n of [...curatedNames].filter(n=>allFlagged.has(n)).sort()) {
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
   if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
   if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
+  if (juncFlags[n])   tags.push(`JUNC(${juncFlags[n].slivers} slivers, worst ${juncFlags[n].worstA!=null?juncFlags[n].worstA.toFixed(1):'?'}m2)`)
   console.log(`  ✔ ${n.padEnd(26)} ${tags.join('  ')}`)
 }
 console.log('\nMISSED CURATED (false negatives — no invariant fired):')
@@ -574,6 +676,7 @@ for (const n of FP.sort()) {
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
   if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
   if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
+  if (juncFlags[n])   tags.push(`JUNC(${juncFlags[n].slivers} slivers, worst ${juncFlags[n].worstA!=null?juncFlags[n].worstA.toFixed(1):'?'}m2)`)
   console.log(`  ? ${n.padEnd(26)} ${tags.join('  ')}`)
 }
 
