@@ -156,6 +156,18 @@ The doctrine is **fix-it-as-you-go**: documentation is *closed per pipeline stag
 
 It's the **per-stage instance of the §5 pack-up**, aimed at the homes built 2026-06-04 (the PIPELINE stage-spine + the START-HERE topic index). Each stage closing its own docs as we go is what keeps the suite from re-diffusing. *(Established 2026-06-04 after the §Wall/better-bones session; the suite-wide cleanup it implies — retire 55 HANDOFFs, split RIBBONS/FEATURES archeology, archive NOTES, finish the MEMORY sweep — is queued for a fresh warm session, never the ragged end.)*
 
+### ⭐⭐ The accord sweep — the hard closing procedure (added 2026-06-13)
+
+The per-touch gate above failed once because it leaned on memory: a session deep-edited a few docs and left the rest **contradicting** them (2026-06-13 — INTAKE/SKELETON updated, but BACKLOG **and** the MEMORY `PICK UP HERE` still pointed at a brief that was archived that same day, so a fresh load-in would pick up the *superseded* task). The gate gets a mechanical close:
+
+> **Before setting a session down — and any time you update a load-bearing doc — SWEEP THE WHOLE CORPUS AND MAKE IT AGREE.** The unit of work is not "the doc you edited"; it is **the corpus in accord**. A doc you didn't deeply touch must at minimum not *contradict* the change — repoint its refs, refresh its date, or one-line-defer to the live home. **A half-update that leaves a contradiction is worse than none — it's a log dropped on the embers that smothers the fire** (the live truth now competes with a confident stale claim).
+>
+> **The accord test:** read any two docs side by side — could they disagree about *what's current · what's superseded · where the live home is*? If yes, the sweep isn't done. The cheapest repair is always a **pointer** ("superseded → see X"), never a silent stale assertion. Especially: when you **archive** a doc, grep the corpus for every reference to it and repoint them in the same breath (the dead pointer is the Archivist's one unforgivable error, §1).
+>
+> **Cleanup is part of accord.** Active docs carry only **live doctrine + open state** — the level `SKELETON`/`INTAKE` already hold. So the sweep also **archives superseded/finished** items out of the active docs (→ dated `_archive/`) and **extracts diary/narrative** (the "how we got here") to `NOTES` (the chiller area). **BACKLOG + FEATURES are the standing laggards** — bloated with dated banners + DONE-narratives + superseded threads; bring them to standard first.
+>
+> **The standard for "clean enough" is AGENT-ACCESSIBILITY, not tidiness:** *could an agent read this doc and reliably extract the load-bearing facts **without missing them in the noise**?* Buried signal is not a cosmetic problem — it is the direct cause of the misses we keep paying for (2026-06-13: live facts — LiDAR heights, the data already in hand — missed partly to doc-noise; `[[feedback_docs_effluvium_buried_the_answer]]`). Lean is correctness, not housekeeping.
+
 ---
 
 ## 4. Where to start (any session)

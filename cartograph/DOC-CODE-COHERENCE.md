@@ -18,6 +18,25 @@
 
 ---
 
+## ⭐ Landed-claim forensic (2026-06-13) — code-landed ≠ done ≠ eye-verified
+
+Triggered by Jacob: *"we can't take the BACKLOG's word for it; we need a forensic pass."* A git/code pass over the ~27 "landed" claims (ancestor-of-HEAD **+** code-path-live). The test for a "done" claim is now **three-tier** — never a bare "done":
+
+- **eye-verified** — confirmed on the **lit app** (the only real "done"; proxy renders don't count — proven 2026-06-13).
+- **code-landed** — commit is an ancestor of HEAD **and** the code path is live (*folded* counts: the original commit can be orphaned yet re-implemented into HEAD). **Necessary, not sufficient — code-landed ≠ works.**
+- **un-landed** — claimed done but the code is **absent** from HEAD (a corpse-lie).
+
+**Findings (HEAD `a4e5a9b`, `curb-offset-draw`):**
+- **~24 items code-landed** (ancestor of HEAD) — e1, d1, e2, e3.1/.2, divided-data-first, intersection-everywhere, loops, dead-ends, cap-wrap, handle-float, alleys, the datum repair…
+- **D2 prebake face-freeze** (`55e5b8e`/`dee5c20`): commits **orphaned (non-ancestor)** but the code is **folded-live** (`tilesFromFrozen` + 103 frozen `tiles[]` in `ribbons.json`) → **code-landed; relabel the BACKLOG's "awaiting land" → live.** (The orphaned-but-folded palimpsest pattern, `[[feedback_audit_then_cut_git_palimpsest]]`.)
+- **band-fold-fix** (`8e1e414`): **NOT landed.** Stranded (non-ancestor) **and** the clamp is absent — `thinTile` is computed but wired **only to `bandJoin`** (`tileGround.js:2383-84`), never to a depth clamp. **Confirmed corpse-lie**; it is open work (NOW), any "done" framing is false.
+- **e3.4 datum-repair**: `c49a4e6` orphaned but **landed via `8452c31`** ("land datum repair … Vernier c49a4e6"). code-landed.
+- **AWAITING-EYE (code-landed, visually unconfirmed — by the BACKLOG's own words):** `e3.3-fillet`, `intersection-everywhere` — both say *"Pending Jacob's eye."*
+
+**Doctrine:** the forensic is **layer 1** (git/code); the operator's eye is **layer 2** (the real gate). BACKLOG carries `code-landed` / `awaiting-eye` / `un-landed`, never a bare "done."
+
+---
+
 ## Code corpse-lies (→ excise via briefs)
 
 | # | Corpse-lie (code) | The truth it contradicts | Locus | Status |
