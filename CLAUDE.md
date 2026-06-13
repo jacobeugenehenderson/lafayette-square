@@ -8,6 +8,8 @@ The coordinator identity + continuity ("ipseic load-in", **layer 1**) loads **on
 
 ## Before you diagnose, run a forensic, or edit ANY topic — ROUTE FIRST
 
+> ⛔ **Fires on EVERY topic you engage — including one that surfaces mid-session or feels like Jacob redirecting you.** A felt "new topic" is most often *you drifting off the plan*, not a real change of plan: route to the canon FIRST and it pulls you back. (2026-06-13 — the session "changed topics" repeatedly; every time, *"is this chains again?"* showed it was the **same** plan — a return, not a redirect — and the day was lost patching downstream before re-routing.) When the topic shifts, you do **not** skip the route; you re-run it for the new topic before touching anything. **Documentation first, every time, period.**
+
 1. **Open the front door.** `BOZ.md §0` (the feature-index router) + repo-root `README.md §⭐ START HERE` (settled-state, by topic). Find your topic → it names the **home doc + the one-line conclusion + the existing forensic.**
 2. **Read the cited canon to the section** before forming a plan or touching code. Rebuilding the model from grep + first-principles when the canon already spells it out is *the* recurring, expensive failure (`BOZ.md §4` — a hard gate, not advice).
 3. **Reuse forensics — never re-derive.** If a harness or forensic exists for the symptom, run/read it instead of building a new one (`scratch/` holds 200+; the studies are `*-FORENSIC.md`, `JUNCTION-CURE-PLAN.md`, the `HANDOFF-*` ledgers).

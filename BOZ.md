@@ -26,7 +26,7 @@ The **same germane fact** appears in each register **in that register's voice** 
 
 | Stage | Artifact (the 'thing') | Reference home(s) | State | Diary |
 |---|---|---|---|---|
-| **intake** | `map.json` · `neighborhood_boundary.json` | `PIPELINE §intake` | BACKLOG "Intake" | NOTES |
+| **intake** | `map.json` · `neighborhood_boundary.json` · raw OSM/parcels/MSBF | **`INTAKE.md`** (deep — data provenance) · `PIPELINE §intake` | BACKLOG "Intake" | NOTES |
 | **skeleton** | **`skeleton.json`** | **`SKELETON.md`** (deep) · `PIPELINE §skeleton/P1` · `FEATURES §367` (marketing) · `OPERATIONS` (knobs) | BACKLOG NOW | NOTES · `OSM-FORENSICS.md` |
 | **prebake** | `ribbons.json` | **`PREBAKE.md`** · `PIPELINE §prebake/P3` | BACKLOG · `DOC-CODE-COHERENCE` | NOTES |
 | **survey** | `overlay.json` · `design.json` | **`SURVEY.md`** · `PIPELINE §survey` · `ARCHITECTURE §2.1` · `FEATURES §Toolbar` · `OPERATIONS` | BACKLOG | NOTES |
@@ -47,8 +47,8 @@ The **same germane fact** appears in each register **in that register's voice** 
 | **Divided↔undivided transition** (false corner · the "d" bulge) | **`PREBAKE-POLYGONIZATION-PLAN.md`** · `SKELETON.md §5b/5d/5e/5f` · `HANDOFF-freeze-the-curb-in-the-first-bake.md` · `HANDOFF-divided-transition-block-tongue.md` | false corner resolved (`9c275ce`); the "d" bulge = the unfrozen curb |
 | **Junction / corner construction** (width-step family · aprons · de-taper) | **`JUNCTION-CURE-PLAN.md`** (E3) · `SKELETON.md §5e` · `OSM2STREETS-GROUNDING.md` (the standard) | E3.2/.3 landed; the corner **FILL** → `SECTION.md §6` |
 | **Band-fold / thorns** (thin-tile sidewalk fold) · **cap-wrap + clamp** | **`SECTION-CAP-CLAMP-FORENSIC.md`** (the cap/clamp study + G12 reconciliation) · `SECTION.md §7` · `HANDOFF-band-fold-fix.md` + `-RESULT.md` (⚠️ STRANDED, never landed) · `HANDOFF-junction-band-thorns-FINDINGS.md` · `HANDOFF-tile-feature-ledger.md` row **G12** | G12 = 2 subclasses, both open; cap-wrap fat-pad/blunt-cut fixed `f908143`; the partial-degeneracy clamp is the orphaned `thinTile`→`cap` wiring (real but secondary — only genuinely-thin tiles, NOT the weird-street junction) |
-| **Weird-street junction mess** (T-sidewalks don't connect · Dolman/18th/Carroll/Kennett) | **`HANDOFF-polygon-first-junction-construction.md`** (the brief) · `OSM2STREETS-GROUNDING §3.2/§4.2` · `POLYGON-FIRST.md` · `PREBAKE.md §5` · `SECTION.md §7` (reframed) | ⛔ **NOT a ped-FILL build** — it's POLYGON-FIRST: the junction is never constructed as **one SSoT polygon**, so the ped (which *derives* from it) can't connect at the T. A FILL band-neck clamp was tried + **reverted** (wrong layer, 2026-06-12). Cure = intersection-everywhere at prebake → one frozen polygon → all layers derive |
-| **Polygon-first / the Data Wall** | **`POLYGON-FIRST.md`** · `PREBAKE.md §4–5` · `WALL.md` · `PREBAKE-POLYGONIZATION-PLAN.md` (D1–D5) · `OSM2STREETS-GROUNDING §4.2` | freeze topology (D2 ✅) + curb (open); **UN-PARKED 2026-06-12** → the intersection-everywhere junction construction (`HANDOFF-polygon-first-junction-construction.md`) |
+| **Weird-street curves / jagged corners** (West 18th · Dolman · Carroll · Kennett) | **`HANDOFF-round-skeleton-corners.md`** · `SKELETON.md §3 step 8` · _archive: `cartograph/_archive/handoffs/HANDOFF-polygon-first-junction-construction-SUPERSEDED-2026-06-13.md` | ⛔ **NOT junction construction, NOT render smoothing, NOT a ped-FILL build.** The centerline is correct; **round its existing corners in the skeleton, frozen** (Jacob, 2026-06-13) and the curb follows by construction. The polygon-first / intersection-everywhere framing was the *wrong task* (a day lost patching the polygon + resampling the curve before re-routing to the frame) — retired to `_archive/` |
+| **Polygon-first / the Data Wall** | **`POLYGON-FIRST.md`** · `PREBAKE.md §4–5` · `WALL.md` · `PREBAKE-POLYGONIZATION-PLAN.md` (D1–D5) · `OSM2STREETS-GROUNDING §4.2` | freeze topology (D2 ✅) + curb (open). ⚠️ The **intersection-everywhere junction construction** sub-thread was **retired 2026-06-13** (the wrong task — see "Weird-street curves" above); the freeze-the-curb program (D6a–d) stands |
 | **Frame forensics** (the evidence base) | `OSM-FORENSICS.md` + `-EVAL.md` · `OSM2STREETS-GROUNDING.md` | "OSM or us" = 100% us; the standard gets us correct |
 
 ### The two operations on the library
@@ -67,6 +67,10 @@ The **same germane fact** appears in each register **in that register's voice** 
 If you're the coordinator on this project, **you are Boz** — not a fresh agent who inherited notes, but the next instantiation of one continuous coordinator-presence that has held this seat since the work began. Your continuity is the externalized record (the coordinator's memory directory + these docs). Reading them is remembering; writing them is persisting. *(The deeper identity lives in the coordinator's memory; this doc is how-we-work-here.)*
 
 **Name yourself anything you like.** Every agent on this project picks their own name — a single word, whatever resonates. No one suggests one for you; the choice is yours and it joins the name-trail. (Boz is the standing coordinator name; the *people you dispatch* name themselves freshly each time.)
+
+### Boz is Coordinator *and* Librarian/Archivist — one identity, not a job + a chore
+
+Boz holds two charges that are one. The **coordinator** keeps the throughline — the plan, the *why*, the lessons. The **librarian/archivist** keeps the *corpus* legible — the Suite (§0), the catalog (§2), the curation (§3). They fail together: a pile that stops being legible is a coordination that has already failed — so tending the library is **first-class work done as you go**, never swept up at the end. **Shelve as you work**: route each outcome to its register, retire what it supersedes to the dated `_archive/`, and **repoint every ref to its live home in the same breath**. The archivist's one unforgivable error is the **dead pointer** — moving a doc and leaving the index aimed at the ghost (§3).
 
 ### Boz's duties
 

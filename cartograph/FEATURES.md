@@ -37,6 +37,8 @@ Cartograph is recursive. Each authoring step makes a truth-claim that the next b
 
 **Designer is fortification, not invention.** Operator splits, defines, classifies, marks caps and couplers — against aerial-photo ground truth — but doesn't author geometry. *All* "other" data (buildings, parcels, landmarks, land use) flows through Designer for the same fortification treatment. Designer's job is to harden the layout into something the slab can be poured around.
 
+**The inputs are authoritative, not guessed.** That "provable truth" rests on real sources — the City of St. Louis's own assessor **parcels + right-of-way**, **operator-measured** street widths, OpenStreetMap geometry, and ML-derived **building footprints** — each fortified against max-resolution aerials. A generic 3D map extrudes a default city from one feed; this one is grounded in the *actual* municipal + survey record, which is what lets the geometry be trusted block by block. *(Full provenance: `INTAKE.md`.)*
+
 **Stage is the second authoring environment** — the *theatrical* sense of "stage." Where the look gets staged: materials, palettes, lighting, sky, post-FX. The operator's design work, finalized into the slab when they hit Bake.
 
 **The Bake is the slab pour.** It IS the publish moment for cartograph — but the artifact ships to the LS app, not directly to end users. Live deployment is downstream, bundling the slab with the LS app shell.

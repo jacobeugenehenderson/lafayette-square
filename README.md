@@ -12,6 +12,8 @@
 
 **Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. Currently **stuck on skeleton + survey**; intake skipped for now. Trunk = `cartograph-looks-pass-ab`.
 
+> ⭐ **Strategic (2026-06-13, Jacob):** the remaining fixes are most likely **in the skeleton**, not the render. The drawing/offset rules are largely straightforward; the sophistication we still owe is in **how we interpret OSM and build the frame**. So the default suspicion on any defect is *"the fix is upstream, in the skeleton"* — confirm that before patching downstream. (The 2026-06-13 day was lost patching the polygon for a curve whose real fix was a frame-level corner-round.)
+
 | Topic | Settled conclusion (don't re-derive) | Authoritative home |
 |---|---|---|
 | **Skeleton** | "The Skeleton is The First Bake" → polygon-ready frame. Centerline over-densification **FIXED** (junction-protected RDP, `smooth=0`). Remaining debt is the **missing across-intersection organ** (doglegs + degenerate corners) — at the intersections, not the lines. ⛔ never conflate clean-lines with clean-corners; junction-protected always; two-carriageway model locked. | **`SKELETON.md`** (deep) · `PIPELINE.md §skeleton` |
@@ -75,6 +77,22 @@ The project is organized as a **public-facing runtime app** plus a small set of 
 | **Arborist** (`/arborist`)       | `src/arborist/` + `arborist/`          | `public/trees/<species>/{skeleton-N.glb, tips-N.json, manifest.json}` | Runtime `InstancedTrees` (planned) |
 | **Meteorologist** (in Stage)     | `meteorologist/` + `src/cartograph/` (UI inline) + `src/components/Atmosphere.jsx` (planned) | `public/clouds/{presets,almanac}.json` | Runtime `<Atmosphere />` (planned) |
 
+### Data sources (intake → the model)
+
+The neighborhood is **assembled from many open + measured sources**, not one — much of the model is already built on them. Full provenance (endpoints, fetch scripts, what we transform, what's authoritative vs. OSM-default): **[`cartograph/INTAKE.md`](cartograph/INTAKE.md)**.
+
+| Source | Gives us | Authoritative? |
+|---|---|---|
+| **OpenStreetMap** (Overpass) | street centerlines (geometry), buildings, POIs, ground features, park paths/water, lamps | base — geometry is OSM digitization |
+| **Microsoft Global ML Footprints** / **Overture** | building footprints | — |
+| **City of St. Louis Open Data** (ArcGIS Assessor) | official **parcels + right-of-way + land-use** | ✅ municipal |
+| **`survey.json`** (operator-measured) | custom **street widths** (ROW, pavement half-width, lanes) | ✅ measured |
+| **35 curated centerlines** | hand-corrected geometry where OSM was wrong | ✅ ours |
+| **Mapillary** | street-level imagery (facade matching) | — |
+| **Elevation DEM** · **Park trees / NPS / Wikimedia** | ground elevation; tree inventory, building enrichment, historic narrative | — |
+
+> ⚠️ **Architecture intent:** today many of these are **hardwired into the LS runtime**; ultimately they **all route through the Slab** (`SLAB-CONTRACT.md`) — `sources → Cartograph (intake → skeleton → bake) → ⟦Slab⟧ → LS runtime`. The Slab is the boundary; LS should consume the *Slab*, never the raw sources.
+
 ---
 
 ## Documentation map
@@ -93,7 +111,7 @@ The project is **four domains** + the runtime, each documented beside its code:
 
 | Domain | Reference | State | Diary |
 |---|---|---|---|
-| **Cartograph** — map-making toolkit (Designer / Stage / Preview / bake) | [README](cartograph/README.md) · [FEATURES](cartograph/FEATURES.md) *(user/pitch)* · [OPERATIONS](cartograph/OPERATIONS.md) *(operator manual — seed)* · [ARCHITECTURE](cartograph/ARCHITECTURE.md) · [PIPELINE](cartograph/PIPELINE.md) · **[SKELETON](cartograph/SKELETON.md)** (the frame) · **[PREBAKE](cartograph/PREBAKE.md)** (chains → frozen polygon substrate) · **[SURVEY](cartograph/SURVEY.md)** (the SHAPE tool) · **[WALL](cartograph/WALL.md)** (the freeze; frozen-wrong-data is odious) · **[SECTION](cartograph/SECTION.md)** (the FILL tool) · **[BAKE](cartograph/BAKE.md)** (pour the slab) · **[STAGE](cartograph/STAGE.md)** (the Look tool) · **[POLYGON-FIRST](cartograph/POLYGON-FIRST.md)** (⭐ the doctrine made enforceable — checks, not adjectives) · **[RIBBONS](cartograph/RIBBONS.md)** (geometry canon — read before any ribbon/corner work) · **[LOOP-STREETS](cartograph/LOOP-STREETS.md)** (Benton/Waverly loop canon) | [BACKLOG](cartograph/BACKLOG.md) · [DOC-CODE-COHERENCE](cartograph/DOC-CODE-COHERENCE.md) (the corpse-lie ledger) + the root `HANDOFF-*.md` briefs | [NOTES](cartograph/NOTES.md) · [OSM-FORENSICS](cartograph/OSM-FORENSICS.md) · [RENDER-PATH-CENSUS](cartograph/RENDER-PATH-CENSUS.md) |
+| **Cartograph** — map-making toolkit (Designer / Stage / Preview / bake) | [README](cartograph/README.md) · [FEATURES](cartograph/FEATURES.md) *(user/pitch)* · [OPERATIONS](cartograph/OPERATIONS.md) *(operator manual — seed)* · [ARCHITECTURE](cartograph/ARCHITECTURE.md) · [PIPELINE](cartograph/PIPELINE.md) · **[INTAKE](cartograph/INTAKE.md)** (data provenance — where it all comes from) · **[SKELETON](cartograph/SKELETON.md)** (the frame) · **[PREBAKE](cartograph/PREBAKE.md)** (chains → frozen polygon substrate) · **[SURVEY](cartograph/SURVEY.md)** (the SHAPE tool) · **[WALL](cartograph/WALL.md)** (the freeze; frozen-wrong-data is odious) · **[SECTION](cartograph/SECTION.md)** (the FILL tool) · **[BAKE](cartograph/BAKE.md)** (pour the slab) · **[STAGE](cartograph/STAGE.md)** (the Look tool) · **[POLYGON-FIRST](cartograph/POLYGON-FIRST.md)** (⭐ the doctrine made enforceable — checks, not adjectives) · **[RIBBONS](cartograph/RIBBONS.md)** (geometry canon — read before any ribbon/corner work) · **[LOOP-STREETS](cartograph/LOOP-STREETS.md)** (Benton/Waverly loop canon) | [BACKLOG](cartograph/BACKLOG.md) · [DOC-CODE-COHERENCE](cartograph/DOC-CODE-COHERENCE.md) (the corpse-lie ledger) + the root `HANDOFF-*.md` briefs | [NOTES](cartograph/NOTES.md) · [OSM-FORENSICS](cartograph/OSM-FORENSICS.md) · [RENDER-PATH-CENSUS](cartograph/RENDER-PATH-CENSUS.md) |
 | **LS app** — the consumer surface (place cards, residence, guardians, Cary) | [FEATURES](ls/FEATURES.md) *(user/pitch)* · [OPERATIONS](ls/OPERATIONS.md) *(operator manual)* · [ARCHITECTURE](ls/ARCHITECTURE.md) · [reference/INVENTORY-DATA](ls/reference/INVENTORY-DATA.md) (every data source) · [INVENTORY-API](ls/reference/INVENTORY-API.md) (every endpoint) · [RUNTIME-DELTA](ls/reference/RUNTIME-DELTA.md) | [STATUS](ls/STATUS.md) (whole-picture section×state map) · [BACKLOG](ls/BACKLOG.md) | — |
 | **Arborist** — tree library + bake | [README](arborist/README.md) · [SPEC](arborist/SPEC.md) · [FEATURES](arborist/FEATURES.md) · [ARCHITECTURE](arborist/ARCHITECTURE.md) · [ROSTER-COVERAGE](arborist/ROSTER-COVERAGE.md) | [BACKLOG](arborist/BACKLOG.md) | [NOTES](arborist/NOTES.md) |
 | **Meteorologist** — clouds + weather (standalone app at `/meteorologist.html`; the staging area for the slab) | [README](meteorologist/README.md) · [FEATURES](meteorologist/FEATURES.md) *(user/pitch)* · [OPERATIONS](meteorologist/OPERATIONS.md) *(operator manual)* · [ARCHITECTURE](meteorologist/ARCHITECTURE.md) · [INTERFACE](meteorologist/INTERFACE.md) · **[WEATHER-MODEL](meteorologist/WEATHER-MODEL.md)** (nomenclature + model SSOT) · [SPEC](meteorologist/SPEC.md) · [CANON](meteorologist/CANON.md) | [STATUS](meteorologist/STATUS.md) (wiring matrix) · [BACKLOG](meteorologist/BACKLOG.md) · [STAGE_MIGRATION](meteorologist/STAGE_MIGRATION.md) · [CLOUD-PHASE0](meteorologist/CLOUD-PHASE0.md) | [NOTES](meteorologist/NOTES.md) |
@@ -116,6 +134,7 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 
 | Stage | Authoritative home | Deep-dive / detail |
 |---|---|---|
+| **intake** (sources → cleaned frame) | **`INTAKE.md`** (data provenance — every source, fetch, transform; authoritative vs. OSM-default) · `PIPELINE.md §intake` | `scripts/` (the fetch pipeline) · `OSM-FORENSICS.md` |
 | **skeleton** (the frame) | **`SKELETON.md`** (the keystone artifact reference — schema + build stages + affordances + gaps) · `PIPELINE.md §skeleton` + `§Wall` + ladder `P1` | `OSM-FORENSICS.md` · `[[project_skeleton_is_the_first_bake]]` · the "better bones" 4 prongs (BACKLOG NOW) |
 | **prebake** (First Bake → `ribbons.json`) | **`PREBAKE.md`** (the keystone — current compile + the polygon-ization target) · `PIPELINE.md §prebake` + ladder `P3` | `[[project_two_bakes_two_walls]]` · `[[feedback_skeleton_pipeline_two_step]]` |
 | **survey** (SHAPE tool — *no ped depth*) | **`SURVEY.md`** (the keystone — tile construction + authoring + the wall) · `PIPELINE.md §survey` + `ARCHITECTURE.md §2.1` | `FEATURES.md §Toolbar` · `SECTION.md §7.1` (SHAPE/FILL split) |
