@@ -809,6 +809,24 @@ function simplifyRDP(coords, eps = 0.5, protectedKeys = null) {
   for (let s = 0; s < splits.length - 1; s++) rdpRange(coords, splits[s], splits[s + 1], eps, keep)
   return coords.filter((_, i) => keep[i])
 }
+// Like simplifyRDP but returns the keep[] boolean mask instead of the filtered
+// points — so a caller can RDP a CONCATENATED through-road once and then split it
+// back into its named chains at known seam indices (see the transition-aware
+// simplification below). Shares rdpRange + the protected-split logic exactly.
+function rdpKeep(coords, eps = 0.5, protectedKeys = null) {
+  const n = coords.length
+  const keep = new Array(n).fill(false)
+  if (n === 0) return keep
+  keep[0] = keep[n - 1] = true
+  if (n <= 2) return keep
+  const splits = [0]
+  for (let i = 1; i < n - 1; i++) {
+    if (protectedKeys && protectedKeys.has(vKey(coords[i]))) { keep[i] = true; splits.push(i) }
+  }
+  splits.push(n - 1)
+  for (let s = 0; s < splits.length - 1; s++) rdpRange(coords, splits[s], splits[s + 1], eps, keep)
+  return keep
+}
 
 // --- Standards-seeded cross-section (OSM-FORENSICS.md Part 4) --------------
 // Default/prior cross-section per street class. NACTO-by-class for the
@@ -1461,18 +1479,124 @@ function main() {
   // NOT over-densification.)
   const RDP_EPS = 1.0
   const RDP_EPS_LOOP = 0.3
+  const RDP_EPS_TRANSITION = 0.3   // through-roads: preserve the rounding at name-transition seams (see (c) below)
   const isClosedLoop = (pts) => {
     if (!pts || pts.length < 4) return false
     const a = pts[0], b = pts[pts.length - 1]
     return Math.hypot(a.x - b.x, a.z - b.z) < 1.0
   }
-  let totalPtsBefore = 0, totalPtsAfter = 0
+  // ── Transition-aware simplification: simplify the ROAD, not the named chain ──
+  // Per-chain RDP pins every name-transition joint (a degree-2 node where two
+  // DIFFERENTLY-named chains meet — it sits in junctionKeys as a shared coord),
+  // then drops the rounding shoulders on each side, so a gentle raw curve facets
+  // into one hard kink at the seam (West 18th↔Dolman: 15.6° raw → 46.5° pinned;
+  // SPAR-SKELETON-FORENSIC.md). The fix follows the road THROUGH each name change
+  // (the continuesAs path), simplifies the concatenated raw polyline ONCE with the
+  // joints UN-pinned (real junctions still protected), then splits back by name —
+  // so the rounding the data already has survives. PRESERVE, never straighten (RDP
+  // only drops within-eps) and never move (retained ⊆ raw). A name is a label; the
+  // road is the line on the ground — simplify the road, attribute the names after.
+  const totalPtsBefore = streets.reduce((a, s) => a + s.points.length, 0)
+  const sById = new Map(streets.map(s => [s.id, s]))
+  const rawDegree = buildNodeGraph(streets).degree
+
+  // (a) Name-transition joints, detected on the RAW points — same gate as the
+  //     post-RDP nameTransitions detector below (degree-2 · two different-named
+  //     chains end-to-end · outward tangents ~opposite, i.e. one road through).
+  const endsAt = new Map()  // vKey -> [{id, end}]
   for (const s of streets) {
-    totalPtsBefore += s.points.length
+    const p = s.points
+    const ks = vKey(p[0]); if (!endsAt.has(ks)) endsAt.set(ks, []); endsAt.get(ks).push({ id: s.id, end: 'start' })
+    const ke = vKey(p[p.length - 1]); if (!endsAt.has(ke)) endsAt.set(ke, []); endsAt.get(ke).push({ id: s.id, end: 'end' })
+  }
+  const tangentOut = (id, end) => {
+    const p = sById.get(id).points
+    const [nd, aw] = end === 'start' ? [p[0], p[1]] : [p[p.length - 1], p[p.length - 2]]
+    const dx = aw.x - nd.x, dz = aw.z - nd.z, L = Math.hypot(dx, dz) || 1
+    return { x: dx / L, z: dz / L }
+  }
+  const endLinks = new Map()       // "id|end" -> { otherId, otherEnd, key }
+  const transitionKeys = new Set() // joint vKeys to UN-pin during road RDP
+  for (const [k, ends] of endsAt) {
+    if ((rawDegree.get(k) || 0) !== 2 || ends.length !== 2) continue
+    const [a, b] = ends
+    if (sById.get(a.id).name === sById.get(b.id).name) continue   // same-name severance, not a transition
+    const ta = tangentOut(a.id, a.end), tb = tangentOut(b.id, b.end)
+    if (ta.x * tb.x + ta.z * tb.z > -0.6) continue                // not collinear → an L-corner, not one road
+    endLinks.set(`${a.id}|${a.end}`, { otherId: b.id, otherEnd: b.end, key: k })
+    endLinks.set(`${b.id}|${b.end}`, { otherId: a.id, otherEnd: a.end, key: k })
+    transitionKeys.add(k)
+  }
+
+  // (b) Walk the joint links into maximal ordered through-roads (chain-sequences).
+  const linkOf = (id, end) => endLinks.get(`${id}|${end}`)
+  const usedInRoad = new Set()
+  const roads = []
+  for (const s of streets) {
+    if (usedInRoad.has(s.id)) continue
+    if (!linkOf(s.id, 'start') && !linkOf(s.id, 'end')) continue
+    const comp = new Set(); const stk = [s.id]
+    while (stk.length) {
+      const id = stk.pop(); if (comp.has(id)) continue; comp.add(id)
+      for (const end of ['start', 'end']) { const l = linkOf(id, end); if (l && !comp.has(l.otherId)) stk.push(l.otherId) }
+    }
+    let startId = null, headEnd = null   // start from a free end (road endpoint); else a cycle → break at s
+    for (const id of comp) {
+      if (!linkOf(id, 'start')) { startId = id; headEnd = 'start'; break }
+      if (!linkOf(id, 'end'))   { startId = id; headEnd = 'end';   break }
+    }
+    if (startId == null) { startId = s.id; headEnd = 'start' }
+    const seq = []; const guard = new Set(); let curId = startId, curHead = headEnd
+    while (curId != null && !guard.has(curId)) {
+      guard.add(curId)
+      seq.push({ id: curId, flip: curHead === 'end' })   // flip = traverse this chain reversed
+      const l = linkOf(curId, curHead === 'start' ? 'end' : 'start')
+      if (!l || guard.has(l.otherId)) break
+      curId = l.otherId; curHead = l.otherEnd
+    }
+    for (const e of seq) usedInRoad.add(e.id)
+    if (seq.length >= 2) roads.push(seq)
+  }
+
+  // (c) Simplify each through-road ONCE across the joins, then split back by name.
+  const protRoad = new Set([...junctionKeys].filter(k => !transitionKeys.has(k)))
+  const orientedPts = (e) => e.flip ? reverse(sById.get(e.id).points) : sById.get(e.id).points.slice()
+  const roadHandled = new Set()
+  for (const road of roads) {
+    const concat = []; const segStart = []
+    for (let i = 0; i < road.length; i++) {
+      const pts = orientedPts(road[i])
+      if (i === 0) { segStart.push(0); for (const p of pts) concat.push(p) }
+      else { segStart.push(concat.length - 1); for (let j = 1; j < pts.length; j++) concat.push(pts[j]) }  // share the seam
+    }
+    // Finer tolerance than the per-chain RDP_EPS: a name-transition's rounding is
+    // sampled densely (~2-3 m vertices, each <1 m off-chord), so at eps=1.0 the
+    // whole gentle bend collapses into one hard kink (W18↔Dolman 46.5°). At 0.3 m
+    // the rounding survives → ~15.6° (its true raw turn). Straights stay thin (≈0
+    // deviation drops at any eps); only curvature keeps extra points. Knob for the
+    // eye. (Un-pinning the joint alone does NOT fix this — the lever is eps.)
+    const eps = isClosedLoop(concat) ? RDP_EPS_LOOP : RDP_EPS_TRANSITION
+    const keep = rdpKeep(concat, eps, protRoad)
+    keep[0] = keep[concat.length - 1] = true
+    for (let i = 1; i < road.length; i++) keep[segStart[i]] = true   // re-insert seams (connectivity + split points)
+    for (let i = 0; i < road.length; i++) {
+      const lo = segStart[i], hi = (i + 1 < road.length) ? segStart[i + 1] : concat.length - 1
+      const seg = []
+      for (let j = lo; j <= hi; j++) if (keep[j]) seg.push(concat[j])
+      sById.get(road[i].id).points = road[i].flip ? reverse(seg) : seg
+      roadHandled.add(road[i].id)
+    }
+  }
+  if (roads.length) console.log(`  through-road simplify: ${roads.length} roads across ${transitionKeys.size} name-transitions (joints un-pinned)`)
+
+  // (d) Every chain NOT in a through-road: per-chain RDP as before (junction-protected).
+  let totalPtsAfter = 0
+  for (const s of streets) {
+    if (roadHandled.has(s.id)) continue
     const eps = isClosedLoop(s.points) ? RDP_EPS_LOOP : RDP_EPS
     s.points = simplifyRDP(s.points, eps, junctionKeys)
-    totalPtsAfter += s.points.length
   }
+  for (const s of streets) totalPtsAfter += s.points.length
 
   // Canonical direction pass. Non-oneway chains are oriented so the
   // dominant component of (last - first) is positive (+X if E-W, +Z if N-S).
