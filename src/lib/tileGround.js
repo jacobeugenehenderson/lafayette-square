@@ -835,7 +835,7 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
     // Single closed run (a loop interior): the strips are whole concentric
     // annuli at that one edge's depths — no corners, no slicing.
     const single = (runs.length === 1 && rr.length) ? rr[0] : null
-    // G5 — ADA corner ramp (structural, RIBBONS §6.9): the corner IS the curb
+    // G5 — ADA corner ramp (structural; live home SECTION §6, archeology _archive/RIBBONS-history §6.9): the corner IS the curb
     // ramp → an all-SW slice of the SAME fullBand from tangent to tangent;
     // treelawn lives only on the straight legs and ends at the tangents. Each
     // run is pulled back from its corner ends by (asphalt-hw + that corner's
