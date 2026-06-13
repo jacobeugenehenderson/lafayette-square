@@ -76,6 +76,24 @@ So this can't rot the same way:
 
 ---
 
+## 5. ⭐⭐ The correctness suite — the system that defeats hand-fixing (2026-06-13, Jacob)
+
+The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central problem**: each is wasted operator time, and a tax the kit **re-pays on every neighborhood** unless defeated at the system level. *"We must build a system to defeat this problem"* (Jacob). The checks above (A/B/C) are the seed of the defeat — the principle is **automate what the operator's eye did.** Four parts:
+
+1. **The invariant suite (the DETECTOR).** Grow the curb checks into a comprehensive set — **one runnable, RED-until-true invariant per bug-class:** curb ∥ chain (`litmus-curb-parallel`, exists) · `iA` no self-intersection (exists) · `corner-guard` byte-stability (exists) · **loops close · no width-step at a through-node · cul-de-sac cap tangent · no polygon overlap · divided median sane · no jagged-arc (max-turn) on a smooth curve.** The suite **flags the bad streets automatically** — the eye, mechanized.
+
+2. **Validate against the 35 (the LABELED SET).** Run the suite on the **raw OSM geometry** of the 35 curated streets (pre-hand-fix). A correct suite **flags those 35** and **does not false-positive** on the clean grid. That tunes the detector to catch exactly what the operator caught — the **acceptance test for the suite itself**.
+
+3. **Enforce (the kit invariant, made mechanical).** Every flag → a **general skeleton fix** (the *class*, never the street — `SKELETON §6`). The suite is a **CI gate:** no green build with an un-flagged defect; a fix must turn a RED invariant GREEN *generally*; a regression guard keeps a fixed class fixed across towns.
+
+4. **The onboarding loop:** new town → run the suite → fix the flagged classes in the skeleton → green → ship. **Zero hand-fixing, by construction.**
+
+**The reframe this forces:** the six SHAPE tasks aren't the deliverable — **the detector is.** Fixing the 6 classes makes LS's suite go green; the *suite* is what defeats the problem on town #2…N. "Remove the 35 and see what breaks" stops being a one-time forensic and becomes the **standing regression test.**
+
+> **First detector pass — scope (read-only, no production change):** harness `scratch/correctness-detector.mjs`. **Inputs:** the 35 curated chains (names in `INTAKE §6.1`) + their **raw OSM geometry** (`centerlines.json` `source:'osm'` siblings, or re-fetch per chain). **Invariants v1:** the three that exist (`litmus-curb-parallel` · iA self-int · corner-guard) **+** cheap new ones — **max-turn-per-chain** (the jagged-arc detector — must flag West 18th), **width-step at through-nodes**, **face-closure**. **Output:** per-street pass/fail → the flagged set + a **confusion report vs the 35** (recall: flagged ⊇ the 35? precision: clean grid mostly passes?). **Acceptance:** high recall on the 35, low false-positive on the grid — *then* the thresholds are trusted. This is the seed of the suite; it converts the campaign from "fix 35 streets" to "make the detector green."
+
+---
+
 ## Cross-references
 - `PREBAKE.md §4.1`/`§5` — the curb-is-the-unfrozen-half SSOT; the L1/L2/L3 split.
 - `SKELETON.md §5f` — the skeleton-voiced statement of the same.
