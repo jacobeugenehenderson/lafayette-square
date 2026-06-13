@@ -21,7 +21,7 @@ The neighborhood frame is **assembled from many open + measured sources**, not o
 | **Overture Maps** (release `2026-01-21.0`) | buildings (incl. MSBF lineage) | `config.py` / merge | — | ODbL/CDLA ⚠️ confirm |
 | **City of St. Louis Open Data** (ArcGIS Assessor) | **official parcels + assessor ROW** | `scripts/03-fetch-stl-parcels.py` → `maps8.stlouis-mo.gov/.../ASSESSOR/Assessor_Public_Parcels/MapServer/11` | `scripts/raw/stl_parcels.json` (2.8 MB) | public/open |
 | **Mapillary** | street-level imagery (facade matching) | `scripts/10-fetch-mapillary.py` (token in `scripts/.env`) | `raw/mapillary_*.json` | CC-BY-SA |
-| **Elevation DEM** | per-point ground elevation grid | ⚠️ confirm (rasterio in `requirements.txt` → a raster DEM; USGS/OpenTopography likely) | `raw/elevation.json` | ⚠️ confirm |
+| **USGS 3DEP LiDAR** | **building heights** (max_Z − ground_Z) **+** ground **terrain** DEM | `scripts/_archive/fetch-lidar-heights.py` (heights) · `bake-terrain.js` (GeoTIFF) | heights → `buildings.json` `size[1]`; DEM → `terrain.{json,bin}` | public (USGS) |
 | **`survey.json`** (operator, 2026-04-11) | **custom street WIDTHS** — `pavementHalfWidth` (centerline→sidewalk-centerline), `rowWidth`, `lanes`, `type` | hand-built from *"OSM sidewalk distances + assessor ROW fallback"* | `raw/survey.json` | ours |
 | **Park trees / NPS / Wikimedia** | tree inventory, building enrichment + facade imagery, historic narrative | `12-process-park-trees.py` · `enrich-*.mjs` · `download-wikimedia.*` | `raw/lafayette_park_trees.json`, `inventory/*` | mixed |
 
@@ -76,6 +76,28 @@ We use **OSM for street geometry** when **St. Louis publishes official street ce
 **The cheap experiment before any spend:** fetch the regional centerlines for the LS bbox, overlay on OSM. If the geometry is **cleaner** → it can obviate the corner-rounding at the source. If it carries **functional class / divided / lane** attributes → it lifts the highways/frontage + divided-roads tasks directly. (`Street_Volumes` may add AADT; address ranges suggest it's geocoding-oriented, so verify attribute richness.) This is the *"industry data as primary source"* doctrine, made actionable.
 
 ---
+
+## 6. The input audit — are we using everything to maximum effect? (2026-06-13)
+
+A pass over every input — what it *carries* vs. what we *consume*. **(Corrected 2026-06-13 after a proper read — the pull-through is more thorough than a first grep suggested: building HEIGHTS are LiDAR-derived, not defaulted.)**
+
+**Used to high effect.** **Buildings** are richly synthesized — MSBF/OSM footprints **+ USGS 3DEP LiDAR heights** (`_archive/fetch-lidar-heights.py` → `size[1]`) **+** STL parcel metadata (`year_built`/`zoning`/`building_sqft`/`historic_district`) **+** **Mapillary** facade matching (→ `wall_material`/`roof_material`) in one record. Parcels also drive land-use + ROW; `survey.json` drives widths; OSM `highway` class gates divided-detection; 3DEP also bakes the terrain. **The metadata/building side is well-used — not a gap.**
+
+**The gaps — all on the SHAPE/geometry side** (where the remaining visible tasks live):
+
+1. **Authoritative street *geometry* — the one real gap.** The centerline *shape* is OSM-digitized + the 35 hand-fixes (§6.1). The regional **Street Centerlines** GIS (§5) is free and **unused**, and may carry functional-class/divided. *Value on the table.*
+2. **Divided-road *geometry* leans on inference** — detection is class-gated (good), but median/carriageway *geometry* isn't from data.
+3. **Minor enrichment left on the table** (opportunities, not gaps): OSM `architect`/`heritage`/`start_date` extracted but not propagated to `buildings.json`; parcel building-counts + fine-grained historic flags simplified to booleans; Mapillary timestamps unused; the stories *count* (not the height) falls back to `building:levels`→`/3.5` where parcels lack it.
+4. **Cleanup, not gaps:** `elevation.js` (EPQS point-query) is superseded by the GeoTIFF bake; `enrich-*.mjs` / `match-facades.py` invocation is unclear — confirm or archive. No curb/pavement-edge dataset exists locally (osm2streets notes the same) — not pursuable.
+
+### ⭐ 6.1 The 35 hand-fixes = the metric for the whole SHAPE campaign
+
+`centerlines.json` carries **35 `source:'curated'`** chains — operator hand-corrections to geometry OSM got wrong. They are **not random**: they are the **problem streets**, mapping almost 1:1 to the remaining visible tasks —
+- **loops + cul-de-sacs** — Benton · Waverly · Mackay · Vail · Albion · Whittemore · Nicholson · Simpson · Preston · Kennett Place (the LS "Places")
+- **weird junctions** — Dolman · South 18th · Hickory · Carroll · Kennett
+- **divided / perimeter** — Truman Pkwy · Lafayette · Park · Mississippi · Chouteau · S. Jefferson
+
+**The hand-fixes are the operator papering over the skeleton's geometry gaps.** So **`# curated streets` is the honest metric of how far the automated pipeline is from correct**, and **0 hand-fixes is the north star**: intake + skeleton produce correct geometry **by construction** (better interpretation — `SKELETON.md`) and/or from authoritative source geometry (§5), so no one ever hand-draws a centerline. Driving that count to 0 *is* the remaining SHAPE campaign — and `Survey shows the perfected map straight from the skeleton` (`README §⭐ START HERE`) is the same goal stated from the other end.
 
 ## Cross-references
 - `SKELETON.md` — the frame built from this intake (`seedSection`, the RDP + corner-round, width-sourcing).
