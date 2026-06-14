@@ -5,6 +5,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import { CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
+import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 import { chainMeasure, findFeForSide as findFeForSidePure, feesForChainSide, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
@@ -309,6 +310,12 @@ export default function MeasureOverlay() {
   // at the offset position — where the asphalt actually starts — so the
   // operator authors against where the median begins, not the carriageway
   // center.
+  // The ONE smoothing knob, applied to the navy editable centerline so it reads
+  // as the SAME smooth curve the curb derives from (SSoT — SKELETON.md §3.5). Same
+  // constant + same junction keys as buildTileGround → concentric by construction.
+  // Operates on a COPY (smoothChain returns new points); the stored centerlineData
+  // points stay sparse so intersections.ix / segOrd / handle math are untouched.
+  const navJunctionKeys = useMemo(() => junctionKeysOf(centerlineData?.streets || []), [centerlineData])
   const centerlineMeshes = useMemo(() => {
     if (!active) return []
     const out = []
@@ -316,7 +323,8 @@ export default function MeasureOverlay() {
     const dividedSeen = new Map()
     for (const { idx, st } of streetData) {
       if (!st.points || st.points.length < 2) continue
-      const geo = polylineRibbon(st.points, 0.35, 0)
+      const sm = smoothChain(st.points, STREET_SMOOTH, undefined, navJunctionKeys) || st.points
+      const geo = polylineRibbon(sm, 0.35, 0)
       if (dividedNames.includes(st.name)) {
         const arr = dividedSeen.get(st.name) || []
         arr.push({ id: st.id, npts: st.points.length, geoOk: !!geo, first: st.points[0] })
@@ -329,7 +337,7 @@ export default function MeasureOverlay() {
     // console.log(`[MeasureOverlay] centerlineMeshes: ${out.length} total. Divided chains:`)
     // for (const [name, arr] of dividedSeen) console.log(`  ${name}: ${arr.length} chain(s)`, arr)
     return out
-  }, [active, streetData])
+  }, [active, streetData, navJunctionKeys])
 
   // Handle positions for the selected street. Anchor to the click point so
   // handles appear where the operator clicked rather than the midpoint.

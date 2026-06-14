@@ -99,6 +99,59 @@ Non-vehicular unnamed ways (footway/cycleway/steps/service) — `{ id, highway, 
 
 ---
 
+## 3.5 ⭐ From frame to render — the centerline's life + where the curve-fit lives
+
+*(2026-06-14 — laid out because **the whole system starts with this step** and it was being re-derived from code. The "what / how / where / when" for the centerline geometry, frame → render. Grounded in §3 step 8 + §5a + §6.)*
+
+**The frame is SPARSE by design.** `skeleton.json streets[].points` is junction-protected-RDP at **eps 1.0 m** (§3 step 8) — polygon-ready, *deliberately* coarse for offset-safety + an early Data Wall (§6, the First Bake). **The skeleton is never densified or smoothed in place.** So a curved through-road is a faceted polyline at its *honest raw turn* — West 18th↔Dolman ≈ **15.6°/vertex** after the §5a name-transition fix (`c4cb191`). Its concentric offset (the curb) therefore facets, and the ribbon that reads off that curb fragments (`RIBBONS.md §1`, the Derivation Chain).
+
+**The render path — START AT THE BEGINNING (Skeleton → Survey), and mind the WALL.** ⚠️ The two tools render the SAME geometry through **different paths on opposite sides of the Data Wall** — conflating them is the recurring track-jump (2026-06-14, repeatedly):
+```
+SKELETON  skeleton.js → skeleton.json  streets[].points       (the sparse RDP frame, §3 step 8)
+   │  derive.js (prebake): INSERTS an IX vertex at every intersection, then FREEZES
+   ▼  → ribbons.json: streets[].points (denser) + intersections.ix (INDICES) + frozen tiles[]
+   ▼  _loadCenterlines → store.centerlineData   (PREFERS ribbons points — the `rbPoints` block)
+
+╔═ SURVEY tool (tool==='surveyor') — UPSTREAM of the Wall · LIVE · where the SHAPE FIRST appears ═╗
+║  • NAVY centerline ... SurveyorOverlay.jsx   (polylineRibbon over centerlineData.streets[].points)  ║
+║  • POLYGON / curb .... BlockGeometryV2Debug → tileGeos = buildTileGround(liveRibbons)   (LIVE)      ║
+║  • faint BASE line ... MapLayers   (ribbonsData, disc-clipped)                                      ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════╝
+       ─────────────── ⟦ DATA WALL ⟧  freeze → shape.json (the per-tile SHAPE) ───────────────
+╔═ SECTION / MEASURE tool (tool==='measure') — DOWNSTREAM of the Wall · FROZEN · pure consumer ═════╗
+║  • NAVY centerline ... MeasureOverlay.jsx   (polylineRibbon over centerlineData)                    ║
+║  • curb / ribbon ..... sectionGeos = sectionOpen(frozenShape)   — the curb SITS STILL (shape.json)  ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+⭐ **The SHAPE first appears in the SURVEY tool, LIVE off the skeleton** (ribbons → the live `buildTileGround`; in Survey `sectionFrozen=false`, so `tileGeos` renders). The **Wall** freezes it to `shape.json`; the **SECTION tool is a pure consumer** of that frozen shape (`sectionFrozen = measureActive && frozenShape` → `sectionGeos`; the curb cannot move there — and the live `buildTileGround` is gated **OFF**: `tileGeos` returns null when `sectionGeos` exists).
+
+⛔ **THE BUG-CLASS — do NOT repeat:** to fix the centerline / polygon **SHAPE** (the curve-fit), work the **SURVEY** render — `SurveyorOverlay` (navy) + the **live** `buildTileGround` (polygon). Editing the **Section/Measure** side (`MeasureOverlay`, `sectionGeos`) is editing the **frozen downstream consumer**: it cannot change the shape, and in frozen mode the live smooth is bypassed entirely. *Start at the beginning: Skeleton → Survey.*
+
+⭐ **Single source still holds:** `ribbons.json` points feed both tools' navy (`centerlineData`, via `rbPoints`) AND the Survey polygon (`liveRibbons`). But the curb's RENDER differs by tool — **Survey = live, Section = frozen** — so a SHAPE change must land in the **Survey live path** to be seen at the source, and be **baked into `shape.json`** to persist past the Wall into Section.
+
+**The curve-fit (the smooth curve) is a CONSUME-TIME map, not a frame edit.** `src/lib/smoothCenterline.js` `smoothChain` — interpolating centripetal Catmull-Rom, **corner-protected** (`CORNER_TOL 30°` splits sharp corners out as hard vertices → "smooth bends, keep junctions sharp"), **junction-pinned** (`breakKeys` = `junctionKeysOf`), **arc-length-uniform** (density-robust; no scallop on sparse input — the dead scalloping fear, `HANDOFF-vector-curve-construction.md` Law 3). Applied **where streets are consumed**, and per the `derive.js` freeze doctrine it must **never bake into the frozen artifact** ("an interpolating, junction-pinned geometric map that cannot change topology and must never bake into the artifact").
+
+⭐ **THE ONE KNOB 2026-06-14.** `smoothCenterline.js` exports **`STREET_SMOOTH`** (the single tension) + **`junctionKeysOf`** (the single pin-set), read by EVERY consumer that renders the centerline curve — same constant + same keys ⇒ ONE smooth curve, **concentric by construction** (the two-source desync is structurally impossible). An **internal constant tuned once on the eye, NOT a UI slider** (a curve's offset-safe sample density has a correct answer, not a preference — the old Smoothing slider was retired 2026-06-04). *(Before: `smooth=0`; the eps-1.0 frame + the `derive.js` Goldilocks ≤5 m densify were judged enough, but the curved through-roads still offset-faceted, 2026-06-14.)* Wiring, by render path (mind the Wall, above):
+> - **SURVEY (live, pre-Wall) — the eye-test home:** navy = `SurveyorOverlay` (`smoothChain` before `polylineRibbon`); polygon/curb = the live `buildTileGround` (`opts.smooth = STREET_SMOOTH`, `tileGeos`). ✅ wired.
+> - **SECTION (frozen, post-Wall):** navy = `MeasureOverlay` (`smoothChain`) ✅; **curb = `sectionGeos` off `shape.json`** — reflects the knob **once `shape.json` is re-frozen**. Both freeze paths now carry it: the **Survey-exit freeze** (`serve.js` POST `/shape`) writes the live smoothed `_shapeArtifact`, and the **full slab bake** (`bake-ground.js`) is wired to `STREET_SMOOTH` ✅. ⏳ just needs the re-freeze/re-bake (Jacob's go). (The live `buildTileGround` smooth stays gated off in frozen mode by design.)
+>
+> ⛔ **First lesson re-learned (2026-06-14): I wired the navy to `MeasureOverlay` (Section) while Jacob was in the SURVEY tool → "no visible change." The Survey navy is `SurveyorOverlay`. Start at Skeleton → Survey.**
+>
+> **Open follow-ons (banked 2026-06-14):**
+> 1. **Name-transition smoothing seam (low priority — Jacob: "not important on its own unless it messes things up down the road").** The knob smooths **per chain**, so at a `continuesAs` joint the two chains meet at the pinned node but with **different tangents** → a hair-gap in the curb offset on each side (Jacob's eye, the smooth West-18th↔Dolman). Fix = smooth the through-ROAD **across `continuesAs`** (concatenate → smooth once → split back — the §5a RDP through-road pattern applied to the smoothing pass; *"smooth the road, attribute the names after"*). ⚠️ **Watch:** confirm it doesn't fragment the ped **ribbon** downstream (a curb gap can sliver the band) — if it does, it graduates from low-priority.
+> 2. **Part-b corner-aware fillet** — `vertR=0` on within-run curve vertices, so the curb doesn't take a `baseR` fillet at every densified point (only if the curb lumps; on a gently-turning smooth curve the fillets are negligible).
+> 3. **Persist past the Wall — WIRED, awaiting the re-freeze (Jacob's go).** The bake (`bake-ground.js`, both `buildTileGround` calls) now applies `STREET_SMOOTH` ✅, and the Survey-exit freeze (`serve.js` POST `/shape`) carries it via the live `_shapeArtifact`. So Section + the 3D slab will show the smooth curve after a re-freeze/re-bake. ⚠️ Triggering it is **Jacob's go** (re-baking `shape.json` can clobber uncommitted bakes).
+
+**WHEN / WHERE the curve-fit lives — two homes:**
+- **(a) Consume-time — ✅ LANDED (the one knob above).** One constant + one pin-set, read by both consumers. Reversible, tunable on the eye, **ix-safe** (operates on a copy; stored frame untouched). The home for *tuning the constant*.
+- **(b) Baked at the source — the follow-on** — once the constant is locked, apply in `derive.js` so `ribbons.json` carries the smooth curve and everything frozen-derives (no render-time re-walk cost). **Requires recomputing `intersections.ix` + re-freezing `tiles[]`.**
+
+⚠️ **THE IX CONSTRAINT — why we can't just densify the stored frame.** `streets[].intersections.ix` are vertex **indices** into `points`; densifying the stored array stales them → the editor's segmentation + handles drift. So consume-time smoothing must leave the stored points untouched. Authoring keys that **survive** densification: **`segOrd`** (count of IX vertices before a run — junction-based, §5g) and **`cornerKeyAt`** (IX *coordinate* + leg skelIds). The one that does **not**: **`intersections.ix`** (index-based) — the fragile key, and the reason home (b) must recompute it.
+
+> **Doctrine fit:** the frame stays sparse (this §); the smooth curve is a derived consume-time map; fix defects at the centerline and the curb + ribbon follow by construction (`RIBBONS.md §1`). ⛔ Smoothing the *polygon* while the centerline stays faceted is the wrong layer (2026-06-14, reverted).
+
+---
+
 ## 4. The affordances the skeleton powers (the Survey/Measure authoring catalog)
 
 Survey/Measure don't edit the skeleton graph — they author a thin **fortification overlay** keyed to the skeleton's identities (`skelId`, side, `segOrd`). The controls (live in `SurveyorPanel.jsx` / `MeasurePanel.jsx` / on-canvas overlays):

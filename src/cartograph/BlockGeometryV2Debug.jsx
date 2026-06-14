@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation, differenceRings } from '../lib/buildBlockGeometryV2.js'
 import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
+import { STREET_SMOOTH } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the MeasureOverlay navy draw (SSoT; SKELETON.md §3.5)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
@@ -265,12 +266,15 @@ export default function BlockGeometryV2Debug({
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const cornerEditMode            = useCartographStore(s => s.cornerEditMode)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
-  // Render-time street smoothing is OFF (the "Smoothing" slider was retired
-  // 2026-06-04). The skeleton RDP already gives a clean, polygon-ready frame, so
-  // re-smoothing at render only RE-ADDS line — and the inward ped-band offset
-  // scallops at every added sample (10× the band wiggles at the old 0.5 default).
-  // §Wall: the clean frame stands on its own; the band offsets straight off it.
-  const streetSmooth = 0
+  // [curve-fit — THE ONE KNOB] The curb derives from the single shared smoothing
+  // tension `STREET_SMOOTH` (smoothCenterline.js). The smooth>0 path re-walks
+  // extractFaces over the smoothed centerline → the curb iA + ped ribbon follow
+  // the smooth curve. The navy editable centerline derives from the SAME constant
+  // + the SAME junction keys (junctionKeysOf) in MeasureOverlay, so the two are
+  // ONE smooth curve, concentric by construction — no two-source desync (the SSoT,
+  // SKELETON.md §3.5, RIBBONS.md §1 the Derivation Chain). NOT a UI slider — an
+  // internal constant tuned once on the eye, then baked at the source.
+  const streetSmooth = STREET_SMOOTH
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
   const measureDragging           = useCartographStore(s => s.measureDragging)

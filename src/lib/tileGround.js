@@ -31,7 +31,7 @@
 
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
-import { smoothChain, jKey } from './smoothCenterline.js'
+import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
 import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
 
 const SCALE = 1000
@@ -1135,17 +1135,9 @@ export function buildTileGround(ribbons, opts = {}) {
   // band notches on the far side — the "thorn opposite a T" / complex-IX corner.
   // Built over ALL ribbon streets so a shared node is seen even if one incident
   // street is grade-separated; matched by jKey (0.01 m).
-  const coordStreets = new Map()
-  for (const s of (ribbons?.streets || [])) {
-    if (!s?.points) continue
-    for (const p of s.points) {
-      const k = jKey(p[0], p[1])
-      let set = coordStreets.get(k); if (!set) { set = new Set(); coordStreets.set(k, set) }
-      set.add(s)
-    }
-  }
-  const junctionKeys = new Set()
-  for (const [k, set] of coordStreets) if (set.size >= 2) junctionKeys.add(k)
+  // SSoT: the SAME junction-key set the navy-centerline draw uses (the one
+  // smooth knob — smoothCenterline.js), so both pin junctions identically.
+  const junctionKeys = junctionKeysOf(ribbons?.streets || [])
   if (smooth > 0) {
     streets = streets.map(s => {
       const sm = smoothChain(s.points, smooth, undefined, junctionKeys)
@@ -2063,7 +2055,11 @@ export function buildTileGround(ribbons, opts = {}) {
           }
           const key = `${idx}|${side}`
           if (!thruSplits.has(key)) thruSplits.set(key, [])
-          thruSplits.get(key).push({ vi, W: { A: WA, B: WB } })
+          // Store the station COORDINATE (= the junction node, preserved exactly
+          // by interpolating smoothing) so the run-poly match below is index-free
+          // — when smooth>0, `vi` is a smoothed-space index that doesn't address
+          // streetsOrig. See splitRunAtStations.
+          thruSplits.get(key).push({ vi, at: [v[0], v[1]], W: { A: WA, B: WB } })
         }
       }
     }
@@ -2089,7 +2085,8 @@ export function buildTileGround(ribbons, opts = {}) {
     const cuts = []
     for (let k = 1; k < p.length - 1; k++) {
       for (const st of stations) {
-        const q = op[st.vi]
+        const q = st.at || op[st.vi]   // coordinate match (smooth-safe; vi is smoothed-space when smooth>0)
+        if (!q) continue
         if (Math.abs(p[k][0] - q[0]) < 5e-3 && Math.abs(p[k][1] - q[1]) < 5e-3) { cuts.push({ k, st }); break }
       }
     }

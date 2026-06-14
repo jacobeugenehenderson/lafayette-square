@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
 import { polylineRibbon } from './overlayGeom.js'
+import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob (SSoT; SKELETON.md §3.5) — the SURVEY navy renders the smooth curve
 import { innerEdgeMeasure } from './streetProfiles.js'
 import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
@@ -162,6 +163,11 @@ export default function SurveyorOverlay() {
     () => resolveChainSegmentation(centerlineData?.streets || []),
     [centerlineData]
   )
+  // The ONE smoothing knob, applied to the SURVEY navy centerline so it reads as
+  // the same smooth curve the curb derives from (SSoT — SKELETON.md §3.5). Same
+  // constant + keys as buildTileGround. Operates on a COPY; stored points stay
+  // sparse so intersections.ix / segOrd / handle math are untouched.
+  const navJunctionKeys = useMemo(() => junctionKeysOf(centerlineData?.streets || []), [centerlineData])
 
   // The set of chain indices that belong to the same corridor as the
   // selected street.
@@ -477,7 +483,7 @@ export default function SurveyorOverlay() {
         if (st.points.length < 2) return null
         const isSel = selectedCorridor?.has(i) || false
         const hw = isSel ? 0.55 : 0.4
-        const geo = polylineRibbon(st.points, hw, 0.1)
+        const geo = polylineRibbon(smoothChain(st.points, STREET_SMOOTH, undefined, navJunctionKeys) || st.points, hw, 0.1)
         if (!geo) return null
         const mat = isSel ? selectedMat : centerlineMat
         return (

@@ -123,3 +123,50 @@ export function smoothChain(pts, t, spacingOverride, breakKeys) {
   }
   return out
 }
+
+// ⭐ THE ONE KNOB — the single street-smoothing tension. Applied once to the
+// shared centerline source so the navy editable centerline AND the curb both
+// derive from ONE smooth curve (true SSoT — SKELETON.md §3.5, RIBBONS.md §1
+// the Derivation Chain). Turn this one value → the navy line, the curb offset,
+// and the ped ribbon all move together, concentric by construction.
+//
+// It is an INTERNAL engineering constant, tuned once on the operator's eye and
+// then baked — NOT a user-facing slider. A curved frame's offset-safe sample
+// density has a CORRECT answer (sample finely enough that a W-wide concentric
+// offset doesn't facet), not a preference; a correct rule belongs in the
+// automatic pipeline, not on a knob the operator must find. (The old Smoothing
+// slider was retired 2026-06-04 for exactly this reason.)
+//
+// t maps to ~3/t m sample spacing (spacingFor). EVERY consumer that smooths
+// imports THIS constant — never hardcode a second value (that reintroduces the
+// two-source desync the SSoT exists to kill).
+//
+// ⚠️ TEMPORARILY 0 (reverted 2026-06-14). The smooth centerline is correct, but it
+// FEEDS the curb offset (offsetRingVariable), which is NOT robust on tight bends /
+// acute junctions — smooth>0 exposed map-wide fold-spikes/spurs in the polygon
+// (Jacob's zoomed-out eye). Sequence must be: land the ROBUST curb offset (D6a
+// "proper" — POLYGON-FIRST §3, the Caltrop forensic) FIRST, THEN re-enable this knob
+// (back to ~1.5) and tune. Until then 0 = known-good clean map.
+export const STREET_SMOOTH = 0
+
+// Junction keys (coords owned by ≥2 streets) = the HARD vertices smoothChain
+// must PIN (never round the centerline through an intersection). The SINGLE
+// shared definition every smoothing consumer reads (buildTileGround's curb walk
+// + the MeasureOverlay navy draw) so they pin identically and the two stay
+// concentric. `breakKeys` for smoothChain. (Distinct from skeleton.junctions —
+// that includes dead-ends; this is the ≥2-streets RDP/smooth-protection set,
+// SKELETON.md §2.)
+export function junctionKeysOf(streets) {
+  const coordStreets = new Map()
+  for (const s of (streets || [])) {
+    if (!s?.points) continue
+    for (const p of s.points) {
+      const k = jKey(p[0], p[1])
+      let set = coordStreets.get(k); if (!set) { set = new Set(); coordStreets.set(k, set) }
+      set.add(s)
+    }
+  }
+  const keys = new Set()
+  for (const [k, set] of coordStreets) if (set.size >= 2) keys.add(k)
+  return keys
+}

@@ -28,6 +28,7 @@ import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js
 import { writeIfChanged } from './io.js'
 import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
+import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
@@ -293,7 +294,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
-    smooth: 0,   // render-time smoothing retired (2026-06-04) — clean RDP frame, no band-scallop
+    smooth: STREET_SMOOTH,   // the ONE knob — WYSIWYG with the live Survey curve-fit (SKELETON.md §3.5; was 0, 2026-06-04→revived 2026-06-14)
     blockLandUse: design.blockLandUse || null,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
     cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : null,
@@ -356,9 +357,8 @@ function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
     blockLandUse:    design.blockLandUse    || null,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
     // Phase 2 — global street-smoothing tension. Same field the live render
-    // reads from the store, so the bake strokes an identical smoothed
-    // polyline (WYSIWYG). Default 0.5 matches the store default.
-    smooth: 0,   // render-time smoothing retired (2026-06-04) — clean RDP frame, no band-scallop
+    // reads, so the bake strokes an identical smoothed polyline (WYSIWYG).
+    smooth: STREET_SMOOTH,   // the ONE knob (SKELETON.md §3.5) — was 0 (2026-06-04 retirement), revived 2026-06-14
     useRingBandEmitter: !!opts.useRingBandEmitter,  // C4: toy default on, LS off until C5 cutover
   })
 
