@@ -108,6 +108,21 @@ A pass over every input — what it *carries* vs. what we *consume*. **(Correcte
 
 The two levers that take the defect count to 0: **stack every free authoritative source** (§5) + a **more sophisticated skeleton** interpretation. That *is* the remaining SHAPE campaign — and equals `Survey shows the perfected map straight from the skeleton` (`README §⭐ START HERE`).
 
+### 6.2 The per-override worklist — the defect ledger as a finite checklist
+
+`§6.1` is the *class-level* ledger; this is the **per-override worklist** — the bounded to-do that converts "make the map perfect" into a finite list. **"Close" = the automated pipeline produces the geometry → DELETE the curated chain → verify on the eye.** It is NOT "re-solve from scratch": where a mechanism has landed, closing is *verify + retire*.
+
+> ⚠️ **Statuses below are FIRST-PASS and need a per-override forensic** (inspect each curated chain: what OSM shape it replaces · is the pipeline now able to produce it · which skeleton rule owns it). That forensic IS the live "where are we" map; until it runs, treat a row's status as a hypothesis, not a fact. **The EYE retires an override, never a metric** (`feedback_proxy_render_is_not_the_operator_eye`).
+
+| Class | Chains (curated) | Landed mechanism (this arc) | Status hypothesis | Automation target (to retire the override) |
+|---|---|---|---|---|
+| **Loops / medians** | Benton · Waverly · Mackay | endpoint-weld (`e8cc310`) + median body (`ed250b3`) | ⚠️ render LANDED — likely **verify+retire-able** | skeleton emits the closed loop body; the curated hand-drawn body becomes unnecessary |
+| **Cul-de-sacs** | Vail · Albion · Whittemore · Nicholson · Simpson · Preston · Kennett Pl | dead-ends woven (`dd4ddb6`); caps render | ⚠️ render LANDED — **verify**; cap is a data-derivable stopgap (OSM `turning_circle`) | auto-cap from OSM tag; auto dead-end footprint — then retire the hand-drawn tip |
+| **Name-transition / weird junctions** | Dolman · South 18th · Hickory · Carroll · Kennett | through-road RDP (`c4cb191`) fixes the *kink* | **PARTIAL** — kink fixed; ped-band junction + curve-render still OPEN | `HANDOFF-vector-curve-construction.md` (curve render) + junction construction; then retire |
+| **Divided / perimeter** | Truman · Lafayette · Park · Mississippi · Chouteau · S. Jefferson | park-perimeter datum repair (`c49a4e6`/`8452c31`) for some | **PARTIAL** — datum-step class addressed; divided-median geometry still inferred | constructed-median geometry from data, not inference (`§6.3`); then retire |
+
+**Reading it:** the *render/construction* mechanisms for loops + dead-ends have largely landed — those rows are the **first candidates to verify and retire** (the quickest path to lowering the count). The junction + divided rows are the genuinely-open campaign. **Nothing here is a re-solve; it is an accounting of done-vs-open.**
+
 ## Cross-references
 - `SKELETON.md` — the frame built from this intake (`seedSection`, the RDP + corner-round, width-sourcing).
 - `PIPELINE.md §intake` — the stage in the execution spine (this is its deep doc).
