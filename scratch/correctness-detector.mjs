@@ -403,6 +403,46 @@ function nameTransitionReport(skOverride) {
   return flagged
 }
 
+// ── INVARIANT: curve-fit curb cleanliness (the D6a robust-offset GATE, 2026-06-14)
+// The smooth-centerline knob (STREET_SMOOTH, SKELETON §3.5) feeds the curb offset;
+// an UN-robust offset folds into needle rings / sliver islands / near-reversal spurs
+// on tight smooth bends (Jacob's zoomed-out eye, the 2026-06-14 regression). This
+// gate builds the frame at the curve-fit smoothing and asserts it introduces ZERO
+// new curb degenerates vs the smooth=0 baseline. The DIFF (new-at-smoothed, by
+// location) cancels the noise that made ad-hoc metrics useless: boundary long-edges
+// + zero-length dup-stacks. RED until offsetRingVariable is robust; the permanent
+// regression guard for every future town's curves after. (Not first-principles-
+// absolute like the others — it's a smooth-vs-baseline DELTA, the honest test for
+// "the knob added no degenerate".)
+const CURVE_FIT_SMOOTH = 1.5
+function curbDegenerates(curbRings) {
+  const feats = []
+  for (const r of (curbRings || [])) {
+    if (!r || r.length < 3) continue
+    const a = Math.abs(signedArea(r))
+    if (a > 0.01 && a < 8) {                                   // needle ring / fold island (legit fragments are >100 m²)
+      let cx = 0, cy = 0; for (const p of r) { cx += p[0]; cy += p[1] }
+      feats.push([cx / r.length, cy / r.length]); continue
+    }
+    for (let i = 0; i < r.length; i++) {                       // near-reversal spur tip on the body
+      const p0 = r[(i - 1 + r.length) % r.length], v = r[i], p1 = r[(i + 1) % r.length]
+      const e1 = dist(p0, v), e2 = dist(v, p1)
+      if (e1 < 1 || e2 < 1 || e1 > 60 || e2 > 60) continue     // skip dup-stacks (0-len) + boundary/grade-sep long edges
+      const d = ((v[0] - p0[0]) / e1) * ((p1[0] - v[0]) / e2) + ((v[1] - p0[1]) / e1) * ((p1[1] - v[1]) / e2)
+      if (Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI > 165) feats.push(v)
+    }
+  }
+  return feats
+}
+function curveFitReport() {
+  const mk = (sm) => buildTileGround(ribbons, { stencil: clip, smooth: sm, curbWidth: design.curbWidth, blockLandUse: design.blockLandUse || null, cornerRadiusScale: design.cornerRadiusScale ?? 1, blockCustoms: design.blockCustoms || null })
+  const base = curbDegenerates(mk(0).curb)
+  const sm = curbDegenerates(mk(CURVE_FIT_SMOOTH).curb)
+  const near = (p, set) => set.some(q => dist(p, q) < 5)
+  const NEW = sm.filter(p => !near(p, base))
+  return { base: base.length, sm: sm.length, NEW }
+}
+
 // ── load the frame (same as corner-guard) ───────────────────────────────────
 const ribbons = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/ribbons.json')))
 const bnd = JSON.parse(fs.readFileSync(path.join(ROOT, 'cartograph/data/lafayette-square/neighborhood_boundary.json')))
@@ -547,6 +587,7 @@ const capFlags  = capTangentReport(streets, tiles, clip)
 const junc      = junctionBandReport(streets, tiles, pr.asphalt, design.curbWidth)
 const juncFlags = junc.flaggedNames   // name -> {slivers, worstA}
 const ntFlags   = nameTransitionReport()   // name -> {turn, why}  (the through-road-simplify gate)
+const cfGate    = curveFitReport()         // {base, sm, NEW}  (the D6a robust-offset gate — curve-fit cleanliness)
 
 // SELF-TEST (--simNT): prove name-transition smoothness is a LIVE gate, not dead-
 // green. Re-pin every transition seam the way per-chain RDP did (drop the rounding
@@ -681,6 +722,11 @@ pr2('  name-transition', flaggedNames(ntFlags))
 console.log('  ' + '─'.repeat(60))
 pr2('GEOMETRIC only', geomFlagged)
 pr2('+ TOPOLOGICAL',  allFlagged)
+
+console.log('\n  · CURVE-FIT GATE (D6a robust-offset — smooth=' + CURVE_FIT_SMOOTH + ' vs smooth=0):')
+console.log(`      curb degenerates: baseline(0)=${cfGate.base}  smoothed=${cfGate.sm}  NEW(regressions)=${cfGate.NEW.length}`)
+console.log(`      ${cfGate.NEW.length === 0 ? '✅ GREEN — the knob adds no curb degenerate (robust offset DONE)' : '❌ RED — robust offset NOT done: ' + cfGate.NEW.length + ' new needle/spur from smoothing'}`)
+cfGate.NEW.slice(0, 14).forEach(p => console.log(`        new degenerate @ ${p[0].toFixed(0)},${p[1].toFixed(0)}`))
 
 // confusion matrix vs the 35
 const gridNames = new Set(streets.map(s => s.name).filter(n => !isCurated(n)))
