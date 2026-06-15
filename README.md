@@ -10,7 +10,7 @@
 
 > **The settled-state index.** Before diagnosing, deciding, or building *anything*, read this so you build on what's already worked out instead of re-deriving it (re-deriving settled doctrine is the recurring, expensive mistake). Each row = the **settled conclusion** + its **one authoritative home**. The full doc landscape is the "Documentation map" further down; this is the topic-first orientation. *(Agents: the **universal first read is [`ORIENTATION.md`](ORIENTATION.md)** (root) — the plain-language mental model + settled doctrine; THEN this topic index, THEN the topic canon it names. That one order, every session. `BOZ.md` is the coordinator's doc — summoned only when you're Boz, never a step in the universal path.)*
 
-**Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. Currently **stuck on skeleton + survey**; intake skipped for now. Trunk = `cartograph-looks-pass-ab`.
+**Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. Currently **stuck on skeleton + survey**; intake skipped for now. Active branch = `curb-offset-draw` (off trunk `cartograph-looks-pass-ab`).
 
 > ⭐ **Strategic (2026-06-13, Jacob):** the remaining fixes are most likely **in the skeleton**, not the render. The drawing/offset rules are largely straightforward; the sophistication we still owe is in **how we interpret OSM and build the frame**. So the default suspicion on any defect is *"the fix is upstream, in the skeleton"* — confirm that before patching downstream. (The 2026-06-13 day was lost patching the polygon for a curve whose real fix was a frame-level corner-round.)
 
