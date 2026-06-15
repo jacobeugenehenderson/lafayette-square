@@ -2364,6 +2364,28 @@ export function deriveLayers(highways) {
   const skeleton = JSON.parse(readFileSync(skelPath, 'utf-8'))
   const skelStreets = skeleton.streets || []
 
+  // [name-aware corner doctrine — SKELETON §5a / the curve-primitive brief's
+  // name-awareness note] Canonical THROUGH-ROAD id: union chains linked by
+  // `continuesAs` into one road (a name-transition is one continuous road — the
+  // road is the line, the name is a label). Frozen onto every street so the curb's
+  // cornerAt and Section's ADA bid treat a `continuesAs` seam as a THROUGH-node
+  // (the curve flows straight through, no corner, no phantom ramp) instead of
+  // minting a corner from a raw-skelId mismatch (the West-18th↔Dolman /
+  // South-18th↔West-18th junction-curb bump, HANDOFF-curve-primitive-skeleton.md).
+  // Representative = the MIN skelId in each component → deterministic across rebuilds.
+  const roadIdOf = (() => {
+    const parent = new Map()
+    const add = (x) => { if (x != null && !parent.has(x)) parent.set(x, x) }
+    const find = (x) => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x) } return x }
+    for (const s of skelStreets) { add(s.id); add(s.continuesAs) }
+    for (const s of skelStreets) {
+      if (s.id == null || s.continuesAs == null) continue
+      const ra = find(s.id), rb = find(s.continuesAs)
+      if (ra !== rb) parent.set(ra < rb ? rb : ra, ra < rb ? ra : rb)   // attach to the lexicographically-smaller root
+    }
+    return (id) => (id != null && parent.has(id)) ? find(id) : id
+  })()
+
   // Operator-intent overlay: skelId-keyed measure/caps/segmentMeasures/
   // couplers/anchor overrides written by Survey + Measure tools. The
   // Designer runtime merges these the same way (useCartographStore.js
@@ -2417,6 +2439,7 @@ export function deriveLayers(highways) {
       intersections: [],
       oneway: !!s.oneway,
       skelId: s.id,
+      roadId: roadIdOf(s.id),                 // canonical through-road id (continuesAs union)
       phase: s.phase || null,
       // OSM highway class carried through from skeleton.js so V2 corner
       // radii (and any other class-conditional logic) can resolve to
@@ -2461,6 +2484,39 @@ export function deriveLayers(highways) {
     ribbonStreets.push(street)
   }
   console.log(`    ${ribbonStreets.length} ribbon chains from skeleton (${skelStreets.length} skeleton streets, ${Object.keys(overlayById).length} overlay overrides)`)
+
+  // [name-aware width reconciliation — SKELETON §5a, RIBBONS §1 "the road is the
+  // line, the name a label"] A through-road (continuesAs union → one roadId) must
+  // carry ONE curb half-width PER SIDE — a per-name-fragment width step on the same
+  // continuous road is a datum artifact (RIBBONS:178), and it renders as a curb BUMP
+  // at the seam (the West-18th↔Dolman / South-18th↔West-18th junction-curb bump,
+  // HANDOFF-curve-primitive-skeleton.md). Reconcile each canonical road's per-side
+  // BASE pavementHW to the MAX across its chains — widen the narrow artifacts to the
+  // road's true width; never narrow a genuinely-wide segment. (Per-fe blockCustoms
+  // overrides are reconciled separately in design.json, the Survey SHAPE SSoT.)
+  {
+    const maxBySide = new Map()   // `${roadId}|${side}` → max pavementHW
+    for (const st of ribbonStreets) {
+      const rid = st.roadId || st.skelId
+      for (const side of ['left', 'right']) {
+        const v = st.measure?.[side]?.pavementHW
+        if (v == null) continue
+        const k = `${rid}|${side}`
+        if (!maxBySide.has(k) || v > maxBySide.get(k)) maxBySide.set(k, v)
+      }
+    }
+    let reconciled = 0
+    for (const st of ribbonStreets) {
+      const rid = st.roadId || st.skelId
+      for (const side of ['left', 'right']) {
+        const m = st.measure?.[side]
+        if (!m || m.pavementHW == null) continue
+        const mx = maxBySide.get(`${rid}|${side}`)
+        if (mx != null && mx - m.pavementHW > 1e-3) { m.pavementHW = mx; reconciled++ }
+      }
+    }
+    if (reconciled) console.log(`    [name-aware] reconciled ${reconciled} through-road side-width step(s) to the road's max half-width`)
+  }
 
   // [curve-primitive] TESSELLATE bezier'd chains' points to a dense polyline (the ONE
   // place curves become points — HANDOFF-curve-primitive-skeleton.md). Done BEFORE the
@@ -3917,6 +3973,9 @@ export function deriveLayers(highways) {
   const ribbonsLayer = {
     streets: ribbonStreets.map(st => ({
       skelId: st.skelId,
+      // canonical through-road id (continuesAs union) — the curb cornerAt + Section
+      // ADA bid read this so a name-transition seam is a through-node, not a corner.
+      ...(st.roadId != null ? { roadId: st.roadId } : {}),
       name: st.name,
       points: st.points,
       // [curve-primitive] sparse, self-contained curve segments (HANDOFF-curve-primitive-

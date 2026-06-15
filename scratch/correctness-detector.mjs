@@ -15,11 +15,20 @@
 // INVARIANTS (each pass/fail per street):
 //   CHAIN-LEVEL (run on ribbons.streets[] AND on raw-OSM stitched chains):
 //     • max-turn      — jagged-arc detector (per-vertex exterior angle). West 18th must fail.
-//     • width-step    — pavementHW jump across a same-name through-node.
+//     • width-step    — pavementHW jump across a same-NAME through-node.
+//     • through-width — a continuesAs through-road (one canonical roadId) must carry ONE
+//                       pavementHW PER SIDE — a per-name-fragment width step is the datum
+//                       artifact behind the junction-curb bump. Regression guard for the
+//                       derive.js name-aware width reconciliation. [HANDOFF-curve-primitive-skeleton]
 //   TILE/CURB-LEVEL (run on buildTileGround output, current frame only):
 //     • curb∥chain    — curb is a parallel offset of its chain (litmus logic).
 //     • iA self-int   — the curb ring does not self-cross.
 //     • face-closure  — the tile ring closes / has positive area / no zero-len edges.
+//     • curb-bump     — a sharp turn between two SHORT curve-samples on iA = a junction-curb
+//                       BUMP (the name-aware-corner / width-step-at-through-seam family: a
+//                       continuesAs seam mis-read as a corner, or a width step rendered as a
+//                       notch). The symptom-level "eye, mechanized" — the worklist that drives
+//                       to zero as each through-road is reconciled. [HANDOFF-curve-primitive-skeleton]
 //
 // ⚠️ Thresholds are NOT tuned to flag exactly 35. They are set from geometric
 // first-principles (a residential turn > ~50° between digitized vertices is a
@@ -43,6 +52,10 @@ const MAX_TURN_COUNT     = 2    // a chain with ≥ this many jag-vertices is fl
 const MIN_SEG_FOR_TURN   = 1.0  // m — ignore turn at vertices joined by a < this segment (noise/dupes)
 const WIDTH_STEP_TOL     = 1.0  // m — same-name through-node pavementHW jump above this = a step
 const NODE_SNAP          = 2.0  // m — two chain endpoints within this are the "same node"
+// junction-curb bump (the name-aware-corner / through-seam family — this fix, 2026-06-15)
+const CURB_BUMP_DEG      = 20   // ° — a sharp turn on iA above this between two short curve-samples = a bump (the genuine fillet arcs sit <18° per-vertex; a real corner has a LONG leg)
+const CURB_BUMP_SEG      = 3.0  // m — both adjacent iA edges shorter than this ⇒ a curve-sample bump, not an authored corner (whose legs run long)
+const THRU_WIDTH_TOL     = 0.5  // m — a canonical through-road's per-side pavementHW must agree within this (else a datum step → seam bump)
 // curb∥chain (from litmus)
 const CURB_TOL           = 0.75 // m — max |curb-offset − halfWidth| on a straight run
 const FILLET_MARGIN      = 9    // m — exclude samples this close to a run end (corner zone) — see litmus
@@ -135,6 +148,31 @@ function widthStepReport(streets) {
         const prev = flagged[name]
         if (!prev || step > prev.step) flagged[name] = { step: +step.toFixed(2), a: +hwA.toFixed(2), b: +hwB.toFixed(2) }
       }
+    }
+  }
+  return flagged   // name -> detail
+}
+
+// ── INVARIANT: through-road width consistency (name-aware, the datum CAUSE) ───
+// A continuesAs through-road is ONE road (the name is a label, the road is the
+// line — RIBBONS §1, SKELETON §5a). It must carry ONE curb half-width PER SIDE;
+// a per-name-fragment step (West-18th 5.49 ↔ Dolman 3.76 ↔ South-18th 3.25) is a
+// datum artifact that renders as the junction-curb BUMP at the seam. Grouped by
+// the canonical `roadId` (continuesAs union, frozen in derive.js), NOT by name —
+// so it sees across name-transitions where same-name grouping is blind. This is
+// the REGRESSION GUARD for the derive.js name-aware width reconciliation: GREEN
+// (0) once a road carries one width per side. [HANDOFF-curve-primitive-skeleton]
+function throughRoadWidthReport(streets) {
+  const byRoad = {}
+  for (const s of streets) { const rid = s.roadId || s.skelId; (byRoad[rid] = byRoad[rid] || []).push(s) }
+  const flagged = {}   // name -> {roadId, side, vals}
+  for (const [rid, chains] of Object.entries(byRoad)) {
+    if (chains.length < 2) continue
+    for (const side of ['left', 'right']) {
+      const vals = [...new Set(chains.map(c => c.measure?.[side]?.pavementHW).filter(v => v != null && v > 0.3).map(v => +v.toFixed(2)))]
+      if (vals.length < 2) continue
+      if (Math.max(...vals) - Math.min(...vals) <= THRU_WIDTH_TOL) continue
+      for (const c of chains) if (c.name && !flagged[c.name]) flagged[c.name] = { rid, side, vals }
     }
   }
   return flagged   // name -> detail
@@ -417,10 +455,12 @@ function nameTransitionReport(skOverride) {
 const CURVE_FIT_SMOOTH = 1.5
 // Corner-roundness floor — the authored fillets MUST survive the offset. An
 // ABSOLUTE check (not a smooth-vs-0 diff): a squaring bug squares at BOTH smooth
-// values, so the diff can't see it. Known-good = 459 rounded fillets (r>0.5 m) at
-// smooth=0; floor at 450 (margin). Caught the openRound regression that squared
-// 459→93 (2026-06-14) which ring-count/area checks were blind to.
-const ROUND_FILLET_MIN = 450
+// values, so the diff can't see it. Known-good = 448 rounded fillets (r>0.5 m) at
+// smooth=0 — was 459 until the name-aware corner fix (2026-06-15) correctly stopped
+// filleting ~11 `continuesAs` name-seams (a through-node is NOT a corner — RIBBONS §1).
+// Floor at 435 (margin below 448) — still craters the openRound squaring regression
+// (459→93, 2026-06-14) which ring-count/area checks were blind to.
+const ROUND_FILLET_MIN = 435
 const roundedFillets = (tg) => Object.keys(tg.cornerFillets || {}).filter(k => (tg.cornerFillets[k]?.r || 0) > 0.5).length
 function curbDegenerates(curbRings) {
   const feats = []
@@ -486,6 +526,8 @@ for (const s of streets) {
 }
 // width-step — per name
 const stepFlags = widthStepReport(streets)
+// through-road width consistency — per canonical roadId (the datum cause of the seam bump)
+const thruWidthFlags = throughRoadWidthReport(streets)
 
 // ════════════════════════════════════════════════════════════════════════════
 // B. TILE / CURB INVARIANTS on the CURRENT frame (buildTileGround)
@@ -497,6 +539,8 @@ for (const s of streets) skelToName[s.skelId] = s.name
 const curbFlags = {}   // name -> worst maxDev
 const selfIntFlags = {}// name -> count
 const faceFlags = {}   // name -> reason
+const bumpFlags = {}   // name -> worst turn°  (junction-curb bump)
+const bumpList = []    // {ti, p, turn} — the worklist (honest unit = LOCATION, not street)
 
 for (let ti = 0; ti < tiles.length; ti++) {
   const tile = tiles[ti]
@@ -541,6 +585,27 @@ for (let ti = 0; ti < tiles.length; ti++) {
       }
     }
     if (hits > 0) for (const n of tileNames) selfIntFlags[n] = Math.max(selfIntFlags[n] || 0, hits)
+  }
+
+  // ── curb-bump: a sharp turn between two SHORT curve-samples on iA = a junction-
+  //    curb bump (the through-seam family). An authored corner has a LONG leg on
+  //    one side (CURB_BUMP_SEG); a fillet arc turns < ~18°/vertex; a fold-spur is
+  //    > 165° (dropFoldSpurs' job). What's left — a 20–165° reversal between two
+  //    short samples — is a genuine bump. The honest unit is the LOCATION; we also
+  //    attribute to the tile's run names for the confusion matrix (over-spreads).
+  if (!big) for (const ring of (tile.iA || [])) {
+    const nR = ring.length
+    for (let i = 0; i < nR; i++) {
+      const a = ring[(i - 1 + nR) % nR], v = ring[i], b = ring[(i + 1) % nR]
+      const e1 = dist(a, v), e2 = dist(v, b)
+      if (e1 > CURB_BUMP_SEG || e2 > CURB_BUMP_SEG || e1 < 1e-3 || e2 < 1e-3) continue
+      const d = ((v[0] - a[0]) / e1) * ((b[0] - v[0]) / e2) + ((v[1] - a[1]) / e1) * ((b[1] - v[1]) / e2)
+      const turn = Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI
+      if (turn > CURB_BUMP_DEG && turn < 165) {
+        bumpList.push({ ti, p: [v[0], v[1]], turn: +turn.toFixed(0) })
+        for (const n of tileNames) bumpFlags[n] = Math.max(bumpFlags[n] || 0, +turn.toFixed(0))
+      }
+    }
   }
 
   // ── curb ∥ chain (litmus logic, per run)
@@ -621,6 +686,24 @@ if (process.argv.includes('--simNT')) {
   console.log('  (expected: Dolman/West 18th + the U-corners fire — the gate is live)\n')
 }
 
+// SELF-TEST (--simthruwidth): prove through-width is a LIVE guard, not dead-green.
+// The derive.js reconciliation made it 0 (every through-road carries one width per
+// side). Re-deviate one chain's per-side width by +3 m (the datum step the fix
+// removed) and the invariant MUST fire. If it stays green, the oracle is dead.
+if (process.argv.includes('--simthruwidth')) {
+  const byRoad = {}
+  for (const s of streets) { const rid = s.roadId || s.skelId; (byRoad[rid] = byRoad[rid] || []).push(s) }
+  const sim = streets.map(s => ({ ...s, measure: JSON.parse(JSON.stringify(s.measure || {})) }))
+  const simByRoad = {}
+  for (const s of sim) { const rid = s.roadId || s.skelId; (simByRoad[rid] = simByRoad[rid] || []).push(s) }
+  let hit = null
+  for (const chains of Object.values(simByRoad)) if (chains.length >= 2 && chains[0].measure?.left?.pavementHW != null) { chains[0].measure.left.pavementHW += 3; hit = chains[0].name; break }
+  const simFlags = throughRoadWidthReport(sim)
+  console.log('\n[SELF-TEST --simthruwidth] one through-road chain re-widened +3 m (' + (hit || 'none') + '):')
+  console.log('  through-width now flags:', Object.keys(simFlags).length ? Object.keys(simFlags).join(', ') : 'NONE — ORACLE DEAD')
+  console.log('  (expected: that road\'s chains fire — the guard is live)\n')
+}
+
 // SELF-TEST (--simweld): prove loop-closure is a LIVE guard, not a dead-green
 // check. Pull the welded loop bodies' endpoints apart past the weld tol (and
 // drop the medians) — the invariant MUST then fire on Benton/Park Place/Saint
@@ -689,8 +772,8 @@ if (RUN_RAW) {
 // REPORT
 // ════════════════════════════════════════════════════════════════════════════
 const allFlagged = new Set([
-  ...Object.keys(turnFlags), ...Object.keys(stepFlags),
-  ...Object.keys(curbFlags), ...Object.keys(selfIntFlags), ...Object.keys(faceFlags),
+  ...Object.keys(turnFlags), ...Object.keys(stepFlags), ...Object.keys(thruWidthFlags),
+  ...Object.keys(curbFlags), ...Object.keys(selfIntFlags), ...Object.keys(faceFlags), ...Object.keys(bumpFlags),
   ...Object.keys(loopFlags), ...Object.keys(capFlags), ...Object.keys(juncFlags),
   ...Object.keys(ntFlags),
 ])
@@ -719,9 +802,11 @@ console.log('PER-INVARIANT (current frame):')
 console.log('  · GEOMETRIC (per-chain shape):')
 pr2('  max-turn',   flaggedNames(turnFlags))
 pr2('  width-step', flaggedNames(stepFlags))
+pr2('  through-width', flaggedNames(thruWidthFlags))
 pr2('  curb∥chain', flaggedNames(curbFlags))
 pr2('  iA self-int',flaggedNames(selfIntFlags))
 pr2('  face-closure',flaggedNames(faceFlags))
+pr2('  curb-bump',  flaggedNames(bumpFlags))
 console.log('  · TOPOLOGICAL (graph-level):')
 pr2('  loop-closure',flaggedNames(loopFlags))
 pr2('  cap-tangent', flaggedNames(capFlags))
@@ -784,14 +869,28 @@ console.log(`    grid FP   = ${FP.length}/${gridNames.size} clean-grid names fla
     console.log(`      (${j.p[0].toFixed(0)},${j.p[1].toFixed(0)}) d${j.deg}  slivers=${j.slivers}  {${j.names.join(' / ')}}`)
 }
 
+// ── curb-bump: the HONEST unit is the LOCATION (a tile can host many run names;
+//    name-attribution over-spreads). This is the to-ZERO worklist for the through-
+//    seam family — each entry is a curb vertex the operator/kit must drive smooth.
+{
+  const byTurn = bumpList.slice().sort((a, b) => b.turn - a.turn)
+  console.log(`\nCURB-BUMP — measured per LOCATION (the honest unit; the through-seam worklist):`)
+  console.log(`    ${bumpList.length} curb bumps (>${CURB_BUMP_DEG}° between <${CURB_BUMP_SEG}m curve-samples) across ${new Set(bumpList.map(b=>b.ti)).size} tiles.`)
+  console.log(`    0 = the family is reconciled to zero (the name-aware corner + through-road width fixes, generalized).`)
+  for (const b of byTurn.slice(0, 24)) console.log(`      tile ${String(b.ti).padStart(3)}  @(${b.p[0].toFixed(0)},${b.p[1].toFixed(0)})  ${b.turn}°`)
+  if (byTurn.length > 24) console.log(`      … +${byTurn.length - 24} more`)
+}
+
 console.log('\nFLAGGED CURATED (true positives):')
 for (const n of [...curatedNames].filter(n=>allFlagged.has(n)).sort()) {
   const tags = []
   if (turnFlags[n])   tags.push(`turn(${turnFlags[n].jags}j,${turnFlags[n].worst}°)`)
   if (stepFlags[n])   tags.push(`step(${stepFlags[n].step}m:${stepFlags[n].a}/${stepFlags[n].b})`)
+  if (thruWidthFlags[n]) tags.push(`thruW(${thruWidthFlags[n].side}{${thruWidthFlags[n].vals.join(',')}})`)
   if (curbFlags[n])   tags.push(`curb(${curbFlags[n]}m)`)
   if (selfIntFlags[n])tags.push(`selfint(${selfIntFlags[n]})`)
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
+  if (bumpFlags[n])   tags.push(`bump(${bumpFlags[n]}°)`)
   if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
   if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
   if (juncFlags[n])   tags.push(`JUNC(${juncFlags[n].slivers} slivers, worst ${juncFlags[n].worstA!=null?juncFlags[n].worstA.toFixed(1):'?'}m2)`)
@@ -805,9 +904,11 @@ for (const n of FP.sort()) {
   const tags = []
   if (turnFlags[n])   tags.push(`turn(${turnFlags[n].jags}j,${turnFlags[n].worst}°)`)
   if (stepFlags[n])   tags.push(`step(${stepFlags[n].step}m)`)
+  if (thruWidthFlags[n]) tags.push(`thruW(${thruWidthFlags[n].side}{${thruWidthFlags[n].vals.join(',')}})`)
   if (curbFlags[n])   tags.push(`curb(${curbFlags[n]}m)`)
   if (selfIntFlags[n])tags.push(`selfint(${selfIntFlags[n]})`)
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
+  if (bumpFlags[n])   tags.push(`bump(${bumpFlags[n]}°)`)
   if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
   if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
   if (juncFlags[n])   tags.push(`JUNC(${juncFlags[n].slivers} slivers, worst ${juncFlags[n].worstA!=null?juncFlags[n].worstA.toFixed(1):'?'}m2)`)

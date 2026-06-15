@@ -4,7 +4,7 @@
 
 ---
 
-## ⭐ SESSION STATUS — end of 2026-06-15 (Cubic). READ THIS FIRST. The ONE open problem: the junction-curb BUMP.
+## ⭐ SESSION STATUS — end of 2026-06-15 (Mitre). READ THIS FIRST. The junction-curb BUMP is RESOLVED — eye-approved.
 
 **LANDED (committed on `curb-offset-draw`):**
 - **Phase 1 — centerline as bezier primitives** (`7c49349`). `skeleton.js` `curveFitSegments` emits sparse `points` + `segments[]` (`{type:'line'}` | `{type:'bezier',c1,c2}`); through-roads fit ACROSS the `continuesAs` seam as ONE curve, then **de Casteljau-split** back per chain (shared seam vertex + matched tangents → **no W18↔Dolman mid-curve split**, verified C1). `derive.js` carries SELF-CONTAINED segments into `ribbons.json` (both whitelists) + `tessellateStreet` (the ONE curve→points helper) + tessellates `points` BEFORE the IX pass (ix indexes the dense array; grid byte-identical). Store + overlays render the dense curve + sparse editor nodes. **West 18th = 4 control points `[B·line·B]`. Jacob: "centerline perfect."** Flag `CURVE_FIT` (env, OFF by default in code).
@@ -12,14 +12,26 @@
 
 **ARTIFACTS:** regenerated with `CURVE_FIT=1` and **left UNCOMMITTED** (Jacob's call): `src/data/ribbons.json` + `cartograph/data/lafayette-square/clean/map.json` modified; `skeleton.json` is gitignored/regenerated (45 bezier'd chains). `shape.json` = Jacob's bake, untouched. To regenerate: `CURVE_FIT=1 node cartograph/skeleton.js && node cartograph/pipeline.js && node cartograph/promote-ribbons.js`.
 
-**THE OPEN PROBLEM — the junction-curb BUMP (the morning's task):**
-- **Symptom:** a fitted curve meeting a cross-street leaves a **bump/notch on the curb** (light-blue) while the navy is smooth; in **Section** it shows as **ADA fragments + a broken ribbon**.
-- **⭐ THE GATE (Jacob's, use THIS not a thorn proxy):** *"If the geometry was correct the system wouldn't be drawing ADA fragments."* `sectionPass` puts an ADA pad at every corner → a **mid-curve ADA fragment IS a spurious corner in the curb**. **Done = zero mid-curve ADA on 18th/Dolman.**
-- **Root (pinned):** the curb is the inward offset of the tile ring (`offsetRingVariable`, `tileGround.js:147`). At a junction neck the offset **FOLDS** — a **MULTI-vertex arc fold** (curve radius < offset depth across several gentle vertices), an in-and-out notch (e.g. tile 16 offset dips `(518.4,-411)→(519.8,-409.2)`). `filletRing` reroutes the fold into the visible bump (iA `t126` @ `[521,-407]`); `sectionPass` ramps it → the ADA fragment.
-- **Canonical case = tile 16:** runs West 18th · Dolman-1 · Hickory-0 · South-18th-3, depths **3.25–5.49 m**. (⚠️ an ADJACENT 11-run composite tile is NOT the spot — I misread it once; verify the tile from the rendered location, not a blurry screenshot.) It's centerline-independent (Jacob: "same trouble no matter how we derive the centerline") → a **junction-CONSTRUCTION** problem, the `HANDOFF-junction-band-thorns-FINDINGS.md` family.
-- **⛔ TRIED & REJECTED this session (do NOT repeat):** (1) `dropSpikes` thorn-truncation (clipper — truncates to flats, leaves 18–50° kinks that still ADA-fragment; Jacob: "no hacks"); (2) a through-node **overshoot clamp** (per-vertex X+lim bevel — **does NOT fire**, because the fold is multi-vertex, not a single-vertex miter spike). Both reverted (`2b37946`).
-- **THE REAL FIX (recommended, NOT yet built):** a proper **variable-depth, fold-free curb offset with CONSTRUCTED junction corners** (the osm2streets intersection-polygon, `POLYGON-FIRST §4.3`). The two existing methods each fail oppositely — **`offsetRingVariable` folds**; the **legacy carve** (`ring − aFill`, Clipper-based, `legacyBlock` ~`tileGround.js:2375`) is **fold-free + variable-depth-correct but d-bulges at divided transitions** (NOT at tile 16, so legacy may be clean there — an empirical test was set up but not run). Design before code; align with Jacob; the ADA gate is the acceptance test.
-- **Touch points:** `offsetRingVariable` `tileGround.js:147` · iA build ~`:2342` (the `offsetRingVariable`/`legacyBlock` choice ~`:2394`) · `sectionPass` ADA corner bid ~`:941` (`isThrough`/`!tipped && !through`) · the topological-ADA companion (gate the corner bid on the junction graph; W18 `intersections:[]` → zero mid-curve ADA by definition).
+**THE JUNCTION-CURB BUMP — RESOLVED (2026-06-15, Mitre; eye-approved by Jacob: "it's finally fixed").**
+
+⭐ **THE HEADLINE.** The bump was **TWO stacked causes**, both at a `continuesAs` **name-transition seam** (which is ONE continuous road wearing two names — *the road is the line, the name a label*), NOT a curve-offset fold and NOT a corner to construct:
+1. **A through-seam mis-read as a CORNER.** `cornerAt`/`sectionPass` keyed identity on raw `skelId`, so the South-18th↔West-18th (and West-18th↔Dolman) name-seam read as a corner → an unstable offset-line intersection between two near-tangent legs → the spike (`126°`) + a `filletRing` bump + a phantom ADA ramp. *(The brief's original "multi-vertex fold / constructed-corner" framing was wrong — proven: the legacy carve folds *harder* there, and merging the two chains' identity collapsed the spike 126°→32°.)*
+2. **A width-step datum artifact.** The same continuous road carried a different curb half-width per name-fragment (South-18th `3.25` ↔ West-18th `5.49` ↔ Dolman `3.76`), so even as a through-node the offset jogged → the residual `32°` dimple. (`RIBBONS:178` — a per-fe width step at a through-node is a datum defect.)
+
+⭐ **HOW IT'S BUILT (the fix — all SHAPE-layer, ahead of the Wall, general by construction):**
+- **Canonical through-road id (`roadId`).** `derive.js` unions chains over `continuesAs` (min-skelId representative) and freezes `roadId` on every street (both serializer whitelists) + the frozen `runMeta`. SSoT for "what is one road."
+- **`cornerAt` reads `roadId`** (`tileGround.js` iA build ~`:2349`): a `continuesAs` seam → same `roadId` → a **through-node**, no corner. Grid byte-identical (no-`continuesAs` streets keep `roadId===skelId`).
+- **`sectionPass` `isNameTransition`** (`tileGround.js` ~`:885`): a run-end meeting a **different-skelId, same-`roadId`** run-end is a continuation → **no corner bid, no leg trim, no ADA pad**. The section runs treelawn→sidewalk→LU unbroken across the seam.
+- **Name-aware width reconciliation** (`derive.js`, after the build loop): each canonical road carries **one curb half-width PER SIDE** = the MAX across its chains (widen the narrow artifacts, never narrow a real width). Today reconciles exactly the 18th/Dolman left side; general for any town.
+- **Per-fe SSoT datum edit** (`design.json` `blockCustoms[south-18th-street-3].left.pavementHW` `3.25→5.49`): the `blockCustoms` `pavementHW` is the Survey/SHAPE SSoT (`SURVEY.md:76`); the base reconcile fixes the seed but a per-fe override still wins, so the deviating override was corrected too. ⚠️ **This per-fe override is the residual curated hand-fix** — the kit-invariant gap (the reconciliation doesn't yet override deviating `blockCustoms` widths on a through-road).
+
+⭐ **HOW TO GET TO IT (reproduce + verify):**
+- **Canonical case = tile 16** (the stretch) + **tile 4** (the W18↔Dolman seam, inside the big 11-run junction). Both now report **zero** curb bumps.
+- **The detector (the kit's "catch it automatically"):** `scratch/correctness-detector.mjs` — two new invariants: **`curb-bump`** (the symptom worklist: a >20° turn between <3 m curve-samples on `iA`; **20 bumps / 9 tiles remain on OTHER roads** = the to-zero family) and **`through-width`** (the datum regression guard, now GREEN/0; prove it live with `--simthruwidth`).
+- **The gate (Jacob's, met):** the curb reads smooth + the section runs treelawn→sidewalk→LU unbroken along 18th/Dolman, judged on the **lit Survey app** (never a proxy render). Scratch harnesses: `scratch/mitre-*.mjs`.
+- **Regenerate:** `CURVE_FIT=1 node cartograph/skeleton.js && node cartograph/pipeline.js && node cartograph/promote-ribbons.js`.
+
+▶ **OPEN (the broader family, NOT this task):** the `curb-bump` detector flags **20 bumps on other roads** (Geyer, Russell, S Jefferson, S18-5/6, Waverly, Park Place…) — same two mechanisms, each its own per-road reconcile. And the **per-fe-override reconciliation gap** above (so the `design.json` edit goes to zero too). These are the kit worklist.
 
 ---
 

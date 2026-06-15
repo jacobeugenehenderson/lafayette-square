@@ -882,6 +882,26 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
       }
     }
     const isThrough = (p, run) => (endSkelCount.get(tipKey(p))?.get(`${run.skelId}|${run.side}`) || 0) >= 2
+    // [name-aware ADA gate] A run-end meeting a DIFFERENT-skelId run of the SAME
+    // canonical road (continuesAs, frozen `roadId`) is a name-transition CONTINUATION
+    // — the road flows straight through under a new name (SKELETON §5a, "the road is
+    // the line, the name a label"). Suppress the corner bid + leg trim there: no
+    // corner exists, so no phantom ADA ramp chops the continuous treelawn→sidewalk→LU
+    // band on 18th/Dolman. Distinct from isThrough (the same-skelId [THRU] split) —
+    // together they cover both continuations. [HANDOFF-curve-primitive-skeleton.md]
+    const endRoad = new Map()        // tipKey(end) → [{ roadId, skelId }]
+    for (const e of rr) {
+      const last = e.run.poly[e.run.poly.length - 1]
+      for (const p of [e.run.poly[0], last]) {
+        const k = tipKey(p); let a = endRoad.get(k); if (!a) { a = []; endRoad.set(k, a) }
+        a.push({ roadId: e.run.roadId, skelId: e.run.skelId })
+      }
+    }
+    const isNameTransition = (p, run) => {
+      if (run.roadId == null) return false
+      const a = endRoad.get(tipKey(p)); if (!a) return false
+      return a.some(o => o.roadId === run.roadId && o.skelId !== run.skelId)
+    }
     // ── §3.3 step 2 · THE MONO-WIDTH BAND (sacrosanct — RIBBONS §3.9a) ──
     // ONE uniform outer depth per tile: WB = cw + max(TL) + max(SW) over the
     // tile's edges, floored at the frozen tile depths so an unauthored tile
@@ -959,9 +979,9 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
           const proj = (t) => (t[0] - p[0]) * dir[0] + (t[1] - p[1]) * dir[1]
           return Math.max(0, Math.max(proj(best.tA), proj(best.tB)))
         }
-        const legTrim = ends.map(([p], i) => (tipped[i] || through[i]) ? 0 : tangentTrim(p, legDirAt(i)))
+        const legTrim = ends.map(([p], i) => (tipped[i] || through[i] || isNameTransition(p, run)) ? 0 : tangentTrim(p, legDirAt(i)))
         ends.forEach(([p, k], i) => {
-          if (tipped[i] || through[i]) return   // tip or T-continuation → no corner bid
+          if (tipped[i] || through[i] || isNameTransition(p, run)) return   // tip / T-continuation / name-transition → no corner bid
           // conD = how deep the ramp CONCRETE runs before LU on this leg: a
           // set-back sidewalk (mat.inner === 'SW', a treelawn-Y leg) → the full
           // total; a curb-side sidewalk (SW leg) → its one strip width.
@@ -2240,6 +2260,7 @@ export function buildTileGround(ribbons, opts = {}) {
         poly: run.poly,
         side: run.side,
         skelId: (so && (so.skelId || so.name)) || null,
+        roadId: (so && (so.roadId || so.skelId || so.name)) || null,   // canonical through-road id — Section reads it post-Wall (name-transition ADA gate)
         segOrd: runSegOrd(run),
         anchor: (so && so.anchor) || null,
         measure: runMeasure(run),               // per-fe-resolved side measure (override pavementHW) — for the asphalt edge `a`
@@ -2350,7 +2371,13 @@ export function buildTileGround(ribbons, opts = {}) {
     for (const run of runs) {
       const dd = edgeDepth(runMeasure(run), run.side, cw, 'A')
       const so = streetsOrig[run.streetIdx]
-      const sk = (so && (so.skelId || so.name)) || run.streetIdx
+      // Key edge identity on the CANONICAL through-road id (continuesAs union,
+      // frozen in derive.js) — so cornerAt reads a name-transition seam (West-18th↔
+      // Dolman / South-18th↔West-18th) as ONE road → a THROUGH-node, not a corner.
+      // The curve then flows straight through (averaged-normal offset), killing the
+      // junction-curb bump born from a raw-skelId mismatch. Falls back to skelId for
+      // pre-roadId artifacts. [HANDOFF-curve-primitive-skeleton.md, name-aware fix]
+      const sk = (so && (so.roadId || so.skelId || so.name)) || run.streetIdx
       for (let i = 0; i < run.poly.length - 1; i++) {
         const k1 = edgeKey(run.poly[i], run.poly[i + 1]), k2 = edgeKey(run.poly[i + 1], run.poly[i])
         depthByEdge.set(k1, dd); depthByEdge.set(k2, dd)
