@@ -164,6 +164,7 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 
 ### Cross-domain / strategic (repo root)
 
+- **[`SHOW-BIBLE.md`](SHOW-BIBLE.md)** — the master package: the whole project for three audiences (Marketing / Fundraising / Engineering) + the productization roadmap. The synthesis the audit campaign produced; points into the corpus.
 - **[`SLAB-CONTRACT.md`](SLAB-CONTRACT.md)** — the formal cartograph↔LS boundary (the slab format; owned by neither app).
 - **[`AGENT-VALIDATION-SURFACES.md`](AGENT-VALIDATION-SURFACES.md)** — where to validate (toy vs LS); the guardrails.
 - **[`AUDIT-MATRIX.md`](AUDIT-MATRIX.md)** (the instrument) + the filed findings `scratch/audit-{cartograph,arborist,ls-app,docs}.md` — the forensic-audit campaign (the four walks landed; the dispatch briefs retired).

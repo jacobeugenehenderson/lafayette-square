@@ -194,7 +194,7 @@ This is the classify-before-cut third question: "is this WIP toward the corner f
 - **Dev docs** — healthy (SKELETON/RIBBONS/POLYGON-FIRST/SURVEY/SECTION/WALL/INTAKE/BAKE/STAGE/PREVIEW current, honest TARGET-vs-CURRENT).
 
 ## What this aggregation does NOT yet do (the remaining Show Bible steps)
-1. **The Show Bible doc itself** — the 3-purpose artifact (Marketing per-app capability sheets · Fundraising master map · Engineering reach/fix/troubleshoot; plan §"three documentation purposes"). Doesn't exist as a file; this matrix is its raw material.
+1. ✅ **The Show Bible doc** — BUILT 2026-06-15 → [`SHOW-BIBLE.md`](SHOW-BIBLE.md) (the 3-purpose master package: Marketing per-app sheets · Fundraising master map · Engineering reach/fix/troubleshoot). This matrix is its raw material.
 2. **Execute the removal queue** — after v1 only.
 3. **Route Tier-1/2/4 into `plans/`** — the register above is assembled; wiring it into the productization horizons is the next non-destructive step.
 4. **Re-audit the exclusion zone** — ribbons/corners/curbs/intersections were inventoried-only and HELD; with the tile model now largely landed they can be classified for real (freeze still applies to what it flags).
