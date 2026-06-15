@@ -2358,6 +2358,14 @@ export function buildTileGround(ribbons, opts = {}) {
       }
     }
     const nRing = tile.ring.length
+    // [curve-primitive Phase 2] This tile has a bezier'd (curved) run → enable the
+    // robust offset cleanup (fold-spur strip + depth-scaled island floor) that was
+    // gated on the retired STREET_SMOOTH knob. The curve now lives in the dense
+    // tessellated points, so the inward offset of a tight bend can still overshoot
+    // into a near-180° needle (POLYGON-FIRST §3, the iA-source pinch). `clean` mode
+    // = non-clean + dropFoldSpurs (identity on a straight ring), so STRAIGHT tiles
+    // stay byte-identical — only curved tiles get the strip. (HANDOFF-curve-primitive.)
+    const tileIsCurved = runs.some(run => { const so = streetsOrig[run.streetIdx]; return so?.segments?.some(g => g.type === 'bezier') })
     const depthAt = (i) => depthByEdge.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing])) || 0
     // A real corner = the two edges at this vertex belong to DIFFERENT streets.
     // Same street both sides = a through-node (T far-side / dogleg) → run straight
@@ -2383,7 +2391,7 @@ export function buildTileGround(ribbons, opts = {}) {
       const capByVertex = new Map()
       for (const t of roundTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'round') }
       for (const t of bluntTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'blunt') }
-      const off = offsetRingVariable(tile.ring, depthAt, cornerAt, (i) => capByVertex.get(i) || null, smooth > 0)
+      const off = offsetRingVariable(tile.ring, depthAt, cornerAt, (i) => capByVertex.get(i) || null, smooth > 0 || tileIsCurved)
       const offArea = off.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
       blockRings = (off.length && offArea > 0.05 * ringArea && offArea <= 1.01 * ringArea) ? off : legacyBlock()
     } else {
