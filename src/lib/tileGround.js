@@ -88,7 +88,63 @@ function capArc(PL, PR, bx, bz, N = 16) {
   for (let k = 0; k <= N; k++) { const a = aL + (ccw ? 1 : -1) * Math.PI * (k / N); out.push([Cx + r * Math.cos(a), Cy + r * Math.sin(a)]) }
   return out
 }
-function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null) {
+// Remove FOLD NEEDLES from a per-vertex offset ring. On a bend tighter than the
+// offset depth (exposed by the curve-fit knob's smooth dense curves) the inward
+// offset overshoots and the ring doubles back on itself, leaving a thin spike —
+// a near-180° reversal whose tip ≈ coincides with a neighbour. unionRings keeps
+// it as an ATTACHED needle (the two legs nearly touch but don't fully cross, so
+// the boolean can't split it off), and that needle pinches the curb band (iA−iC)
+// into a sliver/loop downstream. Iteratively drop the reversal-tip vertices
+// (interior turn > 165° — the gate's own spur threshold; an authored corner turns
+// far less) and collapse the near-coincident points the cut leaves behind.
+// Identity on clean offsets: gentle curve samples + real corners never reverse.
+// [D6a robust-offset, 2026-06-14 — POLYGON-FIRST §3, the iA-source fix; the
+// band-side sliver filter is forbidden, fix the pinch where it's born.]
+const SPUR_COS = Math.cos(165 * Math.PI / 180)   // in·out < this ⇒ turn > 165°
+function dropFoldSpurs(ring) {
+  let r = ring
+  for (let pass = 0; pass < 8; pass++) {
+    const d = []                                   // collapse near-coincident points
+    for (const p of r) { const q = d[d.length - 1]; if (q && Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.03) continue; d.push(p) }
+    while (d.length >= 3 && Math.hypot(d[0][0] - d[d.length - 1][0], d[0][1] - d[d.length - 1][1]) < 0.03) d.pop()
+    if (d.length < 3) return r
+    const n = d.length, keep = new Array(n).fill(true)
+    let removed = 0
+    for (let i = 0; i < n; i++) {
+      const a = d[(i - 1 + n) % n], v = d[i], b = d[(i + 1) % n]
+      const ix = v[0] - a[0], iy = v[1] - a[1], ox = b[0] - v[0], oy = b[1] - v[1]
+      const li = Math.hypot(ix, iy) || 1, lo = Math.hypot(ox, oy) || 1
+      if ((ix / li) * (ox / lo) + (iy / li) * (oy / lo) < SPUR_COS) { keep[i] = false; removed++ }
+    }
+    if (!removed) return d
+    const nx = d.filter((_, i) => keep[i])
+    if (nx.length < 3) return d
+    r = nx
+  }
+  return r
+}
+// Count curb-band degenerates a given iA would produce — the gate's own metric
+// (tiny rings <8 m² + near-180° reversal spurs) on band = iA − (iA inset by cw).
+// Used to SELF-VALIDATE a median fold-strip: adopt it only when it lowers this.
+function bandSliverCount(ia, cw) {
+  if (!ia.length) return 0
+  const band = differenceRings(ia, offsetRings(ia, -cw, 'round'))
+  let c = 0
+  for (const r of band) {
+    if (!r || r.length < 3) continue
+    const a = Math.abs(signedArea(r))
+    if (a > 0.01 && a < 8) { c++; continue }
+    for (let i = 0; i < r.length; i++) {
+      const p0 = r[(i - 1 + r.length) % r.length], v = r[i], p1 = r[(i + 1) % r.length]
+      const e1 = Math.hypot(p0[0] - v[0], p0[1] - v[1]), e2 = Math.hypot(v[0] - p1[0], v[1] - p1[1])
+      if (e1 < 1 || e2 < 1 || e1 > 60 || e2 > 60) continue
+      const d = ((v[0] - p0[0]) / e1) * ((p1[0] - v[0]) / e2) + ((v[1] - p0[1]) / e1) * ((p1[1] - v[1]) / e2)
+      if (Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI > 165) c++
+    }
+  }
+  return c
+}
+function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false) {
   const n = ring.length
   if (n < 3) return []
   const ccw = signedArea(ring) > 0
@@ -145,7 +201,12 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   // scratch/correctness-detector.mjs.
   let maxD = 0; for (const s of seg) if (s.d > maxD) maxD = s.d
   const AREA_MIN = Math.max(0.5, maxD * maxD * 0.6)
-  return unionRings([W]).filter(r => Math.abs(signedArea(r)) > AREA_MIN)
+  // Strip fold needles (curve-fit only — `clean`): on a bend tighter than the depth
+  // the per-vertex offset overshoots into a thin near-180° spike that the union keeps
+  // as an attached needle (legs near-touch, never fully cross) → it pinches the curb
+  // band downstream. Off for smooth=0 so the frozen live map is byte-identical.
+  if (!clean) return unionRings([W]).filter(r => Math.abs(signedArea(r)) > AREA_MIN)
+  return unionRings([dropFoldSpurs(W)]).map(dropFoldSpurs).filter(r => r.length >= 3 && Math.abs(signedArea(r)) > AREA_MIN)
 }
 // Morphological opening (erode R then dilate R, round join): rounds CONVEX
 // corners sharper than R up to radius R, leaves gentler ones. Used to round the
@@ -2322,11 +2383,24 @@ export function buildTileGround(ribbons, opts = {}) {
       const capByVertex = new Map()
       for (const t of roundTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'round') }
       for (const t of bluntTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'blunt') }
-      const off = offsetRingVariable(tile.ring, depthAt, cornerAt, (i) => capByVertex.get(i) || null)
+      const off = offsetRingVariable(tile.ring, depthAt, cornerAt, (i) => capByVertex.get(i) || null, smooth > 0)
       const offArea = off.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
       blockRings = (off.length && offArea > 0.05 * ringArea && offArea <= 1.01 * ringArea) ? off : legacyBlock()
     } else {
       blockRings = legacyBlock()
+    }
+    // The offset path is fold-stripped inside offsetRingVariable (identity at
+    // smooth=0). The MEDIAN carve is not: on a smoothed dense ring the inner-edge
+    // carve folds into thin spikes that filletRing rounds into coincident-point arcs
+    // → curb-band slivers. Strip them — but SELF-VALIDATING, so a blunt removal can
+    // never make a tile worse: adopt the de-spurred ring ONLY if it reduces THAT
+    // tile's own band-sliver count (a genuine fold needle → fewer; a legit thin
+    // median arm whose tip the spur-test would cut → same or more, so kept intact).
+    // Curve-fit knob only (smooth>0); the smooth=0 live map stays the frozen
+    // 191-ring baseline. [D6a robust-offset, 2026-06-14, POLYGON-FIRST §3]
+    if (smooth > 0 && isMedianTile) {
+      const cleaned = blockRings.map(dropFoldSpurs).filter(r => r.length >= 3)
+      if (cleaned.length && bandSliverCount(filletRings(cleaned, cornerRfn, []), cw) < bandSliverCount(filletRings(blockRings, cornerRfn, []), cw)) blockRings = cleaned
     }
     const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
     // Tag each achieved fillet with its corner key (the centerline NODE it
