@@ -1,5 +1,7 @@
 # P1 Frame-Enrichment — Build Eval (before / after)
 
+> 🗄️ **CLOSED BUILD-EVAL (the P1 frame-enrichment landed) — archive PENDING (2026-06-14, doc cleanup).** Held with its companion `OSM-FORENSICS.md` (still-cited evidence base) until Jacob confirms the lift-first gate. Live conclusions: `PIPELINE.md §Wall` · `SKELETON.md` · `PREBAKE.md`.
+
 > **Builder: Vesalius** (continuing — dissected the data in `OSM-FORENSICS.md`, now built the fix). Delivered 2026-06-01. **BUILD mode** — edited `cartograph/skeleton.js` (frame) + `cartograph/derive.js` (the two hacks). Companion brief: `HANDOFF-p1-frame-enrichment.md`. A/B baseline preserved: `scratch/vesalius-skeleton-BEFORE.json` (+ committed git copy).
 
 ## TL;DR

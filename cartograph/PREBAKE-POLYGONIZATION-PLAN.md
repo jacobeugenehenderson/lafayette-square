@@ -1,5 +1,7 @@
 # Prebake polygon-ization — forensic scope + spike report
 
+> 🗄️ **CLOSED SCOPE+SPIKE (D2 face-freeze folded-live) — archive PENDING (2026-06-14, doc cleanup).** Held back per the lift-first gate: **`POLYGON-FIRST.md §0.1` depends on this doc's §1 for the L1/L2/L3 polygon-ization layer definition** — that fact must be lifted into `PREBAKE.md` before the physical move. Needs Jacob's eye. Live home for the curb-freeze program: `PREBAKE.md §4.1`/`§5` · `POLYGON-FIRST.md`.
+
 **Deliverable of `HANDOFF-prebake-polygonization-scope.md` (Mercator, 2026-06-05).** Answers the brief's four questions, reports the validated spike on Mississippi×Lafayette, and decomposes the build into dispatchable sub-briefs. **Scope + spike only — no production change landed.** Spike code: `scratch/mercator-*.mjs`; proof render: `scratch/mercator-spike-proof.png`.
 
 > **Verdict up front:** the brief's framing **holds** — freeze at prebake, detect via `phase.spineAt*`, corner the corridor outer-edge legs. The forensics **sharpen** it in two ways the build must absorb: **(a) the false corner has a third, *data*-level cause** — the carriageway measures have their sides scrambled (carriageway-B's outer `pavementHW` is 0; its width datum sits on the median side) — so the cure = **data fix + corner identity together**, not identity alone; **(b) C5 (the two-source seam) is lower-risk than the ledger implies** — the raw-OSM faces are consumed *only* as a land-use paint lookup, never as geometry, so its retire can sequence last.

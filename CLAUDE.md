@@ -12,7 +12,7 @@ The coordinator identity + continuity ("ipseic load-in", **layer 1**) loads **on
 
 1. **Open the front door.** `BOZ.md §0` (the feature-index router) + repo-root `README.md §⭐ START HERE` (settled-state, by topic). Find your topic → it names the **home doc + the one-line conclusion + the existing forensic.**
 2. **Read the cited canon to the section** before forming a plan or touching code. Rebuilding the model from grep + first-principles when the canon already spells it out is *the* recurring, expensive failure (`BOZ.md §4` — a hard gate, not advice).
-3. **Reuse forensics — never re-derive.** If a harness or forensic exists for the symptom, run/read it instead of building a new one (`scratch/` holds 200+; the studies are `*-FORENSIC.md`, `JUNCTION-CURE-PLAN.md`, the `HANDOFF-*` ledgers).
+3. **Reuse forensics — never re-derive.** If a harness or forensic exists for the symptom, run/read it instead of building a new one (`scratch/` holds 200+; the studies are `*-FORENSIC.md`, the `cartograph/_archive/` forensics, the `HANDOFF-*` ledgers).
 4. **Name the layer before you fix.** SHAPE (the frozen polygon / curb — Survey · skeleton · prebake) vs FILL (the inward ped strokes — Section)? Ask **"is this chains again?"** (`PIPELINE §Wall`). A wrong *silhouette* is upstream; how the *ribbon bends* is Section. Patching the wrong layer is the recurring waste — confirm the layer, in the canon, before editing.
 
 ## Verify your own premises

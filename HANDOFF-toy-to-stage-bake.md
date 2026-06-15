@@ -23,7 +23,7 @@ Toy is the validation spike surface per AGENT-VALIDATION-SURFACES doctrine. If S
 - `[[feedback_bake_ground_scene_clobbers_default_look]]` (known-related)
 - `[[feedback_toy_is_the_construction_spike_surface]]` (why this matters)
 - `AGENT-VALIDATION-SURFACES.md` (the validation-loop doctrine)
-- `[[project_reset_toy_button_queued]]` Stadia's Follow-up section — **partial diagnosis already done**: Stadia's Finding #2 in `HANDOFF-toy-reset-to-defaults-DESIGN.md` documented that `src/data/toy/toy-ribbons.json` is stale since 2026-05-16 and the bake path has no toy derive step. This brief's investigation has a head-start; read Stadia's design doc before tracing.
+- `[[project_reset_toy_button_queued]]` Stadia's Follow-up section — **partial diagnosis already done**: Stadia's Finding #2 (in the never-filed `HANDOFF-toy-reset-to-defaults-DESIGN.md` — git history only) documented that `src/data/toy/toy-ribbons.json` is stale since 2026-05-16 and the bake path has no toy derive step. This brief's investigation has a head-start.
 
 ## Why this brief runs first (Boz recommendation)
 

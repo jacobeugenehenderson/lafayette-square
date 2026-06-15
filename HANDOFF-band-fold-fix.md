@@ -51,7 +51,7 @@ The original brief scoped only the ped band (`iW`). Caliper's forensic shows the
 - **Only the local neck is treated** — in-spec blocks + legit 90° corners untouched (the global guard's full-collapse path stays; you ADD the local/partial case).
 - **Preserve R=0 ADA squares** (jtMiter; no rounding).
 - **Don't touch the cul-de-sac wrap** (`deadEndTips` gates `nodeDeg===1`; T-mouths are deg-3 — Mackay's real round end keeps its wrap).
-- **Don't confuse a divided-carriageway median sliver with a thorn** — the **Truman south-of-Park median is a SEPARATE D3/D8 thread** (`TRUMAN-FORENSICS.md` addendum); do not touch it.
+- **Don't confuse a divided-carriageway median sliver with a thorn** — the **Truman south-of-Park median is a SEPARATE D3/D8 thread** (`cartograph/_archive/TRUMAN-FORENSICS.md` addendum); do not touch it.
 
 ## ⛔ NOT in this brief — distinct roots, do not bundle (false-corner discipline)
 

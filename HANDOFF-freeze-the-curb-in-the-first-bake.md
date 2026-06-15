@@ -1,6 +1,6 @@
 # HANDOFF — Freeze the curb in the First Bake (the divided-transition "d" bulge is a symptom)
 
-**State:** dispatch-ready, architecture-level. **Supersedes** `HANDOFF-divided-transition-block-tongue.md` (that brief's premise — "fix the transition in the frame/skeleton" — was right about the layer but wrong about the artifact; see "What this session ruled out" below). **Read this whole brief before touching code** — it is the distilled result of a long session that bounced off this bug from five wrong angles. The reframe at the end is Jacob's, and it is the actual diagnosis.
+**State:** dispatch-ready, architecture-level. **Supersedes** `HANDOFF-divided-transition-block-tongue.md` (retired to git, 2026-06-14) (that brief's premise — "fix the transition in the frame/skeleton" — was right about the layer but wrong about the artifact; see "What this session ruled out" below). **Read this whole brief before touching code** — it is the distilled result of a long session that bounced off this bug from five wrong angles. The reframe at the end is Jacob's, and it is the actual diagnosis.
 
 ---
 

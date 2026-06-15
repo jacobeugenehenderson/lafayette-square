@@ -1,6 +1,6 @@
 # Junction Band-Thorns — Forensic Findings (Bollard, 2026-06-04)
 
-**Companion to:** `HANDOFF-junction-band-thorns.md` (the dispatch brief). **Forensic only — no construction edits.** Produced on the production `buildTileGround` path (trunk RDP frame, `smooth:0`, `curbWidth:0.381`, `cornerRadiusScale:1`), inspecting `_shapeArtifact` (per-tile `iA`/`runs`/`bandJoin`/`cap`) + `_tiles`. Harnesses: `scratch/bollard-*.mjs`.
+**Companion to** the band-fold / thorn work — live home: `cartograph/SECTION.md §7` + `cartograph/BACKLOG.md` (the `band-fold-fix` NOW item). *(The original `HANDOFF-junction-band-thorns.md` dispatch brief was never filed; this forensic is the surviving record.)* **Forensic only — no construction edits.** Produced on the production `buildTileGround` path (trunk RDP frame, `smooth:0`, `curbWidth:0.381`, `cornerRadiusScale:1`), inspecting `_shapeArtifact` (per-tile `iA`/`runs`/`bandJoin`/`cap`) + `_tiles`. Harnesses: `scratch/bollard-*.mjs`.
 
 ---
 
@@ -99,7 +99,7 @@ The operator's deeper point — *"the skeleton maker should use the names; there
 - **NOT the cul-de-sac wrap path** — `deadEndTips` gates on `nodeDeg===1`; T-mouths are deg-3. `roundTips`/`wrapDisks` uninvolved; Mackay's *actual* cul-de-sac keeps its wrap.
 - **NOT a join artifact** — `iW` folds under both miter and round.
 - **NOT fixable by band-ring cleanup** — Clipper `CleanPolygon` at 0.3–1.2 m barely moves it (111° → 95–108°). It is a *real fold*, not redundant vertices.
-- **NOT double-smoothing** (separate root, handled) and **NOT** the divided-carriageway median (`TRUMAN-FORENSICS.md`).
+- **NOT double-smoothing** (separate root, handled) and **NOT** the divided-carriageway median (`cartograph/_archive/TRUMAN-FORENSICS.md`).
 
 ---
 

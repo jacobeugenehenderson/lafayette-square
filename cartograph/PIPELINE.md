@@ -104,7 +104,7 @@ Doctrine memory: `memory/project_skeleton_is_the_first_bake.md`.
 > 4. **Intersection consolidation** — **over-noded complex IXs doom `cornersAtIx`** (the *degenerate corners*); the highest-leverage prong (relieves the corner saga). ⏭️ not started, **forensic-first** (survey `osm2streets`, don't reinvent).
 >    ⚠️ **RED-HERRING WARNING (2026-06-04) for the divided-transition "false corner" (the marked park-corner defect):** that one is **NOT** this prong. `cornersAtIx` is the **dead figure-ground path**; the live LS path is `tileGround.filletRing`, which **lost** figure-ground's §437 median-wedge *skip* in the tile re-pour (~2026-06-01) = a recent regression. Fix is in `tileGround` (corner the corridor's clean outer-edge legs, not the carriageway stubs), **not** skeleton consolidation / `osm2streets`. Full resolution: **`SKELETON.md §5e`**. (This prong-4 may still be real for genuinely over-noded IXs, but it is the wrong tree for the park-corner false corner.)
 >
-> **The lines on screen are now clean (prong 1 landed); the remaining work is at the INTERSECTIONS (prongs 2–4) — not the centerlines.** Brief: `HANDOFF-too-much-line-root-cause.md` (prong 1, landed). Separate thread (NOT better-bones): Truman south-of-Park median = D3/D8 (`TRUMAN-FORENSICS.md`).
+> **The lines on screen are now clean (prong 1 landed); the remaining work is at the INTERSECTIONS (prongs 2–4) — not the centerlines.** (Prong 1 landed — its brief `HANDOFF-too-much-line-root-cause.md` retired to git, the fact stays inline here.) Separate thread (NOT better-bones): Truman south-of-Park median = D3/D8 (`_archive/TRUMAN-FORENSICS.md`).
 
 ### ⭐ The proper way to a clean map (2026-06-02 — STOP per-symptom whack-a-mole on degenerate polygons)
 

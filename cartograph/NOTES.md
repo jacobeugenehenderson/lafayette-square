@@ -20,6 +20,22 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-14 (cont.) — Doc-corpus cleanup executed (Codex): the gap-map repoint/retire/archive pass.
+
+Executed the `audit-docs` gap map (`scratch/audit-docs.md`) — the long-pending Documentation-Officer audit leg, which had never run. **DOCS ONLY** (the curb agent owned `tileGround.js` + `correctness-detector.mjs` in parallel). Mechanical cleanup committed; the FEATURES front-door left as a reviewable proposal for Jacob's eye.
+
+**Dead pointers repointed (the Archivist's one unforgivable error, BOZ §1):** `HANDOFF-too-much-line-root-cause.md` (PIPELINE §Wall — prong-1 brief, brief retired to git, fact stays inline) · `HANDOFF-polygon-first-junction-construction.md` bare ref → the `_archive/handoffs/…SUPERSEDED` path (round-skeleton-corners) · `HANDOFF-junction-band-thorns.md` (the never-filed dispatch brief — junction-band-thorns-FINDINGS repointed to the live home `SECTION §7`) · `HANDOFF-toy-reset-to-defaults-DESIGN.md` (never filed — toy-to-stage-bake noted git-history-only). The remaining dead pointers (`stroke-construction`, `wall-move`, `wall-W1-identity`, `wall-phase-d`) lived *inside* docs retired this pass — removing the doc removed the pointer.
+
+**Retired to git (11 closed root HANDOFFs — narrative here, fact already in Reference):** `18th-loop-skeleton` (OBE, 06-12) · `dead-end-spike-prune` (prune reverted `dd4ddb6`; "do not resurrect") · `divided-transition-block-tongue` (superseded → freeze-the-curb) · `curb-offset-draw` + `curb-corridor-construction` (superseded by freeze-the-curb; the corridor-weld was a wrong drift) · `pipeline-reconception` (overtaken umbrella; children dead) · `through-road-simplify` (LANDED `c4cb191`; fact in `SKELETON §5a`) · `prebake-d2-face-freeze` (folded-live; `DOC-CODE-COHERENCE`) · `section-forensic` + `survey-construction-forensic` (spent briefs; deliverables in `scratch/SECTION-FORENSIC.md` / `scratch/SURVEY-CONSTRUCTION-FORENSIC.md`) · `BOZ-MORNING-HANDOFF` (stale 06-01, 0 inbound refs, abandoned "stroke" pivot). **Verified NOT subsumed → KEPT + indexed:** `HANDOFF-tile-T3-corner-handles.md` (live; supersedes tile-T3-authoring's corner section). **Held back (still open per BACKLOG):** band-fold-fix family (NOW), section-per-edge-fill (Plumb Fix B open), buildings-bake (awaiting QC), the STANDING audit set.
+
+**Archived to `_archive/` (5 closed place-specific spikes/forensics; cures landed, facts homed in Reference):** `TRUMAN-FORENSICS` (→ RIBBONS §3.1 / FEATURES §367) · `DIVIDED-CORRIDOR-PLAN` (→ RIBBONS §3.1) · `JUNCTION-CURE-PLAN` (→ SKELETON §5e) · `RENDER-PATH-CENSUS` (stale pre-Wall) · `SHADOW_HANDOFF` (Apr-14, no anchor). **Banner-flagged in place, NOT moved (failed the lift-first gate — still-cited evidence / content dependency):** `OSM-FORENSICS` + `-EVAL` (frame-forensics evidence base, cited by live doctrine) · `PREBAKE-POLYGONIZATION-PLAN` (POLYGON-FIRST §0.1 depends on its §1 L1/L2/L3 split — lift to PREBAKE first). **These three need Jacob's eye to finish archiving.**
+
+**Indexed (orphans killed):** the correctness-suite findings trilogy (`SIEVE-DETECTOR` · `LOOM-TOPO` · `THROAT-JUNCTION-FINDINGS`) → BOZ §0 feature index ("Correctness suite" → `POLYGON-FIRST §5`); `audit-docs` surfaced as the executed leg.
+
+> **Lesson banked:** the "verify subsumed first" gate earned its keep — `tile-T3-corner-handles` *looked* closed (orphan, 0 refs) but is live dispatch-ready work; cutting on the orphan signal alone would have deleted an open brief. And the spike-archive gate (lift-first / verify-pointer) correctly held 3 docs whose content other docs still depend on. `[[feedback_audit_then_cut_git_palimpsest]]`.
+
+---
+
 ## 2026-06-13 (night) → 06-14 — The through-road fix lands; the block-construction arc (two laws, reverted clean); the per-override worklist.
 
 ⭐ **Landed:** the **through-road / name-transition fix** (`c4cb191`). RDP ran per-chain, so at the West 18th↔Dolman name-transition it pinned the seam and dropped the rounding → a gentle 15.6° raw curve facetted into a **46.5° kink**. Fix = simplify the through-**ROAD** (follow `continuesAs`, RDP the concatenated polyline once), **preserve the rounding** — and the lever turned out to be the **tolerance**, not un-pinning the joint (`SKELETON §5a`). Plus the **`name-transition` detector invariant** (`27b08c2`, `--simNT` self-test): the correctness suite (Sieve→Loom→Throat→name-transition) now stands as the RED-until-true gate.

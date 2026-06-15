@@ -2,7 +2,7 @@
 
 **State doc.** Tracks where the **docs and the code disagree** — so the two can be driven back into sync. The campaign rule (Jacob, 2026-06-05): **if a truth lives in only ONE place, that's a smell.** Code must reflect the docs; the docs must reflect the code.
 
-> Sibling to `RENDER-PATH-CENSUS.md` / `_archive/SECTION-CENSUS-2026-06-03.md` (archived — Section is built) — the same census discipline, aimed at divergence. The deep "why": `[[project_the_palimpsest_code_path_multiplicity]]` (the code-side palimpsest). Method memory: `[[feedback_docs_effluvium_buried_the_answer]]`.
+> Sibling to `_archive/RENDER-PATH-CENSUS.md` / `_archive/SECTION-CENSUS-2026-06-03.md` (both archived — Section is built) — the same census discipline, aimed at divergence. The deep "why": `[[project_the_palimpsest_code_path_multiplicity]]` (the code-side palimpsest). Method memory: `[[feedback_docs_effluvium_buried_the_answer]]`.
 
 ---
 

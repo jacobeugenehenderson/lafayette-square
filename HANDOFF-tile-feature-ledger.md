@@ -1,6 +1,6 @@
 # Tile Re-pour — Feature Restoration Ledger
 
-**The definition-of-done for the tile re-pour** (`HANDOFF-pipeline-reconception.md`). Every authored/visible capability the figure-ground map had, tracked through the re-pour so **nothing dies silently** and we stop surfacing them one at a time from memory. Adapted from the wall-move's F1–F10 ledger.
+**The definition-of-done for the tile re-pour** (the umbrella `HANDOFF-pipeline-reconception.md` brief was retired to git — live state is `cartograph/BACKLOG.md` + this ledger). Every authored/visible capability the figure-ground map had, tracked through the re-pour so **nothing dies silently** and we stop surfacing them one at a time from memory. Adapted from the wall-move's F1–F10 ledger.
 
 **Status legend:** ✅ landed on tiles · 🔜T2 = T2-finish pass (next dispatch) · 🔜T3 = authoring-into-Survey · ⏸ deferred slab-content (authorized regression, scheduled) · ⚠️ partial/verify.
 

@@ -2,7 +2,7 @@
 
 **Agent: WARM → Tessera.** You built the tile construction (spike → T1 → T2 → T2-finish) and you know exactly where the authoring overlays still mount figure-ground. T3 is yours.
 
-**This is T3 of `HANDOFF-pipeline-reconception.md`.** T2-finish landed the whole *construction* side on LS (the 🔜T2 rows). T3 does the *authoring* side. **Reads first:** `HANDOFF-tile-feature-ledger.md` (the 🔜T3 rows = the scope) · **`RIBBONS.md §5`** (the Measure-tool operator model + the translucency doctrine — load-bearing, see below) · `src/lib/tileGround.js` + the Designer authoring surfaces (`BlockGeometryV2Debug.jsx`, `MeasureOverlay.jsx`, `MeasurePanel.jsx`, `SurveyorPanel.jsx`, `CornerEditHandles.jsx`).
+**This is T3 of the tile re-pour** (the umbrella `pipeline-reconception` brief retired to git; live state → `cartograph/BACKLOG.md` + `HANDOFF-tile-feature-ledger.md`). T2-finish landed the whole *construction* side on LS (the 🔜T2 rows). T3 does the *authoring* side. **Reads first:** `HANDOFF-tile-feature-ledger.md` (the 🔜T3 rows = the scope) · **`RIBBONS.md §5`** (the Measure-tool operator model + the translucency doctrine — load-bearing, see below) · `src/lib/tileGround.js` + the Designer authoring surfaces (`BlockGeometryV2Debug.jsx`, `MeasureOverlay.jsx`, `MeasurePanel.jsx`, `SurveyorPanel.jsx`, `CornerEditHandles.jsx`).
 
 ## ⭐ Design spine — build the DESIGNED tools, not relocated handles
 
@@ -56,4 +56,4 @@ WYSIWYG on Jacob's eye, LS: author a width / a corner-R / a cap / a strip-swap i
 
 Per row: what now works live + the WYSIWYG confirmation. Confirm the figure-ground overlay is no longer *computed* for authoring (the perf drag). Note whether A2's failure was construction (tile R not parameterized) or wire (slider didn't reach the live render). Flag the ADA-tangent if you looked.
 
-*Provenance: Boz, 2026-06-01. T3 of `HANDOFF-pipeline-reconception.md`; rows in `HANDOFF-tile-feature-ledger.md`. The authoring↔construction↔slab seam Jacob named = the wall / helper-app division.*
+*Provenance: Boz, 2026-06-01. T3 of the tile re-pour (umbrella `pipeline-reconception` retired to git); rows in `HANDOFF-tile-feature-ledger.md`. The authoring↔construction↔slab seam Jacob named = the wall / helper-app division.*

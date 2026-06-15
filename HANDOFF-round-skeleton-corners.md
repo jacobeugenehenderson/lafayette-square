@@ -4,7 +4,7 @@
 
 **Task, one line:** In **`skeleton.js`** (after the RDP step, frozen into `skeleton.json`), **round the centerline corner vertices that are already there** — replace each sharp bend with a small tangent arc (a polyline fillet) — **keeping the path exactly**, so the curb polygon (a parallel offset of the centerline) follows with smooth rounded corners.
 
-This **supersedes** `HANDOFF-polygon-first-junction-construction.md` (archived 2026-06-13). That brief aimed at "intersection-everywhere junction construction" — the **wrong task**. What Jacob actually wants is far simpler, in his words: *"the centerline is correct, only the corners need to be smoothed"* → *"smooth the centerline"* → *"just make the corners that were already there rounded."*
+This **supersedes** `cartograph/_archive/handoffs/HANDOFF-polygon-first-junction-construction-SUPERSEDED-2026-06-13.md` (archived 2026-06-13). That brief aimed at "intersection-everywhere junction construction" — the **wrong task**. What Jacob actually wants is far simpler, in his words: *"the centerline is correct, only the corners need to be smoothed"* → *"smooth the centerline"* → *"just make the corners that were already there rounded."*
 
 ---
 

@@ -1,5 +1,7 @@
 # Lighting & Shadow Parity — Handoff
 
+> 🗄️ **ARCHIVED 2026-06-14 (doc cleanup).** Old un-anchored handoff (2026-04-14), 0 inbound refs. Kept as the dated record. **Live home for stage/look parity: `STAGE.md` + `SLAB-CONTRACT.md`.** (Was `cartograph/SHADOW_HANDOFF.md`.)
+
 ## Overview
 
 The cartograph (plan view at `/cartograph`) and the browse view (top-down at `/`)

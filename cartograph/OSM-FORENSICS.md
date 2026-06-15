@@ -1,5 +1,7 @@
 # OSM-FORENSICS — The Skeleton's Semantic Frame
 
+> 🗄️ **CLOSED FORENSIC (the P1 fix landed) — archive PENDING (2026-06-14, doc cleanup).** Not yet moved to `_archive/`: it is still cited as the live **frame-forensics evidence base** by active doctrine (the "OSM or us = 100% us" verdict, the "79 interior Ts" rationale in `PIPELINE §P1`/`SKELETON`). **Held back per the lift-first gate** — needs Jacob's eye to confirm its evidence is fully homed before the physical move. Live conclusions: `PIPELINE.md §Wall`/`§P1` · `SKELETON.md` · `INTAKE.md`.
+
 > **Forensic report.** Pathologist: **Vesalius** (named for the anatomist who corrected centuries of received error by *dissecting the bones* instead of trusting the textbook). Dispatched 2026-05-31, delivered 2026-06-01. **Read-only forensics — this is a report, not a fix.** Companion brief: `HANDOFF-osteopathologist.md`. Doctrine: `PIPELINE.md §P1, §Wall`; memory `project_skeleton_is_the_first_bake`.
 
 ## The verdict, up front

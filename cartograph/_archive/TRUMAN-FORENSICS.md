@@ -1,5 +1,7 @@
 # TRUMAN-FORENSICS — the divided-parkway knot, mapped once
 
+> 🗄️ **ARCHIVED 2026-06-14 (doc cleanup).** Closed forensic — the divided cures landed; kept as the dated deep-dive record. **Live home: `RIBBONS.md §3.1` + `FEATURES.md §367–387`.** (Was `cartograph/TRUMAN-FORENSICS.md`.)
+
 **Agent:** Galen (read-only forensic specialist — Vesalius/Stratum lineage). **Date:** 2026-06-03.
 **Scope:** Truman Parkway, LS. **Mode:** READ-ONLY; only write = this doc.
 **Sources re-derived from:** `src/data/ribbons.json`, `public/baked/lafayette-square/shape.json` (the live bake of 2026-06-03 01:02), `skeleton.js`, `derive.js`, `tileGround.js`, `useCartographStore.js`, `SurveyorPanel.jsx`. The seed findings in `HANDOFF-truman-forensics.md` were treated as leads; **two of them point at code that no longer drives the render** (see §2).

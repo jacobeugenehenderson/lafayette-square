@@ -1,5 +1,7 @@
 # RENDER-PATH CENSUS — the single live path, and every carpet layer around it
 
+> 🗄️ **ARCHIVED 2026-06-14 (doc cleanup).** Stale pre-Wall census (the "LS renders at 0% / blockCustoms graveyard" regime is superseded by the tile model). Kept as the dated deep-dive record. **Live home: `DOC-CODE-COHERENCE.md`** (the live divergence ledger). (Was `cartograph/RENDER-PATH-CENSUS.md`.)
+
 > **Cartographer: Vesalius** (continuing — traced `pipeline.js`/`derive.js`/skeleton in `OSM-FORENSICS.md`+`-EVAL.md`, now maps the whole render path). Delivered 2026-06-01. **READ-ONLY forensics — a MAP, not a demolition.** Companion: `HANDOFF-render-path-census.md`, `HANDOFF-chain-consumer-census.md` (Plumb — Phase B internals; this extends it upstream). Every LIVE/DEAD/PARALLEL/BYPASSED verdict is read-traced; unconfirmed items flagged.
 
 ## The verdict, up front
