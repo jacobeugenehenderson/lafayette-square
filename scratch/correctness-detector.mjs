@@ -415,6 +415,13 @@ function nameTransitionReport(skOverride) {
 // absolute like the others — it's a smooth-vs-baseline DELTA, the honest test for
 // "the knob added no degenerate".)
 const CURVE_FIT_SMOOTH = 1.5
+// Corner-roundness floor — the authored fillets MUST survive the offset. An
+// ABSOLUTE check (not a smooth-vs-0 diff): a squaring bug squares at BOTH smooth
+// values, so the diff can't see it. Known-good = 459 rounded fillets (r>0.5 m) at
+// smooth=0; floor at 450 (margin). Caught the openRound regression that squared
+// 459→93 (2026-06-14) which ring-count/area checks were blind to.
+const ROUND_FILLET_MIN = 450
+const roundedFillets = (tg) => Object.keys(tg.cornerFillets || {}).filter(k => (tg.cornerFillets[k]?.r || 0) > 0.5).length
 function curbDegenerates(curbRings) {
   const feats = []
   for (const r of (curbRings || [])) {
@@ -435,12 +442,13 @@ function curbDegenerates(curbRings) {
   return feats
 }
 function curveFitReport() {
-  const mk = (sm) => buildTileGround(ribbons, { stencil: clip, smooth: sm, curbWidth: design.curbWidth, blockLandUse: design.blockLandUse || null, cornerRadiusScale: design.cornerRadiusScale ?? 1, blockCustoms: design.blockCustoms || null })
-  const base = curbDegenerates(mk(0).curb)
-  const sm = curbDegenerates(mk(CURVE_FIT_SMOOTH).curb)
+  const mk = (sm) => buildTileGround(ribbons, { stencil: clip, smooth: sm, curbWidth: design.curbWidth, blockLandUse: design.blockLandUse || null, cornerRadiusScale: design.cornerRadiusScale ?? 1, blockCustoms: design.blockCustoms || null, emitArtifact: true })
+  const f0 = mk(0), f1 = mk(CURVE_FIT_SMOOTH)
+  const base = curbDegenerates(f0.curb)
+  const sm = curbDegenerates(f1.curb)
   const near = (p, set) => set.some(q => dist(p, q) < 5)
   const NEW = sm.filter(p => !near(p, base))
-  return { base: base.length, sm: sm.length, NEW }
+  return { base: base.length, sm: sm.length, NEW, rnd0: roundedFillets(f0), rnd1: roundedFillets(f1) }
 }
 
 // ── load the frame (same as corner-guard) ───────────────────────────────────
@@ -725,7 +733,14 @@ pr2('+ TOPOLOGICAL',  allFlagged)
 
 console.log('\n  · CURVE-FIT GATE (D6a robust-offset — smooth=' + CURVE_FIT_SMOOTH + ' vs smooth=0):')
 console.log(`      curb degenerates: baseline(0)=${cfGate.base}  smoothed=${cfGate.sm}  NEW(regressions)=${cfGate.NEW.length}`)
-console.log(`      ${cfGate.NEW.length === 0 ? '✅ GREEN — the knob adds no curb degenerate (robust offset DONE)' : '❌ RED — robust offset NOT done: ' + cfGate.NEW.length + ' new needle/spur from smoothing'}`)
+// Corner gate = smooth=0 ONLY (the live map, where fillets ARE the rounding). At
+// smooth>0 the curve-fit legitimately curve-rounds gentle bends so fillet-count
+// drops by design (rnd1 is INFO, not a gate — squared junction corners at smooth>0
+// are the eye's call when the knob re-enables).
+console.log(`      corner-roundness: rounded fillets  smooth0=${cfGate.rnd0} (gate ≥${ROUND_FILLET_MIN})  smooth${CURVE_FIT_SMOOTH}=${cfGate.rnd1} (info — curve-round expected)`)
+const cfSquared = cfGate.rnd0 < ROUND_FILLET_MIN
+const cfGreen = cfGate.NEW.length === 0 && !cfSquared
+console.log(`      ${cfGreen ? '✅ GREEN — clean curb + corners round (robust offset DONE)' : '❌ RED — ' + [cfGate.NEW.length ? cfGate.NEW.length + ' new needle/spur' : '', cfSquared ? `corners SQUARED at smooth=0 (${cfGate.rnd0} rounded vs ≥${ROUND_FILLET_MIN})` : ''].filter(Boolean).join(' + ')}`)
 cfGate.NEW.slice(0, 14).forEach(p => console.log(`        new degenerate @ ${p[0].toFixed(0)},${p[1].toFixed(0)}`))
 
 // confusion matrix vs the 35

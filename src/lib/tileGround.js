@@ -135,16 +135,17 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   }
   // Robust cleanup (D6a "proper", 2026-06-14). A concave fold on a tight/dense
   // smooth bend (offset depth > local edge length, exposed by the curve-fit knob)
-  // leaves degenerate residue the flat 0.5 m² floor missed: detached island lobes
-  // + thin in-and-out needles. DEPTH-SCALED floor (a fold's area scales with
-  // depth²) drops the islands; a hair-radius morphological OPEN snaps the thin
-  // needles off the body (EPS ≪ curb width → straight runs stay parallel). Gated
-  // by the curve-fit invariant in scratch/correctness-detector.mjs.
+  // leaves degenerate residue the flat 0.5 m² floor missed: detached island lobes.
+  // DEPTH-SCALED floor (a fold's area scales with depth²) drops them; converges to
+  // identity on clean offsets. ⛔ NO morphological open here: openRound(0.08)
+  // pre-rounded EVERY corner below filletRing's 18° tol → filletRing skipped the
+  // authored fillet → SQUARE corners (459→93 rounded, 2026-06-14 regression).
+  // The thin in-and-out needles are the iA-source concave pinch — fixed upstream,
+  // not by morphology. Gated by the curve-fit + corner-roundness invariants in
+  // scratch/correctness-detector.mjs.
   let maxD = 0; for (const s of seg) if (s.d > maxD) maxD = s.d
   const AREA_MIN = Math.max(0.5, maxD * maxD * 0.6)
-  let out = unionRings([W]).filter(r => Math.abs(signedArea(r)) > AREA_MIN)
-  if (out.length) out = openRound(out, 0.08).filter(r => Math.abs(signedArea(r)) > AREA_MIN)
-  return out
+  return unionRings([W]).filter(r => Math.abs(signedArea(r)) > AREA_MIN)
 }
 // Morphological opening (erode R then dilate R, round join): rounds CONVEX
 // corners sharper than R up to radius R, leaves gentler ones. Used to round the
