@@ -43,6 +43,8 @@ The concentric-ribbon FILL (`sectionPass`) is **sound** — it just needs **corr
 - **Paint the median POSITIVELY** from its own ring (a filled face), not the subtractive `luRemainder ∩ med` (`:1157`) that gets eaten — so a thin median can never be annihilated by asphalt rounding.
 - **The width datum at the SOURCE:** the inboard carriageway must carry *its own* width, not the whole road's (Lafayette `lanes:1` is stamped at the full ~21 m road's 10.56 m half-width). Fix in the skeleton/prebake width model (split-the-survey-width or lanes×lane-width), **rebuild-gated**.
 
+> ⭐ **IMPLEMENTATION SPEC: `scratch/HALF-B-SPEC-2026-06-15.md` (Cambour).** Three composed fixes — (1) render clamp `effectiveMeasure:654` `inboard ≤ (chainGap−1)/2`; (2) source datum `innerEdgeAssign:3427` split-the-survey-width (inboard=0, outboard=`(full−gap)/2`); (3) positive paint — reserve `medClip` out of `aFill` at the shape loop (`~:2326`), replacing the failing subtractive `luRemainder ∩ st.med`. ⭐ **LOAD-BEARING NEW FINDING:** the existing inner-edge zeroing **zeros the WRONG side** — `innerSign`'s side-key disagrees with the geometric median-facing side on every flagged pair (Lafayette: never zeroed, whole-road width broadcast to both; Geyer/Chouteau: zeroed `left` but the median faces `right`). **THE #1 MOVE: one shared geometric `toMate` inboard-side oracle** routed through `effectiveMeasure` + `innerEdgeAssign` + the detector. Land (1)+(3) first (frame-only, no rebuild → eye + Verge cover 57%→≥95%); then (2)+(4) rebuild → detector `divided-median`→0. Chouteau's residual jaggedness is HALF A (junction flood), not B.
+
 ---
 
 ## The scoreboard — detectors (RED-until-true, the kit invariant; `scratch/correctness-detector.mjs`)
