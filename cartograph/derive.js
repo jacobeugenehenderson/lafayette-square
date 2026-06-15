@@ -3424,14 +3424,40 @@ export function deriveLayers(highways) {
   //      carriageways). Zero the inboard side outright. Authored (overlay)
   //      inboard values are preserved: inboard pavement > 0 is the operator's
   //      documented "eat into the median" control (streetProfiles.js).
-  function innerEdgeAssign(m, innerSign, authored) {
-    if (!m || !innerSign || !m.left || !m.right) return m
-    const inbKey = innerSign === +1 ? 'right' : 'left'   // measure-RIGHT = (-dz,dx) perp; see innerSideSign
+  // [survey-based divided median — recovered DIVIDED-CORRIDOR-PLAN + Cambour II, 2026-06-15]
+  // The median-facing (inboard) side of a divided carriageway, resolved GEOMETRICALLY
+  // (the side whose inward perp points toward the mate). ⛔ `innerSign`'s side-key is
+  // UNRELIABLE — it zeroed the OUTBOARD side on real pairs (Lafayette/Geyer/Chouteau,
+  // Cambour). One oracle, shared with tileGround.inboardSideOf + the detector's toMate.
+  const inboardKeyGeom = (s, mate) => {
+    const pa = s?.points, pb = mate?.points
+    if (!pa || pa.length < 2 || !pb || pb.length < 2) return s?.innerSign === +1 ? 'right' : 'left'
+    const i = Math.max(1, Math.floor(pa.length / 2))
+    const ca = pa[i], cb = pb[Math.floor(pb.length / 2)]
+    const dx = pa[i][0] - pa[i - 1][0], dz = pa[i][1] - pa[i - 1][1], L = Math.hypot(dx, dz) || 1
+    const toMate = [cb[0] - ca[0], cb[1] - ca[1]]
+    return ((-dz / L) * toMate[0] + (dx / L) * toMate[1] > 0) ? 'left' : 'right'
+  }
+  // Build the carriageway measure SYMMETRIC + centered on the chain: each side carries
+  // half the surveyed carriageway width (surveyHW/2). The MEDIAN = chainGap − surveyHW
+  // then falls out as the gap between the two inner asphalt edges (the subtractive
+  // median) — the recovered "centerlines re-registered to the inside, median = the
+  // virtual tile between them" model, frozen by the Wall (RIBBONS §1 doctrine).
+  // ⛔ surveyHW (correctedSurvey — the reliable, eye-validated datum: Lafayette 9.35 →
+  // no median, S-Jefferson 9.16 → a real strip) OVERRIDES the stale authored broadcast
+  // widths (10.56/7.90 = the whole-road width smeared onto a carriageway, impossible
+  // vs the 25.4 m ROW). The median-facing side carries no ped. The asphalt-edge handle
+  // remains the per-road override going forward (operator's eye where the survey is wrong).
+  function innerEdgeAssign(m, inbKey, surveyHW) {
+    if (!m || !m.left || !m.right) return m
     const outKey = inbKey === 'left' ? 'right' : 'left'
-    let inb = m[inbKey], out = m[outKey]
-    if (!(out?.pavementHW > 0) && inb?.pavementHW > 0) { const t = out; out = inb; inb = t }   // (1) reclaim
-    if (!authored) inb = { ...inb, pavementHW: 0, treelawn: 0, sidewalk: 0, terminal: 'none' } // (2) corridor facts
-    return { ...m, symmetric: false, [outKey]: out, [inbKey]: inb }
+    const inb = m[inbKey], out = m[outKey]
+    const hw = surveyHW > 0 ? surveyHW / 2 : Math.max(out?.pavementHW || 0, inb?.pavementHW || 0)
+    return {
+      ...m, symmetric: false,
+      [outKey]: { ...out, pavementHW: hw },
+      [inbKey]: { ...inb, pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none' },
+    }
   }
 
   // Anchor + innerSign for paired carriageways. Runtime uses these to
@@ -3446,14 +3472,21 @@ export function deriveLayers(highways) {
     B.anchor = 'inner-edge'
     B.innerSign = innerSideSign(B.points, A.points)
     B.pairId = A.skelId
-    // Normalize measures into the inner-edge model (see innerEdgeAssign).
-    // segmentMeasures are overlay-only → authored by definition (reclaim only).
+    // Survey-based symmetric carriageway → median = chainGap − surveyHW (see innerEdgeAssign).
+    // Side resolved GEOMETRICALLY (innerSign unreliable); surveyHW from the corridor survey.
     for (const st of [A, B]) {
-      st.measure = innerEdgeAssign(st.measure, st.innerSign, st._measureAuthored)
+      const mate = st === A ? B : A
+      const inbKey = inboardKeyGeom(st, mate)
+      // RAW survey, not correctedSurvey: the lamp correction (correctStreetWidths)
+      // mis-fires on a divided road's outer-edge lamps — it halved Lafayette 9.35→4.78
+      // (a 6-lane road can't be 9.56 m wide → a 6.7 m phantom median). Cambour validated
+      // the median against the raw survey pHW; that is the carriageway-width datum here.
+      const surveyHW = survey[st.name]?.pavementHalfWidth || correctedSurvey[st.name]?.pavementHalfWidth || 0
+      st.measure = innerEdgeAssign(st.measure, inbKey, surveyHW)
       if (st.segmentMeasures) {
         const sm = {}
         for (const k of Object.keys(st.segmentMeasures)) {
-          sm[k] = innerEdgeAssign(st.segmentMeasures[k], st.innerSign, true)
+          sm[k] = innerEdgeAssign(st.segmentMeasures[k], inbKey, surveyHW)
         }
         st.segmentMeasures = sm
       }

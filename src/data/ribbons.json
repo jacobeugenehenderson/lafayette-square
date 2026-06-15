@@ -1630,16 +1630,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 2.865967831554248,
+          "treelawn": 1.36,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.865967831554248,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 3.25,
-          "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -1772,16 +1772,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 2.865967831554248,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.865967831554248,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 3.35,
-          "treelawn": 3.04,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -13667,16 +13667,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 3.8734572883738037,
+          "treelawn": 6.15,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.8734572883738037,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 1.68,
-          "treelawn": 4.17,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -13896,16 +13896,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 3.8734572883738037,
+          "treelawn": 6.15,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.8734572883738037,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 1.68,
-          "treelawn": 4.17,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -14021,7 +14021,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -14122,7 +14122,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -14211,7 +14211,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -14420,7 +14420,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -14508,7 +14508,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -14601,7 +14601,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -14682,7 +14682,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -14867,7 +14867,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -15036,7 +15036,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -15124,7 +15124,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 8.534400000000002,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -15690,16 +15690,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 3.198785587857312,
+          "treelawn": 2.09,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.198785587857312,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 3.96,
-          "treelawn": 0.96,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -16012,16 +16012,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 3.198785587857312,
+          "treelawn": 2.09,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.198785587857312,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 3.96,
-          "treelawn": 0.96,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -18494,16 +18494,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 5.008616185661534,
+          "treelawn": 7.43,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.008616185661534,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 1.68,
-          "treelawn": 7.42,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -18609,16 +18609,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 5.008616185661534,
+          "treelawn": 7.43,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.008616185661534,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 1.68,
-          "treelawn": 7.42,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -18744,16 +18744,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 5.184423225942332,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 5.184423225942332,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 4.13,
-          "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -18903,13 +18903,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 5.184423225942332,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 6.71,
+          "pavementHW": 5.184423225942332,
           "treelawn": 0,
           "sidewalk": 0.9144000000000001,
           "terminal": "lawn"
@@ -19305,16 +19305,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
+          "pavementHW": 4.673822891386253,
           "treelawn": 3.5560120021971127,
           "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 4.673822891386253,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -19568,16 +19568,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
+          "pavementHW": 4.673822891386253,
           "treelawn": 3.5560120021971127,
           "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 4.673822891386253,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -19701,13 +19701,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
-          "treelawn": 3.5560120021971127,
-          "sidewalk": 4.213893953647322,
-          "terminal": "sidewalk"
+          "pavementHW": 4.673822891386253,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
+          "pavementHW": 4.673822891386253,
           "treelawn": 3.756012002197112,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
@@ -19834,16 +19834,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
+          "pavementHW": 4.673822891386253,
           "treelawn": 3.5560120021971127,
           "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 4.673822891386253,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -19957,16 +19957,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
+          "pavementHW": 4.673822891386253,
           "treelawn": 3.5560120021971127,
           "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 4.673822891386253,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -20062,16 +20062,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 10.555325676754327,
+          "pavementHW": 4.673822891386253,
           "treelawn": 3.5560120021971127,
           "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.899666800734073,
-          "treelawn": 3.756012002197112,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "pavementHW": 4.673822891386253,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -20171,16 +20171,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 3.6756399166390326,
+          "treelawn": 3.85,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.6756399166390326,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 3.96,
-          "treelawn": 1.11,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -20283,16 +20283,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 3.6756399166390326,
+          "treelawn": 3.85,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.6756399166390326,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 3.96,
-          "treelawn": 1.11,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -20917,16 +20917,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.645715395972545,
+          "pavementHW": 2.225007261376535,
           "treelawn": 1,
           "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.06749156059035,
-          "treelawn": 1,
-          "sidewalk": 3.693069658822573,
-          "terminal": "sidewalk"
+          "pavementHW": 2.225007261376535,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -21224,16 +21224,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.645715395972545,
+          "pavementHW": 2.225007261376535,
           "treelawn": 1,
           "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.06749156059035,
-          "treelawn": 1,
-          "sidewalk": 3.693069658822573,
-          "terminal": "sidewalk"
+          "pavementHW": 2.225007261376535,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -21373,16 +21373,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.645715395972545,
+          "pavementHW": 2.225007261376535,
           "treelawn": 1,
           "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.06749156059035,
-          "treelawn": 1,
-          "sidewalk": 3.693069658822573,
-          "terminal": "sidewalk"
+          "pavementHW": 2.225007261376535,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -21523,16 +21523,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.645715395972545,
+          "pavementHW": 2.225007261376535,
           "treelawn": 1,
           "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 6.06749156059035,
-          "treelawn": 1,
-          "sidewalk": 3.693069658822573,
-          "terminal": "sidewalk"
+          "pavementHW": 2.225007261376535,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -22799,16 +22799,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 5.03,
+          "pavementHW": 4.581522730981818,
           "treelawn": 3.22,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.581522730981818,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -22906,16 +22906,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
+          "pavementHW": 4.581522730981818,
           "treelawn": 2.002554538036364,
           "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 9.163045461963636,
+          "pavementHW": 4.581522730981818,
           "treelawn": 0,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -23168,16 +23168,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.716508745489069,
+          "pavementHW": 4.581522730981818,
           "treelawn": 2.002554538036364,
           "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.679089669041289,
+          "pavementHW": 4.581522730981818,
           "treelawn": 0,
-          "sidewalk": 1.524,
-          "terminal": "sidewalk"
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false
       },
@@ -23446,16 +23446,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 4.581522730981818,
+          "treelawn": 2.79,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.581522730981818,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 5.34,
-          "treelawn": 0,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -23717,16 +23717,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
+          "pavementHW": 4.581522730981818,
+          "treelawn": 6.14,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.581522730981818,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 5.03,
-          "treelawn": 0.31,
-          "sidewalk": 1.52,
-          "terminal": "sidewalk"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -23876,16 +23876,16 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 0,
-          "treelawn": 0,
-          "sidewalk": 0,
-          "terminal": "none"
-        },
-        "right": {
-          "pavementHW": 6.71,
+          "pavementHW": 4.581522730981818,
           "treelawn": 1.54,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.581522730981818,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -93836,39 +93836,6 @@
         ]
       },
       {
-        "key": "-174.880,-854.240",
-        "at": [
-          -174.88,
-          -854.24
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "south-jefferson-avenue-0",
-            "end": "end",
-            "role": "carriageway-A"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "south-jefferson-avenue-0",
-              "side": "left"
-            },
-            "b": {
-              "chain": "south-jefferson-avenue-0",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
         "key": "-175.800,-786.580",
         "at": [
           -175.8,
@@ -93968,39 +93935,6 @@
             }
           }
         ]
-      },
-      {
-        "key": "-189.360,-855.520",
-        "at": [
-          -189.36,
-          -855.52
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "south-jefferson-avenue-8",
-            "end": "start",
-            "role": "carriageway-B"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "south-jefferson-avenue-8",
-              "side": "left"
-            },
-            "b": {
-              "chain": "south-jefferson-avenue-8",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
       },
       {
         "key": "-194.600,24.700",
@@ -109941,72 +109875,6 @@
         ]
       },
       {
-        "key": "806.580,332.840",
-        "at": [
-          806.58,
-          332.84
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "lafayette-avenue-4",
-            "end": "end",
-            "role": "carriageway-B"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "lafayette-avenue-4",
-              "side": "left"
-            },
-            "b": {
-              "chain": "lafayette-avenue-4",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
-        "key": "838.010,343.620",
-        "at": [
-          838.01,
-          343.62
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "lafayette-avenue-2",
-            "end": "start",
-            "role": "carriageway-A"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "lafayette-avenue-2",
-              "side": "left"
-            },
-            "b": {
-              "chain": "lafayette-avenue-2",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
         "key": "846.200,129.100",
         "at": [
           846.2,
@@ -110073,72 +109941,6 @@
             }
           }
         ]
-      },
-      {
-        "key": "872.610,88.590",
-        "at": [
-          872.61,
-          88.59
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "south-14th-street-0",
-            "end": "start",
-            "role": "carriageway-A"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "south-14th-street-0",
-              "side": "left"
-            },
-            "b": {
-              "chain": "south-14th-street-0",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
-      },
-      {
-        "key": "882.650,90.910",
-        "at": [
-          882.65,
-          90.91
-        ],
-        "kinds": [
-          "pendant-tip"
-        ],
-        "legs": [
-          {
-            "chain": "south-14th-street-1",
-            "end": "end",
-            "role": "carriageway-B"
-          }
-        ],
-        "continuity": [
-          {
-            "a": {
-              "chain": "south-14th-street-1",
-              "side": "left"
-            },
-            "b": {
-              "chain": "south-14th-street-1",
-              "side": "right"
-            },
-            "source": "tip-wrap"
-          }
-        ],
-        "corners": {
-          "outer": []
-        }
       },
       {
         "key": "97.100,-713.500",
