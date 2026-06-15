@@ -8,7 +8,7 @@
 
 ## ⭐ START HERE — what's worked out, by topic (read this FIRST)
 
-> **The settled-state index.** Before diagnosing, deciding, or building *anything*, read this so you build on what's already worked out instead of re-deriving it (re-deriving settled doctrine is the recurring, expensive mistake). Each row = the **settled conclusion** + its **one authoritative home**. The full doc landscape is the "Documentation map" further down; this is the topic-first orientation. *(Boz/agents: the **universal first read is [`ORIENTATION.md`](ORIENTATION.md)** (root) — the plain-language mental model + settled doctrine; THEN this topic index, THEN `BOZ.md §0`. That one order, every session.)*
+> **The settled-state index.** Before diagnosing, deciding, or building *anything*, read this so you build on what's already worked out instead of re-deriving it (re-deriving settled doctrine is the recurring, expensive mistake). Each row = the **settled conclusion** + its **one authoritative home**. The full doc landscape is the "Documentation map" further down; this is the topic-first orientation. *(Agents: the **universal first read is [`ORIENTATION.md`](ORIENTATION.md)** (root) — the plain-language mental model + settled doctrine; THEN this topic index, THEN the topic canon it names. That one order, every session. `BOZ.md` is the coordinator's doc — summoned only when you're Boz, never a step in the universal path.)*
 
 **Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. Currently **stuck on skeleton + survey**; intake skipped for now. Trunk = `cartograph-looks-pass-ab`.
 
@@ -20,10 +20,10 @@
 | **Prebake** | `skeleton → pipeline.js → promote-ribbons.js → ribbons.json` (First Bake). 2D Survey renders **live** from `ribbons.json` via `buildTileGround` — the *ground bake* is irrelevant to the 2D view. | `PIPELINE.md §prebake` |
 | **Survey** | **SHAPE only — NO ped depth** (ped = Section). Smoothing/caps/anchor/corner-R/curb. live==bake. | `PIPELINE.md §survey` + `ARCHITECTURE.md §2.1` |
 | **WALL** | The freeze after Survey — chains die here; downstream is a pure consumer. *Should* be at P2 (standing debt). First diagnostic: "is this chains again?" | `PIPELINE.md §Wall` |
-| **Corners / thorns** | Cluster split into roots: **band-fold** (T-mouth `iW`-fold + thin-tile → **Option A local clamp**, Bollard) · **no-mouth-side dogleg** (through-vertex corner-treated, should be straight) · **intersection consolidation** (degenerate corners at over-noded complex IXs — highest-leverage, forensic-first). Tile corner = band *bent*, never a constructed primitive. | `HANDOFF-band-fold-fix.md` · `RIBBONS.md §3.9a` |
+| **Corners / thorns** | Tile corner = band *bent*, never a constructed primitive (`RIBBONS §1` invariants). Roots, by layer: **divided false corner** = corner-builder pairs the carriageway *stubs* not the corridor outer-edge legs → fixed by cornering the corridor as one road (LANDED `9c275ce`, `SKELETON §5e`) · **width-step dogleg** = a per-fe `pavementHW` step at a through-node, a **datum-data** defect (drop the deviating override; `SKELETON §5a/§5g`) · **thin-tile thorn (G12)** = inward offset folds past the medial axis → the **LOCAL** capacity clamp (`HANDOFF-band-fold-fix.md`, still open). ⛔ intersection-consolidation / `osm2streets` was the *wrong task* (retired 2026-06-13). | **`RIBBONS.md §1/§4`** · `SKELETON.md §5` · `HANDOFF-band-fold-fix.md` |
 | **Divided roads** | Carriageways stay 2 chains; **D1 longitudinal weld + station-overlap gate LANDED**; median = emergent geometric face (`extractFaces`), tagging is downstream. **Truman south-of-Park = separate D3/D8** (one-sided cross-streets). | `RIBBONS.md §3.1` · forensic (archived): `cartograph/_archive/TRUMAN-FORENSICS.md` |
 | **Grade separation** | LANDED — `gradeSeparated` excluded from faces, stroked as flat asphalt, own layer, renders behind local. | `PIPELINE.md §Wall` |
-| **The construction model** | **TILE model** (faces of the centerline graph; strips painted inward; round the strips). Figure-ground retired-in-place. | `NOTES.md` 2026-06-01 · `RIBBONS.md` |
+| **The construction model** | **TILE model** (`src/lib/tileGround.js`): tiles = faces of the centerline graph; the centerlines are the grout; strips painted *inward*; curb = concentric offset; corner = band bent. Figure-ground (`buildBlockGeometryV2`) is dead-in-render, archived out of the canon. | **`RIBBONS.md`** (tile model, v1.0) · `cartograph/_archive/RIBBONS-figureground-emitter-2026-06-15.md` (retired) |
 | **The derivation chain** ⭐ | **The centerline is the ROOT source.** centerline → polygon → ribbon. The polygon is BOTH the geometry source AND the **identity** source (leg / corner / treelawn-vs-sidewalk all read off it), so a rough centerline corrupts *identity*, not just shape. **Fix at the centerline first, at its source** — patching the polygon/ribbon on a rough centerline is editing a shadow. Corollary: polygon moves but centerline doesn't ⇒ wrong layer. | **`RIBBONS.md §1`** (the Derivation Chain doctrine) · **`SKELETON.md §3.5`** (the concrete frame→render flow + where the curve-fit lives) · `HANDOFF-vector-curve-construction.md` Law 1 |
 | **Section** | ped **FILL** off the frozen shape — strokes inward off the frozen curb. **Built** (per-edge FILL, bent corner, caps, revert UI); what remains is the FILL tail (perf/D6d, cap-wrap, thorns) + the Measure→Section rename, not a build. **Freeze the silhouette, author the FILL live.** | **`SECTION.md`** (deep, the SSOT) |
 | **Doc process** | three kinds (Reference/State/Diary), one-kind-per-doc, content flows downstream as it ages; pack-up/pick-up day cycle. | `BOZ.md §2/§5` |
@@ -104,8 +104,9 @@ The neighborhood is **assembled from many open + measured sources**, not one —
 
 **Start here, any session (in this order):**
 - **[`ORIENTATION.md`](ORIENTATION.md)** — the **universal first read**: what we're building · the dependency chain · the settled doctrine in plain language. The mental model everything else hangs off (and the read a tech-DD pass needs of *our* understanding).
-- **[`BOZ.md`](BOZ.md)** — coordinator onboarding, the living doc Process, and "where to start." The front door.
-- **This `README.md`** — the doc index (you're in it) + dev setup.
+- **This `README.md`** — the doc index (you're in it): §⭐ START HERE (settled-state by topic), the Documentation map, the cross-cutting feature index ("where does X live"), + dev setup.
+- → then the **topic canon** the index names.
+- *(**[`BOZ.md`](BOZ.md)** is the **coordinator's doc** — the Boz identity, the librarian Process, the day-cycle. It loads **only when you're summoned as Boz**; it is not a step in the universal path.)*
 
 ### Per-domain docs
 
@@ -144,6 +145,22 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 | **section** (ped FILL → ground bake) | **`SECTION.md`** (the FILL SSOT) · `PIPELINE.md` · `FEATURES.md` | `RIBBONS.md` (FILL geometry) |
 | **bake** (pour the slab → `public/baked/<id>/*`) | **`BAKE.md`** (the keystone — the chain) · `SLAB-CONTRACT.md` (slab format) | `ARCHITECTURE.md §3/§7` |
 | **stage** (the Look tool → `scene.json`) | **`STAGE.md`** (the keystone — SC.1–SC.7) · `SLAB-CONTRACT.md §4` | `FEATURES.md §Stage` |
+
+#### The cross-cutting feature index — where each CONSTRUCTION lives ("where is X")
+
+> The tables above are keyed by *pipeline stage*. Several **constructions cut across stages** (a loop touches skeleton + prebake + section) and live in a **dedicated topic doc or a State HANDOFF** — index them here so they're *found before re-derived*. ⚠️ **The recurring failure is hunting topic docs when the plan is a HANDOFF** — plans live in `BACKLOG.md` + the `HANDOFF-*.md` it indexes; grep BACKLOG for the feature name first, then read its HANDOFF.
+
+| Construction / feature | Home doc(s) | One-line |
+|---|---|---|
+| **Loop streets** (Benton teardrop · Waverly couplet · Park/Saint-Vincent bulbs · 18th U) | **`LOOP-STREETS.md`** · `RIBBONS §3.2` (the endpoint-weld) | median = the **emergent enclosed face**; the endpoint-weld closes near-coincident loop bodies |
+| **Dead-ends** (cul-de-sac · stub · spike) | **`HANDOFF-dead-end-typology.md`** · `OSM-FORENSICS §1` · `SECTION.md §6` (cap *fill*) | render **clean WOVEN** with their authored cap; the pendant-prune was reverted (asphalt is tile-sourced → pruning deletes the road) |
+| **Divided roads / carriageways / medians** | **`RIBBONS.md §3.1`** (the live model — inner-edge anchor LOCKED) · `SKELETON.md §2/§3` (frame topology) · `_archive/TRUMAN-FORENSICS.md` | median = emergent geometric face; two-carriageway model locked |
+| **Divided↔undivided transition** (the false corner · the "d" bulge) | **`SKELETON.md §5e`** (corner the corridor legs, not the stubs — LANDED `9c275ce`) · `HANDOFF-freeze-the-curb-in-the-first-bake.md` (the "d" bulge = the unfrozen curb) | corner the corridor outer-edge legs; the residual bulge is the unfrozen live-stroked curb |
+| **Junction / corner construction** | **`RIBBONS.md §1/§4`** (the invariants + the corner's homes) · `SKELETON.md §5` (the across-intersection organ) | corner = band bent, never a primitive; legs are clean, the bug is leg-choice or a width datum |
+| **Band-fold / thorns** (thin-tile degeneracy, G12) | **`RIBBONS.md §6.1`** · `SECTION-CAP-CLAMP-FORENSIC.md` · `HANDOFF-band-fold-fix.md` · ledger row **G12** | the LOCAL capacity clamp (engage on partial-degeneracy without over-clamping); two subclasses, both open |
+| **Polygon-first / the Data Wall** | **`POLYGON-FIRST.md`** · `PREBAKE.md §4–5` · `WALL.md` | freeze topology (✅) + the curb (open); intersection-everywhere sub-thread retired 2026-06-13 |
+| **Correctness suite** (one RED-until-true invariant per bug-class) | **`POLYGON-FIRST.md §5`** · `SIEVE-DETECTOR-FINDINGS.md` · `LOOM-TOPO-FINDINGS.md` · `THROAT-JUNCTION-FINDINGS.md` · harness `scratch/correctness-detector.mjs` | the detector is the deliverable, not the fixes; validated against the 35 curated |
+| **Frame forensics** (the evidence base) | `OSM-FORENSICS.md` + `-EVAL.md` · `OSM2STREETS-GROUNDING.md` | "OSM or us" = 100% us; the standard gets us correct |
 
 ### Cross-domain / strategic (repo root)
 

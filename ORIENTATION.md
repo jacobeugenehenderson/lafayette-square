@@ -52,7 +52,7 @@ Read it left-to-right: messy inputs get traced into a clean **frame**, frozen in
 - **One compass frame, no trick rotations.** Every coordinate sits at its true GPS position; there are no secret rotation constants hiding in the math. → `cartograph/ARCHITECTURE.md`
 
 ### A few more, settled (won't reopen)
-Divided roads stay two centerlines with the median between them · grade-separated roads (bridges/ramps) are pulled out of the block grid and drawn flat · street smoothing rides **one knob** (`STREET_SMOOTH`), never two copies kept in sync by hand · the practice scene ("toy") routes through the *same* pipeline, never a private one. *(Where each lives: `BOZ.md §0` feature index.)*
+Divided roads stay two centerlines with the median between them · grade-separated roads (bridges/ramps) are pulled out of the block grid and drawn flat · street smoothing rides **one knob** (`STREET_SMOOTH`), never two copies kept in sync by hand · the practice scene ("toy") routes through the *same* pipeline, never a private one. *(Where each lives: the `README` cross-cutting feature index.)*
 
 ---
 
@@ -62,14 +62,14 @@ The project is **four parts** plus the public runtime. Each is documented next t
 
 | If you're working on… | Go to |
 |---|---|
-| **The map kit** — streets, blocks, curbs, the bake | `cartograph/` — start `README §⭐ START HERE` (settled-state by stage) + `BOZ.md §0` (where-X-lives) |
+| **The map kit** — streets, blocks, curbs, the bake | `cartograph/` — start `README §⭐ START HERE` (settled-state by stage) + the `README` cross-cutting feature index (where-X-lives) |
 | **The public app** — place cards, residences, the courier | `ls/` — `FEATURES` / `ARCHITECTURE` / `STATUS` |
 | **The trees** — species library + placement | `arborist/` — `README` / `SPEC` |
 | **The weather** — clouds + sky rules | `meteorologist/` — `README` / `WEATHER-MODEL` |
 
-**The three navigational indexes** (when you need to *find* something, not be *oriented*):
+**The three navigational indexes** (when you need to *find* something, not be *oriented*) — all in `README.md` + `PIPELINE.md`, never `BOZ.md` (that's the coordinator's doc, summoned only when you're Boz):
 - `README.md §⭐ START HERE` — the settled conclusion **per pipeline stage**, with status.
-- `BOZ.md §0` — **where does X live**: the artifact homes + the cross-cutting feature index.
+- `README.md` Documentation map — **where does X live**: the artifact homes + the cross-cutting feature index.
 - `cartograph/PIPELINE.md` — the **execution spine**: how raw data becomes the slab, step by step.
 
 > *New doc, 2026-06-14 — the executive-orientation surface the doc-system arc called for. Reference-kind; keep it plain and lean. The doctrine here is the colloquial face of the dev canon — when the canon changes, change the one-liner, keep the pointer.*
