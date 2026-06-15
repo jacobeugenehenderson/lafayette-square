@@ -108,3 +108,96 @@ This is the classify-before-cut third question: "is this WIP toward the corner f
 | `browseAltitudeFor` inlined in Scene.jsx | duct-tape (dup) | fixed → `src/lib/browseAltitude.js` | slab-field (browse bounds) |
 | Hero camera read stale `PRESETS` not slab | duct-tape | fixed (resolve from slab) | slab-field (camera framing) |
 | `park-ave` photo symlink (dangling) | vestigial | removed | future-setting (asset roots) |
+
+---
+
+# THE MASTER MATRIX — aggregated (2026-06-15)
+
+> **Step 2 of the campaign (the Doc Officer's aggregation).** The four pathologist walks LANDED; their full per-domain tables live (tracked) in `scratch/audit-{cartograph,arborist,ls-app,docs}.md`. This section is the **cross-domain rollup + the two derived queues + the reconciled cross-cutting threads** — the synthesis the per-domain tables don't give on their own. It does **not** re-paste the ~108 rows verbatim (the scratch files are the detail of record); it aggregates them. **No cuts** — the removal freeze holds (everything `remove` is *queued*, executed in one window after v1).
+
+## Domain index (the detail of record)
+
+| Domain | Report | Rows | real / duct-tape / vestigial | keep / fix / remove | Headline |
+|---|---|---|---|---|---|
+| **Cartograph** | `scratch/audit-cartograph.md` | ~47 | 22 / 18 / 5 | 23 / 15 / 4 (+2 build) | the 33-field design block hand-kept in 3 places (clobber risk) |
+| **Arborist** | `scratch/audit-arborist.md` | ~33 | 18 / 9 / 6 | 20 / 9 / 4 (+`_attic` sweep) | heroTier classifier scores the WRONG camera target (~1200 m off) |
+| **LS App** | `scratch/audit-ls-app.md` | ~28 | 18 / 7 / 2 | 19 / 7 / 2 | pins read live data while buildings read the slab (last contract gap) |
+| **Docs** | `scratch/audit-docs.md` | 86 docs | gap-map (not cruft-classed) | EXECUTED `eb030eb` | dev-spine healthy; FEATURES bloat + closed-HANDOFF pile (both since resolved) |
+| **Sky / weather** | — | — | — | — | not walked (cloud-specialist `HANDOFF` tabled, meteorologist/BACKLOG) |
+
+*Totals (the three code domains): ~108 classified rows; ~58 keep, ~31 fix, ~10 remove-queued.*
+
+## ⓵ The deferred removal queue (cross-domain) — 🧊 FROZEN until v1
+
+> Every `Action: remove` row, gathered. **None executed** — they cut in ONE window after v1, against a stable tree, with fresh evidence each is truly dead. Supersedes the informal list in the freeze section above.
+
+| Item / Location | Domain | Why dead | Verify-before-cut |
+|---|---|---|---|
+| `POST /rebuild` → `node render.js` (`serve.js:674`) | Cartograph | `render.js` absent on disk; stub throws | drop the `rebuild()` caller (`api.js:63`) too |
+| `_saveCenterlines` alias (`store:1785`) | Cartograph | dead back-compat shim aliasing `_saveOverlay` | confirm 0 callers |
+| `GET /analyze` (`serve.js:264`) | Cartograph | hardcoded LS parcel path | "fix (LS-pathed) or remove" — confirm unused first |
+| ⛔ coupler write path (`toggleCoupler:1901` / `setSegmentMeasure:1984`) | Cartograph | V1 measure authoring, 0 callers | **CONFLICT: in the exclusion zone (couplers/measure = RIBBONS WIP). HOLD — do not queue-cut; flag Boz.** |
+| `Grove.jsx hovered` state | Arborist | set, only feeds cosmetic ternaries; no real consumer | — |
+| `Workstage.jsx` (legacy Salon) | Arborist | pre-18A surface, only via `?legacy=workstage` | remove after Brief 18B confirmed |
+| `public/baked/lafayette-square.json` | Arborist | stale 745-inst pre-classifier bake, no producer/consumer | **keep the sibling `baked/lafayette-square/` directory** — only the `.json` goes |
+| `arborist/_attic/` sweep (~8 stranded one-shots) | Arborist | completed migration/recovery scripts, no caller | separate Boz-signed sweep brief |
+| `PRESETS.browse` (`Scene.jsx:62`) | LS App | every browse path resolves from `scene.shots…browse.bounds`; unreachable | **`PRESETS.hero` STAYS** (load-bearing) |
+| `public/lsq-tokens.css` redundant load | LS App | every `--lsq-*` it sets is overridden by `theme.css` inline | CodeDesk-internal, low value |
+
+*(Doc-corpus removals are NOT here — the docs audit already EXECUTED its retirements, `eb030eb`: dead pointers repointed, 11 closed HANDOFFs retired, 5 spikes archived. Those were doc moves under the additive law, not code cuts under the freeze.)*
+
+## ⓶ The productization register (cross-domain) — feeds `plans/front-front-end-and-productization.md`
+
+> The `Productization unlock` column, aggregated by tier. **Tier 1 (future-setting) is "the first draft of what the intake/settings screen must collect"** (plan §"three documentation purposes").
+
+**Tier 1 — future-setting (the settings/intake screen):**
+- **Geography** — `lat/lon`, BBOX, projection (Cartograph knot #2: `instance.js` is SSoT but `config.js`/`AerialTiles` re-hardcode it; INSTANCE confirmed clean on the LS side) — *the first geography field.*
+- **Basemap source** — Esri/aerial tile URL, Overpass/USGS/Fontsource endpoints (Cartograph).
+- **Brand/theme** — `cartograph.css --carto-*`, `design.css --vic-*`/`--tod-*` palettes, MapPin/MapPin gradients, street-label typography.
+- **Default Look** — `DEFAULT_LOOK_ID` (hardcoded ×5, Cartograph).
+- **Per-instance contact** — Cary SMS/email/domain (already correctly in `instance.js` SSoT — the model setting).
+- **Device profile** — mobile depth-mode (LINEAR vs log) + the whole mobile render DELTA (LS App §4) + Cartograph Mobile|Desktop tab.
+- **Grove gallery** — "show as baked" toggle (Arborist).
+
+**Tier 2 — slab-field (the format):**
+- *Done channels (LS App, slab-field-done):* building geometry/material + per-building index, hero subject + keyframes/motion, browse framing/bounds, camera FOVs + eye height + heading, Gateway Arch placement, palette/materialPhysics/materialColors, ground/land-use/ribbons/lightmap, trees, street lamps, neon uniforms + tube geometry/anchors, sky tint/celestial/horizon, post-FX channels.
+- *NOT yet done (the open slab fields):* **landmark pin anchors** (pins still read live data — the last building-geometry contract gap); **`scene.clouds`** (dead in the shipping path until volumetric sky lands); **building texture-name catalog**; **zoning→category map** (per-instance); **postFx** (`DEFAULT_LAYERS`, Cartograph scaffold); **mobile profile**; **camera framing** (`shots.browse.bounds`, Cartograph knot #3); **per-Look tree bake path** (`BAKE_URL` hardwired to `default.json`, Arborist).
+
+**Tier 4 — api-route:**
+- Scene data routes (`/<scene>/{markers,measurements,centerlines,overlay,skeleton}`), Looks CRUD (`/looks…`), bake (`POST /looks/<id>/bake`) — Cartograph's scene-aware multi-instance seam.
+- LS App: none tagged; the Apps-Script single-`action` dispatch + the `MOCKS` table are the natural seed for a tier-4 contract spec.
+
+## ⓷ Blocked-on / release knots (the generative column)
+
+| Knot | Domain | What's stuck behind it / ships when untied |
+|---|---|---|
+| **33-field design block in 3 places** (knot #1) | Cartograph | blocks safe addition of ANY new Stage channel (clouds UI, mobile-delta) without re-risking the keyframe clobber → one `DESIGN_FIELDS` descriptor |
+| **heroTier scores wrong camera target** | Arborist | blocks the whole hero-LOD / impostor payoff (Azimuth B–E) → shared `resolveHeroSubject` + re-bake |
+| **`scene.clouds` dead in shipping path** | LS App | authored cloud preset invisible in production → ships when volumetric `Atmosphere` sky lands |
+| **pins read live, not slab** | LS App | last building-geometry contract gap → `useSlabBuildingIndex` resolver |
+| **mobile profile unauthored** | LS App + Cartograph | mobile-specific Look authoring → conformance Phases 4–5 (Vernier) |
+| **camera framing constants triplicated** (knot #3) | Cartograph | clean multi-instance framing → render-conformance Phase 6 |
+| **coupler read path** | Cartograph | needs overlay.json data migration off couplers before the path can drop (exclusion-zone WIP) |
+
+**Serialization:** `Scene.jsx`/`PreviewApp.jsx`/`scene.json` edits must converge with **Azimuth** (tree LOD A→B, has `scene.json` in flight) and **Vernier** (conformance owner) — the same convergence the camera arc respected.
+
+## ⓸ Cross-cutting threads — reconciled (do NOT re-design)
+
+- **CSS / design tokens (Lintel correction, stands).** `design.css` ⟷ `lsq-tokens.css` are **NOT duplicates** (zero variable overlap — two different apps' token sets; LS's app token source is already singular). The real dups: **inside CodeDesk** (`lsq-tokens.css` ⟷ `theme.css` inline) + **`cartograph.css`'s parallel `--carto-*`** set + ~10 raw hex. Work = CodeDesk-internal dedup + decide whether `cartograph.css` aligns to `design.css` or stays the tool's own. ⛔ Do not propagate the original "merge LS's two token files" mislabel.
+- **Mobile.** `src/lib/isMobile.js` is the confirmed single *sensing* source (6 importers, dup regex already removed). Open = the *policy* (which layers ship + global quality) → split across slab/`design.json` (inclusion, per-Look) + `INSTANCE.mobileQuality` (global). Cartograph owns authoring/preview-mobile; LS owns the shipped regime.
+- **The camera-framing → slab-contract class.** One root behind three domains: Cartograph knot #3 (constants triplicated), Arborist heroTier (scores the stale `[400,45,-100]` while cameras aim at the arch `[1584,45,-528]`), LS App hero camera (already fixed). The tree classifier is the one un-migrated consumer. `memory/project_camera_framing_slab_contract`.
+- **The slab contract is the spine.** LS App §1 maps every rendered thing read-vs-hardcoded; mostly honored + recently hardened. The open gaps are the Tier-2 "NOT yet done" list above. A **slab-completeness assertion** (a `whole-scene` dirty export silently mis-tiers trees) folds into conformance Phase-6 parity.
+
+## ⓹ Register health (the doc half of the "Engineering" purpose)
+- **FEATURES** — front-door elevation **LANDED** since the audit (`6b0e6a3`/`0818e93` purged the engineer back-half → ARCHITECTURE/OPERATIONS; `ORIENTATION.md` created as the plain-language bridge).
+- **OPERATIONS** — still a **stalled seed** (placeholders, "populate as T3 lands"); the operator register is effectively empty.
+- **Dev docs** — healthy (SKELETON/RIBBONS/POLYGON-FIRST/SURVEY/SECTION/WALL/INTAKE/BAKE/STAGE/PREVIEW current, honest TARGET-vs-CURRENT).
+
+## What this aggregation does NOT yet do (the remaining Show Bible steps)
+1. **The Show Bible doc itself** — the 3-purpose artifact (Marketing per-app capability sheets · Fundraising master map · Engineering reach/fix/troubleshoot; plan §"three documentation purposes"). Doesn't exist as a file; this matrix is its raw material.
+2. **Execute the removal queue** — after v1 only.
+3. **Route Tier-1/2/4 into `plans/`** — the register above is assembled; wiring it into the productization horizons is the next non-destructive step.
+4. **Re-audit the exclusion zone** — ribbons/corners/curbs/intersections were inventoried-only and HELD; with the tile model now largely landed they can be classified for real (freeze still applies to what it flags).
+5. **OPERATIONS** — build it out as T3 authoring lands.
+
+*Aggregated 2026-06-15 by the Doc Officer step. Detail of record: `scratch/audit-{cartograph,arborist,ls-app,docs}.md` (tracked). Source extractions verified against the four reports, not status claims.*
