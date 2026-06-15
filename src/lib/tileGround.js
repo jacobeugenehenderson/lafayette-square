@@ -651,14 +651,39 @@ export function tilesFromFrozen(frozen, streets) {
 // under the persisted keys. Outer pavementHW 0 with inboard > 0 is an
 // impossible road (zero-width carriageway) → the width is misfiled on the
 // median key; swap the sides back. Fires only on that impossible state.
-function effectiveMeasure(s) {
+// [HALF B, construct-the-hard-polygons] The median-facing (inboard) side of a divided
+// carriageway, resolved GEOMETRICALLY — the side whose inward (left) perp points toward
+// the mate's centerline. ⛔ The persisted `innerSign` side-key is UNRELIABLE: it zeros
+// the OUTBOARD side on real pairs (Lafayette never zeroed / whole-road width broadcast to
+// both; Geyer/Chouteau zero 'left' while the median faces 'right' — Cambour 2026-06-15).
+// This is the ONE inboard-side oracle, shared with the detector's `toMate` test
+// (scratch/correctness-detector.mjs). [HANDOFF-construct-hard-polygons.md HALF B]
+const MEDIAN_MIN = 1.0   // m — a divided pair must keep at least this much median between the two carriageways
+function inboardSideOf(s, mate) {
+  const pa = s?.points, pb = mate?.points
+  if (!pa || pa.length < 2 || !pb || pb.length < 2) return s?.innerSign === +1 ? 'right' : 'left'
+  const i = Math.max(1, Math.floor(pa.length / 2))
+  const ca = pa[i], cb = pb[Math.floor(pb.length / 2)]
+  const dx = pa[i][0] - pa[i - 1][0], dz = pa[i][1] - pa[i - 1][1], L = Math.hypot(dx, dz) || 1
+  const toMate = [cb[0] - ca[0], cb[1] - ca[1]]
+  return ((-dz / L) * toMate[0] + (dx / L) * toMate[1] > 0) ? 'left' : 'right'
+}
+function effectiveMeasure(s, streets) {
   const m = s?.measure
-  if (!m || s.anchor !== 'inner-edge' || !s.innerSign) return m
-  const inboard = s.innerSign === +1 ? 'right' : 'left'
+  if (!m || s.anchor !== 'inner-edge') return m
+  const mate = (s.pairId && streets) ? streets.find(x => x.skelId === s.pairId) : null
+  if (!mate && !s.innerSign) return m
+  const inboard = inboardSideOf(s, mate)
   const outboard = inboard === 'left' ? 'right' : 'left'
-  let inb = m[inboard] || {}, out = m[outboard] || {}
-  if (!(out.pavementHW > 0) && inb.pavementHW > 0) { const t = out; out = inb; inb = t }
-  return { ...m, [outboard]: out, [inboard]: { ...inb, treelawn: 0, sidewalk: 0 } }
+  const inb = m[inboard] || {}, out = m[outboard] || {}
+  // HALF B render CLAMP (the safety net): cap the inboard pavementHW so the median
+  // survives ≥ MEDIAN_MIN. The source datum fix (innerEdgeAssign, derive.js) sets the
+  // inboard → 0 at prebake; this clamp guards the live render until then + permanently
+  // after (a future bad datum can never re-open the needle). chainGap is on phase.
+  let inbHW = inb.pavementHW
+  const gap = s.phase?.chainGap ?? s.phase?.medianWidth
+  if (gap != null && Number.isFinite(inbHW)) inbHW = Math.min(inbHW, Math.max(0, (gap - MEDIAN_MIN) / 2))
+  return { ...m, [outboard]: out, [inboard]: { ...inb, ...(Number.isFinite(inbHW) ? { pavementHW: inbHW } : {}), treelawn: 0, sidewalk: 0 } }
 }
 // (isMedianFacing + the G3a >40%-median-facing tile heuristic retired at E2 —
 // the median is now a CONSTRUCTED polygon frozen at prebake (ribbons.medians,
@@ -1240,7 +1265,7 @@ export function buildTileGround(ribbons, opts = {}) {
 
   // Per-street effective measure (median-facing sides pre-zeroed), indexed by
   // the street index the DCEL tags each edge with.
-  const measures = streets.map(effectiveMeasure)
+  const measures = streets.map(s => effectiveMeasure(s, streets))
   const cw = curbWidth
   // Per-fe (per-block) asphalt-width overrides. blockCustoms is keyed
   // (skelId → side → segOrd) — the SAME identity the Survey/Measure drag writes.
@@ -2334,6 +2359,14 @@ export function buildTileGround(ribbons, opts = {}) {
     const isLoopInterior = runs.length === 1
     const isMedianTile = (medArea > 0.5 && medArea > 0.5 * Math.abs(signedArea(tile.ring)))
       || (isLoopInterior && medArea > 0.5)
+    // [HALF B] POSITIVE median reservation: the median is a reserved region — asphalt
+    // may NOT overrun it. Carve the (non-absorbed) median ring OUT of aFill so the median
+    // region returns to the block and paints positively via sectionPass's luRemainder ∩
+    // med — un-eatable even on a thin/overrun median (the carriageway-overrun needle fix).
+    // Runs AFTER the junction unions (mergeClip/jClip/tClip above); medianClipFor already
+    // excludes HALF-A-absorbed medians (A absorbs at the node, B reserves on the legs).
+    // No-op on a healthy median tile (aFill doesn't cover medClip). [HANDOFF-construct-hard-polygons.md HALF B]
+    if (isMedianTile && medClip.length && aFill.length) aFill = differenceRings(aFill, medClip)
     // Best-effort fill (SECTION.md §3.1): per-tile band depths are STANDARD, not
     // the old per-edge averaged measures. The treelawn band is present iff any of
     // the tile's runs gleans treelawn-Y; the sidewalk band is always ADA.
