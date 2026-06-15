@@ -8,7 +8,7 @@
 
 ## ⭐ START HERE — what's worked out, by topic (read this FIRST)
 
-> **The settled-state index.** Before diagnosing, deciding, or building *anything*, read this so you build on what's already worked out instead of re-deriving it (re-deriving settled doctrine is the recurring, expensive mistake). Each row = the **settled conclusion** + its **one authoritative home**. The full doc landscape is the "Documentation map" further down; this is the topic-first orientation. *(Boz/agents: this + `BOZ.md` are the first reads, every session.)*
+> **The settled-state index.** Before diagnosing, deciding, or building *anything*, read this so you build on what's already worked out instead of re-deriving it (re-deriving settled doctrine is the recurring, expensive mistake). Each row = the **settled conclusion** + its **one authoritative home**. The full doc landscape is the "Documentation map" further down; this is the topic-first orientation. *(Boz/agents: the **universal first read is [`ORIENTATION.md`](ORIENTATION.md)** (root) — the plain-language mental model + settled doctrine; THEN this topic index, THEN `BOZ.md §0`. That one order, every session.)*
 
 **Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. Currently **stuck on skeleton + survey**; intake skipped for now. Trunk = `cartograph-looks-pass-ab`.
 
@@ -102,7 +102,8 @@ The neighborhood is **assembled from many open + measured sources**, not one —
 >
 > **⭐ Audience note — three readers within Reference:** **FEATURES** = user/investor (*what it is, why it's special* — the brochure). **OPERATIONS** = operator (*here's the panel, here's the knob, here's when to turn it* — the manual; the engineering/"actuarial" counterpoint to FEATURES, **paired with it per domain**). **README · ARCHITECTURE · PIPELINE · RIBBONS** = developer (contract / build+rationale / execution / geometry). So **FEATURES is never subsumed** — distinct audience; engineer-internals migrate FEATURES→ARCHITECTURE, operator-knobs migrate FEATURES→OPERATIONS, keeping FEATURES the clean pitch. *(OPERATIONS is seeded in cartograph; other domains get one as they're touched.)*
 
-**Start here, any session:**
+**Start here, any session (in this order):**
+- **[`ORIENTATION.md`](ORIENTATION.md)** — the **universal first read**: what we're building · the dependency chain · the settled doctrine in plain language. The mental model everything else hangs off (and the read a tech-DD pass needs of *our* understanding).
 - **[`BOZ.md`](BOZ.md)** — coordinator onboarding, the living doc Process, and "where to start." The front door.
 - **This `README.md`** — the doc index (you're in it) + dev setup.
 
