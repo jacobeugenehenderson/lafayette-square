@@ -56,6 +56,9 @@ const NODE_SNAP          = 2.0  // m — two chain endpoints within this are the
 const CURB_BUMP_DEG      = 20   // ° — a sharp turn on iA above this between two short curve-samples = a bump (the genuine fillet arcs sit <18° per-vertex; a real corner has a LONG leg)
 const CURB_BUMP_SEG      = 3.0  // m — both adjacent iA edges shorter than this ⇒ a curve-sample bump, not an authored corner (whose legs run long)
 const THRU_WIDTH_TOL     = 0.5  // m — a canonical through-road's per-side pavementHW must agree within this (else a datum step → seam bump)
+// divided-median health (Verge, 2026-06-15 — the construct-the-hard-polygons campaign)
+const MIN_MEDIAN         = 1.0  // m — a divided pair must leave at least this much median between the two carriageways; less ⇒ the asphalt overruns and annihilates it (the needle/sliver)
+const MAX_CHAINGAP       = 60   // m — a divided pair gap wider than this is a detector mis-pair (the OSM2STREETS §3.1 ceiling)
 // curb∥chain (from litmus)
 const CURB_TOL           = 0.75 // m — max |curb-offset − halfWidth| on a straight run
 const FILLET_MARGIN      = 9    // m — exclude samples this close to a run end (corner zone) — see litmus
@@ -174,6 +177,48 @@ function throughRoadWidthReport(streets) {
       if (Math.max(...vals) - Math.min(...vals) <= THRU_WIDTH_TOL) continue
       for (const c of chains) if (c.name && !flagged[c.name]) flagged[c.name] = { rid, side, vals }
     }
+  }
+  return flagged   // name -> detail
+}
+
+// ── INVARIANT: divided-median health (the construct-the-hard-polygons campaign) ──
+// A divided carriageway strokes asphalt INWARD by its full inboard pavementHW; when
+// the two carriageways' median-facing half-widths sum PAST the chain gap, their
+// asphalt OVERRUNS and annihilates the (healthy) median ring → the rendered
+// needle/sliver (Verge, 2026-06-15: all 39 frozen median rings are healthy; the
+// render eats them — e.g. Lafayette lanes:1 stamped at the whole-road 10.56 m
+// half-width). Two FRAME-ONLY gates (no buildTileGround): (1) width-overrun — the
+// ROOT, drive to zero by the inboard-clamp + source width fix; (2) chainGap sanity.
+// The inboard side is found GEOMETRICALLY (the side whose perp faces the mate), so
+// no left/right convention is assumed. [HANDOFF-construct-hard-polygons.md HALF B]
+function dividedMedianReport(streets) {
+  const bySkel = {}; for (const s of streets) if (s.skelId) bySkel[s.skelId] = s
+  const inboardHW = (a, b) => {
+    const pa = a.points, pb = b.points
+    if (!pa?.length || !pb?.length) return 0
+    const ca = pa[Math.floor(pa.length / 2)], cb = pb[Math.floor(pb.length / 2)]
+    const i = Math.max(1, Math.floor(pa.length / 2))
+    const dx = pa[i][0] - pa[i - 1][0], dz = pa[i][1] - pa[i - 1][1], L = Math.hypot(dx, dz) || 1
+    const toMate = [cb[0] - ca[0], cb[1] - ca[1]]
+    const leftPerp = [-dz / L, dx / L]
+    const side = (leftPerp[0] * toMate[0] + leftPerp[1] * toMate[1] > 0) ? 'left' : 'right'
+    return a.measure?.[side]?.pavementHW || 0
+  }
+  const seen = new Set()
+  const flagged = {}   // name -> { gap, hwSum, median, why }
+  for (const s of streets) {
+    if (s.phase?.kind !== 'divided' || !s.pairId) continue
+    const key = [s.skelId, s.pairId].sort().join('|')
+    if (seen.has(key)) continue; seen.add(key)
+    const m = bySkel[s.pairId]; if (!m) continue
+    const gap = s.phase?.chainGap ?? s.phase?.medianWidth
+    if (gap == null) continue
+    const hwA = inboardHW(s, m), hwB = inboardHW(m, s), sum = hwA + hwB
+    const median = gap - sum
+    let why = null
+    if (gap < MIN_MEDIAN || gap > MAX_CHAINGAP) why = `chainGap ${gap.toFixed(1)}m out of [${MIN_MEDIAN},${MAX_CHAINGAP}] (mis-pair?)`
+    else if (median < MIN_MEDIAN) why = `inboard hw ${hwA.toFixed(1)}+${hwB.toFixed(1)}=${sum.toFixed(1)} vs gap ${gap.toFixed(1)} → median ${median.toFixed(1)}m (overrun → needle)`
+    if (why) for (const c of [s, m]) if (c.name && !flagged[c.name]) flagged[c.name] = { gap: +gap.toFixed(1), hwSum: +sum.toFixed(1), median: +median.toFixed(1), why }
   }
   return flagged   // name -> detail
 }
@@ -528,6 +573,8 @@ for (const s of streets) {
 const stepFlags = widthStepReport(streets)
 // through-road width consistency — per canonical roadId (the datum cause of the seam bump)
 const thruWidthFlags = throughRoadWidthReport(streets)
+// divided-median health — per divided pair (the carriageway-overrun root of the needle)
+const medianFlags = dividedMedianReport(streets)
 
 // ════════════════════════════════════════════════════════════════════════════
 // B. TILE / CURB INVARIANTS on the CURRENT frame (buildTileGround)
@@ -775,7 +822,7 @@ const allFlagged = new Set([
   ...Object.keys(turnFlags), ...Object.keys(stepFlags), ...Object.keys(thruWidthFlags),
   ...Object.keys(curbFlags), ...Object.keys(selfIntFlags), ...Object.keys(faceFlags), ...Object.keys(bumpFlags),
   ...Object.keys(loopFlags), ...Object.keys(capFlags), ...Object.keys(juncFlags),
-  ...Object.keys(ntFlags),
+  ...Object.keys(ntFlags), ...Object.keys(medianFlags),
 ])
 // the geometric-only set (Sieve v1) for the before/after comparison
 const geomFlagged = new Set([
@@ -812,6 +859,7 @@ pr2('  loop-closure',flaggedNames(loopFlags))
 pr2('  cap-tangent', flaggedNames(capFlags))
 pr2('  junction-band', flaggedNames(juncFlags))
 pr2('  name-transition', flaggedNames(ntFlags))
+pr2('  divided-median', flaggedNames(medianFlags))
 console.log('  ' + '─'.repeat(60))
 pr2('GEOMETRIC only', geomFlagged)
 pr2('+ TOPOLOGICAL',  allFlagged)
@@ -881,6 +929,18 @@ console.log(`    grid FP   = ${FP.length}/${gridNames.size} clean-grid names fla
   if (byTurn.length > 24) console.log(`      … +${byTurn.length - 24} more`)
 }
 
+// ── divided-median: the overrun worklist (the construct-the-hard-polygons HALF B
+//    scoreboard). Drive to zero by clamping the inboard pavementHW to the median edge
+//    + fixing the source width datum (HANDOFF-construct-hard-polygons.md).
+{
+  const rows = Object.entries(medianFlags)
+  console.log(`\nDIVIDED-MEDIAN — overrun/sanity worklist (HALF B scoreboard):`)
+  console.log(`    ${rows.length} divided chains flagged (median < ${MIN_MEDIAN}m after the carriageways, or gap out of sanity).`)
+  console.log(`    0 = every divided pair leaves a real median (the inboard-clamp + source width fix, generalized).`)
+  for (const [n, f] of rows.sort((a, b) => a[1].median - b[1].median).slice(0, 16))
+    console.log(`      ${n.padEnd(26)} ${f.why}`)
+}
+
 console.log('\nFLAGGED CURATED (true positives):')
 for (const n of [...curatedNames].filter(n=>allFlagged.has(n)).sort()) {
   const tags = []
@@ -891,6 +951,7 @@ for (const n of [...curatedNames].filter(n=>allFlagged.has(n)).sort()) {
   if (selfIntFlags[n])tags.push(`selfint(${selfIntFlags[n]})`)
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
   if (bumpFlags[n])   tags.push(`bump(${bumpFlags[n]}°)`)
+  if (medianFlags[n]) tags.push(`MEDIAN(${medianFlags[n].median}m)`)
   if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
   if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
   if (juncFlags[n])   tags.push(`JUNC(${juncFlags[n].slivers} slivers, worst ${juncFlags[n].worstA!=null?juncFlags[n].worstA.toFixed(1):'?'}m2)`)
@@ -909,6 +970,7 @@ for (const n of FP.sort()) {
   if (selfIntFlags[n])tags.push(`selfint(${selfIntFlags[n]})`)
   if (faceFlags[n])   tags.push(`face(${faceFlags[n]})`)
   if (bumpFlags[n])   tags.push(`bump(${bumpFlags[n]}°)`)
+  if (medianFlags[n]) tags.push(`MEDIAN(${medianFlags[n].median}m)`)
   if (loopFlags[n])   tags.push(`LOOP(${loopFlags[n].why})`)
   if (capFlags[n])    tags.push(`CAP(${capFlags[n].capEnd}/${capFlags[n].end} ${capFlags[n].dist}m)`)
   if (juncFlags[n])   tags.push(`JUNC(${juncFlags[n].slivers} slivers, worst ${juncFlags[n].worstA!=null?juncFlags[n].worstA.toFixed(1):'?'}m2)`)
