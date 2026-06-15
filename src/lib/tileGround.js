@@ -101,36 +101,6 @@ function capArc(PL, PR, bx, bz, N = 16) {
 // [D6a robust-offset, 2026-06-14 — POLYGON-FIRST §3, the iA-source fix; the
 // band-side sliver filter is forbidden, fix the pinch where it's born.]
 const SPUR_COS = Math.cos(165 * Math.PI / 180)   // in·out < this ⇒ turn > 165°
-// [curve-primitive Phase 2.2] Truncate THORN spikes on a curb ring: a vertex turning
-// sharply (> SPIKE_TURN) that has a SHORT adjacent leg (< SPIKE_LEG) is a protrusion —
-// the offset/fillet collision at a tight junction neck (Root A, T-mouth: a corner with
-// no room), NOT a real corner. A genuine corner — square OR rounded — has TWO long legs
-// (real street legs / a fillet arc), so the short-leg test never touches it. Removing the
-// vertex truncates the fold to a clean edge (the forensic's sanctioned local fix). Runs
-// post-fillet on iA, curved tiles only; the corner-roundness gate guards it.
-const SPIKE_TURN = Math.cos(50 * Math.PI / 180)  // in·out < this ⇒ turn > 50°
-const SPIKE_LEG  = 2.0                            // m — a leg shorter than this at a sharp turn = a spike, not a corner leg
-function dropSpikes(ring) {
-  let r = ring
-  for (let pass = 0; pass < 6; pass++) {
-    const n = r.length
-    if (n < 4) return r
-    const keep = new Array(n).fill(true)
-    let removed = 0
-    for (let i = 0; i < n; i++) {
-      const a = r[(i - 1 + n) % n], v = r[i], b = r[(i + 1) % n]
-      const ix = v[0] - a[0], iy = v[1] - a[1], ox = b[0] - v[0], oy = b[1] - v[1]
-      const li = Math.hypot(ix, iy), lo = Math.hypot(ox, oy)
-      if (li < 1e-6 || lo < 1e-6) continue
-      if (Math.min(li, lo) < SPIKE_LEG && (ix / li) * (ox / lo) + (iy / li) * (oy / lo) < SPIKE_TURN) { keep[i] = false; removed++ }
-    }
-    if (!removed) return r
-    const nx = r.filter((_, i) => keep[i])
-    if (nx.length < 4) return r
-    r = nx
-  }
-  return r
-}
 function dropFoldSpurs(ring) {
   let r = ring
   for (let pass = 0; pass < 8; pass++) {
@@ -2440,12 +2410,7 @@ export function buildTileGround(ribbons, opts = {}) {
       const cleaned = blockRings.map(dropFoldSpurs).filter(r => r.length >= 3)
       if (cleaned.length && bandSliverCount(filletRings(cleaned, cornerRfn, []), cw) < bandSliverCount(filletRings(blockRings, cornerRfn, []), cw)) blockRings = cleaned
     }
-    let iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
-    // [curve-primitive Phase 2.2] Truncate thorn spikes on curved tiles — the offset/fillet
-    // collision at a tight junction neck where a fitted curve meets a cross-street (the +N
-    // thorns the curve added). Short-leg discriminator protects real corners; curved tiles
-    // only (grid thorns are the separate band-fold dispatch, HANDOFF-junction-band-thorns).
-    if (tileIsCurved) iA = iA.map(dropSpikes).filter(r => r.length >= 3)
+    const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
     // Tag each achieved fillet with its corner key (the centerline NODE it
     // rounded + that node's two tile-edge legs) so the authoring handle can read
     // the true curb arc — one corner truth, no drift. CORNER-DRIVEN injective
