@@ -4,6 +4,25 @@
 
 ---
 
+## ⭐ SESSION STATUS — end of 2026-06-15 (Cubic). READ THIS FIRST. The ONE open problem: the junction-curb BUMP.
+
+**LANDED (committed on `curb-offset-draw`):**
+- **Phase 1 — centerline as bezier primitives** (`7c49349`). `skeleton.js` `curveFitSegments` emits sparse `points` + `segments[]` (`{type:'line'}` | `{type:'bezier',c1,c2}`); through-roads fit ACROSS the `continuesAs` seam as ONE curve, then **de Casteljau-split** back per chain (shared seam vertex + matched tangents → **no W18↔Dolman mid-curve split**, verified C1). `derive.js` carries SELF-CONTAINED segments into `ribbons.json` (both whitelists) + `tessellateStreet` (the ONE curve→points helper) + tessellates `points` BEFORE the IX pass (ix indexes the dense array; grid byte-identical). Store + overlays render the dense curve + sparse editor nodes. **West 18th = 4 control points `[B·line·B]`. Jacob: "centerline perfect."** Flag `CURVE_FIT` (env, OFF by default in code).
+- **Phase 2.1 — robust curve curb** (`4273ce8`). `tileIsCurved` enables the existing `dropFoldSpurs` cleanup (near-180° only) on bezier'd tiles. Curve curb self-int 5→1, Check-A neutral, grid-safe. **Jacob: "curve curb is clean now."**
+
+**ARTIFACTS:** regenerated with `CURVE_FIT=1` and **left UNCOMMITTED** (Jacob's call): `src/data/ribbons.json` + `cartograph/data/lafayette-square/clean/map.json` modified; `skeleton.json` is gitignored/regenerated (45 bezier'd chains). `shape.json` = Jacob's bake, untouched. To regenerate: `CURVE_FIT=1 node cartograph/skeleton.js && node cartograph/pipeline.js && node cartograph/promote-ribbons.js`.
+
+**THE OPEN PROBLEM — the junction-curb BUMP (the morning's task):**
+- **Symptom:** a fitted curve meeting a cross-street leaves a **bump/notch on the curb** (light-blue) while the navy is smooth; in **Section** it shows as **ADA fragments + a broken ribbon**.
+- **⭐ THE GATE (Jacob's, use THIS not a thorn proxy):** *"If the geometry was correct the system wouldn't be drawing ADA fragments."* `sectionPass` puts an ADA pad at every corner → a **mid-curve ADA fragment IS a spurious corner in the curb**. **Done = zero mid-curve ADA on 18th/Dolman.**
+- **Root (pinned):** the curb is the inward offset of the tile ring (`offsetRingVariable`, `tileGround.js:147`). At a junction neck the offset **FOLDS** — a **MULTI-vertex arc fold** (curve radius < offset depth across several gentle vertices), an in-and-out notch (e.g. tile 16 offset dips `(518.4,-411)→(519.8,-409.2)`). `filletRing` reroutes the fold into the visible bump (iA `t126` @ `[521,-407]`); `sectionPass` ramps it → the ADA fragment.
+- **Canonical case = tile 16:** runs West 18th · Dolman-1 · Hickory-0 · South-18th-3, depths **3.25–5.49 m**. (⚠️ an ADJACENT 11-run composite tile is NOT the spot — I misread it once; verify the tile from the rendered location, not a blurry screenshot.) It's centerline-independent (Jacob: "same trouble no matter how we derive the centerline") → a **junction-CONSTRUCTION** problem, the `HANDOFF-junction-band-thorns-FINDINGS.md` family.
+- **⛔ TRIED & REJECTED this session (do NOT repeat):** (1) `dropSpikes` thorn-truncation (clipper — truncates to flats, leaves 18–50° kinks that still ADA-fragment; Jacob: "no hacks"); (2) a through-node **overshoot clamp** (per-vertex X+lim bevel — **does NOT fire**, because the fold is multi-vertex, not a single-vertex miter spike). Both reverted (`2b37946`).
+- **THE REAL FIX (recommended, NOT yet built):** a proper **variable-depth, fold-free curb offset with CONSTRUCTED junction corners** (the osm2streets intersection-polygon, `POLYGON-FIRST §4.3`). The two existing methods each fail oppositely — **`offsetRingVariable` folds**; the **legacy carve** (`ring − aFill`, Clipper-based, `legacyBlock` ~`tileGround.js:2375`) is **fold-free + variable-depth-correct but d-bulges at divided transitions** (NOT at tile 16, so legacy may be clean there — an empirical test was set up but not run). Design before code; align with Jacob; the ADA gate is the acceptance test.
+- **Touch points:** `offsetRingVariable` `tileGround.js:147` · iA build ~`:2342` (the `offsetRingVariable`/`legacyBlock` choice ~`:2394`) · `sectionPass` ADA corner bid ~`:941` (`isThrough`/`!tipped && !through`) · the topological-ADA companion (gate the corner bid on the junction graph; W18 `intersections:[]` → zero mid-curve ADA by definition).
+
+---
+
 ## The one-line goal (Jacob, distilled over a long arc)
 
 A curving street must be stored as **curve primitives** — a curving stretch is **one cubic bezier (2 endpoints + 2 tangent handles = "2 points with tangents")**, a straight stretch is a **line**, real corners are sharp vertices. The skeleton stays **sparse** (the editor shows ~4 nodes for a street, not dozens), and the curb is the **concentric offset of the bezier** — smooth by construction. **Reduce, don't densify.**
