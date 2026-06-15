@@ -1784,6 +1784,12 @@ const useCartographStore = create((set, get) => ({
           type: s.highway || 'residential',
           oneway: !!s.oneway,
           points,
+          // [curve-primitive] sparse, self-contained curve segments (HANDOFF-curve-
+          // primitive-skeleton.md). `points` above is their DENSE tessellation (smooth
+          // navy + ix parity); `segments` is the sparse companion the editor draws as
+          // "few nodes (≈2 with tangents)". Undefined on straight chains → legacy node
+          // display off `points`.
+          segments: rb?.segments,
           divided: !!s.divided,
           // IX vertex indices on this chain. Indices reference `points`
           // above — must come from the SAME source the points came from

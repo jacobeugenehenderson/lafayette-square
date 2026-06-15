@@ -127,6 +127,17 @@ function naturalSegmentOrdinal(street, segI, ixSet) {
   return ixs.length
 }
 
+// [curve-primitive] The SPARSE control vertices of a chain (HANDOFF-curve-primitive-
+// skeleton.md): for a bezier'd chain the editor shows these "few nodes (≈2 with tangents)",
+// NOT the dense tessellation in `points`. Self-contained segments → [seg0.a, then each seg.b].
+function controlVertices(st) {
+  const segs = st?.segments
+  if (!segs || !segs.length) return st?.points || []
+  const out = [[segs[0].a[0], segs[0].a[1]]]
+  for (const g of segs) out.push([g.b[0], g.b[1]])
+  return out
+}
+
 // Handle pill dimensions (meters) — same grammar as Section's handles.
 const HANDLE_LONG = 5.0
 const HANDLE_SHORT = 1.2
@@ -182,7 +193,7 @@ export default function SurveyorOverlay() {
     if (!active || selectedStreet === null) return { nodePositions: [] }
     const st = centerlineData.streets[selectedStreet]
     if (!st) return { nodePositions: [] }
-    return { nodePositions: st.points }
+    return { nodePositions: controlVertices(st) }   // sparse control vertices, not the dense tessellation
   }, [active, selectedStreet, centerlineData])
 
   // Asphalt-edge handle positions for the selected street. One per side,
@@ -344,8 +355,9 @@ export default function SurveyorOverlay() {
     if (selectedStreet !== null) {
       const st = centerlineData.streets[selectedStreet]
       if (st) {
-        for (let i = 0; i < st.points.length; i++) {
-          if (Math.hypot(p.x - st.points[i][0], p.z - st.points[i][1]) < nodeThresh) {
+        const cv = controlVertices(st)   // match the SPARSE rendered nodes, not the dense tessellation
+        for (let i = 0; i < cv.length; i++) {
+          if (Math.hypot(p.x - cv[i][0], p.z - cv[i][1]) < nodeThresh) {
             selectNode(i); e.stopPropagation(); return
           }
         }
@@ -483,7 +495,11 @@ export default function SurveyorOverlay() {
         if (st.points.length < 2) return null
         const isSel = selectedCorridor?.has(i) || false
         const hw = isSel ? 0.55 : 0.4
-        const geo = polylineRibbon(smoothChain(st.points, STREET_SMOOTH, undefined, navJunctionKeys) || st.points, hw, 0.1)
+        // [curve-primitive] A bezier'd chain's `points` are already the dense curve
+        // tessellation — render them directly; smoothChain (Catmull-Rom) only applies to
+        // legacy/straight chains (it would re-curve, distorting the fitted bezier).
+        const navPts = st.segments ? st.points : (smoothChain(st.points, STREET_SMOOTH, undefined, navJunctionKeys) || st.points)
+        const geo = polylineRibbon(navPts, hw, 0.1)
         if (!geo) return null
         const mat = isSel ? selectedMat : centerlineMat
         return (

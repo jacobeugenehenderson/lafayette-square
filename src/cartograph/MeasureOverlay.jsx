@@ -323,7 +323,9 @@ export default function MeasureOverlay() {
     const dividedSeen = new Map()
     for (const { idx, st } of streetData) {
       if (!st.points || st.points.length < 2) continue
-      const sm = smoothChain(st.points, STREET_SMOOTH, undefined, navJunctionKeys) || st.points
+      // [curve-primitive] a bezier'd chain's points are already the dense curve — render
+      // directly; smoothChain (Catmull-Rom) only for legacy/straight chains (SSoT, Survey side).
+      const sm = st.segments ? st.points : (smoothChain(st.points, STREET_SMOOTH, undefined, navJunctionKeys) || st.points)
       const geo = polylineRibbon(sm, 0.35, 0)
       if (dividedNames.includes(st.name)) {
         const arr = dividedSeen.get(st.name) || []

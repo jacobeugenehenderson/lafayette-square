@@ -837,81 +837,127 @@ function rdpKeep(coords, eps = 0.5, protectedKeys = null) {
 // centerline becomes a true arc (no straight chords) so the curb's concentric offset is
 // smooth — no facets, inner and outer. GRID-SAFE BY CONSTRUCTION: a straight run (no
 // interior bend) and a sharp corner are left byte-identical — only genuine curves change.
-const CURVE_FIT        = process.env.CURVE_FIT === '1'   // OFF by default — the tessellating fit is superseded by the curve-primitive build (HANDOFF-curve-primitive-skeleton.md)
+const CURVE_FIT        = process.env.CURVE_FIT === '1'   // OFF by default — gates the curve-PRIMITIVE fit (HANDOFF-curve-primitive-skeleton.md)
 const CURVE_HARD_TURN  = 35 * Math.PI / 180   // a vertex turning ≥ this is a real corner → kept SHARP, never inside a cluster
 const CURVE_MIN_TURN   = 5  * Math.PI / 180   // a cluster must accumulate at least this total turn to be a real curve
 const CURVE_SEG_MAX    = 40                    // a segment LONGER than this is a straight LEG — kept verbatim, never bezier'd
-const CURVE_CHORD      = 1.0                   // bezier tessellation chord (m)
+const CURVE_DEV_TOL    = 2.0                   // a fitted cubic must ride within this (m) of the cluster's real points, else fall back to lines (Law 2: never pull off the road). Tune on the eye.
 // Cubic-bezier point.
 function bez(P0, P1, P2, P3, t) {
   const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t
   return { x: a * P0.x + b * P1.x + c * P2.x + d * P3.x, z: a * P0.z + b * P1.z + c * P2.z + d * P3.z }
 }
-// Fit a cubic bezier across cluster P[a..b] that LEAVES P[a] along tangent t0 and
-// ARRIVES at P[b] along tangent t3 (the bounding straight-leg directions, unit) — so the
-// curve joins the legs TANGENTIALLY (no hook). The handle length α·chord is chosen to
-// best ride the cluster's real points (sampled). Returns interior+end points (a..b],
-// EXCLUDING P[a] (caller holds it), tessellated at ~CURVE_CHORD; falls back to the raw
-// points if no bezier rides within tolerance (keeps the path — Law 2, never pull off).
-function fitClusterBezier(P, a, b, t0, t3) {
+function lerpPt(a, b, t) { return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t } }
+// Fit ONE cubic across cluster P[a..b], LEAVING P[a] along t0 and ARRIVING at P[b] along
+// t3 (unit leg/seam directions) so the curve joins its neighbours TANGENTIALLY (no hook).
+// Solves the TWO handle magnitudes (α,β) by least squares so the cubic rides the cluster's
+// interior points. Returns ABSOLUTE control handles { c1, c2, dev } — NOT tessellated
+// (this is the curve-PRIMITIVE model; tessellation happens once, downstream). `dev` = max
+// ride error; the caller falls back to lines if it exceeds CURVE_DEV_TOL (Law 2).
+function fitClusterHandles(P, a, b, t0, t3) {
   const P0 = P[a], P3 = P[b]
   const chord = Math.hypot(P3.x - P0.x, P3.z - P0.z)
-  if (!(chord > 1e-6)) { const o = []; for (let i = a + 1; i <= b; i++) o.push(P[i]); return o }
-  // best α by min of the cluster points' max deviation from the bezier (coarse sample)
-  let bestA = 0.33, bestDev = Infinity
-  for (let A = 0.15; A <= 0.65; A += 0.05) {
-    const P1 = { x: P0.x + t0.x * chord * A, z: P0.z + t0.z * chord * A }
-    const P2 = { x: P3.x - t3.x * chord * A, z: P3.z - t3.z * chord * A }
-    let dev = 0
-    for (let i = a + 1; i < b; i++) {           // each real interior point → nearest of N bezier samples
-      let m = Infinity
-      for (let s = 0; s <= 24; s++) { const q = bez(P0, P1, P2, P3, s / 24); const d = Math.hypot(P[i].x - q.x, P[i].z - q.z); if (d < m) m = d }
-      if (m > dev) dev = m
-    }
-    if (dev < bestDev) { bestDev = dev; bestA = A }
+  if (!(chord > 1e-6)) return null
+  const cum = [0]                                  // chord-length parameter for each cluster point
+  for (let i = a + 1; i <= b; i++) cum.push(cum[cum.length - 1] + Math.hypot(P[i].x - P[i - 1].x, P[i].z - P[i - 1].z))
+  const total = cum[cum.length - 1] || 1
+  // least squares: B(t) = base(t) + α·(3t(1-t)²)·t0 − β·(3t²(1-t))·t3  ⇒  2×2 normal eqs
+  let Saa = 0, Sab = 0, Sbb = 0, Sar = 0, Sbr = 0
+  for (let i = a + 1; i < b; i++) {
+    const t = cum[i - a] / total, u = 1 - t
+    const w0 = u * u * u + 3 * t * u * u, w3 = 3 * t * t * u + t * t * t
+    const rx = P[i].x - (w0 * P0.x + w3 * P3.x), rz = P[i].z - (w0 * P0.z + w3 * P3.z)
+    const Ai = 3 * t * u * u, Bi = 3 * t * t * u
+    const ax = Ai * t0.x, az = Ai * t0.z, bx = -Bi * t3.x, bz = -Bi * t3.z
+    Saa += ax * ax + az * az; Sbb += bx * bx + bz * bz; Sab += ax * bx + az * bz
+    Sar += ax * rx + az * rz; Sbr += bx * rx + bz * rz
   }
-  const P1 = { x: P0.x + t0.x * chord * bestA, z: P0.z + t0.z * chord * bestA }
-  const P2 = { x: P3.x - t3.x * chord * bestA, z: P3.z - t3.z * chord * bestA }
-  const segs = Math.max(2, Math.round(chord / CURVE_CHORD))
-  const out = []
-  for (let k = 1; k <= segs; k++) out.push(k === segs ? P3 : bez(P0, P1, P2, P3, k / segs))
-  return out
+  const det = Saa * Sbb - Sab * Sab
+  let alpha, beta
+  if (Math.abs(det) < 1e-9) { alpha = beta = chord * 0.33 }
+  else { alpha = (Sar * Sbb - Sbr * Sab) / det; beta = (Saa * Sbr - Sab * Sar) / det }
+  const lo = chord * 0.05, hi = chord * 0.9       // clamp handles sane-positive (no loops/overshoot)
+  alpha = Math.max(lo, Math.min(hi, alpha)); beta = Math.max(lo, Math.min(hi, beta))
+  const c1 = { x: P0.x + t0.x * alpha, z: P0.z + t0.z * alpha }
+  const c2 = { x: P3.x - t3.x * beta,  z: P3.z - t3.z * beta }
+  let dev = 0
+  for (let i = a + 1; i < b; i++) { let m = Infinity; for (let s = 0; s <= 24; s++) { const q = bez(P0, c1, c2, P3, s / 24); const d = Math.hypot(P[i].x - q.x, P[i].z - q.z); if (d < m) m = d } if (m > dev) dev = m }
+  return { c1, c2, dev }
 }
-// Replace each tightly-packed CURVE CLUSTER (a run of SHORT segments that turns) with a
-// tangent cubic bezier; leave STRAIGHT LEGS (long segments) and sharp corners byte-exact.
-function curveFitChain(points, pinned) {
+// Replace each tightly-packed CURVE CLUSTER (a run of SHORT segments that turns) with ONE
+// cubic-bezier SEGMENT and DROP its interior points; keep STRAIGHT LEGS and sharp corners
+// as LINE segments with their vertices. Returns { points: sparse control vertices,
+// segments: one per consecutive pair ({type:'line'} | {type:'bezier',c1,c2}) }, or
+// { points, segments: null } when the chain has no genuine curve → caller omits the field
+// → byte-identical (grid-safe). The smoothness lives in the curve, not point density.
+function curveFitSegments(points, pinned) {
   const n = points.length
-  if (n < 3) return points
+  if (n < 3) return { points, segments: null }
   const segLen = (i) => Math.hypot(points[i + 1].x - points[i].x, points[i + 1].z - points[i].z)
   const dir = (i, j) => { const dx = points[j].x - points[i].x, dz = points[j].z - points[i].z; const L = Math.hypot(dx, dz) || 1; return { x: dx / L, z: dz / L } }
   const turnAt = (i) => {
     const A = points[i - 1], V = points[i], B = points[i + 1]
     const ix = V.x - A.x, iz = V.z - A.z, ox = B.x - V.x, oz = B.z - V.z
     const li = Math.hypot(ix, iz) || 1, lo = Math.hypot(ox, oz) || 1
-    return Math.acos(Math.max(-1, Math.min(1, (ix * ox + iz * oz) / (li * lo)))) * (((ix * oz - iz * ox) >= 0) ? 1 : -1)
+    return Math.acos(Math.max(-1, Math.min(1, (ix * ox + iz * oz) / (li * lo))))
   }
-  const hardV = (i) => i === 0 || i === n - 1 || (pinned && pinned.has(vKey(points[i]))) || Math.abs(turnAt(i)) >= CURVE_HARD_TURN
-  const out = [points[0]]
-  let i = 0
+  const hardV = (i) => i === 0 || i === n - 1 || (pinned && pinned.has(vKey(points[i]))) || turnAt(i) >= CURVE_HARD_TURN
+  const outPts = [points[0]]
+  const segs = []
+  let any = false, i = 0
   while (i < n - 1) {
     // a cluster begins at i if segment i is SHORT and vertex i isn't a hard corner-break
     if (segLen(i) < CURVE_SEG_MAX && !(i > 0 && hardV(i))) {
       let j = i + 1
       while (j < n - 1 && segLen(j) < CURVE_SEG_MAX && !hardV(j)) j++   // extend over short segs, stop at a long leg / hard vertex
-      // cluster spans points[i..j]; does it actually turn?
-      let tot = 0; for (let k = i + 1; k < j; k++) tot += Math.abs(turnAt(k))
+      let tot = 0; for (let k = i + 1; k < j; k++) tot += turnAt(k)     // does the cluster actually turn?
       if (j > i + 1 && tot >= CURVE_MIN_TURN) {
-        // tangents = the leg directions bounding the cluster (so the bezier joins them tangentially)
-        const t0 = i > 0 ? dir(i - 1, i) : dir(i, i + 1)
+        const t0 = i > 0 ? dir(i - 1, i) : dir(i, i + 1)                // tangents = bounding leg directions → tangential join
         const t3 = j < n - 1 ? dir(j, j + 1) : dir(j - 1, j)
-        out.push(...fitClusterBezier(points, i, j, t0, t3))
-        i = j
-        continue
+        const fit = fitClusterHandles(points, i, j, t0, t3)
+        if (fit && fit.dev <= CURVE_DEV_TOL) {
+          outPts.push(points[j]); segs.push({ type: 'bezier', c1: fit.c1, c2: fit.c2 })
+          any = true; i = j; continue
+        }
       }
     }
-    out.push(points[i + 1]); i++   // straight leg / non-curving — keep the point verbatim
+    outPts.push(points[i + 1]); segs.push({ type: 'line' }); i++        // straight / non-curving / un-fittable → keep verbatim
   }
-  return out
+  if (!any) return { points, segments: null }
+  return { points: outPts, segments: segs }
+}
+// Reverse a segments array (and swap each bezier's handles) to match a reversed points array.
+function reverseSegments(segs) {
+  return segs.slice().reverse().map(g => g.type === 'bezier' ? { type: 'bezier', c1: g.c2, c2: g.c1 } : g)
+}
+// Split the bezier segment nearest `coord` via de Casteljau so `coord`'s on-curve point
+// becomes a shared, C1-continuous control vertex — used to cut a through-road's ONE fitted
+// curve back into its named chains at a name-transition seam without re-introducing a kink
+// (the West-18th↔Dolman mid-curve split). If the seam already sits on a clean vertex
+// (straight-region seam) it splits there with no bezier change. Mutates pts/segs; returns
+// the index in pts of the (possibly newly-inserted) seam vertex.
+function splitAtSeamCoord(pts, segs, coord) {
+  let best = -1, bd = Infinity
+  for (let k = 0; k < pts.length; k++) { const d = Math.hypot(pts[k].x - coord.x, pts[k].z - coord.z); if (d < bd) { bd = d; best = k } }
+  if (bd < 0.05) return best                                           // clean vertex (straight-region seam) → cut here
+  let segIdx = -1, segT = 0, segD = Infinity                           // else find the bezier passing closest + its parameter
+  for (let m = 0; m < segs.length; m++) {
+    if (segs[m].type !== 'bezier') continue
+    const P0 = pts[m], P3 = pts[m + 1], { c1, c2 } = segs[m]
+    let bt = 0, bdd = Infinity
+    for (let s = 0; s <= 60; s++) { const t = s / 60; const q = bez(P0, c1, c2, P3, t); const d = Math.hypot(q.x - coord.x, q.z - coord.z); if (d < bdd) { bdd = d; bt = t } }
+    let lo = Math.max(0, bt - 1 / 60), hi = Math.min(1, bt + 1 / 60)   // ternary-refine
+    for (let it = 0; it < 24; it++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; const q1 = bez(P0, c1, c2, P3, m1), q2 = bez(P0, c1, c2, P3, m2); (Math.hypot(q1.x - coord.x, q1.z - coord.z) < Math.hypot(q2.x - coord.x, q2.z - coord.z)) ? hi = m2 : lo = m1 }
+    const t = (lo + hi) / 2, q = bez(P0, c1, c2, P3, t), d = Math.hypot(q.x - coord.x, q.z - coord.z)
+    if (d < segD) { segD = d; segIdx = m; segT = t }
+  }
+  if (segIdx < 0) return best                                          // no bezier (shouldn't happen) → nearest vertex
+  const P0 = pts[segIdx], P3 = pts[segIdx + 1], { c1, c2 } = segs[segIdx], t = segT
+  const A = lerpPt(P0, c1, t), B = lerpPt(c1, c2, t), C = lerpPt(c2, P3, t)
+  const D = lerpPt(A, B, t), E = lerpPt(B, C, t), F = lerpPt(D, E, t)  // F = on-curve seam point, shared by both halves
+  pts.splice(segIdx + 1, 0, F)
+  segs.splice(segIdx, 1, { type: 'bezier', c1: A, c2: D }, { type: 'bezier', c1: E, c2: C })
+  return segIdx + 1
 }
 
 // --- Standards-seeded cross-section (OSM-FORENSICS.md Part 4) --------------
@@ -1684,19 +1730,51 @@ function main() {
   }
   for (const s of streets) totalPtsAfter += s.points.length
 
-  // Step 4b — curve-fit: a curving run becomes a smooth arc (frame placement, Law 1).
-  // Grid-safe: straights + sharp corners are kept byte-identical; only genuine curves change.
+  // Step 4b — curve-fit (the curve-PRIMITIVE model): a curving run becomes ONE cubic-bezier
+  // SEGMENT (frame placement, Law 1); straights + sharp corners stay LINE segments,
+  // byte-identical. The frame stays SPARSE — smoothness lives in the bezier, not point
+  // density. Sets s.segments (omitted when a chain has no curve → grid-safe identity).
   if (CURVE_FIT) {
     let fitChains = 0
+    // (a) THROUGH-ROADS — fit the curve across name-transition seams as ONE road, then cut
+    //     it back per named chain (de Casteljau at any seam a bezier straddles) so the two
+    //     chains SHARE the seam vertex + matched tangents → no mid-curve split (W18↔Dolman).
+    //     "A name is a label; the road is the line — fit the road, attribute names after."
+    for (const road of roads) {
+      if (road.some(e => { const s = sById.get(e.id); return s.phase && s.phase.kind === 'divided' })) continue
+      const concat = [], segStart = []                            // re-concatenate the (simplified) chains in road order
+      for (let i = 0; i < road.length; i++) {
+        const pts = orientedPts(road[i])
+        if (i === 0) { segStart.push(0); for (const p of pts) concat.push(p) }
+        else { segStart.push(concat.length - 1); for (let j = 1; j < pts.length; j++) concat.push(pts[j]) }
+      }
+      if (isClosedLoop(concat)) continue
+      const fit = curveFitSegments(concat, protRoad)              // protRoad excludes the seams → a bezier may span them
+      if (!fit.segments) continue                                 // straight through-road → identity, no segments
+      const pts = fit.points.slice(), segs = fit.segments.slice()
+      const cuts = [0]                                            // cut indices: road start, each interior seam, road end
+      for (let i = 1; i < road.length; i++) cuts.push(splitAtSeamCoord(pts, segs, concat[segStart[i]]))
+      cuts.push(pts.length - 1)                                   // (later splits only insert to the RIGHT of earlier cuts)
+      for (let i = 0; i < road.length; i++) {
+        let cp = pts.slice(cuts[i], cuts[i + 1] + 1)
+        let cs = segs.slice(cuts[i], cuts[i + 1])
+        if (road[i].flip) { cp = reverse(cp); cs = reverseSegments(cs) }
+        const s = sById.get(road[i].id)
+        s.points = cp
+        s.segments = cs.some(g => g.type === 'bezier') ? cs : undefined   // omit if all-line (identity)
+        if (s.segments) fitChains++
+      }
+    }
+    // (b) STANDALONE chains (not in any through-road) — per-chain fit.
+    //     ⛔ Skip DIVIDED carriageways (moving one desyncs its emergent median — the
+    //     two-carriageway model is LOCKED) and CLOSED LOOPS (interior is an emergent face;
+    //     loops + medians take the legacy path — both v2, vector-curve handoff "Open items").
     for (const s of streets) {
-      // ⛔ Skip DIVIDED carriageways (moving one desyncs its emergent median — the
-      // two-carriageway model is LOCKED) and CLOSED LOOPS (the interior is an emergent
-      // face; loops + medians take the legacy path — vector-curve handoff "Open items").
+      if (roadHandled.has(s.id)) continue
       if (s.phase && s.phase.kind === 'divided') continue
       if (isClosedLoop(s.points)) continue
-      const before = s.points.length
-      s.points = curveFitChain(s.points, junctionKeys)
-      if (s.points.length !== before) fitChains++
+      const fit = curveFitSegments(s.points, junctionKeys)
+      if (fit.segments) { s.points = fit.points; s.segments = fit.segments; fitChains++ }
     }
     console.log(`  curve-fit: bezier-fit ${fitChains} curving chain(s) (divided + loops excluded)`)
   }
@@ -1716,6 +1794,7 @@ function main() {
     const dominantPositive = Math.abs(dx) > Math.abs(dz) ? dx > 0 : dz > 0
     if (!dominantPositive) {
       s.points = reverse(p)
+      if (s.segments) s.segments = reverseSegments(s.segments)   // keep segments aligned to the reversed points (curve-primitive model)
       flipped++
     }
   }

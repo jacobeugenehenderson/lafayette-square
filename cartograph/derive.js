@@ -34,6 +34,30 @@ const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
 const SCALE = 100
 const ARC_TOL = 0.01 * SCALE  // 1cm — smooth arcs
 
+// [curve-primitive] The ONE place a curve becomes points (HANDOFF-curve-primitive-skeleton.md).
+// Tessellate a ribbon street's SELF-CONTAINED segments ({type, a,b[,c1,c2]}, all [x,z]) to a
+// dense polyline: line segments pass through their endpoints EXACTLY (grid-safe); bezier
+// segments subdivide at ~`spacing` m. A street without segments returns its points verbatim.
+function tessellateStreet(street, spacing = 1) {
+  const segs = street.segments
+  if (!segs || !segs.length) return street.points.map(p => [p[0], p[1]])
+  const cubic = (a, c1, c2, b, t) => {
+    const u = 1 - t, A = u * u * u, B = 3 * u * u * t, C = 3 * u * t * t, D = t * t * t
+    return [A * a[0] + B * c1[0] + C * c2[0] + D * b[0], A * a[1] + B * c1[1] + C * c2[1] + D * b[1]]
+  }
+  const out = [[segs[0].a[0], segs[0].a[1]]]
+  for (const g of segs) {
+    if (g.type === 'bezier') {
+      const L = Math.hypot(g.c1[0] - g.a[0], g.c1[1] - g.a[1]) + Math.hypot(g.c2[0] - g.c1[0], g.c2[1] - g.c1[1]) + Math.hypot(g.b[0] - g.c2[0], g.b[1] - g.c2[1])
+      const n = Math.max(2, Math.round(L / spacing))
+      for (let k = 1; k <= n; k++) out.push(k === n ? [g.b[0], g.b[1]] : cubic(g.a, g.c1, g.c2, g.b, k / n))
+    } else {
+      out.push([g.b[0], g.b[1]])
+    }
+  }
+  return out
+}
+
 function toClipper(x, z) {
   return new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))
 }
@@ -2374,9 +2398,21 @@ export function deriveLayers(highways) {
     const measure = ovAuthored
       ? ov.measure
       : computeStreetMeasure(s.name, { highway: s.highway }, s.seed)
+    // [curve-primitive] Convert the skeleton's index-referenced curve segments
+    // (HANDOFF-curve-primitive-skeleton.md) to SELF-CONTAINED ribbon segments —
+    // each carries its own endpoints + handles ([x,z]) so it survives the points
+    // TESSELLATION below (points get densified for ix/legacy byte-identity; segments
+    // stay sparse + index-free, the editor's "few nodes" + the concentric curb).
+    // Omitted when the chain has no genuine curve → grid-identical.
+    const segments = s.segments
+      ? s.segments.map((g, i) => g.type === 'bezier'
+          ? { type: 'bezier', a: [points[i][0], points[i][1]], b: [points[i + 1][0], points[i + 1][1]], c1: [g.c1.x, g.c1.z], c2: [g.c2.x, g.c2.z] }
+          : { type: 'line', a: [points[i][0], points[i][1]], b: [points[i + 1][0], points[i + 1][1]] })
+      : null
     const street = {
       name: s.name,
       points,
+      ...(segments ? { segments } : {}),
       measure,
       intersections: [],
       oneway: !!s.oneway,
@@ -2425,6 +2461,20 @@ export function deriveLayers(highways) {
     ribbonStreets.push(street)
   }
   console.log(`    ${ribbonStreets.length} ribbon chains from skeleton (${skelStreets.length} skeleton streets, ${Object.keys(overlayById).length} overlay overrides)`)
+
+  // [curve-primitive] TESSELLATE bezier'd chains' points to a dense polyline (the ONE
+  // place curves become points — HANDOFF-curve-primitive-skeleton.md). Done BEFORE the
+  // IX pass so `intersections.ix` indexes the dense array and every legacy point-consumer
+  // (extractFaces/tiles/emitChain) keeps working byte-identically; `segments` stays sparse
+  // (self-contained) for the editor + concentric curb. Lines pass through endpoints exactly
+  // and chains WITHOUT segments are untouched → grid streets byte-identical.
+  let tessChains = 0
+  for (const st of ribbonStreets) {
+    if (!st.segments) continue
+    st.points = tessellateStreet(st)
+    tessChains++
+  }
+  if (tessChains) console.log(`    [curve-primitive] tessellated ${tessChains} bezier'd chain(s) → dense points (segments kept sparse)`)
 
   // Find intersection points: use noded segments (which have shared vertices
   // at crossings) to detect where different streets' polylines meet.
@@ -3869,6 +3919,10 @@ export function deriveLayers(highways) {
       skelId: st.skelId,
       name: st.name,
       points: st.points,
+      // [curve-primitive] sparse, self-contained curve segments (HANDOFF-curve-primitive-
+      // skeleton.md) — the editor's "few nodes" + the concentric curb read these; `points`
+      // above is their dense tessellation (so ix/legacy consumers stay byte-identical).
+      ...(st.segments ? { segments: st.segments } : {}),
       measure: st.measure,
       capEnds: st.capEnds,
       anchor: st.anchor || 'center',
