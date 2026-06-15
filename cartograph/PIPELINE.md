@@ -223,7 +223,7 @@ Block fill: `ribbons.faces[]` clipped to owning `blockRounded` ring; `lu = block
 ### P14 · Materials
 `BAND_TO_LAYER` (`m3Colors.js`) maps every band/material to a layer; per-Look `design.json` colors seed each group; bake honors `layerVis`.
 - **🔧 Optimize:** —
-- **🩺 Troubleshoot:** `GrassMesh` needs polygonOffset parity with `FadeMesh` (FEATURES); Designer toggle ↔ bake group parity.
+- **🩺 Troubleshoot:** `GrassMesh` needs polygonOffset parity with `FadeMesh` (`ARCHITECTURE.md §8` layering); Designer toggle ↔ bake group parity.
 - **🗣 Explain:** "The operator paints the whole map's look — and saves variations as named Looks — without changing a single shape."
 
 ### P15 · Bake siblings (the slab)

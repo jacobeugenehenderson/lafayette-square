@@ -14,7 +14,7 @@ Last verified: 2026-05-26 (L1.3 shipped — `buildings.json` → **version 2** r
 
 **Slab version:** every manifest carries a `"version"`. Most are `1`; **`buildings.json` is `2`** (the render-scoped per-building index + footprints/roofOutlines `.bin` sections, added 2026-05-26 — see §6). A consumer MUST refuse to render manifests with a version it doesn't recognize. A producer that changes the binary layout, group semantics, or coordinate frame MUST bump this number. (Forward-compatible *additive* fields — like `roofOutlines` within v2 — do not require a bump; see §10 rule 5.)
 
-**Coordinate frame:** all slab geometry is in **compass-frame world meters**, origin at the neighborhood center, equirectangular GPS→meters projection. No rotation applied. Y is up; XZ is the ground plane. See [`cartograph/FEATURES.md` §"Frame discipline"](cartograph/FEATURES.md) for the canonical statement and the historical reasons.
+**Coordinate frame:** all slab geometry is in **compass-frame world meters**, origin at the neighborhood center, equirectangular GPS→meters projection. No rotation applied. Y is up; XZ is the ground plane. See [`cartograph/ARCHITECTURE.md` §7 "Coordinate systems"](cartograph/ARCHITECTURE.md) for the canonical statement (the compass-only rule + the 9.2° firebreak) and the historical reasons.
 
 **Look ID:** each slab is identified by a `look` string (e.g., `lafayette-square`). The look ID determines the directory under `public/baked/<look>/`. The consumer chooses which look to mount via a prop or store; the producer never picks for the consumer.
 
@@ -46,7 +46,7 @@ public/baked/
 └── <look>.json                      ← (some looks) tree placement override pointer
 ```
 
-**Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `SlabBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/FEATURES.md` §"Bake artifacts are browser-cached"](cartograph/FEATURES.md) for the historical bug.
+**Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `SlabBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) for the cache-bust rule + the historical bug.
 
 ---
 
@@ -409,7 +409,7 @@ Consumer: `src/components/InstancedTrees.jsx` (production + Stage + Preview, sam
 ## 10. Consumer contract (what LS MUST guarantee)
 
 1. **Treat the slab as immutable.** The runtime never writes under `public/baked/`. If you find yourself wanting to, the bug is upstream.
-2. **Cache-bust with `?t=<bakeLastMs>`.** Use a unique-per-bake timestamp from your store, not the bake's *duration*. See [`cartograph/FEATURES.md`](cartograph/FEATURES.md) "Bake artifacts are browser-cached".
+2. **Cache-bust with `?t=<bakeLastMs>`.** Use a unique-per-bake timestamp from your store, not the bake's *duration*. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) (cache-bust rule + historical bug).
 3. **Refuse unknown versions.** A `version` you don't recognize is a failed fetch, not a best-effort render.
 4. **Branch on `stencil: null`.** Skip the radial-fade shader cleanly; don't synthesize a fake stencil.
 5. **Don't infer schema beyond this doc.** If a field appears in a manifest that isn't listed here, ignore it. The producer is allowed to add forward-compatible fields without bumping `version`; the consumer must tolerate them.

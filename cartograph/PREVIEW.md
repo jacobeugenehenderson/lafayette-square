@@ -49,7 +49,7 @@ The bolt-ons over the production render — the only things Preview adds that LS
 | **Soft-reload** | bumps a React key to remount `CanvasContents`, forcing a fresh fetch of the baked artifacts (the cache-bust escape hatch) | `reloadKey` |
 | **Trigger bar / phoneBus** | shot picker + reload + bracketed span events (e.g. a camera transition) so a spike is attributable to a gesture | `TriggerBar.jsx`, `phoneBus.js` |
 
-The **Hero shot is the authored bounce**, replayed identically here, in Stage, and in production through the shared `src/preview/heroAnim.js` model — Preview is the QA mirror of exactly the camera the operator tuned (`STAGE.md §1`, `FEATURES.md §"The Hero shot"`).
+The **Hero shot is the authored bounce**, replayed identically here, in Stage, and in production through the shared `src/preview/heroAnim.js` model — Preview is the QA mirror of exactly the camera the operator tuned (`STAGE.md §1`, `OPERATIONS.md` Stage ▸ Hero shot).
 
 ---
 

@@ -12,7 +12,7 @@
 
 **This doc covers:** the ribbon cross-section (asphalt / curb / treelawn / sidewalk), the corner wrap at every IX, the block polygon as authoring substrate, the bake's flattening to slab, and the Designer/Stage/Preview render side that consumes them. It covers V2 — the rounded-block-clip regime that supersedes V1's per-corner-primitive stack (retired in `0286cb1`).
 
-**This doc does not cover:** survey/centerline derivation (FEATURES §"Authoring is linear-but-concurrent" + skeleton.js), Stage look authoring (FEATURES §"Stage"), Preview QA (FEATURES §"Preview"), Arborist tree atlas, Meteorologist clouds.
+**This doc does not cover:** survey/centerline derivation (`SKELETON.md` + skeleton.js), Stage look authoring (FEATURES §"The three operator environments" → Stage; knobs in OPERATIONS), Preview QA (`PREVIEW.md`), Arborist tree atlas, Meteorologist clouds.
 
 **How to use it:**
 - New session, touching ribbons or corners → read §1 (regime) + §6 (active failure modes) first. Skim §2-§5 as needed.
@@ -699,7 +699,7 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 - **span** — a contiguous run of vertices in a rounded-block ring with the same `arcMeta` corner identity. `'arc'` (corner.identity non-null) or `'straight'` (null).
 - **regime** — the arc-span band emission strategy: ASYMMETRIC / SYMMETRIC-WITH-RAMP / SYMMETRIC-NO-RAMP. Picked from flanking-meta depths.
 - **Vc** — corner Q point. The first crossing of two adjacent legs' offset polylines (polygon-edge-Q).
-- **PRI** — paint render index. Designer's per-material renderOrder slot. Different from polygonOffset and Y-lift; see FEATURES "Layering / coplanar stacking" decision table.
+- **PRI** — paint render index. Designer's per-material renderOrder slot. Different from polygonOffset and Y-lift; see `ARCHITECTURE.md §8` "Layering / coplanar stacking" decision table.
 - **D.x** — phase tags from the 2026-05-10/11 migration sequence (D.3c = polygon-walking band emission, D.5/D.6 = block-edge customs, D.7 = walker identity-driven, D.7a = customs through corners, D.7d = ped-zone coverage from frontageBands only).
 
 ---

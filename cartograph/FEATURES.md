@@ -1,61 +1,45 @@
-# Features & Roles
+# Features & Roles — the pitch
 
-Read this first if you're new (human or agent). It's the product orientation doc — what the thing is, what each part is for, and the load-bearing decisions that shape why the code looks the way it does.
+What Cartograph is and why it's special — the user/investor read (the *brochure* register). **New here?** Read **[`/ORIENTATION.md`](../ORIENTATION.md)** first — the universal first read (what we're building, how it fits together, the settled doctrine in plain language). This doc is the *what & why*; the operator's knobs are in **[OPERATIONS.md](OPERATIONS.md)**, the engineering in **[ARCHITECTURE.md](ARCHITECTURE.md)** / **[PIPELINE.md](PIPELINE.md)** / **[RIBBONS.md](RIBBONS.md)**, the geometry canon in **RIBBONS.md**.
 
-> Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; flag contradictions during work; update at session end. Goal: keep this doc pristine and current. Stale claims are worse than no claims — they actively mistrain readers. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
-
-For *file layout* and the publish-loop pattern, see `ARCHITECTURE.md` (this directory). For *dev setup*, see the root `README.md`. This doc is conceptual.
+> Part of the **cartograph quintet** (`FEATURES` / `ARCHITECTURE` / `BACKLOG` / `NOTES` / `RIBBONS`). Read at session start; flag contradictions; update at session end. Stale claims are worse than no claims — they actively mistrain readers.
 
 ---
 
 ## Architecture in one paragraph
 
-Cartograph + Stage produce a **slab** — a baked, flattened, fortified, secure, optimized artifact under `public/baked/<look>/` — that the LS app builds on top of like a building on a foundation. Authoring is slow, careful, fortification work; the slab is fast, dumb, impenetrable substrate that the LS app trusts unconditionally. **Preview** is the slab inspection environment, used during authoring to stress-test the slab (GPU profiler, phone-aspect frame, per-layer cost matrix) before handing it off. The LS app and its end-user-facing features (place cards, businesses, accounts, etc.) live downstream — outside the cartograph repo today, but bundled with the slab at deploy time.
+Cartograph + Stage produce a **slab** — a baked, flattened, fortified, secure, optimized artifact under `public/baked/<look>/` — that the LS app builds on top of like a building on a foundation. Authoring is slow, careful, fortification work; the slab is fast, dumb, impenetrable substrate the app trusts unconditionally. **Preview** is the slab inspection environment, used during authoring to stress-test the slab (GPU profiler, phone-aspect frame, per-layer cost matrix) before handing it off. The LS app and its end-user features (place cards, businesses, accounts) live downstream.
 
-The architecture is the deliverable. Lafayette Square is the v1 instance. Other neighborhoods will pour their own slabs from the same toolkit; other operators will do the pouring. Every design decision in this codebase is in service of that kit ambition.
-
-## The ribbon doctrine — see `RIBBONS.md`
-
-> ⚠️ **2026-06-01 (updated 2026-06-10) — the construction is TILES** (the map is tiles = faces of the centerline graph; strips painted inward; the corner is the inward-offset). LS runs tiles. The pedestrian cross-section (treelawn/sidewalk/corner fills/caps) is now **built** as the Section FILL off the frozen curb — **`SECTION.md` is its live SSOT** (and `SURVEY.md` for the SHAPE). The **figure-ground-era mechanism passages below** (`cornersAtIx` corner-Q, the "V2 curb" boundary-stroke, `innerEdgeMeasure`-on-`buildBlockGeometryV2`, the per-LU-probe lookup) describe the **superseded** path — kept for the trail, excised at **T4** (the figure-ground deletion). The treelawn-matches-the-abutting-LU *behaviour* (below) is still true; only its figure-ground *plumbing* is superseded. This doc's tile rewrite + the engineer-internals→ARCHITECTURE / operator-knobs→OPERATIONS migration land at T4.
-
-The ribbon + corner + curb + intersection + block geometry doctrine lives in [`RIBBONS.md`](RIBBONS.md) — the living doc that evolves every session. Cartograph quintet: FEATURES / ARCHITECTURE / BACKLOG / NOTES / **RIBBONS**.
-
-Read `RIBBONS.md` §1 (regime) + §6 (active failure modes) before any work that touches ribbons, corners, curbs, intersections, or block geometry. Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem the polygon system already answers.
-
-The doctrine moved out of FEATURES (previously inline at this section) so it could be edited daily without inflating the product-orientation doc. The old inline copy is preserved in git history at any commit before this entry was created.
-
----
+**The architecture is the deliverable. Lafayette Square is the v1 instance.** Other neighborhoods will pour their own slabs from the same toolkit; other operators will do the pouring. Every design decision is in service of that kit ambition.
 
 ## The conceptual model
 
-Cartograph is recursive. Each authoring step makes a truth-claim that the next builds on:
+Cartograph is recursive — each authoring step makes a truth-claim the next builds on:
 
 - **centerlines** (Survey) → *provable truth*: streets exist here, with this geometry
 - **+ thickness** (Measure) → *provable truth*: this street is N meters wide on each side
-- **+ dimension** (ribbons) → *emergent*: 3D cross-section per street
+- **+ dimension** (ribbons) → *emergent*: the 3D cross-section per street
 - **+ finish** (Stage) → *authored*: materials, palettes, lighting, sky
 
-**Designer is fortification, not invention.** Operator splits, defines, classifies, marks caps and couplers — against aerial-photo ground truth — but doesn't author geometry. *All* "other" data (buildings, parcels, landmarks, land use) flows through Designer for the same fortification treatment. Designer's job is to harden the layout into something the slab can be poured around.
+**Designer is fortification, not invention.** The operator splits, defines, classifies, marks caps and couplers — against aerial-photo ground truth — but doesn't author geometry. All "other" data (buildings, parcels, landmarks, land use) flows through Designer for the same fortification treatment.
 
-**The inputs are authoritative, not guessed.** That "provable truth" rests on real sources — the City of St. Louis's own assessor **parcels + right-of-way**, **operator-measured** street widths, OpenStreetMap geometry, and ML-derived **building footprints** — each fortified against max-resolution aerials. A generic 3D map extrudes a default city from one feed; this one is grounded in the *actual* municipal + survey record, which is what lets the geometry be trusted block by block. *(Full provenance: `INTAKE.md`.)*
+**The inputs are authoritative, not guessed.** That "provable truth" rests on real sources — the City of St. Louis's own assessor **parcels + right-of-way**, **operator-measured** street widths, OpenStreetMap geometry, ML-derived **building footprints** — each fortified against max-resolution aerials. A generic 3D map extrudes a default city from one feed; this one is grounded in the *actual* municipal + survey record, which is what lets the geometry be trusted block by block. *(Full provenance: `INTAKE.md`.)*
 
-**Stage is the second authoring environment** — the *theatrical* sense of "stage." Where the look gets staged: materials, palettes, lighting, sky, post-FX. The operator's design work, finalized into the slab when they hit Bake.
+**Stage is the second authoring environment** — the *theatrical* sense of "stage": where the look gets staged (materials, palettes, lighting, sky, post-FX), finalized into the slab on Bake.
 
-**The Bake is the slab pour.** It IS the publish moment for cartograph — but the artifact ships to the LS app, not directly to end users. Live deployment is downstream, bundling the slab with the LS app shell.
+**The Bake is the slab pour** — the publish moment for cartograph. The artifact ships to the LS app, not directly to end users.
 
-**The slab carries the operator's *full* authored product.** This is load-bearing. Anything an operator authors in cartograph — geometry AND optics: sky, atmosphere, post-FX, exposure, time-of-day overrides, per-shot camera, materials, neon, lamp glow, everything — must travel through the bake into `scene.json` (or another baked artifact). The deployed LS runtime trusts the slab unconditionally and cannot reach back into the cartograph authoring store. So anything authored-but-not-baked is invisible to the deployed product; the deployed product silently degrades to "operator-authored geometry + procedural-default optics," which isn't the product. The product is what the operator sees in Stage. See `BACKLOG.md` "Slab completeness" for the current gap inventory and the remediation track.
+**The slab carries the operator's *full* authored product.** This is load-bearing. Anything authored in cartograph — geometry AND optics (sky, atmosphere, post-FX, exposure, time-of-day, per-shot camera, materials, neon, lamp glow) — must travel through the bake into the slab. The deployed runtime trusts the slab unconditionally and cannot reach back into the authoring store, so **anything authored-but-not-baked is invisible** — the product silently degrades to "operator geometry + procedural-default optics," which isn't the product. The product is what the operator sees in Stage. *(Gap inventory: `BACKLOG.md` "Slab completeness.")*
 
-**Preview is the slab inspection environment.** Walks the slab with a GPU monitor strapped on — phone-aspect frame, per-layer cost readouts, post-FX toggle matrix. If the slab holds at acceptable mobile cost, it's ready for the LS app to build on.
+**Aesthetics + performance are co-equal, non-negotiable.** Aesthetics are the differentiator (what separates this from generic 3D maps); performance is equally important and invisible (mobile playback can't compromise). The whole authoring-time complexity exists to guarantee both at runtime.
 
-**Authoring is linear-but-concurrent.** Survey → Measure → Stage is the canonical flow, but mid-Stage realizations frequently bounce back to Survey/Measure. Tool-switching is cheap; map state (zoom, position) persists across tools when feasible.
-
-**Aesthetics + performance are co-equal non-negotiables.** Aesthetics are the differentiator (it's what separates the product from generic 3D maps). Performance is equally important and invisible (mobile playback can't compromise on it). The whole authoring-time complexity exists to guarantee both at runtime.
+*(The geometry doctrine — tiles, ribbons, corners, curbs — lives in `RIBBONS.md`; read it before any geometry work.)*
 
 ## Roles, plainly
 
 | Component | Role | Audience | Deployed? |
 |---|---|---|---|
-| Designer / Survey / Measure | Fortification authoring (geometry + tabular data integrity) | Operator | No |
+| Designer / Survey / Section | Fortification authoring (geometry + tabular data integrity) | Operator | No |
 | Stage | Look authoring (materials, palettes, lighting, post-FX, shots) | Operator | No |
 | **Bake** (action) | Slab pour — publishes to `public/baked/<look>/` | Operator clicks | N/A |
 | Slab (`public/baked/<look>/*`) | Substrate — flat, fortified, secure, dumb | LS app + Preview | Yes (with LS app) |
@@ -65,444 +49,36 @@ Cartograph is recursive. Each authoring step makes a truth-claim that the next b
 
 ## The three operator environments
 
-### 1. **Designer** (`/cartograph.html` in `inDesigner` mode)
+*(What each is, for the pitch. The knobs — every slider and gesture — live in `OPERATIONS.md`.)*
 
-**Owns: fortification of all spatial + tabular data, against aerial-photo ground truth.**
+### 1. Designer (`/cartograph.html`, `inDesigner` mode)
+**Owns: fortification of all spatial + tabular data against aerial-photo ground truth.** Top-down orthographic, compass-N up, paired with max-resolution georeferenced aerials (never shipped). The operator traces and corrects the street network, paths, lots, park boundary; classifies land use; integrates buildings, parcels, landmarks, lamps — splits, defines, marks caps, sets couplers, but doesn't author geometry. **Toolbar = views, Panel = tools:** the toolbar carries view controls (Aerial, Look/Toy picker, Stage); the panel's 3-part pill (Survey · Section · Design) selects the authoring tool. **Toy is the canonical pipeline test rig** — land geometry/pipeline changes in toy first, then cut LS over (doctrine: `/AGENT-VALIDATION-SURFACES.md`; a new scene routes through the *same* pipeline, never a toy-only branch). Output: `data/raw/{centerlines,measurements}.json` + `data/clean/overlay.json`.
 
-Tools: Survey (centerlines, lane counts, road metadata), Measure (street widths, sidewalk widths). Top-down orthographic view, compass-N up, paired with georeferenced aerial photos at maximum resolution (never shipped, so no size/GPU concern).
+### 2. Stage (`/cartograph.html`, shot modes)
+**Owns: look authoring — the theatrical sense.** Perspective camera, multiple "shots" each with their own framing, atmosphere, time-of-day. The operator takes Designer's fortified data as truth and dresses it in a chosen aesthetic ("Look"): lighting curves, building palettes, ribbon materials, sky gradient, post-FX, cloud presets, an authored Hero camera move. The artist spends most of their time here. Output: `public/looks/<id>/design.json` per Look.
 
-What the operator does: traces and corrects the street network, paths, lots, park boundary; classifies land use; integrates building data, parcels, landmarks, lamps. Splits, defines, marks caps, sets couplers — but doesn't author geometry. Centerlines are provable truth from OSM; Measure widths are provable truth from observation; Designer's job is to fortify and validate, not invent.
-
-Output: `cartograph/data/raw/{centerlines,measurements}.json` + `cartograph/data/clean/overlay.json`.
-
-**Toolbar = views, Panel = tools.** The Designer toolbar carries view-only controls (Aerial, Looks-or-Toy picker, Stage) — *what's the scene, what's the look, where's the aerial*. The panel's header is a 3-part pill (Survey | Measure | Design) that selects the authoring tool — *what am I doing in the panel*. "Design" is the no-tool default (formerly the absence of any pressed pill). One topic per place; the panel's content swaps based on the pill (`SurveyorPanel`, `MeasurePanel`, or the default Look-design controls).
-
-**Looks picker also surfaces Toy.** The toolbar's Looks dropdown lists the active Look options plus a "🧪 Toy scene" entry. Picking Toy switches `scene → 'toy'`; picking any Look from toy switches `scene → 'neighborhood'` and sets that Look active. One consolidated context-switcher; no separate Toy button. (Toy is conceptually a scene — a different *dataset* — not a look. The picker just consolidates context-switching UI; under the hood the scene + Look state are still separate. See `cartograph/TOY_AUTHORING_PLAN.md` and the `feedback_no_parallel_pipeline_for_scenes` memory entry for the corollary architectural rule: a new scene is routed through the existing pipeline, never via toy-only branches.)
-
-**Toy is the canonical pipeline test rig.** Land geometry / bake-pipeline / data-flow changes in toy first, then cut LS over. **Doctrine, usage, and surface guardrails all live in [`/AGENT-VALIDATION-SURFACES.md`](../AGENT-VALIDATION-SURFACES.md) at the repo root** — single source of truth; do not re-state the rules here. Adjacent: `cartograph/TOY_AUTHORING_PLAN.md` for the fixture authoring plan.
-
-**Aerial toggle:** the toolbar's `Aerial` button replaces the SVG/curated background with the high-resolution photo (max-res, never shipped, no GPU concern). When a tool (Survey or Measure) is active *and* Aerial is on, Designer enters a focus mode: ribbon bands stay visible (the measurement targets), but the land-use face fills, all decoration in `MapLayers` (buildings, landscape, lamps, water, trees, labels, parking, barriers), and `DesignerArch` step aside so the operator can align directly to the photo without visual competition. Toggle Aerial off, or exit the tool, and full decoration returns.
-
-**Corner-authoring kit (Blocks > Shape):** three layers of corner-radius authoring stack at every intersection. (1) The global `Corners` slider multiplies every IX radius for the active Look (1× = AASHTO/NACTO baseline; >1 = bubblier; 0 = fully square — useful for sponsored-event "retro" mode). (2) The `Edit corners` toggle surfaces draggable dots at every IX center (Illustrator pattern: drag radial distance from cursor to IX = new radius); a big blue dot per IX adjusts all its corners together. (3) Smaller cyan dots at each individual corner adjust that corner alone, for true corner cases. Color coding: blue/cyan = default, gold = operator-authored, white = mid-drag.
-
-(The corner kit lives in Blocks because corner radius shapes the rounded-block-clip that derives every block polygon — it's a block-shape concern even though "corners" reads as intersection geometry. Curb width sits next to it in the same Shape subsection: `curb = dilate(asphaltRounded, CURB_WIDTH) − asphaltRounded` is also a block-boundary stroke. See ARCHITECTURE §"V2 curb is the unifying boundary stroke" and the V2 memory entry.)
-
-Resolution at render time: per-corner override → per-IX override → data-table default, all × global scale. Authoring semantics: dragging the global slider *resets* both override maps on commit (operator's mental model: "scale all corners together to this × default"); dragging an IX center handle *resets* per-corner overrides at that IX only on commit (homogenizes the IX); per-corner drags just write a single override. Revert: right-click on an IX dot clears that IX's overrides (per-IX + per-corner-at-IX) without touching the rest of the map — cheap, common during authoring. The global Revert button (panel) stays for the "nuke everything + reset scale to 1" case. All three layers persist per-Look to `design.json`. Per-corner identity uses leg-pair keys (`<skelIdA>:<dirA>|<skelIdB>:<dirB>`) so authoring survives chain-edit churn at the IX. Bake reads the same maps, so Stage / Preview pick up authored corners on next re-bake.
-
-### 2. **Stage** (`/cartograph.html` in shot modes — Browse, Hero, Street)
-
-**Owns: look authoring — the theatrical sense of "stage," where the design happens.**
-
-Tools: Surfaces panel, Sky & Light panel, Post-processing panel, Look manager, per-shot camera tuning. Perspective camera; multiple "shots" each with their own framing, atmosphere, and time-of-day baseline.
-
-What the operator does: takes Designer's fortified data as truth and dresses it in a chosen aesthetic ("Look"). Lighting curves, building palettes, ribbon materials, sky gradient, post-FX, cloud presets. The artist spends most of their time here.
-
-Output: `public/looks/<id>/design.json` per Look.
-
-**Sky Layer Gain — "how dark is the night sky" (Sky & Light panel, added 2026-06-07).** A single slider that dims (or lifts) *just the sky dome* on a time-of-day curve — bands, sun/moon glow, and horizon scatter together. It is exposure scoped to the sky layer: the global Exposure knob darkens the whole frame (buildings, ground, sky), whereas Sky Layer Gain touches only the dome, so the operator can take deep night genuinely dark while street lamps and lit windows stay where they were authored. Stars are not affected (a darker dome makes them read better). The LS Look authors it ~1.0 by day, dipping to ~0.2 at Night; it shows live in Stage and bakes through to Preview and production. It replaced a cluster of hidden "never let night go black" hardwires — including a bloom auto-boost at night, now removed, so night leans on lamp glow (cheaper, and the look the artist actually wants) instead of a global bloom wash. Authored per-Look like every other channel; default 1.0 leaves any unauthored Look unchanged.
-
-**Stage drag semantics:** Browse uses LEFT-drag = pan, ⌥/Alt+LEFT-drag (or RIGHT-drag) = orbit (3D-easter-egg). `mouseButtons` is passed as a prop to OrbitControls (not mutated imperatively in a useEffect) to avoid ref-timing races where drei's defaults would clobber ours. Hero/Street keep their rotate-by-default (LEFT=ROTATE, ⌥+LEFT=PAN) since they're 3D-inspection shots. Designer's "Stage →" always lands on Browse so the camera transition is continuous with Designer's overhead view.
-
-**Two bake-related buttons; both always run, neither gates on `bakeStale`:**
-
-- **Designer's "Stage →"** = navigate to the operator's last Stage shot *immediately*, then bake async in the background. The Stage view briefly shows the previous slab and refreshes via the `bakeLastMs` cache-bust when the bake finishes. Single click for "I edited, take me to the baked view." Fire-and-forget rather than awaiting — keeps the operator out of a multi-second disabled-button limbo.
-- **Stage's "↻"** = bake in place. Single click for "I'm already in Stage, re-pour without moving me." Stays in current shot. Spins while baking. Small orange dot lights when authoring edits exist since last bake (passive indicator only — never disables the action).
-
-Both accept ⌥-click to force a full rebuild (bypasses the server's dirty-check; the cache-bust escape hatch).
-
-The **Browse shot** is the public-facing overhead view. Its `up` vector is the cosmetic screen-orientation knob (the "Heading" slider in the Browse panel) — purely a viewing preference, not a data transform. All spatial data is in compass frame; this just decides which way the screen is oriented relative to compass-N.
-
-**The Hero shot is an authored camera *bounce*** (timeline-honesty + two-anchor rework `3ebf510`, 2026-05-26). The camera sweeps a Catmull-Rom path out-and-back — Start → (mids) → End → back — looking at the resolved hero subject every frame (`heroSubject` → centroid at runtime; the keyframes carry only camera `position` + `fov`, never a per-keyframe target). **Start and End are permanent anchors** — the two swing extremes that define the bounce — and the operator inserts optional **Mid** keyframes between them; only mids are deletable, so the path can never drop below the two anchors (no degenerate single-point "bounce"). The timeline is **path-honest**: the playhead position *is* the path position `s ∈ [0,1]`, so scrubbing, the dots, the camera, and the playhead all share one coordinate system — during playback the playhead visibly bounces out-and-back glued to the camera (`HeroPreview`'s `useFrame` publishes the post-wave path position, not the raw period phase — the bug that previously made the playhead lie). One capture button is keyed off the playhead: in a gap → **Add Keyframe** (inserts a mid at the playhead, capturing the live camera); parked on a dot → **Update Keyframe**, which is *match-aware* — it reads a steady "✓ Keyframe set" while the live camera still matches the stored pose (persistent proof the capture stuck) and only lights up "Update Keyframe" once the operator actually moves the camera, never reverting on a timer. FOV is a per-keyframe animated channel (captured + interpolated alongside position); an `easing` knob (`heroMotion.easing`) shapes how the sweep eases through its extremes (there is no loop mode — the motion is always a bounce). Persists to `design.json` (`heroKeyframes`, `heroMotion`), bakes into `scene.json`, and is replayed identically by Stage (`HeroPreview`), Preview (`ShotCamera`), and production (`Scene.jsx` CameraRig) through the shared `src/preview/heroAnim.js` motion model.
-
-### 3. **Preview** (`/preview.html`)
-
-> Keystone Reference: **`PREVIEW.md`** (the model + how to read the cost numbers). This section is the user/investor re-voicing.
-
-**Owns: slab inspection — GPU profiling + phone-mode QA + post-bake verification.**
-
-Reads the same baked artifacts the LS app will read, *plus* a substantial QA toolkit:
-
-- **GPU profiler** — per-layer cost tracking (ms / draw calls / triangles), strip chart, GPU panel, scope-to-span events for bracketed measurement.
-- **Phone-mode** — renders the scene inside `<PhoneFrame>` at a target scale, simulating deployed mobile aspect. Toggle persists via localStorage.
-- **Layer toggle matrix** — scene layers (celestial, clouds, ground, buildings, trees, park, lights, arch) and post-FX (ao, bloom, aerial, grade, grain), each with live cost readout.
-- **Time-of-day control** (DawnTimeline).
-- **Soft-reload** — bumps a key to remount `CanvasContents`, forcing re-fetch of bake artifacts.
-- **Trigger bar** — shot picker + reload + phoneBus span events.
-
-Preview is operator-facing, never deployed. If a layer's cost is unexpectedly high in Preview, the GPU panel surfaces it before mobile users feel it. If something looks right in Stage but wrong in Preview, the bake didn't propagate. Preview is the proving ground before slab handoff.
-
----
+### 3. Preview (`/preview.html`)
+**Owns: slab inspection — GPU profiling + phone-mode QA + post-bake verification.** Renders exactly what production renders, plus a QA toolkit (per-layer cost, phone frame, layer-toggle matrix, TOD scrub). If a layer's cost is high here, it surfaces before mobile users feel it; if something looks right in Stage but wrong in Preview, the bake didn't propagate. The proving ground before slab handoff. Model: `PREVIEW.md`.
 
 ## Helper apps
 
-Each authors a discrete content type, ships one canonical artifact, knows nothing about the runtime. See `ARCHITECTURE.md §1` for the publish-loop pattern.
+Each authors a discrete content type, ships one canonical artifact, knows nothing about the runtime (`ARCHITECTURE.md §1`).
 
-- **Arborist** (`/arborist.html`) — tree species library, per-species workstage, and **Grove** (visual roster + curation gallery). Operator browses, rates, and curates GLB tree variants. Bakes `public/baked/<look>.json` (placements: `{x, z, url, scale, rotY, species, variantId, ...}`) consumed by `InstancedTrees`. Placements come from `src/data/park_trees.json` (Python ETL, point-in-polygon-filtered against the real park boundary). Placements are universal across Looks; **roster + atlas are per-Look** (`public/looks/<id>/design.json#/trees` + `public/baked/<id>/trees-atlas-*` + per-Look UV-rewritten GLBs under `public/baked/<id>/trees/`).
-  - **Grove is the per-Look roster surface.** Two scopes: "In Look" (the active Look's roster — click a tile to remove) and "All Rated" (every quality≥2 variant — click to add or remove from the active Look). Roster changes POST to `/api/cartograph/looks/<id>/trees` and fire `/api/arborist/atlas/bake?look=<id>` fire-and-forget so the per-Look atlas + rewritten GLBs are regenerated automatically. Stage/Preview pick up the new artifacts on next reload (cache-busted via `?v=<atlas.generatedAt>` in InstancedTrees). No design.json hand-editing, no manual `bake-look.js` invocation in the normal flow.
-  - **Procedural authoring in-Arborist + skeleton-first redo (v1.5, Phases A + D + B-core + B.1.a + C shipped 2026-05-15 / 2026-05-16).** Six phases shipped: A (`2323a78` dice+adopt UI), D (`06f903e` SCA + tropism skeletons), B-core (`0b2f6cb` photo-PBR bark + retint shader infra), B.1.a (`6c5c957` UV-scale wiring + B-core atlasKind lookup fix; iterated through polish reverts to `54355a4`), C (this commit — geometric polish: 12-segment cylinders, non-linear taper in makeBranch, per-vertex radial noise, flange rings at branching joints, root flare + buttress fins). **Phase C landing means the photo-PBR bark from B wraps onto a non-trivial substrate** — the smooth-cylinder warp artifact that motivated the 2026-05-16 EOD skeleton-first pivot is broken up structurally, not via shader work. **Phase F scope reframed:** the parametric leaf-cluster compositor (`arborist/leafCluster.js`) is dropped; for 5 heroes, hand-authoring cluster atlases in Photoshop produces better species character at less engineering cost. F shrinks to "import authored PSD cluster PNGs, atlas + tint + sparse-occupancy at runtime." **Phase F.5 (parametric leaf editor) killed** — PS-authoring obviates the parametric path. **Phase E priority-dropped** (conifer is 7% of inventory). Same `generateTreeMesh()` params contract throughout; pipeline (publish-glb / bake-look / bake-trees) unmodified. **Phase A surface:** open `/arborist.html` → Procedural button → species dropdown → per-slot 🎲 dice (live preview, no file write) → ✓ adopt (persists seed to `arborist/state/<species>/seedlings.json`, gitignored) → Re-publish species (rebakes through publish-glb + fires per-Look atlas auto-bake). **Phase D surface:** the 4 SCA species' slot cards expose Envelope (profile dropdown of 5 named revolution curves + width/height/asymmetry/Y-offset sliders) and Tropism XYZ panels; silhouettes diverge correctly (weeping curtains 3m below trunk via envelope `offsetYFrac=-0.6` + Y-tropism=-0.4; columnar narrows to W/H≈0.29; broadleaf rounded-oval; ornamental broad-low). **Phase B-core + B.1.a surface:** every tree material (vendor + procedural) carries `extras.bark` with photo-PBR texture references + `uvScale` + `tintBase` + `tintJitterRange` + `roughnessOverride`; the shared `treeAtlasMaterial.js` shader reads them via per-draw uniforms set by `applyBarkUniforms`; per-vertex `aBark` attribute gates retint to bark fragments only. Conifer still routes through the v1 free-growth path until Phase E (priority-dropped). **Remaining v1.5 work:** F (reframed) → G.1–G.5. See `cartograph/BACKLOG.md` "Trees — Procedural v1.5" + `cartograph/NOTES.md` 2026-05-15 maxi-brief (status header reflects 2026-05-16 EOD reality).
-  - **Procedural-variant fallback (v1, shipped 2026-05-14 commit `dbbd1ed`).** Arborist publishes a *generated* species family — `procedural_broadleaf`, `procedural_conifer`, `procedural_ornamental`, `procedural_columnar`, `procedural_weeping` — alongside scanned/vendor GLBs. A pure parametric generator function (`arborist/generate-procedural.js`, resurrected from the pre-`43c4aa3` `ParkTrees` branching algorithm) emits N variants per morphology as a multi-node source GLB under `/tmp`; shells out to the existing `publish-glb.js` for variant-split + LODs + manifest; sets `qualityOverride: 2` (Fill tier) on every variant so `build-index.js` ships them; appends entries to the active Look's `design.json#/trees`. `bake-look.js` then atlas-packs them like any other species. InstancedTrees substitutes from the same-category roster pool exactly as it does for hand-authored species — **the runtime sees no fork**. SpeedTree GLBs will replace these by raising quality ratings on roster entries — no code change at swap time. The slab carries procedurals exactly the same way it will carry SpeedTrees. Bark texture is per-species solid (vertex colors don't survive bake-look's atlas rewrite); leaves use the existing `public/textures/leaves/<morph>.png` library. The generator is parameter-first now (CLI today); the eventual procedural-authoring mode in the Arborist app is a UI surface bound to the same `generateTreeMesh({preset, seed, dbh, canopyR, canopyH, branching, leafMorph})` signature with no algorithm change — see `BACKLOG.md`.
-- **Meteorologist** (`/meteorologist.html`) — clouds & weather rules. Standalone app shell (mirrors Arborist's shape) at `/meteorologist.html`; consumes Stage's published `scene.json` for the sky envelope rather than reproducing Stage's stack. Publishes `public/clouds/{presets,almanac}.json`. Stage's Sky & Light card has a Clouds TodChannel row + "launch meteorologist →" deep-link. (Standalone-shell reversal landed 2026-05-19; see `meteorologist/NOTES.md`.)
+- **Arborist** (`/arborist.html`) — tree species library, per-species workstage, and **Grove** (per-Look roster + curation gallery). Bakes tree placements + per-Look atlases consumed by `InstancedTrees`. *(Build history + procedural-tree phases → `arborist/NOTES.md`.)*
+- **Meteorologist** (`/meteorologist.html`) — clouds & weather rules; authoring UI lives inside Stage. Publishes `public/clouds/{presets,almanac}.json`. *(`meteorologist/` docs.)*
 
----
+## Where the engineering lives
 
-## Frame discipline
-
-**All spatial data is in compass frame** (the unrotated output of equirectangular GPS→meters projection about the neighborhood center). One frame, every dataset, period.
-
-There is no "park frame," no "world frame," no rotation constants in the math layer. If a render path imports a `PARK_GRID_ROTATION`-shaped constant, something is wrong.
-
-The actual park grid is rotated ~9.2° from compass-N because of the city street layout — that rotation is *real-world geometry* baked into the data (every coord is at its true GPS-projected position). It is **not** a coordinate-system choice.
-
-The rule: **no rotation constants in the math/data layer.** Local visual or geometric scoping inside a single component or shader is fine. The only legitimate uses of a 9.2° (or related) constant in the codebase are:
-
-1. `LafayettePark.parkAxisToCompass(px, pz)` — a one-helper authoring shortcut for placing the four fence corners as axis-aligned `±a` and rotating them into their actual compass-frame positions. Could be replaced with hardcoded GPS lookups.
-2. The Browse shot's `up` vector (Heading slider) — cosmetic screen orientation only.
-
-If you find any *other* `9.2`, `-9.2`, `0.1605` (rad), `Math.PI/19.57`, or `GRID_ROTATION`-shaped constant in the math/data layer (bake scripts, store actions, runtime mounts, geometry builders, shaders), it is almost certainly vestigial from the de-parking episode and should be removed, not preserved. **This number has cost many hours; precision in this list is the firebreak.**
-
-History: there was a long "de-parking" episode in May 2026 that tried to introduce a parallel "world frame" duality. It was misdiagnosed; the screen-orientation desire was a camera concern, not a data concern. The duality is removed. If you find yourself reaching for a second frame, stop and read the `project_compass_only_camera_heading` memory entry.
-
----
-
-## Data flow & the bake chain
-
-```
-[Authoring inputs]
-cartograph/data/<scene>/raw/
-  ├── osm.json                  ← node cartograph/fetch.js (one-time)
-  ├── elevation.tif             ← USGS 3DEP 1°×1° 1/3 arc-second GeoTIFF, .gitignored
-  │                                (~453 MB; acquire via the staged-products S3
-  │                                 mirror, NOT EPQS — see memory
-  │                                 `reference_usgs_dem_s3_mirror`)
-  ├── centerlines.json          ← legacy file (name-keyed); Survey wrote here historically
-  └── measurements.json         ← Measure tool writes
-cartograph/data/<scene>/clean/
-  ├── skeleton.json             ← node cartograph/skeleton.js (derived from osm.json)
-  └── overlay.json              ← Survey + Measure tools write (skelId-keyed operator-intent: measure, segmentMeasures, capStart/End, anchor, couplers)
-cartograph/data/<scene>/neighborhood_boundary.json
-                                ← canonical extent (boundary polygon, center,
-                                  radius, streetFade). Single source of truth
-                                  for "where is LS"; consumed by LS_STENCIL
-                                  and bake-terrain's clip bbox.
-
-scripts/raw/
-  └── lafayette_park_trees.json ← city forestry data
-
-src/data/  (some hand-authored, some Python ETL output, some kit-level bakes)
-  ├── park_trees.json    ← scripts/12-process-park-trees.py
-  ├── park_water.json    ← hand-authored (initial commit, OSM-derived)
-  ├── park_paths.json    ← scripts/14-process-park-paths.py
-  ├── street_lamps.json  ← scripts/13-fetch-street-lamps.py
-  ├── terrain.json       ← bake-terrain.js (metadata only: width, height,
-  │                        bounds, baseElev)
-  └── terrain.bin        ← bake-terrain.js (Float32Array heightmap, row-major,
-                           raw; paired with terrain.json. Kit's standard
-                           bulk-numeric pattern — see memory
-                           `kit-bin-pattern-for-bulk-numerics`)
-
-public/looks/<id>/design.json   ← Stage panels write per-Look styling
-
-[Pipeline]
-node cartograph/pipeline.js     → cartograph/data/clean/map.json
-node cartograph/promote-ribbons.js → src/data/ribbons.json
-node cartograph/bake-terrain.js → src/data/terrain.{json,bin}
-                                  (one-shot, ~0.2s. Re-run when
-                                   neighborhood_boundary.json or the raw .tif
-                                   changes. Clips the GeoTIFF to LS_STENCIL's
-                                   bbox + 5 m/sample bilinear resample +
-                                   local-min = 0 normalization. Pre-2026-05-13
-                                   used EPQS per-point fetch, ~45 min for the
-                                   same coverage.)
-
-[Bakes — POST /api/cartograph/looks/<id>/bake]
-  pipeline.js                              ← only if raw inputs are dirty
-  promote-ribbons.js                       ← only if map.json is dirty
-  bake-ground.js                 → public/baked/<id>/ground.{json,bin}
-                                   (reads ribbons.json + map.json + design.json
-                                    so every Designer toggle becomes a baked
-                                    group with the Look's authored color)
-  bake-buildings.js              → public/baked/<id>/buildings.{json,bin}
-                                   (reads src/data/terrain.{json,bin} pair via
-                                    fs to anchor building Y to local elevation)
-  bake-lamps.js                  → public/baked/<id>/lamps.json
-  bake-scene.js                  → public/baked/<id>/scene.json
-                                   (per-Look authoring snapshot: sky / lighting /
-                                    post-FX / shots / hero / arch / horizon /
-                                    browseHeading / materials — every authored
-                                    channel rides the slab as of SC.7)
-  arborist/bake-trees.js         → public/baked/default.json
-  bake-ground-ao.js              → public/baked/<id>/ground.lightmap.png
-
-[Runtime]
-Stage / Preview / production: read public/baked/<id>/* + public/baked/default.json
-                              + (live) src/data/{park_trees,park_water,park_paths,street_lamps,ribbons}.json
-```
-
-The bake button (Stage's "Bake" affordance) chains all of this and is incremental — each step is skipped when its outputs are newer than its declared inputs. `?force=1` on the URL forces a full rebuild.
-
----
-
-## Map state preservation: Designer ↔ Browse
-
-Designer and Browse share the same overhead view; the operator's pan/zoom carries across. Both modes write to `localStorage[cartograph-camera]` every frame (Designer as ortho `{x, z, zoom}`; Browse as perspective `{x, z, altitude→zoom}` via FOV math). On any shot transition into Designer or Browse, the camera reads the shared key and lands the operator where they last were. Hero and Street are independent shots (their own SHOTS-table positions), not part of the overhead-share.
-
-Resolved 2026-05-04. If a round-trip (Designer→Browse→Hero→Designer) starts losing state again, check `useFrame` in CameraRig — the persist hook needs to fire for both `'designer'` and `'browse'`.
-
-## Layering / coplanar stacking / depth precision
-
-Four orthogonal mechanisms keep surfaces from fighting each other. They solve different problems — picking the wrong one is the most common source of "the X is missing in Stage" / "the Y looks weird at distance" bugs. Use this table to decide before reaching for a fix:
-
-| Mechanism | What it handles | Where it works | Cost / failure mode |
-|---|---|---|---|
-| **Geometric Y separation** — meshes at genuinely different heights (water 0.35m above ground, paths 0.4m, trees on top) | Surfaces that ARE at different heights in reality | All distances; robust under depth-buffer precision (with logarithmic depth on, see below) | Visible vertical gap if too aggressive — fine for top-down, gets noticeable in Hero/Street |
-| **`polygonOffset` per renderOrder** — `polygonOffsetFactor: 0, polygonOffsetUnits: -renderOrder` per material | Coplanar surfaces (face fill + ribbon bands + paint stripes, all geometrically at y=0) | All distances within reason | Depth-buffer-precision-relative; the cumulative offset across many groups can run out of useful range at extreme distances |
-| **Tiny Y-lift (0.01m increments)** — `block 0.01 → asphalt 0.04 → paths 0.05` per `BlockGeometryV2Debug.jsx` | **Designer ortho view only** | Top-down ortho; falls apart immediately in perspective at angle | Cheap but fragile — never use for Stage/Preview |
-| **`renderOrder` + transparent material** — explicit paint order regardless of depth | Transparent overlays where you know the geometric relationship is monotonic (selected-chain band overlays, soft-circle silhouette fades) | Forces draw order; bypasses depth test for sort but not for occlusion | Wrong if surfaces aren't genuinely "in front of" each other — produces "this should be hidden but isn't" bugs |
-
-**Plus a fifth axis the table doesn't cover: depth-buffer precision at distance.** The Canvas uses `logarithmicDepthBuffer: true` (added 2026-05-13). Without it, the 24-bit depth buffer's precision is non-uniformly distributed across `near=1, far=60000` — 90%+ of precision lives in the first few meters. At Browse altitude (1300m+) looking down, the 35cm water-above-ground gap was at the edge of resolvable precision and water would intermittently sort INTO the ground or get culled. Logarithmic mode redistributes precision so the gap remains resolvable at any reasonable distance. ~5% perf cost; acceptable on mobile budget.
-
-**Raw `THREE.ShaderMaterial` must include log-depth GLSL chunks (added 2026-05-18).** Three.js's built-in materials (`MeshStandardMaterial`, `MeshBasicMaterial`, etc.) chain the `<logdepthbuf_pars_vertex>` / `<logdepthbuf_vertex>` / `<logdepthbuf_pars_fragment>` / `<logdepthbuf_fragment>` chunks automatically through their internal shader pipeline. A raw `THREE.ShaderMaterial` does not — it must declare `defines: { USE_LOGDEPTHBUF: '' }` and include the four chunk-include directives manually (vertex_pars at the top + `<logdepthbuf_vertex>` after `gl_Position`; fragment_pars at the top + `<logdepthbuf_fragment>` as the first line of `main()`). Without them, the material writes linear depth values from `gl_FragCoord.z` into the log-depth buffer, and the depth comparison against every other mesh's correctly-log-encoded depth is on the wrong scale — fragments win-or-lose in camera-angle-dependent ways. Symptom: mesh draws cleanly at some angles, disappears at others, without a clear occluder; `depthTest: false` rescues it but `polygonOffset` (any magnitude) does not, because the offset is on the wrong axis. The codebase's other raw `ShaderMaterial`s are `depthWrite:false` additive billboards (sky, sun/moon, lamp glow / halo / pool, GatewayArch glow) where the mismatch is invisible; `NeonBandsV2` was the first opaque-or-depth-testing case to surface the bug. See `feedback_raw_shadermaterial_needs_logdepth_chunks` memory for the lesson and the post-fix doctrine.
-
-**`polygonOffset` is STRUCTURALLY INERT under this codebase's Canvas (corollary, recorded 2026-05-18).** Because `logarithmicDepthBuffer: true` is set, every material's `<logdepthbuf_fragment>` chunk writes `gl_FragDepth = log2(vFragDepth) * logDepthBufFC * 0.5` explicitly. Per the GL spec, **`GL_POLYGON_OFFSET_FILL` does not apply when the fragment shader writes `gl_FragDepth`.** Polygon offset is therefore inert across every depth-tested material in this scene — built-in or raw, opaque or transparent. The table row above is retained for the historical pre-2026-05-13 (pre-log-depth) decision tree, but the cumulative `polygonOffsetUnits: -renderOrder` pattern in `bake-ground.js` / `BakedGround` / V2 paint stripes / etc. does not bias depth values today; those coplanar conflicts are actually resolved by **transparent-pass `renderOrder` ordering** (later-drawn transparent overwrites earlier transparent's color and depth). Two confirmations this session: (1) the 2026-05-13 FadeMesh `polygonOffsetUnits: -31` "asphalt-vs-grass z-fight fix" actually works through transparent-pass `renderOrder` (asphalt=30 > grass=0..7), not polygon offset bias; (2) attempts to bias NeonBands toward camera via `polygonOffset: -10/-10` had zero effect (commit `a5c1844` resolved via `renderOrder: 100` instead, putting neon after every baked ground group in the transparent pass). **Practical rule:** to resolve coplanar conflicts among transparent meshes, use `renderOrder`. Among opaque meshes, use Y separation (sub-meter survives at Browse altitude thanks to log-depth). Do not reach for `polygonOffset` as a depth-bias tool here. See `feedback_polygonoffset_inert_under_logdepth` memory.
-
-**Decision rule for new ground layers:**
-1. Does the layer have a real physical height different from the surface below it (water surface above lake floor, sidewalk curb above asphalt)? → **Geometric Y**, ≥1cm.
-2. Is the layer coplanar with what it sits on (parking-lot fill on top of residential face, paint stripe on top of asphalt)? → **polygonOffset** per its renderOrder slot in `PAINT_ORDER` (bake) / `PRI` constants (Designer V2).
-3. Is this a Designer-only authoring overlay (translucent selected-chain bands during Measure drag)? → **Tiny Y-lift OR `transparent opacity={1}` + renderOrder**. Not for Stage/Preview.
-4. Is this an explicit "always draw on top of everything below, regardless of geometry" overlay (Aerial tiles when toggled, sky disc)? → **`renderOrder` + `depthTest: false`** if needed.
-
-**Counter-rules:**
-- Never stack two coplanar surfaces by tiny Y-lift in Stage/Preview; use polygonOffset. The Y-lift only survives in Designer ortho because the view is parallel-projection.
-- Never assume a sub-meter Y separation will survive at Browse altitude without `logarithmicDepthBuffer`. Now that we have it, it does.
-- If you write a custom shader (`makeGrassMaterial`, water ripples, gravel paths), set a unique `customProgramCacheKey` on the material BEFORE any `patchTerrain` or other wrapper — otherwise three's program cache can silently collapse it onto another patched material's compiled shader. Hit this 2026-05-13 with the gravel path shader, and again 2026-05-14 with LafayettePark's `pathMat` + `waterMat` after they were chained with `patchTerrain` next to plain `MeshStandardMaterial` siblings that collapsed both onto a vanilla `terrain-vp-std` cache key. Symptom: procedural gravel/ripple disappears, mesh renders as flat default-color PBR.
-- Per-vertex `patchTerrain` adds depth-precision-sensitive shader code; wrapping a material with it can subtly affect distance-dependent sort even when `terrainExag = 0`. For pond surfaces (lake, grotto) — bank + water + island stacked with sub-meter Y separations — per-vertex displacement makes each mesh's interior interpolate independently across its own triangulation, and the larger bank polygon can rise above the smaller water polygon at the pond center. Use **rigid per-pond group lift** instead (`<PondGroup>` in `LafayettePark.jsx`: each pond's children share a single per-frame `position.y = centroidRaw × terrainExag.value` so the bank/water/island Y offsets ride together). The earlier whole-park rigid lift was the wrong granularity (corner mismatch was meters across the park's 350 m extent under b24fce5's real raw values); the right granularity is per-pond / per-feature, not per-park.
-
-## Known live architecture issues / load-bearing decisions
-
-Decisions that affect how to think about new work:
-
-### Bake artifacts are browser-cached; cache-bust signal must be unique per bake
-
-`BakedGround` and `InstancedTrees` fetch `/baked/<look>/{ground,buildings,scene}.json` and `default.json` with `?t=${bakeLastMs}`. If the same `bakeLastMs` value is reused across bakes, the browser hits its HTTP cache and serves stale geometry — the bake artifacts on disk update, but the page doesn't see them. **`bakeLastMs` must be set to `Date.now()` on every bake completion**, not to the bake's duration. (Historical bug: `useCartographStore.js:runBake` used `r.ms` (duration) as the cache-bust signal; incremental no-op bakes returned identical small durations and the browser cached them. Symptom: "I edited X days ago, Designer shows it, Stage doesn't." Fixed 2026-05-04.)
-
-### Bake handler runs async (fixed 2026-05-13)
-
-`cartograph/serve.js`'s POST `/looks/:id/bake` runs each step via `runShell` (Promise wrapper around `spawn` with `shell: true` + timeout). The Node event loop keeps serving other API requests while a bake child process runs. A per-look `_bakesInFlight` set rejects concurrent bake requests against the same Look with `409 { error: 'bake already in progress' }` so a double-click on the Stage button can't race two bakes writing to the same `public/baked/<id>/` directory.
-
-Historical state (pre-2026-05-13): each step ran via `execSync`, blocking the Node event loop for the bake's entire duration. Every `/api/cartograph/*` request pended; if a step hung, the whole server hung. Workaround was to kill + restart `carto`. The async conversion removed both failure modes.
-
-### Bake-chain dirty-skip: content-aware writes that ALSO touch mtime (2026-05-13)
-
-The bake's per-step `needsRebuild` compares input mtimes (raw data + script source) to output mtimes. To make incremental bakes truly skip when nothing changed, two coupled rules must hold:
-
-1. **Skip the disk write when bytes are byte-identical.** `cartograph/io.js`'s `writeIfChanged(path, content)` reads the existing file, compares, and skips `writeFileSync` on match. Avoids rewriting `map.json` / `ground.json` etc. on every authoring save.
-
-2. **Touch the output's mtime on a no-op write.** This is canonical `make` behavior: a successful build verifies the output is up-to-date *as of now*, so the next dirty-check sees the chain as stable. Without (2), editing a source script (e.g., `pipeline.js`) permanently invalidates its downstream artifact — `pipeline.js > map.json` forever — and `needsRebuild` reruns every step on every bake. Verified on LS: first bake after a fix takes the usual ~40s to stamp the chain; subsequent no-op bakes return in 1 millisecond.
-
-**Output-write ordering rule.** Any bake script that writes an OUTPUT file AND patches another step's output (e.g., `bake-ground-ao.js` writes `ground.lightmap.png` and ALSO patches `ground.json` to add the lightmap reference) must write the patched file BEFORE its own output. Otherwise the patched file ends up with a strictly newer mtime than the step's output, and `needsRebuild` reruns the step every bake. `bake-ground-ao.js` learned this the hard way 2026-05-13.
-
-**To apply for any new bake step:** use `writeIfChanged` from `./io.js` for every output. If the step patches another step's output, patch first, output last.
-
-### Treelawn matches adjacent parcel land-use (2026-05-13)
-
-The treelawn strip between curb and sidewalk paints in the color of the **land-use block it abuts**, not a uniform green. Bake emits per-LU groups (`treelawn:residential`, `treelawn:park`, etc.); Designer's V2 live render does the same per-LU bucketing for parity. Each variant inherits the parcel's authored `luColors[lu]`; grass-LU variants (residential / park / recreation) route through `GrassMesh` and visually merge with the parcel face's procedural grass texture; non-grass-LU variants (commercial / parking / institutional / etc.) render flat via `FadeMesh` in that parcel's authored color so the frontage doesn't read green next to a brown block.
-
-Adjacent-block lookup post-V1 keystone (2026-05-29) is **`fe.blockKey` → `v2.blocks[k].lu` direct map** with **coordinate-probe fallback** for legacy entries. Reason: the V1 keystone ring-band emitter (`emitOneBlockRingBands`) emits treelawn rings as slices of the outer band between `cw` and `cw + TL_block` — those rings sit INSIDE the ribbon, OUTSIDE every parcel polygon. The pre-V1 centroid probe (`ringInteriorProbe(treelawnRings[0])` against `v2.blocks`) fails for V1-emitted rings (centroid lands in the ribbon zone, not in any parcel), so the direct-map lookup via `fe.blockKey` is the canonical path. Probe is retained as fallback for legacy `silhouetteStraightEmitter` entries (LS until C5 cutover). The pre-V1 doctrine note about pass-1 vs pass-2 blockKey drift is preserved in `feedback_block_key_rounded_vs_sharp_diverges` — `blockKeyFromRing` is no longer used as a sharp↔rounded join surface; ring-index parity + smallest-area-enclosing-PIP replaced it. Memory: `project_per_block_lu_via_blockkey`.
-
-Designer toggle `treelawn` hides all per-LU variants together — the runtime visibility check strips the `:<lu>` suffix before `BAND_TO_LAYER` lookup.
-
-### `BakedGround.GrassMesh` needs polygonOffset parity with `FadeMesh` (2026-05-13)
-
-Both `FadeMesh` and `GrassMesh` in `src/components/BakedGround.jsx` render face / material groups; the bake assigns per-group `polygonOffsetUnits = -renderOrder` so coplanar fragments stack in paint order. `FadeMesh` honors this; `GrassMesh` historically didn't, and grass-shaded faces (residential / park / recreation; lawn / treelawn / median) z-fought with adjacent `FadeMesh` faces and rendered invisibly in Stage. The fix is one block in `GrassMesh`'s material build: `material.polygonOffset = true; material.polygonOffsetFactor = 0; material.polygonOffsetUnits = group.polygonOffsetUnits`. Any new material path in BakedGround needs the same parity.
-
-### Terrain doctrine — every consumer reads one dial, every anchor uses corner-mean (2026-05-14)
-
-After the b24fce5 clip-to-stencil terrain pipeline (local-min = 0 normalized raw float32 in `terrain.bin`), the runtime terrain integration was tuned to a single coherent set of rules. Every consumer that participates in elevation displacement multiplies by the same shared `uExag` uniform (driven from `terrainExag.value` in `src/utils/terrainShader.js`, which `BakedGround`'s `TerrainExagDriver` lerps toward `V_EXAG` from `src/lib/terrainCommon.js`). **V_EXAG is the single dial.** Changing it rescales the whole scene coherently — ground, foundations, buildings, lamps, trees, fence posts, paths, water, banks, islands, labels. The current value is `1.5`; visible LS-wide relief is ~52 m (35 m raw × 1.5), which keeps the neighborhood gradient dramatic without making the per-footprint foundation exposure run away on slopes.
-
-**Anchor rule (foundations + walls).** Per `src/lib/foundationGeometry.js` doctrine, foundations are the contact joint between an upright rigid building and a non-flat heightfield. The "centroid Y" used for the rigid lift is the **mean of `getElevationRaw` sampled at every footprint vertex** — not a single sample at `building.position`. Both LafayetteScene's `Building` walls (via `patchTerrainAtCentroidRaw(mat, centroidRaw)` helper) and `Foundations` (via per-vertex `aCentroidY` attribute on each foundation block, preserved through `mergeBufferGeometries`) lift by this same value, so the slab top + wall bottom stay flush regardless of the slope across the footprint. Canonical reference: `cartograph/bake-buildings.js`'s `centroidY = mean(getElevationRaw(footprint[i]))` — match this anywhere a "centroid elevation" is needed. Sampling at `building.position` diverges from the rule by the convexity of the heightfield across the footprint; for LS's concave-down hill geometry, that meant ~0.5 m of extra exposure baked into every building.
-
-**Instance-scale fix.** `TERRAIN_DISPLACE_INSTANCED` divides the lift by the instance's Y-axis scale (`length(instanceMatrix[1].xyz)`) so the world-space result lands at `sample × uExag` METERS regardless of instance scale. Without it, lamps at `LAMP_SCALE ≈ 1.38` over-lifted ~38%, and arborist trees at authored per-tree scale amplified by their own factor (~50 ft "lamps in the air" symptom from the 2026-05-13 brief). The billboard ShaderMaterials (`glowMat`, `haloMat`, `bulbMat`) in `StreetLights.jsx` bypass three's standard project_vertex chain, so they pick up the lift directly in `BILLBOARD_VS_INC` (`_bbCenter.y += texture × uExag` in world space, no scale division needed) and the lantern glow tracks the lamp post.
-
-**Coverage parity.** Every ground-anchored consumer patches:
-- Ground (`BakedGround.GrassMesh` + `FadeMesh`): `patchTerrain({ perVertex: true })`.
-- Walls (`LafayetteScene.Building`, both branches): `patchTerrainAtCentroidRaw(mat, meanCornerRaw)`.
-- Foundations (`LafayetteScene.Foundations`, merged mesh): per-vertex `aCentroidY` attribute (preserved through `mergeBufferGeometries` — extended 2026-05-14 to copy aCentroidY) + onBeforeCompile that adds `aCentroidY × uExag` to `transformed.y`.
-- Lamps (`StreetLights`): `patchTerrainInstanced` on the GLB material; pool/base ShaderMaterials sample world-space; billboards lift via `BILLBOARD_VS_INC`.
-- Trees (`treeAtlasMaterial`): `patchTerrainInstanced` chained after `injectFoliageSway` (instance matrix is T×R only, scale is baked into the GLB at Arborist publish time, so the Y-scale divide is a no-op for trees).
-- Park items (`LafayettePark`): per-item terrain — paths/water/banks/island via per-pond `<PondGroup>` rigid lift; fence posts/rails via `patchTerrain` rigid (each mesh's own world origin); labels via `<ElevatedGroup>` (per-text `useFrame` lift at the label's XZ).
-
-Anything mounted at the ground and missing patchTerrain in some path will visually de-couple from the heightfield. When auditing a new mesh, the question is "what's its anchor, and does it use the shared `uExag`?"
-
-**Ground triangulation density.** Per-vertex `patchTerrain` samples the terrain texture at each baked vertex; fragments interpolate linearly between them. If a face polygon's triangulation has block-corner-only vertices (~50 m apart), the interior fragments interpolate across a span where the heightfield actually curves — and finer overlays (asphalt centerlines, foundation anchors, paths) computed against the real heightfield diverge from the face's rendered Y by however much the curve deviates from the linear interp. At LS scale that was 1–2 m of raw mismatch → 3–5 m of visible artifact under V_EXAG=1.5–1.8 (foundations "way too tall" on apparently-flat blocks, paths "in midair" relative to grass).
-
-The fix is **bake-time triangulation refinement**: `cartograph/bake-ground.js`'s `triangulateAndRefine(outer, holes, maxEdge)` iteratively splits any triangle whose longest edge exceeds `maxEdge` into 4 child triangles via midpoint subdivision (midpoint cache shared across adjacent triangles → no T-junctions). Face groups + landscape overlays (parking_lot, garden, playground, swimming_pool, pitch, sports_centre, wood, scrub) emit at `maxEdge = 15 m` (≈3× the terrain texture's 5 m spacing — caps per-fragment interpolation error around 0.45 m raw / 0.7 m visible at V_EXAG=1.5). Ribbon bands (asphalt, curb, sidewalk, treelawn variants, footway, path, alley, etc.) skip refinement — their authored centerline density already matches the texture. Total LS ground vert count went from ~50 k to ~395 k; bin from ~1 MB to ~12 MB. Higher `maxEdge` cuts size more aggressively at the cost of interpolation accuracy; `REFINE_MAX_EDGE_M` in `bake-ground.js` is the tuning point.
-
-### Frustum culling must be disabled on GPU-displaced meshes (2026-05-14, actually landed 2026-05-18)
-
-`patchTerrain*` displaces vertices in the GPU vertex shader, but three.js's frustum culler checks the geometry's `boundingSphere` — computed once at construction from the *un-displaced* positions (typically Y=0 base). Once the camera moves so the stale sphere falls outside the view frustum, the mesh gets culled even though the actual displaced geometry is still on-screen — visible as "buildings popping out as I scroll past." Fix on `LafayetteScene.jsx`'s Building + Foundations meshes is `frustumCulled={false}`. The alternative — manually updating `boundingSphere` after each `uExag` lerp — is more code for the same effect. Any new mesh that uses `patchTerrain*` and displaces meaningfully should disable frustum culling.
-
-**Note (2026-05-18):** Although this doctrine was recorded 2026-05-14, the `frustumCulled={false}` props themselves never actually shipped to `Foundations` or `Building` until commit `6fcbd2d` on 2026-05-18 (swept in alongside the Stage / production gate-split commit). Symptom persisted as "buildings pop out as I pan" across the intervening days and was misdiagnosed during the 2026-05-18 neon arc (initially assumed to be a building-fade feature) before the doctrine-vs-code drift was caught. Third doctrine-drift instance from 2026-05-14 found this session — alongside the mean-of-corners anchor rule and the `patchTerrainAtCentroidRaw` helper orphan (both landed in `3e51641`). See `feedback_verify_doctrine_against_code` memory.
-
-### MapLayers `ground` mesh must NOT render in shot mode (2026-05-14)
-
-`MapLayers.jsx` renders a full-LS-bbox `ground` plane (color `layerColors.ground = '#2A2826'`, near-black) at Y=-0.08 with ~25 m segmentation per-vertex terrain. In Designer mode that's the neighborhood base. **In shot mode** (Stage, Preview), `BakedGround` paints the full slab at finer-than-25m-when-refined triangulation — the MapLayers ground plane would sit on top of grass faces at Lafayette Park (terrain bulge interpolation differential ~14 m higher than face polygon's block-corner interp) and paint matte black over the grass procedural shader. Symptom we hit 2026-05-14: at Hero, grass invisible; at Browse (uExag → 0), grass "fills in like green liquid" as both planes flatten to coplanar and renderOrder + polygonOffset put face park on top. Fix: `SHOT_SKIP` set in `MapLayers.jsx` now includes `'ground'`. Any future `MapLayers` layer that duplicates a BakedGround group needs the same skip.
-
-### Server changes require a `cartograph/serve.js` restart
-
-`cartograph/serve.js` runs as a long-lived Node process (`carto` in `npm run dev`). Edits to its bake-endpoint chain, dirty-check logic, or any other server code are *not* picked up until the process restarts. The browser-side and the bake scripts (`derive.js`, `bake-ground.js`, etc.) are loaded fresh on each request / each `node X.js` invocation, so they auto-pick-up edits — but `serve.js` is the exception. If you change `serve.js` and don't restart, the Bake button keeps running yesterday's chain.
-
-**Diagnostic:** compare the carto server's process start time (`ps aux | grep cartograph/serve`) to `serve.js`'s mtime (`stat -f %Sm cartograph/serve.js`). If file mtime > process start time, the server is stale — restart it. This bit us 2026-05-04 *twice in one session*; if the symptom is "my Designer edit doesn't appear after Bake," check process age before going on a tour of dirty-checks and cache-busts.
-
-### `ribbons.streets[].highway` carries OSM class through (2026-05-09)
-
-Every emitted street entry in `ribbons.json` now carries two class fields:
-
-- `highway` — the raw OSM tag (`motorway`, `motorway_link`, `trunk`, `primary`, `secondary`, `tertiary_link`, `residential`, `service`, `unclassified`, …). This is the value any AASHTO/NACTO-keyed lookup should use (e.g., `intersectionGeometry.js:cornerRadiusFor` keys on raw class).
-- `type` — the normalized streetProfiles vocabulary (`motorway` / `motorway_link` / `trunk` / `primary` / `secondary` / `service` / `footway` / `cycleway` / `pedestrian` / `steps` / `residential`). This is what `streetProfiles.defaultMeasure` and width-default code paths consume.
-
-Both fall back to `'residential'` when the source tag is missing, so any consumer can rely on a defined value. The mapping lives in `derive.js:mapHighwayToStreetType`.
-
-LS distribution as of this writing: 143 residential, 32 motorway_link, 23 motorway (I-44 main), 17 primary, 17 secondary, plus assorted tertiary/service/unclassified. Future neighborhoods will shift the mix; no class is assumed to be present.
-
-Before this fix, both fields were absent from output and every chain fell through to residential corner-radius defaults — motorway crossings rendered with 4.5m corners. If a downstream consumer ever stops seeing the field, the most likely regression is in `derive.js`'s output-serialization map (`streets: ribbonStreets.map(st => ({...}))`) — fields that aren't whitelisted there get stripped.
-
-### Survey/Measure operator-intent flows through `overlay.json`, not `centerlines.json`
-
-This is the bug-magnet that's burned hours twice now. Survey + Measure tools save to `cartograph/data/clean/overlay.json` (skelId-keyed: `measure`, `segmentMeasures`, `capStart`/`capEnd`, `anchor`, `couplers`). The Designer runtime merges overlay into the live street list via `useCartographStore.js:_loadCenterlines`. The bake pipeline (`derive.js`) reads skeleton + raw/centerlines + raw/measurements + osm/elevation — and as of 2026-05-04 *also reads `overlay.json`* (after a fix). If the bake ever stops reflecting Designer Preview edits, the first thing to check is whether `derive.js`'s overlay merge is still in place. Legacy `cartograph/data/raw/centerlines.json` is fallback only (matched by name, used to seed older streets that don't have skelId entries yet).
-
-### Divided-road inner-edge anchor — opt-in "paired-with-median" authoring mode
-
-> ⚠️ **Status (2026-06-05) — model being reconceived (`_archive/DIVIDED-CORRIDOR-PLAN.md`, Alidade).** The inner-edge *authoring workflow* (the Anchor knob + `setAnchor` mirror + runtime ped-zeroing) is slated for **removal**, replaced by a **median constructed at prebake** (the emergent/residual median was fragile). The two-carriageway **data model STAYS** — chains at the inner edge, `chainGap`/`innerSign`/`pairId`/`spineAt*` kept. The sections below describe the workflow being retired; read the plan for the target.
-
-Divided roads stay as TWO separate centerlines per the locked positive-carriageway model — no pair synthesis, no median couplers, no collapse to a single spine. Each carriageway's chain carries `anchor` (`'center'` | `'inner-edge'`), `innerSign` (±1; which perpendicular side faces the median), and `pairId` (matches its mate). Skeleton emits these via the phase-aware welder; derive passes them through to ribbons.json untransformed. **As of 2026-06-03 the welder also (a) longitudinally welds each carriageway's staggered fragments into ONE continuous chain (D1, `5348fbc` — a corridor that read as 8 chains is now 2) and (b) gates pairing on longitudinal *station-overlap*, so offset stub-pairs no longer mis-pair into a skewed median wedge (`8392b3e`). See RIBBONS §3.1 / PIPELINE P1.**
-
-**`anchor: 'inner-edge'` is an authoring mode, not a geometry override.** ⚠️ **The chain sits at the carriageway's *inner (median-facing) edge*** — `chainGap` = the median width *exactly* (measured against the operator's traces, Alidade 2026-06-05). The earlier *"chain stays at carriageway center"* was a corpse-lie — a center reading makes every measured pair's median **negative**; D1's inner-edge emit was geometrically right. The flag does three things:
-1. Flips the chain's `measure.symmetric` to `false` (so dragging the outboard handle stops mirroring inboard — operator authors per side independently).
-2. Seeds `inboard.pavementHW = 0` on flip — visible feedback that the mode took effect; operator can widen inboard from there to eat into the median.
-3. The runtime `innerEdgeMeasure` helper zeroes the inboard ped zone (`treelawn`, `sidewalk`, `terminal`) so no sidewalk renders along the median. Pavement + curb stay whatever the operator has authored.
-
-**Median emerges by construction**, never authored. The polygon between paired carriageways' chains, minus each carriageway's inboard pavement HW, IS the median (already produced by derive). If the gap can't accommodate one (operator drags inboard pavement wide enough to close the median, or the chains start too close), no median renders — free.
-
-> ✅ **Live mechanism = CONSTRUCTED at prebake (E2, 2026-06-06, `2d98861`)** — superseding the emergent residual. `derive.js` builds the inter-chain lens per divided pair (the polygon between the **inner-edge** chains, D9) and partitions it: `kind:'median'` segments (blunt ~2 m noses where the gap pinches at transitions) + `kind:'merge'` asphalt (transition tapers + crossings + intersection crumbs). **Crossings rule:** a street crossing *both* carriageways **opens** the median (cut = its asphalt-HW + 1.5 m setback); a one-sided **T does not** cut (preserves the Truman addendum) — so no grass is painted across a live crossing. `tileGround` consumes **by identity** (merge→asphalt, median→ped-zeroed); new **`'median'` LU class** (frozen on `shapeTiles.med`); the emergent `isMedianFacing` + G3a >40% heuristics are **RETIRED**. The median is now a positive object — the join cure (E3) resolves junctions against its clean edge. Forensics (archived): `_archive/DIVIDED-CORRIDOR-PLAN.md` · `_archive/TRUMAN-FORENSICS.md`. *(Loop-street medians stay emergent — the couplet/teardrop face, `LOOP-STREETS.md`, not this divided-pair construction.)*
-
-**Pair-aware authoring.** `useCartographStore.setAnchor` mirrors the anchor flip onto the pair mate (`pairId` carries the mate's `skelId`, not a shared pair-group identifier — look up via `s.skelId === st.pairId`). The flip transform applies to BOTH chains' `measure` AND every entry of `segmentMeasures`. Width authoring stays per-carriageway (asymmetric real-world cases like S Jefferson 7.72 / 9.16m).
-
-**Asymmetric and Inner-edge are independent operator concepts** (the streets around the park are asymmetric-center-aligned — a valid combination authored via the MeasurePanel "Asymmetric" checkbox alone, no anchor change). `setAnchor` never clobbers operator-authored asymmetric values:
-- Flip TO inner-edge from symmetric: applies the `symmetric: false` + inboard-seed transform.
-- Flip TO inner-edge from asymmetric: anchor only; measure preserved (operator's per-side authoring is intentional).
-- Un-flip TO center: detects the unmodified inner-edge footprint (symmetric=false AND inboard `pavementHW` exactly 0) and cleans up by restoring `symmetric: true` + mirroring outboard onto inboard. Anything else (operator widened inboard from zero, or had pre-existing asymmetric) → measure left alone.
-
-**Single transform site for the ped-zone zero (2026-05-14).** `buildBlockGeometryV2` (`src/lib/buildBlockGeometryV2.js` ~line 1295) applies `innerEdgeMeasure` to every chain whose `anchor === 'inner-edge'` at the top of the function — `street.measure` AND each entry of `street.segmentMeasures`. Both consumers (`bake-ground.js` and Designer's `BlockGeometryV2Debug.jsx`) inherit; no per-call-site audit needed. `MeasureOverlay.jsx:360` calls `innerEdgeMeasure` separately for the operator's drag-handle preview.
-
-### Algorithm drift between live live-render and offline ground bake — resolved
-
-**Face-clip layer: consolidated.** The face-clip algorithm lives in `src/lib/ribbonsGeometry.js` (`buildRibbonGeometry(ribbons, stencilPolygon)`). Today `cartograph/bake-ground.js` is the sole consumer (the historical `src/components/StreetRibbons.jsx` live-render path was retired during the V2 migration; chain-rectangle live rendering is now done by V2's `src/cartograph/BlockGeometryV2Debug.jsx` against block-edge-owned geometry, not by re-using the face-clip helper). The legacy `bake-paths.js` was retired (alleys/paths now flow through `bake-ground.js` via the same shared geometry pipeline).
-
-**Ribbon-stripe layer: never drifted.** Both sides already use `sideToStripes` from `src/cartograph/streetProfiles.js` — same source.
-
-**Hole-handling caveat:** `buildRibbonGeometry` returns face data with explicit `{outer, holes}` topology. The bake honors holes; the live render currently flattens to `outer` only because `THREE.Shape` in `faceMeshes` doesn't consume the holes array. Visually identical to old behavior; if face-with-hole geometry ever needs to render correctly in Designer, update `faceMeshes` to pass holes through to `THREE.Shape.holes`.
-
-**Designer-toggle ↔ bake parity (2026-05-05).** Every Designer-Panel toggle now has a matching bake group. `bake-ground.js` reads `map.json` directly for sub-block polygon overlays (`parking_lot`, leisure subtypes, natural subtypes) and buffers polylines (`stripe`, `edgeline`, `bikelane`, barriers) into thin polygons, so what the operator hides in Designer is what's hidden in Stage/Preview. Color resolution in the bake routes through `BAND_TO_LAYER` and `design.json`, so authored Look colors reach all groups (no more `BAND_COLORS` defaults masking operator overrides).
-
-**Bake pipeline scene-parametric on the ground bake (2026-05-13).** `bake-ground.js`'s stencil is no longer hardcoded LS — `loadSceneStencil(scene)` reads `cartograph/data/<scene>/neighborhood_boundary.json` and falls back to nulls when absent. When the boundary file omits `fade` / `streetFade` fields (toy), the bake emits `manifest.stencil = null` and BakedGround skips the radial-fade shader. Ribbons input is also scene-keyed (LS uses `src/data/ribbons.json`; other scenes use `src/data/<scene>/<scene>-ribbons.json`). `bake-buildings.js` and `bake-lamps.js` accept `--scene` but ignore it pending the toy publish session — they're still LS-hardcoded under the hood.
-
-**Stage / Preview lamp parity (2026-05-13).** `BakedLamps` lives in `src/components/` and is shared by Stage and Preview. LS Stage mounts `<BakedLamps />` instead of `<StreetLights />`; both surfaces fetch `/baked/<look>/lamps.json` from the same artifact, with cartograph-store `bakeLastMs` cache-bust so Stage's "↻" propagates without a hard reload. Toy Stage retains its `<StreetLights lamps={toyLamps.lamps} />` placeholder until the toy-data session.
-
-**Buildings render off the slab in production + Preview (L1.3 shipped, 2026-05-26).** `bake-buildings.js` now emits `buildings.json` **v2** — the merged mesh + a render-scoped per-building index (vertex ranges, footprint, roofOutline, centroidY, baseY, materials, zoning) packed per `SLAB-CONTRACT §6`. `src/components/SlabBuildings.jsx` is the single consumer for **production + Preview**: it draws the ~9 group meshes (matching the live `Building`/`Foundations` material exactly) and publishes the index to `useSlabBuildingIndex`, which `SceneNeon` + selection resolve identity against (`raycast → id`, then content layer for `id → record`). **Stage keeps the live `LafayetteScene` mount** (authoring needs live retint), so there `useSlabBuildingIndex` is null and `SceneNeon` falls back to live `src/data/buildings`. `BakedBuildings` is **deleted**. Production no longer *renders* live building geometry; the `src/data/buildings` import remains only for the Stage path + the content importers (`SidePanel`/`GlassSearch`/`useListings`/`CheckinPage`/`PlaceCard`) — relocating that content DB off source is a separate future brief (not L1.3).
-
-**Render environments (topology, 2026-05-18).** The repo serves five distinct render environments, often confused. Definitive mount map:
-
-| Environment | Scene root | Neon | Live vs baked |
-|---|---|---|---|
-| Designer (Cartograph authoring) | `cartograph/CartographApp.jsx` → `StageEnvironment` | `<LafayetteScene>` mounts `<NeonBands>` (renamed from `NeonBandsV2` 2026-05-18) | Live authored data |
-| Stage (Cartograph, post-bake / pre-marriage QA) | Same `StageEnvironment` | Same `<NeonBands>` mount, plus `forceNeonOn` toggle | Live authored data |
-| Preview (Slab preview, post-marriage) | `src/preview/PreviewApp.jsx` → `CanvasContents` | `<SceneNeon>` via `<LafayetteScene>` (buildings hidden; neon off the slab index; `forceNeonOn` for inspection) | **Slab `SlabBuildings`** by default — same as production (L1.3 cutover 2026-05-26); A/B toggle back to live |
-| LS production (lafayette-square.com) | `src/components/Scene.jsx` → `SlabBuildings` + `LafayetteScene hiddenLayers={{building:true}}` | `<SceneNeon>` off the slab index, gated by `openPlaces` open-by-hours filter | **Slab `buildings.json` v2** (geometry + per-building index); `scene.json.neon.values` via `useSceneJson(lookId)` |
-| Toy | `cartograph/CartographApp.jsx` `SCENE_REGISTRY['toy']` → `<ToyBuildings>` | `<NeonBands>` mount, `forceOn` unconditional | Toy building set |
-
-Stage and LS share `LafayetteScene` for neon — they are not separate render paths for tube geometry. The only Stage-specific bit is `forceNeonOn`, a QA bypass for the open-by-hours filter (Sky & Light panel checkbox). Whatever Stage shows for neon shape/shader, LS shows. The `openPlaces`/`useNeonLookup`/`<NeonBands>` machinery was extracted from `LafayetteScene` into the shared `src/components/SceneNeon.jsx` (2026-05-26) so Preview can mount it too.
-
-**Preview is not a separate render path (2026-05-26).** It renders exactly what production renders. As of the L1.3 cutover that means the slab buildings (`SlabBuildings`) + foundations off the merged mesh + neon off the slab index — the GPU profiler measures the shipping render, now with the merged-mesh draw-call profile (~9 group meshes vs ~1082 per-building meshes). `BakedBuildings` is deleted. Preview keeps an A/B toggle to flip buildings back to the live `LafayetteScene` mount for comparison, plus its profiler/phone-frame/layer-toggle bolt-ons; those are the only divergences.
-
-Neon geometry is never baked. Bake carries only the intensity uniforms (`scene.json.neon.values`); tubes are runtime-built per frame in every environment that mounts the component.
-
-**Neon renderer (shipped 2026-05-18).** `src/components/NeonBands.jsx` renders one merged shader mesh per scene, mounted in both `LafayetteScene.jsx` (Stage + LS production) and `src/toy/ToyBuildings.jsx` (toy). Geometry: full-circle cross-section (`CROSS_SEGS=8` facets in the vertical plane spanned by ŷ × n̂), tube center at rooftop seam (`ROOF_DROP=-TUBE_RADIUS` puts tube *bottom* flush with the roof seam — a safety margin landed during the z-axis arc, harmless under correct depth math), `TUBE_RADIUS=1.0 m` (the 0.3 m prototype radius was sub-pixel past street level; bloom can't recover what the rasterizer never sampled). Winding: per-footprint outward direction detected via point-in-polygon probe of the first-edge midpoint offset by raw `(e_z, -e_x)` normal — robust to mixed CW/CCW datasets (LS `buildings.json` is ~98% CW + ~1.5% CCW). Material: `DoubleSide` + `AdditiveBlending` + raw `ShaderMaterial`, **no `gl_FrontFacing` normal flip** in the fragment shader — back faces compute `dot(N, V) < 0` clamping to `r=1` → bleed-only dim glow on the camera-far side. This is what produces the omnidirectional emissive look without flattening into a uniform ribbon. (Doctrine: see memory `feedback_neon_cylinder_doubleside_no_flip`. The original session's five wrong diagnoses circled this — don't unwind it.) Per-vertex terrain lift via shared `aCentroidY` attribute threaded from `openPlaces.groundYRaw` (mean-of-footprint-corner anchor, lockstep with Foundations + Building walls per the 2026-05-14 anchor-rule fix). The `<logdepthbuf_*>` GLSL chunks are included so the raw `ShaderMaterial` participates correctly in the Canvas's logarithmic depth buffer (`defines: { USE_LOGDEPTHBUF: '' }` + four chunk-include directives; see the depth-precision section above and memory `feedback_raw_shadermaterial_needs_logdepth_chunks`). One merged mesh per scene; `renderOrder: 20`; `frustumCulled={false}` because the per-vertex GPU lift means a CPU-fit bounding sphere lies meters below the rendered geometry. Uniforms `_neonUniforms.{coreUniform, tubeUniform, bleedUniform, emissiveUniform, tubeRadiusUniform}` are written by Cartograph's `NeonPump` from the Sky & Light Neon channel and read in production once via `useSceneJson(lookId)` from `scene.json.neon.values`. Geometry is never baked; tubes runtime-build in every environment that mounts the component (Designer / Stage / LS / Preview / Toy). As of 2026-05-26 Preview mounts neon too (via the shared `SceneNeon` + a neon layer toggle); the earlier "Preview opts out of neon" stance is retired.
-
-**Tube radius is an operator-authored channel (added 2026-05-18, commit `43ca3fe`).** A slider in the Cartograph Neon panel writes a per-Look `tubeRadius` value (range 0.1–3.0 m, default 1.0 m) into `scene.json.neon.values.tubeRadius`. Unlike `core/tube/bleed/emissive` (shader-uniform-only, cheap to update every frame), `tubeRadius` drives vertex positions and requires a merged BufferGeometry rebuild on change. `NeonBands` polls the uniform via `useFrame`, quantizes to a `TUBE_RADIUS_STEP` grid, and commits via `useState` so the geometry `useMemo` invalidates and rebuilds. Continuous slider drags and TOD slot transitions are handled by step-quantization (no rebuild unless the quantized value actually changes); an earlier debounce was dropped after fixing the underlying rebuild-churn root cause (commit `e2b9095` retired it cleanly). The tradeoff is documented in `feedback_geometry_affecting_channels_need_debounce`: geometry-affecting channels jump at quantization boundaries rather than morphing across them — usually the cleaner read for a geometry knob.
-
-**Stage / production gate split (commit `6fcbd2d`, 2026-05-18).** `NeonBands` consumes its on/off gate via prop-presence: when `forceNeonOn` is passed (Stage path via `<LafayetteScene forceNeonOn={…}>`), the panel toggle is the *sole* master switch — off = no neon, on = every eligible building lit. When the prop is omitted (production path, `<LafayetteScene>` with no toggle prop), the hours gate is the *sole* arbiter — `_isWithinHours(info.hours, now)` decides per building. This eliminates the additive-OR confusion of the prior gating (where Society Pages `activeTags` could force neon on independently of either path); per `feedback_panel_is_source_of_truth_for_authored_channels`, Society Pages tags were decoupled from neon in commit `e2b9095`. Net effect: Stage authoring is deterministic from the toggle; production is deterministic from the hours data.
-
-**Eligibility extended to every building (commit `766bfcc`, 2026-05-18).** Previously `openPlaces` filtered to listings-only — only buildings with `listings.json` entries (authored hours) got tube geometry built. Post-`766bfcc`, every building in `_allBuildings` is eligible; default color derives from the **St. Louis zoning code** populated on `buildings.json` (1036 of 1082 records). The zoning-code → category mapping currently routes: `A B C D E` → residential (Sage), `F G H I` → services (Prussian Blue), and similar groupings — see `LafayetteScene.jsx`'s default-neon-color helper for the canonical table. In Stage with the panel toggle ON, the whole city lights up (~1082 tubes). In production, only listings-with-current-hours render. Bake-side eligibility is **out of scope of this commit** and queued as a future arc — today's extension is runtime-only; the eventual baked-asset model (per-building baked tubes shipped in the slab, lit subset chosen at runtime) is documented in BACKLOG. Hospitality category is a known gap in `CATEGORY_HEX` (also queued).
-
-**Non-street ribbons via shared helper (2026-05-13).** Alleys + footways + cycleways + steps + dirt paths went missing in Designer when V2 took over the live render — MapLayers retired its alley/footway block 2026-04-22 expecting the retired `StreetRibbons` V1 to own them, but V1 isn't mounted anywhere anymore (the file is deleted). Fixed via `src/lib/buildPathRibbons.js` — Clipper-based polyline offset with `jtRound` joints (no self-intersection at sharp bends, `ArcTolerance=25` ≈ 2.5cm for visibly smooth arcs). Both `cartograph/bake-ground.js` and `src/cartograph/BlockGeometryV2Debug.jsx` consume the same helper, so Designer and slab cannot drift. Paths clip to **parcel interiors** = `blocks[].ring − curbBands − frontageBands` (treelawn ∪ sidewalk rings), so they terminate at the sidewalk's inner edge rather than riding over the ped zone or curb stroke. See `feedback_designer_ylift_stacking` and `project_v2_block_ring_extends_to_asphalt` memory entries for the two non-obvious gotchas that bit during implementation.
-
-**Universal alley end-cap dial (2026-05-13).** Designer Panel → Paths → Shape subsection has a 3-segment toggle that controls how ALL alleys in the active Look terminate. Three modes mapped to Clipper's open-polyline end types plus a fillet trick: `square` = `etOpenButt` (flush cut); `rounded` = `etOpenSquare` + morphological-opening fillet by `halfWidth × 0.4` (rounded-rectangle pad); `round` = `etOpenRound` (true semicircle). Stored as `design.alleyCap`, autosaves via the store; bake reads it. Other path kinds (footway/cycleway/steps/path) use per-kind defaults (`round`) and don't carry an operator surface — they're typically organic / blending into other paths so a universal authoring dial isn't needed yet.
-
-**Corner-pad geometry is owned by V2 (2026-05-09).** `buildBlockGeometryV2` emits both the rounded asphalt silhouette (`asphaltRounded`) and the per-corner concrete pads (`cornerSidewalkPads`) in one pass. The bake adapter in `cartograph/bake-ground.js` flattens them into the same `byMaterial` map the rest of the bake walks, and Designer's `BlockGeometryV2Debug` renders them directly from V2's named outputs. Earlier per-corner-annular-sector and IP-rule attempts have been retired; the V1 corner-management code paths (`buildCornerPlug`, `buildCurbAnnulus`, `intersectionGeometry.js`) were deleted in commit `0286cb1`.
-
-**One V2 input is load-bearing:** `cornerSidewalkPads = cornerPadUnion ∩ blockRounded`, and `blockRounded = stencil − asphaltRounded`. If the caller passes `stencil: null`, blockRounded is empty and corner pads vanish. Both consumers now pass the same neighborhood-boundary polygon (bake-side via `STENCIL_POLYGON`, Designer-side via `LS_STENCIL` in `CartographApp.jsx`'s `SCENE_REGISTRY`). New scenes adding V2 must register a stencil or pads won't render — even though every other piece (asphalt, curb, bands) renders fine without one.
-
-**Polygon-edge corner-Q in `cornersAtIx` (2026-05-16).** V2 derives each IX corner's `point` from the *first crossing of two adjacent legs' chain-offset polylines* — not from extrapolated chain tangents meeting at infinity. Each leg builds a side-offset polyline by walking `chain.points` from V outward (6 vertices deep) and perpendicular-offsetting by the leg's `outerR`/`outerL` half-width at each vertex, using the same bisector-perp construction `emitChain` uses for its per-segment asphalt rectangles. So the corner lands at the actual silhouette vertex in the asphalt union, which is what `applyRoundCornersToRing` is trying to match. Where two legs' polylines never cross (the median wedge between two paired carriageways converging at one IX — LS's four park-corner IXs, Toy's Waverly couplet endpoint), the corner record is skipped entirely: that's not a real block corner, so no plug belongs there. This supersedes the divided-pair composite-coalesce that V2 carried briefly between 2026-05-16 morning and afternoon. Doctrine alignment per the ribbon doctrine line 89 (*"compute corner records off polygon edges, not off extended chain tangents"*) is now structural.
-
-**Asphalt-rectangle Douglas-Peucker simplification (Phase A.7, 2026-05-16).** Per-segment asphalt rectangles in `emitChain` are DP-simplified (`SIMPLIFY_EPS = 0.5 m`) on each side BEFORE the ring is assembled and unioned into `asphaltSharp`. Collapses OSM micro-bends (sub-degree wobbles within a few meters of an IX) without touching authored curvature. The unioned asphalt boundary near each IX has longer adjacent sides → `arcReplaceVertex`'s 49% maxInset clamp doesn't fire at modest slider settings → cranked-slider produces visibly big arcs on Mississippi-class dense-chain IXs. Endpoints (IX vertices) anchored by DP construction so adjacent segments' rectangles still meet exactly at corners.
-
-### V2 curb is the unifying boundary stroke (2026-05-08)
-
-In the rounded-block-clip model (V2 — `src/lib/buildBlockGeometryV2.js`), the **curb is the edge that separates asphalt from block**. It's not a per-side rectangular band like V1's curb stripe — it's a single continuous stroked polygon per block, derived directly from the rounded asphalt boundary that the corner geometry is already built on.
-
-```
-curb = dilate(asphaltRounded, CURB_WIDTH) − asphaltRounded
-```
-
-Read this as: the curb is the asphalt's silhouette, painted in width `CURB_WIDTH`, on the block side. Because `asphaltRounded` already carries the rounded corners (from the corner-radius authoring kit) and the cap shapes (from Survey: round / blunt / none), the curb honors all of them automatically. There is no separate corner-curb pass and no separate cap-curb annulus — one offset op covers every silhouette V2 produces.
-
-What the curb traces:
-- **On chain sides:** the asphalt edge running parallel to the centerline at `pavementHW`. This is the place V1 emits the per-side curb stripe; V2's curb covers it as part of the unified stroke.
-- **At intersections:** the rounded asphalt corner. The corner-radius authoring kit (`cornerRadiusScale`, per-IX overrides, per-corner overrides) shapes `asphaltRounded`; the curb inherits that shape with no extra plumbing.
-- **At dead ends:** whatever silhouette Survey + Measure authored. Round-capped end → round curb. Flat / blunt end → straight curb across the end. "None" / open end is the underauthored case (asphalt still closes structurally; if a true open dead-end is needed it requires unclosed asphalt geometry, which neither V1 nor V2 emit today).
-
-Because curb width is global (one `CURB_WIDTH` constant — per-side `side.curb` overrides aren't supported in this model), the dilation produces a constant-width band with no seams. The other strip bands (treelawn, sidewalk) are emitted by **polygon-walking the block rings** (D.3c, 2026-05-10): for each ring in `blockSharp`, walk vertices, identify block corners by per-vertex turn angle, emit one band ring per block-edge by parallel-offsetting the block-edge polyline INWARD into the block. ONE ring per band per block-edge — chain-IX vertices that don't change block direction are interior to the polyline (no seam). Customs are keyed by `[blockKey][edgeOrd]` (D.5/D.6) — operator authors per block-edge; bands, plugs, and live drag preview all read the same identity. The unified curb stroke sits on top at render priority 6 (curb) > 5 (sidewalk) > 3 (treelawn).
-
-**Don't rebuild this as per-side rectangles.** If a future task ever needs to vary curb width per side, the right move is to emit per-side curb sectors and *union* them with the global stroke, not replace it.
-
-The principle in plain words: in V2, the silhouette of the asphalt — wherever it goes, however the corners and caps are shaped — IS the curb's path. Survey + Measure author the silhouette; the corner editor refines it; the curb traces it.
-
-### Park paths auto-detect over-water bridges (2026-05-13)
-
-`park_paths.json` has no `bridge` tag — every path is a flat polygon. `LafayettePark.jsx`'s `ParkPaths` partitions paths at mount-time: for each path, sample segment midpoints; if a majority fall over water (`lake.outer` minus `lake.island`, or `grotto`), classify the path as a bridge and render it at `PATH_BRIDGE_Y` (0.5) — clears the water surface (0.35) and the lake island top (0.4). Non-bridge paths render at `PATH_LAND_Y` (0.4). Path material carries `polygonOffset: factor=-1, units=-1` so the lake-perimeter path stops z-fighting with the bank at the shoreline.
-
-A manual `bridge: true` per-path flag could ride on top of this later if auto-detection ever guesses wrong; no current path needs it.
-
-### Two sources of water/lamps existed; deduped
-
-The cartograph derive pulls OSM water and street lamps; the Python ETLs also produce `park_water.json` and `street_lamps.json`. Both versions used to render, causing visible double-outlines. As of 2026-05-04: `MapLayers.jsx` skips OSM water (`use === 'water'`) in the natural layer and skips `mapData.layers.streetlamp` in lamps. `park_water.json` and `street_lamps.json` are canonical.
-
-### Arborist is the only tree-placement authority
-
-`src/components/MapLayers.jsx` reads `park_trees.json` directly for the Designer-only flat tree dots. Stage / Preview / production read `public/baked/<look>.json` (the arborist's `bake-trees.js` output — `default.json` for the default Look, `lafayette-square.json` for LS, etc.) for InstancedTrees. The Arborist's Grove drives **roster** per Look (which species/variants ship into each Look's atlas + appear via substitution); placements stay universal. Per-Look config covers both the *roster* (`design.json#/trees`) and the *atlas* (textures); placements come from `park_trees.json` and don't change between Looks.
-
-### Legacy `cartograph/render.js` knobs are NOT wired into JSX Designer
-
-The pre-JSX SVG-rendered Designer (`cartograph/render.js`) still exists and contains authoring controls — most notably the `sv-smooth` slider (`render.js:1339`) plus tension/Catmull-Rom plumbing (`smoothPolyD`, `smoothLineD`, `smoothPolyline`). These are dead code from the live authoring path's perspective: the JSX Designer (`src/cartograph/`) does not read them. If you see "Smooth" referenced in render.js and assume it's wired through to current authoring, you will be wrong. The JSX path needs a parallel implementation. Tracked via Survey polish Phase 7.
-
-### Loop streets — in-flight L.0–L.6 (see BACKLOG)
-
-The V1 `LOOP_STREET_NAMES = new Set(['Benton Place', 'Mackay Place'])` at `cartograph/derive.js:1297` is wrong on two counts and dead on a third: **Mackay is not a loop street** (just a normal residential), **Waverly Place is** (and the V1 code path can't represent its divided-couplet topology at all), and **all of derive.js's loop-cut + median-creation paths are dead in production** post the V2 migration — `bake-ground.js` reads block geometry from `buildBlockGeometryV2` against `ribbons.json` and only consults `map.json` for sub-block overlays.
-
-Full spec + phasing in `cartograph/BACKLOG.md` "Loop streets (L.0 through L.6, in flight)"; canonical algorithm in `cartograph/NOTES.md` 2026-05-10 "Loop streets: L.0 architecture lock". Three topologies in scope: Type A teardrop (stem + closed body — Benton), Type B couplet (parallel one-way carriageways enclosing a face, with optional bare cut-thru — Waverly), Type C pure ring (none observed yet). Per-chain `loop: { loopId, role }` flag denormalizes the canonical `overlay.loops[]` list; auto-detect runs in the pipeline, operator override via Survey UI is the safety valve. L.6 deletes `LOOP_STREET_NAMES` + dead V1 paths and migrates this section into a full FEATURES entry.
-
-### The bake is for mobile delivery
-
-The reason the bake pipeline exists is to flatten the runtime to as few files as possible with as light a footprint as possible. First-paint cost on a mobile device is the optimization target. Authoring environments can afford live re-render; production/Preview can't.
-
----
+The render/bake internals that used to sit here moved to their proper homes (2026-06-14) so this stays the pitch:
+- **Render & bake internals** (layering & depth precision, terrain doctrine, the 5-env render topology, neon renderer, async-bake + cache-bust + dirty-skip, the data-flow diagram, frame discipline, map-state) → **`ARCHITECTURE.md §8`** + the §7 conventions.
+- **Operator knobs** (corner-radius kit, Sky Layer Gain, Hero bounce, bake buttons, alley-cap, tube radius, drag) → **`OPERATIONS.md`**.
+- **The settled doctrine in plain language** → **`/ORIENTATION.md`**.
 
 ## Pointers
 
-- `ARCHITECTURE.md` — file layout, publish-loop pattern, which helper publishes what
-- `README.md` — dev setup, ports, scripts
-- `cartograph/BACKLOG.md` — current punchlist (cartograph/Stage/Arborist work in flight)
-- `cartograph/NOTES.md` — historical decisions, ribbons phase records
-- `arborist/SPEC.md` — tree library / atlas / variant rating
-- `meteorologist/SPEC.md` — clouds & weather authoring
-- Project memory `~/.claude/projects/.../memory/MEMORY.md` — running collection of "don't forget" items per session
+- `ARCHITECTURE.md` — file layout, the publish-loop pattern, render/bake internals (§8)
+- `OPERATIONS.md` — the operator's manual (every knob)
+- `PIPELINE.md` — the execution spine (raw data → slab, P1–P15)
+- `RIBBONS.md` — the geometry canon (tiles / ribbons / corners / curbs)
+- `BACKLOG.md` — current punchlist · `NOTES.md` — historical decisions
+- `arborist/SPEC.md` · `meteorologist/SPEC.md` — the helper kits
