@@ -828,6 +828,92 @@ function rdpKeep(coords, eps = 0.5, protectedKeys = null) {
   return keep
 }
 
+// --- Step 4b: curve-fit — a curving RUN becomes a smooth ARC ----------------
+// (HANDOFF-concentric-curb-curved-streets.md / the two laws.) A curving street is
+// a CURVE, not chords. RDP (step 4) gives the control points; here each RUN of gentle
+// same-direction bends — between HARD vertices (endpoints, junctions/name-transitions,
+// real sharp corners) — is replaced by a single circular ARC fit through it (a biarc
+// where one arc can't ride the road, by a deviation bound), tessellated FINELY. The
+// centerline becomes a true arc (no straight chords) so the curb's concentric offset is
+// smooth — no facets, inner and outer. GRID-SAFE BY CONSTRUCTION: a straight run (no
+// interior bend) and a sharp corner are left byte-identical — only genuine curves change.
+const CURVE_FIT        = process.env.CURVE_FIT === '1'   // OFF by default — the tessellating fit is superseded by the curve-primitive build (HANDOFF-curve-primitive-skeleton.md)
+const CURVE_HARD_TURN  = 35 * Math.PI / 180   // a vertex turning ≥ this is a real corner → kept SHARP, never inside a cluster
+const CURVE_MIN_TURN   = 5  * Math.PI / 180   // a cluster must accumulate at least this total turn to be a real curve
+const CURVE_SEG_MAX    = 40                    // a segment LONGER than this is a straight LEG — kept verbatim, never bezier'd
+const CURVE_CHORD      = 1.0                   // bezier tessellation chord (m)
+// Cubic-bezier point.
+function bez(P0, P1, P2, P3, t) {
+  const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t
+  return { x: a * P0.x + b * P1.x + c * P2.x + d * P3.x, z: a * P0.z + b * P1.z + c * P2.z + d * P3.z }
+}
+// Fit a cubic bezier across cluster P[a..b] that LEAVES P[a] along tangent t0 and
+// ARRIVES at P[b] along tangent t3 (the bounding straight-leg directions, unit) — so the
+// curve joins the legs TANGENTIALLY (no hook). The handle length α·chord is chosen to
+// best ride the cluster's real points (sampled). Returns interior+end points (a..b],
+// EXCLUDING P[a] (caller holds it), tessellated at ~CURVE_CHORD; falls back to the raw
+// points if no bezier rides within tolerance (keeps the path — Law 2, never pull off).
+function fitClusterBezier(P, a, b, t0, t3) {
+  const P0 = P[a], P3 = P[b]
+  const chord = Math.hypot(P3.x - P0.x, P3.z - P0.z)
+  if (!(chord > 1e-6)) { const o = []; for (let i = a + 1; i <= b; i++) o.push(P[i]); return o }
+  // best α by min of the cluster points' max deviation from the bezier (coarse sample)
+  let bestA = 0.33, bestDev = Infinity
+  for (let A = 0.15; A <= 0.65; A += 0.05) {
+    const P1 = { x: P0.x + t0.x * chord * A, z: P0.z + t0.z * chord * A }
+    const P2 = { x: P3.x - t3.x * chord * A, z: P3.z - t3.z * chord * A }
+    let dev = 0
+    for (let i = a + 1; i < b; i++) {           // each real interior point → nearest of N bezier samples
+      let m = Infinity
+      for (let s = 0; s <= 24; s++) { const q = bez(P0, P1, P2, P3, s / 24); const d = Math.hypot(P[i].x - q.x, P[i].z - q.z); if (d < m) m = d }
+      if (m > dev) dev = m
+    }
+    if (dev < bestDev) { bestDev = dev; bestA = A }
+  }
+  const P1 = { x: P0.x + t0.x * chord * bestA, z: P0.z + t0.z * chord * bestA }
+  const P2 = { x: P3.x - t3.x * chord * bestA, z: P3.z - t3.z * chord * bestA }
+  const segs = Math.max(2, Math.round(chord / CURVE_CHORD))
+  const out = []
+  for (let k = 1; k <= segs; k++) out.push(k === segs ? P3 : bez(P0, P1, P2, P3, k / segs))
+  return out
+}
+// Replace each tightly-packed CURVE CLUSTER (a run of SHORT segments that turns) with a
+// tangent cubic bezier; leave STRAIGHT LEGS (long segments) and sharp corners byte-exact.
+function curveFitChain(points, pinned) {
+  const n = points.length
+  if (n < 3) return points
+  const segLen = (i) => Math.hypot(points[i + 1].x - points[i].x, points[i + 1].z - points[i].z)
+  const dir = (i, j) => { const dx = points[j].x - points[i].x, dz = points[j].z - points[i].z; const L = Math.hypot(dx, dz) || 1; return { x: dx / L, z: dz / L } }
+  const turnAt = (i) => {
+    const A = points[i - 1], V = points[i], B = points[i + 1]
+    const ix = V.x - A.x, iz = V.z - A.z, ox = B.x - V.x, oz = B.z - V.z
+    const li = Math.hypot(ix, iz) || 1, lo = Math.hypot(ox, oz) || 1
+    return Math.acos(Math.max(-1, Math.min(1, (ix * ox + iz * oz) / (li * lo)))) * (((ix * oz - iz * ox) >= 0) ? 1 : -1)
+  }
+  const hardV = (i) => i === 0 || i === n - 1 || (pinned && pinned.has(vKey(points[i]))) || Math.abs(turnAt(i)) >= CURVE_HARD_TURN
+  const out = [points[0]]
+  let i = 0
+  while (i < n - 1) {
+    // a cluster begins at i if segment i is SHORT and vertex i isn't a hard corner-break
+    if (segLen(i) < CURVE_SEG_MAX && !(i > 0 && hardV(i))) {
+      let j = i + 1
+      while (j < n - 1 && segLen(j) < CURVE_SEG_MAX && !hardV(j)) j++   // extend over short segs, stop at a long leg / hard vertex
+      // cluster spans points[i..j]; does it actually turn?
+      let tot = 0; for (let k = i + 1; k < j; k++) tot += Math.abs(turnAt(k))
+      if (j > i + 1 && tot >= CURVE_MIN_TURN) {
+        // tangents = the leg directions bounding the cluster (so the bezier joins them tangentially)
+        const t0 = i > 0 ? dir(i - 1, i) : dir(i, i + 1)
+        const t3 = j < n - 1 ? dir(j, j + 1) : dir(j - 1, j)
+        out.push(...fitClusterBezier(points, i, j, t0, t3))
+        i = j
+        continue
+      }
+    }
+    out.push(points[i + 1]); i++   // straight leg / non-curving — keep the point verbatim
+  }
+  return out
+}
+
 // --- Standards-seeded cross-section (OSM-FORENSICS.md Part 4) --------------
 // Default/prior cross-section per street class. NACTO-by-class for the
 // pedestrian-zone dims + curb-return R (the 2026-06-01 decision: tight
@@ -1597,6 +1683,23 @@ function main() {
     s.points = simplifyRDP(s.points, eps, junctionKeys)
   }
   for (const s of streets) totalPtsAfter += s.points.length
+
+  // Step 4b — curve-fit: a curving run becomes a smooth arc (frame placement, Law 1).
+  // Grid-safe: straights + sharp corners are kept byte-identical; only genuine curves change.
+  if (CURVE_FIT) {
+    let fitChains = 0
+    for (const s of streets) {
+      // ⛔ Skip DIVIDED carriageways (moving one desyncs its emergent median — the
+      // two-carriageway model is LOCKED) and CLOSED LOOPS (the interior is an emergent
+      // face; loops + medians take the legacy path — vector-curve handoff "Open items").
+      if (s.phase && s.phase.kind === 'divided') continue
+      if (isClosedLoop(s.points)) continue
+      const before = s.points.length
+      s.points = curveFitChain(s.points, junctionKeys)
+      if (s.points.length !== before) fitChains++
+    }
+    console.log(`  curve-fit: bezier-fit ${fitChains} curving chain(s) (divided + loops excluded)`)
+  }
 
   // Canonical direction pass. Non-oneway chains are oriented so the
   // dominant component of (last - first) is positive (+X if E-W, +Z if N-S).
