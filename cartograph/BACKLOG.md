@@ -80,7 +80,7 @@
 ## 🏛 STANDING CAMPAIGNS
 - **⭐⭐ The correctness suite — DEFEAT hand-fixing (the kit's correctness backbone, Jacob 2026-06-13).** Automate what the operator's eye does: a comprehensive invariant suite (one RED-until-true check per bug-class) that flags bad streets, so the kit never needs a hand-fix on *any* town. Validated against LS's 35 curated streets (the labeled set); enforced as a CI gate; the onboarding loop = run-suite → fix-flagged-classes → green → ship. **The six SHAPE tasks make LS's suite green; the *suite* defeats town #2…N.** Doctrine + first-pass scope: **`POLYGON-FIRST.md §5`**.
 - **The living Process / doc-architecture** (`BOZ.md`) — now active as the doc campaign + the `DOC-CODE-COHERENCE` discipline.
-- **Forensic audit + productization → Show Bible** — `HANDOFF-audit-{cartograph,arborist,ls-app,docs}`.
+- **Forensic audit + productization → Show Bible** — the four pathologist walks **LANDED** (deliverables `scratch/audit-{cartograph,arborist,ls-app,docs}.md`, filed `e3b7a4e`; the docs gap-map **executed** `eb030eb`); the dispatch briefs are retired. Open downstream = aggregating the domain tables into the master matrix → the Show Bible (`AUDIT-MATRIX.md` · `plans/front-front-end-and-productization.md`).
 
 ## 🛠 LIVE HANDOFFS (the dispatch layer — OPEN work; landed → the summary below)
 
