@@ -2606,6 +2606,18 @@ export function deriveLayers(highways) {
     ixMatches.push({ npt, matches })
   }
 
+  // Closed-loop streets (weld: start ≈ end). When the IX-snap moves ONE weld
+  // endpoint onto an intersection vertex, its TWIN must move with it or the loop
+  // OPENS — the cul-de-sac stem-circle node then scatters across two mm-buckets,
+  // drops below degree-3, and no junction is built (HANDOFF-junction-construction.md
+  // step (b); the SV cul-de-sac). Captured pre-snap; only loops whose weld actually
+  // meets an intersection are touched (SV; Park's stems join mid-ring).
+  const LOOP_WELD_TOL = 0.05
+  const closedLoopStreet = new Set()
+  for (let si = 0; si < ribbonStreets.length; si++) {
+    const p = ribbonStreets[si].points
+    if (p.length >= 4 && Math.hypot(p[0][0] - p[p.length - 1][0], p[0][1] - p[p.length - 1][1]) < LOOP_WELD_TOL) closedLoopStreet.add(si)
+  }
   for (const { npt, matches } of ixMatches) {
     const pt = [npt.x, npt.z]
     const ixData = { point: pt, streets: [] }
@@ -2630,6 +2642,12 @@ export function deriveLayers(highways) {
         list.push({ afterIdx: m.segIdx, t: m.t, point: pt, ixData })
         splicesByStreet.set(m.streetIdx, list)
         continue
+      }
+      // Keep a closed loop closed through the snap: drag the twin weld endpoint.
+      if (closedLoopStreet.has(m.streetIdx)) {
+        const last = st.points.length - 1
+        if (targetIdx === 0) st.points[last] = pt
+        else if (targetIdx === last) st.points[0] = pt
       }
       st.intersections.push({ ix: targetIdx, with: ixData })
       ixData.streets.push({ name: st.name, ix: targetIdx })

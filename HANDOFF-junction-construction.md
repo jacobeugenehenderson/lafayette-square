@@ -64,4 +64,18 @@ Two-carriageway model (NO merge-to-spine — osm2streets' `MergeDualCarriageways
 - The junction-curb bump (`HANDOFF-curve-primitive-skeleton.md`) + the median (`RIBBONS §1`) — the two proofs that fixing the derivation can dissolve a "needs construction" symptom (the §3 gate).
 
 ---
+
+## 9. ⭐ The cul-de-sac probe (2026-06-16, Boz) — the notch is the CURB-RETURN, not the apron
+
+The turning-circle cul-de-sacs (Saint Vincent, Park Place) render with a **notched ROW** — the symptom Jacob marked. Worked it as the contained probe case for this brief; the derivation-first gate (§3) earned its keep three times:
+
+- **(a) Smooth circles — LANDED** (`skeleton.js` `fitClosedLoopCircle`, `CURVE_LOOP_CIRCLE_TOL`): a closed loop that circle-fits (SV/Park ≈0.2% residual; Benton 73% + Waverly 52% fall through) is emitted as ≤90° bezier ARCS between its pinned vertices. SV/Park now smooth (0 bends >12°). Jacob: likes the smooth arcs. Grid + Benton baseline byte-identical.
+- **(b) The loop-weld scatter — LANDED** (`derive.js` IX-snap, `closedLoopStreet`): SV had NO E3 node at all. At the skeleton SV-0-end / SV-2-start / SV-2-end coincide exactly, but the IX-snap pulled only ONE onto a computed intersection vertex 2.2 cm away → the loop OPENED → the node scattered across two mm-buckets → degree<3 → no junction. Fix: when the snap moves one weld endpoint, drag its twin. SV E3 node now present (Park already had one). General + Benton-safe. **This was a genuine upstream weld bug — keep regardless.**
+- **(c) Apron at the cul-de-sac plain node — TRIED, REVERTED (wrong layer).** Enabled the fan-apron for the cul-de-sac nodes (diameter-gated to SV/Park; Benton-safe). The aprons built, but the notch was **unchanged** on Jacob's eye. **Why:** the apron fills junction *asphalt*; the notch is in the *block-ROW / curb*. Different layer.
+- **⭐ THE ACTUAL DEFECT (ground truth, Jacob's marks + the live-curb harness `scratch/culdesac-curb-probe.mjs`):** the cul-de-sac ROW should be a **keyhole** — the two straight stem-corridor curb edges flaring **tangentially** into the bulb circle. The two notches ARE the two **curb-returns** at those tangent points (stem/west side; the far/east arc is already clean — r climbs 11.9→12.6 m smoothly). This is the **live CURB construction** (`buildTileGround`, the concentric-curb / `HANDOFF-concentric-curb-curved-streets.md` family) — NOT the frozen `tile.ring` (clean in JSON), NOT the asphalt apron. The fix = construct a smooth tangent curb-return where the straight stem curb meets the bulb arc, instead of the notch.
+- **Marks = durable ground truth** (`marker_strokes.json`, 2026-06-16): #2 SV bulb arc + #1/#3 SV stem edges + #0 Park bulb. The target keyhole.
+
+▶ **NEXT:** the curb-return construction at the bulb↔stem tangent (live curb). Not yet pinned to an exact `buildTileGround` site — the notch is a *subtle shape* on the stem side, not a gross kink. (a)+(b) are validated and kept; (c) reverted.
+
+---
 *Scoped 2026-06-16. Supersedes the old construct-hard-polygons campaign (the median half retired by derivation; only the junction remained — this is its dedicated brief). The single idea: promote E3's divided-transition construction — apron, edge-collision trim, corner-by-adjacency — to EVERY node; the metadata already spans every node, only the geometry is divided-only. The field had the names: this is the osm2streets trim-back, in our vocabulary.*
