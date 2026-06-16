@@ -3132,23 +3132,22 @@ export function deriveLayers(highways) {
   const pinchCount = corridors.reduce((a, c) => a + c.transitions.filter(t => t.pinch).length, 0)
   console.log(`    ${corridors.length} corridors, ${pinchCount} pinch transitions`)
 
-  // [E2] CONSTRUCTED medians — the median is a real polygon decided here at
-  // prebake, not a residual face re-derived per render. Per divided pair:
-  // the polygon between the pair's two inner-edge chains (D9: the chains ARE
-  // the median's edges; phase.chainGap = its width), with two refinements:
-  //   1. Mutual-overlap window — each edge spans only the stations where its
-  //      mate runs alongside (project B's endpoints onto A). Where one chain
-  //      overhangs its mate (map-edge clips, interchange fragments) the
-  //      median must not wedge across the overhang.
-  //   2. Blunt ~2 m NOSE — where the gap pinches below NOSE_GAP (a divided↔
-  //      undivided transition: both chains taper into the shared spine node)
-  //      the median is trimmed back to the first station ≥ NOSE_GAP apart and
-  //      closed with a blunt cut. The merge region (node → nose) is corridor
-  //      asphalt — lanes joining — and is filled positively by tileGround.
-  // Tagged kind:'median' so downstream consumes it by IDENTITY (tileGround
-  // median tiles, material/LU), replacing the emergent >40%-median-facing
-  // heuristic + the vestigial A+B.reversed ring this block used to emit
-  // (TRUMAN-FORENSICS §2a — that decoy had zero consumers).
+  // [E2] DIVIDED corridor — nose truth + corridor merge asphalt. The MEDIAN
+  // itself is NO LONGER constructed here: it is the walked face between the two
+  // carriageways, painted by sectionPass's open-field flooded remainder (the
+  // 'median' class; RIBBONS §1 update 2026-06-15, HANDOFF-divided-corridor-
+  // construction.md). This block keeps only what the walked face CANNOT supply:
+  //   1. noseRecs — the per-pinching-end nose stations the E3.1 junction map
+  //      consumes (ONE nose truth, JUNCTION-CURE-PLAN §4.3). Derived from the
+  //      gap profile (mutual-overlap window + NOSE_GAP trim), never re-derived.
+  //   2. merge asphalt (kind:'merge') at the HARD spots — the cross-street
+  //      CROSSING windows + the nose-taper regions (node → nose) — so those read
+  //      corridor asphalt ("lanes joining"), never a parcel pill. The median
+  //      BODY is left empty; the walked-face flood paints its grass.
+  // (The old chain-to-chain median stamp ring is DELETED — that was the
+  // construction Jacob's "why aren't we using the same walk-polygon process?"
+  // retired. If the eye confirms the carriageway strokes already cover the merge
+  // spots, the merge emits can go too — design §5.D.)
   const NOSE_GAP = 2.0   // m — median trimmed back to where the chains are ≥ this apart
   const NOSE_STEP = 0.5  // m — gap-profile sampling step for the trim search
   const arcLengths = (pts) => {
@@ -3330,30 +3329,19 @@ export function deriveLayers(highways) {
       })
       return true
     }
-    // A median segment must clear MIN_MED_AREA (25 m²) to stamp as median —
-    // below that it's an intersection crumb (the divided×divided central
-    // box), which stamps as merge ASPHALT instead so the region never falls
-    // through to a parcel-LU pill.
-    const stampMedianOrMerge = (w0, w1) => {
-      if (stamp('median', w0, w1, 25)) { emitted++; return }
-      if (stamp('merge', w0, w1, 1)) mergeCount++
-    }
-    let cursor = s0
-    let emitted = 0
+    // [universal-median 2026-06-15] The median BODY is NOT stamped — it is the
+    // walked face between the carriageways (sectionPass open-field flood → grass).
+    // Emit ONLY corridor MERGE asphalt at the hard spots: the cross-street CROSSING
+    // windows + the nose-taper regions (node → nose). The median body between the
+    // crossings is left empty for the walked face to paint. (medianSkips no longer
+    // tracks divided medians; it still counts window-collapsed degenerate pairs.)
     for (const [lo, hi] of merged) {
-      stampMedianOrMerge(cursor, lo)
       if (stamp('merge', lo, hi, 1)) mergeCount++
-      cursor = hi
     }
-    stampMedianOrMerge(cursor, s1)
-    if (!emitted) medianSkips++
-    // Transition tapers (node → nose) as merge patches, so the taper needle
-    // is positively asphalt even when its face doesn't match a median tile.
     if (stamp('merge', winLo, s0, 1)) mergeCount++
     if (stamp('merge', s1, winHi, 1)) mergeCount++
   }
-  const medCount = medians.filter(m => m.kind === 'median').length
-  console.log(`    ${medCount} constructed median segments + ${mergeCount} merge patches from ${dividedPairs.length} pairs (${crossingCount} crossings cut${medianSkips ? `, ${medianSkips} pairs degenerate` : ''})`)
+  console.log(`    divided medians = walked faces (no rings) — ${mergeCount} corridor merge patches from ${dividedPairs.length} pairs (${crossingCount} crossings${medianSkips ? `, ${medianSkips} pairs degenerate` : ''})`)
 
   // [E2-loop] CLOSED LOOP-BODY medians — a teardrop / cul-de-sac body (Benton
   // Place, Park Place, Saint Vincent) closes on itself, so its interior is a

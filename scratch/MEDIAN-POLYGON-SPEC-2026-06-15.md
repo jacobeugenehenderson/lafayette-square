@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED (2026-06-15, Jacob — "why aren't we using the same walk-polygon process as everywhere else?").** The whole "construct/inset a median ring" approach is RETRACTED. The median is a WALKED FACE; its grass = `luRemainder`; the stamp ring is deleted. See `RIBBONS §1` + §3.5. Kept only as the record of the detour.
+
 # Median polygon spec (Cambour III, 2026-06-15) — inset the frozen ring inner-edge-to-inner-edge
 
 ## Diagnosis (pinned)

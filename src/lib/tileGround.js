@@ -1176,7 +1176,14 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
     // (whole interior → bare median ground) and a block face that absorbed
     // median area through a one-sided junction (it stops mis-painting as the
     // block's parcel LU — the Truman drop-off/pill class).
-    if (st.med?.length) {
+    if (st.isMedian) {
+      // [universal-median] DIVIDED median — the open-field flooded remainder IS the
+      // grass (SECTION §3; both ped strips are zeroed at the shape pass, so
+      // luRemainder floods curb→center). Route the whole flood to 'median'. No clip,
+      // no constructed ring — the walked face is the median.
+      if (luRemainder.length) { pushLu(luByLu, 'median', luRemainder); luRemainder = [] }
+    } else if (st.med?.length) {
+      // LOOP-body median (Benton / Park Place) — clip the remainder to the frozen ring.
       const medGround = intersectRings(luRemainder, st.med)
       if (medGround.length) {
         luRemainder = differenceRings(luRemainder, st.med)
@@ -2345,17 +2352,35 @@ export function buildTileGround(ribbons, opts = {}) {
     // split station (same positive-asphalt landing as the E3.2 windows).
     const tClip = thruClipFor(tile.ring)
     if (tClip.length) aFill = aFill.length ? unionRings([...aFill, ...tClip]) : tClip
-    const medClip = medianClipFor(tile.ring)
+    const medClip = medianClipFor(tile.ring)   // loop-body median rings only (divided no longer stamps rings)
     let medArea = 0
     for (const r of medClip) medArea += Math.abs(signedArea(r))
-    // A single-run tile (groupRuns found no seam) is bounded entirely by ONE
-    // street-side → a loop interior (LOOP-STREETS §2). When its emergent median
-    // ring covers it, it IS the §2 body interior: ped-zero so the inner side is
-    // curb + grass (no inner sidewalk ring), treelawn flowing into the median —
-    // independent of the >50% area ratio the divided-median heuristic uses.
+    // [universal-median 2026-06-15 — RIBBONS §1 update] Face-read DIVIDED median
+    // identity. The median is the walked face BETWEEN the two carriageways of a
+    // divided pair — NOT a constructed ring. Detect it off the polygon (the
+    // doctrine: identity descends from the face): the ONLY tile bounded by BOTH
+    // members of one divided pair is the median between them. Its grass is then the
+    // open-field flooded remainder (SECTION §3), routed to the 'median' class in
+    // sectionPass via the frozen `isMedian` flag. ⛔ No left/right side test — the
+    // measure side is point-order-relative PER CHAIN, so a pair's two carriageways
+    // disagree on which side faces the median (Lafayette: A side==inboard, B side!=;
+    // inboardSideOf is unreliable for this). "Bordered by both members" is the
+    // convention-free signal; the pairKey match rules out cross-pair junction tiles.
+    const medPairs = new Map()   // pairKey → Set(carriageway skelId bounding this tile)
+    for (const run of runs) {
+      const so = streetsOrig[run.streetIdx]
+      if (!/^carriageway/.test(so?.phase?.role || '')) continue
+      const pk = so.phase.pairKey
+      if (!pk) continue
+      if (!medPairs.has(pk)) medPairs.set(pk, new Set())
+      medPairs.get(pk).add(so.skelId)
+    }
+    const isDividedMedian = [...medPairs.values()].some(set => set.size >= 2)
+    // A single-run tile bounded by ONE street-side is a loop interior (LOOP-STREETS
+    // §2); a loop-body median ring (still stamped) covering it IS the §2 interior.
+    // Loop medians ride the frozen `med` ring; divided medians ride `isMedian`.
     const isLoopInterior = runs.length === 1
-    const isMedianTile = (medArea > 0.5 && medArea > 0.5 * Math.abs(signedArea(tile.ring)))
-      || (isLoopInterior && medArea > 0.5)
+    const isMedianTile = isDividedMedian || (isLoopInterior && medArea > 0.5)
     // Best-effort fill (SECTION.md §3.1): per-tile band depths are STANDARD, not
     // the old per-edge averaged measures. The treelawn band is present iff any of
     // the tile's runs gleans treelawn-Y; the sidewalk band is always ADA.
@@ -2544,7 +2569,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
     // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(medClip.length ? { med: medClip } : {}) })
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────

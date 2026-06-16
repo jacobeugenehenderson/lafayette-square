@@ -9737,19 +9737,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.07,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 4.94,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
@@ -10044,19 +10043,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.94,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.07,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
@@ -10148,19 +10146,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.94,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.07,
+          "pavementHW": 2.1901709234175555,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
@@ -11278,19 +11275,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.07,
-          "treelawn": 0,
-          "sidewalk": 1.52,
+          "pavementHW": 5,
+          "treelawn": 1.3756000000000004,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.07,
+          "pavementHW": 5.997331895265273,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": true,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -19039,19 +19035,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 7.01,
-          "treelawn": 1.33,
-          "sidewalk": 1.52,
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 7.01,
-          "treelawn": 1.53,
-          "sidewalk": 1.52,
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -19176,19 +19171,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 8.34,
-          "treelawn": 0,
-          "sidewalk": 1.52,
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 8.54,
-          "treelawn": 0,
-          "sidewalk": 1.52,
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -21652,19 +21646,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.52,
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.49,
-          "treelawn": 0,
-          "sidewalk": 0.9144000000000001,
-          "terminal": "lawn"
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -22800,8 +22793,8 @@
       "measure": {
         "left": {
           "pavementHW": 4.581522730981818,
-          "treelawn": 3.22,
-          "sidewalk": 1.52,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -22810,8 +22803,7 @@
           "sidewalk": 0,
           "terminal": "none"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -23027,19 +23019,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.34,
-          "treelawn": 0,
-          "sidewalk": 1.52,
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 11.17,
+          "pavementHW": 9.163045461963636,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -23293,19 +23284,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 11.17,
-          "treelawn": 0,
-          "sidewalk": 1.52,
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.34,
+          "pavementHW": 9.163045461963636,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -23447,8 +23437,8 @@
       "measure": {
         "left": {
           "pavementHW": 4.581522730981818,
-          "treelawn": 2.79,
-          "sidewalk": 1.52,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -23457,8 +23447,7 @@
           "sidewalk": 0,
           "terminal": "none"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -23586,19 +23575,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 11.17,
-          "treelawn": 0,
-          "sidewalk": 1.52,
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.34,
+          "pavementHW": 9.163045461963636,
           "treelawn": 0,
-          "sidewalk": 1.52,
+          "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -23718,8 +23706,8 @@
       "measure": {
         "left": {
           "pavementHW": 4.581522730981818,
-          "treelawn": 6.14,
-          "sidewalk": 1.52,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -23728,8 +23716,7 @@
           "sidewalk": 0,
           "terminal": "none"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -23877,8 +23864,8 @@
       "measure": {
         "left": {
           "pavementHW": 4.581522730981818,
-          "treelawn": 1.54,
-          "sidewalk": 1.52,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
           "terminal": "sidewalk"
         },
         "right": {
@@ -23887,8 +23874,7 @@
           "sidewalk": 0,
           "terminal": "none"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -86190,38 +86176,6 @@
   ],
   "medians": [
     {
-      "kind": "median",
-      "name": "South 18th Street",
-      "streets": [
-        "South 18th Street",
-        "South 18th Street"
-      ],
-      "chains": [
-        "south-18th-street-5",
-        "south-18th-street-6"
-      ],
-      "pairKey": "301606663-1297584456",
-      "absorbedBy": "658.300,-726.700",
-      "ring": [
-        [
-          655.7003476311296,
-          -720.8032275535378
-        ],
-        [
-          649.1888708001771,
-          -706.0332923028408
-        ],
-        [
-          656.1635821171147,
-          -705.335821171147
-        ],
-        [
-          657.6904220115497,
-          -720.6042201154958
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "South 18th Street",
       "streets": [
@@ -86261,65 +86215,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "South 18th Street",
-      "streets": [
-        "South 18th Street",
-        "South 18th Street"
-      ],
-      "chains": [
-        "south-18th-street-5",
-        "south-18th-street-6"
-      ],
-      "pairKey": "301606663-1297584456",
-      "ring": [
-        [
-          644.6227638022938,
-          -692.8831979827427
-        ],
-        [
-          636.41,
-          -657.6
-        ],
-        [
-          636.23,
-          -638.33
-        ],
-        [
-          641.58,
-          -605.76
-        ],
-        [
-          655.5973301927512,
-          -560.6717646146526
-        ],
-        [
-          667.7667701709605,
-          -564.5496632573438
-        ],
-        [
-          656.33,
-          -600.44
-        ],
-        [
-          651.35,
-          -619.01
-        ],
-        [
-          648.79,
-          -636
-        ],
-        [
-          648.1,
-          -662.51
-        ],
-        [
-          654.0769600152939,
-          -690.8922587392914
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "South 18th Street",
       "streets": [
@@ -86355,41 +86250,6 @@
         [
           667.7667701709605,
           -564.5496632573438
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "South 18th Street",
-      "streets": [
-        "South 18th Street",
-        "South 18th Street"
-      ],
-      "chains": [
-        "south-18th-street-5",
-        "south-18th-street-6"
-      ],
-      "pairKey": "301606663-1297584456",
-      "ring": [
-        [
-          660.6952909851075,
-          -544.4332668416878
-        ],
-        [
-          677.2,
-          -492.40000000000003
-        ],
-        [
-          688.381118820874,
-          -457.71404745349327
-        ],
-        [
-          699.9047174922086,
-          -461.2935849154337
-        ],
-        [
-          672.901543714798,
-          -548.224854883063
         ]
       ]
     },
@@ -86456,45 +86316,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Russell Boulevard",
-      "streets": [
-        "Russell Boulevard",
-        "Russell Boulevard"
-      ],
-      "chains": [
-        "russell-boulevard-1",
-        "russell-boulevard-3"
-      ],
-      "pairKey": "624166453-1448498459",
-      "ring": [
-        [
-          -558.595067948596,
-          527.0241979839321
-        ],
-        [
-          -562.73,
-          524.38
-        ],
-        [
-          -681.2202111671902,
-          505.0412436647126
-        ],
-        [
-          -682.3925640828525,
-          512.3305237417181
-        ],
-        [
-          -563.39,
-          531.47
-        ],
-        [
-          -557.7490048060552,
-          528.8364278696898
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Russell Boulevard",
       "streets": [
@@ -86530,37 +86351,6 @@
         [
           -682.3925640828525,
           512.3305237417181
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Russell Boulevard",
-      "streets": [
-        "Russell Boulevard",
-        "Russell Boulevard"
-      ],
-      "chains": [
-        "russell-boulevard-1",
-        "russell-boulevard-3"
-      ],
-      "pairKey": "624166453-1448498459",
-      "ring": [
-        [
-          -694.0142159188453,
-          502.97372545298475
-        ],
-        [
-          -878.2309019252941,
-          473.499055691953
-        ],
-        [
-          -879.3766190970546,
-          480.6147519631073
-        ],
-        [
-          -695.1892107420277,
-          510.2712561944482
         ]
       ]
     },
@@ -86604,37 +86394,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Russell Boulevard",
-      "streets": [
-        "Russell Boulevard",
-        "Russell Boulevard"
-      ],
-      "chains": [
-        "russell-boulevard-1",
-        "russell-boulevard-3"
-      ],
-      "pairKey": "624166453-1448498459",
-      "ring": [
-        [
-          -892.0359173612977,
-          471.29407616876955
-        ],
-        [
-          -979.7990576583965,
-          457.30034710564945
-        ],
-        [
-          -980.9158679062426,
-          464.2123129688436
-        ],
-        [
-          -893.1821294293554,
-          478.38801061437033
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Russell Boulevard",
       "streets": [
@@ -86670,45 +86429,6 @@
         [
           -980.9158679062426,
           464.2123129688436
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Russell Boulevard",
-      "streets": [
-        "Russell Boulevard",
-        "Russell Boulevard"
-      ],
-      "chains": [
-        "russell-boulevard-1",
-        "russell-boulevard-3"
-      ],
-      "pairKey": "624166453-1448498459",
-      "ring": [
-        [
-          -993.6052859589814,
-          455.10297494716343
-        ],
-        [
-          -1071.11,
-          442.79
-        ],
-        [
-          -1078.136616195156,
-          443.09637854746575
-        ],
-        [
-          -1079.519552821259,
-          446.03035592764195
-        ],
-        [
-          -1072.01,
-          449.57
-        ],
-        [
-          -994.711741004724,
-          461.989492271774
         ]
       ]
     },
@@ -86806,37 +86526,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Officer David Haynes Memorial Highway",
-      "streets": [
-        "Officer David Haynes Memorial Highway",
-        "Officer David Haynes Memorial Highway"
-      ],
-      "chains": [
-        "officer-david-haynes-memorial-highway-0",
-        "officer-david-haynes-memorial-highway-2"
-      ],
-      "pairKey": "28522849-28522855",
-      "ring": [
-        [
-          -469.7014477856848,
-          262.9703377357372
-        ],
-        [
-          -465.38740545634977,
-          263.4954916712288
-        ],
-        [
-          -462.97810507213126,
-          243.2573684437939
-        ],
-        [
-          -467.24,
-          242.75
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Officer David Haynes Memorial Highway",
       "streets": [
@@ -86850,8 +86539,8 @@
       "pairKey": "28522849-28522855",
       "ring": [
         [
-          -465.38740545634977,
-          263.4954916712288
+          -469.49016432605384,
+          262.99605754371754
         ],
         [
           -459.6,
@@ -86862,12 +86551,12 @@
           266.40000000000003
         ],
         [
-          -430.00038719287124,
-          267.5876859786818
+          -429.46,
+          267.65
         ],
         [
-          -427.74157935345175,
-          247.3324746973299
+          -427.2009661968111,
+          247.3927624533721
         ],
         [
           -437,
@@ -86878,187 +86567,8 @@
           244.10000000000002
         ],
         [
-          -462.97810507213126,
-          243.2573684437939
-        ]
-      ]
-    },
-    {
-      "kind": "merge",
-      "name": "Officer David Haynes Memorial Highway",
-      "streets": [
-        "Officer David Haynes Memorial Highway",
-        "Officer David Haynes Memorial Highway"
-      ],
-      "chains": [
-        "officer-david-haynes-memorial-highway-0",
-        "officer-david-haynes-memorial-highway-2"
-      ],
-      "pairKey": "28522849-28522855",
-      "ring": [
-        [
-          -430.00038719287124,
-          267.5876859786818
-        ],
-        [
-          -429.46,
-          267.65
-        ],
-        [
-          -427.2009661968111,
-          247.3927624533721
-        ],
-        [
-          -427.74157935345175,
-          247.3324746973299
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Officer David Haynes Memorial Highway",
-      "streets": [
-        "Officer David Haynes Memorial Highway",
-        "Officer David Haynes Memorial Highway"
-      ],
-      "chains": [
-        "officer-david-haynes-memorial-highway-1",
-        "officer-david-haynes-memorial-highway-6"
-      ],
-      "pairKey": "28522850-123680975",
-      "ring": [
-        [
-          -428.4766532748253,
-          267.76736873638356
-        ],
-        [
-          -326.91,
-          279.89
-        ],
-        [
-          -290.48,
-          285.65
-        ],
-        [
-          -218.86,
-          302.22
-        ],
-        [
-          -150.5,
-          323.6
-        ],
-        [
-          -144.29004591930777,
-          304.2609763351282
-        ],
-        [
-          -212.93,
-          282.22
-        ],
-        [
-          -282.63,
-          266.1
-        ],
-        [
-          -317.37,
-          260.28
-        ],
-        [
-          -426.06,
-          247.52
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Officer David Haynes Memorial Highway",
-      "streets": [
-        "Officer David Haynes Memorial Highway",
-        "Officer David Haynes Memorial Highway"
-      ],
-      "chains": [
-        "officer-david-haynes-memorial-highway-4",
-        "officer-david-haynes-memorial-highway-11"
-      ],
-      "pairKey": "123680973-1098246220",
-      "ring": [
-        [
-          8.125376611853838,
-          356.9895074861512
-        ],
-        [
-          -142.3,
-          304.90000000000003
-        ],
-        [
-          -149.02213804743099,
-          324.1169596158196
-        ],
-        [
-          1.2381657323170079,
-          376.678370226522
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Officer David Haynes Memorial Highway",
-      "streets": [
-        "Officer David Haynes Memorial Highway",
-        "Officer David Haynes Memorial Highway"
-      ],
-      "chains": [
-        "officer-david-haynes-memorial-highway-5",
-        "officer-david-haynes-memorial-highway-7"
-      ],
-      "pairKey": "123680974-711142584",
-      "ring": [
-        [
-          -727.9000000000001,
-          234
-        ],
-        [
-          -470.69000000000005,
-          262.85
-        ],
-        [
-          -468.39378734185715,
-          242.61904517743167
-        ],
-        [
-          -725.5653154661104,
-          213.43008581432096
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Officer David Haynes Memorial Highway",
-      "streets": [
-        "Officer David Haynes Memorial Highway",
-        "Officer David Haynes Memorial Highway"
-      ],
-      "chains": [
-        "officer-david-haynes-memorial-highway-9",
-        "officer-david-haynes-memorial-highway-12"
-      ],
-      "pairKey": "1098235552-1098277792",
-      "ring": [
-        [
-          -750.5,
-          210.60000000000002
-        ],
-        [
-          -826.96,
-          201.96
-        ],
-        [
-          -829.3087079264055,
-          222.27662238120976
-        ],
-        [
-          -752.8714300834317,
-          231.11317193034606
+          -467.0821563929448,
+          242.7687909056018
         ]
       ]
     },
@@ -87090,53 +86600,6 @@
         [
           -295.7218591225385,
           375.0902417438546
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Geyer Avenue",
-      "streets": [
-        "Geyer Avenue",
-        "Geyer Avenue"
-      ],
-      "chains": [
-        "geyer-avenue-2",
-        "geyer-avenue-5"
-      ],
-      "pairKey": "180345148-612660796",
-      "ring": [
-        [
-          -293.21135670163665,
-          384.77145720300445
-        ],
-        [
-          -209.2000000000001,
-          414.5000000000001
-        ],
-        [
-          -147.80000000000004,
-          436.20000000000005
-        ],
-        [
-          -82.02821502994695,
-          459.4446468970469
-        ],
-        [
-          -79.35859522995112,
-          451.9181137634452
-        ],
-        [
-          -145.10000000000002,
-          428.6
-        ],
-        [
-          -206.29999999999995,
-          406.9000000000002
-        ],
-        [
-          -290.4363278333624,
-          376.9704472575153
         ]
       ]
     },
@@ -87180,45 +86643,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Geyer Avenue",
-      "streets": [
-        "Geyer Avenue",
-        "Geyer Avenue"
-      ],
-      "chains": [
-        "geyer-avenue-2",
-        "geyer-avenue-5"
-      ],
-      "pairKey": "180345148-612660796",
-      "ring": [
-        [
-          -71.73202273807847,
-          463.0826161297849
-        ],
-        [
-          112.56,
-          528.1
-        ],
-        [
-          115.12074902575617,
-          527.5072340218157
-        ],
-        [
-          118.1761711432298,
-          523.683657000512
-        ],
-        [
-          114.53,
-          520.77
-        ],
-        [
-          -69.06520877322296,
-          455.57286488430253
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Geyer Avenue",
       "streets": [
@@ -87277,45 +86701,6 @@
         [
           119.96437700211467,
           525.1126131066374
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Chouteau Avenue",
-      "streets": [
-        "Chouteau Avenue",
-        "Chouteau Avenue"
-      ],
-      "chains": [
-        "chouteau-avenue-2",
-        "chouteau-avenue-3"
-      ],
-      "pairKey": "1350829601-1350829602",
-      "ring": [
-        [
-          539.7140623644017,
-          -490.7371363713186
-        ],
-        [
-          529.39,
-          -495.7
-        ],
-        [
-          342.88151225100466,
-          -545.5996681337901
-        ],
-        [
-          341.0722815579959,
-          -538.8088470378761
-        ],
-        [
-          521.12,
-          -490.84
-        ],
-        [
-          539.4879467294056,
-          -488.7499595498932
         ]
       ]
     },
@@ -87355,45 +86740,6 @@
         [
           341.0722815579959,
           -538.8088470378761
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Chouteau Avenue",
-      "streets": [
-        "Chouteau Avenue",
-        "Chouteau Avenue"
-      ],
-      "chains": [
-        "chouteau-avenue-2",
-        "chouteau-avenue-3"
-      ],
-      "pairKey": "1350829601-1350829602",
-      "ring": [
-        [
-          330.7998150691952,
-          -548.7257854698474
-        ],
-        [
-          316.27,
-          -552.36
-        ],
-        [
-          303.3972757269928,
-          -553.6764515070972
-        ],
-        [
-          302.5557006128176,
-          -551.8621330876347
-        ],
-        [
-          314.59,
-          -546.28
-        ],
-        [
-          328.9207759742904,
-          -542.1715181507153
         ]
       ]
     },
@@ -87477,59 +86823,16 @@
           282
         ],
         [
-          551.3328413534641,
-          272.0936672217002
+          551.6606010253469,
+          270.1051725194511
         ],
         [
-          538.1157850980219,
-          269.8395342008656
+          538.4545960239037,
+          267.85292425994913
         ],
         [
           536.4278883302244,
           279.7364774278897
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Truman Parkway",
-      "streets": [
-        "Truman Parkway",
-        "Truman Parkway"
-      ],
-      "chains": [
-        "truman-parkway-0",
-        "truman-parkway-1"
-      ],
-      "pairKey": "151115548-1433086589",
-      "ring": [
-        [
-          551.3328413534641,
-          272.0936672217002
-        ],
-        [
-          575.1,
-          127.9
-        ],
-        [
-          585.13,
-          70.88
-        ],
-        [
-          605.3050640654511,
-          -9.543506411798077
-        ],
-        [
-          593.1203851741797,
-          -12.718131266876675
-        ],
-        [
-          573.39,
-          63.01
-        ],
-        [
-          538.1157850980219,
-          269.8395342008656
         ]
       ]
     },
@@ -87581,69 +86884,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Truman Parkway",
-      "streets": [
-        "Truman Parkway",
-        "Truman Parkway"
-      ],
-      "chains": [
-        "truman-parkway-0",
-        "truman-parkway-1"
-      ],
-      "pairKey": "151115548-1433086589",
-      "ring": [
-        [
-          611.8674093233997,
-          -34.35995459478615
-        ],
-        [
-          621,
-          -67.9
-        ],
-        [
-          704,
-          -379.70000000000005
-        ],
-        [
-          707.64,
-          -402.45
-        ],
-        [
-          707.88,
-          -414.55
-        ],
-        [
-          705.3637185978613,
-          -438.3355594077909
-        ],
-        [
-          693.9946661683475,
-          -435.83421202610907
-        ],
-        [
-          694.11,
-          -435.31
-        ],
-        [
-          695.22,
-          -412.41
-        ],
-        [
-          694.73,
-          -400.28
-        ],
-        [
-          690.45,
-          -376.63
-        ],
-        [
-          599.764644855787,
-          -37.597233115258305
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Truman Parkway",
       "streets": [
@@ -87671,57 +86911,6 @@
         [
           693.9946661683475,
           -435.83421202610907
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Lafayette Avenue",
-      "streets": [
-        "Lafayette Avenue",
-        "Lafayette Avenue"
-      ],
-      "chains": [
-        "lafayette-avenue-2",
-        "lafayette-avenue-4"
-      ],
-      "pairKey": "172189149-1413275236",
-      "ring": [
-        [
-          810.9899811289902,
-          324.9309797898998
-        ],
-        [
-          800.12,
-          318.87
-        ],
-        [
-          749.32,
-          308.98
-        ],
-        [
-          725.2560744778798,
-          309.8929944642539
-        ],
-        [
-          724.3923286173956,
-          311.99081858442094
-        ],
-        [
-          739.06,
-          318.03
-        ],
-        [
-          767.2,
-          323.40000000000003
-        ],
-        [
-          790.15,
-          327.38
-        ],
-        [
-          806.58,
-          332.84
         ]
       ]
     },
@@ -87815,45 +87004,6 @@
         [
           169.9870163583049,
           221.51615071917865
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Lafayette Avenue",
-      "streets": [
-        "Lafayette Avenue",
-        "Lafayette Avenue"
-      ],
-      "chains": [
-        "lafayette-avenue-5",
-        "lafayette-avenue-6"
-      ],
-      "pairKey": "1349812898-1488940913",
-      "ring": [
-        [
-          172.22652064164996,
-          224.37882257145546
-        ],
-        [
-          180.8,
-          228.09
-        ],
-        [
-          238.6447473500562,
-          237.4719181273008
-        ],
-        [
-          239.91198743601956,
-          229.41642120658634
-        ],
-        [
-          181.58,
-          220.24
-        ],
-        [
-          171.88835939024068,
-          221.3068516851592
         ]
       ]
     },
@@ -87897,69 +87047,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Lafayette Avenue",
-      "streets": [
-        "Lafayette Avenue",
-        "Lafayette Avenue"
-      ],
-      "chains": [
-        "lafayette-avenue-5",
-        "lafayette-avenue-6"
-      ],
-      "pairKey": "1349812898-1488940913",
-      "ring": [
-        [
-          252.44709723782833,
-          239.69346009776154
-        ],
-        [
-          352.49,
-          255.67
-        ],
-        [
-          368.4,
-          259.49999999999994
-        ],
-        [
-          388.53,
-          265.41
-        ],
-        [
-          407.09999999999997,
-          268.29999999999984
-        ],
-        [
-          446.75,
-          273.86
-        ],
-        [
-          466.39,
-          274.14
-        ],
-        [
-          476.549728677454,
-          272.8037107348803
-        ],
-        [
-          477.04240455801977,
-          270.8653427417715
-        ],
-        [
-          448.93,
-          263.72
-        ],
-        [
-          369.8,
-          250.70000000000002
-        ],
-        [
-          253.76895966477548,
-          231.64449581486556
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Lafayette Avenue",
       "streets": [
@@ -88022,53 +87109,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Lafayette Avenue",
-      "streets": [
-        "Lafayette Avenue",
-        "Lafayette Avenue"
-      ],
-      "chains": [
-        "lafayette-avenue-7",
-        "lafayette-avenue-8"
-      ],
-      "pairKey": "1349901208-1349901209",
-      "ring": [
-        [
-          -362.30728799000025,
-          136.70256205687306
-        ],
-        [
-          -374.82,
-          133.04
-        ],
-        [
-          -388.11,
-          130.85
-        ],
-        [
-          -407.77,
-          130.15
-        ],
-        [
-          -414.0055281490357,
-          131.47207923718148
-        ],
-        [
-          -414.6919975490439,
-          135.91072797132537
-        ],
-        [
-          -403.64,
-          137.62
-        ],
-        [
-          -362.3596860504227,
-          138.7018755498661
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Lafayette Avenue",
       "streets": [
@@ -88082,8 +87122,8 @@
       "pairKey": "1349901208-1349901209",
       "ring": [
         [
-          -414.0055281490357,
-          131.47207923718148
+          -415.9688384511554,
+          131.88834739034158
         ],
         [
           -420.8808211358562,
@@ -88094,8 +87134,8 @@
           134.90630555849586
         ],
         [
-          -414.6919975490439,
-          135.91072797132537
+          -416.5465696603531,
+          135.6239048679946
         ]
       ]
     },
@@ -88162,57 +87202,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "South 14th Street",
-      "streets": [
-        "South 14th Street",
-        "South 14th Street"
-      ],
-      "chains": [
-        "south-14th-street-0",
-        "south-14th-street-1"
-      ],
-      "pairKey": "152503839-301606668",
-      "ring": [
-        [
-          872.61,
-          88.59
-        ],
-        [
-          846.2,
-          129.1
-        ],
-        [
-          744.22,
-          270.53
-        ],
-        [
-          726.131178810565,
-          299.841001411382
-        ],
-        [
-          728.9606642550978,
-          304.3445639371062
-        ],
-        [
-          730.48,
-          303.39
-        ],
-        [
-          740.67,
-          293.06
-        ],
-        [
-          865.08,
-          121.97
-        ],
-        [
-          881.2103298088585,
-          93.45502880687842
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "South 14th Street",
       "streets": [
@@ -88271,41 +87260,6 @@
         [
           723.2447313243803,
           307.9357540087462
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-0",
-        "park-avenue-3"
-      ],
-      "pairKey": "163871018-1349812859",
-      "ring": [
-        [
-          871.53,
-          72.44
-        ],
-        [
-          722.2920796030257,
-          15.972626433995714
-        ],
-        [
-          718.666508043166,
-          25.761669645617022
-        ],
-        [
-          788.7,
-          51.7
-        ],
-        [
-          868.2414680240134,
-          81.28227631005444
         ]
       ]
     },
@@ -88345,37 +87299,6 @@
         [
           718.666508043166,
           25.761669645617022
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-0",
-        "park-avenue-3"
-      ],
-      "pairKey": "163871018-1349812859",
-      "ring": [
-        [
-          709.2127967651513,
-          11.035766402128345
-        ],
-        [
-          616.2934395455038,
-          -23.919610837643816
-        ],
-        [
-          612.6217929232765,
-          -14.180568172186021
-        ],
-        [
-          705.5162341194755,
-          20.840898819783412
         ]
       ]
     },
@@ -88427,41 +87350,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-0",
-        "park-avenue-3"
-      ],
-      "pairKey": "163871018-1349812859",
-      "ring": [
-        [
-          590.872494573326,
-          -33.71905923899617
-        ],
-        [
-          570.45,
-          -41.51
-        ],
-        [
-          530.0817878339119,
-          -53.44679138342461
-        ],
-        [
-          527.368523114272,
-          -46.24091080554015
-        ],
-        [
-          587.1164403841864,
-          -23.74374141059285
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Park Avenue",
       "streets": [
@@ -88497,45 +87385,6 @@
         [
           527.368523114272,
           -46.24091080554015
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-0",
-        "park-avenue-3"
-      ],
-      "pairKey": "163871018-1349812859",
-      "ring": [
-        [
-          516.7867300037169,
-          -57.75136873616717
-        ],
-        [
-          440.82,
-          -84.93
-        ],
-        [
-          431.2127384397818,
-          -87.13580853118287
-        ],
-        [
-          429.59105163586605,
-          -84.9129194612856
-        ],
-        [
-          437.23,
-          -79.34
-        ],
-        [
-          514.3381396910673,
-          -51.07217602443922
         ]
       ]
     },
@@ -88619,63 +87468,16 @@
           -255.75025000338596
         ],
         [
-          -364.8814952275206,
-          -261.8300032830061
+          -363.316245686127,
+          -260.57387415313457
         ],
         [
-          -364.3094078596362,
-          -253.2772971331347
+          -362.83477815558507,
+          -253.37593457153278
         ],
         [
           -357.17209644297697,
           -253.7547092680283
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-2",
-        "park-avenue-4"
-      ],
-      "pairKey": "354388956-1349901204",
-      "ring": [
-        [
-          -364.8814952275206,
-          -261.8300032830061
-        ],
-        [
-          -366.95,
-          -263.49
-        ],
-        [
-          -372.22,
-          -265.61
-        ],
-        [
-          -531.0694837924316,
-          -291.5813324906574
-        ],
-        [
-          -532.3705753128849,
-          -283.99702863896573
-        ],
-        [
-          -435.74,
-          -267.42
-        ],
-        [
-          -375.93,
-          -252.5
-        ],
-        [
-          -364.3094078596362,
-          -253.2772971331347
         ]
       ]
     },
@@ -88719,37 +87521,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-2",
-        "park-avenue-4"
-      ],
-      "pairKey": "354388956-1349901204",
-      "ring": [
-        [
-          -543.8683249928371,
-          -293.61809037388974
-        ],
-        [
-          -550.9127156365782,
-          -294.70997092366963
-        ],
-        [
-          -552.1729504913475,
-          -287.4080219122123
-        ],
-        [
-          -545.1493255091036,
-          -286.1958226766981
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Park Avenue",
       "streets": [
@@ -88785,37 +87556,6 @@
         [
           -552.1729504913475,
           -287.4080219122123
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-2",
-        "park-avenue-4"
-      ],
-      "pairKey": "354388956-1349901204",
-      "ring": [
-        [
-          -563.7127996046826,
-          -296.73912603387333
-        ],
-        [
-          -748.5260835694638,
-          -326.6861548842998
-        ],
-        [
-          -749.7414789936407,
-          -319.0870579419698
-        ],
-        [
-          -564.8676718791842,
-          -289.51844197058597
         ]
       ]
     },
@@ -88859,37 +87599,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-2",
-        "park-avenue-4"
-      ],
-      "pairKey": "354388956-1349901204",
-      "ring": [
-        [
-          -762.3239232944326,
-          -328.93556361722915
-        ],
-        [
-          -886.4290322395399,
-          -349.289521978328
-        ],
-        [
-          -887.6913302943778,
-          -341.5418170284106
-        ],
-        [
-          -763.5649408970627,
-          -321.31847335397475
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "Park Avenue",
       "streets": [
@@ -88925,45 +87634,6 @@
         [
           -887.6913302943778,
           -341.5418170284106
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "Park Avenue",
-      "streets": [
-        "Park Avenue",
-        "Park Avenue"
-      ],
-      "chains": [
-        "park-avenue-2",
-        "park-avenue-4"
-      ],
-      "pairKey": "354388956-1349901204",
-      "ring": [
-        [
-          -900.2133240070957,
-          -351.6195831675238
-        ],
-        [
-          -941.85,
-          -358.86
-        ],
-        [
-          -947.3712169888355,
-          -358.2568791080469
-        ],
-        [
-          -949.5597775048421,
-          -354.63537305978707
-        ],
-        [
-          -943.66,
-          -351.07
-        ],
-        [
-          -901.5434102108305,
-          -343.8551850893298
         ]
       ]
     },
@@ -89092,61 +87762,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "South Jefferson Avenue",
-      "streets": [
-        "South Jefferson Avenue",
-        "South Jefferson Avenue"
-      ],
-      "chains": [
-        "south-jefferson-avenue-0",
-        "south-jefferson-avenue-8"
-      ],
-      "pairKey": "624010923-1350829669",
-      "ring": [
-        [
-          -212.180222803301,
-          -700.3499870684021
-        ],
-        [
-          -209.69,
-          -704.46
-        ],
-        [
-          -203.94,
-          -721.14
-        ],
-        [
-          -186.41,
-          -792.13
-        ],
-        [
-          -175.1326792404036,
-          -852.8788631724658
-        ],
-        [
-          -189.4307713229312,
-          -855.055005103452
-        ],
-        [
-          -198.95,
-          -792.51
-        ],
-        [
-          -215.47,
-          -723.08
-        ],
-        [
-          -217.59,
-          -706.77
-        ],
-        [
-          -217.46278545744744,
-          -700.2469646629077
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "South Jefferson Avenue",
       "streets": [
@@ -89209,65 +87824,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "South Jefferson Avenue",
-      "streets": [
-        "South Jefferson Avenue",
-        "South Jefferson Avenue"
-      ],
-      "chains": [
-        "south-jefferson-avenue-1",
-        "south-jefferson-avenue-3"
-      ],
-      "pairKey": "627340928-627340930",
-      "ring": [
-        [
-          -360.7782357442802,
-          -242.67248747707927
-        ],
-        [
-          -371.16,
-          -222.5
-        ],
-        [
-          -383.6,
-          -164.7
-        ],
-        [
-          -429.05,
-          115.87
-        ],
-        [
-          -428.1341930412126,
-          122.1700607013941
-        ],
-        [
-          -421.4088552195852,
-          126.71597145404657
-        ],
-        [
-          -415.95,
-          118.64
-        ],
-        [
-          -406.86,
-          83.43
-        ],
-        [
-          -393.42,
-          -5.62
-        ],
-        [
-          -356.49,
-          -225.76
-        ],
-        [
-          -355.6089843912952,
-          -242.39877800600792
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "South Jefferson Avenue",
       "streets": [
@@ -89361,49 +87917,6 @@
       ]
     },
     {
-      "kind": "median",
-      "name": "South Jefferson Avenue",
-      "streets": [
-        "South Jefferson Avenue",
-        "South Jefferson Avenue"
-      ],
-      "chains": [
-        "south-jefferson-avenue-5",
-        "south-jefferson-avenue-7"
-      ],
-      "pairKey": "712305126-1350036707",
-      "ring": [
-        [
-          -463.70209663624405,
-          360.6023879523184
-        ],
-        [
-          -455.49,
-          350.85
-        ],
-        [
-          -449.0000000000001,
-          319.20000000000005
-        ],
-        [
-          -448.3167426556115,
-          315.06249719231363
-        ],
-        [
-          -467.22861349199104,
-          313.22043185110783
-        ],
-        [
-          -470.1,
-          342.70000000000005
-        ],
-        [
-          -465.6457968476215,
-          361.07358800356144
-        ]
-      ]
-    },
-    {
       "kind": "merge",
       "name": "South Jefferson Avenue",
       "streets": [
@@ -89435,85 +87948,6 @@
         [
           -467.22861349199104,
           313.22043185110783
-        ]
-      ]
-    },
-    {
-      "kind": "median",
-      "name": "South Jefferson Avenue",
-      "streets": [
-        "South Jefferson Avenue",
-        "South Jefferson Avenue"
-      ],
-      "chains": [
-        "south-jefferson-avenue-5",
-        "south-jefferson-avenue-7"
-      ],
-      "pairKey": "712305126-1350036707",
-      "ring": [
-        [
-          -446.03896785151585,
-          301.2693053230679
-        ],
-        [
-          -445.40000000000003,
-          297.40000000000003
-        ],
-        [
-          -440.3,
-          266.40000000000003
-        ],
-        [
-          -437,
-          246.3
-        ],
-        [
-          -432.5,
-          219.3
-        ],
-        [
-          -430.6,
-          207.60000000000002
-        ],
-        [
-          -427.70000000000005,
-          181
-        ],
-        [
-          -430.44363914194764,
-          160.85140005132237
-        ],
-        [
-          -432.201346005279,
-          159.8972163255139
-        ],
-        [
-          -442.3,
-          178.5
-        ],
-        [
-          -448.5,
-          206.3
-        ],
-        [
-          -450.5,
-          215.70000000000002
-        ],
-        [
-          -455.90000000000003,
-          244.10000000000002
-        ],
-        [
-          -459.6,
-          264.2
-        ],
-        [
-          -465,
-          293.90000000000003
-        ],
-        [
-          -465.59359212398266,
-          298.98793249128005
         ]
       ]
     },
@@ -93428,6 +91862,39 @@
             }
           }
         ]
+      },
+      {
+        "key": "-1417.110,-22.920",
+        "at": [
+          -1417.11,
+          -22.92
+        ],
+        "kinds": [
+          "pendant-tip"
+        ],
+        "legs": [
+          {
+            "chain": "lafayette-avenue-0",
+            "end": "start",
+            "role": "spine"
+          }
+        ],
+        "continuity": [
+          {
+            "a": {
+              "chain": "lafayette-avenue-0",
+              "side": "left"
+            },
+            "b": {
+              "chain": "lafayette-avenue-0",
+              "side": "right"
+            },
+            "source": "tip-wrap"
+          }
+        ],
+        "corners": {
+          "outer": []
+        }
       },
       {
         "key": "-145.100,428.600",
@@ -106718,6 +105185,39 @@
         ]
       },
       {
+        "key": "615.710,-404.630",
+        "at": [
+          615.71,
+          -404.63
+        ],
+        "kinds": [
+          "pendant-tip"
+        ],
+        "legs": [
+          {
+            "chain": "dolman-street-0",
+            "end": "end",
+            "role": "spine"
+          }
+        ],
+        "continuity": [
+          {
+            "a": {
+              "chain": "dolman-street-0",
+              "side": "left"
+            },
+            "b": {
+              "chain": "dolman-street-0",
+              "side": "right"
+            },
+            "source": "tip-wrap"
+          }
+        ],
+        "corners": {
+          "outer": []
+        }
+      },
+      {
         "key": "621.000,-67.900",
         "at": [
           621,
@@ -107500,9 +106000,6 @@
             "south-18th-street-5",
             "south-18th-street-2",
             "south-18th-street-6"
-          ],
-          "absorbsMedians": [
-            0
           ]
         }
       },
