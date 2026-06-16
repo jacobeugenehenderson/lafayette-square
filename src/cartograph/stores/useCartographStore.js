@@ -1764,6 +1764,18 @@ const useCartographStore = create((set, get) => ({
         const ov = overlayById[s.id]
         const legacy = ov ? null : byName.get(s.name)
         const rb = ribbonById.get(s.id)
+        // derive.js OWNS divided-carriageway geometry — it auto-detects
+        // anchor/innerSign/pairId AND computes the 3a per-side widths, all
+        // forwarded via ribbons.json. The pre-divided legacy centerlines.json
+        // has ONE undivided by-name entry per road (e.g. "South Jefferson
+        // Avenue" 9.16/7.72, "Lafayette Avenue" 10.56) that, matched by NAME,
+        // would stamp the WHOLE-ROAD width onto each carriageway → carriageways
+        // overrun the median gap → the malformed/annihilated median that loads
+        // on refresh and only clears via revert-to-skeleton (it bypasses legacy).
+        // So for a divided carriageway the ribbons baseline WINS over legacy.
+        const isDividedCarriageway = /carriageway/.test(rb?.phase?.role || '')
+        const legacyMeasure = isDividedCarriageway ? undefined : legacy?.measure
+        const legacySegMeasures = isDividedCarriageway ? undefined : legacy?.segmentMeasures
         // Prefer ribbons.json's points + intersections over skeleton's.
         // derive.js INSERTS extra vertices at every detected IX, so a
         // chain that has 21 points in skeleton can have 34 in ribbons.json
@@ -1813,7 +1825,7 @@ const useCartographStore = create((set, get) => ({
           // though the chain became selectable + translucent. V2 already
           // does this fallback inside mergeLiveRibbons; this keeps the
           // live store's per-chain measure consistent with what V2 sees.
-          measure: ov?.measure ?? legacy?.measure ?? rb?.measure,
+          measure: ov?.measure ?? legacyMeasure ?? rb?.measure,
           // [E1] Provenance for the save guard: only persist a measure that
           // the operator actually owns (came from overlay) or that diverges
           // from the baked baseline. Without this, every chain loads a truthy
@@ -1822,7 +1834,7 @@ const useCartographStore = create((set, get) => ({
           // survey/seed width base (all 220 LS chains had overlay measures).
           _measureFromOverlay: !!ov?.measure,
           _baselineMeasure: rb?.measure,
-          segmentMeasures: ov?.segmentMeasures ?? legacy?.segmentMeasures,
+          segmentMeasures: ov?.segmentMeasures ?? legacySegMeasures,
           // Effective cap = overlay (operator) > legacy (centerlines.json) >
           // ribbons.json (what derive.js actually rendered). The fallback
           // chain keeps the Survey dropdown in sync with the viewer when an

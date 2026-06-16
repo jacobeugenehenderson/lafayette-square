@@ -623,7 +623,13 @@ export default function BlockGeometryV2Debug({
   const [frozenShape, setFrozenShape] = useState(null)
   const frozenKeyRef = useRef(null)
   useEffect(() => {
-    if (!measureActive || !scene) return
+    // Any NON-Survey view consumes the frozen shape — Measure/Section AND the
+    // neutral "Design" view (tool===null). Only Survey live-strokes (it edits
+    // the SHAPE). This kills the "geometry redraws when not active" perf leak:
+    // in Design the heavy live buildTileGround no longer runs to merely display
+    // the map; it reads the frozen shape.json (the idle-case slice of the
+    // freeze-curb program, HANDOFF-freeze-the-curb-in-the-first-bake.md Phase 1b).
+    if (surveyActive || !scene) return
     // One fetch per (scene, freeze): a fresh slab bake (bakeLastMs) OR the
     // light Survey-exit freeze (shapeFrozenMs) re-opens the new shape; take
     // whichever is newer as the cache-bust + key.
@@ -639,8 +645,10 @@ export default function BlockGeometryV2Debug({
     // Abort mid-flight (tool flipped / re-mount): clear the key so the next
     // activation refetches instead of silently falling back to the live build.
     return () => { dead = true; if (!done && frozenKeyRef.current === key) frozenKeyRef.current = null }
-  }, [measureActive, scene, bakeLastMs, shapeFrozenMs])
-  const sectionFrozen = measureActive && !!frozenShape
+  }, [surveyActive, scene, bakeLastMs, shapeFrozenMs])
+  // Frozen whenever NOT surveying (Measure + neutral Design), if a freeze exists;
+  // no freeze yet (fresh scene) → falls through to the live build below.
+  const sectionFrozen = !surveyActive && !!frozenShape
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
     // ⛔ wall: the SHAPE stays frozen — every vertex of geometry comes from the
@@ -1148,13 +1156,15 @@ export default function BlockGeometryV2Debug({
     // one flat translucent blue, roads as gaps. The curb OUTLINE + IX markers
     // frame the blocks; centerlines come from MapLayers; corner controls from
     // CornerEditHandles (both already Survey-gated). Aerial shows through.
-    // ── THE WALL · Phase D — the Section (Measure) ground = the FROZEN
-    // artifact. Everything below comes from sectionGeos (shape.json via
-    // sectionOpen) — the live tileGeos build is skipped entirely in this mode
-    // (its memo returns null), so the Section render provably cannot reach the
-    // chain graph. Same band materials as the live view (WYSIWYG, just frozen).
-    // No highway/perimeter mesh: those aren't in the artifact (not tile-shaped);
-    // they stay Survey/Stage concerns until the artifact grows.
+    // ── THE WALL · Phase D — every NON-Survey view (Section/Measure AND the
+    // neutral "Design" view) renders this FROZEN artifact. Everything below comes
+    // from sectionGeos (shape.json via sectionOpen) — the live tileGeos build is
+    // skipped entirely in these modes (its memo returns null), so the render
+    // provably cannot reach the chain graph, and idle viewing costs no live
+    // buildTileGround. Same band materials as the live view (WYSIWYG, just frozen).
+    // ⚠️ No highway/perimeter mesh: those aren't in the artifact (not tile-shaped);
+    // they stay Survey/Stage concerns until the artifact grows — so grade-separated
+    // roads don't draw in Design/Measure (a known gap, was already true for Measure).
     if (sectionFrozen && sectionGeos) {
       return (
         <group>
