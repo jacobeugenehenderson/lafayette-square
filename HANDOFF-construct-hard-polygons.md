@@ -19,7 +19,11 @@ The concentric-ribbon FILL (`sectionPass`) is **sound** — it just needs **corr
 
 ---
 
-## HALF A — Intersection-everywhere (construct the junction polygon at EVERY node)
+## ⭐ STATUS (2026-06-15, end of the divided/median arc)
+- **HALF B WIDTHS — LANDED `8fd3485` (pushed):** divided carriageways carry SYMMETRIC widths from the **raw survey** (`survey[name].pavementHalfWidth/2` per side; `correctedSurvey`'s lamp correction mis-fires on divided roads). The median **AREA** is correct — `median = chainGap − surveyHW`: Lafayette ~0 (no median, eye-confirmed), South Jefferson a real strip, Park ~4 m, Chouteau none. **Bonus: `iA` self-int 14→0.** The asphalt-edge handle stays the per-road override.
+- **THE MEDIAN POLYGON → FOLDED INTO HALF A (Jacob's call, eye-driven).** Cambour III's **inset** (`stamp` ring inset inboard by `surveyHW/2` → the inner-edge "virtual tile") was **tried + REVERTED**: it makes the median *body* the right inner-edge width, but the **nose collapses to a teardrop at every junction** — the nose-trim ends the median at *centerline*-gap 2 m, then the inset (−4.6 m/side) collapses that to a point. The teardrop is the symptom of **the median and the intersection not being constructed together.** Specs preserved: `scratch/HALF-B-SPEC-survey-2026-06-15.md`, `scratch/MEDIAN-POLYGON-SPEC-2026-06-15.md`. **The median terminating cleanly at a constructed junction is a HALF A deliverable** (below) — not a HALF B nose patch.
+
+## HALF A — Intersection-everywhere + the MEDIAN-AT-JUNCTION (construct the junction polygon at EVERY node)
 
 **The goal (the `OSM2STREETS-GROUNDING §4` recommendation #2):** promote E3 from a *censused ~86 nodes* to the standard's invariant — **every junction node gets a constructed intersection polygon**; roads are **trimmed back** to it; corners assembled by **clockwise adjacency**. The node neighborhood is *replaced by construction*, so a butt-cap meeting a flank, a width-step scallop, a stub fillet **cannot be expressed** (`OSM2STREETS-GROUNDING §2`, "the defining divergence"; §3.2).
 
@@ -29,6 +33,7 @@ The concentric-ribbon FILL (`sectionPass`) is **sound** — it just needs **corr
 - **Coverage:** construct at *every* node (pre-empt the next artifact class, don't census it after it bites).
 - **Trim derivation:** by **edge-collision** (any two legs, any angle — generalizes to plain Ts + skew crossings) instead of median-nose stations (divided-only). A leg fully consumed by trim is **absorbed into the node** (`internal_junction_road` — the general form of the §5e stub cure).
 - **Port `innerSign` as face-adjacency** (which half-edge bounds the median face), not a perpendicular vote — kills the E3.4 foot-vote bug class by construction.
+- **⭐ The MEDIAN-AT-JUNCTION (folded in from HALF B, 2026-06-15).** A divided median must **terminate at the constructed junction polygon with a clean blunt nose**, and the nose-to-node region is **merge asphalt** (the carriageways have merged) — built *together* with the intersection, not as a separate median nose-trim. The HALF B inset proved that patching the median nose alone collapses it to a teardrop, because the median end is trimmed for the centerline gap while the median body is the inner-edge width. The fix: the intersection construction owns the node neighborhood; the median (inner-edge width, `chainGap − surveyHW`, the validated `3a` widths) runs *into* it and is trimmed where the **inner-edge** gap (not the centerline gap) reaches the nose width. Specs: `scratch/MEDIAN-POLYGON-SPEC-2026-06-15.md` (the inset construction — reuse the body, fix the nose at the junction).
 - **Lands in PREBAKE** (`PREBAKE.md §5`): the intersection records become frozen facts of the polygon substrate (the Wall moves earlier).
 
 ---
