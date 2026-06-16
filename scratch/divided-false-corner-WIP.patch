@@ -1,0 +1,97 @@
+diff --git a/src/lib/tileGround.js b/src/lib/tileGround.js
+index e6acdb5..a42b1ee 100644
+--- a/src/lib/tileGround.js
++++ b/src/lib/tileGround.js
+@@ -401,6 +401,53 @@ function edgeDepth(measure, side, curbWidth, level) {
+   return t + Math.max(0, Number.isFinite(m?.sidewalk) ? m.sidewalk : 0)
+ }
+ 
++// ── Divided-transition false-corner fix (SKELETON.md §5e) ────────────────────
++// At a divided↔undivided transition the intersection asphalt bulges past the
++// straight corridor curbs into the block, so the corner lands tens of m off the
++// true one (it corners the carriageway "stub" instead of the corridor's clean
++// outer-edge leg). Fix: build each street's STRAIGHT-section curb line on the
++// block side, intersect the carriageway's with the cross-street's to get the
++// TRUE corner, and TRIM the asphalt in that block-side quadrant — so block =
++// tile − asphalt extends to the two straight legs meeting at the true corner.
++function lineIntersect(p, d, q, e) {
++  const den = d[0] * e[1] - d[1] * e[0]
++  if (Math.abs(den) < 1e-9) return null
++  const t = ((q[0] - p[0]) * e[1] - (q[1] - p[1]) * e[0]) / den
++  return [p[0] + d[0] * t, p[1] + d[1] * t]
++}
++function tileCentroid(ring) { let x = 0, z = 0; for (const p of ring) { x += p[0]; z += p[1] } return [x / ring.length, z / ring.length] }
++// Straight-section curb line of `street` where it passes through (or ends at)
++// node T, on the side facing `toward`. Reversal-proof (measure side keyed to
++// POINT-ORDER forward). Returns { p: a point on the curb, d: unit dir along it }.
++function straightCurbLine(street, T, toward) {
++  const pts = street.points
++  if (!pts || pts.length < 2) return null
++  let bi = 0, bd = 1e9
++  for (let i = 0; i < pts.length; i++) { const dd = Math.hypot(pts[i][0] - T[0], pts[i][1] - T[1]); if (dd < bd) { bd = dd; bi = i } }
++  if (bd > 3) return null
++  const walk = (step, dist) => { let i = bi, acc = 0; while (i + step >= 0 && i + step < pts.length) { const a = pts[i], b = pts[i + step]; const seg = Math.hypot(b[0] - a[0], b[1] - a[1]); if (acc + seg >= dist) { const u = (dist - acc) / (seg || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u] } acc += seg; i += step } return pts[i] }
++  let A = walk(1, 12), B = walk(1, 32); let dx = B[0] - A[0], dz = B[1] - A[1]
++  if (Math.hypot(dx, dz) < 3) { A = walk(-1, 32); B = walk(-1, 12); dx = B[0] - A[0]; dz = B[1] - A[1] }
++  const dl = Math.hypot(dx, dz); if (dl < 1e-6) return null; dx /= dl; dz /= dl
++  const j = Math.min(bi, pts.length - 2)
++  let fdx = pts[j + 1][0] - pts[j][0], fdz = pts[j + 1][1] - pts[j][1]; const fl = Math.hypot(fdx, fdz) || 1; fdx /= fl; fdz /= fl
++  let nx = -dz, nz = dx
++  if ((toward[0] - T[0]) * nx + (toward[1] - T[1]) * nz < 0) { nx = -nx; nz = -nz }
++  const side = ((-fdz) * nx + (fdx) * nz) > 0 ? 'left' : 'right'
++  const hw = Math.max(0, Number.isFinite(street.measure?.[side]?.pavementHW) ? street.measure[side].pavementHW : 0)
++  if (hw < 1e-6) return null
++  return { p: [T[0] + nx * hw, T[1] + nz * hw], d: [dx, dz] }
++}
++function transitionCornerKeepOut(T, carr, cross, toward) {
++  const cl = straightCurbLine(carr, T, toward), xl = straightCurbLine(cross, T, toward)
++  if (!cl || !xl) return null
++  const apex = lineIntersect(cl.p, cl.d, xl.p, xl.d)
++  if (!apex || Math.hypot(apex[0] - T[0], apex[1] - T[1]) > 60) return null
++  const away = (d) => (((T[0] - apex[0]) * d[0] + (T[1] - apex[1]) * d[1]) > 0 ? [-d[0], -d[1]] : d)
++  const u = away(cl.d), v = away(xl.d), L = 45
++  return [apex, [apex[0] + u[0] * L, apex[1] + u[1] * L], [apex[0] + (u[0] + v[0]) * L, apex[1] + (u[1] + v[1]) * L], [apex[0] + v[0] * L, apex[1] + v[1] * L]]
++}
++
+ // Group a tile's cyclic edges into maximal RUNS of the same (streetIdx, side).
+ // A run = a sub-polyline of the tile boundary that all carries the same
+ // street-side widths. Offsetting the run polyline (not each edge) is what
+@@ -837,6 +884,16 @@ export function buildTileGround(ribbons, opts = {}) {
+   // `_perRunMeta`. perTileMeta[i] / shapeTiles[i] align 1:1 with tiles[i].
+   const perTileMeta = []
+   const shapeTiles = []
++  // §5e: (node T, carriageway) for each divided carriageway endpoint meeting its spine.
++  const dividedTransitions = []
++  for (const s of streets) {
++    if (s.anchor !== 'inner-edge' || !s.phase || !s.points || s.points.length < 2) continue
++    if (s.phase.spineAtStart) dividedTransitions.push({ T: s.points[0], carr: s })
++    if (s.phase.spineAtEnd)   dividedTransitions.push({ T: s.points[s.points.length - 1], carr: s })
++  }
++  const nearNode = (p, T) => Math.hypot(p[0] - T[0], p[1] - T[1]) < 2
++  const passesThrough = (s, T) => s.points && s.points.some(p => Math.hypot(p[0] - T[0], p[1] - T[1]) < 3)
++  const crossStreetAt = (T, carr) => streets.find(s => s.anchor !== 'inner-edge' && s !== carr && (s.name || '') !== (carr.name || '') && s.points && s.points.length >= 2 && passesThrough(s, T))
+   for (const tile of tiles) {
+     const runs = groupRuns(tile)
+     const runMeta = runs.map(run => {
+@@ -875,7 +932,20 @@ export function buildTileGround(ribbons, opts = {}) {
+       if (d > 1e-6) aStads.push(...strokeOpen(run.poly, d))
+     }
+     for (const t of roundTips) if (t.hw > 1e-6) aStads.push(circlePoly(t.p[0], t.p[1], t.hw))
+-    const aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
++    let aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
++    // §5e false-corner fix: if this block tile is cornered at a divided transition,
++    // trim the asphalt bulge in the block-side quadrant beyond the two straight
++    // corridor curbs, so the curb corner lands at the true (corridor-leg) corner.
++    if (opts.dividedClamp !== false && aFill.length) {
++      const tc = tileCentroid(tile.ring)
++      for (const { T, carr } of dividedTransitions) {
++        if (!tile.ring.some(p => nearNode(p, T))) continue
++        const cross = crossStreetAt(T, carr)
++        if (!cross) continue
++        const ko = transitionCornerKeepOut(T, carr, cross, tc)
++        if (ko) aFill = differenceRings(aFill, [ko])
++      }
++    }
+     // G3a — a divided-road MEDIAN tile (the thin tile between two carriageways)
+     // drops ALL ped: its bounding edges are median-facing (inner-edge street,
+     // inboard side). Detect by median-facing boundary fraction and zero the

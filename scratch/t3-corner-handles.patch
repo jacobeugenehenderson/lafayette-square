@@ -1,0 +1,571 @@
+diff --git a/src/cartograph/BlockGeometryV2Debug.jsx b/src/cartograph/BlockGeometryV2Debug.jsx
+index 2eb1c05..c72d8a5 100644
+--- a/src/cartograph/BlockGeometryV2Debug.jsx
++++ b/src/cartograph/BlockGeometryV2Debug.jsx
+@@ -682,6 +682,7 @@ export default function BlockGeometryV2Debug({
+       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
+       blockRings: tg.block,   // raw iA rings — handle anchoring (one geometry truth)
+       cornerFillets: tg.cornerFillets || {},
++      cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
+     }
+   }, [isTileScene, liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
+ 
+@@ -703,6 +704,12 @@ export default function BlockGeometryV2Debug({
+   useEffect(() => {
+     setTileCornerFillets(tileGeos?.cornerFillets || {})
+   }, [tileGeos, setTileCornerFillets])
++  // Publish the injective corner SET so CornerEditHandles sources its corner LIST
++  // from the corners actually drawn (the tile graph), not legacy ribbons.intersections.
++  const setTileCorners = useCartographStore(s => s.setTileCorners)
++  useEffect(() => {
++    setTileCorners(tileGeos?.cornerSet || [])
++  }, [tileGeos, setTileCorners])
+ 
+   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
+   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles
+diff --git a/src/cartograph/CartographApp.jsx b/src/cartograph/CartographApp.jsx
+index 9018f36..ad1cc37 100644
+--- a/src/cartograph/CartographApp.jsx
++++ b/src/cartograph/CartographApp.jsx
+@@ -911,7 +911,7 @@ export default function CartographApp() {
+               so the toggle takes effect without a re-mount. */}
+           {inDesigner && (
+             <R3FErrorBoundary name="CornerEditHandles">
+-              <CornerEditHandles ribbons={sceneCfg.ribbons} />
++              <CornerEditHandles />
+             </R3FErrorBoundary>
+           )}
+ 
+diff --git a/src/cartograph/CornerEditHandles.jsx b/src/cartograph/CornerEditHandles.jsx
+index baebe8a..6a62e86 100644
+--- a/src/cartograph/CornerEditHandles.jsx
++++ b/src/cartograph/CornerEditHandles.jsx
+@@ -1,25 +1,30 @@
+ /**
+- * CornerEditHandles — Phases 2 & 3 of the corner-authoring kit.
++ * CornerEditHandles — the corner-radius authoring kit (Survey).
+  *
+- * Surfaces draggable handles at every intersection when the operator flips
+- * the "Corners > Edit" toggle in the Streets panel. Two layers of handles:
++ * Surfaces a draggable handle at EVERY drawn tile corner when the operator flips
++ * the "Corners > Edit" toggle in the Streets panel. The corner LIST is sourced
++ * from the live TILE build (`tileCorners`, published by BlockGeometryV2Debug) —
++ * the same topology the render is built from — NOT the legacy
++ * `ribbons.intersections` list (which is smaller and mis-keyed, so it missed
++ * handles, dropped divided-avenue legs, and drew nothing where its raw-OSM point
++ * didn't match the tile vertex). This is the T3 "one corner truth" migration
++ * (HANDOFF-tile-T3-corner-handles.md).
+  *
+- *   - **IX center dot** (Phase 2). One per intersection. Drags the bulk
+- *     radius for that IX — applies to every corner that doesn't have its
+- *     own per-corner override.
+- *   - **Per-corner dots** (Phase 3). One per CCW-adjacent leg pair at each
+- *     IX. Smaller than the IX dot, anchored at each corner's geometric Q
+- *     point. Drags only that one corner's radius.
++ *   - **Filleted corner** → the magenta handle IS the achieved curb ARC (the
++ *     `fillet` the build rounded this corner to — never a re-derived preview).
++ *   - **Unfilleted corner (R=0)** → a small SQUARE marker at the sharp vertex,
++ *     so square corners are visible AND un-squarable (drag out to author a radius).
+  *
+- * Both use the same gesture: world-space distance from cursor to the IX
+- * center sets the effective radius. The dot tracks the cursor during drag
+- * (Illustrator pattern) and snaps back to its anchor on release. Color
+- * coding: blue/cyan = default, gold = operator-authored, white = mid-drag.
++ * Gesture: world-space distance from cursor to the corner vertex V sets the
++ * effective radius. The handle tracks the cursor during drag (Illustrator
++ * pattern); dragging within SNAP_R of V commits R=0. Color coding: magenta =
++ * default radius, gold = operator-authored, white = mid-drag.
+  *
+- * Persistence: per-IX → `cornerRadiusOverrides`; per-corner →
+- * `cornerCornerRadiusOverrides` (keyed by `<pointKey>|<legKeyA>|<legKeyB>`,
+- * leg keys sorted alphabetically so the key is invariant under A/B swap).
+- * Both maps live in the active Look's `design.json`.
++ * Persistence: per-corner → `cornerCornerRadiusOverrides`, keyed by the tile
++ * corner's own `key` (= `<pointKey>|<legKeyA>|<legKeyB>`, legs sorted so the key
++ * is invariant under A/B swap) — exactly the key `resolveVertR` reads overrides
++ * off, so a drag round-trips to the radius for free. Lives in the active Look's
++ * `design.json`.
+  *
+  * Pointer events captured at the canvas DOM (matches MeasureOverlay /
+  * SurveyorOverlay pattern). Pointer-capture during drag so motion is
+@@ -37,7 +42,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
+ import { useThree } from '@react-three/fiber'
+ import * as THREE from 'three'
+ import useCartographStore from './stores/useCartographStore.js'
+-import { CURB_WIDTH } from './streetProfiles.js'
+ 
+ const raycaster = new THREE.Raycaster()
+ const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+@@ -71,12 +75,11 @@ const Y_DOTS = 0.05
+ const COLOR_CORNER_DEFAULT = '#ff3df0'  // magenta = editable, default radius
+ const COLOR_OVERRIDE = '#ffaa00'        // gold = operator-authored radius
+ const COLOR_DRAG = '#ffffff'            // white
++// Side (world meters) of the marker drawn at an UNFILLETED (R=0) corner — a small
++// square so a sharp corner is visible AND grabbable (drag out to author a radius).
++const SQUARE_SIZE = 1.2
+ 
+ const ixKey = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
+-const sortedCornerKey = (V, legKeyA, legKeyB) => {
+-  const [a, b] = (legKeyA <= legKeyB) ? [legKeyA, legKeyB] : [legKeyB, legKeyA]
+-  return `${ixKey(V)}|${a}|${b}`
+-}
+ const DEFAULT_R = 4.5
+ 
+ // Angular extent of a curb arc — between the two tangent points tA/tB, the side
+@@ -97,124 +100,38 @@ function arcExtentFrom(C, tA, tB, apex) {
+   return { thetaStart: -(start + length), thetaLength: length }
+ }
+ 
+-// Compute every corner's geometric anchor (Q = where leg-A's left curb-outer
+-// meets leg-B's right curb-outer) plus stable leg keys, for each IX in
+-// `ribbons`. Same math as the V2 emitter's corner-Q derivation; if you
+-// change either, change both — the per-corner UI handles MUST land at
+-// the same Q the geometry uses.
+-// Resolve an IX street-ref to (chain, vertexIdx). Tries `sref.ix` first;
+-// falls back to nearest-vertex scan when the index is stale (~36% of LS
+-// IXs per the data-pipeline memo). Mirrors V2's `resolveIxRef` in
+-// `buildBlockGeometryV2.js` exactly — if behavior diverges, corners
+-// disappear on LS while staying intact on toy (which has no stale ix).
+-function resolveSrefChain(sref, V, candidates) {
+-  const TOL = 0.5
+-  let best = null
+-  for (const chain of candidates) {
+-    const pts = chain.points
+-    if (!pts || pts.length < 2) continue
+-    const i = sref.ix
+-    if (i != null && i >= 0 && i < pts.length) {
+-      const d = Math.hypot(pts[i][0] - V[0], pts[i][1] - V[1])
+-      if (d < TOL && (!best || d < best.d)) best = { chain, vertexIdx: i, d }
+-    }
+-    if (best && best.d < 1e-3) continue  // near-perfect; skip fallback.
+-    let bi = -1, bd = Infinity
+-    for (let k = 0; k < pts.length; k++) {
+-      const d = Math.hypot(pts[k][0] - V[0], pts[k][1] - V[1])
+-      if (d < bd) { bd = d; bi = k }
+-    }
+-    if (bd < TOL && (!best || bd < best.d)) best = { chain, vertexIdx: bi, d: bd }
++// Build the handle layout from the TILE corner set (`tileCorners`, published by
++// BlockGeometryV2Debug off the live tile build) — the corners actually drawn, one
++// per sharp tile-ring vertex. This is the T3 migration: the handle corner-LIST is
++// now sourced from the same topology the render is built from, NOT the legacy
++// `ribbons.intersections` (a smaller raw-OSM list the render no longer matches —
++// missing handles, divided-avenue legs dropped, key-mismatch invisibles). Each
++// tile corner already carries its `key` (= the write-path key `resolveVertR` reads
++// overrides off), its two legs, and the achieved `fillet` arc, so no geometry is
++// re-derived here — the handle IS the corner the build computed.
++function computeCornerLayout(tileCorners) {
++  if (!tileCorners?.length) return []
++  // Dedup by full corner key — a corner identity can be emitted by >1 tile at a
++  // shared node; prefer the entry that carries a fillet.
++  const byKey = new Map()
++  for (const tc of tileCorners) {
++    if (!tc || !tc.key || !tc.V) continue
++    const prev = byKey.get(tc.key)
++    if (!prev || (!prev.fillet && tc.fillet)) byKey.set(tc.key, tc)
+   }
+-  return best
+-}
+-
+-function computeIxLayout(ribbons) {
+-  if (!ribbons?.intersections?.length) return []
+-  const TWO_PI = Math.PI * 2
+-  // Multi-value name map. LS has many same-named chains (Park Ave×2,
+-  // Russell×5, Hickory×4, Rutger×5, etc.); single-value get() would
+-  // return only one entry. Iterate all entries with the matching name
+-  // and let resolveSrefChain pick the best by proximity to V.
+-  const streetsByName = new Map()
+-  for (const s of (ribbons.streets || [])) {
+-    if (!s?.name) continue
+-    const list = streetsByName.get(s.name)
+-    if (list) list.push(s); else streetsByName.set(s.name, [s])
++  // Group by IX (the corner point V) for the render <group> structure; the corner
++  // identity is the full `key`.
++  const groups = new Map()
++  for (const tc of byKey.values()) {
++    const gk = ixKey(tc.V)
++    let g = groups.get(gk)
++    if (!g) { g = { ixKey: gk, V: tc.V, corners: [] }; groups.set(gk, g) }
++    g.corners.push({ key: tc.key, V: tc.V, legKeyA: tc.legA, legKeyB: tc.legB, fillet: tc.fillet || null })
+   }
+-  const out = []
+-  for (let ixIdx = 0; ixIdx < ribbons.intersections.length; ixIdx++) {
+-    const ix = ribbons.intersections[ixIdx]
+-    if (!ix.point || !ix.streets || ix.streets.length < 2) continue
+-    if (ix.disabled) continue
+-    const V = ix.point
+-    const legs = []
+-    for (const sref of ix.streets) {
+-      const candidates = streetsByName.get(sref.name) || []
+-      const resolved = resolveSrefChain(sref, V, candidates)
+-      if (!resolved) continue
+-      const { chain, vertexIdx } = resolved
+-      const m = chain.measure
+-      if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
+-      const pts = chain.points
+-      const skel = chain.skelId || chain.name
+-      const tryDir = (direction) => {
+-        const ni = vertexIdx + direction
+-        if (ni < 0 || ni >= pts.length) return
+-        const dx = pts[ni][0] - V[0], dz = pts[ni][1] - V[1]
+-        const L = Math.hypot(dx, dz)
+-        if (L < 1e-6) return
+-        const isBack = direction === -1
+-        const left  = isBack ? m.right : m.left
+-        const right = isBack ? m.left  : m.right
+-        legs.push({
+-          T: [dx / L, dz / L],
+-          outerL: left.pavementHW || 0,
+-          outerR: right.pavementHW || 0,
+-          legKey: `${skel || '?'}:${direction === -1 ? 'b' : 'f'}`,
+-        })
+-      }
+-      if (vertexIdx > 0) tryDir(-1)
+-      if (vertexIdx < pts.length - 1) tryDir(+1)
+-    }
+-    if (legs.length < 2) { out.push({ ixIdx, V, ix, corners: [] }); continue }
+-    legs.sort((a, b) => Math.atan2(a.T[1], a.T[0]) - Math.atan2(b.T[1], b.T[0]))
+-
+-    const corners = []
+-    for (let i = 0; i < legs.length; i++) {
+-      const A = legs[i], B = legs[(i + 1) % legs.length]
+-      const T_A = A.T, T_B = B.T
+-      const P_A = [-T_A[1], T_A[0]]
+-      const P_B = [-T_B[1], T_B[0]]
+-      let theta = Math.atan2(T_B[1], T_B[0]) - Math.atan2(T_A[1], T_A[0])
+-      while (theta < 0) theta += TWO_PI
+-      while (theta >= TWO_PI) theta -= TWO_PI
+-      const thetaDeg = theta * 180 / Math.PI
+-      // Skip degenerate / non-corner pairs — geometry won't render a wedge
+-      // here either, so there's no corner to author.
+-      if (thetaDeg <= 5 || thetaDeg >= 175) continue
+-      // Wedge between adjacent CCW legs sits on A's RIGHT and B's LEFT
+-      // in the V2 chainPavementRing convention (left = -perp, right =
+-      // +perp). Must match the same A0/B0 derivation in
+-      // buildBlockGeometryV2's cornersAtIx — otherwise the per-corner
+-      // override key here disagrees with the geometric corner there.
+-      const A0 = [V[0] + (A.outerR + CURB_WIDTH) * P_A[0], V[1] + (A.outerR + CURB_WIDTH) * P_A[1]]
+-      const B0 = [V[0] - (B.outerL + CURB_WIDTH) * P_B[0], V[1] - (B.outerL + CURB_WIDTH) * P_B[1]]
+-      const det = T_A[0] * (-T_B[1]) - T_A[1] * (-T_B[0])
+-      if (Math.abs(det) < 1e-9) continue
+-      const dq = [B0[0] - A0[0], B0[1] - A0[1]]
+-      const sQ = (dq[0] * (-T_B[1]) - dq[1] * (-T_B[0])) / det
+-      const Q = [A0[0] + sQ * T_A[0], A0[1] + sQ * T_A[1]]
+-      // T_A/T_B (unit leg tangents at the corner) + the interior wedge angle let
+-      // the live preview draw the true fillet circle the curb rounds to.
+-      corners.push({ Q, legKeyA: A.legKey, legKeyB: B.legKey, T_A, T_B, theta })
+-    }
+-    out.push({ ixIdx, V, ix, corners })
+-  }
+-  return out
++  return [...groups.values()]
+ }
+ 
+-export default function CornerEditHandles({ ribbons }) {
++export default function CornerEditHandles() {
+   // Corner SHAPE authoring is a Survey concern (the corner is two things in two
+   // tools — RIBBONS / ARCHITECTURE §2.1). The corner handles show ONLY under the
+   // Survey tool; Section shows its own (ped) handles. Gate by tool so the
+@@ -225,15 +142,14 @@ export default function CornerEditHandles({ ribbons }) {
+   const cornerRadiusScale = useCartographStore(s => s.cornerRadiusScale ?? 1)
+   const setCornerCornerRadius = useCartographStore(s => s.setCornerCornerRadius)
+   const setIxCornerRadius = useCartographStore(s => s.setIxCornerRadius)
+-  // The ACHIEVED fillets from the live tile build — the handle reads the real
+-  // curb arc from here (one corner truth, no drift). The live drag commits to
+-  // the store each frame, so this changes every frame mid-drag; route it through
+-  // a ref so the pointer-listener effect below doesn't tear down / re-add its DOM
+-  // handlers on every commit (which would churn pointer capture mid-drag). The
+-  // effect's grabTarget reads the ref, so the hit-test still sees fresh fillets.
+-  const achievedFillets = useCartographStore(s => s.tileCornerFillets) || {}
+-  const achievedFilletsRef = useRef(achievedFillets)
+-  achievedFilletsRef.current = achievedFillets
++  // The TILE corner set from the live build — the handle's corner LIST AND each
++  // corner's achieved curb arc (`fillet`), one corner truth. The live drag commits
++  // to the store each frame, so this whole array is rebuilt every frame mid-drag;
++  // route the derived layout through a ref so the pointer-listener effect below
++  // doesn't tear down / re-add its DOM handlers on every commit (which would churn
++  // pointer capture mid-drag). The effect's grabTarget reads the ref, so the
++  // hit-test still sees fresh fillets while the render reads the live layout.
++  const tileCorners = useCartographStore(s => s.tileCorners) || []
+   const { camera, gl } = useThree()
+ 
+   const dragRef = useRef(null)
+@@ -241,7 +157,7 @@ export default function CornerEditHandles({ ribbons }) {
+   // Tap on a dot toggles a non-destructive "origin marker" — a tiny
+   // crosshair at the IX center. Reveals where to drag to reset without
+   // disturbing the current arc. Cleared automatically when a drag commits.
+-  //   { kind: 'corner', key: `${ixIdx}:${cornerIdx}` }
++  //   { kind: 'corner', key: <the tile corner's stable key> }
+   const [originHint, setOriginHint] = useState(null)
+   // rAF-throttle the heavy store commit so the dot tracks the cursor
+   // smoothly even at neighborhood density (~252 IXs / ~600 corners). The
+@@ -254,30 +170,38 @@ export default function CornerEditHandles({ ribbons }) {
+   const rafRef = useRef(null)
+   const pendingCommitRef = useRef(null)
+ 
+-  const layout = useMemo(() => computeIxLayout(ribbons), [ribbons])
++  const layout = useMemo(() => computeCornerLayout(tileCorners), [tileCorners])
++  // The layout rebuilds every frame during a live drag (tileCorners is a fresh
++  // array each tile build). Read it through a ref in the listeners so they aren't
++  // torn down mid-drag; gate the effect on `hasLayout` (empty→non-empty) only.
++  const layoutRef = useRef(layout)
++  layoutRef.current = layout
++  const hasLayout = layout.length > 0
+ 
+   useEffect(() => {
+     if (tool !== 'surveyor') return
+     if (!cornerEditMode) return
+-    if (!layout.length) return
++    if (!hasLayout) return
+ 
+     const dom = gl.domElement
+ 
+     // Find the corner whose VISIBLE handle is nearest the cursor, within
+     // HIT_R_CORNER. The grab target is the curb-arc midpoint (where the magenta
+-    // sits) — the achieved fillet's arc midpoint when known, else the apex Q.
++    // sits) when the corner is filleted — the achieved fillet's arc midpoint —
++    // else the sharp vertex V (where the R=0 square marker sits). Reads the live
++    // layout via the ref so the fillet stays fresh mid-drag.
+     const grabTarget = (entry, c) => {
+-      const f = achievedFilletsRef.current[sortedCornerKey(entry.V, c.legKeyA, c.legKeyB)]
++      const f = c.fillet
+       if (f && f.apex && f.C && Number.isFinite(f.r)) {
+         const ax = f.apex[0] - f.C[0], az = f.apex[1] - f.C[1]
+         const al = Math.hypot(ax, az) || 1
+         return [f.C[0] + (ax / al) * f.r, f.C[1] + (az / al) * f.r]
+       }
+-      return c.Q
++      return entry.V
+     }
+     const pickCorner = (p) => {
+       let best = null, bestD = HIT_R_CORNER
+-      for (const entry of layout) {
++      for (const entry of layoutRef.current) {
+         for (let ci = 0; ci < entry.corners.length; ci++) {
+           const c = entry.corners[ci]
+           const t = grabTarget(entry, c)
+@@ -301,16 +225,18 @@ export default function CornerEditHandles({ ribbons }) {
+       }
+       if (e.button !== 0) return
+ 
+-      // Left-click a corner → grab it. Drag tunes the radius (cursor → V).
++      // Left-click a corner → grab it. Drag tunes the radius (cursor → V). The
++      // corner `key` is the stable identity (the layout rebuilds every frame, so
++      // group/index positions are not stable mid-drag).
+       dragRef.current = {
+         kind: 'corner',
+-        ixIdx: hit.entry.ixIdx, cornerIdx: hit.ci,
++        cornerKey: hit.c.key,
+         V: hit.entry.V.slice(),
+         legKeyA: hit.c.legKeyA, legKeyB: hit.c.legKeyB,
+         downPos: p,
+       }
+       setDragState({
+-        kind: 'corner', ixIdx: hit.entry.ixIdx, cornerIdx: hit.ci,
++        kind: 'corner', cornerKey: hit.c.key,
+         cursor: p, r: Math.hypot(p.x - hit.entry.V[0], p.z - hit.entry.V[1]),
+       })
+       dom.setPointerCapture?.(e.pointerId)
+@@ -413,7 +339,7 @@ export default function CornerEditHandles({ ribbons }) {
+         const moved = Math.hypot(upP.x - drag.downPos.x, upP.z - drag.downPos.z)
+         if (moved < TAP_THRESHOLD) {
+           const hintKind = drag.kind === 'ix' ? 'ix' : 'corner'
+-          const key = drag.kind === 'ix' ? `${drag.ixIdx}` : `${drag.ixIdx}:${drag.cornerIdx}`
++          const key = drag.kind === 'ix' ? `${drag.V}` : drag.cornerKey
+           setOriginHint(prev => (prev?.kind === hintKind && prev.key === key) ? null : { kind: hintKind, key })
+           pendingCommitRef.current = null
+           dragRef.current = null
+@@ -462,11 +388,12 @@ export default function CornerEditHandles({ ribbons }) {
+       dom.removeEventListener('pointercancel', onUp, opts)
+       dom.removeEventListener('contextmenu', onContextMenu, opts)
+     }
+-    // NOTE: achievedFillets is intentionally NOT a dep — it changes every frame
+-    // during a live drag; the handlers read it via achievedFilletsRef so the
+-    // listeners aren't torn down mid-drag.
++    // NOTE: the layout is intentionally NOT a dep — it's a fresh array every frame
++    // during a live drag; the handlers read it via layoutRef so the listeners
++    // aren't torn down mid-drag. `hasLayout` (empty→non-empty) is the only
++    // layout-shaped dep, so the effect re-binds once when corners first arrive.
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+-  }, [tool, cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale])
++  }, [tool, cornerEditMode, hasLayout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale])
+ 
+   if (tool !== 'surveyor') return null
+   if (!cornerEditMode) return null
+@@ -475,41 +402,45 @@ export default function CornerEditHandles({ ribbons }) {
+   return (
+     <group>
+       {layout.map((entry) => {
+-        const { V, corners, ixIdx } = entry
++        const { V, corners, ixKey: gKey } = entry
+         return (
+-          <group key={ixIdx}>
+-            {corners.map((c, ci) => {
+-              const ck = sortedCornerKey(V, c.legKeyA, c.legKeyB)
++          <group key={gKey}>
++            {corners.map((c) => {
++              const ck = c.key
+               const hasOverride = Number.isFinite(cornerOverrides[ck])
+-              const draggingCorner = dragState?.kind === 'corner'
+-                && dragState.ixIdx === ixIdx && dragState.cornerIdx === ci
++              const draggingCorner = dragState?.kind === 'corner' && dragState.cornerKey === ck
+               const color = draggingCorner ? COLOR_DRAG : hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT
+-              // The corner IS the handle: paint just the CURB ARC. ALWAYS read the
+-              // ACHIEVED fillet the construction produced (one corner truth — the
++              const fit = c.fillet
++              // FILLETED corner: the corner IS the handle — paint just the CURB ARC,
++              // the ACHIEVED fillet the construction produced (one corner truth — the
+               // magenta IS the curb, never drifts). The drag drives the store live
+-              // (rAF), so tileGround re-runs and the achieved fillet reflects the
+-              // dragged radius — the preview is the bake and cannot detach. No
+-              // achieved fillet → no real curb arc here (exterior phantom with no
+-              // tile, an R=0 square, or a mid-drag rebuild not yet landed): draw
+-              // nothing. The corner stays grabbable via grabTarget's apex fallback.
+-              if (!c.T_A) return <group key={ci} />
+-              const fit = achievedFillets[ck]
+-              if (!(fit && fit.tA && fit.tB)) return <group key={ci} />
+-              const C = fit.C, rr = fit.r
+-              const { thetaStart, thetaLength } = arcExtentFrom(fit.C, fit.tA, fit.tB, fit.apex || c.Q)
+-              // A band straddling the curb line (radius rr from the arc centre),
+-              // ~0.9 m wide so it reads + is grabbable; the apex hit-test stays
+-              // generous regardless.
+-              const inner = Math.max(0.05, rr - 0.6)
+-              const outer = rr + 0.3
+-              return (
+-                <group key={ci}>
+-                  <mesh position={[C[0], Y_DOTS, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
++              // (rAF), so tileGround re-runs and this fillet reflects the dragged
++              // radius — the preview is the bake and cannot detach.
++              if (fit && fit.tA && fit.tB && Number.isFinite(fit.r)) {
++                const C = fit.C, rr = fit.r
++                const { thetaStart, thetaLength } = arcExtentFrom(fit.C, fit.tA, fit.tB, fit.apex || V)
++                // A band straddling the curb line (radius rr from the arc centre),
++                // ~0.9 m wide so it reads + is grabbable; the hit-test stays generous.
++                const inner = Math.max(0.05, rr - 0.6)
++                const outer = rr + 0.3
++                return (
++                  <mesh key={ck} position={[C[0], Y_DOTS, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
+                     <ringGeometry args={[inner, outer, 48, 1, thetaStart, thetaLength]} />
+                     <meshBasicMaterial color={color} transparent opacity={draggingCorner ? 1.0 : 0.85}
+                       side={THREE.DoubleSide} depthTest={false} depthWrite={false} />
+                   </mesh>
+-                </group>
++                )
++              }
++              // UNFILLETED corner (R=0 square, or a fillet not yet landed mid-rebuild):
++              // draw a small SQUARE marker at the sharp vertex V — so square corners are
++              // visible AND un-squarable (drag out to author a radius). Grabbable via
++              // grabTarget's V fallback.
++              return (
++                <mesh key={ck} position={[V[0], Y_DOTS, V[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
++                  <planeGeometry args={[SQUARE_SIZE, SQUARE_SIZE]} />
++                  <meshBasicMaterial color={color} transparent opacity={draggingCorner ? 1.0 : 0.85}
++                    side={THREE.DoubleSide} depthTest={false} depthWrite={false} />
++                </mesh>
+               )
+             })}
+           </group>
+diff --git a/src/cartograph/stores/useCartographStore.js b/src/cartograph/stores/useCartographStore.js
+index c7c6086..18e7bc7 100644
+--- a/src/cartograph/stores/useCartographStore.js
++++ b/src/cartograph/stores/useCartographStore.js
+@@ -403,6 +403,14 @@ const useCartographStore = create((set, get) => ({
+   // Not persisted — it's derived geometry, rebuilt every tile build.
+   tileCornerFillets: {},
+   setTileCornerFillets: (m) => set({ tileCornerFillets: m || {} }),
++  // Transient: the INJECTIVE corner set from the live tile build — one entry per
++  // sharp tile corner ({ key, V, legA, legB, vertR, fillet }). Published by
++  // BlockGeometryV2Debug so the corner-edit handle sources its corner LIST from
++  // the corners actually drawn (the tile graph), not the legacy
++  // `ribbons.intersections` (T3, HANDOFF-tile-T3-corner-handles.md). Not
++  // persisted — derived geometry, rebuilt every tile build.
++  tileCorners: [],
++  setTileCorners: (c) => set({ tileCorners: c || [] }),
+   // The frozen curb (iA) rings the Section FILL strokes off — published so the
+   // Measure handles anchor to the SAME geometry the FILL uses (one *geometry*
+   // truth, SECTION.md §5), not a centreline ruler. Empty outside frozen Section.
+diff --git a/src/lib/tileGround.js b/src/lib/tileGround.js
+index 863e788..0c3f207 100644
+--- a/src/lib/tileGround.js
++++ b/src/lib/tileGround.js
+@@ -998,6 +998,14 @@ export function buildTileGround(ribbons, opts = {}) {
+   // each corner to (after the geometric inset clamp). The authoring handle reads
+   // this so its magenta arc IS the curb, never a re-derived approximation.
+   const cornerFillets = {}
++  // T3 — the authoritative, INJECTIVE corner set the Survey corner-handle rides
++  // (one corner truth). One entry per SHARP tile-ring corner, keyed identically
++  // to `cornerKeyAt` (= the write-path key `resolveVertR` reads overrides off),
++  // each carrying its resolved radius + the fSink arc that rounds THIS corner
++  // (or null when R=0 / unfilleted). Sourced here, not off `ribbons.intersections`
++  // (the legacy raw-OSM list the render no longer matches) — so every drawn
++  // corner gets a handle. See HANDOFF-tile-T3-corner-handles.md.
++  const cornerSet = []
+   // M3 — overridable ped-strip materials. Default {outer:'LU', inner:'SW'}
+   // (V1.5 model). T3 makes this per-fe (the ctrl-click LU↔SW swap); for now a
+   // single model proves the data path. 'LU' → land-use colour, 'SW' → sidewalk.
+@@ -1995,17 +2003,49 @@ export function buildTileGround(ribbons, opts = {}) {
+     const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+     // Tag each achieved fillet with its corner key (the centerline NODE it
+     // rounded + that node's two tile-edge legs) so the authoring handle can read
+-    // the true curb arc — one corner truth, no drift. The apex sits inboard of
+-    // the node (the fillet rounds the curb ring, inset from the centerline), so
+-    // map it back to the nearest SHARP corner of the tile ring — never a nearby
+-    // smoothed curve sample, which would mis-key the corner (the handle-detach
+-    // bug: read side queries the node key, find nothing, falls back to the apex).
++    // the true curb arc — one corner truth, no drift. CORNER-DRIVEN injective
++    // claim (was fillet-driven `nearestCornerVertexIndex`, which collided 93× and
++    // orphaned 77× — Caliper's bucket-B; subsumed here): every SHARP tile-ring
++    // corner is the unit of identity, and each claims at most ONE fSink arc by
++    // nearest apex→corner distance, globally greedy so the matching doesn't depend
++    // on corner order. The apex sits inboard of the node (the fillet rounds the
++    // curb ring, inset from the centerline), so the apex→corner gap ≈ the inset.
+     const cornerIdxs = sharpCornerIndices(tile.ring)
+-    for (const f of fSink) {
+-      const vi = cornerIdxs.length
+-        ? nearestCornerVertexIndex(f.apex, tile.ring, cornerIdxs)
+-        : nearestVertexIndex(f.apex, tile.ring)
+-      cornerFillets[cornerKeyAt(tile.ring[vi], tile.edges, vi)] = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
++    const pairs = []
++    for (let ci = 0; ci < cornerIdxs.length; ci++) {
++      const V = tile.ring[cornerIdxs[ci]]
++      for (let k = 0; k < fSink.length; k++) {
++        const f = fSink[k]
++        pairs.push({ ci, k, d: Math.hypot(f.apex[0] - V[0], f.apex[1] - V[1]) })
++      }
++    }
++    pairs.sort((a, b) => a.d - b.d)
++    const filletForCorner = new Array(cornerIdxs.length).fill(-1)
++    const filletClaimed = new Array(fSink.length).fill(false)
++    for (const p of pairs) {
++      if (filletForCorner[p.ci] >= 0 || filletClaimed[p.k]) continue
++      filletForCorner[p.ci] = p.k
++      filletClaimed[p.k] = true
++    }
++    for (let ci = 0; ci < cornerIdxs.length; ci++) {
++      const vi = cornerIdxs[ci]
++      const V = tile.ring[vi]
++      const key = cornerKeyAt(V, tile.edges, vi)
++      // Split the key's two legs for the write path (legOut/legIn at this corner)
++      // — same derivation as cornerKeyAt, so setCornerCornerRadius(V, legA, legB)
++      // round-trips to exactly this key.
++      const ne = tile.edges.length
++      const eOut = tile.edges[vi], eIn = tile.edges[(vi - 1 + ne) % ne]
++      const legA = `${skelOf(eOut.streetIdx)}:${eOut.forward ? 'f' : 'b'}`
++      const legB = `${skelOf(eIn.streetIdx)}:${eIn.forward ? 'b' : 'f'}`
++      const k = filletForCorner[ci]
++      let fillet = null
++      if (k >= 0) {
++        const f = fSink[k]
++        fillet = { C: f.C, r: f.r, tA: f.tA, tB: f.tB, apex: f.apex }
++        cornerFillets[key] = fillet
++      }
++      cornerSet.push({ key, V, legA, legB, vertR: vertR[vi], fillet })
+     }
+     const lu = luForRing(tile.ring)
+     // Dead-end caps + loop reversals make iA turn ~180°; a jtMiter inward offset
+@@ -2203,5 +2243,5 @@ export function buildTileGround(ribbons, opts = {}) {
+   const _shapeArtifact = opts.emitArtifact
+     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
+     : undefined
+-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact }
++  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact }
+ }

@@ -1,0 +1,39 @@
+=== Were the 79 frame-invisible Ts created by US (simplification) or genuine OSM gaps? ===
+  raw OSM HAD a shared node there (WE removed it via RDP/weld): 79
+  genuine OSM gap (no raw node, terminating way ends mid-segment): 0
+  examples of US-created interior-Ts (raw node existed, distance to nearest raw vertex):
+    "Oregon Place" -> "Lafayette Avenue" at (-920.6,58.5) rawNode 0.00m away
+    "Mississippi Avenue" -> "Chouteau Avenue" at (336.9,-547.2) rawNode 0.00m away
+    "Waverly Place" -> "Lafayette Avenue" at (-42.5,188.9) rawNode 0.00m away
+    "Waverly Place" -> "Lafayette Avenue" at (-25.3,191.6) rawNode 0.00m away
+    "Waverly Place" -> "Waverly Place" at (-53.8,258.5) rawNode 0.00m away
+    "Waverly Place" -> "Waverly Place" at (-36.7,261.4) rawNode 0.00m away
+    "Vail Place" -> "Park Avenue" at (340.0,-120.7) rawNode 0.00m away
+    "Nicholson Place" -> "Lafayette Avenue" at (76.9,207.7) rawNode 0.00m away
+    "South 22nd Street" -> "Chouteau Avenue" at (70.4,-615.0) rawNode 0.00m away
+    "Dillon Street" -> "Carroll Street" at (693.6,147.0) rawNode 0.00m away
+
+=== Simplification aggressiveness: how many raw vertices survive into skeleton? ===
+  raw vehicular vertices: 2741  ->  skeleton vertices: 1431  (48% removed)
+
+=== DOLMAN -> 18th U-STREET TRACE ===
+raw OSM fragments matching Dolman|18th: 16
+  osm6411409 "South 18th Street" hw=residential oneway=yes lanes=- 6pt  [259,583]->[294,704]
+  osm6426765 "Dolman Street" hw=residential oneway=no lanes=2 4pt  [632,-465]->[616,-405]
+  osm28522831 "South 18th Street" hw=motorway_link oneway=yes lanes=1 6pt  [367,266]->[356,323]
+  osm28655768 "South 18th Street" hw=secondary oneway=no lanes=4 2pt  [658,-727]->[678,-796]
+  osm151115527 "South 18th Street" hw=residential oneway=no lanes=2 13pt  [424,-89]->[374,229]
+  osm151115533 "Dolman Street" hw=residential oneway=- lanes=2 13pt  [523,-56]->[480,214]
+  osm151115541 "South 18th Street" hw=residential oneway=no lanes=2 18pt  [516,-414]->[424,-89]
+  osm166624144 "South 18th Street" hw=service oneway=yes lanes=- 8pt  [356,323]->[367,266]
+  osm301606663 "South 18th Street" hw=secondary oneway=yes lanes=3 8pt  [645,-596]->[691,-450]
+  osm301606678 "South 18th Street" hw=secondary oneway=yes lanes=2 20pt  [705,-446]->[658,-727]
+  osm661952868 "Dolman Street" hw=residential oneway=no lanes=2 18pt  [609,-391]->[523,-56]
+  osm1297584456 "South 18th Street" hw=secondary oneway=yes lanes=2 15pt  [658,-727]->[645,-596]
+  osm1349812899 "South 18th Street" hw=motorway_link oneway=no lanes=2 2pt  [368,259]->[370,251]
+  osm1350467176 "Dolman Street" hw=residential oneway=- lanes=2 2pt  [480,214]->[475,243]
+  osm1350963412 "West 18th Street" hw=residential oneway=no lanes=2 9pt  [609,-391]->[516,-414]
+  osm1488940910 "South 18th Street" hw=motorway_link oneway=no lanes=2 2pt  [367,266]->[368,259]
+
+  name-transition search (Dolman endpoint vs 18th endpoint within 2m):
+    Dolman osm661952868 endpoint (608.6,-391.2) == 18th osm1350963412 endpoint  gap 0.00m  <-- NAME TRANSITION POINT

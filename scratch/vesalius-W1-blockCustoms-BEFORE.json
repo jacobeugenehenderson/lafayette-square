@@ -1,0 +1,192 @@
+{
+  "park-avenue-1": {
+    "right": {
+      "0": {
+        "pavementHW": 13.822054607665162,
+        "treelawn": 1.7258555231174242,
+        "sidewalk": 2.866669482870156,
+        "terminal": "sidewalk"
+      },
+      "2": {
+        "pavementHW": 18.28698264857365,
+        "treelawn": 1.2048320255566942,
+        "sidewalk": 3.387692980430886,
+        "terminal": "sidewalk"
+      },
+      "3": {
+        "pavementHW": 13.822054607665162,
+        "treelawn": 1.7258555231174242,
+        "sidewalk": 2.866669482870156,
+        "terminal": "sidewalk"
+      },
+      "4": {
+        "pavementHW": 13.822054607665162,
+        "treelawn": 1.7258555231174242,
+        "sidewalk": 2.866669482870156,
+        "terminal": "sidewalk"
+      },
+      "6": {
+        "pavementHW": 13.822054607665162,
+        "treelawn": 1.7258555231174242,
+        "sidewalk": 2.866669482870156,
+        "terminal": "sidewalk"
+      }
+    },
+    "left": {
+      "2": {
+        "pavementHW": 10.300541536821855,
+        "treelawn": 1.2048320255566942,
+        "sidewalk": 1.689660472381732,
+        "terminal": "sidewalk"
+      }
+    }
+  },
+  "lafayette-avenue-3": {
+    "left": {
+      "0": {
+        "pavementHW": 10.555325676754327,
+        "treelawn": 3.5560120021971127,
+        "sidewalk": 1.0590983769398452,
+        "terminal": "sidewalk"
+      },
+      "2": {
+        "pavementHW": 11.260539626751909,
+        "treelawn": 2.49002617768312,
+        "sidewalk": 2.2990019378462296,
+        "terminal": "sidewalk"
+      }
+    }
+  },
+  "missouri-avenue-2": {
+    "left": {
+      "0": {
+        "pavementHW": 8.98477502061614,
+        "treelawn": 3.020838982094821,
+        "sidewalk": 2.263884048165316,
+        "terminal": "sidewalk"
+      }
+    },
+    "right": {
+      "2": {
+        "pavementHW": 6.961665831871115,
+        "treelawn": 4.210752735261818,
+        "sidewalk": 1.0900301143604647,
+        "terminal": "sidewalk"
+      }
+    }
+  },
+  "mississippi-avenue": {
+    "right": {
+      "0": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "3": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "4": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "5": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "6": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "8": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "10": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "12": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "14": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "16": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      },
+      "17": {
+        "pavementHW": 11.876374210124538,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk",
+        "materials": {
+          "outer": "SW",
+          "inner": "SW"
+        }
+      }
+    }
+  }
+}
