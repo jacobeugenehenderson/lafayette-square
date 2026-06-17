@@ -124,7 +124,7 @@ Comparing the current branch build inventory ([INVENTORY-DATA §G](INVENTORY-DAT
 
 | Dep | Consumer | Verdict |
 |---|---|---|
-| `src/data/planetarium/{constellations,named_stars,planets}.json` | `CelestialBodies`, `StageSky`, `PlanetariumOverlay` (overlay component itself unmounted in production — see §3 K.3) | **keep** (constellations + named stars are visible in night sky); **strip planets.json if PlanetariumOverlay stays unmounted** |
+| `src/data/planetarium/{constellations,named_stars,planets}.json` | `CelestialBodies`, `StageSky`, `PlanetariumOverlay` | ⚠️ **CORRECTED 2026-06-17: `PlanetariumOverlay` IS mounted** — via `CelestialBodies.jsx:962` (gated `viewMode!=browse && constellations×night>0.05`; channel defaults 0). The K.3/RD.3 "unmounted" claim below is **stale** (grepped Scene/LafayetteScene/App, missed the one-level-down mount). **keep all three.** Home: `ls/STREET-VIEW.md §3.2`. |
 | `public/textures/milky_way.jpg` (17 MB) | `CelestialBodies` background star field (TO VERIFY consumer) | **keep + verify gzip/CDN behavior** — 17 MB raw, will be heavy on mobile cellular if not gated |
 | `src/data/landmarks.json` (+31 lines) | `useInit`, `useListings`, cartograph `SurveyorPanel` | keep |
 | `src/data/park_species_map.json` (+148) | `arborist/bake-trees.js`, scripts | **strip from prod build** — authoring input, not runtime |
@@ -206,7 +206,7 @@ Walk the consumer surface against both runtimes. Categorized by feature area; ve
 | Hero | ✅ | ✅ | preset position unchanged |
 | Browse | ✅ (tilt via `SHOTS.browse.up`) | ✅ | the compass-only-camera-heading canon (memory `project_compass_only_camera_heading`) is *more* load-bearing on branch since slab geometry is rigidly compass-framed |
 | Street | ✅ | ✅ | |
-| Planetarium | `viewMode === 'planetarium'` infrastructure exists in `Scene.jsx` (ESC, idle timeout, camera shots) | same | **`PlanetariumOverlay` is not imported by `Scene.jsx` / `LafayetteScene.jsx` / `App.jsx` on either side.** Carry-over K.3. Branch's only diff in the file is `fog: false` on constellation material — dead code edit if overlay is truly unmounted. Phase A flags; Phase B confirms + decides strip vs. wire. |
+| Planetarium | `viewMode === 'planetarium'` infrastructure exists in `Scene.jsx` (ESC, idle timeout, camera shots) | same | ⚠️ **CORRECTED 2026-06-17 — RESOLVED, NOT dead.** `PlanetariumOverlay` is not imported by Scene/LafayetteScene/App because it's mounted **one level down in `CelestialBodies.jsx:962`** (which Scene.jsx:759 does mount), gated + default-off. K.3/RD.3 should be **closed as "live, gated"**, not "strip vs. wire." Home: `ls/STREET-VIEW.md §3.2`. |
 
 ### 3.6. Time-of-day system
 
@@ -252,7 +252,7 @@ Items the read pass surfaced but cannot resolve in Phase A. These feed Phase B's
 |---|---|---|---|
 | RD.1 | `cartograph/FEATURES.md:259,275` + `cartograph/ARCHITECTURE.md:116,136` reference `src/components/StreetRibbons.jsx` which no longer exists on the branch (file deleted, -1939 lines) | Cartograph trinity | Next cartograph session (already on `ls/BACKLOG K.1`) |
 | RD.2 | `CloudDome` is procedural; `public/clouds/{presets,almanac}.json` ship but no runtime consumer reads them | LS runtime ↔ meteorologist | Phase B (`pre_public_cleanout` — decide wire-or-strip) |
-| RD.3 | `PlanetariumOverlay` infrastructure exists in `Scene.jsx` (viewMode, camera shots) but the component is not imported anywhere in production. Branch's only diff: a `fog: false` material flag | LS runtime | Phase B — confirm dead, then strip overlay file + viewMode plumbing OR wire properly |
+| RD.3 | ⚠️ **CORRECTED/CLOSED 2026-06-17:** `PlanetariumOverlay` IS imported in production — via `CelestialBodies.jsx:39/:962` (not directly by Scene/LafayetteScene/App, which is why the original grep missed it). It's **live + operator-gated**, default-off. Not dead; do **not** strip. Home: `ls/STREET-VIEW.md §3.2` | LS runtime | **Done — verified live, gated.** No strip. |
 | RD.4 | `Vite copyPublicDir` actually ships **what** to `dist/`? `public/trees` 4.9 GB, `public/models` 255 MB, `public/lidar` unmeasured — direct inspection of post-build `dist/` is required, not inference | Build | Phase B (`pre_public_cleanout` first move) |
 | RD.5 | `useCartographStore` is reached by 6 production components for ~5 fields' worth of need; the store itself is 1313 lines + transitive deps. The runtime needs `scene.json` reads, not the store | LS runtime ↔ cartograph | Phase B (`ls_basemap_swap` + parametrize pass) |
 | RD.6 | `lampLightmap.js` shader-glow `DataTexture` still reads live `src/data/street_lamps.json` even though `BakedLamps` switched in production (L1.1 shipped). Half-migration | LS runtime | Phase B (close L1.1 with an `L1.1b` follow-on) or memorialize as deliberate |

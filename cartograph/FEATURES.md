@@ -45,7 +45,7 @@ Cartograph is recursive — each authoring step makes a truth-claim the next bui
 | Stage | Look authoring (materials, palettes, lighting, post-FX, shots) | Operator | No |
 | **Bake** (action) | Slab pour — publishes to `public/baked/<look>/` | Operator clicks | N/A |
 | Slab (`public/baked/<look>/*`) | Substrate — flat, fortified, secure, dumb | LS app + Preview | Yes (with LS app) |
-| Preview (`/preview.html`) | Slab QA — GPU profiler, phone-aspect, layer cost | Operator | No |
+| Preview (`/preview.html`) | Publish-confidence gate — virtual-device cost, per-platform editorial, thermal/memory/transition | Operator | No (authors the inclusion manifest) |
 | LS app | Consumer surface (place cards, businesses, accounts, …) | End users | Yes |
 | Aerial photos (in Designer) | Ground-truth verification | Operator | No (max-res, never shipped) |
 
@@ -62,7 +62,7 @@ Cartograph is recursive — each authoring step makes a truth-claim the next bui
 **Owns: look authoring — the theatrical sense.** Perspective camera, multiple "shots" each with their own framing, atmosphere, time-of-day. The operator takes Designer's fortified data as truth and dresses it in a chosen aesthetic ("Look"): lighting curves, building palettes, ribbon materials, sky gradient, post-FX, cloud presets, an authored Hero camera move. The artist spends most of their time here. Output: `public/looks/<id>/design.json` per Look.
 
 ### 3. Preview (`/preview.html`)
-**Owns: slab inspection — GPU profiling + phone-mode QA + post-bake verification.** Renders exactly what production renders, plus a QA toolkit (per-layer cost, phone frame, layer-toggle matrix, TOD scrub). If a layer's cost is high here, it surfaces before mobile users feel it; if something looks right in Stage but wrong in Preview, the bake didn't propagate. The proving ground before slab handoff. Model: `PREVIEW.md`.
+**Owns: the publish-confidence gate — *know* the slab will ship before it does, no push-and-wait.** Renders exactly what production renders, plus the inspection toolkit (per-layer cost, phone frame, layer-toggle matrix, TOD scrub) — and the proving ground where the operator (a) reads each channel's *tax against a target-device budget*, not the desktop's, (b) makes the **per-platform editorial call** (which channels ship to desktop vs. mobile) right beside the gauge that responds, and (c) catches the three things a fast desktop hides — thermal, memory, and crash-on-transition. If a layer is too hot here, it surfaces before a mobile user feels it; if something looks right in Stage but wrong in Preview, the bake didn't propagate. Model: `PREVIEW.md`. *(The named-virtual-device emulator + the re-aimed budget gauges are the in-flight v0.2 arc — `HANDOFF-preview-measurement.md`.)*
 
 ## Helper apps
 

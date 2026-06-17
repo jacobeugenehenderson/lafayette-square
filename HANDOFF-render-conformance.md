@@ -139,6 +139,10 @@ change; all parse. (Chose `src/lib/` over the suggested `src/utils/deviceDetect.
 other shared pure helpers.)
 
 ## Phase 4 — The virtual phone renders the mobile profile (the deploy-on-phone gate; own commit)
+> ⚠️ **2026-06-17:** this phase is now the **workload axis (§2a) of `HANDOFF-preview-measurement.md`** — the
+> Preview "virtual device" arc absorbs it. Build it there (it pairs with the supersample fill-strain proxy
+> + the device-profile SSoT), not as a standalone here. Kept for the root diagnosis below.
+
 Today Preview "Phone" mode renders DESKTOP settings in a phone viewport (Vernier §6-F) — so the virtual
 phone tests nothing real. Make **phone-mode adopt the mobile render path** (the `IS_MOBILE` gating:
 antialias off, dpr 1, shadows off, deferred lamps, mobile post-fx tier). This is what makes "deploy on
@@ -148,6 +152,11 @@ the virtual phone" meaningful AND makes the mobile-perf meter trustworthy.
   post-fx tier shows.
 
 ## Phase 5 — Mobile policy → authored, three homes (the big one; references HANDOFF-mobile-profile.md)
+> ⚠️ **2026-06-17 (reversal B):** the **inclusion** home below is now **Preview-authored**, not
+> Stage-authored (`HANDOFF-preview-measurement.md §6` + the amended `HANDOFF-mobile-profile.md §2`). The
+> three-homes split still holds; only the *editor* of the inclusion channel moved Stage → Preview. The
+> Stage "Mobile | Desktop" selector below is demoted to an optional preview-render aid.
+
 Per the cold-reviewed mobile-profile design ([[project_mobile_profile_authored_channel]]), route the
 `IS_MOBILE` policy to its homes — **device *sensing* stays code; *policy* becomes data**:
 - **Layer inclusion** (lamps, arch, StageShadows) → per-Look slab channel (Stage-authored).

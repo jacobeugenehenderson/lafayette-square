@@ -31,7 +31,7 @@ uncontrollable, duplicated. Violates "**user control over what makes it to runti
 
 | Axis | What | Home | Why | Timing |
 |------|------|------|-----|--------|
-| **Inclusion** | which *layers* ship to mobile (lamps, arch, street lights…) | **slab / design.json**, Stage-authored, **per-Look** | mount-gates *inside* the render tree; an authored artistic choice | async-fine (gates after slab loads) |
+| **Inclusion** | which *layers* ship to mobile (lamps, arch, street lights…) | **slab / design.json**, **per-Look** — **Preview-authored** (reversal B, 2026-06-17; was Stage-authored) | mount-gates *inside* the render tree; **deployment policy**, decided at the publish gate beside the cost instrument | async-fine (gates after slab loads) |
 | **Global quality** | **depth regime (LOG/linear)** · `dpr` · `antialias` · `shadows` · post-fx tier | **`INSTANCE.mobileQuality`**, **product-wide** | device *capability*, not art; Canvas-*construction* props | **must be synchronous** — set before the slab resolves |
 | **Authored-value variants** | slab channels that may differ mobile vs desktop (neon/bloom/grade — e.g. brighter neon to compensate for no bloom) | **slab channel, per-profile**, authored via the Stage Mobile\|Desktop tab | async-safe slab channels; genuinely an *authored* mobile/desktop difference (your #4) | async-fine |
 | **Shader-baked / structural** | `StreetLights` GLSL-template alpha + module consts; `PostProcessing` mobile effect graph; building texture-skip | **stays code-side, documented** | converting a GLSL template constant to a slab uniform is a refactor wildly disproportionate to "halo 0.30 vs 0.45"; the StreetLights halo/pool variants ARE the authored-value idea, just below the threshold to lift | below operator-interest threshold ([[feedback_smallness_as_precondition]]) |
@@ -43,8 +43,18 @@ ONE source). **Device *policy* splits to the two homes above.** Both seeded with
 as defaults → **no day-one behavior change** ("dope the artifact"). Hardwires then come out.
 
 **Carried over from the original settled decisions:** per-layer **inclusion** is Option A (reuse the layer
-taxonomy), Stage-authored; NOT per-tree/micro (that stays automatic). **NO write-back from Preview to the
-slab** (operator). Stage mobile-inclusion ("what ships") ≠ Preview inspection toggles ("what am I measuring").
+taxonomy); NOT per-tree/micro (that stays automatic). The "what ships" inclusion surface ≠ Preview's
+**inspection toggles** ("what am I measuring") — that distinction is permanent.
+
+⚠️ **AMENDED 2026-06-17 (standup, Jacob — ratified reversal "B", see `HANDOFF-preview-measurement.md`):**
+the original "Stage-authored, **NO write-back from Preview**" is **overturned.** Inclusion is **deployment
+policy, not Look-art**, and it is now **authored *in Preview*** — the publish gate, where the cost
+instrument lives, so the operator decides-while-measuring. The distinction that line protected (inclusion
+≠ inspection toggles) is **preserved** by giving inclusion its own editorial surface (the channel-listing,
+distinct from the inspection toggles); only the *host app* moved Stage → Preview. Phase D below (the Stage
+"Mobile" view) is correspondingly demoted/optional. This is a **scoped** refinement of
+`feedback_stage_is_source_preview_is_mirror`: the *Look* still mirrors; only *deployment policy* is
+authored at the gate.
 
 **On the per-Look inclusion home (don't over-justify):** today inclusion is one global `IS_MOBILE`, so the
 per-Look *value* is partly speculative. Justify it as "the per-Look authoring surface already exists; seed
@@ -84,9 +94,12 @@ The reframe in §2 dissolves the original Q1/Q2/Q3:
   from it, seeded to today's values. Mobile renders identically. (No slab/Stage work — self-contained.)
 - **Phase C — Inclusion channel** in design.json + bake → slab; seed from today's inclusion hardwires; runtime
   gates layer mounts on the authored inclusion map. Hardwired inclusion branches come out. Identical behavior.
-- **Phase D — Stage "Mobile" view + per-layer inclusion authoring** → design.json. Operator sees what the
-  phone gets and toggles inclusion.
-- **Phase E — Preview reflects** the mobile profile (read-only; no write-back) + measures it.
+- **Phase D — ~~Stage "Mobile" view~~ → DEMOTED/OPTIONAL (reversal B, 2026-06-17).** Inclusion authoring
+  moved to Preview (Phase E). Keep a Stage Mobile|Desktop *preview-render* if the operator wants to see the
+  phone profile while authoring the Look, but the **inclusion toggles live in Preview**, not here.
+- **Phase E — Preview AUTHORS the per-platform inclusion** (the channel-listing editorial surface) **+
+  measures it against the virtual device.** This is the reversal's payload; spec'd in
+  `HANDOFF-preview-measurement.md §6`. (Was "reflects read-only" — overturned.)
 - **Phase F — Docs + cleanup.** SLAB-CONTRACT (inclusion channel), `INSTANCE` docs (mobileQuality), FEATURES,
   retire regexes; document the code-side shader/structural tail.
 

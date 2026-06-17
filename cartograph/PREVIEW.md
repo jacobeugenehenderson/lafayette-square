@@ -1,6 +1,8 @@
 # Preview — inspecting the slab
 
-> **Status: v0.1 (2026-06-10) — new, the topic-doc.** The keystone Reference for the **Preview** stage — the third beat of `… stage → bake → preview`. Grounded against the live render tree in `src/preview/PreviewApp.jsx` and the cost machinery in `src/preview/GpuMonitor.jsx`, not assembled from prose. Completes the front-half rebuild trio: paired with **`STAGE.md`** (authors the Look) and **`BAKE.md`** (freezes it into the slab). Preview is the surface that *reads* what those two produced.
+> **Status: v0.1 (2026-06-10), doctrine amended 2026-06-17 — the topic-doc.** The keystone Reference for the **Preview** stage — the third beat of `… stage → bake → preview`. Grounded against the live render tree in `src/preview/PreviewApp.jsx` and the cost machinery in `src/preview/GpuMonitor.jsx`, not assembled from prose. Completes the front-half rebuild trio: paired with **`STAGE.md`** (authors the Look) and **`BAKE.md`** (freezes it into the slab). Preview *reads* what those two produced — **and, as of the 2026-06-17 standup, *authors deployment policy* at the publish gate** (§0.2).
+>
+> ▶ **In flight — the v0.2 measurement-regime arc (`HANDOFF-preview-measurement.md`).** A ratified redesign turns Preview from a *desktop truth-meter* into a **publish-confidence instrument**: a named-virtual-device emulator, gauges re-aimed at the *device budget* (not desktop ms), and thermal / memory / transition-spike axes. **Not yet built** — the sections below describe today's v0.1 behavior; the keystone brief holds the forward plan. The doctrine reversal in §0.2 *is* settled and lands here now.
 >
 > Preview is **both** an *idea* (the QA beat after the bake) and a *thing* (the standalone app at `/preview.html`). This doc owns *what Preview is for and how it inspects*. It does **not** re-document the slab's byte format (that's `SLAB-CONTRACT.md`) or the render components themselves (those are LS-runtime concerns shared with production — Preview just mounts them).
 
@@ -14,7 +16,9 @@ Two load-bearing facts:
 
 1. **Preview is production's render tree + inspection bolt-ons — not a separate render path** (`project_preview_equals_ls_literally`). Whatever Preview draws, the deployed LS app draws, byte-for-byte: the same `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies`, `SceneNeon`, post-FX stack. The *only* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the cost numbers honest — they measure the shipping render, not a proxy.
 
-2. **Preview reads; it never authors** (`feedback_stage_is_source_preview_is_mirror`). The chain is **Stage authors → the Look serializes → Preview mirrors**. Preview has no `design.json` store, no live re-derivation, no save. It reads the frozen `scene.json` + baked geometry cold (past **wall #2** — `BAKE.md §0`). If something looks right in Stage but wrong in Preview, the bug is the bake (it didn't propagate), never Preview.
+2. **Preview mirrors the *Look*; it authors *deployment policy*** (amended 2026-06-17 — a scoped refinement of `feedback_stage_is_source_preview_is_mirror`, "we've grown"). Two halves:
+   - **The Look mirrors** (unchanged). Stage authors the art → the Look serializes → Preview reads the frozen `scene.json` + baked geometry cold (past **wall #2** — `BAKE.md §0`); no live re-derivation. If a *Look* looks right in Stage but wrong in Preview, the bug is the bake (it didn't propagate), never Preview.
+   - **Deployment policy is authored at the gate.** *Which channels ship to desktop vs. mobile* is **not Look-art — it is a cost-driven deployment decision**, and the cost instrument lives in Preview. So the per-platform **inclusion manifest is owned and edited in Preview** (the publish gate), where the operator decides-while-measuring. This overturned the prior "Preview never writes the slab" rule (`HANDOFF-preview-measurement.md §doctrine`); the distinction it protected — inclusion ("what ships") ≠ the inspection toggles ("what am I measuring") — survives via a *separate editorial surface* (the channel-listing, §2).
 
 ---
 
@@ -27,7 +31,7 @@ Two load-bearing facts:
 | **Who serves it** | the cartograph dev server (`serve.js:735` maps `/` → `/preview.html`); entry `src/preview/main.jsx` → `PreviewApp` |
 | **Who reads the slab** | the **shared runtime components** — `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies` / `Atmosphere` / `CloudDome`, `LafayettePark`, `SceneNeon` (via `LafayetteScene`), all fed by `useSceneJson(lookId)` |
 | **Format SSOT** | `SLAB-CONTRACT.md` |
-| **Output** | nothing persisted — Preview is a read-only player. Its product is the operator's *verdict*: "ship the slab" or "back to Stage." |
+| **Output** | the **Look is read-only** (Preview persists nothing of the render). Its product is the operator's *verdict*: "ship the slab" or "back to Stage." **Exception (amended 2026-06-17, §0.2):** Preview *does* author the per-platform **inclusion manifest** — its one sanctioned write, deployment policy decided at the gate. |
 
 There is no Preview artifact and no Preview store. Preview is the one stage in `stage → bake → preview` that writes nothing — it is pure inspection.
 
@@ -116,7 +120,7 @@ Preview closes the authoring loop without authoring anything: it is the operator
 ## 7. The doctrine, in one place
 
 - **Preview *is* production + bolt-ons.** Same render tree, byte-for-byte. The only additions are the profiler, the phone frame, and the toggle matrix. This is what makes the cost numbers honest.
-- **Preview reads; it never authors.** Stage authors, the Look serializes, Preview mirrors. No store, no save, no re-derivation — the frozen slab, cold.
+- **Preview mirrors the Look; it authors deployment policy.** Stage authors the art, the Look serializes, Preview mirrors it cold (no store, no save, no re-derivation of the Look). But *per-platform inclusion* — what ships to desktop vs. mobile — is **authored in Preview**, the publish gate beside the cost instrument (§0.2, amended 2026-06-17).
 - **"All on" equals the shipping cost.** Toggles gate `.visible`, never the mount; the all-on total is the production render's cost.
 - **Trust the all-on total, not the sum of deltas.** Shared overdraw makes per-layer deltas non-additive; they isolate *causes*, the total measures *cost*.
 - **Milliseconds are the budget.** Draws/tris are context; frame-time is what users feel. 16ms is the per-layer bar anchor; 33ms is the spike line.
@@ -129,6 +133,7 @@ Preview closes the authoring loop without authoring anything: it is the operator
 - **`STAGE.md`** — the Look-authoring tool whose `design.json` the bake freezes; Preview's upstream source.
 - **`BAKE.md`** — the publish stage that pours the slab Preview reads; the paired keystone (`BAKE.md §3` lists every artifact).
 - **`SLAB-CONTRACT.md`** — the slab's byte format + producer/consumer contracts (the SSOT this doc points to for §1).
+- **`HANDOFF-preview-measurement.md`** *(State — in flight)* — the v0.2 measurement-regime arc: the virtual-device emulator, device-budget gauges, thermal/memory/transition axes, and the per-platform channel-listing this doc's §0.2 reversal enables. The forward plan; this doc becomes its Reference home on landing.
 - **`FEATURES.md §3 "Preview"`** — the user/investor re-voicing of this doc (the role table + the three-environments walkthrough).
 - **`OPERATIONS.md "Preview — the slab inspector"`** — the operator manual entry (defers here for the model).
 - **`_archive/RENDER-PATH-CENSUS.md`** *(archived)* — the render-path audit; Preview as the shipping-render measurement surface.
