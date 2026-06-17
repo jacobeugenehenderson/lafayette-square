@@ -115,6 +115,40 @@
           "terminal": "sidewalk"
         }
       }
+    },
+    "park-avenue-1": {
+      "right": {
+        "2": {
+          "pavementHW": 10.819239038889352,
+          "terminal": "sidewalk"
+        },
+        "3": {
+          "pavementHW": 10.819239038889352,
+          "terminal": "sidewalk"
+        },
+        "4": {
+          "pavementHW": 10.819239038889352,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "kennett-place": {
+      "right": {
+        "0": {
+          "pavementHW": 4.432881733788652,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "left": {
+        "0": {
+          "pavementHW": 4.57785609414989,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "lawn"
+        }
+      }
     }
   },
   "surveyDefault": null,
