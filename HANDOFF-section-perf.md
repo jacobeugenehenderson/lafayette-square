@@ -29,6 +29,9 @@ The render path is correct: Section consumes the frozen `shape.json` via `sectio
 - No whole-map pass fires on a Section edit (verify #2's pass is gone; `sectionOpen` runs on ≤ a few tiles, not 101).
 - Grid-safe: the rendered FILL is identical to today's (only the *recompute scope* changes), curated/correctness suite unchanged.
 
+## ⚠️ Sibling Section-tool bug (PREDATES today — NOT the #2 gate; track, fix later)
+**On select in Section, the aerial map isn't revealed / the translucification is disrupted** (Jacob, 2026-06-17). Authoring against the aerial needs the selected corridor's fills to go **translucent (opacity 0.55)** so the hi-res aerial reads through — Section's translucency rides the **selected-corridor path** (`BlockGeometryV2Debug.jsx` ~:322–326/:598, `selectedCorridor` material variant) + `AerialFocus` (`AerialTiles.jsx:263`, hi-res around the selection). One of those isn't engaging on Section select. **Confirmed pre-existing** (predates the #2 perf gate; the gate only touches the dead V2 figure-ground pass, not the selected-corridor translucency). **Distinct from the perf root above** — a render/material-state bug, not a rebuild-cost one. Probe the select→`selectedCorridor`-material + `AerialFocus`-trigger path when this brief is picked up.
+
 ## Coordination
 - **Same family as `freeze-the-curb` Phase 2** (block-local edit loop) but on the FILL layer — and it overlaps **T4 (delete figure-ground)**. #2 ⊂ T4; landing T4 subsumes #2.
 - Touches `BlockGeometryV2Debug.jsx` + `tileGround.js sectionOpen` + the store — distinct from the SHAPE briefs (A/F/B/C, landed). Independent.
