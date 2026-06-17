@@ -704,9 +704,17 @@ async function buildMaterials(lookName) {
   const roughness = materialDefaults?.roughness ?? 0.85
   const metalness = materialDefaults?.metalness ?? 0
 
+  // The manifest stores absolute `/baked/...` paths (the bake is base-unaware).
+  // Route them through Vite's BASE_URL so the PNGs resolve under a deploy
+  // subpath (e.g. staging's /lafayette-square-staging/) — otherwise they 404,
+  // the atlas load rejects, and InstancedTrees gates ALL trees off. Mirrors the
+  // base-join pattern used for every other baked asset. (treeAtlasMaterial bug
+  // 2026-06-17: the lone runtime fetch that bypassed BASE_URL.)
+  const base = import.meta.env.BASE_URL
+  const withBase = (p) => `${base}${String(p).replace(/^\//, '')}`
   const [color, normal] = await Promise.all([
-    loadTexture(atlas.colorPath),
-    loadNormalTexture(atlas.normalPath),
+    loadTexture(withBase(atlas.colorPath)),
+    loadNormalTexture(withBase(atlas.normalPath)),
   ])
 
   // Single shared material for every tree primitive — bark and leaf tiles
