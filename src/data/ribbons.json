@@ -753,14 +753,14 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.4384,
+          "pavementHW": 3.96,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
           "material": "highway"
         },
         "right": {
-          "pavementHW": 2.4384,
+          "pavementHW": 3.25,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -1244,7 +1244,7 @@
     },
     {
       "skelId": "south-18th-street-4",
-      "roadId": "south-18th-street-4",
+      "roadId": "south-18th-street-1",
       "name": "South 18th Street",
       "points": [
         [
@@ -1868,7 +1868,7 @@
     },
     {
       "skelId": "south-18th-street-7",
-      "roadId": "south-18th-street-7",
+      "roadId": "south-18th-street-1",
       "name": "South 18th Street",
       "points": [
         [
@@ -1886,14 +1886,14 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.4384,
+          "pavementHW": 3.96,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
           "material": "highway"
         },
         "right": {
-          "pavementHW": 2.4384,
+          "pavementHW": 3.25,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none",
@@ -4090,7 +4090,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.28,
+          "pavementHW": 4.11,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -4179,7 +4179,7 @@
     },
     {
       "skelId": "missouri-avenue-4",
-      "roadId": "missouri-avenue-4",
+      "roadId": "missouri-avenue-3",
       "name": "Missouri Avenue",
       "points": [
         [
@@ -4203,7 +4203,7 @@
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.28,
+          "pavementHW": 3.96,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -5118,7 +5118,7 @@
     },
     {
       "skelId": "saint-vincent-avenue-2",
-      "roadId": "saint-vincent-avenue-2",
+      "roadId": "saint-vincent-avenue-0",
       "name": "Saint Vincent Avenue",
       "points": [
         [
@@ -5430,13 +5430,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.25,
           "treelawn": 1.29,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.96,
+          "pavementHW": 4.5962275366593355,
           "treelawn": 1.33,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -5521,13 +5521,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 1.54,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 1.82,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -5603,7 +5603,7 @@
     },
     {
       "skelId": "mackay-place-1",
-      "roadId": "mackay-place-1",
+      "roadId": "mackay-place-0",
       "name": "Mackay Place",
       "points": [
         [
@@ -6010,7 +6010,7 @@
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5.45,
+          "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -6088,7 +6088,7 @@
     },
     {
       "skelId": "ann-avenue-2",
-      "roadId": "ann-avenue-2",
+      "roadId": "ann-avenue-1",
       "name": "Ann Avenue",
       "points": [
         [
@@ -6102,7 +6102,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.45,
+          "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -8980,7 +8980,7 @@
     },
     {
       "skelId": "lasalle-street-3",
-      "roadId": "lasalle-street-3",
+      "roadId": "lasalle-street-2",
       "name": "Lasalle Street",
       "points": [
         [
@@ -8994,13 +8994,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.43,
           "treelawn": 1.47,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.4,
           "treelawn": 1.44,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -9078,7 +9078,7 @@
     },
     {
       "skelId": "lasalle-street-4",
-      "roadId": "lasalle-street-4",
+      "roadId": "lasalle-street-2",
       "name": "Lasalle Street",
       "points": [
         [
@@ -10561,7 +10561,7 @@
     },
     {
       "skelId": "montrose-avenue-1",
-      "roadId": "montrose-avenue-1",
+      "roadId": "montrose-avenue-0",
       "name": "Montrose Avenue",
       "points": [
         [
@@ -10583,13 +10583,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 2.22,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 2.57,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -10850,7 +10850,7 @@
     },
     {
       "skelId": "benton-place-1",
-      "roadId": "benton-place-1",
+      "roadId": "benton-place-0",
       "name": "Benton Place",
       "points": [
         [
@@ -10948,13 +10948,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 1.52,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 1.52,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -12167,7 +12167,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.04,
+          "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -12257,7 +12257,7 @@
     },
     {
       "skelId": "papin-street-2",
-      "roadId": "papin-street-2",
+      "roadId": "papin-street-1",
       "name": "Papin Street",
       "points": [
         [
@@ -12536,7 +12536,7 @@
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 5.49,
+          "pavementHW": 7.01,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
@@ -12608,7 +12608,7 @@
     },
     {
       "skelId": "papin-street-3",
-      "roadId": "papin-street-3",
+      "roadId": "papin-street-1",
       "name": "Papin Street",
       "points": [
         [
@@ -12895,7 +12895,7 @@
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 5.49,
+          "pavementHW": 7.01,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
@@ -14324,7 +14324,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-1",
-      "roadId": "officer-david-haynes-memorial-highway-1",
+      "roadId": "officer-david-haynes-memorial-highway-0",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -14634,7 +14634,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-4",
-      "roadId": "officer-david-haynes-memorial-highway-4",
+      "roadId": "officer-david-haynes-memorial-highway-2",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -14722,7 +14722,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-5",
-      "roadId": "officer-david-haynes-memorial-highway-5",
+      "roadId": "officer-david-haynes-memorial-highway-0",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -14803,7 +14803,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-6",
-      "roadId": "officer-david-haynes-memorial-highway-6",
+      "roadId": "officer-david-haynes-memorial-highway-2",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -14896,7 +14896,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-7",
-      "roadId": "officer-david-haynes-memorial-highway-7",
+      "roadId": "officer-david-haynes-memorial-highway-2",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -15081,7 +15081,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-9",
-      "roadId": "officer-david-haynes-memorial-highway-9",
+      "roadId": "officer-david-haynes-memorial-highway-2",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -15250,7 +15250,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-11",
-      "roadId": "officer-david-haynes-memorial-highway-11",
+      "roadId": "officer-david-haynes-memorial-highway-0",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -15338,7 +15338,7 @@
     },
     {
       "skelId": "officer-david-haynes-memorial-highway-12",
-      "roadId": "officer-david-haynes-memorial-highway-12",
+      "roadId": "officer-david-haynes-memorial-highway-0",
       "name": "Officer David Haynes Memorial Highway",
       "points": [
         [
@@ -15793,7 +15793,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 4.92,
+          "pavementHW": 5.48,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -16116,7 +16116,7 @@
     },
     {
       "skelId": "geyer-avenue-4",
-      "roadId": "geyer-avenue-4",
+      "roadId": "geyer-avenue-1",
       "name": "Geyer Avenue",
       "points": [
         [
@@ -16140,7 +16140,7 @@
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 5.48,
+          "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
@@ -17135,7 +17135,7 @@
     },
     {
       "skelId": "south-ewing-avenue-1",
-      "roadId": "south-ewing-avenue-1",
+      "roadId": "south-ewing-avenue-0",
       "name": "South Ewing Avenue",
       "points": [
         [
@@ -17241,7 +17241,7 @@
     },
     {
       "skelId": "south-ewing-avenue-2",
-      "roadId": "south-ewing-avenue-2",
+      "roadId": "south-ewing-avenue-0",
       "name": "South Ewing Avenue",
       "points": [
         [
@@ -17259,13 +17259,13 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 1.83,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 3.96,
+          "pavementHW": 5.49,
           "treelawn": 3.35,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -88504,228 +88504,228 @@
       "loopId": "saint-vincent-avenue-2",
       "ring": [
         [
-          -408.94,
-          -164.28
-        ],
-        [
-          -408.47,
-          -164.23
-        ],
-        [
-          -407.94,
-          -164.1
-        ],
-        [
-          -407.59,
-          -163.98
-        ],
-        [
-          -407.07,
-          -163.72
-        ],
-        [
-          -406.74,
-          -163.51
-        ],
-        [
-          -406.3,
-          -163.15
-        ],
-        [
-          -405.98,
-          -162.83
-        ],
-        [
-          -405.71,
-          -162.48
-        ],
-        [
-          -405.49,
-          -162.11
-        ],
-        [
-          -405.3,
-          -161.68
-        ],
-        [
-          -405.12,
-          -161.17
-        ],
-        [
-          -405.03,
-          -160.77
-        ],
-        [
-          -404.99,
-          -160.32
-        ],
-        [
-          -404.99,
-          -159.85
-        ],
-        [
-          -405.04,
-          -159.44
-        ],
-        [
-          -405.16,
-          -158.93
-        ],
-        [
-          -405.3,
-          -158.52
-        ],
-        [
-          -405.54,
-          -158.04
-        ],
-        [
-          -405.81,
-          -157.62
-        ],
-        [
-          -406.11,
-          -157.26
-        ],
-        [
-          -406.43,
-          -156.95
-        ],
-        [
-          -406.78,
-          -156.68
-        ],
-        [
-          -407.19,
-          -156.43
-        ],
-        [
-          -407.6,
-          -156.25
-        ],
-        [
-          -408.08,
-          -156.09
-        ],
-        [
-          -408.47,
-          -156
-        ],
-        [
           -408.99,
-          -155.94
+          -162.99
         ],
         [
-          -409.38,
-          -155.95
+          -408.67,
+          -162.96
         ],
         [
-          -409.86,
-          -156
+          -408.38,
+          -162.89
         ],
         [
-          -410.38,
-          -156.13
+          -408.05,
+          -162.77
         ],
         [
-          -410.75,
-          -156.26
-        ],
-        [
-          -411.27,
-          -156.51
-        ],
-        [
-          -411.6,
-          -156.72
-        ],
-        [
-          -412.04,
-          -157.09
-        ],
-        [
-          -412.37,
-          -157.44
-        ],
-        [
-          -412.6,
-          -157.74
-        ],
-        [
-          -412.85,
-          -158.16
-        ],
-        [
-          -413.05,
-          -158.58
-        ],
-        [
-          -413.2,
-          -159.03
-        ],
-        [
-          -413.29,
-          -159.45
-        ],
-        [
-          -413.35,
-          -159.95
-        ],
-        [
-          -413.34,
-          -160.35
-        ],
-        [
-          -413.29,
-          -160.86
-        ],
-        [
-          -413.18,
-          -161.31
-        ],
-        [
-          -413.04,
-          -161.72
-        ],
-        [
-          -412.82,
-          -162.17
-        ],
-        [
-          -412.54,
+          -407.7,
           -162.59
         ],
         [
-          -412.2,
+          -407.47,
+          -162.45
+        ],
+        [
+          -407.22,
+          -162.24
+        ],
+        [
+          -406.99,
+          -162
+        ],
+        [
+          -406.8,
+          -161.76
+        ],
+        [
+          -406.61,
+          -161.45
+        ],
+        [
+          -406.5,
+          -161.22
+        ],
+        [
+          -406.39,
+          -160.9
+        ],
+        [
+          -406.32,
+          -160.61
+        ],
+        [
+          -406.28,
+          -160.19
+        ],
+        [
+          -406.28,
+          -159.92
+        ],
+        [
+          -406.31,
+          -159.65
+        ],
+        [
+          -406.38,
+          -159.33
+        ],
+        [
+          -406.48,
+          -159.04
+        ],
+        [
+          -406.63,
+          -158.74
+        ],
+        [
+          -406.82,
+          -158.44
+        ],
+        [
+          -407.06,
+          -158.14
+        ],
+        [
+          -407.24,
+          -157.97
+        ],
+        [
+          -407.52,
+          -157.75
+        ],
+        [
+          -407.83,
+          -157.56
+        ],
+        [
+          -408.06,
+          -157.45
+        ],
+        [
+          -408.43,
+          -157.33
+        ],
+        [
+          -408.68,
+          -157.27
+        ],
+        [
+          -409.05,
+          -157.23
+        ],
+        [
+          -409.32,
+          -157.24
+        ],
+        [
+          -409.65,
+          -157.27
+        ],
+        [
+          -409.94,
+          -157.34
+        ],
+        [
+          -410.33,
+          -157.48
+        ],
+        [
+          -410.57,
+          -157.6
+        ],
+        [
+          -410.91,
+          -157.82
+        ],
+        [
+          -411.09,
+          -157.97
+        ],
+        [
+          -411.32,
+          -158.22
+        ],
+        [
+          -411.54,
+          -158.5
+        ],
+        [
+          -411.74,
+          -158.83
+        ],
+        [
+          -411.82,
+          -158.99
+        ],
+        [
+          -411.97,
+          -159.44
+        ],
+        [
+          -412.02,
+          -159.68
+        ],
+        [
+          -412.06,
+          -160.05
+        ],
+        [
+          -412.05,
+          -160.34
+        ],
+        [
+          -412.01,
+          -160.68
+        ],
+        [
+          -411.95,
+          -160.93
+        ],
+        [
+          -411.84,
+          -161.25
+        ],
+        [
+          -411.71,
+          -161.5
+        ],
+        [
+          -411.46,
+          -161.88
+        ],
+        [
+          -411.3,
+          -162.07
+        ],
+        [
+          -411.07,
+          -162.3
+        ],
+        [
+          -410.81,
+          -162.49
+        ],
+        [
+          -410.5,
+          -162.67
+        ],
+        [
+          -410.24,
+          -162.8
+        ],
+        [
+          -409.96,
+          -162.89
+        ],
+        [
+          -409.65,
+          -162.96
+        ],
+        [
+          -409.29,
           -163
-        ],
-        [
-          -411.93,
-          -163.27
-        ],
-        [
-          -411.52,
-          -163.58
-        ],
-        [
-          -411.15,
-          -163.8
-        ],
-        [
-          -410.71,
-          -164.01
-        ],
-        [
-          -410.34,
-          -164.13
-        ],
-        [
-          -409.86,
-          -164.23
-        ],
-        [
-          -409.33,
-          -164.29
         ]
       ]
     },
@@ -88735,92 +88735,84 @@
       "loopId": "benton-place-1",
       "ring": [
         [
-          107.49,
-          -382.28
+          106.98,
+          -380.81
         ],
         [
-          109.11,
-          -381.42
+          108.06,
+          -380.24
         ],
         [
-          109.82,
-          -380.39
+          108.34,
+          -379.84
         ],
         [
-          110.33,
-          -375.36
+          108.79,
+          -375.37
         ],
         [
-          110.13,
-          -373.5
+          108.63,
+          -373.81
         ],
         [
-          102.04,
-          -343.56
+          100.53,
+          -343.84
         ],
         [
-          93.99,
-          -316.93
+          92.54,
+          -317.41
         ],
         [
-          83.62,
-          -285.46
+          82.22,
+          -286.08
         ],
         [
-          72.45,
-          -254.4
+          71.01,
+          -254.92
         ],
         [
-          70.78,
-          -250.74
+          69.45,
+          -251.49
         ],
         [
-          65.66,
-          -243.28
+          64.55,
+          -244.36
         ],
         [
-          61.3,
-          -240.06
+          61.85,
+          -242.37
         ],
         [
-          60.84,
-          -239.81
+          61.46,
+          -244.83
         ],
         [
-          60.64,
-          -240.32
+          62.11,
+          -254.19
         ],
         [
-          59.91,
-          -244.78
+          73.1,
+          -294.42
         ],
         [
-          60.59,
-          -254.41
+          84.44,
+          -330.03
         ],
         [
-          71.64,
-          -294.88
+          100.71,
+          -375.7
         ],
         [
-          83.04,
-          -330.67
+          101.63,
+          -377.26
         ],
         [
-          99.3,
-          -376.34
+          105.12,
+          -380.61
         ],
         [
-          100.4,
-          -378.2
-        ],
-        [
-          104.27,
-          -381.92
-        ],
-        [
-          105.82,
-          -382.53
+          106,
+          -380.96
         ]
       ]
     },
