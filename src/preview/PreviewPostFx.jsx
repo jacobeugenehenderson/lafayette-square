@@ -7,8 +7,8 @@
  */
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
-import { EffectComposer, Bloom, N8AO } from '@react-three/postprocessing'
-import { BlendFunction } from 'postprocessing'
+import { EffectComposer, Bloom, N8AO, SMAA } from '@react-three/postprocessing'
+import { BlendFunction, SMAAPreset } from 'postprocessing'
 import { AerialPerspective, FilmGrade, FilmGrain, _postFxRefs } from '../components/PostProcessing.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -106,7 +106,7 @@ function FxDriver({ aoRef, bloomRef, lookId }) {
 }
 
 export default function PreviewPostFx({
-  lookId, ao = false, bloom = false, aerial = false, grade = false, grain = false,
+  lookId, ao = false, bloom = false, aerial = false, grade = false, grain = false, smaa = true,
 }) {
   const aoRef = useRef()
   const bloomRef = useRef()
@@ -117,7 +117,11 @@ export default function PreviewPostFx({
   return (
     <>
       <FxDriver aoRef={aoRef} bloomRef={bloomRef} lookId={lookId} />
-      <EffectComposer>
+      {/* key flips with the conditional-effect set so the composer rebuilds its
+          pipeline when any effect is toggled on/off (EffectComposer doesn't
+          reconcile added/removed effects on its own — this fixes the Preview
+          on/off toggles, SMAA included). */}
+      <EffectComposer key={`fx-${ao}-${bloom}-${aerial}-${grade}-${grain}-${smaa}`}>
         {ao && (
           <N8AO ref={aoRef} halfRes={false} aoRadius={15} intensity={2.5}
             distanceFalloff={0.3} quality="medium" />
@@ -129,6 +133,9 @@ export default function PreviewPostFx({
         )}
         {aerial && <AerialPerspective />}
         {grade  && <FilmGrade />}
+        {/* SMAA — parity with production PostProcessing (AA the final contrast,
+            before grain). Preview must match what ships; toggleable here. */}
+        {smaa && <SMAA preset={SMAAPreset.ULTRA} />}
         {grain  && <FilmGrain />}
       </EffectComposer>
     </>

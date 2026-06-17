@@ -376,6 +376,7 @@ const FX_LAYERS = [
   ['aerial', 'Aerial Perspective'],
   ['grade',  'Film Grade'],
   ['grain',  'Film Grain'],
+  ['smaa',   'SMAA (AA)'],
 ]
 
 // TEMPORARY DEFAULTS — these belong in design.json#/postFx, not in
@@ -397,7 +398,7 @@ const DEFAULT_LAYERS = {
   ground: true, buildings: true, trees: true,
   park: true, lights: true, arch: true, neon: true,
   celestial: true, clouds: true, fog: true,
-  ao: true, bloom: false, aerial: true, grade: true, grain: true,
+  ao: true, bloom: false, aerial: true, grade: true, grain: true, smaa: true,
 }
 
 // v3 (Vernier Phase 2): retired the `slabBuildings` A/B key — one `buildings`
@@ -813,7 +814,7 @@ function CanvasContents({ layers, shot, setShot }) {
       <PreviewPostFx
         lookId={lookId}
         ao={layers.ao} bloom={layers.bloom} aerial={layers.aerial}
-        grade={layers.grade} grain={layers.grain}
+        grade={layers.grade} grain={layers.grain} smaa={layers.smaa}
       />
     </>
   )

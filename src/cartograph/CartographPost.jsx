@@ -23,6 +23,7 @@ import {
   AO_FIELDS, AO_FLAT_DEFAULTS,
   GRADE_FIELDS, GRADE_FLAT_DEFAULTS,
   GRAIN_FIELDS, GRAIN_FLAT_DEFAULTS,
+  SMAA_FIELDS, SMAA_FLAT_DEFAULTS,
   SHADOW_FIELDS, SHADOW_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
 
@@ -99,6 +100,8 @@ export default function CartographPost() {
         fields={GRADE_FIELDS} flatDefaults={GRADE_FLAT_DEFAULTS} />
       <StoreChannel name="grain" label="Grain"
         fields={GRAIN_FIELDS} flatDefaults={GRAIN_FLAT_DEFAULTS} />
+      <StoreChannel name="smaa" label="Antialiasing (SMAA)"
+        fields={SMAA_FIELDS} flatDefaults={SMAA_FLAT_DEFAULTS} />
       <StoreChannel name="shadow" label="Shadow"
         fields={SHADOW_FIELDS} flatDefaults={SHADOW_FLAT_DEFAULTS} />
     </div>

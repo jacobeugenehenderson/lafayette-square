@@ -28,8 +28,8 @@
 
 import { useRef, useEffect, useMemo, forwardRef } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { EffectComposer, Bloom, N8AO } from '@react-three/postprocessing'
-import { Effect, BlendFunction } from 'postprocessing'
+import { EffectComposer, Bloom, N8AO, SMAA } from '@react-three/postprocessing'
+import { Effect, BlendFunction, SMAAPreset } from 'postprocessing'
 import { SoftShadows } from '@react-three/drei'
 import * as THREE from 'three'
 
@@ -48,6 +48,7 @@ import {
   HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
   GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
   GRAIN_FLAT_DEFAULTS,
+  SMAA_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 
@@ -65,6 +66,7 @@ function resolveLookId(propLookId) {
 // resolves). Mirrors bake-scene.js's emit so unauthored Looks read
 // identically.
 const BLOOM_DEFAULT_CHANNEL    = Object.freeze({ values: { ...BLOOM_FLAT_DEFAULTS } })
+const SMAA_DEFAULT_CHANNEL     = Object.freeze({ values: { ...SMAA_FLAT_DEFAULTS } })
 const AO_DEFAULT_CHANNEL       = Object.freeze({ values: { ...AO_FLAT_DEFAULTS } })
 const EXPOSURE_DEFAULT_CHANNEL = Object.freeze({ values: { ...EXPOSURE_FLAT_DEFAULTS } })
 const WARMTH_DEFAULT_CHANNEL   = Object.freeze({ values: { ...WARMTH_FLAT_DEFAULTS } })
@@ -269,7 +271,7 @@ const _tmpColor = new THREE.Color()
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
   bloomOverride, aoOverride, exposureOverride, warmthOverride,
-  fillOverride, haloOverride, gradeOverride, grainOverride,
+  fillOverride, haloOverride, gradeOverride, grainOverride, smaaOverride,
 }) {
   const bloomRef = useRef()
   const aoRef = useRef()
@@ -284,6 +286,11 @@ export function PostProcessing({
   const haloChannel     = haloOverride     ?? scene?.halo     ?? HALO_DEFAULT_CHANNEL
   const gradeChannel    = gradeOverride    ?? scene?.grade    ?? GRADE_DEFAULT_CHANNEL
   const grainChannel    = grainOverride    ?? scene?.grain    ?? GRAIN_DEFAULT_CHANNEL
+  // SMAA on/off — a static per-Look toggle (not TOD-animated): read the flat
+  // value at render and mount the pass when on. Default on. Override (Stage) >
+  // scene.json (baked) > default.
+  const smaaChannel     = smaaOverride     ?? scene?.smaa     ?? SMAA_DEFAULT_CHANNEL
+  const smaaOn = (smaaChannel?.values?.value ?? SMAA_FLAT_DEFAULTS.value) > 0.5
 
   useFrame(() => {
     const tod = useTimeOfDay.getState()
@@ -363,15 +370,28 @@ export function PostProcessing({
 
   if (IS_MOBILE) {
     return (
-      <EffectComposer>
+      // key flips with smaaOn so the composer REBUILDS its pass pipeline when the
+      // SMAA pass is added/removed — EffectComposer doesn't reconcile a
+      // conditionally-mounted effect on its own (only value-streaming effects
+      // update live). Stable in production (smaaOn fixed from scene.json); only
+      // remounts on an operator toggle in Stage.
+      <EffectComposer key={smaaOn ? 'fx-aa' : 'fx-noaa'}>
         <FilmGrade />
+        {/* SMAA — mobile's ONLY antialiasing (Canvas MSAA is off on mobile).
+            ~1 cheap fullscreen pass; after grade, before grain so AA cleans the
+            final contrast and grain stays crisp on top. ULTRA preset = most
+            aggressive edge detection (most visible). Operator on/off via the
+            Stage Post card → scene.json. (2026-06-17.) */}
+        {smaaOn && <SMAA preset={SMAAPreset.ULTRA} />}
         <FilmGrain />
       </EffectComposer>
     )
   }
 
   return (
-    <EffectComposer>
+    // key flips with smaaOn — see the mobile branch: forces the composer to
+    // rebuild when the SMAA pass is added/removed.
+    <EffectComposer key={smaaOn ? 'fx-aa' : 'fx-noaa'}>
       <N8AO ref={aoRef}
         halfRes={viewMode !== undefined && viewMode !== 'hero'}
         aoRadius={AO_FLAT_DEFAULTS.radius}
@@ -386,6 +406,11 @@ export function PostProcessing({
         blendFunction={BlendFunction.SCREEN} />
       <AerialPerspective />
       <FilmGrade />
+      {/* SMAA — cleans shader-contrast edges the Canvas's 8× MSAA can't (curb
+          lines, lit/unlit slab seams, thin poles). After grade, before grain.
+          ULTRA preset = most aggressive edge detection. Operator on/off via the
+          Stage Post card → scene.json. */}
+      {smaaOn && <SMAA preset={SMAAPreset.ULTRA} />}
       <FilmGrain />
     </EffectComposer>
   )

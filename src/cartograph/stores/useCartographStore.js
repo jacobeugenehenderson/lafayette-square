@@ -32,6 +32,7 @@ import {
   ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS,
   HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
+  SMAA_FIELD_KEYS, SMAA_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
@@ -219,6 +220,7 @@ const DESIGN_FIELDS = [
   _grp('skyGain',        SKY_GAIN_FIELD_KEYS,       SKY_GAIN_FLAT_DEFAULTS),
   _grp('grade',          GRADE_FIELD_KEYS,          GRADE_FLAT_DEFAULTS),
   _grp('grain',          GRAIN_FIELD_KEYS,          GRAIN_FLAT_DEFAULTS),
+  _grp('smaa',           SMAA_FIELD_KEYS,           SMAA_FLAT_DEFAULTS),
   _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
   _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
   _grp('milkyWay',       MILKYWAY_FIELD_KEYS,       MILKYWAY_FLAT_DEFAULTS),
@@ -496,6 +498,7 @@ const useCartographStore = create((set, get) => ({
   // round-trips through design.json → bake → scene.json so Atmosphere
   // v3 has it ready. preset='auto' = consult the Almanac at runtime.
   clouds:  { values: { ...CLOUDS_FLAT_DEFAULTS } },
+  smaa:           { values: { ...SMAA_FLAT_DEFAULTS } },
   constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
   milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
   // Neon — group of 3 (core / tube / bleed) sharing one TOD timeline.
@@ -1222,6 +1225,11 @@ const useCartographStore = create((set, get) => ({
     set({ shots: { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) } })
     get()._saveDesignDebounced()
   },
+  ...createGroupChannelActions({
+    name: 'smaa',
+    fieldKeys: SMAA_FIELD_KEYS,
+    flatDefaults: SMAA_FLAT_DEFAULTS,
+  }, set, get),
   ...createGroupChannelActions({
     name: 'constellations',
     fieldKeys: CONSTELLATIONS_FIELD_KEYS,

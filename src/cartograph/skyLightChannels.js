@@ -260,6 +260,15 @@ export const GRAIN_FIELDS = [
 export const GRAIN_FLAT_DEFAULTS = { scale: 1.0 }
 export const GRAIN_FIELD_KEYS = ['scale']
 
+// SMAA antialiasing (Post card) — binary on/off. Mounts the SMAA post pass on
+// both render tiers (it is mobile's ONLY AA — Canvas MSAA is off there). A
+// static per-Look toggle; `value > 0.5` = on. Default ON.
+export const SMAA_FIELDS = [
+  { key: 'value', label: 'On', type: 'toggle' },
+]
+export const SMAA_FLAT_DEFAULTS = { value: 1 }
+export const SMAA_FIELD_KEYS = ['value']
+
 // Shadow (Post card) — SoftShadows parameters. Promoted from envState.
 // Size is the kernel radius; samples is the per-pixel sample count.
 // Defaults match the legacy envState.shadowSize / shadowSamples.
