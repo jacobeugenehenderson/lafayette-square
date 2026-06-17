@@ -423,6 +423,30 @@ function circlePoly(cx, cy, r, seg = 32) {
   for (let i = 0; i < seg; i++) { const a = (i / seg) * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]) }
   return out
 }
+// Kåsa least-squares circle fit → {cx,cy,R,res} (res = mean radial deviation, m),
+// or null. Used to recognise turning-circle cul-de-sac loops: a tightly-fitting
+// SMALL closed circle (SV/Park res ≈0.02 m), where the faceted teardrop/couplet
+// loops (Benton res ~6 m, Waverly ~4 m) fall through — the "don't kill Benton" gate.
+function fitLoopCircle(pts) {
+  let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sxz = 0, syz = 0, sz = 0; const N = pts.length
+  for (const [x, y] of pts) { const z = x * x + y * y; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; sxz += x * z; syz += y * z; sz += z }
+  const M = [[sxx, sxy, sx], [sxy, syy, sy], [sx, sy, N]], V = [sxz, syz, sz]
+  const det3 = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+  const D = det3(M); if (Math.abs(D) < 1e-9) return null
+  const rep = c => M.map((row, ri) => row.map((v, ci) => ci === c ? V[ri] : v))
+  const cx = det3(rep(0)) / (2 * D), cy = det3(rep(1)) / (2 * D), C = det3(rep(2)) / D
+  const R = Math.sqrt(Math.max(0, C + cx * cx + cy * cy))
+  let res = 0; for (const [x, y] of pts) res += Math.abs(Math.hypot(x - cx, y - cy) - R); res /= N
+  return { cx, cy, R, res }
+}
+// Clipper CleanPolygons wrapper: drop near-duplicate / near-collinear vertices
+// within `dist` m — removes the sub-decimetre stutter a difference/offset leaves
+// at a seam (the cul-de-sac keyhole mouth) without moving the shape.
+function cleanRings(rings, dist) {
+  const cp = rings.map(r => r.map(toClipper))
+  const out = clipperLib.Clipper.CleanPolygons(cp, dist * SCALE)   // returns a new array
+  return out.map(r => r.map(fromClipper)).filter(r => r.length >= 3)
+}
 // The bent-corner SECTOR (RIBBONS §3.9a step 10): the annular wedge swept from
 // the frozen curb arc inward, bounded laterally by the two tangent radii — the
 // band BENT around the arc, NEVER a disk. Built from the achieved fillet
@@ -2279,6 +2303,20 @@ export function buildTileGround(ribbons, opts = {}) {
   // perTileMeta (= each tile's runMeta) is the freeze-receipt returned as
   // `_perRunMeta`. perTileMeta[i] / shapeTiles[i] align 1:1 with tiles[i].
   const perTileMeta = []
+  // [CULDESAC] Turning-circle loop streets: a closed chain fitting a tight, small
+  // circle (R 3–12 m, mean radial dev < 0.3 m). SV/Park qualify (res ≈0.02);
+  // Benton/Waverly's faceted teardrop/couplet bodies don't (res ≫ 0.3) — they keep
+  // their emergent face ("don't kill Benton"). A tile bounded by such a loop is a
+  // cul-de-sac block → its curb is carved from the morphologically-closed road
+  // (boolean keyhole) rather than the centerline offset that notched the stem↔bulb.
+  const culDeSacLoops = new Map()   // streetIdx → { C:[x,y], R }
+  for (let si = 0; si < streetsOrig.length; si++) {
+    const pts = streetsOrig[si]?.points
+    if (!pts || pts.length < 8) continue
+    if (Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) > 1.0) continue
+    const f = fitLoopCircle(pts)
+    if (f && f.res < 0.3 && f.R >= 3 && f.R <= 12) culDeSacLoops.set(si, { C: [f.cx, f.cy], R: f.R })
+  }
   const shapeTiles = []
   for (const tile of tiles) {
     // [THRU] runs split at through-construction stations → per-fe spans
@@ -2454,6 +2492,19 @@ export function buildTileGround(ribbons, opts = {}) {
     // blows up past the tile). A post-check also rejects any offset that came out
     // degenerate (vanished or larger than its tile). The d-tile is a large clean
     // block → it takes the offset. Falling back to legacy is never a regression.
+    // [CULDESAC KEYHOLE] Jacob's boolean keyhole, LOCALIZED. The cul-de-sac road
+    // (aFill) is already union(corridor, bulb-disk); morphologically CLOSE it so the
+    // reflex mouth corners round into tangent curb-returns, carve the curb from it —
+    // but splice that ONLY inside a disk around each turning-circle (below), so a
+    // bulb that shares a megatile with the grid leaves the grid SHAPE untouched.
+    let _cdKeyhole = false
+    const _cdDisks = []
+    if (opts.culDeSacKeyhole !== false && aFill.length && !isMedianTile) {
+      for (const run of runs) {
+        const lc = culDeSacLoops.get(run.streetIdx)
+        if (lc) { _cdKeyhole = true; _cdDisks.push(circlePoly(lc.C[0], lc.C[1], lc.R + 9, 64)) }
+      }
+    }
     const legacyBlock = () => differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
     const ringArea = Math.abs(signedArea(tile.ring))
     let blockRings
@@ -2470,6 +2521,18 @@ export function buildTileGround(ribbons, opts = {}) {
       blockRings = (off.length && offArea > 0.05 * ringArea && offArea <= 1.01 * ringArea) ? off : legacyBlock()
     } else {
       blockRings = legacyBlock()
+    }
+    // [CULDESAC KEYHOLE — the bounded splice] keep the offset curb as the base
+    // (grid shape untouched) and replace it with the morphologically-closed keyhole
+    // ONLY inside the bulb disk(s): blockRings = (base − disks) ∪ (keyhole ∩ disks).
+    if (_cdKeyhole && _cdDisks.length) {
+      const RR = 3.0
+      const closed = cleanRings(offsetRings(offsetRings(aFill, RR, 'round'), -RR, 'round'), 0.15)
+      // clean the carved keyhole BEFORE clipping to the disk: smooths the mouth seam
+      // stutter; the disk arc itself comes from circlePoly (both sides), so it welds.
+      const keyhole = cleanRings(differenceRings([tile.ring], closed).filter(r => Math.abs(signedArea(r)) > 0.5), 0.15)
+      const spliced = unionRings([...differenceRings(blockRings, _cdDisks), ...intersectRings(keyhole, _cdDisks)])
+      if (spliced.length) blockRings = spliced
     }
     // The offset path is fold-stripped inside offsetRingVariable (identity at
     // smooth=0). The MEDIAN carve is not: on a smoothed dense ring the inner-edge

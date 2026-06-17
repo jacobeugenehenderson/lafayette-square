@@ -837,6 +837,46 @@ function pr2(label, names) {
   console.log(`  ${label.padEnd(16)} flags ${String(names.size).padStart(3)}  (curated ${String(cur).padStart(2)}/${curatedNames.size},  grid ${String(grid).padStart(3)})`)
 }
 
+// ── cul-de-sac keyhole notch ─────────────────────────────────────────────────
+// A turning-circle's curb must flow TANGENTIALLY into the bulb (the keyhole). RED
+// if the stem↔bulb mouth notches — the un-returned corner the curb offset leaves,
+// a SINGLE ~19° vertex. GREEN once the boolean keyhole (tileGround culDeSacKeyhole)
+// rounds it: the return arc spreads the turn to ≤16°/vertex. The curb-bump 20° gate
+// MISSES this sub-20° class — this is its dedicated guard. (HANDOFF-junction-
+// construction §9e.) Detection mirrors tileGround.fitLoopCircle (R 3–12 m, res<0.3).
+function culdesacNotchReport(streets, tiles) {
+  const loops = []
+  for (const s of streets) {
+    const pts = s.points
+    if (!pts || pts.length < 8) continue
+    if (Math.hypot(pts[0][0] - pts[pts.length-1][0], pts[0][1] - pts[pts.length-1][1]) > 1) continue
+    let sx=0,sy=0,sxx=0,syy=0,sxy=0,sxz=0,syz=0,sz=0; const N=pts.length
+    for (const [x,y] of pts){const z=x*x+y*y;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;sxz+=x*z;syz+=y*z;sz+=z}
+    const M=[[sxx,sxy,sx],[sxy,syy,sy],[sx,sy,N]],V=[sxz,syz,sz]
+    const det3=m=>m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0])
+    const D=det3(M); if(Math.abs(D)<1e-9) continue
+    const rep=c=>M.map((row,ri)=>row.map((v,ci)=>ci===c?V[ri]:v))
+    const cx=det3(rep(0))/(2*D),cy=det3(rep(1))/(2*D),C=det3(rep(2))/D,R=Math.sqrt(Math.max(0,C+cx*cx+cy*cy))
+    if (R<3||R>12) continue
+    let res=0; for(const[x,y]of pts) res+=Math.abs(Math.hypot(x-cx,y-cy)-R); res/=N
+    if (res<0.3) loops.push({ C:[cx,cy], R })
+  }
+  const NOTCH_DEG=16, SEG=3, hits=[]
+  for (const t of tiles) for (const ring of (t.iA||[])) {
+    const n=ring.length
+    for (let i=0;i<n;i++){
+      const v=ring[i]
+      if (!loops.some(L=>Math.hypot(v[0]-L.C[0],v[1]-L.C[1]) < L.R+10)) continue
+      const a=ring[(i-1+n)%n],b=ring[(i+1)%n],e1=dist(a,v),e2=dist(v,b)
+      if (e1>SEG||e2>SEG||e1<1e-3||e2<1e-3) continue
+      const dd=((v[0]-a[0])/e1)*((b[0]-v[0])/e2)+((v[1]-a[1])/e1)*((b[1]-v[1])/e2)
+      const turn=Math.acos(Math.max(-1,Math.min(1,dd)))*180/Math.PI
+      if (turn>NOTCH_DEG && turn<165) hits.push({ p:[+v[0].toFixed(1),+v[1].toFixed(1)], turn:+turn.toFixed(0) })
+    }
+  }
+  return { loops:loops.length, hits }
+}
+
 console.log('\n══════════════════════════════════════════════════════════════════════')
 console.log(' CORRECTNESS DETECTOR v1  ·  Lafayette Square  ·  candidates for the operator')
 console.log('══════════════════════════════════════════════════════════════════════\n')
@@ -875,6 +915,12 @@ const cfSquared = cfGate.rnd0 < ROUND_FILLET_MIN
 const cfGreen = cfGate.NEW.length === 0 && !cfSquared
 console.log(`      ${cfGreen ? '✅ GREEN — clean curb + corners round (robust offset DONE)' : '❌ RED — ' + [cfGate.NEW.length ? cfGate.NEW.length + ' new needle/spur' : '', cfSquared ? `corners SQUARED at smooth=0 (${cfGate.rnd0} rounded vs ≥${ROUND_FILLET_MIN})` : ''].filter(Boolean).join(' + ')}`)
 cfGate.NEW.slice(0, 14).forEach(p => console.log(`        new degenerate @ ${p[0].toFixed(0)},${p[1].toFixed(0)}`))
+
+// cul-de-sac keyhole notch gate
+const cdNotch = culdesacNotchReport(streets, tiles)
+console.log('\n  · CUL-DE-SAC KEYHOLE (turning-circle mouth flows tangent into the bulb):')
+console.log(`      ${cdNotch.loops} turning-circle(s); mouth notches >16° = ${cdNotch.hits.length}`)
+console.log(`      ${cdNotch.hits.length === 0 ? '✅ GREEN — keyhole tangent (no mouth notch)' : '❌ RED — ' + cdNotch.hits.map(h => `${h.turn}°@[${h.p}]`).join(', ')}`)
 
 // confusion matrix vs the 35
 const gridNames = new Set(streets.map(s => s.name).filter(n => !isCurated(n)))
