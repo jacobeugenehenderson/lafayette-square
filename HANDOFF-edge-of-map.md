@@ -1,6 +1,6 @@
 # HANDOFF — Edge-of-map: streets fade out, perimeter faces fill (the boundary, wired at last)
 
-**Status: scoped, dispatch-ready (2026-06-16, Boz). Branch `curb-offset-draw`.** ⛔ **ROUTE FIRST** (`CLAUDE.md`): `ORIENTATION.md` → `README §⭐ START HERE` → this brief → **`HANDOFF-boundary-trio.md`** (circle-SSOT, crop-to-circle-LAST, `streetFade`) → `cartograph/PREBAKE.md`/`SKELETON.md` (the face-walk seam). **The eye is the gate** (Jacob on the lit Survey).
+**Status: ✅ LANDED + BAKED (`329e032`, 2026-06-16; slab `2a40d50`). Branch `curb-offset-draw`.** Perimeter faces fill, boundary clip wired into the PREBAKE face-walk (not the consumer — the brief's layer was corrected); grid-safe 70/70. **OPEN:** S1 outskirts elbow→fade + map-edge fillets (eye-pending). See **§LANDING**. ⛔ **ROUTE FIRST** (`CLAUDE.md`): `ORIENTATION.md` → `README §⭐ START HERE` → this brief → **`HANDOFF-boundary-trio.md`** (circle-SSOT, crop-to-circle-LAST, `streetFade`) → `cartograph/PREBAKE.md`/`SKELETON.md` (the face-walk seam). **The eye is the gate** (Jacob on the lit Survey).
 
 **One line:** at the neighborhood edge, two symptoms share **one root** — streets are **never clipped to the boundary before the face-walk**. Wire the **already-written-but-never-called** boundary clip in *before* `extractFaces`, and both fix at once. Consolidates Jacob's pre-DataWall notes **#7 (open perimeter polygons)** + the **outskirts "artificial elbow" elbows** (Grattan `[624,-79]`, Dillon `[802,-301]`).
 

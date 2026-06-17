@@ -25,6 +25,8 @@ Cartograph is recursive — each authoring step makes a truth-claim the next bui
 
 **The inputs are authoritative, not guessed.** That "provable truth" rests on real sources — the City of St. Louis's own assessor **parcels + right-of-way**, **operator-measured** street widths, OpenStreetMap geometry, ML-derived **building footprints** — each fortified against max-resolution aerials. A generic 3D map extrudes a default city from one feed; this one is grounded in the *actual* municipal + survey record, which is what lets the geometry be trusted block by block. *(Full provenance: `INTAKE.md`.)*
 
+**The hard geometry is handled by the kit, automatically.** Turning-circle cul-de-sacs (tangent "keyhole" curbs), divided carriageways with medians (straight outer fronts; the median is a *derived* walked face), complex intersections, and the neighborhood edge (streets that fade out instead of being chopped) all resolve **from the data** — not hand-drawn. A generic 3D map fudges or omits these; resolving them automatically is precisely what lets the kit pour the *next* town without an operator redrawing every Place and boulevard. The remaining hand-fixes are a tracked defect count headed to zero, guarded by an automatic correctness suite. *(As-built: `RIBBONS.md` / `SKELETON.md`; the bug-class scoreboard: `POLYGON-FIRST §5`.)*
+
 **Stage is the second authoring environment** — the *theatrical* sense of "stage": where the look gets staged (materials, palettes, lighting, sky, post-FX), finalized into the slab on Bake.
 
 **The Bake is the slab pour** — the publish moment for cartograph. The artifact ships to the LS app, not directly to end users.
