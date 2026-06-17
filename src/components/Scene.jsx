@@ -357,10 +357,13 @@ function CameraRig() {
     }
 
     // Double-tap / double-click bookkeeping. End-user gesture: double-tap
-    // in Browse drops the camera to street level at the tap point.
+    // (mobile) or double-click (desktop) in Browse drops the camera to street
+    // level at the tap point, animating down via the CameraRig transition.
     // Mirrors the LS production behavior described in the navigation graph
-    // (Browse ↔ Street edge). 320ms window matches the iOS double-tap
-    // threshold; 24px slop tolerates a finger jitter on the second tap.
+    // (Browse ↔ Street edge). 450ms window comfortably covers a desktop
+    // double-click AND the iOS double-tap; 24px slop tolerates jitter on the
+    // second press.
+    const DBLCLICK_MS = 450
     let lastTap = null
 
     const onDown = (e) => {

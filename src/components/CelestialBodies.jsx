@@ -948,8 +948,16 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     constellationsChannel, tod.getMinuteOfDay(), constellationsSlotMins,
     CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   ).value
-  const constellationsVisible = viewMode !== 'browse'
-    && (constellationsVal * constellationsNightFactor) > 0.05
+  // Visibility (Jacob 2026-06-17 "visible all the time"): ALWAYS on in Street
+  // view (planetarium) — that's the look-up experience and should never be
+  // gated off. In Hero, fade in at night so the daytime landing stays clean.
+  // The operator `constellations` channel is retained as an optional force-on
+  // override in any non-browse mode, so a future parameterization pass can
+  // re-assert authored control without re-plumbing. Never in Browse (overhead).
+  const constellationsVisible =
+    viewMode === 'planetarium'
+    || (viewMode === 'hero' && constellationsNightFactor > 0.05)
+    || (viewMode !== 'browse' && constellationsVal > 0.05)
 
   return (
     <>
