@@ -118,8 +118,8 @@ Each group describes a contiguous slice of `ground.bin`:
 | `kind` | `"face"` for land-use polygons (residential, commercial, parking, recreation, …) or `"mat"` for layered overlays (street, curb, sidewalk, treelawn, stripe, bikelane, building footprints, paths, alleys, water, …) |
 | `id` | Group identity. For `face` groups: a land-use category. For `mat` groups: a layer name from the cartograph design palette. |
 | `color` | Hex string. Resolution: bake reads the active Look's `design.json` `layerColors` / `luColors` and bakes the color into the group, so swapping looks = re-bake (not a runtime palette swap). |
-| `renderOrder` | Three.js render order. Pure integers, increasing = later draw. The bake assigns these based on layer priority. |
-| `polygonOffsetUnits` | Three.js `polygonOffsetUnits`. Negative = pulled toward camera. Used to resolve coplanar z-fighting at the slab. |
+| `renderOrder` | Three.js render order. Pure integers, increasing = later draw. The bake assigns these by paint priority — and (since 2026-06-17) **also drives the geometry: each group's vertices are baked at `Y = renderOrder × GROUND_Y_EPS`** (~2 mm/slot), the actual coplanar-z resolver under the log-depth canvas. The runtime terrain lift is additive, so this micro-Y survives. `ARCHITECTURE §8`. |
+| `polygonOffsetUnits` | Three.js `polygonOffsetUnits`. **Retained for back-compat / the mobile linear-depth path, but INERT under the log-depth canvases** (gl_FragDepth bypasses `GL_POLYGON_OFFSET_FILL`) — the consumer (`BakedGround.jsx`) no longer applies it. The per-group baked Y (see `renderOrder`) is the resolver. |
 | `vertexCount`, `vertexByteOffset` | Position buffer slice |
 | `indexCount`, `indexByteOffset` | Index buffer slice |
 

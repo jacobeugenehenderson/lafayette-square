@@ -5,6 +5,13 @@
  * rises and falls together.  Update `terrainExag.value` once per frame
  * (StreetRibbons drives this) and all meshes follow.
  *
+ * ⛔ CONTRACT: the lift is ADDITIVE — `transformed.y += sampledLift`, never
+ * `transformed.y = sampledLift`. The baked ground encodes coplanar layer order
+ * in tiny per-group Y offsets (`bake-ground.js GROUND_Y_EPS`); an additive lift
+ * preserves those deltas (every group samples the same XZ → same lift → the
+ * delta survives). Switching to assignment would collapse the stack and bring
+ * back the ground z-fighting. (ARCHITECTURE §8, z-fight fix 2026-06-17.)
+ *
  * View-mode targets:
  *   hero:        V_EXAG       — dramatic telephoto terrain
  *   browse:      0            — flat map

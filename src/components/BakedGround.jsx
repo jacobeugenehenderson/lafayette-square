@@ -4,7 +4,9 @@
  * written by `cartograph/bake-ground.js` and `bake-ground-ao.js`, and
  * mounts one Mesh per material/face group.
  *
- * Coplanar surfaces stack via per-material polygonOffset (no Y offsets).
+ * Coplanar surfaces stack via baked per-group geometric Y (renderOrder × EPS,
+ * bake-ground.js) — polygonOffset is inert under the log-depth canvas; renderOrder
+ * still orders the transparent draws.
  * AO is a single texture sample — no real-time AO post-FX needed.
  *
  * Parity rule: Stage and Preview MUST mount the same component reading
@@ -143,9 +145,10 @@ function FadeMesh({ group, geometry, lightmap, fade }) {
       color: group.color,
       roughness: 0.95,
       metalness: 0,
-      polygonOffset: true,
-      polygonOffsetFactor: 0,
-      polygonOffsetUnits: group.polygonOffsetUnits,
+      // No polygonOffset — it's INERT under the log-depth canvas (the
+      // <logdepthbuf_fragment> writes gl_FragDepth, bypassing GL_POLYGON_OFFSET_FILL).
+      // Coplanar groups now separate by baked geometric Y (renderOrder × EPS,
+      // bake-ground.js) + renderOrder for transparent draw-order. ARCHITECTURE §8.
     })
     if (fade) {
       mat.transparent = true
@@ -216,15 +219,11 @@ function GrassMesh({ group, geometry, lightmap, fade }) {
         lampLightmap: getLampLightmap(),
         fade,
       })
-      // Parity with FadeMesh: per-group polygonOffset so coplanar fragments
-      // stack in renderOrder. Without this, grass faces z-fight with
-      // adjacent FadeMesh faces (they're coplanar at y=0 and FadeMesh's
-      // polygonOffset pulls its fragments closer to camera). Symptom 2026-05-13:
-      // every green face (residential / park / recreation, plus lawn /
-      // treelawn / median) rendered invisibly in Stage.
-      built.material.polygonOffset = true
-      built.material.polygonOffsetFactor = 0
-      built.material.polygonOffsetUnits = group.polygonOffsetUnits
+      // No polygonOffset (inert under log-depth). Grass faces separate from
+      // adjacent FadeMesh faces by baked geometric Y (renderOrder × EPS) +
+      // renderOrder. The 2026-05-13 "green faces invisible in Stage" symptom —
+      // caused by relying on the inert polygonOffset at y=0 — is resolved by the
+      // Y stack. (z-fight fix 2026-06-17, ARCHITECTURE §8.)
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
       patchTerrain(built.material, { perVertex: true })

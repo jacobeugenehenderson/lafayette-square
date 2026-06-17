@@ -17,12 +17,17 @@ but **mobile stays LINEAR pending measurement** because a global LOG flip kills 
 (production renders like what the operator authors/sees), not a z-fighting fix. "The product is what the operator sees in Stage"
 ([[project_preview_equals_ls_literally]], [[project_stage_consumer_parity]]) — and Stage is LOG.
 
-**⚠️ Z-fighting is a KNOWN, still-open issue (operator-deprioritized to cosmetic) — NOT solved, and NOT
-in scope here.** Do not claim or assume conforming to LOG resolves it. The authoring surfaces run LOG
-*and still z-fight* at the tolerated level; production-under-LOG inherits the same. Coplanar z-fighting
-(ground ribbons, foundations — polygonOffset cases) is depth-*independent*; LOG mainly helps the
-far-field distribution. Conformance's only obligation re: z-fighting is **make it no worse than the
-authoring surfaces** — fixing z-fighting itself is a separate, deprioritized future arc.
+**Ground z-fighting — FIXED 2026-06-17** (was: "KNOWN, still-open, deprioritized"). ⚠️ **The old claim
+here was WRONG and mis-routed diagnosis:** coplanar z-fighting via polygonOffset is **NOT
+depth-independent** — under `logarithmicDepthBuffer` the `<logdepthbuf_fragment>` writes `gl_FragDepth`,
+which per the GL spec **bypasses `GL_POLYGON_OFFSET_FILL`**, so LOG *disables* the offset mechanism
+entirely (it does not "mainly help far-field"). The baked ground had been flattened to Y=0 and relied
+solely on that inert polygonOffset → it z-fought on every LOG surface (desktop prod, Preview, Stage),
+while the live Designer stayed crisp because it bakes real Y micro-lifts. **Fix:** `bake-ground.js` emits
+per-group geometric **Y = renderOrder × `GROUND_Y_EPS`** (the runtime terrain lift is additive, so it
+survives) and the consumer drops the inert polygonOffset (`BakedGround.jsx`). `ARCHITECTURE §8`. *(The
+separate **edge-aliasing** workstream — dpr/antialias, mobile — is the SMAA pass, distinct from this depth
+fix. Foundations/buildings z-fighting, if any, is a separate surface — re-audit.)*
 
 ## The root finding (the spine)
 

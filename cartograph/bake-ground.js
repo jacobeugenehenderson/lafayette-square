@@ -11,11 +11,17 @@
  * group → a handful of draw calls for the entire ground plane.
  *
  * Coord space: ribbons.json [x,z] meters, origin = neighborhood center.
- * Y = 0 always (flat). Y axis up at runtime.
+ * Y axis up at runtime. The runtime terrain lift is ADDITIVE
+ * (`terrainShader` patchTerrain: `transformed.y += sampledLift`), so any baked Y
+ * survives the displacement.
  *
- * Render order is encoded per group via `renderOrder` + `polygonOffset`
- * pairs so coplanar surfaces never Z-fight (per
- * `feedback_never_y_offsets.md`).
+ * Coplanar stacking: each group gets a tiny geometric **Y = renderOrder × EPS**
+ * separation (`GROUND_Y_EPS`) — the ONLY mechanism that works under the
+ * production `logarithmicDepthBuffer` canvas, where `polygonOffset` is
+ * structurally INERT (the `<logdepthbuf_fragment>` writes `gl_FragDepth`, which
+ * bypasses `GL_POLYGON_OFFSET_FILL`). This reproduces the live Designer's proven
+ * Y-ladder (live == bake). `ARCHITECTURE.md §8`. *(Was Y=0 + polygonOffset —
+ * inert on 3/4 surfaces → the ground z-fought in the slab; fixed 2026-06-17.)*
  *
  * AO lightmap is a follow-on pass (see `bake-ground-ao.js`, separate task).
  */
@@ -69,6 +75,16 @@ const GROUND_REFINE_MIN_EDGE_M = 6;
 const GROUND_REFINE_MAX_EDGE_M = 64;
 // Hardscape overlays routed through refine (parking_lot/pitch) keep fine spacing.
 const HARDSCAPE_REFINE_MAX_EDGE_M = 15;
+
+// [z-fight fix 2026-06-17] Per-group geometric Y separation — the resolver for
+// coplanar ground groups under the production logarithmicDepthBuffer canvas
+// (where polygonOffset is inert). Y = renderOrder × GROUND_Y_EPS, ascending with
+// paint order, so the higher-painted layer sits physically on top. The runtime
+// terrain lift is additive, so this micro-Y survives displacement. Matches the
+// live Designer's ladder (asphalt slot ≈ 0.040 m). Operator-tunable; eye-gated:
+// too small ties under mobile linear-depth at altitude, too large shows a lip at
+// grazing angles where curb meets asphalt. ARCHITECTURE §8.
+const GROUND_Y_EPS = 0.002;   // metres per renderOrder slot (~5 cm over ~26 groups)
 
 // Terrain sampler for the adaptive path -- built once, mirroring
 // src/lib/terrainCommon.js makeElevationSampler so the bake-time deviation test
@@ -581,12 +597,13 @@ function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
 //
 // Winding: ShapeUtils emits CCW in (x, z) 2D, which is CW when mapped to
 // (x, 0, z) viewed from +Y. Flip the index order at emit time.
-function triangulateAndRefine(outer, holes, refine) {
+function triangulateAndRefine(outer, holes, refine, yLift = 0) {
   // Build position list: contour vertices first, then each hole, in the
-  // order ShapeUtils.triangulateShape expects.
+  // order ShapeUtils.triangulateShape expects. yLift = the group's coplanar
+  // Y separation (renderOrder × GROUND_Y_EPS); runtime terrain lift adds on top.
   const posList = []
   const pushRing = (ring) => {
-    for (const [x, z] of ring) posList.push(x, 0, z)
+    for (const [x, z] of ring) posList.push(x, yLift, z)
   }
   pushRing(outer)
   for (const h of holes) pushRing(h)
@@ -641,7 +658,7 @@ function triangulateAndRefine(outer, holes, refine) {
     const ax = posList[a * 3],     az = posList[a * 3 + 2]
     const bx = posList[b * 3],     bz = posList[b * 3 + 2]
     idx = posList.length / 3
-    posList.push((ax + bx) * 0.5, 0, (az + bz) * 0.5)
+    posList.push((ax + bx) * 0.5, yLift, (az + bz) * 0.5)
     midCache.set(key, idx)
     return idx
   }
@@ -720,10 +737,10 @@ function triangulateAndRefine(outer, holes, refine) {
 // of {outer, holes} faces (land-use fills, post-clip). `opts.maxEdge`
 // triggers per-polygon refinement (face polygons + landscape overlays).
 //
-// Y per vertex = 0; the terrain-aware lift happens at runtime in the
-// vertex shader (patchTerrain perVertex via texture sampling at each
-// vertex's world XZ).
-function itemsToBuffers(items, { maxEdge = null, refine = null } = {}) {
+// Y per vertex = `yLift` (the group's coplanar separation, renderOrder × EPS);
+// the terrain-aware lift adds on top at runtime in the vertex shader (patchTerrain
+// perVertex via texture sampling at each vertex's world XZ).
+function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}) {
   // Normalize to {outer, holes} so the rest of the function is uniform.
   const polys = []
   for (const it of items) {
@@ -738,7 +755,7 @@ function itemsToBuffers(items, { maxEdge = null, refine = null } = {}) {
 
   // Triangulate (and optionally refine) each polygon independently, then
   // concatenate with vertex offsets.
-  const perPoly = polys.map(p => triangulateAndRefine(p.outer, p.holes, refine || maxEdge))
+  const perPoly = polys.map(p => triangulateAndRefine(p.outer, p.holes, refine || maxEdge, yLift))
   let totalV = 0, totalI = 0
   for (const r of perPoly) { totalV += r.positions.length / 3; totalI += r.indices.length }
 
@@ -932,7 +949,10 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
     } else if (isHardOverlay) {
       refinePolicy = { mode: 'uniform', maxEdge: HARDSCAPE_REFINE_MAX_EDGE_M }
     }
-    const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy })
+    // yLift = this group's coplanar Y separation (the resolver under log-depth).
+    // `renderOrder` here is the slot this group is about to take (renderOrder++
+    // below), ascending with PAINT_ORDER, so Y agrees with paint order.
+    const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy, yLift: renderOrder * GROUND_Y_EPS })
     if (indices.length === 0) continue
 
     // Color resolution: per-Look design.json wins, then the canonical
@@ -963,9 +983,9 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
       id: key,
       color,
       renderOrder: renderOrder++,
-      // polygonOffsetFactor descends so deeper layers are "behind" — the
-      // runtime sets `polygonOffset:true, polygonOffsetUnits: -1 * (renderOrder)`.
-      // Stored so the runtime doesn't have to re-derive.
+      // polygonOffsetUnits — RETAINED for back-compat + the mobile linear-depth
+      // path, but it is INERT under the log-depth canvases (the per-group Y above
+      // is the real coplanar resolver now). The consumer no longer applies it.
       polygonOffsetUnits: -renderOrder,
       vertexCount: positions.length / 3,
       vertexByteOffset: posByteOffset,
