@@ -493,6 +493,16 @@
           }
         }
       }
+    },
+    "lafayette-avenue-5": {
+      "right": {
+        "0": {
+          "pavementHW": 2.824821478718866,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
     }
   },
   "surveyDefault": null,
