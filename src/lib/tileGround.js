@@ -857,7 +857,14 @@ function groupRuns(tile) {
 // (streets / streetsOrig / measures / centerlineData / ribbons), so it CANNOT
 // reach back. That impossibility is the wall: Section's shape input changes only
 // when the shape pass re-runs. Every helper below is module-level + pure.
-export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
+// Per-tile FILL contribution — pure in (the frozen tile, cw, stripMat, its own
+// blockCustoms slice). Extracted from sectionPass's loop body so block-local
+// Section (BlockGeometryV2Debug) recomputes ONE tile on a drag and reuses the
+// rest from cache. No cross-tile reads — corners/through-nodes are detected from
+// this tile's own runs — so the per-tile isolation is exact. Returns this tile's
+// { Wacc, tlByLu, luByLu } rings (the same arrays the old whole-map loop pushed
+// into). (Body is one indent deep from the old for-loop; logic is unchanged.)
+export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
   // PROTOTYPE C (env-gated, off in the browser): slope the SW↔(TL|SW) corner
   // treelawn band. Keys on the RESOLVED outer material (e.mat.outer) so a flipped
   // strip moves the taper too; the FILL re-strokes on blockCustoms change.
@@ -867,7 +874,7 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
   // wall holds. Carries the depth override (.treelawn/.sidewalk → resolvePedDepths)
   // and the material override (.materials over the §3.1 ordering default).
   const runCustom = (run) => blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null
-  for (const st of shapeTiles) {
+  {
     const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs } = st
     const fillets = st.fillets || []   // achieved curb arcs → the bent-corner sectors
     // Tolerate the serialized artifact: roundTipKeys is a Set in-memory, an array
@@ -1232,6 +1239,35 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
   return { Wacc, tlByLu, luByLu }
 }
 
+// Whole-map FILL — accumulate every tile's sectionPassTile contribution, in tile
+// order (so the unions downstream are bit-identical to the old single loop). The
+// block-local Section path (sectionOpen, below, with a per-tile cache) bypasses
+// this; it stays for the full-pass callers (a cold bake / the :2713 path).
+export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
+  const Wacc = [], tlByLu = {}, luByLu = {}
+  for (const st of shapeTiles) {
+    const t = sectionPassTile(st, cw, stripMat, blockCustoms)
+    Wacc.push(...t.Wacc)
+    for (const k in t.tlByLu) (tlByLu[k] || (tlByLu[k] = [])).push(...t.tlByLu[k])
+    for (const k in t.luByLu) (luByLu[k] || (luByLu[k] = [])).push(...t.luByLu[k])
+  }
+  return { Wacc, tlByLu, luByLu }
+}
+
+// The blockCustoms slice that affects ONE tile's FILL: the override entries its
+// runs reference (keyed skelId→side→segOrd). Identical slice → identical FILL, so
+// the per-tile memo (sectionOpen's cache) can skip the recompute. Cheap — a few
+// runs per tile, only actually-present overrides serialized.
+function tileSliceKey(st, blockCustoms) {
+  if (!blockCustoms) return ''
+  let s = ''
+  for (const run of st.runs || []) {
+    const c = blockCustoms[run.skelId]?.[run.side]?.[run.segOrd]
+    if (c) s += run.skelId + '|' + run.side + '|' + run.segOrd + '=' + JSON.stringify(c) + ';'
+  }
+  return s
+}
+
 // ── THE WALL · Phase D · sectionOpen ───────────────────────────────────────
 // Section OPENS the frozen artifact: compose the whole Section ground render
 // off shapeTiles ALONE — block silhouette (the frozen iA), curb stroke
@@ -1244,16 +1280,39 @@ export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
 // buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
 // Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
 // already tolerates the serialized roundTipKeys array).
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null) {
-  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat, blockCustoms)
-  const Aacc = [], Cacc = [], blockRaw = []
-  for (const st of shapeTiles) {
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null) {
+  // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
+  // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
+  // Section drag (which writes a fresh blockCustoms object every frame but
+  // touches one tile's slice) only needs to recompute the edited tile. With a
+  // caller-owned `cache` (Map keyed by tile index) the rest reuse cached rings;
+  // cache=null is the stateless whole-map path (a cold bake). The global merge
+  // still runs every call — cheap (one union per layer vs the per-run offset
+  // storm) — and it keeps the output bit-identical to the un-cached pass.
+  const tileGeo = (st, i) => {
+    const key = cw + '|' + stripMat.outer + stripMat.inner + '|' + tileSliceKey(st, blockCustoms)
+    if (cache) { const hit = cache.get(i); if (hit && hit.key === key) return hit }
+    const r = sectionPassTile(st, cw, stripMat, blockCustoms)
     const iA = st.iA || []
     const bandJoin = st.bandJoin || 'miter'
     const cap = Number.isFinite(st.cap) ? st.cap : (cw + (st.tl || 0) + (st.sw || 0))
-    Aacc.push(...differenceRings([st.ring], iA))                                      // asphalt = tile − rounded inner
-    Cacc.push(...differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)))  // curb = iA − iC (frozen join + cap)
-    blockRaw.push(...iA)                                                              // block silhouette = the frozen curb ring
+    const bundle = {
+      key,
+      W: r.Wacc, tlByLu: r.tlByLu, luByLu: r.luByLu,
+      A: differenceRings([st.ring], iA),                                       // asphalt = tile − rounded inner
+      C: differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)),    // curb = iA − iC (frozen join + cap)
+      block: iA,                                                               // block silhouette = the frozen curb ring
+    }
+    if (cache) cache.set(i, bundle)
+    return bundle
+  }
+  const Aacc = [], Cacc = [], Wacc = [], blockRaw = []
+  const tlByLu = {}, luByLu = {}
+  for (let i = 0; i < shapeTiles.length; i++) {
+    const b = tileGeo(shapeTiles[i], i)
+    Aacc.push(...b.A); Cacc.push(...b.C); Wacc.push(...b.W); blockRaw.push(...b.block)
+    for (const k in b.tlByLu) (tlByLu[k] || (tlByLu[k] = [])).push(...b.tlByLu[k])
+    for (const k in b.luByLu) (luByLu[k] || (luByLu[k] = [])).push(...b.luByLu[k])
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
   const treelawnByLu = {}, luByClass = {}

@@ -671,8 +671,15 @@ export default function BlockGeometryV2Debug({
   // Frozen whenever NOT surveying (Measure + neutral Design), if a freeze exists;
   // no freeze yet (fresh scene) → falls through to the live build below.
   const sectionFrozen = !surveyActive && !!frozenShape
+  // [Section perf #1] Block-local FILL cache. sectionOpen memoizes each tile's
+  // rings keyed by (cw, stripMat, the tile's own blockCustoms slice), so a FILL
+  // drag — which writes a fresh blockCustoms object every frame — only recomputes
+  // the edited tile, not all 101. Lives in a ref so it survives the memo re-run;
+  // reset when the frozen artifact changes (tile indices change). (HANDOFF-section-perf.md #1.)
+  const sectionCacheRef = useRef({ shape: null, map: new Map() })
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
+    if (sectionCacheRef.current.shape !== frozenShape) sectionCacheRef.current = { shape: frozenShape, map: new Map() }
     // ⛔ wall: the SHAPE stays frozen — every vertex of geometry comes from the
     // fetched silhouette (frozenShape). blockCustoms is passed for MATERIAL routing
     // ONLY (the per-edge LU↔SW override, keyed by the frozen run identity — design
@@ -680,7 +687,7 @@ export default function BlockGeometryV2Debug({
     // stay absent. So the FILL re-strokes live off the frozen curb when you swap a
     // strip, while the curb sits still — SECTION.md §4.
     let sg
-    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms) }
+    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
