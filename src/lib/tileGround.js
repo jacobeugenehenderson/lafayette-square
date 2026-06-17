@@ -2467,7 +2467,7 @@ export function buildTileGround(ribbons, opts = {}) {
     const edgeKey = (p, q) => `${Math.round(p[0] * 50)},${Math.round(p[1] * 50)}|${Math.round(q[0] * 50)},${Math.round(q[1] * 50)}`
     const depthByEdge = new Map(), streetByEdge = new Map()
     for (const run of runs) {
-      const dd = edgeDepth(runMeasure(run), run.side, cw, 'A')
+      const baseDepth = edgeDepth(runMeasure(run), run.side, cw, 'A')
       const so = streetsOrig[run.streetIdx]
       // Key edge identity on the CANONICAL through-road id (continuesAs union,
       // frozen in derive.js) — so cornerAt reads a name-transition seam (West-18th↔
@@ -2476,7 +2476,27 @@ export function buildTileGround(ribbons, opts = {}) {
       // junction-curb bump born from a raw-skelId mismatch. Falls back to skelId for
       // pre-roadId artifacts. [HANDOFF-curve-primitive-skeleton.md, name-aware fix]
       const sk = (so && (so.roadId || so.skelId || so.name)) || run.streetIdx
+      // [Brief C — divided "d" curb] OUTER-curb continuity ramp at a divided→
+      // undivided nose. derive.js froze a per-vertex OUTER half-width (outerHWProfile,
+      // vKey→hw) that makes the outer curb run STRAIGHT THROUGH the transition. Apply
+      // it on the OUTER block tile only — gated on `!isMedianTile`: a carriageway's
+      // ONLY non-median neighbour IS the outer block (its other side bounds the
+      // median, which builds as a separate isMedian tile via the legacy carve). ⛔ NO
+      // run.side test — the base is symmetric (4.67=4.67) so the walk-relative left/
+      // right was never disambiguated against measure and DISAGREES with the median
+      // oracle at the spike tile. The median (inner) curb stays 4.67; the offset
+      // (already variable-depth via depthAt) eases spineOuter→cwHW across the nose, so
+      // the outer edge = the spine outer line, constant. Match by nearest profile coord
+      // within ENDPOINT_SNAP-tolerance (a welded node moves ≤0.15 m). Non-carriageway /
+      // median-tile / non-transition runs → baseDepth, byte-identical.
+      let profPts = null
+      if (so?.outerHWProfile && !isMedianTile && /^carriageway/.test(so.phase?.role || '')) {
+        profPts = []
+        for (const key in so.outerHWProfile) { const c = key.split(','); profPts.push([+c[0], +c[1], so.outerHWProfile[key]]) }
+      }
+      const hwAt = (p) => { if (!profPts) return null; for (const e of profPts) { const dx = e[0] - p[0], dy = e[1] - p[1]; if (dx * dx + dy * dy < 0.09) return e[2] } return null }
       for (let i = 0; i < run.poly.length - 1; i++) {
+        const dd = profPts ? ((hwAt(run.poly[i]) ?? baseDepth) + (hwAt(run.poly[i + 1]) ?? baseDepth)) / 2 : baseDepth
         const k1 = edgeKey(run.poly[i], run.poly[i + 1]), k2 = edgeKey(run.poly[i + 1], run.poly[i])
         depthByEdge.set(k1, dd); depthByEdge.set(k2, dd)
         streetByEdge.set(k1, sk); streetByEdge.set(k2, sk)

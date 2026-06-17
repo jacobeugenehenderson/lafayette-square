@@ -3549,6 +3549,94 @@ export function deriveLayers(highways) {
   const innerEdgeCount = ribbonStreets.filter(s => s.anchor === 'inner-edge').length
   if (innerEdgeCount) console.log(`    ${innerEdgeCount} chains marked anchor=inner-edge (divided carriageways)`)
 
+  // [Brief C — divided "d" curb] OUTER-curb continuity at the divided→undivided
+  // transition. The undivided spine is WIDE (asymmetric L/R pavementHW — Lafayette
+  // is genuinely asymmetric even in single blocks); the carriageways are NARROW
+  // (their own surveyHW pavementHW, just assigned by innerEdgeAssign above — so this
+  // block MUST run AFTER that, or it reads a stale pre-survey width), and they
+  // emanate from the spine centerline at the nose. So each carriageway's OUTER curb
+  // steps inward ~(spineOuter − cwHW) at the node, and the per-edge parallel offset
+  // (tileGround offsetRingVariable) renders that step as the "d" spike/bow (the
+  // residual after D6a; HANDOFF-freeze-the-curb… §LANDING). DOCTRINE (Jacob): the
+  // OUTER edge of the road must run STRAIGHT THROUGH the transition — only the
+  // MEDIAN (inner) opens. Enforce it in the frame (derivation, not construction):
+  // ramp the carriageway's outer half-width from spineOuter at the node down to its
+  // base over the nose, so the outer edge = centerline + outer_hw = the spine's
+  // outer line, CONSTANT (proven: oe·spN = spineLine·spN exactly). Emitted as a
+  // side-agnostic per-vertex profile {vKey → outer half-width}; the consumer applies
+  // it on the OUTER block tile only (gated `!isMedianTile` — a carriageway's only
+  // non-median neighbour). The offset is already variable-depth per edge (depthAt),
+  // so no consumer-shape change — only how depthByEdge is filled. Bounded to the nose
+  // (along ≤ 2.5·spineOuter, its own half) so the curving body away from the
+  // transition is byte-identical. perp matches the codebase offset convention
+  // ([dy,-dx]: Lafayette spine measure.left=10.56 renders SOUTH). (probe +
+  // validation: scratch/dcurb-profile-test.mjs — every emitted vertex 0 m off-line.)
+  {
+    const sub = (a, b) => [a[0] - b[0], a[1] - b[1]]
+    const dotv = (a, b) => a[0] * b[0] + a[1] * b[1]
+    const lenv = v => Math.hypot(v[0], v[1])
+    const unitv = v => { const l = lenv(v) || 1; return [v[0] / l, v[1] / l] }
+    const perpv = v => [v[1], -v[0]]
+    const pvKey = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
+    const bySkel = new Map()
+    for (const s of ribbonStreets) bySkel.set(s.skelId || s.name, s)
+    let rampedCarriageways = 0, rampedVerts = 0
+    for (const cw of ribbonStreets) {
+      if (!/^carriageway/.test(cw.phase?.role || '')) continue
+      const pts = cw.points
+      if (!pts || pts.length < 2) continue
+      const cwHW = cw.measure?.left?.pavementHW || cw.measure?.right?.pavementHW || 0
+      if (!(cwHW > 0)) continue
+      let totLen = 0; for (let i = 1; i < pts.length; i++) totLen += lenv(sub(pts[i], pts[i - 1]))
+      const half = totLen / 2
+      const prof = {}
+      const ends = [
+        { spineId: cw.phase?.spineAtStart, nodeIdx: 0, adjIdx: 1 },
+        { spineId: cw.phase?.spineAtEnd, nodeIdx: pts.length - 1, adjIdx: pts.length - 2 },
+      ]
+      for (const e of ends) {
+        const sp = bySkel.get(e.spineId)
+        if (!sp || !sp.points || sp.points.length < 2) continue
+        const node = pts[e.nodeIdx], adj = pts[e.adjIdx]
+        const s0 = sp.points[0], sN = sp.points[sp.points.length - 1]
+        const atStart = lenv(sub(s0, node)) < lenv(sub(sN, node))
+        // spine FORWARD (start→end) at the node — matches measure.left/right keys
+        const spFwd = unitv(atStart ? sub(sp.points[1], s0) : sub(sN, sp.points[sp.points.length - 2]))
+        const spN = perpv(spFwd)
+        const spL = sp.measure?.left?.pavementHW || 0, spR = sp.measure?.right?.pavementHW || 0
+        const cwDir = unitv(sub(adj, node))            // into the carriageway body
+        const sideSign = Math.sign(dotv(sub(adj, node), spN)) || 1   // which spine side it departs to
+        const spineOuter = sideSign > 0 ? spL : spR
+        if (!(spineOuter > cwHW + 0.05)) continue      // spine no wider than the carriageway → no step
+        const outerN = [spN[0] * sideSign, spN[1] * sideSign]        // outward (away from median)
+        // Walk OUTWARD from the node, ramping outer_hw = spineOuter − lateral so the
+        // outer edge stays on the spine outer line, and STOP at the natural end of the
+        // nose: when the carriageway reaches full splay (lateral ≥ spineOuter−cwHW →
+        // oh would dip below the base) OR the centerline curves back toward the spine
+        // axis (lateral decreases — a far body vertex that wanders near the straight
+        // node-axis must NOT be re-ramped) OR past the carriageway's own half. This
+        // covers a gently-splaying long carriageway fully (outer edge straight the whole
+        // nose) without a fixed cap, while the curve-back guard keeps the body untouched.
+        const order = e.nodeIdx === 0 ? [...pts.keys()] : [...pts.keys()].reverse()
+        let prevLat = -Infinity
+        for (const i of order) {
+          const along = dotv(sub(pts[i], node), cwDir)
+          if (along < -0.5) continue
+          if (along > half) break
+          const lateral = dotv(sub(pts[i], node), outerN)
+          if (lateral < prevLat - 0.5) break          // curve-back → end of nose
+          prevLat = Math.max(prevLat, lateral)
+          const oh = spineOuter - Math.max(0, lateral)
+          if (!(oh > cwHW + 1e-6)) break              // full splay reached → rest is base
+          const k = pvKey(pts[i]); if (!(prof[k] >= oh)) prof[k] = oh
+        }
+      }
+      const keys = Object.keys(prof)
+      if (keys.length) { cw.outerHWProfile = prof; rampedCarriageways++; rampedVerts += keys.length }
+    }
+    if (rampedCarriageways) console.log(`    [Brief C] outer-curb continuity: ramped ${rampedVerts} nose verts on ${rampedCarriageways} carriageways (outer edge runs straight through the transition)`)
+  }
+
   // ── [E3.1] THE JUNCTION MAP — frozen per-node identity stamps ─────────
   // The junction silhouette is never CONSTRUCTED today: it is emergent from
   // independent constant-width butt-capped chain strokes, so every width
@@ -4093,6 +4181,11 @@ export function deriveLayers(highways) {
       // parity with `_loadCenterlines` output.
       ...(st.couplers ? { couplers: st.couplers } : {}),
       ...(st.segmentMeasures ? { segmentMeasures: st.segmentMeasures } : {}),
+      // [Brief C] per-vertex OUTER half-width ramp at a divided→undivided nose
+      // (vKey → outer pavementHW) — makes the outer curb run STRAIGHT THROUGH the
+      // transition. Consumed per-edge in tileGround's depthByEdge (outboard side
+      // only, via inboardSideOf). See the "outer-curb continuity" block above.
+      ...(st.outerHWProfile ? { outerHWProfile: st.outerHWProfile } : {}),
       ...(st.disabled ? { disabled: true } : {}),
       // [P1 frame-enrichment] Enriched frame fields surviving the serializer
       // whitelist. PRESENT-but-not-yet-consumed: the consumer wiring is

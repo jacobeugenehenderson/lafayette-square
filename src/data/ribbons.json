@@ -1661,6 +1661,9 @@
       },
       "highway": "secondary",
       "type": "secondary",
+      "outerHWProfile": {
+        "658.300,-726.700": 3.25
+      },
       "lanes": 3,
       "seed": {
         "seededClass": "secondary",
@@ -1803,6 +1806,9 @@
       },
       "highway": "secondary",
       "type": "secondary",
+      "outerHWProfile": {
+        "658.300,-726.700": 6.39
+      },
       "lanes": 2,
       "seed": {
         "seededClass": "secondary",
@@ -15949,6 +15955,9 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "121.200,526.100": 3.96
+      },
       "seed": {
         "seededClass": "residential",
         "lanesAssumed": 1,
@@ -16271,6 +16280,9 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "121.200,526.100": 3.96
+      },
       "seed": {
         "seededClass": "residential",
         "lanesAssumed": 1,
@@ -18754,6 +18766,12 @@
       },
       "highway": "secondary",
       "type": "secondary",
+      "outerHWProfile": {
+        "545.200,-488.100": 6.71,
+        "297.300,-554.300": 8.38,
+        "316.270,-552.360": 5.360116191662014,
+        "336.900,-547.200": 5.022946133555132
+      },
       "lanes": 1,
       "maxspeed": "35 mph",
       "seed": {
@@ -18869,6 +18887,11 @@
       },
       "highway": "secondary",
       "type": "secondary",
+      "outerHWProfile": {
+        "297.300,-554.300": 8.38,
+        "314.590,-546.280": 5.09228287434212,
+        "545.200,-488.100": 6.71
+      },
       "lanes": 1,
       "maxspeed": "35 mph",
       "seed": {
@@ -19562,6 +19585,9 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "719.800,310.100": 10.555325676754327
+      },
       "lanes": 3,
       "surface": "asphalt",
       "maxspeed": "25 mph",
@@ -19826,6 +19852,9 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "719.800,310.100": 7.899666800734073
+      },
       "lanes": 2,
       "surface": "asphalt",
       "maxspeed": "25 mph",
@@ -19940,8 +19969,7 @@
           "sidewalk": 1.52,
           "terminal": "sidewalk"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -19961,6 +19989,10 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "166.500,221.900": 7.899666800734073,
+        "481.900,272.100": 7.899666800734073
+      },
       "lanes": 4,
       "surface": "asphalt",
       "maxspeed": "25 mph",
@@ -20074,8 +20106,7 @@
           "sidewalk": 0,
           "terminal": "none"
         },
-        "symmetric": false,
-        "source": "seed-survey"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -20095,6 +20126,14 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "481.900,272.100": 10.555325676754327,
+        "448.930,263.720": 6.930899504392851,
+        "369.800,250.700": 5.253023987724536,
+        "166.500,221.900": 10.555325676754327,
+        "181.580,220.240": 6.555336485294049,
+        "246.800,230.500": 6.480070479100979
+      },
       "lanes": 2,
       "surface": "asphalt",
       "maxspeed": "25 mph",
@@ -20219,6 +20258,13 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "-354.800,138.900": 10.555325676754327,
+        "-374.820,133.040": 7.991185390386695,
+        "-388.110,130.850": 7.966968019390462,
+        "-426.400,134.100": 10.555325676754327,
+        "-407.770,130.150": 5.047821591693877
+      },
       "lanes": 1,
       "surface": "asphalt",
       "maxspeed": "25 mph",
@@ -20325,6 +20371,11 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "-426.400,134.100": 7.899666800734073,
+        "-403.640,137.620": 6.312194667722343,
+        "-354.800,138.900": 7.899666800734073
+      },
       "lanes": 1,
       "surface": "asphalt",
       "maxspeed": "25 mph",
@@ -21180,6 +21231,10 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "424.400,-88.700": 5.645715395972545,
+        "440.820,-84.930": 3.36691568390279
+      },
       "lanes": 1,
       "surface": "asphalt",
       "seed": {
@@ -21489,6 +21544,10 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "-355.000,-253.900": 5.645715395972545,
+        "-954.300,-357.500": 5.645715395972545
+      },
       "lanes": 1,
       "surface": "asphalt",
       "seed": {
@@ -21638,6 +21697,9 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "424.400,-88.700": 6.06749156059035
+      },
       "lanes": 2,
       "surface": "asphalt",
       "seed": {
@@ -21790,6 +21852,10 @@
       },
       "highway": "residential",
       "type": "residential",
+      "outerHWProfile": {
+        "-954.300,-357.500": 6.06749156059035,
+        "-355.000,-253.900": 6.06749156059035
+      },
       "lanes": 1,
       "surface": "asphalt",
       "seed": {
@@ -23302,6 +23368,9 @@
       },
       "highway": "primary",
       "type": "primary",
+      "outerHWProfile": {
+        "-217.300,-691.900": 7.716508745489069
+      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -23410,6 +23479,10 @@
       },
       "highway": "primary",
       "type": "primary",
+      "outerHWProfile": {
+        "-355.000,-253.900": 9.163045461963636,
+        "-426.400,134.100": 9.163045461963636
+      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -23672,6 +23745,10 @@
       },
       "highway": "primary",
       "type": "primary",
+      "outerHWProfile": {
+        "-426.400,134.100": 7.716508745489069,
+        "-355.000,-253.900": 7.716508745489069
+      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -23950,6 +24027,10 @@
       },
       "highway": "primary",
       "type": "primary",
+      "outerHWProfile": {
+        "-465.300,362.500": 7.716508745489069,
+        "-430.900,157.500": 7.716508745489069
+      },
       "lanes": 5,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -24220,6 +24301,10 @@
       },
       "highway": "primary",
       "type": "primary",
+      "outerHWProfile": {
+        "-430.900,157.500": 9.163045461963636,
+        "-465.300,362.500": 9.163045461963636
+      },
       "lanes": 3,
       "surface": "concrete",
       "maxspeed": "35 mph",
@@ -24378,6 +24463,9 @@
       },
       "highway": "primary",
       "type": "primary",
+      "outerHWProfile": {
+        "-217.300,-691.900": 9.163045461963636
+      },
       "lanes": 4,
       "surface": "concrete",
       "maxspeed": "35 mph",
