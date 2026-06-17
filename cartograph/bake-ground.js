@@ -36,6 +36,69 @@ import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/c
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
+// -- Adaptive ground-subdivision knobs (the mobile tri-budget lever) --------
+//
+// The flat (Y=0) baked ground is lifted per-vertex at runtime by the terrain
+// sampler (src/lib/terrainCommon.js makeElevationSampler, V_EXAG=1.5); a
+// triangle interior interpolates that lift LINEARLY, so a long edge only
+// introduces visible error where the terrain *curves* under it. The legacy
+// refine split EVERY face triangle whose edge exceeded one global 15 m target
+// -- carpet-bombing the large, near-flat land-use fills (park/residential/
+// recreation = 80% of the mesh) even though LS terrain is locally planar
+// (median ~1.4 cm deviation over a 30 m edge) almost everywhere.
+//
+// GROUND_REFINE="adaptive" (default) swaps the uniform edge test for a
+// terrain-deviation test: split only where the heightfield bends enough that a
+// coarser triangle would lift its interior off the terrain by more than
+// GROUND_REFINE_TOL_M. Flat blocks stay coarse; the steep park band stays fine.
+// "uniform" restores the exact legacy behavior. All thread through
+// bakeGround(opts.refine) below, gated on opts.* (NEVER process.env -- a
+// browser-reachable process.env ref once crashed the whole tile build).
+//
+//   GROUND_REFINE_TOL_M      -- max terrain Y-deviation (m) a coarse triangle
+//      may keep before it is split. The *uniform* mesh already carries p99
+//      ~0.55 m / max ~14 m deviation (its 15 m edge cannot follow the steep
+//      park band), so 0.30 m keeps the soft fills at or BELOW shipped fidelity (p99
+//      ~0.36 m < the uniform mesh's 0.55 m) while halving the tri count.
+//   GROUND_REFINE_MIN_EDGE_M -- never split below this even if tol says to.
+//   GROUND_REFINE_MAX_EDGE_M -- hard coarse cap: ALWAYS split longer edges so
+//      dense coplanar overlays keep a face vertex within range.
+const GROUND_REFINE            = "adaptive";
+const GROUND_REFINE_TOL_M      = 0.50;
+const GROUND_REFINE_MIN_EDGE_M = 6;
+const GROUND_REFINE_MAX_EDGE_M = 64;
+// Hardscape overlays routed through refine (parking_lot/pitch) keep fine spacing.
+const HARDSCAPE_REFINE_MAX_EDGE_M = 15;
+
+// Terrain sampler for the adaptive path -- built once, mirroring
+// src/lib/terrainCommon.js makeElevationSampler so the bake-time deviation test
+// uses the EXACT lift the runtime vertex shader applies. false if absent.
+let _terrainSampler = null;
+function getTerrainSampler() {
+  if (_terrainSampler !== null) return _terrainSampler;
+  const metaPath = join(ROOT, "src", "data", "terrain.json");
+  const binPath  = join(ROOT, "src", "data", "terrain.bin");
+  if (!existsSync(metaPath) || !existsSync(binPath)) { _terrainSampler = false; return false; }
+  const meta = JSON.parse(readFileSync(metaPath, "utf-8"));
+  const buf  = readFileSync(binPath);
+  const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+  const V_EXAG = 1.5;
+  const { width, height, bounds } = meta;
+  const spanX = bounds.maxX - bounds.minX, spanZ = bounds.maxZ - bounds.minZ;
+  _terrainSampler = function elev(x, z) {
+    const gx = ((x - bounds.minX) / spanX) * (width - 1);
+    const gz = ((z - bounds.minZ) / spanZ) * (height - 1);
+    const gx0 = Math.max(0, Math.min(width - 2, Math.floor(gx)));
+    const gz0 = Math.max(0, Math.min(height - 2, Math.floor(gz)));
+    const fx = Math.max(0, Math.min(1, gx - gx0)), fz = Math.max(0, Math.min(1, gz - gz0));
+    const e00 = data[gz0 * width + gx0] || 0, e10 = data[gz0 * width + gx0 + 1] || 0;
+    const e01 = data[(gz0 + 1) * width + gx0] || 0, e11 = data[(gz0 + 1) * width + gx0 + 1] || 0;
+    const e0 = e00 * (1 - fx) + e10 * fx, e1 = e01 * (1 - fx) + e11 * fx;
+    return (e0 * (1 - fz) + e1 * fz) * V_EXAG;
+  };
+  return _terrainSampler;
+}
+
 // Scene stencil loader. Reads cartograph/data/<scene>/neighborhood_boundary.json
 // and derives the four bake-side stencil values:
 //   - center, radius                — manifest emission + AO bbox anchor
@@ -518,7 +581,7 @@ function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
 //
 // Winding: ShapeUtils emits CCW in (x, z) 2D, which is CW when mapped to
 // (x, 0, z) viewed from +Y. Flip the index order at emit time.
-function triangulateAndRefine(outer, holes, maxEdge) {
+function triangulateAndRefine(outer, holes, refine) {
   // Build position list: contour vertices first, then each hole, in the
   // order ShapeUtils.triangulateShape expects.
   const posList = []
@@ -532,12 +595,30 @@ function triangulateAndRefine(outer, holes, maxEdge) {
   const contourV = outer.map(([x, z]) => new THREE.Vector2(x, z))
   const holesV = holes.map(h => h.map(([x, z]) => new THREE.Vector2(x, z)))
   const tris = THREE.ShapeUtils.triangulateShape(contourV, holesV)
-  // Apply CCW→CW flip up front; refinement preserves whatever winding it
+  // Apply CCW->CW flip up front; refinement preserves whatever winding it
   // starts with.
   let triList = tris.map(t => [t[0], t[2], t[1]])
 
-  if (!maxEdge || maxEdge <= 0 || !Number.isFinite(maxEdge)) {
-    // No refinement requested — emit as-is.
+  // Normalize the refine policy. Back-compat: a bare number (or null) is read
+  // as the legacy uniform maxEdge so any unported caller still works.
+  let mode, maxEdge, tol, minEdge, sampler
+  if (refine && typeof refine === "object") {
+    mode    = refine.mode || "uniform"
+    maxEdge = refine.maxEdge
+    tol     = refine.tol
+    minEdge = refine.minEdge || 0
+    sampler = refine.sampler || null
+  } else {
+    mode    = "uniform"
+    maxEdge = refine
+    minEdge = 0
+  }
+  // Adaptive needs a sampler; without one it degrades to a pure maxEdge cap.
+  if (mode === "adaptive" && (!sampler || !(tol > 0))) mode = "uniform"
+
+  const hasCap = maxEdge && maxEdge > 0 && Number.isFinite(maxEdge)
+  if (mode === "uniform" && !hasCap) {
+    // No refinement requested -- emit the earcut output as-is.
     const positions = new Float32Array(posList)
     const indices = new Uint32Array(triList.length * 3)
     for (let i = 0; i < triList.length; i++) {
@@ -548,12 +629,13 @@ function triangulateAndRefine(outer, holes, maxEdge) {
     return { positions, indices }
   }
 
-  // Iterative 1-to-4 refinement. Midpoint cache keyed by edge ensures
-  // adjacent triangles share their midpoint vertex (no T-junctions).
-  const maxEdgeSq = maxEdge * maxEdge
+  // Iterative 1-to-4 refinement. Midpoint cache keyed by edge ensures adjacent
+  // triangles share their midpoint vertex (no T-junctions).
+  const maxEdgeSq = hasCap ? maxEdge * maxEdge : Infinity
+  const minEdgeSq = minEdge * minEdge
   const midCache = new Map()
   function midpointIndex(a, b) {
-    const key = a < b ? `${a}-${b}` : `${b}-${a}`
+    const key = a < b ? a + "-" + b : b + "-" + a
     let idx = midCache.get(key)
     if (idx !== undefined) return idx
     const ax = posList[a * 3],     az = posList[a * 3 + 2]
@@ -568,10 +650,28 @@ function triangulateAndRefine(outer, holes, maxEdge) {
     const dz = posList[a * 3 + 2] - posList[b * 3 + 2]
     return dx * dx + dz * dz
   }
+  // Terrain-deviation of a triangle (a,b,c): the worst |true terrain lift -
+  // planar interpolation of the three corner lifts| over the three edge
+  // midpoints + the centroid. These are exactly the points a one-level 1-to-4
+  // split would introduce, so this measures the Y error the split would heal.
+  function terrainDev(a, b, c) {
+    const ax = posList[a*3], az = posList[a*3+2]
+    const bx = posList[b*3], bz = posList[b*3+2]
+    const cx = posList[c*3], cz = posList[c*3+2]
+    const ya = sampler(ax, az), yb = sampler(bx, bz), yc = sampler(cx, cz)
+    let d = 0
+    let e
+    e = Math.abs(sampler((ax+bx)/2,(az+bz)/2) - (ya+yb)/2); if (e > d) d = e
+    e = Math.abs(sampler((bx+cx)/2,(bz+cz)/2) - (yb+yc)/2); if (e > d) d = e
+    e = Math.abs(sampler((cx+ax)/2,(cz+az)/2) - (yc+ya)/2); if (e > d) d = e
+    e = Math.abs(sampler((ax+bx+cx)/3,(az+bz+cz)/3) - (ya+yb+yc)/3); if (e > d) d = e
+    return d
+  }
 
-  // Hard cap on iterations as a guard. log4 of (worst-case-block-side /
-  // maxEdge) ≈ 4 for LS at maxEdge=5; 8 is comfortable headroom.
-  for (let pass = 0; pass < 8; pass++) {
+  // Hard iteration cap (guard). A few extra passes for the steep adaptive
+  // micro-spots; the minEdge floor stops genuine runaway.
+  const PASSES = mode === "adaptive" ? 10 : 8
+  for (let pass = 0; pass < PASSES; pass++) {
     let changed = false
     const next = []
     for (const t of triList) {
@@ -579,17 +679,23 @@ function triangulateAndRefine(outer, holes, maxEdge) {
       const e01 = edgeSq(v0, v1)
       const e12 = edgeSq(v1, v2)
       const e20 = edgeSq(v2, v0)
-      if (e01 < maxEdgeSq && e12 < maxEdgeSq && e20 < maxEdgeSq) {
-        next.push(t)
-        continue
+      const longest = Math.max(e01, e12, e20)
+      let split
+      if (mode === "adaptive") {
+        // Always split monstrous edges (the coarse cap keeps overlays anchored);
+        // otherwise split only where the terrain bends past tol AND the longest
+        // edge is still above the minEdge floor.
+        split = longest > maxEdgeSq ||
+                (longest > minEdgeSq && terrainDev(v0, v1, v2) > tol)
+      } else {
+        split = e01 > maxEdgeSq || e12 > maxEdgeSq || e20 > maxEdgeSq
       }
+      if (!split) { next.push(t); continue }
       changed = true
       const m01 = midpointIndex(v0, v1)
       const m12 = midpointIndex(v1, v2)
       const m20 = midpointIndex(v2, v0)
-      // Four sub-triangles preserving the parent's winding. Center
-      // triangle (m01, m12, m20) is co-wound with the parent — walk it
-      // in the same orientation as v0→v1→v2.
+      // Four sub-triangles preserving the parent winding.
       next.push([v0, m01, m20])
       next.push([m01, v1, m12])
       next.push([m20, m12, v2])
@@ -617,7 +723,7 @@ function triangulateAndRefine(outer, holes, maxEdge) {
 // Y per vertex = 0; the terrain-aware lift happens at runtime in the
 // vertex shader (patchTerrain perVertex via texture sampling at each
 // vertex's world XZ).
-function itemsToBuffers(items, { maxEdge = null } = {}) {
+function itemsToBuffers(items, { maxEdge = null, refine = null } = {}) {
   // Normalize to {outer, holes} so the rest of the function is uniform.
   const polys = []
   for (const it of items) {
@@ -632,7 +738,7 @@ function itemsToBuffers(items, { maxEdge = null } = {}) {
 
   // Triangulate (and optionally refine) each polygon independently, then
   // concatenate with vertex offsets.
-  const perPoly = polys.map(p => triangulateAndRefine(p.outer, p.holes, maxEdge))
+  const perPoly = polys.map(p => triangulateAndRefine(p.outer, p.holes, refine || maxEdge))
   let totalV = 0, totalI = 0
   for (const r of perPoly) { totalV += r.positions.length / 3; totalI += r.indices.length }
 
@@ -648,7 +754,16 @@ function itemsToBuffers(items, { maxEdge = null } = {}) {
   return { positions, indices }
 }
 
-export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette-square' } = {}) {
+export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette-square', refine: refineOpts = {} } = {}) {
+  // Adaptive ground-subdivision policy, resolved from opts.* over the module
+  // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
+  // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
+  // override tol/minEdge/maxEdge to retune the tri budget.
+  const refineMode    = refineOpts.mode    || GROUND_REFINE
+  const refineTol     = refineOpts.tol     != null ? refineOpts.tol     : GROUND_REFINE_TOL_M
+  const refineMinEdge = refineOpts.minEdge != null ? refineOpts.minEdge : GROUND_REFINE_MIN_EDGE_M
+  const refineMaxEdge = refineOpts.maxEdge != null ? refineOpts.maxEdge : GROUND_REFINE_MAX_EDGE_M
+  const refineSampler = refineMode === 'adaptive' ? getTerrainSampler() : null
   // Bake-target guard (2026-06-01). The app reads `baked/<INSTANCE.lookId>` —
   // for LS that's `baked/lafayette-square`. A bake into a look with no
   // `looks/<look>/` directory silently produces a PHANTOM `baked/<look>/`
@@ -803,10 +918,21 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
     // time so the lawn ribbon underneath a clipped face fill stays visible.
     const items = kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key)
     if (!items || items.length === 0) continue
-    const needsRefine = kind === 'face' || LANDSCAPE_OVERLAY_KEYS.has(key)
-    const { positions, indices } = itemsToBuffers(items, {
-      maxEdge: needsRefine ? REFINE_MAX_EDGE_M : null,
-    })
+    // Tiering: large soft land-use FILLS (faces) take the adaptive policy --
+    // that is where the budget lives and where coarse triangles are least
+    // visible. Landscape overlays keep the legacy fine uniform spacing
+    // (crisp-edged, tiny budget). Ribbon bands bypass refinement entirely.
+    const isSoftFill = kind === 'face'
+    const isHardOverlay = LANDSCAPE_OVERLAY_KEYS.has(key)
+    let refinePolicy = null
+    if (isSoftFill) {
+      refinePolicy = refineMode === 'adaptive' && refineSampler
+        ? { mode: 'adaptive', sampler: refineSampler, tol: refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge }
+        : { mode: 'uniform', maxEdge: REFINE_MAX_EDGE_M }
+    } else if (isHardOverlay) {
+      refinePolicy = { mode: 'uniform', maxEdge: HARDSCAPE_REFINE_MAX_EDGE_M }
+    }
+    const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy })
     if (indices.length === 0) continue
 
     // Color resolution: per-Look design.json wins, then the canonical
@@ -932,12 +1058,18 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
 // CLI
 async function main() {
   let look = 'lafayette-square', scene = 'lafayette-square'
+  const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
-    if ((m = arg.match(/^--look=(.+)$/)))   look  = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
+    if ((m = arg.match(/^--look=(.+)$/)))         look  = m[1]
+    else if ((m = arg.match(/^--scene=(.+)$/)))   scene = m[1]
+    // Adaptive ground-subdivision overrides (gated on argv/opts, never env):
+    else if ((m = arg.match(/^--refine=(.+)$/)))  refine.mode    = m[1]            // adaptive | uniform
+    else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
+    else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
+    else if ((m = arg.match(/^--refine-max-edge=(.+)$/)))refine.maxEdge = parseFloat(m[1])
   }
-  await bakeGround({ look, scene })
+  await bakeGround({ look, scene, refine })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
