@@ -1501,6 +1501,13 @@ const useCartographStore = create((set, get) => ({
   bakeLastMs: null,
   bakeError: null,
   markBakeStale: () => set({ bakeStale: true }),
+  // Loud signal for the silent-save-abort. `_saveOverlay` bails (to avoid
+  // clobbering overlay.json with an empty dict) when the store is un-hydrated
+  // — typically after a Vite HMR reset that resets state without re-firing
+  // _loadCenterlines. Surfaced in StatusBar so the operator SEES that Survey
+  // edits are not persisting and can hard-refresh to re-sync (instead of the
+  // edit silently vanishing on the next reload).
+  overlaySaveBlocked: false,
   // ── The SHAPE freeze (the Data Wall, autosaved on Survey-exit) ────────────
   // `shapeFrozenMs` bumps when the frozen `shape.json` is rewritten, so the
   // Section surface re-opens the fresh freeze (cache-bust). This is the LIGHT
@@ -1911,7 +1918,9 @@ const useCartographStore = create((set, get) => ({
       // Looks index loaded so it can validate the id, so chain through that.
       await get()._loadLooks()
       const design = await fetchLookDesign(get().activeLookId).catch(() => ({}))
-      set({ ...hydrateDesign(design, get), _designHydrated: true })
+      // Re-hydrated from disk → _saveOverlay's guard will pass again; clear
+      // the loud save-blocked flag.
+      set({ ...hydrateDesign(design, get), _designHydrated: true, overlaySaveBlocked: false })
     } catch (e) { console.warn('[skeleton] load failed:', e) }
   },
 
@@ -1930,10 +1939,12 @@ const useCartographStore = create((set, get) => ({
     // _loadCenterlines). In both cases an immediate save would wipe disk.
     if (!centerlineData.streets || centerlineData.streets.length === 0) {
       console.warn('[overlay] save aborted: centerlineData not loaded')
+      set({ overlaySaveBlocked: true })
       return
     }
     if (!_designHydrated) {
       console.warn('[overlay] save aborted: design not hydrated')
+      set({ overlaySaveBlocked: true })
       return
     }
     // Geometry edits stale the active Look's bake (centerlines/measures/caps
@@ -1991,6 +2002,8 @@ const useCartographStore = create((set, get) => ({
     // Look's design.json (see _saveDesignDebounced). Returned so callers that
     // POST a dependent /bake (the toy reset path) can await the write landing
     // first — the flush-before-dependent-POST hazard.
+    // The save is going through — clear any prior loud "edits not saving" flag.
+    if (get().overlaySaveBlocked) set({ overlaySaveBlocked: false })
     return saveOverlay({ version: 1, streets: out }, get().scene)
   },
 
