@@ -294,6 +294,11 @@ export default function BlockGeometryV2Debug({
   const sidewalkVisible           = layerVis?.sidewalk  !== false
   const treelawnVisible           = layerVis?.treelawn  !== false
   const lotVisible                = layerVis?.lot       !== false
+  const medianVisible             = layerVis?.median    !== false
+  // Per-land-use face visibility ('lu-<class>' key — matches bake-ground
+  // groupLayerId + BakedGround.isGroupVisible). Lets a Designer LU toggle
+  // hide that class live, WYSIWYG with the slab. Unset = visible.
+  const luVisible = (lu) => layerVis?.[`lu-${lu}`] !== false
   // Non-street ribbon visibility. Five kinds with one row each in the
   // Stage Surfaces panel; all default-visible. Routed through buildPathRibbons
   // (same helper bake-ground.js consumes), so Designer + slab cannot drift.
@@ -336,6 +341,7 @@ export default function BlockGeometryV2Debug({
   }
   const asphaltCol  = colorFor('asphalt')
   const highwayCol  = colorFor('highway')
+  const medianCol   = colorFor('median')   // layerColors['median'] — same source the slab bakes (WYSIWYG)
   const curbCol     = colorFor('curb')
   const treelawnCol = colorFor('treelawn')
   const sidewalkCol = colorFor('sidewalk')
@@ -640,7 +646,16 @@ export default function BlockGeometryV2Debug({
     let dead = false, done = false
     fetch(`${import.meta.env.BASE_URL}baked/${scene}/shape.json${freezeTag ? `?t=${freezeTag}` : ''}`)
       .then(r => (r.ok ? r.json() : null))
-      .then(d => { done = true; if (!dead) setFrozenShape(Array.isArray(d) && d.length ? d : null) })
+      .then(d => {
+        done = true
+        if (dead) return
+        // [G1] New shape.json form is { tiles, highway }; legacy was a bare tiles
+        // array (no highway). Normalize to { tiles, highway } so the frozen path
+        // always knows the grade-sep group (empty for legacy freezes).
+        const tiles = Array.isArray(d) ? d : (Array.isArray(d?.tiles) ? d.tiles : null)
+        const highway = Array.isArray(d) ? [] : (Array.isArray(d?.highway) ? d.highway : [])
+        setFrozenShape(tiles && tiles.length ? { tiles, highway } : null)
+      })
       .catch(e => { done = true; console.warn('[BlockGeometryV2Debug] no frozen shape artifact (Section falls back to live build):', e); if (!dead) setFrozenShape(null) })
     // Abort mid-flight (tool flipped / re-mount): clear the key so the next
     // activation refetches instead of silently falling back to the live build.
@@ -658,7 +673,7 @@ export default function BlockGeometryV2Debug({
     // stay absent. So the FILL re-strokes live off the frozen curb when you swap a
     // strip, while the curb sits still — SECTION.md §4.
     let sg
-    try { sg = sectionOpen(frozenShape, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms) }
+    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -669,6 +684,7 @@ export default function BlockGeometryV2Debug({
       sidewalk: ringsToFlatGeo(sg.sidewalk, 0.030, true),
       curb:     ringsToFlatGeo(sg.curb,     0.035, true),
       asphalt:  ringsToFlatGeo(sg.asphalt,  0.040, true),
+      highway:  ringsToFlatGeo(frozenShape.highway, 0.015, true),   // G1 — frozen grade-sep highways (sibling group, not tile-derived)
       block:    ringsToFlatGeo(sg.block,    0.008, true),   // frozen block silhouette, under the LU paint
       blockRings: sg.block,   // raw iA rings — handle anchoring (one geometry truth)
       curbRings: sg.curb || [],
@@ -699,6 +715,7 @@ export default function BlockGeometryV2Debug({
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
       highway:  ringsToFlatGeo(tg.highway,  0.015, true),   // above LU faces, below the ribbon network — grade-sep shows in its corridor, occluded by local roads
+      highwayRings: tg.highway || [],   // G1 — raw grade-sep rings, frozen alongside the tiles so non-Survey views + slab restore highways
       block:    ringsToFlatGeo(tg.block,    0.010, true),   // Survey block-polygon fill
       blockRings: tg.block,   // raw iA rings — handle anchoring (one geometry truth)
       // Raw band rings for the path-ribbon parcel clip (mirrors bake-ground's
@@ -725,7 +742,13 @@ export default function BlockGeometryV2Debug({
   const latestShapeArtifactRef = useRef(null)
   useEffect(() => {
     const art = tileGeos?._shapeArtifact
-    if (surveyActive && art && art.length) latestShapeArtifactRef.current = art
+    // [G1] Freeze the per-tile shape AND the top-level grade-sep highway rings
+    // as a sibling group ({ tiles, highway }) — highways aren't tile-shaped, so
+    // they can't ride a tile, and the bare-array artifact dropped them from every
+    // non-Survey view (regression 4924d9a). Now Section/Design restore them.
+    if (surveyActive && art && art.length) {
+      latestShapeArtifactRef.current = { tiles: art, highway: tileGeos.highwayRings || [] }
+    }
   }, [surveyActive, tileGeos])
   const wasSurveyRef = useRef(surveyActive)
   useEffect(() => {
@@ -1024,7 +1047,12 @@ export default function BlockGeometryV2Debug({
     curb:              makeMaterial(curbCol,     PRI.curb,     bandFade, { measureActive, surveyActive }),
     cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, bandFade, { surveyActive, editing: surveyEditing }),
     cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { surveyActive, editing: surveyEditing }),
-  }), [makeMaterial, asphaltCol, highwayCol, treelawnCol, sidewalkCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade])
+    // Median — a grass face between paired carriageways. Colored from
+    // layerColors['median'] (the slab's source, not luColors) so the panel's
+    // Median color edit previews live; faceFade + PRI.residential to sit with
+    // the LU faces it lives among.
+    median:            makeMaterial(medianCol,   PRI.residential, faceFade, { measureActive, surveyActive, editing: surveyEditing }),
+  }), [makeMaterial, asphaltCol, highwayCol, medianCol, treelawnCol, sidewalkCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade, faceFade])
 
   // Non-street ribbons (alley/footway/cycleway/steps/path). Pavement-only
   // strips buffered from each ribbon's pavedWidth via the shared helper
@@ -1162,9 +1190,10 @@ export default function BlockGeometryV2Debug({
     // skipped entirely in these modes (its memo returns null), so the render
     // provably cannot reach the chain graph, and idle viewing costs no live
     // buildTileGround. Same band materials as the live view (WYSIWYG, just frozen).
-    // ⚠️ No highway/perimeter mesh: those aren't in the artifact (not tile-shaped);
-    // they stay Survey/Stage concerns until the artifact grows — so grade-separated
-    // roads don't draw in Design/Measure (a known gap, was already true for Measure).
+    // [G1] Grade-sep highways NOW freeze as a sibling group in shape.json
+    // ({ tiles, highway }) and draw here — the regression where they vanished from
+    // Design/Measure (4924d9a routed non-Survey views to the frozen path, which
+    // dropped them) is restored. (Perimeter-fill still stays Survey/Stage-only.)
     if (sectionFrozen && sectionGeos) {
       return (
         <group>
@@ -1172,9 +1201,14 @@ export default function BlockGeometryV2Debug({
             <mesh geometry={sectionGeos.block} renderOrder={PRI.residential} receiveShadow
               material={tileLuFallback} />
           )}
-          {!hideLandUse && lotVisible && sectionGeos.lu?.map(({ lu, geo }) => (
+          {!hideLandUse && lotVisible && sectionGeos.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
             <mesh key={`flu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
               material={tileLuMats.get(lu) || tileLuFallback} />
+          ))}
+          {/* Median — own toggle (layerVis.median) + own material (layerColors),
+              independent of the parcel/lot toggle. */}
+          {!hideLandUse && medianVisible && sectionGeos.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
+            <mesh key={`fmed:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={bandMats.median} />
           ))}
           {treelawnVisible && sectionGeos.treelawn?.map(({ lu, geo }) => (
             <mesh key={`ftl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
@@ -1188,6 +1222,12 @@ export default function BlockGeometryV2Debug({
           )}
           {asphaltVisible && sectionGeos.asphalt && (
             <mesh geometry={sectionGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
+          )}
+          {/* G1 — grade-sep highways: above LU faces, below the local ribbon network
+              (same render order as the live Survey branch), so the freeway shows in
+              its corridor and is occluded where local roads cross it. */}
+          {highwayVisible && sectionGeos.highway && (
+            <mesh geometry={sectionGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
           )}
           {PATH_KINDS.map(kind => (
             PATH_VISIBLE[kind] && pathGeoByKind[kind] && (
@@ -1205,6 +1245,11 @@ export default function BlockGeometryV2Debug({
             <mesh geometry={tileGeos.block} renderOrder={PRI.residential}
               material={surveyBlockMat} />
           )}
+          {/* G1 — grade-sep highways show in Survey too (the corridor is part of
+              the frozen SHAPE the operator eyes); same material/order as elsewhere. */}
+          {highwayVisible && tileGeos?.highway && (
+            <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
+          )}
           {curbVisible && tileGeos?.curb && (
             <mesh geometry={tileGeos.curb} renderOrder={PRI.sidewalk}
               material={surveyCurbFillMat} />
@@ -1221,9 +1266,14 @@ export default function BlockGeometryV2Debug({
     }
     return (
       <group>
-        {!hideLandUse && lotVisible && tileGeos?.lu?.map(({ lu, geo }) => (
+        {!hideLandUse && lotVisible && tileGeos?.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
           <mesh key={`lu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
             material={tileLuMats.get(lu) || tileLuFallback} />
+        ))}
+        {/* Median — own toggle (layerVis.median) + own material (layerColors),
+            independent of the parcel/lot toggle. */}
+        {!hideLandUse && medianVisible && tileGeos?.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
+          <mesh key={`med:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={bandMats.median} />
         ))}
         {treelawnVisible && tileGeos?.treelawn?.map(({ lu, geo }) => (
           <mesh key={`tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow

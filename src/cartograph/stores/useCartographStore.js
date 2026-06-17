@@ -1509,7 +1509,10 @@ const useCartographStore = create((set, get) => ({
   // the operator ever running a bake (WALL.md §4; "autosave on exit").
   shapeFrozenMs: null,
   freezeShape: async (artifact) => {
-    if (!artifact || !artifact.length) return
+    // Artifact is the { tiles, highway } freeze object (G1); tolerate a legacy
+    // bare tiles array too. Skip empties so we never persist a hollow freeze.
+    const tiles = Array.isArray(artifact) ? artifact : artifact?.tiles
+    if (!tiles || !tiles.length) return
     const scene = get().scene
     try {
       await saveShapeFreeze(artifact, scene)

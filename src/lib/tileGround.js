@@ -641,6 +641,12 @@ export function extractFaces(streets) {
 // across rebuilds. Returns null (caller falls back to the live walk) when
 // the artifact carries no tiles (toy / pre-D2 data) or a skelId no longer
 // resolves (stale artifact — topology must then be re-frozen, not papered).
+// [F — EDGE OF MAP] The skelId a perimeter tile's map-edge carries (frozen by
+// derive.js's D2 freeze when it injects the boundary ring as closing edges). It
+// resolves to NO street: sentinel streetIdx -1 → edgeDepth returns 0 → land-use
+// floods to the boundary, no curb/sidewalk on the map edge. Shared with derive.js.
+export const BOUNDARY_EDGE_SKEL = '__boundary__'
+
 export function tilesFromFrozen(frozen, streets) {
   if (!Array.isArray(frozen) || !frozen.length) return null
   const idxBySkelId = new Map()
@@ -654,6 +660,13 @@ export function tilesFromFrozen(frozen, streets) {
     if (!Array.isArray(ring) || !Array.isArray(fe) || ring.length !== fe.length || ring.length < 3) return null
     const edges = []
     for (const e of fe) {
+      if (e?.skelId === BOUNDARY_EDGE_SKEL) {
+        // Map edge: no street → sentinel idx, zero depth (edgeDepth handles
+        // measures[-1] === undefined → 0). LU floods to the boundary.
+        const forward = e.side === 'right'
+        edges.push({ streetIdx: -1, forward, side: forward ? 'right' : 'left', boundary: true })
+        continue
+      }
       const si = idxBySkelId.get(e?.skelId)
       if (si === undefined) return null
       const forward = e.side === 'right'
@@ -2657,7 +2670,15 @@ export function buildTileGround(ribbons, opts = {}) {
     // (RIBBONS §3.3). The 3rd arg is now a spacing override (meters), not a sample
     // count — see smoothChain. 1.5 m keeps ramp bends kink-free post-RDP.
     const WIDE_SPACING = 1.5
-    const sm = smooth > 0 ? (smoothChain(s.points, smooth, WIDE_SPACING, junctionKeys) || s.points) : s.points
+    // [G1 quality] ALWAYS resample the grade-sep centerline smooth at WIDE_SPACING,
+    // independent of the global STREET_SMOOTH knob (pinned to 0 for local streets
+    // because smoothing FEEDS the fragile concentric curb offset — POLYGON-FIRST §3).
+    // Highways/ramps stroke FLAT (no concentric ped offset), so they carry none of
+    // that fold-spike risk; smoothing them only removes facets. The smoothed curve
+    // is what the freeze/bake captures → frozen views + slab show clean ramps, no
+    // facets (the brief's "freeze the tessellated curve" bar). The `t` seed (1.5)
+    // is moot here — WIDE_SPACING overrides it as the resample spacing (smoothChain).
+    const sm = smoothChain(s.points, 1.5, WIDE_SPACING, junctionKeys) || s.points
     const hw = Math.max(s.measure?.left?.pavementHW || 0, s.measure?.right?.pavementHW || 0)
     if (hw <= 1e-6) continue
     ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))

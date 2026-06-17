@@ -317,6 +317,14 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
   pushClipperRings('sidewalk', pr.sidewalk)
   for (const [lu, rings] of Object.entries(pr.treelawnByLu)) pushClipperRings(`treelawn:${lu}`, rings)
   for (const [lu, rings] of Object.entries(pr.luByClass)) {
+    // [G4] The divided median is a derived face in luByClass, but it bakes as a
+    // `mat` group ('median'): colored from layerColors['median'], gated by
+    // layerVis['median'], grass-shaded by BakedGround (GRASS_MATERIALS). Route it
+    // to byMaterial so PAINT_ORDER's ['mat','median'] paints it. Without this it
+    // lands in byFaceUse under a 'median' key that no ['face',…] entry consumes,
+    // so the median silently dropped from every slab. Other LU classes stay
+    // faces (byFaceUse → luColors).
+    if (lu === 'median') { pushClipperRings('median', rings); continue }
     const polys = ringsToHoledPolys(rings)
     if (polys.length) byFaceUse.set(lu, (byFaceUse.get(lu) || []).concat(polys))
   }
@@ -344,7 +352,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon) {
       pushClipperRings(kind, rings)
     }
   }
-  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact }
+  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [] }
 }
 
 function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
@@ -683,7 +691,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
   // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
   // conditional is gone — a scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact } = buildTileBakeShape(ribbons, design, stencil.clipPolygon)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -908,7 +916,11 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // THE WALL · Phase D — serialize the frozen shape artifact: the per-tile shape
   // sectionPass consumes (iA, runs+measure, vertR, tl/sw, lu, tips), the single
   // source Section reads with no chain. Additive — ground.json/bin are unchanged.
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify(shapeArtifact))
+  // [G1] Wrap the per-tile artifact + the top-level grade-sep highway rings as a
+  // sibling group ({ tiles, highway }) so the frozen Section/Design views restore
+  // highways (the bare-array form dropped them — regression 4924d9a). The slab's
+  // own `highway` mat group is unaffected; this is the Section-side freeze.
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [] }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

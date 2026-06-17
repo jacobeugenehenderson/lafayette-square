@@ -73,10 +73,12 @@ const DEFAULT_MATERIAL_COLORS = {
 
 // Tab catalog — keys match bake material/layer ids so the row binding is
 // straightforward. `kind: 'layer'` reads/writes layerColors+layerVis;
-// `kind: 'lu'` reads/writes luColors; `kind: 'material'` reads/writes
-// materialColors (3D-scene props that never reach the SVG bake).
-// Visibility toggle is shown for 'layer' kind only — that's where the
-// bake honors `layerVis` to skip materials in the published SVG.
+// `kind: 'lu'` reads/writes luColors (color) + layerVis['lu-<id>'] (vis);
+// `kind: 'material'` reads/writes materialColors (3D-scene props that never
+// reach the SVG bake).
+// Visibility toggle is shown for 'layer' AND 'lu' kinds — both reach the
+// bake's `layerVis` gate (layers off their own id, land-use faces off
+// `lu-<id>`; bake-ground.js groupLayerId + BakedGround isGroupVisible).
 const TABS = [
   {
     key: 'streets',
@@ -117,6 +119,11 @@ const TABS = [
       { id: 'institutional',     label: 'Institutional', kind: 'lu' },
       { id: 'recreation',        label: 'Recreation',  kind: 'lu' },
       { id: 'industrial',        label: 'Industrial',  kind: 'lu' },
+      // Divided-road median — a derived grass face, but it bakes as a `mat`
+      // group ('median', layerColors + layerVis['median'], grass-shaded by
+      // BakedGround), so it's a 'layer' row, not 'lu'. Sits with land-use in
+      // the panel because the operator reasons about it as a block surface.
+      { id: 'median',            label: 'Median',      kind: 'layer' },
     ],
   },
   {
@@ -348,9 +355,14 @@ export default function CartographSurfaces() {
   const tab = TABS.find(t => t.key === activeTab) || TABS[0]
   const selectedItem = selectedId ? tab.items.find(i => i.id === selectedId) : null
 
+  // layerVis key for an item: bake layers (incl. median) key by their own id;
+  // land-use faces key by `lu-<class>` — matching bake-ground.js groupLayerId
+  // ('lu-'+key for faces) and BakedGround.isGroupVisible. 'material' kinds have
+  // no bake-vis gate.
+  const visKey = (item) => (item.kind === 'lu' ? `lu-${item.id}` : item.id)
   const isVisible = (item) => {
-    if (item.kind !== 'layer') return true       // visibility only on bake layers
-    return layerVis[item.id] !== false           // unset = visible
+    if (item.kind !== 'layer' && item.kind !== 'lu') return true   // vis only on bake layers + LU faces
+    return layerVis[visKey(item)] !== false                        // unset = visible
   }
   const setColor = (item, color) => {
     if (item.kind === 'lu')       setLuColor(item.id, color)
@@ -466,12 +478,12 @@ export default function CartographSurfaces() {
               </div>
             )}
 
-            {selectedItem.kind === 'layer' && (
+            {(selectedItem.kind === 'layer' || selectedItem.kind === 'lu') && (
               <div className="flex items-center gap-2">
                 <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 60 }}>Visible</span>
                 <input type="checkbox"
                   checked={isVisible(selectedItem)}
-                  onChange={() => toggleLayerVis(selectedItem.id)}
+                  onChange={() => toggleLayerVis(visKey(selectedItem))}
                   style={{ accentColor: 'var(--vic-gold)' }} />
                 <span className="text-caption" style={{ color: 'var(--on-surface-subtle)' }}>
                   {isVisible(selectedItem) ? 'shown' : 'hidden in this Look'}
