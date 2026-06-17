@@ -104,30 +104,30 @@ A walk-around is **street view that translates**: same 1.73 m eye, same look-aro
 - **A noise/filler star field** rotated as a rigid group for sky fill.
 - **The sky dome** — a 4-band operator-authored gradient (`GradientSky`), weather-modified (cloud cover, turbidity, sunset potential), with `skyGain` darkening the *dome only* at night (lamps + lit windows hold their authored strength).
 
-### 3.2 The drawn constellation figures — mounted, gated, **default-off**
-> ⚠️ **Corrects a stale claim.** `ls/reference/RUNTIME-DELTA.md` (K.3 / RD.3) calls `PlanetariumOverlay` "unmounted dead code." **It is not.** That grep checked `Scene.jsx` / `LafayetteScene.jsx` / `App.jsx` and missed that the mount is **one level down, inside `CelestialBodies`** — repoint or retire that note.
+### 3.2 The drawn constellation figures — always-on, gold lines, spectral nodes ✅ LANDED
+> ⚠️ **Corrects a stale claim.** `ls/reference/RUNTIME-DELTA.md` (K.3 / RD.3) once called `PlanetariumOverlay` "unmounted dead code." **It is not** — the mount is **one level down, inside `CelestialBodies`** (`Scene.jsx:759` mounts that). RD.3 is corrected/closed.
 
-The actual wiring (`CelestialBodies.jsx:937-962`):
+The overlay (`PlanetariumOverlay.jsx`) draws, for the 88 IAU constellations in `src/data/planetarium/constellations.json`: **graphic lines** + **vertex nodes** + **name labels**, plus named-star + planet labels. Mounted by `CelestialBodies.jsx:962` behind `constellationsVisible`.
+
+**Visibility — always-on in street view** (LANDED 2026-06-17 `779aded`). The old gate (`viewMode!=browse && constellations × nightFactor > 0.05`, channel default 0 → never showed) is replaced by:
 
 ```js
-const constellationsVisible = viewMode !== 'browse'
-  && (constellationsVal * constellationsNightFactor) > 0.05
-...
-{constellationsVisible && <PlanetariumOverlay />}
+const constellationsVisible =
+  viewMode === 'planetarium'                                   // Street: ALWAYS
+  || (viewMode === 'hero' && constellationsNightFactor > 0.05) // Hero: night only (clean landing)
+  || (viewMode !== 'browse' && constellationsVal > 0.05)       // operator force-on override (future param)
 ```
 
-So the constellation **lines, vertex dots, and name labels** (88 IAU constellations from `src/data/planetarium/constellations.json`, plus named stars) render when **all three** hold:
-1. **mode is Hero or Street** (never Browse), AND
-2. it's **deep night** — `constellationsNightFactor` ramps in only as the sun drops below ~0.05 rad, AND
-3. the operator's **`constellations` channel** is dialed above ~0.05.
+So street view always shows the figures; Hero shows them at night; Browse never. The operator `constellations` channel is **retained as a force-on override** so a future deliberate parameterization needs no re-plumbing (Jacob 2026-06-17: "visible all the time … perhaps we will [parameterize]").
 
-**The channel defaults to 0** (`CONSTELLATIONS_FLAT_DEFAULTS`), so an un-authored Look shows **stars but no drawn figures**.
+**The look — gold figures, real-temperature joints** (LANDED 2026-06-17, spectral-node pass):
+- **Lines + name labels stay GOLD** (`#c4a265`) — deliberately, the **Grand Central Terminal ceiling** aesthetic (Jacob).
+- **Nodes are colored by their real star's spectral color.** A constellation vertex *is* a real star, so `vertexStarColor()` matches it to the catalog (`bright_stars.json`, 1.5° tolerance) and tints the node by that star's **B–V color index** (`ci`) → hot blue-white / gold / cool red by temperature. White-hot core fading out to the true color; degree-≥3 junctions keep their 4-pointed rays. This makes the figure *informative* at its joints while the gold lines hold the look.
+- **Shared SSoT:** the `ci → RGB` ladder lives once in **`src/lib/starColor.js`** (`bvToRGB`), used by both the main catalog field (`CelestialBodies`) and the overlay nodes — no forked copy, so every star recolors together if the ladder ever changes.
 
-> ▶ **Decision (Jacob, 2026-06-17): this gate was never really parameterized on purpose, and constellations can simply be visible all the time.** The night-factor + channel-default-0 is incidental plumbing, not intended doctrine. The likely direction is **always-on** (drop or pin the gate) — or we parameterize it deliberately later. Either way it's a small, well-understood change; **not a concern.** The figures render correctly when shown — the question is only *when* to show them, and "always" is a fine answer.
-
-Two known follow-ups when we do touch it:
-- **Smooth opacity fade** vs. today's **binary mount** (`:939-941` — the value isn't yet propagated into `PlanetariumOverlay`'s sub-materials, so it pops on/off). Matters more if the gate stays time-of-day; moot if always-on.
-- **Milky Way** is authored-but-disabled ("once re-enabled," `ls/FEATURES.md:46`) — the `milkyWay` channel + ~17 MB texture exist. This is the seam into the larger planetarium build-out (§3.4).
+**Open follow-ups (not blocking):**
+- **Smooth opacity fade** vs. today's **binary mount** — moot now that street view is always-on; revisit only if the gate is re-parameterized.
+- **Milky Way** authored-but-disabled — the seam into the larger planetarium build-out (§3.4).
 
 ### 3.3 Where the sky is authored
 The whole celestial envelope is **SC.1 channels** authored in Cartograph Stage (`CartographSkyLight.jsx`), keyframed across time-of-day, baked into `scene.json`, and consumed per-frame by `CelestialBodies` (the *same component* Stage and Meteorologist mount — one-consumer doctrine). Channels: `sky`, `ambient`, `hemi`, `dirSun`, `dirMoon`, `constellations`, `milkyWay`, `skyGain`. Home: `cartograph/STAGE.md §SC.1`.
@@ -183,12 +183,12 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 
 | Thread | Layer | Status / decision |
 |---|---|---|
+| **Desktop double-click → drop to street** | camera | ✅ **LANDED** `779aded` — 450 ms detection window; animates down via CameraRig |
+| **Constellations always-on + spectral nodes + gold lines** | sky | ✅ **LANDED** 2026-06-17 — always-on in street view; gold Grand-Central figures; nodes colored by real B–V spectral color (§3.2) |
 | **Walk-around mode** (§2.5) | camera | the planned evolution of street view — **sequenced *after* everything else**; designed-not-built. Real work = mobile input + collision |
 | **Planetarium build-out** (§3.4): Milky Way anim → planets → meteors → aurora | sky | the vision for the look-up half; **not yet scheduled**, dependency-ordered. Milky Way is the entry move |
-| **Constellations always-on** (drop/pin the night gate) | sky | **accepted as a small change** — gate was incidental; "always visible" is a fine answer. Not a concern |
-| **Repoint/retire the stale `RUNTIME-DELTA.md` K.3 "unmounted" note** | docs | cheap accord repair — overlay IS mounted via `CelestialBodies` (§3.2) |
 | **Tier-2 street bark (Brief 10C) + LOD dispatch** | trees | **accepted as-is for now**; promotes to required when walk-around lands |
-| **Smooth constellation opacity fade** | sky | follow-up; moot if constellations go always-on |
+| **Smooth constellation opacity fade** | sky | follow-up; moot now street view is always-on; revisit only if re-parameterized |
 | **Street-view entry discoverability** | camera | open design question; merges with walk-around entry |
 
 ---
@@ -201,9 +201,10 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 - `src/preview/cameraTween.js` — the shared transition state machine + `easeInOutCubic`.
 
 **Sky / constellations**
-- `src/components/CelestialBodies.jsx` — sky dome, sun, moon, stars; mounts `PlanetariumOverlay` (`:962`); `constellationsVisible` gate (`:951`).
-- `src/components/PlanetariumOverlay.jsx` — constellation lines / dots / labels + named stars (+ planet markers).
-- `src/data/bright_stars.json`, `src/data/planetarium/{constellations,named_stars,planets}.json` — the catalogs.
+- `src/components/CelestialBodies.jsx` — sky dome, sun, moon, stars; mounts `PlanetariumOverlay`; the `constellationsVisible` always-on gate.
+- `src/components/PlanetariumOverlay.jsx` — constellation gold lines / spectral nodes (`vertexStarColor`) / gold labels + named stars (+ planet markers).
+- `src/lib/starColor.js` — `bvToRGB`, the shared B–V→RGB spectral-color SSoT (main field + overlay nodes).
+- `src/data/bright_stars.json` (ra/dec/mag/**ci**), `src/data/planetarium/{constellations,named_stars,planets}.json` — the catalogs.
 - `src/components/Atmosphere.jsx` — volumetric clouds (couples to the sky's sun/sky color).
 - Authoring: `src/cartograph/CartographSkyLight.jsx`, `src/cartograph/skyLightChannels.js`, `cartograph/bake-scene.js` → `scene.json` SC.1 channels.
 

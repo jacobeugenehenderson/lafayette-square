@@ -6,6 +6,8 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import namedStarsData from '../data/planetarium/named_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import planetsData from '../data/planetarium/planets.json'
+import brightStars from '../data/bright_stars.json'
+import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
 
 const DEG = Math.PI / 180
@@ -16,6 +18,27 @@ const R = SKY_RADIUS * 0.88
 
 const sinLat = Math.sin(LATITUDE * DEG)
 const cosLat = Math.cos(LATITUDE * DEG)
+
+// A constellation vertex IS a real star — match it to the catalog and color the
+// node by that star's B–V spectral color (hot-blue → cool-red), so the figure is
+// informative at its joints while the connecting LINES stay gold (the Grand
+// Central Terminal ceiling look). Generous 1.5° tolerance absorbs epoch/rounding
+// drift; an unmatched vertex falls back to a warm white. (Same match metric as
+// CelestialBodies' membership flag; same bvToRGB ladder — one SSoT.)
+const _STAR_MATCH2 = (1.5 * DEG) * (1.5 * DEG)
+function vertexStarColor(raDeg, decDeg) {
+  const raR = raDeg * DEG, decR = decDeg * DEG
+  const cosDec = Math.cos(decR)
+  let best = _STAR_MATCH2, bi = -1
+  for (let i = 0; i < brightStars.length; i++) {
+    const s = brightStars[i]
+    const dRA = (s.ra * DEG - raR) * cosDec
+    const dDec = s.dec * DEG - decR
+    const d2 = dRA * dRA + dDec * dDec
+    if (d2 < best) { best = d2; bi = i }
+  }
+  return bi >= 0 ? bvToRGB(brightStars[bi].ci) : [1.0, 0.95, 0.85]
+}
 
 // Billboard text: always face camera, always right-side-up on screen
 function orientOnDome(obj, camera) {
@@ -220,17 +243,26 @@ function ConstellationDots() {
     const geo = new THREE.BufferGeometry()
     const positions = new Float32Array(uniqueStars.length * 3)
     const degrees = new Float32Array(uniqueStars.length)
-    for (let i = 0; i < uniqueStars.length; i++) degrees[i] = starDegrees[i]
+    const colors = new Float32Array(uniqueStars.length * 3)
+    for (let i = 0; i < uniqueStars.length; i++) {
+      degrees[i] = starDegrees[i]
+      const c = vertexStarColor(uniqueStars[i][0], uniqueStars[i][1])
+      colors[i * 3] = c[0]; colors[i * 3 + 1] = c[1]; colors[i * 3 + 2] = c[2]
+    }
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
     geo.setAttribute('aDegree', new THREE.BufferAttribute(degrees, 1))
+    geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3))
 
     const mat = new THREE.ShaderMaterial({
       uniforms: {},
       vertexShader: `
         attribute float aDegree;
+        attribute vec3 aColor;
         varying float vDegree;
+        varying vec3 vColor;
         void main() {
           vDegree = aDegree;
+          vColor = aColor;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           float baseSize = vDegree >= 3.0 ? 1200.0 : 800.0;
           gl_PointSize = baseSize * (800.0 / length(mv.xyz));
@@ -241,6 +273,7 @@ function ConstellationDots() {
       `,
       fragmentShader: `
         varying float vDegree;
+        varying vec3 vColor;
         #define PI 3.14159265359
         void main() {
           vec2 uv = (gl_PointCoord - 0.5) * 2.0;
@@ -262,9 +295,10 @@ function ConstellationDots() {
 
           float alpha = max(star, max(halo, rays));
 
-          // White-hot center fading to warm gold
-          float whiteness = 1.0 - smoothstep(0.0, 0.3, d);
-          vec3 color = mix(vec3(1.0, 0.91, 0.69), vec3(1.0), whiteness);
+          // White-hot center fading out to the star's TRUE spectral color
+          // (blue-white, gold, or red by temperature) — the informative part.
+          float whiteness = 1.0 - smoothstep(0.0, 0.35, d);
+          vec3 color = mix(vColor, vec3(1.0), whiteness);
 
           if (alpha < 0.01) discard;
           gl_FragColor = vec4(color * alpha, alpha);

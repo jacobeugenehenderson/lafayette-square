@@ -37,6 +37,7 @@ const SKY_GAIN_DEFAULT_CHANNEL       = { values: SKY_GAIN_FLAT_DEFAULTS }
 import brightStars from '../data/bright_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
+import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
@@ -671,25 +672,19 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     const decRad = new Float32Array(N)
     const starColors = new Float32Array(N * 3)
     const starSizes = new Float32Array(N)
+    const _bvOut = [0, 0, 0]
 
     for (let i = 0; i < N; i++) {
       const star = brightStars[i]
       raRad[i] = star.ra * DEG
       decRad[i] = star.dec * DEG
 
-      // B-V color index → RGB (Ballesteros' formula approximation)
-      const bv = star.ci
-      let r, g, b
-      if (bv < -0.2) { r = 0.55; g = 0.65; b = 1.0 }
-      else if (bv < 0.0) { r = 0.7 + bv; g = 0.75 + bv * 0.5; b = 1.0 }
-      else if (bv < 0.4) { r = 0.9 + bv * 0.25; g = 0.92 + bv * 0.1; b = 1.0 - bv * 0.5 }
-      else if (bv < 0.8) { r = 1.0; g = 0.95 - (bv - 0.4) * 0.35; b = 0.8 - (bv - 0.4) * 0.6 }
-      else if (bv < 1.2) { r = 1.0; g = 0.81 - (bv - 0.8) * 0.3; b = 0.56 - (bv - 0.8) * 0.4 }
-      else if (bv < 1.6) { r = 1.0; g = 0.69 - (bv - 1.2) * 0.25; b = 0.4 - (bv - 1.2) * 0.2 }
-      else { r = 1.0; g = 0.55; b = 0.3 }
-      starColors[i * 3] = r
-      starColors[i * 3 + 1] = g
-      starColors[i * 3 + 2] = b
+      // B–V color index → RGB (shared SSoT, src/lib/starColor.js — same ladder
+      // the constellation overlay nodes use, so the figures match the field).
+      bvToRGB(star.ci, _bvOut)
+      starColors[i * 3] = _bvOut[0]
+      starColors[i * 3 + 1] = _bvOut[1]
+      starColors[i * 3 + 2] = _bvOut[2]
 
       // Size from magnitude: brighter = bigger point
       const magNorm = (6.0 - star.mag) / 7.5 // 0..1
