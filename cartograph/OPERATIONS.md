@@ -55,4 +55,70 @@ GPU profiler · phone-mode · layer-toggle matrix · TOD scrub. Walks the *shipp
 - **The bake-target guard:** an unflagged bake targets `lafayette-square`.
 - Server edits (`cartograph/serve.js`) require a `carto` restart — the browser + bake scripts auto-pick-up, but the long-lived server does not (`ARCHITECTURE.md`).
 
-*Provenance: Boz 2026-06-01 (seed); populated 2026-06-14 from the FEATURES operator-knob migration. The operator-manual counterpoint to FEATURES.*
+## Save → ship — the lifecycle, the git tree, and the troubleshooting door
+
+> **The door + the knobs for "the tree is dirty / how do I save / why is staging stale / it works here but not there."** Written so a future troubleshoot is a *lookup*, not a forensic. The bake *mechanism* is `BAKE.md`; the slab *byte format* is `SLAB-CONTRACT.md`; this is the **operator's** view of save-and-ship. Grounded against `serve.js`, the workflows, and `.gitignore` (verified 2026-06-17).
+
+### Source vs. derived — the one distinction that ends the confusion
+
+Everything in the tree is **one of two things.** Knowing which ends most "is this dirty diff real?" questions on sight.
+
+| | **SOURCE** (you author it — intent) | **DERIVED** (the machine bakes it — a shadow of source) |
+|---|---|---|
+| **Files** | `public/looks/<id>/design.json` (the SHAPE + Look SSoT — Survey widths/corners + Stage materials/sky) · `clean/overlay.json` (Survey edits) · the raw set (`raw/osm.json`, `survey.json`, `elevation.json`, `measurements.json`) · `neighborhood_boundary.json` | `clean/map.json` · `src/data/ribbons.json` · `public/baked/<id>/shape.json` · `ground.json`+`ground.bin`+`ground.lightmap.png` · `scene.json` · `public/baked/default.json` (trees) · `public/looks/index.json` |
+| **Who writes it** | the operator, via the tools (autosave) | the bake (`/looks/:id/bake`, see `BAKE.md §2`) |
+| **If you lose it** | gone — it's intent, not regenerable | regenerate it: re-bake from source |
+| **Edit it by hand?** | yes — that's authoring (or a curated datum fix, `SURVEY.md`) | **never** — edit the source, re-bake |
+
+**The rule:** to *change* the map, edit **source** and re-bake. A hand-edit to a **derived** file is a shadow-edit — it comes back wrong on the next bake (the same lesson as `RIBBONS §1` / `ORIENTATION` "fix the centerline, not the shadow").
+
+### Why the tree goes dirty — noise vs. real
+
+The geometry bakes are **deterministic**: same source in → byte-identical `ground.bin` / `ribbons.json` / `map.json` / `shape.json` out (everything routes through `writeIfChanged`, `io.js`). So a derived-file diff is one of exactly two things:
+
+- **NOISE — discard it.** Three files carry a `Date.now()` stamp that changes on *every* bake even when nothing semantic moved: `scene.json` (`bakedAt`, `bake-scene.js`), `public/looks/index.json` (`updatedAt`/`bakedAt`, `serve.js`), `public/baked/default.json` (`generatedAt`). A diff that touches **only** those timestamp lines = a no-op re-bake. Throw it away.
+- **REAL — decide it.** A diff in the *geometry* of `ground.bin` / `ribbons.json` / `map.json` / `shape.json` means the source genuinely changed (a width edit, a corner, a new survey value). Keep it only if you meant the edit.
+
+> **Fast triage:** `git diff --stat` — if the only changes are `scene.json` / `index.json` / `default.json` at ~2 lines each, it's pure timestamp noise. If `ground.bin` / `ribbons.json` / `map.json` moved, real geometry changed — look at `design.json` to see which width/corner you (or an autosave) touched.
+
+### Save / discard ceremony
+
+The dev server **autosaves** source on every edit (Survey/Stage debounce → `overlay.json` / `design.json`) and **re-freezes** `shape.json` on Survey-exit — so the tree is *expected* to drift while authoring. Reaching a clean state is deliberate:
+
+- **To discard churn** (the default habit while iterating): from a quiet tree (no active drag), `git restore .` returns to the last commit. Safe — source autosaves are already on disk; this just throws away uncommitted derived churn + unwanted source edits.
+- **To save a slab** (you authored something to keep): bake it (⌥-click a bake button = force, or `POST /looks/<id>/bake?force=1`) so the derived artifacts match source, then commit **source + derived together** in one commit (`bake(...)` or `feat(...)`). The slab must travel as a coherent set (`SLAB-CONTRACT §9` rule 1) — never commit a `design.json` edit without its re-baked artifacts, or the deploy ships intent the slab doesn't reflect.
+- **⚠️ The dev server reads the *main worktree's* branch.** Work done in an agent worktree is **invisible** on the lit app (`:5173`) until merged into the checked-out branch. "Still not fixed" usually means "not merged yet," not "the fix failed."
+
+### How it ships — local bake → commit → CI serves as-is
+
+**CI does not bake.** Both workflows run `npm ci` + `vite build` (+ `--base` for staging) and publish the committed `public/` as static files. There is **no `pipeline.js` / `bake-*.js` in CI.** Consequence: **whatever slab you committed is exactly what deploys** — a stale or un-baked commit ships stale geometry to the public. Bake + commit *before* you push.
+
+| Branch | Workflow | Deploys to |
+|---|---|---|
+| `main` | `deploy.yml` | **lafayette-square.com (PROD)** |
+| `cartograph-looks-pass-ab` (trunk) | `staging.yml` | **`lafayette-square-staging` (GitHub Pages)** |
+| any feature branch (e.g. `curb-offset-draw`) | — | **nothing** (pushing the branch deploys no site) |
+
+Promote to staging = fast-forward/merge the feature branch into the trunk and push; promote to prod = merge the trunk into `main` and push. *(Derived artifacts are intentionally **git-tracked**, not ignored — that's what lets CI stay a plain `vite build`. The alternative — gitignore them and bake in CI — is a deliberate, un-taken fork; see the named levers below.)*
+
+### The troubleshooting door — symptom → knob
+
+| Symptom | The door (go here, no forensic) |
+|---|---|
+| Tree always dirty, but no geometry changed | Timestamp **noise** (`scene.json`/`index.json`/`default.json`) — §"noise vs. real" above. Discard. |
+| Staging/prod shows **stale geometry** | You didn't bake+commit before push — CI serves the committed slab as-is (§"how it ships"). Re-bake, commit, push. |
+| Wrong in **Survey**, right in **Section/bake** | The **live-load path**, not the frozen geometry — measure-resolution / overlay / the vite bundle (`ARCHITECTURE.md §2.1`). |
+| Section shows **no change** after a CLI bake | The `shape.json` cache-buster (`?t=freezeTag`, `BlockGeometryV2Debug`) — a CLI bake can't bump client state. Exit Survey (autosave-freeze) or click **Bake** to bump it. |
+| A **baked artifact looks wrong** | First ask "is this the *live re-stroke's* defect, faithfully captured?" — the bake is the messenger, not the bug (`BAKE.md §4`). Diagnose **upstream** (the live construction), never patch the output. |
+| Proxy / node render disagrees with the app | **The operator's eye is the gate** (`[[feedback_proxy_render_is_not_the_operator_eye]]`). The proxy misleads in both directions — trust the lit app. |
+| A SHAPE/curb silhouette is wrong | Upstream — Survey · skeleton · prebake. *How a ribbon bends* is Section (FILL). Name the layer before you fix (`CLAUDE.md` route gate · `PIPELINE §Wall`). |
+
+### Named levers (deliberate, not yet built)
+
+Two formalizations are *chosen but un-built* (2026-06-17 — the path-A decision), tracked here so we turn them on purpose, not by accident:
+1. **Kill the timestamp noise** — make `scene.json`/`index.json`/`default.json` omit (or stabilize) their `Date.now()` fields so a no-op re-bake is byte-identical and the tree stops going dirty for free.
+2. **One-command save ceremony** — a single CLI action: flush source → force-bake → report what *semantically* changed → commit the slab. Replaces eyeballing the dirty tree.
+
+*(With path-A also: a reproducibility gate — CI/pre-push check that the committed slab equals a fresh bake from source — to catch a stale slab before it ships.)*
+
+*Provenance: Boz 2026-06-01 (seed); populated 2026-06-14 from the FEATURES operator-knob migration; **save→ship lifecycle + troubleshooting door added 2026-06-17** (the forensic-to-lookup conversion). The operator-manual counterpoint to FEATURES.*

@@ -64,6 +64,17 @@ To trigger a re-deploy without code changes:
 git commit --allow-empty -m "Trigger deploy" && git push
 ```
 
+### Staging (preview before prod)
+
+There is a **second** Pages target for previewing slab/look work before it reaches `lafayette-square.com`:
+
+| Branch | Workflow | Deploys to |
+|---|---|---|
+| `main` | `deploy.yml` | **lafayette-square.com** (prod, this section) |
+| `cartograph-looks-pass-ab` (the trunk) | `staging.yml` | **`lafayette-square-staging`** (GitHub Pages preview) |
+
+Push a feature branch to the trunk to stage it; push the trunk to `main` to ship. **CI does not bake** — both workflows are `vite build` + serve the *committed* slab, so the artifacts you committed are exactly what deploys (bake + commit before you push). The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
+
 ### Build-time environment (GitHub Secrets)
 
 These are injected during `npm run build` in the Actions workflow:

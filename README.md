@@ -161,6 +161,7 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 | **Polygon-first / the Data Wall** | **`POLYGON-FIRST.md`** · `PREBAKE.md §4–5` · `WALL.md` | freeze topology (✅) + the curb (open); intersection-everywhere sub-thread retired 2026-06-13 |
 | **Correctness suite** (one RED-until-true invariant per bug-class) | **`POLYGON-FIRST.md §5`** · `SIEVE-DETECTOR-FINDINGS.md` · `LOOM-TOPO-FINDINGS.md` · `THROAT-JUNCTION-FINDINGS.md` · harness `scratch/correctness-detector.mjs` | the detector is the deliverable, not the fixes; validated against the 35 curated |
 | **Frame forensics** (the evidence base) | `OSM-FORENSICS.md` + `-EVAL.md` · `OSM2STREETS-GROUNDING.md` | "OSM or us" = 100% us; the standard gets us correct |
+| **Save → ship lifecycle** (dirty tree · source-vs-derived · how to commit/discard a slab · why staging is stale · the symptom→door table) | **`cartograph/OPERATIONS.md §Save → ship`** · `BAKE.md` (the bake mechanism) · `SLAB-CONTRACT.md` (byte format) · `PUBLISH.md` (deploy procedures) | derived files are deterministic — a dirty diff is **timestamp noise** (discard) or **real geometry** (decide); CI serves the **committed** slab as-is (no bake in CI) |
 
 ### Cross-domain / strategic (repo root)
 
