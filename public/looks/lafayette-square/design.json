@@ -288,6 +288,11 @@
       "scale": 1
     }
   },
+  "smaa": {
+    "values": {
+      "value": 1
+    }
+  },
   "shadow": {
     "values": {
       "size": 52,
