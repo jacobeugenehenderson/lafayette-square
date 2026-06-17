@@ -2388,6 +2388,49 @@ export function deriveLayers(highways) {
       const ra = find(s.id), rb = find(s.continuesAs)
       if (ra !== rb) parent.set(ra < rb ? rb : ra, ra < rb ? ra : rb)   // attach to the lexicographically-smaller root
     }
+    // [Brief B — same-corridor-join roadId, 2026-06-16 / §10] Extend the union
+    // BEYOND continuesAs: two chains of the SAME corridor whose ends MEET and
+    // CONTINUE through the node (outward tangents ~opposite — not an L-corner, not
+    // a divided A|B pair, not a cw↔spine transition) are one physical road through
+    // a same-corridor-join (the junctionMap stamps `same-corridor-join` for exactly
+    // these — derive.js ~:3740). Union their roadId so the curb's cornerAt reads a
+    // THROUGH-node (the inward offset runs straight, no miter step) AND width
+    // reconciliation (~:2489, MAX per side per roadId) gives ONE width — else the
+    // offset steps at the join (e.g. Mackay 3.96→5.49) → two close corners → the
+    // fillet terminates non-tangent → the perpendicular-join curb tab (Brief B).
+    // Same family as the continuesAs junction-curb bump; the join is topological
+    // (ends meet) not a name-seam, so it needs its own union. Mirrors the
+    // junctionMap gate, computed early for roadId; skelStreets points are {x,z}.
+    {
+      const corOf = (s) => s.phase?.corridorName || s.name
+      const isCwR = (r) => /^carriageway/.test(r || '')
+      const nrm = (vx, vz) => { const L = Math.hypot(vx, vz) || 1; return [vx / L, vz / L] }
+      const vk = (p) => p.x.toFixed(3) + ',' + p.z.toFixed(3)
+      const ends = new Map()   // vKey → [{ id, out:[x,z], corr, pairKey, role }]
+      for (const s of skelStreets) {
+        if (s.id == null || !s.points || s.points.length < 2) continue
+        for (const end of ['start', 'end']) {
+          const p = s.points
+          const [nd, ax] = end === 'start' ? [p[0], p[1]] : [p[p.length - 1], p[p.length - 2]]
+          const k = vk(nd)
+          if (!ends.has(k)) ends.set(k, [])
+          ends.get(k).push({ id: s.id, out: nrm(ax.x - nd.x, ax.z - nd.z), corr: corOf(s), pairKey: s.phase?.pairKey || null, role: s.phase?.role || '' })
+        }
+      }
+      const DOT_CONTINUES = -0.6
+      for (const list of ends.values()) {
+        for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+          const P = list[i], Q = list[j]
+          if (P.id === Q.id || P.corr !== Q.corr) continue                              // same corridor only
+          if (P.pairKey && P.pairKey === Q.pairKey && P.role !== Q.role) continue       // the divided A|B pair itself
+          if (isCwR(P.role) !== isCwR(Q.role)) continue                                 // cw↔spine = a Source-1 transition, not a join
+          if (P.out[0] * Q.out[0] + P.out[1] * Q.out[1] > DOT_CONTINUES) continue        // L-corner / parallel — not a through-join
+          add(P.id); add(Q.id)
+          const ra = find(P.id), rb = find(Q.id)
+          if (ra !== rb) parent.set(ra < rb ? rb : ra, ra < rb ? ra : rb)
+        }
+      }
+    }
     return (id) => (id != null && parent.has(id)) ? find(id) : id
   })()
 

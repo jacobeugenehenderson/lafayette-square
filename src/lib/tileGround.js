@@ -2554,13 +2554,49 @@ export function buildTileGround(ribbons, opts = {}) {
     // never make a tile worse: adopt the de-spurred ring ONLY if it reduces THAT
     // tile's own band-sliver count (a genuine fold needle → fewer; a legit thin
     // median arm whose tip the spur-test would cut → same or more, so kept intact).
-    // Curve-fit knob only (smooth>0); the smooth=0 live map stays the frozen
-    // 191-ring baseline. [D6a robust-offset, 2026-06-14, POLYGON-FIRST §3]
-    if (smooth > 0 && isMedianTile) {
+    // [Brief B mech #2, 2026-06-16 / §10] GENERALIZED past the median+smooth case:
+    // a tight-bend offset fold (offsetRingVariable folding past the medial axis at
+    // ANY tile) leaves the same near-reversal spur → filletRing rounds it into a
+    // curb-band sliver / the perpendicular-join needle (e.g. plain [-422,-172]).
+    // Gate on a cheap has-spur pre-scan (>165° in/out turn, mirroring dropFoldSpurs'
+    // SPUR_COS) so the no-spur grid skips the work and stays byte-identical; the
+    // self-validation makes adoption strictly sliver-reducing, so it can never
+    // regress a clean tile. [D6a robust-offset, POLYGON-FIRST §3]
+    const ringHasSpur = (r) => {
+      if (!r || r.length < 4) return false
+      const n = r.length
+      for (let i = 0; i < n; i++) {
+        const a = r[(i - 1 + n) % n], v = r[i], b = r[(i + 1) % n]
+        const ix = v[0] - a[0], iy = v[1] - a[1], ox = b[0] - v[0], oy = b[1] - v[1]
+        const li = Math.hypot(ix, iy) || 1, lo = Math.hypot(ox, oy) || 1
+        if ((ix / li) * (ox / lo) + (iy / li) * (oy / lo) < SPUR_COS) return true
+      }
+      return false
+    }
+    if (blockRings.some(ringHasSpur)) {
       const cleaned = blockRings.map(dropFoldSpurs).filter(r => r.length >= 3)
       if (cleaned.length && bandSliverCount(filletRings(cleaned, cornerRfn, []), cw) < bandSliverCount(filletRings(blockRings, cornerRfn, []), cw)) blockRings = cleaned
     }
-    const iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+    let iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+    // [Brief B mech #4, 2026-06-16 / §10] filletRing can rejoin a clamped arc into a
+    // near-180° degenerate NEEDLE — a sub-0.15 m reversal spike (the "coincident-point
+    // arc" the median note above describes) born in the fillet, NOT in blockRings, so
+    // the pre-fillet strip can't see it. It propagates into the frozen curb + asphalt
+    // silhouette (e.g. [-421,-172] 176°, [657,-691] 140°). Strip it POST-fillet, but
+    // self-validating on the SAME band-sliver metric → adopt only when it strictly
+    // lowers slivers, so a clean curb is byte-identical and a real thin arm is kept.
+    // Invisible to the eye (<0.15 m) but keeps the frozen curb clean for Section's
+    // inward offset + drops the iA self-int the needle would otherwise mint.
+    // Gate: adopt only when it (a) removes ≥1 near-reversal vertex AND (b) preserves
+    // area within 0.5 m² — a direct needle test, NOT bandSliverCount (which skips
+    // sub-1 m legs, so it can't see these sub-0.15 m needles). Area-preservation
+    // guarantees a real thin feature is never amputated; a clean curb is untouched.
+    if (iA.some(ringHasSpur)) {
+      const spurCount = (rings) => rings.reduce((c, r) => c + (r.length >= 4 ? (() => { const n = r.length; let k = 0; for (let i = 0; i < n; i++) { const a = r[(i-1+n)%n], v = r[i], b = r[(i+1)%n]; const ix=v[0]-a[0],iy=v[1]-a[1],ox=b[0]-v[0],oy=b[1]-v[1]; const li=Math.hypot(ix,iy)||1,lo=Math.hypot(ox,oy)||1; if ((ix/li)*(ox/lo)+(iy/li)*(oy/lo) < SPUR_COS) k++ } return k })() : 0), 0)
+      const areaOf = (rings) => rings.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
+      const cleaned = iA.map(dropFoldSpurs).filter(r => r.length >= 3)
+      if (cleaned.length && spurCount(cleaned) < spurCount(iA) && Math.abs(areaOf(cleaned) - areaOf(iA)) < 0.5) iA = cleaned
+    }
     // Tag each achieved fillet with its corner key (the centerline NODE it
     // rounded + that node's two tile-edge legs) so the authoring handle can read
     // the true curb arc — one corner truth, no drift. CORNER-DRIVEN injective
