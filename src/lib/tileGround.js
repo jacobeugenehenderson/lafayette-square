@@ -1280,7 +1280,7 @@ function tileSliceKey(st, blockCustoms) {
 // buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
 // Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
 // already tolerates the serialized roundTipKeys array).
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null) {
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
   // Section drag (which writes a fresh blockCustoms object every frame but
@@ -1306,25 +1306,38 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     if (cache) cache.set(i, bundle)
     return bundle
   }
-  const Aacc = [], Cacc = [], Wacc = [], blockRaw = []
-  const tlByLu = {}, luByLu = {}
+  // Partition into REST (opaque) and SELECTED-corridor (translucent) buckets so
+  // Section can render the selected block + neighbours translucent (the aerial
+  // reads through) while the rest stays opaque. selectedTileSet = the tile
+  // indices in the corridor; null/empty → everything is REST (prior behavior,
+  // bit-identical). The per-tile bundles are shared (cache), so this only forks
+  // the cheap final unions.
+  const mkAcc = () => ({ A: [], C: [], W: [], block: [], tl: {}, lu: {} })
+  const rest = mkAcc()
+  const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
   for (let i = 0; i < shapeTiles.length; i++) {
     const b = tileGeo(shapeTiles[i], i)
-    Aacc.push(...b.A); Cacc.push(...b.C); Wacc.push(...b.W); blockRaw.push(...b.block)
-    for (const k in b.tlByLu) (tlByLu[k] || (tlByLu[k] = [])).push(...b.tlByLu[k])
-    for (const k in b.luByLu) (luByLu[k] || (luByLu[k] = [])).push(...b.luByLu[k])
+    const acc = (sel && selectedTileSet.has(i)) ? sel : rest
+    acc.A.push(...b.A); acc.C.push(...b.C); acc.W.push(...b.W); acc.block.push(...b.block)
+    for (const k in b.tlByLu) (acc.tl[k] || (acc.tl[k] = [])).push(...b.tlByLu[k])
+    for (const k in b.luByLu) (acc.lu[k] || (acc.lu[k] = [])).push(...b.luByLu[k])
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
-  const treelawnByLu = {}, luByClass = {}
-  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = clip(unionRings(tlByLu[k]))
-  for (const k of Object.keys(luByLu)) luByClass[k]   = clip(unionRings(luByLu[k]))
-  return {
-    asphalt:  clip(unionRings(Aacc)),
-    curb:     clip(unionRings(Cacc)),
-    sidewalk: clip(unionRings(Wacc)),
-    treelawnByLu, luByClass,
-    block:    clip(blockRaw),
+  const finish = (acc) => {
+    const treelawnByLu = {}, luByClass = {}
+    for (const k of Object.keys(acc.tl)) treelawnByLu[k] = clip(unionRings(acc.tl[k]))
+    for (const k of Object.keys(acc.lu)) luByClass[k]   = clip(unionRings(acc.lu[k]))
+    return {
+      asphalt:  clip(unionRings(acc.A)),
+      curb:     clip(unionRings(acc.C)),
+      sidewalk: clip(unionRings(acc.W)),
+      treelawnByLu, luByClass,
+      block:    clip(acc.block),
+    }
   }
+  const out = finish(rest)
+  out.selected = sel ? finish(sel) : null
+  return out
 }
 
 export function buildTileGround(ribbons, opts = {}) {

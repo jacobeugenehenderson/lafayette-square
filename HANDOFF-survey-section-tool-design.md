@@ -53,7 +53,7 @@
 
 These are the *same* in Survey and Section — only the targets differ:
 - **Click-to-select** (centerline → fe), per-fe identity (W1 `feCustomKey`).
-- **Translucency-focus** — selected chain/fe + its block translucent (~0.55), context **opaque**. ⚠️ **This is by design (RIBBONS §5) — NOT a bug to "fix" toward all-translucent (misdiagnosed before).** Rebuilt against tiles in T3.
+- **Translucency-focus** — selected chain/fe + its block translucent (~0.55), context **opaque**. ⚠️ **This is by design (RIBBONS §5) — NOT a bug to "fix" toward all-translucent (misdiagnosed before).** Rebuilt against tiles in T3. ✅ **Section (frozen-path) translucency LANDED 2026-06-17** (`BlockGeometryV2Debug.jsx`): when Section moved to the frozen `sectionGeos` render (the 2026-06-16 perf gate) it dropped the selected-corridor translucency (a live-path feature) and rendered everything opaque — so the aerial stopped reading through on select. Restored *on the tile path* (the T3 direction): `sectionOpen` partitions the FILL into REST (opaque) + SELECTED-corridor (the `*Selected` 0.55 materials), the corridor = frozen tiles whose runs front the selected street's `skelId` (identity-only, chain-free — does **not** reach the dead figure-ground; the live path's `selectedAdjacentBlockKeys` geometric probe would). Curb stays solid. Grid-safe (un-selected path byte-identical). The Survey live path is untouched — no conflict between the two instantiations.
 - **Edit-entire-row vs edit-block** modes (fan-per-fe vs anchored-fe).
 - **Symmetric mirror** toggle (transient UI; applies to per-side widths in both tools).
 - **Anti-overlap handle stagger.**

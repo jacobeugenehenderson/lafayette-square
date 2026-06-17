@@ -680,6 +680,17 @@ export default function BlockGeometryV2Debug({
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
     if (sectionCacheRef.current.shape !== frozenShape) sectionCacheRef.current = { shape: frozenShape, map: new Map() }
+    // [Section translucency] Selected-corridor tiles = those whose runs front the
+    // selected street (its skelId) → the selected block + the across-street
+    // neighbour. Rendered translucent below so the hi-res aerial reads through.
+    // Identity-only (skelId), no chain geometry — the wall holds.
+    const selSkel = selectedStreet != null ? (liveStreets?.[selectedStreet]?.id) : null
+    let selSet = null
+    if (selSkel) {
+      selSet = new Set()
+      frozenShape.tiles.forEach((t, i) => { if ((t.runs || []).some(r => r.skelId === selSkel)) selSet.add(i) })
+      if (!selSet.size) selSet = null
+    }
     // ⛔ wall: the SHAPE stays frozen — every vertex of geometry comes from the
     // fetched silhouette (frozenShape). blockCustoms is passed for MATERIAL routing
     // ONLY (the per-edge LU↔SW override, keyed by the frozen run identity — design
@@ -687,7 +698,7 @@ export default function BlockGeometryV2Debug({
     // stay absent. So the FILL re-strokes live off the frozen curb when you swap a
     // strip, while the curb sits still — SECTION.md §4.
     let sg
-    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map) }
+    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map, selSet) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -705,8 +716,20 @@ export default function BlockGeometryV2Debug({
       sidewalkRings: sg.sidewalk || [],
       treelawnRings: Object.values(sg.treelawnByLu || {}).flat(),
       parkRings: (sg.luByClass && sg.luByClass.park) || [],
+      // The selected corridor (selected block + neighbours), composed separately so
+      // the render branch paints it translucent (opacity 0.55 → the aerial reads
+      // through). null when nothing is selected. Same yLifts as the opaque set —
+      // disjoint tiles, so no z-fight.
+      selected: sg.selected && {
+        lu:       perLu(sg.selected.luByClass,    0.010),
+        treelawn: perLu(sg.selected.treelawnByLu, 0.020),
+        sidewalk: ringsToFlatGeo(sg.selected.sidewalk, 0.030, true),
+        curb:     ringsToFlatGeo(sg.selected.curb,     0.035, true),
+        asphalt:  ringsToFlatGeo(sg.selected.asphalt,  0.040, true),
+        block:    ringsToFlatGeo(sg.selected.block,    0.008, true),
+      },
     }
-  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms])
+  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selectedStreet, liveStreets])
 
   const tileGeos = useMemo(() => {
     if (!isTileScene || !liveRibbons) return null
@@ -1157,6 +1180,23 @@ export default function BlockGeometryV2Debug({
     return out
   }, [makeMaterial, luColors, faceFade, measureActive, surveyActive, surveyEditing])
   const tileLuFallback = tileLuMats.get('residential')
+  // Translucent per-LU variants for the SELECTED corridor in Section (opacity
+  // 0.55 → the hi-res aerial reads through while authoring against it). Mirrors
+  // tileLuMats with selectedCorridor:true. Band layers (treelawn/sidewalk/
+  // asphalt) reuse the existing bandMats.*Selected; curb stays solid.
+  const tileLuMatsSelected = useMemo(() => {
+    const out = new Map()
+    const luSet = new Set([...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS)])
+    for (const lu of luSet) {
+      const col = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || DEFAULT_LU_COLORS.residential
+      out.set(lu, makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive, selectedCorridor: true }))
+    }
+    return out
+  }, [makeMaterial, luColors, faceFade, measureActive, surveyActive])
+  const tileLuFallbackSelected = tileLuMatsSelected.get('residential')
+  const medianSelected = useMemo(
+    () => makeMaterial(medianCol, PRI.residential, faceFade, { measureActive, surveyActive, selectedCorridor: true }),
+    [makeMaterial, medianCol, faceFade, measureActive, surveyActive])
   const tlLuFallback = bandMats.treelawn
 
   // ── Survey wireframe (tool === 'surveyor') ──────────────────────────────
@@ -1249,6 +1289,34 @@ export default function BlockGeometryV2Debug({
                 renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
             )
           ))}
+          {/* [Section translucency] The selected corridor (selected block +
+              neighbours) painted translucent (opacity 0.55) so the hi-res aerial
+              reads through while you author against it. Disjoint tiles from the
+              opaque set above, so they replace — not overlay — those fills. Curb
+              stays SOLID (the hardscape outline reads against the translucency). */}
+          {sectionGeos.selected && (<>
+            {!hideLandUse && lotVisible && sectionGeos.selected.block && (
+              <mesh geometry={sectionGeos.selected.block} renderOrder={PRI.residential} receiveShadow material={tileLuFallbackSelected} />
+            )}
+            {!hideLandUse && lotVisible && sectionGeos.selected.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
+              <mesh key={`fsel-lu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={tileLuMatsSelected.get(lu) || tileLuFallbackSelected} />
+            ))}
+            {!hideLandUse && medianVisible && sectionGeos.selected.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
+              <mesh key={`fsel-med:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={medianSelected} />
+            ))}
+            {treelawnVisible && sectionGeos.selected.treelawn?.map(({ lu, geo }) => (
+              <mesh key={`fsel-tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow material={bandMats.treelawnSelected} />
+            ))}
+            {sidewalkVisible && sectionGeos.selected.sidewalk && (
+              <mesh geometry={sectionGeos.selected.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalkSelected} />
+            )}
+            {curbVisible && sectionGeos.selected.curb && (
+              <mesh geometry={sectionGeos.selected.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
+            )}
+            {asphaltVisible && sectionGeos.selected.asphalt && (
+              <mesh geometry={sectionGeos.selected.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphaltSelected} />
+            )}
+          </>)}
         </group>
       )
     }
