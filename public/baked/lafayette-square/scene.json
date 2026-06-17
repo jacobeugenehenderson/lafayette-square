@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1781716116759,
+  "bakedAt": 1781727598701,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -75,8 +75,8 @@
     "treelawn": true,
     "building": true,
     "parking_lot": true,
-    "garden": false,
-    "playground": false,
+    "garden": true,
+    "playground": true,
     "swimming_pool": true,
     "pitch": true,
     "sports_centre": false,
@@ -85,14 +85,14 @@
     "tree_row": true,
     "alley": true,
     "footway": true,
-    "cycleway": true,
+    "cycleway": false,
     "steps": false,
-    "path": true,
+    "path": false,
     "park": true,
     "water": true,
     "tree": true,
     "lamp": true,
-    "fence": true,
+    "fence": false,
     "wall": false,
     "retaining_wall": false,
     "hedge": false,
@@ -195,7 +195,7 @@
   },
   "halo": {
     "values": {
-      "strength": 0.5,
+      "strength": 0.1,
       "color": "#b8c8d8"
     }
   },
@@ -276,11 +276,11 @@
   "heroKeyframes": [
     {
       "position": [
-        -339,
-        107,
-        371
+        -17,
+        63,
+        216
       ],
-      "fov": 22
+      "fov": 26
     },
     {
       "position": [
@@ -308,9 +308,9 @@
       "distance": 1670,
       "bearingX": 0.9487,
       "bearingZ": -0.3163,
-      "scale": 1.3,
+      "scale": 1.95,
       "rotation": 1.36,
-      "yOffset": 29,
+      "yOffset": 119,
       "footFade": 30,
       "uplightL_intensity": 0,
       "uplightL_color": "#ffd6a8",
