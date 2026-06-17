@@ -9,8 +9,8 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": false,
-    "parking_lot": false,
+    "building": true,
+    "parking_lot": true,
     "garden": false,
     "playground": false,
     "swimming_pool": true,
@@ -85,7 +85,7 @@
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.381,
-  "alleyCap": "square",
+  "alleyCap": "round",
   "labels": {
     "size": 3.75,
     "weight": 500,
@@ -539,7 +539,7 @@
   },
   "warmth": {
     "values": {
-      "value": 0.5
+      "value": 0.86
     }
   },
   "fill": {
@@ -549,7 +549,7 @@
   },
   "exposure": {
     "values": {
-      "value": 0.95
+      "value": 0.74
     }
   },
   "ao": {
@@ -750,14 +750,14 @@
     }
   },
   "openSections": {
-    "Streets": false,
-    "Blocks": false,
-    "Paths": false,
+    "Streets": true,
+    "Blocks": true,
+    "Paths": true,
     "Features": false,
-    "Labels": false,
+    "Labels": true,
     "HeroSubject": false,
     "Look": false,
-    "Land Cover": false,
+    "Land Cover": true,
     "Furniture": false
   },
   "trees": [

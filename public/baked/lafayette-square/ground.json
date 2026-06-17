@@ -39,10 +39,10 @@
       "color": "#5A8A3A",
       "renderOrder": 0,
       "polygonOffsetUnits": -1,
-      "vertexCount": 199048,
+      "vertexCount": 190582,
       "vertexByteOffset": 0,
-      "indexCount": 1116336,
-      "indexByteOffset": 9000804
+      "indexCount": 1069362,
+      "indexByteOffset": 9937692
     },
     {
       "kind": "face",
@@ -50,10 +50,10 @@
       "color": "#A87D3E",
       "renderOrder": 1,
       "polygonOffsetUnits": -2,
-      "vertexCount": 353832,
-      "vertexByteOffset": 2388576,
-      "indexCount": 2032797,
-      "indexByteOffset": 13466148
+      "vertexCount": 21318,
+      "vertexByteOffset": 2286984,
+      "indexCount": 114363,
+      "indexByteOffset": 14215140
     },
     {
       "kind": "face",
@@ -61,10 +61,10 @@
       "color": "#6A6A62",
       "renderOrder": 2,
       "polygonOffsetUnits": -3,
-      "vertexCount": 23219,
-      "vertexByteOffset": 6634560,
-      "indexCount": 127863,
-      "indexByteOffset": 21597336
+      "vertexCount": 37007,
+      "vertexByteOffset": 2542800,
+      "indexCount": 204663,
+      "indexByteOffset": 14672592
     },
     {
       "kind": "face",
@@ -72,10 +72,10 @@
       "color": "#6EA03E",
       "renderOrder": 3,
       "polygonOffsetUnits": -4,
-      "vertexCount": 58150,
-      "vertexByteOffset": 6913188,
-      "indexCount": 326136,
-      "indexByteOffset": 22108788
+      "vertexCount": 163333,
+      "vertexByteOffset": 2986884,
+      "indexCount": 938883,
+      "indexByteOffset": 15491244
     },
     {
       "kind": "face",
@@ -83,10 +83,10 @@
       "color": "#5E8A3A",
       "renderOrder": 4,
       "polygonOffsetUnits": -5,
-      "vertexCount": 13603,
-      "vertexByteOffset": 7610988,
-      "indexCount": 76785,
-      "indexByteOffset": 23413332
+      "vertexCount": 276318,
+      "vertexByteOffset": 4946880,
+      "indexCount": 1578402,
+      "indexByteOffset": 19246776
     },
     {
       "kind": "face",
@@ -94,219 +94,241 @@
       "color": "#888888",
       "renderOrder": 5,
       "polygonOffsetUnits": -6,
-      "vertexCount": 12609,
-      "vertexByteOffset": 7774224,
-      "indexCount": 69963,
-      "indexByteOffset": 23720472
+      "vertexCount": 12655,
+      "vertexByteOffset": 8262696,
+      "indexCount": 70335,
+      "indexByteOffset": 25560384
+    },
+    {
+      "kind": "mat",
+      "id": "parking_lot",
+      "color": "#6A6A62",
+      "renderOrder": 6,
+      "polygonOffsetUnits": -7,
+      "vertexCount": 24781,
+      "vertexByteOffset": 8414556,
+      "indexCount": 124674,
+      "indexByteOffset": 25841724
     },
     {
       "kind": "mat",
       "id": "swimming_pool",
       "color": "#4A7EB0",
-      "renderOrder": 6,
-      "polygonOffsetUnits": -7,
+      "renderOrder": 7,
+      "polygonOffsetUnits": -8,
       "vertexCount": 56,
-      "vertexByteOffset": 7925532,
+      "vertexByteOffset": 8711928,
       "indexCount": 132,
-      "indexByteOffset": 24000324
+      "indexByteOffset": 26340420
     },
     {
       "kind": "mat",
       "id": "pitch",
       "color": "#5E9E4A",
-      "renderOrder": 7,
-      "polygonOffsetUnits": -8,
+      "renderOrder": 8,
+      "polygonOffsetUnits": -9,
       "vertexCount": 162,
-      "vertexByteOffset": 7926204,
+      "vertexByteOffset": 8712600,
       "indexCount": 672,
-      "indexByteOffset": 24000852
+      "indexByteOffset": 26340948
     },
     {
       "kind": "mat",
       "id": "highway",
       "color": "#2D2D2C",
-      "renderOrder": 8,
-      "polygonOffsetUnits": -9,
-      "vertexCount": 5834,
-      "vertexByteOffset": 7928148,
-      "indexCount": 17562,
-      "indexByteOffset": 24003540
+      "renderOrder": 9,
+      "polygonOffsetUnits": -10,
+      "vertexCount": 13109,
+      "vertexByteOffset": 8714544,
+      "indexCount": 39387,
+      "indexByteOffset": 26343636
     },
     {
       "kind": "mat",
       "id": "treelawn:residential",
       "color": "#5A8A3A",
-      "renderOrder": 9,
-      "polygonOffsetUnits": -10,
-      "vertexCount": 7267,
-      "vertexByteOffset": 7998156,
-      "indexCount": 21267,
-      "indexByteOffset": 24073788
+      "renderOrder": 10,
+      "polygonOffsetUnits": -11,
+      "vertexCount": 6304,
+      "vertexByteOffset": 8871852,
+      "indexCount": 18420,
+      "indexByteOffset": 26501184
     },
     {
       "kind": "mat",
       "id": "treelawn:commercial",
       "color": "#A87D3E",
-      "renderOrder": 10,
-      "polygonOffsetUnits": -11,
-      "vertexCount": 5080,
-      "vertexByteOffset": 8085360,
-      "indexCount": 14310,
-      "indexByteOffset": 24158856
+      "renderOrder": 11,
+      "polygonOffsetUnits": -12,
+      "vertexCount": 1659,
+      "vertexByteOffset": 8947500,
+      "indexCount": 4821,
+      "indexByteOffset": 26574864
     },
     {
       "kind": "mat",
       "id": "treelawn:parking",
       "color": "#6A6A62",
-      "renderOrder": 11,
-      "polygonOffsetUnits": -12,
-      "vertexCount": 634,
-      "vertexByteOffset": 8146320,
-      "indexCount": 1824,
-      "indexByteOffset": 24216096
+      "renderOrder": 12,
+      "polygonOffsetUnits": -13,
+      "vertexCount": 984,
+      "vertexByteOffset": 8967408,
+      "indexCount": 2802,
+      "indexByteOffset": 26594148
     },
     {
       "kind": "mat",
       "id": "treelawn:recreation",
       "color": "#6EA03E",
-      "renderOrder": 12,
-      "polygonOffsetUnits": -13,
-      "vertexCount": 2153,
-      "vertexByteOffset": 8153928,
-      "indexCount": 6315,
-      "indexByteOffset": 24223392
+      "renderOrder": 13,
+      "polygonOffsetUnits": -14,
+      "vertexCount": 2479,
+      "vertexByteOffset": 8979216,
+      "indexCount": 7311,
+      "indexByteOffset": 26605356
     },
     {
       "kind": "mat",
       "id": "treelawn:park",
       "color": "#5E8A3A",
-      "renderOrder": 13,
-      "polygonOffsetUnits": -14,
-      "vertexCount": 972,
-      "vertexByteOffset": 8179764,
-      "indexCount": 2856,
-      "indexByteOffset": 24248652
+      "renderOrder": 14,
+      "polygonOffsetUnits": -15,
+      "vertexCount": 3384,
+      "vertexByteOffset": 9008964,
+      "indexCount": 9216,
+      "indexByteOffset": 26634600
     },
     {
       "kind": "mat",
       "id": "treelawn:unknown",
       "color": "#888888",
-      "renderOrder": 14,
-      "polygonOffsetUnits": -15,
-      "vertexCount": 675,
-      "vertexByteOffset": 8191428,
-      "indexCount": 2001,
-      "indexByteOffset": 24260076
+      "renderOrder": 15,
+      "polygonOffsetUnits": -16,
+      "vertexCount": 647,
+      "vertexByteOffset": 9049572,
+      "indexCount": 1911,
+      "indexByteOffset": 26671464
     },
     {
       "kind": "mat",
       "id": "sidewalk",
       "color": "#B8B2A4",
-      "renderOrder": 15,
-      "polygonOffsetUnits": -16,
-      "vertexCount": 22042,
-      "vertexByteOffset": 8199528,
-      "indexCount": 64536,
-      "indexByteOffset": 24268080
+      "renderOrder": 16,
+      "polygonOffsetUnits": -17,
+      "vertexCount": 22365,
+      "vertexByteOffset": 9057336,
+      "indexCount": 65142,
+      "indexByteOffset": 26679108
     },
     {
       "kind": "mat",
       "id": "curb",
       "color": "#A8826A",
-      "renderOrder": 16,
-      "polygonOffsetUnits": -17,
-      "vertexCount": 22124,
-      "vertexByteOffset": 8464032,
-      "indexCount": 66240,
-      "indexByteOffset": 24526224
+      "renderOrder": 17,
+      "polygonOffsetUnits": -18,
+      "vertexCount": 23733,
+      "vertexByteOffset": 9325716,
+      "indexCount": 71094,
+      "indexByteOffset": 26939676
     },
     {
       "kind": "mat",
       "id": "asphalt",
       "color": "#4A4A48",
-      "renderOrder": 17,
-      "polygonOffsetUnits": -18,
-      "vertexCount": 11126,
-      "vertexByteOffset": 8729520,
-      "indexCount": 33135,
-      "indexByteOffset": 24791184
+      "renderOrder": 18,
+      "polygonOffsetUnits": -19,
+      "vertexCount": 11774,
+      "vertexByteOffset": 9610512,
+      "indexCount": 34689,
+      "indexByteOffset": 27224052
+    },
+    {
+      "kind": "mat",
+      "id": "median",
+      "color": "#4E7A32",
+      "renderOrder": 19,
+      "polygonOffsetUnits": -20,
+      "vertexCount": 1895,
+      "vertexByteOffset": 9751800,
+      "indexCount": 5505,
+      "indexByteOffset": 27362808
     },
     {
       "kind": "mat",
       "id": "alley",
       "color": "#3E3E3C",
-      "renderOrder": 18,
-      "polygonOffsetUnits": -19,
-      "vertexCount": 917,
-      "vertexByteOffset": 8863032,
-      "indexCount": 2265,
-      "indexByteOffset": 24923724
+      "renderOrder": 20,
+      "polygonOffsetUnits": -21,
+      "vertexCount": 1961,
+      "vertexByteOffset": 9774540,
+      "indexCount": 5382,
+      "indexByteOffset": 27384828
     },
     {
       "kind": "mat",
       "id": "footway",
       "color": "#9A8E78",
-      "renderOrder": 19,
-      "polygonOffsetUnits": -20,
-      "vertexCount": 1593,
-      "vertexByteOffset": 8874036,
-      "indexCount": 4611,
-      "indexByteOffset": 24932784
+      "renderOrder": 21,
+      "polygonOffsetUnits": -22,
+      "vertexCount": 2506,
+      "vertexByteOffset": 9798072,
+      "indexCount": 7206,
+      "indexByteOffset": 27406356
     },
     {
       "kind": "mat",
       "id": "cycleway",
       "color": "#6EA070",
-      "renderOrder": 20,
-      "polygonOffsetUnits": -21,
-      "vertexCount": 230,
-      "vertexByteOffset": 8893152,
-      "indexCount": 636,
-      "indexByteOffset": 24951228
+      "renderOrder": 22,
+      "polygonOffsetUnits": -23,
+      "vertexCount": 335,
+      "vertexByteOffset": 9828144,
+      "indexCount": 939,
+      "indexByteOffset": 27435180
     },
     {
       "kind": "mat",
       "id": "path",
       "color": "#8E7E68",
-      "renderOrder": 21,
-      "polygonOffsetUnits": -22,
-      "vertexCount": 224,
-      "vertexByteOffset": 8895912,
-      "indexCount": 621,
-      "indexByteOffset": 24953772
+      "renderOrder": 23,
+      "polygonOffsetUnits": -24,
+      "vertexCount": 277,
+      "vertexByteOffset": 9832164,
+      "indexCount": 786,
+      "indexByteOffset": 27438936
     },
     {
       "kind": "mat",
       "id": "fence",
       "color": "#8A7E6E",
-      "renderOrder": 22,
-      "polygonOffsetUnits": -23,
+      "renderOrder": 24,
+      "polygonOffsetUnits": -25,
       "vertexCount": 4602,
-      "vertexByteOffset": 8898600,
+      "vertexByteOffset": 9835488,
       "indexCount": 10140,
-      "indexByteOffset": 24956256
+      "indexByteOffset": 27442080
     },
     {
       "kind": "mat",
       "id": "bikelane",
       "color": "#5EA070",
-      "renderOrder": 23,
-      "polygonOffsetUnits": -24,
+      "renderOrder": 25,
+      "polygonOffsetUnits": -26,
       "vertexCount": 620,
-      "vertexByteOffset": 8953824,
+      "vertexByteOffset": 9890712,
       "indexCount": 1560,
-      "indexByteOffset": 24996816
+      "indexByteOffset": 27482640
     },
     {
       "kind": "mat",
       "id": "stripe",
       "color": "#F2CE4A",
-      "renderOrder": 24,
-      "polygonOffsetUnits": -25,
+      "renderOrder": 26,
+      "polygonOffsetUnits": -27,
       "vertexCount": 3295,
-      "vertexByteOffset": 8961264,
+      "vertexByteOffset": 9898152,
       "indexCount": 8859,
-      "indexByteOffset": 25003056
+      "indexByteOffset": 27488880
     }
   ]
 }

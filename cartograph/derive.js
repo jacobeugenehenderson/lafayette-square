@@ -26,7 +26,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
-import { extractFaces } from '../src/lib/tileGround.js'
+import { extractFaces, BOUNDARY_EDGE_SKEL } from '../src/lib/tileGround.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1182,10 +1182,15 @@ export function deriveLayers(highways) {
   // Inject neighborhood boundary as closing edges (dense polyline so face
   // rings step through many short segments rather than one long chord —
   // avoids visible straight edges in the fade zone).
+  // boundaryPolyXZ is captured here (raw [x,z] pairs) and reused by the D2
+  // block-face freeze far below, which clips the face-streets to it + injects
+  // it as closing edges so the perimeter block faces CLOSE (Brief F edge-of-map).
+  let boundaryPolyXZ = null
   try {
     const boundaryData = JSON.parse(readFileSync(
       join(CARTOGRAPH_DIR, 'data', 'lafayette-square', 'neighborhood_boundary.json'), 'utf-8'
     ))
+    boundaryPolyXZ = boundaryData.boundary
     const boundaryRing = boundaryData.boundary.map(([x, z]) => ({ x, z }))
     if (boundaryRing.length > 2) {
       const first = boundaryRing[0], last = boundaryRing[boundaryRing.length - 1]
@@ -4118,12 +4123,87 @@ export function deriveLayers(highways) {
   // (L2 = D3, deferred to §HARDENING); the raw-OSM LU faces
   // (ribbons.faces) are untouched (C5 = D4).
   {
-    const faceStreets = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
-    ribbonsLayer.tiles = extractFaces(faceStreets).map(f => ({
+    let faceStreets = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
+    // [F — EDGE OF MAP] Close the perimeter block faces. The street network
+    // extends PAST the circular boundary (frame extent ≫ silhouette radius), so
+    // an undecorated extractFaces walk leaves the region between the outermost
+    // streets and the boundary OPEN (no edge bounds it on the outer side) → the
+    // perimeter faces never close → bare N/SE. FIX (boundary-trio "build full,
+    // crop LAST"): clip the face-streets to the boundary and inject the
+    // boundary ring AS closing edges, sharing nodes at the crossings (the SAME
+    // boundary already noded into the polygonize/LU-faces walk above). The
+    // perimeter faces then close into real frozen tiles. extractFaces does NOT
+    // node its input (unlike nodeEdges), so the crossing point is inserted into
+    // BOTH the clipped street endpoint AND the boundary ring — identical coords
+    // → identical 0.1 mm node. Boundary edges carry skelId '__boundary__'; the
+    // consumer (buildTileGround) resolves them to a zero-width MAP EDGE
+    // (edgeDepth → 0, land-use floods to the boundary, no curb/sidewalk on the
+    // map edge). These perimeter tiles are FROZEN in shape (not Survey-editable)
+    // but get land-use shaders + customs in Section like any tile.
+    const BOUNDARY_SKEL = BOUNDARY_EDGE_SKEL
+    if (boundaryPolyXZ && boundaryPolyXZ.length > 2) {
+      const bp = boundaryPolyXZ
+      const bn = bp.length
+      const pip = (px, pz) => { let inside = false; for (let i = 0, j = bn - 1; i < bn; j = i++) { const xi = bp[i][0], zi = bp[i][1], xj = bp[j][0], zj = bp[j][1]; if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside } return inside }
+      const segX = (ax, az, bx, bz, cx, cz, dx, dz) => {
+        const rX = bx - ax, rZ = bz - az, sX = dx - cx, sZ = dz - cz
+        const denom = rX * sZ - rZ * sX
+        if (Math.abs(denom) < 1e-12) return null
+        const t = ((cx - ax) * sZ - (cz - az) * sX) / denom
+        const u = ((cx - ax) * rZ - (cz - az) * rX) / denom
+        if (t <= 1e-9 || t >= 1 - 1e-9 || u < -1e-9 || u > 1 + 1e-9) return null
+        return { t, u }
+      }
+      const crossingsOnEdge = Array.from({ length: bn }, () => [])   // [{u, p}] per boundary edge
+      const clipStreet = (pts) => {
+        const out = []
+        let cur = pip(pts[0][0], pts[0][1]) ? [pts[0]] : null
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i], b = pts[i + 1]
+          const xs = []
+          for (let k = 0, j = bn - 1; k < bn; j = k++) {
+            const hit = segX(a[0], a[1], b[0], b[1], bp[j][0], bp[j][1], bp[k][0], bp[k][1])
+            if (hit) xs.push({ t: hit.t, u: hit.u, edge: j })
+          }
+          xs.sort((p, q) => p.t - q.t)
+          for (const x of xs) {
+            const P = [a[0] + (b[0] - a[0]) * x.t, a[1] + (b[1] - a[1]) * x.t]
+            crossingsOnEdge[x.edge].push({ u: x.u, p: P })
+            if (cur) { cur.push(P); if (cur.length >= 2) out.push(cur); cur = null } else { cur = [P] }
+          }
+          if (cur) cur.push(b)
+          else if (pip(b[0], b[1])) cur = [b]
+        }
+        if (cur && cur.length >= 2) out.push(cur)
+        return out
+      }
+      const clipped = []
+      for (const s of faceStreets) {
+        for (const pc of clipStreet(s.points)) clipped.push({ ...s, points: pc })
+      }
+      // Subdivide the boundary ring at the crossings (sorted along each edge),
+      // then close it — its segments become the perimeter faces' outer edges.
+      const ring = []
+      for (let i = 0; i < bn; i++) {
+        ring.push([bp[i][0], bp[i][1]])
+        for (const x of crossingsOnEdge[i].sort((m, q) => m.u - q.u)) ring.push(x.p)
+      }
+      ring.push([bp[0][0], bp[0][1]])
+      faceStreets = [...clipped, { points: ring, skelId: BOUNDARY_SKEL }]
+      const nCross = crossingsOnEdge.reduce((a, e) => a + e.length, 0)
+      console.log(`    [F] clipped face-streets to boundary (${clipped.length} pieces, ${nCross} crossings) → perimeter faces close`)
+    }
+    const fzTiles = extractFaces(faceStreets)
+    let nPerim = 0
+    ribbonsLayer.tiles = fzTiles.map(f => ({
       ring: f.ring.map(p => [p[0], p[1]]),
-      edges: f.edges.map(e => ({ skelId: faceStreets[e.streetIdx].skelId || faceStreets[e.streetIdx].name, side: e.side })),
+      edges: f.edges.map(e => {
+        const sk = faceStreets[e.streetIdx].skelId || faceStreets[e.streetIdx].name
+        if (sk === BOUNDARY_SKEL) nPerim++
+        return { skelId: sk, side: e.side }
+      }),
     }))
-    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology)`)
+    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology; ${nPerim} boundary edges)`)
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)

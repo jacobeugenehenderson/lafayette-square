@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1781508632264,
+  "bakedAt": 1781663262532,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -75,8 +75,8 @@
     "treelawn": true,
     "building": true,
     "parking_lot": true,
-    "garden": true,
-    "playground": true,
+    "garden": false,
+    "playground": false,
     "swimming_pool": true,
     "pitch": true,
     "sports_centre": false,
