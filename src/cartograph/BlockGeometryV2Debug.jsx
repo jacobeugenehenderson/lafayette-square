@@ -392,6 +392,13 @@ export default function BlockGeometryV2Debug({
   const debounceRef = useRef(null)
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
+    // [Section perf #2] The figure-ground V2 pass is DEAD in non-Survey views
+    // (Section/Design render from the frozen sectionGeos; V2 meshes never mount).
+    // But it's a ~2.5s whole-map rebuild that re-fired on every FILL edit's
+    // blockCustoms write — pure waste. Gate it on surveyActive: don't recompute
+    // in Section; on re-entering Survey the effect re-runs (surveyActive in deps)
+    // and refreshes the snapshot. (HANDOFF-section-perf.md root #2.)
+    if (!surveyActive) return
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null
       setDebouncedInputs({
@@ -410,7 +417,7 @@ export default function BlockGeometryV2Debug({
     // each tick resets the timer, so the full rebuild fires once ~250ms
     // after the edit settles — during the drag the selected chain is still
     // covered by the live overlay, so there's no mid-drag full rebuild.
-  }, [selectedStreet, blockCustoms, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, streetSmooth, useRingBandEmitter])
+  }, [surveyActive, selectedStreet, blockCustoms, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, streetSmooth, useRingBandEmitter])
 
   const { asphaltRounded, blockRounded, blockRoundedWithMeta, blockSharp, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockRoundedWithMeta: [], blockSharp: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
