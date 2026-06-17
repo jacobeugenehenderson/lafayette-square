@@ -11,7 +11,11 @@
     "minLon": -90.229,
     "maxLon": -90.207
   },
-  "elevation": null,
+  "elevation": {
+    "minElev": 136.25,
+    "maxElev": 169.29,
+    "sampleCount": 896
+  },
   "layers": {
     "pavement": [
       {
@@ -805650,7 +805654,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 149.71
     },
     {
       "ring": [
@@ -805691,7 +805695,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 149.8
     },
     {
       "ring": [
@@ -805744,7 +805748,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 149.7
     },
     {
       "ring": [
@@ -805797,7 +805801,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 148.77
     },
     {
       "ring": [
@@ -805838,7 +805842,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 148.81
     },
     {
       "ring": [
@@ -805871,7 +805875,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 148.49
     },
     {
       "ring": [
@@ -805908,7 +805912,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 149.16
     },
     {
       "ring": [
@@ -805965,7 +805969,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.82
     },
     {
       "ring": [
@@ -805998,7 +806002,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.8
     },
     {
       "ring": [
@@ -806039,7 +806043,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.58
     },
     {
       "ring": [
@@ -806072,7 +806076,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.74
     },
     {
       "ring": [
@@ -806109,7 +806113,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.89
     },
     {
       "ring": [
@@ -806150,7 +806154,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.29
     },
     {
       "ring": [
@@ -806183,7 +806187,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.2
     },
     {
       "ring": [
@@ -806228,7 +806232,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.9
     },
     {
       "ring": [
@@ -806269,7 +806273,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.82
     },
     {
       "ring": [
@@ -806314,7 +806318,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.58
     },
     {
       "ring": [
@@ -806355,7 +806359,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.24
     },
     {
       "ring": [
@@ -806404,7 +806408,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.77
     },
     {
       "ring": [
@@ -806437,7 +806441,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.11
     },
     {
       "ring": [
@@ -806474,7 +806478,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.62
     },
     {
       "ring": [
@@ -806519,7 +806523,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 147.52
     },
     {
       "ring": [
@@ -806552,7 +806556,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 147.99
     },
     {
       "ring": [
@@ -806593,7 +806597,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 147.16
     },
     {
       "ring": [
@@ -806642,7 +806646,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 147.13
     },
     {
       "ring": [
@@ -806707,7 +806711,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 147.77
     },
     {
       "ring": [
@@ -806736,7 +806740,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 144.41
     },
     {
       "ring": [
@@ -806765,7 +806769,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 144.66
     },
     {
       "ring": [
@@ -806794,7 +806798,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 144.76
     },
     {
       "ring": [
@@ -806827,7 +806831,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 145.83
     },
     {
       "ring": [
@@ -806860,7 +806864,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 144.61
     },
     {
       "ring": [
@@ -806897,7 +806901,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 145.5
     },
     {
       "ring": [
@@ -806934,7 +806938,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 145.47
     },
     {
       "ring": [
@@ -806975,7 +806979,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 145.48
     },
     {
       "ring": [
@@ -807008,7 +807012,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 146.1
     },
     {
       "ring": [
@@ -807049,7 +807053,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 146.54
     },
     {
       "ring": [
@@ -807086,7 +807090,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.17
     },
     {
       "ring": [
@@ -807127,7 +807131,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.06
     },
     {
       "ring": [
@@ -807168,7 +807172,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.32
     },
     {
       "ring": [
@@ -807209,7 +807213,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.62
     },
     {
       "ring": [
@@ -807242,7 +807246,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.66
     },
     {
       "ring": [
@@ -807275,7 +807279,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.79
     },
     {
       "ring": [
@@ -807324,7 +807328,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.83
     },
     {
       "ring": [
@@ -807365,7 +807369,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.99
     },
     {
       "ring": [
@@ -807398,7 +807402,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.86
     },
     {
       "ring": [
@@ -807439,7 +807443,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.98
     },
     {
       "ring": [
@@ -807480,7 +807484,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.69
     },
     {
       "ring": [
@@ -807525,7 +807529,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.59
     },
     {
       "ring": [
@@ -807570,7 +807574,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.48
     },
     {
       "ring": [
@@ -807607,7 +807611,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.32
     },
     {
       "ring": [
@@ -807648,7 +807652,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.2
     },
     {
       "ring": [
@@ -807685,7 +807689,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 147.11
     },
     {
       "ring": [
@@ -807726,7 +807730,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 146.89
     },
     {
       "ring": [
@@ -807755,7 +807759,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 145.27
     },
     {
       "ring": [
@@ -807816,7 +807820,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 148.51
     },
     {
       "ring": [
@@ -807849,7 +807853,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 142.7
     },
     {
       "ring": [
@@ -807882,7 +807886,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 142.27
     },
     {
       "ring": [
@@ -807915,7 +807919,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 145.13
     },
     {
       "ring": [
@@ -807944,7 +807948,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 142.49
     },
     {
       "ring": [
@@ -807973,7 +807977,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 143.47
     },
     {
       "ring": [
@@ -808002,7 +808006,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 143.92
     },
     {
       "ring": [
@@ -808048,7 +808052,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 141.37
     },
     {
       "ring": [
@@ -808077,7 +808081,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 140.08
     },
     {
       "ring": [
@@ -808115,7 +808119,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 141.01
     },
     {
       "ring": [
@@ -808159,7 +808163,7 @@
         "roof_material": "flat",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 141.1
     },
     {
       "ring": [
@@ -808191,7 +808195,7 @@
         "roof_material": "flat",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 141.21
     },
     {
       "ring": [
@@ -808228,7 +808232,7 @@
         "historic_status": "contributing",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 141.77
     },
     {
       "ring": [
@@ -808257,7 +808261,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 142.75
     },
     {
       "ring": [
@@ -808297,7 +808301,7 @@
         "roof_material": "flat",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 144.21
     },
     {
       "ring": [
@@ -808333,7 +808337,7 @@
         "roof_material": "flat",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 140.64
     },
     {
       "ring": [
@@ -808382,7 +808386,7 @@
         "historic_status": "contributing",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 140.29
     },
     {
       "ring": [
@@ -808439,7 +808443,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 142.86
     },
     {
       "ring": [
@@ -808472,7 +808476,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.69
     },
     {
       "ring": [
@@ -808513,7 +808517,7 @@
         "historic_status": "contributing",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 141.9
     },
     {
       "ring": [
@@ -808550,7 +808554,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.06
     },
     {
       "ring": [
@@ -808583,7 +808587,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.29
     },
     {
       "ring": [
@@ -808616,7 +808620,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.17
     },
     {
       "ring": [
@@ -808649,7 +808653,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.86
     },
     {
       "ring": [
@@ -808682,7 +808686,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.32
     },
     {
       "ring": [
@@ -808715,7 +808719,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.39
     },
     {
       "ring": [
@@ -808748,7 +808752,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.5
     },
     {
       "ring": [
@@ -808781,7 +808785,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.21
     },
     {
       "ring": [
@@ -808814,7 +808818,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 143.3
     },
     {
       "ring": [
@@ -808847,7 +808851,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.36
     },
     {
       "ring": [
@@ -808888,7 +808892,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.78
     },
     {
       "ring": [
@@ -808929,7 +808933,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.42
     },
     {
       "ring": [
@@ -808970,7 +808974,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.18
     },
     {
       "ring": [
@@ -809003,7 +809007,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.7
     },
     {
       "ring": [
@@ -809044,7 +809048,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.49
     },
     {
       "ring": [
@@ -809081,7 +809085,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.36
     },
     {
       "ring": [
@@ -809126,7 +809130,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.44
     },
     {
       "ring": [
@@ -809159,7 +809163,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.16
     },
     {
       "ring": [
@@ -809192,7 +809196,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.55
     },
     {
       "ring": [
@@ -809233,7 +809237,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.13
     },
     {
       "ring": [
@@ -809266,7 +809270,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.74
     },
     {
       "ring": [
@@ -809299,7 +809303,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.65
     },
     {
       "ring": [
@@ -809332,7 +809336,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.47
     },
     {
       "ring": [
@@ -809373,7 +809377,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.98
     },
     {
       "ring": [
@@ -809430,7 +809434,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.95
     },
     {
       "ring": [
@@ -809467,7 +809471,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.27
     },
     {
       "ring": [
@@ -809508,7 +809512,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.32
     },
     {
       "ring": [
@@ -809541,7 +809545,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.7
     },
     {
       "ring": [
@@ -809574,7 +809578,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.36
     },
     {
       "ring": [
@@ -809607,7 +809611,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.97
     },
     {
       "ring": [
@@ -809640,7 +809644,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.22
     },
     {
       "ring": [
@@ -809673,7 +809677,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.83
     },
     {
       "ring": [
@@ -809706,7 +809710,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.38
     },
     {
       "ring": [
@@ -809739,7 +809743,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.19
     },
     {
       "ring": [
@@ -809788,7 +809792,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.1
     },
     {
       "ring": [
@@ -809829,7 +809833,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.98
     },
     {
       "ring": [
@@ -809870,7 +809874,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.15
     },
     {
       "ring": [
@@ -809911,7 +809915,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.19
     },
     {
       "ring": [
@@ -809952,7 +809956,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.39
     },
     {
       "ring": [
@@ -809993,7 +809997,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.32
     },
     {
       "ring": [
@@ -810034,7 +810038,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.2
     },
     {
       "ring": [
@@ -810075,7 +810079,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.34
     },
     {
       "ring": [
@@ -810116,7 +810120,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.34
     },
     {
       "ring": [
@@ -810157,7 +810161,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.56
     },
     {
       "ring": [
@@ -810198,7 +810202,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.49
     },
     {
       "ring": [
@@ -810231,7 +810235,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.12
     },
     {
       "ring": [
@@ -810268,7 +810272,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.8
     },
     {
       "ring": [
@@ -810313,7 +810317,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.05
     },
     {
       "ring": [
@@ -810346,7 +810350,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.34
     },
     {
       "ring": [
@@ -810379,7 +810383,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.13
     },
     {
       "ring": [
@@ -810412,7 +810416,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.03
     },
     {
       "ring": [
@@ -810445,7 +810449,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.4
     },
     {
       "ring": [
@@ -810478,7 +810482,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.84
     },
     {
       "ring": [
@@ -810511,7 +810515,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.19
     },
     {
       "ring": [
@@ -810544,7 +810548,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.61
     },
     {
       "ring": [
@@ -810577,7 +810581,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 146.28
     },
     {
       "ring": [
@@ -810610,7 +810614,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.3
     },
     {
       "ring": [
@@ -810643,7 +810647,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.66
     },
     {
       "ring": [
@@ -810676,7 +810680,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.31
     },
     {
       "ring": [
@@ -810709,7 +810713,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 145.15
     },
     {
       "ring": [
@@ -810742,7 +810746,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.65
     },
     {
       "ring": [
@@ -810775,7 +810779,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 144.96
     },
     {
       "ring": [
@@ -810856,7 +810860,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 143.86
     },
     {
       "ring": [
@@ -810897,7 +810901,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 145.02
     },
     {
       "ring": [
@@ -810946,7 +810950,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 145.59
     },
     {
       "ring": [
@@ -810979,7 +810983,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 146.1
     },
     {
       "ring": [
@@ -811020,7 +811024,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 146.05
     },
     {
       "ring": [
@@ -811069,7 +811073,7 @@
         "historic_status": "contributing",
         "zoning": "J"
       },
-      "elev": null
+      "elev": 147.03
     },
     {
       "ring": [
@@ -811110,7 +811114,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 146.77
     },
     {
       "ring": [
@@ -811151,7 +811155,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 146.08
     },
     {
       "ring": [
@@ -811192,7 +811196,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 145.66
     },
     {
       "ring": [
@@ -811225,7 +811229,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.17
     },
     {
       "ring": [
@@ -811274,7 +811278,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.13
     },
     {
       "ring": [
@@ -811323,7 +811327,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.57
     },
     {
       "ring": [
@@ -811364,7 +811368,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.5
     },
     {
       "ring": [
@@ -811397,7 +811401,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.77
     },
     {
       "ring": [
@@ -811442,7 +811446,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.34
     },
     {
       "ring": [
@@ -811499,7 +811503,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.48
     },
     {
       "ring": [
@@ -811536,7 +811540,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.51
     },
     {
       "ring": [
@@ -811577,7 +811581,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.2
     },
     {
       "ring": [
@@ -811610,7 +811614,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.32
     },
     {
       "ring": [
@@ -811643,7 +811647,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.81
     },
     {
       "ring": [
@@ -811676,7 +811680,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.45
     },
     {
       "ring": [
@@ -811717,7 +811721,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.92
     },
     {
       "ring": [
@@ -811766,7 +811770,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.29
     },
     {
       "ring": [
@@ -811807,7 +811811,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.52
     },
     {
       "ring": [
@@ -811848,7 +811852,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.3
     },
     {
       "ring": [
@@ -811881,7 +811885,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.46
     },
     {
       "ring": [
@@ -811914,7 +811918,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.53
     },
     {
       "ring": [
@@ -812015,7 +812019,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.24
     },
     {
       "ring": [
@@ -812048,7 +812052,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.31
     },
     {
       "ring": [
@@ -812081,7 +812085,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.58
     },
     {
       "ring": [
@@ -812138,7 +812142,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.45
     },
     {
       "ring": [
@@ -812203,7 +812207,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.44
     },
     {
       "ring": [
@@ -812236,7 +812240,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.51
     },
     {
       "ring": [
@@ -812277,7 +812281,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.82
     },
     {
       "ring": [
@@ -812318,7 +812322,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.72
     },
     {
       "ring": [
@@ -812391,7 +812395,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.6
     },
     {
       "ring": [
@@ -812424,7 +812428,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.97
     },
     {
       "ring": [
@@ -812457,7 +812461,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.11
     },
     {
       "ring": [
@@ -812490,7 +812494,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.96
     },
     {
       "ring": [
@@ -812523,7 +812527,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.6
     },
     {
       "ring": [
@@ -812556,7 +812560,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.24
     },
     {
       "ring": [
@@ -812589,7 +812593,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.27
     },
     {
       "ring": [
@@ -812630,7 +812634,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.1
     },
     {
       "ring": [
@@ -812663,7 +812667,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.17
     },
     {
       "ring": [
@@ -812696,7 +812700,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.21
     },
     {
       "ring": [
@@ -812729,7 +812733,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.31
     },
     {
       "ring": [
@@ -812778,7 +812782,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.53
     },
     {
       "ring": [
@@ -812811,7 +812815,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.44
     },
     {
       "ring": [
@@ -812844,7 +812848,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.14
     },
     {
       "ring": [
@@ -812881,7 +812885,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.75
     },
     {
       "ring": [
@@ -812914,7 +812918,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.91
     },
     {
       "ring": [
@@ -812947,7 +812951,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.33
     },
     {
       "ring": [
@@ -812980,7 +812984,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.07
     },
     {
       "ring": [
@@ -813021,7 +813025,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.82
     },
     {
       "ring": [
@@ -813054,7 +813058,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.6
     },
     {
       "ring": [
@@ -813087,7 +813091,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.98
     },
     {
       "ring": [
@@ -813120,7 +813124,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.68
     },
     {
       "ring": [
@@ -813153,7 +813157,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.69
     },
     {
       "ring": [
@@ -813186,7 +813190,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.99
     },
     {
       "ring": [
@@ -813247,7 +813251,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.64
     },
     {
       "ring": [
@@ -813308,7 +813312,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.27
     },
     {
       "ring": [
@@ -813345,7 +813349,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.31
     },
     {
       "ring": [
@@ -813382,7 +813386,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.96
     },
     {
       "ring": [
@@ -813415,7 +813419,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.73
     },
     {
       "ring": [
@@ -813456,7 +813460,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.93
     },
     {
       "ring": [
@@ -813489,7 +813493,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.75
     },
     {
       "ring": [
@@ -813522,7 +813526,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.61
     },
     {
       "ring": [
@@ -813563,7 +813567,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.7
     },
     {
       "ring": [
@@ -813596,7 +813600,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.23
     },
     {
       "ring": [
@@ -813637,7 +813641,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.96
     },
     {
       "ring": [
@@ -813670,7 +813674,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.29
     },
     {
       "ring": [
@@ -813707,7 +813711,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.8
     },
     {
       "ring": [
@@ -813748,7 +813752,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.66
     },
     {
       "ring": [
@@ -813789,7 +813793,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.65
     },
     {
       "ring": [
@@ -813830,7 +813834,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.11
     },
     {
       "ring": [
@@ -813863,7 +813867,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.52
     },
     {
       "ring": [
@@ -813904,7 +813908,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.39
     },
     {
       "ring": [
@@ -813945,7 +813949,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.04
     },
     {
       "ring": [
@@ -813982,7 +813986,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.37
     },
     {
       "ring": [
@@ -814023,7 +814027,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.82
     },
     {
       "ring": [
@@ -814064,7 +814068,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.44
     },
     {
       "ring": [
@@ -814105,7 +814109,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.65
     },
     {
       "ring": [
@@ -814138,7 +814142,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.46
     },
     {
       "ring": [
@@ -814175,7 +814179,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.66
     },
     {
       "ring": [
@@ -814216,7 +814220,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.71
     },
     {
       "ring": [
@@ -814249,7 +814253,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.74
     },
     {
       "ring": [
@@ -814282,7 +814286,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.63
     },
     {
       "ring": [
@@ -814315,7 +814319,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.5
     },
     {
       "ring": [
@@ -814356,7 +814360,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.4
     },
     {
       "ring": [
@@ -814389,7 +814393,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.61
     },
     {
       "ring": [
@@ -814422,7 +814426,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.12
     },
     {
       "ring": [
@@ -814455,7 +814459,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.86
     },
     {
       "ring": [
@@ -814488,7 +814492,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.11
     },
     {
       "ring": [
@@ -814537,7 +814541,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.87
     },
     {
       "ring": [
@@ -814570,7 +814574,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.77
     },
     {
       "ring": [
@@ -814603,7 +814607,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.9
     },
     {
       "ring": [
@@ -814644,7 +814648,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.95
     },
     {
       "ring": [
@@ -814681,7 +814685,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.85
     },
     {
       "ring": [
@@ -814714,7 +814718,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.58
     },
     {
       "ring": [
@@ -814747,7 +814751,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.36
     },
     {
       "ring": [
@@ -814804,7 +814808,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.7
     },
     {
       "ring": [
@@ -814909,7 +814913,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.06
     },
     {
       "ring": [
@@ -815014,7 +815018,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.89
     },
     {
       "ring": [
@@ -815055,7 +815059,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.51
     },
     {
       "ring": [
@@ -815088,7 +815092,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.26
     },
     {
       "ring": [
@@ -815121,7 +815125,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.07
     },
     {
       "ring": [
@@ -815158,7 +815162,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.66
     },
     {
       "ring": [
@@ -815191,7 +815195,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.16
     },
     {
       "ring": [
@@ -815224,7 +815228,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.77
     },
     {
       "ring": [
@@ -815257,7 +815261,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.54
     },
     {
       "ring": [
@@ -815290,7 +815294,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 147.7
     },
     {
       "ring": [
@@ -815323,7 +815327,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.06
     },
     {
       "ring": [
@@ -815368,7 +815372,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.39
     },
     {
       "ring": [
@@ -815433,7 +815437,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.33
     },
     {
       "ring": [
@@ -815478,7 +815482,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.62
     },
     {
       "ring": [
@@ -815531,7 +815535,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.54
     },
     {
       "ring": [
@@ -815592,7 +815596,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.63
     },
     {
       "ring": [
@@ -815673,7 +815677,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.95
     },
     {
       "ring": [
@@ -815714,7 +815718,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 148.97
     },
     {
       "ring": [
@@ -815755,7 +815759,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.2
     },
     {
       "ring": [
@@ -815816,7 +815820,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 149.83
     },
     {
       "ring": [
@@ -815857,7 +815861,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.98
     },
     {
       "ring": [
@@ -815890,7 +815894,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.02
     },
     {
       "ring": [
@@ -815923,7 +815927,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.28
     },
     {
       "ring": [
@@ -816012,7 +816016,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.04
     },
     {
       "ring": [
@@ -816045,7 +816049,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152
     },
     {
       "ring": [
@@ -816110,7 +816114,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.58
     },
     {
       "ring": [
@@ -816167,7 +816171,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.86
     },
     {
       "ring": [
@@ -816224,7 +816228,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.85
     },
     {
       "ring": [
@@ -816273,7 +816277,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.95
     },
     {
       "ring": [
@@ -816322,7 +816326,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.01
     },
     {
       "ring": [
@@ -816359,7 +816363,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.39
     },
     {
       "ring": [
@@ -816392,7 +816396,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.49
     },
     {
       "ring": [
@@ -816441,7 +816445,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.27
     },
     {
       "ring": [
@@ -816474,7 +816478,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.49
     },
     {
       "ring": [
@@ -816579,7 +816583,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.55
     },
     {
       "ring": [
@@ -816668,7 +816672,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.36
     },
     {
       "ring": [
@@ -816701,7 +816705,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.47
     },
     {
       "ring": [
@@ -816734,7 +816738,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.25
     },
     {
       "ring": [
@@ -816783,7 +816787,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.82
     },
     {
       "ring": [
@@ -816840,7 +816844,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.5
     },
     {
       "ring": [
@@ -816873,7 +816877,7 @@
         "historic_status": "contributing",
         "zoning": "BC"
       },
-      "elev": null
+      "elev": 152.78
     },
     {
       "ring": [
@@ -816906,7 +816910,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.39
     },
     {
       "ring": [
@@ -816939,7 +816943,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.86
     },
     {
       "ring": [
@@ -816972,7 +816976,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.36
     },
     {
       "ring": [
@@ -817005,7 +817009,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.84
     },
     {
       "ring": [
@@ -817046,7 +817050,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.7
     },
     {
       "ring": [
@@ -817087,7 +817091,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.58
     },
     {
       "ring": [
@@ -817120,7 +817124,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.42
     },
     {
       "ring": [
@@ -817161,7 +817165,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.26
     },
     {
       "ring": [
@@ -817202,7 +817206,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.33
     },
     {
       "ring": [
@@ -817235,7 +817239,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.87
     },
     {
       "ring": [
@@ -817268,7 +817272,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.07
     },
     {
       "ring": [
@@ -817309,7 +817313,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.72
     },
     {
       "ring": [
@@ -817350,7 +817354,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.51
     },
     {
       "ring": [
@@ -817407,7 +817411,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.14
     },
     {
       "ring": [
@@ -817460,7 +817464,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.11
     },
     {
       "ring": [
@@ -817497,7 +817501,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.9
     },
     {
       "ring": [
@@ -817554,7 +817558,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.58
     },
     {
       "ring": [
@@ -817595,7 +817599,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 153.24
     },
     {
       "ring": [
@@ -817660,7 +817664,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.37
     },
     {
       "ring": [
@@ -817717,7 +817721,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.46
     },
     {
       "ring": [
@@ -817782,7 +817786,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.72
     },
     {
       "ring": [
@@ -817815,7 +817819,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.71
     },
     {
       "ring": [
@@ -817868,7 +817872,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.87
     },
     {
       "ring": [
@@ -817901,7 +817905,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.77
     },
     {
       "ring": [
@@ -817946,7 +817950,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.89
     },
     {
       "ring": [
@@ -817991,7 +817995,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.98
     },
     {
       "ring": [
@@ -818028,7 +818032,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.11
     },
     {
       "ring": [
@@ -818061,7 +818065,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.41
     },
     {
       "ring": [
@@ -818094,7 +818098,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.93
     },
     {
       "ring": [
@@ -818127,7 +818131,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.36
     },
     {
       "ring": [
@@ -818160,7 +818164,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.9
     },
     {
       "ring": [
@@ -818193,7 +818197,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.54
     },
     {
       "ring": [
@@ -818226,7 +818230,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.7
     },
     {
       "ring": [
@@ -818263,7 +818267,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.81
     },
     {
       "ring": [
@@ -818300,7 +818304,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.8
     },
     {
       "ring": [
@@ -818333,7 +818337,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.33
     },
     {
       "ring": [
@@ -818366,7 +818370,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.12
     },
     {
       "ring": [
@@ -818407,7 +818411,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.95
     },
     {
       "ring": [
@@ -818456,7 +818460,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.53
     },
     {
       "ring": [
@@ -818497,7 +818501,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.8
     },
     {
       "ring": [
@@ -818546,7 +818550,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.86
     },
     {
       "ring": [
@@ -818587,7 +818591,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.85
     },
     {
       "ring": [
@@ -818636,7 +818640,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.59
     },
     {
       "ring": [
@@ -818677,7 +818681,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.03
     },
     {
       "ring": [
@@ -818730,7 +818734,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.59
     },
     {
       "ring": [
@@ -818771,7 +818775,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.22
     },
     {
       "ring": [
@@ -818812,7 +818816,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.32
     },
     {
       "ring": [
@@ -818853,7 +818857,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.24
     },
     {
       "ring": [
@@ -818894,7 +818898,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.08
     },
     {
       "ring": [
@@ -818931,7 +818935,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.94
     },
     {
       "ring": [
@@ -818964,7 +818968,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.37
     },
     {
       "ring": [
@@ -819005,7 +819009,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.05
     },
     {
       "ring": [
@@ -819042,7 +819046,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.11
     },
     {
       "ring": [
@@ -819075,7 +819079,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155
     },
     {
       "ring": [
@@ -819108,7 +819112,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.98
     },
     {
       "ring": [
@@ -819141,7 +819145,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.35
     },
     {
       "ring": [
@@ -819174,7 +819178,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.44
     },
     {
       "ring": [
@@ -819263,7 +819267,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.5
     },
     {
       "ring": [
@@ -819336,7 +819340,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.38
     },
     {
       "ring": [
@@ -819413,7 +819417,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.63
     },
     {
       "ring": [
@@ -819490,7 +819494,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.01
     },
     {
       "ring": [
@@ -819523,7 +819527,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.58
     },
     {
       "ring": [
@@ -819556,7 +819560,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.6
     },
     {
       "ring": [
@@ -819589,7 +819593,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.89
     },
     {
       "ring": [
@@ -819622,7 +819626,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.87
     },
     {
       "ring": [
@@ -819663,7 +819667,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.72
     },
     {
       "ring": [
@@ -819772,7 +819776,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.34
     },
     {
       "ring": [
@@ -819813,7 +819817,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.4
     },
     {
       "ring": [
@@ -819850,7 +819854,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.59
     },
     {
       "ring": [
@@ -819887,7 +819891,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 158.15
     },
     {
       "ring": [
@@ -819920,7 +819924,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 159.76
     },
     {
       "ring": [
@@ -819965,7 +819969,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.71
     },
     {
       "ring": [
@@ -820006,7 +820010,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 156.27
     },
     {
       "ring": [
@@ -820075,7 +820079,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 156.3
     },
     {
       "ring": [
@@ -820116,7 +820120,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 156.31
     },
     {
       "ring": [
@@ -820153,7 +820157,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 156.28
     },
     {
       "ring": [
@@ -820194,7 +820198,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 156.43
     },
     {
       "ring": [
@@ -820235,7 +820239,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.16
     },
     {
       "ring": [
@@ -820268,7 +820272,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.11
     },
     {
       "ring": [
@@ -820313,7 +820317,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 156.8
     },
     {
       "ring": [
@@ -820346,7 +820350,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.84
     },
     {
       "ring": [
@@ -820403,7 +820407,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.32
     },
     {
       "ring": [
@@ -820452,7 +820456,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.53
     },
     {
       "ring": [
@@ -820485,7 +820489,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.95
     },
     {
       "ring": [
@@ -820534,7 +820538,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.55
     },
     {
       "ring": [
@@ -820567,7 +820571,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.43
     },
     {
       "ring": [
@@ -820600,7 +820604,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.83
     },
     {
       "ring": [
@@ -820633,7 +820637,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.82
     },
     {
       "ring": [
@@ -820682,7 +820686,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.26
     },
     {
       "ring": [
@@ -820715,7 +820719,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.33
     },
     {
       "ring": [
@@ -820748,7 +820752,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.42
     },
     {
       "ring": [
@@ -820781,7 +820785,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.49
     },
     {
       "ring": [
@@ -820814,7 +820818,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.43
     },
     {
       "ring": [
@@ -820859,7 +820863,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.35
     },
     {
       "ring": [
@@ -820900,7 +820904,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.61
     },
     {
       "ring": [
@@ -820941,7 +820945,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.76
     },
     {
       "ring": [
@@ -820986,7 +820990,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.31
     },
     {
       "ring": [
@@ -821027,7 +821031,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.28
     },
     {
       "ring": [
@@ -821068,7 +821072,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.13
     },
     {
       "ring": [
@@ -821101,7 +821105,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.66
     },
     {
       "ring": [
@@ -821134,7 +821138,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.09
     },
     {
       "ring": [
@@ -821175,7 +821179,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.21
     },
     {
       "ring": [
@@ -821216,7 +821220,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.19
     },
     {
       "ring": [
@@ -821249,7 +821253,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.08
     },
     {
       "ring": [
@@ -821282,7 +821286,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.5
     },
     {
       "ring": [
@@ -821319,7 +821323,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.91
     },
     {
       "ring": [
@@ -821352,7 +821356,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.55
     },
     {
       "ring": [
@@ -821385,7 +821389,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.53
     },
     {
       "ring": [
@@ -821422,7 +821426,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.05
     },
     {
       "ring": [
@@ -821463,7 +821467,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.27
     },
     {
       "ring": [
@@ -821504,7 +821508,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.27
     },
     {
       "ring": [
@@ -821549,7 +821553,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.49
     },
     {
       "ring": [
@@ -821590,7 +821594,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.25
     },
     {
       "ring": [
@@ -821631,7 +821635,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.05
     },
     {
       "ring": [
@@ -821664,7 +821668,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.52
     },
     {
       "ring": [
@@ -821697,7 +821701,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.57
     },
     {
       "ring": [
@@ -821730,7 +821734,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.4
     },
     {
       "ring": [
@@ -821763,7 +821767,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.42
     },
     {
       "ring": [
@@ -821796,7 +821800,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.63
     },
     {
       "ring": [
@@ -821849,7 +821853,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.79
     },
     {
       "ring": [
@@ -821926,7 +821930,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.96
     },
     {
       "ring": [
@@ -821967,7 +821971,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.9
     },
     {
       "ring": [
@@ -822004,7 +822008,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.45
     },
     {
       "ring": [
@@ -822037,7 +822041,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.64
     },
     {
       "ring": [
@@ -822070,7 +822074,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.78
     },
     {
       "ring": [
@@ -822111,7 +822115,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.18
     },
     {
       "ring": [
@@ -822152,7 +822156,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.05
     },
     {
       "ring": [
@@ -822193,7 +822197,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.05
     },
     {
       "ring": [
@@ -822234,7 +822238,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.1
     },
     {
       "ring": [
@@ -822267,7 +822271,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.35
     },
     {
       "ring": [
@@ -822300,7 +822304,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.93
     },
     {
       "ring": [
@@ -822341,7 +822345,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.23
     },
     {
       "ring": [
@@ -822382,7 +822386,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.27
     },
     {
       "ring": [
@@ -822423,7 +822427,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.23
     },
     {
       "ring": [
@@ -822456,7 +822460,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.38
     },
     {
       "ring": [
@@ -822489,7 +822493,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.14
     },
     {
       "ring": [
@@ -822522,7 +822526,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.78
     },
     {
       "ring": [
@@ -822555,7 +822559,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.93
     },
     {
       "ring": [
@@ -822588,7 +822592,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.64
     },
     {
       "ring": [
@@ -822621,7 +822625,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.01
     },
     {
       "ring": [
@@ -822654,7 +822658,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.34
     },
     {
       "ring": [
@@ -822687,7 +822691,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.46
     },
     {
       "ring": [
@@ -822728,7 +822732,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.53
     },
     {
       "ring": [
@@ -822773,7 +822777,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.58
     },
     {
       "ring": [
@@ -822822,7 +822826,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.47
     },
     {
       "ring": [
@@ -822867,7 +822871,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.58
     },
     {
       "ring": [
@@ -822908,7 +822912,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.57
     },
     {
       "ring": [
@@ -822941,7 +822945,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.58
     },
     {
       "ring": [
@@ -822974,7 +822978,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.66
     },
     {
       "ring": [
@@ -823007,7 +823011,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.4
     },
     {
       "ring": [
@@ -823048,7 +823052,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.42
     },
     {
       "ring": [
@@ -823089,7 +823093,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.52
     },
     {
       "ring": [
@@ -823122,7 +823126,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.51
     },
     {
       "ring": [
@@ -823155,7 +823159,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.64
     },
     {
       "ring": [
@@ -823204,7 +823208,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.55
     },
     {
       "ring": [
@@ -823281,7 +823285,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 149.36
     },
     {
       "ring": [
@@ -823338,7 +823342,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 148.95
     },
     {
       "ring": [
@@ -823371,7 +823375,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.47
     },
     {
       "ring": [
@@ -823412,7 +823416,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.13
     },
     {
       "ring": [
@@ -823445,7 +823449,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.27
     },
     {
       "ring": [
@@ -823478,7 +823482,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.52
     },
     {
       "ring": [
@@ -823519,7 +823523,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.37
     },
     {
       "ring": [
@@ -823564,7 +823568,7 @@
         "historic_status": "contributing",
         "zoning": "BF"
       },
-      "elev": null
+      "elev": 150.16
     },
     {
       "ring": [
@@ -823605,7 +823609,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 149.79
     },
     {
       "ring": [
@@ -823638,7 +823642,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 148.5
     },
     {
       "ring": [
@@ -823671,7 +823675,7 @@
         "historic_status": "contributing",
         "zoning": "BF"
       },
-      "elev": null
+      "elev": 149.43
     },
     {
       "ring": [
@@ -823704,7 +823708,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.71
     },
     {
       "ring": [
@@ -823737,7 +823741,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.67
     },
     {
       "ring": [
@@ -823802,7 +823806,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.21
     },
     {
       "ring": [
@@ -823835,7 +823839,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.42
     },
     {
       "ring": [
@@ -823884,7 +823888,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.54
     },
     {
       "ring": [
@@ -823917,7 +823921,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.74
     },
     {
       "ring": [
@@ -823958,7 +823962,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.67
     },
     {
       "ring": [
@@ -823991,7 +823995,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.04
     },
     {
       "ring": [
@@ -824024,7 +824028,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.65
     },
     {
       "ring": [
@@ -824057,7 +824061,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.93
     },
     {
       "ring": [
@@ -824090,7 +824094,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.33
     },
     {
       "ring": [
@@ -824123,7 +824127,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.14
     },
     {
       "ring": [
@@ -824164,7 +824168,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.11
     },
     {
       "ring": [
@@ -824197,7 +824201,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.6
     },
     {
       "ring": [
@@ -824246,7 +824250,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.57
     },
     {
       "ring": [
@@ -824287,7 +824291,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.89
     },
     {
       "ring": [
@@ -824332,7 +824336,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.05
     },
     {
       "ring": [
@@ -824381,7 +824385,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.3
     },
     {
       "ring": [
@@ -824422,7 +824426,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.96
     },
     {
       "ring": [
@@ -824459,7 +824463,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.6
     },
     {
       "ring": [
@@ -824520,7 +824524,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.35
     },
     {
       "ring": [
@@ -824553,7 +824557,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.15
     },
     {
       "ring": [
@@ -824586,7 +824590,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.05
     },
     {
       "ring": [
@@ -824619,7 +824623,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.95
     },
     {
       "ring": [
@@ -824668,7 +824672,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.77
     },
     {
       "ring": [
@@ -824709,7 +824713,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.33
     },
     {
       "ring": [
@@ -824750,7 +824754,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.02
     },
     {
       "ring": [
@@ -824783,7 +824787,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.08
     },
     {
       "ring": [
@@ -824816,7 +824820,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.22
     },
     {
       "ring": [
@@ -824849,7 +824853,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.31
     },
     {
       "ring": [
@@ -824882,7 +824886,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.23
     },
     {
       "ring": [
@@ -824915,7 +824919,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.29
     },
     {
       "ring": [
@@ -824948,7 +824952,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.65
     },
     {
       "ring": [
@@ -825025,7 +825029,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 153.53
     },
     {
       "ring": [
@@ -825058,7 +825062,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.18
     },
     {
       "ring": [
@@ -825091,7 +825095,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.51
     },
     {
       "ring": [
@@ -825124,7 +825128,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.74
     },
     {
       "ring": [
@@ -825177,7 +825181,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.27
     },
     {
       "ring": [
@@ -825230,7 +825234,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.72
     },
     {
       "ring": [
@@ -825263,7 +825267,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.86
     },
     {
       "ring": [
@@ -825296,7 +825300,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.4
     },
     {
       "ring": [
@@ -825329,7 +825333,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.92
     },
     {
       "ring": [
@@ -825382,7 +825386,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.97
     },
     {
       "ring": [
@@ -825435,7 +825439,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.79
     },
     {
       "ring": [
@@ -825488,7 +825492,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.99
     },
     {
       "ring": [
@@ -825541,7 +825545,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.69
     },
     {
       "ring": [
@@ -825594,7 +825598,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.87
     },
     {
       "ring": [
@@ -825647,7 +825651,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.3
     },
     {
       "ring": [
@@ -825700,7 +825704,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.81
     },
     {
       "ring": [
@@ -825753,7 +825757,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.32
     },
     {
       "ring": [
@@ -825786,7 +825790,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.08
     },
     {
       "ring": [
@@ -825819,7 +825823,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.98
     },
     {
       "ring": [
@@ -825860,7 +825864,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.6
     },
     {
       "ring": [
@@ -825897,7 +825901,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.59
     },
     {
       "ring": [
@@ -825938,7 +825942,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.62
     },
     {
       "ring": [
@@ -825971,7 +825975,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.74
     },
     {
       "ring": [
@@ -826004,7 +826008,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.74
     },
     {
       "ring": [
@@ -826037,7 +826041,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.8
     },
     {
       "ring": [
@@ -826078,7 +826082,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.34
     },
     {
       "ring": [
@@ -826119,7 +826123,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.55
     },
     {
       "ring": [
@@ -826160,7 +826164,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.22
     },
     {
       "ring": [
@@ -826213,7 +826217,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.13
     },
     {
       "ring": [
@@ -826270,7 +826274,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.43
     },
     {
       "ring": [
@@ -826311,7 +826315,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.6
     },
     {
       "ring": [
@@ -826344,7 +826348,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.52
     },
     {
       "ring": [
@@ -826393,7 +826397,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.79
     },
     {
       "ring": [
@@ -826446,7 +826450,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.36
     },
     {
       "ring": [
@@ -826495,7 +826499,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.81
     },
     {
       "ring": [
@@ -826560,7 +826564,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.88
     },
     {
       "ring": [
@@ -826593,7 +826597,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.77
     },
     {
       "ring": [
@@ -826626,7 +826630,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.75
     },
     {
       "ring": [
@@ -826659,7 +826663,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.01
     },
     {
       "ring": [
@@ -826692,7 +826696,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.04
     },
     {
       "ring": [
@@ -826725,7 +826729,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.39
     },
     {
       "ring": [
@@ -826766,7 +826770,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.57
     },
     {
       "ring": [
@@ -826807,7 +826811,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.41
     },
     {
       "ring": [
@@ -826848,7 +826852,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.96
     },
     {
       "ring": [
@@ -826897,7 +826901,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 149.8
     },
     {
       "ring": [
@@ -826938,7 +826942,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.19
     },
     {
       "ring": [
@@ -826971,7 +826975,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.58
     },
     {
       "ring": [
@@ -827012,7 +827016,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.68
     },
     {
       "ring": [
@@ -827069,7 +827073,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.75
     },
     {
       "ring": [
@@ -827110,7 +827114,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.57
     },
     {
       "ring": [
@@ -827159,7 +827163,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.18
     },
     {
       "ring": [
@@ -827192,7 +827196,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.37
     },
     {
       "ring": [
@@ -827229,7 +827233,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.01
     },
     {
       "ring": [
@@ -827270,7 +827274,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.78
     },
     {
       "ring": [
@@ -827311,7 +827315,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.95
     },
     {
       "ring": [
@@ -827352,7 +827356,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.05
     },
     {
       "ring": [
@@ -827385,7 +827389,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.26
     },
     {
       "ring": [
@@ -827422,7 +827426,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.03
     },
     {
       "ring": [
@@ -827459,7 +827463,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.72
     },
     {
       "ring": [
@@ -827496,7 +827500,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.3
     },
     {
       "ring": [
@@ -827529,7 +827533,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.51
     },
     {
       "ring": [
@@ -827570,7 +827574,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.37
     },
     {
       "ring": [
@@ -827611,7 +827615,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.19
     },
     {
       "ring": [
@@ -827652,7 +827656,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 151.04
     },
     {
       "ring": [
@@ -827693,7 +827697,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.95
     },
     {
       "ring": [
@@ -827734,7 +827738,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.99
     },
     {
       "ring": [
@@ -827775,7 +827779,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.99
     },
     {
       "ring": [
@@ -827808,7 +827812,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.58
     },
     {
       "ring": [
@@ -827845,7 +827849,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 150.61
     },
     {
       "ring": [
@@ -827882,7 +827886,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.68
     },
     {
       "ring": [
@@ -827915,7 +827919,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.98
     },
     {
       "ring": [
@@ -827948,7 +827952,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 150.7
     },
     {
       "ring": [
@@ -827985,7 +827989,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.46
     },
     {
       "ring": [
@@ -828018,7 +828022,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.43
     },
     {
       "ring": [
@@ -828059,7 +828063,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.02
     },
     {
       "ring": [
@@ -828096,7 +828100,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.09
     },
     {
       "ring": [
@@ -828137,7 +828141,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 151.97
     },
     {
       "ring": [
@@ -828170,7 +828174,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.22
     },
     {
       "ring": [
@@ -828211,7 +828215,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.11
     },
     {
       "ring": [
@@ -828248,7 +828252,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.2
     },
     {
       "ring": [
@@ -828281,7 +828285,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.25
     },
     {
       "ring": [
@@ -828314,7 +828318,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.35
     },
     {
       "ring": [
@@ -828347,7 +828351,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.53
     },
     {
       "ring": [
@@ -828380,7 +828384,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.43
     },
     {
       "ring": [
@@ -828433,7 +828437,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.28
     },
     {
       "ring": [
@@ -828474,7 +828478,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.2
     },
     {
       "ring": [
@@ -828511,7 +828515,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.09
     },
     {
       "ring": [
@@ -828552,7 +828556,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.39
     },
     {
       "ring": [
@@ -828597,7 +828601,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.35
     },
     {
       "ring": [
@@ -828630,7 +828634,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.51
     },
     {
       "ring": [
@@ -828663,7 +828667,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.6
     },
     {
       "ring": [
@@ -828704,7 +828708,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 152.72
     },
     {
       "ring": [
@@ -828737,7 +828741,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.04
     },
     {
       "ring": [
@@ -828818,7 +828822,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 152.55
     },
     {
       "ring": [
@@ -828851,7 +828855,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.84
     },
     {
       "ring": [
@@ -828884,7 +828888,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.03
     },
     {
       "ring": [
@@ -828917,7 +828921,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.85
     },
     {
       "ring": [
@@ -828950,7 +828954,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.63
     },
     {
       "ring": [
@@ -828983,7 +828987,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.44
     },
     {
       "ring": [
@@ -829016,7 +829020,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.65
     },
     {
       "ring": [
@@ -829057,7 +829061,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.62
     },
     {
       "ring": [
@@ -829090,7 +829094,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.2
     },
     {
       "ring": [
@@ -829123,7 +829127,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.8
     },
     {
       "ring": [
@@ -829156,7 +829160,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.92
     },
     {
       "ring": [
@@ -829197,7 +829201,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.66
     },
     {
       "ring": [
@@ -829242,7 +829246,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.63
     },
     {
       "ring": [
@@ -829291,7 +829295,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153
     },
     {
       "ring": [
@@ -829324,7 +829328,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.32
     },
     {
       "ring": [
@@ -829357,7 +829361,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 153.41
     },
     {
       "ring": [
@@ -829394,7 +829398,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.26
     },
     {
       "ring": [
@@ -829427,7 +829431,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.72
     },
     {
       "ring": [
@@ -829464,7 +829468,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.83
     },
     {
       "ring": [
@@ -829509,7 +829513,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.24
     },
     {
       "ring": [
@@ -829542,7 +829546,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.72
     },
     {
       "ring": [
@@ -829587,7 +829591,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.98
     },
     {
       "ring": [
@@ -829624,7 +829628,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.78
     },
     {
       "ring": [
@@ -829669,7 +829673,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.67
     },
     {
       "ring": [
@@ -829702,7 +829706,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 153.9
     },
     {
       "ring": [
@@ -829735,7 +829739,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.13
     },
     {
       "ring": [
@@ -829768,7 +829772,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.06
     },
     {
       "ring": [
@@ -829809,7 +829813,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.61
     },
     {
       "ring": [
@@ -829850,7 +829854,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.63
     },
     {
       "ring": [
@@ -829883,7 +829887,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.59
     },
     {
       "ring": [
@@ -829916,7 +829920,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.48
     },
     {
       "ring": [
@@ -829965,7 +829969,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.29
     },
     {
       "ring": [
@@ -830030,7 +830034,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.19
     },
     {
       "ring": [
@@ -830063,7 +830067,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.64
     },
     {
       "ring": [
@@ -830096,7 +830100,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.52
     },
     {
       "ring": [
@@ -830129,7 +830133,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.55
     },
     {
       "ring": [
@@ -830174,7 +830178,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.47
     },
     {
       "ring": [
@@ -830207,7 +830211,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.16
     },
     {
       "ring": [
@@ -830240,7 +830244,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.21
     },
     {
       "ring": [
@@ -830277,7 +830281,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.7
     },
     {
       "ring": [
@@ -830310,7 +830314,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.63
     },
     {
       "ring": [
@@ -830343,7 +830347,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.96
     },
     {
       "ring": [
@@ -830392,7 +830396,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 155.18
     },
     {
       "ring": [
@@ -830425,7 +830429,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 155.32
     },
     {
       "ring": [
@@ -830462,7 +830466,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.05
     },
     {
       "ring": [
@@ -830495,7 +830499,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.24
     },
     {
       "ring": [
@@ -830528,7 +830532,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.77
     },
     {
       "ring": [
@@ -830561,7 +830565,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.25
     },
     {
       "ring": [
@@ -830610,7 +830614,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 156.73
     },
     {
       "ring": [
@@ -830659,7 +830663,7 @@
         "historic_status": "contributing",
         "zoning": "FC"
       },
-      "elev": null
+      "elev": 155.65
     },
     {
       "ring": [
@@ -830692,7 +830696,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 155.13
     },
     {
       "ring": [
@@ -830725,7 +830729,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.84
     },
     {
       "ring": [
@@ -830758,7 +830762,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.8
     },
     {
       "ring": [
@@ -830807,7 +830811,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 155.12
     },
     {
       "ring": [
@@ -830840,7 +830844,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 155.35
     },
     {
       "ring": [
@@ -830873,7 +830877,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.13
     },
     {
       "ring": [
@@ -830910,7 +830914,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.25
     },
     {
       "ring": [
@@ -830943,7 +830947,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.33
     },
     {
       "ring": [
@@ -830976,7 +830980,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.34
     },
     {
       "ring": [
@@ -831009,7 +831013,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.28
     },
     {
       "ring": [
@@ -831042,7 +831046,7 @@
         "historic_status": "contributing",
         "zoning": "C"
       },
-      "elev": null
+      "elev": 154.2
     },
     {
       "ring": [
@@ -831087,7 +831091,7 @@
         "historic_status": "contributing",
         "zoning": "E"
       },
-      "elev": null
+      "elev": 154.78
     },
     {
       "ring": [
@@ -831120,7 +831124,7 @@
         "historic_status": "contributing",
         "zoning": "E"
       },
-      "elev": null
+      "elev": 154.75
     },
     {
       "ring": [
@@ -831161,7 +831165,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 155.49
     },
     {
       "ring": [
@@ -831194,7 +831198,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.57
     },
     {
       "ring": [
@@ -831235,7 +831239,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.02
     },
     {
       "ring": [
@@ -831276,7 +831280,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.47
     },
     {
       "ring": [
@@ -831317,7 +831321,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.21
     },
     {
       "ring": [
@@ -831350,7 +831354,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.37
     },
     {
       "ring": [
@@ -831383,7 +831387,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.28
     },
     {
       "ring": [
@@ -831416,7 +831420,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.55
     },
     {
       "ring": [
@@ -831449,7 +831453,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.13
     },
     {
       "ring": [
@@ -831482,7 +831486,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.38
     },
     {
       "ring": [
@@ -831515,7 +831519,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.62
     },
     {
       "ring": [
@@ -831552,7 +831556,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.56
     },
     {
       "ring": [
@@ -831585,7 +831589,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.94
     },
     {
       "ring": [
@@ -831618,7 +831622,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.84
     },
     {
       "ring": [
@@ -831659,7 +831663,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.81
     },
     {
       "ring": [
@@ -831692,7 +831696,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.68
     },
     {
       "ring": [
@@ -831757,7 +831761,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.7
     },
     {
       "ring": [
@@ -831790,7 +831794,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.31
     },
     {
       "ring": [
@@ -831831,7 +831835,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.99
     },
     {
       "ring": [
@@ -831864,7 +831868,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.03
     },
     {
       "ring": [
@@ -831905,7 +831909,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.2
     },
     {
       "ring": [
@@ -831938,7 +831942,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 154.7
     },
     {
       "ring": [
@@ -831979,7 +831983,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 154.74
     },
     {
       "ring": [
@@ -832016,7 +832020,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.12
     },
     {
       "ring": [
@@ -832049,7 +832053,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.39
     },
     {
       "ring": [
@@ -832082,7 +832086,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.72
     },
     {
       "ring": [
@@ -832115,7 +832119,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 156.18
     },
     {
       "ring": [
@@ -832176,7 +832180,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 155.32
     },
     {
       "ring": [
@@ -832209,7 +832213,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.08
     },
     {
       "ring": [
@@ -832242,7 +832246,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 154.65
     },
     {
       "ring": [
@@ -832275,7 +832279,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.08
     },
     {
       "ring": [
@@ -832308,7 +832312,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155
     },
     {
       "ring": [
@@ -832341,7 +832345,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 154.97
     },
     {
       "ring": [
@@ -832390,7 +832394,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 154.93
     },
     {
       "ring": [
@@ -832431,7 +832435,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.04
     },
     {
       "ring": [
@@ -832480,7 +832484,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 154.85
     },
     {
       "ring": [
@@ -832513,7 +832517,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 154.9
     },
     {
       "ring": [
@@ -832546,7 +832550,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 155.76
     },
     {
       "ring": [
@@ -832579,7 +832583,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 155.67
     },
     {
       "ring": [
@@ -832616,7 +832620,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.33
     },
     {
       "ring": [
@@ -832649,7 +832653,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.31
     },
     {
       "ring": [
@@ -832682,7 +832686,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 155.48
     },
     {
       "ring": [
@@ -832723,7 +832727,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.3
     },
     {
       "ring": [
@@ -832756,7 +832760,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.37
     },
     {
       "ring": [
@@ -832789,7 +832793,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.39
     },
     {
       "ring": [
@@ -832826,7 +832830,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.57
     },
     {
       "ring": [
@@ -832863,7 +832867,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.98
     },
     {
       "ring": [
@@ -832896,7 +832900,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.14
     },
     {
       "ring": [
@@ -832929,7 +832933,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.4
     },
     {
       "ring": [
@@ -832966,7 +832970,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.15
     },
     {
       "ring": [
@@ -833003,7 +833007,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.84
     },
     {
       "ring": [
@@ -833036,7 +833040,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.61
     },
     {
       "ring": [
@@ -833069,7 +833073,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.76
     },
     {
       "ring": [
@@ -833102,7 +833106,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 155.85
     },
     {
       "ring": [
@@ -833139,7 +833143,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 156.08
     },
     {
       "ring": [
@@ -833180,7 +833184,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 156.16
     },
     {
       "ring": [
@@ -833221,7 +833225,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 156.05
     },
     {
       "ring": [
@@ -833270,7 +833274,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.29
     },
     {
       "ring": [
@@ -833303,7 +833307,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.29
     },
     {
       "ring": [
@@ -833400,7 +833404,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.87
     },
     {
       "ring": [
@@ -833441,7 +833445,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.69
     },
     {
       "ring": [
@@ -833474,7 +833478,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.21
     },
     {
       "ring": [
@@ -833515,7 +833519,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.74
     },
     {
       "ring": [
@@ -833556,7 +833560,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.59
     },
     {
       "ring": [
@@ -833589,7 +833593,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.94
     },
     {
       "ring": [
@@ -833622,7 +833626,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.12
     },
     {
       "ring": [
@@ -833655,7 +833659,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.78
     },
     {
       "ring": [
@@ -833688,7 +833692,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.59
     },
     {
       "ring": [
@@ -833721,7 +833725,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.32
     },
     {
       "ring": [
@@ -833754,7 +833758,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.43
     },
     {
       "ring": [
@@ -833787,7 +833791,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.56
     },
     {
       "ring": [
@@ -833820,7 +833824,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.33
     },
     {
       "ring": [
@@ -833853,7 +833857,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.18
     },
     {
       "ring": [
@@ -833894,7 +833898,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.43
     },
     {
       "ring": [
@@ -833931,7 +833935,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.38
     },
     {
       "ring": [
@@ -833964,7 +833968,7 @@
         "historic_status": "contributing",
         "zoning": "A"
       },
-      "elev": null
+      "elev": 155.3
     },
     {
       "ring": [
@@ -833997,7 +834001,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.9
     },
     {
       "ring": [
@@ -834038,7 +834042,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.01
     },
     {
       "ring": [
@@ -834071,7 +834075,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.09
     },
     {
       "ring": [
@@ -834104,7 +834108,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.14
     },
     {
       "ring": [
@@ -834137,7 +834141,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.4
     },
     {
       "ring": [
@@ -834170,7 +834174,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.81
     },
     {
       "ring": [
@@ -834203,7 +834207,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.75
     },
     {
       "ring": [
@@ -834236,7 +834240,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.65
     },
     {
       "ring": [
@@ -834277,7 +834281,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.51
     },
     {
       "ring": [
@@ -834322,7 +834326,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.58
     },
     {
       "ring": [
@@ -834363,7 +834367,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.66
     },
     {
       "ring": [
@@ -834404,7 +834408,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.76
     },
     {
       "ring": [
@@ -834445,7 +834449,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.85
     },
     {
       "ring": [
@@ -834486,7 +834490,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.99
     },
     {
       "ring": [
@@ -834519,7 +834523,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.33
     },
     {
       "ring": [
@@ -834552,7 +834556,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.18
     },
     {
       "ring": [
@@ -834621,7 +834625,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.91
     },
     {
       "ring": [
@@ -834690,7 +834694,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.59
     },
     {
       "ring": [
@@ -834747,7 +834751,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.46
     },
     {
       "ring": [
@@ -834808,7 +834812,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.96
     },
     {
       "ring": [
@@ -834869,7 +834873,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.83
     },
     {
       "ring": [
@@ -834926,7 +834930,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.12
     },
     {
       "ring": [
@@ -834959,7 +834963,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.04
     },
     {
       "ring": [
@@ -835000,7 +835004,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.33
     },
     {
       "ring": [
@@ -835033,7 +835037,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.55
     },
     {
       "ring": [
@@ -835066,7 +835070,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.67
     },
     {
       "ring": [
@@ -835099,7 +835103,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.6
     },
     {
       "ring": [
@@ -835156,7 +835160,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.49
     },
     {
       "ring": [
@@ -835197,7 +835201,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.02
     },
     {
       "ring": [
@@ -835246,7 +835250,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.2
     },
     {
       "ring": [
@@ -835287,7 +835291,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.57
     },
     {
       "ring": [
@@ -835324,7 +835328,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.84
     },
     {
       "ring": [
@@ -835365,7 +835369,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.05
     },
     {
       "ring": [
@@ -835414,7 +835418,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.94
     },
     {
       "ring": [
@@ -835455,7 +835459,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.66
     },
     {
       "ring": [
@@ -835492,7 +835496,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.65
     },
     {
       "ring": [
@@ -835533,7 +835537,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.18
     },
     {
       "ring": [
@@ -835566,7 +835570,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.3
     },
     {
       "ring": [
@@ -835615,7 +835619,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.86
     },
     {
       "ring": [
@@ -835656,7 +835660,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.93
     },
     {
       "ring": [
@@ -835705,7 +835709,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.06
     },
     {
       "ring": [
@@ -835738,7 +835742,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.18
     },
     {
       "ring": [
@@ -835771,7 +835775,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.77
     },
     {
       "ring": [
@@ -835804,7 +835808,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.93
     },
     {
       "ring": [
@@ -835837,7 +835841,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.74
     },
     {
       "ring": [
@@ -835878,7 +835882,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.88
     },
     {
       "ring": [
@@ -835911,7 +835915,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.55
     },
     {
       "ring": [
@@ -835944,7 +835948,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.86
     },
     {
       "ring": [
@@ -835993,7 +835997,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.61
     },
     {
       "ring": [
@@ -836058,7 +836062,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.1
     },
     {
       "ring": [
@@ -836091,7 +836095,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.38
     },
     {
       "ring": [
@@ -836148,7 +836152,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.27
     },
     {
       "ring": [
@@ -836241,7 +836245,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.23
     },
     {
       "ring": [
@@ -836302,7 +836306,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.71
     },
     {
       "ring": [
@@ -836351,7 +836355,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.1
     },
     {
       "ring": [
@@ -836432,7 +836436,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.42
     },
     {
       "ring": [
@@ -836465,7 +836469,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.95
     },
     {
       "ring": [
@@ -836498,7 +836502,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.91
     },
     {
       "ring": [
@@ -836531,7 +836535,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.67
     },
     {
       "ring": [
@@ -836596,7 +836600,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.79
     },
     {
       "ring": [
@@ -836629,7 +836633,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.84
     },
     {
       "ring": [
@@ -836670,7 +836674,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.7
     },
     {
       "ring": [
@@ -836703,7 +836707,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.83
     },
     {
       "ring": [
@@ -836736,7 +836740,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.83
     },
     {
       "ring": [
@@ -836769,7 +836773,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.01
     },
     {
       "ring": [
@@ -836802,7 +836806,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.01
     },
     {
       "ring": [
@@ -836843,7 +836847,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.68
     },
     {
       "ring": [
@@ -836876,7 +836880,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.1
     },
     {
       "ring": [
@@ -836909,7 +836913,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.49
     },
     {
       "ring": [
@@ -836962,7 +836966,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.17
     },
     {
       "ring": [
@@ -837019,7 +837023,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.62
     },
     {
       "ring": [
@@ -837052,7 +837056,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.38
     },
     {
       "ring": [
@@ -837085,7 +837089,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.14
     },
     {
       "ring": [
@@ -837146,7 +837150,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.54
     },
     {
       "ring": [
@@ -837183,7 +837187,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.97
     },
     {
       "ring": [
@@ -837216,7 +837220,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.2
     },
     {
       "ring": [
@@ -837249,7 +837253,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.43
     },
     {
       "ring": [
@@ -837282,7 +837286,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.08
     },
     {
       "ring": [
@@ -837315,7 +837319,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.15
     },
     {
       "ring": [
@@ -837348,7 +837352,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.22
     },
     {
       "ring": [
@@ -837381,7 +837385,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.32
     },
     {
       "ring": [
@@ -837422,7 +837426,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.93
     },
     {
       "ring": [
@@ -837455,7 +837459,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.41
     },
     {
       "ring": [
@@ -837488,7 +837492,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.78
     },
     {
       "ring": [
@@ -837521,7 +837525,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.12
     },
     {
       "ring": [
@@ -837554,7 +837558,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.97
     },
     {
       "ring": [
@@ -837587,7 +837591,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.72
     },
     {
       "ring": [
@@ -837620,7 +837624,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.23
     },
     {
       "ring": [
@@ -837669,7 +837673,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.81
     },
     {
       "ring": [
@@ -837718,7 +837722,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.84
     },
     {
       "ring": [
@@ -837751,7 +837755,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.93
     },
     {
       "ring": [
@@ -837800,7 +837804,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 158.09
     },
     {
       "ring": [
@@ -837841,7 +837845,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.27
     },
     {
       "ring": [
@@ -837874,7 +837878,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.88
     },
     {
       "ring": [
@@ -837911,7 +837915,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 159.37
     },
     {
       "ring": [
@@ -837944,7 +837948,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 158.54
     },
     {
       "ring": [
@@ -837989,7 +837993,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 158.38
     },
     {
       "ring": [
@@ -838038,7 +838042,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 158.02
     },
     {
       "ring": [
@@ -838127,7 +838131,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 158.05
     },
     {
       "ring": [
@@ -838168,7 +838172,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.46
     },
     {
       "ring": [
@@ -838205,7 +838209,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.78
     },
     {
       "ring": [
@@ -838246,7 +838250,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.62
     },
     {
       "ring": [
@@ -838279,7 +838283,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.75
     },
     {
       "ring": [
@@ -838320,7 +838324,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.37
     },
     {
       "ring": [
@@ -838357,7 +838361,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 157.49
     },
     {
       "ring": [
@@ -838390,7 +838394,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 158.6
     },
     {
       "ring": [
@@ -838423,7 +838427,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.06
     },
     {
       "ring": [
@@ -838456,7 +838460,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 158.26
     },
     {
       "ring": [
@@ -838513,7 +838517,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.18
     },
     {
       "ring": [
@@ -838606,7 +838610,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.21
     },
     {
       "ring": [
@@ -838655,7 +838659,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.35
     },
     {
       "ring": [
@@ -838688,7 +838692,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.7
     },
     {
       "ring": [
@@ -838741,7 +838745,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.04
     },
     {
       "ring": [
@@ -838790,7 +838794,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.2
     },
     {
       "ring": [
@@ -838823,7 +838827,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.98
     },
     {
       "ring": [
@@ -838864,7 +838868,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 159.19
     },
     {
       "ring": [
@@ -838897,7 +838901,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.67
     },
     {
       "ring": [
@@ -838930,7 +838934,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.62
     },
     {
       "ring": [
@@ -838975,7 +838979,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.2
     },
     {
       "ring": [
@@ -839016,7 +839020,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.07
     },
     {
       "ring": [
@@ -839049,7 +839053,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.18
     },
     {
       "ring": [
@@ -839098,7 +839102,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.14
     },
     {
       "ring": [
@@ -839135,7 +839139,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.4
     },
     {
       "ring": [
@@ -839168,7 +839172,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.42
     },
     {
       "ring": [
@@ -839217,7 +839221,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.49
     },
     {
       "ring": [
@@ -839274,7 +839278,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.06
     },
     {
       "ring": [
@@ -839347,7 +839351,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.68
     },
     {
       "ring": [
@@ -839428,7 +839432,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.29
     },
     {
       "ring": [
@@ -839477,7 +839481,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.58
     },
     {
       "ring": [
@@ -839518,7 +839522,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.74
     },
     {
       "ring": [
@@ -839571,7 +839575,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.8
     },
     {
       "ring": [
@@ -839628,7 +839632,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.09
     },
     {
       "ring": [
@@ -839685,7 +839689,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.37
     },
     {
       "ring": [
@@ -839718,7 +839722,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.35
     },
     {
       "ring": [
@@ -839751,7 +839755,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.21
     },
     {
       "ring": [
@@ -839784,7 +839788,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.37
     },
     {
       "ring": [
@@ -839817,7 +839821,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.27
     },
     {
       "ring": [
@@ -839850,7 +839854,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.14
     },
     {
       "ring": [
@@ -839883,7 +839887,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.94
     },
     {
       "ring": [
@@ -839924,7 +839928,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.54
     },
     {
       "ring": [
@@ -839965,7 +839969,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.38
     },
     {
       "ring": [
@@ -839998,7 +840002,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.58
     },
     {
       "ring": [
@@ -840031,7 +840035,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.74
     },
     {
       "ring": [
@@ -840064,7 +840068,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.85
     },
     {
       "ring": [
@@ -840113,7 +840117,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.29
     },
     {
       "ring": [
@@ -840170,7 +840174,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.37
     },
     {
       "ring": [
@@ -840219,7 +840223,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.37
     },
     {
       "ring": [
@@ -840300,7 +840304,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.9
     },
     {
       "ring": [
@@ -840333,7 +840337,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.04
     },
     {
       "ring": [
@@ -840366,7 +840370,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.51
     },
     {
       "ring": [
@@ -840399,7 +840403,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.14
     },
     {
       "ring": [
@@ -840452,7 +840456,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.99
     },
     {
       "ring": [
@@ -840533,7 +840537,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.4
     },
     {
       "ring": [
@@ -840582,7 +840586,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.87
     },
     {
       "ring": [
@@ -840635,7 +840639,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.85
     },
     {
       "ring": [
@@ -840696,7 +840700,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.28
     },
     {
       "ring": [
@@ -840737,7 +840741,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.51
     },
     {
       "ring": [
@@ -840778,7 +840782,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.8
     },
     {
       "ring": [
@@ -840827,7 +840831,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.31
     },
     {
       "ring": [
@@ -840868,7 +840872,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.97
     },
     {
       "ring": [
@@ -840909,7 +840913,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.13
     },
     {
       "ring": [
@@ -840950,7 +840954,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.42
     },
     {
       "ring": [
@@ -841019,7 +841023,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.89
     },
     {
       "ring": [
@@ -841076,7 +841080,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.45
     },
     {
       "ring": [
@@ -841133,7 +841137,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.63
     },
     {
       "ring": [
@@ -841182,7 +841186,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.45
     },
     {
       "ring": [
@@ -841223,7 +841227,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.93
     },
     {
       "ring": [
@@ -841256,7 +841260,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161
     },
     {
       "ring": [
@@ -841289,7 +841293,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.13
     },
     {
       "ring": [
@@ -841322,7 +841326,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.59
     },
     {
       "ring": [
@@ -841355,7 +841359,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.63
     },
     {
       "ring": [
@@ -841388,7 +841392,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.85
     },
     {
       "ring": [
@@ -841421,7 +841425,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.56
     },
     {
       "ring": [
@@ -841454,7 +841458,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.16
     },
     {
       "ring": [
@@ -841487,7 +841491,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.37
     },
     {
       "ring": [
@@ -841520,7 +841524,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.31
     },
     {
       "ring": [
@@ -841597,7 +841601,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.04
     },
     {
       "ring": [
@@ -841630,7 +841634,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.37
     },
     {
       "ring": [
@@ -841691,7 +841695,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.73
     },
     {
       "ring": [
@@ -841724,7 +841728,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.03
     },
     {
       "ring": [
@@ -841757,7 +841761,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.16
     },
     {
       "ring": [
@@ -841846,7 +841850,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.44
     },
     {
       "ring": [
@@ -841939,7 +841943,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.1
     },
     {
       "ring": [
@@ -841980,7 +841984,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.23
     },
     {
       "ring": [
@@ -842013,7 +842017,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.56
     },
     {
       "ring": [
@@ -842070,7 +842074,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 161.39
     },
     {
       "ring": [
@@ -842127,7 +842131,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 161.79
     },
     {
       "ring": [
@@ -842189,7 +842193,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 161.35
     },
     {
       "ring": [
@@ -842222,7 +842226,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.17
     },
     {
       "ring": [
@@ -842255,7 +842259,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.41
     },
     {
       "ring": [
@@ -842288,7 +842292,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.23
     },
     {
       "ring": [
@@ -842361,7 +842365,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.88
     },
     {
       "ring": [
@@ -842394,7 +842398,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.64
     },
     {
       "ring": [
@@ -842443,7 +842447,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.71
     },
     {
       "ring": [
@@ -842476,7 +842480,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.2
     },
     {
       "ring": [
@@ -842509,7 +842513,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.9
     },
     {
       "ring": [
@@ -842542,7 +842546,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.74
     },
     {
       "ring": [
@@ -842591,7 +842595,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.7
     },
     {
       "ring": [
@@ -842656,7 +842660,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.22
     },
     {
       "ring": [
@@ -842697,7 +842701,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.66
     },
     {
       "ring": [
@@ -842730,7 +842734,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.94
     },
     {
       "ring": [
@@ -842779,7 +842783,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.33
     },
     {
       "ring": [
@@ -842820,7 +842824,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.33
     },
     {
       "ring": [
@@ -842861,7 +842865,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.03
     },
     {
       "ring": [
@@ -842894,7 +842898,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.06
     },
     {
       "ring": [
@@ -842943,7 +842947,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.11
     },
     {
       "ring": [
@@ -842976,7 +842980,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.41
     },
     {
       "ring": [
@@ -843025,7 +843029,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.7
     },
     {
       "ring": [
@@ -843058,7 +843062,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.25
     },
     {
       "ring": [
@@ -843091,7 +843095,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.25
     },
     {
       "ring": [
@@ -843124,7 +843128,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.18
     },
     {
       "ring": [
@@ -843157,7 +843161,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.13
     },
     {
       "ring": [
@@ -843190,7 +843194,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.14
     },
     {
       "ring": [
@@ -843239,7 +843243,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.41
     },
     {
       "ring": [
@@ -843292,7 +843296,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.01
     },
     {
       "ring": [
@@ -843325,7 +843329,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.47
     },
     {
       "ring": [
@@ -843406,7 +843410,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.96
     },
     {
       "ring": [
@@ -843463,7 +843467,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.38
     },
     {
       "ring": [
@@ -843496,7 +843500,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.9
     },
     {
       "ring": [
@@ -843561,7 +843565,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.97
     },
     {
       "ring": [
@@ -843626,7 +843630,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.07
     },
     {
       "ring": [
@@ -843707,7 +843711,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.54
     },
     {
       "ring": [
@@ -843756,7 +843760,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 164.38
     },
     {
       "ring": [
@@ -843821,7 +843825,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.54
     },
     {
       "ring": [
@@ -843878,7 +843882,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 165.13
     },
     {
       "ring": [
@@ -843911,7 +843915,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.62
     },
     {
       "ring": [
@@ -843944,7 +843948,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.77
     },
     {
       "ring": [
@@ -843993,7 +843997,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.97
     },
     {
       "ring": [
@@ -844042,7 +844046,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 164.26
     },
     {
       "ring": [
@@ -844075,7 +844079,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 164.38
     },
     {
       "ring": [
@@ -844108,7 +844112,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.04
     },
     {
       "ring": [
@@ -844141,7 +844145,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.99
     },
     {
       "ring": [
@@ -844174,7 +844178,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.74
     },
     {
       "ring": [
@@ -844207,7 +844211,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.8
     },
     {
       "ring": [
@@ -844240,7 +844244,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.07
     },
     {
       "ring": [
@@ -844297,7 +844301,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.11
     },
     {
       "ring": [
@@ -844366,7 +844370,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.13
     },
     {
       "ring": [
@@ -844399,7 +844403,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.24
     },
     {
       "ring": [
@@ -844432,7 +844436,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 162.75
     },
     {
       "ring": [
@@ -844481,7 +844485,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 164.05
     },
     {
       "ring": [
@@ -844514,7 +844518,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 163.04
     },
     {
       "ring": [
@@ -844547,7 +844551,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.08
     },
     {
       "ring": [
@@ -844584,7 +844588,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.66
     },
     {
       "ring": [
@@ -844617,7 +844621,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 161.22
     },
     {
       "ring": [
@@ -844650,7 +844654,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.14
     },
     {
       "ring": [
@@ -844683,7 +844687,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.37
     },
     {
       "ring": [
@@ -844724,7 +844728,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.32
     },
     {
       "ring": [
@@ -844765,7 +844769,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.13
     },
     {
       "ring": [
@@ -844810,7 +844814,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.98
     },
     {
       "ring": [
@@ -844851,7 +844855,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.83
     },
     {
       "ring": [
@@ -844900,7 +844904,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.78
     },
     {
       "ring": [
@@ -844941,7 +844945,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.75
     },
     {
       "ring": [
@@ -844982,7 +844986,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.9
     },
     {
       "ring": [
@@ -845031,7 +845035,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.43
     },
     {
       "ring": [
@@ -845108,7 +845112,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.56
     },
     {
       "ring": [
@@ -845217,7 +845221,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.16
     },
     {
       "ring": [
@@ -845250,7 +845254,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.91
     },
     {
       "ring": [
@@ -845307,7 +845311,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.64
     },
     {
       "ring": [
@@ -845364,7 +845368,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.59
     },
     {
       "ring": [
@@ -845405,7 +845409,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.51
     },
     {
       "ring": [
@@ -845442,7 +845446,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.47
     },
     {
       "ring": [
@@ -845483,7 +845487,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.14
     },
     {
       "ring": [
@@ -845524,7 +845528,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.86
     },
     {
       "ring": [
@@ -845569,7 +845573,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.74
     },
     {
       "ring": [
@@ -845614,7 +845618,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.56
     },
     {
       "ring": [
@@ -845655,7 +845659,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.38
     },
     {
       "ring": [
@@ -845696,7 +845700,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.42
     },
     {
       "ring": [
@@ -845745,7 +845749,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.36
     },
     {
       "ring": [
@@ -845786,7 +845790,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.78
     },
     {
       "ring": [
@@ -845835,7 +845839,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.15
     },
     {
       "ring": [
@@ -845892,7 +845896,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.96
     },
     {
       "ring": [
@@ -845929,7 +845933,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.82
     },
     {
       "ring": [
@@ -845962,7 +845966,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 159.02
     },
     {
       "ring": [
@@ -846007,7 +846011,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 159.19
     },
     {
       "ring": [
@@ -846040,7 +846044,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.84
     },
     {
       "ring": [
@@ -846073,7 +846077,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.95
     },
     {
       "ring": [
@@ -846106,7 +846110,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.13
     },
     {
       "ring": [
@@ -846139,7 +846143,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.07
     },
     {
       "ring": [
@@ -846172,7 +846176,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.08
     },
     {
       "ring": [
@@ -846213,7 +846217,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 158.67
     },
     {
       "ring": [
@@ -846246,7 +846250,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.24
     },
     {
       "ring": [
@@ -846307,7 +846311,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.68
     },
     {
       "ring": [
@@ -846356,7 +846360,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.93
     },
     {
       "ring": [
@@ -846405,7 +846409,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.64
     },
     {
       "ring": [
@@ -846454,7 +846458,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.05
     },
     {
       "ring": [
@@ -846503,7 +846507,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.65
     },
     {
       "ring": [
@@ -846536,7 +846540,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.63
     },
     {
       "ring": [
@@ -846569,7 +846573,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.2
     },
     {
       "ring": [
@@ -846606,7 +846610,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.39
     },
     {
       "ring": [
@@ -846647,7 +846651,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 160.45
     },
     {
       "ring": [
@@ -846680,7 +846684,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.97
     },
     {
       "ring": [
@@ -846725,7 +846729,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.61
     },
     {
       "ring": [
@@ -846778,7 +846782,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.42
     },
     {
       "ring": [
@@ -846823,7 +846827,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.94
     },
     {
       "ring": [
@@ -846864,7 +846868,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.35
     },
     {
       "ring": [
@@ -846897,7 +846901,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.01
     },
     {
       "ring": [
@@ -846938,7 +846942,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.38
     },
     {
       "ring": [
@@ -846979,7 +846983,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.37
     },
     {
       "ring": [
@@ -847020,7 +847024,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.18
     },
     {
       "ring": [
@@ -847061,7 +847065,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.82
     },
     {
       "ring": [
@@ -847106,7 +847110,7 @@
         "historic_status": "contributing",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 156.43
     },
     {
       "ring": [
@@ -847139,7 +847143,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.88
     },
     {
       "ring": [
@@ -847187,7 +847191,7 @@
         "roof_material": "flat",
         "zoning": "H"
       },
-      "elev": null
+      "elev": 155.71
     },
     {
       "ring": [
@@ -847269,7 +847273,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 159.46
     },
     {
       "ring": [
@@ -847302,7 +847306,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 159.01
     },
     {
       "ring": [
@@ -847335,7 +847339,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.4
     },
     {
       "ring": [
@@ -847368,7 +847372,7 @@
         "historic_status": "contributing",
         "zoning": "DB"
       },
-      "elev": null
+      "elev": 156.69
     },
     {
       "ring": [
@@ -847401,7 +847405,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 157.28
     },
     {
       "ring": [
@@ -847434,7 +847438,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.74
     },
     {
       "ring": [
@@ -847467,7 +847471,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.3
     },
     {
       "ring": [
@@ -847520,7 +847524,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 158.03
     },
     {
       "ring": [
@@ -847577,7 +847581,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.81
     },
     {
       "ring": [
@@ -847634,7 +847638,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.72
     },
     {
       "ring": [
@@ -847691,7 +847695,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.57
     },
     {
       "ring": [
@@ -847744,7 +847748,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 157.31
     },
     {
       "ring": [
@@ -847777,7 +847781,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.93
     },
     {
       "ring": [
@@ -847842,7 +847846,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.51
     },
     {
       "ring": [
@@ -847883,7 +847887,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.3
     },
     {
       "ring": [
@@ -847924,7 +847928,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 155.66
     },
     {
       "ring": [
@@ -847957,7 +847961,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.94
     },
     {
       "ring": [
@@ -847990,7 +847994,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.5
     },
     {
       "ring": [
@@ -848023,7 +848027,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.03
     },
     {
       "ring": [
@@ -848064,7 +848068,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 155.44
     },
     {
       "ring": [
@@ -848105,7 +848109,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.36
     },
     {
       "ring": [
@@ -848146,7 +848150,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.52
     },
     {
       "ring": [
@@ -848187,7 +848191,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.92
     },
     {
       "ring": [
@@ -848228,7 +848232,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 156.09
     },
     {
       "ring": [
@@ -848261,7 +848265,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.71
     },
     {
       "ring": [
@@ -848294,7 +848298,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 155.06
     },
     {
       "ring": [
@@ -848371,7 +848375,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 155.06
     },
     {
       "ring": [
@@ -848420,7 +848424,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.65
     },
     {
       "ring": [
@@ -848489,7 +848493,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.78
     },
     {
       "ring": [
@@ -848522,7 +848526,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.41
     },
     {
       "ring": [
@@ -848563,7 +848567,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 154.15
     },
     {
       "ring": [
@@ -848604,7 +848608,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.05
     },
     {
       "ring": [
@@ -848637,7 +848641,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.42
     },
     {
       "ring": [
@@ -848670,7 +848674,7 @@
         "historic_status": "contributing",
         "zoning": "B"
       },
-      "elev": null
+      "elev": 154.09
     },
     {
       "ring": [
@@ -848715,7 +848719,7 @@
         "historic_status": "contributing",
         "zoning": "D"
       },
-      "elev": null
+      "elev": 153.03
     },
     {
       "ring": [
@@ -848748,7 +848752,7 @@
         "historic_status": "contributing",
         "zoning": "F"
       },
-      "elev": null
+      "elev": 151
     },
     {
       "ring": [
@@ -848797,7 +848801,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 139
     },
     {
       "ring": [
@@ -848826,7 +848830,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 156.85
     },
     {
       "ring": [
@@ -848874,7 +848878,7 @@
         "roof_material": "flat",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 155.44
     },
     {
       "ring": [
@@ -848914,7 +848918,7 @@
         "roof_material": "flat",
         "zoning": "G"
       },
-      "elev": null
+      "elev": 157.84
     },
     {
       "ring": [
@@ -848968,7 +848972,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 154.22
     },
     {
       "ring": [
@@ -849001,7 +849005,7 @@
         "historic_status": "contributing",
         "zoning": "H"
       },
-      "elev": null
+      "elev": 153.48
     },
     {
       "ring": [
@@ -849072,7 +849076,7 @@
         "roof_material": "flat",
         "historic_status": "National Register"
       },
-      "elev": null
+      "elev": 150.5
     },
     {
       "ring": [
@@ -849322,7 +849326,7 @@
         "wall_material": "brick_red",
         "roof_material": "flat"
       },
-      "elev": null
+      "elev": 154.48
     },
     {
       "ring": [
@@ -849361,7 +849365,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 156.91
     },
     {
       "ring": [
@@ -849392,7 +849396,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 156.65
     },
     {
       "ring": [
@@ -849427,7 +849431,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 156.12
     },
     {
       "ring": [
@@ -849458,7 +849462,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 156.65
     },
     {
       "ring": [
@@ -849489,7 +849493,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 156.12
     },
     {
       "ring": [
@@ -849528,7 +849532,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 156.1
     },
     {
       "ring": [
@@ -849567,7 +849571,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 156.05
     },
     {
       "ring": [
@@ -849618,7 +849622,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 155.91
     },
     {
       "ring": [
@@ -849665,7 +849669,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 155.87
     },
     {
       "ring": [
@@ -849712,7 +849716,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 155.91
     },
     {
       "ring": [
@@ -849747,7 +849751,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 155.75
     },
     {
       "ring": [
@@ -849778,7 +849782,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 155.69
     },
     {
       "ring": [
@@ -849821,7 +849825,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 158.2
     },
     {
       "ring": [
@@ -849864,7 +849868,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 158.13
     },
     {
       "ring": [
@@ -849907,7 +849911,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 158.06
     },
     {
       "ring": [
@@ -849950,7 +849954,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.99
     },
     {
       "ring": [
@@ -849993,7 +849997,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.92
     },
     {
       "ring": [
@@ -850032,7 +850036,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.86
     },
     {
       "ring": [
@@ -850071,7 +850075,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.74
     },
     {
       "ring": [
@@ -850110,7 +850114,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.64
     },
     {
       "ring": [
@@ -850149,7 +850153,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.55
     },
     {
       "ring": [
@@ -850196,7 +850200,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.34
     },
     {
       "ring": [
@@ -850227,7 +850231,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.18
     },
     {
       "ring": [
@@ -850310,7 +850314,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 139.84
     },
     {
       "ring": [
@@ -850409,7 +850413,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 154.19
     },
     {
       "ring": [
@@ -850452,7 +850456,7 @@
         "roof_material": "flat",
         "historic_status": "contributing"
       },
-      "elev": null
+      "elev": 157.71
     }
   ]
 }
