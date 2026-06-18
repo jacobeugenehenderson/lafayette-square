@@ -525,7 +525,14 @@ function CameraRig() {
         // Y=eyeHeight — otherwise raised terrain buries the camera underground.
         // getElevation already applies V_EXAG, matching the rendered ground
         // (production keeps terrain at V_EXAG; it never drops to exag 1).
-        const eyeY = getElevation(origin[0], origin[1]) + streetEye
+        // Guarded: a non-finite sample must NEVER reach the camera (a NaN Y
+        // invalidates the view matrix → blank screen). Fall back to flat ground.
+        let groundY = 0
+        try {
+          const g = getElevation(origin[0], origin[1])
+          if (Number.isFinite(g)) groundY = g
+        } catch (e) { console.error('[planetarium] getElevation failed', e) }
+        const eyeY = groundY + streetEye
         beginTransition(
           [origin[0], eyeY, origin[1]],
           [origin[0], eyeY, origin[1] - 0.5],  // look north, orbit takes over
