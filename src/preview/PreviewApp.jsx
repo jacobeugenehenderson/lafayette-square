@@ -49,6 +49,7 @@ import {
   GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
   getLayerCost, layerCostSubscribe,
 } from './GpuMonitor'
+import { ACTIVE_PROFILE } from './deviceProfiles'
 
 function BasicLights() {
   return (
@@ -428,8 +429,9 @@ function saveLayers(layers) {
 // Mobile frame budget — bars are anchored to ms (the only thing that
 // directly determines smoothness). Draws + tris are shown numerically
 // for context, but they don't drive the bar color: a layer that takes
-// 1ms but uploads a million tris is fine on modern GPUs.
-const BUDGET_MS = 16
+// 1ms but uploads a million tris is fine on modern GPUs. Sourced from the
+// active device profile (SSoT) — see `deviceProfiles.js`.
+const BUDGET_MS = ACTIVE_PROFILE.frameBudgetMs
 
 function LayerRow({ layerKey, label, on, onToggle, disabled }) {
   const [, force] = useState(0)

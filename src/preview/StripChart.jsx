@@ -21,13 +21,14 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { getSession, subscribe } from './phoneBus'
+import { ACTIVE_PROFILE } from './deviceProfiles'
 
-const CEILING_MS = 17               // 60fps reference line
+const CEILING_MS = ACTIVE_PROFILE.frameBudgetMs   // 60fps reference line (SSoT)
 const Y_MIN_MAX_MS = 20             // axis floor — just above the budget wall so over-budget spikes have headroom
 
-// Literal mobile budget. Bar height = worst-axis overage so the meter
-// warns regardless of which axis is closest to the wall.
-const BUDGET = { ms: 17, draws: 200, tris: 1_000_000 }
+// Device budget from the active profile (SSoT). Bar height = worst-axis overage
+// so the meter warns regardless of which axis is closest to the wall.
+const BUDGET = { ms: ACTIVE_PROFILE.frameBudgetMs, draws: ACTIVE_PROFILE.drawBudget, tris: ACTIVE_PROFILE.triBudget }
 
 // "Knob" prompts — the chart's job is to tell you what to DO, not just
 // what's wrong. Each over-budget axis maps to a concrete action.
@@ -53,7 +54,7 @@ function composite(f) {
   let axis = 'draws', factor = rDraws
   if (rTris > factor) { axis = 'tris'; factor = rTris }
   // ms-equivalent height — keeps the existing ms-anchored gradient + y-axis
-  // machinery. At-budget = 17ms ≈ ceiling line; 2× tris overage = ~34ms.
+  // machinery. At-budget = BUDGET.ms ≈ ceiling line; 2× tris overage = ~2× that.
   const effMs = BUDGET.ms * factor
   return { effMs, axis, factor }
 }

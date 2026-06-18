@@ -13,6 +13,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 import { pushFrame as phoneBusPushFrame } from './phoneBus'
+import { ACTIVE_PROFILE } from './deviceProfiles'
 
 const eventBus = { last: null, log: [] }
 export function noteEvent(label) {
@@ -68,8 +69,8 @@ export function useLayerCosts() {
 }
 export { layerCostSubscribe }
 
-// Spike thresholds (mobile-mindful)
-const SPIKE = { ms: 33, calls: 200, tris: 1_000_000 }
+// Spike thresholds (mobile-mindful) — from the active device profile (SSoT).
+const SPIKE = { ms: ACTIVE_PROFILE.spikeMs, calls: ACTIVE_PROFILE.drawBudget, tris: ACTIVE_PROFILE.triBudget }
 
 // Rolling window of recent samples for averaging.
 const sampleBuffer = []  // each entry: { ms, calls, tris }
@@ -94,7 +95,7 @@ export function GpuMonitorTicker() {
   const { gl } = useThree()
   const times = useRef([])
   const frameCount = useRef(0)
-  const baseline = useRef({ ms: 16, calls: 0, tris: 0 })
+  const baseline = useRef({ ms: ACTIVE_PROFILE.frameBudgetMs, calls: 0, tris: 0 })
   const spikeLog = useRef([])
   // Track previous accumulator values so we can compute per-frame deltas.
   // Three.js's gl.info.render auto-resets at the START of each render() call,
@@ -220,8 +221,8 @@ export function GpuPanel() {
                      : n >= 1_000   ? `${(n / 1_000).toFixed(1)}K`
                      : `${n}`
   const msColor =
-    stats.frameMs > 33 ? 'var(--error)'
-    : stats.frameMs > 22 ? 'var(--warning, #f5a623)'
+    stats.frameMs > ACTIVE_PROFILE.spikeMs ? 'var(--error)'
+    : stats.frameMs > ACTIVE_PROFILE.warnMs ? 'var(--warning, #f5a623)'
     : 'var(--success, #4ade80)'
 
   return (
@@ -235,8 +236,8 @@ export function GpuPanel() {
         </span>
       </div>
 
-      <Row label="draws" value={stats.calls}    cap={200}      fmt={fmt} />
-      <Row label="tris"  value={stats.tris}     cap={1_000_000} fmt={fmt} />
+      <Row label="draws" value={stats.calls}    cap={ACTIVE_PROFILE.drawBudget} fmt={fmt} />
+      <Row label="tris"  value={stats.tris}     cap={ACTIVE_PROFILE.triBudget} fmt={fmt} />
       <Row label="geos"  value={stats.geos}     cap={null}     fmt={fmt} />
       <Row label="tex"   value={stats.tex}      cap={null}     fmt={fmt} />
       <Row label="progs" value={stats.progs}    cap={null}     fmt={fmt} />
