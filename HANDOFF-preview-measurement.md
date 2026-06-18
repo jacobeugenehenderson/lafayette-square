@@ -136,21 +136,39 @@ one place. (The existing layer-toggle matrix stays exactly as-is: ephemeral insp
 ---
 
 ## Sequencing
-1. **Device-profile SSoT (§1)** — pure refactor, unblocks all else, zero behavior change (seed from today's
-   hardcoded 200/1M/17).
+1. **Device-profile SSoT (§1)** — ✅ **LANDED `c1cc244` (Vernier, 2026-06-17).** `src/preview/deviceProfiles.js`
+   owns every gauge budget; `GpuMonitor`/`StripChart`/`PreviewApp` read the active profile. Tiers
+   `desktop` / `phone-hi` / `phone-lo` (phone tiers seeded from today's 200/1M; `desktop` draw/tri null =
+   open doctrine; `fill/mem/thermal` RESERVED-null for Phases 4–5). Active default = `phone-hi` →
+   pixel-identical to today, **one intended diff**: frame-ms unified to the honest `1000/60 = 16.67`
+   (was 16 in two files, 17 in a third) — StripChart's 60fps line shifts ~2%, per-layer bars ~4% shorter;
+   one-char revert to `17` if byte-identical is ever wanted. Render-path knobs deliberately NOT here
+   (stay `INSTANCE.mobileQuality`, Phase 3). Build green.
 2. **Re-aim gauges to the budget denominator (§3) + memory ceiling (§5a)** — high-leverage, mostly
-   front-end; makes the instrument legible immediately.
+   front-end; makes the instrument legible immediately. **⛔ GATED on the two decisions below** (the
+   denominator is only as honest as the budget it divides by).
 3. **Virtual device (§2)** — workload path (= render-conformance Phase 4) then supersample strain.
 4. **Thermal (§4) + transition spikes (§5b)** — the two new failure-mode gauges.
 5. **Channel-listing editorial (§6)** — depends on the inclusion manifest landing (mobile-profile Phase C);
    the editorial-in-Preview is the reversal's payload.
 
-## Open decisions (Jacob's, before/within dispatch)
-- **Device tiers** — which phones are the named profiles, and the real budget numbers (the current
-  200/1M/17 are guesses; a real iPhone-class measurement should seed `phone-hi`).
-- **Inclusion manifest home** — does it live in `design.json` (per-Look, as mobile-profile spec'd) even
-  though Preview now authors it, or a deploy-side manifest? (Per-Look still seems right; only the *editor*
-  moved.) Confirm at Phase C.
+## Open decisions (Jacob's — now the live Phase-2 gate)
+- **⭐ Desktop budget doctrine.** `desktop.drawBudget/triBudget` are null today. Is desktop *unbudgeted*
+  ("use all the GPU"), or does it get a generous-but-real ceiling so the gauge still warns on a pathological
+  scene / a weak laptop GPU? Boz's lean: **real-but-generous** (desktop users on weak GPUs exist; "publish
+  and know" applies to them too) — frame target stays 60fps, draw/tri set high-but-present.
+- **⭐ The real per-tier numbers.** `phone-hi` and `phone-lo` are currently *identical* (both today's
+  200/1M) — there is no actual weak-device gate yet. The honest numbers want a **real device measurement**,
+  not a guess. **Build-vs-trust distinction (important):** Phase 2 can be *built* against the provisional
+  200/1M (it only changes the gauge's *denominator* — a data refinement later, not a code change). But the
+  gauge is not *trustworthy for a publish decision* until the numbers are real — and a fake budget that
+  reads "✅ ships" is the exact false-confidence the north star forbids. So: Phase 2 may proceed on
+  provisional numbers, but the **real-numbers measurement is a hard gate before the gauge is relied on**
+  (cleanest after Phase 3's virtual device exists to measure through; or a one-time real-phone profiling
+  pass; or seeded from published device specs as an interim).
+- **Inclusion manifest home** — `design.json` (per-Look, as mobile-profile spec'd) even though Preview now
+  authors it, or a deploy-side manifest? (Per-Look still seems right; only the *editor* moved.) Confirm at
+  Phase C.
 
 ## Coordination
 - **Absorbs** render-conformance **Phase 4**; **inherits** mobile-profile **Phases C–E** under the reversal.
