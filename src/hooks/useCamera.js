@@ -35,6 +35,12 @@ const useCamera = create((set, get) => ({
   enterPlanetarium: (x, z) => {
     const current = get().viewMode
     if (current === 'planetarium') return
+    // Dismiss any open place card: a double-click's FIRST click can select a
+    // building (opening the near-fullscreen PlaceCard, which carries
+    // `data-scene-pause` and freezes the render loop); without this, dropping to
+    // street level leaves the dark glass card up over a frozen frame ("screen
+    // goes dark"). goHero() deselects for the same reason.
+    useSelectedBuilding.getState().deselect()
     set({
       previousMode: current,
       viewMode: 'planetarium',
