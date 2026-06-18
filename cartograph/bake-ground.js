@@ -646,8 +646,14 @@ function triangulateAndRefine(outer, holes, refine, yLift = 0) {
     return { positions, indices }
   }
 
-  // Iterative 1-to-4 refinement. Midpoint cache keyed by edge ensures adjacent
-  // triangles share their midpoint vertex (no T-junctions).
+  // Iterative CONFORMING refinement (red-green). Midpoint cache keyed by edge
+  // gives adjacent triangles the same midpoint vertex INDEX; the red-green pass
+  // below guarantees that whenever one triangle bisects a shared edge, its
+  // neighbour conforms (green 1-to-2 closure, or promotion to red) — so no
+  // vertex is ever left in the middle of a neighbour's edge. A plain
+  // per-triangle 1-to-4 split (the old code) left exactly those T-junctions at
+  // every adaptive refined/coarse boundary, opening up-to-`tol` vertical cracks
+  // along the contours — invisible from overhead, glaring at street level.
   const maxEdgeSq = hasCap ? maxEdge * maxEdge : Infinity
   const minEdgeSq = minEdge * minEdge
   const midCache = new Map()
@@ -688,11 +694,13 @@ function triangulateAndRefine(outer, holes, refine, yLift = 0) {
   // Hard iteration cap (guard). A few extra passes for the steep adaptive
   // micro-spots; the minEdge floor stops genuine runaway.
   const PASSES = mode === "adaptive" ? 10 : 8
+  const edgeKey = (a, b) => (a < b ? a + "-" + b : b + "-" + a)
   for (let pass = 0; pass < PASSES; pass++) {
-    let changed = false
-    const next = []
-    for (const t of triList) {
-      const [v0, v1, v2] = t
+    // (1) Criterion → initial RED set (triangles to fully 1-to-4 split).
+    const red = new Array(triList.length).fill(false)
+    let anyRed = false
+    for (let i = 0; i < triList.length; i++) {
+      const [v0, v1, v2] = triList[i]
       const e01 = edgeSq(v0, v1)
       const e12 = edgeSq(v1, v2)
       const e20 = edgeSq(v2, v0)
@@ -707,19 +715,61 @@ function triangulateAndRefine(outer, holes, refine, yLift = 0) {
       } else {
         split = e01 > maxEdgeSq || e12 > maxEdgeSq || e20 > maxEdgeSq
       }
-      if (!split) { next.push(t); continue }
-      changed = true
-      const m01 = midpointIndex(v0, v1)
-      const m12 = midpointIndex(v1, v2)
-      const m20 = midpointIndex(v2, v0)
-      // Four sub-triangles preserving the parent winding.
-      next.push([v0, m01, m20])
-      next.push([m01, v1, m12])
-      next.push([m20, m12, v2])
-      next.push([m01, m12, m20])
+      if (split) { red[i] = true; anyRed = true }
+    }
+    if (!anyRed) break
+
+    // (2) Per-triangle edge keys.
+    const triEdges = triList.map(([v0, v1, v2]) => [
+      edgeKey(v0, v1), edgeKey(v1, v2), edgeKey(v2, v0),
+    ])
+
+    // (3) Conformity: an edge is "bisected" if any owning triangle is red. A
+    // non-red triangle carrying >=2 bisected edges is promoted to red (so it
+    // never needs a 3-way closure). Promotion adds bisected edges → iterate to
+    // a fixpoint. Terminates: each triangle promotes at most once.
+    const bisected = new Set()
+    const markRed = (i) => { for (const k of triEdges[i]) bisected.add(k) }
+    for (let i = 0; i < triList.length; i++) if (red[i]) markRed(i)
+    let promoted = true
+    while (promoted) {
+      promoted = false
+      for (let i = 0; i < triList.length; i++) {
+        if (red[i]) continue
+        let cnt = 0
+        for (const k of triEdges[i]) if (bisected.has(k)) cnt++
+        if (cnt >= 2) { red[i] = true; markRed(i); promoted = true }
+      }
+    }
+
+    // (4) Emit. RED → 1-to-4. Non-red with exactly one bisected edge → GREEN
+    // 1-to-2 closure toward the opposite vertex (the new edge is interior, so
+    // it introduces no fresh T-junction). Non-red with zero → kept as-is.
+    const next = []
+    for (let i = 0; i < triList.length; i++) {
+      const [v0, v1, v2] = triList[i]
+      if (red[i]) {
+        const m01 = midpointIndex(v0, v1)
+        const m12 = midpointIndex(v1, v2)
+        const m20 = midpointIndex(v2, v0)
+        next.push([v0, m01, m20], [m01, v1, m12], [m20, m12, v2], [m01, m12, m20])
+        continue
+      }
+      const [k01, k12, k20] = triEdges[i]
+      if (bisected.has(k01)) {
+        const m = midpointIndex(v0, v1)
+        next.push([v0, m, v2], [m, v1, v2])
+      } else if (bisected.has(k12)) {
+        const m = midpointIndex(v1, v2)
+        next.push([v0, v1, m], [v0, m, v2])
+      } else if (bisected.has(k20)) {
+        const m = midpointIndex(v2, v0)
+        next.push([v0, v1, m], [m, v1, v2])
+      } else {
+        next.push(triList[i])
+      }
     }
     triList = next
-    if (!changed) break
   }
 
   const positions = new Float32Array(posList)
