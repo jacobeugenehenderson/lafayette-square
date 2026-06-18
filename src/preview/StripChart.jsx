@@ -7,23 +7,30 @@
  *
  * Layout:
  *   ┌─ header ────────────────────────────────┐
- *   │ {yMax} ms        →label · 1.23s · ●rec  │
+ *   │ 200% budget      →label · 1.23s · ●rec  │
  *   ├─ meter rectangle ───────────────────────┤
- *   │  [bars equalizer-gradient'd to ms]      │
- *   │  ............ 60 fps ...................│
+ *   │  [bars = % of device budget]            │
+ *   │  ............ budget ...................│
  *   ├─ swimlanes (only when spans present) ───┤
  *   │  [event spans]                          │
  *   └─────────────────────────────────────────┘
  *
- * Bars use a fixed gradient pinned to absolute ms (green at 0,
- * yellow at the 60fps line, orange at 30ms, red at 50ms+). Bars
- * shorter than the gradient's red zone stay green.
+ * ⚠️ The bars plot WORK as a % of the active device budget (max of
+ * draws/tris ratios), NOT milliseconds — at vsync, frame-ms is
+ * information-free (`composite()` below). The 100%-budget line is the
+ * dashed reference; the axis tops out at 200%. The color gradient is a
+ * budget-ratio ramp (green ≈ at-budget, orange/red ≈ over) — it was once
+ * labelled "ms"/"60 fps", a unit it never plotted; Vernier Phase 2 fixed
+ * the labels to match the math.
  */
 import { useEffect, useRef, useState } from 'react'
 import { getSession, subscribe } from './phoneBus'
 import { ACTIVE_PROFILE } from './deviceProfiles'
 
-const CEILING_MS = ACTIVE_PROFILE.frameBudgetMs   // 60fps reference line (SSoT)
+// The 100%-of-budget reference line. Positioned at the work-ratio = 1 height
+// (= BUDGET.ms in the ms-equivalent space `composite()` uses internally to
+// reuse the gradient machinery; it is NOT a frame-ms value the user sees).
+const BUDGET_LINE_MS = ACTIVE_PROFILE.frameBudgetMs
 const Y_MIN_MAX_MS = 20             // axis floor — just above the budget wall so over-budget spikes have headroom
 
 // Device budget from the active profile (SSoT). Bar height = worst-axis overage
@@ -46,15 +53,17 @@ const KNOB = {
 // peg at ~98% even on an empty scene, which is information-free. The bar
 // instead reflects work-vs-budget: empty scene = empty bar, at-budget on
 // any work axis = bar at the ceiling line, over-budget = bar above.
-// Stutter (frames missing v-sync) is surfaced by the textual `verdict()`
-// label; severe hitches still appear as ms outliers in the GpuPanel.
+// Severe hitches still appear as ms outliers in the GpuPanel; this chart is the
+// work-vs-budget view, and the GpuPanel's DeviceVerdict is the headline call.
 function composite(f) {
   const rDraws = f.calls / BUDGET.draws
   const rTris  = f.tris  / BUDGET.tris
   let axis = 'draws', factor = rDraws
   if (rTris > factor) { axis = 'tris'; factor = rTris }
-  // ms-equivalent height — keeps the existing ms-anchored gradient + y-axis
-  // machinery. At-budget = BUDGET.ms ≈ ceiling line; 2× tris overage = ~2× that.
+  // `effMs` is a ratio expressed in the gradient's ms-equivalent space ONLY so
+  // we can reuse the existing ms-anchored gradient + y-axis machinery — it is
+  // NOT a frame-ms value. At-budget (factor 1) = BUDGET.ms = the 100%-budget
+  // line; 2× overage = top of axis. The axis/legend label it as % of budget.
   const effMs = BUDGET.ms * factor
   return { effMs, axis, factor }
 }
@@ -72,15 +81,6 @@ const LANES = [
   { id: 'compile', label: 'compile', hint: 'shader compile (todo)' },
 ]
 
-// Literal-budget verdicts. A frame's ms maps to one of these labels.
-function verdict(ms) {
-  if (ms <= 17) return { text: '60 fps', tone: 'good' }
-  if (ms <= 22) return { text: 'near 60', tone: 'ok' }
-  if (ms <= 33) return { text: '30 fps', tone: 'warn' }
-  if (ms <= 50) return { text: 'jank', tone: 'bad' }
-  return { text: 'stutter', tone: 'bad' }
-}
-
 const COLOR_BG = '#0d0d0f'
 const COLOR_GRID = 'rgba(255,255,255,0.06)'
 const COLOR_CEILING = 'rgba(255,255,255,0.22)'
@@ -89,15 +89,16 @@ const COLOR_LABEL_DIM = 'rgba(255,255,255,0.35)'
 const COLOR_LANE_BG = 'rgba(255,255,255,0.03)'
 const COLOR_CARET = 'rgba(255,255,255,0.5)'
 
-// Absolute-ms gradient — hot/cold spectrum (blue→cyan→green→yellow→orange→red).
-// Tailwind 500-series for consistent saturation; the hue walk is smooth so
-// no sharp banding at any single transition. 60fps lands squarely in green.
+// Budget-ratio gradient — hot/cold spectrum (blue→cyan→green→yellow→orange→red),
+// keyed in the ms-equivalent space `composite()` returns (BUDGET.ms = 100% of
+// budget). Tailwind 500-series for consistent saturation; the hue walk is smooth
+// so no sharp banding. At-budget (≈BUDGET.ms) lands squarely in green.
 const GRADIENT_STOPS = [
   { ms: 0,   color: '#3b82f6' }, // blue — well under budget
   { ms: 10,  color: '#06b6d4' }, // cyan
-  { ms: 17,  color: '#22c55e' }, // green — 60fps target
+  { ms: 17,  color: '#22c55e' }, // green — ≈100% of budget
   { ms: 25,  color: '#eab308' }, // yellow
-  { ms: 33,  color: '#f97316' }, // orange — 30fps line
+  { ms: 33,  color: '#f97316' }, // orange — ≈2× budget
   { ms: 50,  color: '#ef4444' }, // red — clear stutter
   { ms: 100, color: '#7f1d1d' }, // deep red — catastrophe
 ]
@@ -223,8 +224,8 @@ export default function StripChart({ height = 110 }) {
       ctx.fillStyle = 'rgba(255,255,255,0.015)'
       ctx.fillRect(barLeft, meterTop, barAreaW, meterH)
 
-      // 60fps reference line — extends across the bar area only
-      const ceilingY = meterBottom - (meterH * CEILING_MS / yMax)
+      // 100%-of-budget reference line — extends across the bar area only
+      const ceilingY = meterBottom - (meterH * BUDGET_LINE_MS / yMax)
       ctx.strokeStyle = COLOR_CEILING
       ctx.setLineDash([4, 4])
       ctx.lineWidth = 1
@@ -233,15 +234,16 @@ export default function StripChart({ height = 110 }) {
       ctx.stroke()
       ctx.setLineDash([])
 
-      // Y-axis labels in the LEFT GUTTER. Just two: top (yMax in ms)
-      // and the dashed budget line (17 ms · 60 fps). Zero is implicit.
+      // Y-axis labels in the LEFT GUTTER. Just two: the top (200% of budget —
+      // the axis is fixed at 2× the work budget) and the dashed 100%-budget
+      // line. These are % of the active device budget, NOT ms. Zero is implicit.
       ctx.fillStyle = COLOR_LABEL
       ctx.textAlign = 'right'
       ctx.font = '10px ui-monospace, SFMono-Regular, Menlo, monospace'
-      ctx.fillText(`${Math.round(yMax)} ms`, LEFT_GUTTER - 8, meterTop + 8)
+      ctx.fillText('200%', LEFT_GUTTER - 8, meterTop + 8)
       ctx.fillStyle = COLOR_LABEL_DIM
       ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace'
-      ctx.fillText('60 fps', LEFT_GUTTER - 8, ceilingY - 1)
+      ctx.fillText('budget', LEFT_GUTTER - 8, ceilingY - 1)
       ctx.textAlign = 'start'
 
       // Build the equalizer gradient ONCE (cached per draw — simple).
@@ -450,7 +452,7 @@ function Tooltip({ x, y, frame, t, spans, containerW }) {
   // For under-budget frames, the meter is calm — no advice needed.
   const headline = isOver
     ? `${c.axis} over · ${c.factor.toFixed(2)}× budget`
-    : '60 fps · within budget'
+    : `within budget · ${Math.round(c.factor * 100)}%`
   const knob = isOver ? KNOB[c.axis] : null
 
   return (

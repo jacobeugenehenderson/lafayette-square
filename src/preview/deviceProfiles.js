@@ -23,12 +23,27 @@
  * forbids — trust the gauge only once the numbers are measured (keystone
  * §"Open decisions", the build-vs-trust gate).
  *
- * This is Phase 1 of the v0.2 measurement-regime arc
- * (`HANDOFF-preview-measurement.md §1`): a pure refactor, zero intended
- * behavior change beyond the one frame-ms unification noted below. Phases 4–6
- * will populate the reserved fields (fill / memory / thermal) and build the
- * active-tier selector (Phase 3) — the shape below is final so they only
- * *consume* it, never reshape it.
+ * Phase 1 of the v0.2 measurement-regime arc seeded this module
+ * (`HANDOFF-preview-measurement.md §1`): a pure refactor, zero behavior change
+ * beyond the one frame-ms unification noted below. Phase 2 (Vernier, 2026-06-18)
+ * then RE-AIMED the gauges to read against these budgets and WIRED the memory
+ * ceiling (`memBudgetCounts`, see below). Phases 3–4 still populate the
+ * remaining reserved fields (fill / true-byte memory / thermal) and build the
+ * active-tier selector — the shape below is final so they only *consume* it.
+ *
+ * ── Memory ceiling: COUNTS, not bytes (Vernier Phase 2 decision) ───────────
+ * The real OOM/VRAM failure mode is measured in BYTES, but three.js
+ * `gl.info.memory` only exposes resident COUNTS (geometries / textures), and
+ * `gl.info.programs.length` a program count — no byte totals. A true MB ceiling
+ * would require estimating bytes per geometry (sum of attribute array sizes)
+ * and per texture (w·h·channels·mip), which is a Phase-4 job alongside the
+ * virtual device. v1 ships a pragmatic COUNT ceiling (`memBudgetCounts`) so the
+ * geos/tex/progs rows stop rendering with no budget at all — a coarse proxy
+ * (one 4K texture ≫ many small ones), but it catches runaway resident growth,
+ * which is the never-crash blind spot. ⚠️ The count NUMBERS are INTERIM and
+ * deliberately GENEROUS (a false OOM alarm erodes trust worse than a quiet
+ * gauge); they are not a measured ceiling. `memBudgetMB` stays reserved for the
+ * true-byte version.
  *
  * ⚠️ Scope guard (keystone §1): this module owns BUDGET NUMBERS only. The
  * render-path knobs (dpr / antialias / logDepth / post-fx tier) belong to
@@ -54,12 +69,14 @@ const FRAME_BUDGET_60FPS_MS = 1000 / 60
  *   frameBudgetMs         — 60fps frame target                          [WIRED]
  *   spikeMs               — frame-ms spike threshold (red / spike log)  [WIRED]
  *   warnMs                — frame-ms warn threshold (amber)             [WIRED]
+ *   memBudgetCounts       — resident {geometries,textures,programs} COUNT ceiling [WIRED, Phase 2 — INTERIM, generous]
  *   fillBudgetPx          — overdraw/fill ceiling, px/frame  — RESERVED, populated Phase 4 (supersample fill-strain)
- *   memBudgetMB           — resident geo/tex/prog memory ceiling — RESERVED, populated Phase 5 (memory gauge)
+ *   memBudgetMB           — true-BYTE resident ceiling — RESERVED, Phase 4 (needs geo-attr + texture-format byte estimation; v1 uses memBudgetCounts)
  *   thermalSustainableMs  — sustained frame-ms before throttle  — RESERVED, populated Phase 4 (thermal gauge)
  *
- * Reserved fields are `null` on purpose — the real values are open Jacob
- * decisions (`HANDOFF-preview-measurement.md §"Open decisions"`); do not guess.
+ * `null` reserved fields are open Jacob decisions
+ * (`HANDOFF-preview-measurement.md §"Open decisions"`); do not guess them. The
+ * WIRED budgets carry INTERIM numbers until the Phase-3 measurement.
  */
 
 export const DEVICE_PROFILES = {
@@ -76,8 +93,11 @@ export const DEVICE_PROFILES = {
     frameBudgetMs: FRAME_BUDGET_60FPS_MS,
     spikeMs: 33,
     warnMs: 22,
+    // INTERIM count ceiling (generous — desktop spans a huge range). Counts, not
+    // bytes (see header). Trips only on pathological resident growth.
+    memBudgetCounts: { geometries: 4000, textures: 512, programs: 512 },
     fillBudgetPx: null,           // RESERVED — populated Phase 4
-    memBudgetMB: null,            // RESERVED — populated Phase 5
+    memBudgetMB: null,            // RESERVED — true-byte ceiling, Phase 4
     thermalSustainableMs: null,   // RESERVED — populated Phase 4
   },
 
@@ -94,8 +114,11 @@ export const DEVICE_PROFILES = {
     frameBudgetMs: FRAME_BUDGET_60FPS_MS,
     spikeMs: 33,
     warnMs: 22,
+    // INTERIM count ceiling. Counts, not bytes (see header). Generous enough to
+    // not false-alarm on the clean all-on scene; set by Phase-3 measurement.
+    memBudgetCounts: { geometries: 1200, textures: 192, programs: 192 },
     fillBudgetPx: null,           // RESERVED — populated Phase 4
-    memBudgetMB: null,            // RESERVED — populated Phase 5
+    memBudgetMB: null,            // RESERVED — true-byte ceiling, Phase 4
     thermalSustainableMs: null,   // RESERVED — populated Phase 4
   },
 
@@ -107,8 +130,11 @@ export const DEVICE_PROFILES = {
     frameBudgetMs: FRAME_BUDGET_60FPS_MS,
     spikeMs: 33,
     warnMs: 22,
+    // INTERIM count ceiling — the LOWEST tier (the floor we guarantee). Counts,
+    // not bytes (see header). Set by Phase-3 measurement (expect LOWER than hi).
+    memBudgetCounts: { geometries: 800, textures: 128, programs: 128 },
     fillBudgetPx: null,           // RESERVED — populated Phase 4
-    memBudgetMB: null,            // RESERVED — populated Phase 5
+    memBudgetMB: null,            // RESERVED — true-byte ceiling, Phase 4
     thermalSustainableMs: null,   // RESERVED — populated Phase 4
   },
 }

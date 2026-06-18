@@ -212,6 +212,86 @@ export function GpuMonitorTicker() {
   return null
 }
 
+// ── Per-device verdict headline (Vernier Phase 2) ───────────────────
+// One at-a-glance call backed by the sub-gauges that EXIST today: frame
+// budget (worst of draws/tris vs the active device ceiling) + resident
+// memory (vs the interim count ceiling). Thermal + transition land in
+// Phase 4 — their slots are reserved here, stubbed "soon", never faked.
+// ⚠️ Trust-gate (`HANDOFF-preview-measurement.md §"Open decisions"`): the
+// budgets are INTERIM until the Phase-3 measurement, so a green verdict is
+// NOT yet a trustworthy "ship it" — the caveat is surfaced inline.
+const VERDICT_TONE = {
+  good: { color: 'var(--success, #4ade80)', mark: '✅' },
+  warn: { color: 'var(--warning, #f5a623)', mark: '⚠️' },
+  bad:  { color: 'var(--error, #ff5566)',   mark: '❌' },
+}
+function toneForRatio(r) { return r > 1 ? 'bad' : r > 0.75 ? 'warn' : 'good' }
+function worseTone(a, b) {
+  const rank = { good: 0, warn: 1, bad: 2 }
+  return rank[a] >= rank[b] ? a : b
+}
+
+function DeviceVerdict({ mem }) {
+  // Frame-budget gauge: the re-aimed instrument reads WORK vs the device
+  // ceiling (draws/tris), not desktop frame-ms (information-free at vsync).
+  const workRatio = Math.max(
+    stats.calls / ACTIVE_PROFILE.drawBudget,
+    stats.tris  / ACTIVE_PROFILE.triBudget,
+  )
+  const frameTone = toneForRatio(workRatio)
+
+  // Memory gauge: worst resident count vs the interim count ceiling.
+  const memRatio = mem ? Math.max(
+    stats.geos  / mem.geometries,
+    stats.tex   / mem.textures,
+    stats.progs / mem.programs,
+  ) : 0
+  const memTone = mem ? toneForRatio(memRatio) : 'good'
+
+  const overall = worseTone(frameTone, memTone)
+  const t = VERDICT_TONE[overall]
+  const word = overall === 'good' ? 'within budget'
+             : overall === 'warn' ? 'near budget'
+             : 'over budget'
+
+  return (
+    <div style={{
+      paddingBottom: 8, marginBottom: 2,
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+    }}>
+      <div className="flex items-baseline justify-between">
+        <span className="glass-text-secondary" style={{ fontSize: 11 }}>{ACTIVE_PROFILE.label}</span>
+        <span className="font-mono" style={{ color: t.color, fontSize: 13, fontWeight: 600 }}>
+          {t.mark} {word}
+        </span>
+      </div>
+      <div className="flex gap-1 flex-wrap" style={{ marginTop: 5 }}>
+        <Chip label="frame" tone={frameTone} />
+        <Chip label="memory" tone={memTone} />
+        <Chip label="thermal" coming />
+        <Chip label="transition" coming />
+      </div>
+      <div className="glass-text-dim" style={{ fontSize: 9, marginTop: 5, lineHeight: 1.4 }}>
+        budgets <span style={{ color: 'var(--warning, #f5a623)' }}>INTERIM</span> — a green verdict is not yet a trustworthy ship call (pending Phase-3 measurement).
+      </div>
+    </div>
+  )
+}
+
+function Chip({ label, tone, coming }) {
+  const color = coming ? 'var(--on-surface-subtle)' : VERDICT_TONE[tone].color
+  return (
+    <span className="font-mono" style={{
+      fontSize: 9, padding: '1px 6px', borderRadius: 4,
+      border: `1px solid ${coming ? 'rgba(255,255,255,0.12)' : color}`,
+      color,
+      opacity: coming ? 0.55 : 1,
+    }}>
+      {coming ? `● ${label} · soon` : `● ${label}`}
+    </span>
+  )
+}
+
 // DOM-side readout. Lives outside the Canvas.
 export function GpuPanel() {
   const [, setTick] = useState(0)
@@ -225,8 +305,12 @@ export function GpuPanel() {
     : stats.frameMs > ACTIVE_PROFILE.warnMs ? 'var(--warning, #f5a623)'
     : 'var(--success, #4ade80)'
 
+  const mem = ACTIVE_PROFILE.memBudgetCounts
+
   return (
     <div className="space-y-2">
+      <DeviceVerdict mem={mem} />
+
       <div className="section-heading">GPU</div>
 
       <div className="flex items-baseline justify-between">
@@ -238,9 +322,13 @@ export function GpuPanel() {
 
       <Row label="draws" value={stats.calls}    cap={ACTIVE_PROFILE.drawBudget} fmt={fmt} />
       <Row label="tris"  value={stats.tris}     cap={ACTIVE_PROFILE.triBudget} fmt={fmt} />
-      <Row label="geos"  value={stats.geos}     cap={null}     fmt={fmt} />
-      <Row label="tex"   value={stats.tex}      cap={null}     fmt={fmt} />
-      <Row label="progs" value={stats.progs}    cap={null}     fmt={fmt} />
+
+      {/* Resident memory ceiling (Vernier Phase 2). COUNTS, not bytes — three.js
+          exposes counts, not VRAM bytes; a coarse proxy for the never-crash
+          OOM gauge. Budget numbers are INTERIM/generous (deviceProfiles.js). */}
+      <Row label="geos"  value={stats.geos}     cap={mem?.geometries ?? null} fmt={fmt} />
+      <Row label="tex"   value={stats.tex}      cap={mem?.textures   ?? null} fmt={fmt} />
+      <Row label="progs" value={stats.progs}    cap={mem?.programs   ?? null} fmt={fmt} />
 
       <SpikeLog />
     </div>

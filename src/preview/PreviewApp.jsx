@@ -426,28 +426,38 @@ function saveLayers(layers) {
   catch { /* ignore quota / disabled */ }
 }
 
-// Mobile frame budget — bars are anchored to ms (the only thing that
-// directly determines smoothness). Draws + tris are shown numerically
-// for context, but they don't drive the bar color: a layer that takes
-// 1ms but uploads a million tris is fine on modern GPUs. Sourced from the
-// active device profile (SSoT) — see `deviceProfiles.js`.
-const BUDGET_MS = ACTIVE_PROFILE.frameBudgetMs
+// A channel's tax as a fraction of the ACTIVE DEVICE budget (Vernier Phase 2,
+// `HANDOFF-preview-measurement.md §3`). The old bar divided the Δ by frame-ms,
+// which is information-free at vsync (the desktop always reads ~0). Now each
+// channel reads as "% of the device DRAW/TRI budget" — a tax against a ceiling.
+// Returns the dominant (worst) axis so the bar warns on whichever is closest to
+// the wall. Structured so fill / memory slot in as extra axes once those budgets
+// land (Phase 4–5) — add a ratio here and `dominant` picks it up automatically.
+function channelBudget(cost, profile) {
+  if (!cost) return null
+  const ratios = [
+    { axis: 'draws', pct: (Math.max(0, cost.calls) / profile.drawBudget) * 100 },
+    { axis: 'tris',  pct: (Math.max(0, cost.tris)  / profile.triBudget)  * 100 },
+  ]
+  return ratios.reduce((a, b) => (b.pct > a.pct ? b : a))
+}
 
 function LayerRow({ layerKey, label, on, onToggle, disabled }) {
   const [, force] = useState(0)
   useEffect(() => layerCostSubscribe(() => force(n => n + 1)), [])
   const cost = getLayerCost(layerKey)
 
-  const absMs    = cost ? Math.max(0, cost.ms)    : 0
   const absCalls = cost ? Math.max(0, cost.calls) : 0
   const absTris  = cost ? Math.max(0, cost.tris)  : 0
 
-  const msPct = (absMs / BUDGET_MS) * 100
+  // Bar reads against the device budget (dominant axis), NOT frame-ms.
+  const dom = channelBudget(cost, ACTIVE_PROFILE)
+  const pct = dom ? dom.pct : 0
   const color =
     !cost ? 'rgba(255,255,255,0.18)'
-    : msPct > 100 ? 'var(--error, #ff5566)'
-    : msPct > 66  ? 'var(--warning, #f5a623)'
-    : msPct > 33  ? '#fbbf24'
+    : pct > 100 ? 'var(--error, #ff5566)'
+    : pct > 66  ? 'var(--warning, #f5a623)'
+    : pct > 33  ? '#fbbf24'
     : 'var(--success, #4ade80)'
 
   const fmt = (n) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M`
@@ -475,15 +485,15 @@ function LayerRow({ layerKey, label, on, onToggle, disabled }) {
           background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
         }}>
           <div style={{
-            width: `${Math.min(100, msPct)}%`, height: '100%',
+            width: `${Math.min(100, pct)}%`, height: '100%',
             background: color, transition: 'width 200ms ease',
           }} />
         </div>
         <span className="font-mono glass-text-dim" style={{
-          fontSize: 10, minWidth: 110, textAlign: 'right',
+          fontSize: 10, minWidth: 124, textAlign: 'right',
         }}>
-          {cost
-            ? `${absMs.toFixed(1)}ms · ${fmt(absCalls)}d · ${fmt(absTris)}t`
+          {cost && dom
+            ? `${Math.round(dom.pct)}% ${dom.axis} · ${fmt(absCalls)}d · ${fmt(absTris)}t`
             : '—'}
         </span>
       </div>
@@ -523,15 +533,16 @@ function ProfilerTab({ tab, setTab }) {
   )
 }
 
-// How to read the per-layer numbers — three caveats that, unstated, would
-// mislead (Vernier Phase 2). Render cost, not memory; non-additive; neon
-// forced on.
+// How to read the per-layer numbers — caveats that, unstated, would mislead
+// (Vernier Phase 2). Bars read against the active device budget; render cost,
+// not memory; non-additive; neon forced on.
 function PanelCaveats() {
   return (
     <div className="glass-text-dim" style={{
       fontSize: 9.5, lineHeight: 1.5, paddingTop: 6, marginTop: 2,
       borderTop: '1px solid rgba(255,255,255,0.08)',
     }}>
+      <div><b>% of {ACTIVE_PROFILE.label} budget</b> — bars read each channel's tax against the device draw/tri ceiling (dominant axis). <span style={{ color: 'var(--warning, #f5a623)' }}>budgets INTERIM, pending measurement.</span></div>
       <div><b>render cost, not memory</b> — toggles hide a layer (skip its draw); geometry stays GPU-resident.</div>
       <div><b>deltas don't sum</b> — overdraw is shared (hiding trees also cuts buildings' fill); trust the all-on total, not the sum of layers.</div>
       <div><b>neon forced on</b> — all tubes lit for worst-case profiling, unlike production's authored/TOD-gated neon.</div>
