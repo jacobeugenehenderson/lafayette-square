@@ -267,9 +267,14 @@ export default function EventTicker() {
 
   const viewMode = useCamera(s => s.viewMode)
   const isBrowse = viewMode === 'browse'
+  // NOTE: every hook must run before any early return. `panelState` used to be
+  // read AFTER `if (planetarium) return null`, so entering Street view skipped a
+  // hook → "Rendered fewer hooks than expected" → React tore down the root →
+  // Canvas remount → WebGL context loss (dark screen). Keep all hooks above the
+  // returns. (2026-06-17)
+  const panelFull = useCamera(s => s.panelState) === 'full'
 
   if (viewMode === 'planetarium') return null
-  const panelFull = useCamera(s => s.panelState) === 'full'
   if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen || panelFull) return null
   if (tickerItems.length === 0) return null
 
