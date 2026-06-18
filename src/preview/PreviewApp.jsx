@@ -49,7 +49,6 @@ import {
   GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
   getLayerCost, layerCostSubscribe,
 } from './GpuMonitor'
-import { ACTIVE_PROFILE } from './deviceProfiles'
 
 function BasicLights() {
   return (
@@ -426,43 +425,44 @@ function saveLayers(layers) {
   catch { /* ignore quota / disabled */ }
 }
 
-// A channel's tax as a fraction of the ACTIVE DEVICE budget (Vernier Phase 2,
-// `HANDOFF-preview-measurement.md §3`). The old bar divided the Δ by frame-ms,
-// which is information-free at vsync (the desktop always reads ~0). Now each
-// channel reads as "% of the device DRAW/TRI budget" — a tax against a ceiling.
-// Returns the dominant (worst) axis so the bar warns on whichever is closest to
-// the wall. Structured so fill / memory slot in as extra axes once those budgets
-// land (Phase 4–5) — add a ratio here and `dominant` picks it up automatically.
-function channelBudget(cost, profile) {
-  if (!cost) return null
-  const ratios = [
-    { axis: 'draws', pct: (Math.max(0, cost.calls) / profile.drawBudget) * 100 },
-    { axis: 'tris',  pct: (Math.max(0, cost.tris)  / profile.triBudget)  * 100 },
-  ]
-  return ratios.reduce((a, b) => (b.pct > a.pct ? b : a))
+const fmtNum = (n) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M`
+                    : n >= 1_000     ? `${(n/1_000).toFixed(1)}K`
+                    : `${Math.round(n)}`
+
+// The per-layer metric a row ranks on. Scene layers are geometry — ranked by
+// DRAW CALLS (the mobile-critical number; tris shown for context). Post-FX are
+// full-screen passes with ~0 geometry — their cost is MS, so showing them
+// against a draw/tri budget read "post-fx · N triangles", nonsense. They rank
+// on ms instead. (Vernier Phase 2 redraw — Jacob's eye, 2026-06-18.)
+function layerMetricValue(cost, metric) {
+  if (!cost) return 0
+  return metric === 'ms' ? Math.max(0, cost.ms) : Math.max(0, cost.calls)
 }
 
-function LayerRow({ layerKey, label, on, onToggle, disabled }) {
-  const [, force] = useState(0)
-  useEffect(() => layerCostSubscribe(() => force(n => n + 1)), [])
+// A layer row = a RANKED HOG. The bar is this layer's share of the HEAVIEST
+// layer in its group (heaviest = full bar), in absolute units — NOT a budget %.
+// Dividing one layer's draws by the whole-DEVICE budget produced "Trees 1004%"
+// (a single layer can dwarf the per-frame ceiling); that's a category error.
+// Budget-% is a SCENE-TOTAL question and now lives in the verdict (GpuPanel).
+// Heat is RELATIVE WEIGHT (which layers are the hogs), not a good/bad call.
+function LayerRow({ layerKey, label, on, onToggle, disabled, metric, groupMax }) {
   const cost = getLayerCost(layerKey)
+  const draws = cost ? Math.max(0, cost.calls) : 0
+  const tris  = cost ? Math.max(0, cost.tris)  : 0
+  const ms    = cost ? Math.max(0, cost.ms)    : 0
 
-  const absCalls = cost ? Math.max(0, cost.calls) : 0
-  const absTris  = cost ? Math.max(0, cost.tris)  : 0
-
-  // Bar reads against the device budget (dominant axis), NOT frame-ms.
-  const dom = channelBudget(cost, ACTIVE_PROFILE)
-  const pct = dom ? dom.pct : 0
+  const value = layerMetricValue(cost, metric)
+  const share = groupMax > 0 ? value / groupMax : 0      // 0..1 of the heaviest
+  const pct = share * 100
   const color =
     !cost ? 'rgba(255,255,255,0.18)'
-    : pct > 100 ? 'var(--error, #ff5566)'
-    : pct > 66  ? 'var(--warning, #f5a623)'
-    : pct > 33  ? '#fbbf24'
-    : 'var(--success, #4ade80)'
+    : share > 0.66 ? 'var(--warning, #f5a623)'   // the hogs
+    : share > 0.33 ? '#fbbf24'
+    : '#5eead4'                                   // light — teal, not "good/green"
 
-  const fmt = (n) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M`
-                  : n >= 1_000     ? `${(n/1_000).toFixed(1)}K`
-                  : `${Math.round(n)}`
+  const readout = !cost ? '—'
+    : metric === 'ms' ? `${ms.toFixed(1)} ms`
+    : `${fmtNum(draws)}d · ${fmtNum(tris)}t`
 
   return (
     <div style={{ opacity: disabled ? 0.4 : 1 }}>
@@ -490,13 +490,38 @@ function LayerRow({ layerKey, label, on, onToggle, disabled }) {
           }} />
         </div>
         <span className="font-mono glass-text-dim" style={{
-          fontSize: 10, minWidth: 124, textAlign: 'right',
+          fontSize: 10, minWidth: 110, textAlign: 'right',
         }}>
-          {cost && dom
-            ? `${Math.round(dom.pct)}% ${dom.axis} · ${fmt(absCalls)}d · ${fmt(absTris)}t`
-            : '—'}
+          {readout}
         </span>
       </div>
+    </div>
+  )
+}
+
+// A toggle group (Scene / Post-FX). Subscribes once to layer-cost changes,
+// computes the group's heaviest cost (its metric), and feeds every row its
+// share. Keeping a single subscription here (vs. per-row) is what lets the
+// share-of-heaviest bar stay consistent across rows on the same render.
+function LayerSection({ title, layerList, layers, setLayer, metric, footer }) {
+  const [, force] = useState(0)
+  useEffect(() => layerCostSubscribe(() => force(n => n + 1)), [])
+  let groupMax = 0
+  for (const [key] of layerList) {
+    const v = layerMetricValue(getLayerCost(key), metric)
+    if (v > groupMax) groupMax = v
+  }
+  return (
+    <div className="glass-panel rounded-xl p-3 space-y-2">
+      <div className="section-heading">{title}</div>
+      <div className="space-y-1">
+        {layerList.map(([key, label]) => (
+          <LayerRow key={key} layerKey={key} label={label}
+            metric={metric} groupMax={groupMax}
+            on={!!layers[key]} onToggle={(v) => setLayer(key, v)} />
+        ))}
+      </div>
+      {footer}
     </div>
   )
 }
@@ -534,18 +559,30 @@ function ProfilerTab({ tab, setTab }) {
 }
 
 // How to read the per-layer numbers — caveats that, unstated, would mislead
-// (Vernier Phase 2). Bars read against the active device budget; render cost,
-// not memory; non-additive; neon forced on.
-function PanelCaveats() {
+// (Vernier Phase 2). Bars rank by share of the heaviest layer (relative weight,
+// not a budget call — that's the scene verdict); render cost, not memory;
+// non-additive; neon forced on.
+function SceneCaveats() {
   return (
     <div className="glass-text-dim" style={{
       fontSize: 9.5, lineHeight: 1.5, paddingTop: 6, marginTop: 2,
       borderTop: '1px solid rgba(255,255,255,0.08)',
     }}>
-      <div><b>% of {ACTIVE_PROFILE.label} budget</b> — bars read each channel's tax against the device draw/tri ceiling (dominant axis). <span style={{ color: 'var(--warning, #f5a623)' }}>budgets INTERIM, pending measurement.</span></div>
+      <div><b>ranked by share of heaviest</b> — bars show each layer's draws relative to the biggest hog, not a budget %. The budget call is the scene verdict (gpu tab).</div>
       <div><b>render cost, not memory</b> — toggles hide a layer (skip its draw); geometry stays GPU-resident.</div>
       <div><b>deltas don't sum</b> — overdraw is shared (hiding trees also cuts buildings' fill); trust the all-on total, not the sum of layers.</div>
       <div><b>neon forced on</b> — all tubes lit for worst-case profiling, unlike production's authored/TOD-gated neon.</div>
+    </div>
+  )
+}
+
+function FxCaveats() {
+  return (
+    <div className="glass-text-dim" style={{
+      fontSize: 9.5, lineHeight: 1.5, paddingTop: 6, marginTop: 2,
+      borderTop: '1px solid rgba(255,255,255,0.08)',
+    }}>
+      <div><b>post-FX cost is ms</b> — full-screen passes draw no geometry; ranked by frame-time, not draws/tris.</div>
     </div>
   )
 }
@@ -558,27 +595,11 @@ function RightPanel({ layers, setLayer, top, bottom }) {
         <TimeControl />
       </div>
 
-      <div className="glass-panel rounded-xl p-3 space-y-2">
-        <div className="section-heading">Scene</div>
-        <div className="space-y-1">
-          {SCENE_LAYERS.map(([key, label]) => (
-            <LayerRow key={key} layerKey={key} label={label}
-              on={!!layers[key]}
-              onToggle={(v) => setLayer(key, v)} />
-          ))}
-        </div>
-        <PanelCaveats />
-      </div>
+      <LayerSection title="Scene" layerList={SCENE_LAYERS} layers={layers}
+        setLayer={setLayer} metric="draws" footer={<SceneCaveats />} />
 
-      <div className="glass-panel rounded-xl p-3 space-y-2">
-        <div className="section-heading">Post-FX</div>
-        <div className="space-y-1">
-          {FX_LAYERS.map(([key, label]) => (
-            <LayerRow key={key} layerKey={key} label={label}
-              on={!!layers[key]} onToggle={(v) => setLayer(key, v)} />
-          ))}
-        </div>
-      </div>
+      <LayerSection title="Post-FX" layerList={FX_LAYERS} layers={layers}
+        setLayer={setLayer} metric="ms" footer={<FxCaveats />} />
     </div>
   )
 }

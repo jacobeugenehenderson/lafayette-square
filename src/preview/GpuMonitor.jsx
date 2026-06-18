@@ -13,7 +13,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 import { pushFrame as phoneBusPushFrame } from './phoneBus'
-import { ACTIVE_PROFILE } from './deviceProfiles'
+import { ACTIVE_PROFILE, DEVICE_PROFILES } from './deviceProfiles'
 
 const eventBus = { last: null, log: [] }
 export function noteEvent(label) {
@@ -212,69 +212,75 @@ export function GpuMonitorTicker() {
   return null
 }
 
-// ── Per-device verdict headline (Vernier Phase 2) ───────────────────
-// One at-a-glance call backed by the sub-gauges that EXIST today: frame
-// budget (worst of draws/tris vs the active device ceiling) + resident
-// memory (vs the interim count ceiling). Thermal + transition land in
-// Phase 4 — their slots are reserved here, stubbed "soon", never faked.
-// ⚠️ Trust-gate (`HANDOFF-preview-measurement.md §"Open decisions"`): the
-// budgets are INTERIM until the Phase-3 measurement, so a green verdict is
-// NOT yet a trustworthy "ship it" — the caveat is surfaced inline.
+// ── Scene-total verdict — the budget call, one chip per device ──────
+// Budget-% is a SCENE-TOTAL question, NOT a per-layer one: a single layer can
+// dwarf the per-frame draw ceiling (the "Trees 1004%" bug), but the all-on
+// scene total vs a device budget is meaningful. So the budget verdict lives
+// here, with one read-only chip per device (desktop / phone-hi / phone-lo) —
+// the operator sees at a glance which devices the slab fits. (Not the Phase-3
+// active-device SELECTOR; just status.) Each chip = worst of draws/tris/memory
+// vs that device's budget.
+// ⚠️ Trust-gate (`HANDOFF-preview-measurement.md §"Open decisions"`): the phone
+// budgets are INTERIM until the Phase-3 measurement, so a green chip is NOT yet
+// a trustworthy "ship it" — surfaced inline. Thermal + transition are Phase 4.
 const VERDICT_TONE = {
   good: { color: 'var(--success, #4ade80)', mark: '✅' },
   warn: { color: 'var(--warning, #f5a623)', mark: '⚠️' },
   bad:  { color: 'var(--error, #ff5566)',   mark: '❌' },
 }
 function toneForRatio(r) { return r > 1 ? 'bad' : r > 0.75 ? 'warn' : 'good' }
-function worseTone(a, b) {
-  const rank = { good: 0, warn: 1, bad: 2 }
-  return rank[a] >= rank[b] ? a : b
+
+// Worst budget ratio for the live scene total against one device profile.
+function sceneRatioFor(p) {
+  let r = Math.max(stats.calls / p.drawBudget, stats.tris / p.triBudget)
+  const mem = p.memBudgetCounts
+  if (mem) {
+    r = Math.max(r,
+      stats.geos  / mem.geometries,
+      stats.tex   / mem.textures,
+      stats.progs / mem.programs,
+    )
+  }
+  return r
 }
 
-function DeviceVerdict({ mem }) {
-  // Frame-budget gauge: the re-aimed instrument reads WORK vs the device
-  // ceiling (draws/tris), not desktop frame-ms (information-free at vsync).
-  const workRatio = Math.max(
-    stats.calls / ACTIVE_PROFILE.drawBudget,
-    stats.tris  / ACTIVE_PROFILE.triBudget,
-  )
-  const frameTone = toneForRatio(workRatio)
+const VERDICT_DEVICE_ORDER = ['desktop', 'phone-hi', 'phone-lo']
 
-  // Memory gauge: worst resident count vs the interim count ceiling.
-  const memRatio = mem ? Math.max(
-    stats.geos  / mem.geometries,
-    stats.tex   / mem.textures,
-    stats.progs / mem.programs,
-  ) : 0
-  const memTone = mem ? toneForRatio(memRatio) : 'good'
-
-  const overall = worseTone(frameTone, memTone)
-  const t = VERDICT_TONE[overall]
-  const word = overall === 'good' ? 'within budget'
-             : overall === 'warn' ? 'near budget'
-             : 'over budget'
-
+function SceneVerdict() {
   return (
     <div style={{
       paddingBottom: 8, marginBottom: 2,
       borderBottom: '1px solid rgba(255,255,255,0.08)',
     }}>
-      <div className="flex items-baseline justify-between">
-        <span className="glass-text-secondary" style={{ fontSize: 11 }}>{ACTIVE_PROFILE.label}</span>
-        <span className="font-mono" style={{ color: t.color, fontSize: 13, fontWeight: 600 }}>
-          {t.mark} {word}
-        </span>
+      <div className="section-heading" style={{ marginBottom: 4 }}>scene vs budget</div>
+      <div className="flex gap-1 flex-wrap">
+        {VERDICT_DEVICE_ORDER.map(id => {
+          const p = DEVICE_PROFILES[id]
+          if (!p) return null
+          return <DeviceChip key={id} profile={p} />
+        })}
       </div>
-      <div className="flex gap-1 flex-wrap" style={{ marginTop: 5 }}>
-        <Chip label="frame" tone={frameTone} />
-        <Chip label="memory" tone={memTone} />
+      <div className="flex gap-1 flex-wrap" style={{ marginTop: 4 }}>
         <Chip label="thermal" coming />
         <Chip label="transition" coming />
       </div>
       <div className="glass-text-dim" style={{ fontSize: 9, marginTop: 5, lineHeight: 1.4 }}>
-        budgets <span style={{ color: 'var(--warning, #f5a623)' }}>INTERIM</span> — a green verdict is not yet a trustworthy ship call (pending Phase-3 measurement).
+        phone budgets <span style={{ color: 'var(--warning, #f5a623)' }}>INTERIM</span> — a green chip is not yet a trustworthy ship call (pending Phase-3 measurement).
       </div>
     </div>
+  )
+}
+
+function DeviceChip({ profile }) {
+  const ratio = sceneRatioFor(profile)
+  const t = VERDICT_TONE[toneForRatio(ratio)]
+  return (
+    <span className="font-mono" style={{
+      fontSize: 10, padding: '2px 7px', borderRadius: 4,
+      border: `1px solid ${t.color}`, color: t.color,
+    }}>
+      {t.mark} {profile.id} · {Math.round(ratio * 100)}%
+    </span>
   )
 }
 
@@ -309,7 +315,7 @@ export function GpuPanel() {
 
   return (
     <div className="space-y-2">
-      <DeviceVerdict mem={mem} />
+      <SceneVerdict />
 
       <div className="section-heading">GPU</div>
 
