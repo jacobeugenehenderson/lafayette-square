@@ -111,16 +111,13 @@ A walk-around is **street view that translates**: same 1.73 m eye, same look-aro
 
 The overlay (`PlanetariumOverlay.jsx`) draws, for the 88 IAU constellations in `src/data/planetarium/constellations.json`: **graphic lines** + **vertex nodes** + **name labels**, plus named-star + planet labels. Mounted by `CelestialBodies.jsx:962` behind `constellationsVisible`.
 
-**Visibility — always-on in street view** (LANDED 2026-06-17 `779aded`). The old gate (`viewMode!=browse && constellations × nightFactor > 0.05`, channel default 0 → never showed) is replaced by:
+**Visibility — Street view ONLY, all day long** (LANDED 2026-06-17). The original channel×night gate (channel default 0 → never showed) is gone entirely:
 
 ```js
-const constellationsVisible =
-  viewMode === 'planetarium'                                   // Street: ALWAYS
-  || (viewMode === 'hero' && constellationsNightFactor > 0.05) // Hero: night only (clean landing)
-  || (viewMode !== 'browse' && constellationsVal > 0.05)       // operator force-on override (future param)
+const constellationsVisible = viewMode === 'planetarium'
 ```
 
-So street view always shows the figures; Hero shows them at night; Browse never. The operator `constellations` channel is **retained as a force-on override** so a future deliberate parameterization needs no re-plumbing (Jacob 2026-06-17: "visible all the time … perhaps we will [parameterize]").
+So the figures show **only in street view (planetarium), all day** — never in Hero or Browse, and with no day/night fade (Jacob 2026-06-17). Visibility is purely the camera mode. *(The operator `constellations` channel still drives the overlay's per-TOD styling inside `PlanetariumOverlay`; it no longer gates whether the overlay appears.)*
 
 **The look — gold figures, real-temperature joints** (LANDED 2026-06-17, spectral-node pass):
 - **Lines + name labels stay GOLD** (`#c4a265`) — deliberately, the **Grand Central Terminal ceiling** aesthetic (Jacob).

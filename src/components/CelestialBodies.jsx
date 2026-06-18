@@ -936,24 +936,12 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   // for v1; smooth opacity fade is a follow-up that needs propagating the
   // value into PlanetariumOverlay's sub-materials.
   const viewMode = useCamera((s) => s.viewMode)
-  const tod = useTimeOfDay.getState()
-  const constellationsSunAlt = tod.getLightingPhase().sunAltitude
-  const constellationsNightFactor = Math.max(0, Math.min(1, (0.05 - constellationsSunAlt) / 0.20))
-  const constellationsSlotMins = constellationsChannel.animated ? getTodSlotMinutes(tod.currentTime) : null
-  const constellationsVal = resolveGroupAtMinute(
-    constellationsChannel, tod.getMinuteOfDay(), constellationsSlotMins,
-    CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
-  ).value
-  // Visibility (Jacob 2026-06-17 "visible all the time"): ALWAYS on in Street
-  // view (planetarium) — that's the look-up experience and should never be
-  // gated off. In Hero, fade in at night so the daytime landing stays clean.
-  // The operator `constellations` channel is retained as an optional force-on
-  // override in any non-browse mode, so a future parameterization pass can
-  // re-assert authored control without re-plumbing. Never in Browse (overhead).
-  const constellationsVisible =
-    viewMode === 'planetarium'
-    || (viewMode === 'hero' && constellationsNightFactor > 0.05)
-    || (viewMode !== 'browse' && constellationsVal > 0.05)
+  // Constellations: ONLY in Street view (planetarium), ALL DAY LONG (Jacob
+  // 2026-06-17). Never in Hero or Browse; no day/night gate. Visibility is
+  // purely the camera mode. (The operator `constellations` channel still drives
+  // the overlay's per-TOD styling inside PlanetariumOverlay — it just no longer
+  // gates whether the overlay shows.)
+  const constellationsVisible = viewMode === 'planetarium'
 
   return (
     <>
