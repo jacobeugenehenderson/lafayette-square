@@ -9,6 +9,7 @@ import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
 import CelestialBodies from './CelestialBodies'
 import BakedGround from './BakedGround.jsx'
+import { getElevation } from '../utils/elevation'
 import LafayettePark from './LafayettePark'
 import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
@@ -520,11 +521,16 @@ function CameraRig() {
         // hardwires-come-out category 3, the click-driven origin is NOT
         // baked — only fov / eyeHeight transit the slab.
         const origin = state.planetariumOrigin || [0, 0]
+        // Eye height is ABOVE the ground at the clicked point, not absolute
+        // Y=eyeHeight — otherwise raised terrain buries the camera underground.
+        // getElevation already applies V_EXAG, matching the rendered ground
+        // (production keeps terrain at V_EXAG; it never drops to exag 1).
+        const eyeY = getElevation(origin[0], origin[1]) + streetEye
         beginTransition(
-          [origin[0], streetEye, origin[1]],
-          [origin[0], streetEye, origin[1] - 0.5],  // look north, orbit takes over
+          [origin[0], eyeY, origin[1]],
+          [origin[0], eyeY, origin[1] - 0.5],  // look north, orbit takes over
           streetFov, 1500,
-          [0, 1, 0]                                  // street-level: upright
+          [0, 1, 0]                            // street-level: upright
         )
       } else if (entering === 'browse') {
         // Browse entered from a non-hero shot (e.g. planetarium→browse): same

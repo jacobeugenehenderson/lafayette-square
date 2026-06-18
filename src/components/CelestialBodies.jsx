@@ -37,6 +37,7 @@ const SKY_GAIN_DEFAULT_CHANNEL       = { values: SKY_GAIN_FLAT_DEFAULTS }
 import brightStars from '../data/bright_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
+import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
 
@@ -962,7 +963,18 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       </mesh>
       <points ref={starRef} geometry={starGeo} material={starMat} frustumCulled={false} />
       <points ref={noiseRef} geometry={noiseGeo} material={noiseMat} frustumCulled={false} />
-      {constellationsVisible && <PlanetariumOverlay />}
+      {constellationsVisible && (
+        // Isolated: PlanetariumOverlay was effectively never mounted in
+        // production (the `constellations` channel defaulted to 0), so an
+        // always-on mount in Street view must not be able to blank the whole
+        // sky/scene if it throws. The boundary logs `[R3F] PlanetariumOverlay
+        // crashed <error>` to the console; Suspense covers any async label load.
+        <R3FErrorBoundary name="PlanetariumOverlay">
+          <Suspense fallback={null}>
+            <PlanetariumOverlay />
+          </Suspense>
+        </R3FErrorBoundary>
+      )}
     </>
   )
 }
