@@ -109,6 +109,11 @@ export const DEFAULTS = {
     // BASE_CARD_SIZE=0.1m yields ~10cm cards at world scale (verified
     // against the obelisk human-height reference). Range 0.5..3.0.
     scale: 1.0,
+    // §5 Leaf Ways — the attach/orient grammar: alternate (default scatter) ·
+    // opposite (maple/ash pairs) · all-one-direction (willow droop) · sprays
+    // (compound fronds) · clusters (ginkgo fans). Seeded from the dossier's
+    // required["leaf.ways"]; operator-overridable.
+    ways: 'alternate',
     tintFront: '#3a7530',
     tintBack:  '#a8b89a',
   },
@@ -529,6 +534,7 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
     yCompression = 0.6,
     tileGrid = [1, 1],   // [cols, rows] in the leaf-pack atlas
     inwardBias = 0,      // 0..1 — shift card scatter toward trunk axis
+    ways = 'alternate',  // §5 Leaf Ways — the per-card ATTACH/ORIENT grammar
   } = opts || {}
   const [gridCols, gridRows] = tileGrid
   const tileW = 1 / gridCols
@@ -549,18 +555,52 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
     const axDist = Math.hypot(att[0], att[2]) || 1
     const inwardX = -att[0] / axDist
     const inwardZ = -att[2] / axDist
+    const biasMag = inwardBias * spread
+    const outwardYaw = Math.atan2(att[0], att[2])      // faces away from the trunk axis
+    const outX = Math.sin(outwardYaw), outZ = Math.cos(outwardYaw)
     for (let k = 0; k < cardsPerAttachment; k++) {
-      const r1 = rng() * 2 - 1
-      const r2 = rng() * 2 - 1
-      const r3 = rng() * 2 - 1
-      const biasMag = inwardBias * spread
-      const cx = att[0] + r1 * spread + inwardX * biasMag
-      const cy = att[1] + r2 * spread * yCompression
-      const cz = att[2] + r3 * spread + inwardZ * biasMag
-      const sx = cardSize * (0.7 + rng() * 0.6)
-      const sy = cardSize * (0.7 + rng() * 0.6)
-      const yaw = rng() * TAU
-      const pitch = (rng() - 0.5) * 0.7
+      // §5 Leaf Ways — the orientation/grouping grammar layered over the anchor.
+      // 'alternate' is the default cloud-scatter (unchanged distribution).
+      let cx, cy, cz, sx, sy, yaw, pitch
+      if (ways === 'all-one-direction') {              // willow — drooping curtain
+        cx = att[0] + (rng() * 2 - 1) * spread * 0.5 + inwardX * biasMag
+        cy = att[1] - rng() * spread * 1.4 * yCompression
+        cz = att[2] + (rng() * 2 - 1) * spread * 0.5 + inwardZ * biasMag
+        sx = cardSize * (0.55 + rng() * 0.35); sy = cardSize * (1.1 + rng() * 0.7)
+        yaw = outwardYaw + (rng() - 0.5) * 0.5
+        pitch = -0.9 - rng() * 0.5
+      } else if (ways === 'sprays') {                  // compound fronds — leaflets along an axis
+        const t = cardsPerAttachment > 1 ? k / (cardsPerAttachment - 1) : 0.5
+        const along = (t - 0.5) * spread * 3
+        cx = att[0] + outX * along + inwardX * biasMag
+        cy = att[1] + (rng() - 0.5) * spread * 0.4 * yCompression - t * spread * 0.3
+        cz = att[2] + outZ * along + inwardZ * biasMag
+        sx = cardSize * (0.45 + rng() * 0.3); sy = cardSize * (0.6 + rng() * 0.3)
+        yaw = outwardYaw + Math.PI / 2 + (rng() - 0.5) * 0.3
+        pitch = (k % 2 ? 1 : -1) * 0.4
+      } else if (ways === 'clusters') {                // ginkgo — tight fan on spur shoots
+        cx = att[0] + (rng() * 2 - 1) * spread * 0.25 + inwardX * biasMag
+        cy = att[1] + (rng() * 2 - 1) * spread * 0.25 * yCompression
+        cz = att[2] + (rng() * 2 - 1) * spread * 0.25 + inwardZ * biasMag
+        sx = cardSize * (0.7 + rng() * 0.5); sy = cardSize * (0.7 + rng() * 0.5)
+        yaw = outwardYaw + (k / cardsPerAttachment) * 1.2 - 0.6
+        pitch = 0.2 + (rng() - 0.5) * 0.3
+      } else if (ways === 'opposite') {                // maple/ash — paired across the twig
+        const side = (k % 2) ? 0 : Math.PI
+        cx = att[0] + (rng() * 2 - 1) * spread * 0.7 + inwardX * biasMag
+        cy = att[1] + (rng() * 2 - 1) * spread * 0.5 * yCompression
+        cz = att[2] + (rng() * 2 - 1) * spread * 0.7 + inwardZ * biasMag
+        sx = cardSize * (0.7 + rng() * 0.5); sy = cardSize * (0.7 + rng() * 0.5)
+        yaw = outwardYaw + side + (rng() - 0.5) * 0.3
+        pitch = (rng() - 0.5) * 0.4
+      } else {                                         // alternate (default) — scatter, unchanged
+        const r1 = rng() * 2 - 1, r2 = rng() * 2 - 1, r3 = rng() * 2 - 1
+        cx = att[0] + r1 * spread + inwardX * biasMag
+        cy = att[1] + r2 * spread * yCompression
+        cz = att[2] + r3 * spread + inwardZ * biasMag
+        sx = cardSize * (0.7 + rng() * 0.6); sy = cardSize * (0.7 + rng() * 0.6)
+        yaw = rng() * TAU; pitch = (rng() - 0.5) * 0.7
+      }
       const sinY = Math.sin(yaw), cosY = Math.cos(yaw)
       const sinP = Math.sin(pitch), cosP = Math.cos(pitch)
       // Card lies in a plane oriented by (yaw, pitch); local XY axes:
@@ -1147,6 +1187,7 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     yCompression: 0.7,
     tileGrid: packMeta.tileGrid,
     inwardBias: 0.35,  // bias card-cloud toward trunk axis — kills edge floaters
+    ways: leaves.ways || 'alternate',   // §5 Leaf Ways
   }, rng)
 
   if (leafGeo) {
