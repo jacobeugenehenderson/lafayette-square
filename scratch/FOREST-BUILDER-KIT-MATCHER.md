@@ -94,7 +94,13 @@ this spine**, not standalone patches. **No new pipeline, no fork** (`feedback_no
 The four things that are genuinely **new or rebuilt** — the rubric, robust dossiers, the matcher, the
 readiness dashboard + reference-driven viewer — are all the **front**, the layer the canon never
 coherently built. Three existing files are their **seeds**, evolved not greenfielded: `species-map.json`
-→ dossier, `leaf-pack-bindings.json` → matcher, `roster-coverage.js` → readiness dashboard.
+→ dossier, `leaf-pack-bindings.json` → matcher, `roster-coverage.js` → readiness dashboard. **The seed
+content is mined from the library as it actually exists** — we analyze, we don't greenfield (§13 Stage 0).
+
+**A physical counterpart runs underneath:** the **Library Builder (§4.5)** is the filesystem analog of
+the rubric — a background task of every ingest / authoring / ratify action that converges the on-disk
+part tree toward one clean, canonically-named folder-per-part-type. The logical rubric organizes the
+*concepts*; the Library Builder organizes the *files*.
 
 ---
 
@@ -180,6 +186,7 @@ the organizing name → gaps + targets become visible → quality becomes addres
 | `leaf.ways` | enum | scattered/alternate · all-one-direction · mirrored/opposite · sprays-of-leaflets · clusters | **How cards attach + orient** (§5) | **missing today** — new | human-only (from phyllotaxy annotation) |
 | `leaf.size` | scalar | real metres, vs a **legibility floor** | How big the leaf reads (never bare) | `pack.meta.naturalSize` (cm) **unused today** + `canopyByVariant` | **auto** (derive at bake) |
 | `leaf.face` | dual | `{front ramp, back ramp}` off one silhouette | Two-tone shimmer (maple, poplar) | orphaned `tintFront`/`tintBack` + `doubleSided:true` — **wire them** | operator |
+| `leaf.color` | scalar(band) | a **value + saturation band**; **hue preserved per species** | Harmonized to one lit world — dead-dark lifted, fake-bright tamed; species stay distinct hues | posterize substrate + ramp LUT (§6); per-species hue from `tints` | draft (from `tints`) + ratify |
 | `leaf.season` | curve | day-of-year ramp (0–365) | Summer-green → gold → russet → bare | year-long-tree (`ARCHITECTURE.md §Phase F Layer 2`) | draft (from `tints`) + ratify |
 | `leaf.occupancy` | scalar | 0.25–0.95 | Canopy density | `composition.leaves.occupancy` | operator |
 
@@ -190,8 +197,13 @@ pixel and read as a **bare winter chassis** (Espalier §3.1). The fix is the `le
 the card's real-metre extent from `canopyByVariant` (already emitted) + `pack.meta.naturalSize`
 (already present, today unused) against a **legibility floor**, with the operator slider redefined as a
 bounded multiplier (0.7–1.4×) *below which they cannot reach*. **`leaf.season` IS the color engine** —
-the gradient ramp owns summer/transitioning/dead as a day-of-year curve (the green-band normalization,
-§6 + Espalier §3.2). Both ride the bark gradient-LUT machinery that already shipped.
+the gradient ramp owns summer/transitioning/dead as a day-of-year curve. **`leaf.color` is the
+harmonization axis (LOCKED 2026-06-18, operator reframe):** species **keep their distinct hues** (a
+maple-green is not an oak-green) — the band clamps **value and saturation only** (lift the dead-dark,
+tame the fake-bright) so every leaf reads as belonging to **one lit world — harmonized, not unified.**
+This **supersedes** Espalier §3.2's "normalize to a green-band" (which would have collapsed hue): the
+band is a value/saturation envelope, **not** a hue target. All three leaf-color axes ride the bark
+gradient-LUT machinery that already shipped (§6).
 
 ### 2.4 Overlay axes
 
@@ -318,6 +330,43 @@ findability** work across sources (Authored / LiDAR / Procedural all get tagged 
 
 ---
 
+## 4.5 The Library Builder — the physical layer beneath the rubric (new)
+
+The rubric (§2) is the *logical* navigable list; the **Library Builder is its filesystem counterpart**
+— the same "make it a navigable list" discipline applied to the actual files on disk. It is **not a
+one-time cleanup chore and not a manual step**: it is a **background task the Arborist front end runs on
+every ingest / authoring / ratify action**, converging the file tree toward a perfectly clean
+architecture over time.
+
+**What it converges toward:**
+- **one canonical folder per part-type** — `leaves/`, `barks/`, `chassises/`. Today: leaves are *split*
+  across flat `<morph>.png` placeholders **and** `shapes/<pack>/` packs; barks are an opaque `Bark0NN`
+  pile; chassis are a flat 241-entry heap in `_chassis/`.
+- **consistent naming by rubric value, not vendor id** — a bark folder named for its `bark.type`
+  (`furrowed/`, `exfoliating/`), not `Bark003`; the rubric's "surface the type as the name" (§2.2) made
+  true on disk.
+- **paired meta** beside every part (the `meta.json` the matcher reads), and **generated documentation**
+  — front-end (the readiness / library view) and back-end (a written manifest of what's where).
+
+**How it relates to the other layers:**
+- The **ingest procedure (§4/§10) writes into the structure the Library Builder owns** — ingest doesn't
+  drop a file wherever; it hands each part to the Builder, which places it canonically, names it by
+  rubric value, and pairs its meta.
+- The **dossier + matcher reference parts by the clean canonical paths** the Builder maintains — so when
+  a part is renamed or relocated, the references the matcher resolves stay valid (the Builder owns the
+  indirection).
+- It **normalizes the current mess incrementally** — the split leaves, the opaque bark IDs, the flat
+  241-chassis pile are exactly what it converges away from, a little on every authoring action, **never
+  as a blocking migration.**
+
+In the build plan it is a **background concern threaded through Stage 1's ingest** (§13), **not a
+separate stage or a manual task** — every Stage-1 ingest of a part-in-hand runs through the Library
+Builder, so by the end of Stage 1 the parts that have been touched are already canonically placed and
+named. It is the filesystem analog of how the rubric organizes the *concepts*: build it once, it pays
+off on every part forever.
+
+---
+
 ## 5. Leaf Ways — the missing axis (new)
 
 **Arrangement: how cards attach and orient** — distinct from silhouette (one leaf's shape) and from
@@ -357,8 +406,11 @@ how a "manageable list" of samples generates the whole library.
 - **Front/back** = two ramps off one silhouette (wire the orphaned `tintFront`/`tintBack` +
   `doubleSided:true` to the `leaf.face` axis).
 - **Posterize** the leaf substrate to flatten chromatic noise (the "calm" half) *before* the ramp
-  recolors (the "coherent" half) — the green-band normalization (Espalier §3.2): a neon pack and a
-  muted pack, sampled by luminance into the same band LUT, **come out the same green**. This is the
+  recolors (the "coherent" half). **The band harmonizes value + saturation, NOT hue (LOCKED 2026-06-18 —
+  operator reframe, §2.3):** a too-dark pack gets its value lifted, a too-neon pack gets its saturation
+  tamed, so a maple-green and an oak-green **stay distinct hues but read as one lit world.** A pack's
+  hue survives; only its value/saturation is clamped into the shared envelope. This **supersedes**
+  Espalier §3.2's "come out the same green" — **harmonized, not unified.** This is the
   leaf half of the **already-shipped** bark gradient/posterize machinery (`bake-look.js` LUT compile +
   sha1 dedup + the single Bloom-stable shader).
 - **Honesty:** ramps own color/value states + occupancy owns shed; a true *shape* change (dead-leaf
@@ -490,7 +542,9 @@ arborist/survey-deleaf.js` for chassis, `compose-leaf-packs.mjs` for leaves, dro
 brief §1.7, brief-28 §"For now"). The **same procedure** gets a user button as the kit matures (Brief
 28's single-asset / incremental ingest mode + the `serve.js` upload endpoint + the two Salon
 affordances). The human's permanent job is **ratify, never plumb**. "Procure more" = run the procedure
-on a new asset; the dashboard's shopping list (§8) is the queue.
+on a new asset; the dashboard's shopping list (§8) is the queue. The procedure **writes through the
+Library Builder (§4.5)** — it never drops files ad hoc; it hands each part to the Builder, which places
+it canonically, names it by rubric value, and pairs its meta.
 
 ---
 
@@ -544,11 +598,25 @@ Sequence after the cloud-Tuner wisdom: **build the spine → prove on the easy c
 the architecture** (standup-before-build).
 
 ### Stage 0 — the keystone (nothing renders)
-**Dispatch unit:** one planning+authoring agent. **Build:**
-- `rubric.json` — every axis of §2 encoded as data (the schema + value-sets + similarity-matrix stubs).
-- the dossier schema (§3) + the **10 species entries harvested** from botanical annotation (robust:
-  required-characteristics with hardness, descriptor).
-- **reference images gathered** for the 10 (one canonical per season-state where it matters + bark).
+**Dispatch unit:** one library-analysis + authoring agent (the rubric + part-tag seed) **plus a research
+agent** to harvest the 10 dossiers (confirmed 2026-06-18 — bounded, only 10 trees). **Build:**
+- **FIRST — analyze the current library and seed from it; do NOT greenfield (operator directive).** Take
+  the rubric value-sets, the initial part tags, and the dossier required-characteristics + recipes as
+  **cues from what's already there** + the organizing work already done. Read concretely:
+  `public/textures/leaves/` (split: flat `<morph>.png` placeholders **and** the real `shapes/<pack>/`
+  packs with `meta.json` morphology / naturalSize), `public/textures/bark/Bark0NN/` (map each → a
+  `bark.type`), the **241 chassis** `public/trees/_chassis/*.{glb,meta.json}` + the operator curation
+  `arborist/state/_chassis-curation.json` (approve / reject / unreviewed = a **strong seed signal**),
+  plus `species-map.json`, `roster-coverage.js`, `leaf-pack-bindings.json`. ⚠️ **Mine for organization
+  cues ONLY — the current assets are NOT deploy-ready or "good"** (the barks look bad, leaves vanish);
+  the seed is about *structure*, not blessing the assets. **Quality is Stage-2/3 work.**
+- `rubric.json` — every axis of §2 encoded as data (schema + value-sets + similarity-matrix stubs),
+  **seeded from the analysis above.**
+- the dossier schema (§3) + the **10 species entries harvested** (research agent) from botanical
+  annotation + the seed above (robust: required-characteristics with hardness, descriptor, recipe).
+- **reference images gathered** for the 10 (one canonical summer + fall + bark per §15.5).
+- the **Library Builder's** target structure declared (§4.5) — the canonical folder/naming scheme the
+  Stage-1 ingest will write into.
 **Acceptance gate:** Jacob reviews `rubric.json` + the 10 dossiers **against botanical reference** —
 are the axes atomic/orthogonal/complete, are the value-sets right, do the required-characteristics read
 true? Sign-off here unblocks everything. *(This is the vocabulary everything hangs off; it ships first
@@ -559,6 +627,9 @@ and alone as data — see review §15.)*
 **Build:**
 - **conform-and-tag-on-ingest** as one procedure (§4) — wire the shipped `survey-deleaf` conform +
   the auto-tagger drafting rubric values with confidence flags; run it on **the parts in hand**.
+- **the Library Builder (§4.5)** — threaded *through* that ingest, not a separate chore: every
+  part-in-hand ingested this stage is placed + named canonically by the Builder (the ingest agent owns
+  this; it's a background concern, not a manual migration).
 - **the matcher** (§7) — the tolerance engine over `rubric.json`, returning ranked workable options
   per part-type; generalize `leaf-pack-bindings.json` to all four part-types.
 - **the readiness dashboard** (§8) — `roster-coverage.js` made per-part + visual; a view over the
@@ -652,6 +723,16 @@ the `BAKE_URL` hard-wire (`baked/default.json`) and `computeTier`'s stale-camera
 Five decisions need Jacob's eye **before Stage 1 dispatches**. Each is a lean recommendation + the one
 real tradeoff (prose, not a checklist — `feedback_design_via_prose_discussion`).
 
+> **Review resolution — 2026-06-18 (Jacob).** Decisions **1, 2, 5 accepted as recommended**; **3
+> accepted — the rubric ships first, alone, as data.** **4 reframed and LOCKED** (folded into §2.3 /
+> §6 + restated below): species **keep distinct hues**; the band clamps **value + saturation** for
+> realism (lift dead-dark, tame fake-bright) so leaves share **one lit world — harmonized, not unified.**
+> The **dossier harvest goes to a research agent** (confirmed — bounded, only 10 trees). Two additions
+> folded into the architecture: **(A) Stage 0 seeds from the current library — analyze, don't
+> greenfield** (§13 Stage 0), and **(B) the Library Builder** — the filesystem counterpart of the
+> rubric, a background task of every ingest / authoring / ratify action (new §4.5, threaded through
+> §13 Stage 1).
+
 **1. The per-axis tolerance basis for "workable" — the matcher's real engine.** I recommend
 **hand-authored similarity matrices per enum axis** (habit, bark-type, leaf-silhouette, leaf-ways) +
 **percentage tolerances for the scalars** (size, color-band), with the legibility floor as a hard
@@ -683,15 +764,16 @@ filled-in entries — but the rubric is what the matcher, dashboard, viewer, and
 from, so a wrong vocabulary discovered after Stage 1 is built is far more expensive than a careful read
 now. Recommended; the keystone earns a gate of its own.
 
-**4. Leaf color — coherence-by-default vs. per-pack fidelity (carried from Espalier #3, still open).**
-I recommend the green-band live as a **baked LUT sampled by luminance** (the shipped bark pattern),
-with each pack's color demoted to a **bounded handle on the shared band** and the per-instance hue
-jitter clamped small — so a neon pack and a muted pack converge to one canopy palette, while per-Look
-art-direction (fall, Halloween) still rides the override layer on top. The tradeoff is genuinely
-aesthetic: we give up each vendor pack's "authentic" baked color (some of which you may like) in
-exchange for a canopy that reads as one coherent palette by construction. Because this color decision is
-now an *axis* (`leaf.season` / the band), it has to be settled at the rubric (Stage 0), not deferred to
-Stage 2 — so it's on this list. *I need your eye on: coherence-by-default, yes?*
+**4. Leaf color — RESOLVED + LOCKED (2026-06-18): harmonize value/saturation, keep hue.** The band is
+**not** a hue target and does **not** collapse species to "one green" — Espalier §3.2's "normalize to a
+green-band" is **superseded.** Species **keep their distinct hues** (maple-green ≠ oak-green); the band
+is a **value + saturation envelope** that lifts the dead-dark and tames the fake-bright so every leaf
+reads as belonging to **one lit world — harmonized, not unified.** The mechanism is unchanged (a baked
+LUT sampled by luminance, the posterize substrate, per-Look art-direction riding on top — §6); only the
+*target* changes — clamp value/saturation, **preserve hue.** This is **locked into the rubric now** as
+the `leaf.color` axis (§2.3). The realism win (no dead-dark, no fake-bright) arrives **without** the cost
+Espalier accepted (losing each pack's authentic hue), which is why the reframe is strictly better — and
+because it is now an *axis*, it is settled at the rubric (Stage 0), not deferred.
 
 **5. The reference-image standard + who harvests the 10 dossiers.** I recommend a **fixed per-species
 reference set** — one canonical summer plate, one fall plate (for the season ramp), one bark plate —
