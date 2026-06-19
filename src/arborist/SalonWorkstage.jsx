@@ -1131,6 +1131,16 @@ function SalonControlsPanel({
           </span>
         </label>
       </Row>
+      <Row label="Leaf source">
+        <select
+          value={leaves?.mode ?? 'authored'}
+          onChange={(e) => onParams({ leaves: { mode: e.target.value } })}
+          style={selectStyle}
+          title="Authored = the model's own leaves, retextured to the pack (Ways + size do NOT apply). Synthesized = kit-generated from the pack + Ways + leaf size (the rubric leaf model).">
+          <option value="authored">Authored (model's own leaves)</option>
+          <option value="synthesized">Synthesized (kit: pack · Ways · size)</option>
+        </select>
+      </Row>
       <Row label="Pack">
         <select
           value={leaves?.pack || ''}

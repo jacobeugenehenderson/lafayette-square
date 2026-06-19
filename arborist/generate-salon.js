@@ -109,6 +109,10 @@ export const DEFAULTS = {
     // BASE_CARD_SIZE=0.1m yields ~10cm cards at world scale (verified
     // against the obelisk human-height reference). Range 0.5..3.0.
     scale: 1.0,
+    // Leaf source: 'authored' = the chassis's own vendor-baked leaves, retextured
+    // (Ways/size N/A); 'synthesized' = the kit spray (pack + Ways + leaf.size).
+    // Default authored (no regression); de-leafed chassis are always synthesized.
+    mode: 'authored',
     // §5 Leaf Ways — the attach/orient grammar: alternate (default scatter) ·
     // opposite (maple/ash pairs) · all-one-direction (willow droop) · sprays
     // (compound fronds) · clusters (ginkgo fans). Seeded from the dossier's
@@ -1113,6 +1117,19 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
   // GLB across re-runs.
   const seed = hashString(`${chassis}|${bark.ref}|${leaves.pack}`)
   const rng = mulberry32(seed)
+
+  // Leaf source (operator 2026-06-19 compromise): leaves render either as
+  // AUTHORED — the chassis's own vendor-baked leaf cards, retextured to the
+  // picked pack (labeled as such; Ways/leaf.size do NOT apply, the cards keep
+  // their authored placement) — or SYNTHESIZED — the kit spray from pack + Ways
+  // + derived leaf.size (the rubric leaf model, authoritative). Default authored
+  // when the chassis HAS vendor leaves (no regression); 'synthesized' strips them
+  // so only the kit leaves render. (A de-leafed chassis has no vendor prims → it
+  // is always synthesized regardless.)
+  if (leaves.mode === 'synthesized' && vendorLeafPrims.length > 0) {
+    for (const { prim, mesh } of vendorLeafPrims) { mesh.removePrimitive(prim); prim.dispose() }
+    vendorLeafPrims.length = 0
+  }
 
   if (vendorLeafPrims.length > 0) {
     // Vendor-card path. Bind the picked pack texture to a fresh Salon leaf
