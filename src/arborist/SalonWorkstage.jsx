@@ -117,6 +117,51 @@ function ReferencePanel() {
   )
 }
 
+// §7/§9 — the matcher's ranked WORKABLE options for one part-type, shown above
+// the raw dropdown: a verdict dot (🟢 workable / 🟡 stretch), the closeness score,
+// and per-axis badges (habit✓ size✓ …) so the operator sees HOW close + WHICH
+// axes are hard vs nice-to-have, and can pick from options instead of dialing
+// from zero. `~` = the match rests on an unratified (provisional) tag. Hidden
+// when the species has no dossier (the raw dropdown remains).
+function MatchOptions({ result, current, onPick, limit = 8 }) {
+  if (!result || !result.options || result.options.length === 0) return null
+  const VDOT = { workable: '#3fb950', stretch: '#d8a019' }
+  return (
+    <div style={{ marginBottom: 6 }}>
+      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#778', marginBottom: 4 }}>
+        Matcher · {result.totalWorkable} workable{result.preselect ? ' · 1 obvious' : ''}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 168, overflowY: 'auto' }}>
+        {result.options.slice(0, limit).map(o => {
+          const sel = o.partId === current
+          return (
+            <button key={o.partId} onClick={() => onPick(o.partId)}
+              title={o.perAxis.map(a => `${a.axis}: need ${a.required} / got ${a.actual} ${a.withinTol ? '✓' : '✗'}${a.provisional ? ' (provisional)' : ''}`).join('\n')}
+              style={{
+                textAlign: 'left', cursor: 'pointer', borderRadius: 4, padding: '4px 7px',
+                background: sel ? 'rgba(120,160,220,0.18)' : 'rgba(255,255,255,0.03)',
+                border: '1px solid ' + (sel ? 'rgba(120,160,220,0.5)' : 'rgba(255,255,255,0.07)'),
+                color: '#cdd6df', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: VDOT[o.verdict] || '#777' }} />
+              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.partId}</span>
+              {o.provisional && <span title="rests on an unratified tag" style={{ color: '#c8a83a' }}>~</span>}
+              <span style={{ color: '#889', fontVariantNumeric: 'tabular-nums' }}>{Math.round(o.score * 100)}</span>
+              <span style={{ display: 'flex', gap: 4 }}>
+                {o.perAxis.map(a => (
+                  <span key={a.axis} style={{ fontSize: 9, color: a.withinTol ? '#6a9a4a' : '#b06a5a' }}>
+                    {a.axis.split('.')[1]}{a.withinTol ? '✓' : '✗'}
+                  </span>
+                ))}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function SalonWorkstage() {
   const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
   const speciesList         = useArboristStore(s => s.salonSpeciesList)
@@ -965,6 +1010,7 @@ function SalonControlsPanel({
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
   candidateScope, recommendedNames,
 }) {
+  const matchOptions = useArboristStore(s => s.salonOptions)   // §9 matcher ranked options (null if no dossier)
   // Chassis picker filtered by morphology suggestion: matching-morphology
   // first, then everything else. Brief 1.5b layers curation on top:
   //   - if `approvedOnly` is ON, drop entries whose `approved !== true`
@@ -1024,6 +1070,7 @@ function SalonControlsPanel({
       fontSize: 11, color: '#aaa',
     }}>
       <SectionLabel>Chassis</SectionLabel>
+      <MatchOptions result={matchOptions?.chassis} current={chassis} onPick={(id) => onParams({ chassis: id })} />
       {/* Brief 26: candidate scope is driven by the inside-view toggle. In
           'recommended' scope the picker shows the roster species' fits and the
           approved-only sub-filter is bypassed; in 'all' scope the Brief 1.5b
@@ -1109,6 +1156,7 @@ function SalonControlsPanel({
       </Row>
 
       <SectionLabel>Bark</SectionLabel>
+      <MatchOptions result={matchOptions?.bark} current={bark?.ref} onPick={(id) => onParams({ bark: { ref: id } })} />
       <Row label="Ref">
         <select
           value={bark?.ref || ''}
@@ -1158,6 +1206,7 @@ function SalonControlsPanel({
         onCommitHashAmp={(v) => onParams({ bark: { gradientHashAmp: v } })} />
 
       <SectionLabel>Leaves</SectionLabel>
+      <MatchOptions result={matchOptions?.leaf} current={leaves?.pack} onPick={(id) => onParams({ leaves: { pack: id } })} />
       {/* Brief 5: bare-chassis inspection toggle (workstage preview only;
           published artifact always carries leaves). */}
       <Row label="Show">
