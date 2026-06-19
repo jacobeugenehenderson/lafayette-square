@@ -92,10 +92,10 @@
       "barkDirMap": {
         "_note": "DRAFT only — the 5 Bark0NN dirs are NOT deploy-ready ('the barks look bad', §0). Mapping seeded from species-map references; operator ratifies. Quality is Stage-2/3 work.",
         "Bark007": "plated (sugar-maple trunk ref, tintBase #3a2820 — re-pointed furrowed→plated 2026-06-18 to agree with the acer_saccharum dossier's ratified target, Jacob)",
-        "Bark003": "ridged (sugar-maple branch ref, tintBase #5a4030)",
-        "Bark004": "unassigned — ratify",
-        "Bark012": "unassigned — ratify",
-        "Bark015": "unassigned — ratify"
+        "Bark003": "ridged (sugar-maple branch ref, tintBase #5a4030 — NB ambientCG tags this 'smooth, dark', not ridged; kept ridged for the Red Maple match, FLAG to ratify against the eye)",
+        "Bark004": "smooth (ambientCG tags: forest, light, smooth — assigned 2026-06-18 to fill the Pin Oak smooth-bark gap; it was already in the kit, just untyped)",
+        "Bark012": "unassigned — ambientCG tags: brown, oak (no texture descriptor; an oak bark but smoothness unclear — ratify against the eye)",
+        "Bark015": "unassigned — ambientCG tags: beige, brown, layered, striped, rough, old (reads ridged or exfoliating — ratify against the eye)"
       }
     },
     {

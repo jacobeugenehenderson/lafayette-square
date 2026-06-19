@@ -7140,10 +7140,10 @@
       "sourcePath": "public/textures/bark/Bark004",
       "tags": {
         "bark.type": {
-          "value": null,
+          "value": "smooth",
           "ratified": false,
           "confidence": "low",
-          "source": "barkDirMap(Bark004) unassigned — needs ratify"
+          "source": "rubric.barkDirMap(Bark004)"
         },
         "bark.color": {
           "value": null,
@@ -7153,7 +7153,7 @@
         }
       },
       "conformReport": null,
-      "path": "public/library/barks/_unassigned/Bark004"
+      "path": "public/library/barks/smooth/Bark004"
     },
     {
       "partId": "Bark007",

@@ -1294,12 +1294,21 @@
           "sourcePath": "public/textures/bark/Bark003"
         }
       ],
-      "_unassigned": [
+      "smooth": [
         {
           "partId": "Bark004",
           "source": "authored",
           "sourcePath": "public/textures/bark/Bark004"
-        },
+        }
+      ],
+      "plated": [
+        {
+          "partId": "Bark007",
+          "source": "authored",
+          "sourcePath": "public/textures/bark/Bark007"
+        }
+      ],
+      "_unassigned": [
         {
           "partId": "Bark012",
           "source": "authored",
@@ -1309,13 +1318,6 @@
           "partId": "Bark015",
           "source": "authored",
           "sourcePath": "public/textures/bark/Bark015"
-        }
-      ],
-      "plated": [
-        {
-          "partId": "Bark007",
-          "source": "authored",
-          "sourcePath": "public/textures/bark/Bark007"
         }
       ]
     }
