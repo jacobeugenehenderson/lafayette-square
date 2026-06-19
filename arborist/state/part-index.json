@@ -6831,10 +6831,15 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "seasonal_elm",
         "naturalSize": 8,
         "tileGrid": [
           2,
           3
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "ulmus_americana"
         ],
         "vendorPack": "LeafSet007"
       },
@@ -6861,10 +6866,15 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "fine_compound",
         "naturalSize": 25,
         "tileGrid": [
           1,
           1
+        ],
+        "quality": "placeholder",
+        "recommendedSpecies": [
+          "fraxinus_pennsylvanica"
         ],
         "vendorPack": "fine_compound.png"
       },
@@ -6891,10 +6901,17 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "heart",
         "naturalSize": 10,
         "tileGrid": [
           3,
           2
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "cercis_canadensis",
+          "syringa_vulgaris",
+          "tilia_americana"
         ],
         "vendorPack": "LeafSet004"
       },
@@ -6921,10 +6938,16 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "lanceolate",
         "naturalSize": 8,
         "tileGrid": [
           4,
           1
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "salix_alba",
+          "salix_babylonica"
         ],
         "vendorPack": "LeafSet013"
       },
@@ -6951,10 +6974,16 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "lobed",
         "naturalSize": 12,
         "tileGrid": [
           3,
           2
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "quercus_alba",
+          "quercus_rubra"
         ],
         "vendorPack": "LeafSet016"
       },
@@ -6981,10 +7010,16 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "long_needle",
         "naturalSize": 15,
         "tileGrid": [
           1,
           3
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "pinus_strobus",
+          "larix_decidua"
         ],
         "vendorPack": "LeafSet019"
       },
@@ -7012,10 +7047,16 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "seasonal_oak",
         "naturalSize": 12,
         "tileGrid": [
           2,
           4
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "quercus_alba",
+          "quercus_rubra"
         ],
         "vendorPack": "LeafSet012"
       },
@@ -7042,10 +7083,17 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "ovate",
         "naturalSize": 8,
         "tileGrid": [
           1,
           1
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "morus_alba",
+          "cornus_florida",
+          "hydrangea_macrophylla"
         ],
         "vendorPack": "LeafSet005"
       },
@@ -7072,10 +7120,17 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "ovate_large",
         "naturalSize": 15,
         "tileGrid": [
           2,
           1
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "morus_alba",
+          "hydrangea_macrophylla",
+          "magnolia_grandiflora"
         ],
         "vendorPack": "Leaf001"
       },
@@ -7102,10 +7157,17 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "palmate",
         "naturalSize": 10,
         "tileGrid": [
           2,
           2
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "acer_saccharum",
+          "acer_rubrum",
+          "platanus_occidentalis"
         ],
         "vendorPack": "LeafSet010"
       },
@@ -7132,10 +7194,16 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "serrate_ovate",
         "naturalSize": 8,
         "tileGrid": [
           3,
           2
+        ],
+        "quality": "vendor",
+        "recommendedSpecies": [
+          "ulmus_americana",
+          "carpinus_caroliniana"
         ],
         "vendorPack": "LeafSet001"
       },
@@ -7162,10 +7230,15 @@
       },
       "conformReport": null,
       "packMeta": {
+        "morphology": "short_needle",
         "naturalSize": 5,
         "tileGrid": [
           1,
           1
+        ],
+        "quality": "placeholder",
+        "recommendedSpecies": [
+          "taxodium_distichum"
         ],
         "vendorPack": "short_needle.png"
       },

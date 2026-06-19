@@ -21,6 +21,7 @@ import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { tagChassis, tagLeaf, tagBark } from './ingest-tagger.js'
 import { place, regenerateManifest, reapOrphans, canonicalDir } from './library-builder.js'
+import { writeInventory } from './library-inventory.js'
 
 const CHASSIS_DIR = 'public/trees/_chassis'
 const LEAF_PACKS_DIR = 'public/textures/leaves/shapes'
@@ -72,7 +73,14 @@ export function runIngest(opts = {}) {
         sourcePath: join(LEAF_PACKS_DIR, pack),
         tags: tagLeaf(rubric, packMeta),
         conformReport: null,
-        packMeta: { naturalSize: packMeta.naturalSize, tileGrid: packMeta.tileGrid, vendorPack: packMeta.source?.pack },
+        packMeta: {
+          morphology: packMeta.morphology,
+          naturalSize: packMeta.naturalSize,
+          tileGrid: packMeta.tileGrid,
+          quality: packMeta.quality || 'vendor',
+          recommendedSpecies: packMeta.recommendedSpecies || [],
+          vendorPack: packMeta.source?.pack,
+        },
       })
     }
   }
@@ -109,6 +117,7 @@ export function runIngest(opts = {}) {
   const out = opts.out || OUT_DEFAULT
   mkdirSync(join(out, '..'), { recursive: true })
   writeFileSync(out, JSON.stringify(index, null, 2) + '\n')
+  if (!opts.out) writeInventory() // regenerate the library listing (reads the just-written default index)
   return index
 }
 
