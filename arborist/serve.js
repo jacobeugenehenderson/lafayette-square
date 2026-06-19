@@ -33,6 +33,7 @@ import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 import { buildPreviewAtlas, previewDir } from './salon-preview-atlas.js'
 import { computeCoverage } from './roster-coverage.js'
 import { computeReadiness } from './readiness.js'
+import { renderDashboardHTML } from './forest-dashboard-html.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -1046,6 +1047,19 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && path === '/readiness') {
       try {
         return jsonRes(res, 200, computeReadiness())
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // GET /forest (or /forest.html) — the RENDERED readiness dashboard + inventory
+    // (forest-dashboard-html.js), so Stage-1 is eye-able in the browser. Rendered
+    // live from the part-index; same origin as /readiness (:3334).
+    if (req.method === 'GET' && (path === '/forest' || path === '/forest.html')) {
+      try {
+        const html = renderDashboardHTML()
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+        return res.end(html)
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }
