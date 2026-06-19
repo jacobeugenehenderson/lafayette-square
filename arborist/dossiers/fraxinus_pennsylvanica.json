@@ -30,5 +30,5 @@
     "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
   },
   "provenance": { "fromSpeciesMap": false, "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound)." },
-  "partAvailability": { "chassis": "have", "bark": "stretch", "leaf": "gap" }
+  "partAvailability": { "chassis": "have", "bark": "stretch", "leaf": "stretch", "_leafNote": "gap→stretch 2026-06-18: fine_compound placeholder pack wired; vendor compound frond is the Stage-2/3 quality piece" }
 }

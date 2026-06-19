@@ -4,11 +4,11 @@
   "rubricVersion": "0.1.0-stage0",
   "counts": {
     "chassis": 239,
-    "leaf": 10,
+    "leaf": 12,
     "bark": 5
   },
   "sources": {
-    "authored": 241,
+    "authored": 243,
     "procedural": 13
   },
   "parts": [
@@ -6841,6 +6841,36 @@
       "path": "public/library/leaves/_unassigned/elm_autumn"
     },
     {
+      "partId": "fine_compound",
+      "partType": "leaf",
+      "source": "authored",
+      "sourcePath": "public/textures/leaves/shapes/fine_compound",
+      "tags": {
+        "leaf.silhouette": {
+          "value": "compound",
+          "ratified": false,
+          "confidence": "high",
+          "source": "pack-meta.morphology(fine_compound→compound)"
+        },
+        "leaf.size": {
+          "value": 25,
+          "ratified": false,
+          "confidence": "high",
+          "source": "pack-meta.naturalSize(cm)"
+        }
+      },
+      "conformReport": null,
+      "packMeta": {
+        "naturalSize": 25,
+        "tileGrid": [
+          1,
+          1
+        ],
+        "vendorPack": "fine_compound.png"
+      },
+      "path": "public/library/leaves/compound/fine_compound"
+    },
+    {
       "partId": "heart",
       "partType": "leaf",
       "source": "authored",
@@ -7112,6 +7142,36 @@
       "path": "public/library/leaves/ovate/serrate_ovate"
     },
     {
+      "partId": "short_needle",
+      "partType": "leaf",
+      "source": "authored",
+      "sourcePath": "public/textures/leaves/shapes/short_needle",
+      "tags": {
+        "leaf.silhouette": {
+          "value": "needle",
+          "ratified": false,
+          "confidence": "high",
+          "source": "pack-meta.morphology(short_needle→needle)"
+        },
+        "leaf.size": {
+          "value": 5,
+          "ratified": false,
+          "confidence": "high",
+          "source": "pack-meta.naturalSize(cm)"
+        }
+      },
+      "conformReport": null,
+      "packMeta": {
+        "naturalSize": 5,
+        "tileGrid": [
+          1,
+          1
+        ],
+        "vendorPack": "short_needle.png"
+      },
+      "path": "public/library/leaves/needle/short_needle"
+    },
+    {
       "partId": "Bark003",
       "partType": "bark",
       "source": "authored",
@@ -7206,10 +7266,10 @@
       "sourcePath": "public/textures/bark/Bark015",
       "tags": {
         "bark.type": {
-          "value": null,
+          "value": "exfoliating",
           "ratified": false,
           "confidence": "low",
-          "source": "barkDirMap(Bark015) unassigned — needs ratify"
+          "source": "rubric.barkDirMap(Bark015)"
         },
         "bark.color": {
           "value": null,
@@ -7219,7 +7279,7 @@
         }
       },
       "conformReport": null,
-      "path": "public/library/barks/_unassigned/Bark015"
+      "path": "public/library/barks/exfoliating/Bark015"
     }
   ]
 }

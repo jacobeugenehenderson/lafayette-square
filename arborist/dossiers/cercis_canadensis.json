@@ -30,5 +30,5 @@
     "overlay": null, "deformer": { "range": { "lean": "morph — redbud leans as a variety trait" } }, "transform": {}, "age": null
   },
   "provenance": { "fromSpeciesMap": false, "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean)." },
-  "partAvailability": { "chassis": "gap", "bark": "stretch", "leaf": "have" }
+  "partAvailability": { "chassis": "stretch", "bark": "stretch", "leaf": "have", "_chassisNote": "gap→stretch 2026-06-18: common_birch_d (multi-stem, 8.26m) + small ovals are workable stand-ins; an ideal multi-stem redbud core is polish, not a blocker" }
 }

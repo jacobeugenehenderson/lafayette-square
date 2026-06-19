@@ -32,6 +32,13 @@ function loadParts() {
 }
 const STATUS = (m) => (m.totalWorkable > 0 ? 'have' : m.options.some(o => o.verdict === 'stretch' && o.score > 0.2) ? 'stretch' : 'gap')
 const GLYPH = { have: '🟢', stretch: '🟡', gap: '🔴' }
+// effective = the WORSE of the live matcher and the author's declared availability.
+// The matcher sees only size+silhouette (it can't tell a placeholder pack from a
+// vendor one, or that the pine-needle pack is wrong for cypress) → the author's
+// declared floor catches quality/stand-in gaps; the live matcher catches the
+// reverse (a declared 'have' the assets don't actually back, e.g. a missing bark).
+const RANK = { gap: 0, stretch: 1, have: 2 }
+const worseStatus = (a, b) => (RANK[a] <= RANK[b] ? a : b)
 
 export function computeReadiness() {
   const rubric = readJSON(RUBRIC)
@@ -46,47 +53,45 @@ export function computeReadiness() {
       const m = matcher(rubric, dossier, pt, parts)
       const status = STATUS(m)
       const declared = (dossier.partAvailability || {})[pt] || null
+      const effective = declared ? worseStatus(status, declared) : status
+      const ready = effective === 'have'
       const best = m.options[0] || null
-      // READY needs BOTH signals to agree it's in hand: the live matcher returns
-      // a workable option AND the dossier author didn't flag a gap. The matcher
-      // sees only size+silhouette (it can't see that the pine-needle pack is wrong
-      // for bald cypress, or the ornamental-shape gap), so the author's declared
-      // gap is the floor; the live matcher catches the reverse (an over-optimistic
-      // Stage-0 'have' the assets don't actually back, e.g. Pin Oak's smooth bark).
-      const authorGap = declared === 'gap'
-      const ready = status === 'have' && !authorGap
       row.parts[pt] = {
-        status, declared, ready, glyph: GLYPH[ready ? 'have' : authorGap ? 'gap' : status],
-        liveGlyph: GLYPH[status],
+        status: effective, liveStatus: status, declared, ready,
+        glyph: GLYPH[effective], liveGlyph: GLYPH[status],
         totalWorkable: m.totalWorkable,
         preselect: m.preselect,
         best: best ? { partId: best.partId, verdict: best.verdict, score: best.score, provisional: best.provisional } : null,
         diverges: declared && declared !== status,
       }
     }
-    row.buildableToday = PART_TYPES.every(pt => row.parts[pt].ready)
+    row.buildableClean = PART_TYPES.every(pt => row.parts[pt].status === 'have')      // all vendor-quality
+    row.buildableWithStandins = PART_TYPES.every(pt => row.parts[pt].status !== 'gap') // no hard blocker
     species.push(row)
   }
 
   species.sort((a, b) => b.count - a.count)
-  const buildableToday = species.filter(s => s.buildableToday).map(s => s.key)
-  // shopping list: every NOT-ready cell → what to procure, with the reason it's
-  // not ready (a live gap/stretch, or an author-flagged gap the matcher missed).
-  const shoppingList = []
+  // BLOCKERS (🔴 — can't build at all) vs UPGRADES (🟡 — buildable now with a
+  // stand-in/placeholder, quality is Stage 2/3). Splitting these is the honest
+  // answer to "which are the real gaps": a 🔴 must be procured to build; a 🟡 is polish.
+  const blockers = [], upgrades = []
   for (const s of species) for (const pt of PART_TYPES) {
     const cell = s.parts[pt]
-    if (cell.ready) continue
-    const reason = cell.status === 'gap' ? 'no-asset' : cell.declared === 'gap' ? 'author-flagged-gap (matcher optimistic)' : cell.status
-    shoppingList.push({ species: s.key, part: pt, reason, liveStatus: cell.status, declared: cell.declared })
+    if (cell.status === 'have') continue
+    const item = { species: s.key, part: pt, liveStatus: cell.liveStatus, declared: cell.declared }
+    if (cell.status === 'gap') blockers.push({ ...item, reason: cell.liveStatus === 'gap' ? 'no matchable asset' : 'author-flagged gap (matcher optimistic)' })
+    else upgrades.push({ ...item, reason: 'stand-in / placeholder in hand; vendor-quality piece is the Stage-2/3 polish' })
   }
 
   return {
-    _doc: 'Forest Builder readiness dashboard (§8) — a view over the matcher. status 🟢 have / 🟡 stretch / 🔴 gap, computed live from the part-index.',
+    _doc: 'Forest Builder readiness dashboard (§8) — a view over the matcher. 🟢 have (vendor-quality) / 🟡 stretch (stand-in or placeholder, buildable, quality TBD) / 🔴 gap (no asset). Effective status = worse(live matcher, author declared).',
     partIndexSource: source,
     partCount: parts.length,
     speciesCount: species.length,
-    buildableToday,              // uncapped (§1.8)
-    shoppingList,
+    buildableClean: species.filter(s => s.buildableClean).map(s => s.key),        // uncapped (§1.8)
+    buildableWithStandins: species.filter(s => s.buildableWithStandins).map(s => s.key),
+    blockers,   // 🔴 — the real gaps to procure
+    upgrades,   // 🟡 — Stage-2/3 quality polish
     species,
   }
 }
@@ -95,15 +100,19 @@ export function computeReadiness() {
 export function renderReadiness(r) {
   const L = []
   L.push(`Readiness — ${r.speciesCount} species over ${r.partCount} parts (${r.partIndexSource})`)
-  L.push(`${'species'.padEnd(22)} ${'cnt'.padStart(3)}  Chassis  Bark  Leaves   buildable`)
+  L.push(`${'species'.padEnd(22)} ${'cnt'.padStart(3)}  Chassis  Bark  Leaves   build`)
   for (const s of r.species) {
     const cell = (pt) => `${s.parts[pt].glyph}${s.parts[pt].diverges ? '*' : ' '}`
-    L.push(`${s.key.padEnd(22)} ${String(s.count).padStart(3)}    ${cell('chassis')}     ${cell('bark')}    ${cell('leaf')}      ${s.buildableToday ? 'YES' : '—'}`)
+    const b = s.buildableClean ? 'CLEAN' : s.buildableWithStandins ? 'stand-in' : '🔴'
+    L.push(`${s.key.padEnd(22)} ${String(s.count).padStart(3)}    ${cell('chassis')}     ${cell('bark')}    ${cell('leaf')}      ${b}`)
   }
-  L.push(`\nbuildable today (${r.buildableToday.length}): ${r.buildableToday.join(', ') || '—'}`)
-  L.push(`shopping list (${r.shoppingList.length}):`)
-  for (const x of r.shoppingList) L.push(`   ${x.species} / ${x.part} — ${x.reason}`)
-  L.push(`(* = live matcher diverges from the dossier's declared availability)`)
+  L.push(`\nbuildable CLEAN (vendor-quality, ${r.buildableClean.length}): ${r.buildableClean.join(', ') || '—'}`)
+  L.push(`buildable with stand-ins (${r.buildableWithStandins.length}): ${r.buildableWithStandins.join(', ') || '—'}`)
+  L.push(`\n🔴 BLOCKERS — real gaps to procure (${r.blockers.length}):`)
+  for (const x of r.blockers) L.push(`   ${x.species} / ${x.part} — ${x.reason}`)
+  L.push(`\n🟡 UPGRADES — Stage-2/3 quality polish (${r.upgrades.length}):`)
+  for (const x of r.upgrades) L.push(`   ${x.species} / ${x.part}`)
+  L.push(`\n(* = live matcher diverges from the author's declared availability)`)
   return L.join('\n')
 }
 

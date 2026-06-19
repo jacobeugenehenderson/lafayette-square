@@ -2,14 +2,14 @@
   "partId": "Bark015",
   "partType": "bark",
   "source": "authored",
-  "canonicalValue": "_unassigned",
+  "canonicalValue": "exfoliating",
   "sourcePath": "public/textures/bark/Bark015",
   "tags": {
     "bark.type": {
-      "value": null,
+      "value": "exfoliating",
       "ratified": false,
       "confidence": "low",
-      "source": "barkDirMap(Bark015) unassigned — needs ratify"
+      "source": "rubric.barkDirMap(Bark015)"
     },
     "bark.color": {
       "value": null,

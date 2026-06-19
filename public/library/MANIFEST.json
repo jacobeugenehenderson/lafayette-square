@@ -3,7 +3,7 @@
   "generatedFrom": "arborist/ingest.js",
   "counts": {
     "chassises": 239,
-    "leaves": 10,
+    "leaves": 12,
     "barks": 5
   },
   "tree": {
@@ -1233,6 +1233,13 @@
           "sourcePath": "public/textures/leaves/shapes/oak_autumn"
         }
       ],
+      "compound": [
+        {
+          "partId": "fine_compound",
+          "source": "authored",
+          "sourcePath": "public/textures/leaves/shapes/fine_compound"
+        }
+      ],
       "heart": [
         {
           "partId": "heart",
@@ -1259,6 +1266,11 @@
           "partId": "long_needle",
           "source": "authored",
           "sourcePath": "public/textures/leaves/shapes/long_needle"
+        },
+        {
+          "partId": "short_needle",
+          "source": "authored",
+          "sourcePath": "public/textures/leaves/shapes/short_needle"
         }
       ],
       "ovate": [
@@ -1313,7 +1325,9 @@
           "partId": "Bark012",
           "source": "authored",
           "sourcePath": "public/textures/bark/Bark012"
-        },
+        }
+      ],
+      "exfoliating": [
         {
           "partId": "Bark015",
           "source": "authored",

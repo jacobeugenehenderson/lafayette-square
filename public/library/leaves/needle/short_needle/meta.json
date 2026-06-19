@@ -1,0 +1,22 @@
+{
+  "partId": "short_needle",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "needle",
+  "sourcePath": "public/textures/leaves/shapes/short_needle",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "needle",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology(short_needle→needle)"
+    },
+    "leaf.size": {
+      "value": 5,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

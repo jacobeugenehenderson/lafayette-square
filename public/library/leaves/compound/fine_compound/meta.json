@@ -1,0 +1,22 @@
+{
+  "partId": "fine_compound",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "compound",
+  "sourcePath": "public/textures/leaves/shapes/fine_compound",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "compound",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology(fine_compound→compound)"
+    },
+    "leaf.size": {
+      "value": 25,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

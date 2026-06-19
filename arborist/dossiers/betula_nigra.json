@@ -30,5 +30,5 @@
     "overlay": null, "deformer": { "range": { "lean": "morph — river birch leans as a variety trait" } }, "transform": {}, "age": null
   },
   "provenance": { "fromSpeciesMap": true, "notes": "Evolved from species-map betula_pendula ('Common Birch', barkMorph papery, tints verbatim). Re-keyed to betula_nigra (River Birch) per reference research — the correct St. Louis urban-park birch. barkMorph 'papery' normalized to 'exfoliating'. THE Stage-3 bark gap." },
-  "partAvailability": { "chassis": "have", "bark": "gap", "leaf": "have" }
+  "partAvailability": { "chassis": "have", "bark": "stretch", "leaf": "have", "_barkNote": "gap→stretch 2026-06-18: Bark015 (layered/striped/peeling) wired as an exfoliating DRAFT; the salmon/cinnamon river-birch look + the second mask channel remain the Stage-3 hard case" }
 }

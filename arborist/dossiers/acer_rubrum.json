@@ -30,5 +30,5 @@
     "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
   },
   "provenance": { "fromSpeciesMap": true, "notes": "Migrated from species-map acer_rubrum (tier cousin, tints verbatim incl. red buds #c44a4a + fall #c8311a→refined #d32414). barkMorph 'furrowed' refined to 'ridged'." },
-  "partAvailability": { "chassis": "have", "bark": "stretch", "leaf": "have" }
+  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have", "_barkNote": "stretch→have 2026-06-18: Bark003 is an exact ridged match (the live matcher found it)" }
 }
