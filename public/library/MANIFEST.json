@@ -1311,7 +1311,7 @@
           "sourcePath": "public/textures/bark/Bark015"
         }
       ],
-      "furrowed": [
+      "plated": [
         {
           "partId": "Bark007",
           "source": "authored",

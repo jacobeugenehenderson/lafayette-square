@@ -91,7 +91,7 @@
       "vocabNormalization": { "papery": "exfoliating" },
       "barkDirMap": {
         "_note": "DRAFT only — the 5 Bark0NN dirs are NOT deploy-ready ('the barks look bad', §0). Mapping seeded from species-map references; operator ratifies. Quality is Stage-2/3 work.",
-        "Bark007": "furrowed (sugar-maple trunk ref, tintBase #3a2820)",
+        "Bark007": "plated (sugar-maple trunk ref, tintBase #3a2820 — re-pointed furrowed→plated 2026-06-18 to agree with the acer_saccharum dossier's ratified target, Jacob)",
         "Bark003": "ridged (sugar-maple branch ref, tintBase #5a4030)",
         "Bark004": "unassigned — ratify",
         "Bark012": "unassigned — ratify",

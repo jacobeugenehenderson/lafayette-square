@@ -20,7 +20,7 @@ import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { tagChassis, tagLeaf, tagBark } from './ingest-tagger.js'
-import { place, regenerateManifest, canonicalDir } from './library-builder.js'
+import { place, regenerateManifest, reapOrphans, canonicalDir } from './library-builder.js'
 
 const CHASSIS_DIR = 'public/trees/_chassis'
 const LEAF_PACKS_DIR = 'public/textures/leaves/shapes'
@@ -94,6 +94,7 @@ export function runIngest(opts = {}) {
     place(part, opts)
     part.path = canonicalDir(part)
   }
+  reapOrphans(parts) // self-heal placements left behind by a re-tag (value change)
   regenerateManifest(parts)
 
   // ── emit the §7.1 part-index (the seam with 1B) ────────────────────────────

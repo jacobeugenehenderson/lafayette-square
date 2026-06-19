@@ -16,8 +16,8 @@
  * is the incremental follow-on (§4.5 "never a blocking migration"). The Builder
  * owns the indirection: sourcePath keeps every reference valid.
  */
-import { mkdirSync, writeFileSync, copyFileSync, existsSync, readdirSync, readFileSync } from 'fs'
-import { dirname, join, basename } from 'path'
+import { mkdirSync, writeFileSync, copyFileSync, existsSync, readdirSync, readFileSync, rmSync, statSync } from 'fs'
+import { dirname, join } from 'path'
 
 const LIB_ROOT = 'public/library'
 const TREE = { chassis: 'chassises', bark: 'barks', leaf: 'leaves', overlay: 'overlays' }
@@ -79,6 +79,34 @@ export function regenerateManifest(parts) {
   writeIfChanged(join(LIB_ROOT, 'MANIFEST.json'), JSON.stringify(manifest, null, 2) + '\n')
   return manifest
 }
+
+/**
+ * reapOrphans(parts) — when a part re-tags to a new rubric value, place() writes
+ * its NEW canonical dir but the OLD one is left behind (e.g. Bark007 furrowed→
+ * plated leaves barks/furrowed/Bark007). Reap removes any <tree>/<value>/<partId>
+ * placement dir that isn't a CURRENT placement, so re-tagging self-heals. Only
+ * touches partId-level dirs we own (the canonical leaf of the tree); never the
+ * value or tree dirs, never anything outside public/library.
+ */
+export function reapOrphans(parts) {
+  const valid = new Set(parts.map(p => canonicalDir(p)))
+  let reaped = 0
+  for (const tree of Object.values(TREE)) {
+    const treeDir = join(LIB_ROOT, tree)
+    if (!existsSync(treeDir)) continue
+    for (const value of readdirSync(treeDir)) {
+      const valueDir = join(treeDir, value)
+      if (!safeIsDir(valueDir)) continue
+      for (const partId of readdirSync(valueDir)) {
+        const dir = join(valueDir, partId)
+        if (safeIsDir(dir) && !valid.has(dir)) { rmSync(dir, { recursive: true, force: true }); reaped++ }
+      }
+      if (readdirSync(valueDir).length === 0) rmSync(valueDir, { recursive: true, force: true }) // drop now-empty value dir
+    }
+  }
+  return reaped
+}
+const safeIsDir = (p) => { try { return statSync(p).isDirectory() } catch { return false } }
 
 function writeIfChanged(path, content) {
   if (existsSync(path) && readFileSync(path, 'utf8') === content) return false

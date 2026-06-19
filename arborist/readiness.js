@@ -45,27 +45,39 @@ export function computeReadiness() {
     for (const pt of PART_TYPES) {
       const m = matcher(rubric, dossier, pt, parts)
       const status = STATUS(m)
+      const declared = (dossier.partAvailability || {})[pt] || null
       const best = m.options[0] || null
+      // READY needs BOTH signals to agree it's in hand: the live matcher returns
+      // a workable option AND the dossier author didn't flag a gap. The matcher
+      // sees only size+silhouette (it can't see that the pine-needle pack is wrong
+      // for bald cypress, or the ornamental-shape gap), so the author's declared
+      // gap is the floor; the live matcher catches the reverse (an over-optimistic
+      // Stage-0 'have' the assets don't actually back, e.g. Pin Oak's smooth bark).
+      const authorGap = declared === 'gap'
+      const ready = status === 'have' && !authorGap
       row.parts[pt] = {
-        status, glyph: GLYPH[status],
+        status, declared, ready, glyph: GLYPH[ready ? 'have' : authorGap ? 'gap' : status],
+        liveGlyph: GLYPH[status],
         totalWorkable: m.totalWorkable,
         preselect: m.preselect,
         best: best ? { partId: best.partId, verdict: best.verdict, score: best.score, provisional: best.provisional } : null,
-        // divergence: the live matcher vs the Stage-0 author's declared availability
-        declared: (dossier.partAvailability || {})[pt] || null,
-        diverges: ((dossier.partAvailability || {})[pt] || null) && (dossier.partAvailability[pt] !== status),
+        diverges: declared && declared !== status,
       }
     }
-    row.buildableToday = PART_TYPES.every(pt => row.parts[pt].status === 'have')
+    row.buildableToday = PART_TYPES.every(pt => row.parts[pt].ready)
     species.push(row)
   }
 
   species.sort((a, b) => b.count - a.count)
   const buildableToday = species.filter(s => s.buildableToday).map(s => s.key)
-  // shopping list: every blocked (🟡/🔴) cell → what to procure
+  // shopping list: every NOT-ready cell → what to procure, with the reason it's
+  // not ready (a live gap/stretch, or an author-flagged gap the matcher missed).
   const shoppingList = []
   for (const s of species) for (const pt of PART_TYPES) {
-    if (s.parts[pt].status !== 'have') shoppingList.push({ species: s.key, part: pt, status: s.parts[pt].status, need: s.parts[pt].declared })
+    const cell = s.parts[pt]
+    if (cell.ready) continue
+    const reason = cell.status === 'gap' ? 'no-asset' : cell.declared === 'gap' ? 'author-flagged-gap (matcher optimistic)' : cell.status
+    shoppingList.push({ species: s.key, part: pt, reason, liveStatus: cell.status, declared: cell.declared })
   }
 
   return {
@@ -89,7 +101,8 @@ export function renderReadiness(r) {
     L.push(`${s.key.padEnd(22)} ${String(s.count).padStart(3)}    ${cell('chassis')}     ${cell('bark')}    ${cell('leaf')}      ${s.buildableToday ? 'YES' : '—'}`)
   }
   L.push(`\nbuildable today (${r.buildableToday.length}): ${r.buildableToday.join(', ') || '—'}`)
-  L.push(`shopping list (${r.shoppingList.length}): ` + r.shoppingList.map(x => `${x.species}/${x.part}[${x.status}]`).join('  '))
+  L.push(`shopping list (${r.shoppingList.length}):`)
+  for (const x of r.shoppingList) L.push(`   ${x.species} / ${x.part} — ${x.reason}`)
   L.push(`(* = live matcher diverges from the dossier's declared availability)`)
   return L.join('\n')
 }

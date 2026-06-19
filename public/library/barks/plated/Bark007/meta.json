@@ -2,11 +2,11 @@
   "partId": "Bark007",
   "partType": "bark",
   "source": "authored",
-  "canonicalValue": "furrowed",
+  "canonicalValue": "plated",
   "sourcePath": "public/textures/bark/Bark007",
   "tags": {
     "bark.type": {
-      "value": "furrowed",
+      "value": "plated",
       "ratified": false,
       "confidence": "low",
       "source": "rubric.barkDirMap(Bark007)"

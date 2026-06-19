@@ -7162,7 +7162,7 @@
       "sourcePath": "public/textures/bark/Bark007",
       "tags": {
         "bark.type": {
-          "value": "furrowed",
+          "value": "plated",
           "ratified": false,
           "confidence": "low",
           "source": "rubric.barkDirMap(Bark007)"
@@ -7175,7 +7175,7 @@
         }
       },
       "conformReport": null,
-      "path": "public/library/barks/furrowed/Bark007"
+      "path": "public/library/barks/plated/Bark007"
     },
     {
       "partId": "Bark012",
