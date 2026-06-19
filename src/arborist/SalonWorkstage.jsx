@@ -78,6 +78,45 @@ function useCanaryPref() {
   return pref
 }
 
+// §9 — the dossier's reference plates beside the live tree ("so we know what
+// we're going for"). The cloud-Tuner's ground truth as a UI element, not an
+// agent. Reads the active species' dossier; null (hidden) when there is none.
+// referenceImages are external source URLs (Wikimedia / MoBot / arboretum) —
+// the captions are the ground truth; clicking opens the plate. (In-repo
+// thumbnails are the Stage-1 ingest download step; manifests carry the URLs.)
+function ReferencePanel() {
+  const d = useArboristStore(s => s.salonDossier)
+  const [open, setOpen] = useState(true)
+  if (!d) return null
+  return (
+    <div style={{
+      position: 'absolute', top: 12, left: 12, maxWidth: 300, zIndex: 5,
+      background: 'rgba(0,0,0,0.62)', border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 6, padding: '9px 11px', fontSize: 11, color: '#cdd6df', pointerEvents: 'auto',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', cursor: 'pointer', gap: 8 }}
+        onClick={() => setOpen(o => !o)}>
+        <span style={{ fontWeight: 600, color: '#e6e9ee' }}>📖 {d.key} <i style={{ color: '#8aa3bb', fontWeight: 400 }}>{d.scientific}</i></span>
+        <span style={{ color: '#778' }}>{open ? '▾' : '▸'}</span>
+      </div>
+      {open && (
+        <>
+          {d.descriptor && <div style={{ marginTop: 5, color: '#aeb8c2', lineHeight: 1.4 }}>{d.descriptor}</div>}
+          {d.identityNotes && <div style={{ marginTop: 5, color: '#8a93a0', fontStyle: 'italic', lineHeight: 1.35 }}>{d.identityNotes}</div>}
+          <div style={{ marginTop: 7, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {(d.referenceImages || []).map((p, i) => (
+              <a key={i} href={p.url} target="_blank" rel="noreferrer"
+                style={{ color: '#9fc0e8', textDecoration: 'none', lineHeight: 1.35 }} title={`${p.caption}\n— ${p.credit}`}>
+                <b style={{ textTransform: 'uppercase', fontSize: 9, color: '#c8a83a' }}>{p.state}</b> — {p.caption}
+              </a>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function SalonWorkstage() {
   const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
   const speciesList         = useArboristStore(s => s.salonSpeciesList)
@@ -640,6 +679,7 @@ function SlotCard({
             in the workstage; the perf gauge below still reports actual
             loaded counts. */}
         <PerfGauge sample={perfSample} />
+        <ReferencePanel />
 
         {/* Wind toggle (lifted) */}
         <div style={{

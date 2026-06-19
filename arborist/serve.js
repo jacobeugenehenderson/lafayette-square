@@ -32,6 +32,7 @@ import {
 import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 import { buildPreviewAtlas, previewDir } from './salon-preview-atlas.js'
 import { computeCoverage } from './roster-coverage.js'
+import { salonOptionsForSpecies } from './salon-options.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -1150,6 +1151,17 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/leaves$/))) {
       try {
         return jsonRes(res, 200, { leaves: await listSalonLeafPacks() })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // GET /salon/:species/options — the Forest Builder matcher's ranked options
+    // per part-type + the dossier (reference plates + required) for this species
+    // (§9/§7). { dossier|null, options:{chassis,bark,leaf}|null }. READ-ONLY.
+    if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/options$/))) {
+      try {
+        return jsonRes(res, 200, salonOptionsForSpecies(decodeURIComponent(m[1])))
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }

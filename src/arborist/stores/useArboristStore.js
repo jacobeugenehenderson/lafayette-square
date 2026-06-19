@@ -513,6 +513,8 @@ const useArboristStore = create((set, get) => ({
   salonChassisCatalog: [],         // [{name, morphology, heightRange, source, ...}]
   salonBarkRefs: [],               // ['Bark003', ...]
   salonLeafPacks: [],              // [{packId, kind}]
+  salonDossier: null,              // §9 — the active species' dossier (reference plates + required) or null
+  salonOptions: null,              // §9 — matcher ranked options {chassis,bark,leaf} or null
   // Brief 1.5b (Quill): operator-authored chassis curation. Keyed by
   // chassis filename (`<name>.glb`); value is `{displayName, approved, notes}`.
   // `approved` is tri-state: true/false/null (unreviewed). Absent entry is
@@ -543,16 +545,21 @@ const useArboristStore = create((set, get) => ({
     // Use the active species id (or '_all' placeholder) as the path arg.
     const speciesArg = encodeURIComponent(get().salonActiveSpecies || '_all')
     try {
-      const [cR, bR, lR] = await Promise.all([
+      const [cR, bR, lR, oR] = await Promise.all([
         fetch(`/api/arborist/salon/${speciesArg}/chassis?t=${Date.now()}`),
         fetch(`/api/arborist/salon/${speciesArg}/bark?t=${Date.now()}`),
         fetch(`/api/arborist/salon/${speciesArg}/leaves?t=${Date.now()}`),
+        fetch(`/api/arborist/salon/${speciesArg}/options?t=${Date.now()}`),
       ])
-      const [cD, bD, lD] = await Promise.all([cR.json(), bR.json(), lR.json()])
+      const [cD, bD, lD, oD] = await Promise.all([cR.json(), bR.json(), lR.json(), oR.json()])
       set({
         salonChassisCatalog: cD.chassis || [],
         salonBarkRefs:       bD.bark || [],
         salonLeafPacks:      lD.leaves || [],
+        // Forest Builder §9: the dossier (reference plates + required) + the
+        // matcher's ranked options per part-type for this species (null if no dossier).
+        salonDossier:        oD.dossier || null,
+        salonOptions:        oD.options || null,
       })
     } catch (err) {
       set({ salonError: String(err) })
