@@ -1,5 +1,7 @@
 # The Forest Builder — a design pass (planning only)
 
+> ⛔ **SUPERSEDED 2026-06-18 by `scratch/FOREST-BUILDER-KIT-MATCHER.md` (Florilegium, v2). Read v2, not this.** Carried forward: cores×deformer (no limb modules); the leaf scale + color fixes — now **rubric axes**, not standalone patches; no-cull. Changed: the kit-matcher spine (rubric → dossiers → matcher → readiness dashboard); leaf-color is value/saturation-harmonization (hue preserved per species), NOT "one palette"; and **Procedural + LiDAR are KEPT** as equal peers (this doc's decision #1 to retire them is reversed). See [[project_arborist_kit_matcher]].
+
 > **Author: Espalier** (a fresh, from-the-canon design agent. *Espalier* — the horticultural
 > art of training a tree into a deliberate, built form; the right verb for a curated, assembled
 > forest.) Dispatched 2026-06-17 against `scratch/brief-arborist-forest-builder-design.md`.

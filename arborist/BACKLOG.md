@@ -2,6 +2,8 @@
 
 > Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. Migrated 2026-05-18 out of `cartograph/BACKLOG.md`. Tree work that intersects cartograph-side code (Couplers wiring, scene channels) still appears in `cartograph/BACKLOG.md`; tree-internal items live here.
 
+> 🌳 **CURRENT ARC (2026-06-18) — the Forest Builder kit-matcher (supersedes the Salon arc below as the front-end direction).** The Arborist is being rebuilt front-first as a fashion-plates kit-matcher (rubric → dossiers → matcher → readiness dashboard). Ratified architecture: **`scratch/FOREST-BUILDER-KIT-MATCHER.md`**; building now: `scratch/brief-stage0-rubric-dossiers.md` (Stage 0 = `rubric.json` + 10 dossiers). **Locked doctrine:** **no-cull** (all trees draw); the hero-LOD / DoF arc is **PARKED** — not pursued this build, kept dormant for a possible return (like LiDAR/Procedural — `HANDOFF-tree-hero-lod.md`); the *cull* half is vetoed, the *detail-taper/DoF* half is what might return. Leaf scale + color are now **rubric axes**, not patches; **Procedural + LiDAR kept** as equal peer tracks. The Salon arc + items below are the as-built the kit-matcher rides + reorganizes — read the architecture doc first.
+
 ---
 
 ## Salon arc — chassis + bark + leaves composition (in flight, 2026-05-21)

@@ -2,6 +2,8 @@
 
 > Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Operator-facing surface of the helper. Read at session start to know what's already shippable vs. what's still in flight. `BACKLOG.md` carries the in-flight items; `ARCHITECTURE.md` carries the load-bearing patterns; `NOTES.md` carries the dated decision record.
 
+> 🌳 **The front is being rebuilt as the Forest Builder kit-matcher** (`scratch/FOREST-BUILDER-KIT-MATCHER.md`, ratified 2026-06-18; **no-cull**, Authored-only; the hero-LOD/DoF arc **parked**, not deleted). The shippable surface below is the as-built it rides; the leaf-colorer + bark fixes are now **rubric axes** there.
+
 ---
 
 ## What the helper produces

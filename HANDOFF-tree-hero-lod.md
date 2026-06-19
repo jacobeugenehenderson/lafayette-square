@@ -1,5 +1,7 @@
 # Handoff — Hero-Shot Tree Visibility-LOD + Pan-Arc Impostors
 
+> ⏸️ **PARKED 2026-06-18 — not pursued in the current build, kept dormant for a possible return** (operator call; same treatment as LiDAR/Procedural — a real approach we may revisit). No-cull is doctrine now, so the **cull half** (trees disappear) is **vetoed**; the **detail-taper / DoF half** (trees stay, detail softens in blurred zones — the romance-DoF direction) is the part that might return, and its design thinking is preserved here. The hero-LOD code stays **dormant, not deleted** (`scratch/FOREST-BUILDER-KIT-MATCHER.md §14`); its §2 mis-aimed-classifier bug is moot while unused. Don't build on this *this time*; don't delete it either. See memory `project_arborist_kit_matcher`.
+
 > Dispatch-ready brief. Makes the tree canopy **mobile-viable** by rendering only the trees
 > the hero pan actually *sees well* at full mesh, and swapping occluded / peripheral trees to
 > cheap multi-view impostors. This is `project_view_aware_baking` realized for trees, scoped

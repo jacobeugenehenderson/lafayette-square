@@ -2,6 +2,8 @@
 
 > Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Load-bearing patterns specific to the tree helper. The kit-wide publish-loop pattern lives in `../cartograph/ARCHITECTURE.md`; this doc covers how it specializes for trees + the algorithms + the master-atlas innovation + the cartograph↔arborist boundary.
 
+> 🌳 **The kit-matcher rebuild rides these patterns** (`scratch/FOREST-BUILDER-KIT-MATCHER.md`, ratified 2026-06-18). The publish-loop / single master atlas / 2-bind material / decimation levers documented here are **KEPT**; the *front* (organizing / authoring) is rebuilt on top. Doctrine: **no-cull** — the hero-LOD / DoF arc is **parked** (dormant for a possible return, like LiDAR/Procedural), not deleted.
+
 ---
 
 ## Publish-loop pattern, applied

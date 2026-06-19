@@ -18,10 +18,10 @@ it into (1) the canonical architecture, (2) the **rubric spelled out completely*
 (3) the dossier + matcher data shapes, (4) a **staged, dispatchable build plan** with eye-gated
 acceptance, and (5) the **keep / rebuild / retire ledger** against Increment's audit.
 
-**It supersedes `scratch/FOREST-BUILDER-DESIGN.md` (Espalier, v1).** What carries forward, verbatim in
+**It supersedes `cartograph/_archive/FOREST-BUILDER-DESIGN-v1-superseded-2026-06-18.md` (Espalier, v1).** What carries forward, verbatim in
 spirit: **articulation = deep chassis-core catalog × deformer envelope, no limb modules** (Espalier
 §1.4/§2); **leaf scale + leaf color are absence-of-derivation bugs fixed at the bake** (Espalier §3);
-**no-cull is doctrine, delete the hero-LOD impostor/cull arc** (Espalier §7.3). What changes: those
+**no-cull is doctrine; the hero-LOD impostor/cull arc is PARKED — dormant, not deleted** (Espalier §7.3; operator call 2026-06-18, same as LiDAR/Procedural — see §14). What changes: those
 leaf fixes stop being a standalone "Increment 0" and become **axes inside the rubric** (the brief's
 explicit reframe — "the leaf-colorer and bark fixes become axes inside this, not standalone patches");
 and **Procedural + LiDAR are KEPT as equal peer tracks, not retired** — a deliberate reversal of
@@ -694,17 +694,8 @@ picker** (§7) · the **readiness dashboard** (§8) · the **reference-driven vi
 (§2.2/§6 — surface the type, fix the barks).
 
 ### RETIRE
-- **The hero-LOD impostor/cull arc** (`HANDOFF-tree-hero-lod.md`) — **no-cull is doctrine, all trees
-  draw at every distance.** Delete: `bake-trees.js`'s `classifyHeroTiers` / `FALLBACK_HERO_TARGET` /
-  `heroTierMeta` emission / the `cull` tier; the slab `heroTier` field; `InstancedTrees.jsx`'s
-  `aHeroTier`; `treeAtlasMaterial.js`'s `treeHeroTierQC` uniform + `?heroTierQC=1` overlay; the
-  never-built Phase-B/C impostor producer (deleting a plan, not code). **Bonus: this clears Increment's
-  §2 headline conflict for free** — the heroTier classifier scores against a camera target ~1200 m off
-  (`[400,45,-100]` vs the resolved arch `[1584,45,-528]`, the `project_camera_framing_slab_contract`
-  failure); under no-cull the classifier is *deleted*, so the bug evaporates rather than needing a fix
-  (Increment §5 unblocks by removal). **Keep only `tree-bounds.js` + `canopyByVariant`** out of that
-  prereq — repurposed for `leaf.size` (§2.3).
-- **Supersede Espalier v1** (`scratch/FOREST-BUILDER-DESIGN.md`) — carry forward cores×deformer + the
+- **The hero-LOD / DoF arc** (`HANDOFF-tree-hero-lod.md`) — **PARK, do NOT delete** (operator call 2026-06-18; same treatment as LiDAR/Procedural — a real approach we may return to). No-cull is doctrine, so the **cull half** (trees disappear) is **vetoed**; the **detail-taper / DoF half** (trees stay, detail softens in blurred zones — the romance-DoF direction) is the part that might return, and its design thinking is preserved in the parked brief. **Leave the hero-LOD code dormant, not deleted:** `bake-trees.js`'s `classifyHeroTiers` / `FALLBACK_HERO_TARGET` / `heroTierMeta` / the `cull` tier; the slab `heroTier` field; `InstancedTrees.jsx`'s `aHeroTier`; `treeAtlasMaterial.js`'s `treeHeroTierQC` uniform + `?heroTierQC=1` overlay. It's unwired under no-cull → harmless dormant weight (minor accepted debt, like the dormant LiDAR/Procedural code). Its **§2 mis-aimed-classifier bug is moot while unused** — no need to fix; if the arc ever returns it would likely rebuild around *real* DoF, so the value preserved is the *design*, not the buggy classifier. **`tree-bounds.js` + `canopyByVariant` are KEPT and repurposed** for `leaf.size` (§2.3) regardless.
+- **Supersede Espalier v1** (`cartograph/_archive/FOREST-BUILDER-DESIGN-v1-superseded-2026-06-18.md`) — carry forward cores×deformer + the
   leaf-fix mechanics (now **as rubric axes**, §2.3/§6); supersede the framing and its retire-decision #1
   (§11).
 - **Do NOT retire LiDAR / Procedural** (§11) — the one place this ledger diverges from Espalier.

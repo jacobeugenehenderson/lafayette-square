@@ -1,6 +1,8 @@
 # Arborist
 
-The species-asset library producer. Authors per-species tree skeletons + leaf/bark configurations from public LiDAR data, publishes them as runtime-ready artifacts.
+The species-asset library producer. Authors per-species tree assets (chassis + bark + leaves) from **curated / authored sources**, publishes them as runtime-ready artifacts.
+
+> 🌳 **CURRENT DIRECTION (2026-06-18) — the Forest Builder kit-matcher.** The Arborist's *front* (organizing / findability / authoring) is being rebuilt as a "fashion-plates" kit-matcher: **`scratch/FOREST-BUILDER-KIT-MATCHER.md`** (ratified architecture) + `scratch/brief-stage0-rubric-dossiers.md` (Stage 0, building now). The publish spine documented below is **KEPT and ridden**. Locked doctrine: **no-cull** (all trees draw at every distance; the hero-LOD / DoF arc is **parked** — dormant for a possible return, like LiDAR/Procedural, not deleted); **Authored-only now** (LiDAR + Procedural kept as **equal peer tracks**, not retired). The quartet describes the as-built; the kit-matcher doc is the live plan.
 
 Read in order:
 
