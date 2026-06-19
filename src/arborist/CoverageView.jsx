@@ -83,6 +83,7 @@ export default function CoverageView() {
             <Th style={{ width: 90 }}>Coverage</Th>
             <Th style={{ width: 48, textAlign: 'right' }}>Cnt</Th>
             <Th>Roster species</Th>
+            <Th style={{ width: 104 }}>Kit · C·B·L</Th>
             <Th>Have (covering library species)</Th>
             <Th>Routing (park_species_map)</Th>
           </tr>
@@ -113,6 +114,7 @@ function Row({ s }) {
           </div>
         )}
       </Td>
+      <Td><KitTriad fb={s.forestBuilder} /></Td>
       <Td>
         {s.covering.length === 0
           ? <span style={{ color: '#c8553a' }}>— no model / cousin (obtain)</span>
@@ -145,6 +147,28 @@ function Row({ s }) {
 }
 
 const cellPad = '7px 10px'
+// Forest Builder per-part readiness (§8), folded into Coverage. 🟢 have (vendor-
+// quality) / 🟡 stretch (stand-in/placeholder) / 🔴 gap; * = matcher diverges
+// from the dossier's declared availability. Only dossier-backed species carry it.
+const PART_GLYPH = { have: '🟢', stretch: '🟡', gap: '🔴' }
+function KitTriad({ fb }) {
+  if (!fb) return <span style={{ color: '#555' }}>—</span>
+  const cell = (pt, name) => {
+    const c = fb.parts[pt] || {}
+    return <span title={`${name}: ${c.status || '?'}${c.diverges ? ' (diverges from declared)' : ''}`} style={{ fontSize: 13 }}>
+      {PART_GLYPH[c.status] || '·'}{c.diverges ? <sup style={{ color: '#c8a83a' }}>*</sup> : ''}
+    </span>
+  }
+  return (
+    <span style={{ whiteSpace: 'nowrap' }}>
+      {cell('chassis', 'Chassis')} {cell('bark', 'Bark')} {cell('leaf', 'Leaves')}
+      {fb.buildableClean
+        ? <span style={{ color: '#6a9a4a', fontSize: 9, marginLeft: 6 }}>CLEAN</span>
+        : fb.buildableWithStandins ? <span style={{ color: '#c8a83a', fontSize: 9, marginLeft: 6 }}>stand-in</span> : null}
+    </span>
+  )
+}
+
 function Th({ children, style }) {
   return <th style={{ padding: cellPad, fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', ...style }}>{children}</th>
 }

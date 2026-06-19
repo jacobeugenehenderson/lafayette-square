@@ -48,7 +48,7 @@ export function computeReadiness() {
 
   for (const f of dossierFiles) {
     const dossier = readJSON(join(DOSSIERS, f))
-    const row = { key: dossier.key, canonicalId: dossier.canonicalId, count: dossier.count || 0, parts: {}, declared: dossier.partAvailability || {} }
+    const row = { key: dossier.key, canonicalId: dossier.canonicalId, count: dossier.count || 0, inventoryNames: dossier.inventoryNames || [], parts: {}, declared: dossier.partAvailability || {} }
     for (const pt of PART_TYPES) {
       const m = matcher(rubric, dossier, pt, parts)
       const status = STATUS(m)

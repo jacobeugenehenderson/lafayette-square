@@ -147,6 +147,19 @@ export async function computeCoverage() {
     return null
   }
 
+  // ── Forest Builder per-part readiness (§8) — folded in for dossier-backed
+  // species. The matcher's Chassis·Bark·Leaves status, keyed back to the roster
+  // by the dossier's inventoryNames. Defensive: coverage still works if the
+  // Forest Builder data (rubric / part-index / dossiers) is absent.
+  const fbByRoster = new Map()
+  try {
+    const { computeReadiness } = await import('./readiness.js')
+    for (const r of computeReadiness().species) {
+      const fb = { parts: r.parts, buildableClean: r.buildableClean, buildableWithStandins: r.buildableWithStandins }
+      for (const inv of (r.inventoryNames || [])) fbByRoster.set(canonize(inv), fb)
+    }
+  } catch { /* Forest Builder data not present — skip the per-part fold */ }
+
   // ── Join ────────────────────────────────────────────────────────────────
   const species = []
   for (const [canonical, { count, rawNames }] of byCanon) {
@@ -212,6 +225,9 @@ export async function computeCoverage() {
       routing,
       mapMissing: !hasMapKey,
       dangling,
+      // Forest Builder per-part readiness (§8) — null unless this roster species
+      // has a dossier; { parts:{chassis,bark,leaf}, buildableClean, buildableWithStandins }.
+      forestBuilder: fbByRoster.get(canonical) || null,
       // Brief 26
       canonicalId,
       recommendedChassis,
