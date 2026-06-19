@@ -1,0 +1,27 @@
+{
+  "partId": "procedural_weeping_a",
+  "partType": "chassis",
+  "source": "procedural",
+  "canonicalValue": "_unassigned",
+  "sourcePath": "public/trees/_chassis/procedural_weeping_a.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 5.96,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "undetermined — no aspect at ingest, no species map"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  }
+}

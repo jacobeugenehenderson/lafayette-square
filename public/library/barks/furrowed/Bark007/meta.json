@@ -1,0 +1,22 @@
+{
+  "partId": "Bark007",
+  "partType": "bark",
+  "source": "authored",
+  "canonicalValue": "furrowed",
+  "sourcePath": "public/textures/bark/Bark007",
+  "tags": {
+    "bark.type": {
+      "value": "furrowed",
+      "ratified": false,
+      "confidence": "low",
+      "source": "rubric.barkDirMap(Bark007)"
+    },
+    "bark.color": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "texture-sample-pending (no decoder this stage)"
+    }
+  },
+  "conformReport": null
+}

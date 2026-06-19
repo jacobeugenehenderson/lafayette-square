@@ -1,0 +1,22 @@
+{
+  "partId": "Bark012",
+  "partType": "bark",
+  "source": "authored",
+  "canonicalValue": "_unassigned",
+  "sourcePath": "public/textures/bark/Bark012",
+  "tags": {
+    "bark.type": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "barkDirMap(Bark012) unassigned — needs ratify"
+    },
+    "bark.color": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "texture-sample-pending (no decoder this stage)"
+    }
+  },
+  "conformReport": null
+}

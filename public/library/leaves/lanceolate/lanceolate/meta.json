@@ -1,0 +1,22 @@
+{
+  "partId": "lanceolate",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "lanceolate",
+  "sourcePath": "public/textures/leaves/shapes/lanceolate",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "lanceolate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 8,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

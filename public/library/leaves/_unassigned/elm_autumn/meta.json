@@ -1,0 +1,23 @@
+{
+  "partId": "elm_autumn",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "_unassigned",
+  "sourcePath": "public/textures/leaves/shapes/elm_autumn",
+  "tags": {
+    "leaf.silhouette": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "pack-meta.morphology(seasonal_elm) — not a silhouette (season/variant pack?)",
+      "unresolved": "seasonal_elm"
+    },
+    "leaf.size": {
+      "value": 8,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

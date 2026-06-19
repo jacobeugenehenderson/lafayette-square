@@ -1,0 +1,27 @@
+{
+  "partId": "candicands_d_bark_133",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "_unassigned",
+  "sourcePath": "public/trees/_chassis/candicands_d_bark_133.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 8.66,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "undetermined — no aspect at ingest, no species map"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  }
+}

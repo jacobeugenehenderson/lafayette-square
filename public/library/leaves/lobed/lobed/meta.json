@@ -1,0 +1,22 @@
+{
+  "partId": "lobed",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "lobed",
+  "sourcePath": "public/textures/leaves/shapes/lobed",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "lobed",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 12,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

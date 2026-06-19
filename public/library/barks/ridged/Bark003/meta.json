@@ -1,0 +1,22 @@
+{
+  "partId": "Bark003",
+  "partType": "bark",
+  "source": "authored",
+  "canonicalValue": "ridged",
+  "sourcePath": "public/textures/bark/Bark003",
+  "tags": {
+    "bark.type": {
+      "value": "ridged",
+      "ratified": false,
+      "confidence": "low",
+      "source": "rubric.barkDirMap(Bark003)"
+    },
+    "bark.color": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "texture-sample-pending (no decoder this stage)"
+    }
+  },
+  "conformReport": null
+}

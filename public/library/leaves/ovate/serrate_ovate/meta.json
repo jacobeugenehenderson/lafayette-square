@@ -1,0 +1,22 @@
+{
+  "partId": "serrate_ovate",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "ovate",
+  "sourcePath": "public/textures/leaves/shapes/serrate_ovate",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "ovate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology(serrate_ovate→ovate)"
+    },
+    "leaf.size": {
+      "value": 8,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

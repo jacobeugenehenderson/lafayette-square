@@ -1,0 +1,22 @@
+{
+  "partId": "long_needle",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "needle",
+  "sourcePath": "public/textures/leaves/shapes/long_needle",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "needle",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology(long_needle→needle)"
+    },
+    "leaf.size": {
+      "value": 15,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

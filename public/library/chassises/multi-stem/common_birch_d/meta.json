@@ -1,0 +1,27 @@
+{
+  "partId": "common_birch_d",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "multi-stem",
+  "sourcePath": "public/trees/_chassis/common_birch_d.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 8.26,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "multi-stem",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(betula_pendula)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  }
+}

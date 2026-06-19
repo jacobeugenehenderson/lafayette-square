@@ -1,0 +1,22 @@
+{
+  "partId": "ovate_large",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "ovate",
+  "sourcePath": "public/textures/leaves/shapes/ovate_large",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "ovate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology(ovate_large→ovate)"
+    },
+    "leaf.size": {
+      "value": 15,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

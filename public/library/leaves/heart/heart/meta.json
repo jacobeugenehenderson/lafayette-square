@@ -1,0 +1,22 @@
+{
+  "partId": "heart",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "heart",
+  "sourcePath": "public/textures/leaves/shapes/heart",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "heart",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 10,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

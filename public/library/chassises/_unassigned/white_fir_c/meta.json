@@ -1,0 +1,27 @@
+{
+  "partId": "white_fir_c",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "_unassigned",
+  "sourcePath": "public/trees/_chassis/white_fir_c.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 17.59,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "undetermined — no aspect at ingest, no species map"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  }
+}

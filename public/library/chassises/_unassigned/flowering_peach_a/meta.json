@@ -1,0 +1,27 @@
+{
+  "partId": "flowering_peach_a",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "_unassigned",
+  "sourcePath": "public/trees/_chassis/flowering_peach_a.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 3.2,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "undetermined — no aspect at ingest, no species map"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  }
+}
