@@ -1,0 +1,4 @@
+bark_brown_01 — Poly Haven (https://polyhaven.com/a/bark_brown_01)
+License: CC0 1.0 Universal (Public Domain)
+Maps: color (Diffuse), normal (nor_gl), roughness (Rough), 1K JPG.
+Wired 2026-06-18 to fill the 'furrowed' bark type for the Forest Builder kit.

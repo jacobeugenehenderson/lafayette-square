@@ -28,18 +28,18 @@ _Non-silhouette packs (season/variant, not a single-leaf shape): elm_autumn(seas
 
 ## Barks (by type)
 
-| type | asset | wanted by |
-|---|---|---|
-| smooth | Bark004 (draft) | Pin Oak |
-| **furrowed** | 🔴 GAP | Sweetgum |
-| plated | Bark007 (draft) | Sugar Maple |
-| **scaly** | 🔴 GAP | Silver Maple, Redbud, Flowering Crabapple |
-| ridged | Bark003 (draft) | Red Maple, Green Ash |
-| exfoliating | Bark015 (draft) | Birch |
-| **fibrous** | 🔴 GAP | Bald Cypress |
-| **mottled** | 🔴 GAP | — |
+| type | asset | provenance | wanted by |
+|---|---|---|---|
+| smooth | Bark004 | ambientCG (draft quality) | Pin Oak |
+| furrowed | bark_brown_01 | Poly Haven CC0 | Sweetgum |
+| plated | Bark007 | ambientCG (draft quality) | Sugar Maple |
+| scaly | bark_platanus | Poly Haven CC0 | Silver Maple, Redbud, Flowering Crabapple |
+| ridged | Bark003 | ambientCG (draft quality) | Red Maple, Green Ash |
+| exfoliating | chinese_hackberry_bark | Poly Haven CC0 | Birch |
+| fibrous | chinese_cedar_bark | Poly Haven CC0 | Bald Cypress |
+| **mottled** | 🔴 GAP | — | — |
 
-**Bark gaps (no asset): furrowed, scaly, fibrous, mottled.**
+**Bark gaps (no asset): mottled.**
 
 ## Chassis (by habit) — count
 

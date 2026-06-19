@@ -45,7 +45,7 @@ export function computeInventory() {
   })).sort((a, b) => String(a.silhouette).localeCompare(String(b.silhouette)))
 
   const barks = parts.filter(p => p.partType === 'bark').map(p => ({
-    id: p.partId, type: p.tags['bark.type']?.value ?? null, quality: 'draft (ambientCG)',
+    id: p.partId, type: p.tags['bark.type']?.value ?? null, provenance: p.provenance || 'ambientCG (draft quality)',
   }))
 
   // GAPS: rubric values with no part covering them
@@ -102,13 +102,13 @@ export function renderInventory(inv) {
   // ── BARKS ──
   L.push('## Barks (by type)')
   L.push('')
-  L.push('| type | asset | wanted by |')
-  L.push('|---|---|---|')
+  L.push('| type | asset | provenance | wanted by |')
+  L.push('|---|---|---|---|')
   for (const v of inv.barkTypes) {
     const got = inv.barks.filter(b => b.type === v)
     const want = inv.wantBy['bark.type'][v] || []
-    if (got.length === 0) L.push(`| **${v}** | 🔴 GAP | ${want.join(', ') || '—'} |`)
-    else for (const b of got) L.push(`| ${v} | ${b.id} (draft) | ${want.join(', ') || '—'} |`)
+    if (got.length === 0) L.push(`| **${v}** | 🔴 GAP | — | ${want.join(', ') || '—'} |`)
+    else for (const b of got) L.push(`| ${v} | ${b.id} | ${b.provenance} | ${want.join(', ') || '—'} |`)
   }
   L.push('')
   L.push(`**Bark gaps (no asset): ${inv.barkGaps.length ? inv.barkGaps.join(', ') : 'none'}.**`)

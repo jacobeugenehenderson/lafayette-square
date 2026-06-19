@@ -85,14 +85,19 @@ export function runIngest(opts = {}) {
     }
   }
 
-  // ── barks (5) ────────────────────────────────────────────────────────────────
+  // ── barks (ambientCG Bark0NN + wired Poly Haven CC0 dirs) ─────────────────────
   if (existsSync(BARK_DIR)) {
-    for (const barkId of readdirSync(BARK_DIR).filter(d => /^Bark/i.test(d))) {
+    for (const ent of readdirSync(BARK_DIR, { withFileTypes: true })) {
+      if (!ent.isDirectory() || ent.name.startsWith('.')) continue
+      const barkId = ent.name
+      const bmetaPath = join(BARK_DIR, barkId, 'meta.json')
+      const bmeta = existsSync(bmetaPath) ? readJSON(bmetaPath) : null
       parts.push({
         partId: barkId, partType: 'bark', source: 'authored',
         sourcePath: join(BARK_DIR, barkId),
         tags: tagBark(rubric, barkId),
         conformReport: null,
+        provenance: bmeta?.provenance || 'ambientCG (draft quality)',
       })
     }
   }

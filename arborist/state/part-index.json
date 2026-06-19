@@ -5,10 +5,10 @@
   "counts": {
     "chassis": 239,
     "leaf": 12,
-    "bark": 5
+    "bark": 9
   },
   "sources": {
-    "authored": 243,
+    "authored": 247,
     "procedural": 13
   },
   "parts": [
@@ -7264,6 +7264,7 @@
         }
       },
       "conformReport": null,
+      "provenance": "ambientCG (draft quality)",
       "path": "public/library/barks/ridged/Bark003"
     },
     {
@@ -7286,6 +7287,7 @@
         }
       },
       "conformReport": null,
+      "provenance": "ambientCG (draft quality)",
       "path": "public/library/barks/smooth/Bark004"
     },
     {
@@ -7308,6 +7310,7 @@
         }
       },
       "conformReport": null,
+      "provenance": "ambientCG (draft quality)",
       "path": "public/library/barks/plated/Bark007"
     },
     {
@@ -7330,6 +7333,7 @@
         }
       },
       "conformReport": null,
+      "provenance": "ambientCG (draft quality)",
       "path": "public/library/barks/_unassigned/Bark012"
     },
     {
@@ -7339,10 +7343,10 @@
       "sourcePath": "public/textures/bark/Bark015",
       "tags": {
         "bark.type": {
-          "value": "exfoliating",
+          "value": null,
           "ratified": false,
           "confidence": "low",
-          "source": "rubric.barkDirMap(Bark015)"
+          "source": "barkDirMap(Bark015) unassigned — needs ratify"
         },
         "bark.color": {
           "value": null,
@@ -7352,7 +7356,100 @@
         }
       },
       "conformReport": null,
-      "path": "public/library/barks/exfoliating/Bark015"
+      "provenance": "ambientCG (draft quality)",
+      "path": "public/library/barks/_unassigned/Bark015"
+    },
+    {
+      "partId": "bark_brown_01",
+      "partType": "bark",
+      "source": "authored",
+      "sourcePath": "public/textures/bark/bark_brown_01",
+      "tags": {
+        "bark.type": {
+          "value": "furrowed",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(bark_brown_01)"
+        },
+        "bark.color": {
+          "value": null,
+          "ratified": false,
+          "confidence": "low",
+          "source": "texture-sample-pending (no decoder this stage)"
+        }
+      },
+      "conformReport": null,
+      "provenance": "Poly Haven CC0",
+      "path": "public/library/barks/furrowed/bark_brown_01"
+    },
+    {
+      "partId": "bark_platanus",
+      "partType": "bark",
+      "source": "authored",
+      "sourcePath": "public/textures/bark/bark_platanus",
+      "tags": {
+        "bark.type": {
+          "value": "scaly",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(bark_platanus)"
+        },
+        "bark.color": {
+          "value": null,
+          "ratified": false,
+          "confidence": "low",
+          "source": "texture-sample-pending (no decoder this stage)"
+        }
+      },
+      "conformReport": null,
+      "provenance": "Poly Haven CC0",
+      "path": "public/library/barks/scaly/bark_platanus"
+    },
+    {
+      "partId": "chinese_cedar_bark",
+      "partType": "bark",
+      "source": "authored",
+      "sourcePath": "public/textures/bark/chinese_cedar_bark",
+      "tags": {
+        "bark.type": {
+          "value": "fibrous",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(chinese_cedar_bark)"
+        },
+        "bark.color": {
+          "value": null,
+          "ratified": false,
+          "confidence": "low",
+          "source": "texture-sample-pending (no decoder this stage)"
+        }
+      },
+      "conformReport": null,
+      "provenance": "Poly Haven CC0",
+      "path": "public/library/barks/fibrous/chinese_cedar_bark"
+    },
+    {
+      "partId": "chinese_hackberry_bark",
+      "partType": "bark",
+      "source": "authored",
+      "sourcePath": "public/textures/bark/chinese_hackberry_bark",
+      "tags": {
+        "bark.type": {
+          "value": "exfoliating",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(chinese_hackberry_bark)"
+        },
+        "bark.color": {
+          "value": null,
+          "ratified": false,
+          "confidence": "low",
+          "source": "texture-sample-pending (no decoder this stage)"
+        }
+      },
+      "conformReport": null,
+      "provenance": "Poly Haven CC0",
+      "path": "public/library/barks/exfoliating/chinese_hackberry_bark"
     }
   ]
 }

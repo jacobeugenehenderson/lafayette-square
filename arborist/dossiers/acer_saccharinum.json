@@ -30,5 +30,5 @@
     "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
   },
   "provenance": { "fromSpeciesMap": false, "notes": "New dossier. Kit-mileage proof — re-uses the palmate pack. The leaf.face axis is load-bearing here (strong two-tone)." },
-  "partAvailability": { "chassis": "have", "bark": "stretch", "leaf": "have" }
+  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have", "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) is a real scaly bark" }
 }

@@ -95,7 +95,11 @@
         "Bark003": "ridged (sugar-maple branch ref, tintBase #5a4030 — NB ambientCG tags this 'smooth, dark', not ridged; kept ridged for the Red Maple match, FLAG to ratify against the eye)",
         "Bark004": "smooth (ambientCG tags: forest, light, smooth — assigned 2026-06-18 to fill the Pin Oak smooth-bark gap; it was already in the kit, just untyped)",
         "Bark012": "unassigned — ambientCG tags: brown, oak (no texture descriptor; an oak bark but smoothness unclear — ratify against the eye)",
-        "Bark015": "exfoliating (ambientCG tags: layered, striped, rough, old — assigned 2026-06-18 as a DRAFT stand-in for the Birch exfoliating gap; NOT the salmon/cinnamon river-birch look + the second mask channel are the Stage-3 hard case, this only makes the type matchable)"
+        "Bark015": "unassigned — ambientCG tags: layered, striped, rough, old (was a DRAFT exfoliating stand-in; superseded 2026-06-18 by chinese_hackberry_bark)",
+        "chinese_cedar_bark": "fibrous (Poly Haven CC0 — fibrous vertical ridges/grooves; the Bald Cypress bark)",
+        "bark_platanus": "scaly (Poly Haven CC0 — flaking plates, mottled brown-grey; the Silver Maple / Crabapple / Redbud bark)",
+        "chinese_hackberry_bark": "exfoliating (Poly Haven CC0 — smooth, papery, peeled strips; the Birch bark TYPE — salmon/cinnamon river-birch color + the second mask channel remain Stage-3)",
+        "bark_brown_01": "furrowed (Poly Haven CC0 — deep vertical grooves; the Sweetgum / Ash furrowed bark)"
       }
     },
     {

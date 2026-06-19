@@ -30,5 +30,5 @@
     "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
   },
   "provenance": { "fromSpeciesMap": false, "notes": "New dossier. Cultivar judgment-call (Prairifire) per reference research. THE ornamental-chassis gap (habit=0) + flowers overlay — Stage 3 with Redbud." },
-  "partAvailability": { "chassis": "stretch", "bark": "stretch", "leaf": "have", "_chassisNote": "gap→stretch 2026-06-18: small workable cores exist (oak_winter_fall rounded ~7.5m etc.); chassis is free geometry so any core serves — an ideal ornamental crabapple core is polish, not a blocker" }
+  "partAvailability": { "chassis": "stretch", "bark": "have", "leaf": "have", "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) scaly", "_chassisNote": "gap→stretch 2026-06-18: small workable cores exist (oak_winter_fall rounded ~7.5m etc.); chassis is free geometry so any core serves — an ideal ornamental crabapple core is polish, not a blocker" }
 }

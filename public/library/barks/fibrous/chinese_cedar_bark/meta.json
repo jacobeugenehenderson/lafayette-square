@@ -1,0 +1,22 @@
+{
+  "partId": "chinese_cedar_bark",
+  "partType": "bark",
+  "source": "authored",
+  "canonicalValue": "fibrous",
+  "sourcePath": "public/textures/bark/chinese_cedar_bark",
+  "tags": {
+    "bark.type": {
+      "value": "fibrous",
+      "ratified": false,
+      "confidence": "low",
+      "source": "rubric.barkDirMap(chinese_cedar_bark)"
+    },
+    "bark.color": {
+      "value": null,
+      "ratified": false,
+      "confidence": "low",
+      "source": "texture-sample-pending (no decoder this stage)"
+    }
+  },
+  "conformReport": null
+}

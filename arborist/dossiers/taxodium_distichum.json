@@ -30,5 +30,5 @@
     "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
   },
   "provenance": { "fromSpeciesMap": false, "notes": "New dossier. THE deciduous-conifer / needle-spray gap. Forces the needle+scale enum addition (see rubric.json leaf.silhouette FINDING) and the deciduous-conifer season ramp." },
-  "partAvailability": { "chassis": "have", "bark": "stretch", "leaf": "stretch", "_leafNote": "gap→stretch 2026-06-18: short_needle placeholder pack wired (needle silhouette matchable); the feathery two-ranked SPRAY is leaf.ways=sprays at authoring (Stage 2), and vendor needle fidelity is the quality piece" }
+  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "stretch", "_barkNote": "stretch→have 2026-06-18: chinese_cedar_bark (Poly Haven CC0) is a real fibrous bark", "_leafNote": "gap→stretch 2026-06-18: short_needle placeholder pack wired (needle silhouette matchable); the feathery two-ranked SPRAY is leaf.ways=sprays at authoring (Stage 2), and vendor needle fidelity is the quality piece" }
 }

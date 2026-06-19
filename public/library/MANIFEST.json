@@ -4,7 +4,7 @@
   "counts": {
     "chassises": 239,
     "leaves": 12,
-    "barks": 5
+    "barks": 9
   },
   "tree": {
     "chassises": {
@@ -1325,13 +1325,39 @@
           "partId": "Bark012",
           "source": "authored",
           "sourcePath": "public/textures/bark/Bark012"
-        }
-      ],
-      "exfoliating": [
+        },
         {
           "partId": "Bark015",
           "source": "authored",
           "sourcePath": "public/textures/bark/Bark015"
+        }
+      ],
+      "furrowed": [
+        {
+          "partId": "bark_brown_01",
+          "source": "authored",
+          "sourcePath": "public/textures/bark/bark_brown_01"
+        }
+      ],
+      "scaly": [
+        {
+          "partId": "bark_platanus",
+          "source": "authored",
+          "sourcePath": "public/textures/bark/bark_platanus"
+        }
+      ],
+      "fibrous": [
+        {
+          "partId": "chinese_cedar_bark",
+          "source": "authored",
+          "sourcePath": "public/textures/bark/chinese_cedar_bark"
+        }
+      ],
+      "exfoliating": [
+        {
+          "partId": "chinese_hackberry_bark",
+          "source": "authored",
+          "sourcePath": "public/textures/bark/chinese_hackberry_bark"
         }
       ]
     }

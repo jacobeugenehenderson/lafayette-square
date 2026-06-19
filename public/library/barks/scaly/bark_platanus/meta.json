@@ -1,15 +1,15 @@
 {
-  "partId": "Bark015",
+  "partId": "bark_platanus",
   "partType": "bark",
   "source": "authored",
-  "canonicalValue": "exfoliating",
-  "sourcePath": "public/textures/bark/Bark015",
+  "canonicalValue": "scaly",
+  "sourcePath": "public/textures/bark/bark_platanus",
   "tags": {
     "bark.type": {
-      "value": "exfoliating",
+      "value": "scaly",
       "ratified": false,
       "confidence": "low",
-      "source": "rubric.barkDirMap(Bark015)"
+      "source": "rubric.barkDirMap(bark_platanus)"
     },
     "bark.color": {
       "value": null,
