@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Pin Oak (Quercus palustris). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Pin Oak",
+  "scientific": "Quercus palustris",
+  "canonicalId": "quercus_palustris",
+  "identityNotes": "Diagnostic three-tier branching (upper ascending, middle horizontal, lower descending/pendulous) — unmistakable winter silhouette. Red-oak group, bristle-tipped lobes; dead lower 'pin' stubs persist.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "quercus_palustris_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
+      "credit": "Wikimedia Commons — Quercus palustris category",
+      "caption": "Pyramidal crown with descending lower limbs; deeply cut bristle-lobed leaves.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "quercus_palustris_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
+      "credit": "Wikimedia Commons — Quercus palustris category",
+      "caption": "Deep red-to-bronze autumn foliage.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "quercus_palustris_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
+      "credit": "Wikimedia Commons — Quercus palustris category",
+      "caption": "Smooth grey-brown trunk with shallow young ridging.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

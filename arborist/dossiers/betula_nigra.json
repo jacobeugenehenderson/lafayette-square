@@ -1,0 +1,34 @@
+{
+  "key": "Birch",
+  "scientific": "Betula nigra",
+  "canonicalId": "betula_nigra",
+  "inventoryNames": ["Birch"],
+  "count": 19,
+  "forces": "⚠️ exfoliating/mottled bark — THE hard bark case (the second mask channel, §6)",
+  "descriptor": "Multi-stemmed river birch; fine airy canopy; small diamond doubly-toothed leaves; yellow fall; SIGNATURE salmon-to-cinnamon papery exfoliating bark.",
+  "identityNotes": "JUDGMENT CALL (reference research): River Birch — the standard heat-and-borer-tolerant urban-park birch for St. Louis / zone 6b (paper/white birches struggle here). Missouri native. Typically MULTI-STEMMED; the salmon-to-cinnamon peeling papery bark is its single most diagnostic feature (NOT the chalky white of paper birch).",
+  "referenceImages": [
+    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra.JPG", "credit": "Wikimedia Commons — 'River Birch Betula nigra.JPG'", "caption": "Multi-stem habit with fine open canopy; diamond-shaped doubly-toothed leaves (leaf detail: File:River_Birch_Betula_nigra_Leaf_2500px.jpg)." },
+    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/Category:Betula_nigra", "credit": "Wikimedia Commons — Betula nigra category", "caption": "Yellow autumn foliage on the airy crown." },
+    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra_Bark_Vertical.JPG", "credit": "Wikimedia Commons — 'River Birch Betula nigra Bark Vertical.JPG'", "caption": "Signature salmon/cinnamon exfoliating papery curling bark — the defining ID trait." }
+  ],
+  "required": {
+    "chassis.habit":   { "target": "multi-stem", "hardness": "soft", "tol": 1 },
+    "chassis.size":    { "target": 14, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 7 },
+    "bark.type":       { "target": "exfoliating", "hardness": "hard", "tol": 1, "note": "THE hard bark case — needs the second mask channel for spatial color variation (§6). exfoliating↔mottled near.", "seedWas": "papery" },
+    "leaf.silhouette": { "target": "ovate", "hardness": "hard", "tol": 0, "note": "diamond/rhombic doubly-toothed" },
+    "leaf.ways":       { "target": "alternate", "hardness": "soft", "tol": 1 },
+    "leaf.size":       { "target": 7, "hardness": "soft", "tol": 0.4 },
+    "leaf.face":       { "front": "#3C6E3A", "back": "#6E9060", "strength": "mild", "note": "paler, slightly downy beneath" },
+    "leaf.season":     { "anchors": { "buds": "#b8c878", "spring": "#88b860", "summer": "#3c6e3a", "fall": "#e8c13a", "winter": null } },
+    "overlay.type":    { "target": "none", "note": "drooping catkins are minor; bark IS the feature, not an overlay" }
+  },
+  "recipe": {
+    "chassis": null,
+    "bark": { "ref": null, "band": null, "gap": "exfoliating channel — the second mask, Stage 3" },
+    "leaf": { "pack": "ovate", "ways": "alternate", "sizeMult": 0.7 },
+    "overlay": null, "deformer": { "range": { "lean": "morph — river birch leans as a variety trait" } }, "transform": {}, "age": null
+  },
+  "provenance": { "fromSpeciesMap": true, "notes": "Evolved from species-map betula_pendula ('Common Birch', barkMorph papery, tints verbatim). Re-keyed to betula_nigra (River Birch) per reference research — the correct St. Louis urban-park birch. barkMorph 'papery' normalized to 'exfoliating'. THE Stage-3 bark gap." },
+  "partAvailability": { "chassis": "have", "bark": "gap", "leaf": "have" }
+}

@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Bald Cypress (Taxodium distichum). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Bald Cypress",
+  "scientific": "Taxodium distichum",
+  "canonicalId": "taxodium_distichum",
+  "identityNotes": "A conifer that goes BARE in winter. Soft needle-like leaves in flat, two-ranked feathery sprays. Trunk strongly buttressed/fluted at the flared base; 'knees' only near standing water (a park-lawn specimen usually lacks them). Botanically NEEDLE-like (linear), not broad scale.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "taxodium_distichum_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Taxodium_distichum",
+      "credit": "Wikimedia Commons — Taxodium distichum",
+      "caption": "Pyramidal habit with feathery soft-green foliage; buttressed trunk base.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "taxodium_distichum_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Taxodium_distichum_BotGardBln1105LeavesFall.JPG",
+      "credit": "Wikimedia Commons — Berlin Botanical Garden",
+      "caption": "Rusty coppery-orange autumn foliage of the feathery needle sprays.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "taxodium_distichum_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Bald_Cypress_(Taxodium_distichum)_bark_detail.jpg",
+      "credit": "Wikimedia Commons — 'Bald Cypress bark detail.jpg'",
+      "caption": "Reddish-brown vertically fibrous exfoliating bark.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

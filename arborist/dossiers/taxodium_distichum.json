@@ -1,0 +1,34 @@
+{
+  "key": "Bald Cypress",
+  "scientific": "Taxodium distichum",
+  "canonicalId": "taxodium_distichum",
+  "inventoryNames": ["Cypress, Bald"],
+  "count": 23,
+  "forces": "⚠️ deciduous CONIFER, needle/scale foliage (coverageGaps: scale) + deciduous-conifer season ramp",
+  "descriptor": "Pyramidal deciduous conifer; soft feathery needle sprays, sage-green in summer, rusty-copper in fall, then BARE in winter; buttressed/fluted trunk; reddish fibrous bark.",
+  "identityNotes": "A conifer that goes BARE in winter. Soft needle-like leaves in flat, two-ranked feathery sprays. Trunk strongly buttressed/fluted at the flared base; 'knees' only near standing water (a park-lawn specimen usually lacks them). Botanically NEEDLE-like (linear), not broad scale.",
+  "referenceImages": [
+    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Taxodium_distichum", "credit": "Wikimedia Commons — Taxodium distichum", "caption": "Pyramidal habit with feathery soft-green foliage; buttressed trunk base." },
+    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/File:Taxodium_distichum_BotGardBln1105LeavesFall.JPG", "credit": "Wikimedia Commons — Berlin Botanical Garden", "caption": "Rusty coppery-orange autumn foliage of the feathery needle sprays." },
+    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/File:Bald_Cypress_(Taxodium_distichum)_bark_detail.jpg", "credit": "Wikimedia Commons — 'Bald Cypress bark detail.jpg'", "caption": "Reddish-brown vertically fibrous exfoliating bark." }
+  ],
+  "required": {
+    "chassis.habit":   { "target": "pyramidal", "hardness": "soft", "tol": 1 },
+    "chassis.size":    { "target": 18, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 6 },
+    "bark.type":       { "target": "fibrous", "hardness": "soft", "tol": 1 },
+    "leaf.silhouette": { "target": "needle", "hardness": "hard", "tol": 1, "note": "needle↔scale near; the brief calls this 'scale foliage' but Taxodium is needle-like (FINDING in rubric.json)" },
+    "leaf.ways":       { "target": "sprays", "hardness": "soft", "tol": 1, "note": "soft needles in flat two-ranked feathery sprays" },
+    "leaf.size":       { "target": 1.5, "hardness": "soft", "tol": 0.5, "note": "single needle ~1.5cm; legibility floor matters — the SPRAY is the readable unit" },
+    "leaf.face":       { "front": "#7FA05A", "back": "#94B070", "strength": "none" },
+    "leaf.season":     { "anchors": { "buds": "#a8c060", "spring": "#9fbf6a", "summer": "#7fa05a", "fall": "#b5651d", "winter": null }, "note": "DECIDUOUS conifer — has a bare-winter anchor (winter: null = leafless), unlike an evergreen conifer" },
+    "overlay.type":    { "target": "fruit", "note": "small round green-to-brown cones" }
+  },
+  "recipe": {
+    "chassis": null,
+    "bark": { "ref": null, "band": null },
+    "leaf": { "pack": null, "ways": "sprays", "sizeMult": 1.0, "gap": "feathery needle-spray pack must be procured — Stage 3 (long_needle pack is pine, wrong arrangement)" },
+    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+  },
+  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. THE deciduous-conifer / needle-spray gap. Forces the needle+scale enum addition (see rubric.json leaf.silhouette FINDING) and the deciduous-conifer season ramp." },
+  "partAvailability": { "chassis": "have", "bark": "stretch", "leaf": "gap" }
+}

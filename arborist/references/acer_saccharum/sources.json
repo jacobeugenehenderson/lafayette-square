@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Sugar Maple (Acer saccharum). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Sugar Maple",
+  "scientific": "Acer saccharum",
+  "canonicalId": "acer_saccharum",
+  "identityNotes": "Rounded (U-shaped) leaf sinuses with few large teeth and a green (not silver) underside separate it from silver/red maple. Classic mixed yellow-orange-red autumn, often all on one tree.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "acer_saccharum_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Acer_saccharum",
+      "credit": "Wikimedia Commons — Acer saccharum gallery",
+      "caption": "Full oval crown in leaf; rounded-sinus palmate leaves visible.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "acer_saccharum_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum",
+      "credit": "Wikimedia Commons — Acer saccharum category (Newark, Ohio fall set)",
+      "caption": "Mixed yellow-orange-red autumn canopy, the classic sugar-maple display.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "acer_saccharum_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum",
+      "credit": "Wikimedia Commons — Acer saccharum category",
+      "caption": "Mature grey plated/shaggy bark with vertical lifting strips.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

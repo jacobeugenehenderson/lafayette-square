@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Flowering Crabapple (Malus 'Prairifire'). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Flowering Crabapple",
+  "scientific": "Malus 'Prairifire'",
+  "canonicalId": "malus_prairifire",
+  "identityNotes": "Modeled on Malus 'Prairifire', the dominant disease-resistant ornamental cultivar in the St. Louis region (MoBot Plant Finder). If actual park trees are another cv., genus-level traits (broad-rounded habit, spring blossom, small persistent pomes) still hold. SMALL tree (~6 m) — the ornamental-chassis gap.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "malus_prairifire_summer.jpg",
+      "url": "https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderDetails.aspx?kempercode=u360",
+      "credit": "Missouri Botanical Garden Plant Finder — Malus 'Prairifire'",
+      "caption": "Broad-rounded habit, dark green summer foliage; authoritative cultivar profile (pull the spring-bloom plate here).",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "malus_prairifire_fall.jpg",
+      "url": "https://www.chicagobotanic.org/plant-information/plant-finder/malus-prairifire-prairifire-crabapple",
+      "credit": "Chicago Botanic Garden — Malus 'Prairifire'",
+      "caption": "Golden-bronze fall foliage with persistent purplish-red fruit clusters.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "malus_prairifire_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Malus",
+      "credit": "Wikimedia Commons — Malus category (genus-level)",
+      "caption": "Ornamental crabapple scaly reddish-brown bark; no cultivar-specific Commons file confirmed.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

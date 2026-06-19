@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Red Maple (Acer rubrum). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Red Maple",
+  "scientific": "Acer rubrum",
+  "canonicalId": "acer_rubrum",
+  "identityNotes": "V-shaped (sharp/angular) sinuses, serrated/toothed margins, and red twigs/petioles separate it from sugar maple. The most reliable bright-red fall of the three maples; red recurs in twigs, early flowers, fruit, and fall.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "acer_rubrum_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Acer_rubrum",
+      "credit": "Wikimedia Commons — Acer rubrum",
+      "caption": "Rounded-oval crown; 3–5 lobed toothed leaves with red petioles.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "acer_rubrum_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum_(leaves)",
+      "credit": "Wikimedia Commons — Acer rubrum (leaves) category",
+      "caption": "Brilliant red autumn foliage, the species' signature.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "acer_rubrum_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum",
+      "credit": "Wikimedia Commons — Acer rubrum category",
+      "caption": "Grey bark, smooth on young trees becoming vertically ridged/striped.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Green Ash (Fraxinus pennsylvanica). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Green Ash",
+  "scientific": "Fraxinus pennsylvanica",
+  "canonicalId": "fraxinus_pennsylvanica",
+  "identityNotes": "Opposite COMPOUND leaves + the interlacing diamond-pattern ridged bark are diagnostic. Highly vulnerable to emerald ash borer in Missouri — model the HEALTHY form, not the dead-topped decline.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "fraxinus_pennsylvanica_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Fraxinus_pennsylvanica",
+      "credit": "Wikimedia Commons — Fraxinus pennsylvanica",
+      "caption": "Pinnately compound 5–9 leaflet leaves; rounded dense crown.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "fraxinus_pennsylvanica_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica_(autumn_leaves)",
+      "credit": "Wikimedia Commons — Fraxinus pennsylvanica (autumn leaves)",
+      "caption": "Uniform golden-yellow autumn foliage.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "fraxinus_pennsylvanica_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica",
+      "credit": "Wikimedia Commons — Fraxinus pennsylvanica category",
+      "caption": "Diamond-pattern ridged-and-furrowed grey-brown bark.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

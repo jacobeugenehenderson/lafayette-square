@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Silver Maple (Acer saccharinum). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Silver Maple",
+  "scientific": "Acer saccharinum",
+  "canonicalId": "acer_saccharinum",
+  "identityNotes": "Deeply cut, sharply pointed lobes with very deep U-sinuses and a VIVID silvery-white underside — the whole canopy flashes silver in wind (the defining trait). Often weak-wooded, ascending-then-arching limbs.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "acer_saccharinum_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Acer_saccharinum",
+      "credit": "Wikimedia Commons — Acer saccharinum",
+      "caption": "Broad spreading crown; deeply lobed leaves with silver undersides catching light.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "acer_saccharinum_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum",
+      "credit": "Wikimedia Commons — Acer saccharinum category",
+      "caption": "Pale yellow autumn foliage (less vivid than sugar/red maple).",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "acer_saccharinum_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum",
+      "credit": "Wikimedia Commons — Acer saccharinum category",
+      "caption": "Mature shaggy grey-to-reddish-brown peeling bark strips.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Sweetgum (Liquidambar styraciflua). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Sweetgum",
+  "scientific": "Liquidambar styraciflua",
+  "canonicalId": "liquidambar_styraciflua",
+  "identityNotes": "Unmistakable 5–7-pointed STAR-shaped leaf, arranged ALTERNATELY (unlike maples' opposite), plus spiky 'gumball' fruit and corky-winged twigs. Aromatic when crushed.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "liquidambar_styraciflua_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Liquidambar_styraciflua",
+      "credit": "Wikimedia Commons — Liquidambar styraciflua",
+      "caption": "Pyramidal-to-oval crown of glossy star-shaped leaves.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "liquidambar_styraciflua_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Sweetgum_in_autumn.JPG",
+      "credit": "Wikimedia Commons — 'Sweetgum in autumn.JPG'",
+      "caption": "Multi-color autumn canopy (yellow/orange/red/purple), the star leaf shape clear.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "liquidambar_styraciflua_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Liquidambar_styraciflua",
+      "credit": "Wikimedia Commons — Liquidambar styraciflua category",
+      "caption": "Deeply furrowed grey-brown bark; corky-winged twigs and spiky gumballs in related files.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

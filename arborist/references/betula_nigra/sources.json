@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Birch (Betula nigra). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Birch",
+  "scientific": "Betula nigra",
+  "canonicalId": "betula_nigra",
+  "identityNotes": "JUDGMENT CALL (reference research): River Birch — the standard heat-and-borer-tolerant urban-park birch for St. Louis / zone 6b (paper/white birches struggle here). Missouri native. Typically MULTI-STEMMED; the salmon-to-cinnamon peeling papery bark is its single most diagnostic feature (NOT the chalky white of paper birch).",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "betula_nigra_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra.JPG",
+      "credit": "Wikimedia Commons — 'River Birch Betula nigra.JPG'",
+      "caption": "Multi-stem habit with fine open canopy; diamond-shaped doubly-toothed leaves (leaf detail: File:River_Birch_Betula_nigra_Leaf_2500px.jpg).",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "betula_nigra_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Betula_nigra",
+      "credit": "Wikimedia Commons — Betula nigra category",
+      "caption": "Yellow autumn foliage on the airy crown.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "betula_nigra_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra_Bark_Vertical.JPG",
+      "credit": "Wikimedia Commons — 'River Birch Betula nigra Bark Vertical.JPG'",
+      "caption": "Signature salmon/cinnamon exfoliating papery curling bark — the defining ID trait.",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}

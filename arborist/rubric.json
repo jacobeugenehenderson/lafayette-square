@@ -1,0 +1,359 @@
+{
+  "_doc": "rubric.json — THE KEYSTONE of the Forest Builder kit-matcher. One shared vocabulary both the dossiers (arborist/dossiers/*.json) and the ingested parts (chassis/bark/leaf/overlay) speak. The matcher (Stage 1, §7), the readiness dashboard (§8), the reference-driven viewer (§9), and the ingest auto-tagger (§4) all derive from this. Get it right and they fall out of it; get it wrong and every layer inherits the confusion. Authored Stage 0 (2026-06-18) by agent Hortus against scratch/FOREST-BUILDER-KIT-MATCHER.md §2 + §7.2; SEEDED from the live library (species-map.json, leaf-pack-bindings.json, public/textures/leaves|bark, _chassis-curation.json), NOT greenfielded. Nothing renders from this file — it is data only.",
+  "version": "0.1.0-stage0",
+  "authoredBy": "Hortus",
+  "ridesCanon": "scratch/FOREST-BUILDER-KIT-MATCHER.md §2 (rubric) · §7.2 (tolerance/similarity)",
+  "discipline": {
+    "atomic": "Each axis is one indivisible characteristic.",
+    "orthogonal": "Each axis is dial-able without disturbing the others (size independent of habit, age conducts several but is itself one dial).",
+    "complete": "Every characteristic the rubric NAMES has a knob or a pick that generates it. Two characteristics are deliberately excluded (see nonAxes) so completeness stays honest.",
+    "plainLanguage": "Operator-facing names are plain ('spreading', not 'deliquescent Troll's-model'). Scientific terms appear only as aliases for ingest-normalization."
+  },
+  "axisSchema": {
+    "id": "dotted partType.name, the stable key",
+    "partType": "chassis | bark | leaf | overlay | tree (cross-cutting)",
+    "name": "operator-facing axis name",
+    "kind": "enum | scalar | ordinal | dual | curve | band",
+    "values": "enum/ordinal value-set (canonical tokens) — present iff discrete",
+    "range": "[lo,hi] (+unit) — present iff scalar/band/curve",
+    "plain": "plain-language gloss the viewer shows",
+    "home": "where this lives in code today (the consolidation target)",
+    "tagging": "auto | draft-then-ratify | human-only | operator — how a part gets this tag on ingest (§4)",
+    "orthogonality": "the note proving this axis is independently dial-able",
+    "seededFrom": "the live-library field/asset this axis's vocabulary was harvested from"
+  },
+  "axes": [
+    {
+      "id": "chassis.habit",
+      "partType": "chassis",
+      "name": "Habit / silhouette",
+      "kind": "enum",
+      "values": ["vase", "columnar", "oval", "spreading", "weeping", "multi-stem", "pyramidal", "rounded", "irregular"],
+      "plain": "The overall shape you'd read from across the street.",
+      "home": "chassis bbox aspect + branch-angle stats; today implicit in survey-deleaf morphology guess and _chassis meta.morphology ('broadleaf'/'conifer' only — too coarse, this axis refines it)",
+      "tagging": "draft-then-ratify",
+      "orthogonality": "Independent of size — a small and a large tree can both be 'spreading'.",
+      "seededFrom": "_chassis-curation.json displayNames (Weeping Willow→weeping, Red Maple/Maple→oval, European Linden→oval) + meta.morphology; species-map implicit habit",
+      "note": "Picking a different chassis-core IS the habit assignment; there is no per-part compatibility matrix (chassis is free geometry). Silhouette variety = pick a different core, NOT limb surgery (§2.1, locked)."
+    },
+    {
+      "id": "chassis.size",
+      "partType": "chassis",
+      "name": "Size (height)",
+      "kind": "scalar",
+      "range": [2, 35, "m"],
+      "pairedField": "canopyRadiusM",
+      "plain": "How big the tree actually is.",
+      "home": "tree-bounds.js → canopyByVariant (live, sole consumer bake-look.js:29); Brief-20 recenter sets Y-min 0 so height is the real metric extent",
+      "tagging": "auto",
+      "orthogonality": "Independent of habit and of leaf.size — the WHOLE-tree extent, not the leaf's.",
+      "seededFrom": "_chassis meta.heightRange (e.g. london_plane variant [0, 25.04])"
+    },
+    {
+      "id": "chassis.lean",
+      "partType": "chassis",
+      "name": "Lean",
+      "kind": "dual",
+      "dual": {
+        "mode": ["correct", "morph"],
+        "azimuthDeg": [0, 360],
+        "angleDeg": [0, 15]
+      },
+      "plain": "Is it leaning because the MODEL is crooked (fix it) or because this VARIETY leans (keep it)?",
+      "home": "correct → transform.rotation (Brief 19, baked once into geometry); morph → deformer center (Brief 3A uDeformLeanRange, per-instance continuum)",
+      "tagging": "human-only",
+      "orthogonality": "The same visual degree of freedom carries TWO intents; the rubric keeps them distinct so a correction is never mistaken for an identity and vice-versa. Collapsing them is the bug this axis exists to prevent (§2.1).",
+      "seededFrom": "Birch + Redbud dossiers (both lean as a VARIETY trait — mode=morph; distinct from a crooked scan = mode=correct)"
+    },
+    {
+      "id": "chassis.density",
+      "partType": "chassis",
+      "name": "Wood density",
+      "kind": "ordinal",
+      "values": ["sparse", "medium", "dense"],
+      "plain": "How much wood/branch texture fills the silhouette.",
+      "home": "leaf/wood primitive tri-stats; or operator",
+      "tagging": "draft-then-ratify",
+      "orthogonality": "Wood-fill of the silhouette, independent of leaf.occupancy (canopy fill) and of habit.",
+      "seededFrom": "not in current data — drafted; Birch/Bald Cypress = sparse(airy), maples = medium/dense"
+    },
+    {
+      "id": "bark.type",
+      "partType": "bark",
+      "name": "Bark pattern",
+      "kind": "enum",
+      "values": ["smooth", "furrowed", "plated", "scaly", "ridged", "exfoliating", "fibrous", "mottled"],
+      "plain": "What the bark pattern reads as.",
+      "home": "species-map.barkMorph (surface the human NAME, never 'Bark003'); the 5 opaque public/textures/bark/Bark0NN dirs map INTO these types (draft) — Bark003/004/007/012/015 are ambientCG CC0 sources, the Library Builder (§4.5) renames them to type on disk",
+      "tagging": "draft-then-ratify",
+      "orthogonality": "The pattern class, independent of bark.color (hue/value) and the scalar bark detail knobs.",
+      "seededFrom": "species-map.barkMorph (furrowed/scaly/ridged/papery/smooth/plated); 'papery'→'exfoliating' (vocab-normalized, §2.2)",
+      "vocabNormalization": { "papery": "exfoliating" },
+      "barkDirMap": {
+        "_note": "DRAFT only — the 5 Bark0NN dirs are NOT deploy-ready ('the barks look bad', §0). Mapping seeded from species-map references; operator ratifies. Quality is Stage-2/3 work.",
+        "Bark007": "furrowed (sugar-maple trunk ref, tintBase #3a2820)",
+        "Bark003": "ridged (sugar-maple branch ref, tintBase #5a4030)",
+        "Bark004": "unassigned — ratify",
+        "Bark012": "unassigned — ratify",
+        "Bark015": "unassigned — ratify"
+      }
+    },
+    {
+      "id": "bark.color",
+      "partType": "bark",
+      "name": "Bark color",
+      "kind": "band",
+      "range": [0, 1, "tint-band handle"],
+      "plain": "The bark's hue / value.",
+      "home": "tintBase + Brief-2 gradient stops; barkGradientByVariant",
+      "tagging": "auto-sample-then-ratify",
+      "orthogonality": "Hue/value of the bark, independent of bark.type (pattern). A grey furrowed and a brown furrowed are the same type, different color.",
+      "seededFrom": "species-map.bark.{trunk,branch}.tintBase (region-split survives into recipe.bark)"
+    },
+    {
+      "id": "bark.groove_depth",
+      "partType": "bark",
+      "name": "Furrow depth",
+      "kind": "scalar",
+      "range": [0, 1],
+      "plain": "How deep the furrows cut.",
+      "home": "master bark shader knob (§6, barkDetail machinery — shipped)",
+      "tagging": "operator",
+      "orthogonality": "One detail knob of the furrowed/ridged types; independent of plate_size and scale_frequency.",
+      "seededFrom": "barkDetail / barkPosterized (extract-bark-detail.mjs, extract-bark-posterized.mjs)"
+    },
+    {
+      "id": "bark.plate_size",
+      "partType": "bark",
+      "name": "Plate size",
+      "kind": "scalar",
+      "range": [0, 1],
+      "plain": "How big the plates are.",
+      "home": "master bark shader knob (§6)",
+      "tagging": "operator",
+      "orthogonality": "Detail knob of the plated type only.",
+      "seededFrom": "barkDetail machinery"
+    },
+    {
+      "id": "bark.scale_frequency",
+      "partType": "bark",
+      "name": "Scale frequency",
+      "kind": "scalar",
+      "range": [0, 1],
+      "plain": "How fine the scaling is.",
+      "home": "master bark shader knob (§6)",
+      "tagging": "operator",
+      "orthogonality": "Detail knob of the scaly type only.",
+      "seededFrom": "barkDetail machinery"
+    },
+    {
+      "id": "bark.exfoliation_density",
+      "partType": "bark",
+      "name": "Exfoliation / peel",
+      "kind": "scalar",
+      "range": [0, 1],
+      "plain": "How much it peels (birch / sycamore).",
+      "home": "master bark shader knob — the mottled/exfoliating HARD CASE; needs a SECOND mask channel for spatial color variation (§6, Stage 3)",
+      "tagging": "operator",
+      "orthogonality": "Detail knob of exfoliating/mottled types; Birch (species #10) forces it.",
+      "seededFrom": "Birch dossier (salmon/cinnamon peeling) — the Stage-3 bark gap"
+    },
+    {
+      "id": "leaf.silhouette",
+      "partType": "leaf",
+      "name": "Leaf shape",
+      "kind": "enum",
+      "values": ["palmate", "lobed", "heart", "ovate", "lanceolate", "compound", "fan", "star", "needle", "scale"],
+      "plain": "One leaf's shape.",
+      "home": "species-map.leafMorph + leaf-pack-bindings.morphology + pack meta.morphology (high-confidence, auto from pack meta)",
+      "tagging": "auto",
+      "orthogonality": "The single-leaf OUTLINE, independent of leaf.size (how big) and leaf.ways (how it attaches). A small and a large leaf can both be 'ovate'.",
+      "seededFrom": "leaf-pack-bindings.morphologyToPacks keys + pack meta.morphology + species-map.leafMorph",
+      "vocabNormalization": {
+        "cordate": "heart",
+        "pinnate": "compound",
+        "fine_compound": "compound",
+        "palmate_compound": "compound",
+        "serrate_ovate": "ovate",
+        "ovate_large": "ovate",
+        "ovate_small": "ovate",
+        "narrow": "lanceolate",
+        "long_needle": "needle",
+        "short_needle": "needle",
+        "tulip": "lobed"
+      },
+      "FINDING_needle_scale": "needle + scale were ADDED to this enum by Hortus (Stage 0). §2.3 of FOREST-BUILDER-KIT-MATCHER.md prints the value-set WITHOUT them, yet §12 forces Bald Cypress (#9, 'scale foliage') and the live roster carries Pine (needle). Omitting them breaks the rubric's COMPLETENESS promise. Botanically, Taxodium (bald cypress) is NEEDLE-like (linear, two-ranked sprays — confirmed by the reference research), NOT broad 'scale' like juniper/thuja; the brief's 'scale' label is loose. Both values are included; bald-cypress is tagged 'needle'. FLAGGED to Boz/Jacob for the vocabulary gate."
+    },
+    {
+      "id": "leaf.ways",
+      "partType": "leaf",
+      "name": "Arrangement",
+      "kind": "enum",
+      "values": ["alternate", "all-one-direction", "opposite", "sprays", "clusters"],
+      "aliases": {
+        "alternate": ["scattered", "spiral"],
+        "all-one-direction": ["drooping", "two-ranked-pendulous"],
+        "opposite": ["mirrored", "decussate", "paired"],
+        "sprays": ["sprays-of-leaflets", "pinnate-fronds", "compound-spray"],
+        "clusters": ["groups", "fascicled", "spur-shoot"]
+      },
+      "plain": "How the leaf cards attach and orient on the twig.",
+      "home": "MISSING TODAY — new (§5). Rides the existing leaf-attachment anchor system (generate-salon.js#buildLeafGeometryFromAttachments + leafAttachmentTags); the May handoff named it 'cluster grammar' and never built it.",
+      "tagging": "human-only",
+      "orthogonality": "How cards ATTACH/ORIENT, independent of silhouette (one leaf's shape) and color. Load-bearing for willow/locust/ginkgo/ash identity — without it all read as generic broadleaf scatter.",
+      "seededFrom": "phyllotaxy is exhaustively annotated botanically (a harvested list); not in any card geometry today"
+    },
+    {
+      "id": "leaf.size",
+      "partType": "leaf",
+      "name": "Leaf size",
+      "kind": "scalar",
+      "range": [0.5, 30, "cm (real single-leaf extent)"],
+      "legibilityFloor": "the card's real-metre extent must keep the leaf above ~1px at viewer distance; the operator multiplier (0.7–1.4×) cannot reach below it",
+      "plain": "How big the leaf reads — never bare.",
+      "home": "DERIVE at bake from canopyByVariant (live) + pack.meta.naturalSize (cm, PRESENT but UNUSED today). The carried-forward Espalier §3.1 fix, demoted from a patch to an axis.",
+      "tagging": "auto",
+      "orthogonality": "The LEAF's metric extent, independent of chassis.size (whole-tree extent). The bug today: BASE_CARD_SIZE (0.5m) × scale is unitless, so a leaf on a 30m Linden equals one on an 8m Magnolia and small leaves fall below a pixel → bare winter chassis.",
+      "seededFrom": "pack meta.naturalSize (palmate 10cm, lobed 12cm, heart 10cm, lanceolate 8cm, needle 15cm, ovate_large 15cm)"
+    },
+    {
+      "id": "leaf.face",
+      "partType": "leaf",
+      "name": "Front / back two-tone",
+      "kind": "dual",
+      "dual": { "front": "ramp off the silhouette", "back": "second ramp off the same silhouette" },
+      "plain": "Two-tone shimmer (silver maple, poplar) — the paler underside flashing in wind.",
+      "home": "orphaned tintFront / tintBack + doubleSided:true — WIRE them to this axis (§6)",
+      "tagging": "operator",
+      "orthogonality": "Two ramps off ONE silhouette; independent of the silhouette shape and of leaf.color's harmonization band (which applies to both ramps).",
+      "seededFrom": "Silver Maple dossier (STRONG silver underside — the defining trait) + Green Ash/Red Maple/Birch (mild)"
+    },
+    {
+      "id": "leaf.color",
+      "partType": "leaf",
+      "name": "Color harmonization",
+      "kind": "band",
+      "LOCKED": "2026-06-18 operator reframe — HARMONIZE value+saturation, PRESERVE hue per species.",
+      "huePolicy": "preserve-per-species",
+      "clamps": {
+        "value": [0.18, 0.82, "lift dead-dark, tame fake-bright"],
+        "saturation": [0.25, 0.75, "tame neon, lift washed-out"]
+      },
+      "plain": "Harmonized to one lit world — dead-dark lifted, fake-bright tamed; species KEEP their distinct hues.",
+      "home": "posterize substrate + ramp LUT (§6, the SHIPPED bark gradient-LUT machinery, 256×1, sha1-deduped, single Bloom-stable program); per-species hue from species-map.tints",
+      "tagging": "draft-then-ratify",
+      "orthogonality": "A value+saturation ENVELOPE, NOT a hue target. A maple-green and an oak-green stay distinct hues but read as belonging to one lit world — harmonized, not unified.",
+      "seededFrom": "species-map.tints.summer per species (maple #3a7b30, oak #3d6f30, ash drafted, etc. — each keeps its hue)",
+      "supersedes": "Espalier §3.2 'normalize to a green-band' (which would have collapsed hue) — REJECTED. The band is a value/saturation envelope, not a hue collapse."
+    },
+    {
+      "id": "leaf.season",
+      "partType": "leaf",
+      "name": "Seasonal ramp",
+      "kind": "curve",
+      "range": [0, 365, "day-of-year"],
+      "anchorsSchema": ["buds", "spring", "summer", "fall", "winter"],
+      "plain": "Summer-green → gold → russet → bare across the year.",
+      "home": "year-long tree (ARCHITECTURE.md §Phase F Layer 2, annualCycle exists); the gradient ramp IS the color engine — summer/transitioning/dead as a day-of-year curve",
+      "tagging": "draft-then-ratify",
+      "orthogonality": "The TIME axis of color; orthogonal to leaf.color's harmonization band (which clamps every anchor's value/saturation).",
+      "seededFrom": "species-map.tints (buds/spring/summer/fall/winter) — the ramp seed, migrated verbatim per species",
+      "cardinality": "deciduous ≈ up to 6 anchors (incl. bare winter); evergreen ≈ 2 (no leaf-drop). Bald Cypress = deciduous CONIFER: needle sprays AND a bare-winter anchor."
+    },
+    {
+      "id": "leaf.occupancy",
+      "partType": "leaf",
+      "name": "Canopy density",
+      "kind": "scalar",
+      "range": [0.25, 0.95],
+      "plain": "How full the canopy is.",
+      "home": "composition.leaves.occupancy",
+      "tagging": "operator",
+      "orthogonality": "Canopy FILL, independent of chassis.density (wood fill) and leaf.size. Owns leaf-shed; a true dead-leaf SHAPE change (curl) is a deferred edge, not v1.",
+      "seededFrom": "composition.leaves.occupancy (existing)"
+    },
+    {
+      "id": "overlay.type",
+      "partType": "overlay",
+      "name": "Overlay",
+      "kind": "enum",
+      "values": ["flowers", "fruit", "thorns", "seasonal-props", "none"],
+      "plain": "Extra botanical or art-direction additions.",
+      "home": "species-map.hasFlowers; Phase F Layer 3 per-Look packs (largely unbuilt). Rides the SAME card pipeline as leaves (public/textures/leaves/shapes/<pack>/) with resolution-order ABOVE the botanical default.",
+      "tagging": "human-only",
+      "orthogonality": "A first-class part-type layered over leaves, not a leaf special-case. Crabapple/Redbud→flowers, Honey Locust→thorns, Sweetgum→fruit (gumballs), fall litter→seasonal-props.",
+      "seededFrom": "species-map.hasFlowers (Crabapple/Redbud/Magnolia true)"
+    },
+    {
+      "id": "tree.age",
+      "partType": "tree",
+      "name": "Maturity",
+      "kind": "scalar",
+      "range": [0, 1, "young ↔ mature"],
+      "plain": "One dial that ages the whole tree.",
+      "home": "composes deformer envelope + chassis.size + bark coarseness TOGETHER (brief §1.1)",
+      "tagging": "operator",
+      "orthogonality": "The one deliberate 'conductor' axis — orthogonal to every other (a young and a mature tree can share habit/silhouette/bark type) but DRIVES several at once, so the operator turns one dial, not three kept-in-sync.",
+      "seededFrom": "not in current data — drafted as the cross-cutting master dial"
+    }
+  ],
+  "similarityMatrices": {
+    "_doc": "§7.2 — the hand-authored near/far tables that ARE the matcher's taste (the single place human taste re-enters, §15.1). For each enum axis: value → { neighborValue: distance }. distance 0 = identity (implicit), 1 = near/adjacent (workable when an axis tol ≥ 1), 2 = stretch. Any pair NOT listed = 'far' (use farDistance). Symmetric by construction. STUBS — authored from botany + the seed library; the operator edits these as the library grows. The matcher reads: withinTol = distance ≤ required.tol; a HARD axis out of tol drops an option from 'workable' to 'stretch'.",
+    "farDistance": 9,
+    "chassis.habit": {
+      "vase": { "spreading": 1, "multi-stem": 1, "rounded": 2, "irregular": 2 },
+      "columnar": { "pyramidal": 1, "oval": 2 },
+      "oval": { "rounded": 1, "pyramidal": 1, "columnar": 2, "spreading": 2 },
+      "spreading": { "rounded": 1, "vase": 1, "irregular": 2, "oval": 2 },
+      "weeping": { "irregular": 2, "vase": 2, "multi-stem": 2 },
+      "multi-stem": { "vase": 1, "irregular": 1, "spreading": 2 },
+      "pyramidal": { "columnar": 1, "oval": 1, "rounded": 2 },
+      "rounded": { "oval": 1, "spreading": 1, "vase": 2, "pyramidal": 2 },
+      "irregular": { "multi-stem": 1, "spreading": 2, "vase": 2, "weeping": 2 }
+    },
+    "bark.type": {
+      "smooth": { "mottled": 1, "exfoliating": 2, "plated": 2 },
+      "furrowed": { "ridged": 1, "plated": 1, "fibrous": 2 },
+      "plated": { "scaly": 1, "furrowed": 1, "ridged": 2 },
+      "scaly": { "plated": 1, "ridged": 2, "furrowed": 2 },
+      "ridged": { "furrowed": 1, "fibrous": 1, "plated": 2, "scaly": 2 },
+      "exfoliating": { "mottled": 1, "fibrous": 2, "smooth": 2 },
+      "fibrous": { "ridged": 1, "exfoliating": 2, "furrowed": 2 },
+      "mottled": { "exfoliating": 1, "smooth": 1 }
+    },
+    "leaf.silhouette": {
+      "_note": "Mostly an IDENTITY axis (hard, tol 0) — a maple is not workable as an oak. Similarity exists only to rank STRETCH options when no exact silhouette is in hand.",
+      "palmate": { "lobed": 1, "star": 1 },
+      "lobed": { "palmate": 1, "star": 2 },
+      "heart": { "ovate": 1 },
+      "ovate": { "heart": 1, "lanceolate": 1 },
+      "lanceolate": { "ovate": 1, "needle": 2 },
+      "compound": { "lanceolate": 2, "ovate": 2 },
+      "fan": { "palmate": 2 },
+      "star": { "palmate": 1, "lobed": 2 },
+      "needle": { "scale": 1, "lanceolate": 2 },
+      "scale": { "needle": 1 }
+    },
+    "leaf.ways": {
+      "alternate": { "clusters": 1, "all-one-direction": 2, "opposite": 2 },
+      "all-one-direction": { "alternate": 2 },
+      "opposite": { "sprays": 1, "alternate": 2 },
+      "sprays": { "opposite": 1, "clusters": 2 },
+      "clusters": { "alternate": 1, "sprays": 2 }
+    }
+  },
+  "scalarTolerance": {
+    "_doc": "§7.2 — scalar axes (size, color-band) use percentage distance, not a matrix. distance = |actual − target| / target; withinTol = distance ≤ required.tol (e.g. tol 0.4 = ±40%). The legibility floor on leaf.size is a HARD clamp underneath — a too-small leaf is never workable regardless of tol.",
+    "method": "abs-relative",
+    "leafSizeLegibilityFloor": "hard-clamp, see leaf.size.legibilityFloor"
+  },
+  "ordinalTolerance": {
+    "_doc": "§7.2 — ordinal axes (chassis.density) — adjacent buckets are workable. sparse↔medium = 1, medium↔dense = 1, sparse↔dense = 2.",
+    "axes": ["chassis.density"]
+  },
+  "nonAxes": {
+    "_doc": "§2.6 — deliberately EXCLUDED so completeness stays honest. The rubric promises completeness OVER THE AXES IT DECLARES; these are explicitly outside that promise.",
+    "branch-angle / limb-count / scaffold-count": "Would require the limb graph we don't have (chassis arrive flat-merged, 1–3 WOOD prims). Silhouette variety = pick a different core, NOT limb surgery.",
+    "canopy-asymmetry / per-branch-jitter (3C-class)": "Needs inverse-transpose normals the per-instance deformer deliberately avoids. Deferred."
+  }
+}

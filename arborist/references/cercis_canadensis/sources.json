@@ -1,0 +1,36 @@
+{
+  "_doc": "Reference-plate manifest for Redbud (Cercis canadensis). Stage-0 source list; binaries download in Stage-1 ingest (downloaded:false). Jacob ratifies identification (ratified:false).",
+  "key": "Redbud",
+  "scientific": "Cercis canadensis",
+  "canonicalId": "cercis_canadensis",
+  "identityNotes": "Heart-shaped (cordate) leaf + cauliflorous pink flowers blooming directly on bare branches and trunk are unmistakable. Missouri native; frequently multi-trunked and leaning.",
+  "plates": [
+    {
+      "state": "summer",
+      "targetFile": "cercis_canadensis_summer.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Category:Cercis_canadensis",
+      "credit": "Wikimedia Commons — Cercis canadensis category",
+      "caption": "Multi-trunked spreading form with heart-shaped leaves; seedpods may be visible.",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "fall",
+      "targetFile": "cercis_canadensis_fall.jpg",
+      "url": "https://commons.wikimedia.org/wiki/Cercis_canadensis",
+      "credit": "Wikimedia Commons — Cercis canadensis",
+      "caption": "Pale greenish-yellow autumn foliage (modest fall display).",
+      "downloaded": false,
+      "ratified": false
+    },
+    {
+      "state": "bark",
+      "targetFile": "cercis_canadensis_bark.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Cercis_canadensis_16zz.jpg",
+      "credit": "Wikimedia Commons — 'Cercis canadensis 16zz.jpg'",
+      "caption": "Scaly grey-brown trunk; note frequent lean / multiple stems. (Spring-bloom plate strongly recommended — the flowering trunk is the defining image.)",
+      "downloaded": false,
+      "ratified": false
+    }
+  ]
+}
