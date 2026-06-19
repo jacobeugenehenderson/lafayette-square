@@ -1144,14 +1144,27 @@ function SalonControlsPanel({
           ))}
         </select>
       </Row>
+      <Row label="Ways">
+        <select
+          value={leaves?.ways ?? 'alternate'}
+          onChange={(e) => onParams({ leaves: { ways: e.target.value } })}
+          style={selectStyle}
+          title="Leaf arrangement (§5) — how cards attach + orient on the canopy">
+          <option value="alternate">Alternate (scatter)</option>
+          <option value="opposite">Opposite (maple / ash)</option>
+          <option value="all-one-direction">Drooping (willow)</option>
+          <option value="sprays">Sprays (compound)</option>
+          <option value="clusters">Clusters (ginkgo)</option>
+        </select>
+      </Row>
       <Row label="Occupancy">
         <DraftSlider min={0} max={1} step={0.01}
           value={leaves?.occupancy ?? 0.7}
           onCommit={(v) => onParams({ leaves: { occupancy: v } })}
           format={(v) => `${Math.round(v * 100)}%`} />
       </Row>
-      <Row label="Scale">
-        <DraftSlider min={0.5} max={3.0} step={0.05}
+      <Row label="Leaf size">
+        <DraftSlider min={0.7} max={1.4} step={0.02}
           value={leaves?.scale ?? 1.0}
           onCommit={(v) => onParams({ leaves: { scale: v } })}
           format={(v) => `${v.toFixed(2)}×`} />
