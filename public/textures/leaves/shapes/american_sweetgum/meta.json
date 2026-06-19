@@ -1,0 +1,8 @@
+{
+  "morphology": "star",
+  "naturalSize": 15,
+  "tileGrid": [1, 1],
+  "quality": "vendor",
+  "recommendedSpecies": ["liquidambar_styraciflua"],
+  "source": { "vendor": "scanned leaf pack (Jacob, 2026-06-19)", "pack": "American-Sweetgum", "hero": "ASWEETGUM1.png", "note": "hi-res source in assets/leaf-packs-2026/american_sweetgum/ (gitignored); shape.png = the hero scan downscaled. ~20 leaves available for atlas/curation." }
+}

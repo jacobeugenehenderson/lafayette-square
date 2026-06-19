@@ -1,0 +1,8 @@
+{
+  "morphology": "fan",
+  "naturalSize": 8,
+  "tileGrid": [1, 1],
+  "quality": "vendor",
+  "recommendedSpecies": ["ginkgo_biloba"],
+  "source": { "vendor": "scanned leaf pack (Jacob, 2026-06-19)", "pack": "Ginkgo-Leaves", "hero": "GINKGO11.png", "note": "hi-res source in assets/leaf-packs-2026/ginkgo/ (gitignored); shape.png = the hero scan downscaled. ~20 leaves available for atlas/curation." }
+}

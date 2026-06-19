@@ -1,0 +1,22 @@
+{
+  "partId": "eastern_black_oak",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "lobed",
+  "sourcePath": "public/textures/leaves/shapes/eastern_black_oak",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "lobed",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 13,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

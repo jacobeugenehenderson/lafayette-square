@@ -26,9 +26,9 @@
   "recipe": {
     "chassis": null,
     "bark": { "ref": null, "band": null },
-    "leaf": { "pack": null, "ways": "alternate", "sizeMult": 1.0, "gap": "star pack must be procured — Stage 3 (only star.png placeholder exists)" },
+    "leaf": { "pack": "american_sweetgum", "ways": "alternate", "sizeMult": 1.0 },
     "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
   },
-  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. THE star-leaf gap. Inventory string carries '(undesirable)' verbatim — kept for the exact park_trees.json match." },
-  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "gap" }
+  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. Star-leaf gap CLEARED 2026-06-19 — american_sweetgum vendor pack (scanned Liquidambar, Jacob) wired as the star silhouette. Inventory string carries '(undesirable)' verbatim — kept for the exact park_trees.json match." },
+  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have", "_leafNote": "gap→have 2026-06-19: real scanned sweetgum star pack" }
 }

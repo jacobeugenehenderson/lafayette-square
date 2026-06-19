@@ -1,0 +1,8 @@
+{
+  "morphology": "palmate",
+  "naturalSize": 20,
+  "tileGrid": [1, 1],
+  "quality": "vendor",
+  "recommendedSpecies": ["acer_macrophyllum"],
+  "source": { "vendor": "scanned leaf pack (Jacob, 2026-06-19)", "pack": "Bigleaf_Maple", "hero": "BIGLEAF5.png", "note": "hi-res source in assets/leaf-packs-2026/bigleaf_maple/ (gitignored); shape.png = the hero scan downscaled. ~20 leaves available for atlas/curation." }
+}

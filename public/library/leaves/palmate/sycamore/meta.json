@@ -1,0 +1,22 @@
+{
+  "partId": "sycamore",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "palmate",
+  "sourcePath": "public/textures/leaves/shapes/sycamore",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "palmate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 15,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

@@ -1,0 +1,8 @@
+{
+  "morphology": "lobed",
+  "naturalSize": 13,
+  "tileGrid": [1, 1],
+  "quality": "vendor",
+  "recommendedSpecies": ["quercus_velutina"],
+  "source": { "vendor": "scanned leaf pack (Jacob, 2026-06-19)", "pack": "Eastern-Black-Oak", "hero": "EBLACKOAK9.png", "note": "hi-res source in assets/leaf-packs-2026/eastern_black_oak/ (gitignored); shape.png = the hero scan downscaled. ~20 leaves available for atlas/curation." }
+}

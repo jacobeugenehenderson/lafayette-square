@@ -1,0 +1,22 @@
+{
+  "partId": "american_sweetgum",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "star",
+  "sourcePath": "public/textures/leaves/shapes/american_sweetgum",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "star",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 15,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

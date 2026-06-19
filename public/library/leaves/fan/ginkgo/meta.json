@@ -1,0 +1,22 @@
+{
+  "partId": "ginkgo",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "fan",
+  "sourcePath": "public/textures/leaves/shapes/ginkgo",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "fan",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 8,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

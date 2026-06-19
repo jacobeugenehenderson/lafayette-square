@@ -8,7 +8,11 @@
 
 | silhouette | pack | size | quality | recommended species |
 |---|---|---|---|---|
+| palmate | bigleaf_maple | 20cm | 🟢 vendor | acer_macrophyllum |
 | palmate | palmate | 10cm | 🟢 vendor | acer_saccharum, acer_rubrum, platanus_occidentalis |
+| palmate | sycamore | 15cm | 🟢 vendor | platanus_occidentalis |
+| lobed | california_black_oak | 14cm | 🟢 vendor | quercus_kelloggii |
+| lobed | eastern_black_oak | 13cm | 🟢 vendor | quercus_velutina |
 | lobed | lobed | 12cm | 🟢 vendor | quercus_alba, quercus_rubra |
 | heart | heart | 10cm | 🟢 vendor | cercis_canadensis, syringa_vulgaris, tilia_americana |
 | ovate | ovate | 8cm | 🟢 vendor | morus_alba, cornus_florida, hydrangea_macrophylla |
@@ -16,15 +20,15 @@
 | ovate | serrate_ovate | 8cm | 🟢 vendor | ulmus_americana, carpinus_caroliniana |
 | lanceolate | lanceolate | 8cm | 🟢 vendor | salix_alba, salix_babylonica |
 | compound | fine_compound | 25cm | 🟡 placeholder | fraxinus_pennsylvanica |
-| **fan** | 🔴 GAP | — | — | — |
-| **star** | 🔴 GAP | — | — | Sweetgum |
+| fan | ginkgo | 8cm | 🟢 vendor | ginkgo_biloba |
+| star | american_sweetgum | 15cm | 🟢 vendor | liquidambar_styraciflua |
 | needle | long_needle | 15cm | 🟢 vendor | pinus_strobus, larix_decidua |
 | needle | short_needle | 5cm | 🟡 placeholder | taxodium_distichum |
 | **scale** | 🔴 GAP | — | — | — |
 
 _Non-silhouette packs (season/variant, not a single-leaf shape): elm_autumn(seasonal_elm), oak_autumn(seasonal_oak)_
 
-**Leaf gaps (no pack): fan, star, scale.**
+**Leaf gaps (no pack): scale.**
 
 ## Barks (by type)
 

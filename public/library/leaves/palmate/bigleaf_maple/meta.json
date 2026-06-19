@@ -1,0 +1,22 @@
+{
+  "partId": "bigleaf_maple",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "palmate",
+  "sourcePath": "public/textures/leaves/shapes/bigleaf_maple",
+  "tags": {
+    "leaf.silhouette": {
+      "value": "palmate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.size": {
+      "value": 20,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}
