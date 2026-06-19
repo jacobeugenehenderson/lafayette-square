@@ -37,8 +37,11 @@ __pycache__/
 *.pyc
 .venv/
 
-# Large reference assets (not needed for build)
+# Large reference assets (not needed for build) — hi-res leaf/bark scan sources.
+# The wired, downscaled packs live under public/textures/ (tracked); these are the
+# full-res originals kept locally for re-baking higher-res atlases.
 assets/botanical-reference-hires/
+assets/leaf-packs-2026/
 models/
 public/models/
 # Allow the victorian lamp model (needed at runtime)
