@@ -32,6 +32,7 @@ import {
 import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 import { buildPreviewAtlas, previewDir } from './salon-preview-atlas.js'
 import { computeCoverage } from './roster-coverage.js'
+import { computeReadiness } from './readiness.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -1031,6 +1032,20 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && path === '/coverage') {
       try {
         return jsonRes(res, 200, await computeCoverage())
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // GET /readiness — the Forest Builder per-part readiness dashboard (§8), a
+    // VIEW over the matcher (matcher.js) keyed by the §7.1 part-index. READ-ONLY.
+    // Each of the 10 dossiers × {chassis,bark,leaf} → 🟢 have / 🟡 stretch / 🔴 gap
+    // (live, so it stays honest as parts ingest) + buildable-today (uncapped) +
+    // the shopping list. `diverges` flags where the live matcher disagrees with a
+    // dossier's Stage-0 declared availability (the ratify-or-procure decisions).
+    if (req.method === 'GET' && path === '/readiness') {
+      try {
+        return jsonRes(res, 200, computeReadiness())
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }

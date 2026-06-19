@@ -1,0 +1,24 @@
+{
+  "_doc": "Contract fixture for the §7.1 part-index seam (Stage 1B). readiness.js / matcher.js fall back to this only when the real arborist/state/part-index.json (Stage 1A output) is absent, so the matcher + dashboard stay testable standalone. ~6 Sugar-Maple-relevant parts; the real index supersedes it.",
+  "version": "1.0-fixture",
+  "parts": [
+    { "partId": "fixture_oval_core", "partType": "chassis", "source": "authored", "path": "fixture",
+      "tags": { "chassis.size": { "value": 20, "ratified": false, "confidence": "high", "source": "tree-bounds" },
+                "chassis.habit": { "value": "oval", "ratified": false, "confidence": "low", "source": "source.species-botany" } } },
+    { "partId": "fixture_pyramidal_core", "partType": "chassis", "source": "authored", "path": "fixture",
+      "tags": { "chassis.size": { "value": 21, "ratified": false, "confidence": "high", "source": "tree-bounds" },
+                "chassis.habit": { "value": "pyramidal", "ratified": false, "confidence": "low", "source": "source.species-botany" } } },
+    { "partId": "palmate", "partType": "leaf", "source": "authored", "path": "fixture",
+      "tags": { "leaf.silhouette": { "value": "palmate", "ratified": false, "confidence": "high", "source": "pack-meta.morphology" },
+                "leaf.size": { "value": 10, "ratified": false, "confidence": "high", "source": "pack-meta.naturalSize" } } },
+    { "partId": "lobed", "partType": "leaf", "source": "authored", "path": "fixture",
+      "tags": { "leaf.silhouette": { "value": "lobed", "ratified": false, "confidence": "high", "source": "pack-meta.morphology" },
+                "leaf.size": { "value": 12, "ratified": false, "confidence": "high", "source": "pack-meta.naturalSize" } } },
+    { "partId": "heart", "partType": "leaf", "source": "authored", "path": "fixture",
+      "tags": { "leaf.silhouette": { "value": "heart", "ratified": false, "confidence": "high", "source": "pack-meta.morphology" },
+                "leaf.size": { "value": 10, "ratified": false, "confidence": "high", "source": "pack-meta.naturalSize" } } },
+    { "partId": "Bark007", "partType": "bark", "source": "authored", "path": "fixture",
+      "tags": { "bark.type": { "value": "furrowed", "ratified": false, "confidence": "low", "source": "rubric.barkDirMap" },
+                "bark.color": { "value": null, "ratified": false, "confidence": "low", "source": "texture-sample-pending" } } }
+  ]
+}
