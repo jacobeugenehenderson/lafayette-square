@@ -129,12 +129,38 @@ export const DEFAULTS = {
   transform: { posOffset: [0, 0, 0], rotation: [0, 0, 0], scale: 1 },
 }
 
-// Base card extent in metres. Multiplied by composition.leaves.scale at
-// emission time. 0.5m (50cm) lands each card as a leaf-CLUSTER (not single
-// leaf) — the right read for 15–30m-tall mature chassis where individual
-// 10cm leaves disappear into pinpoints. Operator session 2026-05-22 (Linden
-// at 30.7m) confirmed: cards as clusters are the right granularity.
-const BASE_CARD_SIZE = 0.5
+// ── leaf.size derivation (§2.3) ──────────────────────────────────────────
+// Each card is a leaf-CLUSTER, not a single leaf (operator 2026-05-22, the
+// 30.7m Linden: single 10cm leaves vanish into pinpoints on mature chassis —
+// clusters are the right granularity). The OLD `BASE_CARD_SIZE = 0.5` × scale
+// was UNIFORM across species + tree size (Espalier §3.1 bug): the same cluster
+// on a 30m Linden and an 8m ornamental. Now the cluster scales with the
+// chassis canopy radius AND the species' natural leaf size, floored so it never
+// vanishes and capped so it never reads absurd. Knobs are EYE-TUNABLE.
+//   cardSize = clamp( canopyR × FRAC × leafFactor × multiplier, FLOOR, CAP )
+// Calibrated so a ~4.5m-radius mature maple lands ≈ the old 0.5m (no regression).
+const LEAF_CLUSTER_FRAC   = 0.11   // cluster size as a fraction of canopy radius
+const LEAF_NATURAL_REF_CM = 12     // reference leaf; bigger/smaller species nudge the cluster (sqrt-damped)
+const LEAF_SIZE_FLOOR_M   = 0.12   // absolute floor — a real leaf; never vanish
+const LEAF_SIZE_CAP_M     = 0.90   // absolute cap — never absurd
+const LEAF_MULT_MIN = 0.7, LEAF_MULT_MAX = 1.4   // operator slider = bounded multiplier (§2.3)
+
+// Canopy radius (m) from a flat [x,y,z,…] vertex array. Chassis is recentered to
+// trunk-base at origin (Brief 20), so hypot(x,z) from the axis IS the radius.
+function canopyRadiusFromPositions(p) {
+  let maxR = 0
+  for (let i = 0; i < p.length; i += 3) { const r = Math.hypot(p[i], p[i + 2]); if (r > maxR) maxR = r }
+  return maxR
+}
+// Derive the per-card cluster size for a chassis + leaf pack.
+function deriveLeafCardSize(positionsCombined, packMeta, scale) {
+  const mult = Math.max(LEAF_MULT_MIN, Math.min(LEAF_MULT_MAX, typeof scale === 'number' ? scale : 1.0))
+  const naturalCm = packMeta?.naturalSize || LEAF_NATURAL_REF_CM
+  const leafFactor = Math.max(0.7, Math.min(1.6, Math.sqrt(naturalCm / LEAF_NATURAL_REF_CM)))
+  const canopyR = canopyRadiusFromPositions(positionsCombined) || 3.0
+  const raw = canopyR * LEAF_CLUSTER_FRAC * leafFactor * mult
+  return Math.max(LEAF_SIZE_FLOOR_M, Math.min(LEAF_SIZE_CAP_M, raw))
+}
 
 // ── Chassis library ─────────────────────────────────────────────────────
 //
@@ -1111,9 +1137,12 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
   // 5 → 12 for denser clusters that read as foliage mass.
   const scale = typeof leaves.scale === 'number' ? leaves.scale : 1.0
   const packMeta = await readLeafPackMeta(leaves.pack)
+  // §2.3 leaf.size: cluster size derived from canopy radius + the pack's natural
+  // leaf size (was the uniform BASE_CARD_SIZE × scale). EYE-TUNABLE knobs above.
+  const cardSize = deriveLeafCardSize(positionsCombined, packMeta, scale)
   const leafGeo = buildLeafGeometryFromAttachments(attachments, {
     cardsPerAttachment: 35,
-    cardSize: BASE_CARD_SIZE * scale,
+    cardSize,
     spread: 0.7,
     yCompression: 0.7,
     tileGrid: packMeta.tileGrid,
