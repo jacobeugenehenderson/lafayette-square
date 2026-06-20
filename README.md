@@ -76,7 +76,7 @@ The project is organized as a **public-facing runtime app** plus a small set of 
 |---|---|---|---|
 | **Cartograph** (`/cartograph`) | `src/cartograph/` + `cartograph/` | `public/looks/<id>/ground.svg` (per Look) | Stage's `SvgGround` |
 | **Stage** (`/stage`)             | `src/stage/` + `src/cartograph/Stage*` | (eventually) `stage-config.json` per Look | Runtime scene environment |
-| **Arborist** (`/arborist`)       | `src/arborist/` + `arborist/`          | `public/trees/<species>/{skeleton-N.glb, tips-N.json, manifest.json}` | Runtime `InstancedTrees` (planned) |
+| **Arborist** (`/arborist`) — the kit-matcher tree builder ([README §START HERE](arborist/README.md)) | `src/arborist/` + `arborist/` | `public/trees/<id>/…` + per-Look `public/baked/<look>/trees/…` (the slab) | Runtime `InstancedTrees` |
 | **Meteorologist** (in Stage)     | `meteorologist/` + `src/cartograph/` (UI inline) + `src/components/Atmosphere.jsx` (planned) | `public/clouds/{presets,almanac}.json` | Runtime `<Atmosphere />` (planned) |
 
 ### Data sources (intake → the model)
