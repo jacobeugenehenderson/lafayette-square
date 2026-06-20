@@ -309,6 +309,8 @@ function snapshotFromComposition(c) {
       scale: c.leaves?.scale ?? null,
       occupancy: c.leaves?.occupancy ?? null,
       show: c.leaves?.show ?? null,
+      ways: c.leaves?.ways ?? null,        // §5 Leaf Ways — changing it must rebuild
+      mode: c.leaves?.mode ?? null,        // Authored vs Synthesized — must rebuild
       tintFront: c.leaves?.tintFront ?? null,
       tintBack: c.leaves?.tintBack ?? null,
     },
@@ -316,6 +318,11 @@ function snapshotFromComposition(c) {
       stops: c.bark?.gradientStops ?? null,
       hashAmp: c.bark?.gradientHashAmp ?? 0,
     },
+    // Cache-buster for CODE changes (emission / populator / Ways grammar): the
+    // composition params don't change when the build LOGIC does, so a re-preview
+    // would otherwise 'noop' to a stale build. Bump this on any leaf-emission
+    // logic change to force a full rebuild.
+    buildVersion: 'leaf-model-2026-06-20a',
   }
 }
 
