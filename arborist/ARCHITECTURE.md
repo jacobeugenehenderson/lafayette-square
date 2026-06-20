@@ -2,7 +2,7 @@
 
 > Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Load-bearing patterns specific to the tree helper. The kit-wide publish-loop pattern lives in `../cartograph/ARCHITECTURE.md`; this doc covers how it specializes for trees + the algorithms + the master-atlas innovation + the cartograph↔arborist boundary.
 
-> 🌳 **The kit-matcher rebuild rides these patterns** (`scratch/FOREST-BUILDER-KIT-MATCHER.md`, ratified 2026-06-18). The publish-loop / single master atlas / 2-bind material / decimation levers documented here are **KEPT**; the *front* (organizing / authoring) is rebuilt on top. Doctrine: **no-cull** — the hero-LOD / DoF arc is **parked** (dormant for a possible return, like LiDAR/Procedural), not deleted.
+> 🌳 **The kit-matcher is the Arborist's architecture now (its front); these patterns are the KEPT spine it rides.** Front door + current state: **`README.md §⭐ START HERE`**; design rationale + staged plan: `scratch/FOREST-BUILDER-KIT-MATCHER.md`. The publish-loop / single master atlas / 2-bind material / decimation levers documented here are **KEPT and ridden unchanged** — no fork (`feedback_no_parallel_pipeline_for_scenes`); the front (rubric → dossiers → matcher → Coverage → Library → Salon, **built** 2026-06-18/20) sits **on top**. New front modules live beside this spine: `rubric.json` · `dossiers/` · `ingest.js`+`ingest-tagger.js`+`library-builder.js` (→ `part-index.json`, `public/library/`) · `matcher.js` · `readiness.js` (→ Coverage) · `salon-options.js` (→ the Salon pickers). Doctrine: **no-cull** — the hero-LOD / DoF arc is **parked** (dormant, not deleted); **Authored-only** active, **LiDAR + Procedural kept as equal peer tracks**.
 
 ---
 
