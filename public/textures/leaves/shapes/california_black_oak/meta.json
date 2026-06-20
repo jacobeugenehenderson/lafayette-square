@@ -1,8 +1,25 @@
 {
   "morphology": "lobed",
   "naturalSize": 14,
-  "tileGrid": [1, 1],
+  "tileGrid": [
+    2,
+    2
+  ],
   "quality": "vendor",
-  "recommendedSpecies": ["quercus_kelloggii"],
-  "source": { "vendor": "scanned leaf pack (Jacob, 2026-06-19)", "pack": "California-Black-Oak", "hero": "CABLACKOAK18.png", "note": "hi-res source in assets/leaf-packs-2026/california_black_oak/ (gitignored); shape.png = the hero scan downscaled. ~20 leaves available for atlas/curation." }
+  "recommendedSpecies": [
+    "quercus_kelloggii"
+  ],
+  "source": {
+    "vendor": "scanned leaf pack (Jacob, 2026-06-19)",
+    "pack": "California-Black-Oak",
+    "hero": "CABLACKOAK18.png",
+    "note": "hi-res source in assets/leaf-packs-2026/california_black_oak/ (gitignored); shape.png = the hero scan downscaled. ~20 leaves available for atlas/curation.",
+    "atlas": "2×2 from 4 scans",
+    "atlasScans": [
+      "CA-Black-Oak/CABLACKOAK10.png",
+      "CA-Black-Oak/CABLACKOAK17.png",
+      "CA-Black-Oak/CABLACKOAK24.png",
+      "CA-Black-Oak/CABLACKOAK31.png"
+    ]
+  }
 }

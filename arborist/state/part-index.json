@@ -6833,8 +6833,8 @@
         "morphology": "star",
         "naturalSize": 15,
         "tileGrid": [
-          1,
-          1
+          2,
+          2
         ],
         "quality": "vendor",
         "recommendedSpecies": [
@@ -6868,8 +6868,8 @@
         "morphology": "palmate",
         "naturalSize": 20,
         "tileGrid": [
-          1,
-          1
+          2,
+          2
         ],
         "quality": "vendor",
         "recommendedSpecies": [
@@ -6903,8 +6903,8 @@
         "morphology": "lobed",
         "naturalSize": 14,
         "tileGrid": [
-          1,
-          1
+          2,
+          2
         ],
         "quality": "vendor",
         "recommendedSpecies": [
@@ -6938,8 +6938,8 @@
         "morphology": "lobed",
         "naturalSize": 13,
         "tileGrid": [
-          1,
-          1
+          2,
+          2
         ],
         "quality": "vendor",
         "recommendedSpecies": [
@@ -7044,8 +7044,8 @@
         "morphology": "fan",
         "naturalSize": 8,
         "tileGrid": [
-          1,
-          1
+          2,
+          2
         ],
         "quality": "vendor",
         "recommendedSpecies": [
@@ -7443,8 +7443,8 @@
         "morphology": "palmate",
         "naturalSize": 15,
         "tileGrid": [
-          1,
-          1
+          2,
+          2
         ],
         "quality": "vendor",
         "recommendedSpecies": [
