@@ -1230,6 +1230,11 @@ function SalonControlsPanel({
           <option value="synthesized">Synthesized (kit: pack · Ways · size)</option>
         </select>
       </Row>
+      {leaves?.mode !== 'synthesized' && (
+        <div style={{ fontSize: 10, color: '#c8a83a', margin: '-3px 0 3px', lineHeight: 1.3 }}>
+          ↳ Ways + Leaf size apply to <b>Synthesized</b> leaves. Authored keeps the model's own.
+        </div>
+      )}
       <Row label="Pack">
         <select
           value={leaves?.pack || ''}
@@ -1247,8 +1252,9 @@ function SalonControlsPanel({
         <select
           value={leaves?.ways ?? 'alternate'}
           onChange={(e) => onParams({ leaves: { ways: e.target.value } })}
-          style={selectStyle}
-          title="Leaf arrangement (§5) — how cards attach + orient on the canopy">
+          disabled={leaves?.mode !== 'synthesized'}
+          style={{ ...selectStyle, opacity: leaves?.mode === 'synthesized' ? 1 : 0.5 }}
+          title="Leaf arrangement (§5) — how cards attach + orient on the canopy. Synthesized leaves only.">
           <option value="alternate">Alternate (scatter)</option>
           <option value="opposite">Opposite (maple / ash)</option>
           <option value="all-one-direction">Drooping (willow)</option>

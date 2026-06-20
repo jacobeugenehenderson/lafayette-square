@@ -500,28 +500,37 @@ async function chassisToBarkPrimSummary(chassisDoc) {
 }
 
 function getUpperBboxSamples(allPositions, count, seedR) {
-  // Sample `count` deterministic points biased to the upper 40% of the
-  // chassis bbox. Used when leafAttachmentTags is empty (Brief 1 default).
-  // The lifted D.1b helpers expect one "tip" position per attachment; here
-  // we synthesize tips by picking vertices that sit in the upper bbox band.
+  // Sample `count` attachment points across the whole CROWN — the branch shell —
+  // not just the upper 40% of the bbox. The old upper-40% band left the wide
+  // LOWER branches bare (the upper-blob bug). canopyStart is usually null on
+  // stock chassis, so we infer the crown geometrically: wood verts with
+  // meaningful XZ radius (i.e. branches, NOT the central trunk column) above the
+  // bare lower trunk. Falls back to the upper band only if no crown is found.
   if (allPositions.length === 0) return []
-  let minY = Infinity, maxY = -Infinity
-  for (let i = 1; i < allPositions.length; i += 3) {
-    if (allPositions[i] < minY) minY = allPositions[i]
-    if (allPositions[i] > maxY) maxY = allPositions[i]
-  }
-  const yThresh = minY + (maxY - minY) * 0.6   // upper 40%
-  const upperVerts = []
+  let minY = Infinity, maxY = -Infinity, maxR = 0
   for (let i = 0; i < allPositions.length; i += 3) {
-    if (allPositions[i + 1] >= yThresh) {
-      upperVerts.push([allPositions[i], allPositions[i + 1], allPositions[i + 2]])
-    }
+    const y = allPositions[i + 1]
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+    const r = Math.hypot(allPositions[i], allPositions[i + 2])
+    if (r > maxR) maxR = r
   }
-  if (upperVerts.length === 0) return []
+  const range = (maxY - minY) || 1
+  const yFloor = minY + range * 0.18   // skip the bare lower trunk
+  const rFloor = maxR * 0.10           // skip the central trunk column → branches only
+  const crown = []
+  const upperBand = []
+  const yUpper = minY + range * 0.6
+  for (let i = 0; i < allPositions.length; i += 3) {
+    const x = allPositions[i], y = allPositions[i + 1], z = allPositions[i + 2]
+    if (y >= yFloor && Math.hypot(x, z) >= rFloor) crown.push([x, y, z])
+    if (y >= yUpper) upperBand.push([x, y, z])
+  }
+  const pool = crown.length >= 8 ? crown : upperBand
+  if (pool.length === 0) return []
   const out = []
   for (let k = 0; k < count; k++) {
-    const idx = Math.floor(seedR() * upperVerts.length) % upperVerts.length
-    out.push(upperVerts[idx])
+    out.push(pool[Math.floor(seedR() * pool.length) % pool.length])
   }
   return out
 }
@@ -1184,8 +1193,9 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
       attachments = arr.slice(0, keep)
     }
   } else {
-    // Density driven by occupancy: 0..1 maps to ~8..80 attachment points.
-    const attachmentCount = Math.round(8 + occ * 72)
+    // Density driven by occupancy: 0..1 maps to ~10..100 attachment points,
+    // now spread across the whole crown (not just the upper band).
+    const attachmentCount = Math.round(10 + occ * 90)
     attachments = getUpperBboxSamples(positionsCombined, attachmentCount, rng)
   }
   // 2026-05-22 tuning: card size scales with leaves.scale, but spread stays
