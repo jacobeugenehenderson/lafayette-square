@@ -1,4 +1,11 @@
-# Handoff — Hero-Shot Tree Visibility-LOD + Pan-Arc Impostors
+# Handoff — Hero-Shot Tree Visibility-LOD + Pan-Arc Impostors  ⟦ARCHIVED 2026-06-21⟧
+
+> 🗄️ **ARCHIVED 2026-06-21 (Boz) — SUPERSEDED by [`HANDOFF-real-dof.md`](../../HANDOFF-real-dof.md).**
+> This is the *fake-blur* direction ("impostor flatness IS the DoF blur" + a `cull` tier). No-cull
+> doctrine vetoed the cull half; the operator chose to **build a real DoF** for the detail-taper half —
+> so this brief is retired as a *direction*. Kept for its design thinking + Phase-0 findings. **The
+> dormant hero-LOD CODE stays dormant, not deleted** (`scratch/FOREST-BUILDER-KIT-MATCHER.md §14`) —
+> archiving the doc does not touch it. Live DoF home: `HANDOFF-real-dof.md`.
 
 > ⏸️ **PARKED 2026-06-18 — not pursued in the current build, kept dormant for a possible return** (operator call; same treatment as LiDAR/Procedural — a real approach we may revisit). No-cull is doctrine now, so the **cull half** (trees disappear) is **vetoed**; the **detail-taper / DoF half** (trees stay, detail softens in blurred zones — the romance-DoF direction) is the part that might return, and its design thinking is preserved here. The hero-LOD code stays **dormant, not deleted** (`scratch/FOREST-BUILDER-KIT-MATCHER.md §14`); its §2 mis-aimed-classifier bug is moot while unused. Don't build on this *this time*; don't delete it either. See memory `project_arborist_kit_matcher`.
 

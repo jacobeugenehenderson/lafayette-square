@@ -211,7 +211,8 @@ export const FilmGrain = forwardRef((_, ref) => {
 })
 
 // AerialPerspective — uHazeStrength × uHazeColor authored by Halo channel.
-// dayFactor still rides on top so halo doesn't fire at night.
+// Strength is authored DIRECTLY (no hidden sun-altitude gate) — author day/night
+// via the Halo TOD curve.
 const _haloStrengthRef = { current: HALO_FLAT_DEFAULTS.strength }
 const _haloColorRef    = { current: new THREE.Color(HALO_FLAT_DEFAULTS.color) }
 // Tack halo refs onto the export bag from above.
@@ -232,10 +233,11 @@ class AerialPerspectiveEffect extends Effect {
     `, { uniforms: new Map([['uHazeStrength', new THREE.Uniform(0)], ['uHazeColor', new THREE.Uniform(new THREE.Vector3(0.7, 0.75, 0.82))]]) })
   }
   update() {
-    const tod = useTimeOfDay.getState()
-    const alt = tod.getLightingPhase().sunAltitude
-    const dayFactor = alt > 0.1 ? 1 : alt < -0.05 ? 0 : (alt + 0.05) / 0.15
-    this.uniforms.get('uHazeStrength').value = dayFactor * _haloStrengthRef.current
+    // Strength authored directly — the dayFactor sun-altitude multiplier was
+    // removed 2026-06-21 (a hidden hardwire that overrode the authored channel
+    // and forbade night haze — the same anti-pattern as the bloom night-boost
+    // removed 2026-06-07). Author the day→night falloff via the Halo TOD curve.
+    this.uniforms.get('uHazeStrength').value = _haloStrengthRef.current
     const hc = _haloColorRef.current
     this.uniforms.get('uHazeColor').value.set(hc.r, hc.g, hc.b)
   }

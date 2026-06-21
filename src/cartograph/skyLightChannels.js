@@ -79,13 +79,19 @@ export const MIST_DENSITY_SCALE = 0.005
 
 // Halo (Sky & Light card) — colorable horizon-band tint via the existing
 // AerialPerspective post effect. Strength default 0.12 matches the
-// previous envState.hazeStrength baseline; runtime scales by sun
-// altitude (dayFactor) on top so halo doesn't fire at night. Color
+// previous envState.hazeStrength baseline. (The hidden sun-altitude
+// `dayFactor` gate was removed 2026-06-21 — strength now renders directly;
+// author any day→night falloff via the Halo TOD curve.) Color
 // default is a desaturated cool horizon tone — small regression from
 // the previous "halo color follows sky horizonColor" behavior; operator
 // now owns it. Same primitive shape as Mist (color + scalar).
+// Strength max opened 0.5 → 1.0 (2026-06-21): at 1.0 the horizon band fully
+// reaches the haze color where it peaks — "enough to really see it / overdo
+// it on purpose for style," per the slider-range principle (scratch/AUDIT-slider-ranges.md).
+// Default stays 0.12 (the legacy envState.hazeStrength baseline) so unauthored
+// Looks are unchanged; the wider ceiling is headroom, not a behavior change.
 export const HALO_FIELDS = [
-  { key: 'strength', label: 'Strength', min: 0, max: 0.5, step: 0.01 },
+  { key: 'strength', label: 'Strength', min: 0, max: 1.0, step: 0.01 },
   { key: 'color',    label: 'Color',    type: 'color' },
 ]
 export const HALO_FLAT_DEFAULTS = { strength: 0.12, color: '#b8c8d8' }

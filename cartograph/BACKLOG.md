@@ -92,6 +92,7 @@
 ## 🏛 STANDING CAMPAIGNS
 - **⭐⭐ The correctness suite — DEFEAT hand-fixing (the kit's correctness backbone, Jacob 2026-06-13).** Automate what the operator's eye does: a comprehensive invariant suite (one RED-until-true check per bug-class) that flags bad streets, so the kit never needs a hand-fix on *any* town. Validated against LS's 35 curated streets (the labeled set); enforced as a CI gate; the onboarding loop = run-suite → fix-flagged-classes → green → ship. **The six SHAPE tasks make LS's suite green; the *suite* defeats town #2…N.** Doctrine + first-pass scope: **`POLYGON-FIRST.md §5`**.
 - **The living Process / doc-architecture** (`BOZ.md`) — now active as the doc campaign + the `DOC-CODE-COHERENCE` discipline.
+- **Slider ranges → 0 "Extreme"** (touch-as-you-go, `scratch/AUDIT-slider-ranges.md`) — every authoring slider should reach far enough to *see* the effect (+ style headroom); too-tight ceilings read as "broken." Halo ✅ done 2026-06-21; rest reviewed when touched. New channels (DoF/Focus) are born to it.
 - **Forensic audit + productization → Show Bible** — the four pathologist walks **LANDED** (deliverables `scratch/audit-{cartograph,arborist,ls-app,docs}.md`); the docs gap-map **executed** `eb030eb`; the dispatch briefs retired. **Master-matrix aggregation DONE 2026-06-15 → [`AUDIT-MATRIX.md` "THE MASTER MATRIX"](../AUDIT-MATRIX.md)** (cross-domain rollup + the deferred removal queue + the productization register by tier + the blocked-on knots + the reconciled cross-cutting threads). **Remaining:** (1) ✅ **Show Bible BUILT 2026-06-15 → [`SHOW-BIBLE.md`](../SHOW-BIBLE.md)** (3-purpose master package); (2) **execute the removal queue** — post-v1 only (🧊 freeze); (3) route the Tier-1/2/4 register into `plans/`; (4) re-audit the held ribbons/corners exclusion zone now the tile model landed; (5) build out **OPERATIONS** as T3 lands.
 
 ## 🛠 LIVE HANDOFFS (the dispatch layer — OPEN work; landed → the summary below)
@@ -123,7 +124,7 @@
 | mobile-profile | two-axis mobile policy (inclusion → slab; quality → `INSTANCE`) | unblocked; needs nod |
 | boundary-trio · asphalt-as-ribbon · dead-end-typology | Survey-side authoring capabilities | NEXT |
 | render-conformance | env parity (Stage↔Preview↔Production) | AWAITING (cold-review) |
-| buildings-bake · tree-hero-lod | slab / 3D | AWAITING (QC) |
+| buildings-bake · ~~tree-hero-lod~~ (archived → real-DoF `HANDOFF-real-dof.md`) | slab / 3D | AWAITING (QC) |
 | audit-{cartograph,arborist,ls-app,docs} | forensic pathology → Show Bible | STANDING — `audit-docs` **executed** 2026-06-14 (gap map → `scratch/audit-docs.md`; mechanical cleanup landed, FEATURES front-door proposed for Jacob's eye) |
 | toy-to-stage-bake · cloud-specialist | parked | LATER |
 

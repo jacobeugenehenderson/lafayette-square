@@ -1,7 +1,14 @@
-# Handoff (DRAFT — cold-review before dispatch) — Render-Environment Conformance: One Pass to Production Parity
+# Handoff — Render-Environment Conformance: One Pass to Production Parity
 
-> **Status: DRAFT, large + high-blast-radius.** Touches the production Canvas, all authoring Canvases,
-> the camera rig, post-FX, and the mobile path. Cold-review (fresh-Boz + Jacob) before dispatch.
+> **Status: PHASES 1–3 LANDED (Vernier 2026-05-26 / Boz 2026-05-27); Phases 4–7 + DoF channel OPEN.**
+> ⭐ **2026-06-21 accord fix:** the depth (Phase 1) + camera (Phase 2) spine is **done and committed on
+> `curb-offset-draw`** — verified against code, not memory. An earlier pickup mis-listed them as "next"
+> off this doc's then-unmarked phases; corrected. **What remains:** Phase 4 (virtual phone = mobile —
+> absorbed into `HANDOFF-preview-measurement.md §2a`), Phase 5 (mobile policy authored), Phase 6 (parity
+> cleanups), Phase 7 (self-serve loop), and the **DoF post-fx channel** — now its own arc,
+> **[`HANDOFF-real-dof.md`](HANDOFF-real-dof.md)** (real DoF + shared-pyramid reuse + the LoD cover;
+> supersedes the archived fake-blur `tree-hero-lod`). Touches the production Canvas, all authoring
+> Canvases, the camera rig, post-FX, and the mobile path. Cold-review (fresh-Boz + Jacob) before dispatch.
 > **Goal:** the production runtime renders identically to the surfaces that authored it — on desktop
 > AND on the virtual phone — and the operator can toggle layers + bake the slab himself, reliably,
 > without per-change back-and-forth. Synthesized from three fresh audits (production / Cartograph
@@ -9,7 +16,16 @@
 
 ## The conformance principle
 
-Production is the reference for **what mounts and what's authored** (the render tree + slab channels).
+⭐ **The design surface is STAGE; Preview == Production is the mirror that conforms to it** (Jacob,
+2026-06-21). We design *for* Stage — what the operator authors and sees there **is** the product — and the
+conformance work makes Preview (production's exact render tree + inspection bolt-ons) and the deployed app
+reproduce it faithfully. **The arrow points Stage → Preview/Production, never the reverse.** Verification
+corollary: the daytime design loop is **Stage ↔ Preview** (both on local 5173: `/cartograph` + `/preview.html`),
+not the raw `/` route. (`/` is only the conformance *receipt* — e.g. for the depth fix, Stage & Preview
+always ran LOG and already showed the target, so the one surface that changed is production `/`; a glance
+there confirms it caught up, but it is not the design reference.)
+
+Production is the reference for **what mounts** (the render tree + slab channels — the literal ship list).
 The **depth regime** is the exception — and it's **per-device** (forensic verdict): the kit "LOG
 mandatory" doctrine holds for desktop (production-desktop conforms UP to it = parity + far-field gain),
 but **mobile stays LINEAR pending measurement** because a global LOG flip kills early-Z on mobile WebGL2
@@ -47,7 +63,11 @@ that produced the neon-over-trees bug ([[project_production_linear_depth_gap]]).
 - Confirm `src/instance.js` is the synchronous home for global mobile-quality (it is — docstring
   "fixed-truth the slab doesn't carry"; [[project_mobile_profile_authored_channel]]).
 
-## Phase 1 — Depth conformance: DESKTOP→LOG (the spine; own commit) — NOT a global flip
+## Phase 1 — Depth conformance: DESKTOP→LOG (the spine; own commit) — NOT a global flip — ✅ LANDED (Vernier, 2026-05-26, `ca3514f2`)
+> **DONE.** `Scene.jsx` now sets `logarithmicDepthBuffer: !IS_MOBILE` (desktop LOG, mobile LINEAR) —
+> the exact per-device regime below. Verify-on-deploy gate (does the jank/neon-over-trees clear?) is
+> Jacob's eye on local 5173 `/` (daytime) + staging (nightly) — flagged at 2026-06-21 standup.
+
 **AMENDED by forensic verdict (2026-05-26, [[project_production_linear_depth_gap]]):** the original
 "global production→LOG" was wrong on mobile. On WebGL2 (every mobile target) a global
 `logarithmicDepthBuffer:true` writes `gl_FragDepth` for every material → **disables early-Z** → taxes
@@ -71,7 +91,15 @@ the canopy-overdraw budget the tree arc fights (the canopy doctrine *relies* on 
   (it should match them). If a surface regresses, its polygonOffset/renderOrder was linear-tuned — fix
   it to the LOG values the authoring surface uses (they're the source of truth).
 
-## Phase 2 — Camera: stop using stale pre-slab data (own commit)
+## Phase 2 — Camera: stop using stale pre-slab data (own commit) — ✅ LANDED (Vernier, 2026-05-26, `ae2f199c`→`91c4b0db`)
+> **DONE (5 commits).** Production `CameraRig` now reads the slab's authored framing: `Scene.jsx` centers
+> Browse on `shotsV.browse.bounds` (the `[0,0,0]/600` hardcode is gone) and resolves the hero via the
+> shared `resolveHeroSubject` (`src/lib/heroSubject.js`, also wired into Preview `ShotCamera` for parity).
+> Commits: shared resolver `ae2f199c` · undesignated→authored-arch `be233ba6` · CameraRig-reads-slab
+> `bc2c293f` · Preview parity `91c4b0db` · up-vector smoothing `6cf00d39` (+ Browse transition fixes
+> `85b9bb9a`/`feb0d564`/`a7309100`). Both the (A) browse-bounds and (B) hero-subject divergences below are
+> closed; the `fromFov` lerp remains (it re-seeds from the authored slab now, no longer stale).
+
 Root cause (Agent A): the hero transition fires before `scene.json` resolves, capturing a stale FOV in
 `fromFov` (`Scene.jsx:493-523`), then lerping stale→authored. Fix: **defer the hero transition until the
 slab resolves** (or re-seed `fromFov`/target when the slab arrives mid-transition). Prefer defer —

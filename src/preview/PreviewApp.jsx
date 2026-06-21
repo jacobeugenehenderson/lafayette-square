@@ -373,7 +373,7 @@ const SCENE_LAYERS = [
 const FX_LAYERS = [
   ['ao',     'N8AO'],
   ['bloom',  'Bloom'],
-  ['aerial', 'Aerial Perspective'],
+  ['aerial', 'Halo'],   // label matches the Stage control (Sky & Light → Halo); key stays `aerial` (the AerialPerspective effect)
   ['grade',  'Film Grade'],
   ['grain',  'Film Grain'],
   ['smaa',   'SMAA (AA)'],
