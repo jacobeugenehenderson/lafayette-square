@@ -32,8 +32,19 @@ export default function Toolbar() {
   const bakeStale = useCartographStore(s => s.bakeStale)
   const runBake = useCartographStore(s => s.runBake)
   const lastStageShot = useCartographStore(s => s.lastStageShot)
+  const activeLookId = useCartographStore(s => s.activeLookId)
 
   const inDesigner = shot === 'designer'
+
+  // Preview opens in ONE reused named window ('cartograph-preview') on the
+  // ACTIVE look — repeated opens refresh that window instead of piling up tabs.
+  // A cache-bust token (the bake's bakeLastMs) forces a reload to the just-baked
+  // slab even if the URL is otherwise unchanged. (HANDOFF-authoring-session-hardening §3.)
+  const openPreview = (token) => {
+    const id = encodeURIComponent(activeLookId || DEFAULT_LOOK_ID)
+    const q = token ? `?look=${id}&t=${token}` : `?look=${id}`
+    window.open(`/preview${q}`, 'cartograph-preview')
+  }
 
   return (
     <div className="carto-toolbar carto-glass">
@@ -59,7 +70,28 @@ export default function Toolbar() {
           </div>
           <LooksMenu />
           <div className="carto-toolgroup">
-            <button onClick={() => window.open('/preview', '_blank')}>Preview</button>
+            {/* Bake & Preview — the publish-confidence loop: run the hardened
+                bake (the runBake settle-gate), then open/refresh the Preview
+                window on the FRESH slab. Skip opening if the bake was refused or
+                failed (the StatusBar banner says why) so we never reinforce a
+                stale slab. Plain "Preview" beside it opens the LAST bake, no
+                re-bake. Both reuse the one named window. */}
+            <button
+              disabled={bakeRunning}
+              onClick={async () => {
+                await runBake()
+                const st = useCartographStore.getState()
+                if (st.bakeError) return
+                openPreview(st.bakeLastMs)
+              }}
+              title={bakeRunning ? 'Baking…' : 'Bake the slab, then open it in the Preview window — the publish-confidence check.'}>
+              {bakeRunning ? 'Baking…' : 'Bake & Preview'}
+            </button>
+            <button
+              onClick={() => openPreview()}
+              title="Open the last-baked slab in the Preview window (no re-bake; reuses the same window).">
+              Preview
+            </button>
           </div>
         </>
       )}

@@ -87,7 +87,13 @@ promise), **flush** `_saveOverlay` + `_saveDesignDebounced`, and **refuse to bak
 (`overlaySaveBlocked` / `!_designHydrated`) with a loud message instead of a stale bake. **Verify:** a fast
 "edit → Stage →" never bakes partial state; un-hydrated bake is blocked, not silent.
 
-### Phase 3 — "Bake & Preview" (the refresh-bake Jacob wants; small, additive)
+### Phase 3 — "Bake & Preview" (the refresh-bake Jacob wants; small, additive) — ✅ LANDED (uncommitted, 2026-06-21)
+`Toolbar.jsx`: Preview now opens ONE reused **named window** (`cartograph-preview`) on the **active look**
+(no more tab-pileup); a new **"Bake & Preview"** primary awaits the hardened `runBake`, skips opening on
+`bakeError` (never reinforces a stale slab), then refreshes the window with a `?t=bakeLastMs` cache-bust.
+Plain "Preview" beside it = open the last bake, no re-bake. **Eye-check pending:** edit Stage → Bake &
+Preview → the window shows the just-baked slab.
+
 A new action: run the **hardened** bake (Phase 2) → then open/focus the Preview window with a fresh
 cache-bust (`?t=bakedAt`). Keep the plain "Preview" (open last bake) too, but make Bake&Preview the
 primary. **Verify:** edit Stage look → Bake&Preview → the new/refreshed window shows the just-baked slab.
