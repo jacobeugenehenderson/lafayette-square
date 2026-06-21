@@ -9,7 +9,7 @@
 ---
 
 ## The shape in one breath
-A **closely-held for-profit** (Jacob Henderson LLC) owns the *kit* and runs the *commerce* (Cary — delivery → rideshare — and selling installations to organizations). A separate **mission nonprofit** holds the *meaning* (truthful-place / memorial / community installations), funded by grants + private philanthropy + earned revenue. The nonprofit is **bootstrapped under a fiscal sponsor** so it can raise and pay people *before* its own 501(c)(3) exists. The two transact at **arm's length**. The whole thing mirrors the product: industrialized kit + hand-fit mission, Slab + harness, one floor up.
+A **closely-held for-profit** (Jacob Henderson LLC) owns the *kit* and runs the *commerce* (Cary — delivery → rideshare — and selling installations to organizations). A separate **national mission nonprofit** holds the *meaning* — **community-owned truthful portraits of places, across the country** (memorials, heritage, civic memory; Altadena is one instance, not the center), funded by grants + private philanthropy + earned revenue. The nonprofit is **bootstrapped under a fiscal sponsor** so it can raise and pay people *before* its own 501(c)(3) exists. The two transact at **arm's length**. The whole thing mirrors the product: industrialized kit + hand-fit mission, Slab + harness, one floor up.
 
 > **▸ Rationale (why split at all).** Mission work (a memorial for a burned neighborhood) will *never* pay commercially — and shouldn't have to; it's what philanthropy funds. Commerce shouldn't be dragged down carrying it. Splitting lets each be what it is. It's also the answer to "partner without a cap table" (nonprofits have no equity) and the hedge against a grant-funding winter (the for-profit + earned revenue sustain the mission when grants tighten).
 
@@ -22,6 +22,17 @@ A **closely-held for-profit** (Jacob Henderson LLC) owns the *kit* and runs the 
 | **Pays** | Erinne's ED salary; Jacob's creative-director salary; vendor payments to the for-profit (arm's-length) | the **developers**; Cary operating costs; Jacob's owner income (profit after costs) |
 | **Governed by** | an independent-majority board | Jacob (closely held; no equity partners) |
 | **Money is** | restricted (must serve the grant's purpose) | unrestricted (ordinary business income) |
+
+## National scope — many installations, two kinds
+The nonprofit is **national and multi-installation.** Its mission isn't disaster recovery — that's one *type*; the through-line is **community-owned, truthful portraits of American places** (civic memory infrastructure). The "verb" varies by place — memorial/recovery (Altadena), heritage/history (an old district), civic life (a town) — but the mission is constant: a true model of a place, given back to the people who live there. **Altadena is one instance — the only disaster-attached one so far.**
+
+**Not every installation is a nonprofit one.** The split follows ability-to-pay:
+- **Can pay → for-profit (commercial).** A city, campus, BID, tourism board, developer, or moneyed historic district *buys* its installation through the for-profit (the kit-sales line).
+- **Can't pay but should exist → nonprofit (philanthropy).** Memorials, under-resourced communities, civic memory where there's no budget — funded by grants + giving. This is the subset Erinne's grant-writing serves.
+
+**The grant operation is central-apparatus + local co-raise — not one person writing every grant.** Erinne (a) lands big **national / multi-site program grants** (national funders fund *scalable models*, so the pitch is "fund our replicable program across communities" — the kit story), and (b) builds a **repeatable fundraising apparatus** (templates, funder relationships, the umbrella) that **local champions** (a "Mia" per place) plug into to co-raise for their own installations — from community foundations, local donors, civic budgets, and situational sources. Same shape as the rest of the kit: central core + local instances. *Start centralized to prove the model; productize the fundraising as it scales so it never bottlenecks on one person.*
+
+> **▸ Rationale (two tiers of money).** National program grants fund the *core capacity*; local co-raising funds each *instance* — mirroring the two-pocket structure. It also keeps national fundraising from depending on a single human writing a bespoke grant for every town.
 
 ## The money flow (keep these channels distinct)
 The single discipline: **two pockets, kept clean, with documented arm's-length between them.** The channels:
@@ -54,7 +65,7 @@ Unlike a for-profit board (represents shareholders; members hold equity), a nonp
 - **Reasonable comp, set early, by the independent board, using comparables** — the IRS rebuttable-presumption safe harbor. Don't leave it to "eventually"; bless the policy up front so it's clean before anyone transitions.
 - **Lateral target.** Setting the ED salary at ~Erinne's current paralegal comp makes "reasonable" trivial to defend — it's a match, not a windfall. No one is asked to impoverish themselves; the move is lateral *at the point of transition.*
 - **Phased transition.** Founders keep current income until the funded role is real: stand up under the sponsor + write grants (budgeting both salaries) *while still employed* → transition when funding lands. Never leap into a void; step onto a built rung.
-- **Roles:** Erinne — ED (grants, operations, governance; legal backbone via her attorney husband). Jacob — creative director of the nonprofit (the meaning/look) **and** owner of the for-profit (the kit + commerce). Local **community anchors** (a "Mia" per place) hold the meaning of each installation — scoped to their place, real authority over its soul, not equity in the enterprise.
+- **Roles:** Erinne — **founding ED of the national nonprofit** (the central fundraising apparatus, operations, governance; legal backbone via her attorney husband). Jacob — creative director of the nonprofit (the meaning/look) **and** owner of the for-profit (the kit + commerce). Local **community anchors** (a "Mia" per place) hold the meaning of each installation — scoped to their place, real authority over its soul, not equity in the enterprise.
 
 > **▸ Rationale (values in the structure, not the people).** Partners need not share the founder's politics; the values live in the charter, the contracts, the flows, the (eventual) community land trust — not in anyone's heart. That makes the mission robust to a competent, security-oriented operator running ops, and robust to staff turnover. Structure outlasts sentiment.
 
@@ -65,7 +76,7 @@ Developers are a **for-profit** cost (they build the for-profit's kit), funded f
 The federal funding environment is contracted — DOGE/retraction hit **federal** grants and agencies hardest. Design around it:
 - **Do not anchor to federal grants.** Diversify across private foundations, **community foundations**, corporate giving, individual/mid-donor giving, crowdfunding, and **earned revenue** — all more resilient, some actively backfilling federal cuts.
 - **The hybrid IS the hedge.** A grant-only nonprofit is fragile now; a mission nonprofit paired with a revenue-generating for-profit + fee-for-service installations is not. When grants tighten, commerce + earned revenue carry the mission.
-- **Disaster-recovery philanthropy is counter-cyclical** to government cuts — private money flows to disasters regardless of federal posture. Altadena (Eaton Fire, Jan 2025) has an established recovery-funding ecosystem (community foundations, recovery funds, mutual aid) + California state/local money, largely independent of the federal pool.
+- **Situational sources stack onto specific installations.** Disaster-attached instances unlock disaster-recovery philanthropy, which is counter-cyclical to government cuts — private money flows to disasters regardless of federal posture (Altadena, the Eaton Fire instance, has an established recovery ecosystem + California state/local money, largely independent of the federal pool). A *bonus* source for that one map — not the national funding model.
 - **Stay lean; use the cheap-compute window.** Low burn (fiscal sponsor, hire-when-funded, subsidized compute) is exactly what a tight climate rewards. Build proof cheaply, earn revenue early, raise *into* proof rather than betting on a grant.
 - **The retraction as pitch:** when the state retreats from civic/recovery functions, community-owned non-extractive infrastructure becomes *more* necessary — a compelling case to anxious private funders.
 
