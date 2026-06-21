@@ -1523,28 +1523,49 @@ const useCartographStore = create((set, get) => ({
   // heavy slab bake, so leaving Survey re-freezes the eye-gated shape WITHOUT
   // the operator ever running a bake (WALL.md §4; "autosave on exit").
   shapeFrozenMs: null,
+  // The in-flight shape-freeze promise (null when idle). runBake's settle-gate
+  // awaits it so a fast "exit Survey → bake" never reads a half-written
+  // shape.json — the freeze is fired async + unawaited from the Survey-exit
+  // effect in BlockGeometryV2Debug (HANDOFF-authoring-session-hardening §B).
+  shapeFreezePending: null,
   freezeShape: async (artifact) => {
     // Artifact is the { tiles, highway } freeze object (G1); tolerate a legacy
     // bare tiles array too. Skip empties so we never persist a hollow freeze.
     const tiles = Array.isArray(artifact) ? artifact : artifact?.tiles
     if (!tiles || !tiles.length) return
     const scene = get().scene
-    try {
-      await saveShapeFreeze(artifact, scene)
-      set({ shapeFrozenMs: Date.now() })
-    } catch (err) {
-      console.warn('[freeze] shape freeze failed:', err)
-    }
+    const p = saveShapeFreeze(artifact, scene)
+      .then(() => set({ shapeFrozenMs: Date.now() }))
+      .catch((err) => console.warn('[freeze] shape freeze failed:', err))
+    set({ shapeFreezePending: p })
+    await p
+    // Clear only if no newer freeze superseded this one.
+    if (get().shapeFreezePending === p) set({ shapeFreezePending: null })
   },
   runBake: async ({ force = false, navigateTo = null } = {}) => {
     if (get().bakeRunning) return
+    // ── The settle-gate (2026-06-21, HANDOFF-authoring-session-hardening §2) ──
+    // (a) REFUSE to bake on an un-hydrated store (real boot before
+    // _loadCenterlines completes, or a Vite-HMR reset where _saveOverlay/
+    // _saveDesign silently bail). Baking here would pour a STALE slab from a
+    // design.json/overlay.json the store can't write — surface it loudly (the
+    // red StatusBar banner via overlaySaveBlocked) instead of shipping stale.
+    if (!get()._designHydrated || get().overlaySaveBlocked) {
+      set({ overlaySaveBlocked: true, bakeError: 'Bake blocked: store not hydrated — hard-refresh (Cmd-R) to re-sync.' })
+      return
+    }
     set({ bakeRunning: true, bakeError: null })
     try {
+      // (b) SETTLE every pending write before the bake child processes read disk:
+      // the in-flight SHAPE freeze (Survey-exit autosaves it async + unawaited),
+      // then the overlay (geometry, immediate) + the design debounce.
+      const freeze = get().shapeFreezePending
+      if (freeze) { try { await freeze } catch { /* freezeShape logs its own */ } }
+      await get()._saveOverlay()
       // Drain the 300 ms autosave debounce so design.json reflects the
-      // operator's latest edits BEFORE the bake child processes read it.
-      // Without this, "toggle layer off + Stage" within 300 ms shipped
-      // stale design.json to bake-buildings/bake-scene — see NOTES.md
-      // §"Autosave debounce must flush before /bake (2026-05-18)".
+      // operator's latest edits BEFORE the bake reads it ("toggle layer off +
+      // Stage" within 300 ms once shipped stale design.json — NOTES.md
+      // §"Autosave debounce must flush before /bake (2026-05-18)").
       await get()._saveDesignDebounced.flush()
       const r = await bakeLook(get().activeLookId, { force })
       // bakeLastMs is the cache-bust signal for BakedGround / InstancedTrees
@@ -1569,15 +1590,30 @@ const useCartographStore = create((set, get) => ({
   //   shot = which camera/environment preset is active
   //          ('designer' | 'browse' | 'hero' | 'street')
   // markerActive = overlay toggle, independent of tool
-  // Cold-boot straight into Survey. The aerial + live tile construction render
-  // incrementally; we never touch the ~26MB baked ground on load.
-  tool: 'surveyor',
-  // Always cold-boot to Designer. Restoring the last shot from localStorage
-  // would land a hard refresh in a Stage browse shot (park-centered), which
-  // pulls the ~26MB baked ground and shows a ~10-15s black screen before it
-  // snaps on. Stage shots are reached via the toolbar's "Stage →" instead
-  // (lastStageShot below still remembers which one).
-  shot: 'designer',
+  // Restore the EXACT tool + shot the operator left (2026-06-21, drops the old
+  // cold-boot-to-Designer guard). Rationale (Jacob): the status card covers any
+  // load, and the dirty-skipping bake (serve.js runIfDirty) is fast unless lots
+  // changed — so landing a refresh back in a Stage shot is fine. Coherence: a
+  // Stage shot (browse/hero/street) carries NO panel tool, so force tool=null
+  // there regardless of the saved tool. `cartograph-shot` is written by setShot;
+  // `cartograph-tool` is written by setTool ('design' encodes the null/neutral).
+  tool: (() => {
+    try {
+      const savedShot = localStorage.getItem('cartograph-shot')
+      if (['browse', 'hero', 'street'].includes(savedShot)) return null
+      const savedTool = localStorage.getItem('cartograph-tool')
+      if (savedTool === 'surveyor' || savedTool === 'measure') return savedTool
+      if (savedTool === 'design') return null
+    } catch { /* ignore */ }
+    return 'surveyor'
+  })(),
+  shot: (() => {
+    try {
+      const saved = localStorage.getItem('cartograph-shot')
+      if (['designer', 'browse', 'hero', 'street'].includes(saved)) return saved
+    } catch { /* ignore */ }
+    return 'designer'
+  })(),
   // Most-recent non-designer shot. Used by the Designer toolbar's
   // "Stage →" button so the operator returns to whichever Stage shot
   // they were last working in (preserves "linear-but-concurrent"
@@ -1612,18 +1648,21 @@ const useCartographStore = create((set, get) => ({
   markerActive: false,
   setTool: (newTool) => {
     const prev = get().tool
+    // Persist the active tool so a reload restores the exact place ('design'
+    // encodes the null/neutral Designer state). Paired with the tool-init above.
+    const persistTool = (t) => { try { localStorage.setItem('cartograph-tool', t ?? 'design') } catch { /* ignore */ } }
     if (prev === newTool) {
-      set({ tool: null, status: '' })
+      set({ tool: null, status: '' }); persistTool(null)
       if (prev === 'surveyor') set({ selectedStreet: null, selectedNode: null })
       return
     }
     if (prev === 'surveyor') set({ selectedStreet: null, selectedNode: null })
     if (newTool === 'surveyor') {
-      set({ tool: 'surveyor', status: 'Click a street to inspect.' })
+      set({ tool: 'surveyor', status: 'Click a street to inspect.' }); persistTool('surveyor')
     } else if (newTool === 'measure') {
-      set({ tool: 'measure', status: 'Click a street to adjust its cross-section.' })
+      set({ tool: 'measure', status: 'Click a street to adjust its cross-section.' }); persistTool('measure')
     } else {
-      set({ tool: null, status: '' })
+      set({ tool: null, status: '' }); persistTool(null)
     }
   },
   // Tree variant style gate. Each Look chooses which style sets are
@@ -1651,6 +1690,10 @@ const useCartographStore = create((set, get) => ({
   setShot: (shot) => {
     if (get().shot === 'designer' && shot !== 'designer') {
       set({ tool: null, selectedStreet: null, selectedNode: null, markerActive: false, markerEraserActive: false })
+      // Entering a Stage shot clears the panel tool — keep the persisted tool
+      // coherent so a reload doesn't restore a stale 'surveyor' (the tool-init
+      // also guards this by shot, but don't leave a stale key behind).
+      try { localStorage.setItem('cartograph-tool', 'design') } catch { /* ignore */ }
     }
     try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
     // Remember the last Stage shot so Designer's "Stage →" returns to it.
