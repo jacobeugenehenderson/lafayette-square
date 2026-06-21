@@ -22,6 +22,29 @@
 
 ---
 
+## The workflow model — deliberate STONE vs. free HOP (Jacob, 2026-06-21)
+
+The clarifying frame for *all* of this. The map crosses real pipeline **walls**:
+`skeleton → prebake → survey → ⟦DataWall⟧ → section → bake → stage`. The **DataWall** (survey→section)
+freezes the SHAPE; the **bake** (section→stage) pours the slab. Two kinds of crossings, and conflating
+them is what made authoring feel heavy:
+
+- **The deliberate STONE — the bake into 3D.** Pouring the slab is load-bearing for perf + layer/effect
+  management ("intentional stones across the river"). It *should* be a deliberate, occasional, heavyish
+  act behind a button (the `↻` / Bake & Preview). Keep it. **`/stage` stays dead** — Stage is the *same*
+  2D authoring environment + a baked ground plane for real-time 3D scene-value editing, not a separate app
+  (one store; `feedback_stage_standalone_should_die`).
+- **The free HOP — toggling the 2D tools (Survey ↔ Section ↔ Design).** These are all 2D views of the
+  *same frozen data* — no new artifact to pour — so switching should be **nearly instant**. It wasn't,
+  because a tool-switch paid a freeze + whole-map recompute it shouldn't (see §toggle-cost below). Making
+  the hop free restores Jacob's original intent (fluid back-and-forth) **without removing the stones** —
+  the prerequisite for actually *using* the tools, and for tuning DoF.
+
+**The rule:** a tool-switch is never a freeze; the freeze/bake is a deliberate act you press, not a
+side-effect of where you point the camera. (Fold into `cartograph/ARCHITECTURE.md` at Phase 5.)
+
+---
+
 ## Findings (grounded — 3 Explore sweeps, `file:line` verified)
 
 ### A. Reload lands on Survey — why

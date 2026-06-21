@@ -1,6 +1,17 @@
 # HANDOFF — Section tool perf: the FILL re-strokes the whole map on every edit
 
-**Status: ✅ #2 LANDED (`bb83f7b`) + ✅ #1 LANDED (`3ed1e6d`, 2026-06-17). Branch `curb-offset-draw`.** Both root causes addressed. #3 (dead per-tick overlays) remains as cheap cleanup; the sibling aerial-translucency bug (below) is untouched and still open. **Drag-fluidity eye-check pending on Jacob (the gate).**
+**Status: ✅ #2 LANDED (`bb83f7b`) + ✅ #1 LANDED (`3ed1e6d`, 2026-06-17) + ✅ TOGGLE-COST LANDED (uncommitted, 2026-06-21). Branch `curb-offset-draw`.** All three DRAG root causes addressed; the **toggle cost** (a separate axis Jacob raised 2026-06-21) is now fixed too. #3 (dead per-tick overlays) remains as cheap cleanup; the sibling aerial-translucency bug (below) is untouched and still open. **Drag-fluidity + toggle-fluidity eye-checks pending on Jacob (the gate).**
+
+> ### ✅ TOGGLE COST — the freeze re-fired on every Survey-exit and blew the FILL cache (LANDED 2026-06-21)
+> **#1 cached the DRAG; the TOGGLE still recomputed.** Distinct root: the Survey-exit `freezeShape`
+> (`BlockGeometryV2Debug.jsx:792`) fired **unconditionally** — even with zero shape edits — bumping
+> `shapeFrozenMs`, which re-fetched `shape.json` → a fresh `frozenShape` object → **reset the block-local
+> FILL cache (`:682`)** → a full `sectionOpen` over all 101 tiles on Section entry. So toggling
+> Survey↔Section↔Design always paid a whole-map recompute. **FIX:** a **dirty-gate** on the freeze
+> (`:790`, `frozenSigRef`) — skip the no-op freeze when the shape signature is unchanged → `shapeFrozenMs`
+> doesn't bump → no re-fetch → `frozenShape` stays reference-stable → the cache survives → the toggle is a
+> **FREE HOP** (the "stone vs hop" model, `HANDOFF-authoring-session-hardening.md`). Signature = a one-time
+> stringify on exit (cheap vs the POST + recompute saved); errs toward re-freezing, never drops an edit.
 > **#1 fix as landed:** `sectionPass` factored into a per-tile `sectionPassTile` (no cross-tile reads — proven); `sectionOpen` takes a caller-owned per-tile cache keyed on (cw, stripMat, the tile's own blockCustoms slice); `BlockGeometryV2Debug` holds it in a ref. A FILL drag now recomputes only the edited tile, not 101. Grid-safe — byte-identical output proven (cache==stateless, real-edit==fresh, re-bake ground.bin/ribbons identical to HEAD). The global union/stencil merge still runs per call (cheap; a follow-up if drag still isn't fluid on the eye).
 
 **(Original forensic, retained below.)** Section ("measure" tool, the ped-FILL authoring) is **nearly unusable** under interaction. ⛔ **ROUTE FIRST** (`CLAUDE.md`): `ORIENTATION.md` → `README §⭐ START HERE` → this brief → `cartograph/SECTION.md §5/§7` (the FILL SSOT + the perf/D6d item) → `HANDOFF-freeze-the-curb-in-the-first-bake.md` (the SHAPE-layer sibling — Phase 2 block-local). **The eye is the gate** (Jacob on the lit Section).

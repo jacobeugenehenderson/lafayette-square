@@ -788,9 +788,24 @@ export default function BlockGeometryV2Debug({
     }
   }, [surveyActive, tileGeos])
   const wasSurveyRef = useRef(surveyActive)
+  const frozenSigRef = useRef(null)
   useEffect(() => {
     if (wasSurveyRef.current && !surveyActive && latestShapeArtifactRef.current) {
-      freezeShape(latestShapeArtifactRef.current)
+      // DIRTY-GATE the freeze: only re-freeze when the SHAPE actually changed
+      // since the last freeze. An unconditional re-freeze bumps shapeFrozenMs,
+      // which re-fetches shape.json → a fresh frozenShape object → resets the
+      // block-local FILL cache (sectionCacheRef) → a full sectionOpen over all
+      // 101 tiles on Section entry. So toggling Survey↔Section↔Design with ZERO
+      // edits paid a whole-map recompute every time. Skipping the no-op freeze
+      // keeps frozenShape reference-stable, so the cache survives and the toggle
+      // is a FREE HOP (vs the deliberate bake STONE). The signature is a one-time
+      // stringify on exit — cheap vs the POST + recompute it saves; it errs
+      // toward re-freezing (a changed shape never matches), never drops an edit.
+      const sig = JSON.stringify(latestShapeArtifactRef.current)
+      if (sig !== frozenSigRef.current) {
+        frozenSigRef.current = sig
+        freezeShape(latestShapeArtifactRef.current)
+      }
     }
     wasSurveyRef.current = surveyActive
   }, [surveyActive, freezeShape])
