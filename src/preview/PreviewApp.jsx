@@ -387,8 +387,10 @@ const FX_LAYERS = [
 //           Preview toggle forces all tubes on, mirroring Stage's Force
 //           Neon On QA bypass so cost is profiled worst-case.
 //   fog   — <StageFog> reads scene.mist; on by default for parity.
-//   bloom — known-broken pending tree atlas work (project_bloom_diagnosis_actual.md);
-//           default off so reloads don't burn into a black scene.
+//   bloom — SOUND (the "known-broken pending tree-atlas work" flag was stale —
+//           cleared 2026-06-21, Jacob; the cited project_bloom_diagnosis_actual.md
+//           never existed). Kept default-off here only so a reload doesn't burn
+//           into a black scene; revisit defaulting it on for production parity.
 //   AO + aerial + grade + grain — full-fidelity desktop targets, on
 const DEFAULT_LAYERS = {
   // `buildings` gates the merged-mesh slab's visibility (production ships the

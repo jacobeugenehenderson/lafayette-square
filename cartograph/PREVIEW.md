@@ -71,7 +71,7 @@ The layer roster (`PreviewApp.jsx:361`): **Scene** — Ground, Buildings, Trees,
 
 Two deliberate default-state divergences from production, both QA bypasses (`DEFAULT_LAYERS`, `PreviewApp.jsx:392`):
 - **Neon is forced all-tubes-on** for worst-case profiling (production gates neon by open-by-hours / TOD) — mirrors Stage's "Force Neon On."
-- **Bloom defaults off** — known-broken pending tree-atlas work (`project_bloom_diagnosis_actual`); off so a reload doesn't burn into a black scene.
+- **Bloom defaults off** (in Preview only) — *not* because it's broken (that flag was stale — cleared 2026-06-21, Jacob; the cited `project_bloom_diagnosis_actual` never existed); off only so a reload doesn't burn into a black scene. Revisit defaulting it on for parity.
 
 ---
 

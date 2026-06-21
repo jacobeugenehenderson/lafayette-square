@@ -13,10 +13,18 @@
  * (mirrors LampGlow's tuning rationale in CartographSurfaces).
  */
 
+// Brackets attenuated to the realistic working zone + finer intervals (2026-06-21,
+// slider-range principle — scratch/AUDIT-slider-ranges.md). Before, the useful
+// range was squished into the extremes ("only shows at max/min"): intensity 2–3
+// is blown-out, and threshold's top (>~0.9) is a dead "nothing blooms" plateau
+// since the scene's bright pixels sit lower. Defaults kept in-range so baked
+// Looks don't move. ⚠️ If out-of-box bloom reads as ~invisible, the lever is the
+// THRESHOLD DEFAULT (0.85, near the dead zone) — lowering it changes baked Looks,
+// so that's a separate eye call.
 export const BLOOM_FIELDS = [
-  { key: 'intensity', label: 'Intensity',           min: 0,   max: 3, step: 0.05 },
-  { key: 'threshold', label: 'Luminance threshold', min: 0.1, max: 1, step: 0.05 },
-  { key: 'smoothing', label: 'Threshold smoothing', min: 0,   max: 1, step: 0.05 },
+  { key: 'intensity', label: 'Intensity',           min: 0, max: 2,   step: 0.02 },
+  { key: 'threshold', label: 'Luminance threshold', min: 0, max: 0.9, step: 0.01 },
+  { key: 'smoothing', label: 'Threshold smoothing', min: 0, max: 1,   step: 0.02 },
 ]
 export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, smoothing: 0.4 }
 export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)

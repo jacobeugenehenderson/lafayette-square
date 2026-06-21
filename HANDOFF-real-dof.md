@@ -80,9 +80,11 @@ gauge line; each consumer is a measurable delta; NEVER pipe one effect *through*
   `FilmGrade → SMAA → FilmGrain` (`PostProcessing.jsx:371`). So the bloom-shared DoF + its LoD cover is a
   desktop/`phone-hi` story; **the mobile leaf-taper needs its own answer** (open decision below — do NOT
   assume DoF on `phone-lo`).
-- **Clear the Bloom health flag first.** Bloom is default-OFF in Preview and flagged known-broken pending
-  tree-atlas work, yet the whole night-glow economy *and* the shared pyramid hang off it. Confirm Bloom
-  is sound (single-page atlas — `render-conformance Phase 0`) before anything leans on it.
+- **Bloom is SOUND** (confirmed Jacob, 2026-06-21 — the "known-broken pending tree-atlas work" flag was
+  stale, and the cited `project_bloom_diagnosis_actual.md` never existed). The whole night-glow economy
+  *and* the shared pyramid (Phase 1) hang off Bloom, so this was the gate — **now cleared.** Phase 1 is
+  unblocked. (Bloom is still default-OFF in *Preview* only, so a reload doesn't burn into a black scene —
+  a QA default, not breakage.)
 - **Fix the heroTier mis-aim (now unblocked).** The dormant `classifyHeroTiers` scored the wrong camera
   target (~1200 m off) because it never used `resolveHeroSubject`. That shared resolver **now exists**
   (render-conformance Phase 2 landed, `src/lib/heroSubject.js`). Any LoD/DoF gate that keys off camera

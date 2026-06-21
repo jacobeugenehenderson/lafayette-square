@@ -27,7 +27,7 @@ correctness here (`BOZ.md §3` agent-accessibility standard, applied to the pane
 | Channel | Field(s) · current max | Verdict / action |
 |---|---|---|
 | **Halo** (AerialPerspective) | strength **0.5 → 1.0** | ✅ **DONE 2026-06-21** — opened to full-haze + headroom; label unified to "Halo" in Preview too |
-| Bloom | intensity 3 · threshold 1 · smoothing 1 | review — intensity 3 likely fine; confirm it can "blow out" for style |
+| Bloom | intensity **3→2** · threshold **1→0.9** (min 0.1→0) · smoothing 1; steps **0.05→0.01/0.02** | ✅ **DONE 2026-06-21** — attenuated to the working zone + finer intervals (was "only shows at max/min"). ⚠️ threshold *default* 0.85 may still need lowering (changes baked Looks — eye call) |
 | AO (N8AO) | radius 30 · intensity 5 · falloff 1 | review — can the operator see an *extreme* occlusion crush? |
 | Fill | 0–2 | likely ok (piecewise toe map) — confirm "2 = obviously soft" |
 | Exposure | 0–2 | review — is 2 enough to clearly over/under-expose? |
