@@ -102,9 +102,19 @@ Artifacts are **deterministic** + **pristine**: same recipe + same on-disk parts
 
 ---
 
-## Open question — the Grove under the kit thinking
+## The Grove → Slab (decided 2026-06-20)
 
-The Grove today appears via a **deliberate Re-publish "add"** (compose → Re-publish → it joins the Look's roster → shows in the Grove), with a `quality < 2` gate. Under the kit-matcher thinking this may be the wrong model: an **eligible** tree from a Look should arguably **just show** in the Grove once it is **suitably prepared and approved** — where *prepared* = the Coverage Kit readiness (its parts are in hand) and *approved* = the curation approve flag — with no manual add step. **To be thought through** (does the deliberate "add" still make sense; how eligibility + approval drive Grove membership). Captured here, not yet decided.
+The per-tree **Re-publish "add"** is **symbolic, not useful** — the Grove's set *is* the slab's set; everything in the Grove already ships to the slab on the bake. So the model is:
+
+- **No per-tree "publish to add."** A tree is never manually added to the Grove.
+- **Grove membership = eligible + approved, automatically.** *Eligible / prepared* = the species has an authored composition whose parts are in hand (the Coverage **Kit** readiness — buildable). *Approved* = the operator's eye sign-off (curation approve). Eligible + approved → it just shows in the Grove (and in every Look whose roster has that species; approval is **global per species** — Looks restyle, they don't re-approve).
+- **One production gesture: the Grove bake.** It **regenerates each eligible+approved composition from its recipe + parts** and ships them to the slab — the bake *absorbs* the old "publish" step.
+
+**Why:** simpler (one gesture, no symbolic middle step); **more reliable** — the slab is always baked *fresh from compositions + parts*, never from stale staged artifacts; **only eye-approved trees ship**. The author-live / produce-static split stays — we drop the *per-tree publish*, not the split.
+
+**Retires / changes:** the per-tree Re-publish gesture; `syncLookRoster`'s "add" role; the `quality < 2` Grove gate — all collapse into *eligible + approved*. `bake-look`/`bake-trees` grow to regenerate-from-source (start with regenerate-everything; incremental later).
+
+> ⚠️ **Synthesized trees are NOT yet "in the clear" (2026-06-20).** The leaf model is *wired + functional* (size, whole-crown fill, Ways are visually distinct) but **not visually correct** — the Ways grammars need work and the **season/color ramp is unbuilt**. The bake-to-slab + LS-camera work proceeds to test the *pipeline + cameras + DoF*, not to declare the trees finished.
 
 ---
 
