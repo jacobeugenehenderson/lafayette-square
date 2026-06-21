@@ -28,6 +28,7 @@ Today the live contract text is hardcoded LS/Missouri values inside JSX arrays (
 | `places-guardian-terms.md` | Places & Guardian Terms — content license + Section 230 posture for the MySpace-style profile layer |
 | `rider-template.md` | The per-jurisdiction schedule. Missouri filled with confirmed values; California stubbed. |
 | `legal-readiness-brief.md` | The cited research findings + the two items to hand a lawyer + open questions |
+| `org-structure.md` | Organizational & financial structure — two-pocket (nonprofit + for-profit), fiscal-sponsor bootstrap, board, money flow, salaries, funding resilience |
 
 ## Conventions
 
