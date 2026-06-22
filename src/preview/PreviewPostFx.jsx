@@ -6,10 +6,31 @@
  * Effects sourced directly from Stage so behavior matches.
  */
 import { useFrame } from '@react-three/fiber'
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { EffectComposer, Bloom, N8AO, SMAA } from '@react-three/postprocessing'
 import { BlendFunction, SMAAPreset } from 'postprocessing'
 import { AerialPerspective, FilmGrade, FilmGrain, _postFxRefs } from '../components/PostProcessing.jsx'
+import { RomanceDoF, _dofRefs } from '../components/RomanceDoF.jsx'
+
+// Verification driver for the WIP two-focal DoF. Turn the effect ON via the
+// "DoF (WIP)" toggle in the Preview FX matrix; these URL params then flip the
+// debug paint + tune the four params without a UI yet (the real home is the
+// Stage "Focus" channel, Phase 3). Examples (after toggling DoF on):
+//   ?dofDebug=1                                → green=sharp / red=blur CoC paint
+//   ?dofNear=40&dofFar=1050&dofBlur=0.012&dofWidth=25&dofMid=300
+function DofDriver() {
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    const num = (k, d) => { const v = parseFloat(q.get(k)); return Number.isFinite(v) ? v : d }
+    _dofRefs.debug.current      = q.get('dofDebug') === '1' ? 1 : 0
+    _dofRefs.nearFocus.current  = num('dofNear',  _dofRefs.nearFocus.current)
+    _dofRefs.farFocus.current   = num('dofFar',   _dofRefs.farFocus.current)
+    _dofRefs.maxBlur.current    = num('dofBlur',  _dofRefs.maxBlur.current)
+    _dofRefs.sharpWidth.current = num('dofWidth', _dofRefs.sharpWidth.current)
+    _dofRefs.midRange.current   = num('dofMid',   _dofRefs.midRange.current)
+  }, [])
+  return null
+}
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -107,21 +128,27 @@ function FxDriver({ aoRef, bloomRef, lookId }) {
 
 export default function PreviewPostFx({
   lookId, ao = false, bloom = false, aerial = false, grade = false, grain = false, smaa = true,
+  dof = false,
 }) {
   const aoRef = useRef()
   const bloomRef = useRef()
 
-  const anyOn = ao || bloom || aerial || grade || grain
+  const anyOn = ao || bloom || aerial || grade || grain || dof
   if (!anyOn) return null
 
   return (
     <>
       <FxDriver aoRef={aoRef} bloomRef={bloomRef} lookId={lookId} />
+      {dof && <DofDriver />}
       {/* key flips with the conditional-effect set so the composer rebuilds its
           pipeline when any effect is toggled on/off (EffectComposer doesn't
           reconcile added/removed effects on its own — this fixes the Preview
           on/off toggles, SMAA included). */}
-      <EffectComposer key={`fx-${ao}-${bloom}-${aerial}-${grade}-${grain}-${smaa}`}>
+      <EffectComposer key={`fx-${ao}-${bloom}-${aerial}-${grade}-${grain}-${smaa}-${dof}`}>
+        {/* WIP two-focal DoF — first in the chain so it blurs the raw scene;
+            grade/grain/AA apply on top. Verify depth via ?dofDebug=1 before
+            trusting the blur (HANDOFF-real-dof Phase 2). */}
+        {dof && <RomanceDoF />}
         {ao && (
           <N8AO ref={aoRef} halfRes={false} aoRadius={15} intensity={2.5}
             distanceFalloff={0.3} quality="medium" />

@@ -383,6 +383,7 @@ const FX_LAYERS = [
   ['grade',  'Film Grade'],
   ['grain',  'Film Grain'],
   ['smaa',   'SMAA (AA)'],
+  ['dof',    'DoF (WIP)'],   // two-focal depth-of-field — verify via ?dofDebug=1
 ]
 
 // TEMPORARY DEFAULTS — these belong in design.json#/postFx, not in
@@ -407,6 +408,7 @@ const DEFAULT_LAYERS = {
   park: true, lights: true, arch: true, neon: true,
   celestial: true, clouds: true, fog: true,
   ao: true, bloom: false, aerial: true, grade: true, grain: true, smaa: true,
+  dof: false,   // WIP two-focal DoF — off by default; toggle to verify/tune
 }
 
 // v3 (Vernier Phase 2): retired the `slabBuildings` A/B key — one `buildings`
@@ -857,6 +859,7 @@ function CanvasContents({ layers, shot, setShot }) {
         lookId={lookId}
         ao={layers.ao} bloom={layers.bloom} aerial={layers.aerial}
         grade={layers.grade} grain={layers.grain} smaa={layers.smaa}
+        dof={layers.dof}
       />
     </>
   )
