@@ -50,9 +50,12 @@ import {
   GRAIN_FLAT_DEFAULTS,
   SMAA_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
+  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 
 import { IS_MOBILE } from '../lib/isMobile.js'
+import { RomanceDoF, _dofRefs } from './RomanceDoF.jsx'
+import { resolveHeroSubject } from '../lib/heroSubject.js'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 function resolveLookId(propLookId) {
@@ -76,6 +79,7 @@ const HALO_DEFAULT_CHANNEL     = Object.freeze({ values: { ...HALO_FLAT_DEFAULTS
 const GRADE_DEFAULT_CHANNEL    = Object.freeze({ values: { ...GRADE_FLAT_DEFAULTS } })
 const GRAIN_DEFAULT_CHANNEL    = Object.freeze({ values: { ...GRAIN_FLAT_DEFAULTS } })
 const SHADOW_DEFAULT_CHANNEL   = Object.freeze({ values: { ...SHADOW_FLAT_DEFAULTS } })
+const DOF_DEFAULT_CHANNEL      = Object.freeze({ values: { ...DOF_FLAT_DEFAULTS } })
 
 // ── Effect classes (moved from src/stage/StageApp.jsx) ──────────────────────
 // All operator-authored params flow through module-level refs that the
@@ -273,11 +277,11 @@ const _tmpColor = new THREE.Color()
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
   bloomOverride, aoOverride, exposureOverride, warmthOverride,
-  fillOverride, haloOverride, gradeOverride, grainOverride, smaaOverride,
+  fillOverride, haloOverride, gradeOverride, grainOverride, smaaOverride, dofOverride,
 }) {
   const bloomRef = useRef()
   const aoRef = useRef()
-  const { gl } = useThree()
+  const { gl, camera } = useThree()
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
 
   const bloomChannel    = bloomOverride    ?? scene?.bloom    ?? BLOOM_DEFAULT_CHANNEL
@@ -293,6 +297,9 @@ export function PostProcessing({
   // scene.json (baked) > default.
   const smaaChannel     = smaaOverride     ?? scene?.smaa     ?? SMAA_DEFAULT_CHANNEL
   const smaaOn = (smaaChannel?.values?.value ?? SMAA_FLAT_DEFAULTS.value) > 0.5
+  // DoF / Focus — desktop-only convolution pass; static on/off like SMAA.
+  const dofChannel = dofOverride ?? scene?.dof ?? DOF_DEFAULT_CHANNEL
+  const dofOn = (dofChannel?.values?.enabled ?? DOF_FLAT_DEFAULTS.enabled) > 0.5
 
   useFrame(() => {
     const tod = useTimeOfDay.getState()
@@ -368,6 +375,26 @@ export function PostProcessing({
         }
       }
     }
+
+    // DoF / Focus — resolve the intuitive channel → RomanceDoF's _dofRefs, mapping
+    // operator knobs to the shader's units. The FAR sharp plane AUTO-ANCHORS to the
+    // Hero Object (Arch) distance each frame, so the operator never moves the arch to
+    // make DoF work (HANDOFF-real-dof Phase 3). Cheap; only meaningful when dofOn.
+    if (dofOn) {
+      const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
+      _dofRefs.debug.current      = 0
+      _dofRefs.nearFocus.current  = d.focus
+      _dofRefs.maxBlur.current    = d.blur * 0.045
+      _dofRefs.sharpWidth.current = 30 - d.softness * 20      // softer → narrower sharp band
+      _dofRefs.midRange.current   = 100 + d.softness * 350    // softer → gentler ramp
+      // The blur fills the NEIGHBORHOOD (a bounded zone past the near focus);
+      // everything beyond it returns to sharp, so the Arch — always far — stays
+      // sharp wherever it's parked. (Anchoring the far plane to the *movable*
+      // arch backfired: moving it out stretched the blur over the whole scene.
+      // A bounded reach is robust and needs no arch tracking — same "never touch
+      // the arch" promise, kept by making far-of-the-neighborhood sharp.)
+      _dofRefs.farFocus.current = d.focus + 700
+    }
   })
 
   if (IS_MOBILE) {
@@ -391,9 +418,14 @@ export function PostProcessing({
   }
 
   return (
-    // key flips with smaaOn — see the mobile branch: forces the composer to
-    // rebuild when the SMAA pass is added/removed.
-    <EffectComposer key={smaaOn ? 'fx-aa' : 'fx-noaa'}>
+    // key flips with smaaOn + dofOn — forces the composer to rebuild when a
+    // conditional pass (SMAA / DoF) is added/removed (EffectComposer doesn't
+    // reconcile that on its own).
+    <EffectComposer key={`fx-${smaaOn}-${dofOn}`}>
+      {/* DoF / Focus — two-focal romance DoF (desktop only; convolution pass).
+          First in the chain so it blurs the raw scene; AO/Bloom/grade apply on
+          top. Verified under LOG depth (HANDOFF-real-dof Phase 3). */}
+      {dofOn && <RomanceDoF />}
       <N8AO ref={aoRef}
         halfRes={viewMode !== undefined && viewMode !== 'hero'}
         aoRadius={AO_FLAT_DEFAULTS.radius}

@@ -740,6 +740,7 @@ export default function CartographApp() {
   const haloOverride     = useCartographStore(s => s.halo)
   const gradeOverride    = useCartographStore(s => s.grade)
   const smaaOverride     = useCartographStore(s => s.smaa)
+  const dofOverride      = useCartographStore(s => s.dof)
   const grainOverride    = useCartographStore(s => s.grain)
   const shadowOverride   = useCartographStore(s => s.shadow)
 
@@ -994,6 +995,7 @@ export default function CartographApp() {
             gradeOverride={gradeOverride}
             grainOverride={grainOverride}
             smaaOverride={smaaOverride}
+            dofOverride={dofOverride}
           />}
           <group visible={!inDesigner}>
             <R3FErrorBoundary name="CelestialBodies"><CelestialBodies

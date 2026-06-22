@@ -33,6 +33,7 @@ import {
   HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
   SMAA_FIELD_KEYS, SMAA_FLAT_DEFAULTS,
+  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
@@ -221,6 +222,7 @@ const DESIGN_FIELDS = [
   _grp('grade',          GRADE_FIELD_KEYS,          GRADE_FLAT_DEFAULTS),
   _grp('grain',          GRAIN_FIELD_KEYS,          GRAIN_FLAT_DEFAULTS),
   _grp('smaa',           SMAA_FIELD_KEYS,           SMAA_FLAT_DEFAULTS),
+  _grp('dof',            DOF_FIELD_KEYS,            DOF_FLAT_DEFAULTS),
   _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
   _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
   _grp('milkyWay',       MILKYWAY_FIELD_KEYS,       MILKYWAY_FLAT_DEFAULTS),
@@ -499,6 +501,7 @@ const useCartographStore = create((set, get) => ({
   // v3 has it ready. preset='auto' = consult the Almanac at runtime.
   clouds:  { values: { ...CLOUDS_FLAT_DEFAULTS } },
   smaa:           { values: { ...SMAA_FLAT_DEFAULTS } },
+  dof:            { values: { ...DOF_FLAT_DEFAULTS } },
   constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
   milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
   // Neon — group of 3 (core / tube / bleed) sharing one TOD timeline.
@@ -1229,6 +1232,11 @@ const useCartographStore = create((set, get) => ({
     name: 'smaa',
     fieldKeys: SMAA_FIELD_KEYS,
     flatDefaults: SMAA_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'dof',
+    fieldKeys: DOF_FIELD_KEYS,
+    flatDefaults: DOF_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
     name: 'constellations',

@@ -36,7 +36,7 @@ import {
   WARMTH_FLAT_DEFAULTS, FILL_FLAT_DEFAULTS,
   MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
   SKY_GAIN_FLAT_DEFAULTS,
-  GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, SMAA_FLAT_DEFAULTS,
+  GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, SMAA_FLAT_DEFAULTS, DOF_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
@@ -112,6 +112,7 @@ export async function bakeScene({ look = 'default' } = {}) {
     grade:    design.grade    || { values: { ...GRADE_FLAT_DEFAULTS } },
     grain:    design.grain    || { values: { ...GRAIN_FLAT_DEFAULTS } },
     smaa:     design.smaa     || { values: { ...SMAA_FLAT_DEFAULTS } },
+    dof:      design.dof      || { values: { ...DOF_FLAT_DEFAULTS } },
     shadow:   design.shadow   || { values: { ...SHADOW_FLAT_DEFAULTS } },
     // SC.5 — per-shot camera + Hero authoring + Browse heading. Runtime
     // inputs (Browse altitude, Hero target, Street position/target)

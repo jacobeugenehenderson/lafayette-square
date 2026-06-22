@@ -29,6 +29,23 @@ export const BLOOM_FIELDS = [
 export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, smoothing: 0.4 }
 export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 
+// DoF / Focus (Post card) — the two-focal romance depth-of-field (RomanceDoF.jsx,
+// HANDOFF-real-dof). Operator-facing INTUITIVE knobs (not the shader's raw UV/metre
+// units): `blur` 0→Extreme, `focus` = the near sharp plane in metres ("move the
+// focal distance"), `softness` folds the sharp-band width + ramp into one gentleness
+// dial. The FAR sharp plane is NOT a knob — the consumer auto-anchors it to the Hero
+// Object (the Arch) distance per-frame, so the operator never moves the arch to make
+// DoF work. `enabled` default 0 (off) so unauthored Looks are unchanged. The consumer
+// (PostProcessing) maps these → RomanceDoF's _dofRefs (blur→maxBlur, softness→sharpWidth+midRange).
+export const DOF_FIELDS = [
+  { key: 'enabled',  label: 'On',             type: 'toggle' },
+  { key: 'blur',     label: 'Blur',           min: 0, max: 1,   step: 0.02 },
+  { key: 'focus',    label: 'Focus distance', min: 5, max: 300, step: 1    },
+  { key: 'softness', label: 'Softness',       min: 0, max: 1,   step: 0.02 },
+]
+export const DOF_FLAT_DEFAULTS = { enabled: 0, blur: 0.4, focus: 40, softness: 0.5 }
+export const DOF_FIELD_KEYS = DOF_FIELDS.map(f => f.key)
+
 // Lighting floor — operator-facing mood axes, not mechanical knobs.
 // Sun + moon stay physics-driven (PrimaryOrb/SecondaryOrb in CelestialBodies).
 // These two channels bias the *atmosphere between bodies*: ambient color
