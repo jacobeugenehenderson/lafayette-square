@@ -1,6 +1,18 @@
 # Handoff — Real Depth-of-Field: the romance *and* the invisible LoD cover
 
-> **Status: DRAFT (2026-06-21, Boz) — design assembled, not yet phased-for-dispatch.** Pulls the
+> **⭐ STATUS 2026-06-21 EOD — Phase 0–3 LANDED + eye-verified; the PROPER-DoF upgrade is NEXT.**
+> Built `src/components/RomanceDoF.jsx` (two-focal CoC, log-depth decode — green/red/green confirmed) and
+> the **Focus channel** end-to-end (`9bbc5fd7`): intuitive knobs (On·Blur·Focus distance·Softness) →
+> shared `PostProcessing` consumer (default-OFF, desktop) → store → Stage Post-card "Focus (DoF)" →
+> `bake-scene` emit. Blur is **bounded to the neighborhood** (arch stays sharp; the auto-anchor-to-arch was
+> dropped — moving the arch out stretched the blur over the whole scene). ▶ **NEXT — the PROPER-DoF pass:**
+> the single-pass gather has three known refinements that a **CoC-aware gather** fixes at once — (a) the
+> **hard edge vs the sky** (foreground/mid blur must bleed over the sharp background), (b) **iris bokeh**
+> (shaped highlights, not a disk), (c) the **shared blur pyramid** (Bloom + DoF reuse one downsample =
+> GPU-cheap, the §"reuse architecture" #2 below). Also queued: blur-vs-softness knob cleanup, subtly-soft
+> arch, Preview reconcile (URL scaffold → channel), mobile DoF (desktop-only today).
+
+> **(Original DRAFT, 2026-06-21, Boz — the plan that built the above.)** Pulls the
 > long-scattered "real DoF" aim into one current plan and **supersedes the conflicting fake-blur
 > direction** (`HANDOFF-tree-hero-lod.md`, now archived → `cartograph/_archive/HANDOFF-tree-hero-lod-2026-06-21.md`).
 > This is the return FOREST-BUILDER §14 anticipated: *"if the arc ever returns it would likely rebuild
