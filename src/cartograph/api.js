@@ -114,6 +114,15 @@ export async function saveShapeFreeze(artifact, scene) {
 export async function bakeLook(lookId, { force = false } = {}) {
   const url = `${BASE}/looks/${encodeURIComponent(lookId)}/bake${force ? '?force=1' : ''}`
   const res = await fetch(url, { method: 'POST' })
+  // 409 = the server's per-look lock: a bake is already running for this Look
+  // (a concurrent request, a second tab, a fast re-fire). It is BENIGN — the
+  // running bake will finish — so surface a friendly, tagged error instead of
+  // the scary "bake look failed: 409". runBake treats BAKE_IN_PROGRESS gently.
+  if (res.status === 409) {
+    const err = new Error('A bake is already running for this Look — give it a moment.')
+    err.code = 'BAKE_IN_PROGRESS'
+    throw err
+  }
   if (!res.ok) throw new Error(`bake look failed: ${res.status}`)
   return res.json()
 }

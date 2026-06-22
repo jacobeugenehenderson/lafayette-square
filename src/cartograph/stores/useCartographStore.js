@@ -1551,21 +1551,34 @@ const useCartographStore = create((set, get) => ({
     // design.json/overlay.json the store can't write — surface it loudly (the
     // red StatusBar banner via overlaySaveBlocked) instead of shipping stale.
     if (!get()._designHydrated || get().overlaySaveBlocked) {
-      set({ overlaySaveBlocked: true, bakeError: 'Bake blocked: store not hydrated — hard-refresh (Cmd-R) to re-sync.' })
-      return
+      // SELF-HEAL (2026-06-21) instead of refuse: a Vite-HMR reset leaves the
+      // store un-hydrated (CartographApp's _loadCenterlines effect has deps []
+      // and doesn't re-fire on HMR), which previously made the bake silently
+      // refuse → "click Stage, nothing happens." Re-hydrate from disk, then
+      // proceed. Only refuse if re-hydration genuinely fails — so we still never
+      // pour a stale slab, but a normal dev bake after an HMR just works.
+      try { await get()._loadCenterlines() } catch { /* surfaced below */ }
+      if (!get()._designHydrated) {
+        set({ overlaySaveBlocked: true, bakeError: 'Bake blocked: could not re-sync the store — hard-refresh (Cmd-R) and retry.' })
+        return
+      }
     }
     set({ bakeRunning: true, bakeError: null })
     try {
-      // (b) SETTLE every pending write before the bake child processes read disk:
-      // the in-flight SHAPE freeze (Survey-exit autosaves it async + unawaited),
-      // then the overlay (geometry, immediate) + the design debounce.
+      // (b) SETTLE pending writes before the bake reads disk — WITHOUT bumping
+      // input mtimes (that defeats the bake's incremental dirty-skip → an
+      // UNCHANGED bake does full work; regression found 2026-06-21):
+      //   - the in-flight SHAPE freeze: await it (it only wrote if dirty).
+      //   - the design debounce: flush() is a no-op when nothing's pending.
+      // ⛔ Do NOT re-save the overlay here. It autosaves IMMEDIATELY on every
+      // edit, so it's already on disk by bake time; re-writing overlay.json each
+      // bake gave it a fresh mtime → the dirty-check re-ran everything even with
+      // zero edits (and the slow bake widened the concurrent-bake 409 window).
       const freeze = get().shapeFreezePending
       if (freeze) { try { await freeze } catch { /* freezeShape logs its own */ } }
-      await get()._saveOverlay()
-      // Drain the 300 ms autosave debounce so design.json reflects the
-      // operator's latest edits BEFORE the bake reads it ("toggle layer off +
-      // Stage" within 300 ms once shipped stale design.json — NOTES.md
-      // §"Autosave debounce must flush before /bake (2026-05-18)").
+      // Drain the 300 ms autosave debounce so design.json reflects the latest
+      // edits before the bake reads it (NOTES.md §"Autosave debounce must flush
+      // before /bake", 2026-05-18). No-op when nothing is pending.
       await get()._saveDesignDebounced.flush()
       const r = await bakeLook(get().activeLookId, { force })
       // bakeLastMs is the cache-bust signal for BakedGround / InstancedTrees
