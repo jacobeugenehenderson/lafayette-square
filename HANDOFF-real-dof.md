@@ -105,11 +105,19 @@ line-item**. Refactor Bloom to sample it for the bright-pass blur (replacing the
 `MipmapBlurPass`). **Verify:** Bloom's per-channel delta unchanged; the pyramid reads as its own line;
 no coupling (the result is not shared, only the pyramid).
 
-### Phase 2 — The DoF effect (CoC from N8AO depth, samples the pyramid; own gauge line)
-A custom DoF effect: **CoC from N8AO's depth target** (#4); blur = lerp the scene toward the shared
-pyramid's blurred copy by CoC. **Two-focal romance:** foreground sharp, mid/far soft (keep a far-sharp
-band in the formula for generality — empty of trees today since the arch sits past every tree). Default
-OFF until tuned. Its own gauge line.
+### Phase 2 — The DoF effect (custom TWO-FOCAL CoC from depth; own gauge line)
+⭐ **The focus model (Jacob, 2026-06-21) — genuinely two-focal, NOT a single plane:**
+- **Near plane sharp** — the "front row" by the camera (e.g. the park edge).
+- **Far plane sharp** — the **Hero Object (the Arch) at infinity focus**.
+- **Graded blur everywhere else** — in front of the near plane (too-close) AND through the mid-distance,
+  easing back to sharp as depth reaches the Arch/infinity.
+
+So **CoC(depth) has TWO zeros** (near + infinity) with a hump between — `CoC = maxBlur · smoothstep(near,
+mid, d) · smoothstep(far, mid, d)`-shaped. ⛔ **Stock `DepthOfField` cannot do this** (one focal plane →
+monotonic CoC → it would blur the Arch). So the effect is **custom from the start** — no stock-DoF proving
+shortcut. CoC sourced from depth (reuse **N8AO's depth target**, #4); blur = lerp the scene toward a
+blurred copy by CoC. **Blur source:** start simple-but-real (a small own blur) to see the look, then
+optimize to the shared Bloom pyramid (Phase 1). Default OFF until tuned. Its own gauge line.
 
 ### Phase 3 — The DoF channel — authored in Stage, confirmed in Preview
 Wire `dof` as a peer channel exactly like bloom/ao (`DOF_FIELDS`/`DEFAULTS`/`FIELD_KEYS` in
