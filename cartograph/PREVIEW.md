@@ -69,6 +69,8 @@ Every Scene-layer toggle gates `.visible` on a `<group>`, **never the mount** (t
 
 The layer roster (`PreviewApp.jsx:361`): **Scene** — Ground, Buildings, Trees, Park, Streetlamps, Gateway Arch, Neon, Sky+Sun, Clouds, Atmospheric Fog. **Post-FX** — N8AO, Bloom, Aerial Perspective, Film Grade, Film Grain.
 
+⭐ **Ground-contact effects ride the Ground layer (parity automatic, no separate toggle).** The lamp light-pools + tree/lamp contact shadows (`ground.poolmap.png`) and the trunk-base ground blend (`ground.colormap.png`) are baked into the ground textures, sampled by the ground/grass + trunk shaders (`SLAB-CONTRACT §3.1/§3.2`) — so toggling **Ground** gates them and "all-on" == production by construction. They're natural candidates for the per-platform channel-listing (a measurable mobile-cost line) once the v0.2 measurement regime lands.
+
 Two deliberate default-state divergences from production, both QA bypasses (`DEFAULT_LAYERS`, `PreviewApp.jsx:392`):
 - **Neon is forced all-tubes-on** for worst-case profiling (production gates neon by open-by-hours / TOD) — mirrors Stage's "Force Neon On."
 - **Bloom defaults off** (in Preview only) — *not* because it's broken (that flag was stale — cleared 2026-06-21, Jacob; the cited `project_bloom_diagnosis_actual` never existed); off only so a reload doesn't burn into a black scene. Revisit defaulting it on for parity.

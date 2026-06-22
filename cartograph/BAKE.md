@@ -49,7 +49,7 @@ The steps, in execution order:
 | 5 | **lamps** | `bake-lamps.js` | `street_lamps.json`, `design.json` | `lamps.json` | lamp point cloud (`SLAB-CONTRACT.md §5`). Gated on `layerVis.lamp`. |
 | 6 | **scene** | `bake-scene.js` | `design.json` **only** | `scene.json` | **wall #2** — the Look's full authored snapshot (palette, materials, every SC channel). Geometry-independent; never forces a geometry re-bake. This is the **Stage's** output — owned by `STAGE.md`, format in `SLAB-CONTRACT.md §4`. |
 | 7 | **trees** | `arborist/bake-trees.js` | `park_trees.json`, `park_water.json`, `map.json` | `public/baked/default.json` | LS-only; placements are cross-Look (`SLAB-CONTRACT.md §8`). Gated on `layerVis.tree`. |
-| 8 | **ground-ao** | `bake-ground-ao.js` | `map.json`, `design.json`, `ground.json` | `ground.lightmap.png` | **last** — slowest (~25 s); baked AO PNG. Depends on `ground.json` mtime, so it must run after the ground geometry settles. |
+| 8 | **ground-ao** | `bake-ground-ao.js` | `map.json`, `design.json`, `ground.json` | `ground.lightmap.png` **+ `ground.poolmap.png` + `ground.colormap.png`** | **last** — slowest (~50 s); depends on `ground.json` mtime, runs after the geometry settles. Emits three "ground-contact" textures (2026-06-22): the **AO lightmap** (building AO), the **ground FX map** (R = lamp light pool, G = tree+lamp contact shadow), and the **ground-color map** (albedo raster for the tree trunk-base blend). See `SLAB-CONTRACT.md §3/§3.1/§3.2`. ⚠️ reads tree positions from `public/baked/default.json` + lamp positions from the per-Look `lamps.json` (or `street_lamps.json`). |
 
 On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks index (`serve.js:616`) — the canonical `?t=` cache-bust seed (`SLAB-CONTRACT.md §4`).
 
@@ -64,7 +64,9 @@ The bake's outputs **are** the slab. Their byte-level format — top-level field
 | Artifact | Format SSOT | Consumer |
 |---|---|---|
 | `ground.json` + `ground.bin` | `SLAB-CONTRACT.md §2` | `BakedGround.jsx` |
-| `ground.lightmap.png` | `SLAB-CONTRACT.md §3` | `BakedGround.jsx` (UV-sampled AO) |
+| `ground.lightmap.png` | `SLAB-CONTRACT.md §3` | `BakedGround.jsx` (UV-sampled building AO) |
+| `ground.poolmap.png` | `SLAB-CONTRACT.md §3.1` | `BakedGround.jsx` → grass + `FadeMesh` shaders (R lamp pool · G contact shadow) |
+| `ground.colormap.png` | `SLAB-CONTRACT.md §3.2` | `BakedGround.jsx` → `groundColorState` → `treeAtlasMaterial` (trunk blend) |
 | `scene.json` | `SLAB-CONTRACT.md §4` | `useSceneJson` → light/material/post-FX consumers |
 | `lamps.json` | `SLAB-CONTRACT.md §5` | `BakedLamps.jsx` |
 | `buildings.json` (v2) + `buildings.bin` | `SLAB-CONTRACT.md §6` | `SlabBuildings.jsx` |

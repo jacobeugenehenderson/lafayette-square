@@ -4,7 +4,7 @@
     "highway": true,
     "stripe": true,
     "edgeline": false,
-    "bikelane": true,
+    "bikelane": false,
     "lot": true,
     "curb": true,
     "sidewalk": true,
@@ -196,21 +196,46 @@
     "values": {
       "sunset": {
         "grass": 0.5,
-        "trees": 0.005,
-        "pool": 0.1
+        "trees": 0.06,
+        "pool": 0
       },
       "night": {
         "grass": 0.5,
-        "trees": 0.06,
-        "pool": 0.25
+        "trees": 0.01,
+        "pool": 0.4
+      },
+      "dusk": {
+        "grass": 0.015,
+        "trees": 0.005,
+        "pool": 0.6
       }
     }
   },
   "bloom": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "intensity": 0,
-      "threshold": 0.8,
-      "smoothing": 0
+      "night": {
+        "intensity": 1.4,
+        "threshold": 0.02,
+        "smoothing": 0.06
+      },
+      "noon": {
+        "intensity": 0.22,
+        "threshold": 0,
+        "smoothing": 0
+      },
+      "dawn": {
+        "intensity": 0.22,
+        "threshold": 0,
+        "smoothing": 0
+      },
+      "sunset": {
+        "intensity": 0.02,
+        "threshold": 0.01,
+        "smoothing": 0.04744157187176836
+      }
     }
   },
   "warmth": {
@@ -225,25 +250,25 @@
   },
   "exposure": {
     "values": {
-      "value": 0.74
+      "value": 0.58
     }
   },
   "ao": {
     "values": {
-      "radius": 15,
+      "radius": 15.5,
       "intensity": 0,
       "distanceFalloff": 0.3
     }
   },
   "mist": {
     "values": {
-      "density": 0.04,
+      "density": 0,
       "color": "#9dc5e0"
     }
   },
   "halo": {
     "values": {
-      "strength": 0.1,
+      "strength": 0.74,
       "color": "#b8c8d8"
     }
   },
@@ -265,13 +290,13 @@
         "value": 1
       },
       "sunset": {
-        "value": 0.95
+        "value": 0.86
       },
       "dusk": {
         "value": 0.5
       },
       "night": {
-        "value": 0.2
+        "value": 0.08
       }
     }
   },
@@ -291,6 +316,14 @@
   "smaa": {
     "values": {
       "value": 1
+    }
+  },
+  "dof": {
+    "values": {
+      "enabled": 1,
+      "blur": 0.02,
+      "focus": 59,
+      "softness": 0
     }
   },
   "shadow": {
@@ -400,27 +433,37 @@
   },
   "arch": {
     "values": {
-      "distance": 1670,
+      "distance": 1250,
       "bearingX": 0.9487,
       "bearingZ": -0.3163,
-      "scale": 1.95,
-      "rotation": 1.36,
-      "yOffset": 119,
-      "footFade": 30,
-      "uplightL_intensity": 0,
+      "scale": 1.8,
+      "rotation": 1.99,
+      "yOffset": 107,
+      "footFade": 27
+    }
+  },
+  "archLight": {
+    "values": {
+      "uplightL_intensity": 0.6,
       "uplightL_color": "#ffd6a8",
-      "uplightL_cone": 0.55,
+      "uplightL_cone": 31.51267873219528,
       "uplightL_reach": 200,
-      "uplightR_intensity": 0,
+      "uplightR_intensity": 0.7,
       "uplightR_color": "#ffd6a8",
-      "uplightR_cone": 0.55,
+      "uplightR_cone": 35,
       "uplightR_reach": 200
+    }
+  },
+  "lantern": {
+    "values": {
+      "intensity": 1,
+      "glow": 1
     }
   },
   "horizon": {
     "values": {
-      "radius": 3750,
-      "fadeInner": 900,
+      "radius": 2860,
+      "fadeInner": 1400,
       "fadeOuter": 3750
     }
   },

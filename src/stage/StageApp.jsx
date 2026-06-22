@@ -33,6 +33,9 @@ import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import TodChannel from '../cartograph/TodChannel.jsx'
+import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
+import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
 
 
@@ -113,29 +116,61 @@ function ToggleRow({ label, value, onChange }) {
   )
 }
 
-function UplightControls({ side, archValues, setArch }) {
-  const I = `uplight${side}_intensity`
-  const C = `uplight${side}_color`
-  const K = `uplight${side}_cone`
-  const R = `uplight${side}_reach`
-  const label = side === 'L' ? 'Uplight L' : 'Uplight R'
+// Arch Lighting — store-bound TOD channel (the cross-aimed foot uplights).
+// Rides the shared TodChannel UX (Clear + keyframe-on-edit) like every
+// other channel; replaces the old hand-rolled flat L/R uplight sliders so
+// the wash can animate across the day. See skyLightChannels ARCHLIGHT_*.
+function ArchLightChannel() {
+  const channel       = useCartographStore(s => s.archLight)
+  const setValue      = useCartographStore(s => s.setArchLight)
+  const animate       = useCartographStore(s => s.animateArchLight)
+  const unanimate     = useCartographStore(s => s.unanimateArchLight)
+  const addSlot       = useCartographStore(s => s.addArchLightSlot)
+  const removeSlot    = useCartographStore(s => s.removeArchLightSlot)
+  const setTransition = useCartographStore(s => s.setArchLightTransition)
+  const revert        = useCartographStore(s => s.revertArchLight)
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 78 }}>{label}</span>
-        <input type="color" value={archValues[C]}
-          style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }}
-          onChange={(e) => setArch(C, e.target.value)}
-        />
-        <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)', flex: 1 }}>{archValues[C]}</span>
-      </div>
-      <SliderRow label={`${label} Intensity`} value={archValues[I]} min={0} max={3} step={0.05}
-        onChange={(v) => setArch(I, v)} />
-      <SliderRow label={`${label} Cone°`} value={Math.round(archValues[K] * 180 / Math.PI)} min={5} max={60} step={1}
-        onChange={(v) => setArch(K, v * Math.PI / 180)} />
-      <SliderRow label={`${label} Reach`} value={archValues[R]} min={50} max={500} step={5}
-        onChange={(v) => setArch(R, v)} />
-    </div>
+    <TodChannel
+      label="Arch Lighting"
+      fields={ARCHLIGHT_FIELDS}
+      flatDefaults={ARCHLIGHT_FLAT_DEFAULTS}
+      channel={channel}
+      onSetValue={(key, value) => setValue(key, value)}
+      onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
+      onRemoveSlot={removeSlot}
+      onUnanimate={unanimate}
+      onSetTransition={setTransition}
+      onRevert={revert}
+    />
+  )
+}
+
+// Lantern — the lamp's own light source (Brightness + Glow), TOD-animatable.
+// Sits in the Lamps card beside Lamp Glow (the ground pool + canopy). Same
+// store-bound TodChannel pattern. (Lamp colour stays the Surfaces lamp swatch
+// and also drives the pool colour — see StreetLights.)
+function LanternChannel() {
+  const channel       = useCartographStore(s => s.lantern)
+  const setValue      = useCartographStore(s => s.setLantern)
+  const animate       = useCartographStore(s => s.animateLantern)
+  const unanimate     = useCartographStore(s => s.unanimateLantern)
+  const addSlot       = useCartographStore(s => s.addLanternSlot)
+  const removeSlot    = useCartographStore(s => s.removeLanternSlot)
+  const setTransition = useCartographStore(s => s.setLanternTransition)
+  const revert        = useCartographStore(s => s.revertLantern)
+  return (
+    <TodChannel
+      label="Lantern"
+      fields={LANTERN_FIELDS}
+      flatDefaults={LANTERN_FLAT_DEFAULTS}
+      channel={channel}
+      onSetValue={(key, value) => setValue(key, value)}
+      onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
+      onRemoveSlot={removeSlot}
+      onUnanimate={unanimate}
+      onSetTransition={setTransition}
+      onRevert={revert}
+    />
   )
 }
 
@@ -164,8 +199,7 @@ function ArchHorizonControls() {
         <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
           onChange={(v) => setArch('footFade', v)} />
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
-        <UplightControls side="L" archValues={a} setArch={setArch} />
-        <UplightControls side="R" archValues={a} setArch={setArch} />
+        <ArchLightChannel />
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
         <SliderRow label="Horizon Radius" value={h.radius} min={400} max={8000} step={10}
           onChange={(v) => setHorizon('radius', v)} />
@@ -1387,6 +1421,17 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           will fold arch-specific consolidation in as LS's Hero subject. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
         <ArchHorizonControls />
+      </div>
+
+      {/* Lamps — the street-lamp glow/pool channel as a first-class Stage
+          control (it was reachable only by selecting the lamp_glow material
+          chip under Surfaces). TOD-animatable; drives the warm grass/canopy
+          glow + the ground light pool via LampGlowDriver/Pump. */}
+      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+        <Collapsible label="Lamps">
+          <LanternChannel />
+          <LampGlowEditor />
+        </Collapsible>
       </div>
 
       {/* Surfaces — defaults to the standalone /stage mockup gallery; the

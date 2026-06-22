@@ -29,8 +29,10 @@ public/baked/
 ├── <look>/                          ← per-scene/look artifacts
 │   ├── ground.json                  ← geometry manifest (face + material groups)
 │   ├── ground.bin                   ← binary positions + indices (sibling of ground.json)
-│   ├── ground.lightmap.png          ← baked AO PNG
-│   ├── scene.json                   ← look-side palette, layer colors, vis flags, lamp glow
+│   ├── ground.lightmap.png          ← baked AO PNG (building AO; aoMap)
+│   ├── ground.poolmap.png           ← baked ground FX map — R: lamp pool · G: contact shadow (2026-06-22)
+│   ├── ground.colormap.png          ← baked ground-albedo raster (trunk-base blend, 2026-06-22)
+│   ├── scene.json                   ← look-side palette, layer colors, vis flags, lamp glow + lantern, arch lighting
 │   ├── lamps.json                   ← lamp point cloud + scene-relative metadata
 │   ├── buildings.json               ← geometry manifest (foundation + wall + roof groups)
 │   ├── buildings.bin                ← binary positions + colors + UVs + centroidY + indices
@@ -153,6 +155,20 @@ LS slab today (44 groups): 10 `face` (land-use) + 34 `mat` (layered overlays).
 PNG lightmap, produced by `cartograph/bake-ground-ao.js`. Sampled by `BakedGround` via UVs derived from the ground bbox. Single channel of meaningful data (luminance); other channels typically duplicated or zero.
 
 Resolution and format are producer's choice; consumer reads via standard Three.js `TextureLoader`. The lightmap MUST be valid for the manifest's bbox — re-bake of the ground geometry without re-baking AO results in misaligned occlusion.
+
+**Carries:** building AO (raycast) only. *(Contact shadows — tree + lamp bases — moved to the FX map's G channel, §3.1, because `aoMap` only dims **ambient** and so is near-invisible in daytime sun; the FX-map shadow darkens the ground albedo directly.)*
+
+## 3.1. `ground.poolmap.png` — baked ground FX map (R: pool · G: contact shadow) (2026-06-22)
+
+A two-channel "ground-contact" map produced by `bake-ground-ao.js`, sampled **once** at world-XZ by the grass + ground (`FadeMesh`) shaders. Meta in `ground.json#/poolmap` `{ image, size, min:[x,z], span:[w,h], scale }`; bbox = union of lamp + tree extents + margin (≈0.5 m/texel).
+- **R — lamp light pool:** each lamp's pool profile (dark center → bright soft ring → 0) **summed** over lamps (overlaps build up), `× scale` then × the **lantern's output** (`StreetLights` writes `poolUniform = Lantern Brightness × the dusk→night ramp` — the pool *is* the lantern's light on the ground, so one control + off by day), tinted by the **lamp colour** (`scene.layerColors.lamp`, via the shared `lampGlow.colorUniform`). Drapes over terrain/curbs, no z-fighting (replaced the retired floating disc).
+- **G — contact shadow:** soft dark rings at every **tree base + lamp base**, summed/clamped. The shaders **multiply** it into the diffuse directly (`× (1 − G·strength)`) so the ring reads in **daytime** (unlike `aoMap`). Constant strength — at night the dark ground + the additive pool naturally swallow it (no night-gate). Replaced the floating `baseMat` disc *and* the day-faint AO-lightmap rings.
+
+`null` when a Look has no lamps **and** no trees.
+
+## 3.2. `ground.colormap.png` — baked ground-albedo raster (2026-06-22)
+
+Per-Look raster of the ground color (each ground group's triangles filled with its color, paint order). Meta in `ground.json#/colormap` `{ image, size, min, span }`. Sampled at world-XZ by the **tree trunk** shader (`treeAtlasMaterial`) so the lowest ~1.5 m of each trunk blends toward the ACTUAL ground beneath it. Published into the runtime via `BakedGround` → `groundColorState`; the Arborist Salon (no `BakedGround`) leaves it unset → trunk blend off.
 
 ---
 
@@ -319,7 +335,7 @@ The render-scoped per-building index. One entry per *rendered* building (skips `
 
 ### 6.4. Consumer status — RESOLVED (L1.3, 2026-05-26)
 
-**Hybrid shipped.** `src/components/SlabBuildings.jsx` is the single buildings consumer for **Preview and production**: it draws the merged mesh (matching the live `Building`/`Foundations` material exactly) and resolves per-building identity against the §6.3 index. `SceneNeon` sources neon geometry/anchors from the index when it's published (production + Preview), falling back to live `src/data/buildings` where it isn't (Stage authoring). `src/preview/BakedBuildings.jsx` is **deleted**. **Stage keeps its live `LafayetteScene` mount** (authoring needs live retint via `paletteOverride`/`materialPhysicsOverride`), so the `import` of `src/data/buildings` remains in the shared `LafayetteScene`/`SceneNeon` files for that path + the content layer — production no longer *renders* live building geometry, which is the render-path gate. See **`HANDOFF-buildings-bake.md`** (root).
+**Hybrid shipped.** `src/components/SlabBuildings.jsx` is the single buildings consumer for **Preview and production**: it draws the merged mesh (matching the live `Building`/`Foundations` material exactly) and resolves per-building identity against the §6.3 index. `SceneNeon` sources neon geometry/anchors from the index when it's published (production + Preview), falling back to live `src/data/buildings` where it isn't (Stage authoring). `src/preview/BakedBuildings.jsx` is **deleted**. **Stage keeps its live `LafayetteScene` mount** (authoring needs live retint via `paletteOverride`/`materialPhysicsOverride`), so the `import` of `src/data/buildings` remains in the shared `LafayetteScene`/`SceneNeon` files for that path + the content layer — production no longer *renders* live building geometry, which is the render-path gate. (L1.3 shipped 2026-05-26; brief landed → `_archive/handoffs/`.)
 
 ---
 

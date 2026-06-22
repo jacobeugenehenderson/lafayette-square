@@ -25,6 +25,8 @@ import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { terrainExag, patchTerrain, V_EXAG } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
+import { lampGlow as _lampGlow } from '../preview/lampGlowState'
+import { setGroundColorMap } from './groundColorState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 
@@ -103,6 +105,40 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
     }
   }, [lightmap])
 
+  // Lamp light-pool map — baked additive ring profile, sampled by the
+  // ground shaders (grass + FadeMesh) at world-XZ × the TOD Pool value.
+  const poolMeta = manifest.poolmap || null
+  const poolmapUrl = poolMeta
+    ? import.meta.env.BASE_URL + 'baked/' + manifest.look + '/' + poolMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    : null
+  const poolmap = poolmapUrl ? useLoader(THREE.TextureLoader, poolmapUrl) : null
+  useEffect(() => {
+    if (poolmap) {
+      poolmap.colorSpace = THREE.NoColorSpace
+      poolmap.flipY = false
+      poolmap.needsUpdate = true
+    }
+  }, [poolmap])
+
+  // Ground-color map — per-Look albedo raster. Published into the shared
+  // groundColor uniforms (groundColorState) so the tree trunk shader blends
+  // each trunk base toward the ground beneath it. Color texture → sRGB so the
+  // sample decodes to linear and mixes correctly with the (linear) trunk diffuse.
+  const colorMeta = manifest.colormap || null
+  const colormapUrl = colorMeta
+    ? import.meta.env.BASE_URL + 'baked/' + manifest.look + '/' + colorMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    : null
+  const colormap = colormapUrl ? useLoader(THREE.TextureLoader, colormapUrl) : null
+  useEffect(() => {
+    if (colormap) {
+      colormap.colorSpace = THREE.SRGBColorSpace
+      colormap.flipY = false
+      colormap.needsUpdate = true
+      setGroundColorMap(colormap, colorMeta.min, colorMeta.span)
+    }
+    return () => setGroundColorMap(null)
+  }, [colormap])
+
   const meshes = useMemo(() => {
     const bbox = manifest.bbox
     const W = bbox.max[0] - bbox.min[0]
@@ -132,14 +168,15 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry }) => {
         const fade = fadeForGroup(group, stencil)
         return isGrassGroup(group)
-          ? <GrassMesh key={group.kind + ':' + group.id} group={group} geometry={geometry} lightmap={lightmap} fade={fade} />
-          : <FadeMesh  key={group.kind + ':' + group.id} group={group} geometry={geometry} lightmap={lightmap} fade={fade} />
+          ? <GrassMesh key={group.kind + ':' + group.id} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+          : <FadeMesh  key={group.kind + ':' + group.id} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
     </group>
   )
 }
 
-function FadeMesh({ group, geometry, lightmap, fade }) {
+function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
+  const hasPool = !!poolmap
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       color: group.color,
@@ -150,50 +187,59 @@ function FadeMesh({ group, geometry, lightmap, fade }) {
       // Coplanar groups now separate by baked geometric Y (renderOrder × EPS,
       // bake-ground.js) + renderOrder for transparent draw-order. ARCHITECTURE §8.
     })
-    if (fade) {
-      mat.transparent = true
-      mat.onBeforeCompile = (shader) => {
-        applyWeatherToShader(shader)  // Phase 7b/c: wet + snow opt-in
-        shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center[0], fade.center[1]) }
-        shader.uniforms.uFadeInner  = { value: fade.inner }
-        shader.uniforms.uFadeOuter  = { value: fade.outer }
+    if (fade) mat.transparent = true
+    mat.onBeforeCompile = (shader) => {
+      applyWeatherToShader(shader)  // Phase 7b/c: wet + snow opt-in
+      // Inject a shared world-XZ varying + the fade discard and/or the lamp
+      // light-pool add (additive warm, baked ring profile × TOD Pool value —
+      // see grassMaterial for the matching grass-side term). Skip entirely
+      // when neither is needed (the cheap plain asphalt path).
+      if (fade || hasPool) {
         shader.vertexShader = shader.vertexShader.replace(
-          '#include <common>',
-          '#include <common>\nvarying vec3 vFadePos;'
-        )
+          '#include <common>', '#include <common>\nvarying vec3 vGndPos;')
         shader.vertexShader = shader.vertexShader.replace(
           '#include <begin_vertex>',
-          `#include <begin_vertex>
-          vFadePos = (modelMatrix * vec4(position, 1.0)).xyz;`
-        )
+          '#include <begin_vertex>\n vGndPos = (modelMatrix * vec4(position, 1.0)).xyz;')
+        let decls = 'varying vec3 vGndPos;\n'
+        if (fade)    decls += 'uniform vec2 uFadeCenter; uniform float uFadeInner; uniform float uFadeOuter;\n'
+        if (hasPool) decls += 'uniform sampler2D uPoolMap; uniform vec2 uPoolMin; uniform vec2 uPoolSpan; uniform float uPoolScale; uniform float uPool; uniform float uShadowStr; uniform vec3 uLampColor;\n'
         shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <common>',
-          `#include <common>
-           uniform vec2 uFadeCenter;
-           uniform float uFadeInner;
-           uniform float uFadeOuter;
-           varying vec3 vFadePos;`
-        )
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <dithering_fragment>',
-          `#include <dithering_fragment>
-           float dFade = length(vFadePos.xz - uFadeCenter);
-           gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, dFade);`
-        )
+          '#include <common>', '#include <common>\n' + decls)
+        if (fade) {
+          shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center[0], fade.center[1]) }
+          shader.uniforms.uFadeInner  = { value: fade.inner }
+          shader.uniforms.uFadeOuter  = { value: fade.outer }
+        }
+        if (hasPool) {
+          shader.uniforms.uPoolMap   = { value: poolmap }
+          shader.uniforms.uPoolMin   = { value: new THREE.Vector2(poolMeta?.min?.[0] ?? 0, poolMeta?.min?.[1] ?? 0) }
+          shader.uniforms.uPoolSpan  = { value: new THREE.Vector2(poolMeta?.span?.[0] ?? 1, poolMeta?.span?.[1] ?? 1) }
+          shader.uniforms.uPoolScale = { value: poolMeta?.scale ?? 1 }
+          shader.uniforms.uPool      = _lampGlow.poolUniform
+          shader.uniforms.uShadowStr = { value: 0.5 }
+          shader.uniforms.uLampColor = _lampGlow.colorUniform
+        }
+        let post = '#include <dithering_fragment>\n'
+        if (hasPool) post +=
+          `{ vec2 puv = (vGndPos.xz - uPoolMin) / uPoolSpan;
+             if (all(greaterThanEqual(puv, vec2(0.0))) && all(lessThanEqual(puv, vec2(1.0)))) {
+               vec4 gfx = texture2D(uPoolMap, puv);
+               gl_FragColor.rgb *= (1.0 - gfx.g * uShadowStr);                  // contact shadow
+               gl_FragColor.rgb += uLampColor * gfx.r * uPoolScale * uPool;     // lamp pool (lamp colour)
+             } }\n`
+        if (fade) post +=
+          `gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, length(vGndPos.xz - uFadeCenter));\n`
+        shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', post)
       }
-      mat.customProgramCacheKey = () => `bg-fade-${fade.inner}-${fade.outer}-wx1`
-    } else {
-      // Non-fade variants still opt in to weather. Apply via fresh
-      // onBeforeCompile + unique cache key.
-      mat.onBeforeCompile = (shader) => { applyWeatherToShader(shader) }
-      mat.customProgramCacheKey = () => 'bg-plain-wx1'
     }
+    mat.customProgramCacheKey = () =>
+      `bg-${fade ? `fade-${fade.inner}-${fade.outer}` : 'plain'}-${hasPool ? 'pool' : 'nopool'}-wx1`
     // Terrain displacement applied last so its onBeforeCompile wraps any
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.
     // Drives off the shared terrainExag uniform.
     patchTerrain(mat, { perVertex: true })
     return mat
-  }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer])
+  }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, hasPool, poolmap])
 
   useEffect(() => {
     material.aoMap = lightmap || null
@@ -211,13 +257,17 @@ function FadeMesh({ group, geometry, lightmap, fade }) {
   )
 }
 
-function GrassMesh({ group, geometry, lightmap, fade }) {
+function GrassMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   const { material, shaderRef } = useMemo(
     () => {
       const built = makeGrassMaterial({
         color: group.color,
         lampLightmap: getLampLightmap(),
         fade,
+        poolMap: poolmap || null,
+        poolMin: poolMeta?.min,
+        poolSpan: poolMeta?.span,
+        poolScale: poolMeta?.scale ?? 1,
       })
       // No polygonOffset (inert under log-depth). Grass faces separate from
       // adjacent FadeMesh faces by baked geometric Y (renderOrder × EPS) +
@@ -229,7 +279,7 @@ function GrassMesh({ group, geometry, lightmap, fade }) {
       patchTerrain(built.material, { perVertex: true })
       return built
     },
-    [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer]
+    [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap]
   )
   useEffect(() => {
     if (lightmap) {
@@ -328,7 +378,12 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = V_EXAG } 
   return (
     <>
       <TerrainExagDriver target={targetExag} />
-      {data && scene && <GroundMeshes manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={cacheBust} />}
+      {/* Keyed by cacheBust so a re-bake REMOUNTS GroundMeshes with a fresh
+          hook order — the lightmap/poolmap useLoaders are conditional on the
+          manifest (poolmap may flip absent→present across a bake), and a bare
+          re-render would change hook order and crash. Remount is fine: the
+          geometry already rebuilds on manifest change. */}
+      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={cacheBust} />}
     </>
   )
 }

@@ -29,8 +29,14 @@ Two load-bearing facts:
 | **SC.4 — time defaults** | *(none persisted — see §5)* | DawnTimeline (scrub only) |
 | **SC.5 — camera** | `shots`, `browseHeading`, `heroSubject`, `heroKeyframes`, `heroMotion` | Camera / Shots |
 | **SC.6 — clouds** | `clouds` (forward-compat preset ref) | *(Meteorologist, standalone — §5)* |
-| **SC.7 — arch / horizon** | `arch`, `horizon` | Arch & Horizon |
-| **(look base)** | `palette`, `materialPhysics`, `materialColors`, `layerColors`, `luColors`, `layerVis`, `lampGlow`, `neon` | Materials / Surfaces / Neon |
+| **SC.7 — arch / horizon / lighting** | `arch`, `archLight`, `horizon` | Hero & Horizon |
+| **(look base)** | `palette`, `materialPhysics`, `materialColors`, `layerColors`, `luColors`, `layerVis`, `lampGlow`, `lantern`, `neon` | Materials / Surfaces / Neon / **Lamps** |
+
+> **Arch Lighting (`archLight`, 2026-06-22).** The cross-aimed foot uplights split off the `arch` *placement* channel into their **own TOD-animatable** group channel (`ARCHLIGHT_*` in `skyLightChannels.js`) so the *wash* rides a day→night curve while placement stays put. Mounted as a `<TodChannel>` in the Hero & Horizon card; `GatewayArch` resolves it per-frame. Legacy Looks migrate via `migrateArchLight` (uplights carried off `arch`; cone radians→degrees).
+>
+> **Lamps card (2026-06-22)** — two channels:
+> - **`lantern`** — the lamp's own LIGHT SOURCE (the lantern): **Brightness + Glow**, TOD-animatable. Replaces the hardwired `t·0.8`/`t` lantern multipliers in `StreetLights` (operator master × the automatic dusk→night ramp). **The Lantern Brightness also drives the ground POOL's intensity** (the pool IS the lantern's light on the ground — `StreetLights` writes `poolUniform = Brightness × ramp`), and the lamp *colour* (`layerColors.lamp`, the Surfaces swatch) drives the pool's colour. So one light source → lantern + pool, coherent; off by day automatically.
+> - **`lampGlow`** now carries only **`{ trees }`** (the tree CANOPY under-glow). The ground pool is no longer a separate `lampGlow.pool` field — it follows the Lantern (above). The pool renders **baked into the ground** (the contour-correct ring map's R channel; G = contact shadow), not a floating disc — see `BAKE.md` / `SLAB-CONTRACT.md §3.1`.
 
 `skyGain` is worth a sentence: it is **exposure scoped to the sky dome only** — it owns "how dark is night" without dimming lamps or lit windows (the single-owner cure for the night-brightness floor sprawl, `ARCHITECTURE.md §7`, 2026-06-07).
 

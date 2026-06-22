@@ -38,7 +38,7 @@ import {
   SKY_GAIN_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, SMAA_FLAT_DEFAULTS, DOF_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
-  ARCH_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
+  ARCH_FLAT_DEFAULTS, migrateArchLight, LANTERN_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
   NEON_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
@@ -129,8 +129,10 @@ export async function bakeScene({ look = 'default' } = {}) {
     // feathering. Promoted from the module-scope `archState` bridge in
     // src/stage/StageApp.jsx — operator's arch authoring now persists
     // across reloads and reaches production via the slab.
-    arch:    design.arch    || { values: { ...ARCH_FLAT_DEFAULTS } },
-    horizon: design.horizon || { values: { ...HORIZON_FLAT_DEFAULTS } },
+    arch:      design.arch      || { values: { ...ARCH_FLAT_DEFAULTS } },
+    archLight: migrateArchLight(design),
+    lantern:   design.lantern   || { values: { ...LANTERN_FLAT_DEFAULTS } },
+    horizon:   design.horizon   || { values: { ...HORIZON_FLAT_DEFAULTS } },
     // SC.6 — Meteorologist coupler scaffolding. Forward-compat field for
     // the future <Atmosphere /> raymarched runtime. v1's CloudDome
     // ignores `clouds`; the field round-trips through bake so Atmosphere

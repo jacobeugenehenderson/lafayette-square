@@ -521,7 +521,7 @@ export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
     const triple = resolveLampGlowAtMinute(channel, minute, slotMinutes)
     _lampGlowUniforms.grassUniform.value = triple.grass
     _lampGlowUniforms.treesUniform.value = triple.trees
-    _lampGlowUniforms.poolUniform.value  = triple.pool
+    // poolUniform is driven by StreetLights (pool follows the lantern's output).
   })
   return null
 }

@@ -24,6 +24,10 @@ export function makeGrassMaterial({
   // Optional radial alpha fade — soft neighborhood-stencil edge.
   // { center: [x,z], inner, outer } ; alpha → 0 at outer.
   fade = null,
+  // Baked lamp light-pool map (ground.poolmap.png). When provided, the warm
+  // pool is sampled from it at world-XZ and scaled by the live TOD Pool value
+  // (no night gate — the channel animates it). poolMin/poolSpan map world→UV.
+  poolMap = null, poolMin = null, poolSpan = null, poolScale = 1,
 } = {}) {
   const shaderRef = { current: null }
   const material = new THREE.MeshStandardMaterial({ roughness: 0.92, color })
@@ -44,6 +48,16 @@ export function makeGrassMaterial({
     shader.uniforms.uLampMap   = { value: lampLightmap }
     shader.uniforms.uHasLamp   = { value: lampLightmap ? 1.0 : 0.0 }
     shader.uniforms.uLampGlow = _lampGlow.grassUniform
+    // Baked lamp light-pool map — warm pool on the ground, sampled at
+    // world-XZ, scaled by the live TOD Pool value (uPool = poolUniform).
+    shader.uniforms.uPoolMap   = { value: poolMap }
+    shader.uniforms.uHasPool   = { value: poolMap ? 1.0 : 0.0 }
+    shader.uniforms.uPoolMin   = { value: new THREE.Vector2(poolMin?.[0] ?? 0, poolMin?.[1] ?? 0) }
+    shader.uniforms.uPoolSpan  = { value: new THREE.Vector2(poolSpan?.[0] ?? 1, poolSpan?.[1] ?? 1) }
+    shader.uniforms.uPoolScale = { value: poolScale }
+    shader.uniforms.uPool      = _lampGlow.poolUniform
+    shader.uniforms.uShadowStr = { value: 0.5 }   // contact-shadow (G) strength
+    shader.uniforms.uLampColor = _lampGlow.colorUniform  // pool colour = lamp colour
     shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade?.center?.[0] ?? 0, fade?.center?.[1] ?? 0) }
     shader.uniforms.uFadeInner  = { value: fade?.inner ?? 0 }
     shader.uniforms.uFadeOuter  = { value: fade?.outer ?? 0 }
@@ -72,6 +86,14 @@ export function makeGrassMaterial({
        uniform sampler2D uLampMap;
        uniform float uHasLamp;
        uniform float uLampGlow;
+       uniform sampler2D uPoolMap;
+       uniform float uHasPool;
+       uniform vec2 uPoolMin;
+       uniform vec2 uPoolSpan;
+       uniform float uPoolScale;
+       uniform float uPool;
+       uniform float uShadowStr;
+       uniform vec3 uLampColor;
        uniform vec2 uFadeCenter;
        uniform float uFadeInner;
        uniform float uFadeOuter;
@@ -128,15 +150,20 @@ export function makeGrassMaterial({
        vec3 nightTint = vec3(0.6, 0.7, 1.0);
        grass = mix(grass * nightTint, grass, dayBright) * brightness;
 
-       if (uHasLamp > 0.5) {
-         vec2 grassLampUV = (vGrassPos.xz + 200.0) / 400.0;
-         float grassLampI = texture2D(uLampMap, grassLampUV).r;
-         float grassLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
-         // Warm incandescent tint (less green, more amber) at modest
-         // strength — meant to nudge the grass toward warm under lamps,
-         // not blast it bright. Operator can crank if needed.
-         // Warm amber over the textured grass — operator-tunable.
-         grass += vec3(0.55, 0.40, 0.20) * grassLampI * grassLampOn * uLampGlow;
+       // Lamp light pool — baked ring profile (dark center → bright soft
+       // ring → 0), summed across lamps, sampled at world-XZ and scaled by
+       // the live TOD Pool value. No night gate: the Pool channel is
+       // manually animated, so it owns when the pool shows.
+       if (uHasPool > 0.5) {
+         vec2 poolUV = (vGrassPos.xz - uPoolMin) / uPoolSpan;
+         if (poolUV.x >= 0.0 && poolUV.x <= 1.0 && poolUV.y >= 0.0 && poolUV.y <= 1.0) {
+           vec4 gfx = texture2D(uPoolMap, poolUV);
+           // G — contact shadow (tree + lamp bases): darken the albedo DIRECTLY
+           // so the ring reads in daytime (not just ambient like aoMap).
+           grass *= (1.0 - gfx.g * uShadowStr);
+           // R — lamp light pool in the LAMP'S colour, scaled by the live TOD Pool value.
+           grass += uLampColor * gfx.r * uPoolScale * uPool;
+         }
        }
 
        diffuseColor.rgb = pow(grass, vec3(2.2));`
@@ -163,7 +190,7 @@ export function makeGrassMaterial({
   // grass shader can silently get replaced by an earlier-compiled
   // plain-MeshStandardMaterial program from the same scene).
   material.customProgramCacheKey = () =>
-    `grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}-wx1`
+    `grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}-${poolMap ? 'pool' : 'nopool'}-wx1`
 
   return { material, shaderRef }
 }

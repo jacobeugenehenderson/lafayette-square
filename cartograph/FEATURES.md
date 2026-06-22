@@ -29,6 +29,8 @@ Cartograph is recursive — each authoring step makes a truth-claim the next bui
 
 **Stage is the second authoring environment** — the *theatrical* sense of "stage": where the look gets staged (materials, palettes, lighting, sky, post-FX), finalized into the slab on Bake.
 
+**The light lives in the ground, and the whole look is a curve across the day.** The lamps' pools of light, the soft contact shadows under every tree and lamp, and the way a trunk's lowest metre takes on the color of the ground beneath it are all *baked into the ground itself* — contour-correct, never floating decals. And every look channel — sky, bloom, exposure, lamp brightness, the Gateway Arch's foot-uplights — is authored as a **time-of-day curve**, so one Look renders golden-hour, high-noon, and deep-night faithfully on the neighborhood's own clock. *(As-built: `STAGE.md`; the baked ground-contact maps: `SLAB-CONTRACT §3.1/§3.2`.)*
+
 **The Bake is the slab pour** — the publish moment for cartograph. The artifact ships to the LS app, not directly to end users.
 
 **The slab carries the operator's *full* authored product.** This is load-bearing. Anything authored in cartograph — geometry AND optics (sky, atmosphere, post-FX, exposure, time-of-day, per-shot camera, materials, neon, lamp glow) — must travel through the bake into the slab. The deployed runtime trusts the slab unconditionally and cannot reach back into the authoring store, so **anything authored-but-not-baked is invisible** — the product silently degrades to "operator geometry + procedural-default optics," which isn't the product. The product is what the operator sees in Stage. *(Gap inventory: `BACKLOG.md` "Slab completeness.")*

@@ -37,8 +37,10 @@ const LONGITUDE = INSTANCE.geography.lon
 import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
+  ARCHLIGHT_FLAT_DEFAULTS, ARCHLIGHT_FIELD_KEYS,
   HORIZON_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
+import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 
 // NPS catenary equation converted to meters:
 const A = 211.5
@@ -125,8 +127,9 @@ export function createArchGeometry(curveSegs = 120) {
   return geo
 }
 
-const ARCH_DEFAULT_CHANNEL    = Object.freeze({ values: { ...ARCH_FLAT_DEFAULTS } })
-const HORIZON_DEFAULT_CHANNEL = Object.freeze({ values: { ...HORIZON_FLAT_DEFAULTS } })
+const ARCH_DEFAULT_CHANNEL      = Object.freeze({ values: { ...ARCH_FLAT_DEFAULTS } })
+const ARCHLIGHT_DEFAULT_CHANNEL = Object.freeze({ values: { ...ARCHLIGHT_FLAT_DEFAULTS } })
+const HORIZON_DEFAULT_CHANNEL   = Object.freeze({ values: { ...HORIZON_FLAT_DEFAULTS } })
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -136,7 +139,7 @@ function resolveLookId(propLookId) {
 }
 
 export default function GatewayArch({
-  lookId, bakeLastMs, archOverride, horizonOverride,
+  lookId, bakeLastMs, archOverride, horizonOverride, archLightOverride,
 }) {
   const geometry = useMemo(() => createArchGeometry(), [])
   const meshRef = useRef()
@@ -144,6 +147,10 @@ export default function GatewayArch({
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
   const arch    = (archOverride    ?? scene?.arch    ?? ARCH_DEFAULT_CHANNEL).values
   const horizon = (horizonOverride ?? scene?.horizon ?? HORIZON_DEFAULT_CHANNEL).values
+  // Arch Lighting is a TOD-animatable channel — keep the whole channel
+  // object and resolve it per-frame (below) so the uplight wash can ride a
+  // day→night curve. Override (Stage live) > baked scene > flat defaults.
+  const archLightChannel = archLightOverride ?? scene?.archLight ?? ARCHLIGHT_DEFAULT_CHANNEL
 
   const material = useMemo(() => {
     const mat = new THREE.MeshBasicMaterial({
@@ -152,7 +159,7 @@ export default function GatewayArch({
       depthWrite: true,
     })
 
-    mat.customProgramCacheKey = () => 'gateway-arch-v4'
+    mat.customProgramCacheKey = () => 'gateway-arch-v5'
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
       shader.uniforms.uDayFactor = { value: 1.0 }
@@ -293,7 +300,11 @@ export default function GatewayArch({
            float dotL = dot(dirL, uUpL_dir);
            float coneL = smoothstep(uUpL_cosCone, uUpL_cosCenter, dotL);
            float reachL = exp(-distL / max(uUpL_reach, 1.0));
-           float faceL = max(0.0, dot(N, -dirL));
+           // Soft face term (floor 0.35): a foot wash scatters onto faces
+           // that don't point straight at the lamp, so the lit cone band
+           // reads even on the camera-facing surface (was max(0,N·-dir),
+           // which zeroed on the visible faces — the "uplights do nothing").
+           float faceL = 0.35 + 0.65 * max(0.0, dot(N, -dirL));
            gl_FragColor.rgb += uUpL_color * uUpL_intensity * coneL * reachL * faceL;
 
            vec3 toFragR = vArchWorld - uUpR_pos;
@@ -302,7 +313,7 @@ export default function GatewayArch({
            float dotR = dot(dirR, uUpR_dir);
            float coneR = smoothstep(uUpR_cosCone, uUpR_cosCenter, dotR);
            float reachR = exp(-distR / max(uUpR_reach, 1.0));
-           float faceR = max(0.0, dot(N, -dirR));
+           float faceR = 0.35 + 0.65 * max(0.0, dot(N, -dirR));
            gl_FragColor.rgb += uUpR_color * uUpR_intensity * coneR * reachR * faceR;
          }
 
@@ -338,6 +349,15 @@ export default function GatewayArch({
     if (shaderRef.current) {
       shaderRef.current.uniforms.uDayFactor.value = day
 
+      // Resolve the TOD-animated Arch Lighting channel at the current
+      // minute (cone authored in degrees → cos for the shader).
+      const alMinute = currentTime.getHours() * 60 + currentTime.getMinutes() + currentTime.getSeconds() / 60
+      const al = resolveGroupAtMinute(
+        archLightChannel, alMinute, getTodSlotMinutes(currentTime),
+        ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS,
+      )
+      const DEG = Math.PI / 180
+
       const hc = useSkyState.getState().horizonColor
       shaderRef.current.uniforms.uHorizonColor.value.copy(hc)
       const gc = shaderRef.current.uniforms.uGroundColor.value
@@ -354,22 +374,22 @@ export default function GatewayArch({
       archFootWorld.L.copy(_upPos)
       _upTarget.set(HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpL_dir.value.copy(_upTarget).sub(_upPos).normalize()
-      shaderRef.current.uniforms.uUpL_color.value.set(arch.uplightL_color)
-      shaderRef.current.uniforms.uUpL_intensity.value = arch.uplightL_intensity
-      shaderRef.current.uniforms.uUpL_cosCone.value = Math.cos(arch.uplightL_cone)
-      shaderRef.current.uniforms.uUpL_cosCenter.value = Math.cos(arch.uplightL_cone * 0.3)
-      shaderRef.current.uniforms.uUpL_reach.value = arch.uplightL_reach
+      shaderRef.current.uniforms.uUpL_color.value.set(al.uplightL_color)
+      shaderRef.current.uniforms.uUpL_intensity.value = al.uplightL_intensity
+      shaderRef.current.uniforms.uUpL_cosCone.value = Math.cos(al.uplightL_cone * DEG)
+      shaderRef.current.uniforms.uUpL_cosCenter.value = Math.cos(al.uplightL_cone * 0.3 * DEG)
+      shaderRef.current.uniforms.uUpL_reach.value = al.uplightL_reach
 
       _upPos.set(HALF_SPAN, 0, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpR_pos.value.copy(_upPos)
       archFootWorld.R.copy(_upPos)
       _upTarget.set(-HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpR_dir.value.copy(_upTarget).sub(_upPos).normalize()
-      shaderRef.current.uniforms.uUpR_color.value.set(arch.uplightR_color)
-      shaderRef.current.uniforms.uUpR_intensity.value = arch.uplightR_intensity
-      shaderRef.current.uniforms.uUpR_cosCone.value = Math.cos(arch.uplightR_cone)
-      shaderRef.current.uniforms.uUpR_cosCenter.value = Math.cos(arch.uplightR_cone * 0.3)
-      shaderRef.current.uniforms.uUpR_reach.value = arch.uplightR_reach
+      shaderRef.current.uniforms.uUpR_color.value.set(al.uplightR_color)
+      shaderRef.current.uniforms.uUpR_intensity.value = al.uplightR_intensity
+      shaderRef.current.uniforms.uUpR_cosCone.value = Math.cos(al.uplightR_cone * DEG)
+      shaderRef.current.uniforms.uUpR_cosCenter.value = Math.cos(al.uplightR_cone * 0.3 * DEG)
+      shaderRef.current.uniforms.uUpR_reach.value = al.uplightR_reach
 
       const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
       const moonPos = SunCalc.getMoonPosition(currentTime, LATITUDE, LONGITUDE)

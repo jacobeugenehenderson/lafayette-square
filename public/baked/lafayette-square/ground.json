@@ -42,7 +42,7 @@
       "vertexCount": 49137,
       "vertexByteOffset": 0,
       "indexCount": 269607,
-      "indexByteOffset": 4105404
+      "indexByteOffset": 4097964
     },
     {
       "kind": "face",
@@ -53,7 +53,7 @@
       "vertexCount": 4718,
       "vertexByteOffset": 589644,
       "indexCount": 23391,
-      "indexByteOffset": 5183832
+      "indexByteOffset": 5176392
     },
     {
       "kind": "face",
@@ -64,7 +64,7 @@
       "vertexCount": 6732,
       "vertexByteOffset": 646260,
       "indexCount": 35169,
-      "indexByteOffset": 5277396
+      "indexByteOffset": 5269956
     },
     {
       "kind": "face",
@@ -75,7 +75,7 @@
       "vertexCount": 89626,
       "vertexByteOffset": 727044,
       "indexCount": 517959,
-      "indexByteOffset": 5418072
+      "indexByteOffset": 5410632
     },
     {
       "kind": "face",
@@ -86,7 +86,7 @@
       "vertexCount": 64044,
       "vertexByteOffset": 1802556,
       "indexCount": 357597,
-      "indexByteOffset": 7489908
+      "indexByteOffset": 7482468
     },
     {
       "kind": "face",
@@ -97,7 +97,7 @@
       "vertexCount": 1829,
       "vertexByteOffset": 2571084,
       "indexCount": 9420,
-      "indexByteOffset": 8920296
+      "indexByteOffset": 8912856
     },
     {
       "kind": "mat",
@@ -108,7 +108,7 @@
       "vertexCount": 24789,
       "vertexByteOffset": 2593032,
       "indexCount": 129840,
-      "indexByteOffset": 8957976
+      "indexByteOffset": 8950536
     },
     {
       "kind": "mat",
@@ -119,7 +119,7 @@
       "vertexCount": 4022,
       "vertexByteOffset": 2890500,
       "indexCount": 14211,
-      "indexByteOffset": 9477336
+      "indexByteOffset": 9469896
     },
     {
       "kind": "mat",
@@ -130,7 +130,7 @@
       "vertexCount": 362,
       "vertexByteOffset": 2938764,
       "indexCount": 1497,
-      "indexByteOffset": 9534180
+      "indexByteOffset": 9526740
     },
     {
       "kind": "mat",
@@ -141,7 +141,7 @@
       "vertexCount": 56,
       "vertexByteOffset": 2943108,
       "indexCount": 132,
-      "indexByteOffset": 9540168
+      "indexByteOffset": 9532728
     },
     {
       "kind": "mat",
@@ -152,7 +152,7 @@
       "vertexCount": 162,
       "vertexByteOffset": 2943780,
       "indexCount": 672,
-      "indexByteOffset": 9540696
+      "indexByteOffset": 9533256
     },
     {
       "kind": "mat",
@@ -163,7 +163,7 @@
       "vertexCount": 13110,
       "vertexByteOffset": 2945724,
       "indexCount": 39390,
-      "indexByteOffset": 9543384
+      "indexByteOffset": 9535944
     },
     {
       "kind": "mat",
@@ -174,7 +174,7 @@
       "vertexCount": 6316,
       "vertexByteOffset": 3103044,
       "indexCount": 18426,
-      "indexByteOffset": 9700944
+      "indexByteOffset": 9693504
     },
     {
       "kind": "mat",
@@ -185,7 +185,7 @@
       "vertexCount": 1704,
       "vertexByteOffset": 3178836,
       "indexCount": 4986,
-      "indexByteOffset": 9774648
+      "indexByteOffset": 9767208
     },
     {
       "kind": "mat",
@@ -196,7 +196,7 @@
       "vertexCount": 898,
       "vertexByteOffset": 3199284,
       "indexCount": 2556,
-      "indexByteOffset": 9794592
+      "indexByteOffset": 9787152
     },
     {
       "kind": "mat",
@@ -207,7 +207,7 @@
       "vertexCount": 2425,
       "vertexByteOffset": 3210060,
       "indexCount": 7143,
-      "indexByteOffset": 9804816
+      "indexByteOffset": 9797376
     },
     {
       "kind": "mat",
@@ -218,7 +218,7 @@
       "vertexCount": 3430,
       "vertexByteOffset": 3239160,
       "indexCount": 9342,
-      "indexByteOffset": 9833388
+      "indexByteOffset": 9825948
     },
     {
       "kind": "mat",
@@ -229,7 +229,7 @@
       "vertexCount": 672,
       "vertexByteOffset": 3280320,
       "indexCount": 1992,
-      "indexByteOffset": 9870756
+      "indexByteOffset": 9863316
     },
     {
       "kind": "mat",
@@ -240,7 +240,7 @@
       "vertexCount": 22081,
       "vertexByteOffset": 3288384,
       "indexCount": 64257,
-      "indexByteOffset": 9878724
+      "indexByteOffset": 9871284
     },
     {
       "kind": "mat",
@@ -251,7 +251,7 @@
       "vertexCount": 23895,
       "vertexByteOffset": 3553356,
       "indexCount": 71583,
-      "indexByteOffset": 10135752
+      "indexByteOffset": 10128312
     },
     {
       "kind": "mat",
@@ -262,7 +262,7 @@
       "vertexCount": 11812,
       "vertexByteOffset": 3840096,
       "indexCount": 34872,
-      "indexByteOffset": 10422084
+      "indexByteOffset": 10414644
     },
     {
       "kind": "mat",
@@ -273,7 +273,7 @@
       "vertexCount": 2067,
       "vertexByteOffset": 3981840,
       "indexCount": 6015,
-      "indexByteOffset": 10561572
+      "indexByteOffset": 10554132
     },
     {
       "kind": "mat",
@@ -284,7 +284,7 @@
       "vertexCount": 1827,
       "vertexByteOffset": 4006644,
       "indexCount": 4974,
-      "indexByteOffset": 10585632
+      "indexByteOffset": 10578192
     },
     {
       "kind": "mat",
@@ -295,31 +295,45 @@
       "vertexCount": 2488,
       "vertexByteOffset": 4028568,
       "indexCount": 7146,
-      "indexByteOffset": 10605528
-    },
-    {
-      "kind": "mat",
-      "id": "bikelane",
-      "color": "#5EA070",
-      "renderOrder": 24,
-      "polygonOffsetUnits": -25,
-      "vertexCount": 620,
-      "vertexByteOffset": 4058424,
-      "indexCount": 1560,
-      "indexByteOffset": 10634112
+      "indexByteOffset": 10598088
     },
     {
       "kind": "mat",
       "id": "stripe",
       "color": "#F2CE4A",
-      "renderOrder": 25,
-      "polygonOffsetUnits": -26,
+      "renderOrder": 24,
+      "polygonOffsetUnits": -25,
       "vertexCount": 3295,
-      "vertexByteOffset": 4065864,
+      "vertexByteOffset": 4058424,
       "indexCount": 8859,
-      "indexByteOffset": 10640352
+      "indexByteOffset": 10626672
     }
   ],
+  "poolmap": {
+    "image": "ground.poolmap.png",
+    "size": 1024,
+    "min": [
+      -218.2,
+      -215.4
+    ],
+    "span": [
+      441.4,
+      435
+    ],
+    "scale": 3
+  },
+  "colormap": {
+    "image": "ground.colormap.png",
+    "size": 1024,
+    "min": [
+      -1065,
+      -1065
+    ],
+    "span": [
+      2100,
+      2100
+    ]
+  },
   "lightmap": {
     "image": "ground.lightmap.png",
     "size": 1024,

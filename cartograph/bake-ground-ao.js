@@ -240,6 +240,153 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
     }
   }
 
+  // ── Ground FX map — R: lamp light pools · G: contact shadows ─────────
+  // One RG texture sampled once by the ground shaders:
+  //   R = additive lamp light pool (dark center → bright soft ring → 0),
+  //       SUMMED over lamps (overlaps build up), scaled live by the TOD Pool
+  //       value. Shape knobs are BAKE-TIME (re-bake to retune).
+  //   G = contact shadow — soft dark rings under every TREE base + LAMP base,
+  //       which the ground shaders MULTIPLY into the diffuse DIRECTLY (visible
+  //       in daytime — unlike the AO lightmap, which only dims ambient). This
+  //       is the "daytime shadow ring." Retires the floating baseMat disc.
+  // Own bbox = union(tree extent, lamp extent) + margin → crisp (~0.5 m/texel).
+  const POOL_RADIUS_M    = 16   // outer reach of one light pool (m)
+  const POOL_RING_POS    = 0.32 // normalized radius of the bright ring (0..1)
+  const POOL_RING_SHARP  = 4.5  // ring sharpness; LOWER = blurrier ring
+  const POOL_SHADOW_FRAC = 0.18 // center radius the pole blocks its own light
+  const POOL_MAX         = 3.0  // R encode headroom so overlaps build un-clipped
+  const TREE_SHADOW_RADIUS_M = 4.5  // tree contact-shadow reach (m)
+  const TREE_SHADOW_STR      = 0.7  // per-tree shadow contribution (0..1, summed)
+  const LAMP_SHADOW_RADIUS_M = 2.5  // lamp-base contact-shadow reach (m)
+  const LAMP_SHADOW_STR      = 0.6  // per-lamp shadow contribution
+  const FX_SIZE = 1024
+  try {
+    let lamps = []
+    const lampsPath = join(lookDir, 'lamps.json')
+    if (existsSync(lampsPath)) {
+      lamps = JSON.parse(readFileSync(lampsPath, 'utf-8')).lamps || []
+    } else {
+      const sp = join(ROOT, 'src', 'data', 'street_lamps.json')
+      if (existsSync(sp)) lamps = JSON.parse(readFileSync(sp, 'utf-8')).lamps || []
+    }
+    let trees = []
+    const treesPath = join(ROOT, 'public', 'baked', 'default.json')
+    if (existsSync(treesPath)) trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
+
+    if (lamps.length || trees.length) {
+      // bbox = union of lamp + tree extents + the largest reach as margin.
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
+      for (const p of [...lamps, ...trees]) {
+        if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x
+        if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z
+      }
+      const margin = Math.max(POOL_RADIUS_M, TREE_SHADOW_RADIUS_M)
+      minX -= margin; maxX += margin; minZ -= margin; maxZ += margin
+      const pW = maxX - minX, pH = maxZ - minZ
+      const accR = new Float32Array(FX_SIZE * FX_SIZE)  // pool light
+      const accG = new Float32Array(FX_SIZE * FX_SIZE)  // contact shadow
+      const splat = (cx, cz, reach, fn) => {
+        const cu = (cx - minX) / pW * FX_SIZE - 0.5
+        const cv = (cz - minZ) / pH * FX_SIZE - 0.5
+        const rU = reach / pW * FX_SIZE, rV = reach / pH * FX_SIZE
+        const u0 = Math.max(0, Math.floor(cu - rU)), u1 = Math.min(FX_SIZE - 1, Math.ceil(cu + rU))
+        const v0 = Math.max(0, Math.floor(cv - rV)), v1 = Math.min(FX_SIZE - 1, Math.ceil(cv + rV))
+        for (let v = v0; v <= v1; v++) {
+          for (let u = u0; u <= u1; u++) {
+            const wx = minX + (u + 0.5) / FX_SIZE * pW
+            const wz = minZ + (v + 0.5) / FX_SIZE * pH
+            const rn = Math.sqrt((wx - cx) ** 2 + (wz - cz) ** 2) / reach
+            if (rn < 1) fn(v * FX_SIZE + u, rn)
+          }
+        }
+      }
+      // R — lamp light pools (summed)
+      for (const l of lamps) splat(l.x, l.z, POOL_RADIUS_M, (i, rn) => {
+        const postShadow = Math.min(1, rn / POOL_SHADOW_FRAC)
+        const ringD = (rn - POOL_RING_POS) * POOL_RING_SHARP
+        const ring = Math.exp(-ringD * ringD)
+        const penumbra = Math.exp(-rn * rn * 1.6)
+        const rim = 1 - Math.max(0, Math.min(1, (rn - 0.7) / 0.3))
+        accR[i] += (ring * 0.55 + penumbra * 0.45) * postShadow * rim
+      })
+      // G — contact shadows (trees + lamp bases), summed + clamped at encode
+      for (const t of trees) splat(t.x, t.z, TREE_SHADOW_RADIUS_M, (i, rn) => {
+        accG[i] += (1 - rn) * (1 - rn) * TREE_SHADOW_STR
+      })
+      for (const l of lamps) splat(l.x, l.z, LAMP_SHADOW_RADIUS_M, (i, rn) => {
+        accG[i] += (1 - rn) * (1 - rn) * LAMP_SHADOW_STR
+      })
+      const fpx = new Uint8Array(FX_SIZE * FX_SIZE * 4)
+      for (let i = 0; i < accR.length; i++) {
+        fpx[i * 4]     = Math.round(Math.max(0, Math.min(1, accR[i] / POOL_MAX)) * 255)  // R pool
+        fpx[i * 4 + 1] = Math.round(Math.max(0, Math.min(1, accG[i])) * 255)             // G shadow
+        fpx[i * 4 + 2] = 0
+        fpx[i * 4 + 3] = 255
+      }
+      const fpng = new PNG({ width: FX_SIZE, height: FX_SIZE })
+      fpng.data = Buffer.from(fpx.buffer, fpx.byteOffset, fpx.byteLength)
+      writeIfChanged(join(lookDir, 'ground.poolmap.png'), PNG.sync.write(fpng))
+      manifest.poolmap = { image: 'ground.poolmap.png', size: FX_SIZE, min: [minX, minZ], span: [pW, pH], scale: POOL_MAX }
+      console.log(`[bake-ao] ground FX map: ${lamps.length} lamps (pool R) + ${trees.length} trees + lamps (shadow G) → ${FX_SIZE}² over ${pW.toFixed(0)}×${pH.toFixed(0)} m`)
+    } else {
+      manifest.poolmap = null
+    }
+  } catch (e) {
+    console.warn('[bake-ao] ground FX map skipped:', e.message)
+    manifest.poolmap = null
+  }
+
+  // ── Ground-color map — per-Look raster of the ground albedo ──────────
+  // Rasterize each ground group's triangles, filled with the group's color,
+  // in paint order (later groups overwrite earlier — topmost wins, matching
+  // the render). The tree trunk shader samples this at each tree's world-XZ
+  // so the trunk base blends toward the ACTUAL ground beneath it (grass /
+  // sidewalk / asphalt — "whatever it is"). Full bbox so it works anywhere.
+  try {
+    const CMAP = 1024
+    const cpx = new Uint8Array(CMAP * CMAP * 4)
+    const hexToRgb = (hex) => {
+      const h = String(hex || '#000000').replace('#', '')
+      const s = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+      return [parseInt(s.slice(0, 2), 16) || 0, parseInt(s.slice(2, 4), 16) || 0, parseInt(s.slice(4, 6), 16) || 0]
+    }
+    for (const g of manifest.groups) {
+      const [cr, cg, cb] = hexToRgb(g.color)
+      const pos = new Float32Array(groundBin, g.vertexByteOffset, g.vertexCount * 3)
+      const idx = new Uint32Array(groundBin, g.indexByteOffset, g.indexCount)
+      for (let t = 0; t < idx.length; t += 3) {
+        const i0 = idx[t] * 3, i1 = idx[t + 1] * 3, i2 = idx[t + 2] * 3
+        const au = (pos[i0]     - bbox.min[0]) / W * CMAP, av = (pos[i0 + 2] - bbox.min[2]) / H * CMAP
+        const bu = (pos[i1]     - bbox.min[0]) / W * CMAP, bv = (pos[i1 + 2] - bbox.min[2]) / H * CMAP
+        const cu = (pos[i2]     - bbox.min[0]) / W * CMAP, cv = (pos[i2 + 2] - bbox.min[2]) / H * CMAP
+        const minU = Math.max(0, Math.floor(Math.min(au, bu, cu)))
+        const maxU = Math.min(CMAP - 1, Math.ceil(Math.max(au, bu, cu)))
+        const minV = Math.max(0, Math.floor(Math.min(av, bv, cv)))
+        const maxV = Math.min(CMAP - 1, Math.ceil(Math.max(av, bv, cv)))
+        const d = (bv - cv) * (au - cu) + (cu - bu) * (av - cv)
+        if (Math.abs(d) < 1e-9) continue
+        for (let v = minV; v <= maxV; v++) {
+          for (let u = minU; u <= maxU; u++) {
+            const px = u + 0.5, py = v + 0.5
+            const wa = ((bv - cv) * (px - cu) + (cu - bu) * (py - cv)) / d
+            const wb = ((cv - av) * (px - cu) + (au - cu) * (py - cv)) / d
+            if (wa < 0 || wb < 0 || wa + wb > 1) continue
+            const i = (v * CMAP + u) * 4
+            cpx[i] = cr; cpx[i + 1] = cg; cpx[i + 2] = cb; cpx[i + 3] = 255
+          }
+        }
+      }
+    }
+    const cpng = new PNG({ width: CMAP, height: CMAP })
+    cpng.data = Buffer.from(cpx.buffer, cpx.byteOffset, cpx.byteLength)
+    writeIfChanged(join(lookDir, 'ground.colormap.png'), PNG.sync.write(cpng))
+    manifest.colormap = { image: 'ground.colormap.png', size: CMAP, min: [bbox.min[0], bbox.min[2]], span: [W, H] }
+    console.log(`[bake-ao] ground-color map: ${manifest.groups.length} groups → ${CMAP}²`)
+  } catch (e) {
+    console.warn('[bake-ao] ground-color map skipped:', e.message)
+    manifest.colormap = null
+  }
+
   // Patch manifest with lightmap reference FIRST, then write the PNG.
   // ground.json is an input to needsRebuild('ground-ao'); ground.lightmap.png
   // is the output. If the manifest write happened last, ground.json would

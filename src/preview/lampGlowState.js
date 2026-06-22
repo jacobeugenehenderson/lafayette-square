@@ -8,6 +8,7 @@
  * authored parameters. For tonight they live in Preview so the operator
  * can dial without re-bake.
  */
+import * as THREE from 'three'
 
 const STORAGE_KEY = 'preview.lampGlow.v1'
 
@@ -38,7 +39,16 @@ const initial = load()
 export const lampGlow = {
   grassUniform: { value: initial.grass },
   treesUniform: { value: initial.trees },
-  poolUniform:  { value: initial.pool },
+  // Init 0, not the legacy default — the pool is driven live by StreetLights
+  // (lantern output) from frame 1, so a non-zero init only causes a bright
+  // flash before the first drive. (Was `initial.pool` = 1.0 → the flash.)
+  poolUniform:  { value: 0 },
+  // The lamp's light COLOUR — written each frame from the resolved `lantern`
+  // channel (StreetLights) so the ground pool (and canopy glow) take on the
+  // lantern's colour instead of a hardcoded warm. THREE.Color so shaders read
+  // it as a vec3. Default = the legacy warm pool tint (sRGB-ish, baked into
+  // the shaders before; no day-one change).
+  colorUniform: { value: new THREE.Color(0.80, 0.62, 0.32) },
 }
 
 const subs = new Set()

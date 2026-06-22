@@ -201,13 +201,12 @@ export const NEON_FIELDS = [
 export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeRadius: 1.0 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
-// Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform /
-// uplights. Single non-TOD channel. Field names drop the redundant `arch`
-// prefix that lived on the legacy archState (e.g., archDistance → distance);
-// uplight fields stay flat-scalar (uplightL_intensity etc.) so the standard
-// factory works without a hand-rolled nested setter. Defaults match the
-// legacy ARCH_DEFAULTS verbatim so unauthored Looks are byte-identical to
-// pre-SC.7.
+// Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform.
+// Single non-TOD channel (the landmark doesn't drift through the day).
+// Field names drop the redundant `arch` prefix that lived on the legacy
+// archState (e.g., archDistance → distance). The uplights moved to their
+// own TOD-animatable `archLight` channel (2026-06-22) so the *lighting* can
+// ride a day→night curve while placement stays put.
 export const ARCH_FLAT_DEFAULTS = {
   distance: 1050,
   bearingX: 0.9487,
@@ -217,17 +216,63 @@ export const ARCH_FLAT_DEFAULTS = {
   yOffset: 0,
   // Foot fade — meters below world y=0 at which the arch alpha reaches zero.
   footFade: 30,
-  // Cross-aimed uplights L and R. Independent so operators can desync.
-  uplightL_intensity: 0,
-  uplightL_color: '#ffd6a8',
-  uplightL_cone: 0.55,
-  uplightL_reach: 200,
-  uplightR_intensity: 0,
-  uplightR_color: '#ffd6a8',
-  uplightR_cone: 0.55,
-  uplightR_reach: 200,
 }
 export const ARCH_FIELD_KEYS = Object.keys(ARCH_FLAT_DEFAULTS)
+
+// Arch Lighting (Hero & Horizon card) — the cross-aimed foot uplights that
+// wash the arch from the feet up. TOD-animatable group channel so the wash
+// can warm up at dusk and fade by day (rides the same TodChannel UX as
+// Bloom/Neon). Operator-facing units: intensity (0 = off), color (hex),
+// cone = full-bright half-angle in DEGREES (the consumer converts to cos),
+// reach = metres the wash carries up the arch. L and R independent so the
+// operator can desync. Default intensity 0 → unauthored Looks render with
+// no uplight (byte-identical to the pre-split arch channel).
+export const ARCHLIGHT_FIELDS = [
+  { key: 'uplightL_intensity', label: 'Uplight L · intensity', min: 0, max: 4,   step: 0.05 },
+  { key: 'uplightL_color',     label: 'Uplight L · color', type: 'color' },
+  { key: 'uplightL_cone',      label: 'Uplight L · cone°',     min: 5, max: 80,  step: 1    },
+  { key: 'uplightL_reach',     label: 'Uplight L · reach',     min: 50, max: 600, step: 5   },
+  { key: 'uplightR_intensity', label: 'Uplight R · intensity', min: 0, max: 4,   step: 0.05 },
+  { key: 'uplightR_color',     label: 'Uplight R · color', type: 'color' },
+  { key: 'uplightR_cone',      label: 'Uplight R · cone°',     min: 5, max: 80,  step: 1    },
+  { key: 'uplightR_reach',     label: 'Uplight R · reach',     min: 50, max: 600, step: 5   },
+]
+export const ARCHLIGHT_FLAT_DEFAULTS = {
+  uplightL_intensity: 0, uplightL_color: '#ffd6a8', uplightL_cone: 35, uplightL_reach: 220,
+  uplightR_intensity: 0, uplightR_color: '#ffd6a8', uplightR_cone: 35, uplightR_reach: 220,
+}
+export const ARCHLIGHT_FIELD_KEYS = ARCHLIGHT_FIELDS.map(f => f.key)
+
+// Hydrate the archLight channel from a design.json, carrying the LEGACY
+// shape where the uplights lived on the `arch` channel with the cone in
+// RADIANS (pre-2026-06-22 split). Self-contained (no animatedParam dep) so
+// both the store hydrate and the headless bake can share it. Returns the
+// canonical { values } (or the animated channel verbatim if already split).
+export function migrateArchLight(design) {
+  const RAD2DEG = 180 / Math.PI
+  const fill = (src) => {
+    const out = {}
+    for (const k of ARCHLIGHT_FIELD_KEYS) {
+      const def = ARCHLIGHT_FLAT_DEFAULTS[k]
+      const v = src?.[k]
+      if (typeof def === 'string') out[k] = (typeof v === 'string' && v[0] === '#') ? v : def
+      else out[k] = v == null ? def : Number(v)
+    }
+    return out
+  }
+  // Already split out (new shape).
+  if (design?.archLight?.animated) return design.archLight
+  if (design?.archLight?.values) return { values: fill(design.archLight.values) }
+  // Legacy: uplights on the arch channel, cone in radians.
+  const a = design?.arch?.values
+  if (a && ('uplightL_intensity' in a || 'uplightR_intensity' in a)) {
+    const carried = { ...a }
+    if (a.uplightL_cone != null) carried.uplightL_cone = Number(a.uplightL_cone) * RAD2DEG
+    if (a.uplightR_cone != null) carried.uplightR_cone = Number(a.uplightR_cone) * RAD2DEG
+    return { values: fill(carried) }
+  }
+  return { values: { ...ARCHLIGHT_FLAT_DEFAULTS } }
+}
 
 // Horizon (Hero & Horizon card — SC.7) — ground disc radius + feathering.
 // Conceptually distinct from the arch landmark itself, so a separate
@@ -328,6 +373,50 @@ export const CLOUDS_FLAT_DEFAULTS = {
   overrides: null,
 }
 export const CLOUDS_FIELD_KEYS = Object.keys(CLOUDS_FLAT_DEFAULTS)
+
+// Lamp Glow (Lamps card) — the per-surface strength of the warm wash the
+// street lamps cast at night, one TOD-animatable group sharing a timeline.
+// `grass` = amber tint on lawn/treelawn/median, `trees` = canopy under-lamp
+// emissive, `pool` = the radial light pool on the ground beneath each lamp.
+// Ranges reflect the operator's working zone (slider-range principle).
+// Consumed via the shared lamp-glow uniforms (LampGlowDriver / LampGlowPump)
+// — see src/components/PostProcessing.jsx. Defaults match the legacy
+// lampGlowState so unauthored Looks are unchanged.
+// Consolidated 2026-06-22 to two knobs: one Pool (the warm light pool on ALL
+// ground — grass/asphalt/sidewalk — from the baked pool map) + Canopy (tree
+// under-glow). The old grass-only tint is folded into the pool. `grass` is
+// kept in the defaults for back-compat with older design.json but is no
+// longer a panel field nor consumed by any shader.
+// The ground POOL intensity is no longer a field here — it's driven by the
+// Lantern's output (StreetLights: pool = lantern Brightness × the dusk→night
+// ramp), so the Lantern Brightness slider controls the pool. This channel now
+// carries only the tree CANOPY under-glow. (`grass`/`pool` kept in defaults for
+// back-compat with older design.json; unused as panel fields.)
+export const LAMPGLOW_FIELDS = [
+  { key: 'trees', label: 'Tree canopy under-glow', min: 0, max: 0.1, step: 0.005 },
+]
+export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 0, pool: 1.0 }
+export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
+
+// Lantern (Lamps card) — the lamp's LIGHT SOURCE itself (the lantern): the
+// glass-panel emissive + the warm glow orb/halo + the bulb dot. TOD-animatable
+// group channel so the lantern's brightness/colour can ride the day. The
+// automatic dusk→night turn-on (the sunAlt ramp in StreetLights) STAYS as the
+// base on/off; this channel is the operator's master Brightness × that ramp,
+// the Glow (wide halo strength), and the Colour. Defaults reproduce today's
+// hardwired look (brightness 1, glow 1, #fff2e0) so an unauthored Look is
+// unchanged. Distinct from `lampGlow` (the GROUND pool + tree canopy) — this is
+// the lantern's own emission. (hardwires-come-out; sibling of `archLight`.)
+// Brightness + Glow only — the lamp's *colour* stays a single source
+// (`layerColors.lamp`, the Surfaces lamp swatch), which also drives the ground
+// pool's colour (the pool IS the lantern's light on the ground). Defaults
+// reproduce today's hardwired output.
+export const LANTERN_FIELDS = [
+  { key: 'intensity', label: 'Brightness',  min: 0, max: 2, step: 0.02 },
+  { key: 'glow',      label: 'Glow (halo)', min: 0, max: 2, step: 0.02 },
+]
+export const LANTERN_FLAT_DEFAULTS = { intensity: 1.0, glow: 1.0 }
+export const LANTERN_FIELD_KEYS = LANTERN_FIELDS.map(f => f.key)
 
 // Milky Way (Sky & Light, CELESTIAL group) — binary on/off. Cross-slot
 // fade comes from the resolver's lerp between authored slots, not from

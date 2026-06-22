@@ -16,25 +16,34 @@
  * Single-channel callers pretend they're single-field groups (e.g. one
  * field with key 'value'). Same code path, no special case.
  *
- * Editability gating (locked from LampGlow):
+ * Editability gating:
  *   - flat, not yet armed → sliders editable (tweak the flat baseline)
- *   - armed, no slots filled → sliders read-only (intent declared,
- *     keyframe required next)
- *   - animated, playhead parked on attached slot → editable
- *   - animated, playhead off all slots → read-only at first slot's value
+ *   - animation mode (armed or animated), parked on a named slot →
+ *     editable; the displayed value is the RESOLVED (tweened) value, and
+ *     the first edit at an unkeyed slot mints its keyframe
+ *   - animation mode, between slots → read-only (nothing to key here)
+ *
+ * Keyframes are born from EDITS, never navigation: scrubbing/clicking a
+ * chip only moves the playhead. An edit while parked seeds (or updates)
+ * that slot's keyframe.
  *
  * Animate toggle:
  *   - dashed empty "animate" → call to action (off)
- *   - filled gold "↓"        → armed, awaiting first keyframe
+ *   - filled gold "↓"        → armed, awaiting first keyframe (no slot is
+ *     auto-filled — scrub + edit to seed one)
  *   - filled gold "animated" → committed (data state animated=true)
  *   Toggling off while animated calls onUnanimate (collapse to flat AND
  *   hide the row).
  *
+ * Clear (was "revert"):
+ *   - parked on a keyframe → remove just that keyframe (value falls back
+ *     to the tween) via onRemoveSlot
+ *   - otherwise → clear the whole channel to flat defaults via onRevert
+ *
  * Chip row:
  *   - All 7 NAMED_TOD_SLOTS chips always render. Filled = attached,
  *     dashed = empty. Parked = stronger ring + bg.
- *   - Plain click on empty → fillSlot(slotId, isFirst) + scrub to slot.
- *   - Plain click on filled → scrub to slot.
+ *   - Plain click (empty or filled) → scrub to that slot. No keyframe.
  *   - Right-click or ⌘/Ctrl-click on filled → onRemoveSlot.
  *
  * The component imports useTimeOfDay + scrubToTodSlot from the cartograph
@@ -46,6 +55,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCartographStore from './stores/useCartographStore.js'
 import {
   NAMED_TOD_SLOTS, getTodSlotLabel, todSlotAtMinute,
+  getTodSlotMinutes, resolveGroupAtMinute,
 } from './animatedParam.js'
 
 // Single-letter initials. Collisions (D/S/N) are resolved by chip color
@@ -114,8 +124,8 @@ function SlotChip({ slot, attached, parked, atPlayhead, onScrub, onFill, onRemov
     onRemove(slot.id)
   }
   const title = attached
-    ? `${slot.label}${parked ? ' (parked)' : ''} · right-click or ⌘-click to detach`
-    : `Attach ${slot.label}${atPlayhead ? '' : ' (and scrub here)'}`
+    ? `${slot.label}${parked ? ' (parked)' : ''} · right-click or ⌘-click to clear this keyframe`
+    : `Jump to ${slot.label}`
   return (
     <button
       onClick={onClick}
@@ -346,9 +356,9 @@ function ChannelColor({ field, value, editable, onChange }) {
  *   onUnanimate   — () → void; collapse animated channel back to flat
  *   onSetTransition — (side: 'in'|'out', minutes) → void
  *   onRevert      — () → void; collapse to flat AND reset to flatDefaults.
- *                   Per-channel revert (feedback_per_item_revert): one
- *                   button at the channel level, not per slider, not per
- *                   card. Hidden when channel is already at flat defaults.
+ *                   Backs the "Clear" button's clear-all path (when not
+ *                   parked on a keyframe). One button at the channel level
+ *                   (feedback_per_item_revert), never per-slider.
  */
 export default function TodChannel({
   label, fields, channel, flatDefaults,
@@ -361,52 +371,83 @@ export default function TodChannel({
   const [intendAnimate, setIntendAnimate] = useState(false)
   const showRow = animated || intendAnimate
 
+  const fieldKeys = fields.map(f => f.key)
   const attachedIds = new Set(
     animated ? Object.keys(channel.values || {}) : []
   )
 
-  // Playhead → parked detection.
+  // The chip the operator last clicked = the deterministic EDIT TARGET. It
+  // sticks regardless of where the playhead/clock drifts, so the controls
+  // stay live on the slot you picked (the old playhead-tolerance gate went
+  // dead the moment the clock advanced off the slot). Cleared when the row
+  // closes / channel unanimate.
+  const [selectedSlot, setSelectedSlot] = useState(null)
   const minute = currentTime.getHours() * 60 + currentTime.getMinutes() + currentTime.getSeconds() / 60
   const playheadSlotId = todSlotAtMinute(minute, currentTime)
-  const parkedSlotId = playheadSlotId && attachedIds.has(playheadSlotId) ? playheadSlotId : null
+  // Edit target: the selected chip if any, else fall back to the slot the
+  // playhead happens to sit on. Null when nothing is selected/parked.
+  const editTarget = showRow ? (selectedSlot ?? playheadSlotId) : null
 
   // Display values + editability gate.
+  //   - flat & not arming → edit the flat baseline directly.
+  //   - animation mode → show the value at the EDIT TARGET (its keyframe if
+  //     attached, else the resolved tween at its minute), and make the
+  //     controls live whenever a target exists. Clearing a keyframe drops
+  //     the shown value back to the tween.
+  const slotMinutes = showRow ? getTodSlotMinutes(currentTime) : null
   let displayValues, editable
-  if (!animated) {
+  if (!showRow) {
     displayValues = channel?.values || flatDefaults || {}
-    editable = !intendAnimate
-  } else if (parkedSlotId) {
-    displayValues = channel.values[parkedSlotId] || flatDefaults || {}
     editable = true
   } else {
-    const firstId = NAMED_TOD_SLOTS.find(s => attachedIds.has(s.id))?.id
-    displayValues = (firstId && channel.values[firstId]) || flatDefaults || {}
-    editable = false
+    const tMin = editTarget ? (slotMinutes[editTarget] ?? minute) : minute
+    displayValues = resolveGroupAtMinute(channel, tMin, slotMinutes, fieldKeys, flatDefaults)
+    editable = !!editTarget
   }
 
-  const fillSlot = (slotId) => {
-    if (attachedIds.has(slotId)) return
-    onFillSlot(slotId, !animated)  // isFirst = was flat before this fill
-    scrubToTodSlot(slotId)
+  // Chip click: select it as the edit target AND scrub the scene there so
+  // you see the moment you're editing. Never mints a keyframe by itself.
+  const onChipClick = (slotId) => { setSelectedSlot(slotId); scrubToTodSlot(slotId) }
+
+  // Edit routing: park the playhead on the target (so the store writes to
+  // THIS slot), mint its keyframe on the first edit (animate if the channel
+  // was flat, else add the slot), then write the field.
+  const onFieldChange = (key, value) => {
+    if (!showRow) { onSetValue(key, value); return }
+    const sid = editTarget
+    if (!sid) return
+    scrubToTodSlot(sid)
+    if (!attachedIds.has(sid)) onFillSlot(sid, !animated)
+    onSetValue(key, value)
   }
 
   const onToggleAnimate = () => {
     if (showRow) {
       if (animated) onUnanimate()
       setIntendAnimate(false)
+      setSelectedSlot(null)
     } else {
+      // Arm only — reveal the chip row. No auto-keyframe; the operator
+      // clicks a slot and edits to seed the first one.
       setIntendAnimate(true)
-      if (playheadSlotId) fillSlot(playheadSlotId)
     }
+  }
+
+  // Clear: target carries a keyframe → remove just that keyframe (value
+  // falls back to the tween between neighbours). Otherwise → clear the
+  // whole channel back to flat defaults. (Renamed from "revert".)
+  const onClear = () => {
+    if (animated && editTarget && attachedIds.has(editTarget)) onRemoveSlot(editTarget)
+    else { onRevert(); setSelectedSlot(null) }
   }
 
   const hint = !showRow
     ? null
-    : !animated
-      ? 'Click a slot to start animating.'
-      : parkedSlotId
-        ? `Editing ${getTodSlotLabel(parkedSlotId)}.`
-        : 'Park on an attached slot to edit; click an empty slot to attach.'
+    : !editTarget
+      ? 'Click a slot, then edit a value to drop a keyframe.'
+      : attachedIds.has(editTarget)
+        ? `Editing ${getTodSlotLabel(editTarget)} keyframe — Clear removes it.`
+        : `${getTodSlotLabel(editTarget)} selected — edit a value to drop a keyframe.`
 
   // Per-channel revert visibility: shown when the channel is animated OR
   // any field's flat value differs from its default. Skipped if no
@@ -422,7 +463,9 @@ export default function TodChannel({
     }
     return true
   })()
-  const showRevert = !!onRevert && !isAtDefaults
+  // Clear is offered whenever there's something to clear: any keyframe
+  // (animated) or a flat baseline moved off its defaults.
+  const showClear = !!onRevert && (animated || !isAtDefaults)
 
   // Twirl-collapsible: collapsed row is just `▸ Label  animated`.
   // Open drawer reveals sliders + animate toggle + revert + chips.
@@ -469,10 +512,14 @@ export default function TodChannel({
           marginBottom: 4,
         }}>
           <div className="flex items-center justify-end" style={{ gap: 6 }}>
-            {showRevert && (
+            {showClear && (() => {
+              const targetIsKeyframe = animated && editTarget && attachedIds.has(editTarget)
+              return (
               <button
-                onClick={onRevert}
-                title={`Revert ${label} to defaults`}
+                onClick={onClear}
+                title={targetIsKeyframe
+                  ? `Clear the ${getTodSlotLabel(editTarget)} keyframe (value falls back to the tween)`
+                  : `Clear ${label} — back to flat defaults`}
                 style={{
                   height: 18, padding: '0 6px', borderRadius: 4,
                   fontSize: 'var(--type-caption)', lineHeight: 1,
@@ -481,8 +528,9 @@ export default function TodChannel({
                   border: '1px solid var(--outline-variant)',
                   color: 'var(--on-surface-subtle)',
                 }}
-              >↺ revert</button>
-            )}
+              >{targetIsKeyframe ? '✕ clear keyframe' : '✕ clear'}</button>
+              )
+            })()}
             <AnimateToggle armed={showRow} animated={animated} onClick={onToggleAnimate} />
           </div>
 
@@ -496,7 +544,7 @@ export default function TodChannel({
                 field={field}
                 value={displayValues[field.key]}
                 editable={editable}
-                onChange={(v) => onSetValue(field.key, v)}
+                onChange={(v) => onFieldChange(field.key, v)}
               />
             )
           })}
@@ -505,10 +553,10 @@ export default function TodChannel({
             <>
               <TodAnimationRow
                 attachedIds={attachedIds}
-                parkedSlotId={parkedSlotId}
+                parkedSlotId={editTarget}
                 playheadSlotId={playheadSlotId}
-                onScrub={scrubToTodSlot}
-                onFill={fillSlot}
+                onScrub={onChipClick}
+                onFill={onChipClick}
                 onRemove={onRemoveSlot}
                 transitionIn={channel?.transitionIn ?? 30}
                 transitionOut={channel?.transitionOut ?? 30}

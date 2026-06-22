@@ -17,6 +17,7 @@ import { useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
+import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS } from './skyLightChannels.js'
 
 // Default shader physics for the 3D-scene materials. roughness/metalness
 // reflect what LafayetteScene's hardcoded materials use today; textures
@@ -511,17 +512,9 @@ export default function CartographSurfaces() {
   )
 }
 
-// Slider ranges reflect the operator's actual working zone for each effect.
-// Trees was max=2/step=0.02; the useful range is 0.01–0.06, so the new
-// 0–0.1/0.005 keeps the slider meaningful across its entire travel.
-const LAMP_GLOW_FIELDS = [
-  { key: 'grass', label: 'Grass / treelawn / median', max: 0.5, step: 0.005 },
-  { key: 'trees', label: 'Tree foliage (canopy)',     max: 0.1, step: 0.005 },
-  { key: 'pool',  label: 'Ground pool intensity',     max: 3,   step: 0.05  },
-]
-const LAMP_GLOW_FLAT_DEFAULTS = { grass: 0, trees: 0, pool: 1.0 }
-
-function LampGlowEditor() {
+// Field schema + defaults now live in skyLightChannels.js (the canonical home
+// for every channel's UI schema); imported above as LAMPGLOW_*.
+export function LampGlowEditor() {
   const lampGlow              = useCartographStore(s => s.lampGlow)
   const setLampGlow           = useCartographStore(s => s.setLampGlow)
   const animateLampGlow       = useCartographStore(s => s.animateLampGlow)
@@ -533,8 +526,8 @@ function LampGlowEditor() {
   return (
     <TodChannel
       label="Lamp Glow"
-      fields={LAMP_GLOW_FIELDS}
-      flatDefaults={LAMP_GLOW_FLAT_DEFAULTS}
+      fields={LAMPGLOW_FIELDS}
+      flatDefaults={LAMPGLOW_FLAT_DEFAULTS}
       channel={lampGlow}
       onSetValue={(key, value) => setLampGlow(key, value)}
       onFillSlot={(slotId, isFirst) => isFirst ? animateLampGlow(slotId) : addLampGlowSlot(slotId)}

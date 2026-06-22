@@ -30,6 +30,8 @@ import {
   SHOTS_FLAT_DEFAULTS,
   BROWSE_HEADING_FIELD_KEYS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS,
+  ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS, migrateArchLight,
+  LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
   HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
   SMAA_FIELD_KEYS, SMAA_FLAT_DEFAULTS,
@@ -255,6 +257,8 @@ const DESIGN_FIELDS = [
     ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...d.browseHeading.values } }
     : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } } },
   _grp('arch',           ARCH_FIELD_KEYS,           ARCH_FLAT_DEFAULTS),
+  { key: 'archLight', hydrate: (d) => migrateArchLight(d) },
+  _grp('lantern',        LANTERN_FIELD_KEYS,        LANTERN_FLAT_DEFAULTS),
   _grp('horizon',        HORIZON_FIELD_KEYS,        HORIZON_FLAT_DEFAULTS),
   { key: 'clouds', hydrate: (d) => d.clouds?.values
     ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...d.clouds.values } }
@@ -495,6 +499,8 @@ const useCartographStore = create((set, get) => ({
   // SC.7 — arch + horizon channels (Hero & Horizon card). Replaces the
   // module-scope archState bridge in src/stage/StageApp.jsx.
   arch:    { values: { ...ARCH_FLAT_DEFAULTS } },
+  archLight: { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },
+  lantern: { values: { ...LANTERN_FLAT_DEFAULTS } },
   horizon: { values: { ...HORIZON_FLAT_DEFAULTS } },
   // SC.6 — Meteorologist coupler scaffolding. v1 has no Stage UI; field
   // round-trips through design.json → bake → scene.json so Atmosphere
@@ -1175,6 +1181,16 @@ const useCartographStore = create((set, get) => ({
     name: 'arch',
     fieldKeys: ARCH_FIELD_KEYS,
     flatDefaults: ARCH_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'archLight',
+    fieldKeys: ARCHLIGHT_FIELD_KEYS,
+    flatDefaults: ARCHLIGHT_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'lantern',
+    fieldKeys: LANTERN_FIELD_KEYS,
+    flatDefaults: LANTERN_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
     name: 'horizon',

@@ -119,7 +119,7 @@ function LampGlowPump() {
     const triple = resolveLampGlowAtMinute(lampGlow, minute, slotMinutes)
     _lampGlowUniforms.grassUniform.value = triple.grass
     _lampGlowUniforms.treesUniform.value = triple.trees
-    _lampGlowUniforms.poolUniform.value  = triple.pool
+    // poolUniform is driven by StreetLights (pool follows the lantern's output).
   })
   return null
 }
@@ -612,6 +612,8 @@ const SCENE_REGISTRY = {
       const materialPhysicsOverride = useCartographStore(s => s.materialPhysics)
       const materialColorsOverride  = useCartographStore(s => s.materialColors)
       const archOverride            = useCartographStore(s => s.arch)
+      const archLightOverride       = useCartographStore(s => s.archLight)
+      const lanternOverride         = useCartographStore(s => s.lantern)
       const horizonOverride         = useCartographStore(s => s.horizon)
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       return <>
@@ -632,12 +634,13 @@ const SCENE_REGISTRY = {
           forceContentReady
         /></R3FErrorBoundary>
         {!hiddenLayers.lamp && (
-          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} /></R3FErrorBoundary>
         )}
         <R3FErrorBoundary name="GatewayArch"><GatewayArch
           lookId={lookId}
           bakeLastMs={bakeLastMs}
           archOverride={archOverride}
+          archLightOverride={archLightOverride}
           horizonOverride={horizonOverride}
         /></R3FErrorBoundary>
       </>

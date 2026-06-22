@@ -15,6 +15,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
+import { groundColor as _groundColor } from './groundColorState'
 import { patchTerrainInstanced } from '../utils/terrainShader'
 
 // Module-level cache: one material set per look. Sharing materials across
@@ -140,6 +141,19 @@ function injectFoliageSway(material) {
     // `aLampGlow` attribute (pre-baked at tree position) carries the
     // gaussian sum over nearby lamps; the uniform scales it.
     shader.uniforms.uLampGlow = _lampGlow.treesUniform
+    // Trunk-base ground blend — the lowest ~uTrunkBlendTop metres of the trunk
+    // blend toward the ACTUAL ground colour beneath the tree, sampled from the
+    // baked per-Look ground-color map at the tree's world-XZ. Marries the tree
+    // into the ground (pairs with the baked AO contact ring). Bark-gated.
+    // LS-driven: the map's shared uniforms are written by BakedGround when the
+    // colormap loads; the Salon never mounts BakedGround → uHasGroundColor 0 →
+    // OFF. `uTrunkBlend` is the strength (still 0 == no effect).
+    shader.uniforms.uGroundColorMap  = _groundColor.mapUniform
+    shader.uniforms.uGroundColorMin  = _groundColor.minUniform
+    shader.uniforms.uGroundColorSpan = _groundColor.spanUniform
+    shader.uniforms.uHasGroundColor  = _groundColor.hasUniform
+    shader.uniforms.uTrunkBlend      = { value: 0.55 }
+    shader.uniforms.uTrunkBlendTop   = { value: 1.5 }
     // Phase B bark retint uniforms (per-draw mutation pattern).
     shader.uniforms.uBarkTintBase = { value: new THREE.Color(1, 1, 1) }
     shader.uniforms.uBarkTintJitterRange = { value: 0 }
@@ -252,6 +266,7 @@ function injectFoliageSway(material) {
          uniform vec2 uDeformSeed;
          varying float vLampGlow;
          varying float vCanopyW;
+         varying float vLocalY;
          varying float vBark;
          varying float vBarkRegion;
          varying float vHeroTier;
@@ -343,6 +358,7 @@ function injectFoliageSway(material) {
          // which still showed as a faint trunk stripe. 3.0→4.5 gives a
          // tight transition: trunk stays fully dark, canopy fully lit.
          vCanopyW = smoothstep(3.0, 4.5, position.y);
+         vLocalY = position.y;  // local height up the tree (0 = trunk base) — trunk-base ground blend
          {
            // Per-instance phase from instanceMatrix translation column when
            // rendered via InstancedMesh (LS path). Brief 7 (Cambium) added
@@ -461,6 +477,12 @@ function injectFoliageSway(material) {
         '#include <common>',
         `#include <common>
          uniform float uLampGlow;
+         uniform sampler2D uGroundColorMap;
+         uniform vec2  uGroundColorMin;
+         uniform vec2  uGroundColorSpan;
+         uniform float uHasGroundColor;
+         uniform float uTrunkBlend;
+         uniform float uTrunkBlendTop;
          uniform vec3  uBarkTintBase;
          uniform float uBarkTintJitterRange;
          uniform float uBarkRoughnessOverride;
@@ -486,6 +508,7 @@ function injectFoliageSway(material) {
          uniform float uHeroTierQC;
          varying float vLampGlow;
          varying float vCanopyW;
+         varying float vLocalY;
          varying float vBark;
          varying float vBarkRegion;
          varying float vHeroTier;
@@ -620,6 +643,20 @@ function injectFoliageSway(material) {
                      : vHeroTier < 1.5 ? vec3(1.0, 0.20, 0.85)
                      :                   vec3(0.15, 0.45, 1.0);
              diffuseColor.rgb = mix(diffuseColor.rgb, qc, 0.65);
+           }
+           // Trunk-base ground blend — the lowest ~uTrunkBlendTop metres of
+           // the trunk take on the ground colour beneath the tree (sampled
+           // per-Look at the tree's world-XZ). Marries the tree into the
+           // ground. Bark-gated; off when no colormap (Salon).
+           if (uHasGroundColor > 0.5) {
+             float baseF = smoothstep(uTrunkBlendTop, 0.0, vLocalY) * uTrunkBlend * vBark;
+             if (baseF > 0.001) {
+               vec2 gcUV = (vWorldXZ.xz - uGroundColorMin) / uGroundColorSpan;
+               if (all(greaterThanEqual(gcUV, vec2(0.0))) && all(lessThanEqual(gcUV, vec2(1.0)))) {
+                 vec3 gcol = texture2D(uGroundColorMap, gcUV).rgb;
+                 diffuseColor.rgb = mix(diffuseColor.rgb, gcol, baseF);
+               }
+             }
            }
          }`
       )

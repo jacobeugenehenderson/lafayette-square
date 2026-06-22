@@ -8,6 +8,11 @@ import lampData from '../data/street_lamps.json'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { patchTerrainInstanced, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { INSTANCE } from '../instance.js'
+import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
+import { lampGlow as _lampGlow } from '../preview/lampGlowState'
+
+const LANTERN_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANTERN_FLAT_DEFAULTS } })
 
 function _resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -15,7 +20,6 @@ function _resolveLookId(propLookId) {
   const m = window.location.search.match(/look=([^&]+)/)
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
-import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const LAMP_URL = `${import.meta.env.BASE_URL}models/lamp-posts/victorian-lamp.glb`
@@ -29,26 +33,14 @@ const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.18 // tight glass halo
 const HALO_RADIUS = _IS_MOBILE ? 0.6 : 1.0   // soft wide glow (bloom substitute)
 const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern center
-// Pool radius shrunk from 40 → 15 (desktop) so each lamp's pool is mostly
-// its own circle. At 40m with ~25m lamp spacing, every street point sat
-// inside 2–3 stacked discs and the gradient (dark center → bright ring →
-// soft fade) was invisible — pools just smeared into one wash. At 15m
-// neighboring pools touch with a gentle penumbra, the gradient is legible,
-// and the pool slider has visible feedback per lamp.
-const POOL_RADIUS = _IS_MOBILE ? 10 : 15
-// Pool sits AT the ground (y=0 plus the terrain displacement applied in the
-// vertex shader). No artificial lift — the pool reads as light cast on the
-// ground beneath the lamp post. Visibility against grass is handled by the
-// pool mesh's renderOrder=50 + the material's polygonOffset, not by a Y bump.
-const POOL_Y = 0.0
-const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
+// (The ground light pool AND the lamp contact shadow moved into the baked
+// ground FX map — see BakedGround / grassMaterial / bake-ground-ao.js.
+// POOL_RADIUS/POOL_Y/poolMat + SHADOW_RADIUS/baseMat all retired.)
 
-function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
+function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternChannel } = {}) {
   const lampRef = useRef()
   const glowRef = useRef()
   const bulbRef = useRef()
-  const poolRef = useRef()
-  const baseRef = useRef()
   const sunAltUniform = useRef({ value: 0.5 })
   const lampMatRef = useRef(null)
   const glowMatRef = useRef(null)
@@ -74,8 +66,6 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
   const glowGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
   const haloGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
   const bulbGeo = useMemo(() => new THREE.SphereGeometry(1, 8, 6), [])
-  const poolGeo = useMemo(() => new THREE.CircleGeometry(POOL_RADIUS, 32), [])
-  const baseGeo = useMemo(() => new THREE.CircleGeometry(SHADOW_RADIUS, 16), [])
 
   // Vertex-shader snippet for camera-facing billboards on instanced
   // geometry. The plane's local position becomes a screen-space offset
@@ -187,110 +177,11 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
     return mat
   }, [])
 
-  // ── Pool material — subtle radial gradient (post shadow + light ring) ───
-  // Shape: dark thin band at r≈0 (the post itself blocks light directly
-  // beneath it), then a brighter halo from ~0.15..0.5, then a long
-  // smooth fade. Low additive intensity — meant to pump the real light
-  // from the lampLightmap-on-grass, not replace it.
-  const poolMat = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: new THREE.Color('#fff2e0') },
-      uIntensity: { value: 0.0 },
-      ...TERRAIN_UNIFORMS,
-    },
-    vertexShader: `
-      ${TERRAIN_DECL}
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        // Apply terrain elevation in WORLD space, after instance rotation
-        // bakes the disc flat. The earlier version added elevation to local
-        // Y *before* the -π/2 X rotation, which mapped onto world -Z and
-        // left the disc buried under non-flat terrain.
-        vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0);
-        vec2 _tuv = clamp(vec2(
-          (wp.x - uBMinX) / uSpanX,
-          (wp.z - uBMinZ) / uSpanZ
-        ), 0.0, 1.0);
-        wp.y += texture2D(uTerrainMap, _tuv).r * uExag;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }`,
-    fragmentShader: `
-      uniform vec3 uColor;
-      uniform float uIntensity;
-      varying vec2 vUv;
-      void main() {
-        float r = length(vUv - 0.5) * 2.0;
-        if (r >= 1.0) discard;
-        // Inner dark band (post shadow at the base) — slight notch at r=0
-        float postShadow = smoothstep(0.0, 0.18, r);
-        // Bright ring around the base — the visible "circle of light"
-        float ring = exp(-pow((r - 0.32) * 4.5, 2.0));
-        // Long soft penumbra — atmospheric scatter
-        float penumbra = exp(-r * r * 1.6);
-        float falloff = ring * 0.55 + penumbra * 0.45;
-        falloff *= postShadow;
-        falloff *= 1.0 - smoothstep(0.7, 1.0, r);
-        float alpha = falloff * uIntensity * ${_IS_MOBILE ? '0.45' : '0.30'};
-        gl_FragColor = vec4(uColor, alpha);
-      }`,
-    transparent: true,
-    depthWrite: false,
-    // depthTest stays ON so trees + buildings occlude pool correctly
-    // (pool sits behind them, on the ground). polygonOffset must beat
-    // StreetRibbons' treelawn/median ribbons, which use factor/units of
-    // -pri/-pri*4 (pri=3 for treelawn → -3/-12). Pool wins at -5/-20.
-    polygonOffset: true,
-    polygonOffsetFactor: -5,
-    polygonOffsetUnits: -20,
-    blending: THREE.AdditiveBlending,
-  }), [])
-
-  // (continued setup — contact shadow material below)
-  // Dark contact shadow — soft radial blur at lamp base, time-of-day aware
-  const baseMat = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: {
-      uSunAlt: { value: 0.5 },
-      ...TERRAIN_UNIFORMS,
-    },
-    vertexShader: `
-      ${TERRAIN_DECL}
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        // Same world-space elevation fix as poolMat above.
-        vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0);
-        vec2 _tuv = clamp(vec2(
-          (wp.x - uBMinX) / uSpanX,
-          (wp.z - uBMinZ) / uSpanZ
-        ), 0.0, 1.0);
-        wp.y += texture2D(uTerrainMap, _tuv).r * uExag;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }`,
-    fragmentShader: `
-      uniform float uSunAlt;
-      varying vec2 vUv;
-      void main() {
-        float dist = length(vUv - 0.5) * 2.0;
-        // Soft radial falloff — no hard core
-        float shadow = exp(-dist * dist * 2.0);
-        shadow *= smoothstep(1.0, 0.3, dist); // fade to zero at edge
-
-        // Time-of-day:
-        // Day (sun > 0.3): subtle contact shadow (0.25)
-        // Twilight: fading
-        // Night (sun < -0.1): near invisible (0.05)
-        float dayT = smoothstep(-0.1, 0.3, uSunAlt);
-        float intensity = mix(0.05, 0.25, dayT);
-
-        gl_FragColor = vec4(0.0, 0.0, 0.0, shadow * intensity);
-      }`,
-    transparent: true,
-    depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  }), [])
+  // (Both the ground light POOL and the lamp CONTACT SHADOW moved into the
+  // baked ground FX map 2026-06-22 — R = additive pool (dark center → bright
+  // ring → 0), G = contact shadow (tree + lamp bases), darkening the ground
+  // diffuse DIRECTLY so the ring reads in daytime. Sampled by grass + FadeMesh;
+  // see bake-ground-ao.js. The floating pool/base discs are retired.)
 
   // ── Load Victorian GLTF ─────────────────────────────────────────────────────
   // Strip KHR_materials_transmission (incompatible with InstancedMesh).
@@ -301,9 +192,12 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
   // GLB finishes loading. Avoids the per-frame mutation that previously
   // caused the iron material to vanish at daytime.
   useEffect(() => {
-    if (!panelLampColor) return
-    if (glowMatRef.current?.uniforms?.uColor) glowMatRef.current.uniforms.uColor.value.set(panelLampColor)
-    if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(panelLampColor)
+    const lampCol = panelLampColor || '#fff2e0'  // layerColors.lamp, else the warm default
+    if (glowMatRef.current?.uniforms?.uColor) glowMatRef.current.uniforms.uColor.value.set(lampCol)
+    if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(lampCol)
+    // The ground light pool IS the lantern's light on the ground — give it the
+    // same colour (consumed by the grass + FadeMesh pool term via uLampColor).
+    _lampGlow.colorUniform.value.set(lampCol)
   }, [panelLampColor, lampModel])
 
   useEffect(() => {
@@ -437,30 +331,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
     bulbRef.current.instanceMatrix.needsUpdate = true
   }, [allLamps, lampModel])
 
-  // ── Instance transforms — pools + base rings ───────────────────────────────
-  useEffect(() => {
-    const d = new THREE.Object3D()
-    if (poolRef.current) {
-      allLamps.forEach((lamp, i) => {
-        d.position.set(lamp.x, POOL_Y, lamp.z)
-        d.rotation.set(-Math.PI / 2, 0, 0)
-        d.scale.setScalar(1)
-        d.updateMatrix()
-        poolRef.current.setMatrixAt(i, d.matrix)
-      })
-      poolRef.current.instanceMatrix.needsUpdate = true
-    }
-    if (baseRef.current) {
-      allLamps.forEach((lamp, i) => {
-        d.position.set(lamp.x, 0.12, lamp.z)
-        d.rotation.set(-Math.PI / 2, 0, 0)
-        d.scale.setScalar(1)
-        d.updateMatrix()
-        baseRef.current.setMatrixAt(i, d.matrix)
-      })
-      baseRef.current.instanceMatrix.needsUpdate = true
-    }
-  }, [allLamps, lampModel])
+  // (Lamp base-ring instance transforms removed — the contact shadow is baked
+  // into the ground FX map now, not a per-lamp disc.)
 
   // ── Per-frame time-of-day animation ─────────────────────────────────────────
   // Transition starts at golden hour (sunAlt=0.15) for a gradual warm-up
@@ -473,21 +345,30 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
     const t = Math.min(1, Math.max(0, (0.15 - sunAltitude) / 0.45))
     const isActive = t > 0.01
 
-    // Glass panels — warm white when lit, no procedural glow
-    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = t * 0.8
-    // Tight glass halo — visible but not blowout
-    if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = t
-    // Sharp bulb dot — bright pinprick at lantern center
-    bulbMat.opacity = t * 1.0
-    // Ground pools — generous spread, lower per-pool alpha so overlap stays controlled
-    // AO contact shadow — driven by sun altitude
-    baseMat.uniforms.uSunAlt.value = sunAltitude
+    // Lantern channel (operator master Brightness + Glow, TOD-animatable) ×
+    // the automatic dusk→night turn-on (t). Resolved per-frame; defaults
+    // reproduce the old hardwired 0.8 / 1.0 multipliers.
+    const tod = useTimeOfDay.getState()
+    const lant = resolveGroupAtMinute(
+      lanternChannel || LANTERN_DEFAULT_CHANNEL, tod.getMinuteOfDay(),
+      lanternChannel?.animated ? getTodSlotMinutes(tod.currentTime) : null,
+      LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
+    )
+    const lampLit = t * (lant.intensity ?? 1)
 
-    // Ground pool intensity scales with the per-Look TOD-driven pool slider.
-    // poolUniform is the canonical uniform (lampGlowState); driven by the
-    // per-Look envelope in CartographApp.
-    poolMat.uniforms.uIntensity.value = t * _lampGlow.poolUniform.value
-    if (poolRef.current) poolRef.current.visible = isActive
+    // Glass panels — warm white when lit, no procedural glow
+    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = lampLit * 0.8
+    // Tight glass halo — visible but not blowout (× the Glow knob)
+    if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = lampLit * (lant.glow ?? 1)
+    // Sharp bulb dot — bright pinprick at lantern center
+    bulbMat.opacity = lampLit
+    // The ground light pool IS the lantern's light on the ground — drive its
+    // intensity from the lantern's actual output (Brightness × the dusk→night
+    // ramp), so the Lantern Brightness slider controls the pool too, and it's
+    // off by day. (Consumed by grass + FadeMesh as uPool; colour = uLampColor.)
+    _lampGlow.poolUniform.value = lampLit
+    // (Lamp pool + contact shadow moved into the baked ground FX map — see
+    // BakedGround / bake-ground-ao.js.)
     if (glowRef.current) glowRef.current.visible = isActive
     if (bulbRef.current) bulbRef.current.visible = isActive
   })
@@ -504,18 +385,11 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
         frustumCulled={false}
       />
 
-      {/* Subtle ground pool — simulates post shadow + visible light ring,
-          additive over the lampLightmap-on-grass to pump up the real light.
-          renderOrder=50 puts pool in the transparent pass AFTER all
-          StreetRibbons meshes (priorities ≤ ~20), so when treelawn ribbons
-          render with their own polygonOffset, pool still gets last say
-          and additively blends on top. */}
-      <instancedMesh
-        ref={poolRef}
-        args={[poolGeo, poolMat, allLamps.length]}
-        renderOrder={50}
-        frustumCulled={false}
-      />
+      {/* Ground light pool — MOVED into the ground itself (2026-06-22): baked
+          additive ring map sampled by the grass + FadeMesh shaders so it
+          drapes over terrain/curbs with no z-fighting. See bake-ground-ao.js
+          (poolmap) + grassMaterial / BakedGround FadeMesh. The floating disc
+          is retired. */}
 
       {/* Tight warm glass halo */}
       <instancedMesh
@@ -531,18 +405,9 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
         frustumCulled={false}
       />
 
-      {/* Ground "pools" replaced — warm lamp glow now comes from
-          shaders that sample the lampLightmap (grass, trees, paths,
-          ground, walls) so the light is continuous and physically-tied
-          to ground material instead of fake additive discs. */}
-
-      {/* Dark base rings (1 draw call) */}
-      <instancedMesh
-        ref={baseRef}
-        args={[baseGeo, baseMat, allLamps.length]}
-        frustumCulled={false}
-        renderOrder={1}
-      />
+      {/* Ground light pool + lamp contact shadow — both baked into the ground
+          FX map (R = pool, G = shadow) and sampled by the ground shaders. No
+          floating discs. See bake-ground-ao.js + BakedGround / grassMaterial. */}
 
     </group>
   )
