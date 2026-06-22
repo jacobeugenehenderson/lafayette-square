@@ -5,12 +5,18 @@
 > the **Focus channel** end-to-end (`9bbc5fd7`): intuitive knobs (On·Blur·Focus distance·Softness) →
 > shared `PostProcessing` consumer (default-OFF, desktop) → store → Stage Post-card "Focus (DoF)" →
 > `bake-scene` emit. Blur is **bounded to the neighborhood** (arch stays sharp; the auto-anchor-to-arch was
-> dropped — moving the arch out stretched the blur over the whole scene). ▶ **NEXT — the PROPER-DoF pass:**
-> the single-pass gather has three known refinements that a **CoC-aware gather** fixes at once — (a) the
-> **hard edge vs the sky** (foreground/mid blur must bleed over the sharp background), (b) **iris bokeh**
-> (shaped highlights, not a disk), (c) the **shared blur pyramid** (Bloom + DoF reuse one downsample =
-> GPU-cheap, the §"reuse architecture" #2 below). Also queued: blur-vs-softness knob cleanup, subtly-soft
-> arch, Preview reconcile (URL scaffold → channel), mobile DoF (desktop-only today).
+> dropped — moving the arch out stretched the blur over the whole scene).
+>
+> ⛔ **FRAMING (Jacob corrected 2026-06-21 EOD — `feedback_effects_mobile_first_measured`): MOBILE-FIRST,
+> not desktop-only.** A full-res CoC-aware iris gather IS now built (`RomanceDoF.jsx`, ~70 taps/px — it
+> feathers the sky edge + makes hex bokeh) **but it's a DESKTOP-QUALITY REFERENCE, held uncommitted /
+> default-OFF, NOT shippable.** ▶ **NEXT — the MOBILE-VIABLE DoF arc:** run that same gather on a
+> **downsampled SHARED PYRAMID** (Bloom + DoF reuse one downsample → cheap enough for the phone floor —
+> §"reuse architecture" #2), **MEASURE every effect through the Preview GPU emulator** against the device
+> profile (`HANDOFF-preview-measurement.md`), and **FINISH the mobile/desktop selector** (per-platform
+> inclusion + the mobile render path = render-conformance Phase 4–5). "Desktop-only, fine" is the failure
+> mode. Also queued: blur-vs-softness knob cleanup, subtly-soft arch, Preview reconcile (URL scaffold →
+> channel).
 
 > **(Original DRAFT, 2026-06-21, Boz — the plan that built the above.)** Pulls the
 > long-scattered "real DoF" aim into one current plan and **supersedes the conflicting fake-blur

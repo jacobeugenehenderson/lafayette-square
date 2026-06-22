@@ -85,53 +85,49 @@ const fragment = /* glsl */`
       return;
     }
 
+    // ── CoC-aware iris gather (the "proper DoF") ─────────────────────────────
+    // Each tap reads its OWN depth → CoC. A tap contributes when EITHER the
+    // centre's blur reaches it, OR a CLOSER (foreground/mid) tap's blur reaches
+    // the centre — so blurred foreground SCATTERS over the sharp background and
+    // the silhouette feathers into the sky instead of a hard edge. The kernel is
+    // a hexagonal iris (straight blade edges) so out-of-focus points read as
+    // bokeh shapes; bright taps are weighted up so highlights form bokeh "balls".
     vec2 aspectCorrection = vec2(1.0, aspect);
-    vec2 b = vec2(coc * uMaxBlur);           // UV blur radius for this fragment
-    vec2 b9 = b * 0.9, b7 = b * 0.7, b4 = b * 0.4;
+    const float TAU = 6.28318530718;
+    const int RINGS = 3;
+    const int BLADES = 6;                                  // hexagonal iris
+    const float HALF_WEDGE = TAU / float(BLADES) * 0.5;
+    float cosHalf = cos(HALF_WEDGE);
 
-    // Proven 41-tap concentric-disk gather (from postprocessing BokehEffect).
-    vec4 color = inputColor;
-    color += texture2D(inputBuffer, uv + (vec2( 0.0,  0.4 ) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.15, 0.37) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.29, 0.29) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2(-0.37, 0.15) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.40, 0.0 ) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.37,-0.15) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.29,-0.29) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2(-0.15,-0.37) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.0, -0.4 ) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2(-0.15, 0.37) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2(-0.29, 0.29) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.37, 0.15) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2(-0.4,  0.0 ) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2(-0.37,-0.15) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2(-0.29,-0.29) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.15,-0.37) * aspectCorrection) * b);
-    color += texture2D(inputBuffer, uv + (vec2( 0.15, 0.37) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2(-0.37, 0.15) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2( 0.37,-0.15) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2(-0.15,-0.37) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2(-0.15, 0.37) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2( 0.37, 0.15) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2(-0.37,-0.15) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2( 0.15,-0.37) * aspectCorrection) * b9);
-    color += texture2D(inputBuffer, uv + (vec2( 0.29, 0.29) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2( 0.40, 0.0 ) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2( 0.29,-0.29) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2( 0.0, -0.4 ) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2(-0.29, 0.29) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2(-0.4,  0.0 ) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2(-0.29,-0.29) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2( 0.0,  0.4 ) * aspectCorrection) * b7);
-    color += texture2D(inputBuffer, uv + (vec2( 0.29, 0.29) * aspectCorrection) * b4);
-    color += texture2D(inputBuffer, uv + (vec2( 0.4,  0.0 ) * aspectCorrection) * b4);
-    color += texture2D(inputBuffer, uv + (vec2( 0.29,-0.29) * aspectCorrection) * b4);
-    color += texture2D(inputBuffer, uv + (vec2( 0.0, -0.4 ) * aspectCorrection) * b4);
-    color += texture2D(inputBuffer, uv + (vec2(-0.29, 0.29) * aspectCorrection) * b4);
-    color += texture2D(inputBuffer, uv + (vec2(-0.4,  0.0 ) * aspectCorrection) * b4);
-    color += texture2D(inputBuffer, uv + (vec2(-0.29,-0.29) * aspectCorrection) * b4);
-    color += texture2D(inputBuffer, uv + (vec2( 0.0,  0.4 ) * aspectCorrection) * b4);
-    outputColor = color / 41.0;
+    vec3 sum = inputColor.rgb;
+    float wsum = 1.0;
+    for (int r = 0; r < RINGS; r++) {
+      float rf = (float(r) + 1.0) / float(RINGS);          // 0.33 .. 1.0
+      for (int s = 0; s < BLADES * 2; s++) {               // 12 samples / ring
+        float ang = (float(s) + 0.5) / float(BLADES * 2) * TAU + rf;
+        // iris-polygon radius: pull the ring toward the straight blade edges.
+        float wedge = mod(ang, TAU / float(BLADES)) - HALF_WEDGE;
+        float poly = cosHalf / cos(wedge);
+        vec2 o = vec2(cos(ang), sin(ang)) * poly * rf;     // normalized offset [0,1]
+        vec2 tapUv = uv + o * uMaxBlur * aspectCorrection;
+
+        float tapDist = depthToDistance(readDepth(tapUv));
+        float tapCoC  = twoFocalCoC(tapDist);
+        float ol = length(o);
+        // centre's own blur reaches the tap …
+        float wC = 1.0 - smoothstep(coc * 0.7, coc + 0.001, ol);
+        // … OR a closer tap's blur reaches the centre (foreground bleed).
+        float wS = (1.0 - smoothstep(tapCoC * 0.7, tapCoC + 0.001, ol)) * step(tapDist, dist);
+        float w  = max(wC, wS);
+
+        vec3 tapCol = texture2D(inputBuffer, tapUv).rgb;
+        float lum = dot(tapCol, vec3(0.2126, 0.7152, 0.0722));
+        w *= 1.0 + lum * lum * 1.5;                        // bright taps → bokeh balls
+        sum  += tapCol * w;
+        wsum += w;
+      }
+    }
+    outputColor = vec4(sum / max(wsum, 1e-4), inputColor.a);
   }
 `
 
