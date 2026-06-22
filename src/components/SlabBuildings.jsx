@@ -83,7 +83,7 @@ function getLookId(propLook) {
   return INSTANCE.lookId
 }
 
-export default function SlabBuildings({ lookId } = {}) {
+export default function SlabBuildings({ lookId, interactive = true } = {}) {
   const LOOK_ID = useMemo(() => getLookId(lookId), [lookId])
   const [data, setData] = useState(null)   // { manifest, bin }
   const [scene, setScene] = useState(null)
@@ -265,6 +265,7 @@ export default function SlabBuildings({ lookId } = {}) {
           geometry={geometry}
           texId={texId}
           scene={scene}
+          interactive={interactive}
           registerShader={(sh) => shadersRef.current.push(sh)}
         />
       ))}
@@ -331,7 +332,7 @@ vec3 slabOverlay(vec3 base, vec3 tex) {
   return mix(2.0 * base * tex, 1.0 - 2.0 * (1.0 - base) * (1.0 - tex), step(0.5, base));
 }`
 
-function GroupMesh({ group, geometry, texId, scene, registerShader }) {
+function GroupMesh({ group, geometry, texId, scene, registerShader, interactive = true }) {
   const tex = useMemo(() => loadTexture(texId), [texId])
   const isRoof = group.kind === 'roof'
   const isWall = group.kind === 'wall'
@@ -475,9 +476,9 @@ function GroupMesh({ group, geometry, texId, scene, registerShader }) {
       castShadow
       receiveShadow
       frustumCulled={false}
-      onPointerMove={(e) => { e.stopPropagation(); const id = idAtFace(e); if (id) { setHovered(id); document.body.style.cursor = 'pointer' } }}
-      onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
-      onClick={(e) => { e.stopPropagation(); if (isDrag(e)) return; const id = idAtFace(e); if (id) select(id) }}
+      onPointerMove={interactive ? (e) => { e.stopPropagation(); const id = idAtFace(e); if (id) { setHovered(id); document.body.style.cursor = 'pointer' } } : undefined}
+      onPointerOut={interactive ? () => { clearHovered(); document.body.style.cursor = 'auto' } : undefined}
+      onClick={interactive ? (e) => { e.stopPropagation(); if (isDrag(e)) return; const id = idAtFace(e); if (id) select(id) } : undefined}
     />
   )
 }

@@ -356,7 +356,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
       args={[geometry, material, placementMatrices.length]}
       castShadow={false}
       receiveShadow={false}
-      frustumCulled={true}
+      frustumCulled={false}   /* diagnostic 2026-06-21: was true — test whether the per-tile cull bounds drop on-screen trees ("trees randomly turn on") */
       onBeforeRender={onBeforeRender}
     />
   )

@@ -834,7 +834,7 @@ function CanvasContents({ layers, shot, setShot }) {
             production. Always mounted, .visible-gated by the single Buildings
             toggle: a clean per-frame draws/tris on-off (Vernier Phase 2). */}
         <group visible={layers.buildings}>
-          <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={lookId} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={lookId} interactive={false} /></R3FErrorBoundary>
         </group>
         {/* Trees / Park / Streetlamps / Arch — visibility-gated (always
             mounted, baked assets resident). Each toggle is a clean per-frame
