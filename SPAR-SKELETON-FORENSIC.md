@@ -50,4 +50,4 @@ Add a **name-transition-smoothness invariant** to the detector (`SIEVE/LOOM/THRO
 - `scratch/through-junction-straightener.patch` — the reverted T-only fix that structurally can't reach this class
 
 ---
-*Relation to `HANDOFF-round-skeleton-corners.md`: same family — the W18/Dolman corner is hard because RDP **threw away** the rounding the raw data has. The general corner-round ADDS rounding; this fix PRESERVES rounding at name-transition joints. The showstopper is this one.*
+*Relation to `HANDOFF-curve-primitive-skeleton.md`: same family — the W18/Dolman corner is hard because RDP **threw away** the rounding the raw data has. The general corner-round ADDS rounding; this fix PRESERVES rounding at name-transition joints. The showstopper is this one.*

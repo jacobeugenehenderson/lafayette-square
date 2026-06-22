@@ -1,5 +1,7 @@
 # HANDOFF — Band-fold fix: LOCAL capacity clamp (Option A), across all three offset layers
 
+> **⭐ Absorbs (2026-06-22):** Bollard's op-by-op forensic `junction-band-thorns-FINDINGS` folded here → `cartograph/_archive/handoffs/` (the Roots A/B mechanism + the 115-junction census; the name-logic sub-root it surfaced went to `SKELETON.md §5`).
+
 > ⚠️ **MECHANISM SUPERSEDED by the build (`band-fold-fix@8e1e414`).** The agent verified in the live geometry that **Clipper offsets do NOT fold** — they *split* rings cleanly. The "offset folds at thin necks" premise below (and Option A's depth-clamp) is therefore **wrong**. The real roots: **degenerate `iA`** (12 sliver/acute tiles) propagating to the asphalt/curb artifacts, + **union folds** (overlapping per-tile contributions). The fix that landed = **iA-regularize-at-source + whole-layer `SimplifyPolygons` hygiene** (+ a scoped ρ=0.5 morphological open on irreducible residuals). Results: 4 marks dead, SELFINT 59→0, handles/footprint preserved. **Pending Jacob's :5173 eye-gate, then canon fold (RIBBONS §3.9a/§6.3) + a rewrite of the diagnosis below.** Read the brief for structure/scope; trust the build for mechanism.
 
 **State:** **dispatch-ready NOW.** The old "sequence AFTER §Wall lands" gate is **cleared** — Wall Phase-D landed (`ef460d1`); Chord's wall sub-step is done. Branch off clean trunk `cartograph-looks-pass-ab` @ `5658d43`, own worktree (`isolation: "worktree"`).
@@ -8,7 +10,7 @@
 
 > **Read first (don't re-derive — build the fix):**
 > 1. **`scratch/SURVEY-CONSTRUCTION-FORENSIC.md` (Caliper, 2026-06-08) — the CURRENT map.** §(b) classifies all 4 marks to exact ops + current line anchors; §(c) proves they're one internal class (band/offset self-intersection) distinct from the corner-registration gap; §(d) item 1 is this fix.
-> 2. **`HANDOFF-junction-band-thorns-FINDINGS.md` (Bollard, 2026-06-04) — the op-by-op MECHANISM.** Roots A (T-mouth fold) + B (thin-tile). *Note: its line anchors predate intersection-everywhere + the datum repair — trust Caliper's anchors below for line numbers, Bollard's for the mechanism.*
+> 2. **`cartograph/_archive/handoffs/HANDOFF-junction-band-thorns-FINDINGS-FOLDED-band-fold-fix-2026-06-22.md` (Bollard, 2026-06-04) — the op-by-op MECHANISM.** Roots A (T-mouth fold) + B (thin-tile). *Note: its line anchors predate intersection-everywhere + the datum repair — trust Caliper's anchors below for line numbers, Bollard's for the mechanism.*
 > 3. **`cartograph/RIBBONS.md §3.9a item 5** (the capacity-guard doctrine we're making local) **+ §6.3** (the 49 repo-wide SELFINT residuals this kills).
 
 ---
@@ -75,4 +77,4 @@ The original brief scoped only the ped band (`iW`). Caliper's forensic shows the
 
 - Fold into **`RIBBONS §3.9a`** (local capacity clamp = the partial-degeneracy completion of the G12 guard) **+ §6.3** (update the SELFINT residual count from 49 → the new floor); **flip the ledger G12 row → DONE (local clamp, all three layers)**.
 - Re-test the dead-end **Missouri Ave** flood on the fresh topology.
-- Retire `HANDOFF-junction-band-thorns-FINDINGS.md` + Caliper's `scratch/SURVEY-CONSTRUCTION-FORENSIC.md` (the band-fold portion) + this brief → NOTES.
+- Retire `cartograph/_archive/handoffs/HANDOFF-junction-band-thorns-FINDINGS-FOLDED-band-fold-fix-2026-06-22.md` + Caliper's `scratch/SURVEY-CONSTRUCTION-FORENSIC.md` (the band-fold portion) + this brief → NOTES.

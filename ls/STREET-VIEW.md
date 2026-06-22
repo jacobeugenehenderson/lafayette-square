@@ -172,7 +172,7 @@ If street view becomes a headline experience, the arborist owes it, roughly in o
 3. **Per-instance canopy variation** at street distance (leaf alpha/scale/occupancy) so neighboring trees don't read as clones up close — partially mitigated today by per-instance jitter (rotation/scale/hue/wind-phase, `SPEC.md`), but canopy composition is still one-per-species.
 4. *(v1.6+, deferred)* **LiDAR canopy-point sampling** — real foliage placement — explicitly reserved for "when/if street-view makes the canopy-fidelity case" (`arborist/ARCHITECTURE.md`).
 
-This is also why Survey cranks curve tessellation: `HANDOFF-survey-section-tool-design.md` notes the operator "sees the curves up close (street view)," so curves are authored to read as true béziers at this scale. Street view is the **acceptance test** for SHAPE fineness, not just trees.
+This is also why Survey cranks curve tessellation: `HANDOFF-tile-T3-authoring.md` notes the operator "sees the curves up close (street view)," so curves are authored to read as true béziers at this scale. Street view is the **acceptance test** for SHAPE fineness, not just trees.
 
 ---
 

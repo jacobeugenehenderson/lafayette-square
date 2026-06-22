@@ -1,6 +1,8 @@
 # HANDOFF — The curve-primitive skeleton (curves as beziers, not dense polylines)
 
-**Status: DESIGN, ready to dispatch (2026-06-15).** Branch `curb-offset-draw`. Agent: a geometry/pipeline specialist — **name yourself**. ⛔ **ROUTE FIRST** per `CLAUDE.md`: read this in full, then `RIBBONS.md §1` (the Derivation Chain), `SKELETON.md §3 step 8 + §3.5`, `HANDOFF-vector-curve-construction.md` (the two laws + what was tried/rejected), and `HANDOFF-concentric-curb-curved-streets.md` (the curb half). The EYE is the gate (`feedback_proxy_render_is_not_the_operator_eye`).
+> **⭐ Absorbs (2026-06-22) — this is the single home for the curve work.** Folded in: `round-skeleton-corners` (round the existing centerline corners), `concentric-curb-curved-streets` (the concentric-arc/bezier curb), and `vector-curve-construction` (the two durable laws: concentric · curves-not-legs). Those framings were earlier passes at the same goal; their deep detail lives in `cartograph/_archive/handoffs/` (dated).
+
+**Status: DESIGN, ready to dispatch (2026-06-15).** Branch `curb-offset-draw`. Agent: a geometry/pipeline specialist — **name yourself**. ⛔ **ROUTE FIRST** per `CLAUDE.md`: read this in full, then `RIBBONS.md §1` (the Derivation Chain), `SKELETON.md §3 step 8 + §3.5`, `cartograph/_archive/handoffs/HANDOFF-vector-curve-construction-SUPERSEDED-curve-primitive-2026-06-22.md` (the two laws + what was tried/rejected), and `cartograph/_archive/handoffs/HANDOFF-concentric-curb-curved-streets-SUPERSEDED-curve-primitive-2026-06-22.md` (the curb half). The EYE is the gate (`feedback_proxy_render_is_not_the_operator_eye`).
 
 ---
 
@@ -43,7 +45,7 @@ A curving street must be stored as **curve primitives** — a curving stretch is
 
 **Offsetting straight segments facets the outer angles, no matter how small the segments** (Jacob, verified). Densifying a polyline (Catmull-Rom at consume, or arc-tessellation in the frame) just makes *more, smaller* facets and a desynced/lumpy curb — and it makes the skeleton "not 2 points," i.e. **not actually simplified**. The smoothness must come from the **curve representation**, tessellated to points **only** at the final polygon step. A bezier's parallel offset is a smooth curve; a polyline's is faceted. (Both prior attempts — consume-time `STREET_SMOOTH` Catmull-Rom and the frame arc/bezier *tessellation* — are reverted; the sparse frame is the current baseline. `CURVE_FIT` flag is OFF.)
 
-The two durable laws (`HANDOFF-vector-curve-construction.md`): **(1) Concentric** — clean on the FRAME, curb = parallel offset, never patch the curb. **(2) Curves, not legs** — fit a curve *through* the control points; never straighten to chords, never bow a straight leg.
+The two durable laws (`cartograph/_archive/handoffs/HANDOFF-vector-curve-construction-SUPERSEDED-curve-primitive-2026-06-22.md`): **(1) Concentric** — clean on the FRAME, curb = parallel offset, never patch the curb. **(2) Curves, not legs** — fit a curve *through* the control points; never straighten to chords, never bow a straight leg.
 
 ## What this replaces / current state
 
@@ -88,9 +90,9 @@ This is the other half — the centerline being smooth is necessary but **not su
 
 ## Pipeline integration (the touch list)
 
-- `skeleton.js` — the fit; emit `segments[]`; through-transition fit. Re-freeze: `node cartograph/skeleton.js && node cartograph/pipeline.js && node cartograph/promote-ribbons.js` (reproducible; **checkpoint + Jacob's go** before re-freezing per `HANDOFF-round-skeleton-corners.md`).
+- `skeleton.js` — the fit; emit `segments[]`; through-transition fit. Re-freeze: `node cartograph/skeleton.js && node cartograph/pipeline.js && node cartograph/promote-ribbons.js` (reproducible; **checkpoint + Jacob's go** before re-freezing per `cartograph/_archive/handoffs/HANDOFF-round-skeleton-corners-SUPERSEDED-curve-primitive-2026-06-22.md`).
 - `derive.js` — carry `segments` into `ribbons.streets`; `tessellateStreet` for `extractFaces`/tiles; recompute `ix`.
-- `tileGround.js` — the concentric bezier-offset curb + topological corners (`HANDOFF-concentric-curb-curved-streets.md`).
+- `tileGround.js` — the concentric bezier-offset curb + topological corners (`cartograph/_archive/handoffs/HANDOFF-concentric-curb-curved-streets-SUPERSEDED-curve-primitive-2026-06-22.md`).
 - the editor (`SurveyorOverlay.jsx`/`MeasureOverlay.jsx`) — draw beziers; edit control points/handles (a real UI piece; can phase: first render beziers read-only, then editable).
 
 ## Gates (RED-until-true; the EYE is final)
@@ -120,7 +122,7 @@ This is the other half — the centerline being smooth is necessary but **not su
 
 **⭐ The Benton gate (Jacob's hard constraint — "don't kill Benton"):** Benton is the canonical v2 risk (the emergent-face teardrop). Gate every change on the baseline (`scratch/benton-baseline.mjs`): **Benton = 2 asphalt rings, 1 median @ ~1799 m², 4 curb rings** — must hold or improve, never regress. Benton is *in the validation set*, not an exception: if a general rule can't keep Benton's emergent median intact, it's the wrong rule. Validate across the **whole curve census** (SV, Park Place, Waverly, Russell, Geyer, S-Jefferson, Park Ave + Benton) + the divided-median invariant (**30 `isMedian` tiles**, S-Jefferson rings 2269/46/695) + **grid byte-identity**. The EYE on the lit Survey is final.
 
-**Build order (smallest-risk first):** (a) **closed-loop fit** for the turning circles (SV, Park Place) — most visible, simplest topology, no pairing; gate on Benton + the two circles. (b) **Benton/Waverly closed-body fit** — the emergent-median loops; gate hard on the median baseline. (c) **paired carriageway fit** — the divided roads; gate on the 30-tile median invariant. (d) the **detector** alongside (a). Each rides the existing `tessellateStreet` + concentric-bezier-curb path (Phase 2, `HANDOFF-concentric-curb-curved-streets.md`); `tileIsCurved`/`dropFoldSpurs` (Phase 2.1) extends to loop/divided tiles.
+**Build order (smallest-risk first):** (a) **closed-loop fit** for the turning circles (SV, Park Place) — most visible, simplest topology, no pairing; gate on Benton + the two circles. (b) **Benton/Waverly closed-body fit** — the emergent-median loops; gate hard on the median baseline. (c) **paired carriageway fit** — the divided roads; gate on the 30-tile median invariant. (d) the **detector** alongside (a). Each rides the existing `tessellateStreet` + concentric-bezier-curb path (Phase 2, `cartograph/_archive/handoffs/HANDOFF-concentric-curb-curved-streets-SUPERSEDED-curve-primitive-2026-06-22.md`); `tileIsCurved`/`dropFoldSpurs` (Phase 2.1) extends to loop/divided tiles.
 
 **Top v2 risks (carry forward):** offset-of-cubic is approximate at **high curvature·depth** — acute for the 8 m turning circles where `pavementHW (~5 m)` approaches the fit radius → self-intersection (use sampled-normal offset, cap radius, `dropFoldSpurs` guard). Paired-carriageway divergence breaking the median (gate on the 30-tile invariant). The whole-map rebuild perf (`derive → ribbons → re-freeze shape.json → bake`; checkpoint + Jacob's go before re-freezing). ⚠️ **Probe-gate per the derivation-first rule before building each sub-case** — confirm the fit is the lever (not a separate datum/weld issue) on the lit app first.
 

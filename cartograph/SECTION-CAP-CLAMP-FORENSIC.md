@@ -2,7 +2,7 @@
 
 **A read-only study (2026-06-11, Boz) of the G8 dead-end cap-wrap + G12 capacity-clamp constructs in `sectionPass` / `buildTileGround` — what is coherent design vs confused/half-finished residue, with provenance and a keep-vs-revert map. Commissioned because the region produced the fat-pad round caps from a "confused and laden session that became untenable" (Jacob), and we wanted the lay of the land before anyone touches the clamp again. NO fix committed here beyond the two cap-wrap repairs already landed (`f908143`).**
 
-> Grounded in code (`src/lib/tileGround.js`) + git archaeology, verified 2026-06-11 on the `curb-offset-draw` branch. Reference-kind. Cross-refs: `SECTION.md §7` (the FILL tail), `HANDOFF-tile-feature-ledger.md` row G12, `HANDOFF-band-fold-fix-RESULT.md`, `HANDOFF-junction-band-thorns-FINDINGS.md`.
+> Grounded in code (`src/lib/tileGround.js`) + git archaeology, verified 2026-06-11 on the `curb-offset-draw` branch. Reference-kind. Cross-refs: `SECTION.md §7` (the FILL tail), `HANDOFF-tile-feature-ledger.md` row G12, `HANDOFF-band-fold-fix-RESULT.md`, `HANDOFF-band-fold-fix.md`.
 
 ---
 
@@ -64,7 +64,7 @@ This is the G12 ledger row **verbatim**: *"a tile that collapses to a thin non-e
 
 **Why it's invisible until now:** the fat-pad round-cap reclaim used to *fill* this area with solid sidewalk, masking the overlap. Today's uniform-wrap repair (`f908143`) restored the full-width treelawn → deeper bands → the overlap shows. **The repair didn't create the bug; it un-masked a pre-existing one.**
 
-**Fix DIRECTION (not implemented — study only):** wire the existing `thinTile` signal (or a local inscribed-reach test) into the `cap` clamp so it engages on **partial** degeneracy, not only full collapse — clamping the band depth where the *local* neck pinches, **without** over-clamping the in-spec rest of the block (the documented hard part: local, not per-tile — `HANDOFF-junction-band-thorns-FINDINGS.md`). This is the same target the reverted `b464297` clamp aimed at; re-derive it cleanly rather than restoring the reverted code.
+**Fix DIRECTION (not implemented — study only):** wire the existing `thinTile` signal (or a local inscribed-reach test) into the `cap` clamp so it engages on **partial** degeneracy, not only full collapse — clamping the band depth where the *local* neck pinches, **without** over-clamping the in-spec rest of the block (the documented hard part: local, not per-tile — `HANDOFF-band-fold-fix.md`). This is the same target the reverted `b464297` clamp aimed at; re-derive it cleanly rather than restoring the reverted code.
 
 ---
 

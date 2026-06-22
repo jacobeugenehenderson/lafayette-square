@@ -1,12 +1,14 @@
 # HANDOFF — Tile re-pour · T3: authoring → Survey (migrate the authoring channel onto tiles)
 
+> **⭐ Absorbs (2026-06-22):** the design spine `survey-section-tool-design` (the Survey=SHAPE / Section=FILL tool split + the shared interaction grammar) and the corner slice `tile-T3-corner-handles` (source the corner-edit handles off the live tile corners, injective) folded here → `cartograph/_archive/handoffs/`.
+
 **Agent: WARM → Tessera.** You built the tile construction (spike → T1 → T2 → T2-finish) and you know exactly where the authoring overlays still mount figure-ground. T3 is yours.
 
 **This is T3 of the tile re-pour** (the umbrella `pipeline-reconception` brief retired to git; live state → `cartograph/BACKLOG.md` + `HANDOFF-tile-feature-ledger.md`). T2-finish landed the whole *construction* side on LS (the 🔜T2 rows). T3 does the *authoring* side. **Reads first:** `HANDOFF-tile-feature-ledger.md` (the 🔜T3 rows = the scope) · **`RIBBONS.md §5`** (the Measure-tool operator model + the translucency doctrine — load-bearing, see below) · `src/lib/tileGround.js` + the Designer authoring surfaces (`BlockGeometryV2Debug.jsx`, `MeasureOverlay.jsx`, `MeasurePanel.jsx`, `SurveyorPanel.jsx`, `CornerEditHandles.jsx`).
 
 ## ⭐ Design spine — build the DESIGNED tools, not relocated handles
 
-**Read `HANDOFF-survey-section-tool-design.md` first — it is the design T3 implements** (decisions locked by Jacob 2026-06-01). The non-obvious bits: each tool shows **only its own** handles (asphalt-edge → Survey; ped → Section); smoothing is auto but a **selected** area renders **un-smoothed (raw), returning to smooth on `enter`**; **all curves béziér-fine** (P3 — the operator sees them up close); curb = **global width, editable, own material**; the **§5 Measure model carries as-is** (it's elegant when working — migrate, don't redesign). The tool split mirrors the construction split: Survey = outward stroke (shape), Section = inward stroke (profile).
+**Read `cartograph/_archive/handoffs/HANDOFF-survey-section-tool-design-FOLDED-tileT3-2026-06-22.md` first — it is the design T3 implements** (decisions locked by Jacob 2026-06-01). The non-obvious bits: each tool shows **only its own** handles (asphalt-edge → Survey; ped → Section); smoothing is auto but a **selected** area renders **un-smoothed (raw), returning to smooth on `enter`**; **all curves béziér-fine** (P3 — the operator sees them up close); curb = **global width, editable, own material**; the **§5 Measure model carries as-is** (it's elegant when working — migrate, don't redesign). The tool split mirrors the construction split: Survey = outward stroke (shape), Section = inward stroke (profile).
 
 ## The frame (the one idea behind every T3 row)
 
