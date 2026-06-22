@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
 import { IS_MOBILE } from '../lib/isMobile.js'
 import { browseAltitude } from '../lib/browseAltitude.js'
+import { SHOT_TRANSITION_MS } from '../camera/transitions.js'
 import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
 import CelestialBodies from './CelestialBodies'
@@ -72,8 +73,9 @@ const PRESETS = {
 }
 
 // Hero→Browse transition duration (ms). 1.5s read as abrupt for the overhead
-// tilt; 2.4s lets it ease into the map as a deliberate "settle" move.
-const BROWSE_TRANS_MS = 2400
+// tilt; 2.4s lets it ease into the map as a deliberate "settle" move. Sourced
+// from the camera-SSOT (transitions.js) so Stage/Preview move identically.
+const BROWSE_TRANS_MS = SHOT_TRANSITION_MS.browse
 
 const MODE_CONSTRAINTS = {
   hero: {
@@ -552,7 +554,7 @@ function CameraRig() {
         // to [0,1,0] so Hero un-rolls smoothly out of Browse's overhead.
         const p = PRESETS[entering]
         const fov = entering === 'hero' ? heroFov : p.fov
-        const dur = entering === 'hero' ? 2500 : 1500
+        const dur = entering === 'hero' ? SHOT_TRANSITION_MS.hero : SHOT_TRANSITION_MS.street
         transToHero.current = entering === 'hero'
         beginTransition(p.position, p.target, fov, dur, [0, 1, 0])
       }

@@ -37,8 +37,17 @@ export function createCameraTween() {
   const toTarget = new THREE.Vector3()
   let toFov = 60
 
+  // Up-vector lerp (added 2026-06-21 — the camera-SSOT unification). Production
+  // smoothly tilts the up-vector into overhead across Hero↔Browse; Stage/Preview
+  // used to SNAP it. Now the shared tween lerps + normalizes it so all three get
+  // the smooth tilt. `up` is optional on from/to — defaults to [0,1,0], so a
+  // caller that doesn't pass it (and ignores the new onUpdate arg) is unchanged.
+  const fromUp = new THREE.Vector3(0, 1, 0)
+  const toUp = new THREE.Vector3(0, 1, 0)
+
   const outPos = new THREE.Vector3()
   const outTarget = new THREE.Vector3()
+  const outUp = new THREE.Vector3(0, 1, 0)
 
   let onUpdate = null
   let onComplete = null
@@ -51,6 +60,10 @@ export function createCameraTween() {
     toPos.set(opts.to.pos[0], opts.to.pos[1], opts.to.pos[2])
     toTarget.set(opts.to.target[0], opts.to.target[1], opts.to.target[2])
     toFov = opts.to.fov
+    const fu = opts.from.up || [0, 1, 0]
+    const tu = opts.to.up || [0, 1, 0]
+    fromUp.set(fu[0], fu[1], fu[2])
+    toUp.set(tu[0], tu[1], tu[2])
     dur = opts.duration ?? 1500
     easeFn = EASES[opts.ease] || easeInOutCubic
     onUpdate = opts.onUpdate || null
@@ -67,8 +80,9 @@ export function createCameraTween() {
     const e = easeFn(t)
     outPos.lerpVectors(fromPos, toPos, e)
     outTarget.lerpVectors(fromTarget, toTarget, e)
+    outUp.lerpVectors(fromUp, toUp, e).normalize()   // smooth up-tilt (matches production)
     const fov = fromFov + (toFov - fromFov) * e
-    if (onUpdate) onUpdate(outPos, outTarget, fov, e)
+    if (onUpdate) onUpdate(outPos, outTarget, fov, e, outUp)
     if (t >= 1) {
       active = false
       const cb = onComplete

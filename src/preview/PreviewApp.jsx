@@ -42,6 +42,7 @@ import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
 import { createCameraTween } from './cameraTween'
+import { transitionMs } from '../camera/transitions.js'
 import { heroKeyframeAnim } from './heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
@@ -194,14 +195,16 @@ function ShotCamera({ shot, setShot }) {
       return
     }
 
-    // Tween from current pose to new pose. Up vector snaps because
-    // mid-tween up flips look bad; we accept the snap on entry.
-    camera.up.set(...pose.up)
+    // Tween from current pose to new pose — IDENTICAL to production now
+    // (camera-SSOT, 2026-06-21): durations from transitions.js (Hero→Browse
+    // 2400ms) and a SMOOTH up-vector tilt into overhead (the shared tween lerps
+    // + normalizes `up`; no more snap).
     const ctl = controlsRef.current
+    const fromUp = [camera.up.x, camera.up.y, camera.up.z]
     const fromTarget = ctl
       ? [ctl.target.x, ctl.target.y, ctl.target.z]
       : pose.target
-    const duration = shot === 'hero' ? 2500 : 1500
+    const duration = transitionMs(shot)
     if (ctl) ctl.enabled = false
     const spanId = `camera:${shot}:${performance.now()}`
     phoneBusStartSpan(spanId, 'camera', `→${shot}`, '#7dd3fc')
@@ -210,14 +213,16 @@ function ShotCamera({ shot, setShot }) {
         pos: [camera.position.x, camera.position.y, camera.position.z],
         target: fromTarget,
         fov: camera.fov,
+        up: fromUp,
       },
-      to: { pos: pose.pos, target: pose.target, fov: pose.fov },
+      to: { pos: pose.pos, target: pose.target, fov: pose.fov, up: pose.up },
       duration,
       ease: 'easeInOutCubic',
       label: `→${shot}`,
-      onUpdate: (p, t, fov) => {
+      onUpdate: (p, t, fov, _e, u) => {
         camera.position.copy(p)
         camera.fov = fov
+        if (u) camera.up.copy(u)        // smooth up-tilt across the glide
         camera.updateProjectionMatrix()
         if (ctl) {
           ctl.target.copy(t)
@@ -228,6 +233,7 @@ function ShotCamera({ shot, setShot }) {
       },
       onComplete: () => {
         if (ctl) ctl.enabled = true
+        camera.up.set(...pose.up)        // settle exactly on target up
         phoneBusEndSpan(spanId)
         phoneBusStop()
       },

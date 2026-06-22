@@ -37,6 +37,7 @@ import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject } from '../stage/StageApp.jsx'
 import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
 import { createCameraTween } from '../preview/cameraTween.js'
+import { transitionMs } from '../camera/transitions.js'
 import { buildings as _allBuildings } from '../data/buildings'
 
 // Toy scene fixtures (single 4-way corner for shader/shadow R&D)
@@ -287,12 +288,12 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
           cam.updateProjectionMatrix()
           if (ctl) { ctl.target.set(toTarget[0], toTarget[1], toTarget[2]); ctl.update() }
         } else {
-          // Glide between perspective shots — same vernacular as production
-          // Scene.jsx (Hero entries get a longer settle; Browse/Street get
-          // the standard 1500ms drop/rise). Up snaps at the start of the
-          // tween because mid-tween up flips look bad (Preview convention).
-          cam.up.set(toUp[0], toUp[1], toUp[2])
-          const duration = shot === 'hero' ? 2500 : 1500
+          // Glide between perspective shots — IDENTICAL to production now
+          // (camera-SSOT, 2026-06-21): durations from transitions.js (Hero→Browse
+          // 2400ms, Browse→Hero 2500ms) and a SMOOTH up-vector tilt into overhead
+          // (the shared tween lerps + normalizes `up`; no more mid-tween snap).
+          const fromUp = [cam.up.x, cam.up.y, cam.up.z]
+          const duration = transitionMs(shot)
           const fromTarget = ctl
             ? [ctl.target.x, ctl.target.y, ctl.target.z]
             : toTarget
@@ -302,19 +303,24 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
               pos:    [cam.position.x, cam.position.y, cam.position.z],
               target: fromTarget,
               fov:    cam.fov,
+              up:     fromUp,
             },
-            to: { pos: toPos, target: toTarget, fov },
+            to: { pos: toPos, target: toTarget, fov, up: toUp },
             duration,
             ease: 'easeInOutCubic',
             label: `→${shot}`,
-            onUpdate: (p, t, f) => {
+            onUpdate: (p, t, f, _e, u) => {
               cam.position.copy(p)
               cam.fov = f
+              if (u) cam.up.copy(u)        // smooth up-tilt across the glide
               cam.updateProjectionMatrix()
               if (ctl) { ctl.target.copy(t); ctl.update() }
               else     { cam.lookAt(t.x, t.y, t.z) }
             },
-            onComplete: () => { if (ctl) ctl.enabled = true },
+            onComplete: () => {
+              if (ctl) ctl.enabled = true
+              cam.up.set(toUp[0], toUp[1], toUp[2])   // settle exactly on target up
+            },
           })
         }
       }
