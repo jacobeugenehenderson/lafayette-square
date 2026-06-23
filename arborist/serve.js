@@ -1092,11 +1092,17 @@ const server = createServer(async (req, res) => {
     }
 
     // POST /grove/bake?look=<name> — the explicit Grove "ship-to-slab"
-    // gesture: atlas (bakeLook) THEN placements (bakeTrees) in one call, so
-    // the operator bakes the whole roster to the slab from the Grove UI
-    // instead of running the CLI pair by hand. The slab is the contract —
-    // this is what LS renders. (/atlas/bake stays atlas-only, for the
-    // per-toggle fire-and-forget auto-bake.)
+    // gesture. PHASE 1 (2026-06-23): regenerate-from-source FIRST so the bake
+    // never ships stale GLBs — closes the "knobs work in the Salon but not the
+    // Grove / LS / after a bake" gap (the long-queued finish of the
+    // Grove→Slab 2026-06-20 decision: "the bake regenerates each composition
+    // from its recipe + parts"). Order:
+    //   1. generate-salon (no --species = ALL composed species; re-emits the
+    //      published GLBs from compositions + parts: leaf size, bark, transform)
+    //   2. bakeLook   — repack the master atlas from the FRESH published GLBs
+    //   3. bakeTrees  — substitute placements
+    // The slab is the contract — this is what LS renders. (/atlas/bake stays
+    // atlas-only, for the per-toggle fire-and-forget auto-bake.)
     if (req.method === 'POST' && path === '/grove/bake') {
       const lookName = new URL(req.url, 'http://x').searchParams.get('look')
       if (!lookName) return jsonRes(res, 400, { error: 'missing ?look=<name>' })
@@ -1105,11 +1111,30 @@ const server = createServer(async (req, res) => {
       }
       try {
         const t0 = Date.now()
+        // 1. Regenerate every composed species from its recipe + parts so the
+        //    GLBs the atlas repacks carry the current authored state. Mirrors
+        //    the /salon/:id/publish shell, minus --species (= all species).
+        const tRegen = Date.now()
+        let regenLog = ''
+        try {
+          const { stdout } = await execAsync('node', [join(__dirname, 'generate-salon.js')])
+          regenLog = String(stdout).slice(-2000)
+          const { rebuildIndex } = await import('./build-index.js')
+          await rebuildIndex()
+        } catch (e) {
+          return jsonRes(res, 500, {
+            error: 'regenerate-from-source failed (generate-salon)',
+            stderr: String(e.stderr || e.message).slice(0, 8000),
+            stdout: String(e.stdout || '').slice(0, 4000),
+          })
+        }
+        const regenMs = Date.now() - tRegen
+        // 2. Atlas, 3. placements.
         const atlas = await bakeLook(lookName, { viz: false })
         if (!atlas.ok) return jsonRes(res, 500, { error: 'bake-look failed', atlas })
         const { bakeTrees } = await import('./bake-trees.js')
         const placements = await bakeTrees({ look: lookName, lod: 'lod2', heroLook: lookName })
-        return jsonRes(res, 200, { ok: true, look: lookName, atlas, placements, totalMs: Date.now() - t0 })
+        return jsonRes(res, 200, { ok: true, look: lookName, regenMs, regenLog, atlas, placements, totalMs: Date.now() - t0 })
       } catch (err) {
         return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
       }
