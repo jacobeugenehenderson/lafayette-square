@@ -1131,9 +1131,9 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // away from the corner); conD/tlo come from its resolved rr entry. FILL-only: no
     // face/curb change. Gated implicitly by mouths (opts.deadEndMouthWrap).
     for (const m of mouths) {
-      if (!m.apexA || !m.apexB || !m.dir) continue
+      if (!m.dir || (!m.apexA && !m.apexB)) continue   // 1-apex mouths carry apexB=null (Piece 1)
       const sideOf = (p) => { const cx = p[0] - m.mid[0], cy = p[1] - m.mid[1]; return (m.dir[0] * cy - m.dir[1] * cx) >= 0 ? 'left' : 'right' }
-      for (const apex of [m.apexA, m.apexB]) {
+      for (const apex of [m.apexA, m.apexB].filter(Boolean)) {
         const k = tipKey(apex)
         const c = cornerT.get(k)
         if (!c || (c.legs && c.legs.length >= 2)) continue   // only the snapped 1-leg mouth corner
@@ -1254,12 +1254,73 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // (hw+cw+tl+sw+1) swept the legitimate beyond-band LU into the sidewalk too,
     // ballooning the bulb into a fat all-sidewalk pad (Jacob 2026-06-11). Clipping
     // the reclaim to fullBand keeps the wrap at the regular treelawn+sidewalk width.
+    // [Piece 2 — STRIP-AWARE G8 reclaim] The reclaimed cap sliver is ped WRAP, not
+    // land use — but its MATERIAL should honor the cap-owning run's outer strip the
+    // same as normal frontage: a treelawn-Y dead-end (outer === 'LU') wraps its cap
+    // in GRASS/LU, a treelawn-N one (outer === 'SW') in concrete/SW. Done per-tip so
+    // an ASYMMETRIC cap (one side LU, one side SW — e.g. henrietta/south-13th) splits
+    // the sliver by the cap axis, routing each half to its own side's material. An
+    // all-SW cap routes the whole sliver to cornerPad EXACTLY as before → the 27
+    // all-concrete caps stay byte-identical; only the 20 treelawn-Y caps change.
     if (roundTips.length) {
-      const caps = roundTips.map(t => circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 1))
-      const stray = intersectRings(intersectRings(luRemainder, caps), fullBand)
-      if (stray.length) {
+      for (const t of roundTips) {
+        const cap0 = circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 1)
+        const stray = intersectRings(intersectRings(luRemainder, [cap0]), fullBand)
+        if (!stray.length) continue
         luRemainder = differenceRings(luRemainder, stray)
-        cornerPad = unionRings([...cornerPad, ...stray])
+        // cap-owning runs (a side-run whose poly end sits at the tip) + their outer
+        // strip material + into-tile axis (body→tip). hasTL ⇒ outer is LU (grass).
+        // The two side-runs run PARALLEL up the stub to the tip, so their body→tip
+        // vectors are ~identical (the cap AXIS). They differ by which SIDE of that
+        // axis their curb line sits — classify each owner by the perpendicular
+        // offset of its body point from the axis line through the tip.
+        let axis = null
+        const owners = []
+        for (const run of runs) {
+          const nP = run.poly.length
+          for (const ix of [0, nP - 1]) {
+            if (Math.hypot(run.poly[ix][0] - t.p[0], run.poly[ix][1] - t.p[1]) >= 1.5) continue
+            const ped = resolvePedDepths(run.baseMeasure, run.side, runCustom(run))
+            const outer = ped.hasTL ? stripMat.outer : stripMat.inner   // 'LU' (grass) / 'SW'
+            const body = run.poly[ix === 0 ? 1 : nP - 2]
+            if (body && !axis) { const dx = t.p[0] - body[0], dy = t.p[1] - body[1], L = Math.hypot(dx, dy) || 1; axis = [dx / L, dy / L] }
+            owners.push({ outer, body })
+          }
+        }
+        const anyLU = owners.some(o => o.outer === 'LU')
+        const anySW = owners.some(o => o.outer === 'SW')
+        if (!anyLU) {
+          // all concrete (or no resolvable owner) → unchanged: the sliver is SW.
+          cornerPad = unionRings([...cornerPad, ...stray])
+        } else if (!anySW) {
+          // all treelawn-Y → the whole cap wrap is grass.
+          pushLu(tlByLu, lu, stray)
+        } else if (axis) {
+          // ASYMMETRIC cap → split the sliver by the cap axis (a half-plane through
+          // the tip). The LEFT half is the side where cross(axis, p−tip) >= 0; route
+          // each half to the material of the owner whose body sits on that side.
+          const perp = [-axis[1], axis[0]]   // points toward the LEFT half
+          const BIG = 1e4
+          const halfLeft = [
+            [t.p[0] + axis[0] * BIG, t.p[1] + axis[1] * BIG],
+            [t.p[0] - axis[0] * BIG, t.p[1] - axis[1] * BIG],
+            [t.p[0] - axis[0] * BIG + perp[0] * BIG, t.p[1] - axis[1] * BIG + perp[1] * BIG],
+            [t.p[0] + axis[0] * BIG + perp[0] * BIG, t.p[1] + axis[1] * BIG + perp[1] * BIG],
+          ]
+          const sideOf = (o) => { if (!o.body) return null; const cx = o.body[0] - t.p[0], cy = o.body[1] - t.p[1]; return (axis[0] * cy - axis[1] * cx) >= 0 ? 'left' : 'right' }
+          const leftOwner = owners.find(o => sideOf(o) === 'left')
+          const rightOwner = owners.find(o => sideOf(o) === 'right')
+          const leftStray = intersectRings(stray, [halfLeft])
+          const rightStray = differenceRings(stray, [halfLeft])
+          const leftMat = leftOwner ? leftOwner.outer : (rightOwner ? (rightOwner.outer === 'LU' ? 'SW' : 'LU') : 'SW')
+          const rightMat = rightOwner ? rightOwner.outer : (leftMat === 'LU' ? 'SW' : 'LU')
+          const route = (rings, mat) => { if (!rings.length) return; if (mat === 'LU') pushLu(tlByLu, lu, rings); else cornerPad = unionRings([...cornerPad, ...rings]) }
+          route(leftStray, leftMat)
+          route(rightStray, rightMat)
+        } else {
+          // mixed but no axis (degenerate) → fall back to grass (treelawn present).
+          pushLu(tlByLu, lu, stray)
+        }
       }
     }
     // Route the leg strips by their per-edge materials ('LU' → the tile's
@@ -2470,6 +2531,7 @@ export function buildTileGround(ribbons, opts = {}) {
     if (f && f.res < 0.3 && f.R >= 3 && f.R <= 12) culDeSacLoops.set(si, { C: [f.cx, f.cy], R: f.R })
   }
   const shapeTiles = []
+  const _mouthProbe = []   // TEMP probe (opts.deadEndMouthProbe): every candidate mouth + its nearby fillets
   for (const tile of tiles) {
     // [THRU] runs split at through-construction stations → per-fe spans
     const runs = thruSplits.size ? groupRuns(tile).flatMap(splitRunAtStations) : groupRuns(tile)
@@ -2882,9 +2944,31 @@ export function buildTileGround(ribbons, opts = {}) {
         // the two mouth fillet apexes nearest the mouth node (the two corners)
         const near = fSink.map(f => ({ f, d: Math.hypot(f.apex[0] - M[0], f.apex[1] - M[1]) }))
           .filter(o => o.d < 30).sort((a, b) => a.d - b.d).slice(0, 2)
-        if (near.length < 2) continue
-        const apexA = near[0].f.apex, apexB = near[1].f.apex
-        const mid = [(apexA[0] + apexB[0]) / 2, (apexA[1] + apexB[1]) / 2]   // asymmetric pavement center
+        if (opts.deadEndMouthProbe) {
+          const allNear = fSink.map(f => ({ d: +Math.hypot(f.apex[0] - M[0], f.apex[1] - M[1]).toFixed(2), r: +(f.r || 0).toFixed(2), apex: f.apex.map(v => +v.toFixed(1)) }))
+            .filter(o => o.d < 60).sort((a, b) => a.d - b.d).slice(0, 5)
+          // count spur run-ends at this mouth + their sides
+          const spurEnds = []
+          for (const rm of runMeta) {
+            if (rm.skelId !== spurSkel) continue
+            for (const ix of [0, rm.poly.length - 1]) {
+              if (Math.hypot(rm.poly[ix][0] - M[0], rm.poly[ix][1] - M[1]) < 1) spurEnds.push({ side: rm.side })
+            }
+          }
+          _mouthProbe.push({ ti: tiles.indexOf(tile), spurSkel, M: M.map(v => +v.toFixed(1)), nearCount: near.length, spurSides: spurEnds.map(e => e.side), fillets: allNear })
+        }
+        // FALLBACK — a SINGLE-FILLET mouth (Piece 1). The probe (deadEndMouthProbe)
+        // confirmed the only genuinely-skipped mouths are south-13th (tile 12) and
+        // henrietta (tile 25): at each, the through/cross road extends to just ONE
+        // side of the node, so the curb forms exactly ONE real corner (one fillet) —
+        // the other side is collinear (no corner to round). We wrap the ONE corner
+        // that exists rather than butt-capping: snap that side's run-end to the lone
+        // apex, free its wedge, let the FILL slide fire on it (apexB stays null so the
+        // collinear side is untouched). With 2 fillets the original 2-corner path runs
+        // verbatim → the 39 working mouths stay byte-identical.
+        if (near.length < 1) continue
+        const apexA = near[0].f.apex, apexB = near.length >= 2 ? near[1].f.apex : null
+        const mid = apexB ? [(apexA[0] + apexB[0]) / 2, (apexA[1] + apexB[1]) / 2] : apexA.slice()   // asymmetric pavement center (2-apex) / the lone apex (1-apex)
         // (a) SNAP each spur run-end at the mouth to the apex on ITS OWN SIDE, so the
         // two opposite sides get DISTINCT cornerT keys (the collapse mapped both to one).
         // Classify the two apexes left/right of the spur's mouth direction (cross
@@ -2904,23 +2988,29 @@ export function buildTileGround(ribbons, opts = {}) {
         }
         // cross(dir, apex−M) > 0 ⇒ apex is to the LEFT of the into-body direction.
         const sideOf = (apex) => { const cx = apex[0] - M[0], cy = apex[1] - M[1]; return (dir[0] * cy - dir[1] * cx) >= 0 ? 'left' : 'right' }
-        const apexBySide = dir ? { [sideOf(apexA)]: apexA, [sideOf(apexB)]: apexB } : null
+        // map curb-side → its apex. 1-apex: only the lone apex's side is keyed, so
+        // ONLY that side's run-end snaps (the collinear side never matches → untouched).
+        const apexBySide = dir ? (apexB ? { [sideOf(apexA)]: apexA, [sideOf(apexB)]: apexB } : { [sideOf(apexA)]: apexA }) : null
         for (const rm of runMeta) {
           if (rm.skelId !== spurSkel) continue
           rm.poly = rm.poly.map(p => p.slice())
           for (const ix of [0, rm.poly.length - 1]) {
             if (Math.hypot(rm.poly[ix][0] - M[0], rm.poly[ix][1] - M[1]) >= 1) continue
             // the run's `side` is the curb side; snap to the apex classified to the
-            // SAME side. Fall back to the nearer apex if the side classify degenerated.
-            const tgt = (apexBySide && apexBySide[rm.side]) ||
-              (Math.hypot(apexA[0] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][0], apexA[1] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][1]) <=
-               Math.hypot(apexB[0] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][0], apexB[1] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][1]) ? apexA : apexB)
-            rm.poly[ix] = tgt.slice()
+            // SAME side. Fall back to the nearer apex if the side classify degenerated
+            // (2-apex only — with one apex a non-matching side has NO corner, leave it).
+            const tgt = (apexBySide && apexBySide[rm.side]) || (apexB
+              ? (Math.hypot(apexA[0] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][0], apexA[1] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][1]) <=
+                 Math.hypot(apexB[0] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][0], apexB[1] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][1]) ? apexA : apexB)
+              : null)
+            if (tgt) rm.poly[ix] = tgt.slice()
           }
         }
         // (b) freeze the per-mouth disc: radius reaches just past the mouth so the
         // FILL trims the through sector clear of the wedge, but no further (local).
-        const R = Math.max(Math.hypot(apexA[0] - M[0], apexA[1] - M[1]), Math.hypot(apexB[0] - M[0], apexB[1] - M[1])) + 2
+        const R = (apexB
+          ? Math.max(Math.hypot(apexA[0] - M[0], apexA[1] - M[1]), Math.hypot(apexB[0] - M[0], apexB[1] - M[1]))
+          : Math.hypot(apexA[0] - M[0], apexA[1] - M[1])) + 2
         // Freeze the two corner apexes + the spur into-body direction so the FILL
         // can give each mouth-corner cornerT its SECOND leg (the through road's
         // straight leg) — that's what lets the Idea-A deep-leg SLIDE fire at the
@@ -3101,5 +3191,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe }
 }
