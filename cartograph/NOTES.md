@@ -29,6 +29,20 @@ A render/Stage session (parallel to the docs Boz). Landed, all eye-verified or p
 
 ---
 
+## 2026-06-21 (EOD) — REAL DoF end-to-end · render-conformance confirmed · authoring-hardening
+*(Relocated from the MEMORY index 2026-06-23 — diary belongs here, not the pickup line. Forward state lives in `HANDOFF-real-dof.md`.)*
+
+A big RENDER/DoF day. Highlights:
+- **render-conformance was ALREADY landed** — Phases 1–3 (depth desktop-LOG `ca3514f2`, cameras-read-slab `bc2c293f`, dedup `112a7546`) shipped 2026-05-26; the AM pickup had been stale off an unmarked HANDOFF (lesson: verify code, not memory).
+- ⭐⭐ **REAL DoF, end-to-end** (`HANDOFF-real-dof.md`): the two-focal romance DoF (`src/components/RomanceDoF.jsx` — near sharp + arch sharp, mid blur; CoC decoded under LOG depth; eye-verified) → the **FOCUS CHANNEL** (`9bbc5fd7`): knobs On·Blur·Focus-distance·Softness in `skyLightChannels` → shared `PostProcessing` (default-OFF, desktop, mounts `RomanceDoF`) → store → Stage Post-card "Focus (DoF)" → `bake-scene` emit. Blur **BOUNDED to the neighborhood** (arch stays sharp wherever parked). Archived the conflicting fake-blur `tree-hero-lod` → `_archive/HANDOFF-tree-hero-lod-2026-06-21.md`. **KNOWN refinements (the PROPER-DoF pass):** single-pass gather has a hard edge vs sky, no iris bokeh (disk), and doesn't share the blur pyramid with Bloom — a CoC-aware gather fixes all three.
+- **authoring-hardening** (`HANDOFF-authoring-session-hardening.md`): reload restores tool+shot (`8f3dcd2b`); bake settle-gate + lifecycle (`4056032c`); Bake&Preview + reused window (`6e4b693d`); 2D toggle = free HOP (`2f9a95be`). Model: deliberate **STONE** (bake to 3D) vs free **HOP** (2D toggle).
+- **camera-transition SSOT** (`8a217914`, `src/camera/transitions.js`): production/Stage/Preview transition identically (2400ms + smooth up). Camera Phase 4 (framing/orbit/intrinsics) OPEN.
+- **Halo finished** (`65c2a3ba`) + Bloom attenuated + stale "broken" flag cleared (`c1f4a393`); slider-range audit `scratch/AUDIT-slider-ranges.md`. **on-pan flicker FIXED** (`fe3f88c7`): SlabBuildings hover in Preview (gated `interactive=false`) + `frustumCulled` dropping on-screen tiles (→false) — the hero PAN sweeping under a stationary cursor.
+- ⛔ **DOCTRINE (Jacob): these effects are MOBILE-FIRST, not desktop-only** — cheaper/alternate ways to fit a phone's budget IS the point; every effect must be measured in the Preview GPU emulator + per-platform selectable. [[feedback_effects_mobile_first_measured]].
+- ▶ **Open arc (forward state in the HANDOFFs):** the **mobile-viable DoF** (the full-res ~70-tap CoC gather is a desktop reference, held uncommitted/default-OFF; the real work is the cheap version on a downsampled shared pyramid, measured in the emulator, + finish the mobile/desktop selector = render-conformance Phase 4–5); the full doc sweep incl. the **STACKING-RENDER-PASSES** doctrine (`scratch/CHANNEL-ECONOMY-FORENSIC.md`).
+
+---
+
 ## 2026-06-14 (cont.) — The DERIVATION CHAIN banked; the curve-fit lands as the ONE KNOB (SSoT).
 
 ⭐ **The fundamental, recorded (Jacob: "this is a fundamental element… we MUST stop re-discovering things"):** **THE DERIVATION CHAIN** — the centerline is the ROOT source; everything is a pure derivation: **centerline → polygon (curb/tile) → ribbon**. The polygon is BOTH the geometry source AND the **identity** source — the ribbon reads *"what is a straight leg / what is a corner / treelawn-or-sidewalk"* off it — so a rough centerline corrupts *identity*, not just shape (a broken sidewalk at a faceted curve is an **identity** failure). ⇒ **fix at the centerline FIRST, at its source**; patching the polygon/ribbon on a rough centerline is editing a shadow (corollary: polygon moves but centerline doesn't ⇒ wrong layer). Banked in **`RIBBONS.md §1`** (doctrine) + **`README §START HERE`**; the concentric law (`HANDOFF-vector-curve-construction.md` Law 1) is its geometry half.

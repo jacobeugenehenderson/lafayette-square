@@ -10,6 +10,25 @@
 
 ---
 
+## ▶ 2026-06-23 — Grove→slab connected; leaf-size knob fixed; night-emissive + interface NEXT
+
+**LANDED (uncommitted, branch `curb-offset-draw`):**
+- **Grove "Bake → Slab" button** — `POST /grove/bake?look=` (bakeLook + bakeTrees, awaited) + `bakeGroveToSlab` store action + green button in `Grove.jsx`. One-gesture ship-to-slab (was CLI-only). 745 trees, ~5–7s.
+- **Leaf-size knob works on NATURAL leaves, all topologies** — `scaleLeafCardsInPlace` rewritten to scale each leaf as a **connected component** about its centroid (union-find), so it resizes the model's own leaves in place on cards (maple) AND connected mesh (blackgum). Slider 0.4–2.5×. Leaves left **natural** everywhere; operator tunes size. Anchored-synthesis built + kept (synth samples anchors from vendor leaf verts) but NOT the default.
+- Slab rebaked from the (natural) compositions.
+
+**NEXT (tomorrow, with operator):**
+1. **#3 night-emissive (diagnosed).** Foliage glows green with lights+bloom off = leaf albedo under residual ambient/hemi (NOT a rogue emissive; lamp-glow is separate/correct). Build: (a) foliage goes dark at night, (b) the intended **night illumination map** (gated emissive → bloom). Needs design call: dusk→night ramp? per-species? Home: `treeAtlasMaterial.js` + sky channels.
+2. **DoF evaluation** — measure how much the DoF/LoD solution is buying us; may need optimizing. (`HANDOFF-real-dof.md`, `HANDOFF-render-conformance.md`.)
+3. **Interface = the "fashion plates" pivot** — rubric-named + thumbnailed visual plates (kill `Bark007`), plate-based selection, **Grove/Salon render parity** (Grove=published GLB@LOD1/master atlas vs Salon=`generateSingleCompositionGLB`@LOD0 — same tree, two pipelines, they diverge).
+
+**Follow-ups surfaced:**
+- Fold **regenerate-from-source** (`generateSalon`) into `/grove/bake` so a bake never ships stale GLBs (the May-25-vs-June-leaf trap). Decided doctrine, not yet wired.
+- **Birch authored renders bare** — connected-mesh leaf UVs map to empty atlas space (per-species texturing fix).
+- Commit tonight's work (code + compositions + baked slab) — left for operator review.
+
+---
+
 ## Salon arc — chassis + bark + leaves composition (in flight, 2026-05-21)
 
 Operator's call to ship v1.5 by **composing** rather than synthesizing. Two prior generation-focused arcs hit ceilings (Phase G.1 procedural progressing slowly; Li'l Vera LiDAR shelved 2026-05-20 at N.3.0 — see `NOTES.md` 2026-05-20 late-night entry). Salon is a parallel authoring surface that lands on the existing publish pipeline + atlas system unchanged.

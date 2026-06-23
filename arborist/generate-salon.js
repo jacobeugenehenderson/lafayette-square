@@ -152,7 +152,7 @@ const LEAF_CLUSTER_FRAC   = 0.11   // cluster size as a fraction of canopy radiu
 const LEAF_NATURAL_REF_CM = 12     // reference leaf; bigger/smaller species nudge the cluster (sqrt-damped)
 const LEAF_SIZE_FLOOR_M   = 0.12   // absolute floor — a real leaf; never vanish
 const LEAF_SIZE_CAP_M     = 0.90   // absolute cap — never absurd
-const LEAF_MULT_MIN = 0.7, LEAF_MULT_MAX = 1.4   // operator slider = bounded multiplier (§2.3)
+const LEAF_MULT_MIN = 0.4, LEAF_MULT_MAX = 2.5   // operator slider = bounded multiplier (§2.3; matches the Salon Leaf-size range)
 
 // Canopy radius (m) from a flat [x,y,z,…] vertex array. Chassis is recentered to
 // trunk-base at origin (Brief 20), so hypot(x,z) from the axis IS the radius.
@@ -535,6 +535,23 @@ function getUpperBboxSamples(allPositions, count, seedR) {
   return out
 }
 
+// Anchored synthesis (operator 2026-06-23): sample `count` attachment points
+// directly from the chassis's OWN vendor leaf vertices — so synthesized cards
+// land where the model actually has foliage (its real placement + density),
+// not at random bbox-crown samples that "blob in irrelevantly". Used in the
+// synthesized path whenever the chassis shipped vendor leaves; falls back to
+// getUpperBboxSamples only for truly de-leafed (LiDAR/wood-only) chassis.
+function sampleLeafAnchors(flatLeafPositions, count, rng) {
+  const n = flatLeafPositions.length / 3
+  if (n === 0) return []
+  const out = []
+  for (let k = 0; k < count; k++) {
+    const i = Math.floor(rng() * n) % n
+    out.push([flatLeafPositions[i * 3], flatLeafPositions[i * 3 + 1], flatLeafPositions[i * 3 + 2]])
+  }
+  return out
+}
+
 // Lifted from generate-procedural.js D.1b — produce a flat leaf-card geometry
 // from a set of attachment positions. Each attachment emits a small spray of
 // outward-facing quads. We keep it deterministic by routing all randomness
@@ -774,6 +791,51 @@ function rescaleConnectedUVsToTile(prim, uvs, cols, rows, rng, doc) {
   }
   const acc = doc.createAccessor().setType('VEC2').setArray(newUvs)
   prim.setAttribute('TEXCOORD_0', acc)
+}
+
+// Leaf size on the AUTHORED/natural-leaf path (operator 2026-06-23): resize
+// the model's OWN leaves in place — keep their authored placement, stem
+// attachment, and UVs, just grow/shrink each leaf. scale=1 is the shipped
+// size; <1 shrinks, >1 enlarges.
+//
+// Works on ANY leaf topology by scaling each CONNECTED COMPONENT (= one leaf)
+// about its own centroid. Union-find over triangle vertices groups a leaf's
+// verts regardless of whether the prim is independent quad cards (maple,
+// 4 verts/leaf) or a connected sculpted mesh (blackgum, ~5–8 verts/leaf) —
+// verified: every species splits into thousands of small components, never
+// one blob, so this never moves leaves around, only resizes them.
+function scaleLeafCardsInPlace(prim, scale, doc) {
+  if (!(scale > 0) || Math.abs(scale - 1) < 1e-4) return
+  const posAttr = prim.getAttribute('POSITION')
+  const idxAcc = prim.getIndices()
+  if (!posAttr || !idxAcc) return
+  const pos = posAttr.getArray()
+  const idx = idxAcc.getArray()
+  const vc = pos.length / 3
+  // Union-find: connect the three verts of every triangle → one leaf per root.
+  const par = new Int32Array(vc)
+  for (let i = 0; i < vc; i++) par[i] = i
+  const find = (x) => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x] } return x }
+  const uni = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) par[ra] = rb }
+  for (let i = 0; i + 2 < idx.length; i += 3) { uni(idx[i], idx[i + 1]); uni(idx[i + 1], idx[i + 2]) }
+  // Per-component centroid.
+  const cent = new Map() // root → [sx, sy, sz, count]
+  for (let v = 0; v < vc; v++) {
+    const r = find(v)
+    let s = cent.get(r); if (!s) { s = [0, 0, 0, 0]; cent.set(r, s) }
+    s[0] += pos[v * 3]; s[1] += pos[v * 3 + 1]; s[2] += pos[v * 3 + 2]; s[3]++
+  }
+  // Scale each vert about its leaf's centroid.
+  const out = new Float32Array(pos.length)
+  for (let v = 0; v < vc; v++) {
+    const s = cent.get(find(v))
+    const cx = s[0] / s[3], cy = s[1] / s[3], cz = s[2] / s[3]
+    out[v * 3]     = cx + (pos[v * 3]     - cx) * scale
+    out[v * 3 + 1] = cy + (pos[v * 3 + 1] - cy) * scale
+    out[v * 3 + 2] = cz + (pos[v * 3 + 2] - cz) * scale
+  }
+  const acc = doc.createAccessor().setType('VEC3').setArray(out).setBuffer(posAttr.getBuffer())
+  prim.setAttribute('POSITION', acc)
 }
 
 // Bake every node's accumulated world transform into its mesh's POSITION
@@ -1090,6 +1152,19 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     }
   }
 
+  // Capture the chassis's OWN leaf-vertex positions BEFORE any synthesized
+  // strip — these are the model's real foliage placement, used as the spray
+  // anchors so synthesized leaves land where the model has leaves (anchored
+  // synthesis, operator 2026-06-23). Empty for truly de-leafed chassis.
+  const vendorLeafAnchorPool = []
+  for (const { prim } of vendorLeafPrims) {
+    const acc = prim.getAttribute('POSITION')
+    if (acc) {
+      const arr = acc.getArray()
+      for (let i = 0; i < arr.length; i++) vendorLeafAnchorPool.push(arr[i])
+    }
+  }
+
   // Rebind bark material: create a fresh material with bark textures and
   // assign it to bark prims only.
   const barkBundle = await readBarkBundle(bark.ref)
@@ -1156,9 +1231,13 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
       .setRoughnessFactor(0.85)
       .setMetallicFactor(0)
     const packMeta = await readLeafPackMeta(leaves.pack)
+    // Operator leaf-size knob applies to authored leaves too (2026-06-23):
+    // a direct multiplier on the model's own card size, in place.
+    const vendorLeafScale = typeof leaves.scale === 'number' ? leaves.scale : 1.0
     for (const { prim } of vendorLeafPrims) {
       prim.setMaterial(leafMat)
       rewriteLeafPrimUVs(prim, packMeta.tileGrid, rng, chassisDoc)
+      scaleLeafCardsInPlace(prim, vendorLeafScale, chassisDoc)
     }
     // Slot label + return early — vendor path doesn't run the spray code.
     const scene = chassisDoc.getRoot().getDefaultScene() || chassisDoc.getRoot().listScenes()[0]
@@ -1175,7 +1254,17 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
   const authoredTags = Array.isArray(meta.leafAttachmentTags) ? meta.leafAttachmentTags : []
   const occ = Math.max(0, Math.min(1, leaves.occupancy ?? 0.7))
   let attachments
-  if (authoredTags.length > 0) {
+  // cards per anchor — fewer when anchored to the model's own (already dense,
+  // well-placed) leaf positions; more for the sparse bbox-spray fallback.
+  let cardsPerAttachment = 35
+  if (vendorLeafAnchorPool.length >= 12) {
+    // Anchored synthesis (2026-06-23): the model's own leaf vertices ARE the
+    // foliage shape — sample them so synthesized cards sit on the real leaves
+    // (placement + density), not random bbox points. Occupancy drives count.
+    const anchorCount = Math.round(120 + occ * 480)
+    attachments = sampleLeafAnchors(vendorLeafAnchorPool, anchorCount, rng)
+    cardsPerAttachment = 5
+  } else if (authoredTags.length > 0) {
     // 2026-05-22: occupancy now subsamples the authored tags (was bypassed
     // entirely when tags exist). Deterministic Fisher-Yates shuffle then
     // slice. At occ=1.0 use all; at occ=0.5 use half; at occ=0.0 keep
@@ -1208,7 +1297,7 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
   // leaf size (was the uniform BASE_CARD_SIZE × scale). EYE-TUNABLE knobs above.
   const cardSize = deriveLeafCardSize(positionsCombined, packMeta, scale)
   const leafGeo = buildLeafGeometryFromAttachments(attachments, {
-    cardsPerAttachment: 35,
+    cardsPerAttachment,
     cardSize,
     spread: 0.7,
     yCompression: 0.7,

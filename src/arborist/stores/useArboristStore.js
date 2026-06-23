@@ -239,6 +239,31 @@ const useArboristStore = create((set, get) => ({
       set({ groveError: String(err), groveLoading: false })
     }
   },
+  // The explicit Grove "ship-to-slab" gesture (one production move): atlas +
+  // placements for the active Look. Awaited (not fire-and-forget) so the
+  // button's spinner reflects the operator's "ready to look in LS" moment.
+  groveBaking: false,
+  groveBakeResult: null,   // { count, uniqueVariants, totalMs } | { error }
+  bakeGroveToSlab: async () => {
+    const lookId = get().activeLookId
+    if (!lookId) { set({ groveBakeResult: { error: 'No active Look selected' } }); return }
+    set({ groveBaking: true, groveBakeResult: null })
+    try {
+      const r = await fetch(`/api/arborist/grove/bake?look=${encodeURIComponent(lookId)}`, { method: 'POST' })
+      const d = await r.json()
+      if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`)
+      set({
+        groveBaking: false,
+        groveBakeResult: {
+          count: d.placements?.count ?? 0,
+          uniqueVariants: d.placements?.uniqueVariants ?? 0,
+          totalMs: d.totalMs ?? 0,
+        },
+      })
+    } catch (err) {
+      set({ groveBaking: false, groveBakeResult: { error: String(err.message || err) } })
+    }
+  },
   // ── Procedural authoring (v1.5 Phase A — dice + adopt) ───────────────
   // Top-level mode mirroring Grove (mutually exclusive with the library /
   // Workstage / Grove views). Per-species panel lets the operator dice

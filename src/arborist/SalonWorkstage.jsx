@@ -1225,14 +1225,14 @@ function SalonControlsPanel({
           value={leaves?.mode ?? 'authored'}
           onChange={(e) => onParams({ leaves: { mode: e.target.value } })}
           style={selectStyle}
-          title="Authored = the model's own leaves, retextured to the pack (Ways + size do NOT apply). Synthesized = kit-generated from the pack + Ways + leaf size (the rubric leaf model).">
+          title="Authored = the model's own leaves, retextured to the pack, resized in place by Leaf size (Ways does NOT apply — the cards keep their authored placement + stems). Synthesized = kit-generated spray from the pack + Ways + leaf size.">
           <option value="authored">Authored (model's own leaves)</option>
-          <option value="synthesized">Synthesized (kit: pack · Ways · size)</option>
+          <option value="synthesized">Synthesized (kit spray: pack · Ways · size)</option>
         </select>
       </Row>
       {leaves?.mode !== 'synthesized' && (
         <div style={{ fontSize: 10, color: '#c8a83a', margin: '-3px 0 3px', lineHeight: 1.3 }}>
-          ↳ Ways + Leaf size apply to <b>Synthesized</b> leaves. Authored keeps the model's own.
+          ↳ Authored keeps the model's own leaves on their stems. <b>Leaf size</b> resizes them in place; <b>Ways</b> applies to Synthesized only.
         </div>
       )}
       <Row label="Pack">
@@ -1269,7 +1269,7 @@ function SalonControlsPanel({
           format={(v) => `${Math.round(v * 100)}%`} />
       </Row>
       <Row label="Leaf size">
-        <DraftSlider min={0.7} max={1.4} step={0.02}
+        <DraftSlider min={0.4} max={2.5} step={0.05}
           value={leaves?.scale ?? 1.0}
           onCommit={(v) => onParams({ leaves: { scale: v } })}
           format={(v) => `${v.toFixed(2)}×`} />

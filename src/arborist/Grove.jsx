@@ -48,6 +48,9 @@ export default function Grove() {
   const looksRosters = useArboristStore(s => s.looksRosters)
   const toggleInLook = useArboristStore(s => s.toggleInLook)
   const setGroveVariantOverride = useArboristStore(s => s.setGroveVariantOverride)
+  const bakeGroveToSlab = useArboristStore(s => s.bakeGroveToSlab)
+  const groveBaking = useArboristStore(s => s.groveBaking)
+  const groveBakeResult = useArboristStore(s => s.groveBakeResult)
   const activeLookTrees = looksRosters[activeLookId] || []
 
   // Two scopes (both populated by published compositions — visibility is
@@ -191,6 +194,27 @@ export default function Grove() {
           <span style={{ color: '#888' }}>
             {scope === 'look' ? `${visible.length} in roster` : `${visible.length} of ${variants.length}`}
           </span>
+          <button
+            onClick={bakeGroveToSlab}
+            disabled={groveBaking || !activeLookId}
+            title={`Bake this Look's roster to the slab (atlas + placements) — what LS renders. Takes ~10-30s.`}
+            style={{
+              border: '1px solid rgba(150,220,130,0.4)', borderRadius: 4,
+              padding: '6px 14px', fontSize: 11, fontWeight: 600,
+              background: groveBaking ? 'rgba(150,220,130,0.15)' : 'rgba(150,220,130,0.22)',
+              color: '#cfeeb4', fontFamily: 'inherit',
+              cursor: (groveBaking || !activeLookId) ? 'not-allowed' : 'pointer',
+              opacity: (groveBaking || !activeLookId) ? 0.5 : 1,
+            }}>
+            {groveBaking ? 'Baking…' : 'Bake → Slab'}
+          </button>
+          {groveBakeResult && !groveBaking && (
+            <span style={{ color: groveBakeResult.error ? '#f88' : '#bce0a0', fontSize: 11 }}>
+              {groveBakeResult.error
+                ? `bake failed: ${groveBakeResult.error}`
+                : `✓ ${groveBakeResult.count} trees placed (${groveBakeResult.uniqueVariants} variants, ${(groveBakeResult.totalMs/1000).toFixed(0)}s)`}
+            </span>
+          )}
         </span>
         )}
       </header>

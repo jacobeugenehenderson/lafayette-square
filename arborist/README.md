@@ -114,6 +114,8 @@ The per-tree **Re-publish "add"** is **symbolic, not useful** — the Grove's se
 
 **Retires / changes:** the per-tree Re-publish gesture; `syncLookRoster`'s "add" role; the `quality < 2` Grove gate — all collapse into *eligible + approved*. `bake-look`/`bake-trees` grow to regenerate-from-source (start with regenerate-everything; incremental later).
 
+> **Status (2026-06-23):** a **"Bake → Slab" button** now lives in the Grove header — `POST /grove/bake?look=` runs `bake-look` + `bake-trees` in one gesture (the CLI pair, awaited; ~5–7s). ⚠️ It does **not yet regenerate-from-source** — it repacks the already-published GLBs. So if a composition changed, re-publish (`generate-salon`) before baking, or the slab ships stale geometry (the May-25-vs-June-leaf trap). Folding `generateSalon` into the button is the queued finish of this decision.
+
 > ⚠️ **Synthesized trees are NOT yet "in the clear" (2026-06-20).** The leaf model is *wired + functional* (size, whole-crown fill, Ways are visually distinct) but **not visually correct** — the Ways grammars need work and the **season/color ramp is unbuilt**. The bake-to-slab + LS-camera work proceeds to test the *pipeline + cameras + DoF*, not to declare the trees finished.
 
 ---

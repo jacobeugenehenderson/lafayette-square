@@ -322,7 +322,7 @@ function snapshotFromComposition(c) {
     // composition params don't change when the build LOGIC does, so a re-preview
     // would otherwise 'noop' to a stale build. Bump this on any leaf-emission
     // logic change to force a full rebuild.
-    buildVersion: 'leaf-model-2026-06-20a',
+    buildVersion: 'leaf-model-2026-06-23d-natural-cc-scale',
   }
 }
 

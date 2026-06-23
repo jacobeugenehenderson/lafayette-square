@@ -1091,6 +1091,30 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    // POST /grove/bake?look=<name> — the explicit Grove "ship-to-slab"
+    // gesture: atlas (bakeLook) THEN placements (bakeTrees) in one call, so
+    // the operator bakes the whole roster to the slab from the Grove UI
+    // instead of running the CLI pair by hand. The slab is the contract —
+    // this is what LS renders. (/atlas/bake stays atlas-only, for the
+    // per-toggle fire-and-forget auto-bake.)
+    if (req.method === 'POST' && path === '/grove/bake') {
+      const lookName = new URL(req.url, 'http://x').searchParams.get('look')
+      if (!lookName) return jsonRes(res, 400, { error: 'missing ?look=<name>' })
+      if (lookName.includes('/') || lookName.includes('..') || lookName.startsWith('.')) {
+        return jsonRes(res, 400, { error: 'invalid look name' })
+      }
+      try {
+        const t0 = Date.now()
+        const atlas = await bakeLook(lookName, { viz: false })
+        if (!atlas.ok) return jsonRes(res, 500, { error: 'bake-look failed', atlas })
+        const { bakeTrees } = await import('./bake-trees.js')
+        const placements = await bakeTrees({ look: lookName, lod: 'lod2', heroLook: lookName })
+        return jsonRes(res, 200, { ok: true, look: lookName, atlas, placements, totalMs: Date.now() - t0 })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
+      }
+    }
+
     // ── Salon authoring (Brief 1, Sequoia 2026-05-21) ─────────────────
     //
     // Fourth top-level mode: chassis + bark + leaves composition.

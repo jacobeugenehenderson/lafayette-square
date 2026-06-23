@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-06-23 — Grove ship-to-slab button + leaf-size knob fix (natural leaves, all topologies) + night-emissive diagnosis
+
+A long session connecting the Arborist to the slab, then chasing the leaf-size knob.
+
+**1. Grove "Bake → Slab" button (LANDED, uncommitted).** The Grove had no explicit ship gesture — baking was the CLI pair (`bake-look` + `bake-trees`). Added `POST /grove/bake?look=<name>` (`arborist/serve.js`) that runs `bakeLook` THEN `bakeTrees` for the look, awaited, returns `{placements, totalMs}`; store action `bakeGroveToSlab` (`useArboristStore.js`); a green **"Bake → Slab"** button + result readout in the Grove header (`Grove.jsx`). `/atlas/bake` stays atlas-only for the per-toggle auto-bake. Verified end-to-end (745 trees, ~5–7s). *(Did NOT fold regenerate-from-source into the button — see below; the button still repacks existing published GLBs.)*
+
+**2. The stale-GLB trap (root cause of "miniature/missing leaves").** Published GLBs in `public/trees/<sp>/` were **May-25**, before the June-19/20 leaf model existed; `bake-look` only repacks them, so the slab/Grove showed pre-leaf-work geometry. Regenerating from compositions (`generate-salon`) is the fix — this is the "Re-publish" step that's hard to reach in the Salon UI. ⚠️ **Lesson reinforced:** the Grove bake SHOULD regenerate-from-source (decided doctrine, README §"The Grove → Slab"); it doesn't yet, so a bake can ship stale leaves. Folding `generateSalon` into `/grove/bake` is queued (BACKLOG).
+
+**3. The leaf-size knob — the real ask + the fix.** Operator: "make the knob WORK and I'LL decide the size." It didn't, because the leaf model has two paths and the chassis vary:
+   - **Authored/vendor path** = the model's OWN leaves, retextured (the 1:1 pack-swap on the same stems the operator wants). Originally **ignored leaf size by design**.
+   - **Synthesized path** = a generated spray; the size knob worked but it "blobs in irrelevantly" (random bbox samples, not the model's placement) → operator rejected it twice.
+   - **Verified:** roster chassis (`red_maple_b`, `common_birch_b`, `black_gum_a`…) all **have vendor leaf prims** (not de-leafed), so authored is the right path. But leaf prim topology varies wildly — maple = clean 4-vert cards, blackgum = 3 prims of connected mesh (`vc%4≠0`), so a 4-vert-card scaler worked on maple, dead on blackgum.
+   - **THE FIX (LANDED):** `scaleLeafCardsInPlace` (`generate-salon.js`) now scales each leaf as a **connected component** (union-find over triangle verts → one clump per leaf), about its own centroid. Verified every species splits into thousands of small components (maple 55k×4v, blackgum 180/52/2354, birch 72k×4v) — **never one blob** — so it resizes leaves in place on ANY topology without moving them. A/B-proven on blackgum (was dead) and maple. Slider widened 0.7–1.4 → **0.4–2.5×** (`SalonWorkstage.jsx`), synth clamp `LEAF_MULT_MIN/MAX` matched. Default scale 1.0 = shipped natural size; **leaves left NATURAL everywhere** (operator: natural > synthesized; he decides size).
+   - Also built (kept, available): **anchored synthesis** — when synthesized, sample the spray anchors from the chassis's own leaf vertices (`sampleLeafAnchors`) so synth cards land on the real foliage, not bbox blobs. Not the default; useful for de-leafed/LiDAR chassis.
+   - ⚠️ **Birch authored renders bare; blackgum looked dark in the Workstage STUDIO view** but **green/correct in the Grove (runtime lighting)** — the STUDIO darkness is a preview-view artifact (likely tied to the #3 night-lighting thread), NOT a leaf bug. Birch-bare = its connected-mesh leaf UVs map to empty atlas space (a per-species texturing follow-up).
+   - Preview cache `buildVersion` bumped (`salon-preview-atlas.js`) on each emission-code change (the documented stale-preview lesson).
+
+**4. Night-emissive bug (DIAGNOSED, not fixed — tomorrow's #3).** Operator screenshot: lights off + bloom off, foliage still glows green. **Cause:** leaf **albedo** under residual scene ambient/hemisphere — bright saturated double-sided leaves catch the little remaining light while dark-albedo ground stays black. **NOT a rogue tree emissive** — the only tree emissive is the warm lamp-glow (`treeAtlasMaterial.js:683`, orange, `uLampGlow`-gated, correct). The **intended night illumination map for bloom does not exist yet.** #3 = (a) make foliage go dark at night, (b) build a gated night-illumination emissive that feeds bloom. Needs operator design call (trigger = dusk→night ramp like lamp pools? per-species/per-pack?).
+
+**5. Interface (DISCUSSED, deferred).** Operator: the Arborist betrays its own "fashion plates" premise — panel-of-knobs + `Bark007` opaque ids instead of named, thumbnailed, visual plates; Grove renders differently than Salon (Grove = published GLBs @ LOD1 through master atlas; Salon = `generateSingleCompositionGLB` live @ LOD0 — same tree, two pipelines). The interface pivot (rubric-named visual plates, plate-based selection, Grove/Salon render parity) is the next big arc.
+
 ## 2026-05-26 — Milestone: LS roster re-seed + tree pipeline reaches production (build → finesse)
 
 The night the kit "broke through to together." Two arborist-relevant milestones:
