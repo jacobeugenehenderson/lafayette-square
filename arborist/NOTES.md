@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-06-23 (EOD) — THE tree-weight wall + the visibility-cull strategy (full capture → `HANDOFF-visibility-cull-lods.md`)
+
+The afternoon's deep arc bottomed out on the real, foundational problem and a strategy to beat it. **Full dispatch-ready detail: `HANDOFF-visibility-cull-lods.md` (repo root). Start there next session.** Summary:
+
+- **The wall:** tree GLBs are **16MB and decimation can't reduce them** — the connected-mesh bark is UV-locked for the atlas, so attribute-aware `simplify` floors at ~127K tris even at `ratio 0.010` (lod0=lod1 byte-identical). Published lod1 set = **1.7 GB**. The **Grove context-losses (GPU OOM)** loading them → shows a stale frozen frame → "Salon edits don't show in the Grove." This is the long-deferred Brief 6.3-followup gate, now acute. `simplifySloppy` gets past the floor but breaks atlas UVs.
+- **The strategy (chosen):** **bake-time per-context VISIBILITY CULLING** — the cameras are on known tracks, so we precompute and *delete* the surfaces never seen, instead of *simplifying* (which can't). Sidesteps the UV-floor, lossless to the eye, beats impostors (operator skeptical) + sloppy (broken UVs). The visibility oracle already exists: the hero pan (`classifyHeroTiers`, 24 poses, fov 26°).
+- **The three contexts (= the LsoD):** **Street** = ONE full tree (focal/near) + the rest Hero-sized + **DoF-blurred in the BG** (so street loads 1 full + N hero + blur, never 50 full — this is the DoF-replaces-LoD bet made concrete). **Hero** = lod1 + PVS-cull against the pan + DoF. **Browse** = overhead trunk-cut below the canopy base (delete occluded wood, keep+decimate canopy) — most aggressive, pure geometric.
+- **The instancing design question** (decide before Hero): per-variant conservative cull (preserves instancing) vs per-placement (aggressive, breaks instancing).
+- **Role model (locked):** Salon = tweaking, per-context knobs in ALL 3 views (browse hardest). Grove = cosmetic confirmation → renders a LIGHT LOD (doesn't need heavy Hero — that's what fixes its crash). DoF is the *cover*, not the *cut* (can't fix GPU memory).
+- **Built this session:** Phase 1 regenerate-into-bake (`15682e55`, needs backend restart), doc correction (`f802cb95`). **Uncommitted in tree (HMR-live):** autosave (works) + enterGrove (fires, but Grove crashes before rendering) + Salon 3 context views + bake lods + GeoTierDriver (moot/risky until LODs light) + 🧹 debug logs to remove. See the HANDOFF for the full build order + file map.
+
 ## 2026-06-23 (PM) — root-cause confirmed in code: the Salon↔Grove stale-artifact divergence; doc correction + the decided WYSIWYG target
 
 The morning's "stale-GLB trap" (entry below, item 2) got nailed to **two specific gaps in `serve.js`**, the docs got corrected to reflect reality, and the operator set the target direction.

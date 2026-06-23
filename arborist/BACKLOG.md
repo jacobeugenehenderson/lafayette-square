@@ -10,6 +10,18 @@
 
 ---
 
+## ▶ 2026-06-23 (EOD) — ⛔ THE WALL: trees are 16MB, decimation floors (UV-lock). NEXT = per-context visibility-cull. **Start: `HANDOFF-visibility-cull-lods.md`**
+
+The afternoon found the foundational blocker and the strategy to beat it. **Full detail: `HANDOFF-visibility-cull-lods.md` (root).**
+- **Wall:** connected-mesh bark is UV-locked → `simplify` can't reduce below ~127K tris (lod0=lod1 byte-identical, GLBs 16MB, lod1 set = 1.7GB). The **Grove context-losses (GPU OOM)** loading them → stale frame → "edits don't show." (Brief 6.3-followup, now acute.)
+- **Strategy:** bake-time **per-context visibility culling** — delete surfaces the known camera tracks never see (don't simplify). Lossless, sidesteps the floor. **Street** = 1 full + rest Hero + DoF-blur BG. **Hero** = lod1 + PVS-cull vs hero pan + DoF. **Browse** = overhead trunk-cut below canopy (most aggressive). Impostors HELD (operator skeptical). DoF = cover, not cut.
+- **Design Q (before Hero):** per-variant cull (keeps instancing) vs per-placement (aggressive, breaks it).
+- **Role model:** Salon = tweaking + per-context knobs in all 3 views; Grove = cosmetic → renders a LIGHT LOD (fixes its crash).
+- **Build order:** (1) Browse trunk-cut, (2) Grove on light LOD + quick Grove→lod2, (3) Hero PVS-cull (+instancing call), (4) Street focal+DoF-BG, (5) per-context knobs.
+- **Built (committed):** Phase 1 regenerate-into-bake `15682e55` (needs backend restart); doc correction `f802cb95`. **Uncommitted (HMR-live):** autosave (✓), enterGrove (fires but Grove crashes first), Salon 3 context views, bake `lods`, GeoTierDriver (moot/risky until LODs light), 🧹 debug logs to remove.
+
+---
+
 ## ▶ 2026-06-23 (PM) — ROOT-CAUSE NAILED: the Salon↔Grove stale-artifact divergence; the WYSIWYG/autosave/green-light arc is NEXT
 
 **The symptom the operator hit:** leaf/bark knobs update in the **Salon** but **not the Grove / LS / after a bake**; hard-refresh doesn't help; the slab looks "pre-leaf." **Confirmed in code (`serve.js`), not memory** — two daylight gaps:
