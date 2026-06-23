@@ -156,11 +156,41 @@ generateTreeMesh({
 
 ---
 
-## Salon preview ↔ LS runtime material parity (doctrine, load-bearing)
+## Salon preview ↔ LS runtime material parity (doctrine = TARGET, not yet true)
 
-**The Salon Workstage preview IS the published artifact, rendered live.** Not "similar to," not "two consumers of the same material" — IS. The bake chain (Adopt → generate-salon → bake-look) is the slab boundary that publishes whatever the Salon authored. LS Stage is where that published slab gets consumed. There is no daylight between Salon preview and LS render that the operator should ever have to step across to verify their work.
+> ⚠️ **AS-BUILT REALITY (corrected 2026-06-23 — read this before the doctrine below).** The doctrine in this section — *"the Salon preview IS the published artifact, no daylight"* — is the **goal we are building toward, not what the code does today.** Today there are **two daylight gaps**, and they are the direct cause of the recurring *"leaf/bark knobs work in the Salon but not in the Grove / LS / the bake"* symptom. Troubleshoot from the flow + gaps below, not from the aspirational doctrine.
+>
+> **The as-built data flow (file:line in `serve.js`):**
+> ```
+> compose in Salon  (arborist/state/<id>/compositions.json)
+>   ├─►[LIVE PREVIEW]  POST /salon/generate → generateSingleCompositionGLB @ LOD0
+>   │     = what the Salon shows. Instant. Reflects every knob.          ← "Salon truth"
+>   └─►[PUBLISH — explicit, PER-SPECIES]  POST /salon/:id/publish  (serve.js:1389)
+>         → node generate-salon.js --species <id>
+>         → THE ONLY regenerate-from-source (leaf-size, bark, authored transform live here)
+>         → public/trees/<id>/skeleton-{lod0,1,2}.glb + manifest          ← "published truth"
+>               └─►[BAKE — explicit]  POST /grove/bake  (serve.js:1100)
+>                     → bakeLook()   repacks the master atlas FROM published GLBs (:1108)
+>                     → bakeTrees()  substitutes placements                        (:1111)
+>                     → public/baked/<look>/…  = the slab            ← "Grove + LS truth"
+> ```
+>
+> **Gap 1 — live-preview ≠ published.** The Salon preview is a *different artifact* (`generateSingleCompositionGLB` @ LOD0) than what `generate-salon` publishes (LOD0/1/2). They can diverge.
+>
+> **Gap 2 — publish ≠ bake.** `/grove/bake` calls **only** `bakeLook + bakeTrees` — it **never** calls `generate-salon`. It repacks whatever GLBs were *last published per species*. Edit a composition, skip the per-species republish, and the bake ships **stale geometry**. (This is the README's documented *"does not yet regenerate-from-source"* gap + the "May-25-vs-June-leaf trap.")
+>
+> **Symptom → cause → fix:**
+> | Symptom | Cause | Fix (today) |
+> |---|---|---|
+> | Knob works in Salon, not Grove/LS | Gap 1 + 2 — Salon = live preview; Grove/LS = stale published-then-baked GLBs | `POST /salon/:id/publish` **each** edited species, *then* `/grove/bake` |
+> | Hard-refresh doesn't fix it | Stale artifacts are **on disk**, not a browser cache | republish + rebake (above) |
+> | A species shows pre-edit ("pre-leaf") after a bake | That species wasn't republished before the bake; or it has **no Salon composition** (raw vendor GLB, e.g. `platanus_acerifolia`) so the leaf knobs structurally can't reach it | republish composed species; vendor-only species need a composition or re-procurement |
+>
+> **The decided TARGET (operator, 2026-06-23) — NOT yet built:** **autosave** (no manual per-species publish) → **fold regenerate-from-source into the bake** so *published is always fresh* (closes Gap 2) → **all three surfaces render the published artifact**, retiring the separate live LOD0 preview (closes Gap 1) → a **green-light readiness gate** decides Grove/bake membership (*not all green = not ready = doesn't bake*) → **strip the Salon UI** toward "fashion plates." **LoD stays dormant-not-deleted** — dropping it rides on the *unproven* bet that DoF far-blur can replace LoD swaps (see the DoF eval; the far-field perf mechanism is orthogonal to this WYSIWYG parity). When this lands, the doctrine below becomes literally true and this AS-BUILT block retires to NOTES.
 
-**Sequencing:**
+**The doctrine (the TARGET this section describes):** the Salon Workstage preview should BE the published artifact, rendered live — not "similar to," not "two consumers of the same material." The bake chain (compose → generate-salon → bake-look → bake-trees) is the slab boundary that publishes whatever the Salon authored; LS is where that published slab gets consumed. The aim is **no daylight** between Salon preview and LS render that the operator must step across to verify their work. *(Today: see the two gaps above.)*
+
+**Sequencing (as-built — the explicit two-gesture model; the target collapses this to autosave + one bake):**
 
 ```
 [operator iterates in the Salon]              ← AUTHORING (must be visually complete here)

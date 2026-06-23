@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-06-23 (PM) — root-cause confirmed in code: the Salon↔Grove stale-artifact divergence; doc correction + the decided WYSIWYG target
+
+The morning's "stale-GLB trap" (entry below, item 2) got nailed to **two specific gaps in `serve.js`**, the docs got corrected to reflect reality, and the operator set the target direction.
+
+**The operator's symptom (lit app + Arborist):** leaf/bark knobs update in the **Salon** but **not the Grove / LS / after a bake**; a hard-refresh shows pre-leaf trees; "the LS/bake problems are problems in the Grove, and between the Salon and the Grove." His instinct was right.
+
+**Confirmed in code (not memory):**
+- `/salon/:species/publish` (serve.js:1389) shells out to `node generate-salon.js --species <id>` — **the only regenerate-from-source path** (where the leaf-size fix, bark, authored transform actually re-emit the GLBs). Per-species, manual.
+- `/grove/bake` (serve.js:1100) runs **only** `bakeLook()` (repack master atlas from existing published GLBs, :1108) + `bakeTrees()` (:1111). **No `generate-salon`.** So it ships whatever was last published per species.
+- The Salon *preview* is `generateSingleCompositionGLB`@LOD0 via `/salon/generate` — a **different artifact** than the published GLBs.
+- ⟹ **Two daylight gaps:** (1) live-preview ≠ published; (2) publish ≠ bake. Together they are the recurring "works in Salon, not Grove/LS" bug. Hard-refresh can't fix it — the staleness is in the on-disk artifacts.
+
+**Doc correction (the operator asked: "update and correct what we have into an accurate reflection… that helps us troubleshoot in the future"):**
+- `ARCHITECTURE.md §Salon preview ↔ LS parity` — the section asserted *"the Salon preview IS the published artifact… no daylight."* That's the **goal**, and the code contradicts it. Reframed: the section now **leads with an AS-BUILT REALITY block** (the data flow with serve.js line numbers + the two gaps + a symptom→cause→fix table), then states the old text as the **TARGET**. A doc that claims no-daylight while the product has two divergence points is worse than silence (trains us to distrust the canon). This block retires to NOTES once the target lands.
+- `README.md §Grove → Slab` — added the troubleshooting conclusion + the target.
+- `BACKLOG.md` — new ▶ 2026-06-23 (PM) entry with the root-cause + the target arc.
+
+**The decided TARGET (operator, 2026-06-23) — the unification that fixes the bug AND is the "fashion plates" interface pivot (NOT yet built):** autosave the Salon (kill manual per-species publish) → fold regenerate-from-source into the bake (published always fresh, closes gap 2 — the long-queued finish of the *Grove→Slab 2026-06-20* decision) → all three surfaces render the *published* artifact, retiring the separate live LOD0 preview (closes gap 1, makes Salon == Grove == LS literal) → a **green-light readiness gate** decides bake membership (*not all green = not ready = doesn't bake*) → strip the Salon UI toward visual plates.
+
+**LoD caveat (operator, load-bearing):** we are *only* benching LoD on the **unproven bet that DoF far-blur can replace LoD swaps** for the perf we need — "may not end up working, but it might." Keep LoD **dormant, not deleted**; do not write its obituary. The far-field perf mechanism (DoF-taper vs LoD) is **orthogonal** to the WYSIWYG parity above — the near/authoring view being faithful is what "what I see is what ships" means; the far-field is a separate perf axis. Settling the bet = the DoF evaluation (measure whether the far-taper buys enough to justify dropping LoD).
+
+**Night-emissive (parked, but confirmed):** the green-at-night is not (only) albedo bounce as first asserted — it's **hardcoded lights that ignore every operator knob**: `CelestialBodies.jsx:1219` white `ambientLight` 0.45 (no knob), `:1236` fill directional 0.06 at night (no knob), `:1203` hemisphere floored at 0.20 at night (knob can't drop below). ≈ 0.51 un-zeroable → "0 doesn't mean 0." `scene.json` ambient/hemi/dir channels are flat 1.0, no TOD curve. Fix = ramp those hardcoded terms to 0 on `nightFactor` so the existing framework goes naturally dark. Operator was right to reject the bounce theory.
+
 ## 2026-06-23 — Grove ship-to-slab button + leaf-size knob fix (natural leaves, all topologies) + night-emissive diagnosis
 
 A long session connecting the Arborist to the slab, then chasing the leaf-size knob.

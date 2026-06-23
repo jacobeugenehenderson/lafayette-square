@@ -10,6 +10,28 @@
 
 ---
 
+## ▶ 2026-06-23 (PM) — ROOT-CAUSE NAILED: the Salon↔Grove stale-artifact divergence; the WYSIWYG/autosave/green-light arc is NEXT
+
+**The symptom the operator hit:** leaf/bark knobs update in the **Salon** but **not the Grove / LS / after a bake**; hard-refresh doesn't help; the slab looks "pre-leaf." **Confirmed in code (`serve.js`), not memory** — two daylight gaps:
+1. **live-preview ≠ published** — the Salon preview is `generateSingleCompositionGLB`@LOD0 (`/salon/generate`), a *different artifact* than what `generate-salon` publishes.
+2. **publish ≠ bake** — `/grove/bake` (serve.js:1100) calls **only** `bakeLook`+`bakeTrees`; it **never** re-runs `generate-salon`, so it repacks the *last-published-per-species* GLBs. `/salon/:id/publish` (serve.js:1389) is the ONLY regenerate-from-source, and it's per-species + manual.
+
+**Today's workaround:** `POST /salon/:id/publish` each edited species → *then* `/grove/bake`. (Vendor-only species with no composition — e.g. `platanus_acerifolia` — can't take the knobs at all.)
+
+**Docs corrected (this session, route-first + accord sweep):** `ARCHITECTURE.md §Salon preview ↔ LS parity` now leads with an **AS-BUILT REALITY** block (the flow + 2 gaps + symptom→fix table) instead of the false "no daylight" claim; `README.md §Grove → Slab` gains the troubleshooting + target; `NOTES.md` 2026-06-23 PM carries the narrative.
+
+**▶ THE DECIDED TARGET ARC (operator, 2026-06-23) — the unification that fixes the bug AND is the interface pivot:**
+- **Autosave** the Salon (kill the manual per-species Re-publish gesture).
+- **Fold regenerate-from-source into the bake** so published is always fresh (closes gap 2 — the long-queued finish of the *Grove→Slab 2026-06-20* decision).
+- **All three surfaces render the published artifact** — retire the separate live LOD0 preview (closes gap 1) so Salon == Grove == LS literally.
+- **Green-light readiness gate** decides Grove/bake membership: *not all green (Kit C·B·L + approve) = not ready = doesn't bake.*
+- **Strip the Salon UI** toward "fashion plates" (folds in the morning's item #3 + the `Bark007`-opaque-ids complaint).
+- **LoD stays dormant-not-deleted** — dropping it rides on the *unproven* bet that **DoF far-blur replaces LoD swaps**; the far-field perf mechanism is orthogonal to this WYSIWYG parity. The DoF eval (below) is how that bet gets settled. Do NOT write LoD's obituary.
+
+*(The morning's #1 night-emissive is parked behind this — but it surfaced a confirmed finding: night foliage stays green because **hardcoded lights ignore every knob** — `CelestialBodies.jsx:1219` white ambient 0.45 + `:1236` fill 0.06 + `:1203` hemi-floor 0.20 ≈ 0.51 un-zeroable. "0 doesn't mean 0." Fix = ramp those to 0 on `nightFactor` so the existing framework goes naturally dark. Separate small arc.)*
+
+---
+
 ## ▶ 2026-06-23 — Grove→slab connected; leaf-size knob fixed; night-emissive + interface NEXT
 
 **LANDED (uncommitted, branch `curb-offset-draw`):**
