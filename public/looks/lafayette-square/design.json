@@ -12,9 +12,9 @@
     "building": true,
     "parking_lot": true,
     "garden": true,
-    "playground": true,
+    "playground": false,
     "swimming_pool": true,
-    "pitch": true,
+    "pitch": false,
     "sports_centre": false,
     "wood": false,
     "scrub": false,
@@ -120,14 +120,10 @@
       "right": {
         "0": {
           "pavementHW": 11.042034627188867,
-          "treelawn": 1.5,
-          "sidewalk": 1.9753462445324317,
           "terminal": "sidewalk"
         },
         "2": {
           "pavementHW": 10.819239038889352,
-          "treelawn": 1.5,
-          "sidewalk": 2.198141832831947,
           "terminal": "sidewalk"
         },
         "3": {
@@ -140,14 +136,10 @@
         },
         "5": {
           "pavementHW": 11.042034627188867,
-          "treelawn": 1.5,
-          "sidewalk": 1.9753462445324317,
           "terminal": "sidewalk"
         },
         "6": {
           "pavementHW": 11.042034627188867,
-          "treelawn": 1.5,
-          "sidewalk": 1.9753462445324317,
           "terminal": "sidewalk"
         }
       }
@@ -158,15 +150,111 @@
           "pavementHW": 4.432881733788652,
           "treelawn": 1.5,
           "sidewalk": 1.5,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
         }
       },
       "left": {
         "0": {
           "pavementHW": 4.57785609414989,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "lawn"
+        }
+      }
+    },
+    "mississippi-avenue": {
+      "left": {
+        "0": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "2": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "3": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "4": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "7": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "8": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "10": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "12": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "14": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        },
+        "15": {
+          "pavementHW": 8.701555809672122,
+          "terminal": "sidewalk"
+        }
+      },
+      "right": {
+        "0": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "3": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "4": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "8": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "10": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "12": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "14": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
+        },
+        "15": {
+          "pavementHW": 11.828274929333126,
+          "terminal": "sidewalk"
         }
       }
     }
@@ -201,7 +289,7 @@
       },
       "night": {
         "grass": 0.5,
-        "trees": 0.01,
+        "trees": 0,
         "pool": 0.4
       },
       "dusk": {
@@ -217,7 +305,7 @@
     "transitionOut": 30,
     "values": {
       "night": {
-        "intensity": 1.4,
+        "intensity": 0,
         "threshold": 0.02,
         "smoothing": 0.06
       },
@@ -402,7 +490,7 @@
     }
   ],
   "heroMotion": {
-    "period": 720,
+    "period": 1360,
     "easing": "sine"
   },
   "shots": {

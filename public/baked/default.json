@@ -1,5 +1,5 @@
 {
-  "generatedAt": 1782092064525,
+  "generatedAt": 1782192012927,
   "look": "default",
   "lod": "lod2",
   "activeStyles": [
@@ -16,28 +16,28 @@
     "cullFrustumGuard": 1.3,
     "fovDeg": 26,
     "target": [
-      1584.329,
-      68.25,
-      -528.221
+      1185.875,
+      63,
+      -395.37500000000006
     ],
-    "mesh": 590,
-    "impostor": 155,
+    "mesh": 600,
+    "impostor": 145,
     "cull": 0,
     "promHistogram": [
-      75,
-      18,
-      27,
-      35,
-      152,
-      214,
-      109,
-      51,
-      37,
-      7,
+      67,
+      16,
+      31,
+      31,
+      128,
+      217,
+      132,
+      46,
+      45,
+      13,
+      4,
       8,
-      7,
-      5,
-      0,
+      6,
+      1,
       0,
       0,
       0,
@@ -46,15 +46,15 @@
       0
     ],
     "thresholdSweep": {
-      "0.005": 670,
-      "0.01": 652,
-      "0.015": 625,
-      "0.02": 590,
-      "0.025": 438,
-      "0.03": 224,
-      "0.04": 64,
-      "0.05": 20,
-      "0.06": 5,
+      "0.005": 678,
+      "0.01": 662,
+      "0.015": 631,
+      "0.02": 600,
+      "0.025": 472,
+      "0.03": 255,
+      "0.04": 77,
+      "0.05": 19,
+      "0.06": 7,
       "0.08": 0
     }
   },
@@ -104,7 +104,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.9538,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -104.8,
@@ -344,7 +344,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.5817,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -151.5,
@@ -368,7 +368,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.5783,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": -115.4,
@@ -1622,7 +1622,7 @@
             "variantId": 2,
             "category": "broadleaf",
             "lampGlow": 1.1724,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": 122.3,
@@ -2156,7 +2156,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.6121,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -153.5,
@@ -2252,7 +2252,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.5568,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -142.9,
@@ -3674,7 +3674,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.7631,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": 177.8,
@@ -3782,7 +3782,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 1.1854,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": 180.7,
@@ -4106,7 +4106,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.2171,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": 149.9,
@@ -4196,7 +4196,7 @@
             "variantId": 3,
             "category": "broadleaf",
             "lampGlow": 0.1291,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -109,
@@ -4292,7 +4292,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.0053,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": -161,
@@ -4328,7 +4328,7 @@
             "variantId": 2,
             "category": "broadleaf",
             "lampGlow": 1.1705,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -103.2,
@@ -4364,7 +4364,7 @@
             "variantId": 2,
             "category": "broadleaf",
             "lampGlow": 1.1866,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -178,
@@ -4388,7 +4388,7 @@
             "variantId": 3,
             "category": "broadleaf",
             "lampGlow": 0.6367,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": -137.7,
@@ -4640,7 +4640,7 @@
             "variantId": 3,
             "category": "broadleaf",
             "lampGlow": 1.2134,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -142.9,
@@ -4724,7 +4724,7 @@
             "variantId": 2,
             "category": "broadleaf",
             "lampGlow": 0.0132,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -150.8,
@@ -4748,7 +4748,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.5478,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -148.9,
@@ -5774,7 +5774,7 @@
             "variantId": 2,
             "category": "broadleaf",
             "lampGlow": 0.3315,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": 114.2,
@@ -6098,7 +6098,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.2998,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": 108.2,
@@ -6644,7 +6644,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 1.1521,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -120,
@@ -6956,7 +6956,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.3281,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -147.4,
@@ -7454,7 +7454,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.3631,
-            "heroTier": "impostor"
+            "heroTier": "mesh"
           },
           {
             "x": -69.3,
@@ -8048,7 +8048,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.2338,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": 57.6,
@@ -8468,7 +8468,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.349,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": 69.5,
@@ -8630,7 +8630,7 @@
             "variantId": 3,
             "category": "broadleaf",
             "lampGlow": 1.2443,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": 148.4,
@@ -8642,7 +8642,7 @@
             "variantId": 1,
             "category": "broadleaf",
             "lampGlow": 0.7148,
-            "heroTier": "mesh"
+            "heroTier": "impostor"
           },
           {
             "x": 122.4,
@@ -9127,7 +9127,7 @@
       "variantId": 2,
       "category": "broadleaf",
       "lampGlow": 0.3315,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -124.1,
@@ -9139,7 +9139,7 @@
       "variantId": 3,
       "category": "broadleaf",
       "lampGlow": 0.1291,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -24,
@@ -9823,7 +9823,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.7631,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 143.6,
@@ -10351,7 +10351,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 1.1521,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -19.3,
@@ -10555,7 +10555,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.0053,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": 137.6,
@@ -10699,7 +10699,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.9538,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 110.3,
@@ -11047,7 +11047,7 @@
       "variantId": 2,
       "category": "broadleaf",
       "lampGlow": 1.1724,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 11.4,
@@ -11275,7 +11275,7 @@
       "variantId": 2,
       "category": "broadleaf",
       "lampGlow": 1.1705,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 109.9,
@@ -11287,7 +11287,7 @@
       "variantId": 3,
       "category": "broadleaf",
       "lampGlow": 1.2443,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": -96.5,
@@ -11383,7 +11383,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.7148,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": 136.6,
@@ -11407,7 +11407,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.6121,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 175.8,
@@ -11443,7 +11443,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 1.1854,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -56.3,
@@ -12235,7 +12235,7 @@
       "variantId": 2,
       "category": "broadleaf",
       "lampGlow": 1.1866,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 138.1,
@@ -12367,7 +12367,7 @@
       "variantId": 3,
       "category": "broadleaf",
       "lampGlow": 0.6367,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": -1.1,
@@ -12991,7 +12991,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.2998,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": 204,
@@ -13075,7 +13075,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.2338,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": -21.5,
@@ -14011,7 +14011,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.5568,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -77.8,
@@ -15187,7 +15187,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.3631,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 73.3,
@@ -15235,7 +15235,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.5817,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 21.4,
@@ -15631,7 +15631,7 @@
       "variantId": 3,
       "category": "broadleaf",
       "lampGlow": 1.2134,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -89.8,
@@ -15739,7 +15739,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.5783,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": 66.2,
@@ -15883,7 +15883,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.3281,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 100.2,
@@ -16255,7 +16255,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.2171,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -99,
@@ -17011,7 +17011,7 @@
       "variantId": 2,
       "category": "broadleaf",
       "lampGlow": 0.0132,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": -150.8,
@@ -17419,7 +17419,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.5478,
-      "heroTier": "impostor"
+      "heroTier": "mesh"
     },
     {
       "x": 98.3,
@@ -17623,7 +17623,7 @@
       "variantId": 1,
       "category": "broadleaf",
       "lampGlow": 0.349,
-      "heroTier": "mesh"
+      "heroTier": "impostor"
     },
     {
       "x": -77.6,
