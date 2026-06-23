@@ -751,8 +751,67 @@ function edgeDepth(measure, side, curbWidth, level) {
 const TREELAWN_YN_THRESHOLD = 0.6   // natural gap below this → no treelawn (the bimodal valley)
 const STD_TREELAWN = 1.5            // standard treelawn depth where present (m) — tunable
 const ADA_SIDEWALK = 1.5            // ADA-standard sidewalk depth — the Revert default (m) — tunable
-const gleanTreelawn = (measure, side) =>
+const VALLEY_LO = 0.25, VALLEY_HI = 0.75   // the bimodal valley span (the ~92 ambiguous run-sides)
+const gleanGap = (measure, side) =>
   Math.max(0, Number.isFinite(measure?.[side]?.treelawn) ? measure[side].treelawn : 0) >= TREELAWN_YN_THRESHOLD
+// ── PER-STREET glean (2026-06-22) ──────────────────────────────────────────
+// The raw gap-threshold mis-assigns the UNMEASURED side of a one-sided street.
+// In LS, 14 streets are surveyed on ONE side (`source:'sidewalk-1side'`) and 4
+// are ROW-only (`source:'assessor'`). measureFromSeed renders the unmeasured
+// side of a one-sided street as terminal='lawn' with treelawn=0 (a modest grass
+// strip placeholder, NOT a survey fact) — so the raw glean reads it N while the
+// MEASURED side reads Y, and the treelawn flips mid-block → the corner reads as
+// broken (Dillon/Grattan/Soulard/S-13th/S-21st, Henrietta Pl — the operator's
+// circled corners). A terminal='lawn' side carries no measure of its own, so it
+// INHERITS the measured (terminal='sidewalk') side's verdict. Two-sided streets
+// keep their per-side glean — real L/R asymmetry (park-edge, divided median) is
+// legitimate, and the threshold-straddle "valley" is the operator's eye-call
+// (surfaced by `reportGlean`, NOT auto-flipped). terminal='none' (highway /
+// median-facing) is genuinely treelawn-less and never inherits.
+// DEFAULT-ONLY: this resolves live UNDER blockCustoms (resolvePedDepths merges
+// the custom on top), so authored overrides win identically.
+const gleanTreelawn = (measure, side) => {
+  const sd = measure?.[side]
+  if (sd && sd.terminal === 'lawn') {
+    const otherKey = side === 'left' ? 'right' : 'left'
+    const o = measure?.[otherKey]
+    if (o && o.terminal === 'sidewalk') return gleanGap(measure, otherKey)
+  }
+  return gleanGap(measure, side)
+}
+
+// Surface the ambiguous run-sides the auto-default cannot decide for the
+// operator — the bimodal VALLEY (gap 0.25–0.75 on a sidewalk-terminal side) and
+// the ROW-only ASSESSOR guesses (no sidewalk measure → the treelawn is a guess).
+// EMITTED, never auto-flipped (the operator's eye is the gate). Gated on
+// `opts.reportGlean` so it fires only during bake — never in the browser path
+// (no process.env; browser-reachable code stays opts.*-gated).
+function reportGlean(measures, streets) {
+  const valley = [], assessor = []
+  const survey = (typeof globalThis !== 'undefined' && globalThis.__cartographSurvey) || null
+  for (let i = 0; i < measures.length; i++) {
+    const m = measures[i], st = streets[i]
+    if (!m) continue
+    const src = survey?.[st?.name]?.source || null
+    for (const side of ['left', 'right']) {
+      const sd = m[side]; if (!sd) continue
+      const g = Math.max(0, Number.isFinite(sd.treelawn) ? sd.treelawn : 0)
+      if (sd.terminal === 'sidewalk' && g >= VALLEY_LO && g <= VALLEY_HI) {
+        valley.push({ street: st?.name, skelId: st?.skelId, side, gap: +g.toFixed(2), source: src })
+      }
+      if (src === 'assessor') {
+        assessor.push({ street: st?.name, skelId: st?.skelId, side, gap: +g.toFixed(2), verdict: gleanTreelawn(m, side) ? 'Y' : 'N', note: 'ROW-only guess' })
+      }
+    }
+  }
+  const dedup = (a, k) => { const seen = new Set(); return a.filter(x => { const s = JSON.stringify(k(x)); return seen.has(s) ? false : (seen.add(s), true) }) }
+  const v = dedup(valley, x => [x.street, x.side, x.gap]).sort((a, b) => (a.street || '').localeCompare(b.street || ''))
+  const as = dedup(assessor, x => [x.street, x.side]).sort((a, b) => (a.street || '').localeCompare(b.street || ''))
+  console.log(`[glean] VALLEY (gap ${VALLEY_LO}-${VALLEY_HI}, sidewalk-terminal) — operator's eye-call, NOT auto-flipped: ${v.length} run-side(s)`)
+  for (const x of v) console.log(`  ${x.street} [${x.skelId}] ${x.side}: gap=${x.gap}${x.source ? ` (${x.source})` : ''}`)
+  console.log(`[glean] ASSESSOR / ROW-only guesses (flag — no sidewalk measure): ${as.length} run-side(s)`)
+  for (const x of as) console.log(`  ${x.street} [${x.skelId}] ${x.side}: gap=${x.gap} verdict=${x.verdict} (${x.note})`)
+}
 
 // ⭐ THE ONE PER-EDGE DEPTH RESOLUTION (SECTION.md §3.3 step 1 / §5 one-depth-truth).
 // override (blockCustoms[skelId][side][segOrd].{treelawn,sidewalk}) else the
@@ -1500,6 +1559,13 @@ export function buildTileGround(ribbons, opts = {}) {
   // Per-street effective measure (median-facing sides pre-zeroed), indexed by
   // the street index the DCEL tags each edge with.
   const measures = streets.map(s => effectiveMeasure(s, streets))
+  // Surface the ambiguous treelawn run-sides for the operator (bake only —
+  // gated on opts.reportGlean, never the browser path). opts.surveyStreets is
+  // the raw survey.json `streets` map (carries the per-street `source` tag).
+  if (opts.reportGlean) {
+    if (opts.surveyStreets) globalThis.__cartographSurvey = opts.surveyStreets
+    reportGlean(measures, streets)
+  }
   const cw = curbWidth
   // Per-fe (per-block) asphalt-width overrides. blockCustoms is keyed
   // (skelId → side → segOrd) — the SAME identity the Survey/Measure drag writes.

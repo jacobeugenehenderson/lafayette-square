@@ -369,9 +369,12 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
-function buildTileBakeShape(ribbons, design, stencilPolygon) {
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
+    // Surface the ambiguous treelawn run-sides for the operator (bake-only).
+    reportGlean: true,
+    surveyStreets,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
     smooth: STREET_SMOOTH,   // the ONE knob — WYSIWYG with the live Survey curve-fit (SKELETON.md §3.5; was 0, 2026-06-04→revived 2026-06-14)
     blockLandUse: design.blockLandUse || null,
@@ -862,6 +865,11 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   const stencil = loadSceneStencil(scene)
 
   const ribbons = JSON.parse(readFileSync(ribbonsPath, 'utf-8'))
+  // Raw survey (per-street `source` tag) — drives the glean valley/assessor
+  // surface report. Optional; absent → the report omits source tags.
+  const surveyPath = join(ROOT, 'cartograph', 'data', scene, 'raw', 'survey.json')
+  const surveyStreets = existsSync(surveyPath)
+    ? (JSON.parse(readFileSync(surveyPath, 'utf-8')).streets || null) : null
   const mapData = existsSync(mapPath) ? JSON.parse(readFileSync(mapPath, 'utf-8')) : { layers: {} }
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const designLayerColors = design.layerColors || {}
@@ -873,7 +881,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
   // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
   // conditional is gone — a scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
