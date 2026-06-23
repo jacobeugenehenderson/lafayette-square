@@ -877,6 +877,13 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
   {
     const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs } = st
     const fillets = st.fillets || []   // achieved curb arcs → the bent-corner sectors
+    // [DEAD-END MOUTH WRAP] Per-mouth discs frozen by the shape pass (the bounded-local
+    // splice — see the freeze block). At each, the through-road's wide leg-sector must
+    // be trimmed back from the mouth so it no longer COVERS the spur's corner wedge,
+    // freeing bandRem for the two bent sectors to build. The spur's own run-ends were
+    // already snapped to the two distinct fillet apexes (distinct cornerT keys). Bounded
+    // to the disc → cross-tile-safe; multi-spur tiles carry one disc per mouth.
+    const mouths = st.mouths || []
     // Tolerate the serialized artifact: roundTipKeys is a Set in-memory, an array
     // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
     const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
@@ -1057,8 +1064,21 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           if (!prev) cornerT.set(k, { p, T: e.total, trim: legTrim[i], legs: [leg] })
           else { if (e.total > prev.T) prev.T = e.total; if (legTrim[i] > prev.trim) prev.trim = legTrim[i]; prev.legs.push(leg) }
         })
-        const t0 = legTrim[0]
-        const t1 = legTrim[1]
+        let t0 = legTrim[0]
+        let t1 = legTrim[1]
+        // [DEAD-END MOUTH WRAP] Trim the THROUGH-road run back from a dead-end mouth
+        // by the mouth disc radius, so its wide leg-sector stops short of the spur's
+        // corner wedge (freeing bandRem). Only the through road (NOT the spur whose
+        // skelId owns the mouth); only the end that sits at the mouth node; bounded by
+        // the per-mouth disc R so it stays local. The spur's own corner pad then fills
+        // the freed wedge at each of its two (now distinct) fillet apexes.
+        if (mouths.length) {
+          for (const ix of [0, 1]) {
+            const end = ix === 0 ? run.poly[0] : run.poly[run.poly.length - 1]
+            const m = mouths.find(mm => mm.spurSkel !== run.skelId && Math.hypot(end[0] - mm.mid[0], end[1] - mm.mid[1]) < 1)
+            if (m) { if (ix === 0) t0 = Math.max(t0, m.R); else t1 = Math.max(t1, m.R) }
+          }
+        }
         const poly = trimPolyline(run.poly, t0, t1)
         if (!poly || poly.length < 2) continue
         // This leg's claim SECTOR: a constant-depth slab (butt-capped at the
@@ -1098,6 +1118,46 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         // deeper-than-this-group's-total band within the claim → LU (the §3.1
         // remainder flows to the block center; no hard property line)
         if (g.total < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(claim, wRing))
+      }
+    }
+    // [DEAD-END MOUTH WRAP — corner INTEGRATION] At a normal corner two legs meet
+    // and the deeper (set-back) leg's walk SLIDES to the curb over a ramp on its own
+    // leg (Idea A, below). At a dead-end mouth the spur's two snapped run-ends each
+    // form a one-leg cornerT (the through road is suppressed as a through-node, line
+    // ~1057), so legs.length===1 and the slide never fires — the spur's set-back walk
+    // butts the corner pad with a step. FIX: give each mouth corner its SECOND leg —
+    // the through road's straight leg on that corner's side — so the SAME Idea-A slide
+    // builds. The through leg is curb-side here (its dir points up the straight road,
+    // away from the corner); conD/tlo come from its resolved rr entry. FILL-only: no
+    // face/curb change. Gated implicitly by mouths (opts.deadEndMouthWrap).
+    for (const m of mouths) {
+      if (!m.apexA || !m.apexB || !m.dir) continue
+      const sideOf = (p) => { const cx = p[0] - m.mid[0], cy = p[1] - m.mid[1]; return (m.dir[0] * cy - m.dir[1] * cx) >= 0 ? 'left' : 'right' }
+      for (const apex of [m.apexA, m.apexB]) {
+        const k = tipKey(apex)
+        const c = cornerT.get(k)
+        if (!c || (c.legs && c.legs.length >= 2)) continue   // only the snapped 1-leg mouth corner
+        const apexSide = sideOf(apex)
+        // find the through run-end at the mouth node M, on this apex's side
+        let best = null, bestD = Infinity
+        for (const e of rr) {
+          const { run } = e
+          if (run.skelId === m.spurSkel) continue
+          for (const ix of [0, run.poly.length - 1]) {
+            const end = run.poly[ix]
+            if (Math.hypot(end[0] - m.mid[0], end[1] - m.mid[1]) >= 1) continue
+            const nb = run.poly[ix === 0 ? 1 : run.poly.length - 2]
+            if (!nb) continue
+            if (sideOf(nb) !== apexSide) continue   // the through segment continuing on this corner's side
+            const dx = nb[0] - m.mid[0], dy = nb[1] - m.mid[1], L = Math.hypot(dx, dy) || 1
+            // conD/tlo as in the cornerT bid (line ~1061): set-back SW → total, curb-side SW → outer strip
+            const conD = e.mat.inner === 'SW' ? e.total : e.o
+            const tlo = e.mat.outer === 'LU' ? e.o : 0
+            const d = Math.hypot(end[0] - apex[0], end[1] - apex[1])
+            if (d < bestD) { bestD = d; best = { dir: [dx / L, dy / L], tlo, conD } }
+          }
+        }
+        if (best) c.legs.push(best)
       }
     }
     // ── §3.3 steps 3+4 · the bent corner = a SLICE of the fullBand ──
@@ -1522,11 +1582,18 @@ export function buildTileGround(ribbons, opts = {}) {
     }
   }
   const deadEndTips = new Map()
+  // [DEAD-END MOUTH WRAP] skelIds that own a genuine deg-1 dead-end tip. A loop
+  // street (Benton / Waverly / Saint Vincent — closed bodies, "don't kill Benton")
+  // has NO deg-1 endpoint (both ends are junctions), so it is EXCLUDED here — the
+  // mouth-wrap below fires only for true dead-end streets, never a loop segment that
+  // happens to present the same-skelId-opposite-side coincident-end signature.
+  const deadEndSkels = new Set()
   for (const s of streets) {
     const caps = s.caps, ce = s.capEnds, pts = s.points
     if (!pts) continue
     for (const [k, idx] of [['start', 0], ['end', pts.length - 1]]) {
       if (nodeDeg.get(tipKey(pts[idx])) !== 1) continue   // not a real dead-end tip
+      deadEndSkels.add(s.skelId || s.name)
       const authored = ce?.[k] || (k === 'start' ? s.capStart : s.capEnd)
       // 'none' / unspecified → the documented default 'round' cul-de-sac. (An
       // explicit 'none' was being treated as blunt → the blunt ped→LU reclaim
@@ -2769,11 +2836,103 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     Aacc.push(...differenceRings([tile.ring], iA))   // asphalt = tile − rounded inner (the shape silhouette)
     Cacc.push(...differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)))   // curb stroke = iA − iC (clamped, shares join)
+    // [DEAD-END MOUTH WRAP] A dead-end street T'ing into a through street collapses
+    // to a ZERO-WIDTH spur in the face: extractFaces walks the dead-end out-and-back
+    // so its two sides' runs (same skelId, opposite side) terminate at ONE coincident
+    // mouth vertex sitting on the through-road centerline. The curb iA already rounds
+    // two mouth fillets there, but the FILL butt-caps: (1) the through-road's wide
+    // leg-sector COVERS the corner wedge (bandRem empty → the bent pad can't build),
+    // and (2) both spur run-ends share ONE cornerT key → only one fillet can pair.
+    // FIX — a BOUNDED LOCAL splice, mirroring the cul-de-sac keyhole (per-mouth disc,
+    // independent on multi-spur tiles): (a) SNAP each spur run-end at the mouth to its
+    // side's mouth fillet apex → two DISTINCT cornerT keys (one per corner); (b) freeze
+    // a per-mouth disc {mid, R} centered on the fillet-MIDPOINT (the asymmetric pavement
+    // center) so the FILL trims the through-road sector back from the mouth inside that
+    // disc only → the wedge (bandRem) is freed and each bent sector builds. Crucially
+    // this leaves iA BYTE-IDENTICAL (the curb already carries the two mouth fillets —
+    // we never reshape the face ring): it sidesteps the DEAD-END-MOUTH-FORENSIC
+    // "iA-byte-identity-unachievable" blocker, which assumed the only path was widening
+    // the face ring. The wedge is freed by trimming the through SECTOR (a FILL slab),
+    // not by moving the curb. Only the spur run-poly ends + per-mouth FILL change;
+    // everything outside each disc — and all of iA — is untouched. Gated on
+    // opts.deadEndMouthWrap (default-on). The far cul-de-sac/blunt TIP is excluded.
+    let _mouths = null
+    if (opts.deadEndMouthWrap !== false && runMeta.length > 2 && fSink.length >= 2) {
+      const tipSet = new Set([...roundTips, ...bluntTips].map(t => tipKey(t.p)))
+      // group same-skelId opposite-side run-ends by coincident vertex (the spur signature)
+      const coincide = new Map()   // tipKey(end) → Map(skelId → Set(side))
+      for (const rm of runMeta) {
+        for (const p of [rm.poly[0], rm.poly[rm.poly.length - 1]]) {
+          const k = tipKey(p)
+          let m = coincide.get(k); if (!m) { m = new Map(); coincide.set(k, m) }
+          let s = m.get(rm.skelId); if (!s) { s = new Set(); m.set(rm.skelId, s) }
+          s.add(rm.side)
+        }
+      }
+      for (const [k, m] of coincide) {
+        if (tipSet.has(k)) continue   // the dead-end's far cul-de-sac/blunt TIP — not the mouth
+        // a mouth: some skelId has BOTH sides ending here AND a DIFFERENT skelId also
+        // ends here (the through road passes through the same node)
+        const spurSkel = [...m.entries()].find(([, sides]) => sides.size >= 2)?.[0]
+        if (!spurSkel) continue
+        if (!deadEndSkels.has(spurSkel)) continue   // a LOOP body (Benton/Waverly/SV), not a dead-end → leave it
+        const hasThrough = [...m.keys()].some(sk => sk !== spurSkel)
+        if (!hasThrough) continue
+        const M = k.split(',').map(v => +v / 1000)
+        // the two mouth fillet apexes nearest the mouth node (the two corners)
+        const near = fSink.map(f => ({ f, d: Math.hypot(f.apex[0] - M[0], f.apex[1] - M[1]) }))
+          .filter(o => o.d < 30).sort((a, b) => a.d - b.d).slice(0, 2)
+        if (near.length < 2) continue
+        const apexA = near[0].f.apex, apexB = near[1].f.apex
+        const mid = [(apexA[0] + apexB[0]) / 2, (apexA[1] + apexB[1]) / 2]   // asymmetric pavement center
+        // (a) SNAP each spur run-end at the mouth to the apex on ITS OWN SIDE, so the
+        // two opposite sides get DISTINCT cornerT keys (the collapse mapped both to one).
+        // Classify the two apexes left/right of the spur's mouth direction (cross
+        // product), then snap the left-side run-end → left apex, right-side → right apex.
+        // The spur centerline runs FROM the mouth INTO the body; take any spur run's
+        // mouth-end → body-point as that direction.
+        let dir = null
+        for (const rm of runMeta) {
+          if (rm.skelId !== spurSkel) continue
+          for (const ix of [0, rm.poly.length - 1]) {
+            if (Math.hypot(rm.poly[ix][0] - M[0], rm.poly[ix][1] - M[1]) >= 1) continue
+            const body = rm.poly[ix === 0 ? 1 : rm.poly.length - 2]
+            const dx = body[0] - M[0], dy = body[1] - M[1], L = Math.hypot(dx, dy) || 1
+            dir = [dx / L, dy / L]
+          }
+          if (dir) break
+        }
+        // cross(dir, apex−M) > 0 ⇒ apex is to the LEFT of the into-body direction.
+        const sideOf = (apex) => { const cx = apex[0] - M[0], cy = apex[1] - M[1]; return (dir[0] * cy - dir[1] * cx) >= 0 ? 'left' : 'right' }
+        const apexBySide = dir ? { [sideOf(apexA)]: apexA, [sideOf(apexB)]: apexB } : null
+        for (const rm of runMeta) {
+          if (rm.skelId !== spurSkel) continue
+          rm.poly = rm.poly.map(p => p.slice())
+          for (const ix of [0, rm.poly.length - 1]) {
+            if (Math.hypot(rm.poly[ix][0] - M[0], rm.poly[ix][1] - M[1]) >= 1) continue
+            // the run's `side` is the curb side; snap to the apex classified to the
+            // SAME side. Fall back to the nearer apex if the side classify degenerated.
+            const tgt = (apexBySide && apexBySide[rm.side]) ||
+              (Math.hypot(apexA[0] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][0], apexA[1] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][1]) <=
+               Math.hypot(apexB[0] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][0], apexB[1] - rm.poly[ix === 0 ? 1 : rm.poly.length - 2][1]) ? apexA : apexB)
+            rm.poly[ix] = tgt.slice()
+          }
+        }
+        // (b) freeze the per-mouth disc: radius reaches just past the mouth so the
+        // FILL trims the through sector clear of the wedge, but no further (local).
+        const R = Math.max(Math.hypot(apexA[0] - M[0], apexA[1] - M[1]), Math.hypot(apexB[0] - M[0], apexB[1] - M[1])) + 2
+        // Freeze the two corner apexes + the spur into-body direction so the FILL
+        // can give each mouth-corner cornerT its SECOND leg (the through road's
+        // straight leg) — that's what lets the Idea-A deep-leg SLIDE fire at the
+        // mouth, the same as at a normal corner (SECTION §6.1 step 5).
+        ;(_mouths || (_mouths = [])).push({ mid: M, ctr: mid, R, spurSkel, apexA, apexB, dir })
+      }
+    }
     // Freeze everything the section pass needs off this tile's shape.
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
     // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(_mouths ? { mouths: _mouths } : {}), ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────
