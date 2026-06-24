@@ -1,5 +1,7 @@
 # Handoff — Real Depth-of-Field: the romance *and* the invisible LoD cover
 
+> **⭐ STATUS 2026-06-24 (Linden) — Phase 1 (the shared `DownsamplePyramid`) is now SCOPED + DISPATCH-READY, Option A LOCKED.** Triggered by a forensic: bloom-on froze the foliage scene to black (perf, not a crash) because Bloom is a solo full-screen hog — exactly what the shared pyramid retires. Build spec + the bloom-non-negotiable rationale are in **Phase 1 below**. The next dispatch is that build (serialize on `PostProcessing.jsx`; land/stash the operator's DoF WIP there first).
+>
 > **⭐ STATUS 2026-06-21 EOD — Phase 0–3 LANDED + eye-verified; the PROPER-DoF upgrade is NEXT.**
 > Built `src/components/RomanceDoF.jsx` (two-focal CoC, log-depth decode — green/red/green confirmed) and
 > the **Focus channel** end-to-end (`9bbc5fd7`): intuitive knobs (On·Blur·Focus distance·Softness) →
@@ -118,10 +120,51 @@ gauge line; each consumer is a measurable delta; NEVER pipe one effect *through*
 - Re-confirm DoF is genuinely absent (it is) — net-new.
 
 ### Phase 1 — The shared `DownsamplePyramid` resource (own gauge line; desktop-first)
-Author the custom down/up mip pass as its own EffectComposer stage **with its own Preview gauge
-line-item**. Refactor Bloom to sample it for the bright-pass blur (replacing the internal unexposed
-`MipmapBlurPass`). **Verify:** Bloom's per-channel delta unchanged; the pyramid reads as its own line;
-no coupling (the result is not shared, only the pyramid).
+
+> **DISPATCH-READY — scoped 2026-06-24 (Linden). Option A LOCKED (Jacob): fork/replace pmndrs
+> `Bloom` with a thin custom bloom that reads our pyramid. "Bloom is not really negotiable" — it
+> STAYS and must be made cheap; we do NOT drop it (Option B, pyramid-for-DoF-only, is rejected: it
+> leaves Bloom paying for a duplicate pyramid).**
+>
+> ⭐ **Motivation, sharpened (2026-06-24):** bloom-on **froze the foliage-heavy scene to a black
+> screen** (`rAF ~194ms`) in both Stage and Preview. Forensic: NOT a crash (all Network 200s, no
+> exception, trees are a light 0.69M tris / 349 draws) — it's **bloom as a SOLO full-screen hog**
+> stacked on a fill-heavy leaf canopy (+ RomanceDoF's own full-res gather when DoF is also on). The
+> shared pyramid is the fix: bloom stops paying for a private downsample → cheap-by-construction →
+> the "bloom default-OFF in Preview so a reload doesn't black" QA bypass can finally be retired.
+
+**The build:**
+1. **`DownsamplePyramid` pass** — a standalone `EffectComposer` stage after the scene render:
+   progressive down-sample (full → ½ → ¼ → ⅛ … N levels) then an up-combine (dual-filter / Kawase
+   style) → a reusable blurred-mip texture. **Pure resource, no effect logic.** Its OWN Preview
+   gauge line-item (the one downsample cost, measured once).
+2. **Custom Bloom (replaces pmndrs `Bloom`)** — pmndrs `Bloom`'s `MipmapBlurPass` is sealed/unexposed,
+   so to share we author a thin custom bloom Effect: bright-pass threshold → blur by sampling the
+   shared pyramid levels → add back × intensity. ⚠️ **Must preserve the authored look + channel
+   wiring unchanged:** `PostProcessing.jsx` drives `bloom.luminanceMaterial` (threshold) +
+   `bloom.intensity` off the `bloom` channel (`resolveGroupAtMinute` → `BLOOM_FIELD_KEYS`); the
+   custom bloom exposes the same knobs so the `bloom` channel keeps authoring it with no change. (The
+   one-tree-program Bloom constraint is about the tree **material**, untouched here — the bloom
+   **pass** swaps safely.)
+3. **Composer order:** scene → (N8AO) → `DownsamplePyramid` → custom Bloom (samples pyramid) →
+   *[Phase 2: DoF samples the SAME pyramid]* → grade/grain/SMAA. **Share the pyramid TEXTURE; never
+   pipe Bloom's RESULT into DoF** (coupling = non-starter).
+4. **Desktop/`phone-hi` only** — pyramid + bloom are desktop-tier; mobile post stays
+   `FilmGrade → SMAA → FilmGrain` (`PostProcessing.jsx:371`). Gate the pyramid+bloom mount on the
+   desktop path.
+
+**Verify (the measurement gate):**
+- Bloom's authored **look is eye-identical** and its **per-channel cost delta is unchanged** — the
+  share is invisible to bloom's result.
+- The **pyramid is its own gauge line.** With DoF off, that line ≈ what Bloom's internal pyramid cost
+  before (cost relocated + exposed, not added). With DoF on (Phase 2), only DoF's delta is added —
+  the pyramid is **not rebuilt**.
+- **No coupling:** toggling DoF off leaves Bloom fully correct and independently measurable.
+
+**Blast radius:** `PostProcessing.jsx` (composer + bloom swap), a new `DownsamplePyramid` +
+custom-bloom module, `GpuMonitor.jsx` (the new gauge line), the desktop/mobile gate. HIGH
+convergence — serialize on `PostProcessing.jsx`; **land or stash the operator's uncommitted DoF WIP
+in `PostProcessing.jsx` first.**
 
 ### Phase 2 — The DoF effect (custom TWO-FOCAL CoC from depth; own gauge line)
 ⭐ **The focus model (Jacob, 2026-06-21) — genuinely two-focal, NOT a single plane:**
