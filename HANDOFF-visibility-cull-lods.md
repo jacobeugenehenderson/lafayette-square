@@ -1,5 +1,20 @@
 # HANDOFF — per-context visibility-cull LODs (the real tree-weight fix)
 
+> ## ⚡ CORRECTION — READ THIS BEFORE THE 30-SECOND VERSION (2026-06-24)
+> **Cut A ("re-UV + re-bake + decimate") is SUPERSEDED — do NOT build it.** The
+> bark wall is **NOT** UV-lock; it's **FLAT NORMALS** — per-face normals split the
+> bark into a triangle-soup with no shared edges, so the texture-safe `simplify`
+> no-ops (byte-identical output = the "127K floor"). **The real fix is far
+> simpler: smooth-normals + weld + simplify** — no re-UV, no re-bake, no
+> `xatlas`, no render-to-texture. Proven + measured: `82,822 → 20,130 → 1,001`
+> tris; full tree **16.2 MB×3 → 5.5 / 2.2 / 1.1 MB** real LOD ladder. Repro:
+> `scratch/LINDEN-*.mjs`. Memory: `tree-weight-wall-is-flat-normals`.
+> **Cut B (visibility culling) is still valid — but as a LATER topping on the
+> smooth-normals base, not the first move.** Everything below that calls Cut A
+> "the universal base" or says "DO FIRST: prove the re-UV step" is the OLD
+> (wrong) diagnosis — kept only for the cull-strategy half (Cut B + the
+> three-context map). ▶ Start from `BATON-tree-weight-smooth-normals.md`.
+
 > ## ▶ NEW AGENT — START HERE (the 30-second version)
 > **You're picking up the Arborist tree-weight fix.** Route first: `ORIENTATION.md` → `arborist/README.md §⭐ START HERE` → this doc.
 > - **The problem:** tree GLBs are **16MB and decimation can't shrink them** — the connected-mesh bark is UV-locked for the atlas, so `simplify` floors at ~127K tris (lod0=lod1 identical). The **Grove crashes the GPU (context lost)** loading them → that's why Salon edits "don't show in the Grove."
