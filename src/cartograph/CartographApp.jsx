@@ -34,7 +34,7 @@ import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
 import { V_EXAG } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject } from '../stage/StageApp.jsx'
+import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject, useHeroAuthoring } from '../stage/StageApp.jsx'
 import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
@@ -369,6 +369,10 @@ function Controls({ controlsRef }) {
   const markerActive = useCartographStore(s => s.markerActive)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const hoverTarget = useCartographStore(s => s.hoverTarget)
+  // Hero runtime/authoring: in the Hero shot the orbit controls are LOCKED
+  // (the bounce plays as it ships) until the operator clicks a keyframe to
+  // author it — then free orbit unlocks to reposition. Street stays free.
+  const heroAuthoring = useHeroAuthoring()
 
   const inDesigner = shot === 'designer'
   // Designer: no rotate, pan enabled unless hovering an editable target.
@@ -402,8 +406,10 @@ function Controls({ controlsRef }) {
       <BrowseControls controlsRef={controlsRef} />
     )
   }
+  // Hero: locked during runtime playback, free only while authoring a
+  // keyframe. Street: always free (no keyframes to lock to).
   return (
-    <OrbitControlsShot controlsRef={controlsRef} />
+    <OrbitControlsShot controlsRef={controlsRef} enabled={shot !== 'hero' || heroAuthoring} />
   )
 }
 
@@ -475,7 +481,8 @@ function BrowseControls({ controlsRef }) {
 }
 
 // Shot-mode controls. Left-drag rotates; Option/Alt+drag pans; wheel zooms.
-function OrbitControlsShot({ controlsRef }) {
+// `enabled` locks them for the Hero runtime preview (see Controls).
+function OrbitControlsShot({ controlsRef, enabled = true }) {
   const localRef = useRef(null)
   useEffect(() => {
     const setButtons = (altDown) => {
@@ -502,6 +509,7 @@ function OrbitControlsShot({ controlsRef }) {
       key="persp"
       makeDefault
       ref={(r) => { localRef.current = r; if (controlsRef) controlsRef.current = r }}
+      enabled={enabled}
       enablePan
       enableRotate
       enableZoom
