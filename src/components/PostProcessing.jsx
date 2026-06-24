@@ -367,10 +367,12 @@ export function PostProcessing({
       const lm = bloom.luminanceMaterial
       if (viewMode === 'planetarium') {
         bloom.intensity = 1.8
+        bloom.warmCool = 0.5
         if (lm) { lm.threshold = 0.15; lm.smoothing = 0.9 }
       } else {
         const base = resolveGroupAtMinute(bloomChannel, minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS)
         bloom.intensity = base.intensity
+        bloom.warmCool = base.warmCool
         if (lm) {
           lm.threshold = base.threshold
           lm.smoothing = base.smoothing

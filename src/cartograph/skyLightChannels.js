@@ -25,8 +25,12 @@ export const BLOOM_FIELDS = [
   { key: 'intensity', label: 'Intensity',           min: 0, max: 2,   step: 0.02 },
   { key: 'threshold', label: 'Luminance threshold', min: 0, max: 0.9, step: 0.01 },
   { key: 'smoothing', label: 'Threshold smoothing', min: 0, max: 1,   step: 0.02 },
+  // Warm ↔ Cool tint of the glow (0 cool · 0.5 neutral · 1 warm). Default
+  // neutral so existing Looks are unchanged; dial cool to recover the look the
+  // blur→threshold mechanism warmed (CustomBloom.jsx, luminance-preserving).
+  { key: 'warmCool',  label: 'Cool ↔ Warm',         min: 0, max: 1,   step: 0.02 },
 ]
-export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, smoothing: 0.4 }
+export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, smoothing: 0.4, warmCool: 0.5 }
 export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 
 // DoF / Focus (Post card) — the two-focal romance depth-of-field (RomanceDoF.jsx,

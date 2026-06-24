@@ -41,6 +41,7 @@ const fragment = /* glsl */`
   uniform float uIntensity;
   uniform float uThreshold;
   uniform float uSmoothing;
+  uniform float uWarmCool;   // 0 cool · 0.5 neutral · 1 warm
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
     vec3 b = texture2D(uPyramid, uv).rgb;
@@ -48,12 +49,24 @@ const fragment = /* glsl */`
     // pyramid (blur→threshold). Knobs keep their meaning; see header.
     float l = dot(b, vec3(0.2126, 0.7152, 0.0722));
     float knee = smoothstep(uThreshold, uThreshold + uSmoothing, l);
+
+    // Warm↔Cool tint of the glow, luminance-preserving (0.5 = neutral → no
+    // change, existing Looks untouched). Recovers the cool look the full-scene
+    // blur→threshold mechanism muddied/warmed. Same photo-tint axis as FilmGrade.
+    float bias = (uWarmCool - 0.5) * 2.0;
+    vec3 warmTint = vec3(1.10, 1.00, 0.84);
+    vec3 coolTint = vec3(0.84, 0.94, 1.12);
+    vec3 tint = bias >= 0.0 ? mix(vec3(1.0), warmTint, bias) : mix(vec3(1.0), coolTint, -bias);
+    vec3 tb = b * tint;
+    float lumOut = dot(tb, vec3(0.2126, 0.7152, 0.0722));
+    b = tb * (l / max(lumOut, 1e-4));   // renormalize → preserve glow brightness
+
     outputColor = vec4(b * knee * uIntensity, inputColor.a);
   }
 `
 
 class CustomBloomEffect extends Effect {
-  constructor({ intensity = 0.5, threshold = 0.85, smoothing = 0.4 } = {}) {
+  constructor({ intensity = 0.5, threshold = 0.85, smoothing = 0.4, warmCool = 0.5 } = {}) {
     super('CustomBloom', fragment, {
       // SCREEN — matches the current LS bloom (PostProcessing.jsx passed
       // blendFunction={BlendFunction.SCREEN}). NOT convolution: it samples its
@@ -64,6 +77,7 @@ class CustomBloomEffect extends Effect {
         ['uIntensity', new THREE.Uniform(intensity)],
         ['uThreshold', new THREE.Uniform(threshold)],
         ['uSmoothing', new THREE.Uniform(smoothing)],
+        ['uWarmCool',  new THREE.Uniform(warmCool)],
       ]),
     })
 
@@ -83,6 +97,9 @@ class CustomBloomEffect extends Effect {
 
   get intensity() { return this.uniforms.get('uIntensity').value }
   set intensity(v) { this.uniforms.get('uIntensity').value = v }
+
+  get warmCool() { return this.uniforms.get('uWarmCool').value }
+  set warmCool(v) { this.uniforms.get('uWarmCool').value = v }
 
   update(/* renderer, inputBuffer, deltaTime */) {
     // Bind the shared pyramid each frame (it's rebuilt by the DownsamplePyramid

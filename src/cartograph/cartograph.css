@@ -474,6 +474,18 @@
   accent-color: #88f;
 }
 
+/* Range sliders — reliable grab + drag on touch/stylus. Native ranges let the
+   browser steal the drag as a scroll gesture (the "sticky" feel); touch-action:
+   none hands the gesture to the slider. The taller hit zone eases stylus
+   targeting. Global so every channel controller benefits; accent colors stay
+   native (no thumb restyle), so mode-accent sliders keep their color. */
+input[type="range"] {
+  touch-action: none;
+  height: 20px;
+  cursor: pointer;
+}
+input[type="range"]:active { cursor: grabbing; }
+
 /* ---------- Buttons ---------- */
 /* Inside a glass toolbar, buttons are translucent chips that pop on hover
    or when active (mode accent). Inside a solid panel they still work. */

@@ -96,6 +96,7 @@ function FxDriver({ aoRef, bloomRef, lookId }) {
         scene?.bloom ?? _ch(BLOOM_FLAT_DEFAULTS), minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
       )
       bloom.intensity = base.intensity
+      bloom.warmCool = base.warmCool
       const lm = bloom.luminanceMaterial
       if (lm) {
         lm.threshold = base.threshold
