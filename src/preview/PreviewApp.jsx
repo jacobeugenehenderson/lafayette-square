@@ -38,6 +38,7 @@ import LafayetteScene from '../components/LafayetteScene'
 import SlabBuildings from '../components/SlabBuildings'
 import PreviewPostFx from './PreviewPostFx'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
+import { setActiveProfileId } from './deviceProfiles'
 import { ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
@@ -747,6 +748,9 @@ export default function PreviewApp() {
     saveTiers(next)
     return next
   })
+  // The env selector also drives which device the gauges judge against (the
+  // active-profile re-aim — meta phase 3). Covers initial mount + every switch.
+  useEffect(() => { setActiveProfileId(mode) }, [mode])
   const [layers, setLayers] = useState(loadLayers)
   const [profilerTab, setProfilerTab] = useState('strip')
   const setLayer = (k, v) => setLayers(prev => {

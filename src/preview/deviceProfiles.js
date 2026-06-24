@@ -139,10 +139,31 @@ export const DEVICE_PROFILES = {
   },
 }
 
-// The active tier. Today the Phone toggle is cosmetic — the gauges use the
-// mobile numbers regardless of mode — so the default reproduces exactly that:
-// a phone tier with the 200/1M budget. The real "which tier is active"
-// selector is Phase 3; until then this constant IS the active profile.
+// The boot-default tier. ACTIVE_PROFILE is the static snapshot (and the
+// frame-ms anchor, which is identical across tiers); the LIVE active tier is
+// driven by the Preview env selector below.
 export const DEFAULT_PROFILE_ID = 'phone-hi'
 
 export const ACTIVE_PROFILE = DEVICE_PROFILES[DEFAULT_PROFILE_ID]
+
+// ── Reactive active profile (the device-regime selector — meta phase 3) ─────
+// The Preview env toggle drives WHICH device the gauges judge against (this is
+// the "which tier is active" selector the header reserved). Gauges that FOLLOW
+// the selector read getActiveProfile() live (they redraw each frame) + subscribe
+// for an immediate re-render. Env ids === profile ids (desktop / phone-hi /
+// phone-lo), so the toggle maps straight through.
+let _activeProfileId = DEFAULT_PROFILE_ID
+const _activeProfileSubs = new Set()
+export function getActiveProfile() {
+  return DEVICE_PROFILES[_activeProfileId] || DEVICE_PROFILES[DEFAULT_PROFILE_ID]
+}
+export function getActiveProfileId() { return _activeProfileId }
+export function setActiveProfileId(id) {
+  if (!DEVICE_PROFILES[id] || id === _activeProfileId) return
+  _activeProfileId = id
+  for (const fn of _activeProfileSubs) fn()
+}
+export function subscribeActiveProfile(fn) {
+  _activeProfileSubs.add(fn)
+  return () => _activeProfileSubs.delete(fn)
+}

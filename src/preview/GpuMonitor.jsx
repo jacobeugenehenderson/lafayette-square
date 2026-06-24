@@ -13,7 +13,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 import { pushFrame as phoneBusPushFrame } from './phoneBus'
-import { ACTIVE_PROFILE, DEVICE_PROFILES } from './deviceProfiles'
+import { ACTIVE_PROFILE, DEVICE_PROFILES, getActiveProfile, getActiveProfileId, subscribeActiveProfile } from './deviceProfiles'
 
 const eventBus = { last: null, log: [] }
 export function noteEvent(label) {
@@ -69,8 +69,8 @@ export function useLayerCosts() {
 }
 export { layerCostSubscribe }
 
-// Spike thresholds (mobile-mindful) — from the active device profile (SSoT).
-const SPIKE = { ms: ACTIVE_PROFILE.spikeMs, calls: ACTIVE_PROFILE.drawBudget, tris: ACTIVE_PROFILE.triBudget }
+// Spike thresholds come from the ACTIVE profile, read live in the ticker (the
+// env selector can change which device is active) — see getActiveProfile() below.
 
 // Rolling window of recent samples for averaging.
 const sampleBuffer = []  // each entry: { ms, calls, tris }
@@ -181,10 +181,11 @@ export function GpuMonitorTicker() {
     }
 
     // Spike detection — log if any metric crosses threshold or doubles
+    const prof = getActiveProfile()
     const isSpike =
-      stats.frameMs > SPIKE.ms ||
-      stats.calls > SPIKE.calls ||
-      stats.tris > SPIKE.tris ||
+      stats.frameMs > prof.spikeMs ||
+      stats.calls > prof.drawBudget ||
+      stats.tris > prof.triBudget ||
       stats.frameMs > baseline.current.ms * 2 ||
       stats.calls > baseline.current.calls * 2 ||
       stats.tris > baseline.current.tris * 2
@@ -274,12 +275,17 @@ function SceneVerdict() {
 function DeviceChip({ profile }) {
   const ratio = sceneRatioFor(profile)
   const t = VERDICT_TONE[toneForRatio(ratio)]
+  // The env selector's active device gets a filled chip + caret, so it's clear
+  // which one the gauges above are judging against.
+  const active = getActiveProfileId() === profile.id
   return (
     <span className="font-mono" style={{
       fontSize: 10, padding: '2px 7px', borderRadius: 4,
       border: `1px solid ${t.color}`, color: t.color,
+      background: active ? `color-mix(in srgb, ${t.color} 22%, transparent)` : 'transparent',
+      fontWeight: active ? 700 : 400,
     }}>
-      {t.mark} {profile.id} · {Math.round(ratio * 100)}%
+      {active ? '▸ ' : ''}{t.mark} {profile.id} · {Math.round(ratio * 100)}%
     </span>
   )
 }
@@ -301,17 +307,24 @@ function Chip({ label, tone, coming }) {
 // DOM-side readout. Lives outside the Canvas.
 export function GpuPanel() {
   const [, setTick] = useState(0)
-  useEffect(() => subscribe(() => setTick(n => n + 1)), [])
+  // Re-render on stats AND on the active-profile change (the env selector), so
+  // the caps/colors below follow the selected device.
+  useEffect(() => {
+    const a = subscribe(() => setTick(n => n + 1))
+    const b = subscribeActiveProfile(() => setTick(n => n + 1))
+    return () => { a(); b() }
+  }, [])
 
+  const prof = getActiveProfile()
   const fmt = (n) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M`
                      : n >= 1_000   ? `${(n / 1_000).toFixed(1)}K`
                      : `${n}`
   const msColor =
-    stats.frameMs > ACTIVE_PROFILE.spikeMs ? 'var(--error)'
-    : stats.frameMs > ACTIVE_PROFILE.warnMs ? 'var(--warning, #f5a623)'
+    stats.frameMs > prof.spikeMs ? 'var(--error)'
+    : stats.frameMs > prof.warnMs ? 'var(--warning, #f5a623)'
     : 'var(--success, #4ade80)'
 
-  const mem = ACTIVE_PROFILE.memBudgetCounts
+  const mem = prof.memBudgetCounts
 
   return (
     <div className="space-y-2">
@@ -326,8 +339,8 @@ export function GpuPanel() {
         </span>
       </div>
 
-      <Row label="draws" value={stats.calls}    cap={ACTIVE_PROFILE.drawBudget} fmt={fmt} />
-      <Row label="tris"  value={stats.tris}     cap={ACTIVE_PROFILE.triBudget} fmt={fmt} />
+      <Row label="draws" value={stats.calls}    cap={prof.drawBudget} fmt={fmt} />
+      <Row label="tris"  value={stats.tris}     cap={prof.triBudget} fmt={fmt} />
 
       {/* Resident memory ceiling (Vernier Phase 2). COUNTS, not bytes — three.js
           exposes counts, not VRAM bytes; a coarse proxy for the never-crash

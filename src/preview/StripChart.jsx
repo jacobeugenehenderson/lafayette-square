@@ -25,7 +25,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { getSession, subscribe } from './phoneBus'
-import { ACTIVE_PROFILE } from './deviceProfiles'
+import { ACTIVE_PROFILE, getActiveProfile } from './deviceProfiles'
 
 // The 100%-of-budget reference line. Positioned at the work-ratio = 1 height
 // (= BUDGET.ms in the ms-equivalent space `composite()` uses internally to
@@ -56,8 +56,12 @@ const KNOB = {
 // Severe hitches still appear as ms outliers in the GpuPanel; this chart is the
 // work-vs-budget view, and the GpuPanel's DeviceVerdict is the headline call.
 function composite(f) {
-  const rDraws = f.calls / BUDGET.draws
-  const rTris  = f.tris  / BUDGET.tris
+  // Budgets read live from the ACTIVE profile (the env selector) so the chart
+  // normalizes against the selected device. BUDGET.ms (frameBudgetMs) is the
+  // same across profiles, so the gradient/ceiling stay put.
+  const prof = getActiveProfile()
+  const rDraws = f.calls / prof.drawBudget
+  const rTris  = f.tris  / prof.triBudget
   let axis = 'draws', factor = rDraws
   if (rTris > factor) { axis = 'tris'; factor = rTris }
   // `effMs` is a ratio expressed in the gradient's ms-equivalent space ONLY so
