@@ -1,6 +1,13 @@
 # HANDOFF — per-context visibility-cull LODs (the real tree-weight fix)
 
-> **Status: SCOPED, not built. 2026-06-23 EOD.** This is the dispatch-ready capture of a long design session. Start here next session. The arc it replaces (#5 "LoD swap") is built-but-moot — see "What's in the tree" below.
+> ## ▶ NEW AGENT — START HERE (the 30-second version)
+> **You're picking up the Arborist tree-weight fix.** Route first: `ORIENTATION.md` → `arborist/README.md §⭐ START HERE` → this doc.
+> - **The problem:** tree GLBs are **16MB and decimation can't shrink them** — the connected-mesh bark is UV-locked for the atlas, so `simplify` floors at ~127K tris (lod0=lod1 identical). The **Grove crashes the GPU (context lost)** loading them → that's why Salon edits "don't show in the Grove."
+> - **The strategy (don't re-derive — operator-designed, locked):** **cut what the camera never sees** (bake-time per-context *visibility culling*), don't try to simplify. Sidesteps the UV floor, lossless to the eye. **Impostors are HELD** (operator skeptical). **DoF is the cover, not the cut.**
+> - **DO FIRST:** the **Browse trunk-cut** — per tree, find the canopy base (leaf-prim bbox bottom), delete the wood/bark prims below it, keep+decimate the canopy. Then point the cosmetic Grove at that light LOD (or `lod2`) so it stops crashing. Build order + the three-context map + the instancing design-question are below.
+> - **Gotchas:** Phase 1 (`/grove/bake` regenerate) needs an **arborist backend restart** to be live. The `GeoTierDriver` in `InstancedTrees.jsx` is **moot + risky** until LODs are light (gate it off / supersede). **The operator's eye is the gate** — verify in the lit app, never a proxy.
+
+> **Status: SCOPED, not built. 2026-06-23 EOD.** This is the dispatch-ready capture of a long design session. The arc it replaces (#5 "LoD swap") is built-but-moot — see "What's in the tree" below.
 
 ---
 
@@ -70,13 +77,13 @@ Browse's trunk-cut has NO instancing issue (pure geometric, per-variant). Street
 - **Phase 1 (`15682e55`)** — `/grove/bake` regenerates-from-source (generate-salon all composed species) before bakeLook+bakeTrees. Closes the publish≠bake staleness gap. **Needs an arborist backend restart to be live.**
 - **Doc correction (`f802cb95`)** — `ARCHITECTURE.md §Salon↔LS parity` reframed to as-built reality + the two daylight gaps + target; README/BACKLOG/NOTES in accord.
 
-## WHAT'S IN THE TREE (uncommitted — HMR-live for frontend, per "don't fuss git yet")
+## WHAT'S BUILT (committed `19ff5c42` — WIP checkpoint, debug logs removed)
 - **Autosave (works, confirmed)** — `useArboristStore.js`: `_saveSalonDebounced` persists every Salon edit to compositions.json (no ✓ Adopt needed); flush-before-bake.
 - **`salonUnpublished` tracking + `enterGrove`** — entering the Grove republishes edited species then loads (the "Publishing your Salon edits…" overlay in `Grove.jsx`). **Confirmed firing** (`[enterGrove] fired; pending=['ash_green']`) — but the Grove **context-losses on the heavy geometry before it can render the fresh result**, so edits still don't show. This is unblocked by the weight fix above, NOT by enterGrove.
 - **Salon 3 context preset views** — `SpecimenViewport.jsx`: Street / Hero / Browse buttons (camera + bark tier per context). Default = Hero. *(Geometry-LOD in the preview still pending — couples to the cull work.)*
 - **Bake carries lod0/1/2 per instance** — `bake-trees.js`: `instance.lods = {lod0,lod1,lod2}`. (Foundation; verified in slab.)
 - **GeoTierDriver LOD-swap** — `InstancedTrees.jsx`: swaps geometry by camera context. ⚠️ **MOOT until LODs are actually light** (all LODs ≈ same weight today), and **risky** — street context would load heavy lod0 for every tree → same OOM. Don't lean on it until the cull lands; consider gating it off.
-- **🧹 DEBUG console.logs** in `useArboristStore.js` (`[autosave] saved + marked unpublished…`, `[enterGrove] fired…`) — **REMOVE next session.**
+- *(Debug console.logs removed before the `19ff5c42` commit.)*
 
 ## KNOWN ISSUES / NOT DONE
 - **Grove context-loss on heavy geometry** = THE blocker. Fixed by the weight cut, not by enterGrove or DoF (DoF blurs the frame; geometry is still uploaded — it can't fix GPU OOM).
