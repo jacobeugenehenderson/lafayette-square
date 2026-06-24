@@ -46,6 +46,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
+import { smoothWeldBark } from './decimate-tree.mjs'
 
 // Chassis GLBs (from Whittle's survey-deleaf.js) preserve vendor source
 // extensions including EXT_texture_webp; matching ALL_EXTENSIONS registration
@@ -1484,15 +1485,22 @@ export async function generateSingleCompositionGLB({ chassis, bark, leaves, lod 
     slotName: slotLabel,
     hideLeaves,
   })
+  // Linden 2026-06-23: smooth-weld the bark in the PREVIEW too, so the Salon
+  // shows the same unlocked/smooth bark as the published artifact (closes the
+  // preview≠published shading gap for this change). Self-gated to flat-normal
+  // soup; clean bark untouched.
+  smoothWeldBark(doc)
   const io = makeIO()
   let buf = Buffer.from(await io.writeBinary(doc))
   if (lod === 1 || lod === 2) buf = await simplifyGlbBytes(buf, lod)
   return buf
 }
 
+// Linden 2026-06-23: errors matched to publish-glb's LODS (lod1 0.02, lod2 0.05)
+// so the preview's distant LODs collapse leaf cards like the published ladder.
 const LOD_PRESETS = {
-  1: { ratio: 0.40, error: 0.0020 },
-  2: { ratio: 0.10, error: 0.0080 },
+  1: { ratio: 0.40, error: 0.0200 },
+  2: { ratio: 0.10, error: 0.0500 },
 }
 async function simplifyGlbBytes(buf, lod) {
   const preset = LOD_PRESETS[lod]

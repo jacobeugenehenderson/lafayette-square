@@ -16,7 +16,8 @@
     "errorTolerance": 0.05,
     "targetRatio": 0.15,
     "algorithm": "meshopt",
-    "uvWeight": 0.5
+    "uvWeight": 1.0,
+    "seamLockThreshold": 0.5
   },
   "leafDecimation": {
     "enabled": true,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-23T06:40:39.275Z",
+  "generatedAt": "2026-06-24T04:02:50.721Z",
   "lookName": "lafayette-square",
   "rosterSize": 18,
   "materialDefaults": {
@@ -1329,58 +1329,58 @@
     },
     "maple_sugar": {
       "1": {
-        "heightM": 11.8,
-        "canopyRadiusM": 5.6
+        "heightM": 12,
+        "canopyRadiusM": 5.8
       }
     },
     "ash_green": {
       "1": {
-        "heightM": 11.8,
-        "canopyRadiusM": 6.9
+        "heightM": 11.6,
+        "canopyRadiusM": 6.8
       }
     },
     "maple_silver": {
       "1": {
-        "heightM": 11.8,
-        "canopyRadiusM": 4.3
+        "heightM": 11.2,
+        "canopyRadiusM": 3.7
       }
     },
     "maple_red": {
       "1": {
-        "heightM": 11.8,
-        "canopyRadiusM": 4.3
+        "heightM": 11.2,
+        "canopyRadiusM": 3.7
       }
     },
     "birch": {
       "1": {
-        "heightM": 12,
-        "canopyRadiusM": 1.6
+        "heightM": 7.1,
+        "canopyRadiusM": 1.7
       }
     },
     "blackgum": {
       "1": {
-        "heightM": 12,
-        "canopyRadiusM": 4.3
+        "heightM": 10.3,
+        "canopyRadiusM": 3.8
       }
     },
     "linden_american": {
       "1": {
         "heightM": 12,
-        "canopyRadiusM": 4.8
+        "canopyRadiusM": 4.4
       },
       "2": {
         "heightM": 12,
-        "canopyRadiusM": 4.8
+        "canopyRadiusM": 4.4
       },
       "3": {
         "heightM": 12,
-        "canopyRadiusM": 4.8
+        "canopyRadiusM": 4.4
       }
     },
     "oak_bur": {
       "1": {
-        "heightM": 11.8,
-        "canopyRadiusM": 6.9
+        "heightM": 11.6,
+        "canopyRadiusM": 6.8
       }
     }
   }

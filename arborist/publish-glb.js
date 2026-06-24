@@ -28,7 +28,7 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { cloneDocument, dedup, prune, weld, simplify, textureCompress } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
 import { rebuildIndex } from './build-index.js'
-import { decimateLeafPrimitives, decimateBarkPrimitives, decimateLeafPrimitivesConnectedMesh, loadDecimationConfig } from './decimate-tree.mjs'
+import { decimateLeafPrimitives, decimateBarkPrimitives, decimateLeafPrimitivesConnectedMesh, loadDecimationConfig, smoothWeldBark } from './decimate-tree.mjs'
 import { stampAtlasKind } from './atlas-kind-classifier.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -41,9 +41,15 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 // Chassis whose pre-simplify tri count is already inside the bracket are
 // emitted as-is.
 const LODS = [
+  // Linden 2026-06-23: lod1/lod2 `error` loosened (0.002→0.02, 0.008→0.05) so
+  // the adaptive ratio-walk can actually collapse leaf CARDS at distance. The
+  // old tight budgets error-capped the bracket walk before it reached the tri
+  // target — leaves floored at ~44K (see decimate-tree.mjs smoothWeldBark note
+  // + scratch/LINDEN-leaf-diag.mjs: err 0.008→44K, 0.02→4.4K, 0.05→0.9K).
+  // lod0 stays tight — near/focal leaf-card silhouette is an eye-call to keep.
   { id: 'lod0', ratio: 0.85, textureSize: 2048, error: 0.0005 },
-  { id: 'lod1', ratio: 0.40, textureSize: 1024, error: 0.0020 },
-  { id: 'lod2', ratio: 0.10, textureSize: 512,  error: 0.0080 },
+  { id: 'lod1', ratio: 0.40, textureSize: 1024, error: 0.0200 },
+  { id: 'lod2', ratio: 0.10, textureSize: 512,  error: 0.0500 },
 ]
 
 function parseArgs() {
@@ -748,6 +754,18 @@ async function main() {
     } else if (decimReports.length) {
       const skips = decimReports.map(r => r.reason).join(',')
       console.log(`  leaf decimation: no-op (${decimReports.length} leaf prim(s): ${skips})`)
+    }
+
+    // Lever 5-pre (Linden, 2026-06-23): smooth-weld bark topology. Vendor
+    // chassis ship flat-shaded, splitting bark into a per-face triangle soup
+    // that has no shared edges for MeshoptSimplifier to collapse — THE actual
+    // cause of the "127K floor / lod0=lod1=lod2 / 16MB" wall (long misread as
+    // an atlas UV-lock). Recompute smooth normals + weld by (pos+UV) so the
+    // Lever 5 + emitLod simplifiers below can finally reduce. No re-UV, no
+    // texture re-bake. Self-targets flat-normal soup; clean bark untouched.
+    const smoothReports = smoothWeldBark(variantDoc)
+    for (const r of smoothReports.filter(r => r.reason === 'welded')) {
+      console.log(`  bark smooth-weld: ${r.mesh}: ${r.vBefore.toLocaleString()} → ${r.vAfter.toLocaleString()} verts (uniq pos ${r.uniqPos.toLocaleString()}, ${r.tcount.toLocaleString()} tris) — topology unlocked`)
     }
 
     // Brief 6.2 Lever 5: connected-mesh bark decimation for Linden-class

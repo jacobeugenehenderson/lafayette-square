@@ -264,6 +264,114 @@ function pickIndexArrayType(vcount, newIndices) {
   return newIndices // Uint32Array OK
 }
 
+// ── Lever 5-pre: smooth-weld bark topology (Linden, 2026-06-23) ──────────────
+//
+// THE WALL we thought was UV-lock is FLAT NORMALS. Vendor chassis are exported
+// flat-shaded, so the bark prim carries per-face normals that split every
+// triangle into its own vertex island (ash_green: 200,940 verts for only
+// 62,608 unique positions). MeshoptSimplifier collapses edges by index
+// topology; a soup has no shared edges, so `simplify` returns the mesh
+// byte-identical — the "127K floor / lod0=lod1=lod2" symptom, long misread as
+// an atlas UV-lock requiring re-UV + render-to-texture re-bake.
+//
+// The fix needs NO re-UV and NO texture work: recompute smooth (position-
+// grouped) normals, then weld by (position+UV). Normals become identical per
+// position so welding merges the soup back into a connected mesh (200,940 →
+// 84,752 verts, UV tiling seams preserved); the existing Lever-5 simplify and
+// emitLod brackets then collapse it as intended (82,822 → ~12K at ratio 0.15).
+//
+// Self-targeting: only fires on prims whose vert count exceeds unique-position
+// count by `splitRatioGate` — i.e. actual flat-normal soup. Already-clean bark
+// (cylinder/procedural, verts ≈ shared) is left untouched. Idempotent via
+// `extras.lindenSmoothWeld`.
+const SMOOTH_WELD_SPLIT_GATE = 1.3   // fire when verts > 1.3× unique positions
+
+export function smoothWeldBark(doc) {
+  const reports = []
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      if ((prim.getExtras() || {}).atlasKind !== 'bark') continue
+      const r = smoothWeldBarkOnePrim(prim)
+      if (r) reports.push({ mesh: mesh.getName() || '<mesh>', ...r })
+    }
+  }
+  return reports
+}
+
+function smoothWeldBarkOnePrim(prim) {
+  const posAttr = prim.getAttribute('POSITION')
+  const idxAttr = prim.getIndices()
+  if (!posAttr || !idxAttr) return null
+  const ex = prim.getExtras() || {}
+  const pos = posAttr.getArray()
+  const idx = idxAttr.getArray()
+  const nv = posAttr.getCount()
+  const tcount = Math.floor(idx.length / 3)
+
+  if (ex.lindenSmoothWeld) return { reason: 'already', vBefore: nv, vAfter: nv, tcount }
+
+  const pkey = (i) => `${Math.round(pos[i * 3] * 1e4)},${Math.round(pos[i * 3 + 1] * 1e4)},${Math.round(pos[i * 3 + 2] * 1e4)}`
+
+  // Gate: only soup (flat-normal-split) bark. Skip already-welded clean bark.
+  const uniqPos = new Set()
+  for (let i = 0; i < nv; i++) uniqPos.add(pkey(i))
+  if (nv <= uniqPos.size * SMOOTH_WELD_SPLIT_GATE) {
+    return { reason: 'not-split', vBefore: nv, vAfter: nv, tcount, uniqPos: uniqPos.size }
+  }
+
+  // 1. Position-grouped smooth normals (area-weighted face normals; shared
+  //    across the normal/UV splits at each position so the seam disappears).
+  const nacc = new Map()
+  for (let t = 0; t < tcount; t++) {
+    const a = idx[t * 3], b = idx[t * 3 + 1], c = idx[t * 3 + 2]
+    const ax = pos[a * 3], ay = pos[a * 3 + 1], az = pos[a * 3 + 2]
+    const ux = pos[b * 3] - ax, uy = pos[b * 3 + 1] - ay, uz = pos[b * 3 + 2] - az
+    const vx = pos[c * 3] - ax, vy = pos[c * 3 + 1] - ay, vz = pos[c * 3 + 2] - az
+    const fx = uy * vz - uz * vy, fy = uz * vx - ux * vz, fz = ux * vy - uy * vx
+    for (const vi of [a, b, c]) {
+      const k = pkey(vi)
+      const g = nacc.get(k)
+      if (g) { g[0] += fx; g[1] += fy; g[2] += fz } else nacc.set(k, [fx, fy, fz])
+    }
+  }
+  const sn = new Float32Array(nv * 3)
+  for (let i = 0; i < nv; i++) {
+    const g = nacc.get(pkey(i)) || [0, 1, 0]
+    const L = Math.hypot(g[0], g[1], g[2]) || 1
+    sn[i * 3] = g[0] / L; sn[i * 3 + 1] = g[1] / L; sn[i * 3 + 2] = g[2] / L
+  }
+  const nrmAttr = prim.getAttribute('NORMAL')
+  if (nrmAttr) nrmAttr.setArray(sn)
+
+  // 2. Weld by (position + UV): normals are now identical per position, so the
+  //    only surviving splitter is the UV tiling seam (kept, so tiling is safe).
+  const uvAttr = prim.getAttribute('TEXCOORD_0')
+  const uv = uvAttr ? uvAttr.getArray() : null
+  const vkey = (i) => (uv ? `${pkey(i)}|${Math.round(uv[i * 2] * 1e4)},${Math.round(uv[i * 2 + 1] * 1e4)}` : pkey(i))
+  const remap = new Int32Array(nv).fill(-1)
+  const seen = new Map()
+  let next = 0
+  for (let i = 0; i < nv; i++) {
+    const k = vkey(i)
+    let ni = seen.get(k)
+    if (ni === undefined) { ni = next++; seen.set(k, ni) }
+    remap[i] = ni
+  }
+  const newVcount = next
+
+  rewriteAttribute(prim, 'POSITION', remap, newVcount, 3)
+  for (const sem of ['NORMAL', 'TANGENT', 'TEXCOORD_0', 'TEXCOORD_1', 'COLOR_0']) {
+    const a = prim.getAttribute(sem)
+    if (a) rewriteAttribute(prim, sem, remap, newVcount, a.getElementSize())
+  }
+  const newIdx = new Uint32Array(idx.length)
+  for (let i = 0; i < idx.length; i++) newIdx[i] = remap[idx[i]]
+  idxAttr.setArray(pickIndexArrayType(newVcount, newIdx))
+
+  prim.setExtras({ ...ex, lindenSmoothWeld: true })
+  return { reason: 'welded', vBefore: nv, vAfter: newVcount, tcount, uniqPos: uniqPos.size }
+}
+
 // Andrew's monotone-chain convex hull on (x,z) pairs stored interleaved.
 // Returns array of {x,z} points in CCW order.
 function convexHullXZ(centroidsXZ, count) {
@@ -363,6 +471,36 @@ export async function decimateBarkPrimitives(doc, config) {
   return reports
 }
 
+// Major-seam vertex lock (Linden, 2026-06-23). The bark UVs TILE (range far
+// outside [0,1]); the texture-safe simplifier still smears the visible TILING
+// SEAMS when it collapses a vertex across a UV discontinuity — a triangle then
+// bridges e.g. U≈2.0 to U≈−0.18 and stretches/mip-blurs the texture (the cross
+// + swirl the operator saw on the Street bark). A position carrying two UVs
+// that differ by > `threshold` is a real seam vertex (the cylinder wrap / tile
+// boundary); lock those so collapses can't bridge them. Cheap (≈0.7% of verts
+// at threshold 1.0) and reduction-preserving — only the major discontinuities
+// are pinned, the interior collapses freely.
+function computeMajorSeamLock(positions, uvs, vcount, threshold) {
+  if (!uvs) return null
+  const byPos = new Map()
+  for (let i = 0; i < vcount; i++) {
+    const k = `${Math.round(positions[i * 3] * 1e4)},${Math.round(positions[i * 3 + 1] * 1e4)},${Math.round(positions[i * 3 + 2] * 1e4)}`
+    let a = byPos.get(k); if (!a) { a = []; byPos.set(k, a) } a.push(i)
+  }
+  const lock = new Uint8Array(vcount)
+  let locked = 0
+  for (const arr of byPos.values()) {
+    if (arr.length < 2) continue
+    let spread = 0
+    for (let x = 0; x < arr.length; x++) for (let y = x + 1; y < arr.length; y++) {
+      const i = arr[x], j = arr[y]
+      spread = Math.max(spread, Math.abs(uvs[i * 2] - uvs[j * 2]), Math.abs(uvs[i * 2 + 1] - uvs[j * 2 + 1]))
+    }
+    if (spread > threshold) { for (const i of arr) { if (!lock[i]) { lock[i] = 1; locked++ } } }
+  }
+  return locked ? lock : null
+}
+
 function decimateBarkOnePrim(prim, opts) {
   const posAttr = prim.getAttribute('POSITION')
   const idxAttr = prim.getIndices()
@@ -392,12 +530,13 @@ function decimateBarkOnePrim(prim, opts) {
   let newIndices, achievedError
   if ((opts.algorithm === 'meshopt' || opts.algorithm === 'auto') && uvAttr && typeof MeshoptSimplifier.simplifyWithAttributes === 'function') {
     const uvs = new Float32Array(uvAttr.getArray())
+    const seamLock = computeMajorSeamLock(positions, uvs, vcount, opts.seamLockThreshold ?? 0.5)
     const result = MeshoptSimplifier.simplifyWithAttributes(
       indices,
       positions, 3,
       uvs, 2,
       [opts.uvWeight ?? 0.5, opts.uvWeight ?? 0.5],
-      null,                          // vertex_lock — none
+      seamLock,                      // vertex_lock — pin major tiling-seam verts (no smear)
       targetIndexCount,
       opts.errorTolerance,
       flags,
