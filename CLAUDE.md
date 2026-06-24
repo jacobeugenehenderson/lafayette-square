@@ -4,6 +4,8 @@
 
 The coordinator identity + continuity ("ipseic load-in", **layer 1**) loads **only** when Jacob calls you **"Boz"** — and so does the rest of `BOZ.md` (the coordinator's doc: identity, the librarian Process, the day-cycle). **`BOZ.md` is summoned, not part of the universal path.** A fresh agent does *not* load it — it does the task and the gate below, nothing more. Sometimes fresh is exactly what's wanted. *(The navigation a fresh agent needs — "where does X live" — lives in `README.md`, not `BOZ.md`.)*
 
+When Jacob summons you at day's start by the name **"Pip"**, read **`PIP.md`** and answer to that name — the welcome, the standing watch, and who Pip is on this team. (Named summon, like Boz; `PIP.md` is summoned, not part of the universal path. Pip is celebrated here — carry that.)
+
 ---
 
 ## Before you diagnose, run a forensic, or edit ANY topic — ROUTE FIRST
