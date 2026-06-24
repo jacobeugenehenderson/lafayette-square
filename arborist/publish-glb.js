@@ -28,7 +28,7 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { cloneDocument, dedup, prune, weld, simplify, textureCompress } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
 import { rebuildIndex } from './build-index.js'
-import { decimateLeafPrimitives, decimateBarkPrimitives, decimateLeafPrimitivesConnectedMesh, loadDecimationConfig, smoothWeldBark, crushFlooredBark, trunkCutBark } from './decimate-tree.mjs'
+import { decimateLeafPrimitives, decimateBarkPrimitives, decimateLeafPrimitivesConnectedMesh, loadDecimationConfig, smoothWeldBark } from './decimate-tree.mjs'
 import { stampAtlasKind } from './atlas-kind-classifier.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -630,29 +630,6 @@ function guessCategory(speciesMeta, speciesId) {
 async function emitLod(doc, lod, bracket) {
   const lodDoc = cloneDocument(doc)
   await lodDoc.transform(weld(), dedup())
-
-  // Distant-LOD bark treatment (Linden, 2026-06-23). Some bark is genuinely
-  // UV-seam-dense (linden_american) and FLOORS the texture-safe simplifier at
-  // ~60K tris — instanced across the park, that black-screens the overhead
-  // Browse view. At distance bark detail is invisible, so:
-  //   lod2 (Browse/overhead) — trunk-cut the canopy-occluded trunk, then crush
-  //     any remaining floored branch bark via position-weld (breaks tiling/
-  //     smears — fine from above). Operator-endorsed: "trunks cut off, branches
-  //     can be flat shaded."
-  //   lod1 (Hero) — crush floored bark only (trunk stays; Hero sees it).
-  //   lod0 (Street) — untouched; the near/focal tree keeps the careful result.
-  // floorThreshold 50000 isolates GENUINELY-floored bark (linden_american
-  // enters emitLod at ~116K) from species the careful attribute-preserving path
-  // reduces fine (ash/maple enter at 14-33K and hit bracket without smearing).
-  // Only the former gets the position-weld crush.
-  const CRUSH_FLOOR = 50000
-  if (lod.id === 'lod2') {
-    trunkCutBark(lodDoc)
-    for (const r of crushFlooredBark(lodDoc, 1500, CRUSH_FLOOR)) if (r.reason === 'crushed') console.log(`  [lod2] crush floored bark: ${r.tBefore.toLocaleString()} → ${r.tAfter.toLocaleString()} tris`)
-  } else if (lod.id === 'lod1') {
-    for (const r of crushFlooredBark(lodDoc, 4000, CRUSH_FLOOR)) if (r.reason === 'crushed') console.log(`  [lod1] crush floored bark: ${r.tBefore.toLocaleString()} → ${r.tAfter.toLocaleString()} tris`)
-  }
-
   const startTris = countTris(lodDoc)
   // If already under maxTris, skip simplify — chassis was naturally light.
   if (bracket && startTris <= bracket.maxTris) {
