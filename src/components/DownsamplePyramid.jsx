@@ -46,20 +46,23 @@ export const _pyramidRefs = {
   texture: { current: null },
 }
 
-// Desktop bracket = full degree. These are the re-bracket knobs (the tier
-// ladder's top rung); lower them for the phone rungs in the per-device arc.
-// `levels: 8` / `radius: 0.85` match stock BloomEffect's internal pyramid, so
-// the custom bloom's blur stays at parity with today's look before re-tune.
-export const PYRAMID_DESKTOP = Object.freeze({ levels: 8, radius: 0.85 })
+// Desktop bracket. The re-bracket knobs (the tier ladder's rungs):
+//   • levels / radius  — the blur WIDTH (and look); 8 / 0.85 match stock bloom.
+//   • resolutionScale  — the COST dial. The pyramid renders at this fraction of
+//     screen res; both consumers sample it by UV (resolution-independent) and
+//     both are blurry, so a lower base res is visually ~free but cuts cost
+//     quadratically (0.5 → ¼ the pixels). Lower further on the phone rungs.
+export const PYRAMID_DESKTOP = Object.freeze({ levels: 8, radius: 0.85, resolutionScale: 0.5 })
 
 class DownsamplePyramidPass extends Pass {
-  constructor({ levels = PYRAMID_DESKTOP.levels, radius = PYRAMID_DESKTOP.radius } = {}) {
+  constructor({ levels = PYRAMID_DESKTOP.levels, radius = PYRAMID_DESKTOP.radius, resolutionScale = PYRAMID_DESKTOP.resolutionScale } = {}) {
     super('DownsamplePyramid')
     // Side-resource: do NOT consume/replace the main color buffer. With
     // needsSwap=false the composer hands the SAME buffer to the next pass, so
     // the custom bloom reads the untouched scene color and samples our texture
     // for its blur — sharing the pyramid, never the result.
     this.needsSwap = false
+    this.resolutionScale = resolutionScale
     this.mipmap = new MipmapBlurPass()
     this.mipmap.levels = levels
     this.mipmap.radius = radius
@@ -86,7 +89,12 @@ class DownsamplePyramidPass extends Pass {
   }
 
   setSize(width, height) {
-    this.mipmap.setSize(width, height)
+    // Render the pyramid at resolutionScale × screen res — the COST dial. Both
+    // consumers sample by UV (resolution-independent) and both are blurry, so a
+    // lower base res is ~free visually but cuts cost quadratically. The first
+    // real rung of the device-tier bracket (memory: preview-equals-pyramid).
+    const s = this.resolutionScale || 1
+    this.mipmap.setSize(Math.max(1, Math.round(width * s)), Math.max(1, Math.round(height * s)))
   }
 
   initialize(renderer, alpha, frameBufferType) {
@@ -111,10 +119,10 @@ export { DownsamplePyramidPass }
 // render (and N8AO, to match bloom's current input) and BEFORE the custom
 // bloom that samples it.
 export const DownsamplePyramid = forwardRef(function DownsamplePyramid(
-  { levels, radius } = {}, ref,
+  { levels, radius, resolutionScale } = {}, ref,
 ) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const pass = useMemo(() => new DownsamplePyramidPass({ levels, radius }), [])
+  const pass = useMemo(() => new DownsamplePyramidPass({ levels, radius, resolutionScale }), [])
   // Live-adjust the bracket degree without remounting (the per-device dial).
   useEffect(() => {
     if (levels != null) pass.levels = levels
