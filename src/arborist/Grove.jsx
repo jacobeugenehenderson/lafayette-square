@@ -39,6 +39,7 @@ const CATEGORIES = ['broadleaf', 'conifer', 'ornamental', 'weeping', 'columnar',
 export default function Grove() {
   const variants    = useArboristStore(s => s.groveVariants)
   const loading     = useArboristStore(s => s.groveLoading)
+  const publishing  = useArboristStore(s => s.grovePublishing)
   const error       = useArboristStore(s => s.groveError)
   const setGroveOpen = useArboristStore(s => s.setGroveOpen)
   const setSalonOpen = useArboristStore(s => s.setSalonOpen)
@@ -225,7 +226,10 @@ export default function Grove() {
       >
         {view === 'coverage' && <CoverageView />}
         {view === 'gallery' && <>
-        {loading && (
+        {publishing && (
+          <div style={overlayMsg}>Publishing your Salon edits…</div>
+        )}
+        {loading && !publishing && (
           <div style={overlayMsg}>Loading manifests…</div>
         )}
         {error && (

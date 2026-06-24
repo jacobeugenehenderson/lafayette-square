@@ -94,13 +94,27 @@ function studioFraming(treeH = 12) {
 // feel. Generic studio-inspection — NOT cartograph SHOT imports per
 // project_kit_helpers_pattern.
 const GROUND_TIER_DISTANCE_THRESHOLD = 20
+// The three viewing CONTEXTS = the LsoD (operator, 2026-06-23): Street
+// (full detail), Hero (size-managed), Browse (overhead). Each preset frames
+// the camera so DollyCam's distance-based auto-bind lands on the matching
+// bark tier — street (close, <threshold) → tier 2, hero (mid, >threshold)
+// → tier 1, browse (top-down) → tier 0. Geometry-LOD binds to these same
+// contexts as the LoD build lands (street=lod0 / hero=lod1 / browse=lod2).
 function presetFraming(preset, treeH = 12) {
   switch (preset) {
-    case 'overhead': {
+    case 'browse': {
+      // Browse — literal top-down plan view (tier 0, aerial / overhead).
       return { distance: 0, height: treeH + 20, lookAtY: 0, topDown: true }
     }
-    case 'ground':
+    case 'street': {
+      // Street — eye-level, close. distance < GROUND_TIER_DISTANCE_THRESHOLD
+      // so the auto-bind picks tier 2 (street, full PBR). Full-sized trees.
+      return { distance: 8, height: 1.7, lookAtY: 1.7, topDown: false }
+    }
+    case 'hero':
     default: {
+      // Hero — studio mid framing (tier 1, size-managed). distance >
+      // threshold → auto tier 1. The authoring default.
       const f = studioFraming(treeH)
       return { distance: f.distance, height: f.height, lookAtY: f.height, topDown: false }
     }
@@ -975,13 +989,14 @@ export default function SpecimenViewport({
   // (xy makes no sense looking horizontally near the floor — operator
   // uses Oubliette drag for horizontal placement instead).
   const [camMode, setCamMode] = useState('studio')
-  // Brief 13 (Vantage) — preset camera for bark-tier verification.
-  // Two presets only (refined post-ship): 'ground' (default — current
-  // studio framing, existing Option+drag + wheel-zoom + key cranes
-  // preserved) and 'overhead' (literal top-down plan view, distance=0,
-  // height=treeH+20, lookAtY=0). The Hero/Street distinction collapsed
-  // into auto-tier-binding driven by camera distance in DollyCam.
-  const [camPreset, setCamPreset] = useState('ground')
+  // Preview the three viewing CONTEXTS (the LsoD, 2026-06-23): 'street'
+  // (eye-level close — full detail), 'hero' (studio mid — size-managed,
+  // default), 'browse' (top-down — overhead/aerial). Each frames the camera
+  // so DollyCam's distance auto-bind lands the matching bark tier (street→2,
+  // hero→1, browse→0); geometry-LOD will bind to the same contexts as the
+  // LoD build lands. (Evolved from Brief 13 Vantage's two ground/overhead
+  // presets — the Hero/Street distinction is now explicit, not just a dolly.)
+  const [camPreset, setCamPreset] = useState('hero')
   // Auto-fit camera whenever the chassis changes. Triggers on viewKey
   // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
   // remounts the Canvas) AND on the first topY emission per chassis.
@@ -1094,7 +1109,7 @@ export default function SpecimenViewport({
             // in Overhead. Gizmo mode is the only thing Studio uniquely
             // owns.
             setCamMode('studio')
-            setCamPreset('ground')
+            setCamPreset('hero')
           }}
           style={presetBtnStyle(camMode === 'studio')}
           title="Full gnomon — XY + Z + rotation handles">
@@ -1127,8 +1142,9 @@ export default function SpecimenViewport({
         display: 'flex', gap: 6,
       }}>
         {[
-          ['overhead', 'Overhead', 'Bird\'s-eye plan view — tier 0 (aerial). Wheel zooms altitude.'],
-          ['ground',   'Ground',   'Studio framing — distance auto-switches tier 1 (hero >20m) / tier 2 (street <20m). Default.'],
+          ['street', 'Street', 'Eye-level, close — Street context (tier 2, full detail). What street-view sees: full-sized trees.'],
+          ['hero',   'Hero',   'Studio mid framing — Hero context (tier 1, size-managed). The authoring default.'],
+          ['browse', 'Browse', 'Top-down plan — Browse context (tier 0, aerial / overhead). Wheel zooms altitude.'],
         ].map(([key, label, title]) => (
           <button key={key}
             onClick={() => setCamPreset(key)}

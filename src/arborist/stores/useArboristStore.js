@@ -148,9 +148,33 @@ const useArboristStore = create((set, get) => ({
   groveVariants: [],            // flattened list from /grove
   groveError: null,
   groveLoading: false,
+  grovePublishing: false,
+  // Species edited in the Salon since their last publish. Autosave persists
+  // compositions.json, but the Grove renders the PUBLISHED GLBs (which only
+  // refresh on a generate-salon republish), so we track what needs
+  // regenerating and do it on Grove entry.
+  salonUnpublished: new Set(),
   setGroveOpen: (open) => {
     set({ groveOpen: !!open })
-    if (open) get().loadGrove()
+    if (open) get().enterGrove()
+  },
+  // Entering the Grove regenerates any Salon-edited species from source, then
+  // loads — so "edit in the Salon → see it in the Grove" holds without a
+  // manual Re-publish. Flushes any pending autosave first so the regenerate
+  // reads current compositions.json.
+  enterGrove: async () => {
+    await get()._saveSalonDebounced.flush()
+    const pending = [...get().salonUnpublished]
+    if (pending.length) {
+      set({ grovePublishing: true })
+      for (const sp of pending) {
+        try {
+          await fetch(`/api/arborist/salon/${encodeURIComponent(sp)}/publish`, { method: 'POST' })
+        } catch (e) { console.warn('[grove] republish failed for', sp, e) }
+      }
+      set({ salonUnpublished: new Set(), grovePublishing: false })
+    }
+    await get().loadGrove()
   },
 
   // Phase L Cycle 1 (2026-05-19) — third top-level mode alongside Grove +
@@ -248,12 +272,17 @@ const useArboristStore = create((set, get) => ({
     const lookId = get().activeLookId
     if (!lookId) { set({ groveBakeResult: { error: 'No active Look selected' } }); return }
     set({ groveBaking: true, groveBakeResult: null })
+    // Flush any pending Salon autosave so the bake regenerates from current source.
+    await get()._saveSalonDebounced.flush()
     try {
       const r = await fetch(`/api/arborist/grove/bake?look=${encodeURIComponent(lookId)}`, { method: 'POST' })
       const d = await r.json()
       if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`)
       set({
         groveBaking: false,
+        // The bake regenerates ALL composed species from source (Phase 1), so
+        // nothing is unpublished afterward.
+        salonUnpublished: new Set(),
         groveBakeResult: {
           count: d.placements?.count ?? 0,
           uniqueVariants: d.placements?.uniqueVariants ?? 0,
@@ -679,6 +708,7 @@ const useArboristStore = create((set, get) => ({
         salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: dirty },
       }
     })
+    get()._saveSalonDebounced(speciesId)
   },
   setSalonSlotName: (speciesId, slot, name) => {
     set(s => {
@@ -690,6 +720,7 @@ const useArboristStore = create((set, get) => ({
         salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: dirty },
       }
     })
+    get()._saveSalonDebounced(speciesId)
   },
   addSalonSlot: (speciesId) => {
     set(s => {
@@ -723,6 +754,7 @@ const useArboristStore = create((set, get) => ({
         salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: dirty },
       }
     })
+    get()._saveSalonDebounced(speciesId)
   },
   resetSalonSlot: async (speciesId, slot) => {
     // Local clear: drop overlay fields, keep slot+name; re-layer effective
@@ -768,14 +800,60 @@ const useArboristStore = create((set, get) => ({
       set({ salonError: String(err) })
     }
   },
-  // Per `feedback_debounced_save_must_flush_before_dependent_post`: if any
-  // slot is still dirty we MUST not fire the publish POST before its
-  // adopt POST has flushed. The Re-publish button is disabled by the UI
-  // when anyDirty, which gives the operator one explicit gesture
-  // (✓ Adopt all → ↳ Re-publish) — debounced auto-save isn't in play here,
-  // each adopt is an explicit click. So the dependency holds by UI shape.
+  // ── Autosave (Phase 4, 2026-06-23) ───────────────────────────────────
+  // Every Salon edit (setSalonSlotParams / setSalonSlotName / addSalonSlot)
+  // debounce-persists the WHOLE compositions array to
+  // /salon/:species/compositions — so the operator never has to click
+  // ✓ Adopt for an edit to reach disk. compositions.json is the source the
+  // Grove bake regenerates from (Phase 1), so "edited → saved → ships on the
+  // next bake" holds without ceremony. Mirrors _saveCurationDebounced.
+  // A successful save clears the species' dirty map (the whole array is
+  // persisted at once). `.flush()` fires any pending save immediately —
+  // call it before any bake/publish so the source is current (the
+  // feedback_debounced_save_must_flush_before_dependent_post hazard; the old
+  // "Adopt-all-before-Re-publish" UI gate is replaced by this flush).
+  _saveSalonDebounced: (() => {
+    let t = null
+    let pending = null
+    const run = async (speciesId) => {
+      const s = useArboristStore.getState()
+      const compositions = s.salonCompositions[speciesId] || []
+      try {
+        const r = await fetch(`/api/arborist/salon/${encodeURIComponent(speciesId)}/compositions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ compositions }),
+        })
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        useArboristStore.setState(st => {
+          const unpub = new Set(st.salonUnpublished); unpub.add(speciesId)
+          return {
+            salonDirtyBySpecies: { ...st.salonDirtyBySpecies, [speciesId]: {} },
+            salonUnpublished: unpub,
+            salonError: null,
+          }
+        })
+      } catch (err) {
+        useArboristStore.setState({ salonError: String(err) })
+      }
+    }
+    const fn = (speciesId) => {
+      pending = speciesId
+      if (t) clearTimeout(t)
+      t = setTimeout(() => { t = null; const sp = pending; pending = null; run(sp) }, 400)
+    }
+    fn.flush = async () => {
+      if (t) { clearTimeout(t); t = null }
+      if (pending) { const sp = pending; pending = null; await run(sp) }
+    }
+    return fn
+  })(),
+  // Re-publish (manual). Now largely redundant with autosave + the Phase-1
+  // bake (which regenerates from source), kept until the UI strip. Flushes any
+  // pending autosave first so the publish reads current source.
   republishSalonSpecies: async (speciesId) => {
     set({ salonPublishing: true, salonError: null })
+    await get()._saveSalonDebounced.flush()
     const lookId = get().activeLookId
     const qs = lookId ? `?look=${encodeURIComponent(lookId)}` : ''
     try {
@@ -791,7 +869,10 @@ const useArboristStore = create((set, get) => ({
       // Refresh salon species so chassisCount / compositionCount counts
       // reflect the new state.
       get().loadSalonSpecies()
-      set({ salonPublishing: false })
+      set(st => {
+        const unpub = new Set(st.salonUnpublished); unpub.delete(speciesId)
+        return { salonPublishing: false, salonUnpublished: unpub }
+      })
     } catch (err) {
       set({ salonPublishing: false, salonError: String(err) })
     }

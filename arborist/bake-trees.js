@@ -513,6 +513,16 @@ export async function bakeTrees({
       y: +py.toFixed(4),
       z: +finalZ.toFixed(4),
       url: lodUrl,
+      // The three LOD URLs (the LsoD, 2026-06-23). publish emits lod0/1/2 and
+      // bake-look UV-rewrites all three into baked/, but the bake used to ship
+      // only one. The runtime selects per camera context — street→lod0,
+      // hero→lod1, browse→lod2 — bound to the same signal as the bark tier.
+      // `url` stays the default-shipped LOD for back-compat with older runtimes.
+      lods: {
+        lod0: v.skeletons.lod0 || lodUrl,
+        lod1: v.skeletons.lod1 || v.skeletons.lod0 || lodUrl,
+        lod2: v.skeletons.lod2 || v.skeletons.lod1 || lodUrl,
+      },
       // Scale is baked into the GLB at Arborist publish (bake-look). Runtime
       // always renders at 1:1.
       rotY: +rotY.toFixed(4),

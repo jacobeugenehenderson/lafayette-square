@@ -408,6 +408,34 @@ function TierDriver() {
   return null
 }
 
+// Geometry-LOD swap driver (the LsoD, 2026-06-23). Mirrors TierDriver's
+// camera-context read (computeTier: browse/aerial→0, hero→1, street→2) but
+// drives GEOMETRY LOD, not a shader uniform — so it must trigger a React
+// re-render (setState) to swap the GLB, not just mutate a uniform. Debounced:
+// a context must HOLD ~0.25s before the forest re-mounts at the new LOD, so a
+// continuous zoom across a threshold doesn't thrash GLB loads. One LOD
+// resident at a time (mobile budget); the swap reloads the active LOD.
+function GeoTierDriver({ onTier }) {
+  const camera = useThree(s => s.camera)
+  const committedRef = useRef(null)
+  const pendingRef = useRef({ tier: null, held: 0 })
+  useFrame((_, dt) => {
+    const desired = computeTier(camera)
+    if (desired === committedRef.current) { pendingRef.current.tier = null; return }
+    if (pendingRef.current.tier !== desired) {
+      pendingRef.current = { tier: desired, held: 0 }
+    } else {
+      pendingRef.current.held += dt
+      if (pendingRef.current.held >= 0.25) {
+        committedRef.current = desired
+        pendingRef.current = { tier: null, held: 0 }
+        onTier(desired)
+      }
+    }
+  })
+  return null
+}
+
 function SwayDriver() {
   useFrame((_, delta) => {
     treeSwayUniforms.uTime.value += delta
@@ -447,6 +475,13 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
 
   const atlas = useTreeAtlas(lookName)
 
+  // Geometry-LOD context (the LsoD, 2026-06-23): 0=browse→lod2, 1=hero→lod1,
+  // 2=street→lod0. Driven by GeoTierDriver off the camera (same computeTier as
+  // the bark tier), so the LOD follows the neutral camera. Initialized to HERO
+  // (1) because that's the VIEWER's neutral/load state (Browse is only the dev
+  // default); the driver corrects to the actual camera within ~0.25s.
+  const [geoTier, setGeoTier] = useState(1)
+
   // Group bake instances by URL. Instances whose (species, variantId) is
   // in the Look's roster render as themselves; out-of-roster placements
   // are substituted with a same-category roster variant (deterministic by
@@ -468,7 +503,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
       seenRosterKeys.add(key)
       const cat = inst.category || 'broadleaf'
       if (!byCategory.has(cat)) byCategory.set(cat, [])
-      byCategory.get(cat).push({ key, species: inst.species, variantId: inst.variantId, url: inst.url })
+      byCategory.get(cat).push({ key, species: inst.species, variantId: inst.variantId, url: inst.url, lods: inst.lods })
     }
     // Flat fallback pool used when no same-category roster entry exists.
     const flatPool = []
@@ -501,16 +536,22 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
         }
       : () => 0
 
+    // Select the LOD GLB for the current context (the LsoD): browse→lod2,
+    // hero→lod1, street→lod0. Falls back to the legacy single `url` for
+    // older bakes that don't carry `lods`.
+    const lodKey = geoTier === 0 ? 'lod2' : geoTier === 2 ? 'lod0' : 'lod1'
+    const lodUrlOf = (o) => (o && o.lods && o.lods[lodKey]) || (o && o.url)
+
     const m = new Map()  // lookUrl -> Map<tileId, instances[]>
     let dropped = 0
     let substituted = 0
     bake.instances.forEach((inst, idx) => {
       const key = `${inst.species}:${inst.variantId}`
-      let url = inst.url
+      let url = lodUrlOf(inst)
       if (!atlas.roster.has(key)) {
         const sub = fallbackFor(inst, idx)
         if (!sub) { dropped++; return }
-        url = sub.url
+        url = lodUrlOf(sub)
         substituted++
       }
       // Cache-bust GLB URLs against the atlas manifest's generatedAt so an
@@ -545,7 +586,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     }
     console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} variants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
     return m
-  }, [bake, maxVariants, atlas, lookName])
+  }, [bake, maxVariants, atlas, lookName, geoTier])
 
   // Phase B (2026-05-15): per-species bark settings carried in the atlas
   // manifest, with per-Look palette override (scene.materialColors[<species>])
@@ -605,6 +646,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     <>
       <SwayDriver />
       <TierDriver />
+      <GeoTierDriver onTier={setGeoTier} />
       {Array.from(groups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {
           const species = urlToSpecies(url)
