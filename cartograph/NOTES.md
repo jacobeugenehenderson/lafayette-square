@@ -8,6 +8,12 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-24 — Stage: Hero camera authoring/runtime control modes.
+
+Planned with Jacob then built (eye-gate pending). The want: clicking a Hero **keyframe** should jump the camera there and turn the on-screen controls into **generic 3D authoring** controls, reverting to **runtime** controls on **Save keyframe**. Decisions locked in conversation: **keep the Hero Lock** (the camera always aims at the subject — authoring only **repositions**, so the model stays `{position, fov}`, no bake/`SLAB-CONTRACT` change); **runtime = controls locked** (can be playing or paused); **default = playing**; **Save → re-lock and stay PAUSED on the saved frame** (do *not* auto-resume — selection is disabled during playback, so auto-play would fight the common edit-the-next-keyframe flow); scope **Hero only**.
+
+**Key build insight (saved a whole subsystem):** `HeroPreview` already pins `controls.target` to the subject centroid **every frame** (even paused), so enabling OrbitControls in authoring pivots the orbit on the subject **for free** — no `heroSubjectPoint` broadcast needed (the brief had planned one). Also found the live controls are `OrbitControlsShot`/`Controls` in `CartographApp.jsx`, **not** the `StageCamera` in `StageApp.jsx` (that's for the deleted standalone `/stage` page — dead). Implementation: ephemeral `heroAuthoring` singleton + `useHeroAuthoring()` (same rail as `heroScrub`), gate `OrbitControlsShot enabled` for the Hero shot, and a two-mode capture zone in `HeroCamera` (clickable dots → `enterAuthoring`; `Save`/`Cancel`/Esc; rail-scrub inert while authoring; opens playing on shot entry). Commits: brief `08def6ed`, code `0141c60f`. Plan: `HANDOFF-hero-camera-authoring-mode.md`.
+
 ## 2026-06-22 (evening) — Render polish: animation UX, Arch Lighting, the ground-contact trio.
 
 A render/Stage session (parallel to the docs Boz). Landed, all eye-verified or parse-clean:

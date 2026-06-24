@@ -90,6 +90,7 @@ Where channels persist (verified in `bake-scene.js`):
 
 **PARTIAL (the V1 tail — "Slab completeness" in `BACKLOG.md`):**
 - 🟡 **SC.5 camera** — Browse heading fully baked; Hero keyframes author + bake but runtime motion is minimal; Browse altitude / Hero target / Street position intentionally live (§4). Closing SC.5 = baking the full per-shot framing.
+  - **Hero authoring/runtime control modes (2026-06-24).** The Hero shot is a deliberate two-mode UX: **runtime** (default) plays the bounce with the orbit controls **locked** (`OrbitControlsShot enabled={false}` in `CartographApp`), exactly as it ships; **clicking a keyframe dot** enters **authoring** — pause, jump to the pose, controls unlocked for free orbit, which pivots on the subject because `HeroPreview` pins `controls.target` to the subject centroid every frame (the **Hero Lock** holds for free). **Save keyframe** captures `{position, fov}` and re-locks, staying paused on the saved frame. The mode is an ephemeral module singleton (`heroAuthoring` / `useHeroAuthoring`, `StageApp.jsx`) on the same R3F⇄DOM rail as `heroScrub` — **not persisted, not baked**; the keyframe **data model is unchanged** (`{position, fov}`, subject-locked), so `bake-scene.js` / `SLAB-CONTRACT §4` are untouched. *(Eye-gate pending; `HANDOFF-hero-camera-authoring-mode.md`.)*
 - 🟡 **SC.4 time defaults** — DawnTimeline is scrub-only; no "save default hour" / sun-curve surface persists. The field is omitted from `scene.json` until that surface exists.
 
 **FORWARD-COMPAT (round-trips, runtime deferred):**
