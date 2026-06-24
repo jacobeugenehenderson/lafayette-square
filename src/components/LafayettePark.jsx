@@ -43,8 +43,11 @@ const PARK_FENCE_CORNERS = (() => {
     parkAxisToCompass(-a,  a),
   ]
 })()
-const LABEL_TITLE_POS    = parkAxisToCompass(0, -PARK_HALF - 15)
-const LABEL_SUBTITLE_POS = parkAxisToCompass(0, -PARK_HALF - 23)
+// Inside the park, north of center (was -PARK_HALF-15/-23 — out over Park
+// Avenue, colliding with the curved street labels; 2026-06-23). ~0.35 of the
+// way from center toward the north edge: clear of the street. Operator-nudgeable.
+const LABEL_TITLE_POS    = parkAxisToCompass(0, -PARK_HALF * 0.35)
+const LABEL_SUBTITLE_POS = parkAxisToCompass(0, -PARK_HALF * 0.35 + 9)
 const LABEL_TEXT_ROT_Y = _PARK_AXIS_RAD
 
 const FENCE_HEIGHT = 1.5
@@ -818,11 +821,32 @@ function PerimeterFence() {
 // ground is local rather than averaged.
 //
 // Labels are drei <Text> instances (TroikaText) — hard to shader-patch
-// cleanly — so each is wrapped in a useFrame'd group that lifts by its own
-// terrain sample × terrainExag.value.
-function ElevatedGroup({ at, children }) {
+// cleanly (and they're rotated flat, so a per-vertex terrain lift would push
+// them sideways, not up) — so each is wrapped in a useFrame'd group that lifts
+// rigidly by a terrain sample × terrainExag.value.
+//
+// `footprintRadius` (for WIDE labels like the park title): lift by the MAX
+// terrain height across the label's footprint, not just its center point. A
+// flat quad placed at the center height sinks below any rise in the rolling
+// park terrain and gets depth-clipped — that's the "TE PARK" half-truncation.
+// Clearing the highest ground under it keeps the whole label visible; from
+// overhead (this label's home view) the clearance is along the camera axis,
+// so it still reads flush with the ground.
+function ElevatedGroup({ at, children, footprintRadius = 0 }) {
   const ref = useRef()
-  const baseY = useMemo(() => getElevationRaw(at[0], at[1]), [at[0], at[1]])
+  const baseY = useMemo(() => {
+    let m = getElevationRaw(at[0], at[1])
+    if (footprintRadius > 0) {
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2
+        m = Math.max(m, getElevationRaw(
+          at[0] + Math.cos(a) * footprintRadius,
+          at[1] + Math.sin(a) * footprintRadius,
+        ))
+      }
+    }
+    return m
+  }, [at, footprintRadius])
   useFrame(() => {
     if (ref.current) ref.current.position.y = baseY * terrainExag.value
   })
@@ -837,7 +861,7 @@ function ElevatedGroup({ at, children }) {
 export function ParkTitle() {
   return (
     <>
-      <ElevatedGroup at={LABEL_TITLE_POS}>
+      <ElevatedGroup at={LABEL_TITLE_POS} footprintRadius={24}>
         <Text
           position={[LABEL_TITLE_POS[0], 0.08, LABEL_TITLE_POS[1]]}
           rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
@@ -848,11 +872,12 @@ export function ParkTitle() {
           letterSpacing={0.15}
           outlineWidth={0.7}
           outlineColor="#14141c"
+          renderOrder={16}
         >
           LAFAYETTE PARK
         </Text>
       </ElevatedGroup>
-      <ElevatedGroup at={LABEL_SUBTITLE_POS}>
+      <ElevatedGroup at={LABEL_SUBTITLE_POS} footprintRadius={14}>
         <Text
           position={[LABEL_SUBTITLE_POS[0], 0.08, LABEL_SUBTITLE_POS[1]]}
           rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
@@ -863,6 +888,7 @@ export function ParkTitle() {
           letterSpacing={0.08}
           outlineWidth={0.35}
           outlineColor="#14141c"
+          renderOrder={16}
         >
           {'EST. 1851 · ST. LOUIS, MO'}
         </Text>

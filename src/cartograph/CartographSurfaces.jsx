@@ -165,7 +165,8 @@ const TABS = [
     key: 'labels',
     label: 'Labels',
     items: [
-      { id: 'labels', label: 'Labels', kind: 'layer' },
+      { id: 'labels',    label: 'Street Labels', kind: 'layer' },
+      { id: 'parkTitle', label: 'Park Title',    kind: 'layer' },
     ],
   },
   {

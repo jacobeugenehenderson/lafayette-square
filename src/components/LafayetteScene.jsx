@@ -1323,12 +1323,12 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
         />
       ))}
 
-      {/* Park title — the "LAFAYETTE PARK" landmark label. Grouped with the
-          street labels under the same `labels` layer toggle (no longer an
-          always-on orphan in LafayettePark). NOT gated by labelsReady: it's a
-          landmark establishing label shown in every shot (incl. Hero), unlike
-          the browse-only street labels. */}
-      {!hide.labels && <ParkTitle />}
+      {/* Park title — the "LAFAYETTE PARK" landmark label. Has its OWN
+          `parkTitle` toggle in the Labels panel (separate from `labels` =
+          street labels), so the operator shows/hides it independently. NOT
+          gated by labelsReady: it's a landmark establishing label shown in
+          every shot (incl. Hero), unlike the browse-only street labels. */}
+      {!hide.parkTitle && <ParkTitle />}
 
       {/* Landmark markers */}
       {markersReady && <LandmarkMarkers />}

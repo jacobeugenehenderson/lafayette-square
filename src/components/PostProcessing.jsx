@@ -384,7 +384,11 @@ export function PostProcessing({
       const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
       _dofRefs.debug.current      = 0
       _dofRefs.nearFocus.current  = d.focus
-      _dofRefs.maxBlur.current    = d.blur * 0.045
+      // Browse (overhead) camera: disable DoF — from above the scene is at ~one
+      // depth, so DoF only smears the map. Gated on camera altitude (matches the
+      // bark aerial tier, TierDriver y > 150). maxBlur=0 is a no-op gather (every
+      // tap samples the center pixel → sharp, not black).
+      _dofRefs.maxBlur.current    = camera.position.y > 150 ? 0 : d.blur * 0.045
       _dofRefs.sharpWidth.current = 30 - d.softness * 20      // softer → narrower sharp band
       _dofRefs.midRange.current   = 100 + d.softness * 350    // softer → gentler ramp
       // The blur fills the NEIGHBORHOOD (a bounded zone past the near focus);
