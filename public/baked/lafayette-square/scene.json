@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1782197605890,
+  "bakedAt": 1782274764367,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -82,7 +82,7 @@
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": true,
+    "tree_row": false,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -90,7 +90,7 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": true,
+    "tree": false,
     "lamp": true,
     "fence": false,
     "wall": false,
@@ -199,7 +199,7 @@
   },
   "exposure": {
     "values": {
-      "value": 0.58
+      "value": 0.5
     }
   },
   "warmth": {
@@ -248,7 +248,7 @@
         "value": 0.5
       },
       "night": {
-        "value": 0.08
+        "value": 0
       }
     }
   },

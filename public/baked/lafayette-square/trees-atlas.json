@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T04:02:50.721Z",
+  "generatedAt": "2026-06-24T04:51:40.040Z",
   "lookName": "lafayette-square",
   "rosterSize": 18,
   "materialDefaults": {
@@ -1329,31 +1329,31 @@
     },
     "maple_sugar": {
       "1": {
-        "heightM": 12,
+        "heightM": 10.2,
         "canopyRadiusM": 5.8
       }
     },
     "ash_green": {
       "1": {
-        "heightM": 11.6,
+        "heightM": 10.8,
         "canopyRadiusM": 6.8
       }
     },
     "maple_silver": {
       "1": {
-        "heightM": 11.2,
+        "heightM": 10.1,
         "canopyRadiusM": 3.7
       }
     },
     "maple_red": {
       "1": {
-        "heightM": 11.2,
+        "heightM": 10.3,
         "canopyRadiusM": 3.7
       }
     },
     "birch": {
       "1": {
-        "heightM": 7.1,
+        "heightM": 7,
         "canopyRadiusM": 1.7
       }
     },
@@ -1365,21 +1365,21 @@
     },
     "linden_american": {
       "1": {
-        "heightM": 12,
+        "heightM": 10.9,
         "canopyRadiusM": 4.4
       },
       "2": {
-        "heightM": 12,
+        "heightM": 10.9,
         "canopyRadiusM": 4.4
       },
       "3": {
-        "heightM": 12,
+        "heightM": 10.9,
         "canopyRadiusM": 4.4
       }
     },
     "oak_bur": {
       "1": {
-        "heightM": 11.6,
+        "heightM": 10.8,
         "canopyRadiusM": 6.8
       }
     }
