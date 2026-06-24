@@ -332,8 +332,9 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
       <span className="rounded-lg px-3 py-1 glass-text-dim"
         style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>Lafayette Square ▼</span>
       <div style={{ flex: 1 }} />
-      {btn('desktop', 'Desktop', mode === 'desktop', () => { setMode('desktop'); noteEvent('mode→desktop') })}
-      {btn('phone', 'Phone', mode === 'phone', () => { setMode('phone'); noteEvent('mode→phone') })}
+      {btn('desktop',  'Desktop',  mode === 'desktop',  () => { setMode('desktop');  noteEvent('mode→desktop') })}
+      {btn('phone-hi', 'Phone hi', mode === 'phone-hi', () => { setMode('phone-hi'); noteEvent('mode→phone-hi') })}
+      {btn('phone-lo', 'Phone lo', mode === 'phone-lo', () => { setMode('phone-lo'); noteEvent('mode→phone-lo') })}
       {divider('d2')}
       {Object.entries(TOOLBAR_SHOTS).map(([k, s]) =>
         btn(k, s.label, shot === k, () => { setShot(k); noteEvent(`shot→${k}`) }, !shotReachable(shot, k))
@@ -615,9 +616,18 @@ function RightPanel({ layers, setLayer, top, bottom }) {
 }
 
 const MODE_KEY = 'preview.mode.v1'
+// Environments = device-regime tiers (same ids as deviceProfiles / renderTiers).
+// Extended from the old binary desktop|phone — the mode toggle IS the env
+// selector (the device-regime workflow, meta phase 1). phone-hi/phone-lo both
+// render the phone frame; they differ in the render degree (pyramid bracket).
+const ENV_IDS = ['desktop', 'phone-hi', 'phone-lo']
 function loadMode() {
   if (typeof localStorage === 'undefined') return 'desktop'
-  try { return localStorage.getItem(MODE_KEY) || 'desktop' } catch { return 'desktop' }
+  try {
+    const raw = localStorage.getItem(MODE_KEY)
+    if (raw === 'phone') return 'phone-hi'             // migrate the old binary value
+    return ENV_IDS.includes(raw) ? raw : 'desktop'
+  } catch { return 'desktop' }
 }
 function saveMode(m) {
   if (typeof localStorage === 'undefined') return
@@ -667,7 +677,7 @@ export default function PreviewApp() {
   const [reloadKey, setReloadKey] = useState(0)
   const onReload = () => setReloadKey(n => n + 1)
 
-  const isPhone = mode === 'phone'
+  const isPhone = mode !== 'desktop'
   const phoneScale = usePhoneScale(isPhone)
 
   // Stage spans from below the app bar to the bottom of the window, leaving
@@ -706,7 +716,7 @@ export default function PreviewApp() {
       shadows="soft"
       onCreated={({ camera }) => camera.lookAt(...SHOTS.hero.target)}
     >
-      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} />
+      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} tier={mode} />
     </Canvas>
   )
 
@@ -753,7 +763,7 @@ function resolvePreviewLookId() {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function CanvasContents({ layers, shot, setShot }) {
+function CanvasContents({ layers, shot, setShot, tier }) {
   const lookId = resolvePreviewLookId()
   return (
     <>
@@ -856,7 +866,7 @@ function CanvasContents({ layers, shot, setShot }) {
       <ShotCamera shot={shot} setShot={setShot} />
 
       <PreviewPostFx
-        lookId={lookId}
+        lookId={lookId} tier={tier}
         ao={layers.ao} bloom={layers.bloom} aerial={layers.aerial}
         grade={layers.grade} grain={layers.grain} smaa={layers.smaa}
         dof={layers.dof}

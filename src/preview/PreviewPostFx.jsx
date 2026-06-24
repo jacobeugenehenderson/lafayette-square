@@ -13,6 +13,7 @@ import { AerialPerspective, FilmGrade, FilmGrain, _postFxRefs } from '../compone
 import { RomanceDoF, _dofRefs } from '../components/RomanceDoF.jsx'
 import { DownsamplePyramid } from '../components/DownsamplePyramid.jsx'
 import { CustomBloom } from '../components/CustomBloom.jsx'
+import { pyramidDegreeFor } from '../lib/renderTiers.js'
 
 // Verification driver for the WIP two-focal DoF. Turn the effect ON via the
 // "DoF (WIP)" toggle in the Preview FX matrix; these URL params then flip the
@@ -130,7 +131,8 @@ function FxDriver({ aoRef, bloomRef, lookId }) {
 }
 
 export default function PreviewPostFx({
-  lookId, ao = false, bloom = false, aerial = false, grade = false, grain = false, smaa = true,
+  lookId, tier = 'desktop',
+  ao = false, bloom = false, aerial = false, grade = false, grain = false, smaa = true,
   dof = false,
 }) {
   const aoRef = useRef()
@@ -138,6 +140,12 @@ export default function PreviewPostFx({
 
   const anyOn = ao || bloom || aerial || grade || grain || dof
   if (!anyOn) return null
+
+  // The active environment's pyramid bracket (device-regime, meta phase 1). The
+  // mode toggle picks the tier → the pyramid renders at that degree, so bloom/
+  // DoF blur dial down on the phone rungs. tier is in the composer key below, so
+  // switching environment rebuilds the pass at the new degree.
+  const pyr = pyramidDegreeFor(tier)
 
   return (
     <>
@@ -147,14 +155,14 @@ export default function PreviewPostFx({
           pipeline when any effect is toggled on/off (EffectComposer doesn't
           reconcile added/removed effects on its own — this fixes the Preview
           on/off toggles, SMAA included). */}
-      <EffectComposer key={`fx-${ao}-${bloom}-${aerial}-${grade}-${grain}-${smaa}-${dof}`}>
+      <EffectComposer key={`fx-${tier}-${ao}-${bloom}-${aerial}-${grade}-${grain}-${smaa}-${dof}`}>
         {ao && (
           <N8AO ref={aoRef} halfRes={false} aoRadius={15} intensity={2.5}
             distanceFalloff={0.3} quality="medium" />
         )}
         {/* Shared full-scene blur pyramid — mounts for EITHER consumer (bloom
             or DoF), both of which SAMPLE it. Parity with PostProcessing.jsx. */}
-        {(bloom || dof) && <DownsamplePyramid />}
+        {(bloom || dof) && <DownsamplePyramid levels={pyr.levels} radius={pyr.radius} resolutionScale={pyr.resolutionScale} />}
         {/* DoF — AFTER the pyramid so it samples it (CoC-weighted lerp toward
             the shared blur). ?dofDebug=1 paints the CoC zones. */}
         {dof && <RomanceDoF />}
