@@ -62,7 +62,11 @@ class DownsamplePyramidPass extends Pass {
     // the custom bloom reads the untouched scene color and samples our texture
     // for its blur — sharing the pyramid, never the result.
     this.needsSwap = false
-    this.resolutionScale = resolutionScale
+    // resolutionScale = the live-settable COST dial (the tuner edits it); _w/_h
+    // hold the last screen dims so a dial change re-renders the mip targets.
+    this._resolutionScale = resolutionScale
+    this._w = 1
+    this._h = 1
     this.mipmap = new MipmapBlurPass()
     this.mipmap.levels = levels
     this.mipmap.radius = radius
@@ -80,6 +84,21 @@ class DownsamplePyramidPass extends Pass {
   get radius() { return this.mipmap.radius }
   set radius(v) { this.mipmap.radius = v }
 
+  // resolutionScale — live-settable (the tuner). Re-renders the mip targets at
+  // the new base res from the last-known screen dims, so it updates without a
+  // composer rebuild.
+  get resolutionScale() { return this._resolutionScale }
+  set resolutionScale(v) {
+    if (v == null || v === this._resolutionScale) return
+    this._resolutionScale = v
+    this._applyResolution()
+  }
+
+  _applyResolution() {
+    const s = this._resolutionScale || 1
+    this.mipmap.setSize(Math.max(1, Math.round(this._w * s)), Math.max(1, Math.round(this._h * s)))
+  }
+
   render(renderer, inputBuffer /* , outputBuffer, deltaTime, stencilTest */) {
     // Build the full-scene down/up pyramid from the current scene color.
     this.mipmap.render(renderer, inputBuffer)
@@ -89,12 +108,13 @@ class DownsamplePyramidPass extends Pass {
   }
 
   setSize(width, height) {
-    // Render the pyramid at resolutionScale × screen res — the COST dial. Both
-    // consumers sample by UV (resolution-independent) and both are blurry, so a
-    // lower base res is ~free visually but cuts cost quadratically. The first
-    // real rung of the device-tier bracket (memory: preview-equals-pyramid).
-    const s = this.resolutionScale || 1
-    this.mipmap.setSize(Math.max(1, Math.round(width * s)), Math.max(1, Math.round(height * s)))
+    // Store the screen dims + render at resolutionScale × that — the COST dial.
+    // Consumers sample by UV (resolution-independent) and both are blurry, so a
+    // lower base res is ~free visually but cuts cost quadratically. The
+    // device-tier bracket (memory: preview-equals-pyramid).
+    this._w = width
+    this._h = height
+    this._applyResolution()
   }
 
   initialize(renderer, alpha, frameBufferType) {
@@ -127,6 +147,7 @@ export const DownsamplePyramid = forwardRef(function DownsamplePyramid(
   useEffect(() => {
     if (levels != null) pass.levels = levels
     if (radius != null) pass.radius = radius
-  }, [pass, levels, radius])
+    if (resolutionScale != null) pass.resolutionScale = resolutionScale
+  }, [pass, levels, radius, resolutionScale])
   return <primitive ref={ref} object={pass} dispose={null} />
 })

@@ -37,6 +37,7 @@ import { V_EXAG } from '../utils/terrainShader'
 import LafayetteScene from '../components/LafayetteScene'
 import SlabBuildings from '../components/SlabBuildings'
 import PreviewPostFx from './PreviewPostFx'
+import { RENDER_TIERS } from '../lib/renderTiers.js'
 import { ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
@@ -514,9 +515,12 @@ function LayerRow({ layerKey, label, on, onToggle, disabled, metric, groupMax })
 // computes the group's heaviest cost (its metric), and feeds every row its
 // share. Keeping a single subscription here (vs. per-row) is what lets the
 // share-of-heaviest bar stay consistent across rows on the same render.
-function LayerSection({ title, layerList, layers, setLayer, metric, footer }) {
+function LayerSection({ title, layerList, layers, setLayer, metric, footer, defaultExpanded = false }) {
   const [, force] = useState(0)
   useEffect(() => layerCostSubscribe(() => force(n => n + 1)), [])
+  // Twirl-collapsible, collapsed by default — there's a lot of roster to look at
+  // but only a little to see at any moment (Jacob, 2026-06-24). Open to toggle.
+  const [expanded, setExpanded] = useState(defaultExpanded)
   let groupMax = 0
   for (const [key] of layerList) {
     const v = layerMetricValue(getLayerCost(key), metric)
@@ -524,15 +528,24 @@ function LayerSection({ title, layerList, layers, setLayer, metric, footer }) {
   }
   return (
     <div className="glass-panel rounded-xl p-3 space-y-2">
-      <div className="section-heading">{title}</div>
-      <div className="space-y-1">
-        {layerList.map(([key, label]) => (
-          <LayerRow key={key} layerKey={key} label={label}
-            metric={metric} groupMax={groupMax}
-            on={!!layers[key]} onToggle={(v) => setLayer(key, v)} />
-        ))}
-      </div>
-      {footer}
+      <button onClick={() => setExpanded(e => !e)} className="w-full flex items-center"
+        style={{ gap: 6, padding: 0, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <span style={{ display: 'inline-block', width: 10, color: 'var(--on-surface-subtle)',
+          transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 120ms' }}>▸</span>
+        <span className="section-heading" style={{ marginBottom: 0 }}>{title}</span>
+      </button>
+      {expanded && (
+        <>
+          <div className="space-y-1">
+            {layerList.map(([key, label]) => (
+              <LayerRow key={key} layerKey={key} label={label}
+                metric={metric} groupMax={groupMax}
+                on={!!layers[key]} onToggle={(v) => setLayer(key, v)} />
+            ))}
+          </div>
+          {footer}
+        </>
+      )}
     </div>
   )
 }
@@ -598,13 +611,52 @@ function FxCaveats() {
   )
 }
 
-function RightPanel({ layers, setLayer, top, bottom }) {
+// Pyramid tuner — edits the ACTIVE environment's blur bracket (meta phase 2).
+// The SAME panel for every env (the "same-but-different" surface); switching the
+// env toggle swaps which env's degree these sliders bind to. Levels/radius/
+// resolution update the live pyramid without a composer rebuild.
+function PyramidTuner({ envId, degree, onChange }) {
+  if (!degree) return null
+  const row = (key, label, min, max, step, digits) => (
+    <div className="space-y-0.5" key={key}>
+      <div className="flex items-baseline justify-between">
+        <span className="glass-text-secondary" style={{ fontSize: 12 }}>{label}</span>
+        <span className="font-mono glass-text-dim" style={{ fontSize: 11 }}>
+          {Number(degree[key]).toFixed(digits)}
+        </span>
+      </div>
+      <input type="range" min={min} max={max} step={step}
+        value={Number(degree[key])}
+        onChange={(e) => onChange(key, parseFloat(e.target.value))}
+        className="w-full" style={{ accentColor: '#5eead4' }} />
+    </div>
+  )
+  return (
+    <div className="glass-panel rounded-xl p-3 space-y-2">
+      <div className="section-heading">Pyramid · {envId}</div>
+      {row('levels', 'Levels', 1, 8, 1, 0)}
+      {row('resolutionScale', 'Resolution', 0.1, 1, 0.05, 2)}
+      {row('radius', 'Radius', 0, 1, 0.05, 2)}
+      <div className="glass-text-dim" style={{ fontSize: 9, lineHeight: 1.4 }}>
+        The blur bracket for this environment — fewer levels / lower resolution =
+        cheaper, tighter bloom + DoF. Switch the env toggle to bracket another tier.
+      </div>
+    </div>
+  )
+}
+
+function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree }) {
   return (
     <div className="absolute z-10 flex flex-col gap-3 pointer-events-auto overflow-y-auto"
       style={{ top, right: 24, bottom, width: RIGHT_PANEL_W }}>
+      {/* Time of Day stays at the very top. */}
       <div className="glass-panel rounded-xl p-3">
         <TimeControl />
       </div>
+
+      {/* Pyramid tuner leads the tools — the active tool; stays open. The roster
+          cards below twirl-collapse (default closed) to cut the clutter. */}
+      <PyramidTuner envId={envId} degree={degree} onChange={onTuneDegree} />
 
       <LayerSection title="Scene" layerList={SCENE_LAYERS} layers={layers}
         setLayer={setLayer} metric="draws" footer={<SceneCaveats />} />
@@ -632,6 +684,28 @@ function loadMode() {
 function saveMode(m) {
   if (typeof localStorage === 'undefined') return
   try { localStorage.setItem(MODE_KEY, m) } catch { /* ignore */ }
+}
+
+// Editable per-environment pyramid degrees (the tuner edits these; meta phase 2).
+// Seeded from RENDER_TIERS, persisted, merged over defaults so new envs/keys
+// always resolve. Same load/save shape as the layer matrix.
+const TIERS_KEY = 'preview.renderTiers.v1'
+function loadTiers() {
+  if (typeof localStorage === 'undefined') return RENDER_TIERS
+  try {
+    const raw = localStorage.getItem(TIERS_KEY)
+    if (!raw) return RENDER_TIERS
+    const saved = JSON.parse(raw)
+    const next = {}
+    for (const id of Object.keys(RENDER_TIERS)) {
+      next[id] = { pyramid: { ...RENDER_TIERS[id].pyramid, ...(saved[id]?.pyramid || {}) } }
+    }
+    return next
+  } catch { return RENDER_TIERS }
+}
+function saveTiers(t) {
+  if (typeof localStorage === 'undefined') return
+  try { localStorage.setItem(TIERS_KEY, JSON.stringify(t)) } catch { /* ignore */ }
 }
 
 const RIGHT_PANEL_W = 400
@@ -664,6 +738,15 @@ export default function PreviewApp() {
   const [shot, setShot] = useState('hero')
   const [mode, setModeRaw] = useState(loadMode)
   const setMode = (m) => { setModeRaw(m); saveMode(m) }
+  // The active environment's editable pyramid degree (tuner-backed, persisted).
+  const [tiers, setTiers] = useState(loadTiers)
+  const activeDegree = (tiers[mode] || tiers.desktop).pyramid
+  const setActiveDegree = (key, value) => setTiers(prev => {
+    const cur = prev[mode] || prev.desktop
+    const next = { ...prev, [mode]: { pyramid: { ...cur.pyramid, [key]: value } } }
+    saveTiers(next)
+    return next
+  })
   const [layers, setLayers] = useState(loadLayers)
   const [profilerTab, setProfilerTab] = useState('strip')
   const setLayer = (k, v) => setLayers(prev => {
@@ -716,7 +799,7 @@ export default function PreviewApp() {
       shadows="soft"
       onCreated={({ camera }) => camera.lookAt(...SHOTS.hero.target)}
     >
-      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} tier={mode} />
+      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} tier={mode} pyramidDegree={activeDegree} />
     </Canvas>
   )
 
@@ -752,7 +835,8 @@ export default function PreviewApp() {
       </div>
 
       <TopAppBar shot={shot} setShot={setShot} mode={mode} setMode={setMode} />
-      <RightPanel layers={layers} setLayer={setLayer} top={panelTop} bottom={panelBottom} />
+      <RightPanel layers={layers} setLayer={setLayer} top={panelTop} bottom={panelBottom}
+        envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} />
     </div>
   )
 }
@@ -763,7 +847,7 @@ function resolvePreviewLookId() {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function CanvasContents({ layers, shot, setShot, tier }) {
+function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
   const lookId = resolvePreviewLookId()
   return (
     <>
@@ -866,7 +950,7 @@ function CanvasContents({ layers, shot, setShot, tier }) {
       <ShotCamera shot={shot} setShot={setShot} />
 
       <PreviewPostFx
-        lookId={lookId} tier={tier}
+        lookId={lookId} tier={tier} pyramidDegree={pyramidDegree}
         ao={layers.ao} bloom={layers.bloom} aerial={layers.aerial}
         grade={layers.grade} grain={layers.grain} smaa={layers.smaa}
         dof={layers.dof}

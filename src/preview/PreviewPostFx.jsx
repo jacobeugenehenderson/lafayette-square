@@ -131,7 +131,7 @@ function FxDriver({ aoRef, bloomRef, lookId }) {
 }
 
 export default function PreviewPostFx({
-  lookId, tier = 'desktop',
+  lookId, tier = 'desktop', pyramidDegree,
   ao = false, bloom = false, aerial = false, grade = false, grain = false, smaa = true,
   dof = false,
 }) {
@@ -141,11 +141,13 @@ export default function PreviewPostFx({
   const anyOn = ao || bloom || aerial || grade || grain || dof
   if (!anyOn) return null
 
-  // The active environment's pyramid bracket (device-regime, meta phase 1). The
-  // mode toggle picks the tier → the pyramid renders at that degree, so bloom/
-  // DoF blur dial down on the phone rungs. tier is in the composer key below, so
-  // switching environment rebuilds the pass at the new degree.
-  const pyr = pyramidDegreeFor(tier)
+  // The active environment's pyramid bracket (device-regime). The mode toggle
+  // picks the tier → the pyramid renders at that degree, so bloom/DoF blur dial
+  // down on the phone rungs. `pyramidDegree` is the operator-tuned value from the
+  // Preview tuner (meta phase 2); it falls back to the static renderTiers config.
+  // tier is in the composer key, so switching environment rebuilds; degree EDITS
+  // apply live (DownsamplePyramid's setters), no rebuild.
+  const pyr = pyramidDegree || pyramidDegreeFor(tier)
 
   return (
     <>
