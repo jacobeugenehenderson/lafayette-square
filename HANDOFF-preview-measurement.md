@@ -73,6 +73,18 @@ Preview v0.1 is live and solid *for its original scope*; this arc extends it. Th
   7 duplicated regexes). Drives the platform forks in `Scene.jsx` / `PostProcessing.jsx` etc.
 - **Phone mode** — `PhoneFrame` renders a phone *aspect/bezel* but **desktop settings** inside it
   (render-conformance §6-F): the virtual phone currently tests nothing real.
+  - ⭐ **The portrait aspect is itself load-bearing (Jacob, 2026-06-24).** A phone is portrait, so at
+    any moment it shows only a narrow **vertical slice** of the neighborhood — a fraction of the wide
+    desktop swath. So the phone's real per-frame load is far below desktop's *iff off-slice geometry
+    frustum-culls.* Two consequences: **(1)** the phone slice — not the desktop view — is the honest
+    measurement surface (the desktop wide frustum is a pessimistic worst case; stacking the §2b
+    supersample strain on it produced a "black screen" that was a *test artifact*, not a ship reality).
+    **(2)** the whole "phone is fine" bet rides on per-tile **frustum culling** working — and today the
+    **tree culling is OFF** (`InstancedTrees.jsx frustumCulled={false}` since 2026-06-21; the per-tile
+    bound culled visible trees) so the slice draws ALL tiles. The deferred fix (manual world-space
+    per-tile `.visible` culling) is tracked in `ls/BACKLOG.md` "Phone-slice frustum culling" +
+    `memory/tree-building-frustum-culling.md`. A frustum-aware gauge (§3) must count what's *in the
+    slice*, not the whole map.
 
 **The two real problems, precisely:**
 - **(P1) The per-channel tax is denominated in desktop-ms** — information-free at vsync, so unclicking a
