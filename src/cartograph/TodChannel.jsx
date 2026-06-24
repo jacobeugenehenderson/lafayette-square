@@ -18,14 +18,15 @@
  *
  * Editability gating:
  *   - flat, not yet armed → sliders editable (tweak the flat baseline)
- *   - animation mode (armed or animated), parked on a named slot →
+ *   - animation mode (armed or animated), a slot TILE selected →
  *     editable; the displayed value is the RESOLVED (tweened) value, and
  *     the first edit at an unkeyed slot mints its keyframe
- *   - animation mode, between slots → read-only (nothing to key here)
+ *   - animation mode, no tile selected → read-only (select a tile to key)
  *
- * Keyframes are born from EDITS, never navigation: scrubbing/clicking a
- * chip only moves the playhead. An edit while parked seeds (or updates)
- * that slot's keyframe.
+ * Keyframes are born from EDITS, never navigation: clicking a slot tile only
+ * moves the playhead (and selects it as the edit target). An edit records a
+ * keyframe ONLY when a slot tile is selected — editing with no tile selected
+ * does nothing and never moves the timeline.
  *
  * Animate toggle:
  *   - dashed empty "animate" → call to action (off)
@@ -384,9 +385,14 @@ export default function TodChannel({
   const [selectedSlot, setSelectedSlot] = useState(null)
   const minute = currentTime.getHours() * 60 + currentTime.getMinutes() + currentTime.getSeconds() / 60
   const playheadSlotId = todSlotAtMinute(minute, currentTime)
-  // Edit target: the selected chip if any, else fall back to the slot the
-  // playhead happens to sit on. Null when nothing is selected/parked.
-  const editTarget = showRow ? (selectedSlot ?? playheadSlotId) : null
+  // Edit target: the EXPLICITLY selected chip — NO playhead fallback. The
+  // animator records a keyframe ONLY when a slot tile is selected, so editing
+  // a value never jogs the timeline; the playhead moves on tile-click alone.
+  // (The old `?? playheadSlotId` fallback silently targeted whatever slot the
+  // live clock had drifted onto, minting a keyframe + scrubbing there on any
+  // edit — the "changing a value moves the timeline" bug.) Null when no tile
+  // is selected → sliders read-only until you pick one.
+  const editTarget = showRow ? selectedSlot : null
 
   // Display values + editability gate.
   //   - flat & not arming → edit the flat baseline directly.
