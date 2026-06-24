@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1782274764367,
+  "bakedAt": 1782327440815,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -174,9 +174,10 @@
         "smoothing": 0.06
       },
       "noon": {
-        "intensity": 0.22,
+        "intensity": 0,
         "threshold": 0,
-        "smoothing": 0
+        "smoothing": 0,
+        "warmCool": 0
       },
       "dawn": {
         "intensity": 0.22,
@@ -184,9 +185,9 @@
         "smoothing": 0
       },
       "sunset": {
-        "intensity": 0.02,
+        "intensity": 0.56,
         "threshold": 0.01,
-        "smoothing": 0.04744157187176836
+        "smoothing": 0
       }
     }
   },
@@ -272,9 +273,9 @@
   },
   "dof": {
     "values": {
-      "enabled": 1,
-      "blur": 0.02,
-      "focus": 59,
+      "enabled": 0,
+      "blur": 0.2,
+      "focus": 52,
       "softness": 0
     }
   },

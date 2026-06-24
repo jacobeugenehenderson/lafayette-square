@@ -18,7 +18,7 @@
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": true,
+    "tree_row": false,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -26,7 +26,7 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": true,
+    "tree": false,
     "lamp": true,
     "fence": false,
     "wall": false,
@@ -310,9 +310,10 @@
         "smoothing": 0.06
       },
       "noon": {
-        "intensity": 0.22,
-        "threshold": 0,
-        "smoothing": 0
+        "intensity": 0.48,
+        "threshold": 0.09,
+        "smoothing": 0,
+        "warmCool": 0.5
       },
       "dawn": {
         "intensity": 0.22,
@@ -320,9 +321,9 @@
         "smoothing": 0
       },
       "sunset": {
-        "intensity": 0.02,
+        "intensity": 0.56,
         "threshold": 0.01,
-        "smoothing": 0.04744157187176836
+        "smoothing": 0
       }
     }
   },
@@ -338,7 +339,7 @@
   },
   "exposure": {
     "values": {
-      "value": 0.58
+      "value": 0.5
     }
   },
   "ao": {
@@ -384,7 +385,7 @@
         "value": 0.5
       },
       "night": {
-        "value": 0.08
+        "value": 0
       }
     }
   },
@@ -409,8 +410,8 @@
   "dof": {
     "values": {
       "enabled": 1,
-      "blur": 0.02,
-      "focus": 59,
+      "blur": 0.08,
+      "focus": 33,
       "softness": 0
     }
   },
