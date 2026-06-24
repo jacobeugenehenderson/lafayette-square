@@ -1,0 +1,100 @@
+/**
+ * CustomBloom — a thin bloom that samples the shared DownsamplePyramid.
+ *
+ * Replaces `@react-three/postprocessing`'s `<Bloom>`. Stock `BloomEffect` owns
+ * a PRIVATE bright-pass + mip pyramid (`MipmapBlurPass`, sealed) — it can't
+ * share. This bloom samples our standalone `DownsamplePyramid` instead, so the
+ * one downsample serves bloom now and DoF in Phase 2 (sharing the pyramid,
+ * never the result — CHANNEL-ECONOMY-FORENSIC §2 #2).
+ *
+ * ── The mechanism shift (the eye-gate) ─────────────────────────────────────
+ * Stock bloom is threshold→blur (knee on the sharp scene, THEN its private
+ * pyramid). The shared pyramid is a full-scene blur (DoF needs the darks), so
+ * this bloom is blur→threshold: it applies the SAME knee
+ * `smoothstep(threshold, threshold+smoothing, luminance)` as the library's
+ * LuminanceMaterial, but to the BLURRED pyramid. The knobs keep their meaning;
+ * the look shifts subtly (small bright sources spread+dim before the knee, so
+ * they bloom weaker) → re-tune the `bloom` channel in Stage at the eye-gate.
+ * See HANDOFF-real-dof Phase 1.
+ *
+ * ── API parity (so the channel wiring is untouched) ────────────────────────
+ * The two driver sites (PostProcessing.jsx, PreviewPostFx.jsx) set
+ * `bloom.intensity`, `bloom.luminanceMaterial.threshold`, and
+ * `.luminanceMaterial.smoothing` off the `bloom` channel each frame. This
+ * effect exposes those exact accessors (backed by its uniforms), so neither
+ * driver changes. The one-tree-program Bloom constraint is about the tree
+ * MATERIAL (untouched here) — the bloom PASS swaps safely.
+ */
+
+import { useMemo, forwardRef } from 'react'
+import { Effect, BlendFunction } from 'postprocessing'
+import * as THREE from 'three'
+
+import { _pyramidRefs } from './DownsamplePyramid.jsx'
+
+const fragment = /* glsl */`
+  #ifdef FRAMEBUFFER_PRECISION_HIGH
+    uniform mediump sampler2D uPyramid;
+  #else
+    uniform lowp sampler2D uPyramid;
+  #endif
+  uniform float uIntensity;
+  uniform float uThreshold;
+  uniform float uSmoothing;
+
+  void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+    vec3 b = texture2D(uPyramid, uv).rgb;
+    // Same soft knee as the library's LuminanceMaterial, applied to the BLURRED
+    // pyramid (blur→threshold). Knobs keep their meaning; see header.
+    float l = dot(b, vec3(0.2126, 0.7152, 0.0722));
+    float knee = smoothstep(uThreshold, uThreshold + uSmoothing, l);
+    outputColor = vec4(b * knee * uIntensity, inputColor.a);
+  }
+`
+
+class CustomBloomEffect extends Effect {
+  constructor({ intensity = 0.5, threshold = 0.85, smoothing = 0.4 } = {}) {
+    super('CustomBloom', fragment, {
+      // SCREEN — matches the current LS bloom (PostProcessing.jsx passed
+      // blendFunction={BlendFunction.SCREEN}). NOT convolution: it samples its
+      // own pyramid uniform, never inputBuffer neighbours.
+      blendFunction: BlendFunction.SCREEN,
+      uniforms: new Map([
+        ['uPyramid',   new THREE.Uniform(null)],
+        ['uIntensity', new THREE.Uniform(intensity)],
+        ['uThreshold', new THREE.Uniform(threshold)],
+        ['uSmoothing', new THREE.Uniform(smoothing)],
+      ]),
+    })
+
+    // ── API-parity shim with @react-three/postprocessing's <Bloom> ──────────
+    // Stable object so `bloom.luminanceMaterial` reads/writes the uniforms; the
+    // drivers set `.threshold` / `.smoothing` on it each frame.
+    const u = this.uniforms
+    this._luminanceMaterial = {
+      get threshold() { return u.get('uThreshold').value },
+      set threshold(v) { u.get('uThreshold').value = v },
+      get smoothing() { return u.get('uSmoothing').value },
+      set smoothing(v) { u.get('uSmoothing').value = v },
+    }
+  }
+
+  get luminanceMaterial() { return this._luminanceMaterial }
+
+  get intensity() { return this.uniforms.get('uIntensity').value }
+  set intensity(v) { this.uniforms.get('uIntensity').value = v }
+
+  update(/* renderer, inputBuffer, deltaTime */) {
+    // Bind the shared pyramid each frame (it's rebuilt by the DownsamplePyramid
+    // pass earlier in the composer). A null/black handle SCREEN-blends to a
+    // no-op, so first-frame mount order is safe.
+    this.uniforms.get('uPyramid').value = _pyramidRefs.texture.current
+  }
+}
+
+export { CustomBloomEffect }
+
+export const CustomBloom = forwardRef(function CustomBloom(_, ref) {
+  const effect = useMemo(() => new CustomBloomEffect(), [])
+  return <primitive ref={ref} object={effect} dispose={null} />
+})

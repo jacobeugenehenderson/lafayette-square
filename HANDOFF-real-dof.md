@@ -1,5 +1,22 @@
 # Handoff — Real Depth-of-Field: the romance *and* the invisible LoD cover
 
+> **✅ LANDED 2026-06-24 — Phase 1 + Phase 2 BUILT + eye-gated.** Shared
+> `src/components/DownsamplePyramid.jsx` (full-scene Karis down/up mips;
+> **re-bracketable** — `levels`/`radius` = the per-device degree dial) feeds two
+> consumers that SAMPLE it, never each other's result: `CustomBloom.jsx`
+> (replaces pmndrs `<Bloom>`, knee applied in-composite, API-parity with the
+> `bloom` channel) and `RomanceDoF.jsx` (36-tap gather → CoC-weighted lerp toward
+> the pyramid). Wired in `PostProcessing.jsx` + `PreviewPostFx.jsx`, order
+> **N8AO → pyramid → DoF → bloom**. DoF eye-gated ("it's good"); bloom works,
+> reads muddier (the blur→threshold mechanism shift) pending a re-tune. ⭐ **The
+> north star this set seeded — "Preview = Pyramid":** the device-tier ladder and
+> the blur pyramid are ONE structure; mobile/desktop = a bracket *position*
+> (degree), not a forked channel set; the per-pass operator gauge was dropped (a
+> number wired to no knob) — the instrument is visual (look *through* the tiers).
+> Memory: `preview-equals-pyramid-tier-ladder`. ▶ **NEXT:** Warm↔Cool bloom-tint
+> slider (recover the cool look); then optionally expose pyramid mip **levels**
+> (sharper bloom + true variable-radius DoF off one dial).
+
 > **⭐ STATUS 2026-06-24 (Linden) — Phase 1 (the shared `DownsamplePyramid`) is now SCOPED + DISPATCH-READY, Option A LOCKED.** Triggered by a forensic: bloom-on froze the foliage scene to black (perf, not a crash) because Bloom is a solo full-screen hog — exactly what the shared pyramid retires. Build spec + the bloom-non-negotiable rationale are in **Phase 1 below**. The next dispatch is that build (serialize on `PostProcessing.jsx`; land/stash the operator's DoF WIP there first).
 >
 > **⭐ STATUS 2026-06-21 EOD — Phase 0–3 LANDED + eye-verified; the PROPER-DoF upgrade is NEXT.**

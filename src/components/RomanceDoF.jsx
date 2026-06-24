@@ -8,32 +8,42 @@
  *   - graded blur everywhere else — in front of the near plane AND through the
  *     mid-distance, easing back to sharp as depth reaches the Arch.
  * So CoC(dist) has TWO zeros with a hump between. Stock <DepthOfField> can't do
- * this (one focal plane → monotonic CoC → it would blur the Arch), so this is a
- * custom CONVOLUTION|DEPTH effect. The 41-tap disk gather is the proven stock
- * `BokehEffect` kernel; ONLY the CoC computation is ours (two-focal, in METERS).
+ * this (one focal plane → monotonic CoC → it would blur the Arch).
  *
- * ⚠️ STATUS: first cut — NOT yet wired into the shared PostProcessing stack.
- * Mount behind a flag in Preview and verify the DEPTH first (uDebug=1 paints the
- * CoC/zones) BEFORE trusting the blur — desktop runs logarithmicDepthBuffer, and
- * the framework's `depth` is the raw (log-encoded) buffer value, so we decode it
- * ourselves (uLogDepth). See the verify steps in HANDOFF-real-dof Phase 2.
+ * ── Phase 2: blur from the SHARED pyramid (not a self-gather) ───────────────
+ * The blur is no longer a per-pixel iris gather of the scene (expensive + crude
+ * — "the old DoF looked like trash"). Instead this LERPS the sharp scene toward
+ * the shared `DownsamplePyramid` (a smooth, wide, full-scene blur built once
+ * and shared with bloom) by the CoC. One texture sample instead of ~36 taps:
+ * cheap, smooth, and the whole point of the shared pyramid. Only the CoC
+ * (two-focal, in METERS) is ours; the blur is free off the pyramid.
+ * ⚠️ Must run AFTER the DownsamplePyramid pass in the composer (it samples its
+ * texture via _pyramidRefs).
  *
- * Parameterization (the "Focus" channel — to be wired in Phase 3):
- *   nearFocus (m) · farFocus (m, auto = hero distance) · maxBlur · sharpWidth (m).
+ * Parameterization (the "Focus" channel):
+ *   focus (m, near sharp plane) · blur (0..1 strength) · softness (band width).
+ *   farFocus auto-derives from focus in the consumer (focus + 700 m).
  */
 
 import { useMemo, forwardRef } from 'react'
 import { Effect, EffectAttribute } from 'postprocessing'
 import * as THREE from 'three'
 
+import { _pyramidRefs } from './DownsamplePyramid.jsx'
+
 // Distances are in METERS (view-space), NOT the [0,1] normalized depth — the
 // scene's focal planes (park edge ~tens of m, Arch ~1050 m) are a tiny fraction
 // of the near:1/far:60000 frustum, so a normalized [0,1] depth has no precision
 // there. We work in real metres throughout.
 const fragment = /* glsl */`
+  #ifdef FRAMEBUFFER_PRECISION_HIGH
+    uniform mediump sampler2D uBlurTex;   // the shared DownsamplePyramid
+  #else
+    uniform lowp sampler2D uBlurTex;
+  #endif
   uniform float uNearFocus;   // m — near sharp plane (front row)
   uniform float uFarFocus;    // m — far sharp plane (the Arch / hero)
-  uniform float uMaxBlur;     // max blur radius in UV (~0.004–0.02)
+  uniform float uMaxBlur;     // 0..1 — max lerp strength toward the blur
   uniform float uSharpWidth;  // m — half-width of each sharp band
   uniform float uMidRange;    // m — distance over which blur ramps to full
   uniform float uLogDepth;    // 1.0 when logarithmicDepthBuffer is active
@@ -85,59 +95,24 @@ const fragment = /* glsl */`
       return;
     }
 
-    // ── CoC-aware iris gather (the "proper DoF") ─────────────────────────────
-    // Each tap reads its OWN depth → CoC. A tap contributes when EITHER the
-    // centre's blur reaches it, OR a CLOSER (foreground/mid) tap's blur reaches
-    // the centre — so blurred foreground SCATTERS over the sharp background and
-    // the silhouette feathers into the sky instead of a hard edge. The kernel is
-    // a hexagonal iris (straight blade edges) so out-of-focus points read as
-    // bokeh shapes; bright taps are weighted up so highlights form bokeh "balls".
-    vec2 aspectCorrection = vec2(1.0, aspect);
-    const float TAU = 6.28318530718;
-    const int RINGS = 3;
-    const int BLADES = 6;                                  // hexagonal iris
-    const float HALF_WEDGE = TAU / float(BLADES) * 0.5;
-    float cosHalf = cos(HALF_WEDGE);
-
-    vec3 sum = inputColor.rgb;
-    float wsum = 1.0;
-    for (int r = 0; r < RINGS; r++) {
-      float rf = (float(r) + 1.0) / float(RINGS);          // 0.33 .. 1.0
-      for (int s = 0; s < BLADES * 2; s++) {               // 12 samples / ring
-        float ang = (float(s) + 0.5) / float(BLADES * 2) * TAU + rf;
-        // iris-polygon radius: pull the ring toward the straight blade edges.
-        float wedge = mod(ang, TAU / float(BLADES)) - HALF_WEDGE;
-        float poly = cosHalf / cos(wedge);
-        vec2 o = vec2(cos(ang), sin(ang)) * poly * rf;     // normalized offset [0,1]
-        vec2 tapUv = uv + o * uMaxBlur * aspectCorrection;
-
-        float tapDist = depthToDistance(readDepth(tapUv));
-        float tapCoC  = twoFocalCoC(tapDist);
-        float ol = length(o);
-        // centre's own blur reaches the tap …
-        float wC = 1.0 - smoothstep(coc * 0.7, coc + 0.001, ol);
-        // … OR a closer tap's blur reaches the centre (foreground bleed).
-        float wS = (1.0 - smoothstep(tapCoC * 0.7, tapCoC + 0.001, ol)) * step(tapDist, dist);
-        float w  = max(wC, wS);
-
-        vec3 tapCol = texture2D(inputBuffer, tapUv).rgb;
-        float lum = dot(tapCol, vec3(0.2126, 0.7152, 0.0722));
-        w *= 1.0 + lum * lum * 1.5;                        // bright taps → bokeh balls
-        sum  += tapCol * w;
-        wsum += w;
-      }
-    }
-    outputColor = vec4(sum / max(wsum, 1e-4), inputColor.a);
+    // ── CoC-weighted lerp toward the shared pyramid blur ─────────────────────
+    // The pyramid is a smooth, wide, full-scene blur (built once, shared with
+    // bloom). Mixing the sharp scene toward it by the CoC gives a cheap, clean
+    // defocus — no per-pixel gather. amt clamps to [0,1]; at the focal planes
+    // (coc 0) it's fully sharp, deep in the blur hump it reaches the pyramid.
+    vec3 blurred = texture2D(uBlurTex, uv).rgb;
+    float amt = clamp(coc * uMaxBlur, 0.0, 1.0);
+    outputColor = vec4(mix(inputColor.rgb, blurred, amt), inputColor.a);
   }
 `
 
 // Module-level refs the consumer's per-frame driver writes (same pattern as the
-// other PostProcessing effects). farFocus is expected to be set from the resolved
-// hero-subject distance by the driver (auto-anchor to the Arch).
+// other PostProcessing effects). farFocus is set from focus + 700 m by the
+// driver; maxBlur is the 0..1 lerp strength (Phase 2 — no longer a UV radius).
 export const _dofRefs = {
   nearFocus:  { current: 40 },
   farFocus:   { current: 1050 },
-  maxBlur:    { current: 0.01 },
+  maxBlur:    { current: 0.4 },
   sharpWidth: { current: 25 },
   midRange:   { current: 300 },
   debug:      { current: 0 },
@@ -146,13 +121,15 @@ export const _dofRefs = {
 class RomanceDoFEffect extends Effect {
   constructor() {
     super('RomanceDoF', fragment, {
-      // CONVOLUTION → its own pass (it samples inputBuffer neighbours); DEPTH →
-      // the framework binds the depth buffer + passes `depth` to mainImage.
+      // CONVOLUTION → its own pass (keeps it isolated/measurable and avoids a
+      // uniform-name clash with bloom's pyramid sampler in a merged pass);
+      // DEPTH → the framework binds the depth buffer + passes `depth`.
       attributes: EffectAttribute.CONVOLUTION | EffectAttribute.DEPTH,
       uniforms: new Map([
+        ['uBlurTex',    new THREE.Uniform(null)],
         ['uNearFocus',  new THREE.Uniform(40)],
         ['uFarFocus',   new THREE.Uniform(1050)],
-        ['uMaxBlur',    new THREE.Uniform(0.01)],
+        ['uMaxBlur',    new THREE.Uniform(0.4)],
         ['uSharpWidth', new THREE.Uniform(25)],
         ['uMidRange',   new THREE.Uniform(300)],
         ['uLogDepth',   new THREE.Uniform(0)],
@@ -161,6 +138,9 @@ class RomanceDoFEffect extends Effect {
     })
   }
   update(renderer) {
+    // Bind the shared pyramid each frame (built by the DownsamplePyramid pass
+    // earlier in the composer — DoF MUST be ordered after it).
+    this.uniforms.get('uBlurTex').value    = _pyramidRefs.texture.current
     this.uniforms.get('uNearFocus').value  = _dofRefs.nearFocus.current
     this.uniforms.get('uFarFocus').value   = _dofRefs.farFocus.current
     this.uniforms.get('uMaxBlur').value    = _dofRefs.maxBlur.current

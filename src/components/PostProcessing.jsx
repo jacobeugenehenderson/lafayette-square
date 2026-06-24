@@ -28,8 +28,8 @@
 
 import { useRef, useEffect, useMemo, forwardRef } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { EffectComposer, Bloom, N8AO, SMAA } from '@react-three/postprocessing'
-import { Effect, BlendFunction, SMAAPreset } from 'postprocessing'
+import { EffectComposer, N8AO, SMAA } from '@react-three/postprocessing'
+import { Effect, SMAAPreset } from 'postprocessing'
 import { SoftShadows } from '@react-three/drei'
 import * as THREE from 'three'
 
@@ -55,6 +55,8 @@ import {
 
 import { IS_MOBILE } from '../lib/isMobile.js'
 import { RomanceDoF, _dofRefs } from './RomanceDoF.jsx'
+import { DownsamplePyramid } from './DownsamplePyramid.jsx'
+import { CustomBloom } from './CustomBloom.jsx'
 import { resolveHeroSubject } from '../lib/heroSubject.js'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
@@ -386,9 +388,9 @@ export function PostProcessing({
       _dofRefs.nearFocus.current  = d.focus
       // Browse (overhead) camera: disable DoF — from above the scene is at ~one
       // depth, so DoF only smears the map. Gated on camera altitude (matches the
-      // bark aerial tier, TierDriver y > 150). maxBlur=0 is a no-op gather (every
-      // tap samples the center pixel → sharp, not black).
-      _dofRefs.maxBlur.current    = camera.position.y > 150 ? 0 : d.blur * 0.045
+      // bark aerial tier, TierDriver y > 150). maxBlur=0 → amt=0 → fully sharp
+      // (no lerp toward the pyramid). d.blur is already the 0..1 lerp strength.
+      _dofRefs.maxBlur.current    = camera.position.y > 150 ? 0 : d.blur
       _dofRefs.sharpWidth.current = 30 - d.softness * 20      // softer → narrower sharp band
       _dofRefs.midRange.current   = 100 + d.softness * 350    // softer → gentler ramp
       // The blur fills the NEIGHBORHOOD (a bounded zone past the near focus);
@@ -426,22 +428,22 @@ export function PostProcessing({
     // conditional pass (SMAA / DoF) is added/removed (EffectComposer doesn't
     // reconcile that on its own).
     <EffectComposer key={`fx-${smaaOn}-${dofOn}`}>
-      {/* DoF / Focus — two-focal romance DoF (desktop only; convolution pass).
-          First in the chain so it blurs the raw scene; AO/Bloom/grade apply on
-          top. Verified under LOG depth (HANDOFF-real-dof Phase 3). */}
-      {dofOn && <RomanceDoF />}
       <N8AO ref={aoRef}
         halfRes={viewMode !== undefined && viewMode !== 'hero'}
         aoRadius={AO_FLAT_DEFAULTS.radius}
         intensity={AO_FLAT_DEFAULTS.intensity}
         distanceFalloff={AO_FLAT_DEFAULTS.distanceFalloff}
         quality="medium" />
-      <Bloom ref={bloomRef}
-        intensity={BLOOM_FLAT_DEFAULTS.intensity}
-        luminanceThreshold={BLOOM_FLAT_DEFAULTS.threshold}
-        luminanceSmoothing={BLOOM_FLAT_DEFAULTS.smoothing}
-        mipmapBlur
-        blendFunction={BlendFunction.SCREEN} />
+      {/* Shared full-scene blur pyramid — built after N8AO (post-AO scene). A
+          PURE RESOURCE both DoF and bloom SAMPLE (never each other's result).
+          Desktop bracket = full degree; the phone rungs dial it down (memory:
+          preview-equals-pyramid-tier-ladder). */}
+      <DownsamplePyramid />
+      {/* DoF — two-focal romance DoF, AFTER the pyramid so it samples it
+          (CoC-weighted lerp toward the shared blur), BEFORE bloom so the glow
+          lands on the defocused scene. Desktop only; LOG-depth (Phase 2). */}
+      {dofOn && <RomanceDoF />}
+      <CustomBloom ref={bloomRef} />
       <AerialPerspective />
       <FilmGrade />
       {/* SMAA — cleans shader-contrast edges the Canvas's 8× MSAA can't (curb

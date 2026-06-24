@@ -7,10 +7,12 @@
  */
 import { useFrame } from '@react-three/fiber'
 import { useRef, useEffect } from 'react'
-import { EffectComposer, Bloom, N8AO, SMAA } from '@react-three/postprocessing'
-import { BlendFunction, SMAAPreset } from 'postprocessing'
+import { EffectComposer, N8AO, SMAA } from '@react-three/postprocessing'
+import { SMAAPreset } from 'postprocessing'
 import { AerialPerspective, FilmGrade, FilmGrain, _postFxRefs } from '../components/PostProcessing.jsx'
 import { RomanceDoF, _dofRefs } from '../components/RomanceDoF.jsx'
+import { DownsamplePyramid } from '../components/DownsamplePyramid.jsx'
+import { CustomBloom } from '../components/CustomBloom.jsx'
 
 // Verification driver for the WIP two-focal DoF. Turn the effect ON via the
 // "DoF (WIP)" toggle in the Preview FX matrix; these URL params then flip the
@@ -145,19 +147,17 @@ export default function PreviewPostFx({
           reconcile added/removed effects on its own — this fixes the Preview
           on/off toggles, SMAA included). */}
       <EffectComposer key={`fx-${ao}-${bloom}-${aerial}-${grade}-${grain}-${smaa}-${dof}`}>
-        {/* WIP two-focal DoF — first in the chain so it blurs the raw scene;
-            grade/grain/AA apply on top. Verify depth via ?dofDebug=1 before
-            trusting the blur (HANDOFF-real-dof Phase 2). */}
-        {dof && <RomanceDoF />}
         {ao && (
           <N8AO ref={aoRef} halfRes={false} aoRadius={15} intensity={2.5}
             distanceFalloff={0.3} quality="medium" />
         )}
-        {bloom && (
-          <Bloom ref={bloomRef} intensity={0.5} luminanceThreshold={0.85}
-            luminanceSmoothing={0.4} mipmapBlur
-            blendFunction={BlendFunction.SCREEN} />
-        )}
+        {/* Shared full-scene blur pyramid — mounts for EITHER consumer (bloom
+            or DoF), both of which SAMPLE it. Parity with PostProcessing.jsx. */}
+        {(bloom || dof) && <DownsamplePyramid />}
+        {/* DoF — AFTER the pyramid so it samples it (CoC-weighted lerp toward
+            the shared blur). ?dofDebug=1 paints the CoC zones. */}
+        {dof && <RomanceDoF />}
+        {bloom && <CustomBloom ref={bloomRef} />}
         {aerial && <AerialPerspective />}
         {grade  && <FilmGrade />}
         {/* SMAA — parity with production PostProcessing (AA the final contrast,
