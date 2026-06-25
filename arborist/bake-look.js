@@ -27,6 +27,7 @@ import crypto from 'node:crypto'
 import { surveyRoster } from './atlas-survey.js'
 import { packSkyline } from './atlas-pack.js'
 import { computeTreeBounds } from './tree-bounds.js'
+import { measureCanopyBase, captureImpostor } from './bake-impostors.js'
 import { ensurePosterizedForRef } from './extract-bark-posterized.mjs'
 
 // Per-tile mip-safe gutter (pixels). Edge pixels of each placed rect are
@@ -818,9 +819,14 @@ export async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale =
   // heightM per rendered roster variant — measured here, at the stage with the
   // real input, not from publish-glb's dirty whole-scene source (finding #7).
   const bounds = computeTreeBounds(doc)
+  // Impostor capture (Phase 1): the canopy-base fraction, measured by
+  // separating leaf vs bark prims (atlasKind was stamped above). Tells the
+  // impostor runtime how tall the bare trunk card is vs where the canopy slabs
+  // stack. Cheap (one extra bbox pass) and only meaningful on the shipped tier.
+  const impostor = measureCanopyBase(doc)
   await ensureDir(path.dirname(dstFile))
   await io.write(dstFile, doc)
-  return { primCount, missCount, missed: [...missed], bounds }
+  return { primCount, missCount, missed: [...missed], bounds, impostor }
 }
 
 // ── orchestrator ─────────────────────────────────────────────────────────
@@ -1111,6 +1117,21 @@ export async function bakeLook(lookName, opts = {}) {
       }
     }
   }
+  // Impostor capture (Phase 1, Hero): the leaf-tile UV rect parallels the bark
+  // one. The impostor's canopy slabs sample the LEAF rect, the trunk card the
+  // BARK rect — the SAME unified-atlas pixels the near trees use, so the
+  // impostor color/normal/season match the real geometry for free (see
+  // bake-impostors.js). Built here so impostorBySpecies can ride into the
+  // manifest; per-species trunkFrac is filled during the GLB rewrite loop below.
+  const tileBySpeciesLeaf = new Map() // species -> uvTransform (first leaf match)
+  for (const t of unified?.tiles || []) {
+    if (t.classification !== 'leaf') continue
+    for (const ref of t.refs) {
+      if (!tileBySpeciesLeaf.has(ref.species)) {
+        tileBySpeciesLeaf.set(ref.species, t.uvTransform)
+      }
+    }
+  }
   for (const dt of unified?.detailTiles || []) {
     const slot = {
       offsetU: dt.uvTransform.offsetU,
@@ -1154,10 +1175,18 @@ export async function bakeLook(lookName, opts = {}) {
   // rewrite=false (atlas-only rebuild) the GLBs are untouched → carry forward
   // the prior manifest's dims rather than dropping them.
   let canopyByVariant = {}
+  // Impostor trunk-frac per species, filled from the lod2 rewrite below
+  // (parallel to canopyByVariant). species -> trunkFrac (canopy-base ÷ height).
+  const impostorTrunkFracBySpecies = {}
   if (!rewrite) {
     try {
       const prior = JSON.parse(await fs.readFile(path.join(outDir, 'trees-atlas.json'), 'utf8'))
       canopyByVariant = prior.canopyByVariant || {}
+      // Carry forward prior impostor trunk-fracs on an atlas-only rebuild
+      // (GLBs untouched → can't re-measure).
+      for (const [sp, rec] of Object.entries(prior.impostorBySpecies || {})) {
+        if (rec?.trunkFrac != null) impostorTrunkFracBySpecies[sp] = rec.trunkFrac
+      }
     } catch { /* no prior manifest */ }
   }
 
@@ -1248,6 +1277,12 @@ export async function bakeLook(lookName, opts = {}) {
               canopyRadiusM: r.bounds.canopyRadiusM,
             }
           }
+          // Impostor (Phase 1): capture the canopy-base fraction from the same
+          // shipped tier. One per species (first variant wins) — the impostor
+          // is a per-species cheap proxy, not per-variant.
+          if (lod === 'lod2' && r.impostor && impostorTrunkFracBySpecies[v.species] == null) {
+            impostorTrunkFracBySpecies[v.species] = r.impostor.trunkFrac
+          }
         } catch (err) {
           rewriteStats.push({ species: v.species, variantId: v.variantId, lod, error: err.message })
         }
@@ -1255,6 +1290,38 @@ export async function bakeLook(lookName, opts = {}) {
     }
     tRewrite = Date.now() - r0
   }
+
+  // ── Impostor manifest (Phase 1, Hero) ─────────────────────────────────────
+  // Assemble per-species impostor records now that the rewrite loop has filled
+  // trunkFrac + canopyByVariant. Each record carries the bark/leaf atlas UV
+  // rects (so the runtime samples the SAME unified atlas the near trees use) +
+  // the per-season layer plans. Consumed by ImpostorTrees at runtime, keyed by
+  // species (impostors are a cheap per-species proxy, not per-variant).
+  // bake-impostors.js documents the full approach + Phase-1 tradeoffs.
+  const impostorBySpecies = {}
+  const speciesSet = new Set([
+    ...tileBySpeciesBark.keys(),
+    ...tileBySpeciesLeaf.keys(),
+  ])
+  for (const species of speciesSet) {
+    const barkUV = tileBySpeciesBark.get(species) || null
+    const leafUV = tileBySpeciesLeaf.get(species) || null
+    if (!barkUV && !leafUV) continue
+    // Representative dims: the first variant's measured canopy bounds.
+    const vars = canopyByVariant[species] || {}
+    const firstDims = Object.values(vars)[0] || {}
+    const trunkFrac = impostorTrunkFracBySpecies[species] ?? 0.35
+    impostorBySpecies[species] = captureImpostor({
+      species,
+      variantId: Object.keys(vars)[0] != null ? Number(Object.keys(vars)[0]) : null,
+      heightM: firstDims.heightM ?? null,
+      canopyRadiusM: firstDims.canopyRadiusM ?? null,
+      trunkFrac,
+      barkRect: barkUV ? { offsetU: barkUV.offsetU, offsetV: barkUV.offsetV, scaleU: barkUV.scaleU, scaleV: barkUV.scaleV } : null,
+      leafRect: leafUV ? { offsetU: leafUV.offsetU, offsetV: leafUV.offsetV, scaleU: leafUV.scaleU, scaleV: leafUV.scaleV } : null,
+    })
+  }
+  manifest.impostorBySpecies = impostorBySpecies
 
   // Write the manifest now that the rewrite loop has populated canopyByVariant
   // (the loop mutated the object the manifest object holds a reference to).
