@@ -229,9 +229,17 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
 // Tunables — calibrated against the operator's eye at the A→B seam (QC overlay):
 const HERO_TIER = {
   POSES: 24,             // camera samples along the keyframe path
-  PROM_THRESHOLD: 0.02,  // min screen-prominence (at ANY pose) to stay `mesh` vs
-                         // `impostor` (calibrated at the A→B seam — telephoto
-                         // makes prominence top out ~0.09, so the dial is small)
+  PROM_THRESHOLD: 0.06,  // ⭐ THE FRONT-ROW DIAL (2026-06-25). Min screen-prominence
+                         // (coverage×centrality, at ANY pose) to stay real `mesh` vs
+                         // `impostor`. "Only the front row need be real; the periphery
+                         // is waste for EVERY device (the pan never lingers there)."
+                         // Aggressive by design — the pan only needs the front/center
+                         // sharp; depth goes impostor+DoF. Calibration on LS (745
+                         // placements, telephoto tops prominence ~0.09):
+                         //   0.02→469 mesh · 0.05→194 · 0.06→92 · 0.07→38 · 0.09→14.
+                         // Raise for a tighter front row (cheaper), lower for more
+                         // real depth. ⏳ Phase B adds an "opaque-articulated" MIDDLE
+                         // band (2nd row) between mesh and impostor — see BATON.
   OCC_FRAC: 0.7,         // a nearer canopy covering ≥ this fraction of a tree's
                          // projected disk occludes it at that pose
   ASPECT: 16 / 9,        // viewport aspect for the horizontal frustum bound
