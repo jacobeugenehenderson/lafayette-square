@@ -690,6 +690,52 @@ function HumanSilhouette() {
   )
 }
 
+// ── Rotator ring (2026-06-25 remake) — visible turntable at the tree base ───
+// Grab the ring and drag to spin the tree (inspection only — view rotation, not
+// authored). Responsive because the drag angle is computed by intersecting the
+// pointer RAY with the ring's ground plane (not the torus mesh), so it tracks
+// even when the cursor leaves the ring. The amber marker shows the tree's facing.
+function RotatorRing({ rotationY = 0, radius = 2.5, onRotate }) {
+  const PLANE_Y = 0.06
+  const drag = useRef(null)
+  const angleFromRay = (ray) => {
+    if (!ray || Math.abs(ray.direction.y) < 1e-6) return null
+    const t = (PLANE_Y - ray.origin.y) / ray.direction.y
+    if (!(t > 0)) return null
+    return Math.atan2(ray.origin.z + ray.direction.z * t, ray.origin.x + ray.direction.x * t)
+  }
+  const onDown = (e) => {
+    e.stopPropagation()
+    e.target.setPointerCapture?.(e.pointerId)
+    const a = angleFromRay(e.ray)
+    if (a == null) return
+    drag.current = { startA: a, startRot: rotationY }
+  }
+  const onMove = (e) => {
+    if (!drag.current) return
+    const a = angleFromRay(e.ray)
+    if (a == null) return
+    onRotate?.(drag.current.startRot - (a - drag.current.startA))
+  }
+  const onUp = (e) => { try { e.target.releasePointerCapture?.(e.pointerId) } catch {} drag.current = null }
+  return (
+    <group position={[0, PLANE_Y, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}
+        onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerOut={onUp}>
+        <torusGeometry args={[radius, 0.05, 8, 72]} />
+        <meshBasicMaterial color="#e8b860" transparent opacity={0.55} />
+      </mesh>
+      {/* facing marker — rotates with the tree so the current orientation reads */}
+      <group rotation={[0, rotationY, 0]}>
+        <mesh position={[0, 0, radius]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.22, 0.55, 14]} />
+          <meshBasicMaterial color="#ffd98a" />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
 // ── Cyclorama (white sweep) ───────────────────────────────────────────
 function Cyclorama() {
   return (
@@ -1078,6 +1124,13 @@ export default function SpecimenViewport({
             are vestigia. */}
         <Yardstick targetCategory={targetCategory} />
         <HumanSilhouette />
+        {mode === 'skeleton' && variantCount === 1 && onRotationChange && (
+          <RotatorRing
+            rotationY={rotationOffset[1]}
+            radius={Math.max(2, (typeof topY === 'number' ? topY : 12) * 0.32)}
+            onRotate={(ry) => onRotationChange(rotationOffset[0], ry, rotationOffset[2])}
+          />
+        )}
         <Suspense fallback={null}>
           {mode === 'cloud'    && cloudUrl && <PointCloud url={cloudUrl} />}
           {mode === 'skeleton' && glbUrl   && (
