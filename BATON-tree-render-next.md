@@ -47,6 +47,8 @@ The classifier + plumbing already exist; the **billboard render is the unbuilt p
 
 **Browse gets its OWN role oracle.** `classifyHeroTiers` classifies from the HERO camera tracks; what's prominent *overhead* ≠ what's prominent in hero. Build a Browse oracle (an overhead/orbit pose set) so the browse view picks mesh-vs-impostor by what's actually seen from above — don't inherit hero's roles for browse.
 
+**Occlusion is a first-class, DISTANCE-INDEPENDENT impostor/cull trigger (Jacob, 2026-06-25).** A tree hidden behind another tree's canopy wastes detail regardless of camera range — a *near* tree fully behind another near canopy is as much an impostor as a far one. This is now reliable *because trees are botanically sized* (`bac11a43`): a 25m oak genuinely occludes what's behind it; the old uniform-12m trees under-counted occlusion. **Already half-built:** `classifyHeroTiers` (`bake-trees.js:360-372`) computes per-pose occlusion by *nearer* canopy disks (`circleCoverFrac`, `OCC_FRAC=0.7`) → an occluded canopy stops accumulating prominence → tagged `impostor`. **The gap to close:** a tree occluded (≥OCC_FRAC) in **every** in-frustum pose should route to **`cull`** (drop), not `impostor` — that's the "specks behind specks in the back" Jacob flagged: the rear speck is always occluded by the front one, so it's pure clutter. Apply the same occlusion-→cull logic in the Browse oracle (overhead occlusion differs from hero).
+
 **Dispatch:** fresh agent, **foreground** (background writes get denied — [[feedback_dispatched_subagents_cannot_write_in_background]]), or a dedicated next session. Boz did the interim (Option 1); this arc (Option 2) is the fresh build.
 
 ## CANONICAL RE-BAKE (when trees change)
