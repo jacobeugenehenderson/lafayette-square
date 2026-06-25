@@ -1,8 +1,16 @@
-# Tree ↔ ground elevation forensic — "trees hover over the ground" (LS runtime, hero view)
+# Tree ↔ ground elevation forensic — "trees hover over the ground" (LS runtime)
 
-**Symptom (Jacob, 2026-06-25, Preview / hero view):** trees appear to **hover over the ground**, leaves possibly clipped. His localization: *"there is an elevation layer that isn't 0,0."* — exactly right; this doc maps that chain so we never re-derive it.
+> ## ✅ ROOT CAUSE CONFIRMED (2026-06-25) — it was NOT terrain. It's the **lod2 (browse) trunk-cut shown at a shallow angle.**
+>
+> Jacob's image + measurement settled it: the **lod2 / browse-tier GLBs have their lower trunk decimated away** (measured base-Y: birch **5.81m**, maple_silver **1.50m**, oak_bur **0.79m**; lod0/lod1 are all 0). LOD is selected purely by **camera altitude** (`computeTier`, `InstancedTrees.jsx:392`: `>150m`→tier 0→**lod2**; `<5m`→street→lod0; else hero→lod1). At a high-altitude **telephoto** (hero-like) or **shallow browse** framing, the altitude rule serves lod2 and the missing lower trunk reads as "floating, cut-off trunks." The browse trunk-cut is only safe **straight-down overhead** (the overhead angle is the cover).
+>
+> **This is the exact failure [[project_tree_lod_role_at_bake_not_distance]] predicts:** don't swap geometry by live camera distance/altitude → retire `GeoTierDriver`; LOD = role decided at bake. The cut itself looks like aggressive lod2 decimation collateral (`error 0.05` eating thin trunks — thin birch cut highest, thick oak lowest), NOT a principled "cut below canopy base" (that intentional cut is noted MISSING/deferred). **Fix arc = role-at-bake; see `BATON-tree-render-next.md`.**
+>
+> The terrain-displacement analysis below is **intact and correct as architecture** (and led to the SSoT cleanup `af038ba4`), but it was NOT the cause of the float. Kept for reference; don't re-chase it.
 
-> ⚠️ Read this BEFORE re-investigating "trees float / sink / wrong height on terrain." The baked tree data is **clean** (every tree grounded at `baseY=0`); the float is the **runtime terrain-displacement chain**, not placement. Don't re-chase it as a grounding/bake bug.
+---
+
+**Original symptom (Jacob, 2026-06-25, Preview):** trees appear to **hover over the ground**, leaves clipped. His localization: *"there is an elevation layer that isn't 0,0."* — pointed at terrain; the actual cause was the lod2 trunk-cut above. This doc maps the terrain chain anyway so it's never re-derived.
 
 ---
 
