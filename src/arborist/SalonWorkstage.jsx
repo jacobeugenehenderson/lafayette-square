@@ -579,9 +579,15 @@ function SlotCard({
   // the per-instance hash varies across placements.
   const [deformSeed] = useState([12.9898, 78.233])
   const cameraStateRef = useRef({ distance: 22, height: 8 })
+  // Bark-focus (2026-06-25): when the Bark section is open, the preview hides the
+  // canopy (leaves `show` is preview-only) so the operator can SEE the bark they're
+  // editing — the canopy otherwise occludes the trunk. Doesn't touch the
+  // composition (the published tree always carries leaves).
+  const [barkOpen, setBarkOpen] = useState(false)
+  const previewLeaves = barkOpen ? { ...leaves, show: false } : leaves
   const paramsKey = useMemo(
-    () => JSON.stringify({ chassis, bark, leaves }),
-    [chassis, bark, leaves],
+    () => JSON.stringify({ chassis, bark, leaves: previewLeaves }),
+    [chassis, bark, previewLeaves],
   )
 
   useEffect(() => {
@@ -602,7 +608,7 @@ function SlotCard({
       fetch(`/api/arborist/salon/${encodeURIComponent(species)}/${slot}/preview-atlas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chassis, bark, leaves }),
+        body: JSON.stringify({ chassis, bark, leaves: previewLeaves }),
       })
         .then(r => {
           if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error || `HTTP ${r.status}`)))
@@ -801,6 +807,8 @@ function SlotCard({
           chassis={chassis}
           bark={bark}
           leaves={leaves}
+          barkOpen={barkOpen}
+          onBarkOpenChange={setBarkOpen}
           chassisCatalog={chassisCatalog}
           speciesMorphology={speciesMorphology}
           barkRefs={barkRefs}
@@ -894,6 +902,7 @@ function SalonControlsPanel({
   tiltX, tiltZ, onTiltXChange, onTiltZChange,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
   candidateScope, recommendedNames,
+  barkOpen, onBarkOpenChange,
 }) {
   const matchOptions = useArboristStore(s => s.salonOptions)   // §9 matcher ranked options (null if no dossier)
   // Chassis picker filtered by morphology suggestion: matching-morphology
@@ -1075,7 +1084,7 @@ function SalonControlsPanel({
       )}
 
       </CollapsibleSection>
-      <CollapsibleSection title="Bark">
+      <CollapsibleSection title="Bark" open={barkOpen} onToggle={onBarkOpenChange}>
       <PlatePicker
         items={barkRefs.map(ref => ({ id: ref, label: ref }))}
         current={bark?.ref}
@@ -1278,11 +1287,13 @@ function SectionLabel({ children }) {
 
 // Collapsible section (2026-06-25) — the controls rail had too much at once;
 // each part section (Chassis / Bark / Leaves) collapses under a clickable header.
-function CollapsibleSection({ title, defaultOpen = true, children }) {
-  const [open, setOpen] = useState(defaultOpen)
+function CollapsibleSection({ title, open: openProp, defaultOpen = true, onToggle, children }) {
+  const [openLocal, setOpenLocal] = useState(defaultOpen)
+  const open = openProp !== undefined ? openProp : openLocal
+  const toggle = () => { if (onToggle) onToggle(!open); else setOpenLocal(o => !o) }
   return (
     <>
-      <button type="button" onClick={() => setOpen(o => !o)}
+      <button type="button" onClick={toggle}
         style={{
           display: 'flex', alignItems: 'center', gap: 6, width: '100%',
           background: 'none', border: 'none', cursor: 'pointer',
