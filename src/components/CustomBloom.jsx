@@ -45,6 +45,13 @@ const fragment = /* glsl */`
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
     vec3 b = texture2D(uPyramid, uv).rgb;
+    // NaN/Inf guard (2026-06-25): a single non-finite foliage texel in the HDR
+    // scene propagates through the Karis mip pyramid — small black squares at
+    // low levels, growing/clumping to whole-screen black flashes as levels rise.
+    // equal(b,b) is false for NaN components (NaN != NaN) → mix them to 0; the
+    // clamp bounds Inf to a HALF_FLOAT-safe range. Stops the artifact reaching
+    // the screen regardless of which fragment seeded it.
+    b = clamp(mix(vec3(0.0), b, vec3(equal(b, b))), 0.0, 60000.0);
     // Same soft knee as the library's LuminanceMaterial, applied to the BLURRED
     // pyramid (blur→threshold). Knobs keep their meaning; see header.
     float l = dot(b, vec3(0.2126, 0.7152, 0.0722));

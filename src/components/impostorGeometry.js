@@ -49,6 +49,7 @@ export function buildImpostorGeometry(rec, season = 'summer') {
   const trunkHalfW = Math.max(0.15, radiusM * 0.12)
 
   const positions = []
+  const normals = []
   const uvs = []
   const aBark = []
   const aBarkRegion = []
@@ -79,7 +80,18 @@ export function buildImpostorGeometry(rec, season = 'summer') {
       )
       const tier = isBark ? 0 : 3   // trunk barely sways; canopy flutters
       const region = isBark ? 1 : 0 // trunk card → 'trunk' region
+      // Per-card normal. The OLD code gave every card a flat +Z normal, but the
+      // cross's plane 1 faces ±X — so under a low sun those cards got no light
+      // and rendered as BLACK squares (2026-06-25). Fix: LEAF canopy cards get
+      // an UP normal so they're lit from the sky/sun like a real canopy (never
+      // fully black sideways); the TRUNK card keeps its true facing normal
+      // (a shaded back reads fine on wood). Plane 0 spans X → faces +Z; plane 1
+      // spans Z → faces +X.
+      const nx = isBark ? (p === 0 ? 0 : 1) : 0
+      const ny = isBark ? 0 : 1
+      const nz = isBark ? (p === 0 ? 1 : 0) : 0
       for (let v = 0; v < 4; v++) {
+        normals.push(nx, ny, nz)
         aBark.push(isBark ? 1 : 0)
         aBarkRegion.push(region)
         aWindTier.push(tier)
@@ -104,14 +116,11 @@ export function buildImpostorGeometry(rec, season = 'summer') {
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  // The shared tree material samples `map` via the standard <map_fragment>
-  // chunk → uv → vMapUv. NORMAL: a flat +Z normal per card is fine; the
-  // atlas normal map relights it (3A.2). We give every vertex a +Z normal;
-  // the cross's two planes face different ways but a flat lit billboard at
-  // Hero distance reads acceptably (true per-card normals = Phase 2 polish).
-  const nrm = new Float32Array(positions.length)
-  for (let i = 0; i < nrm.length; i += 3) { nrm[i] = 0; nrm[i + 1] = 0; nrm[i + 2] = 1 }
-  g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
+  // Per-card normals are built in pushCross (leaf canopy → UP, lit like a
+  // canopy; trunk → its facing normal) so a wrong-facing card never renders
+  // unlit/black under a low sun. (Separate latent fix from the bloom-pyramid
+  // black-square artifact.)
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
   g.setAttribute('aBark', new THREE.Float32BufferAttribute(aBark, 1))
   g.setAttribute('aBarkRegion', new THREE.Float32BufferAttribute(aBarkRegion, 1))
   g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))

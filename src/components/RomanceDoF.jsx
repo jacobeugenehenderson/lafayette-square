@@ -101,6 +101,10 @@ const fragment = /* glsl */`
     // defocus — no per-pixel gather. amt clamps to [0,1]; at the focal planes
     // (coc 0) it's fully sharp, deep in the blur hump it reaches the pyramid.
     vec3 blurred = texture2D(uBlurTex, uv).rgb;
+    // NaN/Inf guard (2026-06-25): same shared pyramid as CustomBloom — a
+    // non-finite foliage texel propagates through the mips → black-square
+    // flashing (worse as levels rise). Kill NaN (NaN != NaN) + clamp Inf.
+    blurred = clamp(mix(vec3(0.0), blurred, vec3(equal(blurred, blurred))), 0.0, 60000.0);
     float amt = clamp(coc * uMaxBlur, 0.0, 1.0);
     outputColor = vec4(mix(inputColor.rgb, blurred, amt), inputColor.a);
   }
