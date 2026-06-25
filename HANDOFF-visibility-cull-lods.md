@@ -1,5 +1,12 @@
 # HANDOFF — per-context visibility-cull LODs (the real tree-weight fix)
 
+> ## 🧭 CONFIRMED DOCTRINE (2026-06-24, Jacob) — the two axes are SEPARATE
+> **0. CAPSTONE: optical PARITY is the invariant; DETAIL is the only variable.** The setup assumes everything is on — the optical pipeline (depth gauges, DoF, fog, post) is uniform everywhere; across contexts/devices/tiers the only thing that changes is *how much detail*. ⛔ Never fork/disable the optics by context/device (mobile≠desktop is a detail *bracket*, not an on/off fork — "tier ladder ≡ blur pyramid"). Impostors are safe because they ride full parity (a billboard still gets DoF'd/fogged). The product is judged with everything ON (evaluating with blur off is off-parity). Points 1–3 are this principle applied to tree geometry:
+> 1. **Geometry representation = a per-placement ROLE decided at BAKE** (park/focal → real-geometry LODs; environment/neighborhood-fill + far/occluded park → **impostor**). The 4-tier ladder is **lod0 / lod1 / lod2 / impostor**. Oracle exists: `bake-trees.js#classifyHeroTiers` (mesh|impostor|cull, against the known camera tracks).
+> 2. **Visual distance = the DEPTH GAUGES, which already own it** — DoF (CoC by depth) + fog/mist fade by depth. "How far a tree *looks*" (recede/soften/blur) is already a wired runtime signal. **DoF is the cover, not the cut.**
+> 3. ⛔ **Do NOT swap geometry by live camera distance/altitude** ("asking for trouble" — popping, crude proxy, unbakeable runtime state, and it re-litigates distance the depth gauges already own). **RETIRE the runtime `GeoTierDriver` altitude-swap** (`InstancedTrees.jsx`) rather than extend it. Decide geometry once (bake/role); let the gauges handle the look.
+> 4. Unbuilt piece = the impostor **render** (billboard geo/material); the classifier + the per-instance `aHeroTier` attribute are already plumbed (today only a QC tint). Park focal trees stay real geometry — no fakes where you stand. *(This supersedes the old "operator skeptical of impostors / hold them" stance below.)*
+
 > ## ⚡ CORRECTION — READ THIS BEFORE THE 30-SECOND VERSION (2026-06-24)
 > **Cut A ("re-UV + re-bake + decimate") is SUPERSEDED — do NOT build it.** The
 > bark wall is **NOT** UV-lock; it's **FLAT NORMALS** — per-face normals split the
@@ -41,7 +48,9 @@ linden        lod0=16M  lod1=13M  lod2=8.6M
 - **Consequences:** the published `lod1` set is **1.7 GB**; the **Grove context-losses** (GPU OOM) loading ~10–50 of these 16MB / 127K-tri meshes → it shows a **stale frozen frame**, which is why Salon edits "don't show in the Grove"; the slab is huge; LS would struggle.
 - **`simplifySloppy`** *can* get past the floor (crushes to ~1%) but **obliterates the atlas UVs** → only acceptable where you can't see the texture (far/overhead).
 
-**Operator is skeptical of impostors (billboards). Hold them.** The strategy below uses *real geometry we'll never see deleted* — no fakes, no broken UVs.
+**⚡ DOCTRINE REFINED (2026-06-24, operator) — impostors are NOW sanctioned, scoped + by-role.** The old "operator skeptical of impostors, hold them" was a *scoping* answer, not a no: impostors are wrong for the **park / focal trees** (you orbit them up close — billboards would show), but **right for the environment / neighborhood-fill trees** (future street trees everywhere) + far/occluded park trees (never the subject, ~always distant). So the ladder becomes **lod0 / lod1 / lod2 / impostor**, impostor the final/cheapest tier for fill. ⛔ **Assign representation by PER-PLACEMENT ROLE at BAKE, against the known camera tracks — NOT by a live camera-distance/altitude swap** (operator: "doing it by camera distance is asking for trouble" — popping, crude altitude proxy, runtime state you can't bake-validate). The role oracle already exists: `bake-trees.js#classifyHeroTiers` tags each placement `mesh|impostor|cull` from the hero pan (561/184 today). **The runtime `GeoTierDriver` altitude-swap (`InstancedTrees.jsx`) is the thing to RETIRE, not extend** (already flagged moot). The impostor *render* (billboard geometry/material) is the unbuilt piece — the classifier + the per-instance `aHeroTier` attribute are already plumbed (today they only drive a QC tint). **Park focal trees stay real geometry — no fakes where you stand.**
+
+*(Superseded note, kept for context:)* ~~Operator is skeptical of impostors (billboards). Hold them.~~ The real-geometry cull (Cut B) is still the path for the **park** trees; impostors are the path for the **environment** trees.
 
 ---
 

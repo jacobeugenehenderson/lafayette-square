@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-06-24 (PM, design) — tree LOD doctrine: role-at-bake, not camera distance; depth gauges own the look
+
+Confirmed with Jacob (full capture → `HANDOFF-visibility-cull-lods.md` top "CONFIRMED DOCTRINE" callout; memory `[[project_tree_lod_role_at_bake_not_distance]]`):
+- **Geometry representation = a per-placement ROLE decided at BAKE** — park/focal → real lod0/1/2; environment/neighborhood-fill + far/occluded park → **impostor**. Ladder = lod0/1/2/impostor.
+- **Visual distance is already owned by the DEPTH GAUGES** (DoF CoC-by-depth + fog/mist) — "DoF is the cover, not the cut." Jacob: "everything is already attached to depth gauges."
+- ⛔ **Do not swap geometry by live camera distance** ("asking for trouble"). **RETIRE `GeoTierDriver`** (the runtime altitude-swap, already moot) rather than extend it.
+- **Impostors now sanctioned, by role** (supersedes "operator skeptical / hold them" — it was a scoping answer, not a no). The classifier (`classifyHeroTiers`) + the `aHeroTier` attribute are plumbed; the billboard *render* is the unbuilt piece.
+- Also fixed today: Preview's in-app Reload now invalidates the tree-atlas module cache (`eb1dc38f`) — the "stale leaves in Preview after rebake" trap (the atlas `_cache` only re-fetched on a full browser reload; `invalidateTreeAtlas` existed but was never called).
+
 ## 2026-06-24 — the lod1 leaf-decimation regression (Grove/hero trees went to sparse specks) + fixes
 
 **Symptom:** in the Grove (and the LS hero/Stage view) most trees rendered as **bare branches with tiny scattered leaf specks**, while the **Salon showed full, correctly-sized canopies.** Operator-reported it "worked last night."
