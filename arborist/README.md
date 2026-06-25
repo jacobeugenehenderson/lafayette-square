@@ -17,11 +17,11 @@ The Arborist has two layers:
 
 **Design rationale:** `scratch/FOREST-BUILDER-KIT-MATCHER.md` (ratified architecture + the staged plan). **As-built detail:** the quartet — `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. This README is the **current contract + front door**.
 
-### Where the build is (now)
-- **Keystone — done:** `rubric.json` (19 axes + similarity matrices) + `dossiers/` (the 10 priority species ≈ 50% of the park, ratified against botanical reference).
-- **Spine — done:** ingest+tagger + Library Builder (`part-index.json`, canonical `public/library/`), the matcher, the readiness folded into **Coverage** (the "Kit · C·B·L" column), the **Salon** wired to ranked options + a reference panel.
-- **Leaf model — functional:** derived leaf **size**, **Leaf Ways** arrangement, whole-crown distribution, varied tile-atlases, an **Authored vs Synthesized** leaf-source toggle. *Open:* Ways-grammar polish; the **season / color ramp** (§6) is unbuilt.
-- **Not yet done — the payoff:** baking an authored kit tree into LS and judging it there (the Stage-2 acceptance gate), then coverage to all 10 + the freebie sweep.
+### Where the build is (now — 2026-06-25)
+- **Keystone + spine — done:** `rubric.json` (19 axes) + `dossiers/` (10 species); ingest+tagger + Library Builder + matcher + readiness (→ Coverage). The publish→bake spine carries authored edits to the slab — **verified byte-level** (`scratch/measure-leaf.mjs`).
+- **The Salon is now a plate-rack** (rubric-forward "fashion plates" — **`SALON-INTERFACE.md`**, root): **chassis** (live gray silhouettes) · **bark** (swatches) · **leaf** (cutouts) as visual plates with per-plate **★ Approve**; edits **autosave**; a **3-variants** toggle eye-gates per-tree variation; the deformer is **automatic by morphology** (panel retired). Going visual surfaced the data gaps — the empty `flat` leaf plates render as **"needed"** = the coverage map (~6 missing bases: fan, compound, fine_compound, palmate_compound, tulip, short_needle).
+- **The part model (the target, `SALON-INTERFACE.md §2`):** ~40 **build-once** bases — silhouette ~3 topologies/9 habits · bark ~8 types · leaf ~25 shapes — color/face/season via **posterize**, each part tiering near/far by render-role. The dossier reference image is **intake-only** (its product is the rubric coordinates).
+- **Open payoff:** fill the leaf-base gaps · `(Add +)` behavior + the **online asset library** (a hosted home for the build-once parts) · **3C** (canopy asymmetry / branch jitter) is the real per-tree diversity — the deformer alone is anti-stamping, parked until 3C.
 
 ---
 
@@ -37,7 +37,7 @@ rubric + dossiers    ┘    tune the rubric axes,         ► bake-trees.js     
                           against the REFERENCE         ► public/baked/<look>/  →  InstancedTrees.jsx
 ```
 
-**Two gestures (Brief 14):** **Re-publish** = stage a composition to the library (authoring side, cheap, frequent). **Grove bake** = the explicit *ship-to-slab* gesture (`bake-look`, rewrites the master atlas / slab — what LS actually renders). Authoring is live; production is static (`project_authoring_is_live_production_is_static`). **The slab is the contract:** if it isn't baked into the slab, the public never sees it.
+**Authoring is live; production is static** (`project_authoring_is_live_production_is_static`). Edits **autosave** to the composition; the **Grove "Bake → Slab"** regenerates-from-source (`generate-salon` → `bake-look` → `bake-trees`) and ships — the explicit per-species **Re-publish** gesture retired 2026-06-25 (autosave + the regenerate-on-bake replaced it). **The slab is the contract:** if it isn't baked into the slab, the public never sees it.
 
 ---
 
@@ -47,7 +47,7 @@ Open at `/arborist` — lands directly in the **Salon**.
 
 | Mode | What it is | Code |
 |---|---|---|
-| **Salon** | The authoring viewer (default). Navigate by **roster species**; pick chassis/bark/leaf from the matcher's **ranked options** (closeness badges) against the dossier's **reference plates**; tune the rubric axes (Ways, leaf size, leaf source, bark, deformer); Adopt → Re-publish. | `src/arborist/SalonWorkstage.jsx` |
+| **Salon** | The authoring viewer (default) — a **plate-rack** (2026-06-25, `SALON-INTERFACE.md`): navigate by **roster species**; pick **chassis** (live gray silhouettes) · **bark** (swatches) · **leaf** (cutouts) as visual plates with per-plate **★ Approve** + `(Add +)`; tune the trims (leaf size, color). Edits **autosave**; **3-variants** toggle eye-gates the deformer. Deformer automatic-by-morphology; Tilt/Y-up in an "advanced" drawer; Re-publish/Adopt/Oubliette/gradient-editor/Studio-Worm retired. | `src/arborist/SalonWorkstage.jsx` + `ChassisPlate.jsx` |
 | **Grove** | Gallery of the published trees on one ground plane + the **ship-to-slab bake**. Roster-driven (a published composition appears in the Look's roster). *See the open question below.* | `src/arborist/Grove.jsx` |
 | **Coverage** | Read-only "have vs need" per roster species (🟢 literal / 🟡 composite / 🔴 gap) **+ the Forest-Builder per-part Kit readiness** (Chassis · Bark · Leaves). The path to the goal. | `src/arborist/CoverageView.jsx` |
 | **Library** | The parts inventory by rubric value (leaves by silhouette, barks by type, chassis by habit) + the gaps. | `public/library/INVENTORY.md` (rendered view pending) |
@@ -114,11 +114,11 @@ The per-tree **Re-publish "add"** is **symbolic, not useful** — the Grove's se
 
 **Retires / changes:** the per-tree Re-publish gesture; `syncLookRoster`'s "add" role; the `quality < 2` Grove gate — all collapse into *eligible + approved*. `bake-look`/`bake-trees` grow to regenerate-from-source (start with regenerate-everything; incremental later).
 
-> **Status (2026-06-23):** a **"Bake → Slab" button** now lives in the Grove header — `POST /grove/bake?look=` runs `bake-look` + `bake-trees` in one gesture (the CLI pair, awaited; ~5–7s). ⚠️ It does **not yet regenerate-from-source** — it repacks the already-published GLBs. So if a composition changed, re-publish (`generate-salon`) before baking, or the slab ships stale geometry (the May-25-vs-June-leaf trap). Folding `generateSalon` into the button is the queued finish of this decision.
+> **Status (2026-06-25 — LANDED):** the Grove **"Bake → Slab"** (`POST /grove/bake?look=`) now **regenerates-from-source** (`generate-salon` → `bake-look` → `bake-trees`, `15682e55`) — published is always fresh; the May-25-vs-June-leaf stale-trap is closed. Propagation verified byte-level (`scratch/measure-leaf.mjs`). Edits **autosave**; the per-species Re-publish gesture is retired (2026-06-25).
 >
 > 🔧 **Troubleshooting "knobs work in the Salon but not the Grove / LS / after a bake" (the recurring stale-artifact bug):** there are **two daylight gaps** — (1) the Salon preview is a *different artifact* (`generateSingleCompositionGLB`@LOD0) than what gets published, and (2) `/grove/bake` repacks the *last-published* GLBs and never re-runs `generate-salon`. **Today's fix:** `POST /salon/:id/publish` **each** edited species, *then* `/grove/bake`. Hard-refresh won't help — the stale artifacts are on disk. A species with no Salon composition (raw vendor GLB, e.g. `platanus_acerifolia`) can't take the leaf/bark knobs at all. **Full as-built flow + symptom→fix table: `ARCHITECTURE.md §Salon preview ↔ LS runtime material parity`.**
 >
-> 🎯 **Decided TARGET (operator, 2026-06-23) — NOT yet built:** **autosave** (kill the manual per-species publish) → **fold regenerate-from-source into the bake** (published is always fresh — closes gap 2) → **all three surfaces render the published artifact**, retiring the separate live LOD0 preview (closes gap 1) → a **green-light readiness gate** decides Grove/bake membership (*not all green = not ready = doesn't bake*) → **strip the Salon UI** toward "fashion plates." **LoD stays dormant-not-deleted** — dropping it rides on the *unproven* bet that DoF far-blur replaces LoD swaps. This makes the parity doctrine literally true; it's the realization of the *Grove → Slab (decided 2026-06-20)* decision above, not a new direction.
+> 🎯 **TARGET — mostly LANDED (2026-06-25):** ✅ **autosave** (manual publish gone) · ✅ **regenerate-from-source folded into the bake** (published always fresh) · ✅ **Salon stripped to "fashion plates"** (the plate-rack — `SALON-INTERFACE.md`). ⏳ Residual: the live LOD0 preview **stays** — piece-3 locked "good enough" (it shares the runtime material, so no shader daylight; the published path is proven faithful). A **green-light readiness gate** for bake membership is *partial* — per-plate **★ Approve** exists; the all-green gate (Kit C·B·L + approve) is unbuilt. **LoD stays dormant-not-deleted** (DoF-replaces-LoD bet unproven). Realizes the *Grove → Slab (2026-06-20)* decision.
 
 > ⚠️ **Synthesized trees are NOT yet "in the clear" (2026-06-20).** The leaf model is *wired + functional* (size, whole-crown fill, Ways are visually distinct) but **not visually correct** — the Ways grammars need work and the **season/color ramp is unbuilt**. The bake-to-slab + LS-camera work proceeds to test the *pipeline + cameras + DoF*, not to declare the trees finished.
 

@@ -10,6 +10,27 @@
 
 ---
 
+## ▶ 2026-06-25 — the Salon "fashion plates" rebuild + a deep vestigia sweep (LANDED). Front door: **`SALON-INTERFACE.md`**
+
+The Salon became the rubric-forward **plate-rack** the kit-matcher always implied. **Full design + decisions + open threads: `SALON-INTERFACE.md` (root); narrative: `NOTES.md` 2026-06-25.** Commits `curb-offset-draw`: `ab3bbbd5` `4631b688` `62dd9988` `65d00f06` `6c29f7a7`.
+
+**LANDED:**
+- [x] **A1 — deformer → automatic** (`generate-salon.js#DEFORMER_BY_MORPHOLOGY`, panel retired; engine/seam unchanged). ⚠️ **parked pending 3C** — the deformer is anti-stamping, not diversity.
+- [x] **B1 — bark + leaf visual plate grids** (`PlatePicker`): replace the dropdowns + the redundant matcher-text; leaf **gaps marked** ("needed" tags) = a coverage map; `(Add +)` tiles.
+- [x] **B2 — chassis live gray-silhouette plates** (`ChassisPlate.jsx`): top-N from the matcher (vendor-filtered), **wood-only**, per-plate **★ Approve**, "Browse all" fallback.
+- [x] **Variant preview** (1/3 toggle) — the deformer eye-gate.
+- [x] **WYSIWYG plumbing verified carrying to the slab** (autosave ✓ · regenerate-on-bake ✓ `15682e55` · shared preview material ✓ Brief 7; **byte-proven** `scratch/measure-leaf.mjs`). Piece-3 locked "good enough."
+- [x] **Vestigia swept:** Oubliette · bark gradient editor · Adopt · RE-PUBLISH SPECIES (+ `publishedVariants` tracking; routing preserved via effect) · STUDIO/WORM · Tilt/Y-up → "advanced" drawer · bio card → tools-rail + inline photos. **Kept (operator):** progress filter, Mark-N/A, multi-slot, Set Canary.
+
+**OPEN / NEXT:**
+- [ ] **Fill the ~6 leaf-base gaps** the coverage grid exposes: `fan` (Ginkgo) · `compound` (Ash) · `fine_compound` (Honeylocust) · `palmate_compound` (Buckeye) · `tulip` (Tuliptree) · `short_needle` (Spruce). The ~25-base leaf library is half-stocked (`leaf-pack-bindings.json` needed-list).
+- [ ] **`(Add +)` behavior** — affordance built, action TBD → ties to the **online models/assets library** (hosted, versioned home for the ~40 build-once bases; where `(Add +)` procures from, reusable town-to-town).
+- [ ] **3C** (canopy asymmetry / branch jitter) — the real per-tree diversity; revisit the deformer magnitudes + any per-species control *then*.
+- [ ] **Part-base near/far render tiers** (`SALON-INTERFACE §2`) — leaf near-tier (posterize + high-pass detail + artificial translucency, reusing the bark toolbox), bark PBR/posterize, chassis real/impostor. The build that makes the part model real.
+- [ ] **Green-light readiness gate** for bake membership (per-plate ★ Approve exists; the all-green Kit·C·B·L gate is unbuilt). · **Chassis plate perf** (8 demand-canvases; render-once-to-image fallback). · Chassis rename/notes row keep-or-fold. · arborist has **no `OPERATIONS.md`** (knobs live in `FEATURES.md`).
+
+---
+
 ## ▶ 2026-06-23 (EOD) — ⛔ THE WALL: trees are 16MB, decimation floors (UV-lock). NEXT = per-context visibility-cull. **Start: `HANDOFF-visibility-cull-lods.md`**
 
 The afternoon found the foundational blocker and the strategy to beat it. **Full detail: `HANDOFF-visibility-cull-lods.md` (root).**

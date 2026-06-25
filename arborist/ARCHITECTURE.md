@@ -158,7 +158,9 @@ generateTreeMesh({
 
 ---
 
-## Salon preview ↔ LS runtime material parity (doctrine = TARGET, not yet true)
+## Salon preview ↔ LS runtime material parity (mostly LANDED 2026-06-25)
+
+> ⭐ **UPDATE 2026-06-25 — mostly closed.** **Gap 2 (publish ≠ bake) is CLOSED:** the Grove "Bake → Slab" regenerates-from-source (`generate-salon` → `bake-look` → `bake-trees`, `15682e55`) — published is always fresh; propagation byte-proven (`scratch/measure-leaf.mjs`). **Gap 1 (live-preview ≠ published) is ACCEPTED, not closed — piece-3 locked "good enough"** (`SALON-INTERFACE.md §6`): the Salon keeps its live preview-atlas (instant authoring), and since Brief 7 it renders through the **same `treeAtlasMaterial`** as runtime (**no shader daylight**); the residual is only that the preview's *artifact* (per-composition atlas) differs from the published one — theoretical, since the published path is proven faithful. Revisit only if a real divergence surfaces. The TARGET block at the end is now largely realized (the Salon UI is the **plate-rack** — `SALON-INTERFACE.md`). The AS-BUILT detail below stays as the troubleshooting reference.
 
 > ⚠️ **AS-BUILT REALITY (corrected 2026-06-23 — read this before the doctrine below).** The doctrine in this section — *"the Salon preview IS the published artifact, no daylight"* — is the **goal we are building toward, not what the code does today.** Today there are **two daylight gaps**, and they are the direct cause of the recurring *"leaf/bark knobs work in the Salon but not in the Grove / LS / the bake"* symptom. Troubleshoot from the flow + gaps below, not from the aspirational doctrine.
 >

@@ -64,7 +64,7 @@ The project is **four parts** plus the public runtime. Each is documented next t
 |---|---|
 | **The map kit** — streets, blocks, curbs, the bake | `cartograph/` — start `README §⭐ START HERE` (settled-state by stage) + the `README` cross-cutting feature index (where-X-lives) |
 | **The public app** — place cards, residences, the courier | `ls/` — `FEATURES` / `ARCHITECTURE` / `STATUS` |
-| **The trees** — the kit-matcher tree builder | `arborist/` — start **`arborist/README.md §⭐ START HERE`** (the goal + current state + the pipeline) → `scratch/FOREST-BUILDER-KIT-MATCHER.md` (the ratified "fashion-plates" architecture + staged plan); **no-cull** — all trees draw; Authored-only, LiDAR/Procedural kept as peers |
+| **The trees** — the kit-matcher tree builder | `arborist/` — start **`arborist/README.md §⭐ START HERE`** (the goal + current state) → **`SALON-INTERFACE.md`** (root — the Salon **plate-rack**, the realized rubric-forward front, 2026-06-25) → `scratch/FOREST-BUILDER-KIT-MATCHER.md` (the ratified architecture); **no-cull** — all trees draw; Authored-only, LiDAR/Procedural kept as peers |
 | **The weather** — clouds + sky rules | `meteorologist/` — `README` / `WEATHER-MODEL` |
 
 **The three navigational indexes** (when you need to *find* something, not be *oriented*) — all in `README.md` + `PIPELINE.md`, never `BOZ.md` (that's the coordinator's doc, summoned only when you're Boz):
