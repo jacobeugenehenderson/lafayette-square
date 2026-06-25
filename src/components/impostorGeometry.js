@@ -129,3 +129,106 @@ export function buildImpostorGeometry(rec, season = 'summer') {
   g.computeBoundingSphere()
   return g
 }
+
+// Tessellation of the opaque canopy ellipsoid. Coarse on purpose — the win is
+// ONE opaque hull (early-Z, ~zero overdraw) replacing ~15K alpha leaf cards, so
+// a low-poly sphere is exactly what we want. 12×8 → ~192 tris per canopy.
+const SHELL_SEG_U = 12   // longitudinal (around)
+const SHELL_SEG_V = 8    // latitudinal (pole→pole)
+
+/**
+ * Build the OPAQUE canopy-shell geometry for an opaque-articulated tree
+ * (Phase B, 2026-06-25). A single foliage-textured ELLIPSOID hull sized from the
+ * species' baked `opaque` record (shell.{centerY,radiusXZ,radiusY} in tree-local
+ * metres, base at y=0). The whole point: rendered with the OPAQUE canopy material
+ * (alphaTest off → writes depth → early-Z), so the canopy's pixels are shaded
+ * once instead of the thousands-of-overdrawing-alpha-cards a real canopy is.
+ *
+ * Carries the SAME per-vertex attributes the shared shader reads (aBark=0 →
+ * leaf-path tint; aWindTier=3 → canopy flutter; aTreeHeightNorm → base-anchored
+ * sway/deformer; aBarkRegion=0) so it rides the exact same sway/bark/QC/terrain
+ * code as every other tree. UVs wrap the whole ellipsoid across the leaf atlas
+ * rect, so the shell samples the SAME foliage pixels the near trees use (no
+ * material pop). Returns null when the record has no usable shell/leaf rect
+ * (e.g. winter / bare ref) — the runtime then renders bark prims only.
+ *
+ * @param {object} rec   opaqueBySpecies[species] from trees-atlas.json
+ * @param {string} season  'summer' | 'winter' | 'spring' | 'fall'
+ */
+export function buildOpaqueCanopyGeometry(rec, season = 'summer') {
+  if (!rec) return null
+  const plan = rec.seasons?.[season] || rec.seasons?.summer
+  if (plan && plan.shell === false) return null   // deciduous bare — no shell this season
+  const shell = rec.shell
+  const leaf = rec.leafRect
+  if (!shell || !leaf) return null
+
+  const cY = shell.centerY
+  const rXZ = Math.max(0.5, shell.radiusXZ)
+  const rY = Math.max(0.5, shell.radiusY)
+
+  const positions = []
+  const normals = []
+  const uvs = []
+  const aBark = []
+  const aBarkRegion = []
+  const aWindTier = []
+  const aTreeHeightNorm = []
+  const indices = []
+
+  const topY = cY + rY            // for aTreeHeightNorm normalization [0, top]
+  // Ellipsoid surface: standard UV-sphere param, scaled per-axis. Normals are
+  // the unit ellipsoid gradient (≈ unit sphere normal for a near-spherical hull;
+  // good enough for canopy relighting under the sun/moon).
+  for (let iv = 0; iv <= SHELL_SEG_V; iv++) {
+    const v = iv / SHELL_SEG_V
+    const phi = v * Math.PI                 // 0=top pole, π=bottom pole
+    const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi)
+    for (let iu = 0; iu <= SHELL_SEG_U; iu++) {
+      const u = iu / SHELL_SEG_U
+      const theta = u * Math.PI * 2
+      const nx = sinPhi * Math.cos(theta)
+      const ny = cosPhi
+      const nz = sinPhi * Math.sin(theta)
+      const px = nx * rXZ
+      const py = cY + ny * rY
+      const pz = nz * rXZ
+      positions.push(px, py, pz)
+      normals.push(nx, ny, nz)         // unit-sphere normal (canopy relights with TOD)
+      // Sample the leaf atlas rect across the hull (u→U, v→V). Spherical
+      // foliage texture reads acceptably wrapped — at opaque-tier distance the
+      // canopy is a solid green volume, not a per-leaf read.
+      uvs.push(
+        leaf.offsetU + u * leaf.scaleU,
+        leaf.offsetV + v * leaf.scaleV,
+      )
+      aBark.push(0)                    // leaf path (no bark retint)
+      aBarkRegion.push(0)
+      aWindTier.push(3)                // canopy tier → full flutter
+      aTreeHeightNorm.push(Math.min(1, Math.max(0, topY > 0 ? py / topY : 0)))
+    }
+  }
+  const rowLen = SHELL_SEG_U + 1
+  for (let iv = 0; iv < SHELL_SEG_V; iv++) {
+    for (let iu = 0; iu < SHELL_SEG_U; iu++) {
+      const a = iv * rowLen + iu
+      const b = a + 1
+      const c = a + rowLen
+      const d = c + 1
+      indices.push(a, c, b,  b, c, d)
+    }
+  }
+
+  if (positions.length === 0) return null
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+  g.setAttribute('aBark', new THREE.Float32BufferAttribute(aBark, 1))
+  g.setAttribute('aBarkRegion', new THREE.Float32BufferAttribute(aBarkRegion, 1))
+  g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
+  g.setIndex(indices)
+  g.computeBoundingSphere()
+  return g
+}

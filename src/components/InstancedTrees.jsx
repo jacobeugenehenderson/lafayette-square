@@ -27,7 +27,7 @@ import {
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
-import { buildImpostorGeometry } from './impostorGeometry.js'
+import { buildImpostorGeometry, buildOpaqueCanopyGeometry } from './impostorGeometry.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -259,15 +259,17 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
     return arr
   }, [instances])
 
-  // Phase A (Azimuth) — per-instance hero-tier (0 = mesh, 1 = impostor, 2 = cull)
-  // from the baked `heroTier` field. Drives the read-only QC tint (treeHeroTierQC);
-  // later phases consume it to split the hero-shot render (cull = dropped entirely).
-  // Absent field → 0 (mesh).
+  // Per-instance hero-tier code for the QC overlay (0 = mesh, 1 = impostor,
+  // 2 = cull, 3 = opaque). From the baked `heroTier` field. Drives the read-only
+  // QC tint (treeHeroTierQC). Absent field → 0 (mesh). NB: these are all `mesh`-
+  // role placements here, so this is effectively all 0 — the attribute exists so
+  // the shared shader's aHeroTier is always valid; OpaqueSpecies/ImpostorSpecies
+  // fill their own tier code.
   const heroTiers = useMemo(() => {
     const arr = new Float32Array(instances.length)
     for (let i = 0; i < instances.length; i++) {
       const t = instances[i].heroTier
-      arr[i] = t === 'cull' ? 2 : t === 'impostor' ? 1 : 0
+      arr[i] = t === 'cull' ? 2 : t === 'impostor' ? 1 : t === 'opaque' ? 3 : 0
     }
     return arr
   }, [instances])
@@ -493,6 +495,158 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
   )
 }
 
+// OpaqueSpecies (Arc 2, Phase B — the "opaque-articulated" MIDDLE tier) —
+// renders all opaque-ROLE placements of one species as TWO instanced meshes:
+//
+//   1. the REAL bark prims of the species' lod GLB (articulated trunk/branches)
+//      on the SHARED alpha-tested treeMaterial. Bark fragments are alpha=1 so
+//      they pass the cutoff trivially — no overdraw concern on thin wood, and we
+//      keep the genuine 3D structure (this tier is "more 3D than a billboard").
+//
+//   2. a SINGLE solid OPAQUE canopy SHELL (an ellipsoid, foliage-textured from
+//      the species' leaf atlas rect) on the sibling OPAQUE material (alphaTest
+//      OFF → writes depth → early-Z → ~zero overdraw). This REPLACES the
+//      thousands of alpha-tested leaf cards that are the overdraw hog: alphaTest
+//      defeats early-Z, so every leaf card's pixels are shaded then discarded;
+//      an opaque hull shades each canopy pixel exactly once. That is the whole
+//      perf point of the tier — cheaper than mesh, more form than an impostor.
+//
+// Both ride the SHARED sway/bark/QC/terrain uniforms (base-anchored hula ∝ height
+// off the same wind), so the canopy sways with the rest of the forest. Per the
+// role-at-bake doctrine this is chosen at BAKE (heroTier === 'opaque'), not by
+// live camera distance.
+function OpaqueSpecies({ url, record, instances, treeMaterial, opaqueCanopyMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
+  const { scene } = useGLTF(url)
+
+  // Extract ONLY the bark prims from the GLB (the articulated trunk/branches),
+  // merged into a single geometry — mirrors VariantInstances#meshes' merge but
+  // drops the leaf prims (the opaque canopy SHELL stands in for them). The
+  // per-vertex attributes the shared shader needs (aBark, aBarkRegion, aWindTier,
+  // aTreeHeightNorm) are stamped here exactly as the mesh path does.
+  const barkGeometry = useMemo(() => {
+    scene.updateMatrixWorld(true)
+    const collected = []
+    let chassisMinY = Infinity, chassisMaxY = -Infinity
+    scene.traverse(o => {
+      if (!o.isMesh) return
+      const pos = o.geometry?.attributes?.position
+      if (!pos) return
+      const atlasKind = o.geometry?.userData?.atlasKind
+        ?? o.userData?.atlasKind
+        ?? o.userData?.gltfExtras?.atlasKind
+      if (atlasKind !== 'bark') return   // bark prims only — the shell replaces leaves
+      const g = o.geometry.clone()
+      g.applyMatrix4(o.matrixWorld)
+      g.computeBoundingBox()
+      if (g.boundingBox) {
+        if (g.boundingBox.min.y < chassisMinY) chassisMinY = g.boundingBox.min.y
+        if (g.boundingBox.max.y > chassisMaxY) chassisMaxY = g.boundingBox.max.y
+      }
+      collected.push({ g, barkRegion: o.geometry?.userData?.barkRegion ?? o.userData?.barkRegion ?? o.userData?.gltfExtras?.barkRegion })
+    })
+    if (collected.length === 0) return null
+    if (!Number.isFinite(chassisMinY)) chassisMinY = 0
+    const chassisYRange = Math.max(1e-4, chassisMaxY - chassisMinY)
+    for (const { g, barkRegion } of collected) {
+      const gp = g.attributes.position
+      const n = gp.count
+      const aBarkArr = new Float32Array(n); aBarkArr.fill(1)         // all bark
+      const aRegionArr = new Float32Array(n); if (barkRegion === 'trunk') aRegionArr.fill(1)
+      const aWindArr = new Float32Array(n)
+      const aHeightArr = new Float32Array(n)
+      for (let i = 0; i < n; i++) {
+        const x = gp.getX(i), y = gp.getY(i), z = gp.getZ(i)
+        const r = Math.sqrt(x * x + z * z)
+        aWindArr[i] = (r > 0.15 && y < 3.0) ? 0 : r > 0.06 ? 1 : 2   // trunk/branch/twig
+        const t = (y - chassisMinY) / chassisYRange
+        aHeightArr[i] = t < 0 ? 0 : t > 1 ? 1 : t
+      }
+      g.setAttribute('aBark', new THREE.BufferAttribute(aBarkArr, 1))
+      g.setAttribute('aBarkRegion', new THREE.BufferAttribute(aRegionArr, 1))
+      g.setAttribute('aWindTier', new THREE.BufferAttribute(aWindArr, 1))
+      g.setAttribute('aTreeHeightNorm', new THREE.BufferAttribute(aHeightArr, 1))
+    }
+    const geos = collected.map(c => c.g)
+    const keys = Object.keys(geos[0].attributes).sort().join('|')
+    const sameKeys = geos.every(g => Object.keys(g.attributes).sort().join('|') === keys)
+    const noInterleaved = geos.every(g => Object.values(g.attributes).every(a => !a.isInterleavedBufferAttribute))
+    if (sameKeys && noInterleaved) {
+      const merged = mergeGeometries(geos, false)
+      if (merged) return merged
+    }
+    return geos[0]   // degenerate fallback: first bark prim (rare attribute mismatch)
+  }, [scene])
+
+  // The opaque canopy shell geometry (one per species; summer). Null when the
+  // record has no usable shell (winter/bare) → bark-only render.
+  const shellGeometry = useMemo(() => buildOpaqueCanopyGeometry(record, 'summer'), [record])
+
+  // Per-instance world matrices (translation + Y-rotation; scale baked into the
+  // GLB / the shell's real-metre dims, like the mesh + impostor paths).
+  const matrices = useMemo(() => {
+    const arr = new Array(instances.length)
+    for (let i = 0; i < instances.length; i++) {
+      const inst = instances[i]
+      const T = new THREE.Matrix4().makeTranslation(inst.x, inst.y || 0, inst.z)
+      const R = new THREE.Matrix4().makeRotationY(inst.rotY || 0)
+      arr[i] = T.multiply(R)
+    }
+    return arr
+  }, [instances])
+
+  const lampGlows = useMemo(() => {
+    const a = new Float32Array(instances.length)
+    for (let i = 0; i < instances.length; i++) a[i] = Number(instances[i].lampGlow) || 0
+    return a
+  }, [instances])
+  // aHeroTier = 3 (opaque) so the QC overlay tints these ORANGE and the shared
+  // shader treats them consistently with the mesh/impostor paths.
+  const heroTiers = useMemo(() => {
+    const a = new Float32Array(instances.length); a.fill(3); return a
+  }, [instances])
+
+  if ((!barkGeometry && !shellGeometry) || instances.length === 0) return null
+
+  return (
+    <>
+      {barkGeometry && (
+        <SubmeshInstances
+          geometry={barkGeometry}
+          material={treeMaterial}
+          localMatrix={IDENTITY_MATRIX}
+          placementMatrices={matrices}
+          lampGlows={lampGlows}
+          heroTiers={heroTiers}
+          barkSettings={barkSettings}
+          gradientSlot={gradientSlot}
+          detailSlot={detailSlot}
+          posterizedSlot={posterizedSlot}
+          deformerRange={deformerRange}
+        />
+      )}
+      {shellGeometry && (
+        <SubmeshInstances
+          geometry={shellGeometry}
+          material={opaqueCanopyMaterial}
+          localMatrix={IDENTITY_MATRIX}
+          placementMatrices={matrices}
+          lampGlows={lampGlows}
+          heroTiers={heroTiers}
+          barkSettings={barkSettings}
+          gradientSlot={gradientSlot}
+          detailSlot={detailSlot}
+          posterizedSlot={posterizedSlot}
+          deformerRange={deformerRange}
+        />
+      )}
+    </>
+  )
+}
+
+// Shared identity local-matrix for opaque-tier SubmeshInstances (the bark prims
+// already carry their baked world transform; the shell is in tree-local metres).
+const IDENTITY_MATRIX = new THREE.Matrix4()
+
 // Brief 9a (Sough) — wind-field consumer. Resolves the directive into a
 // `windState` once per frame via the shared wind-field.js seam, then
 // writes the drift component + gust parameters into the shared sway
@@ -593,6 +747,16 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     return atlas?.manifest?.impostorBySpecies || null
   }, [atlas?.manifest?.impostorBySpecies])
 
+  // Opaque records (Arc 2, Phase B) — per-species canopy-shell specs baked by
+  // arborist/bake-impostors.js#captureOpaque into the atlas manifest. Keyed by
+  // species; the grouping memo routes opaque-role placements to OpaqueSpecies,
+  // which keeps the species' real bark prims + builds one opaque canopy shell.
+  // Declared BEFORE the `groups` memo that depends on it (TDZ-safe, mirrors
+  // impostorRecords).
+  const opaqueRecords = useMemo(() => {
+    return atlas?.manifest?.opaqueBySpecies || null
+  }, [atlas?.manifest?.opaqueBySpecies])
+
   // Geometry representation is a per-placement ROLE decided at BAKE, NOT a live
   // camera-distance/altitude swap (role-at-bake doctrine, 2026-06-25 — see
   // [[project_tree_lod_role_at_bake_not_distance]] + TREE-GROUND-ELEVATION-FORENSIC.md).
@@ -671,9 +835,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
 
     const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
     const impostors = new Map()  // species -> instances[]  (impostor role)
+    const opaques = new Map()    // lookUrl -> { species, instances[] }  (opaque role)
     let dropped = 0
     let substituted = 0
     let impostorCount = 0
+    let opaqueCount = 0
     bake.instances.forEach((inst, idx) => {
       // Baked-role cull: always-occluded "specks behind specks" are dropped.
       if (inst.heroTier === 'cull') { dropped++; return }
@@ -700,8 +866,27 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
         return
       }
 
-      // Mesh ROLE (or impostor with no baked record → fall back to real geo).
+      // Resolve the species' lod GLB url (mesh + opaque both load it; opaque
+      // keeps only the bark prims, mesh keeps everything).
       const url = inRoster ? lodUrlOf(inst, inst) : lodUrlOf(sub, inst)
+
+      // Opaque ROLE → articulated-bark + opaque-canopy-shell path. Bucketed by
+      // GLB url (OpaqueSpecies loads it for the bark prims) and carries the
+      // rendered species so the shell record (opaqueBySpecies) resolves. Falls
+      // through to the mesh path when no baked shell record exists for the
+      // species (so the tree still renders, full leaves).
+      if (inst.heroTier === 'opaque' && opaqueRecords?.[renderSpecies]) {
+        const lookUrl = url.startsWith('/trees/')
+          ? `${import.meta.env.BASE_URL}baked/${lookName}${url}${atlasVersion}`
+          : url
+        let entry = opaques.get(lookUrl)
+        if (!entry) { entry = { species: renderSpecies, instances: [] }; opaques.set(lookUrl, entry) }
+        entry.instances.push(inst)
+        opaqueCount++
+        return
+      }
+
+      // Mesh ROLE (or impostor/opaque with no baked record → fall back to real geo).
       // Cache-bust GLB URLs against the atlas manifest's generatedAt so an
       // open Preview/Stage tab picks up rewritten UVs after a rebake instead
       // of holding drei's useGLTF cache for the same path indefinitely.
@@ -732,9 +917,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
       meshCount += byTile.size
       for (const tid of byTile.keys()) tileSet.add(tid)
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
-    return { meshGroups: m, impostors }
-  }, [bake, maxVariants, atlas, lookName, impostorRecords])
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} opaque=${opaqueCount}(${opaques.size}url) impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    return { meshGroups: m, impostors, opaques }
+  }, [bake, maxVariants, atlas, lookName, impostorRecords, opaqueRecords])
 
   // Phase B (2026-05-15): per-species bark settings carried in the atlas
   // manifest, with per-Look palette override (scene.materialColors[<species>])
@@ -790,7 +975,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
-  const { meshGroups, impostors } = groups
+  const { meshGroups, impostors, opaques } = groups
 
   return (
     <>
@@ -824,6 +1009,38 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
           )
         }),
       )}
+      {/* Opaque-role trees: articulated bark prims + one SOLID OPAQUE canopy
+          shell (Arc 2, Phase B — the 2nd-row middle tier). Bucketed by GLB url
+          (OpaqueSpecies loads it for the real trunk/branches); the shell record
+          resolves by the carried species. The shell is OPAQUE (early-Z → no
+          overdraw — the perf point); bark rides the shared alpha material. */}
+      {opaques && opaqueRecords && Array.from(opaques.entries()).map(([url, entry]) => {
+        const species = entry.species
+        const variantId = urlToVariantId(url)
+        const barkSettings = barkBySpeciesEffective[species] || null
+        const gradientSlot = (species && variantId)
+          ? (barkGradientByVariant[species]?.[variantId] || barkGradientByVariant[species]?.[Number(variantId)] || null)
+          : null
+        const detailSlot = barkDetailBySpecies[species] || null
+        const posterizedSlot = barkPosterizedBySpecies[species] || null
+        const deformerRange = deformerBySpecies[species]?.range || null
+        return (
+          <Suspense key={`opaque#${url}`} fallback={null}>
+            <OpaqueSpecies
+              url={url}
+              record={opaqueRecords[species]}
+              instances={entry.instances}
+              treeMaterial={atlas.treeMaterial}
+              opaqueCanopyMaterial={atlas.opaqueCanopyMaterial}
+              barkSettings={barkSettings}
+              gradientSlot={gradientSlot}
+              detailSlot={detailSlot}
+              posterizedSlot={posterizedSlot}
+              deformerRange={deformerRange}
+            />
+          </Suspense>
+        )
+      })}
       {/* Impostor-role trees: cheap stamped-2D layer cards (Arc 2, Phase 1).
           One geometry per rendered species, instanced across placements. Rides
           the SAME shared atlas material → full optical parity (DoF/fog/bloom). */}

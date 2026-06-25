@@ -638,10 +638,13 @@ function injectFoliageSway(material) {
            if (uHeroTierQC > 0.5) {
              // 0 = mesh (green), 1 = impostor (magenta), 2 = cull (blue — these
              // are dropped entirely in production; tinted here only so the
-             // operator can confirm nothing visible is being culled).
+             // operator can confirm nothing visible is being culled), 3 = opaque
+             // (ORANGE — the Phase-B opaque-articulated middle tier: real
+             // trunk/branches + a solid opaque canopy shell).
              vec3 qc = vHeroTier < 0.5 ? vec3(0.15, 0.95, 0.35)
                      : vHeroTier < 1.5 ? vec3(1.0, 0.20, 0.85)
-                     :                   vec3(0.15, 0.45, 1.0);
+                     : vHeroTier < 2.5 ? vec3(0.15, 0.45, 1.0)
+                     :                   vec3(1.0, 0.55, 0.05);
              diffuseColor.rgb = mix(diffuseColor.rgb, qc, 0.65);
            }
            // Trunk-base ground blend — the lowest ~uTrunkBlendTop metres of
@@ -776,7 +779,32 @@ async function buildMaterials(lookName) {
   // on top of the per-instance translation, sway leaves the canopy alone.
   patchTerrainInstanced(treeMaterial)
 
-  return { manifest, treeMaterial, roster }
+  // Phase B (2026-06-25) — sibling OPAQUE canopy material for the opaque-
+  // articulated middle tier. SAME atlas color+normal, SAME injectFoliageSway +
+  // terrain chunks (so sway/bark/QC/terrain uniforms all apply identically and
+  // it stays in the one shader-program FAMILY — same chunk structure → Bloom-
+  // stable), but alphaTest OFF + transparent:false → genuinely opaque: it writes
+  // depth and gets early-Z, so the opaque canopy SHELL has ~zero overdraw. That
+  // is the whole perf point of the tier (alpha-tested leaf cards defeat early-Z;
+  // an opaque hull shades each pixel once). Tradeoff documented: this is a 2nd
+  // compiled program (the alphaTest #define differs from the shared material's),
+  // but its shader SOURCE is byte-identical to treeMaterial's — same family, no
+  // new variance path Bloom can choke on. Doubled-sided OFF so back faces are
+  // culled (an opaque convex hull only needs front faces → fewer fragments).
+  const opaqueCanopyMaterial = new THREE.MeshStandardMaterial({
+    map: color,
+    normalMap: normal,
+    roughness,
+    metalness,
+    side: THREE.FrontSide,
+    transparent: false,
+    alphaTest: 0,          // OFF → opaque → early-Z → zero overdraw (the tier's point)
+  })
+  opaqueCanopyMaterial.name = `tree-atlas:${lookName}:opaque`
+  injectFoliageSway(opaqueCanopyMaterial)
+  patchTerrainInstanced(opaqueCanopyMaterial)
+
+  return { manifest, treeMaterial, opaqueCanopyMaterial, roster }
 }
 
 /**
