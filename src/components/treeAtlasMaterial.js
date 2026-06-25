@@ -682,6 +682,18 @@ function injectFoliageSway(material) {
         `#include <emissivemap_fragment>
          totalEmissiveRadiance += vec3(0.55, 0.40, 0.20) * vLampGlow * uLampGlow * vCanopyW;`
       )
+      // SOURCE clamp (2026-06-25): bound the tree's final HDR colour so NO
+      // foliage fragment — mesh OR impostor — can emit Inf/huge values that
+      // poison the shared bloom/DoF pyramid (the black→gray square flashes that
+      // grow with pyramid levels). Kill NaN via equal(x,x) (NaN != NaN), clamp
+      // to a sane max — trees never exceed ~lamp-emissive brightness, so 8.0 is
+      // generous headroom. three #defines gl_FragColor for GLSL1+GLSL3 alike, so
+      // referencing it in an injected chunk is version-safe.
+      .replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+         gl_FragColor.rgb = clamp(mix(vec3(0.0), gl_FragColor.rgb, vec3(equal(gl_FragColor.rgb, gl_FragColor.rgb))), 0.0, 4.0);`
+      )
   }
 }
 
