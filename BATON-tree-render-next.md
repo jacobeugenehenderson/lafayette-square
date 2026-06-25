@@ -27,5 +27,27 @@ The classifier + plumbing already exist; the **billboard render is the unbuilt p
 - **Dirty tracked, NOT this work (leave / Jacob's):** `ground.bin`/`ground.json`/`ground.colormap.png`/`scene.json`, `public/looks/index.json`, `public/looks/lafayette-square/design.json` (dev-server timestamp/auto-bake noise).
 - **131 untracked** = `scratch/` (Linden tree arc) + `PIP.md`-adjacent — leave as-is (Jacob's instruction earlier).
 
+## ⭐ ARC-2 STANDUP DECISIONS (2026-06-25, with Jacob) — build to these
+
+**Interim LANDED this session (`0fc1e126`):** `GeoTierDriver` (the runtime camera-altitude LOD swap) is RETIRED. Geometry is now chosen by baked role via a `lodForRole(inst)` hook in `InstancedTrees.jsx` (keyed on `heroTier`); INTERIM every role → lod1 (full trunk). **That hook is the seam for this arc:** `impostor → billboard`, `cull → drop`. lod2 (cut-trunk browse tier) is no longer rendered; leave the cut as-is (moot once impostors land — Jacob: "if we get good impostors we definitely skip cutting off trunks"). Root-cause forensic: `TREE-GROUND-ELEVATION-FORENSIC.md`.
+
+**Build TWO impostors together (they differ by viewing hemisphere):**
+- **Hero impostor** — viewed ~horizontally at distance. Preserve silhouette from any azimuth → **octahedral / hemi-octahedral multi-view** atlas (sample nearest captured view as the camera orbits; wrong silhouette = the #1 tell).
+- **Browse impostor** — viewed top-down. Jacob's **"cake layers":** N horizontal canopy slabs stacked → real vertical **motion parallax** from above (a flat card can't). Each layer **hulas** (low-freq rotation about the canopy's vertical axis, phase-offset per layer) **+ a higher-freq waveform jitter** on top (the "alive/shimmer" quality).
+
+**Wind = the real weather, shared.** Impostor sway/hula/jitter is driven by the SAME uniforms as real trees — `treeSwayUniforms` (`uWindForce`/`uWindIntensity`/`uGust*`) fed by `resolveWindState(meteorologist directive)` in `SwayDriver`. The whole forest (mesh + impostor) moves as one weather system; amplitude scales with `uWindIntensity`. NO separate wind.
+
+**Make impostors "as good as possible back there" (Jacob's 3A), prioritized for LS:**
+1. **Bake the impostor FROM the real lod0 geometry + the same atlas leaves** — color/character/season match the near trees exactly; no separate art, no material pop.
+2. **Normal map, not just color** (must-have for LS) — relights with the sun/moon/TOD (day→night planetarium) instead of going flat.
+3. **Octahedral multi-view** (Hero) for azimuth-stable silhouette.
+4. **Ride full optical parity** — same DoF/fog/bloom/grade as real geo (capstone invariant; "DoF is the cover").
+5. **Season/posterize match** — same front/back/season LUT as near trees.
+6. **Alpha-tested cutout, single shader program** — matches near-foliage edges, Bloom-stable.
+
+**Browse gets its OWN role oracle.** `classifyHeroTiers` classifies from the HERO camera tracks; what's prominent *overhead* ≠ what's prominent in hero. Build a Browse oracle (an overhead/orbit pose set) so the browse view picks mesh-vs-impostor by what's actually seen from above — don't inherit hero's roles for browse.
+
+**Dispatch:** fresh agent, **foreground** (background writes get denied — [[feedback_dispatched_subagents_cannot_write_in_background]]), or a dedicated next session. Boz did the interim (Option 1); this arc (Option 2) is the fresh build.
+
 ## CANONICAL RE-BAKE (when trees change)
 `/grove/bake?look=lafayette-square` (POST to arborist :3334) = generate-salon → bakeLook → bakeTrees, the full regenerate-from-source chain (applies Salon leaf scale/bark, repacks atlas, writes slab). A partial CLI bake skips generate-salon → stale geometry.
