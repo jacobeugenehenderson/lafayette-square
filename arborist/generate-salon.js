@@ -323,6 +323,28 @@ async function readOverlay(species) {
 
 // Resolve a single composition's `effective` field — DEFAULTS → CHASSIS_DEFAULTS
 // → operator overlay. UI binds to `effective`; controlled selects mirror
+// A1 (2026-06-25) — deformer ranges are MORPHOLOGY-DERIVED, not per-species
+// authored. The Salon DeformerPanel is retired (SALON-INTERFACE.md §3-B/§4):
+// per-instance lean/twist/wander variation is now a single automatic default
+// keyed on the chassis meta `morphology` (broadleaf | conifer | columnar |
+// weeping; the real 4-value vocabulary in public/trees/_chassis/*.meta.json).
+// This table is THE knob — tune magnitudes here (eye-gate pending). lean/twist
+// in radians (angle grows base→top), wander in metres. Identity-safe: an old
+// composition that still carries an authored `deformer.range` overrides this
+// (back-compat). Mirrors the per-morphology default model of
+// spaceColonization.js#DEFAULT_SCA_BY_PRESET. Consumed only at runtime (per-draw
+// uniforms via deformerBySpecies → applyDeformerUniforms; nothing baked).
+const DEFORMER_BY_MORPHOLOGY = {
+  broadleaf: { lean: [0, 0.08],  twist: [0, 0.10],  wander: [0, 0.15] },
+  weeping:   { lean: [0, 0.10],  twist: [0, 0.14],  wander: [0, 0.30] },
+  columnar:  { lean: [0, 0.03],  twist: [0, 0.05],  wander: [0, 0.06] },
+  conifer:   { lean: [0, 0.025], twist: [0, 0.035], wander: [0, 0.05] },
+}
+const DEFORMER_DEFAULT = DEFORMER_BY_MORPHOLOGY.broadleaf
+function deformerForMorphology(morphology) {
+  return { range: DEFORMER_BY_MORPHOLOGY[morphology] || DEFORMER_DEFAULT }
+}
+
 // patches into both `params` and `effective` in the store so changes reflect
 // without a server round-trip (per the procedural-mode pattern).
 function resolveEffective(composition, chassisMeta) {
@@ -341,6 +363,7 @@ function resolveEffective(composition, chassisMeta) {
     },
     deformer: {
       ...DEFAULTS.deformer,
+      ...deformerForMorphology(chassisMeta && chassisMeta.morphology),
       ...(chassisDefaults.deformer || {}),
       ...(composition.deformer || {}),
     },

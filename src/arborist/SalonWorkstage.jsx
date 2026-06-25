@@ -560,12 +560,12 @@ function SlotCard({
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
   const [perfSample, setPerfSample] = useState(null)
-  // Brief 3A (Cant): preview re-roll seed. The single preview tree samples ONE
-  // point of the authored range (its instance anchor hashes to one signature);
-  // re-rolling perturbs the hash anchor so the operator can cycle through the
-  // spread. Non-zero default so the first paint already shows a representative
-  // (not the range's low end). Multi-instance preview deferred — see brief.
-  const [deformSeed, setDeformSeed] = useState([12.9898, 78.233])
+  // A1 (2026-06-25): the preview tree samples ONE point of the deformer range
+  // (now MORPHOLOGY-DERIVED; the authoring panel is retired — SALON-INTERFACE §3-B).
+  // Fixed non-zero seed so the single preview shows a representative deformed
+  // read (not the range's low end); the spread is visible in the Grove / LS where
+  // the per-instance hash varies across placements.
+  const [deformSeed] = useState([12.9898, 78.233])
   const cameraStateRef = useRef({ distance: 22, height: 8 })
   const paramsKey = useMemo(
     () => JSON.stringify({ chassis, bark, leaves }),
@@ -781,13 +781,11 @@ function SlotCard({
           chassis={chassis}
           bark={bark}
           leaves={leaves}
-          deformer={deformer}
           chassisCatalog={chassisCatalog}
           speciesMorphology={speciesMorphology}
           barkRefs={barkRefs}
           leafPacks={leafPacks}
           onParams={onParams}
-          onReroll={() => setDeformSeed([Math.random() * 200 - 100, Math.random() * 200 - 100])}
           tiltX={tiltX}
           tiltZ={tiltZ}
           onTiltXChange={(v) => { setTiltX(v); persistTransform({ tiltX: v }) }}
@@ -1002,10 +1000,10 @@ function BarkGradientEditor({ stops, tintBase, hashAmp, onCommit, onCommitHashAm
 // ── Salon controls panel (the Brief 1 replacement for SCAPanel) ─────────
 
 function SalonControlsPanel({
-  chassis, bark, leaves, deformer,
+  chassis, bark, leaves,
   chassisCatalog, speciesMorphology,
   barkRefs, leafPacks,
-  onParams, onReroll,
+  onParams,
   tiltX, tiltZ, onTiltXChange, onTiltZChange,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
   candidateScope, recommendedNames,
@@ -1287,79 +1285,16 @@ function SalonControlsPanel({
           style={colorStyle} />
       </Row>
 
-      <DeformerPanel deformer={deformer} onParams={onParams} onReroll={onReroll} />
     </div>
   )
 }
 
-// Brief 3A (Cant) — per-instance deformer ranges. Three ops, each authored as
-// a [lo,hi] band the runtime samples per-instance by a world-XZ hash: lean +
-// twist grow from base→top (canopy tilts/spins, base stays planted), wander
-// drifts the centerline sideways along height. Lean/twist authored in DEGREES
-// (operator-friendly, like the chassis Tilt knobs) and stored in RADIANS;
-// wander in metres. The store deep-merges `deformer` one level, so every commit
-// resends the FULL range object (else sibling ops get wiped). Re-roll perturbs
-// the single-tree preview's hash so the operator can cycle the spread.
-const R2D = 180 / Math.PI
-const D2R = Math.PI / 180
-function DeformerPanel({ deformer, onParams, onReroll }) {
-  const range  = deformer?.range || {}
-  const lean   = Array.isArray(range.lean)   ? range.lean   : [0, 0]
-  const twist  = Array.isArray(range.twist)  ? range.twist  : [0, 0]
-  const wander = Array.isArray(range.wander) ? range.wander : [0, 0]
-  const commit = (next) => onParams({ deformer: { range: { lean, twist, wander, ...next } } })
-  return (
-    <>
-      <SectionLabel>Deformer</SectionLabel>
-      <Row label="">
-        <span style={{ fontSize: 10, color: '#777', lineHeight: 1.4 }}>
-          Per-instance lean / twist / wander. One chassis → many distinct reads.
-        </span>
-      </Row>
-      <Row label="Lean lo">
-        <DraftSlider min={0} max={35} step={1}
-          value={lean[0] * R2D}
-          onCommit={(v) => commit({ lean: [v * D2R, lean[1]] })}
-          format={(v) => `${v.toFixed(0)}°`} />
-      </Row>
-      <Row label="Lean hi">
-        <DraftSlider min={0} max={35} step={1}
-          value={lean[1] * R2D}
-          onCommit={(v) => commit({ lean: [lean[0], v * D2R] })}
-          format={(v) => `${v.toFixed(0)}°`} />
-      </Row>
-      <Row label="Twist lo">
-        <DraftSlider min={-25} max={25} step={1}
-          value={twist[0] * R2D}
-          onCommit={(v) => commit({ twist: [v * D2R, twist[1]] })}
-          format={(v) => `${v.toFixed(0)}°`} />
-      </Row>
-      <Row label="Twist hi">
-        <DraftSlider min={-25} max={25} step={1}
-          value={twist[1] * R2D}
-          onCommit={(v) => commit({ twist: [twist[0], v * D2R] })}
-          format={(v) => `${v.toFixed(0)}°`} />
-      </Row>
-      <Row label="Wander lo">
-        <DraftSlider min={0} max={1.2} step={0.05}
-          value={wander[0]}
-          onCommit={(v) => commit({ wander: [v, wander[1]] })}
-          format={(v) => `${v.toFixed(2)}m`} />
-      </Row>
-      <Row label="Wander hi">
-        <DraftSlider min={0} max={1.2} step={0.05}
-          value={wander[1]}
-          onCommit={(v) => commit({ wander: [wander[0], v] })}
-          format={(v) => `${v.toFixed(2)}m`} />
-      </Row>
-      <Row label="">
-        <button onClick={onReroll} style={{ ...btnStyle({ block: true }), fontSize: 11 }}>
-          Re-roll preview sample
-        </button>
-      </Row>
-    </>
-  )
-}
+// A1 (2026-06-25): DeformerPanel RETIRED. Per-instance lean/twist/wander is now
+// MORPHOLOGY-DERIVED automatically — arborist/generate-salon.js#DEFORMER_BY_MORPHOLOGY,
+// injected at resolveEffective, surfaced via deformerBySpecies → applyDeformerUniforms.
+// The runtime engine (treeAtlasMaterial.js) + the preview rendering are UNCHANGED;
+// only the per-species authoring surface is gone. Tune magnitudes in the table,
+// not here. See SALON-INTERFACE.md §3-B/§4 + arborist/ARCHITECTURE.md (deformer).
 
 // ── Lifted helpers (identical to ProceduralWorkstage) ──────────────────
 
