@@ -36,6 +36,7 @@ import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeom
 import { buildTileGround } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
+import { makeElevationSampler } from '../src/lib/terrainCommon.js'  // SSoT: one sampler + one V_EXAG (applied inside getElevation), shared with the runtime — no hand-rolled copy
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 
@@ -86,9 +87,12 @@ const HARDSCAPE_REFINE_MAX_EDGE_M = 15;
 // grazing angles where curb meets asphalt. ARCHITECTURE §8.
 const GROUND_Y_EPS = 0.002;   // metres per renderOrder slot (~5 cm over ~26 groups)
 
-// Terrain sampler for the adaptive path -- built once, mirroring
-// src/lib/terrainCommon.js makeElevationSampler so the bake-time deviation test
-// uses the EXACT lift the runtime vertex shader applies. false if absent.
+// Terrain sampler for the adaptive path -- built once from the SSoT
+// (src/lib/terrainCommon.js makeElevationSampler + V_EXAG), so the bake-time
+// deviation test uses the EXACT sampler and exaggeration the runtime vertex
+// shader applies. No hand-rolled copy → the mesh auto-recalibrates if V_EXAG
+// ever changes. `getElevation(x,z)` is raw × V_EXAG (world-space lift in m).
+// false if the heightmap is absent.
 let _terrainSampler = null;
 function getTerrainSampler() {
   if (_terrainSampler !== null) return _terrainSampler;
@@ -98,20 +102,8 @@ function getTerrainSampler() {
   const meta = JSON.parse(readFileSync(metaPath, "utf-8"));
   const buf  = readFileSync(binPath);
   const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
-  const V_EXAG = 1.5;
-  const { width, height, bounds } = meta;
-  const spanX = bounds.maxX - bounds.minX, spanZ = bounds.maxZ - bounds.minZ;
-  _terrainSampler = function elev(x, z) {
-    const gx = ((x - bounds.minX) / spanX) * (width - 1);
-    const gz = ((z - bounds.minZ) / spanZ) * (height - 1);
-    const gx0 = Math.max(0, Math.min(width - 2, Math.floor(gx)));
-    const gz0 = Math.max(0, Math.min(height - 2, Math.floor(gz)));
-    const fx = Math.max(0, Math.min(1, gx - gx0)), fz = Math.max(0, Math.min(1, gz - gz0));
-    const e00 = data[gz0 * width + gx0] || 0, e10 = data[gz0 * width + gx0 + 1] || 0;
-    const e01 = data[(gz0 + 1) * width + gx0] || 0, e11 = data[(gz0 + 1) * width + gx0 + 1] || 0;
-    const e0 = e00 * (1 - fx) + e10 * fx, e1 = e01 * (1 - fx) + e11 * fx;
-    return (e0 * (1 - fz) + e1 * fz) * V_EXAG;
-  };
+  const { getElevation } = makeElevationSampler({ ...meta, data });
+  _terrainSampler = getElevation;
   return _terrainSampler;
 }
 

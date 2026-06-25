@@ -9,7 +9,7 @@
 // V_EXAG multiplies the raw heightmap (in meters), which bake-terrain.js
 // normalizes to local-min = 0. For LS the source GeoTIFF spans ~35 m of
 // relief, so V_EXAG × 35 m is the max vertical climb a ground vertex sees.
-// 1.8 keeps Lafayette Park's raised yard band readable as a ~1–2 m bulge
+// 1.5 keeps Lafayette Park's raised yard band readable as a ~1–2 m bulge
 // without ballooning the neighborhood into multi-story hills (the V_EXAG=5
 // regime, sized for the prior offset-square EPQS bake that clipped most of
 // LS's actual range, no longer applies after the b24fce5 clip-to-stencil
