@@ -912,7 +912,30 @@ function Skeleton({
   // Stack (outer → inner): rotation → scale → position → auto-center.
   const variantSpacing = Math.max(7, (typeof topY === 'number' ? topY : 12) * 0.95)
   const autoCenter = [centerX, groundOffset, centerZ]
+  // De-lean reground (2026-06-25): tilting (tiltX/tiltZ) to fix a leaning chassis
+  // shifts the tree's lowest point off the floor. When tilted, compute the
+  // post-tilt bbox minY (auto-centered · scaled · posOffset · tilt; Y-spin
+  // excluded — it barely moves the floor) and drop the whole tree by it so it
+  // sits flat. Zero (no shift) when not tilting → preserves the trunk-base grounding.
+  const groundDrop = useMemo(() => {
+    if (!anchorScene || (rx === 0 && rz === 0)) return 0
+    const box = new THREE.Box3().setFromObject(anchorScene)
+    if (!isFinite(box.min.y)) return 0
+    const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx, 0, rz, 'XYZ'))
+    const v = new THREE.Vector3()
+    let minY = Infinity
+    for (let xi = 0; xi < 2; xi++) for (let yi = 0; yi < 2; yi++) for (let zi = 0; zi < 2; zi++) {
+      v.set(
+        ((xi ? box.max.x : box.min.x) + centerX) * scale + ox,
+        ((yi ? box.max.y : box.min.y) + groundOffset) * scale + oy,
+        ((zi ? box.max.z : box.min.z) + centerZ) * scale + oz,
+      ).applyMatrix4(m)
+      if (v.y < minY) minY = v.y
+    }
+    return isFinite(minY) ? -minY : 0
+  }, [anchorScene, centerX, groundOffset, centerZ, scale, ox, oy, oz, rx, rz])
   return (
+    <group position={[0, groundDrop, 0]}>
     <group rotation={[rx, ry, rz]}>
       <group scale={[scale, scale, scale]}>
         <group position={[ox, oy, oz]}>
@@ -941,6 +964,7 @@ function Skeleton({
             )}
         </group>
       </group>
+    </group>
     </group>
   )
 }

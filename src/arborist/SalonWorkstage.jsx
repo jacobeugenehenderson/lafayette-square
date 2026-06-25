@@ -737,6 +737,7 @@ function SlotCard({
             variantHeightSpread
             positionOffset={posOffset}
             rotationOffset={[tiltX, rotationY, tiltZ]}
+            onRotationChange={(_rx, ry) => setRotationY(ry)}
             cameraStateRef={cameraStateRef}
             windStrength={windEnabled ? windStrength : 0}
             deformerRange={deformer?.range || null}
