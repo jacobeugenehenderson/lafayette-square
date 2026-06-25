@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-25T18:08:55.663Z",
+  "generatedAt": "2026-06-25T21:37:45.043Z",
   "lookName": "lafayette-square",
   "rosterSize": 19,
   "materialDefaults": {
@@ -3706,6 +3706,318 @@
             "yHi": 1
           }
         ]
+      }
+    }
+  },
+  "opaqueBySpecies": {
+    "maple_sugar": {
+      "species": "maple_sugar",
+      "heightM": 17.6,
+      "canopyRadiusM": 9.4,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 9.680000000000001,
+        "radiusXZ": 9.4,
+        "radiusY": 7.920000000000001
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "maple_silver": {
+      "species": "maple_silver",
+      "heightM": 18,
+      "canopyRadiusM": 6.6,
+      "trunkFrac": 0.11234712307701725,
+      "shell": {
+        "centerY": 10.011124107693155,
+        "radiusXZ": 6.6,
+        "radiusY": 7.988875892306845
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "birch": {
+      "species": "birch",
+      "heightM": 8.2,
+      "canopyRadiusM": 1.9,
+      "trunkFrac": 0.7,
+      "shell": {
+        "centerY": 6.969999999999999,
+        "radiusXZ": 1.9,
+        "radiusY": 1.23
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "blackgum": {
+      "species": "blackgum",
+      "heightM": 13.7,
+      "canopyRadiusM": 5,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 7.535,
+        "radiusXZ": 5,
+        "radiusY": 6.164999999999999
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "linden_american": {
+      "species": "linden_american",
+      "heightM": 19,
+      "canopyRadiusM": 7.8,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 10.45,
+        "radiusXZ": 7.8,
+        "radiusY": 8.55
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "oak_bur": {
+      "species": "oak_bur",
+      "heightM": 20.2,
+      "canopyRadiusM": 12.7,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 11.11,
+        "radiusXZ": 12.7,
+        "radiusY": 9.09
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "oak_white": {
+      "species": "oak_white",
+      "heightM": 22.9,
+      "canopyRadiusM": 14.4,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 12.594999999999999,
+        "radiusXZ": 14.4,
+        "radiusY": 10.305
+      },
+      "leafRect": {
+        "offsetU": 0.8582417582417582,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "platanus_acerifolia": {
+      "species": "platanus_acerifolia",
+      "heightM": 12,
+      "canopyRadiusM": 3.8,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 6.6,
+        "radiusXZ": 3.8,
+        "radiusY": 5.4
+      },
+      "leafRect": {
+        "offsetU": 0.14395604395604394,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "ash_green": {
+      "species": "ash_green",
+      "heightM": 16.1,
+      "canopyRadiusM": 10.2,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 8.855,
+        "radiusXZ": 10.2,
+        "radiusY": 7.245000000000001
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "maple_red": {
+      "species": "maple_red",
+      "heightM": 12.9,
+      "canopyRadiusM": 4.7,
+      "trunkFrac": 0.11234712307701723,
+      "shell": {
+        "centerY": 7.1746389438467615,
+        "radiusXZ": 4.7,
+        "radiusY": 5.725361056153239
+      },
+      "leafRect": {
+        "offsetU": 0.001098901098901099,
+        "offsetV": 0.726123595505618,
+        "scaleU": 0.14065934065934066,
+        "scaleV": 0.17977528089887643
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
       }
     }
   }
