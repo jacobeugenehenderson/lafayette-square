@@ -12,6 +12,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 
 import InstancedTrees from '../components/InstancedTrees'
+import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import CelestialBodies from '../components/CelestialBodies'
 import Atmosphere from '../components/Atmosphere'
@@ -762,7 +763,15 @@ export default function PreviewApp() {
   // BakedGround/Buildings/Trees to re-fetch + re-mount). True cold
   // reload comes later via sessionStorage handoff.
   const [reloadKey, setReloadKey] = useState(0)
-  const onReload = () => setReloadKey(n => n + 1)
+  const onReload = () => {
+    // Drop the module-cached tree atlas for this Look so the remount RE-FETCHES
+    // trees-atlas.json (fresh generatedAt → fresh ?v= on the GLB URLs). Without
+    // this, the soft-reload reuses the stale _cache manifest and the trees show
+    // the pre-rebake geometry until a full browser hard-reload — the recurring
+    // "stale leaves in Preview after a rebake" trap (2026-06-24).
+    invalidateTreeAtlas(resolvePreviewLookId())
+    setReloadKey(n => n + 1)
+  }
 
   const isPhone = mode !== 'desktop'
   const phoneScale = usePhoneScale(isPhone)
