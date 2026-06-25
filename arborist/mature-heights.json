@@ -1,0 +1,7 @@
+{
+  "_doc": "STOPGAP species→mature-height (metres) fallback for publish-glb's normalizeScale, used ONLY when a species has no full dossier yet. Lookup order in publish-glb: dossier required['chassis.size'].target → this map → per-category TARGET_HEIGHT. These are typical urban-mature heights; a full dossier (the professional-botanist annotation — habit/bark/leaf/season/…, ratified against botanical reference) SUPERSEDES the entry here per species. The annotation is first-class kit IP — these numbers are a placeholder until the real dossiers land. Keyed by Salon species id.",
+  "oak_bur": 22,
+  "oak_white": 25,
+  "blackgum": 16,
+  "linden_american": 21
+}

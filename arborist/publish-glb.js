@@ -738,6 +738,15 @@ async function main() {
   // TARGET_HEIGHT for species with no dossier.
   let matureHeight = null
   try { matureHeight = dossierForSalonSpecies(args.species)?.required?.['chassis.size']?.target ?? null } catch {}
+  // Fallback: stopgap mature-height map for roster species without a full dossier
+  // yet (so they aren't stuck at the 12m category default). The dossier wins when
+  // it exists; this map is a placeholder until the real annotation lands.
+  if (matureHeight == null) {
+    try {
+      const hm = JSON.parse(await fs.readFile(path.join(__dirname, 'mature-heights.json'), 'utf8'))
+      if (typeof hm[args.species] === 'number') matureHeight = hm[args.species]
+    } catch { /* no map → category default */ }
+  }
 
   // Read existing manifest (if any) and capture per-variant operator
   // overrides so a republish doesn't blow them away. Rating UI writes
