@@ -13,6 +13,16 @@
 - Doctrine captured (`5dbd7f49`, `b1036ca7`) in `arborist/NOTES.md` + `ARCHITECTURE.md` + the HANDOFF callout.
 - (Earlier same session: Hero camera authoring/runtime modes `0141c60f`; bloom slab `2c7dded6`; Pip wiring `160f9a45`.)
 
+## 🪜 THE 3-TIER DEPTH MODEL (Jacob, 2026-06-25) — the simplification that beats per-device knobs
+The fixed pan + hero object make **the outside of the shot pure waste for EVERY device** — so don't fork by device, just split aggressively by prominence (= "front/center rows" since prominence is coverage×centrality). Three bands:
+- **Front row → real MESH** (full detail — what the pan looks straight at).
+- **2nd row → "OPAQUE but ARTICULATED"** (the Phase-B build): a SOLID opaque canopy shell (NOT thousands of alpha cards → **zero overdraw**, each pixel shaded once) on the real 3D trunk/branches. The overdraw-killer middle tier — cheaper than mesh, more form than a billboard.
+- **3rd row + periphery → IMPOSTOR + DoF** (cheap billboards; DoF is the cover).
+- (never-seen → cull, already done.)
+
+**LANDED (Phase A, `ca7a757a`):** `PROM_THRESHOLD` 0.02→**0.06** = the front-row dial → mesh **469→92**, impostor 41→418, cull 235 (mesh tri-load ~18.5M→~4.6M). One aggressive bake, mobile+desktop. Dial: 0.07→38, 0.05→194. ⚠️ Phase A skips the middle tier (2nd row → impostor for now).
+**NEXT (Phase B):** build the **opaque-articulated canopy shell** as the mid band (a new bake artifact — opaque hull + foliage texture/normal on the real branches), inserted between mesh and impostor by a second prominence band. This is the real overdraw fix for the near-but-not-front trees.
+
 ## 🎥 PERF TARGET = the camera PAN only (Jacob, 2026-06-25)
 Smooth playback is required ONLY for the cinematic hero PAN (fixed track). Authoring/free-camera views can be janky — they're tools, not the product. The pan's visible set is FIXED+predictable, so aggressive PVS culling/impostor is SAFE (no need to defend free angles). `classifyHeroTiers` (role from the pan poses) + the per-tile frustum cull (`InstancedTrees.jsx`, 2026-06-25) are exactly right. **Eye-gate = "is the PAN smooth," not free-browse fps.** [[project_smooth_pan_is_the_only_perf_target]]
 
