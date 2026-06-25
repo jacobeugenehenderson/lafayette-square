@@ -13,6 +13,11 @@
 - Doctrine captured (`5dbd7f49`, `b1036ca7`) in `arborist/NOTES.md` + `ARCHITECTURE.md` + the HANDOFF callout.
 - (Earlier same session: Hero camera authoring/runtime modes `0141c60f`; bloom slab `2c7dded6`; Pip wiring `160f9a45`.)
 
+## ⚡ WHY THIS IS THE PRIORITY (Jacob, 2026-06-25): impostors ARE the perf fix
+The GPU emulator gauge is **RED every moment from the trees — even with blur OFF.** Tree *geometry* (leaf-card overdraw; the all-lod1 interim made it worse) is the **single largest standing blocker** (`[[feedback_instrument_verdict_then_fix]]`). "Getting rid of geometry is the solution" — impostors replace thousands of overdrawing alpha cards with ~a dozen pre-baked quads → gauge red→green, and scales to neighborhood street-tree fill cheap-by-construction. **This is separate from the bloom/DoF black-screen** (that's the NaN/Inf pyramid-poison bug — `[[bloom-foliage-freeze-shared-pyramid]]`); but cheap trees also unblock blur (less to blur + headroom), so blur is gated, NOT impossible.
+
+**BAKED AHEAD OF TIME (Jacob confirmed the architecture):** the hula slices are a pre-baked ASSET, not a runtime generation. Offline (bake): render each species per season (summer/winter) → slice textures + a thin set of layer cards (the octahedral Hero set + the overhead Browse cake-layers). Runtime: a handful of textured quads + a cheap **hula vertex shader** (a few sin() off the shared wind) — no leaf cards, no per-frame geometry cost. Expensive capture happens once; runtime is tiny.
+
 ## NEXT ARC — the impostor render (needs a standup with Jacob first; it's a new build)
 The classifier + plumbing already exist; the **billboard render is the unbuilt piece**:
 - `bake-trees.js#classifyHeroTiers` already tags each placement `mesh|impostor|cull` (561/184 on LS) from the known camera tracks — the role oracle.
