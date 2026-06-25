@@ -18,6 +18,15 @@ The GPU emulator gauge is **RED every moment from the trees — even with blur O
 
 **BAKED AHEAD OF TIME (Jacob confirmed the architecture):** the hula slices are a pre-baked ASSET, not a runtime generation. Offline (bake): render each species per season (summer/winter) → slice textures + a thin set of layer cards (the octahedral Hero set + the overhead Browse cake-layers). Runtime: a handful of textured quads + a cheap **hula vertex shader** (a few sin() off the shared wind) — no leaf cards, no per-frame geometry cost. Expensive capture happens once; runtime is tiny.
 
+## PHASE 1 LANDED (2026-06-25, dispatched build — commits 53b975a1 → 18cd1555)
+Impostor-role trees (41 on LS) now render via the `lodForRole` seam as cheap stamped-2D billboards instead of lod1; mesh (469) unchanged 3D, cull (235) dropped. Files: `arborist/bake-impostors.js` (new, capture/layer-plan), `arborist/bake-look.js` (emits `impostorBySpecies` into `trees-atlas.json`: bark+leaf atlas rects, height/canopyRadius/trunkFrac, per-season layer plans), `src/components/impostorGeometry.js` (new, `buildImpostorGeometry(record, season)` → trunk card + N canopy slabs as cross-billboards on the SHARED atlas material, base-anchored hula via the existing wind uniforms), `src/components/InstancedTrees.jsx` (`lodForRole`: impostor → `ImpostorSpecies`). Season-parameterized (summer wired; winter=trunk-only plan baked). **Eye-gate:** restart arborist backend (:3334, ESM no-hot-reload), `/grove/bake?look=lafayette-square`, hard-reload Preview, `?heroTierQC=1` → impostors tint magenta; watch the GPU gauge drop.
+
+### ⚠️ THE PHASE-2 DECISION — capture architecture (analytic stand-in today)
+Phase 1 is **analytic** (cross-quads sampling the bark/leaf ATLAS TILES), NOT a captured silhouette — because **the repo has NO headless-GL / render-to-texture rasterizer** (`gl`/`canvas`/`puppeteer` all absent). So silhouettes are procedural, not the real tree. The BATON vision (octahedral multi-view / true stamped layers of the actual tree) **requires render-to-texture**. Two paths to decide:
+- **(a) Headless-GL node dep** in the bake — true offline capture, but a heavy/fragile native dependency.
+- **(b) In-browser GPU capture (recommended)** — render each species' lod0 to a RenderTarget from N angles ONCE at load, build the impostor atlas on-GPU, cache it. No native dep, uses WebGL we already have, capture-quality silhouette. Bigger runtime build but the cleaner architecture.
+Eye-gate the analytic stand-in first: if it reads acceptably for far/occluded trees (which is what impostor-role IS), it may suffice as an interim while (b) is built. Also: `trunkFrac` clamps to 0.1 for most species (birch reads 0.7) → impostor trunks may look stubby; the dial is `bake-impostors.js#measureCanopyBase`.
+
 ## NEXT ARC — the impostor render (needs a standup with Jacob first; it's a new build)
 The classifier + plumbing already exist; the **billboard render is the unbuilt piece**:
 - `bake-trees.js#classifyHeroTiers` already tags each placement `mesh|impostor|cull` (561/184 on LS) from the known camera tracks — the role oracle.
