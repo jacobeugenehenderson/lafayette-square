@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T04:51:40.040Z",
+  "generatedAt": "2026-06-25T00:25:13.135Z",
   "lookName": "lafayette-square",
   "rosterSize": 18,
   "materialDefaults": {
@@ -1296,35 +1296,35 @@
     "platanus_acerifolia": {
       "1": {
         "heightM": 12,
-        "canopyRadiusM": 3.9
+        "canopyRadiusM": 3.8
       },
       "2": {
         "heightM": 12,
-        "canopyRadiusM": 3.5
+        "canopyRadiusM": 3.4
       },
       "3": {
-        "heightM": 12,
+        "heightM": 11.9,
         "canopyRadiusM": 3.7
       },
       "6": {
-        "heightM": 12,
-        "canopyRadiusM": 3.8
+        "heightM": 20.6,
+        "canopyRadiusM": 6.6
       },
       "7": {
-        "heightM": 12,
-        "canopyRadiusM": 4
+        "heightM": 20.1,
+        "canopyRadiusM": 6.7
       },
       "8": {
-        "heightM": 12,
-        "canopyRadiusM": 4.1
+        "heightM": 18.5,
+        "canopyRadiusM": 6.3
       },
       "9": {
-        "heightM": 12,
-        "canopyRadiusM": 4.5
+        "heightM": 18.5,
+        "canopyRadiusM": 6.9
       },
       "10": {
-        "heightM": 12,
-        "canopyRadiusM": 3.9
+        "heightM": 19.5,
+        "canopyRadiusM": 6.3
       }
     },
     "maple_sugar": {

@@ -41,14 +41,18 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 // Chassis whose pre-simplify tri count is already inside the bracket are
 // emitted as-is.
 const LODS = [
-  // Linden 2026-06-23: lod1/lod2 `error` loosened (0.002→0.02, 0.008→0.05) so
-  // the adaptive ratio-walk can actually collapse leaf CARDS at distance. The
-  // old tight budgets error-capped the bracket walk before it reached the tri
-  // target — leaves floored at ~44K (see decimate-tree.mjs smoothWeldBark note
-  // + scratch/LINDEN-leaf-diag.mjs: err 0.008→44K, 0.02→4.4K, 0.05→0.9K).
-  // lod0 stays tight — near/focal leaf-card silhouette is an eye-call to keep.
+  // Per-LOD `error` budgets. The tree-WEIGHT win is the bark smooth-weld
+  // (decimate-tree.mjs#smoothWeldBark, topology — independent of `error`), so
+  // the leaf-collapse half of the 2026-06-23 loosening is separable.
+  // - 2026-06-24 REGRESSION FIX: lod1 `error` 0.02→0.002 restored. The 0.02
+  //   loosening collapsed leaf CARDS ~90% (birch lod0 15.7K → lod1 1.6K), and
+  //   lod1 is the HERO LOD (LS hero view + the Grove gallery) — it must keep a
+  //   full canopy. Bark stays light via smooth-weld regardless of `error`.
+  // - lod2 stays loose (0.05): the BROWSE/overhead far LOD where leaf sparsity
+  //   reads fine + DoF covers it, and the weight win matters most.
+  // - lod0 tight (near/focal silhouette is an eye-call to keep).
   { id: 'lod0', ratio: 0.85, textureSize: 2048, error: 0.0005 },
-  { id: 'lod1', ratio: 0.40, textureSize: 1024, error: 0.0200 },
+  { id: 'lod1', ratio: 0.40, textureSize: 1024, error: 0.0020 },
   { id: 'lod2', ratio: 0.10, textureSize: 512,  error: 0.0500 },
 ]
 

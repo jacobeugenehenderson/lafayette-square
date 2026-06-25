@@ -301,7 +301,12 @@ const server = createServer(async (req, res) => {
           // operator must set. (A future explicit `v.published` marker would
           // decouple this from the rating *value*; deferred — Brief 27.)
           if (quality < 2) continue
-          const lod = v.skeletons?.lod1 || v.skeletons?.lod0 || v.skeletons?.lod2
+          // Grove is the cosmetic confirmation gallery (one tree per species,
+          // not 745 placements) → render the full-quality lod0 canopy. The
+          // bark smooth-weld keeps lod0 light enough for a per-species gallery;
+          // if a heavy holdout (e.g. linden) OOMs the Grove, fall back to lod1
+          // (now full-leaved again — see publish-glb.js LODS, 2026-06-24).
+          const lod = v.skeletons?.lod0 || v.skeletons?.lod1 || v.skeletons?.lod2
           if (!lod) continue
           variants.push({
             speciesId,
