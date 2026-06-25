@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-06-24 — the lod1 leaf-decimation regression (Grove/hero trees went to sparse specks) + fixes
+
+**Symptom:** in the Grove (and the LS hero/Stage view) most trees rendered as **bare branches with tiny scattered leaf specks**, while the **Salon showed full, correctly-sized canopies.** Operator-reported it "worked last night."
+
+**The hunt (and the dead ends — banked so we don't repeat them):**
+- Started as a "trees too big / black screen / impostors?" question. Verified the **weight ladder + atlas were the first problems**: the published ladder was real (linden lod0 16.4 / lod1 1.4 / lod2 0.4 MB) but the **LS slab/atlas were stale** vs a 15:29 republish → re-baked (`bake-look` regenerates the master atlas + UV-rewrites GLBs; `bake-trees` the slab). Leaves returned but small.
+- **Dead end #1 — "leaf scale not applied":** chased the Salon Leaf-size knob (`leaves.scale`). Proved with same-species before/after that **`generate-salon` bakes the scale correctly** (birch chassis leaf 0.093 → published 0.209 = ~2.1×, all LODs). So NOT a scale/authoring/save bug. *(`scaleLeafCardsInPlace` handles any leaf topology; the knob writes `leaves.scale`, max 2.5×; the save path persists it.)*
+- **The reframe that cracked it (operator):** *"it worked last night — your diagnosis is incorrect."* → treat as a **regression**, bisect via git, stop theorizing authoring. ⭐ **Process lesson: when the operator says it worked before, that's a regression signal — ask it FIRST, then `git log`/diff the pipeline, don't build an authoring/save theory.** (Cost: a long detour. `[[feedback_proxy_render_is_not_the_operator_eye]]` again — and its sibling: *the operator's memory of "it worked" is a bisection anchor.*)
+
+**Root cause:** commit `6c3ff5e5` (the weight-wall fix, last night) loosened **lod1 `error` 0.002→0.02** (and lod2 0.008→0.05) in `publish-glb.js#LODS` to "collapse leaf CARDS at distance" for the light ladder. That decimated the **lod1** canopy ~90% (birch lod0 15,659 leaf cards → lod1 **1,620**). But **lod1 is the HERO LOD** — both the Grove gallery (`serve.js#/grove`) and the LS hero view render it — so close-up trees showed the thinned distant-canopy. The Salon renders live (`generateSingleCompositionGLB`, no `publish-glb` decimation), so it looked correct → the divergence.
+
+**Key separability doctrine (now in ARCHITECTURE):** the tree-**weight** win is the **bark smooth-weld** (`smoothWeldBark`, topology — independent of `error`). So the leaf-collapse half of the loosening is **separable** from the bark win. Leaf density at a LOD = that LOD's `error`; bark weight = smooth-weld. Don't conflate.
+
+**Fix (`4f9c9a77`, eye-gated by Jacob):**
+- `publish-glb.js#LODS`: **lod1 `error` 0.02→0.002** → full canopy restored (birch lod1 back to 15,659 cards). **lod2 stays 0.05** (far/overhead browse — leaf sparsity reads fine + DoF covers it; weight matters most there).
+- `serve.js#/grove`: render **lod0** (full-quality cosmetic gallery) instead of lod1. ⚠️ OOM-watch (lod0 is heaviest; linden 16 MB holdout) — fallback is lod1, now also full-leaved.
+- **Cost:** lod1 GLBs ~1.3 MB → ~3.6–5.8 MB (full leaves cost tris). The long-term weight answer is the **per-context cull arc** (`HANDOFF-visibility-cull-lods.md`), not this knob.
+
+**Also banked:** the **publish ≠ bake** staleness (atlas/slab older than the GLB republish) re-bit; the canonical resync is the **`/grove/bake` endpoint** (generate-salon → bakeLook → bakeTrees), not a partial CLI bake. The bark-weight ladder shipped earlier today and is real; only the leaf half regressed.
+
 ## 2026-06-23 (EOD) — THE tree-weight wall + the visibility-cull strategy (full capture → `HANDOFF-visibility-cull-lods.md`)
 
 The afternoon's deep arc bottomed out on the real, foundational problem and a strategy to beat it. **Full dispatch-ready detail: `HANDOFF-visibility-cull-lods.md` (repo root). Start there next session.** Summary:
