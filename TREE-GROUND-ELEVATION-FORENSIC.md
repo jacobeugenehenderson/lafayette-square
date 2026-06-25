@@ -53,11 +53,10 @@ The ground mesh is flat on disk; **real hills/valleys are applied at render time
 
 **The elevation DATA is already single-sourced.** `src/data/terrain.{json,bin}` is the ONE heightmap — runtime displacement (ground/buildings/lamps/trees) AND `bake-ground.js`'s tri-cut deviation test both read it. No duplicated elevation grid.
 
-**What is NOT single-sourced (the real drift risk): the sampler + the `V_EXAG` constant.**
-- `src/lib/terrainCommon.js` is the *designed* SSoT — "the math and constants live here once" — exporting `makeElevationSampler`, **`V_EXAG = 1.5`** (`:18`), `displaceGeometry`. Shared browser+node. The runtime imports it (`terrainShader.js:29`).
-- BUT `cartograph/bake-ground.js` **re-rolls its own sampler** (`:92–115`) and **hardcodes `const V_EXAG = 1.5`** (`:101`) instead of importing terrainCommon. It matches today *by coincidence*; if terrainCommon's V_EXAG ever changes (the stale "1.8" comment shows it was contemplated), the ground mesh gets tri-cut-refined for the OLD exag while the runtime lifts by the NEW one → under-tessellated terrain / visible error where it curves.
-
-**The SSoT fix (small, endorsed):** make `bake-ground.js` `import { makeElevationSampler, V_EXAG } from '../src/lib/terrainCommon.js'` and delete its hand-rolled `_terrainSampler` + hardcoded constant. Then ONE sampler + ONE `V_EXAG` spans bake + runtime, and the mesh auto-recalibrates to any exag change. (This is the memory-flagged "tri-cut coupling: import V_EXAG SSoT so the mesh auto-recalibrates.") ⚠️ Note this is about bake/runtime *consistency*, NOT the tree float — both ground and trees already use the runtime sampler for actual lift, so they agree on displacement regardless; the float is hypothesis 1 above.
+**The sampler + `V_EXAG` are now single-sourced too — LANDED `af038ba4` (2026-06-25).**
+- `src/lib/terrainCommon.js` is the SSoT — "the math and constants live here once" — exporting `makeElevationSampler`, **`V_EXAG = 1.5`** (`:18`), `displaceGeometry`. Shared browser+node.
+- The runtime imports it (`terrainShader.js:29`). **`cartograph/bake-ground.js` now imports `makeElevationSampler` too** (was: a hand-rolled copy + hardcoded `const V_EXAG = 1.5`, which matched only by coincidence and would have drifted if V_EXAG ever changed → ground tri-cut for the old exag vs runtime lifting by the new). Now ONE sampler + ONE `V_EXAG` spans bake + runtime; the mesh auto-recalibrates. Verified **byte-identical** lift across 2907 grid points → behavior-neutral, no re-bake. (Also fixed terrainCommon's stale "1.8" prose comment → 1.5.)
+- ⚠️ This was a bake/runtime *consistency* fix, NOT the tree-float fix — both ground and trees already use the runtime sampler for actual lift, so they agree on displacement regardless; the float is hypothesis 1 above (still open).
 
 ---
 
