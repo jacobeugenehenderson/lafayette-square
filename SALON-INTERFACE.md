@@ -155,11 +155,24 @@ The plate-rack (§5) is largely built across a fast iteration with Jacob (commit
 - **B2 — chassis silhouette plates** (`ChassisPlate.jsx`, uncommitted): top-N (`CHASSIS_PLATE_N=8`) chassis as **live flat-gray silhouette** plates (`frameloop="demand"` Canvas each), per-plate ★ **Approve** (the green-light gate), `(Add +)`, full library behind **"Browse all."** Replaces the chassis matcher-text + dropdown + CURATE-card clutter. ⚠️ *Eye-gate:* 8 WebGL contexts — if slow / context-loss, switch to render-once-to-image; silhouettes load the full textured GLB just to show gray (wasteful, optimizable).
 - **Vestigia swept:** Oubliette removed · bark gradient editor retired · Adopt removed (autosave) · Tilt/Y-up → "Fix orientation (advanced)" drawer · bio card → bottom of the tools rail, now **inline reference photos** (only earns its place with images) · **Set Canary kept** (operator uses it).
 
+### Polish wave (2026-06-25 cont. — commits `e42595b1` … `ce959a1d`)
+- **Collapsible sections** — Chassis / Bark / Leaves fold under clickable headers (the rail was too dense; `CollapsibleSection`).
+- **Botanical height — SHIPS** (`393c3646`): `publish-glb.js#normalizeScale` targets the species' **mature height** from the dossier (`required["chassis.size"].target`, m) instead of the per-category default → trees render relatively-correct in LS (maple ~21m vs dogwood ~8m), matching the preview's `effectiveScale`. (Flat-key bug fixed: the dossier `required` uses rubric-axis-id keys, `required["chassis.size"]`, not nested.)
+- **Variant height spread** — the 3 variants also vary in height (±16%), scaled about the **grounded base** (no floating).
+- **Orientation toolkit rebuilt** (the gnomon removal was over-eager — real models are messy): **Worm POV** camera preset (low, look at the trunk base); the **rotator ring** (visible amber turntable, grab-drag, responsive via pointer-ray↔ground-plane intersection); **Tilt X/Z** + a **Ground-height nudge** (posOffset.y) in the "Fix orientation (advanced)" drawer — for float / underground-roots / off-base trunks that auto-centering can't ground. Inspection rotation is view-only (not authored).
+- **Bark-focus** — opening the Bark section hides the canopy in the preview (`leaves.show` is preview-only) so you can see the bark you're editing (the canopy occluded it).
+- **Chassis plates deduped by base** (`ce959a1d`) — distinct silhouettes, not 8× one variant (strip the `_<variant-letter>` suffix); **dropped the Browse-all / Approved-only / Pick cluster** — the deduped matcher plates are the picker.
+- **Removed:** floor Bullseye (centering reticle, `a8f7276c`), the gizmo, the CURATE card, the chassis Height row.
+
 ## 8. Open threads
 
-- [ ] **`(Add +)` behavior** — the affordance is built (bark/leaf/chassis), wired to a stub. Define the action: file-upload an image? a procurement form? → ties to the online library below.
-- [ ] **Online models/assets library (later, Jacob 2026-06-25)** — a hosted, organized place for the kit's parts (chassis · barks · leaf cutouts). It's where `(Add +)` would *procure from* (browse/pull a vetted part) and where the ~40 build-once bases (§2) live as a shared, versioned library — the kit's asset backbone, reusable town-to-town. Future arc.
-- [ ] **Fill the leaf-base gaps** — procure the ~6 missing cutouts the coverage grid now shows (fan, compound, fine_compound, palmate_compound, tulip, short_needle).
-- [ ] **Chassis CurationRow** — rename/notes for the selected chassis still shows below the grid; per-plate Approve now covers the gate. Decide if rename/notes stays or folds away.
-- [ ] **Eye-gates pending:** the deformer magnitudes (via "3 variants"), the chassis-plate perf, the leaf near-tier stylization.
+- [ ] **`(Add +)` behavior** — affordance built (bark/leaf/chassis), wired to a stub. Define the action (upload / procurement form) → ties to the online library.
+- [ ] **Online models/assets library (Jacob 2026-06-25)** — a hosted, versioned home for the ~40 build-once bases (§2); where `(Add +)` procures from. Future arc.
+- [ ] **Fill the ~6 leaf-base gaps** the coverage grid shows: fan (Ginkgo) · compound (Ash) · fine_compound (Honeylocust) · palmate_compound (Buckeye) · tulip (Tuliptree) · short_needle (Spruce).
+- [ ] **Full-library chassis browser** — the deduped matcher plates are the picker; a proper "browse all 205" (lazy-rendered or baked thumbnails, to dodge the WebGL-context limit) is deferred — NOT the dropdown we removed.
+- [ ] **Lowest-vertex reground** — a de-leaned chassis's base cut meets the ground at an angle; the base *point* is grounded, but a true "sits flat" needs regrounding to the lowest actual vertex (the bbox version over-lifted → reverted). The manual **Ground-nudge** covers it by hand for now.
+- [ ] **Eye-gates pending:** deformer magnitudes (via "3 variants", **behind 3C** — the deformer alone is anti-stamping; canopy asymmetry / branch jitter is the real diversity), chassis-plate perf (8 demand-canvases), leaf near-tier stylization.
+- [x] **Chassis CurationRow + browse cluster** — RESOLVED (`ce959a1d`): CURATE card + Browse-all/Approved-only/Pick removed; per-plate ★ Approve + deduped plates are the picker.
+- [x] **Botanical height ships** — RESOLVED (`393c3646`).
+- [ ] **Botanical height needs full dossier coverage + republish-all** — `normalizeScale` targets the dossier mature height ONLY for species WITH a dossier; non-dossier roster species (`oak_bur`, `oak_white`, `blackgum`, `linden_american`) fall back to the category default (12m) → too SHORT next to dossier species (maple 21m). Also: **only republished species get the new scale** — a botanical-height change requires `generate-salon` (all) / a full Grove regenerate, or the Grove shows one giant among stale 12m trees. Fix: dossiers (with `chassis.size.target`) for the remaining roster species, or a smarter non-dossier fallback (the flat 12m category default reads stunted for mature broadleaves).
 </content>
