@@ -911,25 +911,34 @@ function Skeleton({
   // useful "you haven't centered yet" cues.
   // Stack (outer → inner): rotation → scale → position → auto-center.
   const variantSpacing = Math.max(7, (typeof topY === 'number' ? topY : 12) * 0.95)
+  const autoCenter = [centerX, groundOffset, centerZ]
   return (
     <group rotation={[rx, ry, rz]}>
       <group scale={[scale, scale, scale]}>
         <group position={[ox, oy, oz]}>
-          <group position={[centerX, groundOffset, centerZ]}>
-            {variantClones
-              ? variantClones.map((v, i) => {
-                  // Per-clone HEIGHT variation (a real stand isn't size-cloned).
-                  // Uniform scale about the trunk base (≈ origin per Brief 20), so
-                  // they grow from the floor. ±16% across the row.
-                  const hv = variantHeightSpread ? 1 + (i - (variantCount - 1) / 2) * 0.16 : 1
-                  return (
-                    <primitive key={i} object={v} rotation={rot}
-                      scale={[hv, hv, hv]}
-                      position={[(i - (variantCount - 1) / 2) * variantSpacing, 0, 0]} />
-                  )
-                })
-              : <primitive object={scene} rotation={rot} />}
-          </group>
+          {variantClones
+            ? variantClones.map((v, i) => {
+                // Per-clone HEIGHT variation (±16%; a real stand isn't size-cloned).
+                // The scale group wraps the auto-center group, so the trunk base
+                // sits at the scale group's origin → it scales ABOUT THE BASE and
+                // stays grounded (no floating). X-spacing rides the same group
+                // (a uniform scale leaves the X position correct).
+                const hv = variantHeightSpread ? 1 + (i - (variantCount - 1) / 2) * 0.16 : 1
+                return (
+                  <group key={i}
+                    position={[(i - (variantCount - 1) / 2) * variantSpacing, 0, 0]}
+                    scale={[hv, hv, hv]}>
+                    <group position={autoCenter}>
+                      <primitive object={v} rotation={rot} />
+                    </group>
+                  </group>
+                )
+              })
+            : (
+              <group position={autoCenter}>
+                <primitive object={scene} rotation={rot} />
+              </group>
+            )}
         </group>
       </group>
     </group>
