@@ -111,6 +111,11 @@ function presetFraming(preset, treeH = 12) {
       // so the auto-bind picks tier 2 (street, full PBR). Full-sized trees.
       return { distance: 8, height: 1.7, lookAtY: 1.7, topDown: false }
     }
+    case 'worm': {
+      // Worm — low to the ground, looking at the trunk base, to check the tree
+      // sits flat (the grounding-inspection POV; restored 2026-06-25).
+      return { distance: 5, height: 0.35, lookAtY: 0.55, topDown: false }
+    }
     case 'hero':
     default: {
       // Hero — studio mid framing (tier 1, size-managed). distance >
@@ -1180,6 +1185,7 @@ export default function SpecimenViewport({
         display: 'flex', gap: 6,
       }}>
         {[
+          ['worm',   'Worm',   'Worm POV — low to the ground, looking at the trunk base, to check the tree sits flat.'],
           ['street', 'Street', 'Eye-level, close — Street context (tier 2, full detail). What street-view sees: full-sized trees.'],
           ['hero',   'Hero',   'Studio mid framing — Hero context (tier 1, size-managed). The authoring default.'],
           ['browse', 'Browse', 'Top-down plan — Browse context (tier 0, aerial / overhead). Wheel zooms altitude.'],
