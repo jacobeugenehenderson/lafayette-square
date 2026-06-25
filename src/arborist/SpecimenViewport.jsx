@@ -752,6 +752,7 @@ function Skeleton({
   deformerRange = null,
   deformerSeed = null,
   variantCount = 1,
+  variantHeightSpread = false,
 }) {
   const { scene } = useGLTF(url)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
@@ -916,10 +917,17 @@ function Skeleton({
         <group position={[ox, oy, oz]}>
           <group position={[centerX, groundOffset, centerZ]}>
             {variantClones
-              ? variantClones.map((v, i) => (
-                  <primitive key={i} object={v} rotation={rot}
-                    position={[(i - (variantCount - 1) / 2) * variantSpacing, 0, 0]} />
-                ))
+              ? variantClones.map((v, i) => {
+                  // Per-clone HEIGHT variation (a real stand isn't size-cloned).
+                  // Uniform scale about the trunk base (≈ origin per Brief 20), so
+                  // they grow from the floor. ±16% across the row.
+                  const hv = variantHeightSpread ? 1 + (i - (variantCount - 1) / 2) * 0.16 : 1
+                  return (
+                    <primitive key={i} object={v} rotation={rot}
+                      scale={[hv, hv, hv]}
+                      position={[(i - (variantCount - 1) / 2) * variantSpacing, 0, 0]} />
+                  )
+                })
               : <primitive object={scene} rotation={rot} />}
           </group>
         </group>
@@ -980,6 +988,7 @@ export default function SpecimenViewport({
   // Brief 3A (Cant): live authored deformer range + preview re-roll seed.
   deformerRange = null,
   deformerSeed = null,
+  variantHeightSpread = false,  // 3-variants also vary in HEIGHT (a real stand isn't size-cloned)
   // Brief 7 (Cambium): SpecimenViewport now mounts the shared
   // treeAtlasMaterial via the per-composition preview atlas. atlasUrl /
   // atlasNormalUrl are accepted but unused at this level — the atlas PNGs
@@ -1073,21 +1082,13 @@ export default function SpecimenViewport({
               deformerRange={deformerRange}
               deformerSeed={deformerSeed}
               variantCount={variantCount}
+              variantHeightSpread={variantHeightSpread}
             />
           )}
         </Suspense>
-        {mode === 'skeleton' && variantCount === 1 && (
-          <TreeGizmo
-            position={positionOffset}
-            rotation={rotationOffset}
-            scale={effectiveScale}
-            topY={topYRef.current}
-            overheadY={(CATEGORY_TARGET_HEIGHT[targetCategory] ?? 12) + 1}
-            onTranslate={(x, y, z) => onPositionChange?.(x, y, z)}
-            onRotateY={(y) => onRotationChange?.(rotationOffset[0], y, rotationOffset[2])}
-            onScale={onScaleChange}
-          />
-        )}
+        {/* TreeGizmo (translate/rotate/scale handles) retired 2026-06-25 —
+            recentering is automatic (Brief 20), rotation is never needed, and
+            scale is now botanical (mature-height). */}
         <DollyCam
           cameraStateRef={cameraStateRef}
           dragPanRef={dragPanRef}

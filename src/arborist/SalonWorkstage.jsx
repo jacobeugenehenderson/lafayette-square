@@ -97,7 +97,7 @@ function ReferencePanel() {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', cursor: 'pointer', gap: 8 }}
         onClick={() => setOpen(o => !o)}>
-        <span style={{ fontWeight: 600, color: '#e6e9ee' }}>📖 {d.key} <i style={{ color: '#8aa3bb', fontWeight: 400 }}>{d.scientific}</i></span>
+        <span style={{ fontWeight: 600, color: '#e6e9ee' }}>📖 {d.key} <i style={{ color: '#8aa3bb', fontWeight: 400 }}>{d.scientific}</i>{d.required?.chassis?.size?.target ? <span style={{ color: '#9ab', fontWeight: 400, fontSize: 10 }}> · mature ~{d.required.chassis.size.target}m</span> : null}</span>
         <span style={{ color: '#778' }}>{open ? '▾' : '▸'}</span>
       </div>
       {open && (
@@ -691,6 +691,17 @@ function SlotCard({
     } })
   }
 
+  // Botanical height (2026-06-25): the PREVIEW scales the chassis to its species'
+  // mature height — dossier `chassis.size.target` (m) ÷ the chassis's native
+  // height (`meta.heightRange[1]`) — so species render RELATIVELY CORRECT to one
+  // another (a 21m maple towering over an 8m dogwood), no manual scale knob.
+  // ⚠️ Preview only for now; wiring the same scale into the BAKE (so LS ships
+  // relative-correct sizes) is the eye-gated follow-up.
+  const dossier = useArboristStore(s => s.salonDossier)
+  const matureHeightM = dossier?.required?.chassis?.size?.target
+  const chassisNativeH = chassisCatalog.find(c => c.name === chassis)?.heightRange?.[1]
+  const botanicalScale = (matureHeightM && chassisNativeH) ? matureHeightM / chassisNativeH : 1
+
   return (
     <div style={{
       flex: 1, minWidth: 0, minHeight: 0,
@@ -716,12 +727,10 @@ function SlotCard({
             viewKey={viewKey}
             forestryRotation={false}
             targetCategory={targetCategory}
-            effectiveScale={scaleOverride}
+            effectiveScale={botanicalScale}
+            variantHeightSpread
             positionOffset={posOffset}
             rotationOffset={[tiltX, rotationY, tiltZ]}
-            onRotationChange={(_rx, ry, _rz) => { setRotationY(ry); persistTransform({ rotationY: ry }) }}
-            onPositionChange={(x, y, z) => { setPosOffset([x, y, z]); persistTransform({ posOffset: [x, y, z] }) }}
-            onScaleChange={(s) => { setScaleOverride(s); persistTransform({ scaleOverride: s }) }}
             cameraStateRef={cameraStateRef}
             windStrength={windEnabled ? windStrength : 0}
             deformerRange={deformer?.range || null}
@@ -959,7 +968,7 @@ function SalonControlsPanel({
       display: 'flex', flexDirection: 'column', gap: 8,
       fontSize: 11, color: '#aaa',
     }}>
-      <SectionLabel>Chassis</SectionLabel>
+      <CollapsibleSection title="Chassis">
       {/* B2 (2026-06-25): the top-N ranked chassis render as live gray-silhouette
           plates (live-render-top-N, operator-confirmed). Click to pick; the
           per-plate ★ badge is the green-light Approve gate (approved → Grove).
@@ -1019,25 +1028,10 @@ function SalonControlsPanel({
           </Row>
         </>
       )}
-      {activeChassis && activeChassis.heightRange && (
-        <Row label="Height">
-          <span style={{ fontFamily: 'monospace', color: '#bbb' }}>
-            {activeChassis.heightRange[0].toFixed(2)}–{activeChassis.heightRange[1].toFixed(2)} m
-          </span>
-        </Row>
-      )}
-      {/* Brief 1.5b: curation row — appears once a chassis is picked.
-          displayName commits on blur (per `feedback_debounced_save_must
-          _flush_before_dependent_post`); tri-state approval commits
-          immediately; notes textarea collapsed by default. */}
-      {pickedCurationKey && (
-        <CurationRow
-          chassisFilename={pickedCurationKey}
-          entry={pickedCuration}
-          approvalState={approvalState}
-          onCommit={onChassisCuration}
-        />
-      )}
+      {/* Height row + CURATE card removed 2026-06-25 — height is now BOTANICAL
+          (the tree renders scaled to its species' mature height; shown in the
+          species description at top). Approve is the per-plate ★ badge; chassis
+          rename/notes retired. */}
       {/* Orientation fixers (tilt + Y-up flip) demoted to an advanced drawer
           2026-06-25 — Brief 20 recentering handles position; these only fix the
           rare mis-ORIENTED vendor chassis, so they collapse by default. */}
@@ -1080,7 +1074,8 @@ function SalonControlsPanel({
         </>
       )}
 
-      <SectionLabel>Bark</SectionLabel>
+      </CollapsibleSection>
+      <CollapsibleSection title="Bark">
       <PlatePicker
         items={barkRefs.map(ref => ({ id: ref, label: ref }))}
         current={bark?.ref}
@@ -1119,7 +1114,8 @@ function SalonControlsPanel({
           format={(v) => v.toFixed(2)} />
       </Row>
 
-      <SectionLabel>Leaves</SectionLabel>
+      </CollapsibleSection>
+      <CollapsibleSection title="Leaves">
       {/* Brief 5: bare-chassis inspection toggle (workstage preview only;
           published artifact always carries leaves). */}
       <Row label="Show">
@@ -1193,7 +1189,7 @@ function SalonControlsPanel({
           onChange={(e) => onParams({ leaves: { tintBack: e.target.value } })}
           style={colorStyle} />
       </Row>
-
+      </CollapsibleSection>
     </div>
   )
 }
@@ -1277,6 +1273,26 @@ function SectionLabel({ children }) {
       letterSpacing: '0.12em', textTransform: 'uppercase',
       marginTop: 2,
     }}>{children}</div>
+  )
+}
+
+// Collapsible section (2026-06-25) — the controls rail had too much at once;
+// each part section (Chassis / Bark / Leaves) collapses under a clickable header.
+function CollapsibleSection({ title, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '8px 0 2px', marginTop: 2, color: '#9aa3ad',
+          fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+        }}>
+        <span style={{ fontSize: 9, color: '#778' }}>{open ? '▾' : '▸'}</span>{title}
+      </button>
+      {open && children}
+    </>
   )
 }
 
