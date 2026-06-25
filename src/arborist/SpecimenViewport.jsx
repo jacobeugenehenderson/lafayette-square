@@ -1064,7 +1064,9 @@ export default function SpecimenViewport({
         camera={{ near: 0.1, far: 500, fov: 38 }}
       >
         <Cyclorama />
-        <Bullseye />
+        {/* Bullseye (centering reticle) retired 2026-06-25 — centering is
+            automatic (Brief 20) and the gizmo is gone, so the floor target rings
+            are vestigia. */}
         <Yardstick targetCategory={targetCategory} />
         <HumanSilhouette />
         <Suspense fallback={null}>
