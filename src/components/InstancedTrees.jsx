@@ -530,6 +530,10 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     let dropped = 0
     let substituted = 0
     bake.instances.forEach((inst, idx) => {
+      // Baked-role cull: always-occluded "specks behind specks" are dropped
+      // (role-at-bake; bake-trees#classifyHeroTiers). mesh + impostor still
+      // render (lod1 interim) until the impostor billboard lands.
+      if (inst.heroTier === 'cull') { dropped++; return }
       const key = `${inst.species}:${inst.variantId}`
       let url = lodUrlOf(inst, inst)
       if (!atlas.roster.has(key)) {

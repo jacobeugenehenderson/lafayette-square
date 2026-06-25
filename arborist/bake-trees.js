@@ -327,6 +327,11 @@ function classifyHeroTiers(canopies, heroPan) {
 
   const maxProm = new Float64Array(n)
   const everSeen = new Uint8Array(n)   // ever inside the guard-expanded frustum
+  // Occlusion as a DISTANCE-INDEPENDENT cull trigger (Jacob, 2026-06-25): a
+  // canopy that is in-frustum but ≥OCC_FRAC-occluded by NEARER canopies in
+  // EVERY pose it appears is "a speck behind a speck" — pure clutter, dropped.
+  // Set when a tree is in-frustum AND not occluded in at least one pose.
+  const unoccludedSeen = new Uint8Array(n)
   const hGuard = hHalf * HERO_TIER.CULL_FRUSTUM_GUARD
   const vGuard = vHalf * HERO_TIER.CULL_FRUSTUM_GUARD
   const proj = new Array(n)
@@ -370,6 +375,9 @@ function classifyHeroTiers(canopies, heroPan) {
         if (occ >= HERO_TIER.OCC_FRAC) break
       }
       if (occ >= HERO_TIER.OCC_FRAC) continue
+      // Reached here ⇒ this pose: in-frustum AND not occluded → the tree has at
+      // least one clear sightline, so it's NOT a "speck behind a speck."
+      unoccludedSeen[i] = 1
       const coverage = (2 * pr.r) / (2 * vHalf)               // angular diameter / vfov
       const centrality = Math.max(0, 1 - Math.hypot(pr.h, pr.v) / diagHalf)
       const prom = coverage * centrality
@@ -383,6 +391,7 @@ function classifyHeroTiers(canopies, heroPan) {
     const m = maxProm[i]
     hist[Math.min(19, Math.floor(m * 200))]++
     if (!everSeen[i]) { tiers[i] = 'cull'; cullN++ }          // never in frustum → dropped
+    else if (!unoccludedSeen[i]) { tiers[i] = 'cull'; cullN++ } // always occluded by nearer trees → dropped (speck-behind-speck)
     else if (m >= HERO_TIER.PROM_THRESHOLD) { tiers[i] = 'mesh'; meshN++ }
     else { tiers[i] = 'impostor'; impostorN++ }
   }
