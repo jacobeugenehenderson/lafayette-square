@@ -13,6 +13,9 @@
 - Doctrine captured (`5dbd7f49`, `b1036ca7`) in `arborist/NOTES.md` + `ARCHITECTURE.md` + the HANDOFF callout.
 - (Earlier same session: Hero camera authoring/runtime modes `0141c60f`; bloom slab `2c7dded6`; Pip wiring `160f9a45`.)
 
+## 🎥 PERF TARGET = the camera PAN only (Jacob, 2026-06-25)
+Smooth playback is required ONLY for the cinematic hero PAN (fixed track). Authoring/free-camera views can be janky — they're tools, not the product. The pan's visible set is FIXED+predictable, so aggressive PVS culling/impostor is SAFE (no need to defend free angles). `classifyHeroTiers` (role from the pan poses) + the per-tile frustum cull (`InstancedTrees.jsx`, 2026-06-25) are exactly right. **Eye-gate = "is the PAN smooth," not free-browse fps.** [[project_smooth_pan_is_the_only_perf_target]]
+
 ## ⚡ WHY THIS IS THE PRIORITY (Jacob, 2026-06-25): impostors ARE the perf fix
 The GPU emulator gauge is **RED every moment from the trees — even with blur OFF.** Tree *geometry* (leaf-card overdraw; the all-lod1 interim made it worse) is the **single largest standing blocker** (`[[feedback_instrument_verdict_then_fix]]`). "Getting rid of geometry is the solution" — impostors replace thousands of overdrawing alpha cards with ~a dozen pre-baked quads → gauge red→green, and scales to neighborhood street-tree fill cheap-by-construction. **This is separate from the bloom/DoF black-screen** (that's the NaN/Inf pyramid-poison bug — `[[bloom-foliage-freeze-shared-pyramid]]`); but cheap trees also unblock blur (less to blur + headroom), so blur is gated, NOT impossible.
 
