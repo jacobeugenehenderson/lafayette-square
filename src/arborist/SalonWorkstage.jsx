@@ -918,7 +918,6 @@ function SalonControlsPanel({
   // regenerate instruction when catalog is empty).
   const curationKey = (c) => `${c.name}.glb`
   const [orientOpen, setOrientOpen] = useState(false)  // "Fix orientation" advanced drawer (tilt/Y-up), collapsed by default
-  const [chassisBrowseOpen, setChassisBrowseOpen] = useState(false)  // "Browse all" reveals the full-library dropdown
   // Brief 26: candidate scope. 'recommended' = chassis fitting THIS roster
   // species (names from the coverage join), intersected with the catalog (so
   // procedural/forest chassis the catalog already excludes never appear).
@@ -947,7 +946,16 @@ function SalonControlsPanel({
     const byName = new Map(chassisCatalog.map(c => [c.name, c]))
     let names = (matchOptions?.chassis?.options || []).map(o => o.partId).filter(n => byName.has(n))
     if (names.length === 0) names = (ranked.length ? ranked : chassisCatalog).map(c => c.name)
-    return names.slice(0, CHASSIS_PLATE_N).map(n => byName.get(n) || { name: n })
+    // Dedupe by BASE chassis (strip the trailing _<variant-letter>) so the plates
+    // are distinct silhouettes, not N variants of one tree (the 8× alaskan_cedar
+    // problem). Keeps the highest-ranked variant of each base.
+    const seen = new Set(), deduped = []
+    for (const n of names) {
+      const base = n.replace(/_[a-z]$/, '')
+      if (seen.has(base)) continue
+      seen.add(base); deduped.push(n)
+    }
+    return deduped.slice(0, CHASSIS_PLATE_N).map(n => byName.get(n) || { name: n })
   }, [matchOptions, ranked, chassisCatalog])
   // Curation entry for the currently-picked chassis (may be undefined if
   // chassis is null OR if the chassis is excluded by the approved filter
@@ -1016,31 +1024,9 @@ function SalonControlsPanel({
           <span style={{ fontSize: 9, color: '#99a', textAlign: 'center' }}>Add</span>
         </button>
       </div>
-      <Row label="">
-        <button onClick={() => setChassisBrowseOpen(o => !o)}
-          style={{ ...btnStyle({ block: true }), fontSize: 10, color: '#8a93a0' }}>
-          {chassisBrowseOpen ? '▾' : '▸'} Browse all ({chassisCatalog.length})
-        </button>
-      </Row>
-      {chassisBrowseOpen && (
-        <>
-          <Row label="">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
-              <input type="checkbox" checked={!!approvedOnly}
-                onChange={(e) => onApprovedOnlyChange(e.target.checked)} style={{ margin: 0 }} />
-              <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Approved only {approvedOnly ? `(${ranked.length})` : `(${chassisCatalog.length})`}
-              </span>
-            </label>
-          </Row>
-          <Row label="Pick">
-            <select value={chassis || ''} onChange={(e) => onParams({ chassis: e.target.value || null })} style={selectStyle}>
-              <option value="">(none)</option>
-              {ranked.map(c => (<option key={c.name} value={c.name}>{labelFor(c)}</option>))}
-            </select>
-          </Row>
-        </>
-      )}
+      {/* Browse-all / Approved-only / Pick-dropdown cluster removed 2026-06-25 —
+          the deduped matcher plates above ARE the workable options. A proper
+          full-library browser (lazy / baked thumbnails) is a future feature. */}
       {/* Height row + CURATE card removed 2026-06-25 — height is now BOTANICAL
           (the tree renders scaled to its species' mature height; shown in the
           species description at top). Approve is the per-plate ★ badge; chassis
