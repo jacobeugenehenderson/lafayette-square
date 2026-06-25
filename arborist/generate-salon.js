@@ -1416,6 +1416,9 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
   // texture & material identity inside each composition).
   const masterDoc = new Document()
   const masterScene = masterDoc.createScene()
+  // Botanical height (2026-06-25): the species' mature height is applied
+  // downstream by publish-glb's normalizeScale (now dossier-targeted, not the
+  // category default), not here — see publish-glb.js#TARGET_HEIGHT.
   for (let i = 0; i < compositions.length; i++) {
     const c = compositions[i]
     const slotName = `${species}_${c.slot}`

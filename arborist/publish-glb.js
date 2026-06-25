@@ -30,6 +30,7 @@ import { MeshoptSimplifier } from 'meshoptimizer'
 import { rebuildIndex } from './build-index.js'
 import { decimateLeafPrimitives, decimateBarkPrimitives, decimateLeafPrimitivesConnectedMesh, loadDecimationConfig, smoothWeldBark, crushFlooredBark, trunkCutBark } from './decimate-tree.mjs'
 import { stampAtlasKind } from './atlas-kind-classifier.js'
+import { dossierForSalonSpecies } from './salon-options.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -730,6 +731,13 @@ async function main() {
 
   const category = guessCategory(speciesMeta, args.species)
   const defaultStyles = inferStyles(args.species, 'glb')
+  // Botanical height (2026-06-25): normalizeScale targets the species' MATURE
+  // height from the dossier (`required["chassis.size"].target`, m) when known, so
+  // trees ship RELATIVELY CORRECT to one another (a 21m maple over an 8m dogwood)
+  // — matching the Salon preview's effectiveScale. Falls back to the per-category
+  // TARGET_HEIGHT for species with no dossier.
+  let matureHeight = null
+  try { matureHeight = dossierForSalonSpecies(args.species)?.required?.['chassis.size']?.target ?? null } catch {}
 
   // Read existing manifest (if any) and capture per-variant operator
   // overrides so a republish doesn't blow them away. Rating UI writes
@@ -847,7 +855,7 @@ async function main() {
       skeletons[lod.id] = filename
     }
 
-    const target = TARGET_HEIGHT[category] ?? TARGET_HEIGHT.broadleaf
+    const target = matureHeight ?? TARGET_HEIGHT[category] ?? TARGET_HEIGHT.broadleaf
     const normalizeScale = (typeof approxHeightM === 'number' && approxHeightM > 0.001)
       ? +(target / approxHeightM).toFixed(6)
       : 1

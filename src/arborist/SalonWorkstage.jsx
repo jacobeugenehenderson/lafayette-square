@@ -97,7 +97,7 @@ function ReferencePanel() {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', cursor: 'pointer', gap: 8 }}
         onClick={() => setOpen(o => !o)}>
-        <span style={{ fontWeight: 600, color: '#e6e9ee' }}>📖 {d.key} <i style={{ color: '#8aa3bb', fontWeight: 400 }}>{d.scientific}</i>{d.required?.chassis?.size?.target ? <span style={{ color: '#9ab', fontWeight: 400, fontSize: 10 }}> · mature ~{d.required.chassis.size.target}m</span> : null}</span>
+        <span style={{ fontWeight: 600, color: '#e6e9ee' }}>📖 {d.key} <i style={{ color: '#8aa3bb', fontWeight: 400 }}>{d.scientific}</i>{d.required?.['chassis.size']?.target ? <span style={{ color: '#9ab', fontWeight: 400, fontSize: 10 }}> · mature ~{d.required['chassis.size'].target}m</span> : null}</span>
         <span style={{ color: '#778' }}>{open ? '▾' : '▸'}</span>
       </div>
       {open && (
@@ -704,7 +704,7 @@ function SlotCard({
   // ⚠️ Preview only for now; wiring the same scale into the BAKE (so LS ships
   // relative-correct sizes) is the eye-gated follow-up.
   const dossier = useArboristStore(s => s.salonDossier)
-  const matureHeightM = dossier?.required?.chassis?.size?.target
+  const matureHeightM = dossier?.required?.['chassis.size']?.target
   const chassisNativeH = chassisCatalog.find(c => c.name === chassis)?.heightRange?.[1]
   const botanicalScale = (matureHeightM && chassisNativeH) ? matureHeightM / chassisNativeH : 1
 
