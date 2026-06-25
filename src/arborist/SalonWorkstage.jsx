@@ -222,8 +222,7 @@ export default function SalonWorkstage() {
   const resetSlot           = useArboristStore(s => s.resetSalonSlot)
   const addSlot             = useArboristStore(s => s.addSalonSlot)
   const adoptSlot           = useArboristStore(s => s.adoptSalonSlot)
-  const republishSpecies    = useArboristStore(s => s.republishSalonSpecies)
-  const publishing          = useArboristStore(s => s.salonPublishing)
+  // Re-publish + its publishing-state subscription retired 2026-06-25 (autosave + Grove bake regenerate-from-source).
   const error               = useArboristStore(s => s.salonError)
   const activeLookId        = useArboristStore(s => s.activeLookId)
   const loadSalonSpecies    = useArboristStore(s => s.loadSalonSpecies)
@@ -270,26 +269,7 @@ export default function SalonWorkstage() {
   const recommendedNames = activeRosterRow?.recommendedChassis || []
 
   // Brief 8 (Linnet): published-variant set for the active species, used to
-  // gate the canary button. A composition slot is "canary-ready" iff its
-  // variant id exists in the published manifest (i.e. operator has run
-  // Re-publish since the slot was added). Re-fetched on species change and
-  // after a republish completes; cache-busted so a fresh publish is seen
-  // immediately. Per ARCH.md §canary — kept in component state, not store.
-  const [publishedVariants, setPublishedVariants] = useState(new Set())
-  useEffect(() => {
-    if (!activeSpecies) { setPublishedVariants(new Set()); return }
-    if (publishing) return  // refetch once the republish settles
-    let cancelled = false
-    fetch(`/api/arborist/species/${encodeURIComponent(activeSpecies)}?t=${Date.now()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(m => {
-        if (cancelled) return
-        const ids = new Set((m?.variants || []).map(v => Number(v.id)))
-        setPublishedVariants(ids)
-      })
-      .catch(() => { if (!cancelled) setPublishedVariants(new Set()) })
-    return () => { cancelled = true }
-  }, [activeSpecies, publishing])
+  // (publishedVariants canary-readiness tracking retired with Re-publish, 2026-06-25.)
 
   const compositions = compositionsBySpecies[activeSpecies] || []
   const dirty        = dirtyBySpecies[activeSpecies] || {}
@@ -299,6 +279,18 @@ export default function SalonWorkstage() {
   const anyDirty = Object.keys(dirty).length > 0
   const anyMissingChassis = compositions.some(c => !c.effective?.chassis && !c.chassis)
   const chassisLibEmpty = chassisCatalog.length === 0
+  // Routing claim (was bundled in the retired Re-publish button, 2026-06-25):
+  // map this roster species → its canonical id in park_species_map so bake-trees
+  // routes its placements here. Idempotent; once per species when it has a
+  // composed chassis. (Mark-N/A clears it via setRosterRouting(…, null).)
+  const routedRef = useRef(new Set())
+  useEffect(() => {
+    if (!activeSpecies || !activeRosterName) return
+    if (routedRef.current.has(activeSpecies)) return
+    if (!compositions.some(c => c.effective?.chassis || c.chassis)) return
+    routedRef.current.add(activeSpecies)
+    setRosterRouting(activeRosterName, activeSpecies)
+  }, [activeSpecies, activeRosterName, compositions, setRosterRouting])
 
   const [activeSlot, setActiveSlot] = useState(null)
   const [windEnabled, setWindEnabled] = useState(false)
@@ -515,10 +507,7 @@ export default function SalonWorkstage() {
                     onAdopt={() => adoptSlot(activeSpecies, activeComposition.slot)}
                     onSetCanary={() => setSalonCanary(activeSpecies, activeComposition.slot, activeLookId)}
                     canaryDisabledReason={
-                      !activeLookId ? 'No active Look — open a Look in the cartograph first'
-                      : (dirty[activeComposition.slot] ? 'Adopt the composition first'
-                      : (!publishedVariants.has(Number(activeComposition.slot)) ? 'Re-publish species first'
-                      : null))
+                      !activeLookId ? 'No active Look — open a Look in the cartograph first' : null
                     }
                     isCanary={
                       canaryPref
@@ -546,34 +535,11 @@ export default function SalonWorkstage() {
         display: 'flex', alignItems: 'center', gap: 14,
         color: '#888', fontSize: 11,
       }}>
-        <button
-          onClick={async () => {
-            // Compose = publish the composition under the canonical id, THEN
-            // claim the routing (park_species_map[rosterName] = [canonicalId])
-            // so bake-trees#pickVariant sends this roster species' placements
-            // to it. Brief 26 routing write.
-            await republishSpecies(activeSpecies)
-            if (activeRosterName) await setRosterRouting(activeRosterName, activeSpecies)
-          }}
-          disabled={publishing || anyDirty || !activeSpecies || compositions.length === 0 || anyMissingChassis}
-          title={
-            anyDirty ? 'Adopt all dirty slots before republishing'
-            : anyMissingChassis ? 'Every slot needs a chassis picked before publish'
-            : compositions.length === 0 ? 'Add a composition first'
-            : 'Publish this composition under the roster species canonical id + route its placements to it. Bake the slab from Grove to ship to LS.'
-          }
-          style={{
-            ...btnStyle(),
-            opacity: (publishing || anyDirty || !activeSpecies || compositions.length === 0 || anyMissingChassis) ? 0.4 : 1,
-            cursor:  (publishing || anyDirty || !activeSpecies || compositions.length === 0 || anyMissingChassis) ? 'not-allowed' : 'pointer',
-            background: 'rgba(232,184,96,0.18)',
-            border: '1px solid rgba(232,184,96,0.5)',
-            color: '#e8c878',
-          }}>
-          {publishing ? 'Re-publishing…' : 'Re-publish species'}
-        </button>
+        {/* Re-publish retired 2026-06-25 — autosave persists every edit and the
+            Grove "Bake → Slab" regenerates-from-source + ships. Routing
+            (park_species_map) is now claimed by the effect above, not here. */}
         <span>
-          Stages to the species library — bake the slab from <strong style={{ color: '#bbb' }}>Grove</strong> to update LS.
+          Edits autosave. Bake the slab from the <strong style={{ color: '#bbb' }}>Grove</strong> to ship to LS.
         </span>
       </footer>
     </div>

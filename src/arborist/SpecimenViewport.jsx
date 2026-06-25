@@ -1004,10 +1004,6 @@ export default function SpecimenViewport({
   // canvas clicks arm the drag. Mid-drag updates land in DollyCam via the
   // shared ref (set on the pointerdown, read in pointermove).
   const dragPanRef = useRef(null)
-  // 'studio' = full gizmo (xy + z + rotation), 'worm' = only z + rotation
-  // (xy makes no sense looking horizontally near the floor — operator
-  // uses Oubliette drag for horizontal placement instead).
-  const [camMode, setCamMode] = useState('studio')
   const [variantCount, setVariantCount] = useState(1)  // 1 = single authoring tree; 3 = review the deformer spread
   // Preview the three viewing CONTEXTS (the LsoD, 2026-06-23): 'street'
   // (eye-level close — full detail), 'hero' (studio mid — size-managed,
@@ -1087,8 +1083,6 @@ export default function SpecimenViewport({
             scale={effectiveScale}
             topY={topYRef.current}
             overheadY={(CATEGORY_TARGET_HEIGHT[targetCategory] ?? 12) + 1}
-            showXZArrows={camMode !== 'worm'}
-            wormMode={camMode === 'worm'}
             onTranslate={(x, y, z) => onPositionChange?.(x, y, z)}
             onRotateY={(y) => onRotationChange?.(rotationOffset[0], y, rotationOffset[2])}
             onScale={onScaleChange}
@@ -1106,43 +1100,9 @@ export default function SpecimenViewport({
       {/* Oubliette (top-down XZ radar) retired 2026-06-25 — chassis auto-center
           (Brief 20, dominant-trunk to origin at source) made manual X/Z
           placement vestigial. The perf readout reclaims the bottom-right. */}
-      {/* Gizmo-mode toggle (Brief 7). Studio = full xy+z+rotate gizmo;
-          Worm = only z + rotate (xy makes no sense at eye level — drag
-          the Oubliette for horizontal placement instead). These buttons
-          ALSO snap the camera as a courtesy, but the camera framing of
-          record is the preset row below — Brief 13. */}
-      <div style={{
-        position: 'absolute', top: 12, left: 12,
-        display: 'flex', gap: 6,
-      }}>
-        <button
-          onClick={() => {
-            // Camera framing now lives on camPreset; Studio just snaps
-            // back to the Ground preset's framing if the operator was
-            // in Overhead. Gizmo mode is the only thing Studio uniquely
-            // owns.
-            setCamMode('studio')
-            setCamPreset('hero')
-          }}
-          style={presetBtnStyle(camMode === 'studio')}
-          title="Full gnomon — XY + Z + rotation handles">
-          Studio
-        </button>
-        <button
-          onClick={() => {
-            if (cameraStateRef?.current) {
-              cameraStateRef.current.distance = 6
-              cameraStateRef.current.height = 0.3
-              cameraStateRef.current.lookAtY = 0.3
-              cameraStateRef.current.topDown = false
-            }
-            setCamMode('worm')
-          }}
-          style={presetBtnStyle(camMode === 'worm')}
-          title="Eye-level near the bullseye; only scale + rotation handles, drag the Oubliette for X/Z">
-          Worm
-        </button>
-      </div>
+      {/* Studio/Worm gizmo-mode toggle retired 2026-06-25 — Worm rode the
+          (removed) Oubliette + the Street preset covers eye-level; the gizmo
+          now defaults to the full Studio handles. */}
       {/* Brief 13 (Vantage, refined 2026-05-23) — two preset cameras
           driving Brief 10's bark-shader tier auto-binding. Overhead
           pins tier 0 (aerial). Ground hands off to distance-based
@@ -1151,7 +1111,7 @@ export default function SpecimenViewport({
           window.__setBarkShaderTier(n) overrides the auto-binding;
           window.__releaseBarkShaderTier() restores it. */}
       <div style={{
-        position: 'absolute', top: 44, left: 12,
+        position: 'absolute', top: 12, left: 12,
         display: 'flex', gap: 6,
       }}>
         {[
@@ -1171,7 +1131,7 @@ export default function SpecimenViewport({
           instances to SEE + eye-gate the per-tree variation (the deformer). The
           deformer hashes each tree's position, so the 3 clones differ for free.
           3 hides the gizmo (review, not authoring). */}
-      <div style={{ position: 'absolute', top: 76, left: 12, display: 'flex', gap: 6 }}>
+      <div style={{ position: 'absolute', top: 44, left: 12, display: 'flex', gap: 6 }}>
         {[1, 3].map(n => (
           <button key={n}
             onClick={() => {
