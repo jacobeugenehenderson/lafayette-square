@@ -539,6 +539,15 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
 
   const atlas = useTreeAtlas(lookName)
 
+  // Impostor records (Arc 2, Phase 1) — per-species layer-card plans baked by
+  // arborist/bake-impostors.js into the atlas manifest. Keyed by species; the
+  // grouping memo (below) routes impostor-role placements here, ImpostorSpecies
+  // builds one geometry per species (sampling the SAME atlas) and instances it.
+  // Declared BEFORE the `groups` memo that depends on it (TDZ-safe).
+  const impostorRecords = useMemo(() => {
+    return atlas?.manifest?.impostorBySpecies || null
+  }, [atlas?.manifest?.impostorBySpecies])
+
   // Geometry representation is a per-placement ROLE decided at BAKE, NOT a live
   // camera-distance/altitude swap (role-at-bake doctrine, 2026-06-25 — see
   // [[project_tree_lod_role_at_bake_not_distance]] + TREE-GROUND-ELEVATION-FORENSIC.md).
@@ -732,14 +741,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
   const deformerBySpecies = useMemo(() => {
     return atlas?.manifest?.deformerBySpecies || {}
   }, [atlas?.manifest?.deformerBySpecies])
-
-  // Impostor records (Arc 2, Phase 1) — per-species layer-card plans baked by
-  // arborist/bake-impostors.js into the atlas manifest. Keyed by species; the
-  // grouping memo routes impostor-role placements here, ImpostorTrees builds
-  // one geometry per species (sampling the SAME atlas) and instances it.
-  const impostorRecords = useMemo(() => {
-    return atlas?.manifest?.impostorBySpecies || null
-  }, [atlas?.manifest?.impostorBySpecies])
 
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
