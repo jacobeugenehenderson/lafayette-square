@@ -27,6 +27,7 @@ import {
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
+import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -362,6 +363,91 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   )
 }
 
+// ImpostorSpecies (Arc 2, Phase 1) — renders all impostor-ROLE placements of
+// one species as a single InstancedMesh of cheap stamped-2D layer cards.
+//
+// The geometry (impostorGeometry.js) is the WHOLE tree as a handful of
+// billboard quads (trunk card + canopy slabs) whose UVs sample the SAME unified
+// atlas the near trees use — so it mounts the SAME shared treeMaterial. That's
+// the whole win: one shader program (Bloom-stable), full optical parity (the
+// cards get DoF'd/fogged/graded/terrain-lifted exactly like real geometry), and
+// the cards hula off the SHARED wind uniforms (base-anchored sway ∝ height) with
+// zero per-frame geometry cost — ~a dozen quads replace ~15K leaf cards.
+function ImpostorSpecies({ species, record, instances, treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange }) {
+  const ref = useRef(null)
+
+  // One geometry per species per season. Phase 1 = summer; the winter plan is
+  // already baked (record.seasons.winter) for the Phase-2 runtime switch.
+  const geometry = useMemo(() => buildImpostorGeometry(record, 'summer'), [record])
+
+  // Per-instance world matrices (translation + Y-rotation; scale is baked into
+  // the impostor geometry's real-metre layer heights, like the GLB path).
+  const matrices = useMemo(() => {
+    const arr = new Array(instances.length)
+    const T = new THREE.Matrix4(), R = new THREE.Matrix4()
+    for (let i = 0; i < instances.length; i++) {
+      const inst = instances[i]
+      T.makeTranslation(inst.x, inst.y || 0, inst.z)
+      R.makeRotationY(inst.rotY || 0)
+      arr[i] = T.multiply(R)
+    }
+    return arr
+  }, [instances])
+
+  // Per-instance lamp-glow + hero-tier attributes (mirror SubmeshInstances).
+  // aHeroTier = 1 (impostor) so the QC overlay tints these magenta and the
+  // shared shader treats them consistently with the mesh path.
+  const lampGlows = useMemo(() => {
+    const a = new Float32Array(instances.length)
+    for (let i = 0; i < instances.length; i++) a[i] = Number(instances[i].lampGlow) || 0
+    return a
+  }, [instances])
+  const heroTiers = useMemo(() => {
+    const a = new Float32Array(instances.length)
+    a.fill(1)   // impostor
+    return a
+  }, [instances])
+
+  useEffect(() => {
+    if (!geometry) return
+    geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
+    geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
+  }, [geometry, lampGlows, heroTiers])
+
+  useEffect(() => {
+    const im = ref.current
+    if (!im) return
+    for (let i = 0; i < matrices.length; i++) im.setMatrixAt(i, matrices[i])
+    im.instanceMatrix.needsUpdate = true
+    if (im.computeBoundingSphere) im.computeBoundingSphere()
+  }, [matrices])
+
+  // Per-draw bark uniforms — same shared-material mutation as the mesh path so
+  // the impostor's bark/leaf fragments pick up this species' tint/gradient/
+  // posterize (color match with the near trees, 3A.5). gradientSlot omitted
+  // (the impostor samples the species' primary bark/leaf rect, not a per-variant
+  // gradient — Phase 1).
+  const onBeforeRender = useMemo(() => {
+    return () => {
+      applyBarkUniforms(treeMaterial, barkSettings, null, detailSlot, posterizedSlot)
+      applyDeformerUniforms(treeMaterial, deformerRange)
+    }
+  }, [treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange])
+
+  if (!geometry || instances.length === 0) return null
+
+  return (
+    <instancedMesh
+      ref={ref}
+      args={[geometry, treeMaterial, instances.length]}
+      castShadow={false}
+      receiveShadow={false}
+      frustumCulled={false}
+      onBeforeRender={onBeforeRender}
+    />
+  )
+}
+
 // Brief 9a (Sough) — wind-field consumer. Resolves the directive into a
 // `windState` once per frame via the shared wind-field.js seam, then
 // writes the drift component + gust parameters into the shared sway
@@ -516,32 +602,52 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
       : () => 0
 
     // Geometry by BAKED ROLE (heroTier: mesh|impostor|cull from
-    // bake-trees#classifyHeroTiers), not live camera distance. INTERIM: until
-    // the impostor billboard render lands (next arc), every role falls back to
-    // lod1 (full canopy + FULL TRUNK). lod2 (the cut-trunk browse tier) is no
-    // longer selected at runtime, so no camera angle can pull a cut trunk into
-    // view. Arc 2 makes this a one-line change: impostor → billboard (cheap
-    // far/fill), cull → dropped. Falls back to the legacy single `url` for
-    // older bakes that don't carry `lods`.
-    const lodForRole = (_inst) => 'lod1'   // interim: all roles → full-trunk lod1
+    // bake-trees#classifyHeroTiers), NOT live camera distance.
+    //   mesh     → real 3D geometry (lod1, full canopy + full trunk).
+    //   impostor → cheap stamped-2D layer-card billboard (ImpostorTrees), the
+    //              perf fix for far/occluded/fill trees. Rides the SAME atlas +
+    //              material (full optical parity). Phase 1 (Hero) — Arc 2.
+    //   cull     → dropped entirely (always-occluded "specks behind specks").
+    // lod2 (the cut-trunk browse tier) is never selected at runtime, so no
+    // camera angle can pull a cut trunk into view. The impostor record is keyed
+    // by SPECIES (impostorBySpecies in the atlas manifest); a per-species
+    // impostor geometry is instanced across all impostor-role placements.
+    const lodForRole = (_inst) => 'lod1'   // mesh role → full-trunk lod1
     const lodUrlOf = (o, inst) => (o && o.lods && o.lods[lodForRole(inst)]) || (o && o.url)
 
-    const m = new Map()  // lookUrl -> Map<tileId, instances[]>
+    const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
+    const impostors = new Map()  // species -> instances[]  (impostor role)
     let dropped = 0
     let substituted = 0
+    let impostorCount = 0
     bake.instances.forEach((inst, idx) => {
-      // Baked-role cull: always-occluded "specks behind specks" are dropped
-      // (role-at-bake; bake-trees#classifyHeroTiers). mesh + impostor still
-      // render (lod1 interim) until the impostor billboard lands.
+      // Baked-role cull: always-occluded "specks behind specks" are dropped.
       if (inst.heroTier === 'cull') { dropped++; return }
+
+      // Resolve the rendered species (out-of-roster placements substitute a
+      // same-category roster variant — the impostor must use that species'
+      // atlas rects, same as the mesh path uses its GLB).
       const key = `${inst.species}:${inst.variantId}`
-      let url = lodUrlOf(inst, inst)
-      if (!atlas.roster.has(key)) {
-        const sub = fallbackFor(inst, idx)
+      const inRoster = atlas.roster.has(key)
+      let sub = null
+      if (!inRoster) {
+        sub = fallbackFor(inst, idx)
         if (!sub) { dropped++; return }
-        url = lodUrlOf(sub, inst)
         substituted++
       }
+      const renderSpecies = inRoster ? inst.species : sub.species
+
+      // Impostor ROLE → stamped-2D billboard path. One bucket per rendered
+      // species; the per-species geometry samples that species' atlas rects.
+      if (inst.heroTier === 'impostor' && impostorRecords?.[renderSpecies]) {
+        if (!impostors.has(renderSpecies)) impostors.set(renderSpecies, [])
+        impostors.get(renderSpecies).push(inst)
+        impostorCount++
+        return
+      }
+
+      // Mesh ROLE (or impostor with no baked record → fall back to real geo).
+      const url = inRoster ? lodUrlOf(inst, inst) : lodUrlOf(sub, inst)
       // Cache-bust GLB URLs against the atlas manifest's generatedAt so an
       // open Preview/Stage tab picks up rewritten UVs after a rebake instead
       // of holding drei's useGLTF cache for the same path indefinitely.
@@ -572,9 +678,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
       meshCount += byTile.size
       for (const tid of byTile.keys()) tileSet.add(tid)
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} variants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
-    return m
-  }, [bake, maxVariants, atlas, lookName])
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    return { meshGroups: m, impostors }
+  }, [bake, maxVariants, atlas, lookName, impostorRecords])
 
   // Phase B (2026-05-15): per-species bark settings carried in the atlas
   // manifest, with per-Look palette override (scene.materialColors[<species>])
@@ -627,14 +733,25 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     return atlas?.manifest?.deformerBySpecies || {}
   }, [atlas?.manifest?.deformerBySpecies])
 
+  // Impostor records (Arc 2, Phase 1) — per-species layer-card plans baked by
+  // arborist/bake-impostors.js into the atlas manifest. Keyed by species; the
+  // grouping memo routes impostor-role placements here, ImpostorTrees builds
+  // one geometry per species (sampling the SAME atlas) and instances it.
+  const impostorRecords = useMemo(() => {
+    return atlas?.manifest?.impostorBySpecies || null
+  }, [atlas?.manifest?.impostorBySpecies])
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
+
+  const { meshGroups, impostors } = groups
 
   return (
     <>
       <SwayDriver />
       <TierDriver />
-      {Array.from(groups.entries()).flatMap(([url, byTile]) =>
+      {/* Mesh-role trees: real 3D geometry (lod1). */}
+      {Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {
           const species = urlToSpecies(url)
           const variantId = urlToVariantId(url)
@@ -661,6 +778,28 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
           )
         }),
       )}
+      {/* Impostor-role trees: cheap stamped-2D layer cards (Arc 2, Phase 1).
+          One geometry per rendered species, instanced across placements. Rides
+          the SAME shared atlas material → full optical parity (DoF/fog/bloom). */}
+      {impostors && impostorRecords && Array.from(impostors.entries()).map(([species, instances]) => {
+        const barkSettings = barkBySpeciesEffective[species] || null
+        const detailSlot = barkDetailBySpecies[species] || null
+        const posterizedSlot = barkPosterizedBySpecies[species] || null
+        const deformerRange = deformerBySpecies[species]?.range || null
+        return (
+          <ImpostorSpecies
+            key={`impostor#${species}`}
+            species={species}
+            record={impostorRecords[species]}
+            instances={instances}
+            treeMaterial={atlas.treeMaterial}
+            barkSettings={barkSettings}
+            detailSlot={detailSlot}
+            posterizedSlot={posterizedSlot}
+            deformerRange={deformerRange}
+          />
+        )
+      })}
     </>
   )
 }
