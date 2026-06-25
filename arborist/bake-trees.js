@@ -229,7 +229,7 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
 // Tunables — calibrated against the operator's eye at the A→B seam (QC overlay):
 const HERO_TIER = {
   POSES: 24,             // camera samples along the keyframe path
-  PROM_THRESHOLD: 0.06,  // ⭐ THE FRONT-ROW DIAL (2026-06-25). Min screen-prominence
+  PROM_THRESHOLD: 0.07,  // ⭐ THE FRONT-ROW DIAL (2026-06-25). Min screen-prominence
                          // (coverage×centrality, at ANY pose) to stay real `mesh` vs
                          // `impostor`. "Only the front row need be real; the periphery
                          // is waste for EVERY device (the pan never lingers there)."
