@@ -751,6 +751,7 @@ function Skeleton({
   windStrength = 0,
   deformerRange = null,
   deformerSeed = null,
+  variantCount = 1,
 }) {
   const { scene } = useGLTF(url)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
@@ -891,17 +892,35 @@ function Skeleton({
 
   useEffect(() => { onTopY?.(topY) }, [topY, onTopY])
 
+  // Variant review (2026-06-25): N clones spaced along X. The deformer hashes
+  // each tree's WORLD position into its lean/twist/wander, so N clones at N
+  // positions auto-show N DISTINCT deformations — no new deformer logic. Clones
+  // share geometry + the one treeMaterial (THREE clone() copies refs), so the
+  // deformer/bark/wind uniforms apply to all. variantCount<=1 = the single
+  // authoring tree (gizmo + transform). See the A1 deformer / SALON-INTERFACE.md.
+  const variantClones = useMemo(() => {
+    if (variantCount <= 1) return null
+    return Array.from({ length: variantCount }, () => scene.clone(true))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene, variantCount, atlas.treeMaterial])
+
   // Both rotation AND scale pivot at world origin (the bullseye).
   // Position is applied INSIDE both, so a tree off-bullseye orbits on
   // rotate and grows/shrinks toward the bullseye on scale — both
   // useful "you haven't centered yet" cues.
   // Stack (outer → inner): rotation → scale → position → auto-center.
+  const variantSpacing = Math.max(7, (typeof topY === 'number' ? topY : 12) * 0.95)
   return (
     <group rotation={[rx, ry, rz]}>
       <group scale={[scale, scale, scale]}>
         <group position={[ox, oy, oz]}>
           <group position={[centerX, groundOffset, centerZ]}>
-            <primitive object={scene} rotation={rot} />
+            {variantClones
+              ? variantClones.map((v, i) => (
+                  <primitive key={i} object={v} rotation={rot}
+                    position={[(i - (variantCount - 1) / 2) * variantSpacing, 0, 0]} />
+                ))
+              : <primitive object={scene} rotation={rot} />}
           </group>
         </group>
       </group>
@@ -989,6 +1008,7 @@ export default function SpecimenViewport({
   // (xy makes no sense looking horizontally near the floor — operator
   // uses Oubliette drag for horizontal placement instead).
   const [camMode, setCamMode] = useState('studio')
+  const [variantCount, setVariantCount] = useState(1)  // 1 = single authoring tree; 3 = review the deformer spread
   // Preview the three viewing CONTEXTS (the LsoD, 2026-06-23): 'street'
   // (eye-level close — full detail), 'hero' (studio mid — size-managed,
   // default), 'browse' (top-down — overhead/aerial). Each frames the camera
@@ -1056,10 +1076,11 @@ export default function SpecimenViewport({
               windStrength={windStrength}
               deformerRange={deformerRange}
               deformerSeed={deformerSeed}
+              variantCount={variantCount}
             />
           )}
         </Suspense>
-        {mode === 'skeleton' && (
+        {mode === 'skeleton' && variantCount === 1 && (
           <TreeGizmo
             position={positionOffset}
             rotation={rotationOffset}
@@ -1082,17 +1103,9 @@ export default function SpecimenViewport({
         />
         {onPerfSample && <PerfProbe onSample={onPerfSample} />}
       </Canvas>
-      {mode === 'skeleton' && glbUrl && (
-        <Suspense fallback={null}>
-          <TopDownSchematic
-            glbUrl={glbUrl}
-            scale={effectiveScale}
-            positionOffset={positionOffset}
-            rotationOffset={rotationOffset}
-            onPositionChange={onPositionChange}
-          />
-        </Suspense>
-      )}
+      {/* Oubliette (top-down XZ radar) retired 2026-06-25 — chassis auto-center
+          (Brief 20, dominant-trunk to origin at source) made manual X/Z
+          placement vestigial. The perf readout reclaims the bottom-right. */}
       {/* Gizmo-mode toggle (Brief 7). Studio = full xy+z+rotate gizmo;
           Worm = only z + rotate (xy makes no sense at eye level — drag
           the Oubliette for horizontal placement instead). These buttons
@@ -1154,6 +1167,26 @@ export default function SpecimenViewport({
           </button>
         ))}
       </div>
+      {/* Variant review (2026-06-25): 1 authoring tree, or a row of 3 deformed
+          instances to SEE + eye-gate the per-tree variation (the deformer). The
+          deformer hashes each tree's position, so the 3 clones differ for free.
+          3 hides the gizmo (review, not authoring). */}
+      <div style={{ position: 'absolute', top: 76, left: 12, display: 'flex', gap: 6 }}>
+        {[1, 3].map(n => (
+          <button key={n}
+            onClick={() => {
+              setVariantCount(n)
+              if (cameraStateRef?.current) {
+                const base = presetFraming(camPreset, (typeof topY === 'number' ? topY : 12)).distance || 22
+                cameraStateRef.current.distance = base * (n > 1 ? 1.9 : 1)
+              }
+            }}
+            style={presetBtnStyle(variantCount === n)}
+            title={n > 1 ? 'Show 3 deformed variants side by side — review the per-tree variation' : 'Single tree (authoring + gizmo)'}>
+            {n === 1 ? '1 tree' : '3 variants'}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -1170,165 +1203,6 @@ function presetBtnStyle(active = false) {
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
   }
-}
-
-// ── Hell view — top-down XZ schematic over the bullseye ──────────────
-// A small inset SVG that projects the tree's geometry onto the floor
-// plane. Operator can verify the trunk is centered on the bullseye
-// without perspective ambiguity. Splits the canopy footprint (light)
-// from the trunk-slab footprint (dark) so where the actual trunk lands
-// is unmissable.
-function TopDownSchematic({ glbUrl, scale, positionOffset, rotationOffset, onPositionChange }) {
-  const { scene } = useGLTF(glbUrl)
-  // Always source the anchor from LOD0 so the schematic agrees with
-  // Skeleton's auto-anchor (which is also LOD0-pinned). Otherwise
-  // switching LOD shifts the projection relative to what's in 3D.
-  const lod0Url = glbUrl.replace(/-lod[12]\.glb($|\?)/, '-lod0.glb$1')
-  const { scene: anchorScene } = useGLTF(lod0Url)
-  const VIEW_RADIUS_M = 12
-  const SIZE_PX = 200
-
-  const { trunkPts, canopyPts, trunkAnchor } = useMemo(() => {
-    const trunk = computeDominantTrunk(anchorScene)
-    const anchor = trunk ? [trunk.x, trunk.z] : [0, 0]
-    if (!trunk) return { trunkPts: [], canopyPts: [], trunkAnchor: anchor }
-    const slabHi = trunk.minY + Math.max(trunk.height * 0.05, 0.05)
-    const trunkPts = [], canopyPts = []
-    scene.traverse((o) => {
-      if (!o.isMesh || !o.geometry?.attributes?.position) return
-      const pos = o.geometry.attributes.position
-      const e = o.matrixWorld.elements
-      const stride = Math.max(1, Math.floor(pos.count / 1500))
-      for (let i = 0; i < pos.count; i += stride) {
-        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i)
-        const wx = e[0] * x + e[4] * y + e[8]  * z + e[12]
-        const wy = e[1] * x + e[5] * y + e[9]  * z + e[13]
-        const wz = e[2] * x + e[6] * y + e[10] * z + e[14]
-        canopyPts.push([wx, wz])
-        if (wy <= slabHi) trunkPts.push([wx, wz])
-      }
-    })
-    return { trunkPts, canopyPts, trunkAnchor: anchor }
-  }, [scene, anchorScene])
-
-  // Mirror the runtime transform stack EXACTLY:
-  //   world = R · S · (positionOffset + (sceneXZ − trunkAnchor))
-  // i.e. positionOffset lives INSIDE the scale + rotation, same as in
-  // Skeleton's nested groups. Putting it outside (like an earlier
-  // version did) was wrong whenever scale ≠ 1 or rotation ≠ 0 and
-  // caused the schematic to lie to the operator.
-  const cos = Math.cos(rotationOffset[1] || 0)
-  const sin = Math.sin(rotationOffset[1] || 0)
-  const transform = (x, z) => {
-    const dx = (x - trunkAnchor[0]) + (positionOffset[0] || 0)
-    const dz = (z - trunkAnchor[1]) + (positionOffset[2] || 0)
-    const lx = dx * scale
-    const lz = dz * scale
-    const rx = lx * cos + lz * sin
-    const rz = -lx * sin + lz * cos
-    return [rx, rz]
-  }
-
-  // Auto-fit the view radius to whatever's in the variant. If extreme
-  // transforms push things past the default ±12m, expand so nothing's
-  // ever just empty. Floor at 12m so a normal tree doesn't zoom in
-  // weirdly tight.
-  let viewRadius = VIEW_RADIUS_M
-  for (let i = 0; i < canopyPts.length; i += 8) {
-    const [tx, tz] = transform(canopyPts[i][0], canopyPts[i][1])
-    const m = Math.max(Math.abs(tx), Math.abs(tz))
-    if (m > viewRadius) viewRadius = m
-  }
-  // World → SVG: standard top-down map. World +X right, world +Z up.
-  const k = SIZE_PX / (2 * viewRadius)
-  const w2s = (wx, wz) => [SIZE_PX / 2 + wx * k, SIZE_PX / 2 - wz * k]
-
-  // For point clouds at this scale, compress to a sparse polyline-style
-  // dot field. Use a Set keyed by quantized cell so we don't render
-  // hundreds of overlapping dots at the same screen position.
-  const renderDots = (pts, color, opacity, size) => {
-    const out = []
-    for (let i = 0; i < pts.length; i++) {
-      const [wx, wz] = pts[i]
-      const [twx, twz] = transform(wx, wz)
-      if (Math.abs(twx) > viewRadius || Math.abs(twz) > viewRadius) continue
-      const [sx, sy] = w2s(twx, twz)
-      out.push(<circle key={i} cx={sx} cy={sy} r={size} fill={color} opacity={opacity} />)
-    }
-    return out
-  }
-
-  // Drag-on-radar: pointer moves on the SVG → positionOverride moves
-  // by the same world-XZ delta. The cyan crosshair (and the orange
-  // trunk dots) track the cursor. Accounts for scale + Y rotation
-  // so the drag stays 1:1 with what you see.
-  const dragRef = useRef(null)
-  const cosI = Math.cos(-(rotationOffset[1] || 0))
-  const sinI = Math.sin(-(rotationOffset[1] || 0))
-  const onSvgDown = (e) => {
-    if (!onPositionChange) return
-    e.target.setPointerCapture?.(e.pointerId)
-    dragRef.current = {
-      startX: e.clientX, startY: e.clientY,
-      origin: [...positionOffset],
-    }
-  }
-  const onSvgMove = (e) => {
-    const d = dragRef.current
-    if (!d) return
-    // Pixel delta on the SVG → world XZ delta (top-down standard map).
-    const dwx = (e.clientX - d.startX) / k
-    const dwz = -(e.clientY - d.startY) / k
-    // Inverse-rotate (because positionOffset is in pre-rotation frame)
-    // and divide by scale (because positionOffset is pre-scale).
-    const inv = 1 / Math.max(scale, 0.001)
-    const lx = (dwx * cosI + dwz * sinI) * inv
-    const lz = (-dwx * sinI + dwz * cosI) * inv
-    onPositionChange(d.origin[0] + lx, d.origin[1], d.origin[2] + lz)
-  }
-  const onSvgUp = (e) => {
-    try { e.target.releasePointerCapture?.(e.pointerId) } catch {}
-    dragRef.current = null
-  }
-
-  return (
-    <div style={{
-      position: 'absolute', bottom: 12, right: 12,
-      width: SIZE_PX, height: SIZE_PX,
-      background: 'rgba(20, 20, 24, 0.85)',
-      border: '1px solid rgba(255,255,255,0.12)', borderRadius: 4,
-    }}>
-      <svg width={SIZE_PX} height={SIZE_PX}
-        style={{ cursor: onPositionChange ? 'grab' : 'default' }}
-        onPointerDown={onSvgDown}
-        onPointerMove={onSvgMove}
-        onPointerUp={onSvgUp}
-        onPointerCancel={onSvgUp}>
-        {/* Grid rings at 2m, 5m, 10m */}
-        {[2, 5, 10].map((r) => (
-          <circle key={r} cx={SIZE_PX/2} cy={SIZE_PX/2} r={r * k}
-            fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1" />
-        ))}
-        {/* Crosshairs */}
-        <line x1={0} y1={SIZE_PX/2} x2={SIZE_PX} y2={SIZE_PX/2} stroke="rgba(255,255,255,0.10)" />
-        <line x1={SIZE_PX/2} y1={0} x2={SIZE_PX/2} y2={SIZE_PX} stroke="rgba(255,255,255,0.10)" />
-        {/* Canopy footprint — light dots */}
-        {renderDots(canopyPts, '#6ad06a', 0.35, 1.0)}
-        {/* Trunk slab — bright dots over canopy */}
-        {renderDots(trunkPts, '#ff8a3d', 1.0, 1.6)}
-        {/* Bullseye marker (target, world origin). */}
-        <circle cx={SIZE_PX/2} cy={SIZE_PX/2} r={3} fill="#c92a2a" />
-        <circle cx={SIZE_PX/2} cy={SIZE_PX/2} r={10} fill="none" stroke="#c92a2a" strokeWidth="1" />
-        {/* (Cyan dominant-trunk crosshair removed — too unreliable across
-            multi-trunk variants. Operator reads the orange cluster
-            on the bullseye to identify which tree is the canonical one.) */}
-      </svg>
-      <div style={{
-        position: 'absolute', top: 4, left: 6, fontSize: 9,
-        color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.1em',
-      }}>oubliette · ±{Math.round(viewRadius)}m</div>
-    </div>
-  )
 }
 
 function EmptyState({ children }) {

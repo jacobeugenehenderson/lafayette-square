@@ -90,9 +90,9 @@ function ReferencePanel() {
   if (!d) return null
   return (
     <div style={{
-      position: 'absolute', top: 12, left: 12, maxWidth: 300, zIndex: 5,
-      background: 'rgba(0,0,0,0.62)', border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 6, padding: '9px 11px', fontSize: 11, color: '#cdd6df', pointerEvents: 'auto',
+      margin: '0 12px 10px', maxWidth: 'none',
+      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 6, padding: '9px 11px', fontSize: 11, color: '#cdd6df',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', cursor: 'pointer', gap: 8 }}
         onClick={() => setOpen(o => !o)}>
@@ -104,10 +104,19 @@ function ReferencePanel() {
           {d.descriptor && <div style={{ marginTop: 5, color: '#aeb8c2', lineHeight: 1.4 }}>{d.descriptor}</div>}
           {d.identityNotes && <div style={{ marginTop: 5, color: '#8a93a0', fontStyle: 'italic', lineHeight: 1.35 }}>{d.identityNotes}</div>}
           <div style={{ marginTop: 7, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {/* 2026-06-25: the educational card only earns its place with IMAGES
+                — show the reference photos inline (click opens the source). An
+                image that fails to load (CORS/404) hides itself. */}
             {(d.referenceImages || []).map((p, i) => (
               <a key={i} href={p.url} target="_blank" rel="noreferrer"
-                style={{ color: '#9fc0e8', textDecoration: 'none', lineHeight: 1.35 }} title={`${p.caption}\n— ${p.credit}`}>
-                <b style={{ textTransform: 'uppercase', fontSize: 9, color: '#c8a83a' }}>{p.state}</b> — {p.caption}
+                style={{ display: 'block', textDecoration: 'none' }}
+                title={`${p.state} — ${p.caption}\n${p.credit}`}>
+                <img src={p.url} alt={p.caption} loading="lazy"
+                  style={{ width: '100%', borderRadius: 4, display: 'block', border: '1px solid rgba(255,255,255,0.08)' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                <span style={{ fontSize: 9, color: '#8a93a0' }}>
+                  <b style={{ textTransform: 'uppercase', color: '#c8a83a' }}>{p.state}</b> {p.caption}
+                </span>
               </a>
             ))}
           </div>
@@ -117,47 +126,79 @@ function ReferencePanel() {
   )
 }
 
-// §7/§9 — the matcher's ranked WORKABLE options for one part-type, shown above
-// the raw dropdown: a verdict dot (🟢 workable / 🟡 stretch), the closeness score,
-// and per-axis badges (habit✓ size✓ …) so the operator sees HOW close + WHICH
-// axes are hard vs nice-to-have, and can pick from options instead of dialing
-// from zero. `~` = the match rests on an unratified (provisional) tag. Hidden
-// when the species has no dossier (the raw dropdown remains).
-function MatchOptions({ result, current, onPick, limit = 8 }) {
-  if (!result || !result.options || result.options.length === 0) return null
-  const VDOT = { workable: '#3fb950', stretch: '#d8a019' }
+
+// B1 (2026-06-25) — visual plate picker (the "fashion plates"). Replaces the raw
+// <select> AND the redundant MatchOptions text row for parts with an image on
+// disk: bark swatch = color.jpg, leaf cutout = shape.png. Clickable grid, current
+// pick ringed. An item flagged `missing` (a documented gap — e.g. a 'flat' leaf
+// pack with no cutout asset) renders dimmed with a "needed" tag, so the grid
+// reads as a COVERAGE map, not a list of look-alike options (the screenshot that
+// surfaced the empty packs). `onAdd` appends an "Add +" tile (procure/author a
+// new part — behavior TBD). SALON-INTERFACE.md §5 (the plate-rack).
+// (Add +) handler — behavior TBD (procure / author a new part). Placeholder so
+// the affordance exists; wire to the real add/ingest flow once Jacob defines it.
+function salonAddStub(kind) {
+  console.info('[salon] Add', kind, '— behavior TBD (define the add/procure flow)')
+}
+
+const CELL_IMG = {
+  width: '100%', aspectRatio: '1 / 1', borderRadius: 3, overflow: 'hidden',
+  background: 'repeating-conic-gradient(#2c2c2c 0% 25%, #232323 0% 50%) 50% / 12px 12px',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+}
+function PlatePicker({ items, current, onPick, onAdd, thumb, fit = 'cover', empty = '(loading…)', tile = 60 }) {
+  if ((!items || items.length === 0) && !onAdd) {
+    return <div style={{ fontSize: 11, color: '#777', padding: '2px 0 8px' }}>{empty}</div>
+  }
   return (
-    <div style={{ marginBottom: 6 }}>
-      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#778', marginBottom: 4 }}>
-        Matcher · {result.totalWorkable} workable{result.preselect ? ' · 1 obvious' : ''}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 168, overflowY: 'auto' }}>
-        {result.options.slice(0, limit).map(o => {
-          const sel = o.partId === current
-          return (
-            <button key={o.partId} onClick={() => onPick(o.partId)}
-              title={o.perAxis.map(a => `${a.axis}: need ${a.required} / got ${a.actual} ${a.withinTol ? '✓' : '✗'}${a.provisional ? ' (provisional)' : ''}`).join('\n')}
-              style={{
-                textAlign: 'left', cursor: 'pointer', borderRadius: 4, padding: '4px 7px',
-                background: sel ? 'rgba(120,160,220,0.18)' : 'rgba(255,255,255,0.03)',
-                border: '1px solid ' + (sel ? 'rgba(120,160,220,0.5)' : 'rgba(255,255,255,0.07)'),
-                color: '#cdd6df', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: VDOT[o.verdict] || '#777' }} />
-              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.partId}</span>
-              {o.provisional && <span title="rests on an unratified tag" style={{ color: '#c8a83a' }}>~</span>}
-              <span style={{ color: '#889', fontVariantNumeric: 'tabular-nums' }}>{Math.round(o.score * 100)}</span>
-              <span style={{ display: 'flex', gap: 4 }}>
-                {o.perAxis.map(a => (
-                  <span key={a.axis} style={{ fontSize: 9, color: a.withinTol ? '#6a9a4a' : '#b06a5a' }}>
-                    {a.axis.split('.')[1]}{a.withinTol ? '✓' : '✗'}
-                  </span>
-                ))}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: `repeat(auto-fill, minmax(${tile}px, 1fr))`,
+      gap: 6, padding: '2px 0 8px',
+    }}>
+      {(items || []).map(it => {
+        const sel = it.id === current
+        return (
+          <button key={it.id} type="button" onClick={() => onPick(it.id)} title={it.note || it.label}
+            style={{
+              cursor: 'pointer', padding: 3, borderRadius: 5,
+              background: sel ? 'rgba(120,160,220,0.18)' : 'rgba(255,255,255,0.03)',
+              border: '1px solid ' + (sel ? 'rgba(120,160,220,0.75)' : 'rgba(255,255,255,0.08)'),
+              opacity: it.missing ? 0.6 : 1,
+              display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch',
+            }}>
+            <div style={CELL_IMG}>
+              {it.missing ? (
+                <span style={{
+                  fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#c8a83a',
+                  border: '1px solid rgba(200,168,58,0.5)', borderRadius: 3, padding: '2px 4px',
+                }}>needed</span>
+              ) : (
+                <img src={thumb(it.id)} alt={it.label} loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: fit, display: 'block' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              )}
+            </div>
+            <span style={{
+              fontSize: 9, color: it.missing ? '#998a55' : (sel ? '#cdd6df' : '#99a'), textAlign: 'center',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>{it.label}</span>
+          </button>
+        )
+      })}
+      {onAdd && (
+        <button type="button" onClick={onAdd} title="Add a new part (procure / author) — behavior TBD"
+          style={{
+            cursor: 'pointer', padding: 3, borderRadius: 5,
+            background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.22)',
+            display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch',
+          }}>
+          <div style={{ ...CELL_IMG, background: 'none' }}>
+            <span style={{ fontSize: 22, color: '#7a8aa0', lineHeight: 1 }}>+</span>
+          </div>
+          <span style={{ fontSize: 9, color: '#99a', textAlign: 'center' }}>Add</span>
+        </button>
+      )}
     </div>
   )
 }
@@ -724,7 +765,6 @@ function SlotCard({
             in the workstage; the perf gauge below still reports actual
             loaded counts. */}
         <PerfGauge sample={perfSample} />
-        <ReferencePanel />
 
         {/* Wind toggle (lifted) */}
         <div style={{
@@ -798,6 +838,11 @@ function SlotCard({
           recommendedNames={recommendedNames}
         />
 
+        {/* Reference dossier — educational, not a comparison tool (2026-06-25),
+            so it lives at the bottom of the tools rail, not floating over the
+            viewport. Collapsible; reference photos are external links. */}
+        <ReferencePanel />
+
         {/* Footer: name + reset + adopt */}
         <div style={{
           marginTop: 'auto',
@@ -829,20 +874,8 @@ function SlotCard({
             style={btnStyle()}>
             ↺ Reset
           </button>
-          <button
-            onClick={onAdopt}
-            disabled={!dirty}
-            title={dirty ? 'Persist this composition to compositions.json' : 'Already adopted'}
-            style={{
-              ...btnStyle(),
-              background: dirty ? 'rgba(80,200,140,0.18)' : 'rgba(255,255,255,0.04)',
-              border: '1px solid ' + (dirty ? 'rgba(80,200,140,0.5)' : 'rgba(255,255,255,0.1)'),
-              color: dirty ? '#9ed8b0' : '#666',
-              cursor: dirty ? 'pointer' : 'not-allowed',
-              opacity: dirty ? 1 : 0.5,
-            }}>
-            ✓ Adopt
-          </button>
+          {/* Adopt retired 2026-06-25 — autosave (_saveSalonDebounced) persists
+              every edit; the explicit commit gesture is vestigial. */}
           {/* Brief 8 (Linnet): set this composition as the Meteorologist
               canary. Same payload Grove writes — see ARCHITECTURE.md
               §canary contract. Disabled until composition is adopted +
@@ -870,132 +903,6 @@ function SlotCard({
   )
 }
 
-// ── Brief 2 (Holm): bark gradient stops editor ───────────────────────────
-//
-// Multi-stop color ramp authored per composition. Runtime samples the LUT
-// per-instance via hash so 5 trees of the same variant land at different
-// positions along the ramp. Every commit pipes through onCommit (= a
-// setSalonSlotParams patch on bark.gradientStops) so the overlay POST +
-// adopt+republish chain remains the single source of truth.
-function hexToRgb(hex) {
-  const s = (hex || '#ffffff').replace(/^#/, '')
-  const v = s.length === 3 ? s.split('').map(c => c + c).join('') : s
-  return [parseInt(v.slice(0, 2), 16) || 0, parseInt(v.slice(2, 4), 16) || 0, parseInt(v.slice(4, 6), 16) || 0]
-}
-function rgbToHex(r, g, b) {
-  const h = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0')
-  return `#${h(r)}${h(g)}${h(b)}`
-}
-function lightenHex(hex, amt) {
-  const [r, g, b] = hexToRgb(hex)
-  return rgbToHex(r + (255 - r) * amt, g + (255 - g) * amt, b + (255 - b) * amt)
-}
-function rampCss(stops) {
-  if (!stops || stops.length === 0) return 'linear-gradient(to right, #888, #888)'
-  const sorted = [...stops].sort((a, b) => a.t - b.t)
-  const parts = sorted.map(s => `${s.color} ${(s.t * 100).toFixed(1)}%`)
-  return `linear-gradient(to right, ${parts.join(', ')})`
-}
-function insertMidpointStop(stops) {
-  const sorted = [...stops].sort((a, b) => a.t - b.t)
-  let gapMax = 0, gapI = 0
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const g = sorted[i + 1].t - sorted[i].t
-    if (g > gapMax) { gapMax = g; gapI = i }
-  }
-  const a = sorted[gapI], b = sorted[gapI + 1]
-  const t = (a.t + b.t) / 2
-  const ac = hexToRgb(a.color), bc = hexToRgb(b.color)
-  const color = rgbToHex((ac[0] + bc[0]) / 2, (ac[1] + bc[1]) / 2, (ac[2] + bc[2]) / 2)
-  const next = [...sorted.slice(0, gapI + 1), { t, color }, ...sorted.slice(gapI + 1)]
-  return next
-}
-function BarkGradientEditor({ stops, tintBase, hashAmp, onCommit, onCommitHashAmp }) {
-  // Stash the last-authored stops in a ref so a toggle-off-then-on round
-  // trip preserves the operator's work (brief AC #6). The stash is updated
-  // whenever a valid (>=2-stop) array passes through.
-  const stashRef = useRef(null)
-  if (Array.isArray(stops) && stops.length >= 2) stashRef.current = stops
-  const on = Array.isArray(stops) && stops.length >= 2
-  const toggle = (e) => {
-    if (e.target.checked) {
-      const next = stashRef.current && stashRef.current.length >= 2
-        ? stashRef.current
-        : [
-            { t: 0, color: tintBase || '#3a2820' },
-            { t: 1, color: lightenHex(tintBase || '#3a2820', 0.5) },
-          ]
-      onCommit(next)
-    } else {
-      // Empty array passes through the overlay POST → patchManifestForSalon
-      // sees stops.length < 2 → clears variant.bark.gradientStops on disk.
-      onCommit([])
-    }
-  }
-  if (!on) {
-    return (
-      <Row label="Use gradient">
-        <input type="checkbox" checked={false} onChange={toggle} />
-      </Row>
-    )
-  }
-  const sorted = [...stops].sort((a, b) => a.t - b.t)
-  const commit = (next) => onCommit(next.sort((a, b) => a.t - b.t))
-  const setStop = (idx, patch) => commit(sorted.map((s, i) => i === idx ? { ...s, ...patch } : s))
-  const deleteStop = (idx) => {
-    if (sorted.length <= 2) return
-    commit(sorted.filter((_, i) => i !== idx))
-  }
-  const addStop = () => commit(insertMidpointStop(sorted))
-  return (
-    <>
-      <Row label="Use gradient">
-        <input type="checkbox" checked={true} onChange={toggle} />
-      </Row>
-      <div style={{
-        height: 32, borderRadius: 4, margin: '6px 0',
-        background: rampCss(sorted),
-        border: '1px solid #444',
-      }} />
-      {sorted.map((s, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: 11 }}>
-          <span style={{ width: 18, color: '#888', fontFamily: 'monospace' }}>#{i + 1}</span>
-          <DraftSlider min={0} max={1} step={0.01} value={s.t}
-            onCommit={(v) => setStop(i, { t: v })}
-            format={(v) => v.toFixed(2)} />
-          <input type="color" value={s.color} style={colorStyle}
-            onChange={(e) => setStop(i, { color: e.target.value })} />
-          <button onClick={() => deleteStop(i)} disabled={sorted.length <= 2}
-            title={sorted.length <= 2 ? 'minimum 2 stops required' : 'delete stop'}
-            style={{
-              width: 22, height: 22, padding: 0,
-              cursor: sorted.length <= 2 ? 'not-allowed' : 'pointer',
-              background: 'transparent',
-              color: sorted.length <= 2 ? '#444' : '#a55',
-              border: '1px solid #333', borderRadius: 3,
-            }}>×</button>
-        </div>
-      ))}
-      <Row label="">
-        <button onClick={addStop} style={{ ...btnStyle({ block: true }), fontSize: 11, flex: 1 }}>
-          + Add stop
-        </button>
-      </Row>
-      {/* Brief 2.1 (Birch): cross-tree variation rides on top of the
-          per-pixel luminance base. 0 = adjacent same-species trees
-          pixel-identical; >0 = sub-amplitude hash offset along the ramp. */}
-      <Row label="Cross-tree">
-        <DraftSlider min={0} max={0.3} step={0.01}
-          value={typeof hashAmp === 'number' ? hashAmp : 0}
-          onCommit={(v) => onCommitHashAmp(v)}
-          format={(v) => v.toFixed(2)} />
-      </Row>
-      <div style={{ fontSize: 10, color: '#888', fontStyle: 'italic', marginTop: 2 }}>
-        Gradient replaces bark color via per-pixel luminance lookup
-      </div>
-    </>
-  )
-}
 
 // ── Salon controls panel (the Brief 1 replacement for SCAPanel) ─────────
 
@@ -1017,6 +924,7 @@ function SalonControlsPanel({
   // Empty-state is handled by the parent (whole workstage shows the
   // regenerate instruction when catalog is empty).
   const curationKey = (c) => `${c.name}.glb`
+  const [orientOpen, setOrientOpen] = useState(false)  // "Fix orientation" advanced drawer (tilt/Y-up), collapsed by default
   // Brief 26: candidate scope. 'recommended' = chassis fitting THIS roster
   // species (names from the coverage join), intersected with the catalog (so
   // procedural/forest chassis the catalog already excludes never appear).
@@ -1068,7 +976,6 @@ function SalonControlsPanel({
       fontSize: 11, color: '#aaa',
     }}>
       <SectionLabel>Chassis</SectionLabel>
-      <MatchOptions result={matchOptions?.chassis} current={chassis} onPick={(id) => onParams({ chassis: id })} />
       {/* Brief 26: candidate scope is driven by the inside-view toggle. In
           'recommended' scope the picker shows the roster species' fits and the
           approved-only sub-filter is bypassed; in 'all' scope the Brief 1.5b
@@ -1123,49 +1030,56 @@ function SalonControlsPanel({
           onCommit={onChassisCuration}
         />
       )}
-      <Row label="Tilt X">
-        <input type="range" min={-30} max={30} step={1}
-          value={(tiltX * 180 / Math.PI).toFixed(0)}
-          onChange={(e) => onTiltXChange(parseFloat(e.target.value) * Math.PI / 180)}
-          style={{ flex: 1, accentColor: '#e8b860' }} />
-        <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
-          {(tiltX * 180 / Math.PI).toFixed(0)}°
-        </span>
-      </Row>
-      <Row label="Tilt Z">
-        <input type="range" min={-30} max={30} step={1}
-          value={(tiltZ * 180 / Math.PI).toFixed(0)}
-          onChange={(e) => onTiltZChange(parseFloat(e.target.value) * Math.PI / 180)}
-          style={{ flex: 1, accentColor: '#e8b860' }} />
-        <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
-          {(tiltZ * 180 / Math.PI).toFixed(0)}°
-        </span>
-      </Row>
+      {/* Orientation fixers (tilt + Y-up flip) demoted to an advanced drawer
+          2026-06-25 — Brief 20 recentering handles position; these only fix the
+          rare mis-ORIENTED vendor chassis, so they collapse by default. */}
       <Row label="">
-        <button
-          onClick={() => {
-            // Y-up flip: toggle a -90° X tilt (root-cause for Z-up chassis)
-            const cur = tiltX
-            onTiltXChange(Math.abs(cur + Math.PI / 2) < 0.01 ? 0 : -Math.PI / 2)
-          }}
-          style={{ ...btnStyle({ block: true }), fontSize: 11 }}>
-          {Math.abs(tiltX + Math.PI / 2) < 0.01 ? 'Z-up applied — clear' : 'Y-up trunk (90° X)'}
+        <button onClick={() => setOrientOpen(o => !o)}
+          style={{ ...btnStyle({ block: true }), fontSize: 10, color: '#8a93a0' }}>
+          {orientOpen ? '▾' : '▸'} Fix orientation (advanced)
         </button>
       </Row>
+      {orientOpen && (
+        <>
+          <Row label="Tilt X">
+            <input type="range" min={-30} max={30} step={1}
+              value={(tiltX * 180 / Math.PI).toFixed(0)}
+              onChange={(e) => onTiltXChange(parseFloat(e.target.value) * Math.PI / 180)}
+              style={{ flex: 1, accentColor: '#e8b860' }} />
+            <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
+              {(tiltX * 180 / Math.PI).toFixed(0)}°
+            </span>
+          </Row>
+          <Row label="Tilt Z">
+            <input type="range" min={-30} max={30} step={1}
+              value={(tiltZ * 180 / Math.PI).toFixed(0)}
+              onChange={(e) => onTiltZChange(parseFloat(e.target.value) * Math.PI / 180)}
+              style={{ flex: 1, accentColor: '#e8b860' }} />
+            <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
+              {(tiltZ * 180 / Math.PI).toFixed(0)}°
+            </span>
+          </Row>
+          <Row label="">
+            <button
+              onClick={() => {
+                const cur = tiltX
+                onTiltXChange(Math.abs(cur + Math.PI / 2) < 0.01 ? 0 : -Math.PI / 2)
+              }}
+              style={{ ...btnStyle({ block: true }), fontSize: 11 }}>
+              {Math.abs(tiltX + Math.PI / 2) < 0.01 ? 'Z-up applied — clear' : 'Y-up trunk (90° X)'}
+            </button>
+          </Row>
+        </>
+      )}
 
       <SectionLabel>Bark</SectionLabel>
-      <MatchOptions result={matchOptions?.bark} current={bark?.ref} onPick={(id) => onParams({ bark: { ref: id } })} />
-      <Row label="Ref">
-        <select
-          value={bark?.ref || ''}
-          onChange={(e) => onParams({ bark: { ref: e.target.value } })}
-          style={selectStyle}>
-          {barkRefs.length === 0 && <option value="">(loading…)</option>}
-          {barkRefs.map(ref => (
-            <option key={ref} value={ref}>{ref}</option>
-          ))}
-        </select>
-      </Row>
+      <PlatePicker
+        items={barkRefs.map(ref => ({ id: ref, label: ref }))}
+        current={bark?.ref}
+        onPick={(id) => onParams({ bark: { ref: id } })}
+        onAdd={() => salonAddStub('bark')}
+        thumb={(id) => `/textures/bark/${id}/color.jpg`}
+        fit="cover" />
       <Row label="UV X">
         <DraftSlider min={0.5} max={6} step={0.1}
           value={bark?.uvScale?.[0] ?? 1.5}
@@ -1196,15 +1110,8 @@ function SalonControlsPanel({
           onCommit={(v) => onParams({ bark: { roughnessOverride: v } })}
           format={(v) => v.toFixed(2)} />
       </Row>
-      <BarkGradientEditor
-        stops={bark?.gradientStops}
-        tintBase={bark?.tintBase}
-        hashAmp={bark?.gradientHashAmp}
-        onCommit={(next) => onParams({ bark: { gradientStops: next } })}
-        onCommitHashAmp={(v) => onParams({ bark: { gradientHashAmp: v } })} />
 
       <SectionLabel>Leaves</SectionLabel>
-      <MatchOptions result={matchOptions?.leaf} current={leaves?.pack} onPick={(id) => onParams({ leaves: { pack: id } })} />
       {/* Brief 5: bare-chassis inspection toggle (workstage preview only;
           published artifact always carries leaves). */}
       <Row label="Show">
@@ -1233,19 +1140,13 @@ function SalonControlsPanel({
           ↳ Authored keeps the model's own leaves on their stems. <b>Leaf size</b> resizes them in place; <b>Ways</b> applies to Synthesized only.
         </div>
       )}
-      <Row label="Pack">
-        <select
-          value={leaves?.pack || ''}
-          onChange={(e) => onParams({ leaves: { pack: e.target.value } })}
-          style={selectStyle}>
-          {leafPacks.length === 0 && <option value="">(loading…)</option>}
-          {leafPacks.map(p => (
-            <option key={p.packId} value={p.packId}>
-              {p.packId}{p.kind === 'flat' ? ' (flat)' : ''}
-            </option>
-          ))}
-        </select>
-      </Row>
+      <PlatePicker
+        items={leafPacks.map(p => ({ id: p.packId, label: p.packId, missing: p.kind === 'flat' }))}
+        current={leaves?.pack}
+        onPick={(id) => onParams({ leaves: { pack: id } })}
+        onAdd={() => salonAddStub('leaf')}
+        thumb={(id) => `/textures/leaves/shapes/${id}/shape.png`}
+        fit="contain" />
       <Row label="Ways">
         <select
           value={leaves?.ways ?? 'alternate'}
