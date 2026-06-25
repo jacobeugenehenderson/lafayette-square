@@ -43,6 +43,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import SpecimenViewport from './SpecimenViewport.jsx'
+import ChassisPlate from './ChassisPlate.jsx'
 
 // Same heuristic mapping ProceduralWorkstage uses to drive the yardstick
 // band. Salon species can be any binomial; map common Salon morphologies
@@ -140,6 +141,10 @@ function ReferencePanel() {
 function salonAddStub(kind) {
   console.info('[salon] Add', kind, '— behavior TBD (define the add/procure flow)')
 }
+
+// B2: how many top-ranked chassis render as live silhouette plates (each its own
+// WebGL context, so keep it small; the full library is behind "Browse all").
+const CHASSIS_PLATE_N = 8
 
 const CELL_IMG = {
   width: '100%', aspectRatio: '1 / 1', borderRadius: 3, overflow: 'hidden',
@@ -925,6 +930,7 @@ function SalonControlsPanel({
   // regenerate instruction when catalog is empty).
   const curationKey = (c) => `${c.name}.glb`
   const [orientOpen, setOrientOpen] = useState(false)  // "Fix orientation" advanced drawer (tilt/Y-up), collapsed by default
+  const [chassisBrowseOpen, setChassisBrowseOpen] = useState(false)  // "Browse all" reveals the full-library dropdown
   // Brief 26: candidate scope. 'recommended' = chassis fitting THIS roster
   // species (names from the coverage join), intersected with the catalog (so
   // procedural/forest chassis the catalog already excludes never appear).
@@ -943,6 +949,18 @@ function SalonControlsPanel({
     return [...matches, ...others]
   }, [chassisCatalog, speciesMorphology, approvedOnly, chassisCuration, candidateScope, recommendedNames])
   const activeChassis = ranked.find(c => c.name === chassis)
+  // B2 fix (2026-06-25): the silhouette plates source the MATCHER's ranked
+  // chassis (closeness order), filtered to vendor catalog GLBs so every plate has
+  // a real GLB to render (procedural ids the catalog excludes are dropped). Falls
+  // back to the catalog when there's no dossier OR the recommended-scope filter
+  // emptied `ranked` — without this, 'recommended' scope with 0 fits → an empty
+  // grid ("no silhouettes to choose from").
+  const chassisPlateList = useMemo(() => {
+    const byName = new Map(chassisCatalog.map(c => [c.name, c]))
+    let names = (matchOptions?.chassis?.options || []).map(o => o.partId).filter(n => byName.has(n))
+    if (names.length === 0) names = (ranked.length ? ranked : chassisCatalog).map(c => c.name)
+    return names.slice(0, CHASSIS_PLATE_N).map(n => byName.get(n) || { name: n })
+  }, [matchOptions, ranked, chassisCatalog])
   // Curation entry for the currently-picked chassis (may be undefined if
   // chassis is null OR if the chassis is excluded by the approved filter
   // but still selected on the slot — we read from chassisCatalog directly
@@ -976,41 +994,65 @@ function SalonControlsPanel({
       fontSize: 11, color: '#aaa',
     }}>
       <SectionLabel>Chassis</SectionLabel>
-      {/* Brief 26: candidate scope is driven by the inside-view toggle. In
-          'recommended' scope the picker shows the roster species' fits and the
-          approved-only sub-filter is bypassed; in 'all' scope the Brief 1.5b
-          approved-only toggle applies over the full catalog. */}
-      {candidateScope === 'recommended' ? (
-        <Row label="">
-          <span style={{ fontSize: 10, color: '#888', lineHeight: 1.4 }}>
-            Showing <b style={{ color: '#bbb' }}>{ranked.length}</b> recommended chassis for this roster species. Switch to <i>Show all</i> above for the full library.
-          </span>
-        </Row>
-      ) : (
-        <Row label="">
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
-            <input type="checkbox" checked={!!approvedOnly}
-              onChange={(e) => onApprovedOnlyChange(e.target.checked)}
-              style={{ margin: 0 }} />
-            <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Approved only {approvedOnly ? `(${ranked.length})` : `(${chassisCatalog.length})`}
-            </span>
-          </label>
-        </Row>
-      )}
-      <Row label="Pick">
-        <select
-          value={chassis || ''}
-          onChange={(e) => onParams({ chassis: e.target.value || null })}
-          style={selectStyle}>
-          <option value="">(none)</option>
-          {ranked.map(c => (
-            <option key={c.name} value={c.name}>
-              {labelFor(c)}
-            </option>
-          ))}
-        </select>
+      {/* B2 (2026-06-25): the top-N ranked chassis render as live gray-silhouette
+          plates (live-render-top-N, operator-confirmed). Click to pick; the
+          per-plate ★ badge is the green-light Approve gate (approved → Grove).
+          (Add +) + "Browse all" (the full library via the legacy dropdown) hang
+          off the bottom. Replaces the matcher-text + dropdown + CURATE card.
+          SALON-INTERFACE.md §5. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 0 6px' }}>
+        {chassisPlateList.map(c => {
+          const k = curationKey(c)
+          return (
+            <ChassisPlate key={c.name} name={c.name}
+              label={chassisCuration[k]?.displayName || c.displayName || c.name}
+              selected={c.name === chassis}
+              approved={chassisCuration[k]?.approved ?? null}
+              onPick={(name) => onParams({ chassis: name })}
+              onApprove={(name) => {
+                const cur = chassisCuration[`${name}.glb`]?.approved ?? null
+                onChassisCuration(`${name}.glb`, { approved: cur === true ? null : true })
+              }} />
+          )
+        })}
+        <button type="button" onClick={() => salonAddStub('chassis')}
+          title="Add a new chassis (procure / author) — behavior TBD"
+          style={{
+            cursor: 'pointer', padding: 3, borderRadius: 5,
+            background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.22)',
+            display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch',
+          }}>
+          <div style={{ width: '100%', aspectRatio: '1 / 1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 22, color: '#7a8aa0', lineHeight: 1 }}>+</span>
+          </div>
+          <span style={{ fontSize: 9, color: '#99a', textAlign: 'center' }}>Add</span>
+        </button>
+      </div>
+      <Row label="">
+        <button onClick={() => setChassisBrowseOpen(o => !o)}
+          style={{ ...btnStyle({ block: true }), fontSize: 10, color: '#8a93a0' }}>
+          {chassisBrowseOpen ? '▾' : '▸'} Browse all ({chassisCatalog.length})
+        </button>
       </Row>
+      {chassisBrowseOpen && (
+        <>
+          <Row label="">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
+              <input type="checkbox" checked={!!approvedOnly}
+                onChange={(e) => onApprovedOnlyChange(e.target.checked)} style={{ margin: 0 }} />
+              <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Approved only {approvedOnly ? `(${ranked.length})` : `(${chassisCatalog.length})`}
+              </span>
+            </label>
+          </Row>
+          <Row label="Pick">
+            <select value={chassis || ''} onChange={(e) => onParams({ chassis: e.target.value || null })} style={selectStyle}>
+              <option value="">(none)</option>
+              {ranked.map(c => (<option key={c.name} value={c.name}>{labelFor(c)}</option>))}
+            </select>
+          </Row>
+        </>
+      )}
       {activeChassis && activeChassis.heightRange && (
         <Row label="Height">
           <span style={{ fontFamily: 'monospace', color: '#bbb' }}>

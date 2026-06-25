@@ -142,4 +142,24 @@ A **plate-rack, not a control panel**: roster species list (auto-populated from 
 - [x] **Leaf near-tier technique decided** (2026-06-25): posterize substrate + high-pass detail-overlay (near-only) + artificial translucency (`gl_FrontFacing` + cheap back-light, **not** SSS), reusing the bark toolbox. Only the *how-stylized* eye-gate remains (Street view).
 - [x] **Sequencing** (2026-06-25): the **WYSIWYG plumbing leads** — and is now **verified built + carrying to the slab.** Autosave ✓ (committed), fold-regenerate-into-bake ✓ (`15682e55`), shared runtime material in the preview ✓ (Brief 7 Cambium). Propagation proven at the byte level (`scratch/measure-leaf.mjs`): a `leaves.scale: 2` edit on `maple_sugar` → published GLB leaf-edge 0.1148→0.2850 (~2.5×) → **slab GLB byte-identical (0.2850, 44,352 verts)**. The operator couldn't *see* it only because bloom obscures the foliage — a separate observability matter, not a propagation bug (bloom-off = off-parity, don't chase).
 - [x] **Piece-3 (render-published-everywhere) LOCKED "good enough"** (2026-06-25): the Salon keeps its **live preview-atlas** (instant authoring). The forked preview *material* was already retired (Brief 7 → same `treeAtlasMaterial` as runtime, no shader daylight); the residual is only that the preview renders a live per-composition *artifact* vs the published one — and the published path is proven faithful, so the daylight is mostly theoretical. **Revisit only if a real divergence surfaces in authoring.** Effort redirects to the visible payoff: the **plate-rack**.
+
+---
+
+## 7. The UI sprint — landed (2026-06-25)
+
+The plate-rack (§5) is largely built across a fast iteration with Jacob (commits `4631b688` A1, `62dd9988` B1+variant+sweep, + B2 uncommitted):
+
+- **A1 — deformer → automatic** (committed `4631b688`). Panel retired; morphology table. See §6.
+- **B1 — bark + leaf visual plates** (`PlatePicker`): swatch / cutout grids replace the dropdowns **and** the redundant matcher-text rows. **Leaf gaps marked** — `flat` packs with no cutout asset render dimmed with a "needed" tag (the grid is a coverage map). The empty plates are the documented procurement gaps in `leaf-pack-bindings.json` (fan→Ginkgo, compound→Ash, etc.) — the ~25-base library half-stocked, now visible.
+- **Variant preview** (`SpecimenViewport` "1 tree / 3 variants" toggle): renders the tree as a row of clones; the deformer hashes position, so they deform differently for free — the **A1 deformer eye-gate** (finally see the per-tree variation). 3-mode hides the gizmo.
+- **B2 — chassis silhouette plates** (`ChassisPlate.jsx`, uncommitted): top-N (`CHASSIS_PLATE_N=8`) chassis as **live flat-gray silhouette** plates (`frameloop="demand"` Canvas each), per-plate ★ **Approve** (the green-light gate), `(Add +)`, full library behind **"Browse all."** Replaces the chassis matcher-text + dropdown + CURATE-card clutter. ⚠️ *Eye-gate:* 8 WebGL contexts — if slow / context-loss, switch to render-once-to-image; silhouettes load the full textured GLB just to show gray (wasteful, optimizable).
+- **Vestigia swept:** Oubliette removed · bark gradient editor retired · Adopt removed (autosave) · Tilt/Y-up → "Fix orientation (advanced)" drawer · bio card → bottom of the tools rail, now **inline reference photos** (only earns its place with images) · **Set Canary kept** (operator uses it).
+
+## 8. Open threads
+
+- [ ] **`(Add +)` behavior** — the affordance is built (bark/leaf/chassis), wired to a stub. Define the action: file-upload an image? a procurement form? → ties to the online library below.
+- [ ] **Online models/assets library (later, Jacob 2026-06-25)** — a hosted, organized place for the kit's parts (chassis · barks · leaf cutouts). It's where `(Add +)` would *procure from* (browse/pull a vetted part) and where the ~40 build-once bases (§2) live as a shared, versioned library — the kit's asset backbone, reusable town-to-town. Future arc.
+- [ ] **Fill the leaf-base gaps** — procure the ~6 missing cutouts the coverage grid now shows (fan, compound, fine_compound, palmate_compound, tulip, short_needle).
+- [ ] **Chassis CurationRow** — rename/notes for the selected chassis still shows below the grid; per-plate Approve now covers the gate. Decide if rename/notes stays or folds away.
+- [ ] **Eye-gates pending:** the deformer magnitudes (via "3 variants"), the chassis-plate perf, the leaf near-tier stylization.
 </content>
