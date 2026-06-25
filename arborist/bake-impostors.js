@@ -192,6 +192,71 @@ export function captureImpostor({ species, variantId, heightM, canopyRadiusM, tr
   }
 }
 
+// ── Opaque-articulated tier (Phase B, 2026-06-25) ───────────────────────────
+//
+// The MIDDLE band of the 3-tier depth model (mesh / opaque / impostor / cull).
+// An opaque-role tree keeps its REAL 3D trunk/branches (the bark prims of the
+// species' lod GLB — articulated, loaded at runtime) but replaces the thousands
+// of alpha-tested leaf CARDS with a SINGLE solid OPAQUE canopy shell (an
+// ellipsoid, foliage-textured from the same atlas leaf rect). Why: an opaque
+// shell writes depth and gets early-Z, so each canopy pixel is shaded once —
+// vs alpha-tested leaf cards, where alphaTest defeats early-Z and every card's
+// pixels are shaded THEN discarded (the overdraw hog). Cheaper than mesh (one
+// hull, not ~15K cards), more 3D than a billboard (real articulated wood + a
+// genuine 3D canopy volume that parallaxes).
+//
+// captureOpaque emits a thin per-species record: the canopy-shell ellipsoid
+// dims (centre + radii in tree-local metres, derived from canopyRadiusM /
+// heightM / trunkFrac — the SAME measurements the impostor uses) + the leaf
+// atlas rect (so the shell samples the SAME unified-atlas foliage pixels the
+// near trees use → no material pop). The runtime (OpaqueSpecies, impostor-
+// Geometry#buildOpaqueCanopyGeometry) builds the hull mesh + instances the real
+// bark prims. Season-parameterized FROM THE START (summer ships; winter drops
+// the shell, leaving the bare articulated branches — same forcing-function as
+// the impostor's winter plan).
+
+/**
+ * Capture one species' opaque-canopy record. Pure: reuses the impostor's
+ * measured canopy dims to size an ellipsoid foliage shell. The runtime sizes
+ * the shell by the per-placement heightM (the dims here are the representative
+ * variant's real metres; the shell radii are in those same metres, anchored at
+ * the tree base y=0).
+ *
+ * @param {object}  args
+ * @param {string}  args.species
+ * @param {number}  args.heightM            real metres (representative variant)
+ * @param {number}  args.canopyRadiusM      real metres
+ * @param {number}  args.trunkFrac          canopy-base ÷ height (measureCanopyBase)
+ * @param {object|null} args.leafRect       {offsetU,offsetV,scaleU,scaleV} | null
+ * @returns {object} opaque record
+ */
+export function captureOpaque({ species, heightM, canopyRadiusM, trunkFrac, leafRect }) {
+  const h = heightM || 12
+  const rXZ = Math.max(0.5, canopyRadiusM || 4)
+  // The canopy occupies [canopyBase, top] in tree-local metres; model it as an
+  // ellipsoid whose vertical centre is the midpoint of that span and whose
+  // vertical radius is half that span (so the shell touches the canopy base and
+  // the tree top). Horizontal radii = the measured canopy radius.
+  const canopyBaseY = trunkFrac * h
+  const topY = h
+  const cy = (canopyBaseY + topY) / 2
+  const ryV = Math.max(0.5, (topY - canopyBaseY) / 2)
+  return {
+    species,
+    heightM: heightM ?? null,
+    canopyRadiusM: canopyRadiusM ?? null,
+    trunkFrac,
+    // Canopy shell ellipsoid in tree-local metres (base at y=0). The runtime
+    // builds a unit ellipsoid and scales by these; an opaque hull → early-Z.
+    shell: { centerY: cy, radiusXZ: rXZ, radiusY: ryV },
+    leafRect: leafRect ?? null,
+    // Season plan: summer = shell present; winter = no shell (deciduous bare,
+    // the articulated branches carry the woody silhouette). Spring/fall reuse
+    // summer (the shared material's season recolor LUT handles the palette).
+    seasons: { summer: { shell: true }, winter: { shell: false }, spring: { shell: true }, fall: { shell: true } },
+  }
+}
+
 // ── small local helpers (no deps; mirror tree-bounds.js math) ───────────────
 function nodeWorldMatrix(node) {
   let m = node.getMatrix()

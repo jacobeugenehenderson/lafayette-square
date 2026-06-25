@@ -27,7 +27,7 @@ import crypto from 'node:crypto'
 import { surveyRoster } from './atlas-survey.js'
 import { packSkyline } from './atlas-pack.js'
 import { computeTreeBounds } from './tree-bounds.js'
-import { measureCanopyBase, captureImpostor } from './bake-impostors.js'
+import { measureCanopyBase, captureImpostor, captureOpaque } from './bake-impostors.js'
 import { ensurePosterizedForRef } from './extract-bark-posterized.mjs'
 
 // Per-tile mip-safe gutter (pixels). Edge pixels of each placed rect are
@@ -1322,6 +1322,31 @@ export async function bakeLook(lookName, opts = {}) {
     })
   }
   manifest.impostorBySpecies = impostorBySpecies
+
+  // ── Opaque-articulated manifest (Phase B, 2026-06-25) ─────────────────────
+  // The MIDDLE tier of the 3-tier depth model. Reuses the exact same per-species
+  // measurements the impostor record uses (heightM, canopyRadiusM, trunkFrac,
+  // leafRect) to emit a canopy-shell ellipsoid spec. The runtime (OpaqueSpecies)
+  // keeps the REAL bark prims of the species' lod GLB (articulated trunk/branches)
+  // and adds ONE solid OPAQUE leaf-textured hull (early-Z → ~zero overdraw, the
+  // real fix for the near-but-not-front trees). bake-impostors.js documents the
+  // approach. Keyed by species (one shell per species, instanced across placements).
+  const opaqueBySpecies = {}
+  for (const species of speciesSet) {
+    const leafUV = tileBySpeciesLeaf.get(species) || null
+    if (!leafUV) continue   // no foliage rect → no canopy shell (e.g. winter-only/bare ref)
+    const vars = canopyByVariant[species] || {}
+    const firstDims = Object.values(vars)[0] || {}
+    const trunkFrac = impostorTrunkFracBySpecies[species] ?? 0.35
+    opaqueBySpecies[species] = captureOpaque({
+      species,
+      heightM: firstDims.heightM ?? null,
+      canopyRadiusM: firstDims.canopyRadiusM ?? null,
+      trunkFrac,
+      leafRect: { offsetU: leafUV.offsetU, offsetV: leafUV.offsetV, scaleU: leafUV.scaleU, scaleV: leafUV.scaleV },
+    })
+  }
+  manifest.opaqueBySpecies = opaqueBySpecies
 
   // Write the manifest now that the rewrite loop has populated canopyByVariant
   // (the loop mutated the object the manifest object holds a reference to).

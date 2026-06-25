@@ -21,7 +21,7 @@
  *              instancesByTile: [{ tileX, tileZ, instances: [...] }, ...] } | null,
  *     instances: [{ x, z, url, scale, rotY, species, variantId, heroTier? }] }
  *
- * `heroTier` ('mesh'|'impostor') is a purely DERIVED per-tree visibility class
+ * `heroTier` ('mesh'|'opaque'|'impostor'|'cull') is a purely DERIVED per-tree visibility class
  * for the Hero shot (no authored override). Omitted when no hero pan is found.
  *
  * Stage / Mobile read this file and instance directly. No live picker,
@@ -218,8 +218,10 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
 
 // ── Hero-shot visibility tiering (Phase A — Azimuth) ─────────────────────────
 // Analytic prominence pass: score each placed tree across the authored hero pan
-// and label it `mesh` (keep full lod2 geometry) or `impostor` (cheap billboard,
-// consumed in later phases). Purely DERIVED — no authored override, no knobs.
+// and label it by the 3-tier depth model — `mesh` (front row, full geometry),
+// `opaque` (2nd row, articulated trunk/branches + solid opaque canopy shell),
+// `impostor` (3rd row + periphery, cheap billboard), or `cull` (never/always-
+// occluded, dropped). Purely DERIVED — no authored override, no knobs.
 //
 // The hero "arc" is whatever the camera ACTUALLY traverses; the pan is read from
 // the slab, so the classification self-adjusts when the operator re-polishes the
@@ -230,16 +232,24 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
 const HERO_TIER = {
   POSES: 24,             // camera samples along the keyframe path
   PROM_THRESHOLD: 0.07,  // ⭐ THE FRONT-ROW DIAL (2026-06-25). Min screen-prominence
-                         // (coverage×centrality, at ANY pose) to stay real `mesh` vs
-                         // `impostor`. "Only the front row need be real; the periphery
-                         // is waste for EVERY device (the pan never lingers there)."
-                         // Aggressive by design — the pan only needs the front/center
-                         // sharp; depth goes impostor+DoF. Calibration on LS (745
+                         // (coverage×centrality, at ANY pose) to stay real `mesh`.
+                         // "Only the front row need be real; the periphery is waste
+                         // for EVERY device (the pan never lingers there)." Aggressive
+                         // by design — the pan only needs the front/center sharp; depth
+                         // goes opaque-then-impostor+DoF. Calibration on LS (745
                          // placements, telephoto tops prominence ~0.09):
                          //   0.02→469 mesh · 0.05→194 · 0.06→92 · 0.07→38 · 0.09→14.
                          // Raise for a tighter front row (cheaper), lower for more
-                         // real depth. ⏳ Phase B adds an "opaque-articulated" MIDDLE
-                         // band (2nd row) between mesh and impostor — see BATON.
+                         // real depth.
+  PROM_OPAQUE: 0.05,     // ⭐ THE 2ND-ROW DIAL (Phase B, 2026-06-25). Prominence in
+                         // [PROM_OPAQUE, PROM_THRESHOLD) → the "opaque-articulated"
+                         // MIDDLE tier: real 3D trunk/branches (articulated) + a SOLID
+                         // OPAQUE leaf-textured canopy shell instead of thousands of
+                         // alpha-tested leaf cards. The shell writes depth → early-Z →
+                         // ~zero overdraw (the real overdraw fix for near-but-not-front
+                         // trees). Cheaper than mesh, more 3D than a billboard. Below
+                         // PROM_OPAQUE → `impostor` (cheap stamped billboard + DoF).
+                         // On LS this band ≈ 0.05→194 minus 0.07→38 mesh ≈ ~156 trees.
   OCC_FRAC: 0.7,         // a nearer canopy covering ≥ this fraction of a tree's
                          // projected disk occludes it at that pose
   ASPECT: 16 / 9,        // viewport aspect for the horizontal frustum bound
@@ -307,7 +317,7 @@ function buildCanopyResolver(canopyByVariant, indexVariants) {
 }
 
 // canopies: [{ x, z, centerY, R }] world-space bounding spheres, parallel to the
-// placed instances. Returns { tiers: ('mesh'|'impostor')[], meta }.
+// placed instances. Returns { tiers: ('mesh'|'opaque'|'impostor'|'cull')[], meta }.
 function classifyHeroTiers(canopies, heroPan) {
   const n = canopies.length
   const tiers = new Array(n).fill('mesh')
@@ -393,15 +403,16 @@ function classifyHeroTiers(canopies, heroPan) {
     }
   }
 
-  let meshN = 0, impostorN = 0, cullN = 0
+  let meshN = 0, opaqueN = 0, impostorN = 0, cullN = 0
   const hist = new Array(20).fill(0)                          // 0.005-wide buckets [0,0.1)
   for (let i = 0; i < n; i++) {
     const m = maxProm[i]
     hist[Math.min(19, Math.floor(m * 200))]++
     if (!everSeen[i]) { tiers[i] = 'cull'; cullN++ }          // never in frustum → dropped
     else if (!unoccludedSeen[i]) { tiers[i] = 'cull'; cullN++ } // always occluded by nearer trees → dropped (speck-behind-speck)
-    else if (m >= HERO_TIER.PROM_THRESHOLD) { tiers[i] = 'mesh'; meshN++ }
-    else { tiers[i] = 'impostor'; impostorN++ }
+    else if (m >= HERO_TIER.PROM_THRESHOLD) { tiers[i] = 'mesh'; meshN++ }   // front row → real mesh
+    else if (m >= HERO_TIER.PROM_OPAQUE) { tiers[i] = 'opaque'; opaqueN++ }  // 2nd row → opaque-articulated
+    else { tiers[i] = 'impostor'; impostorN++ }              // 3rd row + periphery → billboard
   }
   // Calibration curve: how many trees stay `mesh` at each candidate threshold,
   // so the A→B seam can pick the split by intent ("keep the crisp X%") rather
@@ -415,9 +426,9 @@ function classifyHeroTiers(canopies, heroPan) {
   return {
     tiers,
     meta: {
-      poses: N, promThreshold: HERO_TIER.PROM_THRESHOLD, occFrac: HERO_TIER.OCC_FRAC,
-      cullFrustumGuard: HERO_TIER.CULL_FRUSTUM_GUARD,
-      fovDeg, target, mesh: meshN, impostor: impostorN, cull: cullN, promHistogram: hist,
+      poses: N, promThreshold: HERO_TIER.PROM_THRESHOLD, promOpaque: HERO_TIER.PROM_OPAQUE,
+      occFrac: HERO_TIER.OCC_FRAC, cullFrustumGuard: HERO_TIER.CULL_FRUSTUM_GUARD,
+      fovDeg, target, mesh: meshN, opaque: opaqueN, impostor: impostorN, cull: cullN, promHistogram: hist,
       thresholdSweep: sweep,
     },
   }
@@ -570,8 +581,8 @@ export async function bakeTrees({
     for (let i = 0; i < instances.length; i++) instances[i].heroTier = tiers[i]
     heroTierMeta = { heroLook, ...meta }
     if (verbose) {
-      console.log(`[bake-trees] heroTier: ${meta.mesh} mesh / ${meta.impostor} impostor / ${meta.cull} cull `
-        + `(thresh ${meta.promThreshold}, guard ${meta.cullFrustumGuard}, ${meta.poses} poses, fov ${meta.fovDeg}°)`)
+      console.log(`[bake-trees] heroTier: ${meta.mesh} mesh / ${meta.opaque} opaque / ${meta.impostor} impostor / ${meta.cull} cull `
+        + `(mesh≥${meta.promThreshold}, opaque≥${meta.promOpaque}, guard ${meta.cullFrustumGuard}, ${meta.poses} poses, fov ${meta.fovDeg}°)`)
     }
   }
 
