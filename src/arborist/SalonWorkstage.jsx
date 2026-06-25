@@ -819,6 +819,8 @@ function SlotCard({
           tiltZ={tiltZ}
           onTiltXChange={(v) => { setTiltX(v); persistTransform({ tiltX: v }) }}
           onTiltZChange={(v) => { setTiltZ(v); persistTransform({ tiltZ: v }) }}
+          groundY={posOffset[1]}
+          onGroundYChange={(y) => { const next = [posOffset[0], y, posOffset[2]]; setPosOffset(next); persistTransform({ posOffset: next }) }}
           chassisCuration={chassisCuration}
           onChassisCuration={onChassisCuration}
           approvedOnly={approvedOnly}
@@ -901,6 +903,7 @@ function SalonControlsPanel({
   barkRefs, leafPacks,
   onParams,
   tiltX, tiltZ, onTiltXChange, onTiltZChange,
+  groundY, onGroundYChange,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
   candidateScope, recommendedNames,
   barkOpen, onBarkOpenChange,
@@ -1053,6 +1056,16 @@ function SalonControlsPanel({
       </Row>
       {orientOpen && (
         <>
+          <Row label="Ground">
+            <input type="range" min={-4} max={4} step={0.05}
+              value={groundY ?? 0}
+              onChange={(e) => onGroundYChange(parseFloat(e.target.value))}
+              style={{ flex: 1, accentColor: '#e8b860' }}
+              title="Raise / drop the tree so it sits flat (use the Worm view). For models with underground roots or an off-base trunk that auto-centering can't ground." />
+            <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
+              {(groundY ?? 0).toFixed(2)}
+            </span>
+          </Row>
           <Row label="Tilt X">
             <input type="range" min={-30} max={30} step={1}
               value={(tiltX * 180 / Math.PI).toFixed(0)}
