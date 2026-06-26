@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1782327440815,
+  "bakedAt": 1782423349391,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -75,14 +75,14 @@
     "treelawn": true,
     "building": true,
     "parking_lot": true,
-    "garden": true,
-    "playground": false,
+    "garden": false,
+    "playground": true,
     "swimming_pool": true,
     "pitch": false,
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": false,
+    "tree_row": true,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -90,7 +90,7 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": false,
+    "tree": true,
     "lamp": true,
     "fence": false,
     "wall": false,
@@ -174,10 +174,10 @@
         "smoothing": 0.06
       },
       "noon": {
-        "intensity": 0,
-        "threshold": 0,
+        "intensity": 0.48,
+        "threshold": 0.09,
         "smoothing": 0,
-        "warmCool": 0
+        "warmCool": 0.5
       },
       "dawn": {
         "intensity": 0.22,
@@ -273,9 +273,9 @@
   },
   "dof": {
     "values": {
-      "enabled": 0,
-      "blur": 0.2,
-      "focus": 52,
+      "enabled": 1,
+      "blur": 0.08,
+      "focus": 33,
       "softness": 0
     }
   },
@@ -315,25 +315,25 @@
   "heroKeyframes": [
     {
       "position": [
-        -17,
-        63,
-        216
+        9,
+        67,
+        266
       ],
       "fov": 26
     },
     {
       "position": [
-        -491,
-        99,
-        243
+        -297,
+        54,
+        170
       ],
       "fov": 22
     },
     {
       "position": [
-        -321,
-        57,
-        -125
+        -322,
+        80,
+        -129
       ],
       "fov": 22
     }

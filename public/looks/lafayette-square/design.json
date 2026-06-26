@@ -11,14 +11,14 @@
     "treelawn": true,
     "building": true,
     "parking_lot": true,
-    "garden": true,
-    "playground": false,
+    "garden": false,
+    "playground": true,
     "swimming_pool": true,
     "pitch": false,
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": false,
+    "tree_row": true,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -26,7 +26,7 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": false,
+    "tree": true,
     "lamp": true,
     "fence": false,
     "wall": false,
@@ -467,25 +467,25 @@
   "heroKeyframes": [
     {
       "position": [
-        -17,
-        63,
-        216
+        9,
+        67,
+        266
       ],
       "fov": 26
     },
     {
       "position": [
-        -491,
-        99,
-        243
+        -297,
+        54,
+        170
       ],
       "fov": 22
     },
     {
       "position": [
-        -321,
-        57,
-        -125
+        -322,
+        80,
+        -129
       ],
       "fov": 22
     }
@@ -564,13 +564,13 @@
   },
   "openSections": {
     "Streets": true,
-    "Blocks": true,
-    "Paths": true,
+    "Blocks": false,
+    "Paths": false,
     "Features": false,
     "Labels": true,
     "HeroSubject": false,
     "Look": false,
-    "Land Cover": true,
+    "Land Cover": false,
     "Furniture": true
   },
   "trees": [
@@ -644,6 +644,10 @@
     },
     {
       "species": "oak_bur",
+      "variantId": 1
+    },
+    {
+      "species": "oak_white",
       "variantId": 1
     }
   ]
