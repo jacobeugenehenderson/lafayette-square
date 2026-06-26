@@ -55,8 +55,9 @@ const ZONING_LABELS = {
 }
 
 function formatTime(time) {
-  if (!time) return null
+  if (!time || typeof time !== 'string' || time.indexOf(':') === -1) return null
   const [hours, minutes] = time.split(':').map(Number)
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null
   const period = hours >= 12 ? 'PM' : 'AM'
   const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
   return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`
@@ -84,6 +85,10 @@ function getOpenStatus(hours) {
   }
 
   const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  if (typeof todayHours.open !== 'string' || typeof todayHours.close !== 'string'
+      || todayHours.open.indexOf(':') === -1 || todayHours.close.indexOf(':') === -1) {
+    return { isOpen: null, text: 'Hours not available' }
+  }
   const [openH, openM] = todayHours.open.split(':').map(Number)
   const [closeH, closeM] = todayHours.close.split(':').map(Number)
   const openMinutes = openH * 60 + openM
@@ -362,9 +367,10 @@ function EditableField({ value, field, isGuardian, placeholder, multiline, child
 // ─── Listing logo (with initials fallback + guardian upload) ──────────
 function getInitials(name) {
   if (!name) return '?'
-  const words = name.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/)
+  const words = name.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/).filter(Boolean)
+  if (!words.length) return '?'
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return (words[0][0] + words[1][0]).toUpperCase()
+  return ((words[0][0] || '') + (words[1][0] || '')).toUpperCase() || '?'
 }
 
 function nameToColor(name) {

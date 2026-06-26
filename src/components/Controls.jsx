@@ -4,6 +4,7 @@ import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
 import { buildings as _allBuildings } from '../data/buildings'
 import PlaceCard from './PlaceCard'
+import R3FErrorBoundary from './R3FErrorBoundary'
 
 const INSTRUCTIONS = {
   hero: '',
@@ -52,12 +53,17 @@ function Controls() {
       )}
 
       {showCard && selectedId && (buildingInfo || listing) && (
-        <PlaceCard
-          listing={listing}
-          building={buildingInfo}
-          allListings={allListings}
-          onClose={hideCard}
-        />
+        // A crash inside the card (e.g. a listing with malformed hours) used to
+        // white-screen the whole site — wrapped so it degrades to "the card
+        // just doesn't open," site stays up. (2026-06-25)
+        <R3FErrorBoundary name="PlaceCard">
+          <PlaceCard
+            listing={listing}
+            building={buildingInfo}
+            allListings={allListings}
+            onClose={hideCard}
+          />
+        </R3FErrorBoundary>
       )}
     </>
   )
