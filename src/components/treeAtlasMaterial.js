@@ -109,6 +109,20 @@ if (typeof window !== 'undefined') {
   window.__setHeroTierQC = setHeroTierQC
   // URL opt-in so Stage/Preview can boot straight into the QC view: ?heroTierQC=1
   try { if (/[?&]heroTierQC=1\b/.test(window.location.search)) treeHeroTierQC.value = 1 } catch {}
+  // ── Z-prepass measurement toggle (2026-06-25) ──────────────────────────────
+  // `window.__treeAlphaTest(0)` flips the LEAF mask OFF on every live tree
+  // material → solid rectangles (ugly!) but FULLY OPAQUE → early-Z kicks in,
+  // so the gauge shows the no-overdraw CEILING. `window.__treeAlphaTest(0.5)`
+  // restores the normal cutout. If the gauge drops hard at 0, the real z-prepass
+  // (early-Z while KEEPING the cutout look) is worth building. _cache holds the
+  // live MeshStandardMaterial per look (alphaTest is a #define → needsUpdate).
+  window.__treeAlphaTest = (v = 0) => {
+    let n = 0
+    for (const e of _cache.values()) {
+      if (e?.treeMaterial) { e.treeMaterial.alphaTest = v; e.treeMaterial.needsUpdate = true; n++ }
+    }
+    console.log(`[tree] alphaTest=${v} on ${n} material(s) — ${v === 0 ? 'SOLID/early-Z (overdraw ceiling; rectangles)' : 'normal cutout'}. Watch the gauge.`)
+  }
 }
 
 // Phase B (2026-05-15) — per-(species, draw) bark retint uniforms. These
