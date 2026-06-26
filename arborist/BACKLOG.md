@@ -33,9 +33,9 @@ The Salon became the rubric-forward **plate-rack** the kit-matcher always implie
 
 ## ▶ 2026-06-23 (EOD) — ⛔ THE WALL: trees are 16MB, decimation floors. **(Largely SUPERSEDED — see status)**
 
-> 🔄 **STATUS (2026-06-25):** The 16MB wall was **fixed at the source** — it was **flat normals**, not UV-lock: smooth-normals + weld + simplify gives a real lod0/1/2 ladder (`BATON-tree-weight-smooth-normals.md`, rolled out library-wide). The **per-context Street/Hero/Browse-LOD + GeoTierDriver** strategy below is **SUPERSEDED** by the role-at-bake doctrine (`BATON-tree-render-next.md`): geometry = a per-placement ROLE at bake, depth gauges own visual distance, `GeoTierDriver` RETIRED. And trees currently **ship ALL-MESH** (`PROM_THRESHOLD=0`); the impostor render is PARKED. Kept here for the cull-oracle half (`classifyHeroTiers`, occlusion cull) which the future impostor arc reuses.
+> 🔄 **STATUS (2026-06-25):** The 16MB wall was **fixed at the source** — it was **flat normals**, not UV-lock: smooth-normals + weld + simplify gives a real lod0/1/2 ladder (`_archive/BATON-tree-weight-smooth-normals-2026-06-24.md`, rolled out library-wide). The **per-context Street/Hero/Browse-LOD + GeoTierDriver** strategy below is **SUPERSEDED** by the role-at-bake doctrine (`BATON-tree-render-next.md`): geometry = a per-placement ROLE at bake, depth gauges own visual distance, `GeoTierDriver` RETIRED. And trees currently **ship ALL-MESH** (`PROM_THRESHOLD=0`); the impostor render is PARKED. Kept here for the cull-oracle half (`classifyHeroTiers`, occlusion cull) which the future impostor arc reuses.
 
-The afternoon found the foundational blocker and the strategy to beat it. **Full detail: `HANDOFF-visibility-cull-lods.md` (root).**
+The afternoon found the foundational blocker and the strategy to beat it. **Full detail: `_archive/HANDOFF-visibility-cull-lods-2026-06-23.md` (root).**
 - **Wall:** connected-mesh bark is UV-locked → `simplify` can't reduce below ~127K tris (lod0=lod1 byte-identical, GLBs 16MB, lod1 set = 1.7GB). The **Grove context-losses (GPU OOM)** loading them → stale frame → "edits don't show." (Brief 6.3-followup, now acute.)
 - **Strategy:** bake-time **per-context visibility culling** — delete surfaces the known camera tracks never see (don't simplify). Lossless, sidesteps the floor. **Street** = 1 full + rest Hero + DoF-blur BG. **Hero** = lod1 + PVS-cull vs hero pan + DoF. **Browse** = overhead trunk-cut below canopy (most aggressive). Impostors HELD (operator skeptical). DoF = cover, not cut.
 - **Design Q (before Hero):** per-variant cull (keeps instancing) vs per-placement (aggressive, breaks it).
@@ -109,8 +109,8 @@ The afternoon found the foundational blocker and the strategy to beat it. **Full
 - [ ] **Build blocker (env, not code): restore `photos-wikimedia/other`** — `public/photos/lafayette-square/other` is a dangling symlink; `npm run build` transforms all modules then fails in vite's publicDir copy. Blocks production builds until the target is restored.
 
 **Superseded / moot (recorded so they aren't re-opened):**
-- ~~Brief 17 per-species bottom-cut~~ + ~~the lod2 browse trunk-cut~~ — **moot** under all-mesh + role-at-bake ("if we get good impostors we skip cutting off trunks" — Jacob; `TREE-GROUND-ELEVATION-FORENSIC.md`).
-- ~~Brief 6.3-followup connected-mesh bark lod2 floor~~ — the 16MB wall was **flat normals**, fixed by smooth-weld (`BATON-tree-weight-smooth-normals.md`), not the UV-lock the followup assumed.
+- ~~Brief 17 per-species bottom-cut~~ + ~~the lod2 browse trunk-cut~~ — **moot** under all-mesh + role-at-bake ("if we get good impostors we skip cutting off trunks" — Jacob; `_archive/TREE-GROUND-ELEVATION-FORENSIC-2026-06-25.md`).
+- ~~Brief 6.3-followup connected-mesh bark lod2 floor~~ — the 16MB wall was **flat normals**, fixed by smooth-weld (`_archive/BATON-tree-weight-smooth-normals-2026-06-24.md`), not the UV-lock the followup assumed.
 - ~~Brief 11 / GeoTierDriver runtime tier-swap~~ — **RETIRED** (geometry by baked role, not live camera distance).
 - ~~SpeedTree library~~ — peer-track placeholder; the kit-matcher (Authored-only active) is the live track.
 

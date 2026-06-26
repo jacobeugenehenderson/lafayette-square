@@ -1,14 +1,19 @@
+> ## 🗄️ ARCHIVED 2026-06-25 — SETTLED (the fix landed + rolled out library-wide).
+> The flat-normals diagnosis was correct: smooth-normals + weld + simplify gives a real lod0/1/2 ladder (no re-UV / re-bake). Cut 1 (smooth-normals base) was wired into the bake + `republish-all`'d over the whole library (lod1 set 1.7 GB → ~548 MB). Banked: `tree-weight-wall-is-flat-normals`, `tree-weight-smooth-base-rolled-out`. This baton is done; forward tree-render work is `BATON-tree-render-next.md` (root).
+
+---
+
 # Baton — Arborist tree-weight, Cut 1: the smooth-normals base
 
 > **Agent: FRESH** — name yourself when you pick this up. *(FRESH because it's a
 > self-contained bake-pipeline task; no cross-arc continuity is load-bearing.)*
 > Branch `curb-offset-draw`. **Paste-and-go:** this note is your whole launch
-> brief; the deep reference is `HANDOFF-visibility-cull-lods.md` (read its ⚡
+> brief; the deep reference is `HANDOFF-visibility-cull-lods-2026-06-23.md` (read its ⚡
 > CORRECTION banner first). The **eye-gate is Jacob's** — you hand him the
 > before/after and stop.
 
 ## Route first (CLAUDE.md hard gate — read to the section, don't grep-and-go)
-`ORIENTATION.md` → `arborist/README.md §⭐ START HERE` → `HANDOFF-visibility-cull-lods.md`
+`ORIENTATION.md` → `arborist/README.md §⭐ START HERE` → `HANDOFF-visibility-cull-lods-2026-06-23.md`
 **§⚡ CORRECTION banner** (the real fix; SKIP "Cut A") + keep **§"THE STRATEGY → Cut B"**
 and **§"the three contexts"** for *later* batons only. Then the repro harness
 `scratch/LINDEN-*.mjs` and the decimation/`simplify` step in `bake-trees.js`.

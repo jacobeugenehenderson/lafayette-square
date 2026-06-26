@@ -1,3 +1,8 @@
+> ## 🗄️ ARCHIVED 2026-06-25 — RESOLVED + mostly MOOT.
+> Root cause was confirmed (top callout): the float was the **lod2 browse trunk-cut shown at a shallow angle**, not terrain. Now that trees **ship ALL-MESH at lod1** (full trunk, `PROM_THRESHOLD=0`) the visible symptom is gone. The SSoT elevation cleanup it surfaced landed (`af038ba4`). ⚠️ One hypothesis was left technically open (whether the tree material's `begin_vertex` terrain patch ever no-ops) — only re-chase if trees visibly float again in the lit app; the terrain-displacement chain map here is the reference if so.
+
+---
+
 # Tree ↔ ground elevation forensic — "trees hover over the ground" (LS runtime)
 
 > ## ✅ ROOT CAUSE CONFIRMED (2026-06-25) — it was NOT terrain. It's the **lod2 (browse) trunk-cut shown at a shallow angle.**

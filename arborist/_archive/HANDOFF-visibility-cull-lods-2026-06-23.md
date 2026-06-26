@@ -1,3 +1,8 @@
+> ## 🗄️ ARCHIVED 2026-06-25 — SUPERSEDED (kept for the doctrine + the cull-oracle).
+> The "16MB wall / decimation floor" was fixed at the source — it was **flat normals**, not the UV-lock this doc assumed (the ⚡ CORRECTION banner below already flags it). The smooth-normals + weld + simplify fix landed + rolled out library-wide (`BATON-tree-weight-smooth-normals-2026-06-24.md`). The **per-context Street/Hero/Browse-LOD cull strategy + GeoTierDriver** are **SUPERSEDED** by role-at-bake (`BATON-tree-render-next.md`, root): geometry = a per-placement role decided at bake, depth gauges own visual distance, GeoTierDriver retired. Trees currently **ship ALL-MESH** (`PROM_THRESHOLD=0`); the impostor render is parked. **What survives:** the top "🧭 CONFIRMED DOCTRINE" callout (still the frame, also in `arborist/ARCHITECTURE.md`) + the cull-oracle (`classifyHeroTiers`, occlusion cull) which the future impostor arc reuses.
+
+---
+
 # HANDOFF — per-context visibility-cull LODs (the real tree-weight fix)
 
 > ## 🧭 CONFIRMED DOCTRINE (2026-06-24, Jacob) — the two axes are SEPARATE
@@ -20,7 +25,7 @@
 > smooth-normals base, not the first move.** Everything below that calls Cut A
 > "the universal base" or says "DO FIRST: prove the re-UV step" is the OLD
 > (wrong) diagnosis — kept only for the cull-strategy half (Cut B + the
-> three-context map). ▶ Start from `BATON-tree-weight-smooth-normals.md`.
+> three-context map). ▶ Start from `BATON-tree-weight-smooth-normals-2026-06-24.md`.
 
 > ## ▶ NEW AGENT — START HERE (the 30-second version)
 > **You're picking up the Arborist tree-weight fix.** Route first: `ORIENTATION.md` → `arborist/README.md §⭐ START HERE` → this doc.

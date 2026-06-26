@@ -13,7 +13,7 @@ Three things settled tonight that supersede the in-flight impostor-tiering guida
 - **Trees ship ALL-MESH in production.** `bake-trees.js#HERO_TIER.PROM_THRESHOLD = 0` ("⭐ DEMO / SHIP 2026-06-25: EVERY visible tree → full MESH") — the full-foliage forest (real mesh trees, per-tile frustum cull + occlusion cull) is what's live. The earlier aggressive `PROM_THRESHOLD = 0.06` Phase-A bake (mesh 469→92, the rest → impostor) is **reverted** to 0 (all-mesh) — that's the demo/ship state.
 - **The impostor / opaque-shell / render-to-texture-capture arc is PARKED, not deleted.** The captured-impostor + opaque-articulated-shell + RTT capture code crashed the prod build (it was dev-only) and was kept out of the production render path. The plumbing remains on disk **dormant**: `arborist/bake-impostors.js`, `src/components/impostorGeometry.js`, and `InstancedTrees.jsx`'s `ImpostorSpecies` / `lodForRole` seam exist, but `lodForRole` returns `'lod1'` for every role and nothing is tagged impostor (PROM_THRESHOLD 0), so the impostor render never fires. The FUTURE plan — impostors as authored Salon entries fed by real-tree render-to-texture — is the forward-pointer in `BATON-tree-render-next.md` + the approved plan. ⛔ Treat the aggressive impostor-tiering guidance (per-device bands, Phase-A/B prominence dials) as **superseded/parked**, not current.
 - **The GPU "gauge" is NOT a perf signal — gate perf on real device / frame-ms.** The emulator gauge is a count-vs-INTERIM-FAKE-budget verdict (draws/200, tris/1M) that **ignores frame-ms and reads red even with no trees on screen.** It drove a whole degradation arc (the impostor-tiering "the gauge is red, geometry must go" reasoning) that was then reverted. The real instrument is the device frame-ms + the operator's eye on the cinematic pan ([[feedback_instrument_verdict_then_fix]], [[feedback_proxy_render_is_not_the_operator_eye]]). Fixing the gauge's fake budgets is a backlog item, not a render-degradation trigger.
-- Also settled this session: **botanical heights ship** (`publish-glb.js#normalizeScale` → dossier `chassis.size`, `mature-heights.json` stopgap, `bac11a43`) and the **tree-float root cause** was the lod2 browse trunk-cut shown at a shallow angle, not terrain (`TREE-GROUND-ELEVATION-FORENSIC.md`) — moot now that all roles render lod1 (full trunk).
+- Also settled this session: **botanical heights ship** (`publish-glb.js#normalizeScale` → dossier `chassis.size`, `mature-heights.json` stopgap, `bac11a43`) and the **tree-float root cause** was the lod2 browse trunk-cut shown at a shallow angle, not terrain (`_archive/TREE-GROUND-ELEVATION-FORENSIC-2026-06-25.md`) — moot now that all roles render lod1 (full trunk).
 
 ## 2026-06-25 — the Salon-interface rebuild: rubric-forward "fashion plates" + the part model + a deep vestigia sweep
 
@@ -46,7 +46,7 @@ A long polish pass with Jacob's eye on the live app. Full landed list: `SALON-IN
 
 ## 2026-06-24 (PM, design) — tree LOD doctrine: role-at-bake, not camera distance; depth gauges own the look
 
-Confirmed with Jacob (full capture → `HANDOFF-visibility-cull-lods.md` top "CONFIRMED DOCTRINE" callout; memory `[[project_tree_lod_role_at_bake_not_distance]]`):
+Confirmed with Jacob (full capture → `_archive/HANDOFF-visibility-cull-lods-2026-06-23.md` top "CONFIRMED DOCTRINE" callout; memory `[[project_tree_lod_role_at_bake_not_distance]]`):
 - **Geometry representation = a per-placement ROLE decided at BAKE** — park/focal → real lod0/1/2; environment/neighborhood-fill + far/occluded park → **impostor**. Ladder = lod0/1/2/impostor.
 - **Visual distance is already owned by the DEPTH GAUGES** (DoF CoC-by-depth + fog/mist) — "DoF is the cover, not the cut." Jacob: "everything is already attached to depth gauges."
 - ⛔ **Do not swap geometry by live camera distance** ("asking for trouble"). **RETIRE `GeoTierDriver`** (the runtime altitude-swap, already moot) rather than extend it.
@@ -69,13 +69,13 @@ Confirmed with Jacob (full capture → `HANDOFF-visibility-cull-lods.md` top "CO
 **Fix (`4f9c9a77`, eye-gated by Jacob):**
 - `publish-glb.js#LODS`: **lod1 `error` 0.02→0.002** → full canopy restored (birch lod1 back to 15,659 cards). **lod2 stays 0.05** (far/overhead browse — leaf sparsity reads fine + DoF covers it; weight matters most there).
 - `serve.js#/grove`: render **lod0** (full-quality cosmetic gallery) instead of lod1. ⚠️ OOM-watch (lod0 is heaviest; linden 16 MB holdout) — fallback is lod1, now also full-leaved.
-- **Cost:** lod1 GLBs ~1.3 MB → ~3.6–5.8 MB (full leaves cost tris). The long-term weight answer is the **per-context cull arc** (`HANDOFF-visibility-cull-lods.md`), not this knob.
+- **Cost:** lod1 GLBs ~1.3 MB → ~3.6–5.8 MB (full leaves cost tris). The long-term weight answer is the **per-context cull arc** (`_archive/HANDOFF-visibility-cull-lods-2026-06-23.md`), not this knob.
 
 **Also banked:** the **publish ≠ bake** staleness (atlas/slab older than the GLB republish) re-bit; the canonical resync is the **`/grove/bake` endpoint** (generate-salon → bakeLook → bakeTrees), not a partial CLI bake. The bark-weight ladder shipped earlier today and is real; only the leaf half regressed.
 
-## 2026-06-23 (EOD) — THE tree-weight wall + the visibility-cull strategy (full capture → `HANDOFF-visibility-cull-lods.md`)
+## 2026-06-23 (EOD) — THE tree-weight wall + the visibility-cull strategy (full capture → `_archive/HANDOFF-visibility-cull-lods-2026-06-23.md`)
 
-The afternoon's deep arc bottomed out on the real, foundational problem and a strategy to beat it. **Full dispatch-ready detail: `HANDOFF-visibility-cull-lods.md` (repo root). Start there next session.** Summary:
+The afternoon's deep arc bottomed out on the real, foundational problem and a strategy to beat it. **Full dispatch-ready detail: `_archive/HANDOFF-visibility-cull-lods-2026-06-23.md` (repo root). Start there next session.** Summary:
 
 - **The wall:** tree GLBs are **16MB and decimation can't reduce them** — the connected-mesh bark is UV-locked for the atlas, so attribute-aware `simplify` floors at ~127K tris even at `ratio 0.010` (lod0=lod1 byte-identical). Published lod1 set = **1.7 GB**. The **Grove context-losses (GPU OOM)** loading them → shows a stale frozen frame → "Salon edits don't show in the Grove." This is the long-deferred Brief 6.3-followup gate, now acute. `simplifySloppy` gets past the floor but breaks atlas UVs.
 - **The strategy (chosen):** **bake-time per-context VISIBILITY CULLING** — the cameras are on known tracks, so we precompute and *delete* the surfaces never seen, instead of *simplifying* (which can't). Sidesteps the UV-floor, lossless to the eye, beats impostors (operator skeptical) + sloppy (broken UVs). The visibility oracle already exists: the hero pan (`classifyHeroTiers`, 24 poses, fov 26°).

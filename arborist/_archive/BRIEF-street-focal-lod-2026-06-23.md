@@ -1,3 +1,8 @@
+> ## 🗄️ ARCHIVED 2026-06-25 — SUPERSEDED (premised on a retired mechanism).
+> This scoped-not-built brief makes LOD **per-instance by live camera distance** on top of `GeoTierDriver` — both of which the role-at-bake doctrine **rejects** ("⛔ do not swap geometry by live camera distance"; GeoTierDriver is RETIRED). The bark-seam / Street-focal-crispness concern it raises is real but its near-tree-detail answer now lives in the impostor/part-near-tier plan (`BATON-tree-render-next.md` + `SALON-INTERFACE.md §2` part near/far tiers). Kept for the seam analysis only.
+
+---
+
 # BRIEF — per-instance Street-focal LOD (the real bark-seam fix)
 
 > **Status: SCOPED, not built. 2026-06-23 (Linden).** Dispatch-ready. This is the fix the bark-seam investigation converged on, and the same change that resolves the Street-lod0 weight problem and finally makes the high-pass bark detail pay off. Prereq landed: the tree-weight wall + LOD ladder + Browse fix (commits `6c3ff5e5`, `3be3ba03`).

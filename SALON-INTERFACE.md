@@ -41,7 +41,7 @@ The one part where the *shape is the identity* (you can't gradient a maple into 
 - **Color is *not* in the shape — it's parametric** via **posterize** (Jacob's call — the bark mechanism ported): posterize a base to a few tones → each tone a swappable slot → **front-palette vs back-palette keyed off facing** = Silver Maple's silver underside (`leaf.face` = `{front: ramp, back: second ramp}`) → swap the palette LUT for the **seasonal ramp** (`leaf.season`, summer→gold→russet→bare). So one base × parametric recolor serves a whole genus; **you never need a colored pack per species.**
 
 ### Every part tiers by render-role (the LsoD applied to parts)
-Optical parity is invariant; detail is the only variable (`HANDOFF-visibility-cull-lods.md` capstone). So each part has a **near-tier** (Street, eye level, feet away — paid only on the *focal* tree) and a **far-tier** (Hero/Browse/background-Street — DoF covers it), over the *same* shared base:
+Optical parity is invariant; detail is the only variable (the role-at-bake capstone — `arborist/ARCHITECTURE.md "Tree-render reality"`; orig. capture `arborist/_archive/HANDOFF-visibility-cull-lods-2026-06-23.md`). So each part has a **near-tier** (Street, eye level, feet away — paid only on the *focal* tree) and a **far-tier** (Hero/Browse/background-Street — DoF covers it), over the *same* shared base:
 
 | Part | Near-tier (focal, Street) | Far-tier (Hero/Browse/background) |
 |---|---|---|
