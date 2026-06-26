@@ -12,15 +12,17 @@ Per-species runtime artifacts under `public/trees/<species>/`:
 
 - `skeleton-N.glb` — one published variant per `N`, baked at 3 LOD tiers (`skeleton-N-lod0.glb` / `lod1` / `lod2`)
 - `tips-N.json` — leaf-anchor positions for per-instance jitter / wind
-- `manifest.json` — per-species metadata: variant list, `quality` / `qualityOverride`, `bark` spec (photo-PBR material ref + tint defaults + uvScale), `leafCluster` ref (per-hero), approximate height in meters
+- `manifest.json` — per-species metadata: variant list, `quality` / `qualityOverride`, `bark` spec (photo-PBR material ref + tint defaults + uvScale), `leafCluster` ref (per-hero), `deformer.range`, and **botanical mature height in meters** (2026-06-25 — `publish-glb.js#normalizeScale` targets the species' dossier `chassis.size`, so a sugar maple ships ~21m and a dogwood ~8m; `mature-heights.json` is the stopgap for roster species without a full dossier yet — see ARCHITECTURE "Botanical mature height")
 - `public/trees/index.json` — roster index aggregating all species
 
 Plus per-Look atlas artifacts emitted by `bake-look.js`:
 
-- `public/baked/<look>/trees-atlas.json` — master atlas tile map, `barkBySpecies` block, per-species overrides
+- `public/baked/<look>/trees-atlas.json` — master atlas tile map, `barkBySpecies` block, per-species overrides, `deformerBySpecies`, and (dormant) `impostorBySpecies` layer plans
 - `public/baked/<look>/trees/<species>/...` — placement-substituted GLBs for the Look
 
 These are the contract the deployed runtime (`InstancedTrees.jsx`) consumes. The helper's job is to keep them deterministic and pristine.
+
+> 🌲 **What ships to LS today (tree-render reality, 2026-06-25):** trees render **ALL-MESH** — every visible placement is a full lod1 mesh tree (`bake-trees.js#PROM_THRESHOLD=0`), with per-tile frustum + occlusion culling. Geometry is chosen by a **role decided at bake** (`classifyHeroTiers` → `aHeroTier`), never swapped by live camera distance (the runtime `GeoTierDriver` is retired). The **impostor / opaque-shell render is PARKED** — its plumbing (`bake-impostors.js`, `impostorGeometry.js`, `ImpostorSpecies`) sits dormant on disk; the future plan is `BATON-tree-render-next.md`. Visual distance is the **depth gauges'** job (DoF/fog — "DoF is the cover"). ⚠️ **Don't read the Preview GPU gauge as a perf signal** (count-vs-fake-budget, ignores frame-ms, red even with no trees) — gate tree perf on real device frame-ms + the operator's eye on the cinematic pan. Full as-built + doctrine: ARCHITECTURE "Tree-render reality at LS."
 
 ---
 
@@ -82,7 +84,7 @@ All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final comm
   - `leaf cards` — `geometry.userData.atlasKind === 'leaf'` vertex count divided by 4 (each card is a 4-vert quad).
   - `draw calls` — `gl.info.render.calls`.
   - `programs` — `gl.info.programs.length`. Author-time tripwire: flagged red if > 5 to catch accidental shader-program divergence (per [[feedback_unique_program_cache_key_before_wrappers]]); should stay at the shared-tree-material count regardless of slot or LoD.
-  PerfProbe renders nothing — it can't pollute the count it measures. Instrumentation readout.
+  PerfProbe renders nothing — it can't pollute the count it measures. Instrumentation readout. ⚠️ **This (and the Preview GPU gauge) is a count-vs-interim-fake-budget readout, NOT a frame-ms perf signal** — the LS-side gauge reads red even with no trees and drove a reverted tree-degradation arc. Real tree perf is gated on device frame-ms + the operator's eye on the cinematic pan (2026-06-25; see ARCHITECTURE "Tree-render reality").
 
 **Conifer panel** (Phase E, pending): whorlsPerHeight, branchesPerWhorl, leaderDominance, droopPerWhorlAge. Hidden today.
 
@@ -317,7 +319,7 @@ Per-Look palette override is instant — `scene.materialColors[<species>]` wins 
 - `README.md` — runtime contract (the slimmer outward-facing version of this doc)
 - `SPEC.md` — original v1 build specification (largely shipped; residual decisions folded into `BACKLOG.md`)
 - `ARCHITECTURE.md` — load-bearing patterns: publish-loop, two-tier substitution, master atlas, generator contract, bark shader unification
-- `BACKLOG.md` — in-flight phases (E, F, G.1–G.5) + parked items
+- `BACKLOG.md` — the live kit-matcher arc + recent open state + the distilled carried-forward items (the May-2026 Procedural/Salon brief arcs are cooled to `_archive/BACKLOG-2026-05-brief-arcs.md`)
 - `NOTES.md` — dated decision record (live + recent; the May-2026 brief diary, incl. the load-bearing 2026-05-15 maxi-brief, is cooled to `_archive/NOTES-2026-05-diary.md`)
 - `../cartograph/ARCHITECTURE.md` — kit-wide publish-loop pattern Arborist mirrors
 - `../cartograph/README.md` — helper template
