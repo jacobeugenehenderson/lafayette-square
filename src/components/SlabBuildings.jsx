@@ -34,10 +34,35 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
+import useCamera from '../hooks/useCamera'
 import { INSTANCE } from '../instance.js'
 
 import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
+
+// ── "Don't cut through buildings" dissolve (2026-06-25) ────────────────────
+// When the camera passes THROUGH a building (its body is within DIST metres of
+// the camera) the fragments dither-discard, so you never see the hollow
+// cross-section the near-clip would slice. Roofs the camera PASSES OVER stay
+// solid — they're DIST+ away (the camera is well above them), so only buildings
+// the camera is genuinely inside dissolve. Gated to 0 (off) until the operator
+// toggles it (useCamera.buildingDissolve). DIST/BAND are the feel knobs — tune
+// live with `window.__bldgDissolve(dist, band)` during the standup.
+let _dissolveDist = 12   // m: fragments closer than this fully dissolve (camera is "inside")
+let _dissolveBand = 9    // m: soft dither band above the threshold (12→21m fades in)
+if (typeof window !== 'undefined') {
+  window.__bldgDissolve = (d, b) => {
+    if (d != null) _dissolveDist = d
+    if (b != null) _dissolveBand = b
+    if (d === undefined && b === undefined) {
+      // bare call = flip the toggle on/off (standup convenience, no UI yet)
+      const c = useCamera.getState()
+      c.toggleBuildingDissolve()
+    }
+    const on = useCamera.getState().buildingDissolve
+    console.log(`[buildings] dissolve ${on ? 'ON' : 'OFF'} · dist=${_dissolveDist}m band=${_dissolveBand}m`)
+  }
+}
 
 // Shared texture cache (heavy, shared across material groups + remounts).
 const _texCache = new Map()
@@ -229,18 +254,27 @@ export default function SlabBuildings({ lookId, interactive = true } = {}) {
   const getLightingPhase = useTimeOfDay((s) => s.getLightingPhase)
   const idToNum = useSlabBuildingIndex((s) => s.index?.idToNum)
 
-  useFrame(() => {
+  useFrame((state) => {
     if (shadersRef.current.length === 0) return
     const { sunAltitude } = getLightingPhase()
     const darkFactor = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
     const { selectedId, hoveredId } = useSelectedBuilding.getState()
     const selNum = (idToNum && selectedId != null) ? (idToNum.get(selectedId) ?? -1) : -1
     const hovNum = (idToNum && hoveredId != null) ? (idToNum.get(hoveredId) ?? -1) : -1
+    // "Don't cut through buildings": feed the camera pos + the dissolve dist
+    // (0 when the toggle is off → the shader gate no-ops).
+    const dissolveDist = useCamera.getState().buildingDissolve ? _dissolveDist : 0
+    const cam = state.camera.position
     for (const sh of shadersRef.current) {
       if (!sh) continue
       sh.uniforms.uDarkFactor.value = darkFactor
       sh.uniforms.uSelectedId.value = selNum
       sh.uniforms.uHoveredId.value = hovNum
+      if (sh.uniforms.uCamPos) {
+        sh.uniforms.uCamPos.value.set(cam.x, cam.y, cam.z)
+        sh.uniforms.uDissolveDist.value = dissolveDist
+        sh.uniforms.uDissolveBand.value = _dissolveBand
+      }
     }
   })
 
@@ -365,6 +399,9 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       shader.uniforms.uDarkFactor = { value: 0 }
       shader.uniforms.uSelectedId = { value: -1 }
       shader.uniforms.uHoveredId = { value: -1 }
+      shader.uniforms.uCamPos = { value: new THREE.Vector3() }
+      shader.uniforms.uDissolveDist = { value: 0 }   // 0 = off (gate no-ops)
+      shader.uniforms.uDissolveBand = { value: _dissolveBand }
       if (isFoundation) shader.uniforms.uFoundNight = { value: _NIGHT_FOUND }
       if (tex) {
         shader.uniforms.uTex = { value: tex }
@@ -406,10 +443,31 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          ${isFoundation ? 'uniform vec3 uFoundNight;' : ''}
          ${isWall ? 'varying vec3 vNightCol;' : ''}
          ${tex ? 'uniform sampler2D uTex;\n uniform float uTexStrength;\n uniform float uTexScale;' : ''}
+         uniform vec3 uCamPos;
+         uniform float uDissolveDist;
+         uniform float uDissolveBand;
          varying vec3 vBPos;
          varying vec3 vBNorm;
          varying float vBId;
          ${GLSL_OVERLAY}`
+      )
+
+      // ── Fragment: "don't cut through buildings" dissolve. Fragments within
+      //    uDissolveDist of the camera fully discard; a dither band above it
+      //    softens the edge. Camera DISTANCE (not height) is the gate, so roofs
+      //    passing far below when flying over stay solid — only the walls the
+      //    camera is interpenetrating dissolve. uDissolveDist=0 → no-op. ──
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+         if (uDissolveDist > 0.0) {
+           float camDist = distance(vBPos, uCamPos);
+           float keep = smoothstep(uDissolveDist, uDissolveDist + uDissolveBand, camDist);
+           if (keep < 1.0) {
+             float ign = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+             if (keep < ign) discard;
+           }
+         }`
       )
 
       // ── Fragment: albedo (append after color_fragment so it runs before
