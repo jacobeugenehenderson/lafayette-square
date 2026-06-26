@@ -11,7 +11,7 @@
     "treelawn": true,
     "building": true,
     "parking_lot": true,
-    "garden": false,
+    "garden": true,
     "playground": true,
     "swimming_pool": true,
     "pitch": false,
@@ -257,6 +257,20 @@
           "terminal": "sidewalk"
         }
       }
+    },
+    "missouri-avenue-2": {
+      "left": {
+        "0": {
+          "pavementHW": 8.179490412721057,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "LU"
+          }
+        }
+      }
     }
   },
   "surveyDefault": null,
@@ -301,24 +315,26 @@
   },
   "bloom": {
     "animated": "tod",
-    "transitionIn": 30,
-    "transitionOut": 30,
+    "transitionIn": 0,
+    "transitionOut": 0,
     "values": {
       "night": {
-        "intensity": 0,
+        "intensity": 2,
         "threshold": 0.02,
-        "smoothing": 0.06
+        "smoothing": 0.06,
+        "warmCool": 0
       },
       "noon": {
-        "intensity": 0.48,
-        "threshold": 0.09,
-        "smoothing": 0,
+        "intensity": 0.54,
+        "threshold": 0.26,
+        "smoothing": 0.16,
         "warmCool": 0.5
       },
       "dawn": {
         "intensity": 0.22,
         "threshold": 0,
-        "smoothing": 0
+        "smoothing": 0,
+        "warmCool": 0.5
       },
       "sunset": {
         "intensity": 0.56,
@@ -339,7 +355,7 @@
   },
   "exposure": {
     "values": {
-      "value": 0.5
+      "value": 0.56
     }
   },
   "ao": {
@@ -410,8 +426,8 @@
   "dof": {
     "values": {
       "enabled": 1,
-      "blur": 0.08,
-      "focus": 33,
+      "blur": 0.14,
+      "focus": 300,
       "softness": 0
     }
   },
@@ -467,9 +483,9 @@
   "heroKeyframes": [
     {
       "position": [
-        9,
-        67,
-        266
+        -190,
+        107,
+        370
       ],
       "fov": 26
     },
@@ -483,9 +499,9 @@
     },
     {
       "position": [
-        -322,
-        80,
-        -129
+        -634,
+        113,
+        -117
       ],
       "fov": 22
     }
@@ -545,7 +561,7 @@
   },
   "lantern": {
     "values": {
-      "intensity": 1,
+      "intensity": 1.26,
       "glow": 1
     }
   },
@@ -563,11 +579,11 @@
     }
   },
   "openSections": {
-    "Streets": true,
+    "Streets": false,
     "Blocks": false,
     "Paths": false,
     "Features": false,
-    "Labels": true,
+    "Labels": false,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,

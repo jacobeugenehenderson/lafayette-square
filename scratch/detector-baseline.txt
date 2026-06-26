@@ -1,0 +1,180 @@
+    [E3.2] junction construction: 70 pairs (136 windows), 35 aprons, 0 absorbed median ring(s), 28 tip-wraps left to G8, 2 pairs skipped (unresolvable)
+    [E3.3] corner identities: 8 corners constructed
+    [THRU] through-node construction: 113 windows at 43 chains
+    [E3.2] junction construction: 70 pairs (136 windows), 35 aprons, 0 absorbed median ring(s), 28 tip-wraps left to G8, 2 pairs skipped (unresolvable)
+    [E3.3] corner identities: 8 corners constructed
+    [THRU] through-node construction: 113 windows at 43 chains
+    [E3.2] junction construction: 70 pairs (136 windows), 35 aprons, 0 absorbed median ring(s), 28 tip-wraps left to G8, 2 pairs skipped (unresolvable)
+    [E3.3] corner identities: 3 corners constructed
+    [THRU] through-node construction: 96 windows at 37 chains
+
+══════════════════════════════════════════════════════════════════════
+ CORRECTNESS DETECTOR v1  ·  Lafayette Square  ·  candidates for the operator
+══════════════════════════════════════════════════════════════════════
+
+Frame: 217 street chains across 113 names; 101 tiles.
+Labeled defect set: 35 curated CHAINS = 31 distinct NAMES (INTAKE §6.1).
+(4 names carry 2 curated chains each — Lasalle, Rutger, South 18th, Waverly — so recall is
+ measured per-NAME against 31, not per-chain against 35.)
+
+PER-INVARIANT (current frame):
+  · GEOMETRIC (per-chain shape):
+    max-turn       flags   7  (curated  0/31,  grid   7)
+    width-step     flags   5  (curated  5/31,  grid   0)
+    through-width  flags   0  (curated  0/31,  grid   0)
+    curb∥chain     flags  33  (curated 17/31,  grid  16)
+    iA self-int    flags  20  (curated 10/31,  grid  10)
+    face-closure   flags   0  (curated  0/31,  grid   0)
+    curb-bump      flags  13  (curated  7/31,  grid   6)
+  · TOPOLOGICAL (graph-level):
+    loop-closure   flags   0  (curated  0/31,  grid   0)
+    cap-tangent    flags   0  (curated  0/31,  grid   0)
+    junction-band  flags  40  (curated 22/31,  grid  18)
+    name-transition flags   3  (curated  2/31,  grid   1)
+    divided-median flags   4  (curated  2/31,  grid   2)
+  ────────────────────────────────────────────────────────────
+  GEOMETRIC only   flags  42  (curated 18/31,  grid  24)
+  + TOPOLOGICAL    flags  56  (curated 25/31,  grid  31)
+
+  · CURVE-FIT GATE (D6a robust-offset — smooth=1.5 vs smooth=0):
+      curb degenerates: baseline(0)=23  smoothed=8  NEW(regressions)=5
+      corner-roundness: rounded fillets  smooth0=472 (gate ≥435)  smooth1.5=454 (info — curve-round expected)
+      ❌ RED — 5 new needle/spur
+        new degenerate @ -621,517
+        new degenerate @ 208,228
+        new degenerate @ 647,-679
+        new degenerate @ 653,-707
+        new degenerate @ 653,-706
+
+  · CUL-DE-SAC KEYHOLE (turning-circle mouth flows tangent into the bulb):
+      2 turning-circle(s); mouth notches >16° = 9
+      ❌ RED — 137°@[-426.4,-161.3], 17°@[-425.8,-161.7], 147°@[-421.5,-172.2], 68°@[782.9,101.2], 51°@[782.5,100.6], 21°@[781.1,91.3], 39°@[780.9,90.3], 29°@[777.6,113.7], 128°@[777.5,113.7]
+
+CONFUSION — measured per curated NAME:
+  GEOMETRIC only (Sieve v1):
+    recall    = 18/31  (58%)
+    precision = 18/42  (43%)
+    grid FP   = 24/82
+  + TOPOLOGICAL (loop-closure + cap-tangent + junction-band):
+    recall    = 25/31  (81%)  curated names flagged   [+7]
+    precision = 25/56  (45%)  of flags are curated
+    grid FP   = 31/82 clean-grid names flagged   [+7]
+
+JUNCTION-BAND — measured per JUNCTION NODE (the honest unit):
+    181 junctions (deg>=3): 119 CLEAN (0 throat slivers), 52 FLAGGED (>=2 slivers <8m2)
+    curated-touching junctions flagged = 42/118;  pure-grid junctions flagged = 10/63
+    the 4 weird junctions caught = 4/4  [Carroll, Hickory, Hickory, Grattan]
+    NOTE 55% of junctions are clean — the sliver signal discriminates; it is NOT firing everywhere.
+       The defect class is PERVASIVE (52 junctions), so name-level grid FP is mostly REAL
+       uncurated defect, not noise (verified by eye: scratch/jx-montrose-hickory.png et al).
+
+    Worst-fragmented junctions (slivers — the operator-eye candidates):
+      (-54,259) d3  slivers=27  {Waverly Place}
+      (-37,261) d3  slivers=27  {Waverly Place}
+      (-671,-209) d3  slivers=20  {St. Vincent Court / Saint Vincent Avenue}
+      (-686,-211) d3  slivers=19  {St. Vincent Court / Saint Vincent Avenue}
+      (-443,-656) d4  slivers=11  {Lasalle Street / Ohio Avenue}
+      (724,-418) d5  slivers=10  {Grattan Street / secondary_link 29}
+      (-88,567) d4  slivers=9  {McNair Avenue / Serbian Drive / Allen Avenue}
+      (-557,528) d3  slivers=9  {Russell Boulevard}
+      (668,-205) d3  slivers=9  {Hickory Lane / Grattan Street}
+      (766,-180) d3  slivers=9  {Hickory Lane / Dillon Drive}
+      (-419,-745) d3  slivers=8  {Ohio Avenue / Chouteau Avenue}
+      (-30,-642) d3  slivers=7  {Missouri Avenue / Chouteau Avenue}
+      (767,323) d3  slivers=7  {South 13th Street / Lafayette Avenue}
+      (-249,-588) d3  slivers=7  {Lasalle Street / South Jefferson Avenue}
+
+CURB-BUMP — measured per LOCATION (the honest unit; the through-seam worklist):
+    14 curb bumps (>20° between <3m curve-samples) across 4 tiles.
+    0 = the family is reconciled to zero (the name-aware corner + through-road width fixes, generalized).
+      tile  92  @(718,-403)  95°
+      tile  22  @(671,-469)  88°
+      tile  92  @(716,-404)  86°
+      tile  22  @(674,-473)  69°
+      tile  33  @(783,101)  68°
+      tile  22  @(670,-471)  67°
+      tile  23  @(681,-551)  60°
+      tile  33  @(872,74)  56°
+      tile  33  @(873,71)  55°
+      tile  22  @(672,-473)  54°
+      tile  23  @(682,-553)  52°
+      tile  33  @(782,101)  51°
+      tile  33  @(781,90)  39°
+      tile  33  @(781,91)  21°
+
+DIVIDED-MEDIAN — overrun/sanity worklist (HALF B scoreboard):
+    4 divided chains flagged (median < 1m after the carriageways, or gap out of sanity).
+    0 = every divided pair leaves a real median (the inboard-clamp + source width fix, generalized).
+      Chouteau Avenue            inboard hw 5.0+5.0=10.0 vs gap 6.0 → median -4.0m (overrun → needle)
+      Russell Boulevard          inboard hw 3.9+3.9=7.7 vs gap 5.0 → median -2.8m (overrun → needle)
+      Lafayette Avenue           inboard hw 4.7+4.7=9.3 vs gap 7.9 → median -1.4m (overrun → needle)
+      Geyer Avenue               inboard hw 3.2+3.2=6.4 vs gap 6.7 → median 0.3m (overrun → needle)
+
+FLAGGED CURATED (true positives):
+  ✔ Benton Place               curb(1.44m)
+  ✔ Carroll Street             JUNC(7 slivers, worst 0.0m2)
+  ✔ Chouteau Avenue            step(3.37m:8.38/5.01)  curb(3.68m)  selfint(2)  bump(95°)  MEDIAN(-4m)  JUNC(8 slivers, worst 2.2m2)
+  ✔ Dillon Drive               curb(3.55m)  selfint(1)  bump(68°)  JUNC(9 slivers, worst 0.0m2)
+  ✔ Dillon Street              selfint(1)  bump(68°)  JUNC(3 slivers, worst 2.2m2)
+  ✔ Dolman Street              
+  ✔ Grattan Street             JUNC(10 slivers, worst 0.1m2)
+  ✔ Hickory Lane               JUNC(9 slivers, worst 0.0m2)
+  ✔ Hickory Street             JUNC(5 slivers, worst 2.3m2)
+  ✔ Kennett Place              JUNC(4 slivers, worst 4.4m2)
+  ✔ Lafayette Avenue           step(5.88m:10.56/4.67)  curb(4.32m)  selfint(2)  MEDIAN(-1.4m)  JUNC(7 slivers, worst 0.0m2)
+  ✔ Lasalle Street             curb(1.29m)  JUNC(11 slivers, worst 2.2m2)
+  ✔ Mackay Place               JUNC(5 slivers, worst 2.3m2)
+  ✔ Mississippi Alley          curb(2.44m)  JUNC(7 slivers, worst 2.3m2)
+  ✔ Mississippi Avenue         curb(3.49m)  JUNC(5 slivers, worst 0.0m2)
+  ✔ Missouri Avenue            curb(3.87m)  JUNC(7 slivers, worst 2.2m2)
+  ✔ Park Avenue                step(7.72m:2.23/9.94)  curb(4.41m)  selfint(1)  bump(68°)  JUNC(5 slivers, worst 2.2m2)
+  ✔ Rutger Lane                curb(4.44m)  selfint(1)  bump(68°)
+  ✔ Rutger Street              curb(2.94m)  selfint(2)  JUNC(7 slivers, worst 2.2m2)
+  ✔ South 18th Street          step(3.52m:6.39/2.87)  curb(4.41m)  bump(88°)  JUNC(7 slivers, worst 2.3m2)
+  ✔ South 21st Street          curb(2.21m)  selfint(2)  JUNC(3 slivers, worst 4.4m2)
+  ✔ South 22nd Street          curb(2.28m)  selfint(2)  JUNC(4 slivers, worst 2.2m2)
+  ✔ South Jefferson Avenue     step(3.13m:7.72/4.58)  curb(4.41m)  selfint(2)  JUNC(7 slivers, worst 2.2m2)
+  ✔ Truman Parkway             curb(2.74m)  bump(95°)  JUNC(7 slivers, worst 0.0m2)
+  ✔ Waverly Place              curb(1.92m)  JUNC(27 slivers, worst 0.0m2)
+
+MISSED CURATED (false negatives — no invariant fired):
+  ✗ Albion Place
+  ✗ Nicholson Place
+  ✗ Preston Place
+  ✗ Simpson Place
+  ✗ Vail Place
+  ✗ Whittemore Place
+
+GRID FALSE-POSITIVES (flagged but NOT curated — operator must judge):
+  ? Allen Avenue               turn(2j,98°)  curb(2.19m)  selfint(2)  JUNC(9 slivers, worst 2.2m2)
+  ? Ann Avenue                 curb(3.59m)  JUNC(5 slivers, worst 0.0m2)
+  ? California Avenue          curb(4.31m)  selfint(2)  JUNC(7 slivers, worst 0.0m2)
+  ? Caroline Street            curb(1.74m)  selfint(2)
+  ? Eads Avenue                curb(1.64m)  JUNC(7 slivers, worst 0.0m2)
+  ? Geyer Avenue               curb(4.29m)  selfint(2)  MEDIAN(0.3m)  JUNC(5 slivers, worst 0.0m2)
+  ? Henrietta Street           curb(4.41m)  JUNC(6 slivers, worst 2.3m2)
+  ? Iowa Avenue                selfint(2)
+  ? Lasalle Lane               curb(1.46m)
+  ? McNair Avenue              curb(1.08m)  JUNC(9 slivers, worst 2.2m2)
+  ? Ohio Avenue                curb(2.74m)  selfint(2)  JUNC(11 slivers, worst 2.2m2)
+  ? Ozark Expressway           turn(2j,86.8°)
+  ? Papin Street               curb(2.48m)  selfint(2)  bump(60°)
+  ? Park Place                 selfint(1)  bump(68°)  JUNC(2 slivers, worst 2.6m2)
+  ? Russell Boulevard          curb(3.39m)  selfint(2)  MEDIAN(-2.8m)  JUNC(9 slivers, worst 0.0m2)
+  ? Saint Vincent Avenue       JUNC(20 slivers, worst 0.0m2)
+  ? Serbian Drive              JUNC(9 slivers, worst 2.2m2)
+  ? South 13th Street          JUNC(7 slivers, worst 0.0m2)
+  ? South 14th Street          curb(2.8m)  selfint(1)  bump(68°)  JUNC(4 slivers, worst 2.3m2)
+  ? South 17th Street          bump(60°)
+  ? South Tucker Boulevard     turn(2j,79.1°)
+  ? St. Vincent Court          curb(1.49m)  JUNC(20 slivers, worst 0.0m2)
+  ? West 18th Street           
+  ? motorway 4                 turn(5j,155.2°)
+  ? motorway_link 11           turn(3j,132.6°)
+  ? motorway_link 16           turn(2j,92.3°)
+  ? motorway_link 38           JUNC(3 slivers, worst 1.3m2)
+  ? motorway_link 39           JUNC(2 slivers, worst 4.2m2)
+  ? motorway_link 9            turn(2j,88.2°)
+  ? secondary_link 29          curb(3.89m)  bump(95°)  JUNC(10 slivers, worst 0.1m2)
+  ? secondary_link 30          curb(3.41m)  bump(88°)
+

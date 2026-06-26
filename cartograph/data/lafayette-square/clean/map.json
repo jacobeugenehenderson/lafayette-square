@@ -676922,7 +676922,7 @@
             "source": "seed-survey"
           },
           "capEnds": {
-            "start": "round",
+            "start": "blunt",
             "end": null
           },
           "anchor": "center",
@@ -681281,7 +681281,7 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 5.49,
+              "pavementHW": 4.403268846614062,
               "treelawn": 1.53,
               "sidewalk": 1.52,
               "terminal": "sidewalk"
@@ -681292,8 +681292,7 @@
               "sidewalk": 1.52,
               "terminal": "sidewalk"
             },
-            "symmetric": false,
-            "source": "seed-survey"
+            "symmetric": false
           },
           "capEnds": {
             "start": "round",
@@ -695620,12 +695619,12 @@
           "highway": "residential",
           "type": "residential",
           "outerHWProfile": {
-            "424.400,-88.700": 9.941819272548011,
-            "440.820,-84.930": 7.663019560478257,
-            "522.800,-55.600": 6.114597266945497,
-            "570.450,-41.510": 2.4478698804300283,
-            "598.000,-31.000": 2.5387403577378596,
-            "609.700,-26.400": 2.7050979457839777
+            "424.400,-88.700": 10.538202461707964,
+            "440.820,-84.930": 8.259402749638209,
+            "522.800,-55.600": 6.71098045610545,
+            "570.450,-41.510": 3.044253069589981,
+            "598.000,-31.000": 3.1351235468978125,
+            "609.700,-26.400": 3.3014811349439306
           },
           "lanes": 1,
           "surface": "asphalt",
@@ -695742,7 +695741,7 @@
           ],
           "measure": {
             "left": {
-              "pavementHW": 9.941819272548011,
+              "pavementHW": 10.538202461707964,
               "treelawn": 1,
               "sidewalk": 1,
               "terminal": "sidewalk"
@@ -695937,8 +695936,8 @@
           "highway": "residential",
           "type": "residential",
           "outerHWProfile": {
-            "-355.000,-253.900": 9.941819272548011,
-            "-366.950,-263.490": 2.4273696426029883,
+            "-355.000,-253.900": 10.538202461707964,
+            "-366.950,-263.490": 3.023752831762941,
             "-954.300,-357.500": 5.645715395972545
           },
           "lanes": 1,
@@ -769699,6 +769698,39 @@
                 }
               }
             ]
+          },
+          {
+            "key": "-377.010,-5.260",
+            "at": [
+              -377.01,
+              -5.26
+            ],
+            "kinds": [
+              "pendant-tip"
+            ],
+            "legs": [
+              {
+                "chain": "whittemore-place",
+                "end": "start",
+                "role": "spine"
+              }
+            ],
+            "continuity": [
+              {
+                "a": {
+                  "chain": "whittemore-place",
+                  "side": "left"
+                },
+                "b": {
+                  "chain": "whittemore-place",
+                  "side": "right"
+                },
+                "source": "tip-wrap"
+              }
+            ],
+            "corners": {
+              "outer": []
+            }
           },
           {
             "key": "-391.320,344.500",
