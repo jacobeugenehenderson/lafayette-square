@@ -23,6 +23,19 @@ import { patchTerrainInstanced } from '../utils/terrainShader'
 // tree re-renders.
 const _cache = new Map()  // lookName -> { manifest, barkMaterial, leavesMaterial, status, error }
 
+// Shared completion subscription. The async atlas build is owned by whichever
+// useTreeAtlas() instance kicks it off, but its result lands in the shared
+// _cache — so EVERY mounted consumer must be re-rendered when it completes, not
+// just the initiator. Without this, a second consumer (or the SAME component
+// remounting while a load is in flight — e.g. React StrictMode's dev
+// mount→unmount→remount, which fires on nearly every load) returns early from
+// the load effect, never attaches a completion callback, and stays stuck on
+// 'loading' until some unrelated re-render re-reads the now-ready cache ("trees
+// don't reliably come on; jiggle a knob to remind them"). A module-level
+// listener set fixes it: status changes notify all live consumers.
+const _atlasListeners = new Set()
+function _notifyAtlasChange() { _atlasListeners.forEach((fn) => { try { fn() } catch {} }) }
+
 // Shared sway uniforms — single object mutated each frame by the runtime.
 // Both the LS InstancedTrees consumer and the Salon workstage preview
 // write into the SAME object; only one renders at a time (different
@@ -141,8 +154,25 @@ if (typeof window !== 'undefined') {
 // Per-instance hue jitter: hashes world-XZ to keep neighboring trees from
 // looking like color clones. World-Y is intentionally excluded so a tall
 // branch and a low one in the same tree share a tint.
+// ── Tree fragment OUTPUT sanitize (the black-block root fix, 2026-06-26) ────
+// A foliage fragment writes a non-finite / huge / negative HDR value; the SHARED
+// bloom+DoF pyramid (which must stay shared for the GPU budget) spreads it into
+// dark blocks. We clamp the final lit color `outgoingLight` (a plain vec3, BEFORE
+// <opaque_fragment> writes gl_FragColor — avoids the gl_FragColor/mix(bvec3) trap
+// that nuked all trees on the prior attempt): NaN→0 (ternary select, never
+// arithmetic on a NaN), Inf/huge→ceiling, negative→0. Default ON. Live A/B via
+// window.__treeSanitize(0/1) — flip it to confirm it kills the blocks.
+const treeSanitizeUniform = { value: 1 }   // 1 = on, 0 = off (shared across all tree materials)
+if (typeof window !== 'undefined') {
+  window.__treeSanitize = (v) => {
+    treeSanitizeUniform.value = (v === 0 || v === false) ? 0 : 1
+    console.log(`[tree] fragment output sanitize ${treeSanitizeUniform.value ? 'ON' : 'OFF'} (NaN/Inf/neg → clamped)`)
+  }
+}
+
 function injectFoliageSway(material) {
   material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTreeSanitizeOn    = treeSanitizeUniform
     shader.uniforms.uTime              = treeSwayUniforms.uTime
     shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
     shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
@@ -520,6 +550,7 @@ function injectFoliageSway(material) {
          uniform vec2  uBarkPosterizedTileScale;
          uniform float uBarkShaderTier;
          uniform float uHeroTierQC;
+         uniform float uTreeSanitizeOn;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vLocalY;
@@ -698,6 +729,22 @@ function injectFoliageSway(material) {
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
          totalEmissiveRadiance += vec3(0.55, 0.40, 0.20) * vLampGlow * uLampGlow * vCanopyW;`
+      )
+      .replace(
+        // Sanitize the final lit color before it becomes gl_FragColor — kills the
+        // non-finite/huge/negative foliage texel that the shared pyramid spreads
+        // into dark blocks. outgoingLight is a plain vec3 here (set just above by
+        // the lighting chunks); clamping it is safe in any GLSL version. NaN via
+        // ternary select (NaN != NaN), never mix() (NaN*0==NaN).
+        '#include <opaque_fragment>',
+        `if (uTreeSanitizeOn > 0.5) {
+           outgoingLight = vec3(
+             (outgoingLight.r != outgoingLight.r) ? 0.0 : clamp(outgoingLight.r, 0.0, 1000.0),
+             (outgoingLight.g != outgoingLight.g) ? 0.0 : clamp(outgoingLight.g, 0.0, 1000.0),
+             (outgoingLight.b != outgoingLight.b) ? 0.0 : clamp(outgoingLight.b, 0.0, 1000.0)
+           );
+         }
+         #include <opaque_fragment>`
       )
   }
 }
@@ -949,22 +996,31 @@ export function useTreeAtlas(lookName) {
 
   const entry = lookName ? _cache.get(lookName) : null
 
+  // Subscribe to shared completion notifications: ANY status change (from any
+  // instance's load, or invalidateTreeAtlas) re-renders this consumer. This is
+  // what makes the trees reliably appear when the async build finishes —
+  // independent of which instance owns the in-flight promise (see _atlasListeners).
+  useEffect(() => {
+    const listener = () => setBump((b) => b + 1)
+    _atlasListeners.add(listener)
+    return () => { _atlasListeners.delete(listener) }
+  }, [])
+
   useEffect(() => {
     if (!lookName) return
-    let cached = _cache.get(lookName)
+    const cached = _cache.get(lookName)
     if (cached?.status === 'ready' || cached?.status === 'loading') return
-    cached = { status: 'loading' }
-    _cache.set(lookName, cached)
-    setBump(b => b + 1)
+    _cache.set(lookName, { status: 'loading' })
+    _notifyAtlasChange()
     buildMaterials(lookName)
       .then((built) => {
         _cache.set(lookName, { status: 'ready', ...built })
-        setBump(b => b + 1)
+        _notifyAtlasChange()
       })
       .catch((err) => {
         console.warn('[treeAtlas] bake failed for', lookName, err)
         _cache.set(lookName, { status: 'error', error: err })
-        setBump(b => b + 1)
+        _notifyAtlasChange()
       })
   }, [lookName])
 
@@ -983,6 +1039,10 @@ export function useTreeAtlas(lookName) {
 export function invalidateTreeAtlas(lookName) {
   if (!lookName) return
   _cache.delete(lookName)
+  // Wake live consumers so they re-run their load effect against the now-empty
+  // cache (re-bake after a Grove republish), instead of waiting for a stray
+  // re-render.
+  _notifyAtlasChange()
 }
 
 // ── Brief 7 (Cambium): Salon-preview material path ──────────────────────

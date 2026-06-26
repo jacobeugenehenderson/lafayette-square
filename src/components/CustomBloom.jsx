@@ -45,13 +45,24 @@ const fragment = /* glsl */`
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
     vec3 b = texture2D(uPyramid, uv).rgb;
-    // NaN/Inf guard (2026-06-25): a single non-finite foliage texel in the HDR
-    // scene propagates through the Karis mip pyramid — small black squares at
-    // low levels, growing/clumping to whole-screen black flashes as levels rise.
-    // equal(b,b) is false for NaN components (NaN != NaN) → mix them to 0; the
-    // clamp bounds Inf to a HALF_FLOAT-safe range. Stops the artifact reaching
-    // the screen regardless of which fragment seeded it.
-    b = clamp(mix(vec3(0.0), b, vec3(equal(b, b))), 0.0, 60000.0);
+    // NaN/Inf guard (2026-06-26, FIXED): a single non-finite foliage texel in the
+    // HDR scene propagates through the Karis mip pyramid — black squares at low
+    // levels, growing to whole-screen flashes as levels rise. The prior guard
+    // used mix(vec3(0), b, equal(b,b)), but mix is x*(1-t)+y*t and NaN*0.0==NaN,
+    // so a NaN channel survived (→ propagated to black through the SCREEN blend).
+    // SELECT with a ternary instead (no arithmetic on the poisoned channel): a
+    // bad texel contributes ZERO bloom (SCREEN with 0 = unchanged scene).
+    b = vec3(
+      (b.x != b.x || abs(b.x) > 60000.0) ? 0.0 : b.x,
+      (b.y != b.y || abs(b.y) > 60000.0) ? 0.0 : b.y,
+      (b.z != b.z || abs(b.z) > 60000.0) ? 0.0 : b.z
+    );
+    // NEGATIVE guard (2026-06-26 — the actual root of the black blocks): the
+    // pyramid carries negative HDR texels over the canopy; with this SCREEN
+    // blend a negative b makes (1-b) > 1 → result < 0 → clamps to PURE BLACK
+    // (hard-edged blobs at the zero-crossing). Negative "light" is meaningless;
+    // clamp to 0 so a poisoned texel contributes no bloom instead of black.
+    b = max(b, vec3(0.0));
     // Same soft knee as the library's LuminanceMaterial, applied to the BLURRED
     // pyramid (blur→threshold). Knobs keep their meaning; see header.
     float l = dot(b, vec3(0.2126, 0.7152, 0.0722));

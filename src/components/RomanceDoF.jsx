@@ -101,10 +101,17 @@ const fragment = /* glsl */`
     // defocus — no per-pixel gather. amt clamps to [0,1]; at the focal planes
     // (coc 0) it's fully sharp, deep in the blur hump it reaches the pyramid.
     vec3 blurred = texture2D(uBlurTex, uv).rgb;
-    // NaN/Inf guard (2026-06-25): same shared pyramid as CustomBloom — a
-    // non-finite foliage texel propagates through the mips → black-square
-    // flashing (worse as levels rise). Kill NaN (NaN != NaN) + clamp Inf.
-    blurred = clamp(mix(vec3(0.0), blurred, vec3(equal(blurred, blurred))), 0.0, 60000.0);
+    // Belt-and-suspenders guard on the shared pyramid sample. The ROOT fix for
+    // the dark blocks is the tree-output sanitize (treeAtlasMaterial.js); this
+    // stays as a defensive net. A channel is "bad" if NaN (x!=x), Inf/absurd, OR
+    // NEGATIVE — a negative blur texel would drag the CoC lerp below 0 → black.
+    // SELECT with a ternary (never mix(): mix(x,y,t)=x*(1-t)+y*t and NaN*0==NaN);
+    // fall back to the SHARP input so a bad texel just reads in-focus, never dark.
+    blurred = vec3(
+      (blurred.x != blurred.x || blurred.x < 0.0 || abs(blurred.x) > 65000.0) ? inputColor.r : blurred.x,
+      (blurred.y != blurred.y || blurred.y < 0.0 || abs(blurred.y) > 65000.0) ? inputColor.g : blurred.y,
+      (blurred.z != blurred.z || blurred.z < 0.0 || abs(blurred.z) > 65000.0) ? inputColor.b : blurred.z
+    );
     float amt = clamp(coc * uMaxBlur, 0.0, 1.0);
     outputColor = vec4(mix(inputColor.rgb, blurred, amt), inputColor.a);
   }
