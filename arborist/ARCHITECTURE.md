@@ -673,7 +673,7 @@ The boundary lives at the **`bake-look.js` + `bake-trees.js` invocation** — ev
 
 - `FEATURES.md` — operator-facing surface
 - `BACKLOG.md` — in-flight phases + parked items
-- `NOTES.md` — dated architecture record (2026-05-15 maxi-brief is load-bearing)
+- `NOTES.md` — dated architecture record (live + recent; the May-2026 brief diary, incl. the load-bearing 2026-05-15 maxi-brief, is cooled to `_archive/NOTES-2026-05-diary.md`)
 - `README.md` — runtime contract (slimmer)
 - `SPEC.md` — original v1 build specification
 - `../cartograph/ARCHITECTURE.md` — kit-wide publish-loop pattern

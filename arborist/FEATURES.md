@@ -318,6 +318,6 @@ Per-Look palette override is instant — `scene.materialColors[<species>]` wins 
 - `SPEC.md` — original v1 build specification (largely shipped; residual decisions folded into `BACKLOG.md`)
 - `ARCHITECTURE.md` — load-bearing patterns: publish-loop, two-tier substitution, master atlas, generator contract, bark shader unification
 - `BACKLOG.md` — in-flight phases (E, F, G.1–G.5) + parked items
-- `NOTES.md` — dated decision record (2026-05-15 maxi-brief is load-bearing)
+- `NOTES.md` — dated decision record (live + recent; the May-2026 brief diary, incl. the load-bearing 2026-05-15 maxi-brief, is cooled to `_archive/NOTES-2026-05-diary.md`)
 - `../cartograph/ARCHITECTURE.md` — kit-wide publish-loop pattern Arborist mirrors
 - `../cartograph/README.md` — helper template
