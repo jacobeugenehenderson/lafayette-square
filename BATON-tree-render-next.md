@@ -13,6 +13,11 @@
 - Doctrine captured (`5dbd7f49`, `b1036ca7`) in `arborist/NOTES.md` + `ARCHITECTURE.md` + the HANDOFF callout.
 - (Earlier same session: Hero camera authoring/runtime modes `0141c60f`; bloom slab `2c7dded6`; Pip wiring `160f9a45`.)
 
+## 🪧 CAPTURED IMPOSTOR — geometry refinements (Jacob, 2026-06-25)
+The impostor billboard is "**slice a captured tree image into N billboard cards along an axis**" — ONE slicer serves both view-context impostors:
+- **Hero "X" / "double-X"** = vertical planes from a FRONT capture. Start with the plain X (2 quads); **double-X = 4 quads (asterisk 0/45/90/135°)** holds silhouette from more azimuths (cheap) if the single X "turns to face you" on the pan. Plane-count = a parameter. (P1 landed the single X: `e978eb2b`/`f5fb4a96`, captured-RTT + `buildXImpostorGeometry`, runtime-only.)
+- **Browse "hula-layers"** = horizontal cards from a TOP-DOWN capture, stacked + per-layer hula. **Reuse the SAME slice builder** — different axis + capture angle (front vs overhead, both already in `SpecimenViewport` `presetFraming` hero/browse). So Phase 3 hula is mostly the slicer + the overhead capture.
+
 ## 🪜 THE 3-TIER DEPTH MODEL (Jacob, 2026-06-25) — the simplification that beats per-device knobs
 The fixed pan + hero object make **the outside of the shot pure waste for EVERY device** — so don't fork by device, just split aggressively by prominence (= "front/center rows" since prominence is coverage×centrality). Three bands:
 - **Front row → real MESH** (full detail — what the pan looks straight at).
