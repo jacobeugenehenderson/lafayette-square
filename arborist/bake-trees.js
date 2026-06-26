@@ -231,25 +231,20 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
 // Tunables — calibrated against the operator's eye at the A→B seam (QC overlay):
 const HERO_TIER = {
   POSES: 24,             // camera samples along the keyframe path
-  PROM_THRESHOLD: 0.07,  // ⭐ THE FRONT-ROW DIAL (2026-06-25). Min screen-prominence
-                         // (coverage×centrality, at ANY pose) to stay real `mesh`.
-                         // "Only the front row need be real; the periphery is waste
-                         // for EVERY device (the pan never lingers there)." Aggressive
-                         // by design — the pan only needs the front/center sharp; depth
-                         // goes opaque-then-impostor+DoF. Calibration on LS (745
-                         // placements, telephoto tops prominence ~0.09):
-                         //   0.02→469 mesh · 0.05→194 · 0.06→92 · 0.07→38 · 0.09→14.
-                         // Raise for a tighter front row (cheaper), lower for more
-                         // real depth.
-  PROM_OPAQUE: 0.05,     // ⭐ THE 2ND-ROW DIAL (Phase B, 2026-06-25). Prominence in
-                         // [PROM_OPAQUE, PROM_THRESHOLD) → the "opaque-articulated"
-                         // MIDDLE tier: real 3D trunk/branches (articulated) + a SOLID
-                         // OPAQUE leaf-textured canopy shell instead of thousands of
-                         // alpha-tested leaf cards. The shell writes depth → early-Z →
-                         // ~zero overdraw (the real overdraw fix for near-but-not-front
-                         // trees). Cheaper than mesh, more 3D than a billboard. Below
-                         // PROM_OPAQUE → `impostor` (cheap stamped billboard + DoF).
-                         // On LS this band ≈ 0.05→194 minus 0.07→38 mesh ≈ ~156 trees.
+  PROM_THRESHOLD: 0,     // ⭐ DEMO / SHIP (2026-06-25): EVERY visible tree → full MESH
+                         // (no impostor, no opaque ellipsoid). The aggressive thresholds
+                         // (0.06/0.07) were chasing the GPU GAUGE, which we found is a
+                         // COUNT-vs-fake-budget verdict (draws/200, tris/1M, INTERIM) that
+                         // ignores actual frame-ms — it was red even with NO trees, so it
+                         // was never a real perf signal. The full-foliage forest is the
+                         // look; real perf is gated on the device/staging, not this gauge.
+                         // (Occlusion-cull + per-tile frustum cull stay — real wins, no
+                         // look change.) Restore a front-row dial later if a REAL signal
+                         // demands it: 0.02→469 mesh · 0.05→194 · 0.07→38.
+  PROM_OPAQUE: 0,        // empty opaque band (== mesh floor) → no opaque ellipsoids ship.
+                         // (Parked: was 0.05 — the [PROM_OPAQUE, PROM_THRESHOLD) band that
+                         // routed near-but-not-front trees to the opaque canopy shell.
+                         // Re-enable with the front-row dial when a REAL perf signal asks.)
   OCC_FRAC: 0.7,         // a nearer canopy covering ≥ this fraction of a tree's
                          // projected disk occludes it at that pose
   ASPECT: 16 / 9,        // viewport aspect for the horizontal frustum bound
