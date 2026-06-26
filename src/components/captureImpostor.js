@@ -1,0 +1,301 @@
+/**
+ * captureImpostor — in-browser render-to-texture capture of the REAL tree, the
+ * texture that skins the X cross-billboard impostor (Arc 2, Phase 1).
+ *
+ * The analytic impostor (cross-quads sampling the bark/leaf ATLAS TILES) was a
+ * dead end — it read as floating dark leaf-slabs + a stone trunk at every
+ * distance (operator, 2026-06-25). The fix: the billboard must be textured with
+ * an actual RENDER of the species, so the silhouette is correct BY CONSTRUCTION.
+ *
+ * Phase 1 proves the look the fastest way — capture in the LS runtime at load
+ * (no backend, no bake round-trip; Salon-authored capture + a baked texture is
+ * Phase 2). For each impostor-role species we:
+ *   1. load its lod1 GLB (the same one the mesh path loads, via drei's cache),
+ *   2. apply the shared `treeMaterial` + stamp the per-vertex bark/leaf/wind/
+ *      height attributes exactly as the LS mesh path + Salon preview do
+ *      (`stampTreeVertexAttrs`) so bark/leaf render with full atlas parity,
+ *   3. frame an OrthographicCamera FRONT-ON, fit to the tree's real
+ *      height/width (reusing SpecimenViewport's `studioFraming` proportions but
+ *      ortho, so a billboard has no perspective foreshortening),
+ *   4. render to a transparent-clear WebGLRenderTarget (real alpha for the
+ *      billboard's alphaTest), with full save/restore of the renderer's
+ *      target / autoClear / clear color+alpha / toneMapping / outputColorSpace
+ *      so the main scene render is undisturbed,
+ *   5. cache `rt.texture` per species in a module-level map and bump a counter
+ *      so the X-billboards mount.
+ *
+ * The capture runs ONCE per species in a useEffect (NOT useFrame) — gated until
+ * the atlas is ready + GLBs loaded. Flat-lit (one hemisphere light, NO harsh
+ * directional) so no shadow bakes into the texture and the billboard doesn't pop
+ * darker/brighter than its mesh neighbours; per-azimuth octahedral capture +
+ * normal-map relight are the accepted v1 deferrals (BATON-tree-render-next.md).
+ */
+import { useEffect, useMemo, useState } from 'react'
+import { useThree } from '@react-three/fiber'
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { stampTreeVertexAttrs } from './treeAtlasMaterial.js'
+
+// One shared loader for all captures. The tree GLBs carry no DRACO/meshopt (only
+// EXT_texture_webp, which we don't read — the material is overridden with the
+// shared atlas treeMaterial), so a plain GLTFLoader parses them fine.
+const _gltfLoader = new GLTFLoader()
+function loadGltf(url) {
+  return new Promise((resolve, reject) => _gltfLoader.load(url, resolve, undefined, reject))
+}
+
+// Module-level cache: species -> THREE.Texture (the captured RT color texture).
+// Mirrors treeAtlasMaterial.js#_cache — sharing across remounts keeps the
+// expensive capture a once-per-species cost even if the tree component
+// re-renders. Keyed by `${lookName}:${species}` so two Looks don't collide.
+const _captureCache = new Map()
+
+// One square capture per species. 512² is enough for a far/occluded impostor
+// (the whole point is it's small on screen) and cheap to render once. Higher
+// would only matter if impostors crept into mid-distance — they don't (role at
+// bake; DoF is the cover).
+const CAPTURE_SIZE = 512
+
+// Front-on ortho framing proportions mirror SpecimenViewport.studioFraming's
+// padding, but ORTHO (no perspective) so the captured image is a clean flat
+// elevation — a billboard textured with a perspective render would look wrong
+// at the silhouette edges. The camera distance is irrelevant for ortho; we only
+// need the half-span the frustum spans.
+const FRAME_PAD_M = 1.5   // metres of headroom around the tree's box
+
+export function invalidateImpostorCaptures(lookName) {
+  if (!lookName) {
+    for (const tex of _captureCache.values()) { try { tex.dispose() } catch {} }
+    _captureCache.clear()
+    return
+  }
+  const prefix = `${lookName}:`
+  for (const key of [..._captureCache.keys()]) {
+    if (key.startsWith(prefix)) {
+      try { _captureCache.get(key)?.dispose() } catch {}
+      _captureCache.delete(key)
+    }
+  }
+}
+
+/**
+ * Render one tree (its lod1 GLB scene) to a transparent RT, front-on ortho, and
+ * return the RT's color texture. Pure capture: saves + restores every renderer
+ * state it touches so the caller's main render is byte-undisturbed.
+ *
+ * @param {THREE.WebGLRenderer} gl
+ * @param {THREE.Object3D} glbScene   the loaded GLB scene (cloned + materialized by caller)
+ * @param {number} heightM            real tree height (metres) for the ortho fit
+ * @param {number} canopyRadiusM      real half-width (metres) for the ortho fit
+ */
+function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM) {
+  // Throwaway scene + ONE neutral light. Hemisphere (sky/ground) only — no
+  // directional, so no baked-in shadow and no side that goes black. Flat-lit is
+  // the v1 tradeoff (TOD relight via captured normals is deferred).
+  const scene = new THREE.Scene()
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0)
+  const amb = new THREE.AmbientLight(0xffffff, 0.6)
+  scene.add(hemi, amb)
+  scene.add(glbScene)
+
+  // Fit an ortho frustum to the tree's real box: width = 2·canopyRadius,
+  // height = heightM, both padded. The capture frame is wider of the two so the
+  // whole silhouette fits with the same metres-per-pixel on both axes (square
+  // RT), then the billboard quad is sized to the SAME real metres so it lands
+  // 1:1 on the world tree.
+  const halfW = Math.max(0.5, canopyRadiusM + FRAME_PAD_M)
+  const halfH = Math.max(0.5, heightM / 2 + FRAME_PAD_M)
+  const half = Math.max(halfW, halfH)
+  const cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 1000)
+  // Centre the frustum on the tree's mid-height; look down -Z (front-on), the
+  // GLB's +Y up. Distance is arbitrary for ortho — sit well outside the box.
+  const midY = heightM / 2
+  cam.position.set(0, midY, half * 4 + 50)
+  cam.up.set(0, 1, 0)
+  cam.lookAt(0, midY, 0)
+  cam.updateMatrixWorld(true)
+  cam.updateProjectionMatrix()
+
+  const rt = new THREE.WebGLRenderTarget(CAPTURE_SIZE, CAPTURE_SIZE, {
+    minFilter: THREE.LinearMipmapLinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    colorSpace: THREE.SRGBColorSpace,   // match the main scene's output space
+    generateMipmaps: true,
+    depthBuffer: true,
+  })
+  rt.texture.anisotropy = 4
+
+  // ── Save every renderer state we mutate ──────────────────────────────────
+  const prevTarget = gl.getRenderTarget()
+  const prevActiveCubeFace = gl.getActiveCubeFace?.() ?? 0
+  const prevActiveMipLevel = gl.getActiveMipmapLevel?.() ?? 0
+  const prevAutoClear = gl.autoClear
+  const prevClearColor = new THREE.Color()
+  gl.getClearColor(prevClearColor)
+  const prevClearAlpha = gl.getClearAlpha()
+  const prevToneMapping = gl.toneMapping
+  const prevOutputColorSpace = gl.outputColorSpace
+
+  try {
+    // Capture in a KNOWN, neutral state: no tone-mapping (the texture is the
+    // tree's raw lit color — tone-mapping is re-applied when the billboard
+    // renders into the main scene, so applying it here would double it), sRGB
+    // output to match the atlas/textures. Transparent clear → real alpha.
+    gl.setRenderTarget(rt)
+    gl.toneMapping = THREE.NoToneMapping
+    gl.outputColorSpace = THREE.SRGBColorSpace
+    gl.autoClear = true
+    gl.setClearColor(0x000000, 0)   // transparent
+    gl.clear(true, true, true)
+    gl.render(scene, cam)
+  } finally {
+    // ── Restore — main scene render must be undisturbed ─────────────────────
+    gl.setRenderTarget(prevTarget, prevActiveCubeFace, prevActiveMipLevel)
+    gl.autoClear = prevAutoClear
+    gl.setClearColor(prevClearColor, prevClearAlpha)
+    gl.toneMapping = prevToneMapping
+    gl.outputColorSpace = prevOutputColorSpace
+  }
+
+  // Detach the GLB so disposing the throwaway scene's lights doesn't take the
+  // shared GLB geometry with it (the GLB scene is a fresh clone owned here, but
+  // its geometry/material are shared — detach to be safe before GC).
+  scene.remove(glbScene)
+  hemi.dispose?.()
+  // The RT keeps its own depth/color buffers alive; the texture is what we cache.
+  return rt.texture
+}
+
+/**
+ * Clone a loaded GLB scene, bake each prim's world transform into a merged-frame
+ * clone, apply the shared `treeMaterial`, and stamp the per-vertex attributes
+ * the shared shader reads (aBark / aBarkRegion / aWindTier / aTreeHeightNorm /
+ * aLampGlow / aHeroTier) — exactly as the Salon preview does
+ * (SpecimenViewport#Skeleton), so bark + leaves render with full atlas parity.
+ * Returns { scene, heightM } where heightM is the chassis Y-extent (the real
+ * height the ortho frames + the billboard is sized to).
+ */
+function materializeForCapture(gltfScene, treeMaterial) {
+  const root = gltfScene.clone(true)
+  root.updateMatrixWorld(true)
+  // Chassis-wide Y range so aTreeHeightNorm normalizes consistently (mirrors
+  // InstancedTrees#meshes + SpecimenViewport).
+  let chMinY = Infinity, chMaxY = -Infinity
+  root.traverse((o) => {
+    if (!o.isMesh || !o.geometry?.attributes?.position) return
+    o.geometry.computeBoundingBox()
+    const bb = o.geometry.boundingBox
+    if (bb) { chMinY = Math.min(chMinY, bb.min.y); chMaxY = Math.max(chMaxY, bb.max.y) }
+  })
+  const chassisMinY = Number.isFinite(chMinY) ? chMinY : 0
+  const chassisYRange = Math.max(1e-4, chMaxY - chMinY)
+  root.traverse((o) => {
+    if (!o.isMesh || !o.geometry) return
+    stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+    if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+    o.material = treeMaterial
+    o.castShadow = false
+    o.receiveShadow = false
+  })
+  const heightM = Number.isFinite(chMaxY) ? Math.max(1, chMaxY) : 12
+  return { scene: root, heightM }
+}
+
+/**
+ * useImpostorCaptures — load every impostor-role species' lod1 GLB, capture each
+ * to a texture once, and return a per-species texture map (+ a ready flag).
+ *
+ * @param {object}   args
+ * @param {string}   args.lookName
+ * @param {object}   args.treeMaterial   the shared LS tree material (atlas-skinned)
+ * @param {object[]} args.species        [{ species, glbUrl, heightM, canopyRadiusM }]
+ *                                       glbUrl = the look-prefixed lod1 GLB URL.
+ * @returns {{ textures: Map<string,THREE.Texture>, ready: boolean }}
+ */
+export function useImpostorCaptures({ lookName, treeMaterial, species }) {
+  const gl = useThree((s) => s.gl)
+  const [bump, setBump] = useState(0)
+
+  // Stable signature so the effect only re-runs when the actual capture set
+  // changes (species list / GLB URLs / dims), not on every parent render.
+  const sig = useMemo(() => {
+    if (!species?.length) return ''
+    return species
+      .map((s) => `${s.species}|${s.glbUrl}|${s.heightM}|${s.canopyRadiusM}`)
+      .sort()
+      .join('~~')
+  }, [species])
+
+  useEffect(() => {
+    if (!gl || !treeMaterial || !lookName || !species?.length) return
+    let cancelled = false
+
+    // Resolve which species still need a capture (cache miss). Load their GLBs
+    // via drei's loader (shares the useGLTF cache with the mesh path), then
+    // capture in a microtask so we never block the frame. Each capture is
+    // independent; a failed load just leaves that species without an impostor
+    // texture (it falls back to mesh in the runtime).
+    const pending = species.filter((s) => {
+      const key = `${lookName}:${s.species}`
+      return !_captureCache.has(key) && s.glbUrl
+    })
+    if (pending.length === 0) return
+
+    Promise.all(
+      pending.map((s) =>
+        loadGltf(s.glbUrl)
+          .then((gltf) => ({ s, gltf }))
+          .catch((err) => {
+            console.warn('[captureImpostor] GLB load failed', s.species, s.glbUrl, err)
+            return null
+          }),
+      ),
+    ).then((loaded) => {
+      if (cancelled) return
+      let any = false
+      for (const item of loaded) {
+        if (!item) continue
+        const { s, gltf } = item
+        const key = `${lookName}:${s.species}`
+        if (_captureCache.has(key)) continue
+        try {
+          const { scene, heightM } = materializeForCapture(gltf.scene, treeMaterial)
+          // Prefer the chassis height from the GLB (exact); fall back to the
+          // baked record height. canopyRadius comes from the baked record (the
+          // GLB's XZ extent includes stray branches; the record's value is the
+          // measured canopy radius the runtime billboard is sized to).
+          const tex = renderTreeToTexture(
+            gl,
+            scene,
+            heightM || s.heightM,
+            s.canopyRadiusM,
+          )
+          tex.name = `impostor-capture:${s.species}`
+          _captureCache.set(key, tex)
+          any = true
+        } catch (err) {
+          console.warn('[captureImpostor] capture failed', s.species, err)
+        }
+      }
+      if (any && !cancelled) setBump((b) => b + 1)
+    })
+
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gl, treeMaterial, lookName, sig])
+
+  return useMemo(() => {
+    const textures = new Map()
+    if (lookName && species?.length) {
+      for (const s of species) {
+        const tex = _captureCache.get(`${lookName}:${s.species}`)
+        if (tex) textures.set(s.species, tex)
+      }
+    }
+    const ready = species?.length ? textures.size === species.length : false
+    return { textures, ready }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookName, sig, bump])
+}

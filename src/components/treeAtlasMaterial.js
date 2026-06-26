@@ -688,6 +688,121 @@ function injectFoliageSway(material) {
   }
 }
 
+// ── Captured-impostor billboard material (Arc 2, Phase 1) ──────────────────
+//
+// The X cross-billboard (impostorGeometry.js#buildXImpostorGeometry) is textured
+// with a render-to-texture CAPTURE of the real tree (captureImpostor.js), NOT
+// the shared atlas — so it can't ride injectFoliageSway's bark-retint/atlas
+// path. It gets its OWN slim MeshStandardMaterial with a captured texture as
+// `map`, plus the SAME base-anchored sway (off the shared treeSwayUniforms — the
+// whole forest moves as one weather system) and the SAME lamp-glow emissive as
+// the mesh trees, so it rides full optical parity (tone-mapped + fogged → DoF /
+// fog / bloom all apply). Flat-lit billboard: no per-leaf-tier damping, just a
+// single horizontal sway growing with aTreeHeightNorm (base planted, canopy
+// flutters), reusing the sway/lamp shader slices of injectFoliageSway.
+export function injectImpostorBillboard(material) {
+  material.onBeforeCompile = (shader) => {
+    // Reuse the SHARED sway uniforms (same object the mesh trees mutate per
+    // frame in SwayDriver) so impostor + mesh move as one weather system.
+    shader.uniforms.uTime              = treeSwayUniforms.uTime
+    shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
+    shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
+    shader.uniforms.uGustFrontVelocity = treeSwayUniforms.uGustFrontVelocity
+    shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
+    shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
+    // Per-instance lamp glow (same per-Look TOD uniform + per-tree baked attr).
+    shader.uniforms.uLampGlow          = _lampGlow.treesUniform
+    // Hero-tier QC overlay (shared module uniform) so ?heroTierQC=1 tints the
+    // captured-impostor billboards magenta too — the operator's eye-gate for the
+    // mesh/impostor split must cover impostors (these ARE the impostor tier).
+    shader.uniforms.uHeroTierQC        = treeHeroTierQC
+    material.userData.shader = shader
+
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+         uniform float uTime;
+         uniform vec3  uWindForce;
+         uniform float uWindIntensity;
+         uniform vec3  uGustFrontVelocity;
+         uniform float uGustsScale;
+         uniform float uGustEnvelope;
+         attribute float aLampGlow;
+         attribute float aTreeHeightNorm;
+         varying float vLampGlow;`
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+         vLampGlow = aLampGlow;
+         {
+           // Per-instance phase + advection from the instance translation column
+           // (same seam injectFoliageSway uses). Base-anchored horizontal sway
+           // ∝ aTreeHeightNorm: trunk base planted, canopy top fluttering.
+           #ifdef USE_INSTANCING
+             vec3 instWorld = vec3(instanceMatrix[3].x, 0.0, instanceMatrix[3].z);
+           #else
+             vec3 instWorld = vec3(modelMatrix[3].x, 0.0, modelMatrix[3].z);
+           #endif
+           float phase = instWorld.x * 0.05 + instWorld.z * 0.07;
+           float frontLenSq = dot(uGustFrontVelocity.xz, uGustFrontVelocity.xz);
+           float phaseOffset = (frontLenSq > 1e-4)
+             ? dot(instWorld.xz, uGustFrontVelocity.xz) / frontLenSq
+             : 0.0;
+           vec2 windDirXZ;
+           if (uWindIntensity > 1e-3)      windDirXZ = uWindForce.xz / uWindIntensity;
+           else if (frontLenSq > 1e-4)     windDirXZ = uGustFrontVelocity.xz / sqrt(frontLenSq);
+           else                            windDirXZ = vec2(0.0);
+           float wtGust  = uTime - phaseOffset;
+           float spikePhase = wtGust * 1.5 + instWorld.x * 0.01 + instWorld.z * 0.007;
+           float spikeRaw   = sin(spikePhase) * 0.6
+                            + sin(spikePhase * 1.7 + 1.3) * 0.3
+                            + sin(spikePhase * 0.31 + 0.7) * 0.1;
+           float spikeShape = max(spikeRaw - 0.35, 0.0) * 2.2;
+           float gustAmp    = uGustsScale * uGustEnvelope * spikeShape;
+           float driftOsc   = sin(uTime * 1.6 + phase);
+           float gustOsc    = sin(wtGust * 1.9 + phase * 1.7);
+           float swayMps    = uWindIntensity * driftOsc + gustAmp * gustOsc;
+           // The whole canopy is one billboard, so sway it as a unit (no per-
+           // tier damping); aTreeHeightNorm keeps the base planted. 0.05 m / (m/s)
+           // / m of height ≈ the mesh canopy's flutter at the leaf tier.
+           float swayM = swayMps * 0.05 * aTreeHeightNorm;
+           transformed.xz += windDirXZ * swayM;
+           // Static lean toward the wind, also base-anchored.
+           transformed.xz += windDirXZ * (uWindIntensity * 0.05 * aTreeHeightNorm * 0.3);
+         }`
+      )
+
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+         uniform float uLampGlow;
+         uniform float uHeroTierQC;
+         varying float vLampGlow;`
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+         // Hero-tier QC overlay — impostors are tier 1 (magenta). Gated → no-op
+         // when off (bit-identical capture render). Matches the mesh material's
+         // QC tint so the operator's eye-gate reads the whole forest uniformly.
+         if (uHeroTierQC > 0.5) {
+           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.20, 0.85), 0.65);
+         }`
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+         // Lamp glow — same warm amber the mesh canopy emits (no vCanopyW gate:
+         // the whole billboard IS canopy), so impostor trees under a lamp warm
+         // up consistently with their mesh neighbours.
+         totalEmissiveRadiance += vec3(0.55, 0.40, 0.20) * vLampGlow * uLampGlow;`
+      )
+  }
+}
+
 function loadTexture(url) {
   return new Promise((resolve, reject) => {
     const loader = new THREE.TextureLoader()

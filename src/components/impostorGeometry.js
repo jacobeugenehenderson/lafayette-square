@@ -1,129 +1,86 @@
 /**
- * impostorGeometry.js — build the layer-card geometry for a Hero tree impostor.
+ * impostorGeometry.js — billboard geometry for the captured-texture tree
+ * impostors (Arc 2, Phase 1 — captured-impostor arc).
  *
- * The impostor is the WHOLE tree as a handful of stamped 2D layer cards
- * (doctrine: BATON-tree-render-next.md): a trunk card (bark) + N canopy slabs
- * (leaves), all anchored at the base and hula-ing together. This module turns
- * one species' baked impostor record (trees-atlas.json#impostorBySpecies, from
- * arborist/bake-impostors.js) into a single merged BufferGeometry whose UVs
- * sample the SAME unified tree atlas the near trees use — so it rides the exact
- * same shared material (one shader program, Bloom-stable, DoF'd/fogged/graded
- * like real geometry).
+ *   buildXImpostorGeometry  — the HERO impostor: an "X" cross of two
+ *                             perpendicular quads, FULL-quad UVs (0..1), sized
+ *                             to the tree's real height × 2·canopyRadius, base
+ *                             at y=0. Textured (in InstancedTrees#XImpostor)
+ *                             with a render-to-texture CAPTURE of the real tree
+ *                             (captureImpostor.js) — so the silhouette is
+ *                             correct BY CONSTRUCTION, not sampled from atlas
+ *                             tiles. This replaces the FAILED analytic impostor
+ *                             (cross-quads sampling bark/leaf atlas TILES, which
+ *                             read as dark leaf-slabs + a stone trunk at every
+ *                             distance — operator-rejected 2026-06-25).
  *
- * Why this is cheap: ~a dozen quads per species (one geometry, instanced across
- * every impostor-role placement) replaces ~15K overdrawing alpha leaf cards per
- * tree. That's the standing perf fix the impostor arc exists for.
+ *   buildOpaqueCanopyGeometry — unchanged; the Phase-B opaque-articulated middle
+ *                             tier's solid canopy shell.
  *
- * The geometry carries the SAME per-vertex attributes the runtime-merge stamps
- * onto real trees (aBark, aBarkRegion, aWindTier, aTreeHeightNorm, aHeroTier)
- * so the shared material's bark-retint + sway + QC paths all light up
- * identically — base-anchored hula (sway ∝ position.y), trunk barely moves,
- * canopy slabs flutter (aWindTier 0 vs 3).
+ * Why this is cheap: TWO quads per species (one geometry, instanced across every
+ * impostor-role placement) replaces ~15K overdrawing alpha leaf cards per tree.
+ * That's the standing perf fix the impostor arc exists for.
+ *
+ * The X geometry carries the per-vertex attributes the captured-impostor
+ * material reads for base-anchored sway (aTreeHeightNorm) — the canopy hulas off
+ * the SAME shared wind uniforms, trunk-base planted, sway growing with height.
  */
 import * as THREE from 'three'
 
-// Each canopy slab is a CROSS of two perpendicular quads (a "+" billboard) so
-// the silhouette reads from any azimuth without a true octahedral capture
-// (deferred to Phase 2). The trunk is a single cross too. Cheap: a 4-slab
-// summer impostor = (1 trunk + 4 canopy) × 2 quads × 2 tris = 20 tris.
-const CROSS_PLANES = 2
-
 /**
- * Build one impostor geometry for a species from its baked record + the season
- * plan to render (default 'summer'). Returns a THREE.BufferGeometry in tree-
- * local metres (base at y=0, +y up), ready to instance — or null if the record
- * has no usable layers.
+ * Build the HERO X-impostor geometry: two perpendicular quads (an "X"/"+"
+ * billboard) so the silhouette reads from any azimuth without an octahedral
+ * capture (deferred). FULL-quad UVs (0..1) — the captured texture IS the tree,
+ * so each quad spans the whole capture, NOT an atlas sub-rect. Sized to real
+ * metres: height = heightM, width = 2·canopyRadiusM, base anchored at y=0.
  *
- * @param {object} rec   impostorBySpecies[species] from trees-atlas.json
- * @param {string} season  'summer' | 'winter' | 'spring' | 'fall'
+ * @param {number} heightM        real tree height (metres)
+ * @param {number} canopyRadiusM  real canopy half-width (metres)
+ * @returns {THREE.BufferGeometry}
  */
-export function buildImpostorGeometry(rec, season = 'summer') {
-  if (!rec) return null
-  const layers = rec.seasons?.[season] || rec.seasons?.summer || []
-  if (!layers.length) return null
-
-  const heightM = rec.heightM || 12
-  const radiusM = Math.max(0.5, rec.canopyRadiusM || 4)
-  // Trunk half-width: a fraction of canopy radius (a slab card reads as a
-  // trunk when it's narrow). Tuned visual proxy, not a measured trunk radius.
-  const trunkHalfW = Math.max(0.15, radiusM * 0.12)
+export function buildXImpostorGeometry(heightM, canopyRadiusM) {
+  const h = Math.max(1, heightM || 12)
+  const halfW = Math.max(0.5, canopyRadiusM || 4)
 
   const positions = []
   const normals = []
   const uvs = []
-  const aBark = []
-  const aBarkRegion = []
-  const aWindTier = []
   const aTreeHeightNorm = []
   const indices = []
 
-  // Emit one camera-agnostic CROSS (two perpendicular quads) for a layer band
-  // [yLo, yHi] (normalized height), with the given half-width + atlas rect.
-  const pushCross = (yLo, yHi, halfW, rect, isBark) => {
-    const y0 = yLo * heightM
-    const y1 = yHi * heightM
-    for (let p = 0; p < CROSS_PLANES; p++) {
-      // Plane 0 spans X (faces ±Z); plane 1 spans Z (faces ±X).
-      const base = positions.length / 3
-      const ax = p === 0 ? halfW : 0
-      const az = p === 0 ? 0 : halfW
-      // 4 corners: (-h, y0) (+h, y0) (+h, y1) (-h, y1)
-      positions.push(-ax, y0, -az,  ax, y0, az,  ax, y1, az,  -ax, y1, -az)
-      // Sample the atlas rect: U across the card width, V across its height.
-      // offset+scale map [0,1]→the species' tile sub-region of the unified atlas.
-      const { offsetU, offsetV, scaleU, scaleV } = rect
-      uvs.push(
-        offsetU,           offsetV + scaleV,   // bottom-left
-        offsetU + scaleU,  offsetV + scaleV,   // bottom-right
-        offsetU + scaleU,  offsetV,            // top-right
-        offsetU,           offsetV,            // top-left
-      )
-      const tier = isBark ? 0 : 3   // trunk barely sways; canopy flutters
-      const region = isBark ? 1 : 0 // trunk card → 'trunk' region
-      // Per-card normal. The OLD code gave every card a flat +Z normal, but the
-      // cross's plane 1 faces ±X — so under a low sun those cards got no light
-      // and rendered as BLACK squares (2026-06-25). Fix: LEAF canopy cards get
-      // an UP normal so they're lit from the sky/sun like a real canopy (never
-      // fully black sideways); the TRUNK card keeps its true facing normal
-      // (a shaded back reads fine on wood). Plane 0 spans X → faces +Z; plane 1
-      // spans Z → faces +X.
-      const nx = isBark ? (p === 0 ? 0 : 1) : 0
-      const ny = isBark ? 0 : 1
-      const nz = isBark ? (p === 0 ? 1 : 0) : 0
-      for (let v = 0; v < 4; v++) {
-        normals.push(nx, ny, nz)
-        aBark.push(isBark ? 1 : 0)
-        aBarkRegion.push(region)
-        aWindTier.push(tier)
-        // aTreeHeightNorm normalizes the vertex's Y up the tree [0,1] so the
-        // deformer + sway anchor at the base and grow with height (real wood).
-        const vy = (v === 0 || v === 1) ? yLo : yHi
-        aTreeHeightNorm.push(Math.min(1, Math.max(0, vy)))
-      }
-      indices.push(base, base + 1, base + 2, base, base + 2, base + 3)
+  // Two quads: plane 0 spans X (faces ±Z), plane 1 spans Z (faces ±X). Both run
+  // full-height (0 → h) and full-width (-halfW → +halfW), full-quad UVs.
+  for (let p = 0; p < 2; p++) {
+    const base = positions.length / 3
+    const ax = p === 0 ? halfW : 0
+    const az = p === 0 ? 0 : halfW
+    // 4 corners: (-w, 0) (+w, 0) (+w, h) (-w, h)
+    positions.push(-ax, 0, -az,  ax, 0, az,  ax, h, az,  -ax, h, -az)
+    // Capture is rendered +Y up, front-on; the RT texture is NOT flipped, so V=0
+    // is the texture's top row = canopy. Map quad-bottom→V=1, quad-top→V=0 so
+    // the world tree's base reads the capture's base. U across the width.
+    uvs.push(
+      0, 1,   // bottom-left
+      1, 1,   // bottom-right
+      1, 0,   // top-right
+      0, 0,   // top-left
+    )
+    // Normals face UP — a billboard lit like a canopy reads acceptably flat-lit
+    // from any azimuth (the capture already baked the tree's own shading; this
+    // just keeps it from going black sideways under a low sun). Octahedral
+    // per-azimuth normals are deferred (BATON-tree-render-next.md).
+    for (let v = 0; v < 4; v++) {
+      normals.push(0, 1, 0)
+      // Base-anchored sway axis: 0 at the trunk base, 1 at the canopy top.
+      aTreeHeightNorm.push((v === 0 || v === 1) ? 0 : 1)
     }
+    indices.push(base, base + 1, base + 2, base, base + 2, base + 3)
   }
-
-  for (const layer of layers) {
-    if (!layer.atlasRect) continue
-    const isBark = layer.kind === 'bark'
-    const halfW = isBark ? trunkHalfW : radiusM
-    pushCross(layer.yLo, layer.yHi, halfW, layer.atlasRect, isBark)
-  }
-
-  if (positions.length === 0) return null
 
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  // Per-card normals are built in pushCross (leaf canopy → UP, lit like a
-  // canopy; trunk → its facing normal) so a wrong-facing card never renders
-  // unlit/black under a low sun. (Separate latent fix from the bloom-pyramid
-  // black-square artifact.)
   g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
-  g.setAttribute('aBark', new THREE.Float32BufferAttribute(aBark, 1))
-  g.setAttribute('aBarkRegion', new THREE.Float32BufferAttribute(aBarkRegion, 1))
-  g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
   g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
   g.setIndex(indices)
   g.computeBoundingSphere()
