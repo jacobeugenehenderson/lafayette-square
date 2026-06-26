@@ -835,14 +835,22 @@ function PerimeterFence() {
 function ElevatedGroup({ at, children, footprintRadius = 0 }) {
   const ref = useRef()
   const baseY = useMemo(() => {
+    // Lift to the MAX terrain over the whole label FOOTPRINT (a disc, not one
+    // ring). The label is far wider than a single ring, so a terrain bump under
+    // the word but beyond an 8-spoke ring used to poke up through the letters
+    // ("LAFAYETTE PARK" read half-drowned, 2026-06-26). Two rings × 12 spokes
+    // capture the true max, so the baseline clears the ground beneath the whole
+    // word regardless of vertical exaggeration (both ride terrainExag).
     let m = getElevationRaw(at[0], at[1])
     if (footprintRadius > 0) {
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2
-        m = Math.max(m, getElevationRaw(
-          at[0] + Math.cos(a) * footprintRadius,
-          at[1] + Math.sin(a) * footprintRadius,
-        ))
+      for (const r of [footprintRadius * 0.5, footprintRadius]) {
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2
+          m = Math.max(m, getElevationRaw(
+            at[0] + Math.cos(a) * r,
+            at[1] + Math.sin(a) * r,
+          ))
+        }
       }
     }
     return m
@@ -858,12 +866,16 @@ function ElevatedGroup({ at, children, footprintRadius = 0 }) {
 // toggle) so the operator controls it from the Labels section instead of it
 // being an always-on orphan. Kept here so its park-relative position
 // constants + terrain-lift (ElevatedGroup) stay with the park geometry.
+// NOTE: landmark labels are a DISTINCT class from street labels — they live
+// in the world on the terrain (occludable, height/position matter) and want
+// their OWN operator controls, not the shared `labels` toggle. See
+// ls/BACKLOG.md "Landmark labels need their own controls".
 export function ParkTitle() {
   return (
     <>
-      <ElevatedGroup at={LABEL_TITLE_POS} footprintRadius={24}>
+      <ElevatedGroup at={LABEL_TITLE_POS} footprintRadius={34}>
         <Text
-          position={[LABEL_TITLE_POS[0], 0.08, LABEL_TITLE_POS[1]]}
+          position={[LABEL_TITLE_POS[0], 4.0, LABEL_TITLE_POS[1]]}
           rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
           fontSize={6}
           color="#e8e8f0"
@@ -877,9 +889,9 @@ export function ParkTitle() {
           LAFAYETTE PARK
         </Text>
       </ElevatedGroup>
-      <ElevatedGroup at={LABEL_SUBTITLE_POS} footprintRadius={14}>
+      <ElevatedGroup at={LABEL_SUBTITLE_POS} footprintRadius={24}>
         <Text
-          position={[LABEL_SUBTITLE_POS[0], 0.08, LABEL_SUBTITLE_POS[1]]}
+          position={[LABEL_SUBTITLE_POS[0], 4.0, LABEL_SUBTITLE_POS[1]]}
           rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
           fontSize={3}
           color="#888890"

@@ -16,7 +16,7 @@ import useSkyState from '../hooks/useSkyState'
 import { INSTANCE } from '../instance.js'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
-import WeatherTimeline from './WeatherTimeline'
+import { TodStrip } from './DawnTimeline'
 import { useContact } from './ContactModal'
 import useCommunityStats from '../hooks/useCommunityStats'
 
@@ -190,7 +190,7 @@ function CollapsibleSection({ title, defaultOpen = false, bg = '', highlight = f
 // ============ ALMANAC TAB ============
 
 function AlmanacTab() {
-  const { currentTime, setTime, isLive } = useTimeOfDay()
+  const { currentTime, isLive } = useTimeOfDay()
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
 
@@ -330,15 +330,10 @@ function AlmanacTab() {
             </div>
           </div>
         </div>
-        {/* ── Timeline slider ── */}
-        <div className="bg-surface-container border-b border-outline-variant">
-          <WeatherTimeline
-            currentTime={currentTime}
-            isLive={isLive}
-            useCelsius={useCelsius}
-            use24Hour={use24Hour}
-            onScrub={(date) => setTime(date)}
-          />
+        {/* ── Timeline slider ── shared DawnTimeline TodStrip (the slider used
+            everywhere else): label-only slots, no clock times, + hi/lo temps. */}
+        <div className="bg-surface-container border-b border-outline-variant px-4 py-2">
+          <TodStrip showHiLo useCelsius={useCelsius} />
         </div>
         </div>
       )}

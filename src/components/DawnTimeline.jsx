@@ -2,8 +2,9 @@ import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCalendar from '../hooks/useCalendar'
+import useSkyState from '../hooks/useSkyState'
 import {
-  getDawnWindow, dateToFraction, fractionToDate,
+  getDawnWindow, dateToFraction, fractionToDate, getHiLo,
 } from '../lib/dawnTimeline'
 import { NAMED_TOD_SLOTS } from '../cartograph/animatedParam'
 import { INSTANCE } from '../instance.js'
@@ -113,9 +114,12 @@ function preserveTickFraction(oldDate, newDateAnchor) {
   return new Date(newTicks[aIdx].getTime() + subFrac * newSpan)
 }
 
-function TodStrip() {
+// showHiLo + useCelsius are opt-in (production Almanac) — authoring callers
+// render <TodStrip/> bare and get the original chrome-free strip unchanged.
+export function TodStrip({ showHiLo = false, useCelsius = false }) {
   const currentTime = useTimeOfDay((s) => s.currentTime)
   const setTime = useTimeOfDay((s) => s.setTime)
+  const hourlyForecast = useSkyState((s) => s.hourlyForecast)
 
   const dawnWindow = useMemo(() => getDawnWindow(currentTime), [
     currentTime.getFullYear(), currentTime.getMonth(),
@@ -133,6 +137,11 @@ function TodStrip() {
       .filter(w => w.time && w.time >= dawnWindow.start && w.time <= dawnWindow.end)
       .map(w => ({ ...w, fraction: dateToFraction(w.time, dawnWindow) }))
   }, [dawnWindow])
+
+  const hiLo = useMemo(
+    () => (showHiLo ? getHiLo(dawnWindow, hourlyForecast) : null),
+    [showHiLo, dawnWindow, hourlyForecast]
+  )
 
   const nowFrac = dateToFraction(currentTime, dawnWindow)
 
@@ -197,6 +206,20 @@ function TodStrip() {
           />
         ))}
 
+        {/* Hi/Lo dots (production Almanac) */}
+        {hiLo && (
+          <>
+            <div
+              className="absolute w-[6px] h-[6px] rounded-full top-1/2 -translate-y-1/2 -translate-x-1/2 border border-red-400/70"
+              style={{ left: `${hiLo.hi.fraction * 100}%`, backgroundColor: 'rgba(248,113,113,0.3)' }}
+            />
+            <div
+              className="absolute w-[6px] h-[6px] rounded-full top-1/2 -translate-y-1/2 -translate-x-1/2 border border-blue-400/70"
+              style={{ left: `${hiLo.lo.fraction * 100}%`, backgroundColor: 'rgba(96,165,250,0.3)' }}
+            />
+          </>
+        )}
+
         <div
           className="absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none border-2 shadow-sm"
           style={{
@@ -206,6 +229,36 @@ function TodStrip() {
           }}
         />
       </div>
+
+      {/* Hi/Lo labels (production Almanac) — collision-nudged like WeatherTimeline */}
+      {hiLo && (() => {
+        const MIN_GAP = 0.10
+        let hiPct = hiLo.hi.fraction
+        let loPct = hiLo.lo.fraction
+        const gap = Math.abs(hiPct - loPct)
+        if (gap < MIN_GAP) {
+          const mid = (hiPct + loPct) / 2
+          const sign = hiPct <= loPct ? -1 : 1
+          hiPct = Math.max(0.05, Math.min(0.95, mid + sign * MIN_GAP / 2))
+          loPct = Math.max(0.05, Math.min(0.95, mid - sign * MIN_GAP / 2))
+        }
+        return (
+          <div className="relative h-4 px-1">
+            <span
+              className="absolute -translate-x-1/2 text-caption leading-none text-red-400/60 whitespace-nowrap"
+              style={{ left: `${hiPct * 100}%` }}
+            >
+              Hi {Math.round(useCelsius ? (hiLo.hi.temperatureF - 32) * 5 / 9 : hiLo.hi.temperatureF)}&deg;
+            </span>
+            <span
+              className="absolute -translate-x-1/2 text-caption leading-none text-blue-400/60 whitespace-nowrap"
+              style={{ left: `${loPct * 100}%` }}
+            >
+              Lo {Math.round(useCelsius ? (hiLo.lo.temperatureF - 32) * 5 / 9 : hiLo.lo.temperatureF)}&deg;
+            </span>
+          </div>
+        )
+      })()}
     </div>
   )
 }

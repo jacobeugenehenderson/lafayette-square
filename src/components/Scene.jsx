@@ -67,8 +67,13 @@ const PRESETS = {
     target: HERO_TARGET,
   },
   browse: {
-    position: [0, 600, 1],        // top-down (Z=1 avoids gimbal lock)
-    target: [0, 0, 0],
+    // Centered on the neighborhood centroid [-15,-15] (the boundary SSoT in
+    // neighborhood_boundary.json), not [0,0] — the old target sat off-center.
+    // Altitude pulled 600→420 to crop the default frame to the core (no empty
+    // lots / wasted space); still freely zoomable (min 50 / max 4000).
+    // EYE-GATE: 420 is the framing dial — nudge for desktop crop.
+    position: [-15, 420, -14],    // top-down, centered; Z = target.z+1 avoids gimbal lock
+    target: [-15, 0, -15],
   },
 }
 
