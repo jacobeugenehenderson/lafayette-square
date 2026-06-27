@@ -533,7 +533,7 @@ export function LampGlowEditor() {
       fields={LAMPGLOW_FIELDS}
       flatDefaults={LAMPGLOW_FLAT_DEFAULTS}
       channel={lampGlow}
-      onSetValue={(key, value) => setLampGlow(key, value)}
+      onSetValue={(key, value, slotId) => setLampGlow(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animateLampGlow(slotId) : addLampGlowSlot(slotId)}
       onRemoveSlot={removeLampGlowSlot}
       onUnanimate={unanimateLampGlow}

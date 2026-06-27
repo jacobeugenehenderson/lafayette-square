@@ -45,7 +45,7 @@ function StoreChannel({ name, label, fields, flatDefaults }) {
       fields={fields}
       flatDefaults={flatDefaults}
       channel={channel}
-      onSetValue={(key, value) => setValue(key, value)}
+      onSetValue={(key, value, slotId) => setValue(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
       onRemoveSlot={removeSlot}
       onUnanimate={unanimate}

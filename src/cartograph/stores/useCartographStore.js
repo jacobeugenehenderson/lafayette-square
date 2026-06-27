@@ -69,14 +69,22 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
     return out
   }
   return {
-    [`set${cap}`]: (key, value) => {
+    [`set${cap}`]: (key, value, slotId) => {
       set(s => {
         const ch = s[name] || { values: {} }
         if (!ch.animated) {
           return { [name]: { ...ch, values: { ...(ch.values || {}), [key]: value } } }
         }
-        const tod = useTimeOfDay.getState()
-        const sid = todSlotAtMinute(tod.getMinuteOfDay(), tod.currentTime)
+        // Animated: write to the EXPLICIT edit-target slot the caller passes
+        // (TodChannel's selected chip). Keyframes are keyed BY SLOT ID and each
+        // slot's time is already stamped (getTodSlotMinutes), so the write never
+        // needs the playhead — which is what retired the scrub-on-edit timeline
+        // jog. Fall back to the playhead-inferred slot for any caller that
+        // doesn't pass one (e.g. meteorologist's Teacup, programmatic writes).
+        const sid = slotId ?? (() => {
+          const tod = useTimeOfDay.getState()
+          return todSlotAtMinute(tod.getMinuteOfDay(), tod.currentTime)
+        })()
         if (!sid || !(sid in (ch.values || {}))) return s
         const tuple = { ...(ch.values[sid] || {}), [key]: value }
         return { [name]: { ...ch, values: { ...ch.values, [sid]: tuple } } }

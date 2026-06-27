@@ -135,7 +135,7 @@ function ArchLightChannel() {
       fields={ARCHLIGHT_FIELDS}
       flatDefaults={ARCHLIGHT_FLAT_DEFAULTS}
       channel={channel}
-      onSetValue={(key, value) => setValue(key, value)}
+      onSetValue={(key, value, slotId) => setValue(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
       onRemoveSlot={removeSlot}
       onUnanimate={unanimate}
@@ -164,7 +164,7 @@ function LanternChannel() {
       fields={LANTERN_FIELDS}
       flatDefaults={LANTERN_FLAT_DEFAULTS}
       channel={channel}
-      onSetValue={(key, value) => setValue(key, value)}
+      onSetValue={(key, value, slotId) => setValue(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
       onRemoveSlot={removeSlot}
       onUnanimate={unanimate}

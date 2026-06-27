@@ -415,16 +415,17 @@ export default function TodChannel({
   // you see the moment you're editing. Never mints a keyframe by itself.
   const onChipClick = (slotId) => { setSelectedSlot(slotId); scrubToTodSlot(slotId) }
 
-  // Edit routing: park the playhead on the target (so the store writes to
-  // THIS slot), mint its keyframe on the first edit (animate if the channel
-  // was flat, else add the slot), then write the field.
+  // Edit routing: mint the target's keyframe on the first edit (animate if the
+  // channel was flat, else add the slot), then write the field DIRECTLY to that
+  // slot. The slot id is the keyframe key (its time is stamped), so the write
+  // needs no playhead — editing never jogs the timeline; the playhead moves on
+  // tile-click alone (onChipClick).
   const onFieldChange = (key, value) => {
     if (!showRow) { onSetValue(key, value); return }
     const sid = editTarget
     if (!sid) return
-    scrubToTodSlot(sid)
     if (!attachedIds.has(sid)) onFillSlot(sid, !animated)
-    onSetValue(key, value)
+    onSetValue(key, value, sid)
   }
 
   const onToggleAnimate = () => {
