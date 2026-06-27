@@ -10,31 +10,11 @@ import { useRef, useEffect } from 'react'
 import { EffectComposer, N8AO, SMAA } from '@react-three/postprocessing'
 import { SMAAPreset } from 'postprocessing'
 import { AerialPerspective, FilmGrade, FilmGrain, _postFxRefs } from '../components/PostProcessing.jsx'
-import { RomanceDoF, _dofRefs } from '../components/RomanceDoF.jsx'
+import { RomanceDoF } from '../components/RomanceDoF.jsx'
 import { DownsamplePyramid } from '../components/DownsamplePyramid.jsx'
 import { CustomBloom } from '../components/CustomBloom.jsx'
+import { applyDofFrame } from '../components/dofDriver.js'
 import { pyramidDegreeFor } from '../lib/renderTiers.js'
-
-// Verification driver for the WIP two-focal DoF. Turn the effect ON via the
-// "DoF (WIP)" toggle in the Preview FX matrix; these URL params then flip the
-// debug paint + tune the four params without a UI yet (the real home is the
-// Stage "Focus" channel, Phase 3). Examples (after toggling DoF on):
-//   ?dofDebug=1                                → green=sharp / red=blur paint
-//   ?dofNear=120&dofBlur=0.6&dofHero=0.15&dofHeroDist=1250&dofWidth=25&dofMid=300
-function DofDriver() {
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search)
-    const num = (k, d) => { const v = parseFloat(q.get(k)); return Number.isFinite(v) ? v : d }
-    _dofRefs.debug.current      = q.get('dofDebug') === '1' ? 1 : 0
-    _dofRefs.nearFocus.current  = num('dofNear',     _dofRefs.nearFocus.current)
-    _dofRefs.maxBlur.current    = num('dofBlur',     _dofRefs.maxBlur.current)
-    _dofRefs.heroBlur.current   = num('dofHero',     _dofRefs.heroBlur.current)
-    _dofRefs.heroDist.current   = num('dofHeroDist', _dofRefs.heroDist.current)
-    _dofRefs.sharpWidth.current = num('dofWidth',    _dofRefs.sharpWidth.current)
-    _dofRefs.midRange.current   = num('dofMid',      _dofRefs.midRange.current)
-  }, [])
-  return null
-}
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -48,6 +28,7 @@ import {
   HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
   GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
   GRAIN_FLAT_DEFAULTS,
+  DOF_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 
 // First-paint default channels — mirror PostProcessing.jsx so an unauthored
@@ -68,6 +49,32 @@ function resolveLookId(propLookId) {
 // authoring AND the bake. Reading scene.json is "Preview = LS literally": the
 // chain reflects exactly what's published. Per-effect mounting (the toggles
 // below) is Preview's only sanctioned divergence from the shared consumer.
+// DoF driver — calls the ONE shared per-frame driver (dofDriver.js), the same
+// one production's PostProcessing uses, so Preview's DoF tracks the live camera +
+// the `dof` TOD channel exactly like the shipping render (no more frozen
+// URL-param fork). ?dofDebug=1 still paints the CoC zones — the shared driver
+// reads window.__dofDebug, which we set from the URL once on mount.
+function DofDriver({ lookId }) {
+  const scene = useSceneJson(resolveLookId(lookId))
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('dofDebug') === '1') {
+      window.__dofDebug = 1
+    }
+  }, [])
+  useFrame((state) => {
+    const tod = useTimeOfDay.getState()
+    applyDofFrame({
+      camera: state.camera,
+      dofChannel: scene?.dof ?? _ch(DOF_FLAT_DEFAULTS),
+      minute: tod.getMinuteOfDay(),
+      slotMins: getTodSlotMinutes(tod.currentTime),
+      archValues: scene?.arch?.values,
+      heroSubject: scene?.heroSubject,
+    })
+  })
+  return null
+}
+
 function FxDriver({ aoRef, bloomRef, lookId }) {
   const scene = useSceneJson(resolveLookId(lookId))
   useFrame(() => {
@@ -153,7 +160,7 @@ export default function PreviewPostFx({
   return (
     <>
       <FxDriver aoRef={aoRef} bloomRef={bloomRef} lookId={lookId} />
-      {dof && <DofDriver />}
+      {dof && <DofDriver lookId={lookId} />}
       {/* key flips with the conditional-effect set so the composer rebuilds its
           pipeline when any effect is toggled on/off (EffectComposer doesn't
           reconcile added/removed effects on its own — this fixes the Preview
