@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1782488078544,
+  "bakedAt": 1782504761363,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -165,24 +165,26 @@
   },
   "bloom": {
     "animated": "tod",
-    "transitionIn": 30,
-    "transitionOut": 30,
+    "transitionIn": 0,
+    "transitionOut": 0,
     "values": {
       "night": {
-        "intensity": 0,
+        "intensity": 2,
         "threshold": 0.02,
-        "smoothing": 0.06
+        "smoothing": 0.06,
+        "warmCool": 0
       },
       "noon": {
-        "intensity": 0.48,
-        "threshold": 0.09,
-        "smoothing": 0,
+        "intensity": 0.54,
+        "threshold": 0.26,
+        "smoothing": 0.16,
         "warmCool": 0.5
       },
       "dawn": {
         "intensity": 0.22,
         "threshold": 0,
-        "smoothing": 0
+        "smoothing": 0,
+        "warmCool": 0.5
       },
       "sunset": {
         "intensity": 0.56,
@@ -200,7 +202,7 @@
   },
   "exposure": {
     "values": {
-      "value": 0.58
+      "value": 0.56
     }
   },
   "warmth": {
@@ -274,9 +276,10 @@
   "dof": {
     "values": {
       "enabled": 1,
-      "blur": 0.08,
-      "focus": 33,
-      "softness": 0
+      "blur": 0.6,
+      "focus": 120,
+      "softness": 0.5,
+      "heroBlur": 0.15
     }
   },
   "shadow": {
@@ -367,7 +370,7 @@
   },
   "lantern": {
     "values": {
-      "intensity": 1,
+      "intensity": 1.26,
       "glow": 1
     }
   },

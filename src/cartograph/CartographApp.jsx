@@ -754,6 +754,10 @@ export default function CartographApp() {
   const dofOverride      = useCartographStore(s => s.dof)
   const grainOverride    = useCartographStore(s => s.grain)
   const shadowOverride   = useCartographStore(s => s.shadow)
+  // Live arch placement → the DoF hero pocket anchors to the SAME (store) arch
+  // Stage renders, not the stale baked scene.json one (heroSubject already read
+  // above at component scope).
+  const archOverride     = useCartographStore(s => s.arch)
 
   // Hero keyframes + authored motion live in the store (persisted to design.json).
   // preview + speed are transient runtime UI only.
@@ -1007,6 +1011,8 @@ export default function CartographApp() {
             grainOverride={grainOverride}
             smaaOverride={smaaOverride}
             dofOverride={dofOverride}
+            archOverride={archOverride}
+            heroSubjectOverride={heroSubject}
           />}
           <group visible={!inDesigner}>
             <R3FErrorBoundary name="CelestialBodies"><CelestialBodies

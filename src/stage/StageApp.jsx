@@ -131,7 +131,7 @@ function ArchLightChannel() {
   const revert        = useCartographStore(s => s.revertArchLight)
   return (
     <TodChannel
-      label="Arch Lighting"
+      label="Hero Lighting"
       fields={ARCHLIGHT_FIELDS}
       flatDefaults={ARCHLIGHT_FLAT_DEFAULTS}
       channel={channel}
@@ -188,13 +188,13 @@ function ArchHorizonControls() {
   return (
     <Collapsible label="Hero & Horizon">
       <div className="space-y-1">
-        <SliderRow label="Arch Distance" value={a.distance} min={400} max={2000} step={10}
+        <SliderRow label="Hero Distance" value={a.distance} min={400} max={2000} step={10}
           onChange={(v) => setArch('distance', v)} />
-        <SliderRow label="Arch Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
+        <SliderRow label="Hero Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
           onChange={(v) => setArch('scale', v)} />
-        <SliderRow label="Arch Rotation" value={a.rotation} min={0} max={Math.PI * 2} step={0.01}
+        <SliderRow label="Hero Rotation" value={a.rotation} min={0} max={Math.PI * 2} step={0.01}
           onChange={(v) => setArch('rotation', v)} />
-        <SliderRow label="Arch Y Offset" value={a.yOffset} min={-200} max={200} step={1}
+        <SliderRow label="Hero Y Offset" value={a.yOffset} min={-200} max={200} step={1}
           onChange={(v) => setArch('yOffset', v)} />
         <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
           onChange={(v) => setArch('footFade', v)} />

@@ -275,11 +275,14 @@ export function ExposureTicker({ lookId, bakeLastMs, exposureOverride }) {
 // ── Shared PostProcessing consumer ──────────────────────────────────────────
 
 const _tmpColor = new THREE.Color()
+const _camDir = new THREE.Vector3()   // reused for the DoF browse (look-down) gate
+const _heroVec = new THREE.Vector3()  // reused for the hero-pocket view-Z depth
 
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
   bloomOverride, aoOverride, exposureOverride, warmthOverride,
   fillOverride, haloOverride, gradeOverride, grainOverride, smaaOverride, dofOverride,
+  archOverride, heroSubjectOverride,
 }) {
   const bloomRef = useRef()
   const aoRef = useRef()
@@ -386,22 +389,41 @@ export function PostProcessing({
     // make DoF work (HANDOFF-real-dof Phase 3). Cheap; only meaningful when dofOn.
     if (dofOn) {
       const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
-      _dofRefs.debug.current      = 0
-      _dofRefs.nearFocus.current  = d.focus
-      // Browse (overhead) camera: disable DoF — from above the scene is at ~one
-      // depth, so DoF only smears the map. Gated on camera altitude (matches the
-      // bark aerial tier, TierDriver y > 150). maxBlur=0 → amt=0 → fully sharp
-      // (no lerp toward the pyramid). d.blur is already the 0..1 lerp strength.
-      _dofRefs.maxBlur.current    = camera.position.y > 150 ? 0 : d.blur
-      _dofRefs.sharpWidth.current = 30 - d.softness * 20      // softer → narrower sharp band
-      _dofRefs.midRange.current   = 100 + d.softness * 350    // softer → gentler ramp
-      // The blur fills the NEIGHBORHOOD (a bounded zone past the near focus);
-      // everything beyond it returns to sharp, so the Arch — always far — stays
-      // sharp wherever it's parked. (Anchoring the far plane to the *movable*
-      // arch backfired: moving it out stretched the blur over the whole scene.
-      // A bounded reach is robust and needs no arch tracking — same "never touch
-      // the arch" promise, kept by making far-of-the-neighborhood sharp.)
-      _dofRefs.farFocus.current = d.focus + 700
+      // Browse (overhead) camera: kill all DoF — from above the scene is at ~one
+      // depth, so DoF only smears the map (matches the bark aerial tier, y > 150).
+      // amt = 0 → fully sharp.
+      // Disable DoF only in the OVERHEAD browse view (camera looking steeply
+      // down → scene sits at ~one depth, so DoF just smears the map). The old
+      // gate used raw height (y > 150), which also caught the elevated HERO
+      // camera and killed DoF in the Hero shot. Gate on look-DOWN instead — it
+      // separates Browse (vertical) from Hero/Street (horizontal).
+      camera.getWorldDirection(_camDir)
+      const browse = _camDir.y < -0.6
+      // Toggle the CoC paint from the console: window.__dofDebug = 1 (green =
+      // sharp, red = full blur) → see exactly where the hero pocket lands.
+      _dofRefs.debug.current      = (typeof window !== 'undefined' && window.__dofDebug) ? 1 : 0
+      _dofRefs.nearFocus.current  = d.focus                          // near sharp distance
+      _dofRefs.maxBlur.current     = browse ? 0 : d.blur             // mid/far melt
+      _dofRefs.heroBlur.current    = browse ? 0 : (d.heroBlur ?? DOF_FLAT_DEFAULTS.heroBlur)
+      _dofRefs.sharpWidth.current  = 30 - d.softness * 20            // softer → wider near feather
+      _dofRefs.midRange.current    = 100 + d.softness * 350          // softer → gentler ramp
+      // Anchor the hero pocket to the AUTHORED hero — the "what" (hero picker,
+      // scene.heroSubject) resolved at its "where & how" (the Arch card's
+      // placement) — measured from the CAMERA each frame, so the softening lands
+      // on the real hero wherever the camera is parked (the shader works in
+      // camera-space distance, NOT distance-from-origin). Mirrors Scene.jsx.
+      // Prefer the LIVE (store) arch + hero subject in Stage; fall back to the
+      // baked scene.json in production (no overrides passed there).
+      const archValues = archOverride?.values ?? scene?.arch?.values
+      const heroSubj   = heroSubjectOverride ?? scene?.heroSubject
+      const heroPt = resolveHeroSubject(heroSubj, { archValues })
+      // The shader decodes `dist` as VIEW-Z (depth along the camera's forward
+      // axis), NOT the Euclidean distance — so the pocket must anchor in the same
+      // space, or an OFF-AXIS hero (the Arch sits to the side of where the camera
+      // points) lands at the wrong depth and the pocket misses it. Transform the
+      // hero point into view space; -z is that forward depth.
+      _heroVec.set(heroPt[0], heroPt[1], heroPt[2]).applyMatrix4(camera.matrixWorldInverse)
+      _dofRefs.heroDist.current    = -_heroVec.z
     }
   })
 

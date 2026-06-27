@@ -19,18 +19,19 @@ import { pyramidDegreeFor } from '../lib/renderTiers.js'
 // "DoF (WIP)" toggle in the Preview FX matrix; these URL params then flip the
 // debug paint + tune the four params without a UI yet (the real home is the
 // Stage "Focus" channel, Phase 3). Examples (after toggling DoF on):
-//   ?dofDebug=1                                → green=sharp / red=blur CoC paint
-//   ?dofNear=40&dofFar=1050&dofBlur=0.012&dofWidth=25&dofMid=300
+//   ?dofDebug=1                                → green=sharp / red=blur paint
+//   ?dofNear=120&dofBlur=0.6&dofHero=0.15&dofHeroDist=1250&dofWidth=25&dofMid=300
 function DofDriver() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     const num = (k, d) => { const v = parseFloat(q.get(k)); return Number.isFinite(v) ? v : d }
     _dofRefs.debug.current      = q.get('dofDebug') === '1' ? 1 : 0
-    _dofRefs.nearFocus.current  = num('dofNear',  _dofRefs.nearFocus.current)
-    _dofRefs.farFocus.current   = num('dofFar',   _dofRefs.farFocus.current)
-    _dofRefs.maxBlur.current    = num('dofBlur',  _dofRefs.maxBlur.current)
-    _dofRefs.sharpWidth.current = num('dofWidth', _dofRefs.sharpWidth.current)
-    _dofRefs.midRange.current   = num('dofMid',   _dofRefs.midRange.current)
+    _dofRefs.nearFocus.current  = num('dofNear',     _dofRefs.nearFocus.current)
+    _dofRefs.maxBlur.current    = num('dofBlur',     _dofRefs.maxBlur.current)
+    _dofRefs.heroBlur.current   = num('dofHero',     _dofRefs.heroBlur.current)
+    _dofRefs.heroDist.current   = num('dofHeroDist', _dofRefs.heroDist.current)
+    _dofRefs.sharpWidth.current = num('dofWidth',    _dofRefs.sharpWidth.current)
+    _dofRefs.midRange.current   = num('dofMid',      _dofRefs.midRange.current)
   }, [])
   return null
 }

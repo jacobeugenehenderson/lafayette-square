@@ -1,97 +1,144 @@
 /**
- * CustomBloom — a thin bloom that samples the shared DownsamplePyramid.
+ * CustomBloom — a thin bloom that samples the shared DownsamplePyramid ladder.
  *
- * Replaces `@react-three/postprocessing`'s `<Bloom>`. Stock `BloomEffect` owns
- * a PRIVATE bright-pass + mip pyramid (`MipmapBlurPass`, sealed) — it can't
- * share. This bloom samples our standalone `DownsamplePyramid` instead, so the
- * one downsample serves bloom now and DoF in Phase 2 (sharing the pyramid,
- * never the result — CHANNEL-ECONOMY-FORENSIC §2 #2).
+ * Replaces `@react-three/postprocessing`'s `<Bloom>`. Stock `BloomEffect` owns a
+ * PRIVATE bright-pass + mip pyramid (sealed) — it can't share. This bloom reads
+ * the standalone `DownsamplePyramid` instead, so the one downsample serves bloom
+ * and DoF (sharing the LADDER, never each other's result).
  *
- * ── The mechanism shift (the eye-gate) ─────────────────────────────────────
- * Stock bloom is threshold→blur (knee on the sharp scene, THEN its private
- * pyramid). The shared pyramid is a full-scene blur (DoF needs the darks), so
- * this bloom is blur→threshold: it applies the SAME knee
- * `smoothstep(threshold, threshold+smoothing, luminance)` as the library's
- * LuminanceMaterial, but to the BLURRED pyramid. The knobs keep their meaning;
- * the look shifts subtly (small bright sources spread+dim before the knee, so
- * they bloom weaker) → re-tune the `bloom` channel in Stage at the eye-gate.
- * See HANDOFF-real-dof Phase 1.
+ * ── The mechanism (HDR high-pass across SCALES, not a luminance gate) ───────
+ * Bloom is light scattering — a glow that sits ON the bright sources, dark
+ * staying dark. The first cut applied a luminance smoothstep gate to ONE
+ * collapsed full-scene blur, which (a) thresholded AFTER the blur, so a lamp's
+ * energy was diluted into its surroundings before the gate and broad midtones
+ * (sky, sunlit walls) drifted over it → a flat warm WASH, and (b) had only one
+ * blur scale, so no core+halo shape. This version fixes both off the shared
+ * ladder:
+ *   • HDR soft-knee high-pass (Unity/Karis) on EACH rung — keeps the bright
+ *     cores (energy survives the energy-conserving downsample) and lets midtones
+ *     fall away; no binary gate, no wash.
+ *   • Sums several rungs — the tight rungs give the bright core, the wide rungs
+ *     give the soft halo → real multi-scale glow.
+ * `uThreshold` = the HDR floor, `uSmoothing` = the soft-knee width. Mechanism
+ * shifted → re-tune the `bloom` channel in Stage at the eye-gate.
  *
  * ── API parity (so the channel wiring is untouched) ────────────────────────
- * The two driver sites (PostProcessing.jsx, PreviewPostFx.jsx) set
- * `bloom.intensity`, `bloom.luminanceMaterial.threshold`, and
- * `.luminanceMaterial.smoothing` off the `bloom` channel each frame. This
- * effect exposes those exact accessors (backed by its uniforms), so neither
- * driver changes. The one-tree-program Bloom constraint is about the tree
- * MATERIAL (untouched here) — the bloom PASS swaps safely.
+ * The driver sites (PostProcessing.jsx, PreviewPostFx.jsx) set `bloom.intensity`,
+ * `bloom.luminanceMaterial.threshold`, `.luminanceMaterial.smoothing`, and
+ * `bloom.warmCool` off the `bloom` channel each frame. This effect exposes those
+ * exact accessors (backed by its uniforms), so neither driver changes. The
+ * one-tree-program Bloom constraint is about the tree MATERIAL (untouched here)
+ * — the bloom PASS swaps safely.
  */
 
 import { useMemo, forwardRef } from 'react'
 import { Effect, BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
 
-import { _pyramidRefs } from './DownsamplePyramid.jsx'
+import { _pyramidRefs, PYRAMID_LEVELS } from './DownsamplePyramid.jsx'
 
 const fragment = /* glsl */`
   #ifdef FRAMEBUFFER_PRECISION_HIGH
-    uniform mediump sampler2D uPyramid;
+    uniform mediump sampler2D uLevel0;
+    uniform mediump sampler2D uLevel1;
+    uniform mediump sampler2D uLevel2;
+    uniform mediump sampler2D uLevel3;
+    uniform mediump sampler2D uLevel4;
+    uniform mediump sampler2D uLevel5;
+    uniform mediump sampler2D uLevel6;
+    uniform mediump sampler2D uLevel7;
   #else
-    uniform lowp sampler2D uPyramid;
+    uniform lowp sampler2D uLevel0;
+    uniform lowp sampler2D uLevel1;
+    uniform lowp sampler2D uLevel2;
+    uniform lowp sampler2D uLevel3;
+    uniform lowp sampler2D uLevel4;
+    uniform lowp sampler2D uLevel5;
+    uniform lowp sampler2D uLevel6;
+    uniform lowp sampler2D uLevel7;
   #endif
   uniform float uIntensity;
   uniform float uThreshold;
   uniform float uSmoothing;
   uniform float uWarmCool;   // 0 cool · 0.5 neutral · 1 warm
 
+  // Constant-index ladder access (dynamic sampler indexing is undefined in GLSL).
+  vec3 sampleLevel(int idx, vec2 uv) {
+    if (idx <= 0) return texture2D(uLevel0, uv).rgb;
+    if (idx == 1) return texture2D(uLevel1, uv).rgb;
+    if (idx == 2) return texture2D(uLevel2, uv).rgb;
+    if (idx == 3) return texture2D(uLevel3, uv).rgb;
+    if (idx == 4) return texture2D(uLevel4, uv).rgb;
+    if (idx == 5) return texture2D(uLevel5, uv).rgb;
+    if (idx == 6) return texture2D(uLevel6, uv).rgb;
+    return texture2D(uLevel7, uv).rgb;
+  }
+
+  // HDR soft-knee high-pass on one rung — hue-preserving contribution factor.
+  // Bright (HDR > floor) keeps ~all its energy; midtones near the floor ramp in
+  // softly; below the floor → 0. (Unity/Karis prefilter curve.)
+  vec3 highPass(vec3 c) {
+    c = max(c, vec3(0.0));
+    float b    = max(c.x, max(c.y, c.z));
+    float knee = uThreshold * uSmoothing + 1e-5;
+    float soft = clamp(b - uThreshold + knee, 0.0, 2.0 * knee);
+    soft = soft * soft / (4.0 * knee + 1e-5);
+    float contribution = max(soft, b - uThreshold) / max(b, 1e-5);
+    return c * contribution;
+  }
+
   void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-    vec3 b = texture2D(uPyramid, uv).rgb;
-    // NaN/Inf guard (2026-06-26, FIXED): a single non-finite foliage texel in the
-    // HDR scene propagates through the Karis mip pyramid — black squares at low
-    // levels, growing to whole-screen flashes as levels rise. The prior guard
-    // used mix(vec3(0), b, equal(b,b)), but mix is x*(1-t)+y*t and NaN*0.0==NaN,
-    // so a NaN channel survived (→ propagated to black through the SCREEN blend).
-    // SELECT with a ternary instead (no arithmetic on the poisoned channel): a
-    // bad texel contributes ZERO bloom (SCREEN with 0 = unchanged scene).
-    b = vec3(
-      (b.x != b.x || abs(b.x) > 60000.0) ? 0.0 : b.x,
-      (b.y != b.y || abs(b.y) > 60000.0) ? 0.0 : b.y,
-      (b.z != b.z || abs(b.z) > 60000.0) ? 0.0 : b.z
-    );
-    // NEGATIVE guard (2026-06-26 — the actual root of the black blocks): the
-    // pyramid carries negative HDR texels over the canopy; with this SCREEN
-    // blend a negative b makes (1-b) > 1 → result < 0 → clamps to PURE BLACK
-    // (hard-edged blobs at the zero-crossing). Negative "light" is meaningless;
-    // clamp to 0 so a poisoned texel contributes no bloom instead of black.
-    b = max(b, vec3(0.0));
-    // Same soft knee as the library's LuminanceMaterial, applied to the BLURRED
-    // pyramid (blur→threshold). Knobs keep their meaning; see header.
-    float l = dot(b, vec3(0.2126, 0.7152, 0.0722));
-    float knee = smoothstep(uThreshold, uThreshold + uSmoothing, l);
+    // SUM the high-passed rungs (do NOT average). A small light's energy lives
+    // only in the FINE rungs — downsampling a point thins its energy, while a
+    // broad bright area (the sky) stays bright at every rung. Averaging across
+    // all rungs diluted the point-lights and let the always-bright sky dominate
+    // ("the effect gets used up in the sky"); summing restores the bright core
+    // (fine rungs) + the soft halo (wide rungs).
+    vec3 glow = vec3(0.0);
+    for (int i = 0; i < ${PYRAMID_LEVELS}; i++) {
+      glow += highPass(sampleLevel(i, uv));
+    }
+
+    // Hue-preserving compression (Reinhard on luminance) — the very-luminous sky
+    // rolls off to a soft halation while dim lights stay ~linear, so the sky and
+    // the small lights land in the same visual range and BOTH read. No gating.
+    float gl = dot(glow, vec3(0.2126, 0.7152, 0.0722));
+    glow *= (gl > 1e-5) ? ((gl / (1.0 + gl)) / gl) : 1.0;
 
     // Warm↔Cool tint of the glow, luminance-preserving (0.5 = neutral → no
-    // change, existing Looks untouched). Recovers the cool look the full-scene
-    // blur→threshold mechanism muddied/warmed. Same photo-tint axis as FilmGrade.
+    // change, existing Looks untouched). Optional artistic tint — the HDR
+    // high-pass no longer warms the glow, so this isn't a patch over a wash.
     float bias = (uWarmCool - 0.5) * 2.0;
     vec3 warmTint = vec3(1.10, 1.00, 0.84);
     vec3 coolTint = vec3(0.84, 0.94, 1.12);
     vec3 tint = bias >= 0.0 ? mix(vec3(1.0), warmTint, bias) : mix(vec3(1.0), coolTint, -bias);
-    vec3 tb = b * tint;
-    float lumOut = dot(tb, vec3(0.2126, 0.7152, 0.0722));
-    b = tb * (l / max(lumOut, 1e-4));   // renormalize → preserve glow brightness
+    float lIn  = dot(glow, vec3(0.2126, 0.7152, 0.0722));
+    vec3  tg   = glow * tint;
+    float lOut = dot(tg, vec3(0.2126, 0.7152, 0.0722));
+    glow = tg * (lIn / max(lOut, 1e-4));
 
-    outputColor = vec4(b * knee * uIntensity, inputColor.a);
+    outputColor = vec4(glow * uIntensity, inputColor.a);
   }
 `
 
 class CustomBloomEffect extends Effect {
   constructor({ intensity = 0.5, threshold = 0.85, smoothing = 0.4, warmCool = 0.5 } = {}) {
     super('CustomBloom', fragment, {
-      // SCREEN — matches the current LS bloom (PostProcessing.jsx passed
-      // blendFunction={BlendFunction.SCREEN}). NOT convolution: it samples its
-      // own pyramid uniform, never inputBuffer neighbours.
-      blendFunction: BlendFunction.SCREEN,
+      // ADD — the correct blend for an HDR bloom. This runs BEFORE tone-mapping,
+      // where the scene carries values > 1. SCREEN (x + y − x·y) is an LDR (0..1)
+      // op: on an HDR-bright pixel (the sky) it DARKENS — screen(2.0, glow) = 1.5
+      // < 2.0 — which muddied/"used up" the sky. Additive glow tone-maps right.
+      // NOT convolution: samples the shared ladder uniforms, never neighbours.
+      blendFunction: BlendFunction.ADD,
       uniforms: new Map([
-        ['uPyramid',   new THREE.Uniform(null)],
+        ['uLevel0',    new THREE.Uniform(null)],
+        ['uLevel1',    new THREE.Uniform(null)],
+        ['uLevel2',    new THREE.Uniform(null)],
+        ['uLevel3',    new THREE.Uniform(null)],
+        ['uLevel4',    new THREE.Uniform(null)],
+        ['uLevel5',    new THREE.Uniform(null)],
+        ['uLevel6',    new THREE.Uniform(null)],
+        ['uLevel7',    new THREE.Uniform(null)],
         ['uIntensity', new THREE.Uniform(intensity)],
         ['uThreshold', new THREE.Uniform(threshold)],
         ['uSmoothing', new THREE.Uniform(smoothing)],
@@ -100,8 +147,6 @@ class CustomBloomEffect extends Effect {
     })
 
     // ── API-parity shim with @react-three/postprocessing's <Bloom> ──────────
-    // Stable object so `bloom.luminanceMaterial` reads/writes the uniforms; the
-    // drivers set `.threshold` / `.smoothing` on it each frame.
     const u = this.uniforms
     this._luminanceMaterial = {
       get threshold() { return u.get('uThreshold').value },
@@ -120,10 +165,14 @@ class CustomBloomEffect extends Effect {
   set warmCool(v) { this.uniforms.get('uWarmCool').value = v }
 
   update(/* renderer, inputBuffer, deltaTime */) {
-    // Bind the shared pyramid each frame (it's rebuilt by the DownsamplePyramid
-    // pass earlier in the composer). A null/black handle SCREEN-blends to a
-    // no-op, so first-frame mount order is safe.
-    this.uniforms.get('uPyramid').value = _pyramidRefs.texture.current
+    // Bind the shared ladder each frame (rebuilt by the DownsamplePyramid pass
+    // earlier in the composer). A null/black handle SCREEN-blends to a no-op, so
+    // first-frame mount order is safe.
+    const levels = _pyramidRefs.levels.current
+    const u = this.uniforms
+    for (let i = 0; i < 8; i++) {
+      u.get('uLevel' + i).value = levels[i] ?? levels[levels.length - 1] ?? null
+    }
   }
 }
 

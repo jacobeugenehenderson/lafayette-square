@@ -33,21 +33,24 @@ export const BLOOM_FIELDS = [
 export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, smoothing: 0.4, warmCool: 0.5 }
 export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 
-// DoF / Focus (Post card) — the two-focal romance depth-of-field (RomanceDoF.jsx,
-// HANDOFF-real-dof). Operator-facing INTUITIVE knobs (not the shader's raw UV/metre
-// units): `blur` 0→Extreme, `focus` = the near sharp plane in metres ("move the
-// focal distance"), `softness` folds the sharp-band width + ramp into one gentleness
-// dial. The FAR sharp plane is NOT a knob — the consumer auto-anchors it to the Hero
-// Object (the Arch) distance per-frame, so the operator never moves the arch to make
-// DoF work. `enabled` default 0 (off) so unauthored Looks are unchanged. The consumer
-// (PostProcessing) maps these → RomanceDoF's _dofRefs (blur→maxBlur, softness→sharpWidth+midRange).
+// DoF / Focus (Post card) — single-focal romance depth-of-field (RomanceDoF.jsx,
+// HANDOFF-real-dof). Operator-facing INTUITIVE knobs: `focus` = how far the SHARP
+// near zone extends from the camera (sharp out to here); `blur` = how much the
+// mid/far field melts beyond it (the LoD cover); `heroBlur` = the Arch's own
+// gentle softening (a little, like IRL — independent of the melt); `softness`
+// folds the near feather + ramp into one gentleness dial. The hero's DISTANCE is
+// not a knob — the consumer anchors the pocket to the baked Arch distance.
+// `enabled` default 0 (off) so unauthored Looks are unchanged.
 export const DOF_FIELDS = [
   { key: 'enabled',  label: 'On',             type: 'toggle' },
   { key: 'blur',     label: 'Blur',           min: 0, max: 1,   step: 0.02 },
-  { key: 'focus',    label: 'Focus distance', min: 5, max: 300, step: 1    },
+  // focus = the near sharp distance (sharp from the camera out to here); the
+  // mid/far melts beyond it. Pushing it OUT extends the sharp zone (not backwards).
+  { key: 'focus',    label: 'Focus distance', min: 5, max: 600, step: 5    },
+  { key: 'heroBlur', label: 'Hero softness',  min: 0, max: 1,   step: 0.02 },
   { key: 'softness', label: 'Softness',       min: 0, max: 1,   step: 0.02 },
 ]
-export const DOF_FLAT_DEFAULTS = { enabled: 0, blur: 0.4, focus: 40, softness: 0.5 }
+export const DOF_FLAT_DEFAULTS = { enabled: 0, blur: 0.6, focus: 120, softness: 0.5, heroBlur: 0.15 }
 export const DOF_FIELD_KEYS = DOF_FIELDS.map(f => f.key)
 
 // Lighting floor — operator-facing mood axes, not mechanical knobs.

@@ -1,133 +1,167 @@
 /**
- * DownsamplePyramid — the shared, re-bracketable blur pyramid resource.
+ * DownsamplePyramid — the shared blur LADDER (the gang, done right).
  *
- * ONE expensive downsample, paid once, SAMPLED by many cheap consumers:
- *   - custom bloom (Phase 1)  — bright-knee + intensity on the blurred scene
- *   - RomanceDoF  (Phase 2)   — full-scene blur lerped by CoC
- * Consumers share the pyramid TEXTURE, never each other's RESULT — so each
- * stays independently authorable + measurable (coupling = non-starter,
- * CHANNEL-ECONOMY-FORENSIC §2 #2). This pass is a PURE RESOURCE: no effect
- * logic, no look. It reads the current scene color and publishes a blurred
- * full-scene mip texture.
+ * ONE expensive downsample chain, paid once, exposing every RUNG so each
+ * consumer takes the blur RADIUS it needs:
+ *   - RomanceDoF — picks the level matching its circle-of-confusion → a real
+ *                  focus pull (blur radius grows with distance from focus).
+ *   - CustomBloom — high-passes in HDR + weights several levels → a glow with a
+ *                   tight core and a wide halo.
+ * Both SAMPLE the rungs; neither consumes the other's result. The earlier
+ * version collapsed the whole pyramid into ONE blurred texture (a single fixed
+ * radius), which starved both effects — DoF could only cross-fade opacity (a
+ * veil, not a focus pull) and bloom could only smear one scale. Exposing the
+ * ladder is the fix the audit pointed at.
  *
- * ── Why a full-scene pyramid (not bloom's bright-pass one) ──────────────────
- * Stock `BloomEffect` thresholds FIRST, then builds its mip pyramid from the
- * bright-pass — a pyramid of only the bright pixels, useless to DoF (which
- * blurs everything). DoF needs the full scene; the full scene is the only
- * source rich enough for BOTH. So the share forces bloom from threshold→blur
- * to blur→threshold (the knee moves into the custom-bloom composite). That's a
- * mechanism change with an eye-gate (re-tune the bloom channel in Stage);
- * see HANDOFF-real-dof Phase 1.
+ * Level i is the full scene downsampled to res/2^(i+1): level 0 ≈ half-res (a
+ * tight blur), level 7 ≈ a wide soft blur. A 13-tap Jimenez/COD kernel makes
+ * each step smooth + firefly-resistant. The whole chain is the shared cost; the
+ * per-consumer sampling is a handful of cheap fetches on tiny mips.
  *
- * ── The "degree" IS the per-device bracket ─────────────────────────────────
- * `levels` / `radius` (and, later, a render-resolution scale) are the dial that
- * makes Preview's device-tier ladder and this blur pyramid ONE structure:
- * desktop = full degree (this module's defaults); the phone rungs dial it down.
- * Mobile/desktop stops being a forked channel set and becomes a bracket
- * position on the ladder. (Memory: preview-equals-pyramid-tier-ladder.) Phase 1
- * wires only the DESKTOP bracket; the dial is exposed for the per-device arc.
- *
- * Reuses the library's `MipmapBlurPass` (Karis 13-tap down + tent up) as the
- * blur kernel — the same primitive bloom builds internally, here exposed as a
- * standalone, shareable pass. Mounted as a raw `Pass` child of `<EffectComposer>`
- * with `needsSwap=false` so the main color buffer passes through untouched.
+ * Mounted as a raw Pass child of <EffectComposer> with needsSwap=false so the
+ * main color buffer passes through untouched — this pass only publishes the
+ * ladder textures to _pyramidRefs.levels for the consumers downstream.
  */
 
-import { useMemo, useEffect, forwardRef } from 'react'
-import { Pass, MipmapBlurPass } from 'postprocessing'
+import { useMemo, forwardRef } from 'react'
+import { Pass } from 'postprocessing'
+import * as THREE from 'three'
 
-// Shared handle — the pass publishes its result texture here; the custom bloom
-// Effect (Phase 1) and RomanceDoF (Phase 2) read it in their per-frame update().
-// Stage / Preview / production are separate entry points (one composer per
-// page), so a module singleton is safe — same idiom as _dofRefs / _lampGlow.
-// It holds the pass's render-target texture (a STABLE object), populated each
-// frame, so consumers can bind it once and never see null.
+// Number of rungs. 8 from half-res reaches a ~1/256-screen widest blur — plenty
+// of radius range for both DoF and bloom. Consumers bind exactly this many
+// samplers, so this is the single source of truth for the ladder height.
+export const PYRAMID_LEVELS = 8
+
+// Shared handle — the pass publishes its rung textures here each frame; the
+// consumers (CustomBloom, RomanceDoF) read them in their per-frame update().
+// One composer per page (Stage / Preview / production), so a module singleton
+// is safe — same idiom as _dofRefs / _lampGlow. `current` is a STABLE array
+// reference, repopulated each frame, so consumers can read it without nulls.
 export const _pyramidRefs = {
-  texture: { current: null },
+  levels: { current: [] },
 }
 
-// Desktop bracket. The re-bracket knobs (the tier ladder's rungs):
-//   • levels / radius  — the blur WIDTH (and look); 8 / 0.85 match stock bloom.
-//   • resolutionScale  — the COST dial. The pyramid renders at this fraction of
-//     screen res; both consumers sample it by UV (resolution-independent) and
-//     both are blurry, so a lower base res is visually ~free but cuts cost
-//     quadratically (0.5 → ¼ the pixels). Lower further on the phone rungs.
-export const PYRAMID_DESKTOP = Object.freeze({ levels: 8, radius: 0.85, resolutionScale: 0.5 })
+// 13-tap Jimenez/COD downsample — smooth, energy-preserving, firefly-resistant.
+const downsampleFrag = /* glsl */`
+  uniform sampler2D uInput;
+  uniform vec2 uTexel;        // 1 / size of the SOURCE level being read
+  varying vec2 vUv;
+  void main() {
+    vec2 t = uTexel;
+    vec3 a = texture2D(uInput, vUv + t * vec2(-2.0,  2.0)).rgb;
+    vec3 b = texture2D(uInput, vUv + t * vec2( 0.0,  2.0)).rgb;
+    vec3 c = texture2D(uInput, vUv + t * vec2( 2.0,  2.0)).rgb;
+    vec3 d = texture2D(uInput, vUv + t * vec2(-2.0,  0.0)).rgb;
+    vec3 e = texture2D(uInput, vUv).rgb;
+    vec3 f = texture2D(uInput, vUv + t * vec2( 2.0,  0.0)).rgb;
+    vec3 g = texture2D(uInput, vUv + t * vec2(-2.0, -2.0)).rgb;
+    vec3 h = texture2D(uInput, vUv + t * vec2( 0.0, -2.0)).rgb;
+    vec3 i = texture2D(uInput, vUv + t * vec2( 2.0, -2.0)).rgb;
+    vec3 j = texture2D(uInput, vUv + t * vec2(-1.0,  1.0)).rgb;
+    vec3 k = texture2D(uInput, vUv + t * vec2( 1.0,  1.0)).rgb;
+    vec3 l = texture2D(uInput, vUv + t * vec2(-1.0, -1.0)).rgb;
+    vec3 m = texture2D(uInput, vUv + t * vec2( 1.0, -1.0)).rgb;
+    vec3 col = e * 0.125;
+    col += (a + c + g + i) * 0.03125;
+    col += (b + d + f + h) * 0.0625;
+    col += (j + k + l + m) * 0.125;
+    // Guard non-finite / negative HDR texels so a bad scene pixel can't poison
+    // the ladder (the dark-block root fix lives in treeAtlasMaterial; this is a
+    // cheap net). NaN → 0 via the self-compare; negatives clamped to 0.
+    col = max(vec3(
+      (col.x != col.x) ? 0.0 : col.x,
+      (col.y != col.y) ? 0.0 : col.y,
+      (col.z != col.z) ? 0.0 : col.z
+    ), vec3(0.0));
+    gl_FragColor = vec4(col, 1.0);
+  }
+`
+
+const downsampleVert = /* glsl */`
+  varying vec2 vUv;
+  void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`
 
 class DownsamplePyramidPass extends Pass {
-  constructor({ levels = PYRAMID_DESKTOP.levels, radius = PYRAMID_DESKTOP.radius, resolutionScale = PYRAMID_DESKTOP.resolutionScale } = {}) {
+  constructor() {
     super('DownsamplePyramid')
-    // Side-resource: do NOT consume/replace the main color buffer. With
-    // needsSwap=false the composer hands the SAME buffer to the next pass, so
-    // the custom bloom reads the untouched scene color and samples our texture
-    // for its blur — sharing the pyramid, never the result.
+    // Side-resource: do not consume/replace the main color buffer.
     this.needsSwap = false
-    // resolutionScale = the live-settable COST dial (the tuner edits it); _w/_h
-    // hold the last screen dims so a dial change re-renders the mip targets.
-    this._resolutionScale = resolutionScale
+    this.targets = []
     this._w = 1
     this._h = 1
-    this.mipmap = new MipmapBlurPass()
-    this.mipmap.levels = levels
-    this.mipmap.radius = radius
-    // Publish the (stable) result texture immediately so a consumer mounting
-    // the same frame binds a real handle, not null. Filled on first render().
-    _pyramidRefs.texture.current = this.mipmap.texture
+
+    // Self-managed fullscreen quad (PlaneGeometry(2,2) spans clip space with the
+    // passthrough vertex) — independent of the base Pass's fullscreen plumbing.
+    this.downMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uInput: { value: null },
+        uTexel: { value: new THREE.Vector2() },
+      },
+      vertexShader: downsampleVert,
+      fragmentShader: downsampleFrag,
+      depthTest: false,
+      depthWrite: false,
+    })
+    this._fsScene = new THREE.Scene()
+    this._fsCamera = new THREE.Camera()
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.downMat)
+    quad.frustumCulled = false
+    this._fsScene.add(quad)
+    this._fsQuad = quad
   }
 
-  // The blurred full-scene mip texture consumers sample.
-  get texture() { return this.mipmap.texture }
-
-  // ── The bracket degree (per-device dial; desktop = full) ──────────────────
-  get levels() { return this.mipmap.levels }
-  set levels(v) { this.mipmap.levels = v }
-  get radius() { return this.mipmap.radius }
-  set radius(v) { this.mipmap.radius = v }
-
-  // resolutionScale — live-settable (the tuner). Re-renders the mip targets at
-  // the new base res from the last-known screen dims, so it updates without a
-  // composer rebuild.
-  get resolutionScale() { return this._resolutionScale }
-  set resolutionScale(v) {
-    if (v == null || v === this._resolutionScale) return
-    this._resolutionScale = v
-    this._applyResolution()
-  }
-
-  _applyResolution() {
-    const s = this._resolutionScale || 1
-    this.mipmap.setSize(Math.max(1, Math.round(this._w * s)), Math.max(1, Math.round(this._h * s)))
-  }
-
-  render(renderer, inputBuffer /* , outputBuffer, deltaTime, stencilTest */) {
-    // Build the full-scene down/up pyramid from the current scene color.
-    this.mipmap.render(renderer, inputBuffer)
-    // Re-publish (the RT texture object is stable, but cheap insurance against
-    // a levels-change swapping targets).
-    _pyramidRefs.texture.current = this.mipmap.texture
+  _makeTargets() {
+    for (const t of this.targets) t.dispose()
+    this.targets = []
+    let w = this._w
+    let h = this._h
+    for (let i = 0; i < PYRAMID_LEVELS; i++) {
+      w = Math.max(1, Math.floor(w / 2))
+      h = Math.max(1, Math.floor(h / 2))
+      this.targets.push(new THREE.WebGLRenderTarget(w, h, {
+        type: THREE.HalfFloatType,        // HDR — bright sources keep their energy
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        wrapS: THREE.ClampToEdgeWrapping,
+        wrapT: THREE.ClampToEdgeWrapping,
+        depthBuffer: false,
+        generateMipmaps: false,
+      }))
+    }
+    _pyramidRefs.levels.current = this.targets.map(t => t.texture)
   }
 
   setSize(width, height) {
-    // Store the screen dims + render at resolutionScale × that — the COST dial.
-    // Consumers sample by UV (resolution-independent) and both are blurry, so a
-    // lower base res is ~free visually but cuts cost quadratically. The
-    // device-tier bracket (memory: preview-equals-pyramid).
-    this._w = width
-    this._h = height
-    this._applyResolution()
+    this._w = Math.max(1, width)
+    this._h = Math.max(1, height)
+    this._makeTargets()
   }
 
-  initialize(renderer, alpha, frameBufferType) {
-    // frameBufferType carries the composer's HDR (HALF_FLOAT) type through to
-    // the mip targets — the pyramid must stay HDR so bloom highlights bloom.
-    this.mipmap.initialize(renderer, alpha, frameBufferType)
+  render(renderer, inputBuffer) {
+    if (this.targets.length === 0) this._makeTargets()
+    const prev = renderer.getRenderTarget()
+    let srcTex = inputBuffer.texture
+    let srcW = this._w
+    let srcH = this._h
+    for (let i = 0; i < this.targets.length; i++) {
+      const t = this.targets[i]
+      this.downMat.uniforms.uInput.value = srcTex
+      this.downMat.uniforms.uTexel.value.set(1 / srcW, 1 / srcH)
+      renderer.setRenderTarget(t)
+      renderer.render(this._fsScene, this._fsCamera)
+      srcTex = t.texture
+      srcW = t.width
+      srcH = t.height
+    }
+    renderer.setRenderTarget(prev)
+    _pyramidRefs.levels.current = this.targets.map(t => t.texture)
   }
 
   dispose() {
-    this.mipmap.dispose()
-    if (_pyramidRefs.texture.current === this.mipmap.texture) {
-      _pyramidRefs.texture.current = null
-    }
+    for (const t of this.targets) t.dispose()
+    this._fsQuad.geometry.dispose()
+    this.downMat.dispose()
     super.dispose()
   }
 }
@@ -135,19 +169,11 @@ class DownsamplePyramidPass extends Pass {
 export { DownsamplePyramidPass }
 
 // React mount — a raw Pass child of <EffectComposer> (r3f adds any
-// `instanceof Pass` child standalone, in JSX order). Place it AFTER the scene
-// render (and N8AO, to match bloom's current input) and BEFORE the custom
-// bloom that samples it.
-export const DownsamplePyramid = forwardRef(function DownsamplePyramid(
-  { levels, radius, resolutionScale } = {}, ref,
-) {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const pass = useMemo(() => new DownsamplePyramidPass({ levels, radius, resolutionScale }), [])
-  // Live-adjust the bracket degree without remounting (the per-device dial).
-  useEffect(() => {
-    if (levels != null) pass.levels = levels
-    if (radius != null) pass.radius = radius
-    if (resolutionScale != null) pass.resolutionScale = resolutionScale
-  }, [pass, levels, radius, resolutionScale])
+// `instanceof Pass` child standalone, in JSX order). Place AFTER the scene
+// render (and N8AO) and BEFORE the consumers (DoF, bloom) that sample it.
+// Accepts (and ignores) legacy levels/radius/resolutionScale props so existing
+// mount sites don't break; the ladder height is fixed at PYRAMID_LEVELS.
+export const DownsamplePyramid = forwardRef(function DownsamplePyramid(_props, ref) {
+  const pass = useMemo(() => new DownsamplePyramidPass(), [])
   return <primitive ref={ref} object={pass} dispose={null} />
 })

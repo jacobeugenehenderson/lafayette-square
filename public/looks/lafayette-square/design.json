@@ -120,11 +120,23 @@
       "right": {
         "0": {
           "pavementHW": 11.042034627188867,
-          "terminal": "sidewalk"
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
         },
         "2": {
           "pavementHW": 10.819239038889352,
-          "terminal": "sidewalk"
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
         },
         "3": {
           "pavementHW": 10.819239038889352,
@@ -136,11 +148,23 @@
         },
         "5": {
           "pavementHW": 11.042034627188867,
-          "terminal": "sidewalk"
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
         },
         "6": {
           "pavementHW": 11.042034627188867,
-          "terminal": "sidewalk"
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
         }
       }
     },
@@ -319,15 +343,15 @@
     "transitionOut": 0,
     "values": {
       "night": {
-        "intensity": 2,
-        "threshold": 0.02,
+        "intensity": 0.3,
+        "threshold": 0.03,
         "smoothing": 0.06,
-        "warmCool": 0
+        "warmCool": 0.5
       },
       "noon": {
-        "intensity": 0.54,
-        "threshold": 0.26,
-        "smoothing": 0.16,
+        "intensity": 0.24,
+        "threshold": 0.1,
+        "smoothing": 0,
         "warmCool": 0.5
       },
       "dawn": {
@@ -337,8 +361,8 @@
         "warmCool": 0.5
       },
       "sunset": {
-        "intensity": 0.56,
-        "threshold": 0.01,
+        "intensity": 0.36,
+        "threshold": 0.02,
         "smoothing": 0
       }
     }
@@ -426,9 +450,10 @@
   "dof": {
     "values": {
       "enabled": 1,
-      "blur": 0.14,
-      "focus": 300,
-      "softness": 0
+      "blur": 0.16,
+      "focus": 320,
+      "heroBlur": 0,
+      "softness": 0.16
     }
   },
   "shadow": {
@@ -538,13 +563,13 @@
   },
   "arch": {
     "values": {
-      "distance": 1250,
+      "distance": 1690,
       "bearingX": 0.9487,
       "bearingZ": -0.3163,
-      "scale": 1.8,
+      "scale": 2.1,
       "rotation": 1.99,
-      "yOffset": 107,
-      "footFade": 27
+      "yOffset": 155,
+      "footFade": 40
     }
   },
   "archLight": {
@@ -586,7 +611,7 @@
     "Labels": false,
     "HeroSubject": false,
     "Look": false,
-    "Land Cover": false,
+    "Land Cover": true,
     "Furniture": true
   },
   "trees": [
