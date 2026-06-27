@@ -2,7 +2,7 @@
 
 > **The engineering/operator counterpoint to [FEATURES.md](FEATURES.md).** FEATURES is the *brochure* — what it is, why it's special (user/investor-facing). **This is the *manual* — here's the panel, here's the knob, here's when to turn it (operator-facing).** Same tools, two books: one sells it, one runs it. Reference-kind (eternal-present); **operator** audience (distinct from FEATURES = user/investor, and from ARCHITECTURE/PIPELINE/RIBBONS = developer). Engineer-internals behind these knobs live in `ARCHITECTURE.md`; the geometry in `RIBBONS.md`.
 
-> **Status: populated 2026-06-14** (the operator-knob content migrated out of FEATURES, purifying FEATURES to pure what/why). Still grows as the tile re-pour's **T3 authoring migration** reshapes the Survey/Section tools — fill in as those settle.
+> **Status: populated 2026-06-14** (the operator-knob content migrated out of FEATURES, purifying FEATURES to pure what/why); **Stage + Preview built out to the full per-card knob master list 2026-06-26** (grounded against the panel code — `CartographSkyLight.jsx` / `CartographPost.jsx` / `CartographSurfaces.jsx` / `PreviewApp.jsx`). Still grows as the tile re-pour's **T3 authoring migration** reshapes the Survey/Section tools — fill in as those settle.
 
 ---
 
@@ -34,31 +34,143 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
 
 ## Stage — the look tool
 
-Materials, color, visibility, shaders, sky, post-FX, neon, camera — the per-Look aesthetic, baked into the slab.
+Materials, color, visibility, shaders, sky, post-FX, neon, camera — the per-Look aesthetic, baked into the slab. Everything here is **WYSIWYG and live**: a tweak shows on screen immediately, and the bake freezes that exact state into `scene.json` (`STAGE.md §3`). Two facts shape every knob below:
 
-- **Surfaces** — color / visibility per material · **Sky & Light** · **Post-FX** · shots / Hero keyframes.
-- **Sky Layer Gain** — *"how dark is the night sky."* Dims (or lifts) **just the sky dome** on a TOD curve — bands, sun/moon glow, horizon scatter together. It is exposure scoped to the sky layer: the global **Exposure** knob darkens the *whole frame* (buildings + ground + sky), whereas Sky Layer Gain touches only the dome — so deep night goes genuinely dark while street lamps and lit windows stay where authored. Stars are not affected. LS authors ~1.0 by day dipping to ~0.2 at Night; default 1.0 leaves an unauthored Look unchanged. **Reach for Sky Layer Gain when the *sky* is too bright; Exposure when the *whole image* is.** *(Note 2026-06-07: bloom no longer auto-boosts at night — author it in the Post-FX **Bloom** channel; night otherwise leans on lamp glow, cheaper and intentional.)*
-- **Hero shot** — an authored camera **bounce**: the camera sweeps a Catmull-Rom path Start → (mids) → End → back, looking at the resolved hero subject. **Start/End are permanent anchors**; insert optional **Mid** keyframes (only mids are deletable). FOV is a per-keyframe animated channel; an `easing` knob shapes the sweep. Replays identically in Stage / Preview / production via `heroAnim.js`.
+- **Every look value is a *time-of-day curve*, not a single number** — the **TodChannel** (`STAGE.md §1`). You drag a slider *at the currently-scrubbed time*, and the channel records the curve, so one Look renders dawn, noon, and deep-night faithfully. A channel left unanimated is a flat scalar (the same value all day).
+- **The only deliberate "save" is forking a named Look** ("＋ Save as new Look…"). Every other tweak just autosaves the active Look to `design.json` (~300 ms debounce); there is no "save the bake."
+
+The full channel inventory + where each persists is `STAGE.md §1`; the cards below are the operator's-eye view — *which knob is on which card, and how to drive it.*
+
+### How to operate any TOD channel (the universal mechanic)
+
+Every animatable channel shares one drawer. **Open the channel**, hit **animate** to arm it, then **click a time-of-day slot chip** (dawn / sunrise / noon / golden / sunset / dusk / night) **to jump there** — scrubbing alone never drops a keyframe — and **edit a value to drop or update that slot's keyframe**. The clicked chip stays the live edit target. **Transition-in / -out (ramp) inputs** appear once a channel has ≥1 keyframe — they shape how fast the value crosses between slots. **✕ Clear**: parked on a keyframe → removes *that* keyframe (the value falls back to the tween); otherwise → clears the whole channel to its flat default. *(2026-06-22 — replaced the old "Revert"/auto-keyframe behavior.)* Toggle-type channels lerp 0↔1 between slots; color fields are an HTML color swatch storing a hex string.
+
+### Sky & Light card
+
+**Atmosphere group**
+- **Mist** — fog density + colour (the FogExp2 the runtime applies). TOD.
+- **Halo** — the aerial-perspective glow strength + colour (sky-light bleeding into distance). TOD.
+- **Sky Layer Gain** — *"how dark is the night sky."* Dims (or lifts) **just the sky dome** on a TOD curve — bands, sun/moon glow, horizon scatter together. It is exposure scoped to the sky layer: the global **Exposure** knob (Post card) darkens the *whole frame* (buildings + ground + sky), whereas Sky Layer Gain touches only the dome — so deep night goes genuinely dark while street lamps and lit windows stay where authored. Stars are not affected. LS authors ~1.0 by day dipping to ~0.2 at Night; default 1.0 leaves an unauthored Look unchanged. **Reach for Sky Layer Gain when the *sky* is too bright; Exposure when the *whole image* is.** *(Note 2026-06-07: bloom no longer auto-boosts at night — author it in the Post **Bloom** channel; night otherwise leans on lamp glow, cheaper and intentional.)*
+- **Neon** — the neon look as one grouped TOD channel: **core / tube / bleed / emissive** intensities, plus the **tube-radius** field. Tube radius (per-Look `tubeRadius`, ~0.1–3.0 m, default 1.0) is the odd one out — unlike the intensity fields it **drives geometry**, so it rebuilds the merged neon mesh on change (step-quantized so a drag doesn't churn). Neon *colour* is set on the Surfaces card's **Neon** tab.
+
+**Lighting group** — each a TOD intensity slider:
+- **Ambient** — flat fill light everywhere.
+- **Hemisphere** — sky-vs-ground gradient fill.
+- **Sun light** — the directional sun.
+- **Moon light** — the directional moon (carries the night).
+
+**Celestial group**
+- **Constellations** — toggle the spectral-node constellation overlay (TOD; defaults off, lifts at night).
+
+### Post card — post-processing
+
+All Post channels are TOD. Grouped on the card as:
+
+**Camera group**
+- **Exposure** — global brightness of the whole frame (the master image knob; contrast with Sky Layer Gain, which is sky-only).
+- **Warmth** — cool↔warm colour-temperature tint across the image.
+
+**Shadow group**
+- **AO** — ambient occlusion (N8AO): contact-darkening in crevices. Fields: radius, intensity, distance-falloff.
+- **Fill** — lifts shadow floors (distinct-and-deep ↔ soft-and-open).
+
+**Soften group**
+- **Bloom** — glow on bright **contrast** (edges + points of light), not on broad brightness. A *band-pass* off the shared blur ladder: bright local detail (a sharp mip minus a blurrier one) glows, so lamps/neon/glints read as points and a bright sky **backlights** dark objects as a rim, while open sky and flat surfaces don't wash. Fields: intensity (strength), threshold (**how much contrast it takes to glow** — runs LOWER than the old absolute-bright bloom), smoothing (the knee), warm/cool tint. Additive (HDR-correct; SCREEN darkened the HDR-bright sky). *(Owns night glow — see the Sky Layer Gain note. `CustomBloom.jsx`, off `DownsamplePyramid.jsx`.)*
+
+**Finish group**
+- **Grade** — the film grade: contrast, toe (shadow shoulder), saturation, vignette.
+- **Grain** — film-grain scale.
+- **Antialiasing (SMAA)** — on/off, baked to `scene.json` (default on). An SMAA post-pass at the ULTRA preset. ⚠️ **Near-invisible on desktop by design** — the desktop Canvas already runs 8× MSAA, so SMAA only cleans the *shader-contrast* edges MSAA can't (lit/unlit seams). Its real job is **mobile**, where MSAA is off (`antialias:!IS_MOBILE`) and SMAA is the *only* AA. Also exposed as a toggle in **Preview**'s layer matrix for A/B inspection. *(To witness it on desktop, temporarily disable MSAA so SMAA does all the AA — `Scene.jsx` `antialias`.)* The on/off is a mount/unmount; the `EffectComposer` is keyed so it reconciles on toggle (value-channels stream live, but an effect's *existence* needs the rebuild). `PostProcessing.jsx` / `PreviewPostFx.jsx`.
+- **Focus (DoF)** — depth-of-field (`RomanceDoF`). **Single-focal + a hero pocket**: sharp from the camera out to **Focus distance**, then the blur RADIUS grows with depth (the mid/far melts — the LoD cover), picked from the shared blur ladder (a real focus pull, not a haze cross-fade). **Hero softness** gives the designated hero (the Arch) its own gentle blur near its distance — *a little soft, like IRL* — anchored to the live authored hero placement. Fields: On · Blur (mid/far melt) · Focus distance (m — how far the sharp zone reaches; a Hero shot frames everything far, so it wants a big value) · Hero softness · Softness (transition width). Auto-off in the overhead Browse view (gated on the camera looking *down*, not its height). *(Debug: `window.__dofDebug = 1` paints the zones green=sharp / red=blur. `RomanceDoF.jsx`, off `DownsamplePyramid.jsx`.)*
+- **Shadow** — shadow-map quality: kernel size + per-pixel samples (softer/cleaner cast shadows ↔ cheaper).
+
+### Surfaces / Materials card
+
+- **Per-layer / per-LU swatch** — pick any map layer or land-use class from the tabbed list (Streets, Blocks, Land Use, Paths, Land Cover, Furniture, Labels, Roofs, Lighting, Building, Neon, Trees, Park, Infra) and set its **Color** (hex swatch) and **Visible** (checkbox). Visibility here is also a bake lever (`BAKE.md §2`). *(Not TOD — a flat per-Look property.)*
+- **3D material editor** (for the selected PBR material) — **Roughness**, **Metalness**, a **Texture** dropdown (none / brick variants / stone / stucco / wood / slate / metal) with **Texture Scale** + **Texture Strength** when a texture is chosen, and **Emissive** (colour swatch + intensity).
+- **Building palette** — a 16-swatch colour grid that drives the per-building tint mix.
+- **Lamp colour** — the **lamp swatch** here (`layerColors.lamp`) is the single source that tints both the lamp lantern and its ground light-pool (see Lamps card).
+
+### Lamps card
+
+Two channels:
+- **Lantern** (`lantern` = **Brightness + Glow**) — the lamp's own light source (lantern / glow orb / bulb), TOD-animatable, operator master × the automatic dusk→night turn-on. **Lantern Brightness also drives the ground light POOL** (the pool *is* the lantern's light on the ground — one slider for both; off by day).
+- **Lamp Glow** (`lampGlow` = **Canopy**) — the under-lamp glow on tree foliage.
+
+The pool is **baked into the ground** (contour-correct), so its *shape* is a bake-time knob (CLI / bake operations, below). **Lamp colour** is the Surfaces lamp swatch (above) — one source tints the lantern **and** the pool.
+
+### Hero & Horizon card
+
+- **Arch placement** (non-TOD) — the Gateway Arch's **Distance**, **Scale**, **Rotation**, **Y-offset**, and **Foot-fade** (where the legs dissolve into the ground).
+- **Arch Lighting** (`archLight`, TOD) — the cross-aimed foot **uplights**: left/right **intensity · colour · cone° · reach**, a TOD channel of their own so the wash can warm at dusk and fade by day. *(Placement stays on the separate, non-animated `arch` channel above.)*
+- **Horizon** (non-TOD) — the horizon disc: **Radius**, **Fade-inner**, **Fade-outer** (how the ground plane dissolves into the far sky).
+
+### Camera / Shots
+
+- **Hero shot** — an authored camera **bounce**: the camera sweeps a Catmull-Rom path Start → (mids) → End → back, looking at the resolved hero subject. **Start/End are permanent anchors**; insert optional **Mid** keyframes (only mids are deletable). **FOV** is a per-keyframe channel; **Period** sets the bounce duration and an **Ease** toggle (sine / triangle) shapes the sweep. Replays identically in Stage / Preview / production via `heroAnim.js`.
   - **Authoring vs. runtime controls (2026-06-24).** The Hero shot opens in **runtime**: the bounce **plays** and the orbit controls are **locked** — you're watching exactly what ships. **Click a keyframe dot** (on the timeline) to **author** it: playback pauses, the camera **jumps** to that keyframe, and the controls unlock to a **free orbit** so you can reposition — the camera **stays locked on the subject** (the Hero Lock; you're choosing the vantage, not the aim). **Save keyframe** captures the new position + FOV, **re-locks**, and **stays paused on the saved frame** (so you can click the next dot and keep going); press **▶** to watch the motion, or **Cancel / Esc** to discard the orbit. In a gap with playback paused, **+ Add keyframe here** inserts one at the playhead and drops you straight into authoring it. *(Only `{position, fov}` is stored; the subject-aim is applied at runtime — so the look-direction you orbit through is a framing aid, not saved.)*
-- **Bake buttons** — Designer's **"Stage →"** = navigate to your last Stage shot immediately, bake async in the background (the slab refreshes when done). Stage's **"↻"** = bake in place, stay put. Both accept **⌥-click to force a full rebuild** (bypass the dirty-check). A small orange dot lights when authoring edits exist since the last bake (indicator only — never disables the action).
-- **Alley end-cap dial** (Paths ▸ Shape) — a 3-segment toggle controlling how **all** alleys in the active Look terminate: `square` (flush) / `rounded` (rounded-rectangle pad) / `round` (true semicircle). Stored as `design.alleyCap`. Other path kinds use per-kind defaults and carry no operator surface.
-- **Tube-radius slider** (Neon) — per-Look `tubeRadius` (0.1–3.0 m, default 1.0). Unlike the color/intensity channels it drives geometry, so it rebuilds the merged mesh on change (step-quantized so a drag doesn't churn).
-- **Antialiasing (SMAA)** (Post card) — on/off, per-Look, baked to `scene.json` (default on). An SMAA post-pass at the ULTRA preset. ⚠️ **Near-invisible on desktop by design** — the desktop Canvas already runs 8× MSAA, so SMAA only cleans the *shader-contrast* edges MSAA can't (lit/unlit seams). Its real job is **mobile**, where MSAA is off (`antialias:!IS_MOBILE`) and SMAA is the *only* AA. Also exposed as a toggle in **Preview**'s layer matrix for A/B inspection. *(To witness it on desktop, temporarily disable MSAA so SMAA does all the AA — `Scene.jsx` `antialias`.)* The on/off is a mount/unmount; the `EffectComposer` is keyed so it reconciles on toggle (value-channels stream live, but an effect's *existence* needs the rebuild). `PostProcessing.jsx` / `PreviewPostFx.jsx`.
+- **Browse camera** — the overhead default: **Center X / Center Z** (the look-at point; numeric inputs, click-to-edit or drag-to-scrub), **Altitude**, **FOV**, and **Heading** (screen orientation — the one fully-baked camera channel today).
+- **Street camera** — the eye-level shot: **Eye height** and **FOV**.
 - **Stage drag semantics** — Browse: LEFT-drag = pan, ⌥+LEFT (or RIGHT) = orbit. Hero/Street: LEFT = rotate, ⌥+LEFT = pan (they're inspection shots). **Hero is the exception: its controls are locked during the runtime preview and only free while authoring a keyframe** (above). Designer's "Stage →" always lands on Browse so the camera transition is continuous with the overhead view.
-- **Animating a channel (every TodChannel)** — open the drawer, hit **animate** to arm, then **click a slot chip to jump there** (scrubbing alone never drops a keyframe) and **edit a value to drop/update that slot's keyframe**. The clicked chip stays the live edit target. **✕ Clear**: parked on a keyframe → removes *that* keyframe (the value falls back to the tween); otherwise → clears the whole channel to its flat default. *(2026-06-22 — replaced the old "Revert"/auto-keyframe behavior.)*
-- **Lamps card** — two channels: **Lantern** (`lantern` = **Brightness + Glow**) = the lamp's own light source (lantern/glow orb/bulb), TOD-animatable, operator master × the automatic dusk→night turn-on. **Lantern Brightness also drives the ground light POOL** (the pool *is* the lantern's light on the ground — one slider for both; off by day). And **Lamp Glow** (`lampGlow` = **Canopy**) = the under-lamp glow on tree foliage. The pool is **baked into the ground** (contour-correct), so its *shape* is a bake-time knob (below). **Lamp colour** = the Surfaces **lamp swatch** (`layerColors.lamp`) — one source; it tints the lantern **and** the ground pool.
-- **Arch Lighting card** (`archLight`, Hero & Horizon) — the cross-aimed foot **uplights** (L/R intensity · color · cone° · reach), now a **TOD-animatable** channel of their own so the wash can warm at dusk and fade by day. *(Placement — distance/scale/rotation — stays on the separate, non-animated `arch` channel.)*
+
+### Paths ▸ Shape
+
+- **Alley end-cap dial** — a 3-segment toggle controlling how **all** alleys in the active Look terminate: `square` (flush) / `rounded` (rounded-rectangle pad) / `round` (true semicircle). Stored as `design.alleyCap`. Other path kinds use per-kind defaults and carry no operator surface.
+
+### Bake — committing the look to the slab
+
+- **Bake buttons** — Designer's **"Stage →"** = navigate to your last Stage shot immediately, bake async in the background (the slab refreshes when done). Stage's **"↻"** = bake in place, stay put. Both accept **⌥-click to force a full rebuild** (bypass the dirty-check). A small orange dot lights when authoring edits exist since the last bake (indicator only — never disables the action).
 - **Ground-contact effects** (baked; tune via the bake constants in **CLI / bake operations** below): the **lamp light pools**, the **dark contact rings** under trees + lamps (visible in daylight), and the **tree trunk-base ground blend** (the lowest of each trunk takes on the ground colour beneath it). All three bake into ground textures + sample in the ground/tree shaders — **re-bake to see them**, hard-refresh to pick up the slab.
 
 ## Preview — the publish-confidence gate
 
-GPU profiler · phone-mode · layer-toggle matrix · TOD scrub. Walks the *shipping* render with a profiler strapped on. **The layer-toggle matrix is *ephemeral inspection* ("what am I measuring") — never persisted; "all-on" equals production.** Separately, the operator authors **deployment policy** here: the per-platform channel-listing (desktop vs. mobile inclusion), the one thing Preview writes. Keystone Reference: **`PREVIEW.md`** (the model — what it inspects + how to read the numbers). *(In flight — the virtual-device emulator + device-budget gauges + thermal/memory/transition readouts: `HANDOFF-preview-measurement.md`.)*
+GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shipping* render with a profiler strapped on. **The layer-toggle matrix is *ephemeral inspection* ("what am I measuring") — never persisted as policy; "all-on" equals production.** Separately, the operator authors **deployment policy** here: the per-platform channel-listing (desktop vs. mobile inclusion), the one thing Preview writes. Keystone Reference: **`PREVIEW.md`** (the model — what it inspects + how to read the numbers). *(In flight — the virtual-device emulator + device-budget gauges + thermal/memory/transition readouts: `HANDOFF-preview-measurement.md`.)*
 
-- **The benchmark devices + the budget knob.** The cost gauges read against **two real reference phones**, not an abstract budget:
-  - **`phone-hi` = iPhone 16 Pro Max** — Apple A18 Pro (6-core GPU), 8 GB RAM, 6.9″ 2868×1320 (~460 ppi). The best-case ceiling (and the device the PhoneFrame bezel is modeled on).
-  - **`phone-lo` = Samsung Galaxy A54/A55** — the floor we *guarantee*. Anchored to the weaker A54 (Exynos 1380, Mali-G68 MP5, 8 GB, 6.4″ 2340×1080); the A55 (Exynos 1480, RDNA-based Xclipse 530) is the stronger sibling, so an A54-clean slab covers it.
-  - **`desktop`** — a 60fps target with a generous-but-present draw/tri ceiling (trips only on a pathological scene / weak laptop GPU).
-  - **All budgets live in one place: `src/preview/deviceProfiles.js`** — edit the numbers there. ⚠️ Today the device *identities* are set but the per-tier budget *numbers* are **interim** (placeholder) until the Phase-3 virtual-device measurement locks them — don't trust a "ships" verdict for a publish call until they're measured.
+Unlike Stage, **Preview authors almost nothing** — its knobs set up an *inspection*, not a look. The one thing it will write is deployment policy (below). What persists is the inspection *state* (which device, which layers shown), in `localStorage`, so a reload returns you to the same vantage.
+
+### Device / environment selector — Desktop · Phone-hi · Phone-lo
+
+The top-bar device picker switches the render environment *and* the budget the gauges read against — the cost is benchmarked to **two real reference phones**, not the operator's desktop. Exclusive toggle; persists to `localStorage` (`preview.mode.v1`). Phone modes also draw the canvas inside the phone bezel (below).
+- **`phone-hi` = iPhone 16 Pro Max** — Apple A18 Pro (6-core GPU), 8 GB RAM, 6.9″ 2868×1320 (~460 ppi). The best-case ceiling (and the device the PhoneFrame bezel is modeled on).
+- **`phone-lo` = Samsung Galaxy A54/A55** — the floor we *guarantee*. Anchored to the weaker A54 (Exynos 1380, Mali-G68 MP5, 8 GB, 6.4″ 2340×1080); the A55 (Exynos 1480, RDNA-based Xclipse 530) is the stronger sibling, so an A54-clean slab covers it.
+- **`desktop`** — a 60fps target with a generous-but-present draw/tri ceiling (trips only on a pathological scene / weak laptop GPU).
+- **All budgets live in one place: `src/preview/deviceProfiles.js`** — edit the numbers there. ⚠️ Today the device *identities* are set but the per-tier budget *numbers* are **interim** (placeholder) until the Phase-3 virtual-device measurement locks them — don't trust a "ships" verdict for a publish call until they're measured.
+
+### Shot picker — Hero · Browse · Street
+
+Top-bar buttons that move the camera between the three production shots, **gated by production's adjacency graph** (Hero ↔ Browse ↔ Street; there is no direct Hero↔Street edge, so that button greys out from Hero). The **Hero** shot is the same authored bounce, replayed identically here (`heroAnim.js`). Camera drag in each shot mirrors Stage (Browse: LEFT = pan, RIGHT = orbit; Hero/Street: LEFT = orbit, RIGHT = pan); a deliberate drag during the Hero auto-pan interrupts it back to Browse, exactly as production does. Ephemeral.
+
+### Time-of-day scrub
+
+The shared **DawnTimeline** — scrub dawn → day → dusk → night to inspect the Look across the day (the same control Stage uses). Ephemeral.
+
+### The layer-toggle matrix — *what am I measuring*
+
+The right panel lists every render layer with a per-layer cost bar; each checkbox gates that layer's `.visible` (never the mount), so **"all on" is the literal shipping cost** (`PREVIEW.md §3`). Toggling a layer off attributes its measured Δ. Inspection state persists to `localStorage` (`preview.layers.v3`) — but this is *measurement* setup, **not** the deployment manifest (those are separate; see below).
+- **Scene layers** — Ground (carries the baked lamp-pools / contact-shadows / trunk-blend), Buildings (the slab merged mesh), Trees, Park, Streetlamps, Gateway Arch, Neon, Sky+Sun, Clouds, Atmospheric Fog.
+- **Post-FX layers** — N8AO, Bloom, Halo (aerial perspective), Film Grade, Film Grain, SMAA, **DoF** *(WIP)*.
+- **Two deliberate default divergences from production** (`DEFAULT_LAYERS`): **Neon is forced all-on** (worst-case profiling, vs. production's TOD-gated neon), and **Bloom defaults off** (only so a reload doesn't burn into a black scene — not because it's broken). Flip them on for true parity.
+
+### Reading the gauges
+
+- **GPU panel** — the numeric tab: a **scene-vs-budget verdict** (one chip per device, green/amber/red against that device's budget), live **frame ms · fps**, **draws / tris** vs. budget, resident **geos / tex / progs**, and a rolling **spike log** (each spike tagged with the gesture that caused it). **Milliseconds are the budget** — draws/tris are context, frame-time is what users feel (`PREVIEW.md §4`).
+- **Strip chart** (phone mode) — a rolling work-ratio equalizer against the device budget line, with cluster detection (≥3 events bunched → "stagger" hint) and a hover caret (when stopped) for per-frame detail.
+- **Recording mode** (phone mode) — **event** (a trigger arms a ~5 s capture window) vs. **ambient** (a continuous rolling window, triggers disabled). Persists to `localStorage` (`preview.recMode.v1`).
+- ⚠️ **Three caveats** when reading per-layer cost (`PREVIEW.md §4`): it's *render* cost, not VRAM; deltas **don't sum** (shared overdraw) — trust the all-on total; neon is forced-on.
+
+### Phone frame · soft-reload · trigger bar
+
+- **Phone frame** — in a phone device mode, the canvas renders inside an iPhone bezel at the deployed mobile aspect, so you read the real portrait slice.
+- **Soft-reload (↻)** — remounts the canvas and re-fetches the baked artifacts (and busts the tree-atlas cache) — the escape hatch when a re-bake didn't show. *(If a Look looks right in Stage but wrong here, it's the bake that didn't propagate — re-bake / soft-reload — never a Preview bug.)*
+- **Trigger bar** (phone mode) — shot-jump + reload buttons that fire a recording span, so a spike is attributable to a specific gesture.
+
+### The pyramid tuner — *in flight* ⏳
+
+Per-device sliders (**Levels · Resolution · Radius**) that tune the **shared downsample pyramid** feeding Bloom + DoF — `Resolution` is the looks↔cost dial (finer mips cost perf). Persists per-environment to `localStorage` (`preview.renderTiers.v1`). ⚠️ **This is part of the in-flight measurement-regime / shared-pyramid arc, not settled doctrine** — the pyramid being shared + re-bracketable per device tier is still being worked out (`HANDOFF-preview-measurement.md`, `[[preview-equals-pyramid-tier-ladder]]`). Document/operate it as provisional; the channel set and where it lives may still move.
+
+### Deployment policy — the one thing Preview writes *(planned)*
+
+The per-platform **inclusion manifest** — *which channels ship to desktop vs. mobile* — is a **cost-driven deployment decision**, so it's authored here at the gate, beside the instrument that responds (`PREVIEW.md §0.2`). ⚠️ **Not yet built** — the editorial surface lands with the v0.2 measurement regime (`HANDOFF-preview-measurement.md`, Phase 3–4). Until then Preview writes nothing; its product is the operator's *verdict* ("ship the slab" / "back to Stage").
 
 ## CLI / bake operations
 
@@ -113,7 +225,13 @@ The dev server **autosaves** source on every edit (Survey/Stage debounce → `ov
 | `cartograph-looks-pass-ab` (trunk) | `staging.yml` | **`lafayette-square-staging` (GitHub Pages)** |
 | any feature branch (e.g. `curb-offset-draw`) | — | **nothing** (pushing the branch deploys no site) |
 
-Promote to staging = fast-forward/merge the feature branch into the trunk and push; promote to prod = merge the trunk into `main` and push. *(Derived artifacts are intentionally **git-tracked**, not ignored — that's what lets CI stay a plain `vite build`. The alternative — gitignore them and bake in CI — is a deliberate, un-taken fork; see the named levers below.)*
+Promote to staging = fast-forward/merge the feature branch into the trunk and push; promote to prod = merge the trunk into `main` and push.
+
+**The working loop (strategy B, chosen 2026-06-26).** Author on the working branch (`curb-offset-draw`) → commit source+derived → push to the **trunk** (auto-deploys staging) → eye-check staging → **fast-forward `main`** when you want it public. Prod (`main`) and the trunk are **both slab-era** and kept only a few commits apart, so a prod promotion is a clean fast-forward, not a big-bang. Quick commands: `git push origin <branch>:cartograph-looks-pass-ab` (staging), then `git push origin <branch>:main` (prod) once staging is verified.
+
+> ⚠️ **Reason about deploy state from the REMOTE, never a stale local ref.** Always `git fetch` and compare `origin/main` / `origin/cartograph-looks-pass-ab` — not local `main`/trunk, which drift badly when you live on a feature branch. On 2026-06-26 local `main` (`b39834b4`) read **1123 commits + "pre-slab" behind** while `origin/main` was actually **4 commits behind and slab-era** — an entirely phantom gap that nearly derailed a publish decision until the remote was checked.
+
+*(Derived artifacts are intentionally **git-tracked**, not ignored — that's what lets CI stay a plain `vite build`. The alternative — gitignore them and bake in CI — is a deliberate, un-taken fork; see the named levers below.)*
 
 ### The troubleshooting door — symptom → knob
 
@@ -135,4 +253,4 @@ Two formalizations are *chosen but un-built* (2026-06-17 — the path-A decision
 
 *(With path-A also: a reproducibility gate — CI/pre-push check that the committed slab equals a fresh bake from source — to catch a stale slab before it ships.)*
 
-*Provenance: Boz 2026-06-01 (seed); populated 2026-06-14 from the FEATURES operator-knob migration; **save→ship lifecycle + troubleshooting door added 2026-06-17** (the forensic-to-lookup conversion). The operator-manual counterpoint to FEATURES.*
+*Provenance: Boz 2026-06-01 (seed); populated 2026-06-14 from the FEATURES operator-knob migration; **save→ship lifecycle + troubleshooting door added 2026-06-17** (the forensic-to-lookup conversion); **Stage + Preview expanded to the full code-grounded knob master list 2026-06-26** (pyramid tuner + inclusion manifest flagged in-flight). The operator-manual counterpoint to FEATURES.*

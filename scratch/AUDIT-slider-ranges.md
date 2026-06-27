@@ -40,5 +40,5 @@ correctness here (`BOZ.md §3` agent-accessibility standard, applied to the pane
 | Shadow | size 100 · samples 32 | engine-bound; leave |
 | Warmth | 0–1 | bipolar (0.5 neutral); leave |
 
-*(New channels — e.g. the coming DoF/Focus section, `HANDOFF-real-dof.md` — are born to this principle:
+*(New channels — e.g. the coming DoF/Focus section, `cartograph/_archive/HANDOFF-real-dof-2026-06-27.md` — are born to this principle:
 focus/range/strength sliders shipped with 0→Extreme ceilings from day one.)*

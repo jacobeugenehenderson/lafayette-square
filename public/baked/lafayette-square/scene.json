@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1782504761363,
+  "bakedAt": 1782537861454,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -106,12 +106,12 @@
     "values": {
       "sunset": {
         "grass": 0.5,
-        "trees": 0.06,
+        "trees": 0,
         "pool": 0
       },
       "night": {
         "grass": 0.5,
-        "trees": 0,
+        "trees": 0.03,
         "pool": 0.4
       },
       "dusk": {
@@ -135,12 +135,20 @@
   },
   "ambient": {
     "values": {
-      "value": 1
+      "value": 2
     }
   },
   "hemi": {
+    "animated": "tod",
+    "transitionIn": 0,
+    "transitionOut": 0,
     "values": {
-      "value": 1
+      "noon": {
+        "value": 0
+      },
+      "night": {
+        "value": 2
+      }
     }
   },
   "dirSun": {
@@ -150,7 +158,7 @@
   },
   "dirMoon": {
     "values": {
-      "value": 1
+      "value": 2
     }
   },
   "constellations": {
@@ -169,15 +177,15 @@
     "transitionOut": 0,
     "values": {
       "night": {
-        "intensity": 2,
-        "threshold": 0.02,
+        "intensity": 0.3,
+        "threshold": 0.03,
         "smoothing": 0.06,
-        "warmCool": 0
+        "warmCool": 0.5
       },
       "noon": {
-        "intensity": 0.54,
-        "threshold": 0.26,
-        "smoothing": 0.16,
+        "intensity": 0.62,
+        "threshold": 0.67,
+        "smoothing": 0,
         "warmCool": 0.5
       },
       "dawn": {
@@ -187,8 +195,8 @@
         "warmCool": 0.5
       },
       "sunset": {
-        "intensity": 0.56,
-        "threshold": 0.01,
+        "intensity": 0.36,
+        "threshold": 0.02,
         "smoothing": 0
       }
     }
@@ -217,13 +225,13 @@
   },
   "mist": {
     "values": {
-      "density": 0,
+      "density": 0.04,
       "color": "#9dc5e0"
     }
   },
   "halo": {
     "values": {
-      "strength": 0.74,
+      "strength": 0,
       "color": "#b8c8d8"
     }
   },
@@ -276,10 +284,10 @@
   "dof": {
     "values": {
       "enabled": 1,
-      "blur": 0.6,
-      "focus": 120,
-      "softness": 0.5,
-      "heroBlur": 0.15
+      "blur": 0.16,
+      "focus": 320,
+      "heroBlur": 0.02,
+      "softness": 0.16
     }
   },
   "shadow": {
@@ -347,13 +355,13 @@
   },
   "arch": {
     "values": {
-      "distance": 1250,
+      "distance": 1690,
       "bearingX": 0.9487,
       "bearingZ": -0.3163,
-      "scale": 1.8,
+      "scale": 2.1,
       "rotation": 1.99,
-      "yOffset": 107,
-      "footFade": 27
+      "yOffset": 155,
+      "footFade": 40
     }
   },
   "archLight": {
@@ -370,13 +378,13 @@
   },
   "lantern": {
     "values": {
-      "intensity": 1.26,
-      "glow": 1
+      "intensity": 0.56,
+      "glow": 1.24
     }
   },
   "horizon": {
     "values": {
-      "radius": 2860,
+      "radius": 2500,
       "fadeInner": 1400,
       "fadeOuter": 3750
     }

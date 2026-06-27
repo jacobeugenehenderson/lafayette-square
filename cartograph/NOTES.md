@@ -8,6 +8,26 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-26/27 — DoF + bloom, rebuilt off a shared blur LADDER (the romance lands)
+
+A long post-FX session with Jacob, eye-gated throughout. The arc the `HANDOFF-real-dof` brief opened finally landed — and **superseded its own plan**. Archived → `_archive/HANDOFF-real-dof-2026-06-27.md`. Commit `7d1bb238` + follow-ups. Settled doctrine → `ARCHITECTURE.md` (Decisions) + `OPERATIONS.md` (Bloom / Focus knobs).
+
+**The one architectural move:** `DownsamplePyramid` now exposes its **mip LADDER** (8 rungs, tight→wide) via `_pyramidRefs.levels`, not one collapsed blur. One downsample, sampled many ways — gang intact, phone budget intact. Both effects got their defining property back off it.
+
+- **DoF (`RomanceDoF`)** — variable **radius** by depth (2-tap lerp of the straddling rungs) = a real focus pull, not the opacity cross-fade it was. **Single-focal** (sharp near → mid/far melts), which **replaced the two-focal model** — that read *backwards*: pushing Focus out blurred the *near* (everything closer than the far plane was "foreground"). A gentle **hero pocket** eases the far blur toward `heroBlur` near the designated hero's distance (the "a little soft, like IRL" Arch).
+- **Bloom (`CustomBloom`)** — a **band-pass**: glow on bright *contrast* (`rung_i − rung_{i+1}`), not absolute brightness. Lamps/edges glow and a bright sky **backlights** the Arch as a rim, while uniform areas (open sky, the Arch's body) don't wash. (Jacob's framing cracked it: "IRL a bright sky would back-light the arch" — the sky bloom *is* the wanted backlight; the fix was keying on contrast so the rim glows and the body stays dark.) Also **ADDITIVE** (SCREEN *darkens* HDR-bright pixels — `screen(2.0,g) < 2.0` washed the sky).
+
+**Lessons banked (the day was mostly debugging the hero pocket):**
+- **The "everything blurry" was BLOOM, not DoF.** `window.__dofDebug = 1` (CoC paint) proved DoF was computing ~zero blur while the frame was hazy → the haze was the additive bloom. *Instrument before theorizing* — the debug paint cracked it after hours of code-reading flip-flops.
+- **Anchor depth-pockets in the SHADER's depth space.** The shader decodes depth as **view-Z** (forward-axis); `camera.distanceTo` (Euclidean) put the pocket at the wrong depth for the **off-axis** Arch → missed every time. Fix: `worldPos.applyMatrix4(camera.matrixWorldInverse); heroDist = -z`. **The final blocker.**
+- **Stage renders the LIVE store; the driver was reading the BAKED slab.** The pocket anchored to `scene.json`'s arch (1250) while Stage rendered the store's (1690) — a 440 m miss. Fix: pass the live arch via override.
+- **The browse-disable gate killed DoF in the Hero shot** — it used raw height (`y>150`), which the elevated Hero camera trips. Gate on look-**down** instead.
+- **"We did it!" ≠ done.** I committed + started archiving on a premature thumbs-up; the pocket wasn't visually confirmed yet. Close the loop *visually* before retiring State.
+
+**Open (BACKLOG'd):** Preview's `PreviewPostFx` forks its own URL-param DoF driver (no per-frame `heroDist`/gate) → out of sync; a bloom **"blend" slider** (some broad bloom back over the Arch); Phase 4 (leaf-taper LoD cover) + Phase 5 (day/night budget); bloom TOD-curve tuning (threshold runs lower for band-pass); the Stage timeline-shift-on-edit bug (blocks per-TOD bloom authoring).
+
+---
+
 ## 2026-06-24 — Stage: Hero camera authoring/runtime control modes.
 
 Planned with Jacob then built (eye-gate pending). The want: clicking a Hero **keyframe** should jump the camera there and turn the on-screen controls into **generic 3D authoring** controls, reverting to **runtime** controls on **Save keyframe**. Decisions locked in conversation: **keep the Hero Lock** (the camera always aims at the subject — authoring only **repositions**, so the model stays `{position, fov}`, no bake/`SLAB-CONTRACT` change); **runtime = controls locked** (can be playing or paused); **default = playing**; **Save → re-lock and stay PAUSED on the saved frame** (do *not* auto-resume — selection is disabled during playback, so auto-play would fight the common edit-the-next-keyframe flow); scope **Hero only**.
@@ -36,7 +56,7 @@ A render/Stage session (parallel to the docs Boz). Landed, all eye-verified or p
 ---
 
 ## 2026-06-21 (EOD) — REAL DoF end-to-end · render-conformance confirmed · authoring-hardening
-*(Relocated from the MEMORY index 2026-06-23 — diary belongs here, not the pickup line. Forward state lives in `HANDOFF-real-dof.md`.)*
+*(Relocated from the MEMORY index 2026-06-23 — diary belongs here, not the pickup line. The DoF arc LANDED + superseded its plan 2026-06-26/27 — see the entry above; the HANDOFF is archived `_archive/HANDOFF-real-dof-2026-06-27.md`.)*
 
 A big RENDER/DoF day. Highlights:
 - **render-conformance was ALREADY landed** — Phases 1–3 (depth desktop-LOG `ca3514f2`, cameras-read-slab `bc2c293f`, dedup `112a7546`) shipped 2026-05-26; the AM pickup had been stale off an unmarked HANDOFF (lesson: verify code, not memory).

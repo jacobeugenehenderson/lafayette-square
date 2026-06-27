@@ -322,12 +322,12 @@
     "values": {
       "sunset": {
         "grass": 0.5,
-        "trees": 0.06,
+        "trees": 0,
         "pool": 0
       },
       "night": {
         "grass": 0.5,
-        "trees": 0,
+        "trees": 0.03,
         "pool": 0.4
       },
       "dusk": {
@@ -349,8 +349,8 @@
         "warmCool": 0.5
       },
       "noon": {
-        "intensity": 0.24,
-        "threshold": 0.1,
+        "intensity": 0.62,
+        "threshold": 0.67,
         "smoothing": 0,
         "warmCool": 0.5
       },
@@ -391,13 +391,13 @@
   },
   "mist": {
     "values": {
-      "density": 0,
+      "density": 0.04,
       "color": "#9dc5e0"
     }
   },
   "halo": {
     "values": {
-      "strength": 0.74,
+      "strength": 0,
       "color": "#b8c8d8"
     }
   },
@@ -452,7 +452,7 @@
       "enabled": 1,
       "blur": 0.16,
       "focus": 320,
-      "heroBlur": 0,
+      "heroBlur": 0.02,
       "softness": 0.16
     }
   },
@@ -486,12 +486,20 @@
   },
   "ambient": {
     "values": {
-      "value": 1
+      "value": 2
     }
   },
   "hemi": {
+    "animated": "tod",
+    "transitionIn": 0,
+    "transitionOut": 0,
     "values": {
-      "value": 1
+      "noon": {
+        "value": 0
+      },
+      "night": {
+        "value": 2
+      }
     }
   },
   "dirSun": {
@@ -501,7 +509,7 @@
   },
   "dirMoon": {
     "values": {
-      "value": 1
+      "value": 2
     }
   },
   "heroSubject": null,
@@ -586,13 +594,13 @@
   },
   "lantern": {
     "values": {
-      "intensity": 1.26,
-      "glow": 1
+      "intensity": 0.56,
+      "glow": 1.24
     }
   },
   "horizon": {
     "values": {
-      "radius": 2860,
+      "radius": 2500,
       "fadeInner": 1400,
       "fadeOuter": 3750
     }

@@ -6,21 +6,21 @@
  * the standalone `DownsamplePyramid` instead, so the one downsample serves bloom
  * and DoF (sharing the LADDER, never each other's result).
  *
- * ── The mechanism (HDR high-pass across SCALES, not a luminance gate) ───────
- * Bloom is light scattering — a glow that sits ON the bright sources, dark
- * staying dark. The first cut applied a luminance smoothstep gate to ONE
- * collapsed full-scene blur, which (a) thresholded AFTER the blur, so a lamp's
- * energy was diluted into its surroundings before the gate and broad midtones
- * (sky, sunlit walls) drifted over it → a flat warm WASH, and (b) had only one
- * blur scale, so no core+halo shape. This version fixes both off the shared
- * ladder:
- *   • HDR soft-knee high-pass (Unity/Karis) on EACH rung — keeps the bright
- *     cores (energy survives the energy-conserving downsample) and lets midtones
- *     fall away; no binary gate, no wash.
- *   • Sums several rungs — the tight rungs give the bright core, the wide rungs
- *     give the soft halo → real multi-scale glow.
- * `uThreshold` = the HDR floor, `uSmoothing` = the soft-knee width. Mechanism
- * shifted → re-tune the `bloom` channel in Stage at the eye-gate.
+ * ── The mechanism (BAND-PASS — glow on CONTRAST, not absolute brightness) ───
+ * Bloom should glow where there's bright CONTRAST (the edges + points of light),
+ * not on broad uniform brightness. Keying on absolute brightness made the big
+ * luminous daytime sky bloom as a flat haze over everything — washing the Hero's
+ * body to gray instead of letting the sky BACKLIGHT it. A band-pass fixes that:
+ *   • detail at scale i = the bright part of (rung_i − the next-blurrier rung) =
+ *     the bright FEATURE at that scale (a Laplacian band). Summed across scales →
+ *     fine points (lamps/glints) + wide rim halos.
+ *   • Uniform regions (open sky, a flat wall, the Arch's BODY) have ~no contrast
+ *     → no wash. The bright-sky/dark-Arch EDGE has high contrast → glows = the
+ *     BACKLIGHT RIM. Lamps against dark → glow as points.
+ * `uThreshold` = how much contrast it takes to glow (soft-knee on the contrast
+ * magnitude), `uSmoothing` = the knee. ⚠️ Contrast runs SMALLER than absolute
+ * brightness → threshold wants a LOWER setting; re-tune the `bloom` channel.
+ * ADD blend (HDR-correct; SCREEN darkened the HDR-bright sky).
  *
  * ── API parity (so the channel wiring is untouched) ────────────────────────
  * The driver sites (PostProcessing.jsx, PreviewPostFx.jsx) set `bloom.intensity`,
@@ -88,22 +88,24 @@ const fragment = /* glsl */`
   }
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-    // SUM the high-passed rungs (do NOT average). A small light's energy lives
-    // only in the FINE rungs — downsampling a point thins its energy, while a
-    // broad bright area (the sky) stays bright at every rung. Averaging across
-    // all rungs diluted the point-lights and let the always-bright sky dominate
-    // ("the effect gets used up in the sky"); summing restores the bright core
-    // (fine rungs) + the soft halo (wide rungs).
+    // BAND-PASS bloom — glow on bright local CONTRAST, not uniform brightness.
+    // detail at scale i = the bright part of (rung_i − the next-blurrier rung) =
+    // the bright FEATURE at that scale. Summed across scales → fine points (lamps,
+    // glints) + wide rim halos. Uniform regions (open sky, a flat wall, the arch
+    // BODY) have ~no contrast → no wash; the bright-sky/dark-arch EDGE has high
+    // contrast → glows = the backlight rim. THIS is what makes the bright SPOTS
+    // glow and the bright sky BACKLIGHT the arch, instead of a flat sky wash.
     vec3 glow = vec3(0.0);
-    for (int i = 0; i < ${PYRAMID_LEVELS}; i++) {
-      glow += highPass(sampleLevel(i, uv));
+    for (int i = 0; i < ${PYRAMID_LEVELS - 1}; i++) {
+      vec3 fine   = max(sampleLevel(i, uv),     vec3(0.0));
+      vec3 coarse = max(sampleLevel(i + 1, uv), vec3(0.0));
+      glow += max(fine - coarse, vec3(0.0));   // bright contrast at scale i
     }
-
-    // Hue-preserving compression (Reinhard on luminance) — the very-luminous sky
-    // rolls off to a soft halation while dim lights stay ~linear, so the sky and
-    // the small lights land in the same visual range and BOTH read. No gating.
-    float gl = dot(glow, vec3(0.2126, 0.7152, 0.0722));
-    glow *= (gl > 1e-5) ? ((gl / (1.0 + gl)) / gl) : 1.0;
+    // Soft-knee gate on the contrast magnitude: uThreshold = how much contrast it
+    // takes to glow, uSmoothing = the knee. ⚠️ Contrast magnitudes run SMALLER
+    // than absolute brightness, so threshold wants a LOWER setting than the old
+    // absolute-bright bloom — re-tune the bloom channel at the eye-gate.
+    glow = highPass(glow);
 
     // Warm↔Cool tint of the glow, luminance-preserving (0.5 = neutral → no
     // change, existing Looks untouched). Optional artistic tint — the HDR

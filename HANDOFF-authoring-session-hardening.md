@@ -11,7 +11,7 @@
 >
 > ⚠️ **HIGH blast radius / serialize:** Phase 4 (camera) touches `Scene.jsx` / `StageApp.jsx` /
 > `CartographApp.jsx` / `PreviewApp.jsx` — the SAME files as `HANDOFF-render-conformance.md` and
-> `HANDOFF-real-dof.md`. Do not edit those concurrently with either arc; surface to Boz.
+> `cartograph/_archive/HANDOFF-real-dof-2026-06-27.md`. Do not edit those concurrently with either arc; surface to Boz.
 
 ## Decided (Jacob, 2026-06-21)
 - **Reload restores the EXACT place** (tool + shot + camera) — not a cold-boot to Designer. The
@@ -137,7 +137,7 @@ serialize.** **Verify:** all surfaces frame identically; no behavior change beyo
 - **FEATURES** — user-facing "your work is where you left it" + "publish with confidence."
 
 ## Open / coordination
-- Phase 4 **must serialize** with `HANDOFF-render-conformance.md` + `HANDOFF-real-dof.md` (shared files).
+- Phase 4 **must serialize** with `HANDOFF-render-conformance.md` + `cartograph/_archive/HANDOFF-real-dof-2026-06-27.md` (shared files).
 - Phases 1–3 are low-coupling and can land first.
 - Mobile: keep a light guard option if the restored 3D load is genuinely painful on `phone-lo` (measure;
   default is restore-exact per Jacob).

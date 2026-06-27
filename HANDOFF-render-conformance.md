@@ -6,7 +6,7 @@
 > off this doc's then-unmarked phases; corrected. **What remains:** Phase 4 (virtual phone = mobile —
 > absorbed into `HANDOFF-preview-measurement.md §2a`), Phase 5 (mobile policy authored), Phase 6 (parity
 > cleanups), Phase 7 (self-serve loop), and the **DoF post-fx channel** — now its own arc,
-> **[`HANDOFF-real-dof.md`](HANDOFF-real-dof.md)** (real DoF + shared-pyramid reuse + the LoD cover;
+> **[`cartograph/_archive/HANDOFF-real-dof-2026-06-27.md`](cartograph/_archive/HANDOFF-real-dof-2026-06-27.md)** (real DoF + shared-pyramid reuse + the LoD cover;
 > supersedes the archived fake-blur `tree-hero-lod`). Touches the production Canvas, all authoring
 > Canvases, the camera rig, post-FX, and the mobile path. Cold-review (fresh-Boz + Jacob) before dispatch.
 > **Goal:** the production runtime renders identically to the surfaces that authored it — on desktop

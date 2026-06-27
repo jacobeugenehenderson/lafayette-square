@@ -2,7 +2,7 @@
 
 > Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. Migrated 2026-05-18 out of `cartograph/BACKLOG.md`. Tree work that intersects cartograph-side code (Couplers wiring, scene channels) still appears in `cartograph/BACKLOG.md`; tree-internal items live here.
 
-> 🌳 **CURRENT ARC — the Forest Builder kit-matcher (supersedes the Salon arc below as the front-end direction).** Ratified architecture: **`scratch/FOREST-BUILDER-KIT-MATCHER.md`**. **Locked doctrine:** **no-cull** (all trees draw); hero-LOD impostor arc **ARCHIVED** (`cartograph/_archive/HANDOFF-tree-hero-lod-2026-06-21.md`) → the **real-DoF return** is now `HANDOFF-real-dof.md`; leaf scale + color are **rubric axes**; **Procedural + LiDAR kept** as equal peer tracks.
+> 🌳 **CURRENT ARC — the Forest Builder kit-matcher (supersedes the Salon arc below as the front-end direction).** Ratified architecture: **`scratch/FOREST-BUILDER-KIT-MATCHER.md`**. **Locked doctrine:** **no-cull** (all trees draw); hero-LOD impostor arc **ARCHIVED** (`cartograph/_archive/HANDOFF-tree-hero-lod-2026-06-21.md`) → the **real-DoF return** is now `cartograph/_archive/HANDOFF-real-dof-2026-06-27.md`; leaf scale + color are **rubric axes**; **Procedural + LiDAR kept** as equal peer tracks.
 >
 > **✅ STAGE 0 + STAGE 1 DONE (2026-06-18/19, on `curb-offset-draw`).** Keystone `arborist/rubric.json` (19 axes + similarity matrices) + `arborist/dossiers/` (10 species, ratified vs botany). Spine `arborist/{ingest-tagger,library-builder,ingest,matcher,readiness,library-inventory,forest-dashboard-html}.js` → `arborist/state/part-index.json` + canonical `public/library/` + `GET /readiness` & **`GET /forest`** (rendered dashboard, :3334) + `public/library/INVENTORY.md`. Parts procured: 4 Poly Haven CC0 barks (7/8 types) + 6 scanned vendor leaf packs (star+fan filled; hi-res in `assets/leaf-packs-2026/`, gitignored). **All 10 species buildable, 0 blockers, buildable-CLEAN=5** (Sugar/Silver/Pin Oak/Red Maple/Sweetgum). **Eye it: `:3334/forest`** (or `node arborist/readiness.js` / `INVENTORY.md`).
 >
@@ -80,7 +80,7 @@ The afternoon found the foundational blocker and the strategy to beat it. **Full
 
 **NEXT (tomorrow, with operator):**
 1. **#3 night-emissive (diagnosed).** Foliage glows green with lights+bloom off = leaf albedo under residual ambient/hemi (NOT a rogue emissive; lamp-glow is separate/correct). Build: (a) foliage goes dark at night, (b) the intended **night illumination map** (gated emissive → bloom). Needs design call: dusk→night ramp? per-species? Home: `treeAtlasMaterial.js` + sky channels.
-2. **DoF evaluation** — measure how much the DoF/LoD solution is buying us; may need optimizing. (`HANDOFF-real-dof.md`, `HANDOFF-render-conformance.md`.)
+2. **DoF evaluation** — measure how much the DoF/LoD solution is buying us; may need optimizing. (`cartograph/_archive/HANDOFF-real-dof-2026-06-27.md`, `HANDOFF-render-conformance.md`.)
 3. **Interface = the "fashion plates" pivot** — rubric-named + thumbnailed visual plates (kill `Bark007`), plate-based selection, **Grove/Salon render parity** (Grove=published GLB@LOD1/master atlas vs Salon=`generateSingleCompositionGLB`@LOD0 — same tree, two pipelines, they diverge).
 
 **Follow-ups surfaced:**
