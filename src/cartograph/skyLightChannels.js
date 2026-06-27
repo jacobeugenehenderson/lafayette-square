@@ -15,14 +15,16 @@
 
 // Brackets attenuated to the realistic working zone + finer intervals (2026-06-21,
 // slider-range principle — scratch/AUDIT-slider-ranges.md). Before, the useful
-// range was squished into the extremes ("only shows at max/min"): intensity 2–3
-// is blown-out, and threshold's top (>~0.9) is a dead "nothing blooms" plateau
-// since the scene's bright pixels sit lower. Defaults kept in-range so baked
-// Looks don't move. ⚠️ If out-of-box bloom reads as ~invisible, the lever is the
+// range was squished into the extremes ("only shows at max/min"): intensity's
+// realistic zone is ≤~2 (2–3 blows out), and threshold's top (>~0.9) is a dead
+// "nothing blooms" plateau since the scene's bright pixels sit lower. Defaults
+// kept in-range so baked Looks don't move. Intensity ceiling reopened 2→3
+// (2026-06-27, Jacob): the 2–3 blow-out zone is now reachable ON PURPOSE — overdo
+// the glow for style — while the default 0.5 stays in-range. ⚠️ If out-of-box bloom reads as ~invisible, the lever is the
 // THRESHOLD DEFAULT (0.85, near the dead zone) — lowering it changes baked Looks,
 // so that's a separate eye call.
 export const BLOOM_FIELDS = [
-  { key: 'intensity', label: 'Intensity',           min: 0, max: 2,   step: 0.02 },
+  { key: 'intensity', label: 'Intensity',           min: 0, max: 3,   step: 0.02 },
   { key: 'threshold', label: 'Luminance threshold', min: 0, max: 0.9, step: 0.01 },
   { key: 'smoothing', label: 'Threshold smoothing', min: 0, max: 1,   step: 0.02 },
   // Warm ↔ Cool tint of the glow (0 cool · 0.5 neutral · 1 warm). Default
