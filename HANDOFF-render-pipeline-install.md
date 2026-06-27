@@ -80,6 +80,17 @@ One component (extend `PostProcessing` or a new `RenderPipeline` it delegates to
 3. **Does this absorb `preview-measurement`'s inclusion manifest?** The per-platform "what ships to desktop vs mobile" is just the `platform` field per manifest entry — i.e. the *same* SSoT. If yes, `preview-measurement` narrows to the *gauges + device emulator*, and the inclusion-authoring becomes editing this manifest at the Preview gate. *(Boz leans yes — one manifest, not two.)*
 4. **Naming** — extend `PostProcessing` into the installer, or a new `RenderPipeline` that `PostProcessing` becomes a thin mode of? *(Cosmetic; decide at build.)*
 
+## Documentation deliverable (first-class, not an afterthought — Jacob, 2026-06-27)
+
+The manifest is itself a **documentation artifact** — the recorded, readable SSoT of *what the product renders*. So this build is **also a doc effort**, and it must hit **every register** (the accord matrix, `BOZ §0`), never just one:
+- **The manifest, recorded.** `renderPipeline.js` is the machine SSoT; its human-readable copy + the *why* live in `cartograph/ARCHITECTURE.md` (the install mechanism + a manifest table) and `PREVIEW.md` (the parity guarantee it makes structural).
+- **FEATURES** (pitch) — the pipeline is a *feature*: "author one Look; it renders the same on every surface and every device, by construction." Each effect that earns a slot is a feature line (DoF = the romance + invisible-LoD cover; bloom = backlit hero + glowing lights).
+- **OPERATIONS** (knobs) — each entry's channel + its Preview toggle/gauge.
+- **ARCHITECTURE** (mechanism) — the manifest + installer + mode-parameterization; a Decisions entry.
+- **NOTES** (narrative) — the arc + lessons on landing; this HANDOFF retires there.
+
+⭐ **The rule:** a thing like DoF is *simultaneously* a FEATURE, an ARCHITECTURE decision, an OPERATIONS knob, and a manifest entry — landing it means **closing the per-touch gate across all of them in the same arc**, not just the doc you happened to edit. The same gate applies to the BACKLOG: it must always reflect the *real* current state, callable at a glance.
+
 ## Relationship to the existing plan docs (accord)
 - **Supersedes** the loose "Preview out of sync" patch item in `cartograph/BACKLOG.md` (the DoF-arc bullet, follow-up #1) — that bug is *fixed as a side-effect* of Phase 3, not patched.
 - **Foundation for** `render-conformance` (makes its "Preview == Production" principle structural) and `preview-measurement` (the toggle/gauge/inclusion become installer capabilities). Repoint both to this once the design is signed off.
