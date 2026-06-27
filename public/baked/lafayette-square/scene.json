@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1782537861454,
+  "bakedAt": 1782583496768,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -85,9 +85,9 @@
     "tree_row": true,
     "alley": true,
     "footway": true,
-    "cycleway": false,
-    "steps": false,
-    "path": false,
+    "cycleway": true,
+    "steps": true,
+    "path": true,
     "park": true,
     "water": true,
     "tree": true,
