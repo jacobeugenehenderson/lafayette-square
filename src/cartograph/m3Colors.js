@@ -30,6 +30,7 @@ export const DEFAULT_LAYER_COLORS = {
   cycleway:   '#6EA070',  // softer green (bike path)
   steps:      '#A0907E',  // stone tone
   path:       '#8E7E68',  // dirt/loose aggregate
+  park_path:  '#928a7c', // park gravel (Voronoi pebble shader in render; this is the bake/2D base)
 
   // Lines / paint (striping)
   stripe:     '#F2CE4A',  // saturated school-bus yellow

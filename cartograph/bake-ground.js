@@ -36,6 +36,7 @@ import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeom
 import { buildTileGround } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
+import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { makeElevationSampler } from '../src/lib/terrainCommon.js'  // SSoT: one sampler + one V_EXAG (applied inside getElevation), shared with the runtime — no hand-rolled copy
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
@@ -202,6 +203,9 @@ const PAINT_ORDER = [
   ['mat', 'cycleway'],
   ['mat', 'steps'],
   ['mat', 'path'],
+  // Park footpaths (gravel) — clipped to the park polygon, painted on top of
+  // the park grass face like the other path ribbons sit on the streets.
+  ['mat', 'park_path'],
   // Linear barriers (buffered polylines).
   ['mat', 'fence'],
   ['mat', 'wall'],
@@ -361,7 +365,7 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
-function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null) {
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
@@ -425,6 +429,22 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     })) {
       pushClipperRings(kind, rings)
     }
+  }
+
+  // Park footpaths → the `park-path` gravel group, clipped to the park
+  // polygon INTERIOR (the mirror of how neighborhood paths clip to parcel
+  // interiors and EXCLUDE the park above — so the two partition cleanly off
+  // the SAME polygon, no double-render). Land paths only: bridges (paths over
+  // water) are excluded here and rendered as a lifted overlay (LafayettePark)
+  // until the Phase-5 off-the-ground-paths arc makes bridges first-class.
+  // Same ribbons.paths, same shared lib — the old park-path fork is dead.
+  if (parkClip?.polygon?.corners) {
+    // LAND park paths → the `park_path` gravel group, clipped to the park
+    // polygon relaxed to the perimeter sidewalk's inner edge (shared SSoT;
+    // see src/lib/parkPaths.js). Bridges are excluded (lifted overlay until
+    // Phase 5). Same ribbons.paths, same shared lib — the old fork is dead.
+    const { land } = buildParkPathRings(ribbons, { polygon: parkClip.polygon, water: parkClip.water })
+    pushClipperRings('park_path', mergeRings(land))
   }
   return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [] }
 }
@@ -864,6 +884,18 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
     ? (JSON.parse(readFileSync(surveyPath, 'utf-8')).streets || null) : null
   const mapData = existsSync(mapPath) ? JSON.parse(readFileSync(mapPath, 'utf-8')) : { layers: {} }
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
+  // Park footpaths: the clip polygon + water (the bridge split) for the
+  // `park-path` group. Scene-keyed; absent → no park-path group emitted.
+  // (Water-overlap bridge detection is a Phase-1 stopgap — Phase 5 carries
+  // an OSM bridge tag onto paths and bakes bridges as a lifted group.)
+  const parkPolyPath  = join(ROOT, 'cartograph', 'data', scene, 'clean', 'park-polygon.json')
+  const parkWaterPath = scene === 'lafayette-square'
+    ? join(ROOT, 'src', 'data', 'park_water.json')
+    : join(ROOT, 'src', 'data', scene, 'park_water.json')
+  const parkClip = existsSync(parkPolyPath) ? {
+    polygon: JSON.parse(readFileSync(parkPolyPath, 'utf-8')),
+    water: existsSync(parkWaterPath) ? JSON.parse(readFileSync(parkWaterPath, 'utf-8')) : null,
+  } : null
   const designLayerColors = design.layerColors || {}
   const designLuColors    = design.luColors    || {}
   // C5 — LS cutover: the ring-band emitter (keeper) is now on for all
@@ -873,7 +905,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
   // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
   // conditional is gone — a scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group

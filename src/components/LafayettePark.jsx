@@ -5,14 +5,19 @@ import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import parkWaterData from '../data/park_water.json'
-import parkPathData from '../data/park_paths.json'
+import ribbonsData from '../data/ribbons.json'
 import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
-import { getElevationRaw } from '../utils/elevation'
+import { getElevationRaw, V_EXAG } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
 import { terrainExag, patchTerrain } from '../utils/terrainShader'
+import { ringsToFlatGeo } from '../lib/ringsToFlatGeo.js'
+import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
+import { buildStairGeometry } from '../lib/buildStairGeometry.js'
+import featureElev from '../data/park-feature-elev.json'
+import { makeGravelPathMaterial } from './gravelPathMaterial.js'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
@@ -180,246 +185,132 @@ function ParkGround() {
   )
 }
 
-// ── Park Paths (ribbon meshes from park_paths.json) ──────────────────
-// Canonical park paths live in park_paths.json (OSM-sourced, world-aligned).
-// Designer renders them as 2D strips; shots render them as shaded ribbons
-// using the same polylines — no more SVG rasterization. See
-// `feedback_designer_is_canonical.md`.
-const PATH_WIDTH_M = 2.8
-const PATH_LAND_Y = 0.4    // float just above the park face
+// ── Park Paths — UNIFIED onto the real path pipeline (2026-06-27) ────
+// Park footpaths are real OSM data that already arrive in the shared prebake
+// artifact `ribbons.json` `.paths`. The LAND footpaths are now baked into the
+// ground stack as the `park_path` gravel group (cartograph/bake-ground.js →
+// BakedGround's GravelMesh) and drawn in the 2D Designer — so they ride
+// terrain, sit in paint order, gate off the `park_path` layer toggle, and ship
+// in the slab. The old fork (a private buildPathRibbons + scripts/14 +
+// src/data/park_paths.json) is gone; width = each path's `pavedWidth` (real OSM).
+//
+// The ONE remaining live piece here is the lake BRIDGE: a path over water can't
+// drape onto the flat ground stack (it would sink under the water mesh), so it
+// stays a lifted overlay until the Phase-5 off-the-ground-paths arc makes
+// bridges first-class. It reads the SAME ribbons data via the SAME shared
+// builder (buildParkPathRings) + gravel material — no fork — and gates off the
+// SAME `park_path` toggle as the baked land paths.
 const PATH_BRIDGE_Y = 0.5  // clear water (0.35) + island top (0.4)
 
-// Ray-cast point-in-polygon test (compass-frame coords [x, z]).
-function pointInRing(p, ring) {
-  let inside = false
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], zi = ring[i][1]
-    const xj = ring[j][0], zj = ring[j][1]
-    if (((zi > p[1]) !== (zj > p[1])) &&
-        (p[0] < (xj - xi) * (p[1] - zi) / (zj - zi) + xi)) {
-      inside = !inside
-    }
-  }
-  return inside
-}
+function ParkBridge({ lookId, bakeLastMs }) {
+  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const hidden = scene?.layerVis?.park_path === false
+  const tintHex = scene?.layerColors?.park_path
+  const roughness = scene?.materialPhysics?.park_path?.roughness
+  const scale = scene?.materialPhysics?.park_path?.scale
+  const { shaderRef, material } = useMemo(
+    () => makeGravelPathMaterial({ tintHex, roughness, scale }),
+    [tintHex, roughness, scale]
+  )
 
-// Water = lake.outer minus lake.island (island is land), plus grotto.
-function pointInWater(p, water) {
-  if (water.lake?.outer && pointInRing(p, water.lake.outer)) {
-    if (water.lake.island && pointInRing(p, water.lake.island)) return false
-    return true
-  }
-  if (Array.isArray(water.grotto) && pointInRing(p, water.grotto)) return true
-  if (water.grotto?.outer && pointInRing(p, water.grotto.outer)) return true
-  return false
-}
-
-// Auto-detect bridges: a path is a "bridge" if the majority of its segment
-// midpoints fall over water. No park_paths.json authoring needed — the
-// geometry is the source of truth. (Manual override could be added via
-// `bridge: true` per path later.)
-function classifyBridgePath(path, water) {
-  const pts = path.points || path
-  if (!pts || pts.length < 2) return false
-  let inWater = 0, total = 0
-  for (let i = 0; i < pts.length - 1; i++) {
-    const [ax, az] = pts[i]
-    const [bx, bz] = pts[i + 1]
-    if (pointInWater([(ax + bx) / 2, (az + bz) / 2], water)) inWater++
-    total++
-  }
-  return inWater > total / 2
-}
-
-function buildPathRibbons(paths, width) {
-  const positions = [], indices = []
-  let vOff = 0
-  const half = width / 2
-  for (const p of paths) {
-    const pts = p.points || p
-    if (!pts || pts.length < 2) continue
-    for (let i = 0; i < pts.length; i++) {
-      const [x, z] = pts[i]
-      let nx = 0, nz = 0
-      if (i > 0) {
-        const [px, pz] = pts[i - 1]
-        const dx = x - px, dz = z - pz
-        const len = Math.hypot(dx, dz) || 1
-        nx += -dz / len; nz += dx / len
-      }
-      if (i < pts.length - 1) {
-        const [nxp, nzp] = pts[i + 1]
-        const dx = nxp - x, dz = nzp - z
-        const len = Math.hypot(dx, dz) || 1
-        nx += -dz / len; nz += dx / len
-      }
-      const nl = Math.hypot(nx, nz) || 1
-      nx /= nl; nz /= nl
-      // Ground reverted to flat (#19); paths flat at y=0.
-      positions.push(x + nx * half, 0, z + nz * half)
-      positions.push(x - nx * half, 0, z - nz * half)
-    }
-    for (let i = 0; i < pts.length - 1; i++) {
-      const a = vOff + i * 2
-      indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3)
-    }
-    vOff += pts.length * 2
-  }
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  g.setIndex(indices)
-  g.computeVertexNormals()
-  return g
-}
-
-function ParkPaths() {
-  const pathShaderRef = useRef()
-
-  // Auto-bridge: split park paths into "land" and "bridge" sets based on
-  // overlap with park water. Bridge paths render at a higher Y so they
-  // clear water and the lake island. Land paths stay at the canonical
-  // path Y. See classifyBridgePath above.
-  const { landGeo, bridgeGeo } = useMemo(() => {
-    const all = parkPathData.paths || []
-    const bridges = [], lands = []
-    for (const p of all) {
-      (classifyBridgePath(p, parkWaterData) ? bridges : lands).push(p)
-    }
-    return {
-      landGeo: buildPathRibbons(lands, PATH_WIDTH_M),
-      bridgeGeo: buildPathRibbons(bridges, PATH_WIDTH_M),
-    }
-  }, [])
-
-  // Gravel material — same pebble/voronoi shader as before, minus the
-  // SVG-clip uniforms since the geometry IS the path shape now.
-  //
-  // polygonOffset: paths win over any coplanar surface they touch (lake
-  // island at y=0.4 coplanar with land paths; bank meshes near the water
-  // edge). Negative factor/units pulls fragments toward camera.
-  const pathMat = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      roughness: 0.95,
-      color: '#928a7c',
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
-    })
-    mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uSunAltitude = { value: 0.5 }
-      shader.uniforms.uLampMap = { value: getLampLightmap() }
-      pathShaderRef.current = shader
-
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <common>',
-        `#include <common>
-         varying vec3 vPathPos;`
-      )
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-         vPathPos = (modelMatrix * vec4(position, 1.0)).xyz;`
-      )
-
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <common>',
-        `#include <common>
-         uniform float uSunAltitude;
-         uniform sampler2D uLampMap;
-         varying vec3 vPathPos;
-
-         float pHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-         vec2 pHash2(vec2 p) { return vec2(pHash(p), pHash(p + vec2(37.0, 91.0))); }
-
-         float pNoise(vec2 p) {
-           vec2 i = floor(p), f = fract(p);
-           f = f * f * (3.0 - 2.0 * f);
-           return mix(mix(pHash(i), pHash(i+vec2(1,0)), f.x),
-                      mix(pHash(i+vec2(0,1)), pHash(i+vec2(1,1)), f.x), f.y);
-         }
-
-         float pFBM(vec2 p) {
-           float v = 0.0, a = 0.5;
-           for (int i = 0; i < 4; i++) { v += a * pNoise(p); p *= 2.05; a *= 0.48; }
-           return v;
-         }
-
-         vec3 pVoronoi(vec2 p) {
-           vec2 ig = floor(p);
-           vec2 fg = fract(p);
-           float minD = 1.0;
-           vec2 bestCell = vec2(0.0);
-           for (int y = -1; y <= 1; y++) {
-             for (int x = -1; x <= 1; x++) {
-               vec2 nb = vec2(float(x), float(y));
-               vec2 pt = pHash2(ig + nb);
-               vec2 diff = nb + pt - fg;
-               float d = dot(diff, diff);
-               if (d < minD) { minD = d; bestCell = ig + nb; }
-             }
-           }
-           return vec3(sqrt(minD), bestCell);
-         }`
-      )
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
-         vec2 pp = vPathPos.xz;
-
-         vec3 vr = pVoronoi(pp * 3.0);
-         float vDist = vr.x;
-         float stoneId = pHash(vr.yz);
-
-         vec3 stoneCol = mix(vec3(0.28, 0.26, 0.23), vec3(0.32, 0.28, 0.22), step(0.3, stoneId));
-         stoneCol = mix(stoneCol, vec3(0.35, 0.30, 0.24), step(0.6, stoneId));
-         stoneCol = mix(stoneCol, vec3(0.18, 0.16, 0.13), step(0.85, stoneId));
-
-         float gap = smoothstep(0.30, 0.38, vDist);
-         vec3 gravelCol = mix(stoneCol, vec3(0.12, 0.10, 0.08), gap * 0.7);
-
-         gravelCol *= 0.9 + pNoise(pp * 12.0 + vr.yz * 7.0) * 0.2;
-         gravelCol = mix(gravelCol, gravelCol * 0.85, smoothstep(0.4, 0.65, pFBM(pp * 0.3)));
-
-         float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
-         float brightness = mix(0.7, 1.0, dayBright);
-         vec3 nightTint = vec3(0.6, 0.7, 1.0);
-         gravelCol = mix(gravelCol * nightTint, gravelCol, dayBright) * brightness;
-
-         vec2 pathLampUV = (pp + 200.0) / 400.0;
-         float pathLampI = texture2D(uLampMap, pathLampUV).r;
-         float pathLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
-         gravelCol += vec3(0.50, 0.45, 0.28) * pathLampI * pathLampOn * 0.7;
-
-         diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
-      )
-    }
-    // Unique cache key MUST be set before patchTerrain wraps the material
-    // — otherwise three.js's program cache silently collapses this shader
-    // onto another `terrain-vp-std` keyed material (islandMat / bankMat /
-    // non-fade FadeMesh) and the gravel fragment never compiles. The
-    // resulting render is a flat light-gray plain MeshStandardMaterial.
-    mat.customProgramCacheKey = () => 'park-path-gravel-v1'
-    // Per-vertex terrain displacement: each gravel-path vertex rides the
-    // ground beneath it. Rigid-group lift can't work for an item spread
-    // across the park's 350 m extent — corner mismatch is meters at LS scale.
-    patchTerrain(mat, { perVertex: true })
-    return mat
+  const bridgeGeo = useMemo(() => {
+    const { bridge } = buildParkPathRings(ribbonsData, { polygon: parkPolygon, water: parkWaterData })
+    const rings = mergeRings(bridge)
+    return rings.length ? ringsToFlatGeo(rings, 0) : null
   }, [])
 
   useFrame(() => {
-    if (pathShaderRef.current) {
-      pathShaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+    if (shaderRef.current) {
+      shaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     }
   })
 
+  if (hidden || !bridgeGeo) return null
+  return (
+    <group position={[0, PATH_BRIDGE_Y, 0]}>
+      <mesh geometry={bridgeGeo} material={material} receiveShadow frustumCulled={false} />
+    </group>
+  )
+}
+
+// ── Park Stairs (real treads/risers, Phase 5) ────────────────────────
+// `steps` polylines become 3D staircases (buildStairGeometry), placed RIGIDLY
+// on terrain (a staircase IS a grade transition — can't drape like flat ground;
+// it's split out of the flat park_path group in parkPaths.js). Direction:
+// descend toward water where an end is near it, else toward lower terrain. ⚠️
+// Some park steps actually ASCEND to a monument/pedestal — we have no monument
+// coordinates to auto-detect that, so those read backwards until flipped; the
+// kit-general fix is carrying OSM `incline` + an operator override (BACKLOG).
+const STAIR_DESCEND_WATER_THRESH = 25
+function nearestWaterDist(p, water) {
+  const rings = []
+  if (water?.lake?.outer) rings.push(water.lake.outer)
+  if (Array.isArray(water?.grotto)) rings.push(water.grotto)
+  else if (water?.grotto?.outer) rings.push(water.grotto.outer)
+  let min = Infinity
+  for (const ring of rings) for (const v of ring) {
+    const d = Math.hypot(p[0] - v[0], p[1] - v[1]); if (d < min) min = d
+  }
+  return min
+}
+
+// Match a step polyline to its 3DEP sidecar record (endpoints, either order);
+// returns elevations aligned to the step's own a/b, or null. Higher end = up.
+function lookupStepElev(a, b, records) {
+  const near = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 1.0
+  for (const r of (records || [])) {
+    if (near(a, r.a) && near(b, r.b)) return { elevA: r.elevA, elevB: r.elevB }
+    if (near(a, r.b) && near(b, r.a)) return { elevA: r.elevB, elevB: r.elevA }
+  }
+  return null
+}
+
+function ParkStairs({ lookId, bakeLastMs }) {
+  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const hidden = scene?.layerVis?.steps === false
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#A0907E', roughness: 0.9 }), [])
+  const stairs = useMemo(() => {
+    const { steps } = buildParkPathRings(ribbonsData, { polygon: parkPolygon, water: parkWaterData })
+    const out = []
+    for (const s of steps) {
+      const a = s.points[0], b = s.points[s.points.length - 1]
+      // Prefer the measured 3DEP micro-grade (real direction + drop, handles
+      // descend-to-water AND ascend-to-monument); fall back to the
+      // water/terrain heuristic where the probe has no record.
+      const probe = lookupStepElev(a, b, featureElev?.steps)
+      let descendToB, drop
+      if (probe) {
+        descendToB = probe.elevB < probe.elevA          // descend toward the lower end
+        // Bake the vertical exaggeration into the flight (constant V_EXAG, NOT
+        // the live terrainExag — a group scale.y collapses the stairs to zero
+        // in flat/top-down camera modes). The lift below still rides the live
+        // exag terrain; only the stair's own rise is boosted to read at scale.
+        drop = Math.abs(probe.elevA - probe.elevB) * V_EXAG
+      } else {
+        const dwA = nearestWaterDist(a, parkWaterData), dwB = nearestWaterDist(b, parkWaterData)
+        descendToB = Math.min(dwA, dwB) < STAIR_DESCEND_WATER_THRESH
+          ? dwB < dwA
+          : getElevationRaw(b[0], b[1]) <= getElevationRaw(a[0], a[1])
+        drop = null
+      }
+      const g = buildStairGeometry(s.points, { width: s.pavedWidth || 1.5, descendToB, drop })
+      if (!g) continue
+      const geo = new THREE.BufferGeometry()
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(g.positions, 3))
+      geo.setIndex(g.indices)
+      geo.computeVertexNormals()
+      out.push({ geo, centroidRaw: getElevationRaw(g.centroid[0], g.centroid[1]) })
+    }
+    return out
+  }, [])
+  if (hidden || !stairs.length) return null
   return (
     <>
-      <group position={[0, PATH_LAND_Y, 0]}>
-        <mesh geometry={landGeo} material={pathMat} receiveShadow frustumCulled={false} />
-      </group>
-      <group position={[0, PATH_BRIDGE_Y, 0]}>
-        <mesh geometry={bridgeGeo} material={pathMat} receiveShadow frustumCulled={false} />
-      </group>
+      {stairs.map((s, i) => (
+        <StairLift key={i} centroidRaw={s.centroidRaw}>
+          <mesh geometry={s.geo} material={mat} castShadow receiveShadow frustumCulled={false} />
+        </StairLift>
+      ))}
     </>
   )
 }
@@ -744,6 +635,20 @@ function PondGroup({ centroidRaw, children }) {
   return <group ref={ref}>{children}</group>
 }
 
+// Rides the stair flight onto the (exaggerated) terrain like the pond — lift
+// only, NO group scale (a scale.y = terrainExag collapses the flight to zero
+// height in flat/top-down camera modes where exag→0). The flight's own rise is
+// pre-exaggerated in the geometry (buildStairGeometry drop × V_EXAG), so it
+// reads at scale without tracking the live exag. Bottom tread (y=0) lands on
+// the ground here.
+function StairLift({ centroidRaw, children }) {
+  const ref = useRef()
+  useFrame(() => {
+    if (ref.current) ref.current.position.y = centroidRaw * terrainExag.value
+  })
+  return <group ref={ref}>{children}</group>
+}
+
 
 // ── Perimeter Fence ────────────────────────────────────────────────────
 function PerimeterFence() {
@@ -914,7 +819,10 @@ function LafayettePark({ lookId, bakeLastMs } = {}) {
     <group>
       {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
       <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />
-      <ParkPaths />
+      <ParkBridge lookId={lookId} bakeLastMs={bakeLastMs} />
+      {/* STAIRS PARKED: 3D stairs build + place correctly but render invisible
+          (likely back-face culling — try side: DoubleSide on resume). Park steps
+          render flat (parkPaths.js). Re-mount <ParkStairs/> when reviving. */}
       <PerimeterFence />
       {/* Park title (ParkTitle) moved to LafayetteScene so it's gated by the
           `labels` layer toggle with the rest of the text labels. */}

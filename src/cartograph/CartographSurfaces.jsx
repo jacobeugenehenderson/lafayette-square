@@ -246,7 +246,10 @@ const TABS = [
     label: 'Park',
     items: [
       { id: 'park_grass', label: 'Grass', kind: 'material' },
-      { id: 'park_path',  label: 'Paths', kind: 'material' },
+      // park_path is a real ground layer (baked `park_path` group + 2D Designer
+      // + bridge overlay all gate off layerVis['park_path']) — 'layer' kind so
+      // it gets the on/off eye + colour, not the inert material-only swatch.
+      { id: 'park_path',  label: 'Paths', kind: 'layer' },
     ],
   },
   {

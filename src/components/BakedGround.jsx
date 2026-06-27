@@ -21,6 +21,7 @@ import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGrassMaterial } from './grassMaterial'
+import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { terrainExag, patchTerrain, V_EXAG } from '../utils/terrainShader'
@@ -52,6 +53,12 @@ function isGrassGroup(group) {
   if (!GRASS_MATERIALS.has(bareKind)) return false
   const variant = group.id.slice(colonIdx + 1)
   return GRASS_FACES.has(variant)
+}
+
+// Ground groups that render with the park gravel (Voronoi pebble) shader.
+const GRAVEL_MATERIALS = new Set(['park_path'])
+function isGravelGroup(group) {
+  return group.kind !== 'face' && GRAVEL_MATERIALS.has(group.id)
 }
 
 // Resolve a group's effective layer-visibility from scene.json. Material
@@ -167,9 +174,15 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
     <group>
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry }) => {
         const fade = fadeForGroup(group, stencil)
+        const key = group.kind + ':' + group.id
+        if (isGravelGroup(group))
+          return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
+            tintHex={scene?.layerColors?.[group.id]}
+            roughness={scene?.materialPhysics?.[group.id]?.roughness}
+            scale={scene?.materialPhysics?.[group.id]?.scale} />
         return isGrassGroup(group)
-          ? <GrassMesh key={group.kind + ':' + group.id} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
-          : <FadeMesh  key={group.kind + ':' + group.id} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+          ? <GrassMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+          : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
     </group>
   )
@@ -291,6 +304,36 @@ function GrassMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
     const s = shaderRef.current
     if (!s) return
     s.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+  })
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      renderOrder={group.renderOrder}
+      receiveShadow
+    />
+  )
+}
+
+// Park footpaths — the Voronoi pebble gravel shader, shared with the live
+// lake-bridge overlay (gravelPathMaterial). Rides terrain via patchTerrain
+// (applied inside the factory) like every other ground group; drives its own
+// time-of-day uniform. Phase 3 promotes the look-tunable bits to a scene-
+// driven Stage material card.
+function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
+  const { material, shaderRef } = useMemo(
+    () => makeGravelPathMaterial({ tintHex, roughness, scale }),
+    [tintHex, roughness, scale]
+  )
+  useEffect(() => {
+    material.aoMap = lightmap || null
+    material.aoMapIntensity = 1
+    material.needsUpdate = true
+  }, [material, lightmap])
+  useFrame(() => {
+    if (shaderRef.current) {
+      shaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+    }
   })
   return (
     <mesh

@@ -25,6 +25,9 @@ import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation, di
 import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
 import { STREET_SMOOTH } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the MeasureOverlay navy draw (SSoT; SKELETON.md §3.5)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
+import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
+import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
+import parkWaterData from '../data/park_water.json'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
@@ -307,6 +310,7 @@ export default function BlockGeometryV2Debug({
   const cyclewayVisible           = layerVis?.cycleway  !== false
   const stepsVisible              = layerVis?.steps     !== false
   const pathVisible               = layerVis?.path      !== false
+  const parkPathVisible           = layerVis?.park_path !== false
   // Highway-class chains route through the `highway` toggle row; everything
   // else through `street` (Asphalt). Same split the bake adapter does
   // — keep both in sync so toggling Highway in Designer matches Stage.
@@ -1169,6 +1173,29 @@ export default function BlockGeometryV2Debug({
     alley: alleyVisible, footway: footwayVisible, cycleway: cyclewayVisible,
     steps: stepsVisible, path: pathVisible,
   }
+  // Park footpaths (gravel) — the LAND park paths from the SAME shared builder
+  // the bake uses (buildParkPathRings), clipped to the park polygon, so the 2D
+  // Designer shows them too and they gate off the `park_path` toggle. Flat
+  // gravel colour in 2D (the 3D render uses the Voronoi shader).
+  const parkPathGeo = useMemo(() => {
+    const { land } = buildParkPathRings(liveRibbons, { polygon: parkPolygon, water: parkWaterData })
+    const rings = mergeRings(land)
+    return rings.length ? ringsToFlatGeo(rings, 0.05, true) : null
+  }, [liveRibbons])
+  const parkPathMat = useMemo(
+    () => makeMaterial(colorFor('park_path'), PRI.asphalt + 1, bandFade, { measureActive, surveyActive }),
+    // colorFor closes over layerColors + DEFAULT_LAYER_COLORS.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [makeMaterial, layerColors, measureActive, surveyActive, bandFade]
+  )
+  // Park steps render as 3D staircases in the runtime; in the top-down 2D view
+  // they read as flat footprints (same shared builder), in the steps colour,
+  // gated off the same `steps` toggle.
+  const parkStepsGeo = useMemo(() => {
+    const { stepRings } = buildParkPathRings(liveRibbons, { polygon: parkPolygon, water: parkWaterData })
+    const rings = mergeRings(stepRings)
+    return rings.length ? ringsToFlatGeo(rings, 0.05, true) : null
+  }, [liveRibbons])
   // LU block-fill materials cached per (lu, selected) key. Selected
   // adjacent blocks route through the `selectedCorridor` variant so the
   // parcel translucency matches the chain's band translucency (0.55 in
@@ -1304,6 +1331,12 @@ export default function BlockGeometryV2Debug({
                 renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
             )
           ))}
+          {parkPathVisible && parkPathGeo && (
+            <mesh geometry={parkPathGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={parkPathMat} />
+          )}
+          {stepsVisible && parkStepsGeo && (
+            <mesh geometry={parkStepsGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats.steps} />
+          )}
           {/* [Section translucency] The selected corridor (selected block +
               neighbours) painted translucent (opacity 0.55) so the hi-res aerial
               reads through while you author against it. Disjoint tiles from the
@@ -1398,6 +1431,12 @@ export default function BlockGeometryV2Debug({
               renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
           )
         ))}
+        {parkPathVisible && parkPathGeo && (
+          <mesh geometry={parkPathGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={parkPathMat} />
+        )}
+        {stepsVisible && parkStepsGeo && (
+          <mesh geometry={parkStepsGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats.steps} />
+        )}
       </group>
     )
   }
@@ -1471,6 +1510,12 @@ export default function BlockGeometryV2Debug({
             renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
         )
       ))}
+      {parkPathVisible && parkPathGeo && (
+        <mesh geometry={parkPathGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={parkPathMat} />
+      )}
+      {stepsVisible && parkStepsGeo && (
+        <mesh geometry={parkStepsGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats.steps} />
+      )}
       {/* Phase 2: corner concrete pad retired — the regime emitter
           emits sidewalk-material wedges (ramp / asym plug) as part of
           frontageBands' arc-span branch. Those render under the

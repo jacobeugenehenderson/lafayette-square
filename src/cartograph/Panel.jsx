@@ -35,11 +35,12 @@ const BLOCKS_DEFS = [
   { id: 'sports_centre', label: 'Sports Centres' },
 ]
 const PATHS_DEFS = [
-  { id: 'alley',    label: 'Alleys' },
-  { id: 'footway',  label: 'Footways' },
-  { id: 'cycleway', label: 'Cycleways' },
-  { id: 'steps',    label: 'Steps' },
-  { id: 'path',     label: 'Dirt Paths' },
+  { id: 'alley',     label: 'Alleys' },
+  { id: 'footway',   label: 'Footways' },
+  { id: 'cycleway',  label: 'Cycleways' },
+  { id: 'steps',     label: 'Steps' },
+  { id: 'path',      label: 'Dirt Paths' },
+  { id: 'park_path', label: 'Park Paths' },
 ]
 // Ground-plane fills that aren't parcel-bound. Pool sits here too — same
 // material/treatment as Water, just a smaller polygon.

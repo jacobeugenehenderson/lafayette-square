@@ -27,6 +27,7 @@
 
 import clipperLib from 'clipper-lib'
 import { differenceRings, intersectRings } from './buildBlockGeometryV2.js'
+import { smoothChain } from './smoothCenterline.js'
 
 const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -52,6 +53,23 @@ const DEFAULT_CAP_BY_KIND = {
   cycleway: 'round',
   steps:    'round',
   path:     'round',
+}
+
+// ── Layer B: centerline sweep-smoothing (the two-layer framing, 2026-06-27) ──
+// Layer A (rounded Clipper joins/caps) is the universal floor — every kind keeps
+// it. Layer B adds a gentle bow of the centerline BETWEEN OSM vertices, applied
+// (on a copy, before the offset) ONLY to ORGANIC kinds; BUILT kinds (alley,
+// steps) stay crisp between endpoints. This reuses the SAME centripetal
+// Catmull-Rom as the streets (smoothChain — corners >30° stay hard vertices),
+// but with a PATH-scoped tension: it is NOT the pinned STREET_SMOOTH (=0). Safe
+// where the street curb isn't, because paths offset with the robust Clipper
+// offsetter and buildPathRibbons never sees a street polygon (HANDOFF: the
+// smoother is path-kind-gated and physically cannot reach a street).
+const ORGANIC_PATH_KINDS = new Set(['footway', 'cycleway', 'path'])
+const PATH_SMOOTH = 0.5   // tension → ~6 m sample spacing (spacingFor); gentle sweep
+function smoothPathPoints(kind, points) {
+  if (!ORGANIC_PATH_KINDS.has(kind)) return points
+  return smoothChain(points, PATH_SMOOTH) || points   // null = straight → untouched
 }
 
 function endTypeFor(cap) {
@@ -103,6 +121,20 @@ function offsetPolyline(points, halfWidth, cap) {
   return rings
 }
 
+// Offset a CLOSED polygon ring outward (+deltaM) or inward (−deltaM) with
+// rounded joins. Used to relax the park-path clip out to the perimeter
+// sidewalk's inner edge so park footpaths reach the walk (rounded corners →
+// no street-corner bleed). Returns ring[] (an offset may split/merge rings).
+export function offsetClosedRing(ring, deltaM) {
+  if (!ring || ring.length < 3 || !deltaM) return ring ? [ring] : []
+  const { ClipperOffset, JoinType, EndType } = clipperLib
+  const co = new ClipperOffset(2.0, ARC_TOLERANCE)
+  co.AddPath(ring.map(toClipper), JoinType.jtRound, EndType.etClosedPolygon)
+  const raw = []
+  co.Execute(raw, deltaM * SCALE)
+  return raw.map(path => path.map(fromClipper))
+}
+
 const DEFAULT_PAVED_WIDTH = 3
 
 /**
@@ -126,7 +158,8 @@ export function buildPathRibbons(ribbons, { alleyCap, intersect, subtract } = {}
   for (const p of (ribbons?.paths || [])) {
     const kind = p.kind || 'footway'
     const cap = DEFAULT_CAP_BY_KIND[kind] || 'round'
-    push(kind, offsetPolyline(p.points, (p.pavedWidth || DEFAULT_PAVED_WIDTH) / 2, cap))
+    const pts = smoothPathPoints(kind, p.points)   // Layer B (organic kinds only)
+    push(kind, offsetPolyline(pts, (p.pavedWidth || DEFAULT_PAVED_WIDTH) / 2, cap))
   }
   const ALLEY_CAP = alleyCap || DEFAULT_CAP_BY_KIND.alley
   for (const a of (ribbons?.alleys || [])) {
