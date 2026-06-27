@@ -106,10 +106,10 @@ function FxDriver({ aoRef, bloomRef, lookId }) {
       )
       bloom.intensity = base.intensity
       bloom.warmCool = base.warmCool
+      bloom.spread = base.spread
       const lm = bloom.luminanceMaterial
       if (lm) {
         lm.threshold = base.threshold
-        lm.smoothing = base.smoothing
       }
     }
 

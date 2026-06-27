@@ -18,21 +18,28 @@
 // range was squished into the extremes ("only shows at max/min"): intensity's
 // realistic zone is ≤~2 (2–3 blows out), and threshold's top (>~0.9) is a dead
 // "nothing blooms" plateau since the scene's bright pixels sit lower. Defaults
-// kept in-range so baked Looks don't move. Intensity ceiling reopened 2→3
-// (2026-06-27, Jacob): the 2–3 blow-out zone is now reachable ON PURPOSE — overdo
-// the glow for style — while the default 0.5 stays in-range. ⚠️ If out-of-box bloom reads as ~invisible, the lever is the
+// kept in-range so baked Looks don't move. Intensity ceiling opened WIDE (→6,
+// 2026-06-27, Jacob): at max-3 + threshold-0 the look was "nice" but still
+// climbing, so the meaningful intensity/threshold zone sits higher than the old
+// cap — open it up to FIND that zone by eye, then RE-CAP to the real working
+// range (slider-range principle). Default 0.5 stays in-range; baked Looks unmoved. ⚠️ If out-of-box bloom reads as ~invisible, the lever is the
 // THRESHOLD DEFAULT (0.85, near the dead zone) — lowering it changes baked Looks,
 // so that's a separate eye call.
 export const BLOOM_FIELDS = [
-  { key: 'intensity', label: 'Intensity',           min: 0, max: 3,   step: 0.02 },
+  { key: 'intensity', label: 'Intensity',           min: 0, max: 6,   step: 0.02 },
   { key: 'threshold', label: 'Luminance threshold', min: 0, max: 0.9, step: 0.01 },
-  { key: 'smoothing', label: 'Threshold smoothing', min: 0, max: 1,   step: 0.02 },
+  // Spread: tilt the glow tight↔broad across the pyramid rungs (energy-preserving,
+  // so it doesn't change overall brightness — intensity stays independent). 0 =
+  // tight crisp points/edges, 0.5 = the plain sum (today), 1 = wide soft halo.
+  // (Replaces the old "Threshold smoothing" knee, which was near-dead on a
+  // band-pass source — see CustomBloom.jsx.)
+  { key: 'spread',    label: 'Spread',              min: 0, max: 1,   step: 0.02 },
   // Warm ↔ Cool tint of the glow (0 cool · 0.5 neutral · 1 warm). Default
   // neutral so existing Looks are unchanged; dial cool to recover the look the
   // blur→threshold mechanism warmed (CustomBloom.jsx, luminance-preserving).
   { key: 'warmCool',  label: 'Cool ↔ Warm',         min: 0, max: 1,   step: 0.02 },
 ]
-export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, smoothing: 0.4, warmCool: 0.5 }
+export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, spread: 0.5, warmCool: 0.5 }
 export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 
 // DoF / Focus (Post card) — single-focal romance depth-of-field (RomanceDoF.jsx,

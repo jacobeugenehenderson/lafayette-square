@@ -352,7 +352,7 @@ export function PostProcessing({
 
     // Bloom — operator-authored only (via the `bloom` channel). Planetarium
     // viewMode preserves Scene.jsx's old dramatic bump (intensity 1.8 /
-    // threshold 0.15 / smoothing 0.9).
+    // threshold 0.15 / spread 0.5 neutral).
     //
     // Removed 2026-06-07: the hardcoded sun-altitude `dk` night boost
     // (intensity +0.5, threshold -0.5, smoothing +0.4 below sunAlt -0.15).
@@ -369,14 +369,15 @@ export function PostProcessing({
       if (viewMode === 'planetarium') {
         bloom.intensity = 1.8
         bloom.warmCool = 0.5
-        if (lm) { lm.threshold = 0.15; lm.smoothing = 0.9 }
+        bloom.spread = 0.5
+        if (lm) { lm.threshold = 0.15 }
       } else {
         const base = resolveGroupAtMinute(bloomChannel, minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS)
         bloom.intensity = base.intensity
         bloom.warmCool = base.warmCool
+        bloom.spread = base.spread
         if (lm) {
           lm.threshold = base.threshold
-          lm.smoothing = base.smoothing
         }
       }
     }
