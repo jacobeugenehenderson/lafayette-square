@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1782583496768,
+  "bakedAt": 1782624926688,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -106,8 +106,8 @@
     "values": {
       "sunset": {
         "grass": 0.5,
-        "trees": 0,
-        "pool": 0
+        "trees": 0.01,
+        "pool": 0.2
       },
       "night": {
         "grass": 0.5,
@@ -116,8 +116,28 @@
       },
       "dusk": {
         "grass": 0.015,
-        "trees": 0.005,
+        "trees": 0.02,
         "pool": 0.6
+      },
+      "dawn": {
+        "grass": 0,
+        "trees": 0.02,
+        "pool": 0.4
+      },
+      "sunrise": {
+        "grass": 0,
+        "trees": 0,
+        "pool": 0
+      },
+      "noon": {
+        "grass": 0,
+        "trees": 0,
+        "pool": 0
+      },
+      "golden": {
+        "grass": 0,
+        "trees": 0,
+        "pool": 0
       }
     }
   },
@@ -134,8 +154,29 @@
     "overrides": []
   },
   "ambient": {
+    "animated": "tod",
     "values": {
-      "value": 2
+      "noon": {
+        "value": 1
+      },
+      "dawn": {
+        "value": 1.8
+      },
+      "sunrise": {
+        "value": 1.3
+      },
+      "golden": {
+        "value": 1.1
+      },
+      "sunset": {
+        "value": 1.2
+      },
+      "dusk": {
+        "value": 1.3
+      },
+      "night": {
+        "value": 1
+      }
     }
   },
   "hemi": {
@@ -148,6 +189,21 @@
       },
       "night": {
         "value": 2
+      },
+      "dawn": {
+        "value": 1.6
+      },
+      "sunrise": {
+        "value": 1
+      },
+      "golden": {
+        "value": 0.4
+      },
+      "sunset": {
+        "value": 0.7
+      },
+      "dusk": {
+        "value": 1.3
       }
     }
   },
@@ -158,12 +214,17 @@
   },
   "dirMoon": {
     "values": {
-      "value": 2
+      "value": 0.96
     }
   },
   "constellations": {
     "values": {
       "value": 0
+    }
+  },
+  "stars": {
+    "values": {
+      "brightness": 1
     }
   },
   "milkyWay": {
@@ -177,27 +238,47 @@
     "transitionOut": 0,
     "values": {
       "night": {
-        "intensity": 0.3,
+        "intensity": 4.24,
         "threshold": 0.03,
-        "smoothing": 0.06,
-        "warmCool": 0.5
+        "warmCool": 0.5,
+        "spread": 0.34
       },
       "noon": {
-        "intensity": 0.62,
-        "threshold": 0.67,
-        "smoothing": 0,
-        "warmCool": 0.5
+        "intensity": 0.8,
+        "threshold": 0.8,
+        "warmCool": 0.5,
+        "spread": 0.4
       },
       "dawn": {
-        "intensity": 0.22,
-        "threshold": 0,
+        "intensity": 0.7,
+        "threshold": 0.4,
         "smoothing": 0,
-        "warmCool": 0.5
+        "warmCool": 0.65,
+        "spread": 0.4
       },
       "sunset": {
-        "intensity": 0.36,
-        "threshold": 0.02,
-        "smoothing": 0
+        "intensity": 2.2,
+        "threshold": 0.16,
+        "warmCool": 0.88,
+        "spread": 0.55
+      },
+      "sunrise": {
+        "intensity": 1,
+        "threshold": 0.5,
+        "warmCool": 0.7,
+        "spread": 0.4
+      },
+      "golden": {
+        "intensity": 1.2,
+        "threshold": 0.45,
+        "warmCool": 0.75,
+        "spread": 0.4
+      },
+      "dusk": {
+        "intensity": 1.6,
+        "threshold": 0.2,
+        "warmCool": 0.7,
+        "spread": 0.45
       }
     }
   },
@@ -209,8 +290,29 @@
     }
   },
   "exposure": {
+    "animated": "tod",
     "values": {
-      "value": 0.56
+      "noon": {
+        "value": 0.56
+      },
+      "dawn": {
+        "value": 0.72
+      },
+      "sunrise": {
+        "value": 0.66
+      },
+      "golden": {
+        "value": 0.62
+      },
+      "sunset": {
+        "value": 0.66
+      },
+      "dusk": {
+        "value": 0.7
+      },
+      "night": {
+        "value": 0.56
+      }
     }
   },
   "warmth": {
@@ -224,15 +326,45 @@
     }
   },
   "mist": {
+    "animated": "tod",
     "values": {
-      "density": 0.04,
-      "color": "#9dc5e0"
+      "noon": {
+        "density": 0,
+        "color": "#9dc5e0"
+      },
+      "night": {
+        "density": 0,
+        "color": "#9dc5e0"
+      },
+      "sunset": {
+        "density": 0.06,
+        "color": "#e89055"
+      },
+      "dusk": {
+        "density": 0.03,
+        "color": "#8a7a9e"
+      }
     }
   },
   "halo": {
+    "animated": "tod",
     "values": {
-      "strength": 0,
-      "color": "#b8c8d8"
+      "noon": {
+        "strength": 0.39,
+        "color": "#b8c8d8"
+      },
+      "night": {
+        "strength": 0.39,
+        "color": "#b8c8d8"
+      },
+      "sunset": {
+        "strength": 0.75,
+        "color": "#ff7a3c"
+      },
+      "dusk": {
+        "strength": 0.5,
+        "color": "#b86a4e"
+      }
     }
   },
   "skyGain": {
@@ -241,7 +373,7 @@
     "transitionOut": 0,
     "values": {
       "dawn": {
-        "value": 0.55
+        "value": 0.65
       },
       "sunrise": {
         "value": 0.9
@@ -253,7 +385,7 @@
         "value": 1
       },
       "sunset": {
-        "value": 0.86
+        "value": 1
       },
       "dusk": {
         "value": 0.5
@@ -264,11 +396,16 @@
     }
   },
   "grade": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "contrast": 0.28,
-      "toe": 0.6,
-      "saturation": 1.25,
-      "vignette": 0.7
+      "sunrise": {
+        "contrast": 0.3,
+        "toe": 0.6,
+        "saturation": 1.25,
+        "vignette": 0.7
+      }
     }
   },
   "grain": {
@@ -284,7 +421,7 @@
   "dof": {
     "values": {
       "enabled": 1,
-      "blur": 0.16,
+      "blur": 0,
       "focus": 320,
       "heroBlur": 0.02,
       "softness": 0.16
@@ -361,13 +498,13 @@
       "scale": 2.1,
       "rotation": 1.99,
       "yOffset": 155,
-      "footFade": 40
+      "footFade": 36
     }
   },
   "archLight": {
     "values": {
-      "uplightL_intensity": 0.6,
-      "uplightL_color": "#ffd6a8",
+      "uplightL_intensity": 1.15,
+      "uplightL_color": "#ebebeb",
       "uplightL_cone": 31.51267873219528,
       "uplightL_reach": 200,
       "uplightR_intensity": 0.7,
@@ -377,16 +514,45 @@
     }
   },
   "lantern": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "intensity": 0.56,
-      "glow": 1.24
+      "night": {
+        "intensity": 0.56,
+        "glow": 1.24
+      },
+      "dawn": {
+        "intensity": 0.5,
+        "glow": 1.2
+      },
+      "sunrise": {
+        "intensity": 0,
+        "glow": 0
+      },
+      "noon": {
+        "intensity": 0,
+        "glow": 0
+      },
+      "golden": {
+        "intensity": 0,
+        "glow": 0
+      },
+      "sunset": {
+        "intensity": 0.4,
+        "glow": 0.8
+      },
+      "dusk": {
+        "intensity": 0.55,
+        "glow": 1.1
+      }
     }
   },
   "horizon": {
     "values": {
       "radius": 2500,
-      "fadeInner": 1400,
-      "fadeOuter": 3750
+      "fadeInner": 940,
+      "fadeOuter": 3150
     }
   },
   "clouds": {
