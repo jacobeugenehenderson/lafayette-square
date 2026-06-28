@@ -522,7 +522,6 @@ export function LampGlowEditor() {
   const lampGlow              = useCartographStore(s => s.lampGlow)
   const setLampGlow           = useCartographStore(s => s.setLampGlow)
   const animateLampGlow       = useCartographStore(s => s.animateLampGlow)
-  const unanimateLampGlow     = useCartographStore(s => s.unanimateLampGlow)
   const addLampGlowSlot       = useCartographStore(s => s.addLampGlowSlot)
   const removeLampGlowSlot    = useCartographStore(s => s.removeLampGlowSlot)
   const setLampGlowTransition = useCartographStore(s => s.setLampGlowTransition)
@@ -536,7 +535,6 @@ export function LampGlowEditor() {
       onSetValue={(key, value, slotId) => setLampGlow(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animateLampGlow(slotId) : addLampGlowSlot(slotId)}
       onRemoveSlot={removeLampGlowSlot}
-      onUnanimate={unanimateLampGlow}
       onSetTransition={setLampGlowTransition}
       onRevert={revertLampGlow}
     />

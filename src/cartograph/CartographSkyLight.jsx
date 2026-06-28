@@ -35,7 +35,6 @@ function StoreChannel({ name, label, fields, flatDefaults }) {
   const channel       = useCartographStore(s => s[name])
   const setValue      = useCartographStore(s => s[`set${cap}`])
   const animate       = useCartographStore(s => s[`animate${cap}`])
-  const unanimate     = useCartographStore(s => s[`unanimate${cap}`])
   const addSlot       = useCartographStore(s => s[`add${cap}Slot`])
   const removeSlot    = useCartographStore(s => s[`remove${cap}Slot`])
   const setTransition = useCartographStore(s => s[`set${cap}Transition`])
@@ -49,7 +48,6 @@ function StoreChannel({ name, label, fields, flatDefaults }) {
       onSetValue={(key, value, slotId) => setValue(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
       onRemoveSlot={removeSlot}
-      onUnanimate={unanimate}
       onSetTransition={setTransition}
       onRevert={revert}
     />

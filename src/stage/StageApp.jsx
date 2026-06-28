@@ -124,7 +124,6 @@ function ArchLightChannel() {
   const channel       = useCartographStore(s => s.archLight)
   const setValue      = useCartographStore(s => s.setArchLight)
   const animate       = useCartographStore(s => s.animateArchLight)
-  const unanimate     = useCartographStore(s => s.unanimateArchLight)
   const addSlot       = useCartographStore(s => s.addArchLightSlot)
   const removeSlot    = useCartographStore(s => s.removeArchLightSlot)
   const setTransition = useCartographStore(s => s.setArchLightTransition)
@@ -138,7 +137,6 @@ function ArchLightChannel() {
       onSetValue={(key, value, slotId) => setValue(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
       onRemoveSlot={removeSlot}
-      onUnanimate={unanimate}
       onSetTransition={setTransition}
       onRevert={revert}
     />
@@ -153,7 +151,6 @@ function LanternChannel() {
   const channel       = useCartographStore(s => s.lantern)
   const setValue      = useCartographStore(s => s.setLantern)
   const animate       = useCartographStore(s => s.animateLantern)
-  const unanimate     = useCartographStore(s => s.unanimateLantern)
   const addSlot       = useCartographStore(s => s.addLanternSlot)
   const removeSlot    = useCartographStore(s => s.removeLanternSlot)
   const setTransition = useCartographStore(s => s.setLanternTransition)
@@ -167,7 +164,6 @@ function LanternChannel() {
       onSetValue={(key, value, slotId) => setValue(key, value, slotId)}
       onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
       onRemoveSlot={removeSlot}
-      onUnanimate={unanimate}
       onSetTransition={setTransition}
       onRevert={revert}
     />
