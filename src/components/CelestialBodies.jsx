@@ -870,16 +870,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     if (!starRef.current || !starMat) return
     const planetariumActive = useCamera.getState().viewMode === 'planetarium'
     const { astronomyAlpha } = useSkyState.getState()
-    // Operator star-brightness knob (the `stars` channel) — multiplies the
-    // physical astronomyAlpha. An AUTHORED control, not a hardcoded ramp; default
-    // 1.0 (no-op). Live-overridable in Stage, baked into scene.json otherwise.
-    const starsCh = starsOverride ?? scene?.stars ?? STARS_DEFAULT_CHANNEL
-    const starsBright = resolveGroupAtMinute(
-      starsCh, useTimeOfDay.getState().getMinuteOfDay(),
-      starsCh?.animated ? getTodSlotMinutes(useTimeOfDay.getState().currentTime) : null,
-      STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
-    ).brightness ?? 1
-    starMat.uniforms.uOpacity.value = (planetariumActive ? 1.0 : astronomyAlpha) * starsBright
+    starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : astronomyAlpha
     // Twinkle clock — real wall-time so the shimmer is independent of TOD scrub.
     starMat.uniforms.uTime.value = state.clock.elapsedTime
     noiseMat.uniforms.uTime.value = state.clock.elapsedTime
@@ -948,7 +939,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
     // ── Rotate filler stars as rigid group via equatorial→local matrix ──
     if (noiseRef.current) {
-      noiseMat.uniforms.uOpacity.value = (planetariumActive ? 0.9 : astronomyAlpha * 0.95) * starsBright
+      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.9 : astronomyAlpha * 0.95
       const cosLST = Math.cos(lstRad), sinLST = Math.sin(lstRad)
       const cosL = cosLat, sinL = sinLat
       noiseRef.current.matrixAutoUpdate = false
