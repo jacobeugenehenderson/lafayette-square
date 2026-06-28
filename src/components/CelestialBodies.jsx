@@ -1231,11 +1231,24 @@ function CelestialBodies({
   // PrimaryOrb / SecondaryOrb handle their own multipliers internally.
   const ambientRef = useRef()
   const hemiRef = useRef()
+  // Refs for the 3 night-fill floors (white · warm · fill-directional) so the
+  // operator's Ambient knob (ambientMulRef) reaches them too — they used to be
+  // hardcoded floors that ignored every knob (Jacob 2026-06-27, the un-zeroable night).
+  const floorWhiteRef = useRef()
+  const floorWarmRef  = useRef()
+  const floorDirRef   = useRef()
   const ambientBase = (lighting.ambient?.intensity || 0.5) * (1 + cc * 0.4)
   const hemiBase = (0.35 - lighting.nightFactor * 0.15) * (1 + cc * 0.5)
   useFrame(() => {
     if (ambientRef.current) ambientRef.current.intensity = ambientBase * ambientMulRef.current
     if (hemiRef.current)    hemiRef.current.intensity    = hemiBase    * hemiMulRef.current
+    // Night-fill floors now ride the Ambient knob (× ambientMulRef): default (×1)
+    // = today's look; Ambient → 0 darkens night fully (stars / mood). Folds the
+    // old hardcoded floors into the operator's control — knob, not hardwire.
+    const aMul = ambientMulRef.current
+    if (floorWhiteRef.current) floorWhiteRef.current.intensity = 0.45 * aMul
+    if (floorWarmRef.current)  floorWarmRef.current.intensity  = 0.15 * lighting.nightFactor * aMul
+    if (floorDirRef.current)   floorDirRef.current.intensity   = (0.12 - lighting.nightFactor * 0.06) * aMul
   })
 
   if (debugLevel >= 3) return null
@@ -1248,13 +1261,13 @@ function CelestialBodies({
           CartographSkyLight.jsx. MilkyWaySphere component preserved; takes
           a milkyWayChannel prop for the eventual re-mount path. */}
       {/* {debugLevel < 1 && <MilkyWaySphere nightFactor={lighting.nightFactor} milkyWayChannel={milkyWayChannel} />} */}
-      <ambientLight color="#ffffff" intensity={0.45} />
+      <ambientLight ref={floorWhiteRef} color="#ffffff" intensity={0.45} />
       {debugLevel < 99 && <ambientLight
         ref={ambientRef}
         color={lighting.ambient?.color || '#ffffff'}
         intensity={ambientBase}
       />}
-      <ambientLight color="#8a7060" intensity={0.15 * lighting.nightFactor} />
+      <ambientLight ref={floorWarmRef} color="#8a7060" intensity={0.15 * lighting.nightFactor} />
       {debugLevel < 2 && <hemisphereLight
         ref={hemiRef}
         color={lerpColor('#ffeedd', '#556688', lighting.nightFactor)}
@@ -1264,6 +1277,7 @@ function CelestialBodies({
       {debugLevel < 1 && <PrimaryOrb {...primaryWeathered} intensityMulRef={dirSunMulRef} />}
       {debugLevel < 1 && <SecondaryOrb {...lighting.secondary} intensityMulRef={dirMoonMulRef} />}
       {debugLevel < 2 && <directionalLight
+        ref={floorDirRef}
         position={[0, 100, -400]}
         intensity={0.12 - lighting.nightFactor * 0.06}
         color={lerpColor('#ffeedd', '#5577aa', lighting.nightFactor)}
