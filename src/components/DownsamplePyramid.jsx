@@ -41,11 +41,17 @@ export const _pyramidRefs = {
   levels: { current: [] },
 }
 
-// 13-tap Jimenez/COD downsample — smooth, energy-preserving, firefly-resistant.
+// 13-tap Jimenez/COD downsample — smooth, energy-preserving. On the FIRST level
+// (uKaris=1) a partial Karis average (luma-weighted) tames thin bright sources
+// (neon, lamps) so they don't alias into blocky chunks under DoF/bloom; deeper
+// levels use the plain weights. Normal-mode output is byte-identical to the old
+// kernel — the 5 box-groups recombine to the same weighted sum.
 const downsampleFrag = /* glsl */`
   uniform sampler2D uInput;
   uniform vec2 uTexel;        // 1 / size of the SOURCE level being read
+  uniform float uKaris;       // 1.0 on the first downsample only
   varying vec2 vUv;
+  float kw(vec3 c) { return 1.0 / (1.0 + dot(c, vec3(0.2126, 0.7152, 0.0722))); }
   void main() {
     vec2 t = uTexel;
     vec3 a = texture2D(uInput, vUv + t * vec2(-2.0,  2.0)).rgb;
@@ -61,10 +67,23 @@ const downsampleFrag = /* glsl */`
     vec3 k = texture2D(uInput, vUv + t * vec2( 1.0,  1.0)).rgb;
     vec3 l = texture2D(uInput, vUv + t * vec2(-1.0, -1.0)).rgb;
     vec3 m = texture2D(uInput, vUv + t * vec2( 1.0, -1.0)).rgb;
-    vec3 col = e * 0.125;
-    col += (a + c + g + i) * 0.03125;
-    col += (b + d + f + h) * 0.0625;
-    col += (j + k + l + m) * 0.125;
+    // 5 box-groups (2x2 averages); they recombine to the original 13-tap weights.
+    vec3 gA = (a + b + d + e) * 0.25;
+    vec3 gB = (b + c + e + f) * 0.25;
+    vec3 gC = (d + e + g + h) * 0.25;
+    vec3 gD = (e + f + h + i) * 0.25;
+    vec3 gE = (j + k + l + m) * 0.25;
+    vec3 col;
+    if (uKaris > 0.5) {
+      // Karis partial average — down-weight bright groups so a thin bright source
+      // (neon, a lamp) can't dominate the first downsample and alias into blocks
+      // under DoF/bloom. Deeper levels keep the plain weights.
+      float wA = kw(gA), wB = kw(gB), wC = kw(gC), wD = kw(gD), wE = kw(gE);
+      float wSum = (wA + wB + wC + wD) * 0.125 + wE * 0.5;
+      col = (gA * wA * 0.125 + gB * wB * 0.125 + gC * wC * 0.125 + gD * wD * 0.125 + gE * wE * 0.5) / max(wSum, 1e-5);
+    } else {
+      col = gE * 0.5 + (gA + gB + gC + gD) * 0.125;   // == the original 13-tap
+    }
     // Guard non-finite / negative HDR texels so a bad scene pixel can't poison
     // the ladder (the dark-block root fix lives in treeAtlasMaterial; this is a
     // cheap net). NaN → 0 via the self-compare; negatives clamped to 0.
@@ -97,6 +116,7 @@ class DownsamplePyramidPass extends Pass {
       uniforms: {
         uInput: { value: null },
         uTexel: { value: new THREE.Vector2() },
+        uKaris: { value: 0.0 },
       },
       vertexShader: downsampleVert,
       fragmentShader: downsampleFrag,
@@ -148,6 +168,8 @@ class DownsamplePyramidPass extends Pass {
       const t = this.targets[i]
       this.downMat.uniforms.uInput.value = srcTex
       this.downMat.uniforms.uTexel.value.set(1 / srcW, 1 / srcH)
+      this.downMat.uniforms.uKaris.value = (i === 0) ? 1.0 : 0.0   // tame bright thin sources on the first level only
+
       renderer.setRenderTarget(t)
       renderer.render(this._fsScene, this._fsCamera)
       srcTex = t.texture
