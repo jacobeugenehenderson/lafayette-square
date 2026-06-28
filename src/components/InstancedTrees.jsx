@@ -309,59 +309,14 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, forceTreesOn = true }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
   const ref = useRef(null)
-  const camera = useThree(s => s.camera)
-
-  // Robust per-tile frustum cull (2026-06-25). Each SubmeshInstances covers ONE
-  // bake-tile's instances of one species (~103 m footprint, 4×4 grid), so in a
-  // telephoto hero/street framing most tiles are off-screen and skippable —
-  // 18.5M mesh tris/frame is otherwise drawn regardless of view.
-  //
-  // Why manual (not three's `frustumCulled`): the InstancedMesh auto-cull tests
-  // a bound that does NOT include the RUNTIME terrain lift + sway the vertex
-  // shader adds, so a tile's bound can sit off-screen while its displaced
-  // geometry is on-screen → "trees randomly turn on" (the 2026-06-21 regression
-  // that forced frustumCulled=false). Here we build a GENEROUSLY-PADDED
-  // world-space sphere (instance positions + canopy radius + tree height +
-  // terrain-lift/sway headroom) and test it ourselves. Over-padding is safe:
-  // slightly less culling at tile edges, never a false drop. [[tree-building-frustum-culling]]
-  const cullSphere = useMemo(() => {
-    if (!placementMatrices?.length) return null
-    if (geometry && !geometry.boundingBox) geometry.computeBoundingBox()
-    const bb = geometry?.boundingBox
-    const treeTop = bb ? Math.max(bb.max.y, 1) : 25
-    const canopyR = bb
-      ? Math.max(Math.abs(bb.max.x), Math.abs(bb.min.x), Math.abs(bb.max.z), Math.abs(bb.min.z), 1)
-      : 6
-    const box = new THREE.Box3()
-    const p = new THREE.Vector3()
-    for (const m of placementMatrices) { p.setFromMatrixPosition(m); box.expandByPoint(p) }
-    const sphere = new THREE.Sphere()
-    box.getBoundingSphere(sphere)
-    // Instance positions are trunk bases (y≈0); raise the centre to cover the
-    // canopy column and pad for spread + runtime lift/sway.
-    sphere.center.y += treeTop * 0.5
-    const TERRAIN_SWAY_PAD = 10   // generous headroom: terrain lift (≤V_EXAG×relief) + sway
-    sphere.radius += canopyR + treeTop * 0.5 + TERRAIN_SWAY_PAD
-    return sphere
-  }, [placementMatrices, geometry])
-
-  const _frustum = useMemo(() => new THREE.Frustum(), [])
-  const _frMat = useMemo(() => new THREE.Matrix4(), [])
-  useFrame(() => {
-    const im = ref.current
-    if (!im) return
-    // Force-on in ALL playback (Stage / Preview / Production) — the per-tile cull
-    // over-culled and made trees "not reliably render" (Jacob 2026-06-27); render
-    // reliability wins over the cull's tri savings. Pass forceTreesOn={false} to
-    // re-enable the frustum cull for a future perf context (e.g. a phone tier).
-    if (forceTreesOn) { im.visible = true; return }
-    if (!cullSphere) return
-    _frMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
-    _frustum.setFromProjectionMatrix(_frMat)
-    im.visible = _frustum.intersectsSphere(cullSphere)
-  })
+  // Trees ALWAYS render — the per-tile frustum cull was excised 2026-06-27. It
+  // over-culled (its padded world-sphere vs the runtime terrain-lift/sway) and
+  // made trees "not reliably render". `frustumCulled={false}` stays below. If a
+  // phone tier ever needs visibility culling it's a fresh robust build — and
+  // impostors are the real far-tree perf lever (role-at-bake), not runtime camera
+  // culling. [[tree-building-frustum-culling]]
   // Attach the per-instance lamp-glow + hero-tier attributes to the geometry.
   // Each unique GLB has a unique geometry instance (per url×tile), so these
   // don't bleed across variants. Consumed by the shader injection in
