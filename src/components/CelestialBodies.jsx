@@ -1237,10 +1237,7 @@ function CelestialBodies({
           CartographSkyLight.jsx. MilkyWaySphere component preserved; takes
           a milkyWayChannel prop for the eventual re-mount path. */}
       {/* {debugLevel < 1 && <MilkyWaySphere nightFactor={lighting.nightFactor} milkyWayChannel={milkyWayChannel} />} */}
-      {/* White ambient fill — ramp to 0 across the night so it stops drowning the
-          stars (deep night leans on the warm night fill + hemi + lamps/lit windows,
-          per the Sky Layer Gain doctrine). Day unchanged (nightFactor 0 → 0.45). */}
-      <ambientLight color="#ffffff" intensity={0.45 * (1.0 - lighting.nightFactor)} />
+      <ambientLight color="#ffffff" intensity={0.45} />
       {debugLevel < 99 && <ambientLight
         ref={ambientRef}
         color={lighting.ambient?.color || '#ffffff'}
