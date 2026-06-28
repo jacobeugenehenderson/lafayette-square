@@ -318,6 +318,7 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   // it occludes correctly in both. See HANDOFF-neon-roof-depth.md Phase 2 and
   // [[feedback_raw_shadermaterial_needs_logdepth_chunks]].
   const logDepth = useThree((s) => s.gl.capabilities.logarithmicDepthBuffer)
+  const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
     if (!lookId || !scene?.neon?.values) return
     const v = scene.neon.values
@@ -326,7 +327,14 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     _neonUniforms.bleedUniform.value      = v.bleed      ?? 0
     _neonUniforms.emissiveUniform.value   = v.emissive   ?? 4
     _neonUniforms.tubeRadiusUniform.value = v.tubeRadius ?? DEFAULT_TUBE_RADIUS
-  }, [lookId, scene])
+    // Production runs frameloop="demand". These are imperative writes to shared
+    // uniform objects (not React props), so they don't trigger R3F's auto-
+    // invalidate — and the uniforms init to 0 (alpha<0.01 → discard → invisible).
+    // Without this, neon mounts dark, the values land here, and no frame is ever
+    // requested → neon stays off until a camera nudge. (2026-06-28 — the "neon
+    // not showing at all" bug; sibling of the InstancedTrees demand-mode fix.)
+    invalidate()
+  }, [lookId, scene, invalidate])
 
   // Tube radius — animated like the other four fields, but the value
   // drives vertex positions (not a shader uniform), so a change must

@@ -21,7 +21,7 @@
  * LafayetteScene — both are hoisted `function` declarations, so the
  * LafayetteScene⟷SceneNeon circular import resolves safely at runtime.
  */
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useReducer } from 'react'
 import { buildings as _allBuildings } from '../data/buildings'
 import useListings from '../hooks/useListings'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
@@ -175,6 +175,23 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
     }
     return places
   }, [neonLookup, neonTick, forceNeonOn, slabIndex])
+
+  // Cold-load reconcile flush — the same frameloop="demand" issue that hid the
+  // trees (see InstancedTrees ParkPopulation). On a cold load the neon mesh and
+  // its scene.json-driven brightness uniforms settle in while the loop is idle,
+  // so neon stays dark until a state-change "poke" (navigating Browse↔Hero,
+  // nudging a knob). Rendering ≠ reconciling, so a frame alone doesn't fix it.
+  // Self-poke: once there are open places, force a few re-renders across the
+  // load window so the mesh attaches + paints with its resolved uniforms, then
+  // stop. (2026-06-28 — the "neon not showing at all" bug.)
+  const [, forceReconcile] = useReducer(x => (x + 1) & 0xffff, 0)
+  useEffect(() => {
+    if (openPlaces.length === 0) return
+    let id, n = 0
+    const tick = () => { forceReconcile(); if (++n < 20) id = setTimeout(tick, 400) }  // ~8s
+    id = setTimeout(tick, 400)
+    return () => clearTimeout(id)
+  }, [openPlaces.length])
 
   if (openPlaces.length === 0) return null
   return <NeonBands places={openPlaces} lookId={lookId} />

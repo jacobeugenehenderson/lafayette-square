@@ -1,5 +1,5 @@
 import { useRef, useMemo, useEffect, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
@@ -41,6 +41,12 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
   const lampRef = useRef()
   const glowRef = useRef()
   const bulbRef = useRef()
+  // Production Canvas runs frameloop="demand"; the imperative instance-matrix
+  // fills below (lamp/glow/bulb) don't trigger R3F's auto-invalidate, and the
+  // lamp model loads async — so lamps would stay unpainted until a camera nudge.
+  // invalidate() after each fill requests the paint. No-op under "always".
+  // (2026-06-28 — sibling of the InstancedTrees demand-mode fix.)
+  const invalidate = useThree(s => s.invalidate)
   const sunAltUniform = useRef({ value: 0.5 })
   const lampMatRef = useRef(null)
   const glowMatRef = useRef(null)
@@ -301,7 +307,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       lampRef.current.setMatrixAt(i, combined)
     })
     lampRef.current.instanceMatrix.needsUpdate = true
-  }, [allLamps, lampModel])
+    invalidate()   // demand-mode: paint the just-filled matrices
+  }, [allLamps, lampModel, invalidate])
 
   // ── Instance transforms — glow orbs (tight glass halo) ────────────────────
   useEffect(() => {
@@ -315,7 +322,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       glowRef.current.setMatrixAt(i, d.matrix)
     })
     glowRef.current.instanceMatrix.needsUpdate = true
-  }, [allLamps, lampModel])
+    invalidate()
+  }, [allLamps, lampModel, invalidate])
 
   // ── Instance transforms — sharp bulb dot ───────────────────────────────────
   useEffect(() => {
@@ -329,7 +337,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       bulbRef.current.setMatrixAt(i, d.matrix)
     })
     bulbRef.current.instanceMatrix.needsUpdate = true
-  }, [allLamps, lampModel])
+    invalidate()
+  }, [allLamps, lampModel, invalidate])
 
   // (Lamp base-ring instance transforms removed — the contact shadow is baked
   // into the ground FX map now, not a per-lamp disc.)

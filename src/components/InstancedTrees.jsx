@@ -14,7 +14,7 @@
  * one InstancedMesh per submesh per variant. No picker, no overrides,
  * no index.json. Same shape Stage / mobile would consume.
  */
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -68,8 +68,28 @@ function urlToVariantId(url) {
   return m ? m[1] : null
 }
 
+// frameloop="demand" + Suspense gotcha: when a <Suspense>-wrapped useGLTF
+// boundary RESOLVES, R3F commits the new mesh into the scene but does NOT
+// reliably schedule the frame that draws it. With a locked camera (hero) the
+// loop is idle, so freshly loaded trees stay invisible until something else
+// invalidates — the "nudge a knob and they pop on" symptom. A single commit-time
+// invalidate() races the GPU upload and gets dropped; a short rAF-spaced BURST
+// after each variant resolves reliably paints it, no poke needed. Pumps ~15
+// frames (~250ms) then stops. (2026-06-28 — the hero "trees don't relieve" bug.)
+function pumpFramesAfterLoad(invalidate, frames = 15) {
+  let id, i = 0
+  const tick = () => { invalidate(); if (++i < frames) id = requestAnimationFrame(tick) }
+  id = requestAnimationFrame(tick)
+  return () => { if (id) cancelAnimationFrame(id) }
+}
+
 function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
   const { scene } = useGLTF(url)
+  // This component only mounts AFTER useGLTF resolves (it's inside <Suspense>),
+  // so this effect runs exactly when the GLB has loaded — the moment we must
+  // wake the demand loop. See pumpFramesAfterLoad above.
+  const invalidate = useThree(s => s.invalidate)
+  useEffect(() => pumpFramesAfterLoad(invalidate), [invalidate])
 
   // Walk the rewritten GLB, baking each primitive's world matrix into its
   // vertices, then merge all primitives that share attribute layout into a
@@ -311,6 +331,13 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 
 function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
   const ref = useRef(null)
+  // Canvas runs frameloop="demand": R3F auto-invalidates on React reconciliation
+  // (mount) but NOT on the imperative matrix/attribute fills below. Without an
+  // explicit invalidate the mesh paints ONCE at mount with empty matrices, then
+  // the effects fill the real matrices but no frame is requested → trees stay
+  // invisible until a camera nudge wakes the loop. invalidate() after each fill
+  // is the fix. (2026-06-28 — the "trees don't load until something wakes it" bug.)
+  const invalidate = useThree(s => s.invalidate)
   // Trees ALWAYS render — the per-tile frustum cull was excised 2026-06-27. It
   // over-culled (its padded world-sphere vs the runtime terrain-lift/sway) and
   // made trees "not reliably render". `frustumCulled={false}` stays below. If a
@@ -325,7 +352,8 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
     if (!geometry) return
     if (lampGlows) geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
     if (heroTiers) geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
-  }, [geometry, lampGlows, heroTiers])
+    invalidate()
+  }, [geometry, lampGlows, heroTiers, invalidate])
   useEffect(() => {
     const im = ref.current
     if (!im) return
@@ -340,7 +368,8 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
     // recompute the InstancedMesh bound that wraps it across all instances.
     if (im.geometry?.computeBoundingSphere) im.geometry.computeBoundingSphere()
     if (im.computeBoundingSphere) im.computeBoundingSphere()
-  }, [placementMatrices, localMatrix])
+    invalidate()   // demand-mode: paint the just-filled matrices (see note at top of component)
+  }, [placementMatrices, localMatrix, invalidate])
 
   // Phase B onBeforeRender — mutate the shared material's bark uniforms
   // for THIS draw call only. Since the material is shared across every
@@ -381,6 +410,9 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
 // zero per-frame geometry cost — ~a dozen quads replace ~15K leaf cards.
 function ImpostorSpecies({ species, record, instances, treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange }) {
   const ref = useRef(null)
+  // demand-mode frame request after imperative fills — same reason as
+  // SubmeshInstances (see the note there).
+  const invalidate = useThree(s => s.invalidate)
 
   // One geometry per species per season. Phase 1 = summer; the winter plan is
   // already baked (record.seasons.winter) for the Phase-2 runtime switch.
@@ -418,7 +450,8 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
     if (!geometry) return
     geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
     geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
-  }, [geometry, lampGlows, heroTiers])
+    invalidate()
+  }, [geometry, lampGlows, heroTiers, invalidate])
 
   useEffect(() => {
     const im = ref.current
@@ -426,7 +459,8 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
     for (let i = 0; i < matrices.length; i++) im.setMatrixAt(i, matrices[i])
     im.instanceMatrix.needsUpdate = true
     if (im.computeBoundingSphere) im.computeBoundingSphere()
-  }, [matrices])
+    invalidate()   // demand-mode: paint the just-filled matrices
+  }, [matrices, invalidate])
 
   // Per-draw bark uniforms — same shared-material mutation as the mesh path so
   // the impostor's bark/leaf fragments pick up this species' tint/gradient/
@@ -696,6 +730,30 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
     return { meshGroups: m, impostors }
   }, [bake, maxVariants, atlas, lookName, impostorRecords])
+
+  // ── Cold-load reconcile flush (the REAL fix) ───────────────────────────
+  // The Canvas runs frameloop="demand". On a COLD load each per-variant
+  // <Suspense> useGLTF resolves and React commits the VariantInstances fiber,
+  // but R3F does NOT attach the new instancedMesh to the three.scene until the
+  // NEXT reconcile pass. So the trees sit committed-but-UNATTACHED and stay
+  // invisible until ANY state change triggers a reconcile — confirmed by the
+  // operator: navigating Browse↔Hero, or nudging Exposure and back, makes them
+  // appear. It is NOT a missing frame: continuous invalidate() does nothing, and
+  // it also failed under frameloop="always" (Preview/Stage). Rendering ≠
+  // reconciling. So we self-poke: force a few re-renders across the cold-load
+  // window so each variant flushes/attaches as its GLB resolves, then stop. This
+  // is the automated equivalent of the operator's Exposure-nudge. The visible
+  // result is the sub-second shimmer-fill. (2026-06-28 — the hero "trees don't
+  // relieve until a poke" bug.)
+  const [, forceReconcile] = useReducer(x => (x + 1) & 0xffff, 0)
+  useEffect(() => {
+    if (!groups) return
+    let id, n = 0
+    const KICKS = 20            // ~8s of flushes (every 400ms), then stop
+    const tick = () => { forceReconcile(); if (++n < KICKS) id = setTimeout(tick, 400) }
+    id = setTimeout(tick, 400)
+    return () => clearTimeout(id)
+  }, [groups])
 
   // Phase B (2026-05-15): per-species bark settings carried in the atlas
   // manifest, with per-Look palette override (scene.materialColors[<species>])
