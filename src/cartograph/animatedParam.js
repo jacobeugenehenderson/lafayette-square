@@ -108,6 +108,20 @@ export function todSlotAtMinute(minute, date) {
   return best
 }
 
+// TOD is CYCLIC. The gap between the LAST authored slot (evening) and the FIRST
+// (pre-dawn) crosses midnight, so off-hours should TWEEN across the seam, not
+// clamp to the nearest endpoint. For a minute OUTSIDE [first, last], return the
+// fraction 0→1 running from `last` (at/after it) through midnight to `first`
+// (at/before it). (2026-06-28 — wrap-across-midnight; before this, pre-dawn hours
+// clamped to the dawn slot instead of tweening down from the night slot.)
+const TOD_DAY_MIN = 1440
+function wrapTodFraction(minute, firstMin, lastMin) {
+  const gap = (firstMin + TOD_DAY_MIN) - lastMin
+  if (gap <= 0) return 0
+  const pos = minute >= lastMin ? (minute - lastMin) : (minute + TOD_DAY_MIN - lastMin)
+  return Math.min(1, Math.max(0, pos / gap))
+}
+
 export function resolveAnimatedAtMinute(channel, minute, todSlots) {
   if (!channel) return 0
   if (!channel.animated) return Number(channel.value) || 0
@@ -123,20 +137,10 @@ export function resolveAnimatedAtMinute(channel, minute, todSlots) {
   if (points.length === 1) return points[0].value
   const first = points[0]
   const last = points[points.length - 1]
-  if (minute <= first.minute) {
-    const gap = first.minute - minute
-    const tIn = Math.max(0, channel.transitionIn ?? 0)
-    if (tIn === 0 || gap >= tIn) return first.value
-    // Inside the in-ramp: ease toward first.value from a notional held
-    // pre-state. Without an explicit pre-value, target == first.value
-    // so this collapses to "hold first." Kept as an extension hook.
-    return first.value
-  }
-  if (minute >= last.minute) {
-    const gap = minute - last.minute
-    const tOut = Math.max(0, channel.transitionOut ?? 0)
-    if (tOut === 0 || gap >= tOut) return last.value
-    return last.value
+  // Outside [first, last] = the midnight gap → wrap-tween last → first.
+  if (minute < first.minute || minute > last.minute) {
+    const t = wrapTodFraction(minute, first.minute, last.minute)
+    return last.value + (first.value - last.value) * t
   }
   // Find bracketing authored points.
   let lo = first
@@ -301,8 +305,13 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
   }
   if (points.length === 1) return pick(points[0])
   const first = points[0], last = points[points.length - 1]
-  if (minute <= first.minute) return pick(first)
-  if (minute >= last.minute)  return pick(last)
+  // Outside [first, last] = the midnight gap → wrap-tween last → first.
+  if (minute < first.minute || minute > last.minute) {
+    const t = wrapTodFraction(minute, first.minute, last.minute)
+    const out = {}
+    for (const k of fieldKeys) out[k] = lerpField(last[k], first[k], t, isColorVal(defaults[k]))
+    return out
+  }
   let lo = first, hi = last
   for (let i = 0; i < points.length - 1; i++) {
     if (minute >= points[i].minute && minute <= points[i + 1].minute) {

@@ -168,7 +168,14 @@ class DownsamplePyramidPass extends Pass {
       const t = this.targets[i]
       this.downMat.uniforms.uInput.value = srcTex
       this.downMat.uniforms.uTexel.value.set(1 / srcW, 1 / srcH)
-      this.downMat.uniforms.uKaris.value = (i === 0) ? 1.0 : 0.0   // tame bright thin sources on the first level only
+      // Tame bright thin sources (neon, lamps) on the first THREE downsamples,
+      // not just level 0. The thin bright neon survived the single level-0 Karis
+      // and aliased into blocky chunks when DoF/bloom sampled the deeper low-res
+      // mips — the "neon looks terrible in the blurred areas" de-block. Carrying
+      // the luma-weighted down-weight into levels 1–2 keeps the bright source from
+      // dominating those coarser mips. Levels 3+ keep the plain energy-preserving
+      // weights. (2026-06-28 — neon de-block; the resolutionScale dial is gone.)
+      this.downMat.uniforms.uKaris.value = (i < 3) ? 1.0 : 0.0
 
       renderer.setRenderTarget(t)
       renderer.render(this._fsScene, this._fsCamera)
