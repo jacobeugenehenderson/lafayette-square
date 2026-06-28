@@ -30,7 +30,7 @@ import { getElevationRaw } from '../utils/elevation'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { INSTANCE } from '../instance.js'
 import NeonBands from './NeonBands.jsx'
-import { getFoundationHeight, getRoofPeakHeight, roofTopRingFor } from './LafayetteScene.jsx'
+import { getFoundationHeight, roofTopRingFor } from './LafayetteScene.jsx'
 
 // ── Open-by-hours filter ────────────────────────────────────────────
 // Glows when the place is currently open AND it's dark enough to see.
@@ -149,10 +149,12 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
         ? !!forceNeonOn
         : _isWithinHours(info.hours, now)
       if (!on) continue
-      // baseY = world Y of the rooftop. Foundation pedestal lift shifts
-      // the building's mounted position; the neon tube must sit at the
-      // same rooftop. NeonBands.buildTubeFor reads place.baseY.
-      const baseY = getFoundationHeight(b) + b.size[1] + getRoofPeakHeight(b) + 0.3
+      // baseY = world Y of the building TOP (the wall/roof joint, the eave) —
+      // dropped the roof-peak lift so neon HUGS the building instead of hovering
+      // at the peak (Jacob 2026-06-27). Foundation pedestal lift shifts the
+      // mounted position; the tube sits at the eave. buildTube traces the
+      // footprint, so the ring matches the building's size on every roof type.
+      const baseY = getFoundationHeight(b) + b.size[1] + 0.3
       // Mean-corner raw elevation — canonical anchor matching Foundations
       // and Building walls, so the neon mesh lifts in lockstep with its
       // building on sloped terrain.

@@ -686,11 +686,11 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     for (let i = 0; i < ring.length; i++) roofOutlineData.push(ring[i][0], ring[i][1])
     roofOutlinePtCursor += ring.length
 
-    // baseY = rooftop world Y (pre-terrain-lift), identical to the runtime
-    // neon term getFoundationHeight + size[1] + getRoofPeakHeight + 0.3
-    // (SceneNeon.jsx:124). `h` === b.size[1] for all real buildings; the
-    // bake's fallback only differs for size-less records (none in prod).
-    const baseY = fh + h + getRoofPeakHeightFor(b, overrides) + 0.3
+    // baseY = building-TOP world Y (the eave / wall-roof joint, pre-terrain-lift),
+    // identical to the runtime neon term getFoundationHeight + size[1] + 0.3
+    // (SceneNeon.jsx). The roof-peak lift was dropped so neon hugs the building
+    // (2026-06-27). `h` === b.size[1] for all real buildings.
+    const baseY = fh + h + 0.3
 
     const ranges = { wall: wallRange, roof: roofRange }
     if (foundRange) ranges.foundation = foundRange
