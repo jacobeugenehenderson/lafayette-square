@@ -341,5 +341,36 @@
       "indexCount": 8859,
       "indexByteOffset": 10373724
     }
-  ]
+  ],
+  "poolmap": {
+    "image": "ground.poolmap.png",
+    "size": 1024,
+    "min": [
+      -218.2,
+      -215.4
+    ],
+    "span": [
+      441.4,
+      435
+    ],
+    "scale": 3
+  },
+  "colormap": {
+    "image": "ground.colormap.png",
+    "size": 1024,
+    "min": [
+      -1065,
+      -1065
+    ],
+    "span": [
+      2100,
+      2100
+    ]
+  },
+  "lightmap": {
+    "image": "ground.lightmap.png",
+    "size": 1024,
+    "rays": 24,
+    "floor": 0.35
+  }
 }
