@@ -1,0 +1,62 @@
+# HARDWIRE-FORENSIC — render/look values still hardcoded past the TOD channels
+
+*Forensic agent: **Filament** · 2026-06-27 · read-only audit (no code edited).*
+*Channel registry of record: `src/cartograph/skyLightChannels.js`. Doctrine: `project_hardwires_come_out_when_channels_install`.*
+
+## Summary
+
+The channel install is ~90% done — most post-FX and lighting knobs now resolve through `resolveGroupAtMinute` off `scene.json`. What remains are a small set of **floors and tints that sit OUTSIDE the channels and ignore them**, plus a larger tail of look-values that simply never got a knob. The operator's anger is justified and concentrated in **one place: night-fill lighting in `CelestialBodies.jsx`.** Two hardcoded `<ambientLight>`s (white `0.45` + warm `0.15·nightFactor`) and one directional fill (`0.12 − nightFactor·0.06`) sit *beside* the channel-driven ambient/hemi lights but are NOT multiplied by `ambientMulRef`/`hemiMulRef` — so dialing **Ambient → 0 still leaves ~0.45–0.60 of un-zeroable lift** and the night can never go truly dark. That is the marquee `[BYPASS]`. Two more bypasses live in `PostProcessing.jsx`: the planetarium bloom bump that overwrites the authored `bloom` channel, and the FilmGrade `goldenT/nightT` sun-altitude color tint that auto-grades on top of (and against) the authored Warmth/Grade — the exact "hidden TOD hardwire" anti-pattern already excised from bloom (night-boost) and halo (dayFactor). **Headline: 5 `[BYPASS]` findings; the 3 night-fill lights in `CelestialBodies.jsx` are the worst and should be excised first.** Everything else is `[NO-KNOB]` (grass/orb/star/neon-profile colors an operator would plausibly want) or `[INTERNAL]` (kernel shapes, channel tint-vector definitions, bake-time geometry).
+
+---
+
+## PRIORITIZED TABLE
+
+### [BYPASS] — a channel exists; the hardcode sits on top and ignores it (fix these first)
+
+| # | file:line | value | controls | should be |
+|---|-----------|-------|----------|-----------|
+| B1 | `src/components/CelestialBodies.jsx:1251` | `<ambientLight color="#ffffff" intensity={0.45} />` | flat white ambient **floor** added to the whole scene, all day + night | **Ambient channel.** Remove the standalone light; fold its lift into `ambientBase` (line 1234) so `ambientMulRef` (×Ambient knob) governs it. This is the un-zeroable night floor #1. |
+| B2 | `src/components/CelestialBodies.jsx:1257` | `<ambientLight color="#8a7060" intensity={0.15 * lighting.nightFactor} />` | warm amber night-fill ambient, ramps in at night | **Ambient channel** (or a new Night-warmth knob). Also un-multiplied by `ambientMulRef` → Ambient→0 cannot kill it. Merge into `ambientBase` or gate by the Ambient multiplier. |
+| B3 | `src/components/CelestialBodies.jsx:1266-1270` | `<directionalLight position={[0,100,-400]} intensity={0.12 - nightFactor*0.06} color={lerp('#ffeedd','#5577aa',nf)} />` | a third "fill" directional (≈0.06–0.12) that is neither Sun (PrimaryOrb) nor Moon (SecondaryOrb) | **Hemi or a new Fill channel.** No multiplier ref at all → ignores every lighting knob; completes the un-zeroable night-fill floor. Fold into `hemiBase` (×`hemiMulRef`) or give it its own knob. |
+| B4 | `src/components/PostProcessing.jsx:369-373` | `bloom.intensity=1.8; threshold=0.15; spread=0.5` (when `viewMode==='planetarium'`) | hard-overwrites the resolved `bloom` channel in planetarium/Street view | **Bloom channel.** Author the planetarium bloom as a per-Look/per-view value instead of overwriting the channel in the consumer; or at minimum scale the authored value rather than replacing it. |
+| B5 | `src/components/PostProcessing.jsx:141-144` | `goldenT=exp(-((sunAlt-0.08)/0.12)²)`; `nightT=smoothstep(0.05,-0.15,sunAlt)`; `c *= mix(1, vec3(1.06,1.0,0.88), goldenT*0.5)`; `c *= mix(1, vec3(0.88,0.92,1.08), nightT*0.4)` | a sun-altitude-driven warm(golden)/cool(night) color grade applied **on top of** the authored Grade + Warmth | **Warmth / Grade channels.** Same hidden-TOD-hardwire pattern already removed from bloom night-boost (PostProcessing:357-365 comment) and halo dayFactor (PostProcessing:242-245). Remove and let the operator author the day→night tint via the Warmth/Grade TOD curves. |
+
+### [NO-KNOB] — a look value with no channel an operator would plausibly want
+
+| # | file:line | value | controls | should be (new knob) |
+|---|-----------|-------|----------|----------------------|
+| N1 | `CelestialBodies.jsx:1107-1190` | per-phase orb/light **intensity + color ladder**: noon `2.2` / golden `0.7+t*1.5` / twilight `0.4` / night moon; sun colors `'#fffefa'`, `lerp('#ff6644','#ffaa66')`, etc.; orb sizes `12/18/20/25` | the actual sun/moon **light color + base intensity curve** through the day. dirSun/dirMoon channels scale the *final* intensity but the color + base curve are unauthored | a "Sun/Moon tint + intensity-curve" channel, or accept dirSun×color authoring. Medium — sky **bands** are authored but the *light* color is not. |
+| N2 | `CelestialBodies.jsx:135-136, 145-151` (grass) `grassMaterial.js:132-136` | grass palette `gBase(0.22,0.40,0.19) gLight gDark gWarm gCool`; `nightTint vec3(0.6,0.7,1.0)`; `brightness mix(0.7,1.0)` | the **grass color**, fully procedural — overrides the `color` prop (`diffuseColor = pow(grass,2.2)`), so the passed albedo is effectively dead | a `grass`/treelawn material swatch (the world-materials palette card, already flagged as a future arc). Medium — operator cannot retint lawns. |
+| N3 | `treeAtlasMaterial.js:199-200` | `uTrunkBlend 0.55`, `uTrunkBlendTop 1.5` | strength + height of the trunk-base → ground-color blend | a tree material knob (trunk-marry strength). Low-med. |
+| N4 | `treeAtlasMaterial.js:731` (& `:862`) | `vec3(0.55,0.40,0.20)` canopy lamp-emissive amber | color of the under-lamp canopy warm-up (lampGlow.trees scales the *amount*, color fixed; grass `:165` uses the lamp swatch — trees don't) | drive from the lamp color swatch like the grass pool does. Low. |
+| N5 | `grassMaterial.js:59` / `BakedGround.jsx:232` | `uShadowStr 0.5` | strength of the baked contact-shadow darkening (tree/lamp bases) on ground albedo | a contact-shadow strength knob. Low. |
+| N6 | `gravelPathMaterial.js:124-129, 145` | stone palette `(0.28,0.26,0.23)…`; lamp add `vec3(0.50,0.45,0.28)` | gravel path color + path lamp wash color (`tintHex` gives a proportional hue shift only) | extend the existing park_path swatch to full palette/lamp control. Low (partial knob exists). |
+| N7 | `CelestialBodies.jsx:772` `:850` `:809` `:739/830` `:764` | catalog star `col *= 3.0`; filler `× 1.7`; filler size `(10+rng*14)*20`; twinkle `0.80+0.20·sin / 0.78+0.22·sin`; chromatic `0.04+vBright*0.06` | star core boost, filler brightness, star sizes, twinkle amplitude, chromatic aberration | the Stars channel scales overall opacity only — add star **size / twinkle / boost** sub-knobs if wanted. Low. |
+| N8 | `CelestialBodies.jsx:1190 & 584-585, 604-607, 623` | noon `sky{top:'#5090dd',bottom:'#99ccee'}`; `horizonWarm vec3(0.15,0.08,0.02)`; moon glow palette `moonDiscColor(0.85,0.88,0.95)…`; night horizon glow `vec3(0.03,0.018,0.04)` | sky-glow / moon-glow / horizon-warm atmospheric tints in GradientSky (the 4 bands + sunGlow ARE authored; these extras are not) | optional moon-glow / horizon-warm tint knobs. Low (atmospheric detail). |
+| N9 | `PostProcessing.jsx:132,135-136` | `shadowSat 1.0+(1-toe)*0.3`; `midBell 4.0*lum*(1-lum)`, `c *= 1+midBell*0.15` | hardcoded shadow-saturation lift + midtone contrast bump inside FilmGrade | optional Grade sub-knobs (shadow-sat, midtone punch). Low. |
+| N10 | `PostProcessing.jsx:201,211` | grain `mix(0.007,0.002,…)`; day curve `0.4+day*0.6` | base grain strength + its day/night ramp (Grain channel scales only the multiplier) | a grain base-strength knob if the scale dial isn't enough. Low. |
+| N11 | `NeonBands.jsx:287-289, 292, 294` | Gaussian widths `16.0/4.0/1.0`; core whiteness `mix(vColor,white,0.7)`; bleed `×0.4` | the neon tube **profile** (how tight core/tube/bleed falloff is). core/tube/bleed channels scale intensity, not width | optional neon profile-width knobs. Low (intentionally minimal per file header). |
+| N12 | `CelestialBodies.jsx:441` | planetarium `dimFactor = 0.4` | dome dim in planetarium view | superseded by the SkyGain channel per its comment, but still hardcoded for planetarium mode. Low. |
+| N13 | `skyLightChannels.js:70-72` (claim) vs `CelestialBodies.jsx` (no `WARMTH` import) | Warmth channel doc says it "biases ambient + hemi color … bounded inside CelestialBodies" — but CelestialBodies never reads warmth | **gap, not a hardcode:** Warmth is consumed only in FilmGrade (post-tint); the advertised ambient/hemi color bias is unimplemented | either implement the ambient/hemi bias or correct the channel doc. Low-med (doc/behavior mismatch). |
+
+### [INTERNAL] — genuinely fixed math/engine (lowest priority; list, don't excise)
+
+- `CelestialBodies.jsx` orbit/astro math: `LIGHT_RADIUS 600`, `SUN/MOON/SKY_RADIUS 50000/55000`, J2000/GMST sidereal constants, `MATCH_THRESHOLD 1°`, `NOISE_N 6000` seeded RNG, moon angular `1.5°`, lat/lon tilts — unit conversions + celestial mechanics.
+- Shadow rig: `shadow-mapSize 4096`, `shadow-camera ±900/far 2400`, bias `-0.0001`/normalBias `0.15`, `dist2>100` re-render gate — shadow-map engine tuning (Shadow channel owns size/samples, not the rig).
+- `PostProcessing.jsx` FilmGrade: contrast curve `c*c*(3-2c)`, Rec.709 luma weights, warmth `photoTint` vectors `(1.10,1.00,0.84)/(0.86,0.94,1.12)` (these ARE the Warmth channel's tint *definition*, amount driven by `uWarmth`).
+- `CustomBloom.jsx`: `warmTint/coolTint` vectors (122-123 — the warmCool channel's tint definition, amount driven), knee `uThreshold*0.4` (84), energy-preserving per-rung weights, ADD blend, `PYRAMID_LEVELS` loop.
+- `RomanceDoF.jsx`: `sharpWidth 25`, `midRange 300` (`_dofRefs` 152-153) and the `depth>=0.9999` sky-cut + log-depth decode — DoF mapping constants. ⚠️ *Verify in `dofDriver.js` that the DoF `softness` field drives sharpWidth/midRange; if it does NOT, promote these two to `[NO-KNOB]` (near-feather + melt-range).* 
+- `treeAtlasMaterial.js`: `uRustleAmplitude 0.005`, wind tier amp/tempo scales, deform hashes — wind/deformer engine (not look-tint).
+- `bake-ground-ao.js` (**BAKE-TIME**, can't be a runtime channel without bake-param plumbing): `POOL_RADIUS_M 16`, `POOL_RING_POS 0.32`, `POOL_RING_SHARP 4.5`, `POOL_SHADOW_FRAC 0.18`, `POOL_MAX 3.0`, `TREE_SHADOW_RADIUS_M 4.5/STR 0.7`, `LAMP_SHADOW_RADIUS_M 2.5/STR 0.6`, `LIGHTMAP_SIZE 1024`, `RAYS_PER_TEXEL 24`. These shape the *baked* pool/contact maps — note as a possible future "bake-knobs" surface, lowest priority. The pool *color* is already the lamp swatch (good).
+- `NeonBands.jsx`: `OFFSET_OUT 0.5`, `CROSS_SEGS 8`, `CORNER_SEGS 3`, `CORNER_MIN 15°`, `ROOF_DROP = −tubeRadius` — tube geometry; the file header states no operator geometry knobs by design (tubeRadius excepted).
+
+---
+
+## Recommended excision order (most operator-pain relief first)
+
+1. **Night-fill lighting (B1, B2, B3) — `CelestialBodies.jsx:1251, 1257, 1266`.** THE complaint. Remove the three un-multiplied floor lights; fold their lift into `ambientBase` / `hemiBase` so `ambientMulRef` / `hemiMulRef` (the Ambient/Hemisphere knobs) actually reach them. After this, Ambient→0 + SkyGain→low = a genuinely dark night. *(One file, ~6 lines; matches the banked `night-emissive = hardcoded lights ignore every knob` PARKED note in MEMORY.)*
+2. **FilmGrade TOD auto-tint (B5) — `PostProcessing.jsx:141-144`.** Delete the goldenT/nightT color shift (mirror the bloom-night-boost + halo-dayFactor removals already done in this file); let Warmth/Grade TOD curves own the day→night color.
+3. **Planetarium bloom bump (B4) — `PostProcessing.jsx:369-373`.** Stop overwriting the `bloom` channel; author the planetarium look or scale rather than replace.
+4. **Grass + tree-material color (N2, N3, N4) — the world-materials palette card** (already a known future arc): grass palette, trunk-blend, canopy lamp tint. Highest-value of the NO-KNOB tail because lawns/trees dominate the frame.
+5. **Sun/Moon light tint + curve (N1)**, then the long low-priority tail (stars N7, atmospheric tints N8, grade sub-knobs N9, neon profile N11) as eye-driven wants surface.
+6. **Verify N13** (Warmth ambient/hemi-bias doc vs unimplemented behavior) and the RomanceDoF `softness→sharpWidth/midRange` wiring while in `PostProcessing`/`dofDriver`.
