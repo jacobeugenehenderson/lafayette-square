@@ -8,6 +8,26 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-28 — The full 7-slot day-cycle, authored as one continuous curve.
+
+A look-authoring day with Jacob (agent "Wren"), eye-gated throughout. Authored the complete time-of-day arc for lafayette-square — **dawn → sunrise → noon → golden → sunset → dusk → night** as one continuous curve. Data lives in `public/looks/lafayette-square/design.json` (authored via `scratch/set-slot.mjs`, baked with `node cartograph/bake-scene.js --look=lafayette-square`); recipe table in `scratch/DAWN-DESIGN-NOTES.md`. This is where `HANDOFF-design-dawn` conceptually retires. Commits `bc9a74ea`, `4ca9ab5f`, `986a4f8f`.
+
+- **Promoted flat → TOD-animated this pass:** lantern, ambient, exposure, halo, mist, dof, warmth, dirMoon, fill (lampGlow/hemi/skyGain/bloom were already animated).
+- **The artistic arc:** dawn = moody (DoF up, bloom OFF) · noon = "blown out" (superbloom 6 + exposure 0.8) · sunset = sharp + ELECTRIC sky overrides (hour 20) · dusk = blue moonglow (warmth 0.3, hemi 1.6, dirMoon 1.2, blue mist + sky overrides hour 21) · night = dark but **softened** (Fill lifted to 1.3 to kill the stark crushed shadows + hemi/ambient/exposure nudged).
+- **Photocell-realistic lamps:** lantern ON at civil dawn (the StreetLights sun-altitude ramp gives ~0.56 there — verified), OFF at sunrise, warms back at sunset, full at night.
+- **Render fix (`4ca9ab5f`):** the DoF mount gate in `PostProcessing.jsx` read only the FLAT `dof.values.enabled`, so a TOD-animated dof never mounted. Now mounts when ANY slot enables it → **per-slot DoF is a real TOD channel.**
+
+**Lessons banked:**
+- **The resolver: a channel with ONE keyframe resolves to that value at EVERY minute.** Converting flat→animated by writing one slot globally overwrites the whole day → **always seed an anchor slot (noon/night) with the prior flat value** before authoring the rest.
+- **The EffectComposer key is `fx-${smaaOn}-${dofOn}`.** Any edit flipping dofOn/smaaOn rebuilds the composer, and under Vite HMR the rebuild can leave a consumer detached ("bloom went dark / no glow") until a **HARD REFRESH**. This cost a long phantom "bloom broke when DoF mounted" chase — it was an HMR artifact, **not** a DoF↔Bloom coupling. Hard-reload after a dofOn/smaaOn change before diagnosing.
+- **DoF + Bloom share the DownsamplePyramid BY DESIGN and coexist fine** (guards `a1a6956c` + tree-source sanitize). "Turn one off and the other returns" has repeatedly been a mount/HMR confound — **the operator's live repro is the gate, not code-reading.** (This session I re-derived from code despite the existing canon — the exact CLAUDE.md anti-pattern; route first.)
+- **DoF blur is forced to 0 in Browse** (dofDriver look-down gate) — DoF shows only in Hero/Street.
+- **Sky colour overrides are CLOCK-HOUR-keyed on a seasonal grid, not slot-keyed** — they don't track the slot across seasons (known limitation; the Sky Builder is the live tool).
+
+**Open:** trees don't show in Browse until a look dial is nudged ("wake-up" symptom) — a render/cull-layer bug, not a look problem.
+
+---
+
 ## 2026-06-26/27 — DoF + bloom, rebuilt off a shared blur LADDER (the romance lands)
 
 A long post-FX session with Jacob, eye-gated throughout. The arc the `HANDOFF-real-dof` brief opened finally landed — and **superseded its own plan**. Archived → `_archive/HANDOFF-real-dof-2026-06-27.md`. Commit `7d1bb238` + follow-ups. Settled doctrine → `ARCHITECTURE.md` (Decisions) + `OPERATIONS.md` (Bloom / Focus knobs).
