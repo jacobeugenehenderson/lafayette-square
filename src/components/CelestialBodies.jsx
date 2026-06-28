@@ -719,19 +719,28 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     }
 
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uOpacity: { value: 0.0 } },
+      uniforms: { uOpacity: { value: 0.0 }, uTime: { value: 0.0 } },
       vertexShader: `
+        uniform float uTime;
         attribute float aSize;
         attribute vec3 aColor;
         varying vec3 vCol;
         varying float vBright;
+        varying float vTwinkle;
         void main() {
           vCol = aColor;
           vBright = aSize / 60.0;
+          // Gentle twinkle — slow, low-amplitude brightness wander with a per-star
+          // phase + slight per-star speed, so they shimmer independently instead of
+          // strobing. Amplitude kept small so it reads alive, not flashing.
+          float phase = position.x * 0.013 + position.y * 0.017 + position.z * 0.019;
+          vTwinkle = 0.80 + 0.20 * sin(uTime * (1.6 + fract(phase) * 1.2) + phase);
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           // Use distance (not -mv.z) — all sky-dome stars are equidistant,
-          // so depth-based scaling blows up at the camera side plane.
-          gl_PointSize = max(aSize * (800.0 / length(mv.xyz)), 1.0);
+          // so depth-based scaling blows up at the camera side plane. Min 1.8px
+          // (was 1.0) so the soft disc has room to anti-alias — 1px sprites
+          // scintillated as the sky drifted (the "fake flash").
+          gl_PointSize = max(aSize * (800.0 / length(mv.xyz)), 1.8);
           // Fade out below horizon (position is world-space, Y=0 is horizon)
           gl_PointSize *= smoothstep(-500.0, 0.0, position.y);
           gl_Position = projectionMatrix * mv;
@@ -741,6 +750,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         uniform float uOpacity;
         varying vec3 vCol;
         varying float vBright;
+        varying float vTwinkle;
         void main() {
           float d = length(gl_PointCoord - 0.5);
           // Soft circular falloff — fade to zero well within sprite bounds
@@ -758,7 +768,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
           float aB = ((1.0 - smoothstep(0.0, 0.35, dB)) + exp(-dB * 8.0) * 0.4) * edgeB;
           vec3 col = vec3(aR * vCol.r, a * vCol.g, aB * vCol.b);
           col *= 3.0;
-          gl_FragColor = vec4(col * uOpacity, max(col.r, max(col.g, col.b)) * uOpacity);
+          gl_FragColor = vec4(col * uOpacity * vTwinkle, max(col.r, max(col.g, col.b)) * uOpacity * vTwinkle);
         }
       `,
       transparent: true,
@@ -776,7 +786,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), SKY_RADIUS * 2)
 
     // ── Background filler stars (equatorial cartesian, rotated as rigid group) ──
-    const NOISE_N = 3000
+    const NOISE_N = 6000
     const noisePositions = new Float32Array(NOISE_N * 3)
     const noiseColors = new Float32Array(NOISE_N * 3)
     const noiseSizes = new Float32Array(NOISE_N)
@@ -804,15 +814,20 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     nGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), SKY_RADIUS * 2)
 
     const nMat = new THREE.ShaderMaterial({
-      uniforms: { uOpacity: { value: 0.0 } },
+      uniforms: { uOpacity: { value: 0.0 }, uTime: { value: 0.0 } },
       vertexShader: `
+        uniform float uTime;
         attribute float aSize;
         attribute vec3 aColor;
         varying vec3 vCol;
+        varying float vTwinkle;
         void main() {
           vCol = aColor;
+          // Same gentle twinkle as the catalog stars (per-star phase + speed).
+          float phase = position.x * 0.013 + position.y * 0.017 + position.z * 0.019;
+          vTwinkle = 0.78 + 0.22 * sin(uTime * (1.4 + fract(phase) * 1.2) + phase);
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = aSize * (800.0 / length(mv.xyz));
+          gl_PointSize = max(aSize * (800.0 / length(mv.xyz)), 1.5);  // min 1.5px → no scintillation
           // Fade out below horizon (world Y < 0)
           vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
           gl_PointSize *= smoothstep(-500.0, 0.0, worldPos.y);
@@ -822,12 +837,15 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       fragmentShader: `
         uniform float uOpacity;
         varying vec3 vCol;
+        varying float vTwinkle;
         void main() {
           float d = length(gl_PointCoord - 0.5);
           float a = 1.0 - smoothstep(0.0, 0.5, d);
           a *= a;
-          if (a * uOpacity < 0.005) discard;
-          gl_FragColor = vec4(vCol * a * uOpacity, a * uOpacity);
+          float bri = a * uOpacity * vTwinkle;
+          if (bri < 0.005) discard;
+          // ×1.7 so the filler reads as stars, not faint haze (catalog gets ×3).
+          gl_FragColor = vec4(vCol * bri * 1.7, bri);
         }
       `,
       transparent: true,
@@ -846,11 +864,14 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
   // Update star positions each frame based on sidereal time (Earth rotation)
   // and fade opacity with sun altitude
-  useFrame(() => {
+  useFrame((state) => {
     if (!starRef.current || !starMat) return
     const planetariumActive = useCamera.getState().viewMode === 'planetarium'
     const { astronomyAlpha } = useSkyState.getState()
     starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : astronomyAlpha
+    // Twinkle clock — real wall-time so the shimmer is independent of TOD scrub.
+    starMat.uniforms.uTime.value = state.clock.elapsedTime
+    noiseMat.uniforms.uTime.value = state.clock.elapsedTime
 
     // Skip expensive sidereal position computation when stars are invisible
     if (!planetariumActive && astronomyAlpha < 0.01) return
@@ -916,7 +937,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
     // ── Rotate filler stars as rigid group via equatorial→local matrix ──
     if (noiseRef.current) {
-      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.8 : astronomyAlpha * 0.85
+      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.9 : astronomyAlpha * 0.95
       const cosLST = Math.cos(lstRad), sinLST = Math.sin(lstRad)
       const cosL = cosLat, sinL = sinLat
       noiseRef.current.matrixAutoUpdate = false
