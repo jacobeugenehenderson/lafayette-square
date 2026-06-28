@@ -70,23 +70,8 @@ export default function Toolbar() {
           </div>
           <LooksMenu />
           <div className="carto-toolgroup">
-            {/* Bake & Preview — the publish-confidence loop: run the hardened
-                bake (the runBake settle-gate), then open/refresh the Preview
-                window on the FRESH slab. Skip opening if the bake was refused or
-                failed (the StatusBar banner says why) so we never reinforce a
-                stale slab. Plain "Preview" beside it opens the LAST bake, no
-                re-bake. Both reuse the one named window. */}
-            <button
-              disabled={bakeRunning}
-              onClick={async () => {
-                await runBake()
-                const st = useCartographStore.getState()
-                if (st.bakeError) return
-                openPreview(st.bakeLastMs)
-              }}
-              title={bakeRunning ? 'Baking…' : 'Bake the slab, then open it in the Preview window — the publish-confidence check.'}>
-              {bakeRunning ? 'Baking…' : 'Bake & Preview'}
-            </button>
+            {/* Preview — opens the last-baked slab in the named window (no re-bake;
+                baking is reached from the Designer "Stage →" / Stage "↻"). */}
             <button
               onClick={() => openPreview()}
               title="Open the last-baked slab in the Preview window (no re-bake; reuses the same window).">
