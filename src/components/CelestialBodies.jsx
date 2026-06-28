@@ -424,7 +424,7 @@ function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
   )
 }
 
-function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constellationsChannel, skyGainChannel }) {
+function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constellationsChannel, skyGainChannel, starsChannel }) {
   const materialRef = useRef()
   // 4-band sky color authoring lives in `skyChannel` (operator's grid).
   // The legacy procedural keyframe ladder + JS-side weather color
@@ -870,7 +870,15 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     if (!starRef.current || !starMat) return
     const planetariumActive = useCamera.getState().viewMode === 'planetarium'
     const { astronomyAlpha } = useSkyState.getState()
-    starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : astronomyAlpha
+    // Operator star-brightness knob (the `stars` channel, threaded into GradientSky
+    // like constellations/skyGain) multiplies the physical astronomyAlpha. Authored,
+    // not hardcoded; default 1.0 = no-op.
+    const starsBright = resolveGroupAtMinute(
+      starsChannel, useTimeOfDay.getState().getMinuteOfDay(),
+      starsChannel?.animated ? getTodSlotMinutes(useTimeOfDay.getState().currentTime) : null,
+      STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
+    ).brightness ?? 1
+    starMat.uniforms.uOpacity.value = (planetariumActive ? 1.0 : astronomyAlpha) * starsBright
     // Twinkle clock — real wall-time so the shimmer is independent of TOD scrub.
     starMat.uniforms.uTime.value = state.clock.elapsedTime
     noiseMat.uniforms.uTime.value = state.clock.elapsedTime
@@ -939,7 +947,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
     // ── Rotate filler stars as rigid group via equatorial→local matrix ──
     if (noiseRef.current) {
-      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.9 : astronomyAlpha * 0.95
+      noiseMat.uniforms.uOpacity.value = (planetariumActive ? 0.9 : astronomyAlpha * 0.95) * starsBright
       const cosLST = Math.cos(lstRad), sinLST = Math.sin(lstRad)
       const cosL = cosLat, sinL = sinLat
       noiseRef.current.matrixAutoUpdate = false
@@ -1018,6 +1026,7 @@ function CelestialBodies({
   const dirSunChannel         = dirSunOverride         ?? scene?.dirSun         ?? DIRSUN_DEFAULT_CHANNEL
   const dirMoonChannel        = dirMoonOverride        ?? scene?.dirMoon        ?? DIRMOON_DEFAULT_CHANNEL
   const constellationsChannel = constellationsOverride ?? scene?.constellations ?? CONSTELLATIONS_DEFAULT_CHANNEL
+  const starsChannel          = starsOverride          ?? scene?.stars          ?? STARS_DEFAULT_CHANNEL
   const milkyWayChannel       = milkyWayOverride       ?? scene?.milkyWay       ?? MILKYWAY_DEFAULT_CHANNEL
   const skyGainChannel        = skyGainOverride        ?? scene?.skyGain        ?? SKY_GAIN_DEFAULT_CHANNEL
 
@@ -1233,7 +1242,7 @@ function CelestialBodies({
 
   return (
     <>
-      {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} skyChannel={skyChannel} constellationsChannel={constellationsChannel} skyGainChannel={skyGainChannel} />}
+      {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} skyChannel={skyChannel} constellationsChannel={constellationsChannel} skyGainChannel={skyGainChannel} starsChannel={starsChannel} />}
       {debugLevel < 1 && <Suspense fallback={null}><Moon {...lighting.moon} /></Suspense>}
       {/* Milky Way mount hidden from runtime 2026-05-02 — see comment in
           CartographSkyLight.jsx. MilkyWaySphere component preserved; takes
