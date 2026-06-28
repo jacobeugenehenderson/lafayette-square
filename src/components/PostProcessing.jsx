@@ -300,9 +300,14 @@ export function PostProcessing({
   // scene.json (baked) > default.
   const smaaChannel     = smaaOverride     ?? scene?.smaa     ?? SMAA_DEFAULT_CHANNEL
   const smaaOn = (smaaChannel?.values?.value ?? SMAA_FLAT_DEFAULTS.value) > 0.5
-  // DoF / Focus — desktop-only convolution pass; static on/off like SMAA.
+  // DoF / Focus — desktop-only convolution pass. Mount when enabled. A
+  // TOD-animated dof has its `enabled` nested per slot, so mount if ANY slot
+  // enables it (the per-frame dofDriver resolves blur per-minute — sharp slots
+  // run a near-noop passthrough). Flat dof keeps the original single-toggle read.
   const dofChannel = dofOverride ?? scene?.dof ?? DOF_DEFAULT_CHANNEL
-  const dofOn = (dofChannel?.values?.enabled ?? DOF_FLAT_DEFAULTS.enabled) > 0.5
+  const dofOn = dofChannel?.animated === 'tod'
+    ? Object.values(dofChannel.values || {}).some(s => (s?.enabled ?? 0) > 0.5)
+    : (dofChannel?.values?.enabled ?? DOF_FLAT_DEFAULTS.enabled) > 0.5
 
   useFrame(() => {
     const tod = useTimeOfDay.getState()
