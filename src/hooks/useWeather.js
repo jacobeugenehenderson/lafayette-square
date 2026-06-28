@@ -9,6 +9,31 @@ import { INSTANCE } from '../instance.js'
 const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${INSTANCE.geography.lat}&longitude=${INSTANCE.geography.lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation&hourly=temperature_2m,weather_code,pressure_msl&past_hours=4&forecast_hours=48&temperature_unit=fahrenheit&timezone=${encodeURIComponent(INSTANCE.geography.timezone)}`
 
 /**
+ * Reconcile Open-Meteo's current `weather_code` against the live Degrees.
+ *
+ * Open-Meteo's `current.weather_code` can go stale / inconsistent with the
+ * other current fields — e.g. it returns 95 ("thunderstorm") with cloud_cover 0
+ * and precipitation 0 on a clear evening (verified St. Louis 2026-06-28). The
+ * code is the unreliable tier; the Degrees (precip, cloud cover) are the ground
+ * truth (WEATHER-MODEL.md: a Condition × its Degrees). So: if the code claims
+ * active precipitation (any WMO ≥ 51 — drizzle/rain/snow/showers/thunderstorm)
+ * but nothing is actually falling, downgrade to the dry condition the cloud
+ * cover supports. Fog (45/48) is visibility-driven, not precip — left alone.
+ * This stops the public app from reading "thunderstorm" on a clear day, and
+ * keeps the phantom code out of storminess (sky darkening).
+ */
+function reconcileWeatherCode(code, precipMm, cloudCoverPct) {
+  if (code >= 51 && (precipMm ?? 0) <= 0) {
+    const cc = cloudCoverPct ?? 0
+    if (cc < 12) return 0   // clear
+    if (cc < 50) return 1   // mainly clear
+    if (cc < 87) return 2   // partly cloudy
+    return 3                // overcast
+  }
+  return code
+}
+
+/**
  * Derive storminess (0-1) from WMO weather code + precipitation amount
  */
 function deriveStorminess(weatherCode, precipitation) {
@@ -45,8 +70,10 @@ export async function fetchWeather() {
     const data = await res.json()
     const c = data.current
 
+    // Trust the Degrees over a possibly-stale weather_code (see reconcile above).
+    const saneCode = reconcileWeatherCode(c.weather_code ?? 0, c.precipitation ?? 0, c.cloud_cover ?? 0)
     const cloudCover = (c.cloud_cover ?? 0) / 100
-    const storminess = deriveStorminess(c.weather_code ?? 0, c.precipitation ?? 0)
+    const storminess = deriveStorminess(saneCode, c.precipitation ?? 0)
     const turbidity = deriveTurbidity(c.visibility ?? 50000)
     const precipitationIntensity = c.precipitation ?? 0
 
@@ -69,7 +96,7 @@ export async function fetchWeather() {
       pressureMb: c.pressure_msl ?? null,
       humidity: c.relative_humidity_2m != null ? c.relative_humidity_2m / 100 : null,
       temperatureF: c.temperature_2m ?? null,
-      currentWeatherCode: c.weather_code ?? null,
+      currentWeatherCode: saneCode,
       directRadiation:  c.direct_radiation  ?? null,
       diffuseRadiation: c.diffuse_radiation ?? null,
     })
