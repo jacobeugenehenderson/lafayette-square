@@ -13,7 +13,8 @@
  *   flat channel must differ at dawn, seed an ANCHOR slot with its current
  *   flat value too (see `lantern` below) so the rest of the day is preserved.
  *
- * This pass authors DAWN only. Usage: `node scratch/set-slot.mjs`
+ * Authors the full TOD day + Jacob's artistic-arc pass (Phase 2 at the
+ * bottom). Usage: `node scratch/set-slot.mjs`
  */
 import { readFileSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
@@ -167,5 +168,82 @@ design.bloom.values.dusk = { intensity: 1.6, threshold: 0.2, warmCool: 0.7, spre
 //    (keep its authored values — the heavy lamp/neon/window glow). ────────────
 design.bloom.values.night = { intensity: 4.24, threshold: 0.03, warmCool: 0.5, spread: 0.34 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 2 — Jacob's artistic arc (2026-06-28). Overrides the per-slot values
+// above where they differ. The day's STORY:
+//   dawn   = moody: DoF blur up, bloom OFF
+//   noon   = blown out: superbloom + overexposure
+//   sunset = sharp + vibrant ELECTRIC sky colors (focus crisp, colour leads)
+//   dusk   = blue moonglow
+//   night  = dark, near-black (lamps/neon/stars the only light)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// DAWN — moody, no bloom. DoF blur up (Hero/Street only; dofDriver forces
+// blur=0 in Browse). Convert flat dof → animated: dawn blurred, sharp anchors.
+setSlot('bloom', 'dawn', { intensity: 0 }) // "moody without bloom"
+convertFlat('dof', {
+  dawn:   { enabled: 1, blur: 0.78, focus: 130, heroBlur: 0.15, softness: 0.45 }, // soft, dreamy
+  noon:   { enabled: 1, blur: 0,    focus: 320, heroBlur: 0.02, softness: 0.16 }, // sharp
+  sunset: { enabled: 1, blur: 0,    focus: 320, heroBlur: 0.02, softness: 0.16 }, // sharp (electric)
+  night:  { enabled: 1, blur: 0,    focus: 320, heroBlur: 0.02, softness: 0.16 }, // sharp
+}, false)
+
+// NOON — blow it out: the superbloom + overexposure (hazy, electric white midday).
+setSlot('bloom', 'noon', { intensity: 6, threshold: 0.3, warmCool: 0.5, spread: 0.7 })
+setSlot('exposure', 'noon', { value: 0.8 })
+
+// SUNSET — sharp + vibrant electric colours. Pull bloom back from the soft
+// blaze (2.2) so colour stays crisp; the SKY does the drama now.
+setSlot('bloom', 'sunset', { intensity: 1.1, threshold: 0.25, spread: 0.4 })
+
+// DUSK — blue moonglow. Cool the white balance, lift the cool sky-fill, blue
+// the haze, give the moon a touch more presence.
+convertFlat('warmth', {
+  noon:   { value: 0.86 }, // warm day baseline (also covers dawn via first-point)
+  sunset: { value: 0.9 },  // warmest
+  dusk:   { value: 0.3 },  // cool blue moonglow
+  night:  { value: 0.45 }, // cool moonlit
+}, false)
+convertFlat('dirMoon', {
+  noon:  { value: 0.96 },
+  dusk:  { value: 1.2 },  // moon presence for the moonglow
+  night: { value: 1.1 },
+}, false)
+setSlot('hemi', 'dusk', { value: 1.6 })            // more cool skylight fill
+setSlot('mist', 'dusk', { color: '#5a7ab8' })      // blue haze (was purple-grey)
+
+// NIGHT — dark but SOFTENED (Jacob: "a little too stark"). Keep the dark mood,
+// lift the harsh shadows: Fill is the shadow-lift lever (0 deep ↔ 2 soft), plus
+// a gentle bump to ambient/hemi/exposure. Lamps/neon/stars still lead.
+setSlot('hemi', 'night', { value: 1.3 })           // was 2.0 → 1.0; ease back up a touch
+setSlot('ambient', 'night', { value: 0.78 })       // was 0.6; soft fill
+setSlot('exposure', 'night', { value: 0.53 })      // was 0.5; slight lift
+// Fill — lift the crushed shadows so night isn't stark. Day anchor 0.65 keeps
+// distinct daytime shadows; evening softens toward the lifted night.
+convertFlat('fill', {
+  noon:  { value: 0.65 }, // distinct day shadows (current baseline)
+  night: { value: 1.3 },  // soft, lifted shadows — kills the starkness
+}, false)
+
+// SKY COLOURS (now permitted) — sparse {hour,band,hex} overrides on the sky
+// grid; each cell feathers spatially+temporally. Summer date → sunset = grid
+// hour 20, dusk = hour 21. ⚠️ SEASONAL CAVEAT: overrides key on clock-hour, not
+// the slot — authored for the CURRENT (summer) season's sunset/dusk hours; in
+// other seasons those hours aren't sunset. The Sky Builder is the live tool.
+design.sky ??= { overrides: [] }
+design.sky.overrides ??= []
+const sky = (hour, bands) => {
+  for (const [band, hex] of Object.entries(bands)) {
+    // replace any existing override on this exact cell, else append
+    const i = design.sky.overrides.findIndex(o => o.hour === hour && o.band === band)
+    const cell = { hour, band, hex }
+    if (i >= 0) design.sky.overrides[i] = cell; else design.sky.overrides.push(cell)
+  }
+}
+// h20 — electric sunset: hot orange/magenta → electric purple → deep indigo.
+sky(20, { horizon: '#ff4d2e', low: '#ff2d95', mid: '#9b2fae', high: '#3a2a8c', sunGlow: '#ff7e2a' })
+// h21 — blue moonglow dusk: deep blue gradient toward the black of night.
+sky(21, { horizon: '#2a3a7a', low: '#243066', mid: '#1a2350', high: '#10163a', sunGlow: '#26356e' })
+
 writeFileSync(FILE, JSON.stringify(design, null, 2) + '\n')
-console.log('Authored Dawn slots → ' + FILE)
+console.log('Authored full TOD day + artistic arc → ' + FILE)
