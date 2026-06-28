@@ -31,7 +31,7 @@ import { migrateSkyChannel } from '../src/cartograph/skyGrid.js'
 import {
   AMBIENT_FLAT_DEFAULTS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FLAT_DEFAULTS, DIRMOON_FLAT_DEFAULTS,
-  CONSTELLATIONS_FLAT_DEFAULTS, MILKYWAY_FLAT_DEFAULTS,
+  CONSTELLATIONS_FLAT_DEFAULTS, MILKYWAY_FLAT_DEFAULTS, STARS_FLAT_DEFAULTS,
   BLOOM_FLAT_DEFAULTS, AO_FLAT_DEFAULTS, EXPOSURE_FLAT_DEFAULTS,
   WARMTH_FLAT_DEFAULTS, FILL_FLAT_DEFAULTS,
   MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
@@ -94,6 +94,7 @@ export async function bakeScene({ look = 'default' } = {}) {
     dirSun:         design.dirSun         || { values: { ...DIRSUN_FLAT_DEFAULTS } },
     dirMoon:        design.dirMoon        || { values: { ...DIRMOON_FLAT_DEFAULTS } },
     constellations: design.constellations || { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
+    stars:          design.stars          || { values: { ...STARS_FLAT_DEFAULTS } },
     milkyWay:       design.milkyWay       || { values: { ...MILKYWAY_FLAT_DEFAULTS } },
     // SC.2 + SC.3 — post-FX channels (Post card + Sky & Light). Operator
     // authors via cartograph sliders; defaults seeded from

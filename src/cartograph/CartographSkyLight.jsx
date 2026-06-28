@@ -19,6 +19,7 @@ import {
   HALO_FIELDS, HALO_FLAT_DEFAULTS,
   SKY_GAIN_FIELDS, SKY_GAIN_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELDS, CONSTELLATIONS_FLAT_DEFAULTS,
+  STARS_FIELDS, STARS_FLAT_DEFAULTS,
   MILKYWAY_FIELDS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELDS, NEON_FLAT_DEFAULTS,
   AMBIENT_FIELDS, AMBIENT_FLAT_DEFAULTS,
@@ -120,6 +121,8 @@ export default function CartographSkyLight() {
       <SectionLabel label="Celestial" />
       <StoreChannel name="constellations" label="Constellations"
         fields={CONSTELLATIONS_FIELDS} flatDefaults={CONSTELLATIONS_FLAT_DEFAULTS} />
+      <StoreChannel name="stars" label="Stars"
+        fields={STARS_FIELDS} flatDefaults={STARS_FLAT_DEFAULTS} />
       {/* Milky Way hidden from operator UI 2026-05-02. Brunier panorama
           shows visible JPEG artifacting + stretched/oversized stars at
           Hero/Street FOV; needs higher-res source or cubemap rebuild

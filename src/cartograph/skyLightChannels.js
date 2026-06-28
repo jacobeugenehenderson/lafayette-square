@@ -168,6 +168,17 @@ export const CONSTELLATIONS_FIELDS = [
 export const CONSTELLATIONS_FLAT_DEFAULTS = { value: 0 }
 export const CONSTELLATIONS_FIELD_KEYS = ['value']
 
+// Stars (Sky & Light, CELESTIAL) — operator multiplier on STAR VISIBILITY, on top
+// of the physical astronomyAlpha (the sun-altitude night fade). 1.0 = as-is; raise
+// to make the night sky pop, author a TOD curve to bring stars up at night, or 0
+// to hide them. Default 1.0 (no-op → unauthored Looks unchanged). The KIT way to
+// tune stars — an authored knob, not a hardcoded ramp.
+export const STARS_FIELDS = [
+  { key: 'brightness', label: 'Star brightness', min: 0, max: 3, step: 0.02 },
+]
+export const STARS_FLAT_DEFAULTS = { brightness: 1.0 }
+export const STARS_FIELD_KEYS = ['brightness']
+
 // Lighting unit — 4 single-value channels that act as TOD-driven
 // intensity multipliers on the existing scene lights in CelestialBodies.jsx.
 // Defaults = 1.0 (no modulation; current behavior preserved). Operator

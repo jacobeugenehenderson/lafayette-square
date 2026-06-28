@@ -37,6 +37,7 @@ import {
   SMAA_FIELD_KEYS, SMAA_FLAT_DEFAULTS,
   DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
+  STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
   AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS,
@@ -1164,6 +1165,11 @@ const useCartographStore = create((set, get) => ({
     name: 'skyGain',
     fieldKeys: SKY_GAIN_FIELD_KEYS,
     flatDefaults: SKY_GAIN_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'stars',
+    fieldKeys: STARS_FIELD_KEYS,
+    flatDefaults: STARS_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
     name: 'grade',

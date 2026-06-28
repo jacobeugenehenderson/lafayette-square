@@ -15,6 +15,7 @@ import {
   DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
   DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
+  STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   SKY_GAIN_FIELD_KEYS, SKY_GAIN_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
@@ -32,6 +33,7 @@ const HEMI_DEFAULT_CHANNEL           = { values: HEMI_FLAT_DEFAULTS }
 const DIRSUN_DEFAULT_CHANNEL         = { values: DIRSUN_FLAT_DEFAULTS }
 const DIRMOON_DEFAULT_CHANNEL        = { values: DIRMOON_FLAT_DEFAULTS }
 const CONSTELLATIONS_DEFAULT_CHANNEL = { values: CONSTELLATIONS_FLAT_DEFAULTS }
+const STARS_DEFAULT_CHANNEL          = { values: STARS_FLAT_DEFAULTS }
 const MILKYWAY_DEFAULT_CHANNEL       = { values: MILKYWAY_FLAT_DEFAULTS }
 const SKY_GAIN_DEFAULT_CHANNEL       = { values: SKY_GAIN_FLAT_DEFAULTS }
 import brightStars from '../data/bright_stars.json'
@@ -868,7 +870,16 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     if (!starRef.current || !starMat) return
     const planetariumActive = useCamera.getState().viewMode === 'planetarium'
     const { astronomyAlpha } = useSkyState.getState()
-    starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : astronomyAlpha
+    // Operator star-brightness knob (the `stars` channel) — multiplies the
+    // physical astronomyAlpha. An AUTHORED control, not a hardcoded ramp; default
+    // 1.0 (no-op). Live-overridable in Stage, baked into scene.json otherwise.
+    const starsCh = starsOverride ?? scene?.stars ?? STARS_DEFAULT_CHANNEL
+    const starsBright = resolveGroupAtMinute(
+      starsCh, useTimeOfDay.getState().getMinuteOfDay(),
+      starsCh?.animated ? getTodSlotMinutes(useTimeOfDay.getState().currentTime) : null,
+      STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
+    ).brightness ?? 1
+    starMat.uniforms.uOpacity.value = (planetariumActive ? 1.0 : astronomyAlpha) * starsBright
     // Twinkle clock — real wall-time so the shimmer is independent of TOD scrub.
     starMat.uniforms.uTime.value = state.clock.elapsedTime
     noiseMat.uniforms.uTime.value = state.clock.elapsedTime
@@ -937,7 +948,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
     // ── Rotate filler stars as rigid group via equatorial→local matrix ──
     if (noiseRef.current) {
-      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.9 : astronomyAlpha * 0.95
+      noiseMat.uniforms.uOpacity.value = (planetariumActive ? 0.9 : astronomyAlpha * 0.95) * starsBright
       const cosLST = Math.cos(lstRad), sinLST = Math.sin(lstRad)
       const cosL = cosLat, sinL = sinLat
       noiseRef.current.matrixAutoUpdate = false
@@ -1001,7 +1012,7 @@ function CelestialBodies({
   skyOverride, ambientOverride, hemiOverride,
   dirSunOverride, dirMoonOverride,
   constellationsOverride, milkyWayOverride,
-  skyGainOverride,
+  skyGainOverride, starsOverride,
 } = {}) {
   // debugLevel: 0 = full, 1 = lights only (no sky/moon/orbs), 2 = ambient only, 3 = nothing (just compute)
   const { currentTime } = useTimeOfDay()
