@@ -113,6 +113,12 @@ const fragment = /* glsl */`
     float dist = depthToDistance(depth);
     float amt  = clamp(blurAmount(dist), 0.0, 1.0);
 
+    // Sky + stars sit at the far plane (they render depthWrite OFF, so their
+    // pixels keep the cleared depth = 1.0). Hold them at INFINITY FOCUS — sharp,
+    // not the far melt — so the bright sky reads as a crisp backdrop and stars
+    // stay as points. Real geometry writes depth < 1.0 and still melts normally.
+    if (depth >= 0.9999) amt = 0.0;
+
     if (uDebug > 0.5) {
       // Verification paint: green = sharp (0), red = full blur. Near field green,
       // mid/far red, the Arch a softer green pocket.
