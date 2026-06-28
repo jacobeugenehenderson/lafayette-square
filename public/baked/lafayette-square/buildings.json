@@ -193,7 +193,7 @@
         4
       ],
       "centroidY": 13.745060139465336,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "F",
@@ -283,7 +283,7 @@
         4
       ],
       "centroidY": 15.87720647277832,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -613,7 +613,7 @@
         4
       ],
       "centroidY": 12.790540026855467,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -703,7 +703,7 @@
         1
       ],
       "centroidY": 12.655514356994628,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "F",
@@ -913,7 +913,7 @@
         4
       ],
       "centroidY": 9.832570323181153,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "F",
@@ -943,7 +943,7 @@
         1
       ],
       "centroidY": 9.78529600982666,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "F",
@@ -973,7 +973,7 @@
         5
       ],
       "centroidY": 8.929162841796876,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "F",
@@ -1063,7 +1063,7 @@
         4
       ],
       "centroidY": 10.083043672180175,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "F",
@@ -1123,7 +1123,7 @@
         2
       ],
       "centroidY": 11.187089594726562,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -1243,7 +1243,7 @@
         1
       ],
       "centroidY": 11.958805375671384,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -1273,7 +1273,7 @@
         4
       ],
       "centroidY": 12.269982284545902,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -1363,7 +1363,7 @@
         4
       ],
       "centroidY": 12.79728872680664,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -2023,7 +2023,7 @@
         5
       ],
       "centroidY": 4.474155406494129,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "J",
@@ -2203,7 +2203,7 @@
         4
       ],
       "centroidY": 7.5829595397949205,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2233,7 +2233,7 @@
         1
       ],
       "centroidY": 5.642391657511394,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "J",
@@ -2293,7 +2293,7 @@
         4
       ],
       "centroidY": 8.156185421752928,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2323,7 +2323,7 @@
         4
       ],
       "centroidY": 8.21297380218506,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2383,7 +2383,7 @@
         4
       ],
       "centroidY": 6.57055339202881,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2413,7 +2413,7 @@
         4
       ],
       "centroidY": 6.731248793029785,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2533,7 +2533,7 @@
         4
       ],
       "centroidY": 8.841198681640627,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2653,7 +2653,7 @@
         4
       ],
       "centroidY": 9.599763537597653,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2773,7 +2773,7 @@
         4
       ],
       "centroidY": 9.49933461151123,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -2803,7 +2803,7 @@
         1
       ],
       "centroidY": 10.993606457519537,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -2863,7 +2863,7 @@
         1
       ],
       "centroidY": 11.341443971252442,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -2893,7 +2893,7 @@
         1
       ],
       "centroidY": 11.262957405090331,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -2923,7 +2923,7 @@
         4
       ],
       "centroidY": 10.072221351623536,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -3073,7 +3073,7 @@
         4
       ],
       "centroidY": 12.602058442687987,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -3193,7 +3193,7 @@
         4
       ],
       "centroidY": 11.062751329040527,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -3223,7 +3223,7 @@
         4
       ],
       "centroidY": 10.65486952819824,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -3583,7 +3583,7 @@
         6
       ],
       "centroidY": 9.201892078653973,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -3643,7 +3643,7 @@
         5
       ],
       "centroidY": 10.667737702636718,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -3943,7 +3943,7 @@
         4
       ],
       "centroidY": 12.215885858154294,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -4183,7 +4183,7 @@
         2
       ],
       "centroidY": 9.232988769531248,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4213,7 +4213,7 @@
         2
       ],
       "centroidY": 9.715796124267573,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4273,7 +4273,7 @@
         1
       ],
       "centroidY": 11.96060918121338,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "J",
@@ -4423,7 +4423,7 @@
         2
       ],
       "centroidY": 18.860470334625244,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4483,7 +4483,7 @@
         2
       ],
       "centroidY": 19.184237085978193,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4513,7 +4513,7 @@
         1
       ],
       "centroidY": 17.801487342834466,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4663,7 +4663,7 @@
         1
       ],
       "centroidY": 21.184052589416503,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4693,7 +4693,7 @@
         4
       ],
       "centroidY": 21.863821713256833,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -4723,7 +4723,7 @@
         1
       ],
       "centroidY": 21.678967111206056,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4873,7 +4873,7 @@
         2
       ],
       "centroidY": 23.35059455871582,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4903,7 +4903,7 @@
         2
       ],
       "centroidY": 23.463898783874516,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -4963,7 +4963,7 @@
         4
       ],
       "centroidY": 21.105064871215824,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -4993,7 +4993,7 @@
         4
       ],
       "centroidY": 20.88290952758789,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -5143,7 +5143,7 @@
         1
       ],
       "centroidY": 21.761621407063803,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -5473,7 +5473,7 @@
         4
       ],
       "centroidY": 20.031939245605468,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -5503,7 +5503,7 @@
         2
       ],
       "centroidY": 18.149486955261235,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -5533,7 +5533,7 @@
         2
       ],
       "centroidY": 17.400062594604485,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -5653,7 +5653,7 @@
         2
       ],
       "centroidY": 17.01498061065674,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -5773,7 +5773,7 @@
         4
       ],
       "centroidY": 16.583939535522465,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -5803,7 +5803,7 @@
         1
       ],
       "centroidY": 18.721527351379397,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -5833,7 +5833,7 @@
         4
       ],
       "centroidY": 17.122596423339843,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -5863,7 +5863,7 @@
         4
       ],
       "centroidY": 15.897128770446777,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -6073,7 +6073,7 @@
         4
       ],
       "centroidY": 14.565994071960448,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -6103,7 +6103,7 @@
         4
       ],
       "centroidY": 13.979339878845213,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -6163,7 +6163,7 @@
         4
       ],
       "centroidY": 13.329123861694335,
-      "baseY": 12.2,
+      "baseY": 10.2,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -6223,7 +6223,7 @@
         4
       ],
       "centroidY": 13.020908197021486,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -6793,7 +6793,7 @@
         2
       ],
       "centroidY": 12.816935661315917,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -6823,7 +6823,7 @@
         4
       ],
       "centroidY": 12.585568252563476,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -6853,7 +6853,7 @@
         4
       ],
       "centroidY": 13.37763720550537,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -6883,7 +6883,7 @@
         4
       ],
       "centroidY": 13.653230355834957,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -6943,7 +6943,7 @@
         4
       ],
       "centroidY": 14.44939259643555,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -6973,7 +6973,7 @@
         4
       ],
       "centroidY": 14.751133578491212,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -7063,7 +7063,7 @@
         4
       ],
       "centroidY": 14.159573800659174,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -7093,7 +7093,7 @@
         4
       ],
       "centroidY": 13.916164553833001,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -7213,7 +7213,7 @@
         2
       ],
       "centroidY": 13.594020719401042,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -7243,7 +7243,7 @@
         2
       ],
       "centroidY": 13.325338723754884,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -7303,7 +7303,7 @@
         5
       ],
       "centroidY": 14.318626750488287,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -7693,7 +7693,7 @@
         2
       ],
       "centroidY": 15.440816006469726,
-      "baseY": 8,
+      "baseY": 6.2,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -7813,7 +7813,7 @@
         1
       ],
       "centroidY": 16.037498854064943,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -7993,7 +7993,7 @@
         2
       ],
       "centroidY": 18.1792137802124,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -8023,7 +8023,7 @@
         2
       ],
       "centroidY": 18.202283377075197,
-      "baseY": 8.1,
+      "baseY": 6.3,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -8053,7 +8053,7 @@
         1
       ],
       "centroidY": 16.442398459472663,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -8083,7 +8083,7 @@
         1
       ],
       "centroidY": 16.542582327270505,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -8353,7 +8353,7 @@
         4
       ],
       "centroidY": 18.943827081298828,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "BC",
@@ -8383,7 +8383,7 @@
         4
       ],
       "centroidY": 21.311816119384765,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -8653,7 +8653,7 @@
         4
       ],
       "centroidY": 21.905064443969728,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -8683,7 +8683,7 @@
         4
       ],
       "centroidY": 22.04056756591797,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -9013,7 +9013,7 @@
         4
       ],
       "centroidY": 19.6727928894043,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -9073,7 +9073,7 @@
         4
       ],
       "centroidY": 19.72697169342041,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -9103,7 +9103,7 @@
         2
       ],
       "centroidY": 19.999619948032922,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9133,7 +9133,7 @@
         2
       ],
       "centroidY": 20.1901110735212,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9163,7 +9163,7 @@
         2
       ],
       "centroidY": 21.216425664062502,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9223,7 +9223,7 @@
         1
       ],
       "centroidY": 21.135411369323734,
-      "baseY": 8.1,
+      "baseY": 6.3,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9253,7 +9253,7 @@
         1
       ],
       "centroidY": 20.30858223724365,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9283,7 +9283,7 @@
         1
       ],
       "centroidY": 20.938958772277832,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9313,7 +9313,7 @@
         2
       ],
       "centroidY": 20.6135399230957,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9343,7 +9343,7 @@
         1
       ],
       "centroidY": 20.778254312133786,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9433,7 +9433,7 @@
         2
       ],
       "centroidY": 21.499890913391113,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9463,7 +9463,7 @@
         1
       ],
       "centroidY": 21.288081878662112,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -9853,7 +9853,7 @@
         5
       ],
       "centroidY": 21.30270283813477,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -10213,7 +10213,7 @@
         1
       ],
       "centroidY": 25.460743344116214,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -10243,7 +10243,7 @@
         2
       ],
       "centroidY": 24.862719238281255,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -10273,7 +10273,7 @@
         4
       ],
       "centroidY": 24.18439471740723,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -10303,7 +10303,7 @@
         4
       ],
       "centroidY": 24.078474334716795,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -10633,7 +10633,7 @@
         1
       ],
       "centroidY": 23.858886425781247,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "F",
@@ -10723,7 +10723,7 @@
         4
       ],
       "centroidY": 24.312393472290033,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "F",
@@ -10783,7 +10783,7 @@
         1
       ],
       "centroidY": 23.513936335754394,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -10933,7 +10933,7 @@
         4
       ],
       "centroidY": 22.98669967956543,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -10993,7 +10993,7 @@
         4
       ],
       "centroidY": 23.91885691680908,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11023,7 +11023,7 @@
         2
       ],
       "centroidY": 22.701071793365482,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -11053,7 +11053,7 @@
         4
       ],
       "centroidY": 23.003300971984867,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11083,7 +11083,7 @@
         4
       ],
       "centroidY": 23.127606132507324,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11113,7 +11113,7 @@
         4
       ],
       "centroidY": 23.27808976745606,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11143,7 +11143,7 @@
         4
       ],
       "centroidY": 22.97292739257812,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11443,7 +11443,7 @@
         2
       ],
       "centroidY": 22.354672976684572,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -11473,7 +11473,7 @@
         4
       ],
       "centroidY": 23.20453348236084,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11593,7 +11593,7 @@
         4
       ],
       "centroidY": 22.79648764038086,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11803,7 +11803,7 @@
         2
       ],
       "centroidY": 24.165734832763675,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -11863,7 +11863,7 @@
         4
       ],
       "centroidY": 23.73820503234863,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11893,7 +11893,7 @@
         4
       ],
       "centroidY": 23.9823786315918,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -11923,7 +11923,7 @@
         4
       ],
       "centroidY": 25.007934025573732,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12103,7 +12103,7 @@
         4
       ],
       "centroidY": 23.293308096313478,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12253,7 +12253,7 @@
         1
       ],
       "centroidY": 23.60516981201172,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -12283,7 +12283,7 @@
         1
       ],
       "centroidY": 23.73776189575195,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -12403,7 +12403,7 @@
         4
       ],
       "centroidY": 19.63429490966797,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12433,7 +12433,7 @@
         4
       ],
       "centroidY": 20.45187241363525,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12463,7 +12463,7 @@
         4
       ],
       "centroidY": 20.012255117797856,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12493,7 +12493,7 @@
         4
       ],
       "centroidY": 20.932816755676274,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12523,7 +12523,7 @@
         4
       ],
       "centroidY": 18.769526155090333,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12553,7 +12553,7 @@
         4
       ],
       "centroidY": 19.238477513122557,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12583,7 +12583,7 @@
         1
       ],
       "centroidY": 19.00390388183594,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -12613,7 +12613,7 @@
         4
       ],
       "centroidY": 21.42912501220703,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12793,7 +12793,7 @@
         4
       ],
       "centroidY": 22.024634609985355,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12823,7 +12823,7 @@
         4
       ],
       "centroidY": 19.20094456481934,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12853,7 +12853,7 @@
         4
       ],
       "centroidY": 19.228974540710453,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12943,7 +12943,7 @@
         4
       ],
       "centroidY": 17.483503158569334,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -12973,7 +12973,7 @@
         4
       ],
       "centroidY": 18.19725953979492,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13093,7 +13093,7 @@
         4
       ],
       "centroidY": 17.13939354553223,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13183,7 +13183,7 @@
         4
       ],
       "centroidY": 15.775815129089354,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13333,7 +13333,7 @@
         4
       ],
       "centroidY": 14.357824124145512,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "BF",
@@ -13363,7 +13363,7 @@
         4
       ],
       "centroidY": 14.712001828002927,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13393,7 +13393,7 @@
         4
       ],
       "centroidY": 14.812567851257324,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13453,7 +13453,7 @@
         4
       ],
       "centroidY": 14.437965942382817,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13513,7 +13513,7 @@
         4
       ],
       "centroidY": 15.132418014526365,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13573,7 +13573,7 @@
         4
       ],
       "centroidY": 15.418600241088871,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13603,7 +13603,7 @@
         4
       ],
       "centroidY": 16.47212951049805,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13633,7 +13633,7 @@
         4
       ],
       "centroidY": 16.853746697998044,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13663,7 +13663,7 @@
         1
       ],
       "centroidY": 15.75151671752929,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -13693,7 +13693,7 @@
         1
       ],
       "centroidY": 15.52610641174316,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -13723,7 +13723,7 @@
         2
       ],
       "centroidY": 15.28000231831868,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -13753,7 +13753,7 @@
         4
       ],
       "centroidY": 15.917939735412599,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -13933,7 +13933,7 @@
         5
       ],
       "centroidY": 19.229332972412113,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14173,7 +14173,7 @@
         4
       ],
       "centroidY": 16.21794188537598,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14203,7 +14203,7 @@
         2
       ],
       "centroidY": 16.183192291259765,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -14233,7 +14233,7 @@
         2
       ],
       "centroidY": 16.178283041381835,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -14263,7 +14263,7 @@
         4
       ],
       "centroidY": 17.54527124176025,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14293,7 +14293,7 @@
         4
       ],
       "centroidY": 17.76172137298584,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14323,7 +14323,7 @@
         1
       ],
       "centroidY": 18.302147537231445,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -14413,7 +14413,7 @@
         4
       ],
       "centroidY": 20.096719201660154,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14443,7 +14443,7 @@
         4
       ],
       "centroidY": 20.432278875732422,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14533,7 +14533,7 @@
         4
       ],
       "centroidY": 20.897640576171877,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14563,7 +14563,7 @@
         4
       ],
       "centroidY": 20.666757571411136,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14593,7 +14593,7 @@
         4
       ],
       "centroidY": 21.24037982788086,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14863,7 +14863,7 @@
         1
       ],
       "centroidY": 21.011600491333006,
-      "baseY": 8.3,
+      "baseY": 6.5,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -14893,7 +14893,7 @@
         4
       ],
       "centroidY": 20.748348715209964,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -14953,7 +14953,7 @@
         5
       ],
       "centroidY": 20.357426556396483,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15013,7 +15013,7 @@
         4
       ],
       "centroidY": 20.040515301513672,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15043,7 +15043,7 @@
         4
       ],
       "centroidY": 19.771803591918946,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15283,7 +15283,7 @@
         4
       ],
       "centroidY": 18.710294232177734,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15433,7 +15433,7 @@
         4
       ],
       "centroidY": 17.95030526428222,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15463,7 +15463,7 @@
         4
       ],
       "centroidY": 17.68866725769043,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15493,7 +15493,7 @@
         1
       ],
       "centroidY": 16.9849008026123,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -15523,7 +15523,7 @@
         1
       ],
       "centroidY": 17.004527584838865,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -15553,7 +15553,7 @@
         4
       ],
       "centroidY": 16.055798519897458,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15733,7 +15733,7 @@
         4
       ],
       "centroidY": 16.269598727416994,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15883,7 +15883,7 @@
         4
       ],
       "centroidY": 17.72818725891113,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -15913,7 +15913,7 @@
         1
       ],
       "centroidY": 18.5322256262207,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -16033,7 +16033,7 @@
         4
       ],
       "centroidY": 17.974108779907226,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -16153,7 +16153,7 @@
         1
       ],
       "centroidY": 17.49905643615723,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -16393,7 +16393,7 @@
         1
       ],
       "centroidY": 16.372538781738285,
-      "baseY": 8.200000000000001,
+      "baseY": 6.4,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -16453,7 +16453,7 @@
         4
       ],
       "centroidY": 16.72306945037842,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -16573,7 +16573,7 @@
         2
       ],
       "centroidY": 17.627753087361654,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -16663,7 +16663,7 @@
         1
       ],
       "centroidY": 18.242410800170898,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -16693,7 +16693,7 @@
         1
       ],
       "centroidY": 18.16413794148763,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -16723,7 +16723,7 @@
         1
       ],
       "centroidY": 18.298177708740234,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -16753,7 +16753,7 @@
         1
       ],
       "centroidY": 18.450904272460935,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -16783,7 +16783,7 @@
         1
       ],
       "centroidY": 18.52815576782227,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -16813,7 +16813,7 @@
         1
       ],
       "centroidY": 18.685758839416508,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -16843,7 +16843,7 @@
         1
       ],
       "centroidY": 18.54831309814453,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -17023,7 +17023,7 @@
         1
       ],
       "centroidY": 18.686250621032716,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -17053,7 +17053,7 @@
         1
       ],
       "centroidY": 18.654035078430173,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -17083,7 +17083,7 @@
         1
       ],
       "centroidY": 18.96772376302083,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -17473,7 +17473,7 @@
         6
       ],
       "centroidY": 19.70178162943522,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -17653,7 +17653,7 @@
         4
       ],
       "centroidY": 19.870490257263185,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -17743,7 +17743,7 @@
         4
       ],
       "centroidY": 20.937948150634764,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -17803,7 +17803,7 @@
         5
       ],
       "centroidY": 20.528348271484376,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -17863,7 +17863,7 @@
         4
       ],
       "centroidY": 20.557530548095706,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -17893,7 +17893,7 @@
         1
       ],
       "centroidY": 21.194787670898435,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -17923,7 +17923,7 @@
         4
       ],
       "centroidY": 21.31386181640625,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18013,7 +18013,7 @@
         4
       ],
       "centroidY": 21.40489044189453,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18043,7 +18043,7 @@
         4
       ],
       "centroidY": 21.1610446105957,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18133,7 +18133,7 @@
         4
       ],
       "centroidY": 21.815222518920898,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18163,7 +18163,7 @@
         4
       ],
       "centroidY": 21.6870931274414,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18193,7 +18193,7 @@
         4
       ],
       "centroidY": 21.124627459716795,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18253,7 +18253,7 @@
         1
       ],
       "centroidY": 20.302465010070804,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -18343,7 +18343,7 @@
         2
       ],
       "centroidY": 20.840899937438962,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -18403,7 +18403,7 @@
         2
       ],
       "centroidY": 21.916247941589358,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -18433,7 +18433,7 @@
         2
       ],
       "centroidY": 21.602070748901365,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -18493,7 +18493,7 @@
         4
       ],
       "centroidY": 21.81348601074219,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18523,7 +18523,7 @@
         4
       ],
       "centroidY": 22.639237045288088,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18553,7 +18553,7 @@
         4
       ],
       "centroidY": 22.5497988571167,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -18733,7 +18733,7 @@
         2
       ],
       "centroidY": 20.983581324005133,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "C",
@@ -18763,7 +18763,7 @@
         4
       ],
       "centroidY": 21.15991952209474,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "C",
@@ -19003,7 +19003,7 @@
         2
       ],
       "centroidY": 21.518101306152342,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "E",
@@ -19033,7 +19033,7 @@
         2
       ],
       "centroidY": 22.375639470418292,
-      "baseY": 7.8999999999999995,
+      "baseY": 6.1,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "F",
@@ -19063,7 +19063,7 @@
         4
       ],
       "centroidY": 23.26215207824707,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -19213,7 +19213,7 @@
         4
       ],
       "centroidY": 22.813406086730957,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -19273,7 +19273,7 @@
         2
       ],
       "centroidY": 23.794590979003907,
-      "baseY": 8.4,
+      "baseY": 6.6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -19303,7 +19303,7 @@
         2
       ],
       "centroidY": 23.71569958496094,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -19333,7 +19333,7 @@
         4
       ],
       "centroidY": 23.166002133178708,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -19363,7 +19363,7 @@
         1
       ],
       "centroidY": 23.211753803710938,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -19393,7 +19393,7 @@
         4
       ],
       "centroidY": 23.842979037475587,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -19423,7 +19423,7 @@
         4
       ],
       "centroidY": 23.81260043334961,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -19483,7 +19483,7 @@
         2
       ],
       "centroidY": 23.51202731323243,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -19543,7 +19543,7 @@
         1
       ],
       "centroidY": 22.816809513854977,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -19603,7 +19603,7 @@
         4
       ],
       "centroidY": 22.325620321655272,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -19633,7 +19633,7 @@
         2
       ],
       "centroidY": 22.3857432434082,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -19663,7 +19663,7 @@
         2
       ],
       "centroidY": 21.197901927185054,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "A",
@@ -19723,7 +19723,7 @@
         5
       ],
       "centroidY": 21.712543350830078,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -19753,7 +19753,7 @@
         4
       ],
       "centroidY": 21.932000059509285,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -19783,7 +19783,7 @@
         4
       ],
       "centroidY": 22.096898202514645,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -19813,7 +19813,7 @@
         4
       ],
       "centroidY": 21.877289349365242,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -19873,7 +19873,7 @@
         4
       ],
       "centroidY": 21.437767498779294,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -19903,7 +19903,7 @@
         4
       ],
       "centroidY": 20.75443872833252,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -19933,7 +19933,7 @@
         1
       ],
       "centroidY": 20.853887426757808,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "A",
@@ -19963,7 +19963,7 @@
         4
       ],
       "centroidY": 20.620051797485353,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -19993,7 +19993,7 @@
         1
       ],
       "centroidY": 20.456756742858886,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "A",
@@ -20023,7 +20023,7 @@
         2
       ],
       "centroidY": 20.617138357543947,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "A",
@@ -20083,7 +20083,7 @@
         2
       ],
       "centroidY": 20.53139894180298,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "A",
@@ -20113,7 +20113,7 @@
         4
       ],
       "centroidY": 20.328153993225097,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -20143,7 +20143,7 @@
         4
       ],
       "centroidY": 21.374262837219238,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "G",
@@ -20173,7 +20173,7 @@
         4
       ],
       "centroidY": 21.339111953735355,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "G",
@@ -20203,7 +20203,7 @@
         1
       ],
       "centroidY": 20.908610559082035,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "A",
@@ -20233,7 +20233,7 @@
         4
       ],
       "centroidY": 21.12628717956543,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -20263,7 +20263,7 @@
         4
       ],
       "centroidY": 21.289926000976564,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "G",
@@ -20293,7 +20293,7 @@
         2
       ],
       "centroidY": 20.555464418538413,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "A",
@@ -20323,7 +20323,7 @@
         4
       ],
       "centroidY": 20.838160824584957,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -20353,7 +20353,7 @@
         4
       ],
       "centroidY": 20.909544155883793,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "A",
@@ -20623,7 +20623,7 @@
         4
       ],
       "centroidY": 21.550110488891605,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "G",
@@ -20653,7 +20653,7 @@
         5
       ],
       "centroidY": 21.877502056884765,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "G",
@@ -20983,7 +20983,7 @@
         1
       ],
       "centroidY": 23.254710449218752,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -21253,7 +21253,7 @@
         5
       ],
       "centroidY": 23.14965650390625,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -21313,7 +21313,7 @@
         4
       ],
       "centroidY": 21.831923435974122,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -21373,7 +21373,7 @@
         4
       ],
       "centroidY": 22.112824099731444,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -21403,7 +21403,7 @@
         4
       ],
       "centroidY": 22.137388047790527,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -21463,7 +21463,7 @@
         4
       ],
       "centroidY": 22.971911280822756,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -21493,7 +21493,7 @@
         4
       ],
       "centroidY": 23.07282600708008,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -21523,7 +21523,7 @@
         4
       ],
       "centroidY": 22.99687552642822,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -21763,7 +21763,7 @@
         1
       ],
       "centroidY": 26.05249227905274,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -21973,7 +21973,7 @@
         2
       ],
       "centroidY": 23.95248116607666,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -22033,7 +22033,7 @@
         1
       ],
       "centroidY": 25.01088018341064,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -22063,7 +22063,7 @@
         1
       ],
       "centroidY": 25.459297221374516,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -22093,7 +22093,7 @@
         4
       ],
       "centroidY": 24.886451046752924,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -22363,7 +22363,7 @@
         5
       ],
       "centroidY": 26.892115386962892,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -22543,7 +22543,7 @@
         4
       ],
       "centroidY": 27.502655824279785,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -22573,7 +22573,7 @@
         4
       ],
       "centroidY": 27.512850592041012,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -22603,7 +22603,7 @@
         4
       ],
       "centroidY": 27.728080010986332,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -22633,7 +22633,7 @@
         4
       ],
       "centroidY": 27.727560554504393,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -22723,7 +22723,7 @@
         4
       ],
       "centroidY": 28.05589704589844,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -22993,7 +22993,7 @@
         1
       ],
       "centroidY": 27.607770101928715,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23023,7 +23023,7 @@
         1
       ],
       "centroidY": 27.631248501586917,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23053,7 +23053,7 @@
         1
       ],
       "centroidY": 27.355865417480473,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23113,7 +23113,7 @@
         4
       ],
       "centroidY": 26.386223526000975,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23173,7 +23173,7 @@
         4
       ],
       "centroidY": 27.011868795776365,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23203,7 +23203,7 @@
         4
       ],
       "centroidY": 27.375025659179688,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23233,7 +23233,7 @@
         4
       ],
       "centroidY": 27.413253887939447,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23263,7 +23263,7 @@
         1
       ],
       "centroidY": 27.419656260681148,
-      "baseY": 8.3,
+      "baseY": 6.5,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23323,7 +23323,7 @@
         4
       ],
       "centroidY": 28.183950901794432,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23353,7 +23353,7 @@
         2
       ],
       "centroidY": 28.498433656311033,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23443,7 +23443,7 @@
         1
       ],
       "centroidY": 26.756847994995116,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23473,7 +23473,7 @@
         4
       ],
       "centroidY": 27.35142810363769,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23533,7 +23533,7 @@
         5
       ],
       "centroidY": 26.782630534667977,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23563,7 +23563,7 @@
         4
       ],
       "centroidY": 26.517601086425785,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23593,7 +23593,7 @@
         1
       ],
       "centroidY": 26.71402484741211,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "stucco",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23623,7 +23623,7 @@
         1
       ],
       "centroidY": 26.389197631835934,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23653,7 +23653,7 @@
         1
       ],
       "centroidY": 26.61902138519287,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23713,7 +23713,7 @@
         4
       ],
       "centroidY": 26.92741935272217,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23773,7 +23773,7 @@
         4
       ],
       "centroidY": 27.06802413330078,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23803,7 +23803,7 @@
         4
       ],
       "centroidY": 27.881231369018558,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23833,7 +23833,7 @@
         4
       ],
       "centroidY": 28.015094003295896,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23863,7 +23863,7 @@
         4
       ],
       "centroidY": 28.147720101928712,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23893,7 +23893,7 @@
         4
       ],
       "centroidY": 26.88844939880371,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -23923,7 +23923,7 @@
         2
       ],
       "centroidY": 26.18471737976074,
-      "baseY": 8,
+      "baseY": 6.2,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -23953,7 +23953,7 @@
         2
       ],
       "centroidY": 26.091468890380856,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -24013,7 +24013,7 @@
         4
       ],
       "centroidY": 26.026202938842776,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -24073,7 +24073,7 @@
         2
       ],
       "centroidY": 23.773659172566735,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "F",
@@ -24103,7 +24103,7 @@
         4
       ],
       "centroidY": 26.070178387451175,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -24493,7 +24493,7 @@
         4
       ],
       "centroidY": 25.249415980529783,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -24733,7 +24733,7 @@
         4
       ],
       "centroidY": 25.633660237121575,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -24763,7 +24763,7 @@
         2
       ],
       "centroidY": 25.42549269205729,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "D",
@@ -25303,7 +25303,7 @@
         1
       ],
       "centroidY": 23.576864614868168,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25333,7 +25333,7 @@
         1
       ],
       "centroidY": 23.417677731323245,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25363,7 +25363,7 @@
         1
       ],
       "centroidY": 23.157604315185548,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25393,7 +25393,7 @@
         1
       ],
       "centroidY": 23.294228010559085,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25423,7 +25423,7 @@
         4
       ],
       "centroidY": 23.508578273010247,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -25453,7 +25453,7 @@
         2
       ],
       "centroidY": 23.253248245239256,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25483,7 +25483,7 @@
         1
       ],
       "centroidY": 24.027234843953448,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25513,7 +25513,7 @@
         6
       ],
       "centroidY": 23.80028608805338,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -25543,7 +25543,7 @@
         1
       ],
       "centroidY": 23.777288862609865,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25573,7 +25573,7 @@
         4
       ],
       "centroidY": 23.899829376220705,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -25603,7 +25603,7 @@
         2
       ],
       "centroidY": 24.298241156005858,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -25753,7 +25753,7 @@
         4
       ],
       "centroidY": 25.601249513244625,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -25783,7 +25783,7 @@
         4
       ],
       "centroidY": 25.479373683166504,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -25813,7 +25813,7 @@
         2
       ],
       "centroidY": 25.102911022949222,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -26323,7 +26323,7 @@
         4
       ],
       "centroidY": 26.815190351867685,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -26353,7 +26353,7 @@
         4
       ],
       "centroidY": 27.027495291137694,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -26383,7 +26383,7 @@
         2
       ],
       "centroidY": 26.100330833435052,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -26413,7 +26413,7 @@
         1
       ],
       "centroidY": 25.843654740905762,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -26443,7 +26443,7 @@
         4
       ],
       "centroidY": 25.534229751586913,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -26533,7 +26533,7 @@
         4
       ],
       "centroidY": 27.055982833862306,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -26563,7 +26563,7 @@
         4
       ],
       "centroidY": 27.42025641937256,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -26623,7 +26623,7 @@
         2
       ],
       "centroidY": 28.80569338684082,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -26683,7 +26683,7 @@
         4
       ],
       "centroidY": 28.982225598144534,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -26713,7 +26713,7 @@
         4
       ],
       "centroidY": 28.34810100402832,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -27073,7 +27073,7 @@
         4
       ],
       "centroidY": 27.95243022460938,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -27133,7 +27133,7 @@
         1
       ],
       "centroidY": 28.024911886596676,
-      "baseY": 8.3,
+      "baseY": 6.5,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27193,7 +27193,7 @@
         4
       ],
       "centroidY": 28.44099971466064,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -27223,7 +27223,7 @@
         2
       ],
       "centroidY": 28.380076755523678,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "stone",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27283,7 +27283,7 @@
         2
       ],
       "centroidY": 28.862393645222983,
-      "baseY": 8,
+      "baseY": 6.2,
       "wallMaterial": "stucco",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27313,7 +27313,7 @@
         1
       ],
       "centroidY": 28.59522264099121,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27343,7 +27343,7 @@
         2
       ],
       "centroidY": 29.060649455261228,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27373,7 +27373,7 @@
         2
       ],
       "centroidY": 28.778515669759113,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27403,7 +27403,7 @@
         2
       ],
       "centroidY": 29.257450672403973,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27493,7 +27493,7 @@
         4
       ],
       "centroidY": 29.160014108276364,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -27583,7 +27583,7 @@
         2
       ],
       "centroidY": 29.359917158508303,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27613,7 +27613,7 @@
         2
       ],
       "centroidY": 29.344346990966798,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27643,7 +27643,7 @@
         2
       ],
       "centroidY": 29.37284143066406,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27673,7 +27673,7 @@
         2
       ],
       "centroidY": 29.399639860534666,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27703,7 +27703,7 @@
         1
       ],
       "centroidY": 30.090512429809568,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -27853,7 +27853,7 @@
         4
       ],
       "centroidY": 29.075344242858886,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -28063,7 +28063,7 @@
         1
       ],
       "centroidY": 30.61290458068848,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -28423,7 +28423,7 @@
         4
       ],
       "centroidY": 31.049271070861817,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -28453,7 +28453,7 @@
         4
       ],
       "centroidY": 30.6726483581543,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -28483,7 +28483,7 @@
         8
       ],
       "centroidY": 30.05286782455444,
-      "baseY": 12.1,
+      "baseY": 10.1,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -28543,7 +28543,7 @@
         4
       ],
       "centroidY": 28.75817701416016,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -28573,7 +28573,7 @@
         5
       ],
       "centroidY": 28.425996748046874,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -28603,7 +28603,7 @@
         4
       ],
       "centroidY": 28.342839126586917,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -28633,7 +28633,7 @@
         1
       ],
       "centroidY": 28.227649804687495,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -28663,7 +28663,7 @@
         2
       ],
       "centroidY": 28.81778067474366,
-      "baseY": 7.499999999999999,
+      "baseY": 5.699999999999999,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -28693,7 +28693,7 @@
         2
       ],
       "centroidY": 28.866858321126305,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -29443,7 +29443,7 @@
         2
       ],
       "centroidY": 25.560889018554683,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -29473,7 +29473,7 @@
         4
       ],
       "centroidY": 24.656308670043945,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "F",
@@ -29533,7 +29533,7 @@
         2
       ],
       "centroidY": 25.206990155029295,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -29563,7 +29563,7 @@
         1
       ],
       "centroidY": 24.00118350219727,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -29593,7 +29593,7 @@
         1
       ],
       "centroidY": 24.13069866027832,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -29623,7 +29623,7 @@
         2
       ],
       "centroidY": 24.308716470336915,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -29653,7 +29653,7 @@
         2
       ],
       "centroidY": 24.24509436340332,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -29713,7 +29713,7 @@
         4
       ],
       "centroidY": 25.88244859313965,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -29923,7 +29923,7 @@
         4
       ],
       "centroidY": 26.406222863769532,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "stone",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -30013,7 +30013,7 @@
         2
       ],
       "centroidY": 23.385366488647456,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -30163,7 +30163,7 @@
         2
       ],
       "centroidY": 22.970272357177734,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -30283,7 +30283,7 @@
         2
       ],
       "centroidY": 22.743499555460616,
-      "baseY": 7.3999999999999995,
+      "baseY": 5.6,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -30313,7 +30313,7 @@
         1
       ],
       "centroidY": 22.46113679983956,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "G",
@@ -30343,7 +30343,7 @@
         2
       ],
       "centroidY": 23.246061096191404,
-      "baseY": 14.100000000000001,
+      "baseY": 12.600000000000001,
       "wallMaterial": "brick_weathered",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -30463,7 +30463,7 @@
         4
       ],
       "centroidY": 24.523097680664065,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -30493,7 +30493,7 @@
         4
       ],
       "centroidY": 22.523090438842775,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "DB",
@@ -30553,7 +30553,7 @@
         1
       ],
       "centroidY": 23.60802682800293,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -30583,7 +30583,7 @@
         4
       ],
       "centroidY": 24.059279960632328,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -30763,7 +30763,7 @@
         4
       ],
       "centroidY": 23.486759129333496,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -30883,7 +30883,7 @@
         4
       ],
       "centroidY": 21.88544353942871,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -30913,7 +30913,7 @@
         4
       ],
       "centroidY": 22.78636120758057,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -30943,7 +30943,7 @@
         4
       ],
       "centroidY": 21.985057751464844,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -30973,7 +30973,7 @@
         1
       ],
       "centroidY": 21.38300351969401,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "D",
@@ -31123,7 +31123,7 @@
         4
       ],
       "centroidY": 22.39852534484863,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -31153,7 +31153,7 @@
         4
       ],
       "centroidY": 20.772140313720705,
-      "baseY": 12,
+      "baseY": 10,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "D",
@@ -31273,7 +31273,7 @@
         1
       ],
       "centroidY": 20.710545289611815,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -31333,7 +31333,7 @@
         2
       ],
       "centroidY": 20.119812380981447,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -31363,7 +31363,7 @@
         4
       ],
       "centroidY": 20.348208477783196,
-      "baseY": 15.5,
+      "baseY": 13,
       "wallMaterial": "brick_red",
       "roofMaterial": "slate",
       "zoning": "B",
@@ -31393,7 +31393,7 @@
         1
       ],
       "centroidY": 20.140824368286133,
-      "baseY": 7.8,
+      "baseY": 6,
       "wallMaterial": "brick_red",
       "roofMaterial": "metal",
       "zoning": "B",
@@ -31453,7 +31453,7 @@
         2
       ],
       "centroidY": 16.25065533752442,
-      "baseY": 11.100000000000001,
+      "baseY": 9.600000000000001,
       "wallMaterial": "wood_siding",
       "roofMaterial": "metal",
       "zoning": "F",

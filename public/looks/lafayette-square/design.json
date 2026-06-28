@@ -354,17 +354,18 @@
     "values": {
       "night": {
         "intensity": 5.34,
-        "threshold": 0.03,
+        "threshold": 0.01,
         "smoothing": 0.06,
         "warmCool": 0.5,
         "spread": 0.34
       },
       "noon": {
-        "intensity": 3.1,
-        "threshold": 0.9,
+        "intensity": 1.84,
+        "threshold": 0,
         "smoothing": 0.96,
-        "warmCool": 0,
-        "blend": 0
+        "warmCool": 0.5,
+        "blend": 0,
+        "spread": 0.76
       },
       "dawn": {
         "intensity": 0.7,
@@ -401,13 +402,16 @@
     "animated": "tod",
     "values": {
       "noon": {
-        "value": 0.56
+        "value": 0.4
       },
       "dawn": {
         "value": 0.72
       },
       "sunrise": {
         "value": 0.66
+      },
+      "golden": {
+        "value": 0.7
       }
     }
   },
@@ -494,8 +498,8 @@
         "softness": 0.16
       },
       "noon": {
-        "enabled": 1,
-        "blur": 0.28,
+        "enabled": 0,
+        "blur": 0.08,
         "focus": 320,
         "heroBlur": 0.02,
         "softness": 0.16
@@ -519,12 +523,17 @@
     }
   },
   "neon": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "core": 0.2,
-      "tube": 0.2,
-      "bleed": 0.5,
-      "emissive": 8,
-      "tubeRadius": 0.1
+      "golden": {
+        "core": 0.2,
+        "tube": 0.2,
+        "bleed": 0.5,
+        "emissive": 8,
+        "tubeRadius": 0.5
+      }
     }
   },
   "sky": {
@@ -534,7 +543,7 @@
     "animated": "tod",
     "values": {
       "noon": {
-        "value": 1
+        "value": 1.5
       },
       "dawn": {
         "value": 1.8
@@ -564,8 +573,13 @@
     }
   },
   "dirSun": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "value": 1
+      "noon": {
+        "value": 2
+      }
     }
   },
   "dirMoon": {

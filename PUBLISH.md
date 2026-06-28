@@ -39,7 +39,8 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 | What changed | What to do |
 |---|---|
-| Frontend code only | `git push` — Actions deploys automatically |
+| Frontend → **staging** | commit, then `git push origin <branch>:cartograph-looks-pass-ab` → `staging.yml` deploys staging |
+| Promote **staging → prod** | once staging is verified: `git push origin <branch>:main` → `deploy.yml` deploys lafayette-square.com (clean fast-forward; main + trunk stay a few commits apart) |
 | Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
 | Both | Do both. Order doesn't matter. |
 | Worker only | Update in Cloudflare dashboard |
@@ -49,10 +50,12 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 ## 1. Frontend (GitHub Pages)
 
-Deploys automatically on every push to `main`.
+Deploys automatically on every push to `main`. **Per the working loop (strategy B, 2026-06-26), promote to `main` only after verifying on staging** (`cartograph-looks-pass-ab`) — see the Quick reference above + [`cartograph/OPERATIONS.md §Save → ship`](cartograph/OPERATIONS.md). Both branches are slab-era and stay a few commits apart, so prod promotion is a clean fast-forward.
 
 ```bash
-git add <files> && git commit -m "description" && git push
+# author on the working branch, then:
+git push origin <branch>:cartograph-looks-pass-ab   # → staging (verify here first)
+git push origin <branch>:main                        # → prod, once staging looks right
 ```
 
 The GitHub Actions workflow (`.github/workflows/deploy.yml`) builds with Vite and deploys `dist/` via `actions/deploy-pages@v4`.
