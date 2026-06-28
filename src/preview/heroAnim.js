@@ -103,12 +103,20 @@ export function heroAnimPose(t01, keyframes, motion, outPos, outTgt) {
 // `elapsedSec` — seconds since mount; `motion` = { period, easing, speed?,
 // tension? }; writes the camera position into `outPos` (THREE.Vector3).
 // Returns { fov }.
+// Per-entry random phase offset so each visit to the Hero view picks up at a
+// DIFFERENT point in the pan. Set on hero entry by the consumer (production
+// CameraRig calls randomizeHeroStart). Module-scoped → per app instance, so it
+// never randomizes Stage/Preview authoring unless they opt in (default 0 =
+// no shift, the deterministic pan).
+let _startOffsetSec = 0
+export function randomizeHeroStart(period = 720) { _startOffsetSec = Math.random() * period }
+
 const _kfPositions = []
 export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos) {
   const period = motion.period || 720
   const speed = motion.speed || 1
   const wave = WAVES[motion.easing] || WAVES.sine
-  const t = wave(((elapsedSec * speed) % period) / period)
+  const t = wave((((elapsedSec + _startOffsetSec) * speed) % period) / period)
 
   if (keyframes.length <= 1) {
     const p = keyframes[0]?.position || [0, 0, 0]

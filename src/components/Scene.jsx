@@ -31,7 +31,7 @@ import Terrain from './Terrain'
 import InstancedTrees from './InstancedTrees'
 import { PostProcessing, StageShadows, StageFog, LampGlowDriver } from './PostProcessing.jsx'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { heroKeyframeAnim } from '../preview/heroAnim.js'
+import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { resolveHeroSubject } from '../lib/heroSubject.js'
@@ -561,6 +561,9 @@ function CameraRig() {
         const fov = entering === 'hero' ? heroFov : p.fov
         const dur = entering === 'hero' ? SHOT_TRANSITION_MS.hero : SHOT_TRANSITION_MS.street
         transToHero.current = entering === 'hero'
+        // Pick a random point in the pan on each Hero entry → a returning user
+        // sees a different part of the arc, not always the same start.
+        if (entering === 'hero') randomizeHeroStart(heroMotion.period)
         beginTransition(p.position, p.target, fov, dur, [0, 1, 0])
       }
     }
