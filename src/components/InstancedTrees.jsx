@@ -309,7 +309,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, forceTreesOn = true }) {
   const ref = useRef(null)
   const camera = useThree(s => s.camera)
 
@@ -351,7 +351,13 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   const _frMat = useMemo(() => new THREE.Matrix4(), [])
   useFrame(() => {
     const im = ref.current
-    if (!im || !cullSphere) return
+    if (!im) return
+    // Force-on in ALL playback (Stage / Preview / Production) — the per-tile cull
+    // over-culled and made trees "not reliably render" (Jacob 2026-06-27); render
+    // reliability wins over the cull's tri savings. Pass forceTreesOn={false} to
+    // re-enable the frustum cull for a future perf context (e.g. a phone tier).
+    if (forceTreesOn) { im.visible = true; return }
+    if (!cullSphere) return
     _frMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
     _frustum.setFromProjectionMatrix(_frMat)
     im.visible = _frustum.intersectsSphere(cullSphere)
