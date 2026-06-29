@@ -17,9 +17,15 @@
  *   browse:      0            — flat map
  *   planetarium: 1            — life-size street level
  *
- * V_EXAG itself lives in src/lib/terrainCommon.js (currently 1.8 — sized
+ * V_EXAG itself lives in src/lib/terrainCommon.js (currently 1.5 — sized
  * for the b24fce5 clip-to-stencil bake whose raw values are normalized to
  * local-min = 0).
+ *
+ * CPU/GPU reconcile (2026-06-29): the GPU `texture2D` sample is remapped
+ * through the `_terrainUV` helper so it lands on the SAME grid index as the
+ * CPU bilinear sampler (terrainCommon.makeElevationSampler). They previously
+ * diverged up to ~2 m at the domain edges (texel-center vs grid-corner
+ * convention); CPU and GPU now return identical world-Y.
  */
 
 import * as THREE from 'three'
