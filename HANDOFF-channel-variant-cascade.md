@@ -1,9 +1,70 @@
 # Handoff — The Channel Variant Cascade (per-shot + per-platform channel values)
 
-> **Status: design/plan — NOT dispatch-ready yet (design-doc first).** Raised by Jacob 2026-06-22.
-> The marquee unsolved axis of the channel system. **Lands last** — highest convergence of any arc
-> (see `HANDOFF-mobile-profile.md §6`); the measurement regime is its instrument. Build only after the
-> in-flight visual work (pool/trunk-blend) + the measurement regime + the Scene.jsx work settle.
+> **Status: DESIGN LOCKED 2026-06-29 (Jacob + Boz) — build-ready.** Raised 2026-06-22; design reviewed +
+> locked 2026-06-29. The marquee unsolved axis of the channel system. Still the **highest convergence of
+> any arc** — surface to Boz before touching the channel store / `Scene.jsx` / the slab schema.
+
+## Agent: FRESH
+
+**Name yourself** (one word, joins the name-trail). Clean, self-contained arc on a now-locked design — no warm agent holds prior context; the design lives in this doc.
+
+### First reads (in order — hard gate, `CLAUDE.md`)
+1. **`ORIENTATION.md`** (root) — the mental model + settled doctrine.
+2. **`README.md §⭐ START HERE`** + its cross-cutting feature index (where-X-lives).
+3. **This whole doc** — especially "⭐ LOCKED DESIGN" + "Build phases" below. Build to the locked **whole-look fork** model, NOT the superseded sparse per-channel cascade in the "Original design notes" section.
+4. The channel-system canon in the **Read-list** at the bottom — **read the cited file/section before editing it.**
+
+### Write / commit boundaries
+- **Code + `cartograph/bake-scene.js` + the slab schema are yours** — but ⛔ **surface to Boz/Jacob before the Phase-2 store change** (the highest-convergence edit: `useCartographStore.createGroupChannelActions` + every panel read site). Stand up the Phase-2 approach first; don't barrel the store.
+- **Verify each phase against the lit app** (Jacob's eye, not a proxy — `feedback_proxy_render_is_not_the_operator_eye`). Migration must be **byte-identical** with no `shotLooks` (no fork = today's behavior exactly).
+- **Canon docs are READ-ONLY for you** (`ARCHITECTURE` · `STAGE` · `SLAB-CONTRACT` · `PREVIEW` · `README` · `ORIENTATION`). Note doctrine deltas in a `scratch/` journal; **Boz folds them into canon** after the arc lands (per-touch gate + accord sweep). The one exception: when the schema lands, `SLAB-CONTRACT` gains the `shotLooks` note — flag Boz to add it.
+- Commit your own files on `curb-offset-draw` with **selective `git add`**; don't sweep unrelated dirty files (there may be an uncommitted AO/soft-circles fix + slab edits — leave them).
+
+---
+
+## ⭐ LOCKED DESIGN (2026-06-29) — whole-look fork per shot ("duplicate the interface")
+
+Jacob chose the **simpler-to-build** model over the original sparse per-channel/per-field cascade below: a
+shot is either **following base** or **forked** — a *full independent copy of the whole channel set*, authored
+with the **exact same Stage panel** bound to the active shot. **No per-field inherit badges, no per-channel
+cascade-merge** — the front-end is today's interface, duplicated per shot. (Per-field granularity comes free:
+a fork is a full copy, so every field can differ.)
+
+- **Schema (sparse):** `design.json`/`scene.json` gain `shotLooks: { browse?: {<all channels>}, street?: {…} }`.
+  Present only for forked shots → migration byte-identical (no fork = today's behavior exactly); no 3× bloat
+  until a shot is opted in. Base stays the top-level channels (Hero uses base — Hero IS the default look).
+- **Resolve (one point, NOT per-consumer):** the active look = `shotLooks[shot] ?? base`, merged channel-wise:
+  `effectiveScene = { ...base, ...(shotLooks[shot] || {}) }`. Production resolves ONCE off the CameraRig's
+  `viewMode` and passes the effective scene down — **consumers read `scene.<channel>` unchanged** (this is the
+  blast-radius win of whole-look-fork over per-consumer `resolveChannel(shot)`). Stage resolves off the active
+  shot selector.
+- **Decisions settled:** granularity = whole-look fork (Jacob); specificity = `shotLooks[shot] ?? base`
+  (platform layer slots in later as `shotLooks[shot]?.[platform] ?? shotLooks[shot] ?? base` — same shape,
+  UI deferred); host = Stage (shot selector already there); fork seeded by duplicating base.
+- **Authoring UX:** in a shot, a **"make this shot its own look / reset to base"** toggle. Forked → the panel
+  edits `shotLooks[shot]` (the store's channel actions target the active shot's block instead of `s[name]`);
+  reset → delete `shotLooks[shot]`. Switching shots swaps the whole panel to that shot's look.
+
+### Build phases (sequential, verify each)
+1. **Schema + production render** (lower-risk foundation): bake emits `shotLooks`; production resolves
+   `effectiveScene = {...base, ...shotLooks[viewMode]}` ONCE (a `useShotResolvedScene(scene, viewMode)` at the
+   scene-provision point) → consumers unchanged → per-shot looks RENDER. (Authoring not yet possible; verify a
+   hand-edited `shotLooks` in scene.json renders per shot.)
+2. **Stage authoring** (the bulk): the store's channel target follows the active shot (fork/reset actions);
+   the panel binds to the active shot's block; the fork/reset toggle. This is where the read-site convergence
+   lives — go carefully, verify a forked Browse channel edits independently of Hero.
+3. **Bake** (`bake-scene.js`): emit `shotLooks` into `scene.json`; `SLAB-CONTRACT` schema note.
+4. **(Later) platform axis:** add the platform layer to the fork (Stage Mobile|Desktop tab) — same mechanism.
+
+### Blast-radius read sites (Phase 2 audit)
+The channel store (`useCartographStore.createGroupChannelActions`, ~14 channels + hand-rolled lampGlow/clouds)
++ every panel selector `s.<channel>` + every render consumer (`PostProcessing`, `NeonBands`, `CelestialBodies`,
+`GatewayArch`, `BakedGround`/grass pool, `StreetLights` lantern, clouds). Phase-1's single-resolve keeps
+consumers unchanged; Phase-2 makes the STORE shot-aware (the authoring side).
+
+---
+
+### Original design notes (the sparse per-channel cascade — superseded by the whole-look fork above, kept for rationale)
 
 ## The problem
 
