@@ -23,6 +23,7 @@ import WeatherEffects from './WeatherEffects'
 import UserDot from './UserDot'
 import CourierDots from './CourierDots'
 import useCamera from '../hooks/useCamera'
+import { V_EXAG } from '../utils/terrainShader'
 import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -215,6 +216,22 @@ const _lerpTarget = new THREE.Vector3()
 const _fromUp = new THREE.Vector3()
 const _toUp = new THREE.Vector3()
 const _lerpUp = new THREE.Vector3()
+
+// Terrain exaggeration is per-VIEW, not constant: Browse (top-down) flattens to
+// 0 so the overhead map reads clean, Hero gets the full V_EXAG drama, and
+// planetarium sits at 1. Production previously mounted BakedGround with no
+// targetExag → it defaulted to V_EXAG and was never keyed to the view, so once
+// the Hero pan eased terrainExag up to V_EXAG, returning to Browse left the
+// terrain exaggerated → the top-down Y-fighting. Subscribe to viewMode here so
+// only BakedGround re-renders on a mode switch (its data effect + GroundMeshes
+// key off lookId/cacheBust, not targetExag → no refetch/remount). Mirrors the
+// shot-keyed targetExag Preview + Cartograph already pass.
+// (2026-06-28 — Browse terrain Y-fight on return.)
+function ViewKeyedBakedGround({ lookId }) {
+  const viewMode = useCamera(s => s.viewMode)
+  const targetExag = viewMode === 'browse' ? 0 : viewMode === 'planetarium' ? 1 : V_EXAG
+  return <BakedGround lookId={lookId} targetExag={targetExag} />
+}
 
 function CameraRig() {
   const { camera, gl, size } = useThree()
@@ -796,7 +813,7 @@ function Scene() {
       <group visible={false}>
         <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
       </group>
-      <R3FErrorBoundary name="BakedGround"><BakedGround lookId={INSTANCE.lookId} /></R3FErrorBoundary>
+      <R3FErrorBoundary name="BakedGround"><ViewKeyedBakedGround lookId={INSTANCE.lookId} /></R3FErrorBoundary>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {/* Trees — 9-species roster shipped into the slab this session; the
           lightweight tier + LoD + deformer perf groundwork is in place, so

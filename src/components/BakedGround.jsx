@@ -16,7 +16,7 @@
  * Publish ships. Differences belong upstream (in the bake) or downstream
  * (lighting environment), not in the consumer.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
@@ -349,14 +349,38 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 // Mounted unconditionally inside BakedGround so any consumer (Stage,
 // Preview, future apps) gets terrain displacement without depending on
 // StreetRibbons being mounted somewhere to drive it. `target` is a number;
-// callers pick it (V_EXAG for hero/browse, 1 for street/planetarium, 0
-// for flat top-down). Lerp matches the existing StreetRibbons cadence so
-// transitions read identically wherever exag is consumed.
+// callers pick it per view (V_EXAG for hero drama, 1 for street/planetarium,
+// 0 for the flat top-down Browse map).
+//
+// The ease is TIME-BASED (delta-driven), not a fixed per-frame fraction: the
+// old `+= (target-cur)*0.06` took ~80 frames, and FrameLimiter runs non-hero
+// modes at ~30fps, so flattening trailed the 2400ms Browse transition and the
+// shot landed still-exaggerated. A fixed-duration ease shorter than the
+// SHORTEST shot transition (1500ms) guarantees the terrain SETTLES before the
+// camera lands, at any framerate. (2026-06-28 — Browse terrain Y-fight on
+// return + late flatten.)
+const EXAG_EASE_MS = 1200
 function TerrainExagDriver({ target }) {
-  useFrame(() => {
-    const cur = terrainExag.value
-    if (Math.abs(cur - target) < 0.01) { terrainExag.value = target; return }
-    terrainExag.value += (target - cur) * 0.06
+  const from = useRef(terrainExag.value)
+  const lastTarget = useRef(target)
+  const elapsed = useRef(0)
+  useFrame((state, delta) => {
+    // View change → re-anchor the ease at wherever the value is right now.
+    if (target !== lastTarget.current) {
+      from.current = terrainExag.value
+      lastTarget.current = target
+      elapsed.current = 0
+    }
+    if (terrainExag.value === target) return
+    elapsed.current += delta * 1000
+    const p = Math.min(elapsed.current / EXAG_EASE_MS, 1)
+    const e = p * p * (3 - 2 * p)   // smoothstep
+    terrainExag.value = from.current + (target - from.current) * e
+    if (p >= 1) { terrainExag.value = target; return }
+    // frameloop="demand": keep requesting frames until settled, or the ease
+    // stalls when the camera goes idle mid-transition. Early-return above stops
+    // the spin once it lands.
+    state.invalidate()
   })
   return null
 }
