@@ -5,6 +5,9 @@ import { CATEGORY_HEX } from '../tokens/categories'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
+import useTimeOfDay from '../hooks/useTimeOfDay'
+import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 /**
  * NeonBands — wall-mounted glass-tube signage along the rooftop perimeter
@@ -321,7 +324,18 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
     if (!lookId || !scene?.neon?.values) return
-    const v = scene.neon.values
+    // Resolve the (TOD-animated) neon channel at the current minute — same as
+    // Stage's NeonPump. The OLD code flat-read `scene.neon.values.core`, which
+    // is `undefined` once neon is `animated:"tod"` (values is slot-keyed, e.g.
+    // {golden:{…}}) → core/tube = 0 → tubes built but rendered at ZERO intensity
+    // → INVISIBLE in production. Force-on "worked" only in Stage, where NeonPump
+    // resolves the slot. (2026-06-29 regression fix.) In Stage, NeonPump's
+    // per-frame write still wins; this mount-time resolve is the production /
+    // Preview baseline (single-slot today → constant; promote to a gated
+    // per-frame pump if a multi-slot neon TOD curve is ever authored).
+    const tod = useTimeOfDay.getState()
+    const slotMinutes = scene.neon.animated ? getTodSlotMinutes(tod.currentTime) : null
+    const v = resolveGroupAtMinute(scene.neon, tod.getMinuteOfDay(), slotMinutes, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS)
     _neonUniforms.coreUniform.value       = v.core       ?? 0
     _neonUniforms.tubeUniform.value       = v.tube       ?? 0
     _neonUniforms.bleedUniform.value      = v.bleed      ?? 0
