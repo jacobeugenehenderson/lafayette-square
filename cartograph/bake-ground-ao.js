@@ -309,8 +309,12 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
         const rim = 1 - Math.max(0, Math.min(1, (rn - 0.7) / 0.3))
         accR[i] += (ring * 0.55 + penumbra * 0.45) * postShadow * rim
       })
-      // G — contact shadows (trees + lamp bases), summed + clamped at encode
-      for (const t of trees) splat(t.x, t.z, TREE_SHADOW_RADIUS_M, (i, rn) => {
+      // G — contact shadows (trees + lamp bases), summed + clamped at encode.
+      // ONLY for trees that actually render — `heroTier:"cull"` placements draw
+      // nothing (InstancedTrees drops them), so splatting their shadow leaves an
+      // orphan soft circle on bare grass. (2026-06-29 — "extra soft circles".)
+      const shadowTrees = trees.filter(t => t.heroTier !== 'cull')
+      for (const t of shadowTrees) splat(t.x, t.z, TREE_SHADOW_RADIUS_M, (i, rn) => {
         accG[i] += (1 - rn) * (1 - rn) * TREE_SHADOW_STR
       })
       for (const l of lamps) splat(l.x, l.z, LAMP_SHADOW_RADIUS_M, (i, rn) => {
@@ -327,7 +331,7 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
       fpng.data = Buffer.from(fpx.buffer, fpx.byteOffset, fpx.byteLength)
       writeIfChanged(join(lookDir, 'ground.poolmap.png'), PNG.sync.write(fpng))
       manifest.poolmap = { image: 'ground.poolmap.png', size: FX_SIZE, min: [minX, minZ], span: [pW, pH], scale: POOL_MAX }
-      console.log(`[bake-ao] ground FX map: ${lamps.length} lamps (pool R) + ${trees.length} trees + lamps (shadow G) → ${FX_SIZE}² over ${pW.toFixed(0)}×${pH.toFixed(0)} m`)
+      console.log(`[bake-ao] ground FX map: ${lamps.length} lamps (pool R) + ${shadowTrees.length}/${trees.length} rendered trees + lamps (shadow G) → ${FX_SIZE}² over ${pW.toFixed(0)}×${pH.toFixed(0)} m`)
     } else {
       manifest.poolmap = null
     }
