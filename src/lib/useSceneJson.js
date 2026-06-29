@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import useCamera from '../hooks/useCamera'
+import { shotKeyForViewMode, resolveShotScene } from './shotScene.js'
 
 /**
  * useSceneJson — the production-side slab data adapter.
@@ -27,11 +29,19 @@ import { useEffect, useState } from 'react'
 
 const _cache = new Map() // `${lookId}@${cacheBust}` → Promise<scene>
 
+// In dev the cacheBust seed is constant (`development`), so the browser's HTTP
+// memory-cache can serve a stale scene.json for the unchanging URL even after a
+// re-bake — the recurring "edited the slab but the app shows the old look" dev
+// footgun (same reason the Section shape.json fetch uses no-store). Force a
+// fresh read in dev; production keeps normal caching (the bakedAt cacheBust
+// busts the URL on each bake, so the slab still caches correctly).
+const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
+
 function fetchSceneOnce(lookId, cacheBust) {
   const key = `${lookId}@${cacheBust}`
   if (_cache.has(key)) return _cache.get(key)
   const url = `${import.meta.env.BASE_URL}baked/${lookId}/scene.json?t=${cacheBust}`
-  const p = fetch(url)
+  const p = fetch(url, _fetchOpts)
     .then(r => (r.ok ? r.json() : null))
     .catch(e => {
       console.warn(`[useSceneJson] load failed for ${lookId}:`, e)
@@ -64,5 +74,15 @@ export function useSceneJson(lookId, cacheBust) {
     })
     return () => { cancelled = true }
   }, [lookId, bust])
-  return scene
+  // Channel-variant cascade (HANDOFF-channel-variant-cascade.md): resolve the
+  // per-shot whole-look fork ONCE, here, off the live camera viewMode — so every
+  // consumer reading through this adapter gets the active shot's look with no
+  // consumer change. resolveShotScene returns the SAME object identity when the
+  // shot has no fork, so an unforked Look (no scene.shotLooks) is byte-identical
+  // to before and doesn't add render churn.
+  const viewMode = useCamera(s => s.viewMode)
+  return useMemo(
+    () => resolveShotScene(scene, shotKeyForViewMode(viewMode)),
+    [scene, viewMode]
+  )
 }
