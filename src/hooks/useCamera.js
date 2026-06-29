@@ -12,7 +12,6 @@ const useCamera = create((set, get) => ({
   azimuth: 0,
   flyTarget: null,
   planetariumOrigin: null,  // [x, z] ground position for street-level sky view
-  buildingDissolve: false,  // fade buildings the camera passes *through* (roofs below stay solid)
   lastInteraction: Date.now(),
 
   setPanelState: (state) => set({ panelState: state, panelOpen: state !== 'collapsed' }),
@@ -80,8 +79,6 @@ const useCamera = create((set, get) => ({
   },
 
   clearFly: () => set({ flyTarget: null }),
-  setBuildingDissolve: (on) => set({ buildingDissolve: on }),
-  toggleBuildingDissolve: () => set({ buildingDissolve: !get().buildingDissolve }),
   setAzimuth: (angle) => set({ azimuth: angle }),
   resetIdle: () => set({ lastInteraction: Date.now() }),
 }))

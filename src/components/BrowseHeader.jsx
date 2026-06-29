@@ -8,7 +8,6 @@ import { useInfo } from './InfoModal'
 
 export default function BrowseHeader() {
   const viewMode = useCamera(s => s.viewMode)
-  const dissolveOn = useCamera(s => s.buildingDissolve)
   const isLive = useTimeOfDay(s => s.isLive)
   const showCard = useSelectedBuilding(s => s.showCard)
   const bulletinOpen = useBulletin(s => s.modalOpen)
@@ -22,23 +21,7 @@ export default function BrowseHeader() {
 
   return (
     <div className="fixed right-5 z-[60] flex flex-col items-end gap-2" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 20px)' }}>
-      {/* See-through buildings: fade only the buildings the camera passes
-          THROUGH (roofs passing below stay solid). */}
-      <button
-        onClick={() => useCamera.getState().toggleBuildingDissolve()}
-        className={`w-9 h-9 rounded-full backdrop-blur-md border transition-all duration-200 flex items-center justify-center ${
-          dissolveOn
-            ? 'bg-primary/25 border-primary/50 text-primary hover:bg-primary/35'
-            : 'bg-surface-container-high border-outline text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface'
-        }`}
-        aria-label={dissolveOn ? 'Solid buildings' : 'See through buildings the camera passes through'}
-        title="Fade buildings the camera passes through"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M5.25 21V6.75A1.5 1.5 0 016.75 5.25h4.5A1.5 1.5 0 0112.75 6.75V21" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dissolveOn ? '2 2' : '0'} d="M12.75 21V10.5a1.5 1.5 0 011.5-1.5h3.75a1.5 1.5 0 011.5 1.5V21" />
-        </svg>
-      </button>
+      {/* Camera x-ray is automatic (SlabBuildings) — no toggle. */}
       {!isLive ? (
         <button
           onClick={() => useTimeOfDay.getState().returnToLive()}

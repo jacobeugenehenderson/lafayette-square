@@ -40,27 +40,22 @@ import { INSTANCE } from '../instance.js'
 import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
 
-// ── "Don't cut through buildings" dissolve (2026-06-25) ────────────────────
-// When the camera passes THROUGH a building (its body is within DIST metres of
-// the camera) the fragments dither-discard, so you never see the hollow
-// cross-section the near-clip would slice. Roofs the camera PASSES OVER stay
-// solid — they're DIST+ away (the camera is well above them), so only buildings
-// the camera is genuinely inside dissolve. Gated to 0 (off) until the operator
-// toggles it (useCamera.buildingDissolve). DIST/BAND are the feel knobs — tune
-// live with `window.__bldgDissolve(dist, band)` during the standup.
+// ── Camera x-ray — always on (2026-06-28) ─────────────────────────────────
+// When the camera passes THROUGH a building (its body within DIST metres of the
+// camera) the fragments dither-discard, so you never see the hollow cross-
+// section the near-clip would slice — the camera gets a clear shot through.
+// Roofs the camera PASSES OVER stay solid (they're DIST+ away, well below), so
+// only buildings the camera is genuinely *inside* dissolve. This is artifact
+// suppression (like frustum culling), not a look channel — so it's automatic,
+// not a knob: there's no value in ever seeing the broken cross-section.
+// DIST/BAND are the feel knobs — tune live with `window.__bldgXray(dist, band)`.
 let _dissolveDist = 12   // m: fragments closer than this fully dissolve (camera is "inside")
 let _dissolveBand = 9    // m: soft dither band above the threshold (12→21m fades in)
 if (typeof window !== 'undefined') {
-  window.__bldgDissolve = (d, b) => {
+  window.__bldgXray = (d, b) => {
     if (d != null) _dissolveDist = d
     if (b != null) _dissolveBand = b
-    if (d === undefined && b === undefined) {
-      // bare call = flip the toggle on/off (standup convenience, no UI yet)
-      const c = useCamera.getState()
-      c.toggleBuildingDissolve()
-    }
-    const on = useCamera.getState().buildingDissolve
-    console.log(`[buildings] dissolve ${on ? 'ON' : 'OFF'} · dist=${_dissolveDist}m band=${_dissolveBand}m`)
+    console.log(`[buildings] x-ray dist=${_dissolveDist}m band=${_dissolveBand}m`)
   }
 }
 
@@ -261,9 +256,8 @@ export default function SlabBuildings({ lookId, interactive = true } = {}) {
     const { selectedId, hoveredId } = useSelectedBuilding.getState()
     const selNum = (idToNum && selectedId != null) ? (idToNum.get(selectedId) ?? -1) : -1
     const hovNum = (idToNum && hoveredId != null) ? (idToNum.get(hoveredId) ?? -1) : -1
-    // "Don't cut through buildings": feed the camera pos + the dissolve dist
-    // (0 when the toggle is off → the shader gate no-ops).
-    const dissolveDist = useCamera.getState().buildingDissolve ? _dissolveDist : 0
+    // X-ray: feed the camera pos + the always-on dissolve dist/band (so the
+    // shader gives a clear shot through any building the camera is inside).
     const cam = state.camera.position
     for (const sh of shadersRef.current) {
       if (!sh) continue
@@ -272,7 +266,7 @@ export default function SlabBuildings({ lookId, interactive = true } = {}) {
       sh.uniforms.uHoveredId.value = hovNum
       if (sh.uniforms.uCamPos) {
         sh.uniforms.uCamPos.value.set(cam.x, cam.y, cam.z)
-        sh.uniforms.uDissolveDist.value = dissolveDist
+        sh.uniforms.uDissolveDist.value = _dissolveDist
         sh.uniforms.uDissolveBand.value = _dissolveBand
       }
     }
@@ -400,7 +394,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       shader.uniforms.uSelectedId = { value: -1 }
       shader.uniforms.uHoveredId = { value: -1 }
       shader.uniforms.uCamPos = { value: new THREE.Vector3() }
-      shader.uniforms.uDissolveDist = { value: 0 }   // 0 = off (gate no-ops)
+      shader.uniforms.uDissolveDist = { value: _dissolveDist }   // x-ray, always on
       shader.uniforms.uDissolveBand = { value: _dissolveBand }
       if (isFoundation) shader.uniforms.uFoundNight = { value: _NIGHT_FOUND }
       if (tex) {
@@ -452,11 +446,12 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          ${GLSL_OVERLAY}`
       )
 
-      // ── Fragment: "don't cut through buildings" dissolve. Fragments within
-      //    uDissolveDist of the camera fully discard; a dither band above it
-      //    softens the edge. Camera DISTANCE (not height) is the gate, so roofs
-      //    passing far below when flying over stay solid — only the walls the
-      //    camera is interpenetrating dissolve. uDissolveDist=0 → no-op. ──
+      // ── Fragment: camera x-ray (always on). Fragments within uDissolveDist
+      //    of the camera fully discard; a dither band above it softens the edge.
+      //    Camera DISTANCE (not height) is the gate, so roofs passing far below
+      //    when flying over stay solid — only the walls the camera is
+      //    interpenetrating dissolve, giving a clear shot through. (The
+      //    uDissolveDist>0 check is just a safety guard; it's wired on.) ──
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <clipping_planes_fragment>',
         `#include <clipping_planes_fragment>
