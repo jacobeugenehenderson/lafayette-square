@@ -22,6 +22,23 @@ const landmarksWithMenus = staticData.landmarks.map(lm =>
   menuData[lm.id] ? { ...lm, menu: menuData[lm.id] } : lm
 )
 
+// Hours arrive from the backend as a JSON STRING (`hours_json`, per backend
+// schema: `{"monday":{"open":"11:00","close":"22:00"}}`), but the consumers —
+// the neon open-by-hours gate (SceneNeon) AND the place card (PlaceCard) — read
+// a parsed `hours` OBJECT. Nothing parsed it, so `l.hours` was always undefined:
+// the neon gate never lit (no business ever "open") and cards showed "Hours not
+// available". Parse it here on ingest. Idempotent: a value that's already an
+// object passes through; a bad string is dropped, not thrown. (2026-06-29)
+function parseListingHours(l) {
+  if (!l || (l.hours && typeof l.hours === 'object')) return l
+  const raw = l.hours_json ?? (typeof l.hours === 'string' ? l.hours : null)
+  if (!raw) return l
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? { ...l, hours: parsed } : l
+  } catch { return l }
+}
+
 // Generate synthetic listings for bare buildings using zoning codes
 const ZONING_CAT = { A: 'residential', B: 'residential', C: 'residential', D: 'commercial', E: 'residential', F: 'commercial', G: 'commercial', H: 'residential', J: 'industrial' }
 const ZONING_SUB = { A: 'unnamed', B: 'unnamed', C: 'unnamed', D: 'storefronts', E: 'unnamed', F: 'storefronts', G: 'retail', H: 'unnamed', J: 'warehouses' }
@@ -98,9 +115,9 @@ const useListings = create((set, get) => ({
     set({ loading: true })
     try {
       const res = await getListings()
-      const apiListings = Array.isArray(res.data) ? res.data
+      const apiListings = (Array.isArray(res.data) ? res.data
         : Array.isArray(res.data?.listings) ? res.data.listings
-        : []
+        : []).map(parseListingHours)
       if (apiListings.length > 0) {
         // Build lookup from static data for fallback fields (logo, reviews, etc.)
         const staticLookup = new Map()
