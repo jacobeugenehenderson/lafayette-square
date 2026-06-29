@@ -28,6 +28,14 @@ A look-authoring day with Jacob (agent "Wren"), eye-gated throughout. Authored t
 
 ---
 
+## 2026-06-28 — Building x-ray promoted to automatic (the toggle dies).
+
+The "don't cut through buildings" dissolve (added 2026-06-25, shipped *gated off* behind `useCamera.buildingDissolve` + a see-through button in the BrowseHeader) became the **camera x-ray**: always on, no toggle, no button. The session resumed mid-edit — a half-removal had stripped the JS uniform plumbing but left the GLSL + store + UI button dangling — so we finished it deliberately: restored the per-frame `uCamPos` feed in `SlabBuildings` and hardwired `uDissolveDist`/`uDissolveBand` on; deleted the BrowseHeader button and the `buildingDissolve`/`setBuildingDissolve`/`toggleBuildingDissolve` store fields; renamed the dev helper `window.__bldgDissolve` → `window.__bldgXray` (drops its toggle-flip behaviour, keeps live DIST/BAND tuning). Fact → `ARCHITECTURE.md` "Building x-ray"; operator note → `OPERATIONS.md` "Shot picker"; pitch → `FEATURES.md`.
+
+**The decision (Jacob, eye-confirmed):** auto, not a knob. The hollow cross-section the near-clip slices is *never* something you'd want to see — this is artifact suppression, the same family as frustum culling, not a look channel. By our own no-hidden-look-math rule (`feedback-no-hardcoded-ramps-use-knobs`) a knob is for *authored look variation*; this varies nothing, it just removes an artifact → it shouldn't be a knob. The lingering question we closed: a toggle would only let a user choose to see broken geometry — no value. If the dither band ever flickers on some path, we promote DIST/BAND to a real authored knob *then*, not pre-emptively.
+
+---
+
 ## 2026-06-26/27 — DoF + bloom, rebuilt off a shared blur LADDER (the romance lands)
 
 A long post-FX session with Jacob, eye-gated throughout. The arc the `HANDOFF-real-dof` brief opened finally landed — and **superseded its own plan**. Archived → `_archive/HANDOFF-real-dof-2026-06-27.md`. Commit `7d1bb238` + follow-ups. Settled doctrine → `ARCHITECTURE.md` (Decisions) + `OPERATIONS.md` (Bloom / Focus knobs).

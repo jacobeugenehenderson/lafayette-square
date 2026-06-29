@@ -35,6 +35,8 @@ Cartograph is recursive — each authoring step makes a truth-claim the next bui
 
 **The slab carries the operator's *full* authored product.** This is load-bearing. Anything authored in cartograph — geometry AND optics (sky, atmosphere, post-FX, exposure, time-of-day, per-shot camera, materials, neon, lamp glow) — must travel through the bake into the slab. The deployed runtime trusts the slab unconditionally and cannot reach back into the authoring store, so **anything authored-but-not-baked is invisible** — the product silently degrades to "operator geometry + procedural-default optics," which isn't the product. The product is what the operator sees in Stage. *(Gap inventory: `BACKLOG.md` "Slab completeness.")*
 
+**The camera flies clean through buildings.** Move the camera inside a building and it dissolves out of the way — a clear, uninterrupted shot through the neighborhood instead of a jarring hollow cross-section. Roofs you pass over stay solid. It's automatic, with no setting to hunt for.
+
 **Aesthetics + performance are co-equal, non-negotiable.** Aesthetics are the differentiator (what separates this from generic 3D maps); performance is equally important and invisible (mobile playback can't compromise). The whole authoring-time complexity exists to guarantee both at runtime.
 
 *(The geometry doctrine — tiles, ribbons, corners, curbs — lives in `RIBBONS.md`; read it before any geometry work.)*

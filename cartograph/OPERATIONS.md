@@ -142,6 +142,8 @@ The top-bar device picker switches the render environment *and* the budget the g
 
 Top-bar buttons that move the camera between the three production shots, **gated by production's adjacency graph** (Hero ↔ Browse ↔ Street; there is no direct Hero↔Street edge, so that button greys out from Hero). The **Hero** shot is the same authored bounce, replayed identically here (`heroAnim.js`). Camera drag in each shot mirrors Stage (Browse: LEFT = pan, RIGHT = orbit; Hero/Street: LEFT = orbit, RIGHT = pan); a deliberate drag during the Hero auto-pan interrupts it back to Browse, exactly as production does. Ephemeral.
 
+> **Building x-ray is automatic — there is no toggle to find.** When the camera moves *inside* a building, that building dissolves so you get a clean shot through it instead of a hollow cross-section; roofs you pass over stay solid. It's artifact suppression, not a look channel, so it's wired on with no knob (the old see-through button was removed 2026-06-28). The feel values (dissolve distance 12 m / fade band 9 m) are dev-tunable via `window.__bldgXray(dist, band)`; if they ever need authoring we'll promote them to a real knob. *(As-built: `ARCHITECTURE.md` "Building x-ray.")*
+
 ### Time-of-day scrub
 
 The shared **DawnTimeline** — scrub dawn → day → dusk → night to inspect the Look across the day (the same control Stage uses). Ephemeral.
