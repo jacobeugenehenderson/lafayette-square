@@ -984,7 +984,9 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
         frustumCulled={false}
         onPointerOver={(e) => { e.stopPropagation(); setHovered(building.id); document.body.style.cursor = 'pointer' }}
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
-        onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(building.id) }}
+        // Defer select past the click (same drei <Html> mid-event crash guard as
+        // the MapPin): select() re-renders/repositions the <Html> marker layer.
+        onClick={(e) => { e.stopPropagation(); const ok = !isDrag(e); if (ok) requestAnimationFrame(() => select(building.id)) }}
       />
       {/* Neon retired from per-Building mount — see <NeonBands /> at the
           LafayetteScene render block. One merged mesh covers all open
@@ -1069,7 +1071,13 @@ function MapPin({ listing, building, xOffset = 0, zOffset = 0 }) {
         zIndexRange={[1, 10]}
       >
         <div
-          onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(listing.id, listing.building_id) }}
+          // Defer select past the click event: select() changes selectedListingId,
+          // which recomputes LandmarkMarkers' filtered set + de-overlap offsets and
+          // re-renders/repositions these drei <Html> pins. Doing that SYNCHRONOUSLY
+          // inside the pin's own click handler reconciles the <Html> mid-event →
+          // drei crashes (~75% intermittent "click a business icon → site crashes").
+          // rAF lets the click finish first. (isDrag reads the event → run it sync.)
+          onClick={(e) => { e.stopPropagation(); const ok = !isDrag(e); if (ok) requestAnimationFrame(() => select(listing.id, listing.building_id)) }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { document.body.style.cursor = 'auto' }}
           style={{
