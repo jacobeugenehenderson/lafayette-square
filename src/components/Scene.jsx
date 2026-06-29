@@ -736,24 +736,14 @@ function DeferredStreetLights() {
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
 
-  // ── DEV: live frameloop toggle (test hero-pan smoothness) ────────────────
-  // The hero pan reads ~2 fps even though the demand loop self-pumps 60. To
-  // split "demand-clock stepping" (H1) from "GPU perf wall" (H2): flip the loop
-  // live during a pan. `window.__frameloop('always')` = continuous render;
-  // `window.__frameloop('demand')` = back to on-demand (default). Smooth on
-  // 'always' ⇒ H1 (the loop/clock); still 2 fps ⇒ H2 (perf). Remove once the
-  // root is settled. (BACKLOG "Hero motion is TEMPORALLY JERKY".)
-  const [frameloop, setFrameloop] = useState('demand')
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.__frameloop = (mode = 'always') => {
-      const m = mode === 'demand' ? 'demand' : 'always'
-      setFrameloop(m)
-      console.log(`[scene] frameloop = ${m}`)
-      return m
-    }
-    return () => { delete window.__frameloop }
-  }, [])
+  // Hero needs CONTINUOUS rendering. Under frameloop="demand" the R3F clock
+  // advances in coarse steps, so the authored pan (driven by clock.elapsedTime)
+  // reads ~2 fps even though FrameLimiter pumps invalidate every frame — the
+  // demand loop redraws the same pose between coarse clock ticks. Desktop hero
+  // runs "always" (smooth); every other mode stays "demand" (FrameLimiter pumps
+  // those at 30 fps). Mobile stays "demand" everywhere for battery — FrameLimiter
+  // caps it. Confirmed by the window.__frameloop A/B test, 2026-06-29 (H1).
+  const frameloop = (!IS_MOBILE && viewMode === 'hero') ? 'always' : 'demand'
 
   return (
     <div role="img" aria-label="3D visualization of Lafayette Square neighborhood" style={{
