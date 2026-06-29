@@ -16,7 +16,7 @@ import { useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { groundColor as _groundColor } from './groundColorState'
-import { patchTerrainInstanced } from '../utils/terrainShader'
+import { patchTerrainInstancedBaked } from '../utils/terrainShader'
 
 // Module-level cache: one material set per look. Sharing materials across
 // component remounts keeps program count at 2 even if the tree component
@@ -198,6 +198,16 @@ function injectFoliageSway(material) {
     shader.uniforms.uHasGroundColor  = _groundColor.hasUniform
     shader.uniforms.uTrunkBlend      = { value: 0.55 }
     shader.uniforms.uTrunkBlendTop   = { value: 1.5 }
+    // FX map (G contact shadow / R lamp pool) so the trunk blends toward the
+    // COMBINED EFFECTIVE ground colour, not raw albedo — same map + math as
+    // grassMaterial, so the trunk base sits in its own shadow ring.
+    shader.uniforms.uGroundFxMap    = _groundColor.fxMapUniform
+    shader.uniforms.uGroundFxMin    = _groundColor.fxMinUniform
+    shader.uniforms.uGroundFxSpan   = _groundColor.fxSpanUniform
+    shader.uniforms.uGroundFxScale  = _groundColor.fxScaleUniform
+    shader.uniforms.uTrunkShadowStr = { value: 0.5 }   // matches grass uShadowStr
+    shader.uniforms.uTrunkPool      = _lampGlow.poolUniform
+    shader.uniforms.uTrunkPoolColor = _lampGlow.colorUniform
     // Phase B bark retint uniforms (per-draw mutation pattern).
     shader.uniforms.uBarkTintBase = { value: new THREE.Color(1, 1, 1) }
     shader.uniforms.uBarkTintJitterRange = { value: 0 }
@@ -527,6 +537,13 @@ function injectFoliageSway(material) {
          uniform float uHasGroundColor;
          uniform float uTrunkBlend;
          uniform float uTrunkBlendTop;
+         uniform sampler2D uGroundFxMap;
+         uniform vec2  uGroundFxMin;
+         uniform vec2  uGroundFxSpan;
+         uniform float uGroundFxScale;
+         uniform float uTrunkShadowStr;
+         uniform float uTrunkPool;
+         uniform vec3  uTrunkPoolColor;
          uniform vec3  uBarkTintBase;
          uniform float uBarkTintJitterRange;
          uniform float uBarkRoughnessOverride;
@@ -702,6 +719,16 @@ function injectFoliageSway(material) {
                vec2 gcUV = (vWorldXZ.xz - uGroundColorMin) / uGroundColorSpan;
                if (all(greaterThanEqual(gcUV, vec2(0.0))) && all(lessThanEqual(gcUV, vec2(1.0)))) {
                  vec3 gcol = texture2D(uGroundColorMap, gcUV).rgb;
+                 // Combined EFFECTIVE ground colour — apply the same baked contact
+                 // shadow (G) + lamp pool (R) the ground shader does (grassMaterial),
+                 // so the trunk base sits in its own shadow ring instead of reading
+                 // as bright raw albedo.
+                 vec2 fxUV = (vWorldXZ.xz - uGroundFxMin) / uGroundFxSpan;
+                 if (all(greaterThanEqual(fxUV, vec2(0.0))) && all(lessThanEqual(fxUV, vec2(1.0)))) {
+                   vec4 gfx = texture2D(uGroundFxMap, fxUV);
+                   gcol *= (1.0 - gfx.g * uTrunkShadowStr);
+                   gcol += uTrunkPoolColor * gfx.r * uGroundFxScale * uTrunkPool;
+                 }
                  diffuseColor.rgb = mix(diffuseColor.rgb, gcol, baseF);
                }
              }
@@ -953,7 +980,7 @@ async function buildMaterials(lookName) {
   // via the shared uExag uniform. Chains AFTER sway so the foliage
   // begin_vertex modifications still run; terrain adds y += sample*uExag
   // on top of the per-instance translation, sway leaves the canopy alone.
-  patchTerrainInstanced(treeMaterial)
+  patchTerrainInstancedBaked(treeMaterial)
 
   // Phase B (2026-06-25) — sibling OPAQUE canopy material for the opaque-
   // articulated middle tier. SAME atlas color+normal, SAME injectFoliageSway +
@@ -978,7 +1005,7 @@ async function buildMaterials(lookName) {
   })
   opaqueCanopyMaterial.name = `tree-atlas:${lookName}:opaque`
   injectFoliageSway(opaqueCanopyMaterial)
-  patchTerrainInstanced(opaqueCanopyMaterial)
+  patchTerrainInstancedBaked(opaqueCanopyMaterial)
 
   return { manifest, treeMaterial, opaqueCanopyMaterial, roster }
 }

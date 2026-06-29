@@ -67,6 +67,8 @@ export const UNIFORMS = {
   uSpanX: { value: spanX },
   uSpanZ: { value: spanZ },
   uExag: terrainExag,
+  uTexW: { value: width },
+  uTexH: { value: height },
 }
 
 /** Assign shared terrain uniforms to a compiled shader. */
@@ -79,7 +81,24 @@ export function assignTerrainUniforms(shader) {
 /** Uniform declarations — inject after #include <common>. */
 export const TERRAIN_DECL = `
 uniform sampler2D uTerrainMap;
-uniform float uBMinX, uBMinZ, uSpanX, uSpanZ, uExag;`
+uniform float uBMinX, uBMinZ, uSpanX, uSpanZ, uExag;
+uniform float uTexW, uTexH;
+// Reconcile the GPU texture sample with the CPU sampler
+// (terrainCommon.makeElevationSampler) so BOTH return the identical world-Y at
+// the same XZ — one field, no float/sink between a CPU-placed object and the
+// GPU-rendered ground. The CPU indexes the grid at u*(N-1); a raw texture2D
+// samples at texel CENTERS (u*N-0.5), up to ±0.5 cell off, worst at the domain
+// edges. Remap the normalized coord to land on the CPU grid index at the texel
+// center: u_tex = (u*(N-1)+0.5)/N. (2026-06-29 — the "nothing sits on the
+// ground" reconcile; buildings/foundations are baked off the CPU sampler and
+// never sample this texture, so they are unaffected.)
+vec2 _terrainUV(vec2 raw) {
+  raw = clamp(raw, 0.0, 1.0);
+  return vec2(
+    (raw.x * (uTexW - 1.0) + 0.5) / uTexW,
+    (raw.y * (uTexH - 1.0) + 0.5) / uTexH
+  );
+}`
 
 /**
  * Vertex displacement — replaces #include <begin_vertex>.
@@ -90,10 +109,10 @@ export const TERRAIN_DISPLACE = `
 #include <begin_vertex>
 {
   vec4 _tw = modelMatrix * vec4(transformed, 1.0);
-  vec2 _tuv = clamp(vec2(
+  vec2 _tuv = _terrainUV(vec2(
     (_tw.x - uBMinX) / uSpanX,
     (_tw.z - uBMinZ) / uSpanZ
-  ), 0.0, 1.0);
+  ));
   transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
 }`
 
@@ -110,10 +129,10 @@ export const TERRAIN_DISPLACE_CENTROID = `
 {
   // aCentroidXZ is declared by the material as: attribute vec2 aCentroidXZ;
   // (x, z) in world space.
-  vec2 _tuv = clamp(vec2(
+  vec2 _tuv = _terrainUV(vec2(
     (aCentroidXZ.x - uBMinX) / uSpanX,
     (aCentroidXZ.y - uBMinZ) / uSpanZ
-  ), 0.0, 1.0);
+  ));
   transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
 }`
 
@@ -125,10 +144,10 @@ export const TERRAIN_DISPLACE_CENTROID = `
  */
 const TERRAIN_DISPLACE_RIGID = `
 {
-  vec2 _tuv = clamp(vec2(
+  vec2 _tuv = _terrainUV(vec2(
     (modelMatrix[3].x - uBMinX) / uSpanX,
     (modelMatrix[3].z - uBMinZ) / uSpanZ
-  ), 0.0, 1.0);
+  ));
   transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
 }
 #include <project_vertex>`
@@ -142,10 +161,10 @@ export const TERRAIN_NORMAL = `
 #include <beginnormal_vertex>
 if (uExag > 0.01) {
   vec4 _nw = modelMatrix * vec4(position, 1.0);
-  vec2 _nuv = clamp(vec2(
+  vec2 _nuv = _terrainUV(vec2(
     (_nw.x - uBMinX) / uSpanX,
     (_nw.z - uBMinZ) / uSpanZ
-  ), 0.0, 1.0);
+  ));
   float _eps = 5.0;
   float _du = _eps / uSpanX, _dv = _eps / uSpanZ;
   float _eL = texture2D(uTerrainMap, _nuv + vec2(-_du, 0.0)).r * uExag;
@@ -163,10 +182,10 @@ if (uExag > 0.01) {
 const TERRAIN_DISPLACE_PERVERTEX = `
 {
   vec4 _tw = modelMatrix * vec4(transformed, 1.0);
-  vec2 _tuv = clamp(vec2(
+  vec2 _tuv = _terrainUV(vec2(
     (_tw.x - uBMinX) / uSpanX,
     (_tw.z - uBMinZ) / uSpanZ
-  ), 0.0, 1.0);
+  ));
   transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
 }
 #include <project_vertex>`
@@ -195,10 +214,10 @@ export const TERRAIN_DISPLACE_INSTANCED = `
 #include <begin_vertex>
 {
   vec4 _iw = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-  vec2 _tuv = clamp(vec2(
+  vec2 _tuv = _terrainUV(vec2(
     (_iw.x - uBMinX) / uSpanX,
     (_iw.z - uBMinZ) / uSpanZ
-  ), 0.0, 1.0);
+  ));
   // Divide by the instance's Y-axis scale so the lift lands as
   // sample*uExag METERS in world space after instanceMatrix scaling
   // (otherwise a lamp with LAMP_SCALE=1.38 lifts about 38% too far,
@@ -223,6 +242,36 @@ export function patchTerrainInstanced(mat) {
   }
   const prevKey = mat.customProgramCacheKey?.bind(mat)
   mat.customProgramCacheKey = () => `terrain-inst-${prevKey ? prevKey() : 'std'}`
+}
+
+/**
+ * INSTANCED rigid lift by a BAKED per-instance ground anchor — `groundSampler`'s
+ * `groundRawAt`, the raw field where the DRAWN ground sits under the instance —
+ * instead of a live texture sample. So the instance lands exactly on the
+ * rendered ground (no coarse-mesh float); the buildings/foundations `aCentroidY`
+ * regime generalized to point objects. The geometry must carry an `aGroundRaw`
+ * InstancedBufferAttribute (raw, pre-uExag). Lift = aGroundRaw × uExag, divided
+ * by the instance Y-scale so it lands as meters in world space (same as
+ * patchTerrainInstanced). Replaces #include <begin_vertex>.
+ */
+export const TERRAIN_DISPLACE_INSTANCED_BAKED = `
+#include <begin_vertex>
+{
+  float _instYScale = length(instanceMatrix[1].xyz);
+  transformed.y += aGroundRaw * uExag / max(_instYScale, 0.0001);
+}`
+
+export function patchTerrainInstancedBaked(mat) {
+  const prev = mat.onBeforeCompile
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uExag = terrainExag
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\n attribute float aGroundRaw;\n uniform float uExag;')
+      .replace('#include <begin_vertex>', TERRAIN_DISPLACE_INSTANCED_BAKED)
+    if (prev) prev(shader)
+  }
+  const prevKey = mat.customProgramCacheKey?.bind(mat)
+  mat.customProgramCacheKey = () => `terrain-inst-baked-${prevKey ? prevKey() : 'std'}`
 }
 
 /**

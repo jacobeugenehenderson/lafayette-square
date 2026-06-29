@@ -77,6 +77,9 @@ const GROUND_REFINE_MIN_EDGE_M = 6;
 const GROUND_REFINE_MAX_EDGE_M = 64;
 // Hardscape overlays routed through refine (parking_lot/pitch) keep fine spacing.
 const HARDSCAPE_REFINE_MAX_EDGE_M = 15;
+// Park gravel paths get DENSE even sampling (vs adaptive's coarse tol/minEdge
+// floor) so they ride the rolling park contour. Tiny group → cost negligible.
+const PATH_CONTOUR_REFINE_MAX_EDGE_M = 6;
 
 // [z-fight fix 2026-06-17] Per-group geometric Y separation — the resolver for
 // coplanar ground groups under the production logarithmicDepthBuffer canvas
@@ -988,6 +991,16 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
     'parking_lot', 'garden', 'playground', 'swimming_pool',
     'pitch', 'sports_centre', 'wood', 'scrub',
   ])
+  // Ribbon groups that cross ROLLING terrain and must follow the contour.
+  // Ribbons normally bypass refinement (their authored density matches FLAT
+  // blocks), but the park gravel paths run over the park's hill — with no
+  // refinement the sparse OSM vertices get terrain-displaced only at segment
+  // endpoints, so each straight chord knifes through the rolling grass (the
+  // "paths don't follow the contour" artifact, 2026-06-28). Give them a dense
+  // uniform sampling (PATH_CONTOUR_REFINE_MAX_EDGE_M) so a vertex lands every
+  // few metres along the run. (Conforming red-green refinement keeps the
+  // path/grass boundary crack-free.)
+  const CONTOUR_REFINE_KEYS = new Set(['park_path'])
   // Target ~3× the terrain.bin sample spacing (5 m). At LS's ~3% gradient
   // this caps the per-fragment interpolation error at roughly 0.45 m raw
   // (~0.7 m visible at V_EXAG=1.5) — well below the per-footprint
@@ -1023,11 +1036,18 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
     // (crisp-edged, tiny budget). Ribbon bands bypass refinement entirely.
     const isSoftFill = kind === 'face'
     const isHardOverlay = LANDSCAPE_OVERLAY_KEYS.has(key)
+    const isContourRibbon = CONTOUR_REFINE_KEYS.has(key)   // park_path: rides the park hill
     let refinePolicy = null
     if (isSoftFill) {
       refinePolicy = refineMode === 'adaptive' && refineSampler
         ? { mode: 'adaptive', sampler: refineSampler, tol: refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge }
         : { mode: 'uniform', maxEdge: REFINE_MAX_EDGE_M }
+    } else if (isContourRibbon) {
+      // Dense, EVEN sampling so the path follows the contour. Adaptive's
+      // tol(0.5)/minEdge(6) floor barely split it — a long straight OSM run can
+      // bow under 0.5 m per 6 m yet still knife through the rolling park over its
+      // full length. A small uniform maxEdge guarantees a vertex every few metres.
+      refinePolicy = { mode: 'uniform', maxEdge: PATH_CONTOUR_REFINE_MAX_EDGE_M }
     } else if (isHardOverlay) {
       refinePolicy = { mode: 'uniform', maxEdge: HARDSCAPE_REFINE_MAX_EDGE_M }
     }

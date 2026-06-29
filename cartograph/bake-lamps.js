@@ -12,9 +12,35 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
+import { makeElevationSampler } from '../src/lib/terrainCommon.js'
+import { makeGroundSampler } from './groundSampler.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
+
+// Read a .bin as a clean ArrayBuffer (Buffer is a view into a shared pool).
+function readAB(path) {
+  const u8 = readFileSync(path)
+  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength)
+}
+
+// Bake the per-lamp ground anchor: the raw field where the DRAWN ground sits
+// under each lamp (groundSampler over the look's baked ground mesh), so the
+// runtime rigid-lifts the lamp onto the rendered surface instead of the smooth
+// field — no float. Mutates each lamp with `groundRaw`. Needs the look's ground
+// bake to exist (it runs earlier in the chain); skips with a warning otherwise.
+function anchorLampsToGround(lamps, outDir) {
+  const groundJsonPath = join(outDir, 'ground.json')
+  const groundBinPath  = join(outDir, 'ground.bin')
+  if (!existsSync(groundJsonPath) || !existsSync(groundBinPath)) return 0
+  const gj = JSON.parse(readFileSync(groundJsonPath, 'utf-8'))
+  const gAB = readAB(groundBinPath)
+  const tmeta = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
+  const tdata = new Float32Array(readAB(join(ROOT, 'src', 'data', 'terrain.bin')))
+  const sampler = makeGroundSampler(gj, gAB, makeElevationSampler({ ...tmeta, data: tdata }))
+  for (const l of lamps) l.groundRaw = sampler.groundRawAt(l.x, l.z)
+  return lamps.length
+}
 
 export async function bakeLamps({ look = 'default' } = {}) {
   const inPath  = join(ROOT, 'src', 'data', 'street_lamps.json')
@@ -23,6 +49,7 @@ export async function bakeLamps({ look = 'default' } = {}) {
 
   const raw = JSON.parse(readFileSync(inPath, 'utf-8'))
   const lamps = raw.lamps || raw
+  const anchored = anchorLampsToGround(lamps, outDir)
   const out = {
     version: 1,
     look,
@@ -31,7 +58,7 @@ export async function bakeLamps({ look = 'default' } = {}) {
   }
   const outPath = join(outDir, 'lamps.json')
   const wrote = writeIfChanged(outPath, JSON.stringify(out, null, 2))
-  console.log(`[bake-lamps] ${wrote ? 'wrote' : 'unchanged'} ${outPath} (${lamps.length} lamps)`)
+  console.log(`[bake-lamps] ${wrote ? 'wrote' : 'unchanged'} ${outPath} (${lamps.length} lamps${anchored ? `, ${anchored} ground-anchored` : ' — NO ground bake, un-anchored'})`)
 }
 
 async function main() {

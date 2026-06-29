@@ -19,6 +19,14 @@ export const groundColor = {
   minUniform:  { value: new THREE.Vector2(0, 0) },
   spanUniform: { value: new THREE.Vector2(1, 1) },
   hasUniform:  { value: 0 },
+  // FX map (ground.poolmap.png): G = baked contact shadow, R = lamp pool — the
+  // SAME map grassMaterial uses. The trunk blend applies it so the trunk base
+  // takes the COMBINED EFFECTIVE ground colour (albedo darkened by its own
+  // contact-shadow ring + lamp pool), not the bright raw albedo.
+  fxMapUniform:  { value: null },
+  fxMinUniform:  { value: new THREE.Vector2(0, 0) },
+  fxSpanUniform: { value: new THREE.Vector2(1, 1) },
+  fxScaleUniform:{ value: 1 },
 }
 
 export function setGroundColorMap(texture, min, span) {
@@ -26,4 +34,11 @@ export function setGroundColorMap(texture, min, span) {
   if (min)  groundColor.minUniform.value.set(min[0], min[1])
   if (span) groundColor.spanUniform.value.set(span[0], span[1])
   groundColor.hasUniform.value = texture ? 1 : 0
+}
+
+export function setGroundFxMap(texture, min, span, scale) {
+  groundColor.fxMapUniform.value = texture || null
+  if (min)  groundColor.fxMinUniform.value.set(min[0], min[1])
+  if (span) groundColor.fxSpanUniform.value.set(span[0], span[1])
+  if (scale != null) groundColor.fxScaleUniform.value = scale
 }

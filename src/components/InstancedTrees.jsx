@@ -28,6 +28,7 @@ import {
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
+import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -292,6 +293,19 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
     return arr
   }, [instances])
 
+  // Per-instance ground anchor (groundSampler, baked per-look as tree-anchors).
+  // The raw field where the DRAWN ground sits under each tree → the trunk lands
+  // exactly on the rendered surface (no float), via patchTerrainInstancedBaked.
+  // Falls back to the smooth field for any instance missing an anchor.
+  const groundRaws = useMemo(() => {
+    const arr = new Float32Array(instances.length)
+    for (let i = 0; i < instances.length; i++) {
+      const g = instances[i].groundRaw
+      arr[i] = typeof g === 'number' ? g : getElevationRaw(instances[i].x, instances[i].z)
+    }
+    return arr
+  }, [instances])
+
   // One log per (url × tile) saying how many submeshes we ended up with.
   // After the primitive-merge optimization this should be 1 for all variants
   // — if any logs show >1, the merge fell back (attribute-set mismatch).
@@ -314,6 +328,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
           placementMatrices={matrices}
           lampGlows={lampGlows}
           heroTiers={heroTiers}
+          groundRaws={groundRaws}
           barkSettings={barkSettings}
           gradientSlot={gradientSlot}
           detailSlot={detailSlot}
@@ -329,7 +344,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, groundRaws, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
   const ref = useRef(null)
   // Canvas runs frameloop="demand": R3F auto-invalidates on React reconciliation
   // (mount) but NOT on the imperative matrix/attribute fills below. Without an
@@ -352,8 +367,9 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
     if (!geometry) return
     if (lampGlows) geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
     if (heroTiers) geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
+    if (groundRaws) geometry.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(groundRaws, 1))
     invalidate()
-  }, [geometry, lampGlows, heroTiers, invalidate])
+  }, [geometry, lampGlows, heroTiers, groundRaws, invalidate])
   useEffect(() => {
     const im = ref.current
     if (!im) return
@@ -445,13 +461,22 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
     a.fill(1)   // impostor
     return a
   }, [instances])
+  const groundRaws = useMemo(() => {
+    const a = new Float32Array(instances.length)
+    for (let i = 0; i < instances.length; i++) {
+      const g = instances[i].groundRaw
+      a[i] = typeof g === 'number' ? g : getElevationRaw(instances[i].x, instances[i].z)
+    }
+    return a
+  }, [instances])
 
   useEffect(() => {
     if (!geometry) return
     geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
     geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
+    geometry.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(groundRaws, 1))
     invalidate()
-  }, [geometry, lampGlows, heroTiers, invalidate])
+  }, [geometry, lampGlows, heroTiers, groundRaws, invalidate])
 
   useEffect(() => {
     const im = ref.current
@@ -570,12 +595,26 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
   useEffect(() => {
     if (cacheBust == null) return
     let cancelled = false
-    fetch(bakeUrl + '?t=' + cacheBust)
-      .then(r => r.ok ? r.json() : null)
-      .then(j => { if (!cancelled) setBake(j) })
+    // Tree placements are GLOBAL (default.json); the ground anchor that seats
+    // each trunk on the DRAWN ground is PER-LOOK (tree-anchors.json, groundSampler
+    // bake). Fetch both and inject groundRaw into each instance; if anchors are
+    // absent/stale, the per-instance memos fall back to the smooth field.
+    const anchorsUrl = `${import.meta.env.BASE_URL}baked/${lookName}/tree-anchors.json`
+    Promise.all([
+      fetch(bakeUrl + '?t=' + cacheBust).then(r => r.ok ? r.json() : null),
+      fetch(anchorsUrl + '?t=' + cacheBust).then(r => r.ok ? r.json() : null).catch(() => null),
+    ])
+      .then(([j, anchorsDoc]) => {
+        if (cancelled) return
+        const anchors = anchorsDoc?.anchors
+        if (j?.instances && Array.isArray(anchors) && anchors.length === j.instances.length) {
+          for (let i = 0; i < j.instances.length; i++) j.instances[i].groundRaw = anchors[i]
+        }
+        setBake(j)
+      })
       .catch(e => console.warn('[InstancedTrees] bake fetch failed:', e))
     return () => { cancelled = true }
-  }, [bakeUrl, cacheBust])
+  }, [bakeUrl, cacheBust, lookName])
 
   const atlas = useTreeAtlas(lookName)
 

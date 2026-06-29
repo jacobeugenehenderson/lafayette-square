@@ -6,7 +6,8 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import lampData from '../data/street_lamps.json'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { patchTerrainInstanced, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
+import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
+import { getElevationRaw } from '../utils/elevation'
 import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
@@ -63,6 +64,14 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
   // dep array can include it (re-runs when the GLB finishes loading).
 
   const allLamps = lampsProp || lampData.lamps
+  // Baked ground anchor per lamp (groundSampler): the raw field where the DRAWN
+  // ground sits under each lamp → rigid-lift onto the rendered surface, no float
+  // (the buildings/foundations regime for point objects). Falls back to the
+  // smooth field for any lamp that predates the bake.
+  const aGroundRaw = useMemo(
+    () => new Float32Array(allLamps.map(l => (typeof l.groundRaw === 'number' ? l.groundRaw : getElevationRaw(l.x, l.z)))),
+    [allLamps],
+  )
 
   // ── Shared geometries ───────────────────────────────────────────────────────
   // Glow + halo are billboards (planes that face the camera in the
@@ -84,11 +93,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
   // TERRAIN_UNIFORMS on each ShaderMaterial that consumes this snippet.
   const BILLBOARD_VS_INC = /*glsl*/`
     vec4 _bbCenter = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-    vec2 _bbTuv = clamp(vec2(
-      (_bbCenter.x - uBMinX) / uSpanX,
-      (_bbCenter.z - uBMinZ) / uSpanZ
-    ), 0.0, 1.0);
-    _bbCenter.y += texture2D(uTerrainMap, _bbTuv).r * uExag;
+    // Baked ground anchor (matches the lamp post) — no live terrain sample.
+    _bbCenter.y += aGroundRaw * uExag;
     vec4 _bbCenterView = viewMatrix * _bbCenter;
     // Scale recovered from instanceMatrix's first column (uniform scale).
     float _bbScale = length(vec3(instanceMatrix[0].xyz));
@@ -109,6 +115,7 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       },
       vertexShader: /*glsl*/`
         ${TERRAIN_DECL}
+        attribute float aGroundRaw;
         varying vec2 vUv;
         void main() {
           vUv = uv;
@@ -145,6 +152,7 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       },
       vertexShader: /*glsl*/`
         ${TERRAIN_DECL}
+        attribute float aGroundRaw;
         varying vec2 vUv;
         void main() {
           vUv = uv;
@@ -179,7 +187,7 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     })
-    patchTerrainInstanced(mat)
+    patchTerrainInstancedBaked(mat)
     return mat
   }, [])
 
@@ -276,7 +284,7 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
             }
 
             // Chain terrain displacement for instanced mesh lift.
-            patchTerrainInstanced(mat)
+            patchTerrainInstancedBaked(mat)
             lampMatRef.current = mat
 
             setLampModel({
@@ -307,8 +315,9 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       lampRef.current.setMatrixAt(i, combined)
     })
     lampRef.current.instanceMatrix.needsUpdate = true
+    lampModel.geometry.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
     invalidate()   // demand-mode: paint the just-filled matrices
-  }, [allLamps, lampModel, invalidate])
+  }, [allLamps, lampModel, aGroundRaw, invalidate])
 
   // ── Instance transforms — glow orbs (tight glass halo) ────────────────────
   useEffect(() => {
@@ -322,8 +331,9 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       glowRef.current.setMatrixAt(i, d.matrix)
     })
     glowRef.current.instanceMatrix.needsUpdate = true
+    glowGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
     invalidate()
-  }, [allLamps, lampModel, invalidate])
+  }, [allLamps, lampModel, aGroundRaw, glowGeo, invalidate])
 
   // ── Instance transforms — sharp bulb dot ───────────────────────────────────
   useEffect(() => {
@@ -337,8 +347,9 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       bulbRef.current.setMatrixAt(i, d.matrix)
     })
     bulbRef.current.instanceMatrix.needsUpdate = true
+    bulbGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
     invalidate()
-  }, [allLamps, lampModel, invalidate])
+  }, [allLamps, lampModel, aGroundRaw, bulbGeo, invalidate])
 
   // (Lamp base-ring instance transforms removed — the contact shadow is baked
   // into the ground FX map now, not a per-lamp disc.)

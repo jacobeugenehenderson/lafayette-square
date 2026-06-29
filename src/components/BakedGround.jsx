@@ -27,7 +27,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import { terrainExag, patchTerrain, V_EXAG } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
-import { setGroundColorMap } from './groundColorState'
+import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 
@@ -124,7 +124,11 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
       poolmap.colorSpace = THREE.NoColorSpace
       poolmap.flipY = false
       poolmap.needsUpdate = true
+      // Share the FX map (G shadow / R pool) so the tree trunk blend can take
+      // the combined effective ground colour, matching grassMaterial.
+      setGroundFxMap(poolmap, poolMeta?.min, poolMeta?.span, poolMeta?.scale)
     }
+    return () => setGroundFxMap(null)
   }, [poolmap])
 
   // Ground-color map — per-Look albedo raster. Published into the shared

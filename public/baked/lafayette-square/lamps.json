@@ -6,402 +6,482 @@
     {
       "x": -76.5,
       "z": 144.3,
-      "park": true
+      "park": true,
+      "groundRaw": 29.80751384688674
     },
     {
       "x": 61,
       "z": -79.4,
-      "park": true
+      "park": true,
+      "groundRaw": 30.18457095247044
     },
     {
       "x": 49.1,
       "z": -42.4,
-      "park": true
+      "park": true,
+      "groundRaw": 31.02841856569667
     },
     {
       "x": 39.3,
       "z": -88.3,
-      "park": true
+      "park": true,
+      "groundRaw": 30.061211486613214
     },
     {
       "x": 34.4,
       "z": -125.7,
-      "park": true
+      "park": true,
+      "groundRaw": 28.317065965949325
     },
     {
       "x": 64.8,
       "z": -12.7,
-      "park": true
+      "park": true,
+      "groundRaw": 31.10529033930804
     },
     {
       "x": -11.3,
       "z": -43.2,
-      "park": true
+      "park": true,
+      "groundRaw": 30.82174395688829
     },
     {
       "x": -4.6,
       "z": -10.5,
-      "park": true
+      "park": true,
+      "groundRaw": 31.2422832593607
     },
     {
       "x": 18.5,
       "z": -2.5,
-      "park": true
+      "park": true,
+      "groundRaw": 30.75772263346959
     },
     {
       "x": -119.7,
       "z": 57,
-      "park": true
+      "park": true,
+      "groundRaw": 30.309146156662557
     },
     {
       "x": -36.2,
       "z": 149.5,
-      "park": true
+      "park": true,
+      "groundRaw": 29.897847600348463
     },
     {
       "x": -22,
       "z": 20.5,
-      "park": true
+      "park": true,
+      "groundRaw": 31.00591550893496
     },
     {
       "x": 141.5,
       "z": -129.5,
-      "park": true
+      "park": true,
+      "groundRaw": 27.705509788884385
     },
     {
       "x": -50.9,
       "z": -36.9,
-      "park": true
+      "park": true,
+      "groundRaw": 30.623273452761467
     },
     {
       "x": -14.8,
       "z": -163.5,
-      "park": true
+      "park": true,
+      "groundRaw": 27.55608778954152
     },
     {
       "x": -119.8,
       "z": -94,
-      "park": true
+      "park": true,
+      "groundRaw": 26.9048679587944
     },
     {
       "x": -142.8,
       "z": -16.3,
-      "park": true
+      "park": true,
+      "groundRaw": 27.312783633545475
     },
     {
       "x": -39.8,
       "z": -6.5,
-      "park": true
+      "park": true,
+      "groundRaw": 31.073534402509832
     },
     {
       "x": -66.8,
       "z": -68.9,
-      "park": true
+      "park": true,
+      "groundRaw": 29.906369209824984
     },
     {
       "x": -83.7,
       "z": -104.9,
-      "park": true
+      "park": true,
+      "groundRaw": 28.167318517993316
     },
     {
       "x": -130,
       "z": -172.4,
-      "park": true
+      "park": true,
+      "groundRaw": 22.80613778188215
     },
     {
       "x": -153.4,
       "z": 23.1,
-      "park": true
+      "park": true,
+      "groundRaw": 28.455245077998683
     },
     {
       "x": -141.5,
       "z": 64.3,
-      "park": true
+      "park": true,
+      "groundRaw": 30.297274218780665
     },
     {
       "x": -14.8,
       "z": 136,
-      "park": true
+      "park": true,
+      "groundRaw": 30.209715604976154
     },
     {
       "x": -12.2,
       "z": 100.7,
-      "park": true
+      "park": true,
+      "groundRaw": 30.205980116625618
     },
     {
       "x": -23.9,
       "z": 66.5,
-      "park": true
+      "park": true,
+      "groundRaw": 30.30401241480477
     },
     {
       "x": 21.5,
       "z": 141.1,
-      "park": true
+      "park": true,
+      "groundRaw": 30.153112041602135
     },
     {
       "x": 40.7,
       "z": 109.4,
-      "park": true
+      "park": true,
+      "groundRaw": 30.222273995543638
     },
     {
       "x": 1.6,
       "z": 157.1,
-      "park": true
+      "park": true,
+      "groundRaw": 29.822288897092182
     },
     {
       "x": 81.7,
       "z": 172.1,
-      "park": true
+      "park": true,
+      "groundRaw": 29.090767549328643
     },
     {
       "x": 63.8,
       "z": 8,
-      "park": true
+      "park": true,
+      "groundRaw": 30.74691248874945
     },
     {
       "x": 87.8,
       "z": 44.1,
-      "park": true
+      "park": true,
+      "groundRaw": 30.322810808775415
     },
     {
       "x": 104,
       "z": 67.5,
-      "park": true
+      "park": true,
+      "groundRaw": 28.539396612940344
     },
     {
       "x": -121.7,
       "z": -183.8,
-      "park": true
+      "park": true,
+      "groundRaw": 22.165341884567308
     },
     {
       "x": -97.1,
       "z": -179.8,
-      "park": true
+      "park": true,
+      "groundRaw": 23.66756390806662
     },
     {
       "x": -72.5,
       "z": -175.9,
-      "park": true
+      "park": true,
+      "groundRaw": 24.93578388461562
     },
     {
       "x": -47.9,
       "z": -171.9,
-      "park": true
+      "park": true,
+      "groundRaw": 26.354079561392787
     },
     {
       "x": 1.3,
       "z": -163.9,
-      "park": true
+      "park": true,
+      "groundRaw": 27.072710166616037
     },
     {
       "x": 25.9,
       "z": -159.9,
-      "park": true
+      "park": true,
+      "groundRaw": 26.185739959639484
     },
     {
       "x": 50.5,
       "z": -155.9,
-      "park": true
+      "park": true,
+      "groundRaw": 27.21981782265315
     },
     {
       "x": 75.1,
       "z": -151.9,
-      "park": true
+      "park": true,
+      "groundRaw": 27.027413978047466
     },
     {
       "x": 99.7,
       "z": -148,
-      "park": true
+      "park": true,
+      "groundRaw": 26.784562920191153
     },
     {
       "x": 124.3,
       "z": -144,
-      "park": true
+      "park": true,
+      "groundRaw": 26.983868770772567
     },
     {
       "x": 148.9,
       "z": -140,
-      "park": true
+      "park": true,
+      "groundRaw": 27.065137814778318
     },
     {
       "x": 173.5,
       "z": -136,
-      "park": true
+      "park": true,
+      "groundRaw": 26.7105602871429
     },
     {
       "x": 183.8,
       "z": -121.7,
-      "park": true
+      "park": true,
+      "groundRaw": 26.760453358841268
     },
     {
       "x": 179.8,
       "z": -97.1,
-      "park": true
+      "park": true,
+      "groundRaw": 27.17677561047648
     },
     {
       "x": 175.9,
       "z": -72.5,
-      "park": true
+      "park": true,
+      "groundRaw": 27.564789275695837
     },
     {
       "x": 171.9,
       "z": -47.9,
-      "park": true
+      "park": true,
+      "groundRaw": 27.891118967819025
     },
     {
       "x": 167.9,
       "z": -23.3,
-      "park": true
+      "park": true,
+      "groundRaw": 28.187668202799557
     },
     {
       "x": 163.9,
       "z": 1.3,
-      "park": true
+      "park": true,
+      "groundRaw": 28.768913044006432
     },
     {
       "x": 159.9,
       "z": 25.9,
-      "park": true
+      "park": true,
+      "groundRaw": 29.155292594891492
     },
     {
       "x": 155.9,
       "z": 50.5,
-      "park": true
+      "park": true,
+      "groundRaw": 29.16309103127365
     },
     {
       "x": 151.9,
       "z": 75.1,
-      "park": true
+      "park": true,
+      "groundRaw": 28.729353871532247
     },
     {
       "x": 148,
       "z": 99.7,
-      "park": true
+      "park": true,
+      "groundRaw": 28.277302695481367
     },
     {
       "x": 144,
       "z": 124.3,
-      "park": true
+      "park": true,
+      "groundRaw": 28.840231976033053
     },
     {
       "x": 140,
       "z": 148.9,
-      "park": true
+      "park": true,
+      "groundRaw": 28.826283202966763
     },
     {
       "x": 136,
       "z": 173.5,
-      "park": true
+      "park": true,
+      "groundRaw": 28.435191540285597
     },
     {
       "x": 121.7,
       "z": 183.8,
-      "park": true
+      "park": true,
+      "groundRaw": 28.377728705496807
     },
     {
       "x": 97.1,
       "z": 179.8,
-      "park": true
+      "park": true,
+      "groundRaw": 28.653112404504164
     },
     {
       "x": 47.9,
       "z": 171.9,
-      "park": true
+      "park": true,
+      "groundRaw": 29.160519975986748
     },
     {
       "x": 23.3,
       "z": 167.9,
-      "park": true
+      "park": true,
+      "groundRaw": 29.340429194557018
     },
     {
       "x": -25.9,
       "z": 159.9,
-      "park": true
+      "park": true,
+      "groundRaw": 29.58745522372407
     },
     {
       "x": -50.5,
       "z": 155.9,
-      "park": true
+      "park": true,
+      "groundRaw": 29.841344002951356
     },
     {
       "x": -99.7,
       "z": 148,
-      "park": true
+      "park": true,
+      "groundRaw": 30.174598420868925
     },
     {
       "x": -124.3,
       "z": 144,
-      "park": true
+      "park": true,
+      "groundRaw": 30.84979246579079
     },
     {
       "x": -148.9,
       "z": 140,
-      "park": true
+      "park": true,
+      "groundRaw": 30.86881522929229
     },
     {
       "x": -173.5,
       "z": 136,
-      "park": true
+      "park": true,
+      "groundRaw": 30.29490437526926
     },
     {
       "x": -183.8,
       "z": 121.7,
-      "park": true
+      "park": true,
+      "groundRaw": 29.780570260721657
     },
     {
       "x": -179.8,
       "z": 97.1,
-      "park": true
+      "park": true,
+      "groundRaw": 29.575052034929335
     },
     {
       "x": -175.9,
       "z": 72.5,
-      "park": true
+      "park": true,
+      "groundRaw": 28.780381715948774
     },
     {
       "x": -171.9,
       "z": 47.9,
-      "park": true
+      "park": true,
+      "groundRaw": 28.416287633413102
     },
     {
       "x": -167.9,
       "z": 23.3,
-      "park": true
+      "park": true,
+      "groundRaw": 27.580074338917292
     },
     {
       "x": -163.9,
       "z": -1.3,
-      "park": true
+      "park": true,
+      "groundRaw": 26.617351930525075
     },
     {
       "x": -159.9,
       "z": -25.9,
-      "park": true
+      "park": true,
+      "groundRaw": 25.809225194625157
     },
     {
       "x": -155.9,
       "z": -50.5,
-      "park": true
+      "park": true,
+      "groundRaw": 25.67617846206658
     },
     {
       "x": -151.9,
       "z": -75.1,
-      "park": true
+      "park": true,
+      "groundRaw": 25.139939083969452
     },
     {
       "x": -148,
       "z": -99.7,
-      "park": true
+      "park": true,
+      "groundRaw": 24.562023905904766
     },
     {
       "x": -144,
       "z": -124.3,
-      "park": true
+      "park": true,
+      "groundRaw": 23.922195909101767
     },
     {
       "x": -140,
       "z": -148.9,
-      "park": true
+      "park": true,
+      "groundRaw": 23.262006231122534
     }
   ]
 }
