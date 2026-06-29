@@ -14,6 +14,7 @@ import { IS_MOBILE } from '../lib/isMobile.js'
 export default function ContactModal() {
   const open = useContact((s) => s.open)
   const initialMessage = useContact((s) => s.initialMessage)
+  const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   const [seeded, setSeeded] = useState(false)
   const [sendCount] = useState(() => parseInt(localStorage.getItem('lsq_contact_count') || '0', 10))
@@ -22,9 +23,11 @@ export default function ContactModal() {
   const [error, setError] = useState(null)
   const textareaRef = useRef(null)
 
-  // Seed textarea with initial message when modal opens
-  if (open && !seeded && initialMessage) {
-    setMessage(initialMessage)
+  // Seed fields when the modal opens: the initial message + the remembered name.
+  if (open && !seeded) {
+    if (initialMessage) setMessage(initialMessage)
+    const savedName = localStorage.getItem('lsq_handle')
+    if (savedName) setName(savedName)
     setSeeded(true)
   }
   if (!open && seeded) setSeeded(false)
@@ -39,15 +42,16 @@ export default function ContactModal() {
   }
 
   const sendDirect = async () => {
-    if (!message.trim() || sending) return
+    if (!name.trim() || !message.trim() || sending) return
     setSending(true)
     setError(null)
     try {
       const deviceHash = await getDeviceHash()
-      const handle = localStorage.getItem('lsq_handle') || null
+      const trimmedName = name.trim()
+      localStorage.setItem('lsq_handle', trimmedName)   // remember the name for next time
       const avatar = localStorage.getItem('lsq_avatar') || null
       const { data, error: fnError } = await supabase.functions.invoke('contact-sms', {
-        body: { message: message.trim(), device_hash: deviceHash, handle, avatar },
+        body: { message: message.trim(), device_hash: deviceHash, handle: trimmedName, name: trimmedName, avatar },
       })
       if (fnError && !data?.sent) throw fnError
       if (data?.error) throw new Error(data.error)
@@ -63,11 +67,13 @@ export default function ContactModal() {
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey && message.trim() && !IS_MOBILE) {
+    if (e.key === 'Enter' && !e.shiftKey && name.trim() && message.trim() && !IS_MOBILE) {
       e.preventDefault()
       sendDirect()
     }
   }
+
+  const canSend = !!name.trim() && !!message.trim() && !sending
 
   return (
     <div
@@ -122,7 +128,7 @@ export default function ContactModal() {
                 </svg>
               </div>
               <p className="text-body text-on-surface-variant">
-                {sendCount === 0 ? "Sent. We'll get back to you here on the site — no personal info needed."
+                {sendCount === 0 ? "Sent. We'll get back to you here on the site."
                   : sendCount === 1 ? "Sent. We'll get back to you here on the site."
                   : 'Sent.'}
               </p>
@@ -135,6 +141,23 @@ export default function ContactModal() {
             </div>
           ) : (
             <>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                aria-label="Your name"
+                className="w-full outline-none"
+                style={{
+                  boxSizing: 'border-box',
+                  background: 'var(--surface-container)', borderRadius: 12, padding: '12px',
+                  color: 'var(--on-surface)', border: '1px solid var(--outline-variant)',
+                  fontFamily: 'inherit', fontSize: 'var(--type-body-sm)',
+                }}
+                maxLength={80}
+                disabled={sending}
+              />
+
               <textarea
                 ref={textareaRef}
                 value={message}
@@ -158,13 +181,13 @@ export default function ContactModal() {
 
               <button
                 onClick={sendDirect}
-                disabled={!message.trim() || sending}
+                disabled={!canSend}
                 className="w-full py-2.5 rounded-xl text-body font-medium text-center transition-opacity"
                 style={{
                   background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)',
                   color: '#6ee7b7',
-                  opacity: (!message.trim() || sending) ? 0.3 : 1,
-                  cursor: (!message.trim() || sending) ? 'not-allowed' : 'pointer',
+                  opacity: !canSend ? 0.3 : 1,
+                  cursor: !canSend ? 'not-allowed' : 'pointer',
                 }}
               >
                 {sending ? 'Sending...' : 'Send'}
