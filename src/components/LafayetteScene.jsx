@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { buildings as _allBuildings, buildingMap as _buildingMap } from '../data/buildings'
@@ -1133,6 +1133,18 @@ function LandmarkMarkers() {
   const selectedListingId = useSelectedBuilding((state) => state.selectedListingId)
   const listings = useListings((s) => s.listings)
 
+  // Meters-per-pixel at the ground for the current overhead browse framing, so the
+  // de-overlap below works in SCREEN space (pins are billboards of varying size).
+  // Recomputed only on a real zoom change (>5%) so it doesn't churn per frame.
+  const { camera, size } = useThree()
+  const [mpp, setMpp] = useState(0.9)
+  useFrame(() => {
+    const alt = Math.max(1, camera.position.y)               // overhead: altitude ≈ camera Y (target ~Y=0)
+    const vfov = ((camera.fov || 45) * Math.PI) / 180         // three's fov is vertical
+    const m = (2 * alt * Math.tan(vfov / 2)) / Math.max(1, size.height)
+    if (m > 0 && Math.abs(m - mpp) / mpp > 0.05) setMpp(m)
+  })
+
   const filteredLandmarks = useMemo(() => {
     return listings.filter(l =>
       !l._bare && (activeTags.has(l.subcategory) || activeTags.has(l.category) || l.id === selectedListingId)
@@ -1145,42 +1157,50 @@ function LandmarkMarkers() {
     return map
   }, [])
 
-  // De-overlap: spread pins that are too close in XZ space
+  // De-overlap in SCREEN space, SIZE-aware. Pins are drei <Html> billboards of
+  // varying on-screen width (logo pins ~95px, initial-circle pins ~42px), so two
+  // pins collide when their on-screen footprints touch — independent of zoom. We
+  // convert the needed pixel separation to a WORLD offset via `mpp` (so the stem
+  // stays attached to its offset head) and fan clusters on a ring big enough that
+  // adjacent (and the widest) pins clear. (2026-06-29 — was world-metres + a
+  // fixed size, which neither tracked zoom nor pin size.)
   const pinOffsets = useMemo(() => {
-    const THRESH = 25  // detection radius
-    const SPREAD = 20  // spacing between spread pins
+    const CIRCLE_PX = 42, LOGO_PX = 95, GAP_PX = 14
+    const pinPx = (l) => (l.logo ? LOGO_PX : CIRCLE_PX)
     const entries = filteredLandmarks.map(l => {
       const b = buildingMap[l.building_id]
-      return b ? { id: l.id, x: b.position[0], z: b.position[2] } : null
+      return b ? { id: l.id, x: b.position[0], z: b.position[2], px: pinPx(l) } : null
     }).filter(Boolean)
 
     const dx = {}, dz = {}
     entries.forEach(e => { dx[e.id] = 0; dz[e.id] = 0 })
 
-    // Group pins within THRESH of each other
+    // Cluster pins whose on-screen footprints overlap (half-widths + gap, → world via mpp).
     const assigned = new Set()
     for (let i = 0; i < entries.length; i++) {
       if (assigned.has(i)) continue
       const cluster = [i]
       for (let j = i + 1; j < entries.length; j++) {
         if (assigned.has(j)) continue
-        const ex = entries[i].x - entries[j].x
-        const ez = entries[i].z - entries[j].z
-        if (Math.sqrt(ex * ex + ez * ez) < THRESH) cluster.push(j)
+        const d = Math.hypot(entries[i].x - entries[j].x, entries[i].z - entries[j].z)
+        const collideWorld = ((entries[i].px + entries[j].px) / 2 + GAP_PX) * mpp
+        if (d < collideWorld) cluster.push(j)
       }
       if (cluster.length < 2) continue
       cluster.forEach(ci => assigned.add(ci))
-      // Fan out radially around the cluster center
-      const cx = cluster.reduce((s, ci) => s + entries[ci].x, 0) / cluster.length
-      const cz = cluster.reduce((s, ci) => s + entries[ci].z, 0) / cluster.length
+      // Fan on a ring sized so the WIDEST pin in the cluster clears its neighbours.
+      const N = cluster.length
+      const maxPx = Math.max(...cluster.map(ci => entries[ci].px))
+      const sepWorld = (maxPx + GAP_PX) * mpp            // needed center-to-center, in world units
+      const ringR = sepWorld / (2 * Math.sin(Math.PI / N))   // N=2 → sepWorld/2 (diametric)
       cluster.forEach((ci, idx) => {
-        const angle = (idx / cluster.length) * Math.PI * 2 - Math.PI / 2
-        dx[entries[ci].id] = Math.cos(angle) * SPREAD
-        dz[entries[ci].id] = Math.sin(angle) * SPREAD
+        const angle = (idx / N) * Math.PI * 2 - Math.PI / 2
+        dx[entries[ci].id] = Math.cos(angle) * ringR
+        dz[entries[ci].id] = Math.sin(angle) * ringR
       })
     }
     return { dx, dz }
-  }, [filteredLandmarks, buildingMap])
+  }, [filteredLandmarks, buildingMap, mpp])
 
   if (filteredLandmarks.length === 0) return null
 
