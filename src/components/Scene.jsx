@@ -736,13 +736,32 @@ function DeferredStreetLights() {
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
 
+  // ── DEV: live frameloop toggle (test hero-pan smoothness) ────────────────
+  // The hero pan reads ~2 fps even though the demand loop self-pumps 60. To
+  // split "demand-clock stepping" (H1) from "GPU perf wall" (H2): flip the loop
+  // live during a pan. `window.__frameloop('always')` = continuous render;
+  // `window.__frameloop('demand')` = back to on-demand (default). Smooth on
+  // 'always' ⇒ H1 (the loop/clock); still 2 fps ⇒ H2 (perf). Remove once the
+  // root is settled. (BACKLOG "Hero motion is TEMPORALLY JERKY".)
+  const [frameloop, setFrameloop] = useState('demand')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.__frameloop = (mode = 'always') => {
+      const m = mode === 'demand' ? 'demand' : 'always'
+      setFrameloop(m)
+      console.log(`[scene] frameloop = ${m}`)
+      return m
+    }
+    return () => { delete window.__frameloop }
+  }, [])
+
   return (
     <div role="img" aria-label="3D visualization of Lafayette Square neighborhood" style={{
       position: 'relative', width: '100%', height: '100%', background: '#000',
     }}>
     <Canvas
       style={{ position: 'relative' }}
-      frameloop="demand"
+      frameloop={frameloop}
       camera={{
         position: PRESETS.hero.position,
         // Canvas's initial fov fires at mount time, before scene.json
