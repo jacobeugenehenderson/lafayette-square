@@ -19,6 +19,8 @@
 
 ## 2. The role system (operator's view)
 
+> **Deep specs per role:** [`TOWNIES.md`](TOWNIES.md) (check-in ladder + gates) · [`GUARDIANS.md`](GUARDIANS.md) (claim, permission model, staff ops) · [`RESIDENTS.md`](RESIDENTS.md) (residence + lobby). This table is the at-a-glance summary; the mechanics live in those.
+
 | Role | How earned | Powers |
 |------|-----------|--------|
 | **Visitor** | default (anonymous device hash) | browse, search, read everything |
@@ -30,6 +32,7 @@
 
 - **Identity** is a per-device anonymous UUID (`lsq_device_hash`) + a chosen `@handle` + emoji/vignette avatar. No email, no password. A handle can be carried across devices via a 6-char link token (5-min expiry).
 - **Claiming a listing** requires the secret printed on the physical QR card at the location — this is the presence proof that anchors the whole guardian system.
+- **What a guardian actually edits** (every card field, the menu/delivery model, where curated menus live vs. guardian-authored ones) is specced in [`PLACE-CARDS.md`](PLACE-CARDS.md).
 
 ---
 

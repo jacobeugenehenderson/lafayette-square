@@ -52,20 +52,22 @@ And when you look up, it's a *real* sky. The sun and moon sit in their **true po
 ### Place cards
 Click any building to open its card. **Claimed places** show photos, hours (with a live open/closed indicator), contact info, a menu where applicable, reviews with a fleur-de-lis rating, and upcoming events. **Unclaimed buildings** still open — LS auto-synthesizes a read-only card from the building's own record (year built, stories, architectural style, zoning, historic status, square footage), so every structure in the neighborhood is discoverable and described. Townies can leave reviews (with optional photos); guardians edit their card inline.
 
+> **The full spec — every card field, the menu/delivery data model, and how cards get authored — is [`PLACE-CARDS.md`](PLACE-CARDS.md).** This is the directory ("the Society Pages") and the enhanced card behind it.
+
 ### Bulletin
 A neighborhood bulletin board organized into groups (Marketplace, Services, Neighbors, Cary) and sub-sections (including Missed Connections, Square Notes). Townies with a handle can post; posts support full markdown authoring (bold, links, images, headings, colors, lists — 15+ tools) with live preview. Each post takes threaded comments, and any post can spin off into a **private direct-message thread** between two neighbors. Some sections (Missed Connections, Square Notes) default to anonymous posting; the app asks how you want to appear and remembers your choice.
 
 ### Residence + Lobby
-Anyone can claim their home. Once verified — by an admin, a QR invite, or another already-verified resident of the building, or automatically if a device you've linked is already verified — you become a resident with access to that building's **private lobby**: a residents-only message board (text + photos) and a view of your co-residents. Residence claims last a year.
+Anyone can claim their home. Once verified — by an admin, a QR invite, another already-verified resident, or a device you've linked — you become a **resident** with access to that building's **private lobby**: a residents-only message board (text + photos) and a view of your co-residents. Residence lasts a year. → Full spec (the four verify paths, the lobby gates, the data model): [`RESIDENTS.md`](RESIDENTS.md). *(Distinct from a "resident place card" — the card kind — which is in [`PLACE-CARDS.md`](PLACE-CARDS.md).)*
 
 ### Guardian / business listing edits
-A business owner claims their listing by scanning the QR card physically posted at the location (the secret on the card proves presence). The first claimant becomes the **guardian** (full control); anyone they add afterward is a **keyholder** with exactly the per-field permissions the guardian grants (menu, hours, photos, replies, events). Guardians edit everything inline — hours, photos, logo, tags/category, menu, and events — and can reply to reviews, post events, and manage their staff roster. All edits are gated server-side, not just in the UI.
+A business owner claims their listing by scanning the QR card posted at the location (the secret on the card proves presence). The first claimant is the **guardian** (full control); anyone they add is a **keyholder** with exactly the per-field permissions granted. Guardians edit everything inline (hours, photos, logo, tags, menu, events), reply to reviews, and manage their staff roster — all gated server-side. → Full spec (claim flow, permission model, staff ops, every gate): [`GUARDIANS.md`](GUARDIANS.md).
 
 ### Cary (courier system)
 A neighborhood courier request-and-dispatch system, backed by Supabase (phone-OTP auth, courier profiles, realtime dispatch + chat). It's **architected and the backend is live** — courier dots already render on the map and the community masthead counts active couriers from Supabase — but the rider/courier UI ships behind "coming soon" placeholders (per `PUBLISH.md §5`). Full inventory of this section is deferred (it was held off the forensic pass).
 
 ### Check-in (townie QR)
-The neighborhood's trust ladder. Scanning a place's QR check-in card logs a visit (one per place per day); reach **3 distinct check-in days within a rolling 14-day window** and you become a **townie** — which unlocks reviewing places and posting to the bulletin board. Check-ins also fire quietly whenever you open a place card. Status is computed server-side; there's no way to fake your way in.
+The neighborhood's trust ladder. Scanning a place's QR check-in card logs a visit; reach **3 distinct check-in days within a rolling 14-day window** and you become a **townie** — which unlocks reviewing places, posting to the bulletin, commenting, and starting DM threads. Status is computed server-side; there's no way to fake your way in. → Full spec (the computation, the gated actions, the data model): [`TOWNIES.md`](TOWNIES.md).
 
 ### Handles + avatars
 Your public face in the neighborhood: a chosen `@handle` plus an emoji avatar set on a colored "vignette" backdrop. Identity is tied to your device (anonymous by design — no email, no password) and can be carried to another device via a short linking token, so the same handle follows you across phone and laptop.

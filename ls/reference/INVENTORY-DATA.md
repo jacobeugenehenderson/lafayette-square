@@ -43,7 +43,7 @@ Imported at JS module load, bundled into the JS chunk. No HTTP fetch; immutable 
 | Named stars | `src/data/planetarium/named_stars.json` | `PlanetariumOverlay` | **Freeze** |
 | Planets | `src/data/planetarium/planets.json` | `PlanetariumOverlay` | **Freeze** |
 | Landmarks catalog | `src/data/landmarks.json` | `useInit`, `useListings`, `src/cartograph/SurveyorPanel.jsx` | **Keep live** — merged with GAS state at boot |
-| Menus | `src/data/menus.json` | `useInit`, `useListings` | **Keep live** — merged with GAS state at boot |
+| Menus | `src/data/menus.json` | `useInit`, `useListings` | **Keep live** — merged at boot (`useListings.js:22`), **overrides** GAS `menu_json` for the curated set. Shape + delivery model: [`../PLACE-CARDS.md`](../PLACE-CARDS.md) §3 |
 | Seed events (GAS fallback) | `src/data/seedEvents.json` | `useEvents` | **Keep live** — fallback when GAS unavailable |
 
 ---
