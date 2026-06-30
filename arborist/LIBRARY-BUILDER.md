@@ -1,5 +1,7 @@
 # The Library Builder — target structure (declared, Stage 0)
 
+> ⚠️ **SUPERSEDED 2026-06 — frozen Stage-0 declaration. Stage 1 is DONE (`BACKLOG.md`): the ingest now writes through this Builder and `public/library/` is partially built.** This is the *target layout as declared at Stage 0* (2026-06-18), not the as-built inventory; for current state read `README.md §⭐ START HERE` (`public/library/INVENTORY.md`) and `BACKLOG.md`. Kept as historical record.
+
 > **Declaration only — no files migrate in Stage 0.** Authored by **Hortus** (2026-06-18) against
 > `FOREST-BUILDER-KIT-MATCHER.md §4.5`. The Library Builder is the **filesystem counterpart of the
 > rubric**: the rubric organizes the *concepts*, the Builder organizes the *files*. It is **not a

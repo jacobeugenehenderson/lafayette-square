@@ -1,5 +1,7 @@
 # LS — Runtime Delta (main → `cartograph-looks-pass-ab`)
 
+> ⚠️ **SUPERSEDED — the branch has merged; this is the pre-merge diff catalog.** This doc answered "what changes *when* this branch lands on `main`" — that landing has **happened** (the slab now renders in production; buildings via `SlabBuildings`, L1.3 2026-05-26). Read it as the historical Phase-A diagnostic record, **not** current state. Live consumer architecture = [`../ARCHITECTURE.md`](../ARCHITECTURE.md); auth/security posture = [`../OPERATIONS.md §1`](../OPERATIONS.md) + [`../STATUS.md §Security`](../STATUS.md). Several inline claims have since flipped (notably: buildings are now production-slab not Preview-only; the clouds `<Atmosphere/>` consumer is wired-but-gated-off; `PlanetariumOverlay` is live+gated, corrections already inline at §2.4/§3.5/RD.3). Kept as historical snapshot.
+
 What changes for the live consumer app when this branch lands on `main`. The canonical reference for Phase B's two plans ([`project_ls_basemap_swap`](../BACKLOG.md#phase-b--plan) and [`project_pre_public_cleanout_security_audit`](../BACKLOG.md#phase-b--plan)).
 
 Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b` vs. `origin/main @ 20866ef` (the `v1-pre-cartograph-merge` rollback floor). 189 commits ahead, ~267 files changed.
@@ -217,7 +219,7 @@ Walk the consumer surface against both runtimes. Categorized by feature area; ve
 
 ### 3.7. Identity flow (device hash, admin, Cary auth)
 
-Unchanged. `getDeviceHash`, `?admin` passphrase + 6h sessionStorage token, Supabase phone OTP for Cary. The cartograph routes (`/cartograph.html`, etc.) ship **without auth gates** in the current branch — anyone with the URL can reach the authoring kit. Phase B's security audit is where this gets resolved (strip beats gate in this codebase, per the doctrine).
+Unchanged. `getDeviceHash`, `?admin` passphrase + 6h token in **`localStorage`** (`lsq_admin_token` — corrected; not sessionStorage), Supabase phone OTP for Cary. The cartograph routes (`/cartograph.html`, etc.) ship **without auth gates** in the current branch — anyone with the URL can reach the authoring kit. Phase B's security audit is where this gets resolved (strip beats gate in this codebase, per the doctrine).
 
 ### 3.8. Park visual
 
@@ -233,7 +235,7 @@ Net-new visual. Production didn't render street/yard trees on main; branch adds 
 
 ### 3.10. Handles + avatars
 
-Unchanged. GAS endpoints + sessionStorage; no slab dependency.
+Unchanged. GAS endpoints + `localStorage` identity keys (corrected; not sessionStorage); no slab dependency.
 
 ### 3.11. Check-in (townie QR), residence, bulletin, Cary
 

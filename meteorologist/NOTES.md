@@ -470,6 +470,8 @@ for (const [k, u] of Object.entries(PARAM_TO_UNIFORM)) {
 
 ---
 
+> 📁 **MISFILED-DOMAIN MARKER (flagged 2026-06-30 doc-canon sweep).** The next several entries below (≈through the "4-anchor seasonal sky matrix" ADR) are **cartograph sky-pipeline** history — they concern `cartograph/proceduralSky.js` · `skyGrid.js` · `SkyGradientGrid.jsx` · the `scene.json` sky schema, **not** the Meteorologist cloud renderer. They live here only because one cross-helper agent authored them in this file. Their proper diary home is the cartograph diary; relocation is a deferred follow-up. *(The "kit-level clock + calendar anchor" entry that follows them IS cross-cutting — the clock primitive feeds Meteorologist's time card — so that one stays.)*
+
 ## 2026-05-21 — Sky pivot Phase B shipped — rules-based seasonal derivation
 
 Three HSV knobs per season instead of per-cell painting. `SEASON_TRANSFORMS` in `cartograph/proceduralSky.js` applies a `(hueDeg, sat, val)` transform to `KEYFRAMES` at sample time — the procedural lerp then walks through a palette-shifted copy of the canon per season. Summer is locked to identity (canon). Winter / spring / autumn deviate per the knobs:

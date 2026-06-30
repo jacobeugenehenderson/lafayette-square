@@ -1,11 +1,13 @@
 # Arborist — work order
 
+> ⚠️ **SUPERSEDED — this is the 2026-04-27 v1 work order (LiDAR/QSM); the 2026-06 kit-matcher / "fashion-plates" rethink replaced most of it. Kept as the historical v1 record.** What changed: **rubric + robust dossiers replace the flat `species-map.json`**; **`public/library/` build-once bases + posterize recolor replace the flat morph/leaf-atlas library**; **Salon composition (pick chassis · bark · leaf, tune rubric axes) replaces specimen-picking + the "bake ~10 specimens per species" model**; **Authored-only is the active track, LiDAR is now a kept PEER track (not the spine)**. The "DO NOT re-litigate / do not build" tables below are v1-scoped and largely superseded — do **not** treat them as live doctrine. **Live home = `README.md §⭐ START HERE` + `scratch/FOREST-BUILDER-KIT-MATCHER.md`** (ratified architecture + staged plan). This file is retained because other docs cite it as "the v1 spec, largely shipped."
+
 Build the **Arborist**, a standalone helper app that authors per-species tree assets and publishes them as artifacts the runtime consumes. Modeled directly on the existing **Cartograph** helper. Read these first, in this order:
 
 1. [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — publish-loop pattern, Looks model, Designer/Stage split.
 2. [`../cartograph/README.md`](../cartograph/README.md) — the canonical helper this Arborist mirrors.
-3. [`../memory/project_tree_lidar_pipeline.md`](../memory/project_tree_lidar_pipeline.md) — tree-pipeline architecture, dataset notes, runtime memory budget, why this approach.
-4. [`../memory/project_tree_model_sourcing.md`](../memory/project_tree_model_sourcing.md) — researched paid + free options; sets context for why we're building this rather than buying.
+3. [[project_tree_lidar_pipeline]] — tree-pipeline architecture, dataset notes, runtime memory budget, why this approach.
+4. [[project_tree_model_sourcing]] — researched paid + free options; sets context for why we're building this rather than buying.
 
 **This document is the work order. Build to it. Where it omits a detail, ask before inventing — see "Open questions" at the bottom.**
 
@@ -612,7 +614,7 @@ Each step is a commit. Branch off the operator's current working branch (`cartog
 
 - [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — project-wide patterns
 - [`../cartograph/README.md`](../cartograph/README.md) — the helper template
-- [`../memory/project_tree_lidar_pipeline.md`](../memory/project_tree_lidar_pipeline.md) — full pipeline rationale + dataset notes
-- [`../memory/project_tree_model_sourcing.md`](../memory/project_tree_model_sourcing.md) — research on alternatives
-- [`../memory/feedback_mount_dont_hide_heavy_3d.md`](../memory/feedback_mount_dont_hide_heavy_3d.md) — heavy 3D children should not mount when invisible (current ParkTrees was muted because of this; InstancedTrees should respect it too)
+- [[project_tree_lidar_pipeline]] — full pipeline rationale + dataset notes
+- [[project_tree_model_sourcing]] — research on alternatives
+- [[feedback_mount_dont_hide_heavy_3d]] — heavy 3D children should not mount when invisible (current ParkTrees was muted because of this; InstancedTrees should respect it too)
 - FOR-species20K dataset: https://zenodo.org/records/13255198

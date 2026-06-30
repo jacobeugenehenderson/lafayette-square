@@ -132,7 +132,9 @@ Canvas opts into `logarithmicDepthBuffer: true` per kit convention. Raw `ShaderM
 
 ## What `<Atmosphere />` renders today
 
-Five photoreal levers per HANDOFF-clouds-day3-clouddome-v2.md, all five shipped in Phase 4b.1:
+> ⚠️ **Where `<Atmosphere />` actually mounts:** in **CanaryScene** (the authoring viewport) always, and in the three production surfaces only under `?sky=volumetric`. Production defaults to the cheap `<CloudDome />` via the `skyMode` stopgap (volumetric per-genus work is TABLED). So "renders today" = renders in authoring + under the flag. See `ARCHITECTURE.md §4/§8` + `STATUS.md`.
+
+Five photoreal levers (live home: `src/components/atmosphere-materials.js` + this section; the old `HANDOFF-clouds-day3-clouddome-v2.md` was deleted 2026-05-20), all five shipped in Phase 4b.1:
 
 1. **Three-tier lighting** — every visible cloud point reads as one of sun-side cap (warm-bright), body (neutral mid-gray), or shadow-side / underside (cool-dark, picks up sky color). Driven by `dot(cloudNormal, sunDir)` lerping between three colors. Without this, clouds read as flat noise blobs.
 2. **Silver lining** — Mie forward-scatter at thin sun-facing edges. `smoothstep(0.7, 1.0, dot(viewDir, sunDir)) × (1 - density) × edgeSilver × sunScatter`. Visible when the camera looks toward the sun through a cloud edge.
@@ -145,6 +147,8 @@ As of 2026-05-20 (Phase 5a + 4b.3), uniforms read live: the 12 shape + lighting 
 ---
 
 ## API endpoints (`meteorologist/serve.js`, port 3335)
+
+> **SSOT for the endpoint contract.** SPEC's backend table is an older work-order sketch and diverges; this table is the closest-to-current one. Verify against `serve.js` if in doubt.
 
 Mounted under `/api/meteorologist` via Vite proxy.
 
@@ -176,16 +180,7 @@ No `/bake` endpoint. Saves are direct.
 
 ## Vocabulary
 
-| User-facing word | What it is | Schema name (internal) | File |
-|---|---|---|---|
-| **Teapot** | Library of 52 cloud presets | `presets-file` + `preset` | `public/clouds/presets.json` |
-| **Teacup** | Per-cloud workstage | — | — |
-| **Conditions** | Library of 16 weather situations | `almanac` (file stays named Almanac) | `public/clouds/almanac.json` |
-| **Condition editor** | Per-condition workstage | — | — |
-| **Cloud Chamber** | First slot tab — cloud isolated against sky, close framing | — | — |
-| **Ground** | Second slot tab — cloud composed with hero tree for scale | — | — |
-
-Schemas and file names keep their internal names to avoid churn; UI uses the operator-facing vocabulary throughout.
+**Single owner: `INTERFACE.md §2`** (Teapot / Teacup / Conditions / Condition editor / Cloud Chamber / Ground → schema names + files). Schemas and file names keep their internal names to avoid churn; the UI uses the operator-facing vocabulary throughout. *(The duplicate table that lived here was removed 2026-06-30 — see INTERFACE §2.)*
 
 ---
 
@@ -279,4 +274,4 @@ Beyond Atmosphere's cloud shader, the directive now drives a second consumer fam
 - [`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md) — cleanup commit spec for Phase 4b.3
 - [`../cartograph/FEATURES.md`](../cartograph/FEATURES.md) — kit-level features (Designer / Stage / Preview)
 - [`../arborist/FEATURES.md`](../arborist/FEATURES.md) — sibling helper Meteorologist borrows shape from
-- [`../HANDOFF-clouds-day3-clouddome-v2.md`](../HANDOFF-clouds-day3-clouddome-v2.md) — five photoreal levers reference (still alive until 4b.3 retires)
+- Five photoreal levers reference — live home is `src/components/atmosphere-materials.js` + this doc's "What `<Atmosphere />` renders today" section. *(The old `HANDOFF-clouds-day3-clouddome-v2.md` was deleted 2026-05-20.)*

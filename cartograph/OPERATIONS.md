@@ -255,11 +255,11 @@ Promote to staging = fast-forward/merge the feature branch into the trunk and pu
 | **Bloom (or another post effect) suddenly looks broken / no glow** right after you toggled **DoF or SMAA** | An **HMR artifact, not a real bug.** The `EffectComposer` is keyed `fx-${smaaOn}-${dofOn}`, so toggling DoF/SMAA rebuilds the composer and Vite HMR can leave it detached → **hard-refresh the page.** Don't chase a DoF↔Bloom coupling — they share the pyramid by design. |
 | **Trees don't show in Browse** | Known render "wake-up" — **nudge any look dial** and they pop in. It's the render/cull layer, not a look knob (tracked, unresolved). |
 
-### Named levers (deliberate, not yet built)
+### Named levers (deliberate)
 
-Two formalizations are *chosen but un-built* (2026-06-17 — the path-A decision), tracked here so we turn them on purpose, not by accident:
+Two formalizations from the 2026-06-17 path-A decision, tracked here so we turn them on purpose, not by accident — **#2 is now built (2026-06-30); #1 remains chosen-but-unbuilt:**
 1. **Kill the timestamp noise** — make `scene.json`/`index.json`/`default.json` omit (or stabilize) their `Date.now()` fields so a no-op re-bake is byte-identical and the tree stops going dirty for free.
-2. **One-command save ceremony** — a single CLI action: flush source → force-bake → report what *semantically* changed → commit the slab. Replaces eyeballing the dirty tree.
+2. **One-command save ceremony** — ✅ **BUILT 2026-06-30** (`d1b86dd4`), as the **Preview "Publish" panel** rather than a CLI: a button commits the scoped slab pathspecs only + pushes (DEV-ONLY git endpoints in `cartograph/serve.js`; the panel hides when the backend is unreachable, so a deployed Preview can't touch prod). Replaces eyeballing the dirty tree. **Refinement (settled 2026-06-30):** Preview is the publish gate and **staging is REDUNDANT for slab-data** publishes — Preview already renders the slab in production's exact tree, so the SMS-hero flow pushes **straight to prod**; staging-first still applies to *code/structural* changes (the strategy-B loop above). Home: `PREVIEW.md §0.2`.
 
 *(With path-A also: a reproducibility gate — CI/pre-push check that the committed slab equals a fresh bake from source — to catch a stale slab before it ships.)*
 

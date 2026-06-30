@@ -78,7 +78,7 @@ Your public face in the neighborhood: a chosen `@handle` plus an emoji avatar se
 
 What LS trusts cartograph to publish, and what LS does *not* re-author (confirmed by the 2026-06-02 inventory):
 
-- **Trusts as immutable:** `public/baked/<look>/ground.{json,bin}` + `ground.lightmap.png`, `public/baked/<look>/buildings.{json,bin}` (**now the production building source — `SlabBuildings`, not Preview-only**), `public/baked/<look>/lamps.json`, `public/baked/<look>/scene.json`, `public/baked/default.json` (arborist tree placements + GLB variants), `public/clouds/{presets,almanac,modulators}.json` (**now consumed at runtime by the volumetric `Atmosphere` via the meteorologist directive — no longer "published but unconsumed"**).
+- **Trusts as immutable:** `public/baked/<look>/ground.{json,bin}` + `ground.lightmap.png`, `public/baked/<look>/buildings.{json,bin}` (**now the production building source — `SlabBuildings`, not Preview-only**), `public/baked/<look>/lamps.json`, `public/baked/<look>/scene.json`, `public/baked/default.json` (arborist tree placements + GLB variants), `public/clouds/{presets,almanac,modulators}.json` (**the volumetric `<Atmosphere/>` consumer is now wired via the meteorologist directive — no longer "published but unconsumed" — though it is gated OFF by default; production ships the cheap `<CloudDome/>` and `<Atmosphere/>` only mounts under `?sky=volumetric`**).
 - **Live data still consumed at runtime (intentional or to-be-baked):** enumerated in `ls/ARCHITECTURE.md` §2 "could/should bake" table.
 - **Live data still consumed at runtime (load-bearing, won't ever bake):** GAS listings/events/reviews/bulletins/threads, Supabase Cary sessions, handles, residence + guardian claims, check-ins, community counts, and live Open-Meteo weather. These are dynamic by definition.
 
@@ -86,7 +86,6 @@ What LS trusts cartograph to publish, and what LS does *not* re-author (confirme
 
 ## Product / runtime decisions worth knowing
 
-[TO BE FILLED as decisions emerge from inventory + composition pass. Candidates from the walk:]
 - **Buildings render off the slab (L1.3, shipped 2026-05-26).** Production + Preview mount `SlabBuildings` — the merged-mesh buildings bake (`buildings.json` **v2**) plus a render-scoped per-building index. Identity (click / hover / neon / selection / place card) resolves `raycast → building id` against the slab index (`useSlabBuildingIndex`), then `id → record` via the content layer (`buildingMap` / `useListings`) — the slab owns spatial identity, content owns what to display. `SceneNeon` sources tube geometry/anchors from the index. **Stage keeps the live `LafayetteScene` mount** (authoring needs live retint), so `SceneNeon` falls back to live `src/data/buildings` there. The `src/data/buildings` *render* dependency is gone from production; the *content* importers (`SidePanel`, `GlassSearch`, `useListings`, `CheckinPage`, `PlaceCard`) still read it as the content DB — relocating that is a separate future brief. `BakedBuildings` is deleted. See `SLAB-CONTRACT.md §6`.
 - **Mobile-first staging.** `LafayetteScene` mobile-detects and staggers heavy content (labels, markers) across seconds to avoid GPU upload crashes.
 - **Time-of-day is live, not baked.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute sun/moon/sky continuously. The slab carries no time-of-day data.

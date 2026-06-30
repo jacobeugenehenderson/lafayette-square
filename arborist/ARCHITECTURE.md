@@ -213,7 +213,7 @@ generateTreeMesh({
 
 **The doctrine (the TARGET this section describes):** the Salon Workstage preview should BE the published artifact, rendered live — not "similar to," not "two consumers of the same material." The bake chain (compose → generate-salon → bake-look → bake-trees) is the slab boundary that publishes whatever the Salon authored; LS is where that published slab gets consumed. The aim is **no daylight** between Salon preview and LS render that the operator must step across to verify their work. *(Today: see the two gaps above.)*
 
-**Sequencing (as-built — the explicit two-gesture model; the target collapses this to autosave + one bake):**
+**Sequencing — ⚠️ SUPERSEDED 2026-06-25 (the explicit two-gesture / Adopt + Re-publish model below is RETIRED):** edits now **autosave** and the Grove **"Bake → Slab" regenerates-from-source** (`generate-salon` → `bake-look` → `bake-trees`), so the per-species **Re-publish gesture is gone** — the live flow is *author (autosaves) → Grove bake (regenerates + ships)*. Live home = `README.md §The Grove → Slab` + `NOTES.md` (2026-06-25). The diagram + Gesture-split note below are kept as the historical as-built record.
 
 ```
 [operator iterates in the Salon]              ← AUTHORING (must be visually complete here)
@@ -318,6 +318,8 @@ Runtime classifies each cylinder by radius at bake time → assigns `aBark` attr
 **Carrier (locked Cycle 2 Stage 1):** primitive split. `bake-tree.py` emits a `trimesh.Scene` with two named geometries `trunkBark` + `branchBark` (radius ≥ median → trunk, sections=8; else branch, sections=6). `lidar-publish.js` attaches the per-region Bark photo packs as `baseColorTexture` + `normalTexture` on the matching materials so `atlas-survey.js` picks them up (without a `baseColorTexture` it'd skip the material entirely). `bake-look.js`'s atlas pass reads `mesh.getName()` to stamp `extras.barkRegion: 'trunk'|'branch'` alongside `extras.atlasKind: 'bark'`. `InstancedTrees.jsx` reads `geometry.userData.barkRegion` at runtime merge time, stamps a per-vertex `aBarkRegion` (1=trunk, 0=branch). The fragment shader gates region selection via `uBarkRegionSplit` (per-draw uniform: 1 enables region, 0 falls back to legacy single-spec). Stage 2's Configuration D will add a third+fourth primitive category (`canopyCard` outer-shell + inner-mass points) — the GLB structure inherits cleanly since each category is its own primitive with its own mesh-name marker.
 
 ### View-aware bark tiering (Brief 10 — sub-phase A SHIPPED 2026-05-23 by Cork)
+
+> ℹ️ **Disambiguation:** this is the **bark *shader* tier** (`uBarkShaderTier` / `TierDriver` / `computeTier`) — which fragment path a bark pixel takes, legitimately selected at runtime by camera. It is **NOT geometry-LOD.** Geometry is **role-at-bake** and never camera-swapped (the runtime `GeoTierDriver` is RETIRED — see §Tree-render reality at LS).
 
 `project_view_aware_baking` applied to the bark surface. One uniform — `uBarkShaderTier` — selects the fragment path per bark fragment; same compiled program serves all tiers (Bloom-stable, single-program-doctrine preserved). Three tiers map to three view classes:
 
@@ -532,6 +534,8 @@ UI controls bind to `effective`. Without the DEFAULTS layer, controls that refer
 
 ## Phase F leaf-color architecture (design, 2026-05-19)
 
+> ⚠️ **SUPERSEDED 2026-06 — the `annualCycle` manifest + per-Look override-packs design below did NOT become the live model.** Leaf **color** is now a **rubric axis recolored via posterize** (build-once greyscale base → posterized tint), not a per-anchor gradient LUT keyed on `uDayOfYear`. Live home = `scratch/FOREST-BUILDER-KIT-MATCHER.md §6` + `SALON-INTERFACE.md §2` (root). Kept as the historical design record of the Phase F pivots.
+
 Phase F's leaf surface architecture went through three pivots on 2026-05-19. The final shape consolidates three doctrines: vendor-pack binding, year-long tree (annual cycle), and per-Look art-direction overrides. See `BACKLOG.md` Phase F for full pivot history; [[project_year_long_tree_doctrine]] for the year-long manifest schema in detail.
 
 ### Layer 1 — Leaf-pack library (greyscale shape + PBR)
@@ -602,6 +606,8 @@ Halloween bats, Christmas candy canes, Diwali ornament gold, Pride rainbow, Vale
 ---
 
 ## Configuration D canopy render (Phase L Cycle 2 + Phase H supersession, 2026-05-19)
+
+> ⚠️ **SUPERSEDED 2026-06 — the outer-shell-cards + inner-mass `THREE.Points` point-canopy design below is NOT the live model.** Trees ship **all-mesh** (every visible placement is a full lod1 mesh tree, `bake-trees.js#PROM_THRESHOLD=0`); geometry is role-at-bake, no points-canopy. Live home = `FEATURES.md` "What ships to LS today" + `ARCHITECTURE.md §Tree-render reality at LS`. Kept as historical design record.
 
 Per [[project_configuration_d_canopy_render]] (locked 2026-05-19 PM): the canopy renders as **outer-shell A2C cards + inner-mass `THREE.Points` point cloud**.
 

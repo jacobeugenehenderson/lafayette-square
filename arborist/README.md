@@ -133,5 +133,5 @@ The per-tree **Re-publish "add"** is **symbolic, not useful** — the Grove's se
 
 ## Cross-references
 - `STAGE0-KEYSTONE.md` · `LIBRARY-BUILDER.md` — the kit keystone + the filesystem layer
-- `../memory/project_arborist_kit_matcher.md` — the project thread
+- [[project_arborist_kit_matcher]] — the project thread
 - FOR-species20K (LiDAR peer track): https://zenodo.org/records/13255198

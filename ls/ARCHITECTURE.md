@@ -29,11 +29,17 @@ index.html
         │       ├── SkyStateTicker          (drives useSkyState)
         │       ├── WeatherPoller           → fetches open-meteo.com every N min
         │       ├── CelestialBodies         (sun/moon/stars; live, no data fetch beyond bright_stars.json + planetarium/*)
-        │       ├── CloudDome               (cheap procedural sky-cloud backup, hero mode; does NOT itself read meteorologist artifacts)
-        │       ├── Atmosphere              (volumetric raymarched clouds; DOES consume the
-        │       │                             meteorologist directive — reads /clouds/{almanac,
-        │       │                             presets,modulators}.json + scene.json.sky channel.
-        │       │                             This is the live-weather cloud system as of 2026-06-02.)
+        │       ├── CloudDome               (cheap procedural sky-cloud system; the
+        │       │                             DEFAULT production cloud render; does NOT
+        │       │                             itself read meteorologist artifacts)
+        │       ├── Atmosphere              (volumetric raymarched clouds; consumer IS
+        │       │                             wired — reads /clouds/{almanac,presets,
+        │       │                             modulators}.json + scene.json.sky via
+        │       │                             useAtmosphereDirective + atmosphere-materials.
+        │       │                             ⚠️ GATED OFF BY DEFAULT (skyMode stopgap):
+        │       │                             prod ships CloudDome; Atmosphere only mounts
+        │       │                             under ?sky=volumetric. "Wired, not the
+        │       │                             default" — not "the live production clouds.")
         │       ├── AtmosphereDirectiveDriver (per-frame: lerps useAtmosphere.rawDirective →
         │       │                             tweenedDirective over 45s; the meteorologist
         │       │                             store→scene-uniform bridge)
@@ -63,7 +69,14 @@ index.html
         │       │   ├── SceneLabel × N      ← src/lib/streetLabels.js (shared with Cartograph; reads ribbons.json)
         │       │   ├── MapPin × N          (mobile-deferred)
         │       │   └── LandmarkMarkers
-        │       ├── StreetLights            ← street_lamps.json (live)
+        │       ├── BakedLamps              ← /baked/<look>/lamps.json + scene.json
+        │       │                             lampGlow (production lamp consumer since
+        │       │                             L1.1, 2026-05-12; desktop direct, mobile
+        │       │                             via DeferredStreetLights → <BakedLamps/>).
+        │       │                             Shader glow DataTexture still reads live
+        │       │                             street_lamps.json (lampLightmap.js).
+        │       │                             [CORRECTED — was "StreetLights (live)";
+        │       │                             StreetLights.jsx no longer mounted by Scene.]
         │       ├── GatewayArch             (procedural catenary; placement +
         │       │                             transform + uplights + horizon disc
         │       │                             authored, baked into scene.arch +
@@ -101,7 +114,7 @@ index.html
 
 **Boundary-crossing imports** (LS runtime → cartograph store): `BakedGround`, `BakedLamps`, `InstancedTrees`, `LafayetteScene`, `LafayettePark`, `StreetLights` all import `useCartographStore` from `src/cartograph/stores/`. This is the seam where cartograph code reaches into production — visible as the 4.5MB `cartograph` chunk in the build output. Tree-shaking limits the cost but doesn't eliminate it; the store + its transitive deps survive.
 
-**Production does NOT mount:** `BakedLamps` (Stage/Preview only), `BakedBuildings` (Preview only), `StreetRibbons` (file no longer exists), `MapLayers` (cartograph-internal), `PlanetariumOverlay` (Scene has the *viewMode* but the overlay component is not mounted in `Scene.jsx`/`LafayetteScene.jsx`/`App.jsx` — pending verification, may be dead UI infrastructure).
+**Production does NOT mount** *(corrected 2026-06-30 — several prior entries were stale):* `StreetLights.jsx` (no longer imported by `Scene.jsx`; production lamps render via `BakedLamps`), `BakedBuildings` (deleted — production renders buildings via `SlabBuildings`), `StreetRibbons` (file no longer exists), `MapLayers` (cartograph-internal). *Note: `BakedLamps` **is** production (corrected from "Stage/Preview only"); `PlanetariumOverlay` **is** mounted in production — one level down via `CelestialBodies.jsx:962`, operator-gated + default-off (corrected from "not mounted / may be dead" — see RUNTIME-DELTA RD.3, `STREET-VIEW.md §3.2`).*
 
 ---
 
@@ -125,7 +138,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 | Source | Consumer | Why live |
 |---|---|---|
 | Google Apps Script `getInit` batch | `hooks/useInit.js` | End-user-mutable: listings + events + handle hydrated on boot |
-| GAS individual endpoints (**59** routed via `?action=` in `lib/api.js` → `Code.js`) | Various hooks + modals | Reviews, replies, claims, bulletins, comments, threads, qr designs, staff, residence, guardian, link tokens, check-ins, init batch (full table in `reference/INVENTORY-API.md` / inventory §6) |
+| GAS individual endpoints (**~54 actions / 57 routes** via `?action=` in `lib/api.js` → `Code.js`) | Various hooks + modals | Reviews, replies, claims, bulletins, comments, threads, qr designs, staff, residence, guardian, link tokens, check-ins, init batch (full table in `reference/INVENTORY-API.md` / inventory §6) |
 | Supabase | `useCary`, `ChatModal`, `SmsInbox`, `ContactModal`, `CourierDots`, `useInit` | Cary realtime sessions + auth + chat |
 | open-meteo.com forecast | `hooks/useWeather.js` (called by `WeatherPoller`) | Live weather, 48-hour forecast; lat/lon/timezone templated from `INSTANCE.geography` |
 
@@ -139,10 +152,10 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 | `src/data/facade_mapping.json` | `PlaceCard.jsx` | Per-building photo + description; static catalog; keep live (consumer-surface data, ~2600 lines) |
 | `src/data/park_water.json` | `LafayettePark` | Already baked-into-ground for ground bake; still live for park render. Decide: retire live import. |
 | `src/data/park_paths.json` | `LafayettePark` | Same as park_water |
-| `src/data/street_lamps.json` | `StreetLights`, `lampLightmap.js` | Production hasn't switched to `BakedLamps`. Already addressed in Stage/Preview. |
+| `src/data/street_lamps.json` | `lampLightmap.js` (shader-glow `DataTexture`) | **[CORRECTED]** Production **has** switched to `BakedLamps` for the lamp posts (L1.1, 2026-05-12); `StreetLights.jsx` is no longer mounted. Only the `lampLightmap.js` shader-glow source still reads this live (L1.1b follow-on to migrate it to `/baked/<look>/lamps.json`). |
 | `src/data/terrain.{json,bin}` | `Terrain.jsx`, `utils/elevation.js`, `utils/terrainShader.js` | ✅ Baked via `cartograph/bake-terrain.js` (clipped to LS_STENCIL, 5 m/sample, paired metadata.json + Float32 .bin payload). Magnitude + consumer-parity sweep landed 2026-05-14: V_EXAG=1.5; foundation/wall anchor = mean of footprint vertex raw (matches `bake-buildings.js`); `mergeBufferGeometries` preserves per-vertex `aCentroidY`; `TERRAIN_DISPLACE_INSTANCED` divides lift by instance Y-scale (lamp/tree fix); trees + glow/halo billboards now patched; LafayettePark switched from rigid-park-group lift to per-item (gravel paths per-vertex, posts/rails rigid-at-mesh-origin, lake/grotto via shared `<PondGroup>` rigid lift, labels via `<ElevatedGroup>`); `bake-ground.js` ground refinement is now **adaptive** (conforming red-green to a `GROUND_REFINE_TOL_M = 0.50 m` tolerance, *not* the old uniform ≤15 m max-edge); ribbon groups skip refinement EXCEPT `park_path`, which gets a dense uniform contour refine (`PATH_CONTOUR_REFINE_MAX_EDGE_M = 6`, 2026-06-29). **2026-06-29 also reconciled CPU↔GPU sampling** (GPU `texture2D` remapped via `_terrainUV` to the CPU grid-corner convention → identical world-Y) and moved lamps/trees to a **baked per-object anchor** (`groundRaw × uExag` via `cartograph/groundSampler.js`, applied by `patchTerrainInstancedBaked`) — the buildings/foundations `aCentroidY` regime generalized to point objects. See `cartograph/ARCHITECTURE.md §8 "Terrain doctrine"` for the full live rule. Per-Look elevation-exag channel still pending. |
 | `src/data/bright_stars.json` | `CelestialBodies` | Static catalog; freeze |
-| `src/data/planetarium/{constellations,named_stars,planets}.json` | `PlanetariumOverlay` (unmounted today?), `CelestialBodies` | Static; freeze |
+| `src/data/planetarium/{constellations,named_stars,planets}.json` | `PlanetariumOverlay` (**mounted via `CelestialBodies.jsx:962`, gated + default-off** — [CORRECTED], not unmounted), `CelestialBodies` | Static; freeze |
 | `src/data/landmarks.json` + `src/data/menus.json` | `useInit`, `useListings` | Static catalog merged with GAS state; keep live |
 | `src/data/seedEvents.json` | `useEvents` | Fallback when GAS events unavailable; keep live |
 
@@ -162,7 +175,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 
 | Backend | Purpose | Auth | Status |
 |---|---|---|---|
-| Google Apps Script (`apps-script/Code.js`) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets, init batch (**59 endpoints**, one shared 14-tab Google Sheet) | Device hash (forgeable naming anchor) + admin passphrase → 6h token (localStorage client-side, Script Cache server-side). **Privileged writes re-verify device_hash → Guardians/Residents/Checkins sheet server-side** (25+ endpoints). See `OPERATIONS.md` + `project_ls_security_arc` for the gating verdict + the admin-token hotspot. | Live |
+| Google Apps Script (`apps-script/Code.js`) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets, init batch (**~54 actions / 57 GET+POST routes** — reconciled 2026-06-30 against `Code.js`; one shared 14-tab Google Sheet) | Device hash (forgeable naming anchor) + admin passphrase → 6h token (localStorage client-side, Script Cache server-side). **Privileged writes re-verify device_hash → Guardians/Residents/Checkins sheet server-side** (25+ endpoints). See `OPERATIONS.md` + `project_ls_security_arc` for the gating verdict + the admin-token hotspot. | Live |
 | Supabase | Cary courier system (requests, sessions, phone OTP, profiles, courier_profiles, edge functions: `onboarding`, `dispatch`); also realtime channels for `CourierDots`, `ChatModal`, `SmsInbox`, `ContactModal` | Phone OTP | Hosted project live; LS UI behind "coming soon" placeholders |
 | Cloudflare Worker (`worker.js`) | Per-place OG meta tags for social previews on `/place/*` | None | Live |
 | open-meteo.com | 48-hour weather forecast for St. Louis | None (free) | Live |
@@ -218,7 +231,7 @@ All four HTML entries build into `dist/`. Authoring HTML files (`cartograph.html
 | `public/baked` | 201 MB | The slab — by design |
 | `public/photos` | 71 MB | Building photos served to PlaceCard |
 | `public/looks` | 508 KB | Per-Look design.json files |
-| `public/clouds` | 28 KB | Meteorologist `presets.json` + `almanac.json` + `modulators.json` — **consumed at runtime** by the volumetric `Atmosphere` (via `useAtmosphereDirective` → `AtmosphereDirectiveDriver`). `modulators.json` is optional (graceful 404 → empty). |
+| `public/clouds` | 28 KB | Meteorologist `presets.json` + `almanac.json` + `modulators.json`. Consumer (`<Atmosphere/>` via `useAtmosphereDirective` → `AtmosphereDirectiveDriver`) is **wired but gated OFF by default** — production ships the cheap `<CloudDome/>`; the volumetric `<Atmosphere/>` only mounts under `?sky=volumetric` (skyMode stopgap). `modulators.json` is optional (graceful 404 → empty). |
 
 **Staging URL** (auto-deploys on push to `cartograph-looks-pass-ab` via `.github/workflows/staging.yml`): [`https://jacobeugenehenderson.github.io/lafayette-square-staging/`](https://jacobeugenehenderson.github.io/lafayette-square-staging/). Slab renders end-to-end as of `a1ebe1b`. The staging build passes `--base=/lafayette-square-staging/` to Vite; all runtime asset fetches route through `import.meta.env.BASE_URL` (memory `project_kit_deploy_path_agnostic`, SLAB-CONTRACT §10.6, couplers plan CC.8). Production builds with default `BASE_URL='/'` for apex-domain deploy.
 
@@ -264,9 +277,9 @@ Authoring HTMLs (`/cartograph.html`, `/arborist.html`, `/preview.html`) bypass `
 
 Items the inventory walk surfaced. Status reflects Phase B resolution where applicable.
 
-1. **`PlanetariumOverlay` mount** — RUNTIME-DELTA K.3 / RD.3. Phase C's Phase 3 staging walk confirms dead-or-live; strip if confirmed dead.
+1. **`PlanetariumOverlay` mount** — ✅ **RESOLVED (RUNTIME-DELTA RD.3, 2026-06-17): live + operator-gated, default-off.** Mounted one level down via `CelestialBodies.jsx:962` (which `Scene.jsx` mounts), so the earlier "not imported by Scene/LafayetteScene/App → may be dead" grep missed it. Not dead; do **not** strip. Home: `STREET-VIEW.md §3.2`.
 2. **Vite's `copyPublicDir` selectivity** — RESOLVED by cleanout plan §S3: production build moves to `copyPublicDir: false` + named allow-list plugin. Phase C executes.
-3. **Meteorologist `clouds/{presets,almanac,modulators}.json` consumer** — ✅ **WIRED, not stripped.** The old plan (strip in v1, defer wire to v1.1) is obsolete: the volumetric `Atmosphere` consumes these artifacts at runtime today (confirmed inventory §5, 2026-06-02). Do not strip.
+3. **Meteorologist `clouds/{presets,almanac,modulators}.json` consumer** — ✅ **WIRED, not stripped — but gated OFF by default.** The old plan (strip in v1, defer wire to v1.1) is obsolete: the volumetric `<Atmosphere/>` consumer reads these artifacts (`useAtmosphereDirective` + `atmosphere-materials.js`). ⚠️ Correction to the 2026-06-02 reading: it is **not the default production cloud system** — production ships the cheap `<CloudDome/>`; `<Atmosphere/>` only mounts under `?sky=volumetric` (skyMode stopgap). Do not strip the artifacts (the consumer is real); but it is "wired-and-gated," not "live in prod."
 4. **Cartograph trinity stale `StreetRibbons.jsx` claims** — partially addressed 2026-05-13 (`cartograph/FEATURES.md L286`). `cartograph/ARCHITECTURE.md L116, L136` still need rewriting; flagged for next cartograph session (ls/BACKLOG K.1).
 
 ---

@@ -87,9 +87,9 @@ removals — fine to do now.)
 ## ⛔ Exclusion zone — ribbons / corners / curbs / intersections / block geometry / measure / couplers
 
 **Ribbons and corners are NOT fixed yet** (the 2026-05-27 uniform-width arc was attempted under
-`HANDOFF-ribbon-corners.md` and REVERTED 2026-05-28 in `ea0bed6` — root cause documented in
-`cartograph/RIBBONS.md §6.10` + `memory/feedback_per_leg_straight_only_overshoot.md`; brief
-rewrite pending). Everything that system governs — curbs, intersections, block geometry, the
+`HANDOFF-ribbon-corners.md` (retired → git) and REVERTED 2026-05-28 in `ea0bed6` — root cause
+documented in the live home `cartograph/RIBBONS.md §6.10` + `[[feedback_per_leg_straight_only_overshoot]]`;
+brief rewrite pending). Everything that system governs — curbs, intersections, block geometry, the
 measure path, **couplers** (`toggleCoupler`, `setSegmentMeasure`, segment measures) — is
 **unfinished work-in-progress, NOT cruft.** Its loose ends (dead-looking code, zero-caller
 writers, back-compat shims) are WIP toward an in-progress fix; the rewrite may re-introduce them.

@@ -10,7 +10,7 @@
 
 > **The settled-state index.** Before diagnosing, deciding, or building *anything*, read this so you build on what's already worked out instead of re-deriving it (re-deriving settled doctrine is the recurring, expensive mistake). Each row = the **settled conclusion** + its **one authoritative home**. The full doc landscape is the "Documentation map" further down; this is the topic-first orientation. *(Agents: the **universal first read is [`ORIENTATION.md`](ORIENTATION.md)** (root) — the plain-language mental model + settled doctrine; THEN this topic index, THEN the topic canon it names. That one order, every session. `BOZ.md` is the coordinator's doc — summoned only when you're Boz, never a step in the universal path.)*
 
-**Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. Currently **stuck on skeleton + survey**; intake skipped for now. Active branch = `curb-offset-draw` (off trunk `cartograph-looks-pass-ab`).
+**Pipeline order (Jacob's):** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage`. The open **SHAPE frontier is skeleton + survey** (intake skipped for now); recent sessions have run on the downstream **look / stage / publish** side (TOD day-cycle, per-shot look cascade, the Preview publish gate). Active branch = `curb-offset-draw` (off trunk `cartograph-looks-pass-ab`).
 
 > ⭐ **Strategic (2026-06-13, Jacob):** the remaining fixes are most likely **in the skeleton**, not the render. The drawing/offset rules are largely straightforward; the sophistication we still owe is in **how we interpret OSM and build the frame**. So the default suspicion on any defect is *"the fix is upstream, in the skeleton"* — confirm that before patching downstream. (The 2026-06-13 day was lost patching the polygon for a curve whose real fix was a frame-level corner-round.)
 
@@ -45,9 +45,9 @@ npm run dev
 | `web`   | `vite`                  | 5173 | Main neighborhood app + helper UIs (Cartograph, Stage, Arborist) |
 | `carto` | `cartograph/serve.js`   | 3333 | Cartograph backend: skeleton/overlay I/O, Looks API, bake CLI runner |
 | `arb`   | `arborist/serve.js`     | 3334 | Arborist backend: species library, specimen browser API, tree bake CLI runner |
-| `met`   | `meteorologist/serve.js`| 3335 | Meteorologist backend: Teapot (clouds) + Almanac (weather rules) I/O, almanac evaluator endpoint *(not yet wired into dev script — see meteorologist/README.md)* |
+| `met`   | `meteorologist/serve.js`| 3335 | Meteorologist backend: Teapot (clouds) + Almanac (weather rules) I/O, almanac evaluator endpoint |
 
-`Ctrl-C` kills all three. Escape hatches if you want to run one in isolation:
+`Ctrl-C` kills all four. Escape hatches if you want to run one in isolation:
 
 ```bash
 npm run dev:web         # vite only
@@ -75,7 +75,7 @@ The project is organized as a **public-facing runtime app** plus a small set of 
 | Helper | Built in | Publishes | Consumed by |
 |---|---|---|---|
 | **Cartograph** (`/cartograph`) | `src/cartograph/` + `cartograph/` | `public/looks/<id>/ground.svg` (per Look) | Stage's `SvgGround` |
-| **Stage** (`/stage`)             | `src/stage/` + `src/cartograph/Stage*` | (eventually) `stage-config.json` per Look | Runtime scene environment |
+| **Stage** (`/stage`)             | `src/stage/` + `src/cartograph/Stage*` | `public/baked/<id>/scene.json` per Look | Runtime scene environment |
 | **Arborist** (`/arborist`) — the kit-matcher tree builder ([README §START HERE](arborist/README.md)) | `src/arborist/` + `arborist/` | `public/trees/<id>/…` + per-Look `public/baked/<look>/trees/…` (the slab) | Runtime `InstancedTrees` |
 | **Meteorologist** (in Stage)     | `meteorologist/` + `src/cartograph/` (UI inline) + `src/components/Atmosphere.jsx` (planned) | `public/clouds/{presets,almanac}.json` | Runtime `<Atmosphere />` (planned) |
 
@@ -212,7 +212,7 @@ React Three Fiber, Three.js, Zustand, Tailwind CSS, Vite, Supabase (Cary courier
 
 ## Admin access
 
-Append `?admin` to any URL to trigger the admin login prompt. The passphrase is validated server-side and a session token is issued (valid 6 hours, stored in sessionStorage). Use `?logout` to end the session.
+Append `?admin` to any URL to trigger the admin login prompt. The passphrase is validated server-side and a session token is issued (valid 6 hours, stored in `localStorage` as `lsq_admin_token`). Use `?logout` to end the session.
 
 Set the passphrase in Apps Script: `PropertiesService.getScriptProperties().setProperty('ADMIN_PASSPHRASE', 'your-secret')`
 

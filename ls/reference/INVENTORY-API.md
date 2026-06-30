@@ -1,8 +1,10 @@
 # LS — API Inventory
 
+> ⚠️ **PARTIALLY SUPERSEDED — slab-merge has shipped (2026-05-26) + 2026-06 spec cluster.** The endpoint catalog itself is still broadly accurate, but this doc predates the slab-merge to `main` and the 2026-06-29 spec cluster. Live architecture home = [`../ARCHITECTURE.md §2/§3`](../ARCHITECTURE.md); the auth/security posture now lives in [`../OPERATIONS.md §1`](../OPERATIONS.md) + [`../STATUS.md §Security`](../STATUS.md). Endpoint count reconciled below. Kept as historical API-catalog snapshot.
+
 Every backend endpoint the LS app calls at runtime. Format: pasteable catalog.
 
-Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. For deploy / DNS / secret management see [`../../PUBLISH.md`](../../PUBLISH.md). For data sources see [`INVENTORY-DATA.md`](INVENTORY-DATA.md). For auth + identity model see [`SECURITY.md`](SECURITY.md).
+Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. For deploy / DNS / secret management see [`../../PUBLISH.md`](../../PUBLISH.md). For data sources see [`INVENTORY-DATA.md`](INVENTORY-DATA.md). For the auth + identity + security posture see [`../OPERATIONS.md §1`](../OPERATIONS.md) + [`../STATUS.md §Security`](../STATUS.md) (there is no `SECURITY.md` — that planned doc was folded into OPERATIONS/STATUS).
 
 ---
 
@@ -18,7 +20,9 @@ Wrapper helpers live in `src/lib/api.js`. Two transports:
 
 Dev fallback: when `VITE_API_URL` is unset in dev, `lib/api.js` serves a 30+ entry in-memory mock map (no backend reached).
 
-### Endpoint catalog (40+)
+### Endpoint catalog (~54 actions / 57 routes)
+
+> **Count reconciled 2026-06-30** against `apps-script/Code.js` dispatch: **24 GET cases + 33 POST cases = 57 verb-routes**, of which `init` / `events` / `listings` are dual GET+POST (read-only POSTs bypass Google's redirect cache) → **54 distinct actions**. Earlier figures ("40+", "50+", "59") were a mix of floors and one overcount; 54 distinct / 57 routes is the verified number.
 
 | Verb | Action | `lib/api.js` export | Caller(s) | Auth |
 |---|---|---|---|---|

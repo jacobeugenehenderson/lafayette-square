@@ -125,7 +125,7 @@ This turns "I don't have a name yet" into a one-tap non-event with **zero backen
 
 **The crucial correction (verified in code):** the brief and the specs assume "a guardian does **not** get townie automatically." **That is wrong as-built.** `postClaim` calls `grantTownieStatus(device_hash)` (`Code.js:636`), which backfills synthetic check-ins (`Code.js:1766`) until the device meets the 3-in-14 threshold. **So a guardian (and any keyholder) is auto-granted townie status at claim** — and can immediately review *other* restaurants. The plain answer for the playbook: **yes, a guardian can review other places the moment they claim, because claiming makes them a townie too.** Nothing wrongly blocks it; if anything, the surprise is that it's *more* permissive than the specs state.
 
-> ⚠️ **Spec inaccuracy for Boz to fold in:** `GUARDIANS.md §2` step 3 and the Massage-b premise omit the `grantTownieStatus(device_hash)` call at `postClaim` (`Code.js:636`). `OPERATIONS.md §2` says townie is earned only via check-ins (and residence verify) — it should also note the **claim-grant** path. `TOWNIES.md §1` mentions residence-verify auto-grant but not claim-grant.
+> ✅ **Resolved 2026-06-30 (was a spec-inaccuracy to-do).** The claim-grant path is now documented in all three sibling specs: [`GUARDIANS.md §2`](GUARDIANS.md) (the ⚠️ "Claiming also auto-grants townie status" callout), [`OPERATIONS.md §2`](OPERATIONS.md) (the Townie row notes "also auto-granted on claiming a listing or verifying a residence"), and [`TOWNIES.md §1`](TOWNIES.md) (the ⚠️ "two other actions auto-grant townie" callout). Only the original Massage-b *premise* in this doc understated it; the as-built behavior (`postClaim` → `grantTownieStatus`, `Code.js:636`) is correctly captured below and across the cluster.
 
 ### c. Business medallions + the structure they represent
 There are **two distinct visual systems**, and they encode different things:
@@ -186,7 +186,7 @@ Member-types: **Visitor** (anon device) · **Townie** (3-in-14) · **Resident** 
 - ⁵ Keyholder edit rights are exactly the granted subset of `menu · hours · photos · replies · events` (`STAFF_PERM_MAP`); fields outside the map are guardian-only (`Code.js:704`).
 
 ### Matrix holes / inconsistencies flagged (for Boz / Phase 2)
-1. **Townie auto-grant on claim is undocumented** (`Code.js:636`) — contradicts the Massage-b premise and `GUARDIANS.md §2` / `OPERATIONS.md §2` / `TOWNIES.md §1`. *(Confirmed in code.)*
+1. **Townie auto-grant on claim** (`Code.js:636`) — as-built, a guardian/keyholder becomes a townie immediately on claim. *(Confirmed in code; now documented in `GUARDIANS.md §2` / `OPERATIONS.md §2` / `TOWNIES.md §1` as of 2026-06-30 — the prior "undocumented" flag is resolved.)* Open question is design-intent (intended convenience vs. loophole to tighten), flagged for review in the onboarding arc.
 2. **Keyholder has no distinct medallion** — renders as `resident` in the post composer (`PlaceCard.jsx:2567` binary `isGuardian ? guardian : resident`). Townie and admin also lack medallions (Massage §c).
 3. **Admin powers ride a long-lived bearer token in the request body** (6-hour, `OPERATIONS.md §1`) — known security hotspot (`project_ls_security_arc`); not a tomorrow blocker but the most privileged path is the least hardened.
 4. **No referral affordance for guardian→other-business** (B.3) — spread of new *businesses* is admin-only; only staff-claim and the townie check-in loop self-serve.

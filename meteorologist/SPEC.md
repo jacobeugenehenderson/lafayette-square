@@ -16,7 +16,9 @@ Read first, in order:
 
 ## Mission
 
-A meteorologist owns the sky. Given a live weather payload, it produces a complete atmospheric directive — which clouds to render, where the sun sits, how the light dome looks, how hard the wind blows trees — and the runtime renders accordingly. The directive smoothly tweens as conditions change. Authoring of the underlying preset library and rule table happens inside Stage; the runtime is loaded everywhere the world is rendered (Stage, Preview, production).
+A meteorologist owns the sky. Given a live weather payload, it produces a complete atmospheric directive — which clouds to render, where the sun sits, how the light dome looks, how hard the wind blows trees — and the runtime renders accordingly. The directive smoothly tweens as conditions change. Authoring of the underlying preset library and rule table happens in a **standalone app shell at `/meteorologist.html`** (the 2026-05-19 reversal of the original in-Stage model — see `INTERFACE.md §1` + `ARCHITECTURE.md §2`); the runtime is loaded everywhere the world is rendered (Stage, Preview, production).
+
+> ⚠️ **This SPEC predates the standalone-shell reversal (2026-05-19) in places.** The §"Three apps, one runtime" table and §"Authoring entry point" / §"Authoring UI" sections below still describe the original *in-Stage authoring* model (launch a Meteorologist *mode* inside Stage, right-panel takeover). That shipped as a **standalone shell** instead — `meteorologist.html` exists at repo root; Stage keeps only a Clouds TodChannel row + a "launch meteorologist →" deep-link. The live layout is `INTERFACE.md §1`; the locked decision is in §"Decisions locked → Authoring location" below.
 
 ---
 
@@ -24,10 +26,13 @@ A meteorologist owns the sky. Given a live weather payload, it produces a comple
 
 ### Three apps, one runtime
 
+> *(Pre-reversal table, kept for the work-order record. The live model is four shells — see `INTERFACE.md §1`. Authoring the Teapot + Almanac happens at `/meteorologist.html`, NOT "inside Stage" as the first row reads.)*
+
 | | URL | Role |
 |---|---|---|
-| **Stage** (the studio) | `/cartograph` | Authoring environment. Launch Meteorologist mode from inside the Sky and Light card to author the Teapot + Almanac against the toy canary scene. |
-| **Preview** | `/preview` | "The real preview" — full neighborhood + live `WeatherPoller` running through the published Almanac → `<Atmosphere />`. No authoring. |
+| **Meteorologist** (weather authoring) | `/meteorologist.html` | Standalone authoring shell. Author the Teapot + Almanac against the `CanaryScene` (sky imported from the active Look). *(Was "Meteorologist mode inside Stage" pre-reversal.)* |
+| **Stage** (the studio) | `/cartograph.html` | Authors the world. Keeps a Clouds TodChannel row (per-Look preset pick) + a "launch meteorologist →" deep-link in the Sky & Light card. |
+| **Preview** | `/preview.html` | "The real preview" — full neighborhood + live `WeatherPoller`. No authoring. |
 | **Production** | `/` | Same runtime as Preview, public-facing. |
 
 ### The two artifacts the Meteorologist publishes
@@ -63,7 +68,7 @@ Per-Look overrides apply to dome visual-styling values (sun tint, halo, light do
 
 | Decision | Choice |
 |---|---|
-| Cloud representation | Procedural parametric raymarch. Math, not bakes. No KTX2, no GLB, no texture memory cost. |
+| Cloud representation | Procedural parametric raymarch. **Math for the library; bake only the Hero swath** *(narrowed 2026-06-08 from a blanket "Math, not bakes")* — the preset library + authoring stay procedural (no KTX2/GLB/texture assets), but the runtime may bake the Hero-keyframe-visible sky swath as a bounded relightable impostor (a refresh-on-change cache, not a shipped asset). See `TUNER.md §4.1` / `§7` + decision D1. |
 | Volume geometry | Bounded slab at cloud altitude (y ∈ [800m, 2200m] world space). |
 | Phone LoD | One shader, three quality tiers via `uQualityTier`. Half-res raymarch + bilateral upsample on phone. |
 | Stylization | Schema reserves a post-pass uniform block; UI deferred to v1.x. |
@@ -117,7 +122,7 @@ WeatherPoller → useSkyState → almanac-eval → directive → Atmosphere unif
 
 ### `src/components/atmosphere-materials.js` (new)
 
-The shader factory. Single source for the volume material; takes a directive and a quality tier, returns a configured material. The five photoreal levers from `HANDOFF-clouds-day3-clouddome-v2.md` are all present:
+The shader factory. Single source for the volume material; takes a directive and a quality tier, returns a configured material. The five photoreal levers (live home: this file + `FEATURES.md` § "What `<Atmosphere />` renders today"; the old `HANDOFF-clouds-day3-clouddome-v2.md` was deleted 2026-05-20) are all present:
 
 1. **Three-tier lighting** (sun-side cap warm-bright, body neutral, shadow-side cool-dark) — biggest lever
 2. **Silver lining** (Mie forward-scatter on thin sun-facing edges)
@@ -180,6 +185,8 @@ Stays as planned — operator picks a Teapot preset id per TOD slot for the acti
 ### `meteorologist/serve.js`
 
 Local Node service, port 3335, vite-proxied at `/api/meteorologist/*`.
+
+> ⚠️ **Endpoint contract: see `FEATURES.md` § "API endpoints" — that table is the closest-to-current SSOT.** The table below is the original work-order sketch (whole-file PUTs, a `/evaluate` endpoint) and diverges from what shipped (per-`:id` PUTs, `/almanac/:id/revert`). Kept for the design record; do not treat it as the live contract.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -282,5 +289,5 @@ The build is complete for v1 when **all** of these are true:
 - [`./CANON.md`](./CANON.md) — Teapot inclusion principles and roster
 - [`./STAGE_MIGRATION.md`](./STAGE_MIGRATION.md) — cleanup commit checklist
 - [`../arborist/SPEC.md`](../arborist/SPEC.md) — sibling helper for the artifact + schema pattern
-- [`../HANDOFF-sky-and-light.md`](../HANDOFF-sky-and-light.md) — current sky/light pipeline
+- [`../cartograph/STAGE.md`](../cartograph/STAGE.md) (SC.1 — sky / light / celestial) + [`./ARCHITECTURE.md`](./ARCHITECTURE.md) — the live sky/light pipeline home *(replaces the dead `HANDOFF-sky-and-light.md` pointer)*
 - WMO Cloud Atlas: https://cloudatlas.wmo.int/en/clouds-genera.html

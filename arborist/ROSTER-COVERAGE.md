@@ -3,6 +3,8 @@
 > **Purpose.** A living worklist for seeding the Grove with a representation of every tree option we have, measured against the **Lafayette Square** roster. Boz fills the derivable columns (chassis we have, recommended recipe, provenance, gaps). **Jacob QCs** in the Salon, marks status, and notes what to re-obtain. This doc is expected to drift — update it as models are bought, compositions are tuned, and QC verdicts land.
 >
 > Snapshot taken **2026-05-25** from: `src/data/park_trees.json` (roster, 756 placements / 89 raw species), `public/trees/_chassis/*.meta.json` (46 source species), `arborist/leaf-pack-bindings.json` (10 packs), `public/textures/bark/` (5 refs). Re-derive any time the chassis library or roster changes.
+>
+> ⚠️ **All inventory counts in this file (and in `SPEC.md` / `FOREST-BUILDER`) are DATED SNAPSHOTS and drift between docs** (e.g. Sugar Maple 61 vs 88, park total 644 vs 756 reflect different snapshot dates / canonicalization passes). **`src/data/park_trees.json` is the single source of truth — re-derive counts from it, never trust a number quoted in prose.**
 
 ---
 
@@ -122,9 +124,11 @@ Split by whether a usable cousin exists at all, so the initial roster has the ri
 
 ## §4 — How to seed (workflow)
 
-1. For each §1 row: open Salon → pick the chassis → bind the leaf pack + bark + set height/scale → adopt → name it for the target species → set provenance (🟢/🟡).
+> ⚠️ **Updated 2026-06-25 — the Adopt + per-species Re-publish gestures referenced below are RETIRED.** Edits now **autosave** to the composition and the **Grove "Bake → Slab" regenerates-from-source** (`generate-salon` → `bake-look` → `bake-trees`). Read "adopt" / "Re-publish (stages to library)" below as "the edit autosaves; nothing is staged separately." Live home = `README.md §The Grove → Slab`.
+
+1. For each §1 row: open Salon → pick the chassis → bind the leaf pack + bark + set height/scale (edits **autosave**) → name it for the target species → set provenance (🟢/🟡).
 2. **Refresh the routing map.** `src/data/park_species_map.json` (stale, 2026-04-29) is what `bake-trees.js#pickVariant` uses to fan the **89 messy park-names → the ~25–30 published library species**. You don't seed 89 species — you seed the distinct library species and the *map* routes Pin/Willow/Bur Oak all onto `quercus_alba`, etc. **Seeding is NOT "done" until the map routes every park-name onto a seeded species** (or a deliberate filler) — else the bake substitutes the wrong tree (or none). Hand-curated ("no auto-guess gets it right"); Brief 24's coverage join surfaces current-routing-vs-available so you can refresh it fast.
-3. Re-publish (stages to library) → **Grove bake** (ships to slab) so it appears in LS. The bake's `unifyAtlases` **gangs every roster species' bark + leaf cards into one master atlas**, sha1-deduped — so ~25–30 species reuse the same 10 leaf packs + 5 bark refs and the atlas stays compact (one shared material/program, Bloom-stable). Adding species is nearly free; once the roster settles you can *raise* `bake-look.js#CONTENT_CAP` for fidelity.
+3. **Grove "Bake → Slab"** (regenerates-from-source + ships to slab) so it appears in LS — there is no separate Re-publish/stage step anymore (autosave + regenerate-on-bake replaced it, 2026-06-25). The bake's `unifyAtlases` **gangs every roster species' bark + leaf cards into one master atlas**, sha1-deduped — so ~25–30 species reuse the same 10 leaf packs + 5 bark refs and the atlas stays compact (one shared material/program, Bloom-stable). Adding species is nearly free; once the roster settles you can *raise* `bake-look.js#CONTENT_CAP` for fidelity.
 4. Click through in the Salon / Grove, mark QC status in this doc, and flag 🔁 for anything that needs a real model.
 5. Gaps (§2) → obtain models → re-run the chassis survey → re-derive this doc.
 

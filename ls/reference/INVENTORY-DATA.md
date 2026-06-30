@@ -1,5 +1,7 @@
 # LS — Data Inventory
 
+> ⚠️ **PARTIALLY SUPERSEDED — slab-merge has shipped (L1.3, 2026-05-26) + 2026-06 spec cluster.** Buildings now render off the slab via `SlabBuildings` (**production**, not Preview-only) and the clouds artifacts are now **consumed** by the volumetric `<Atmosphere/>` consumer (wired, but gated off by default — production ships the cheap `<CloudDome/>`). Several §A/§F rows below describe the pre-merge world; inline corrections are marked **[CORRECTED]**. Live architecture home = [`../ARCHITECTURE.md §2`](../ARCHITECTURE.md) + the 2026-06-29 spec cluster ([`PLACE-CARDS`](../PLACE-CARDS.md)/[`GUARDIANS`](../GUARDIANS.md)/[`RESIDENTS`](../RESIDENTS.md)/[`TOWNIES`](../TOWNIES.md)/[`QR-CODES`](../QR-CODES.md)/[`BULLETIN`](../BULLETIN.md)). Kept as historical data-catalog snapshot.
+
 Every data source the LS consumer app touches at runtime: bundled JSON, baked slab artifacts, live backends, external APIs. Catalog format, pasteable.
 
 Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. For narrative context see [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §2. For backend endpoint shapes see [`INVENTORY-API.md`](INVENTORY-API.md).
@@ -17,10 +19,10 @@ Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. For narr
 | Tree GLB variants | `public/baked/<look>/trees/*.glb` | `InstancedTrees.jsx` | ✅ |
 | Tree atlas manifest + textures | `public/baked/<look>/trees-atlas.json` + atlas PNGs | `src/components/treeAtlasMaterial.js` | ✅ |
 | Lamps | `public/baked/<look>/lamps.json` | `src/components/BakedLamps.jsx` | ✅ Production + Stage + Preview (production switched 2026-05-12, L1.1) |
-| Buildings (merged mesh) | `public/baked/<look>/buildings.json` + `buildings.bin` | `src/preview/BakedBuildings.jsx` | ⚠ Preview only — production reads live `src/data/buildings.json` |
-| Cloud presets + almanac | `public/clouds/presets.json` + `almanac.json` | (no runtime consumer wired) | ❌ Published by meteorologist, not consumed |
+| Buildings (merged mesh, v2 + render index) | `public/baked/<look>/buildings.json` + `buildings.bin` | `src/components/SlabBuildings.jsx` | ✅ **[CORRECTED 2026-05-26]** **Production** (L1.3) — `SlabBuildings` is the prod + Preview consumer; raycast→id resolves against the slab index. (Old `BakedBuildings` Preview consumer deleted; live per-`<Building>` path kept only for Stage authoring retint.) |
+| Cloud presets + almanac + modulators | `public/clouds/presets.json` + `almanac.json` + `modulators.json` | `src/components/Atmosphere` via `useAtmosphereDirective.js` + `atmosphere-materials.js` | ⚠ **[CORRECTED]** Consumer **wired**, but **gated off by default** — production ships the cheap `<CloudDome/>`; `<Atmosphere/>` only mounts under `?sky=volumetric` (skyMode stopgap). Not "unconsumed." |
 
-**Available Looks today:** `lafayette-square` (the v1 instance), `default` (arborist tree placements), `toy` (test rig). Production `Scene.jsx:942` hardcodes `lookId="lafayette-square"`.
+**Available Looks today:** `lafayette-square` (the v1 instance), `default` (arborist tree placements), `toy` (test rig). **[CORRECTED]** The runtime Look is **not** a hardcode — it resolves from `INSTANCE.lookId` (`src/instance.js`, Couplers §6) with a `?look=` URL override where wired (`Scene.jsx:243`). The old "`Scene.jsx:942` hardcodes `lookId`" claim is stale (INSTANCE module shipped).
 
 ---
 
@@ -54,7 +56,7 @@ See [`INVENTORY-API.md`](INVENTORY-API.md) for endpoint-level detail.
 
 | Backend | Purpose | Auth | Mounts |
 |---|---|---|---|
-| Google Apps Script (GAS) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets | Device hash + admin passphrase token (6h sessionStorage) | All consumer modals; `useInit` boot fetch |
+| Google Apps Script (GAS) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets | Device hash + admin passphrase token (6h, **`localStorage` `lsq_admin_token`** — **[CORRECTED]**, not sessionStorage) | All consumer modals; `useInit` boot fetch |
 | Supabase | Cary courier (requests, sessions, profiles, edge functions); realtime channels for chat, SMS inbox, contact, courier dots | Phone OTP for Cary; anon key for realtime reads | `useCary`, `ChatModal`, `SmsInbox`, `ContactModal`, `CourierDots`, `useInit` |
 | open-meteo.com | 48-hour weather forecast | None (free tier) | `WeatherPoller` → `useWeather.fetchWeather()` (St. Louis lat/lon hardcoded) |
 | Cloudflare Worker | OG meta tags for `/place/<id>` social previews | None | Server-side only (not a runtime consumer) |
@@ -98,7 +100,7 @@ Production never touches these — they're for authoring sessions.
 | `public/baked/` | 201 MB | The slab (ground bin + lightmap + buildings bin + tree GLBs + atlases) | ✅ By design |
 | `public/photos/` | 71 MB | Building photos served to PlaceCard | ✅ |
 | `public/looks/` | 508 KB | Per-Look `design.json` files | ✅ |
-| `public/clouds/` | 28 KB | Meteorologist presets + almanac | ❌ Published but no runtime consumer |
+| `public/clouds/` | 28 KB | Meteorologist presets + almanac + modulators | ⚠ **[CORRECTED]** Consumer wired (`<Atmosphere/>` via `useAtmosphereDirective`) but **gated off by default** (production ships `<CloudDome/>`; volumetric only under `?sky=volumetric`). Not "no consumer." |
 
 ---
 

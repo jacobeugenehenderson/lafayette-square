@@ -320,6 +320,8 @@ Four docs flagged in `ls/BACKLOG.md` "Stale handoff docs":
 | `HANDOFF-sky-and-light.md` | repo root | Sky/light pipeline lifts into both trinities |
 | `cartograph/SHADOW_HANDOFF.md` | `cartograph/` | Cartograph BACKLOG C.4 lands; doc ingested into ARCHITECTURE |
 
+> ⚠️ **Status (2026-06-30):** the first three (`HANDOFF-clouds-day3-clouddome-v2.md`, `HANDOFF-neon.md`, `HANDOFF-sky-and-light.md`) are **already retired** (git-removed, not moved to `_archive/handoffs/`) — git history holds them. So this S5a step is mostly done; only `cartograph/SHADOW_HANDOFF.md` may remain. The "lifts into ls/FEATURES §Neon" target was superseded — neon's live home is `cartograph/ARCHITECTURE.md §8 "Neon renderer"`.
+
 #### Strip mechanism (decision)
 
 **Move to `_archive/handoffs/`** — established pattern (`_archive/handoffs/GATEWAY_ARCH.md` per INVENTORY-DATA §E). One commit per doc.

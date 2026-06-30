@@ -1,5 +1,7 @@
 # Lafayette Square — Backlog
 
+> ⚠️ **PARTIALLY STALE — the marriage leap has landed.** The Phase A/B/C "merge to `main`" framing below describes the pre-merge world; the **slab-merge has since shipped to production** (buildings render off the slab via `SlabBuildings`, L1.3 2026-05-26; prod renders the slab end-to-end). The live consumer architecture home = [`ARCHITECTURE.md §2`](ARCHITECTURE.md) + the 2026-06-29 spec cluster (`PLACE-CARDS`/`GUARDIANS`/`RESIDENTS`/`TOWNIES`/`QR-CODES`/`BULLETIN`/`CARY`). The **Concurrent / non-blocking** section below is the live backlog; the phased-merge sections are kept as the historical execution record. Dead doc-pointers repointed inline 2026-06-30.
+
 The path from where we are (branch `cartograph-looks-pass-ab`) to where we're going (clean LS app deployed on the cartograph slab at `lafayette-square.com`).
 
 > Part of the **LS trinity** (`ls/FEATURES.md` / `ls/ARCHITECTURE.md` / `ls/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. The cartograph trinity under `cartograph/` covers authoring; this is the consumer side.
@@ -63,8 +65,9 @@ These don't gate the marriage leap; they progress on their own tracks.
 | **Cartograph evergreen** | Visual stack refinements (`cartograph/BACKLOG.md`) continue. Each bake produces a fresher slab; the deployed site picks up new slab data as you ship. |
 | **Arborist roster swap** | Trees library upgrade post-stability. Hot-swappable into `public/baked/<look>/trees/` + `default.json`; no LS app code changes needed. |
 | **Cary v1 status decision** | Ship behind placeholder vs. wire up Supabase live. Affects bundle weight + secrets. Resolution lands in Phase B's parametrize plan (Cary's data layer is the kit-instance boundary). |
+| **Onboarding field-procedure + wiring audit** (`HANDOFF-logistician-onboarding.md`) | **DISPATCH-READY** (Boz, 2026-06-29 — *was orphaned, indexed here 2026-06-30*). Turn the diamond specs (`PLACE-CARDS`/`GUARDIANS`/`TOWNIES`/`QR-CODES`/`IDENTITY`/`OPERATIONS`) into a field procedure for the "tomorrow trio": **(1) commercial/restaurant Place card** + **(2) Guardian instant-claim** (the meeting hinge) + (3) Townie (secondary). Heart is §Massage & fortify (the wiring audit), output = the permanent `ls/ONBOARDING.md` playbook + a rights/privileges matrix. `Agent: FRESH`. |
 | **`ls/FEATURES.md` end-user experience writeup** | Browse / Hero / Street / PlaceCard / Bulletin / residence / handles. Doc work, lags execution opportunistically. |
-| **`ls/reference/SECURITY.md`** | Device-hash identity, admin passphrase, Supabase RLS posture. Lands as part of Phase B's security audit doc. |
+| **Security posture doc** (the once-planned `ls/reference/SECURITY.md`) | Device-hash identity, admin passphrase, Supabase RLS posture. **Did not land as a standalone file — folded into [`OPERATIONS.md §1`](OPERATIONS.md) + [`STATUS.md §Security`](STATUS.md)** (the `project_ls_security_arc`). Remaining hardening (signed/ephemeral admin JWT, rate-limiting, audit log) is the open security arc. |
 | **L1.3 — Hybrid buildings bake** | Production renders buildings live from `src/data/buildings.json` (reaches into source, violating the slab boundary); the baked `buildings.json` merged mesh is now consumer-less (Preview moved to the live mount in the parity pass). **✅ SHIPPED 2026-05-26** — `SlabBuildings` (merged mesh + render-scoped per-building index `buildings.json v2`) is the production + Preview consumer; identity resolves `raycast → id` against the slab index. Brief landed → `_archive/handoffs/`; fact home `SLAB-CONTRACT.md §6`. *(This row's lead text above is pre-cutover/stale — accord-sweep target.)* |
 | **Building-dissolve threshold sliders** | The "see-through buildings" dissolve (fade only the buildings the camera passes *through*; roofs passing below stay solid) **shipped 2026-06-26** — camera-distance dither-discard in `SlabBuildings.jsx`, toggle button in `BrowseHeader.jsx` (browse-mode camera cluster), `useCamera.buildingDissolve`. Threshold knobs `_dissolveDist` (12 m) / `_dissolveBand` (9 m) are **hardcoded module constants**, live-tunable only via console `window.__bldgDissolve(dist, band)`. **Backlog:** surface dist/band as live **UI sliders** in a small tuning panel (operator's request, 2026-06-26 — "good in the future") so the threshold can be dialed by eye without the console; then bake the operator's chosen values as the defaults. Non-urgent. |
 | **Time-of-day OG link-preview** | The shared-link preview image (`og:image`) is currently a **single static slab snapshot**, captured from Preview (📷 "Capture hero → preview" → `public/photos/og-preview.jpg`, ships in the slab pathspecs; fixed the prior 404→bare-URL card). **Backlog (Jacob, 2026-06-30 — explicitly not today):** make it **time-of-day-aware** so the shared link shows a **night shot at night, a day shot by day**. Approach: capture N TOD variants from Preview (a **day/night pair** is ~90% of the charm; full set = the 7 slots dawn→night); extend `worker.js` with an **`/og` route** that computes the live TOD server-side (`suncalc` + the neighborhood lat/lng — the same model the app renders) and **serves the matching variant's bytes** (serve, don't 302 — some crawlers won't follow redirects for images); point `og:image` at `/og`. Cost: needs a Cloudflare **`/og` route** added in the dashboard (where `worker.js` is pasted), plus re-capturing variants when the look changes materially. |
@@ -82,10 +85,10 @@ These don't gate the marriage leap; they progress on their own tracks.
 | Two-trinity index | Root `README.md` |
 | Live-data inventory | `ls/ARCHITECTURE.md §2` + `ls/reference/INVENTORY-DATA.md` |
 | Runtime composition map | `ls/ARCHITECTURE.md §1` |
-| API reference (50+ GAS endpoints + Supabase + Worker + open-meteo) | `ls/reference/INVENTORY-API.md` |
+| API reference (~54 GAS actions / 57 routes + Supabase + Worker + open-meteo) | `ls/reference/INVENTORY-API.md` (count reconciled 2026-06-30 — 24 GET + 33 POST cases in `Code.js`, 3 dual-verb) |
 | Slab boundary spec | `SLAB-CONTRACT.md` (root) |
 | Rollback floor | Tag `v1-pre-cartograph-merge` on `origin/main @ 20866ef` |
-| Spring cleaning | 400 MB facade-decor + 40 ribbons backups + ARCH.md archived |
+| Spring cleaning | 400 MB facade-decor + 40 ribbons backups + `ARCH.md` (the old Gateway Arch handoff, now `_archive/handoffs/GATEWAY_ARCH.md`) archived |
 | L1.1 BakedLamps swap | Shipped (production parity with Stage/Preview) |
 
 ---
@@ -106,16 +109,16 @@ Items the inventory + slab-contract walks flagged. None affect runtime; all shou
 
 ---
 
-## Stale handoff docs (kept, with explicit retire conditions)
+## Retired handoff docs (files no longer present — live homes below)
 
-These have live references — they retire when their successor lands.
+> ⚠️ **Updated 2026-06-30:** all four handoff files listed here **no longer exist in the tree** (verified). Their content has been folded into the live docs; pointers repointed. Kept as a redirect table so old references resolve.
 
-| Item | Retire when |
+| Former handoff (gone) | Live home now |
 |---|---|
-| `HANDOFF-clouds-day3-clouddome-v2.md` | `<Atmosphere />` ships and supersedes the shader tuning rubric (per `meteorologist/README.md`) |
-| `HANDOFF-neon.md` | NeonBands lifts decision history into `ls/FEATURES.md §"Neon"`; refs in source comments rewritten |
-| `HANDOFF-sky-and-light.md` | Sky/light pipeline gets lifted into both trinities |
-| `cartograph/SHADOW_HANDOFF.md` | Cartograph BACKLOG item C.4 (Shadow post-pass) lands; doc is ingested into ARCHITECTURE |
+| `HANDOFF-clouds-day3-clouddome-v2.md` | `meteorologist/` docs + `cartograph/ARCHITECTURE.md` (Atmosphere/cloud pipeline); the volumetric `<Atmosphere/>` consumer is wired (gated off by default behind `?sky=volumetric`) |
+| `HANDOFF-neon.md` | Neon doctrine = `cartograph/ARCHITECTURE.md` (the render-environment table + the Stage/production prop-gating note `<LafayetteScene forceNeonOn>`); user-facing = `ls/FEATURES.md` |
+| `HANDOFF-sky-and-light.md` | Sky/light channels = `cartograph/STAGE.md` SC.1 (sky/light/celestial) + SC.5 (camera); slab format = `SLAB-CONTRACT.md §4` |
+| `cartograph/SHADOW_HANDOFF.md` | Cartograph shadow post-pass — see `cartograph/ARCHITECTURE.md` + `cartograph/BACKLOG.md` (item C.4) |
 
 ---
 

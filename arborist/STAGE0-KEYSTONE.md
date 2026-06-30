@@ -1,5 +1,7 @@
 # Stage 0 — the keystone: rubric + 10 dossiers (built)
 
+> ⚠️ **SUPERSEDED 2026-06 — frozen Stage-0 snapshot. Stage 1 is DONE (`BACKLOG.md`): ingest + tagger + Library Builder + matcher + readiness shipped, and `public/library/` is partially built.** This records the keystone *as delivered at Stage 0* (2026-06-18); for current state read `README.md §⭐ START HERE` and `BACKLOG.md`. Kept as historical record.
+
 > **Agent: Hortus** (fresh, non-author of the architecture). 2026-06-18. Built against
 > `scratch/brief-stage0-rubric-dossiers.md` + `scratch/FOREST-BUILDER-KIT-MATCHER.md` §2/§3/§4.5/§7/§12/§13/§15.
 > **Nothing renders — data + entries + the declared structure only.** Acceptance = **Jacob's eye on the

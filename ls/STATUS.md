@@ -1,7 +1,9 @@
 # LS — Whole-Picture Status Map
 
-**Kind:** State (where-we-are). **Updated:** 2026-06-02 (from the forensic inventory campaign).
-**Source of detail:** `scratch/ls-forensic-inventory.md` (1153-line section-by-section read). Boz folds that into `ls/FEATURES` (user voice), `ls/ARCHITECTURE` (build), and a future `ls/OPERATIONS` (operator); this map is the *index + state* across it.
+> ⚠️ **PARTIALLY STALE — refreshed 2026-06-30 for slab-merge + spec cluster; body still 2026-06-02-era.** The slab-merge has **shipped** (buildings render off the slab via `SlabBuildings`, L1.3 2026-05-26); the 2026-06-29 **spec cluster** ([`PLACE-CARDS`](PLACE-CARDS.md)/[`GUARDIANS`](GUARDIANS.md)/[`RESIDENTS`](RESIDENTS.md)/[`TOWNIES`](TOWNIES.md)/[`QR-CODES`](QR-CODES.md)/[`BULLETIN`](BULLETIN.md)) and [`CARY.md`](CARY.md) now exist as the deep specs. Live architecture home = [`ARCHITECTURE.md §2`](ARCHITECTURE.md). The campaign narrative below is kept as the where-we-stand index; row-level state updated 2026-06-30.
+
+**Kind:** State (where-we-are). **Updated:** 2026-06-30 (slab-merge + spec-cluster refresh; prior: 2026-06-02 forensic inventory campaign).
+**Source of detail:** `scratch/ls-forensic-inventory.md` (1153-line section-by-section read), now folded into the LS docs: `ls/FEATURES` (user voice), `ls/ARCHITECTURE` (build), `ls/OPERATIONS` (operator), and the 2026-06-29 spec cluster (`PLACE-CARDS`/`GUARDIANS`/`RESIDENTS`/`TOWNIES`/`QR-CODES`/`BULLETIN`/`CARY`). This map is the *index + state* across them.
 
 > Jacob's framing: LS is **"robust but barely documented."** This campaign confirms the first half (robust across every section read) and begins the second (this is the documentation).
 
@@ -16,10 +18,12 @@
 | 3 | **Accounts / Roles / Identity** | 🟢 robust (8 / 3 partial) | Anonymous device-hash → townie → guardian/keyholder → admin. |
 | 4 | **Events / Bulletins / Community** | 🟢 robust (4 robust / 2 partial of 7) | EventTicker aggregator; bulletin board (posts→comments→DM threads). |
 | 5 | **Time / Atmosphere / Environment** | 🟢 robust (12 / 2 partial) | Live wall-clock vs scrub duality; meteorologist 3-layer consumer contract. |
-| 6 | **Data / Backends / API** | 🟢 robust, sound (59 GAS endpoints) | One Google Sheet, 25+ server-gated privileged writes. Security: see below. |
-| 7 | **Cary / Courier** | ⏸️ **ON HOLD** (not yet inventoried) | Supabase data layer noted in §6; UI internals deferred. |
+| 6 | **Data / Backends / API** | 🟢 robust, sound (**~54 GAS actions / 57 routes**) | One Google Sheet, 25+ server-gated privileged writes. Security: see below. (Count reconciled 2026-06-30 against `Code.js` — 24 GET + 33 POST cases, 3 dual-verb; the old "59" was an overcount. Full catalog: `reference/INVENTORY-API.md`.) |
+| 7 | **Cary / Courier** | 🟢 **inventoried** (app-integration view) | Courier side live (onboarding, dashboard, dots, OTP); requester side "coming soon". Full app-integration spec now exists: [`CARY.md`](CARY.md); program/legal/schema = `CARY-BRIEF.md` + `cary/`. (Was "ON HOLD" — superseded 2026-06-29.) |
 
-**Verdict:** the production app is robust, well-architected, and (for the rendered neighborhood) slab-complete. No dead paths found in sections 1–6. The gaps that exist are completeness gaps (below), not broken features.
+**Verdict:** the production app is robust, well-architected, and (for the rendered neighborhood) slab-complete (**buildings now render off the slab — `SlabBuildings`, L1.3 shipped 2026-05-26**). No dead paths found in sections 1–7. The gaps that exist are completeness gaps (below), not broken features.
+
+**The 2026-06-29 spec cluster** (the deep per-surface specs that fold this map's sections out): [`PLACE-CARDS.md`](PLACE-CARDS.md) (the Society Pages + card model) · [`GUARDIANS.md`](GUARDIANS.md) · [`RESIDENTS.md`](RESIDENTS.md) · [`TOWNIES.md`](TOWNIES.md) · [`QR-CODES.md`](QR-CODES.md) · [`BULLETIN.md`](BULLETIN.md) · [`CARY.md`](CARY.md) · [`ONBOARDING.md`](ONBOARDING.md) (the field procedure) · [`IDENTITY.md`](IDENTITY.md) · [`DEVICE-LINK.md`](DEVICE-LINK.md).
 
 ---
 

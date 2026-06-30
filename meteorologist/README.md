@@ -1,6 +1,8 @@
 # Meteorologist
 
-The project's atmospheric authoring system + runtime. Authors a cloud preset library ("the Teapot") and weather-interpretation rules ("the Almanac"); renders volumetric raymarched clouds against a live weather feed.
+The project's atmospheric authoring system + runtime. Authors a cloud preset library ("the Teapot") and weather-interpretation rules ("the Almanac") that drive the sky against a live weather feed.
+
+> ⚠️ **What the live map renders today (2026-06-30):** the **cheap procedural `<CloudDome />`** ships by default, via the 2026-05-27 `skyMode` stopgap (`src/lib/skyMode.js`). The volumetric raymarched `<Atmosphere />` slab — the headline cloud renderer this doc suite describes — mounts only under `?sky=volumetric`, because the per-genus volumetric cloud work is **TABLED** (`BACKLOG.md`). The whole authoring loop + slab integration stay intact behind the flag; CanaryScene always uses `<Atmosphere />`. Full detail: `ARCHITECTURE.md §4/§8` + `STATUS.md`.
 
 **This README is the orientation card.** Open this first when starting work; it points at the rest.
 
@@ -126,7 +128,7 @@ meteorologist/                        # backend + docs (THIS DIR)
     validate.js                       # ajv validators + cross-schema checks
     schema/                           # 5 JSON schemas
     migrate-params-to-channels.js     # Phase 2 one-shot migration; kept as precedent
-  serve.js                            # SHIPPED — port 3335, GET/PUT presets + almanac
+  serve.js                            # SHIPPED — port 3335 (full endpoint table: FEATURES.md § "API endpoints" = SSOT)
   state/                              # GITIGNORED — not used in v1 (no drafts)
 
 public/clouds/                        # PUBLISHED ARTIFACTS — runtime contracts
@@ -153,17 +155,18 @@ src/meteorologist/                    # SHIPPED — UI tree mirroring src/arbori
   stores/useMeteorologistStore.js     # zustand: mode + active id + autosave plumbing
 
 src/components/
-  Atmosphere.jsx                      # SHIPPED 4b.1 + 4b.2 + 5a — directive-driven in production, active-preset-driven in Meteorologist
-  atmosphere-materials.js             # SHIPPED 4b.1 — shader factory + inline GLSL
-  Atmosphere.jsx                      # production renderer (post-4b.3)
-  SpriteClouds.jsx                    # retires in cleanup commit
+  Atmosphere.jsx                      # SHIPPED — volumetric slab; directive-driven in production, active-preset-driven in Meteorologist. Mounts only under ?sky=volumetric (+ always in CanaryScene)
+  atmosphere-materials.js             # SHIPPED 4b.1 — shader factory + inline GLSL (the 5 photoreal levers)
+  CloudDome.jsx                       # RESTORED 2026-05-27 — the cheap procedural dome; DEFAULT production renderer via the skyMode stopgap
   CelestialBodies.jsx                 # IMPORTED — same consumer Stage/Preview mount
   WeatherPoller.jsx                   # untouched; consumes its output downstream
+  # (SpriteClouds.jsx was deleted 2026-05-20 — gone, not restored)
 
 src/lib/
+  skyMode.js                          # the 2026-05-27 stopgap switch: SKY_IS_VOLUMETRIC gates Atmosphere vs CloudDome (default cheap)
   almanac-eval.js                     # SHIPPED 2026-05-13 (SC.6); no production consumer yet
   weather-payload.js                  # SHIPPED 5a — open-meteo + INSTANCE + SunCalc → schema-aligned payload
-  weather-signals.js                  # NOT YET WRITTEN — Phase 6 (Modulators)
+  weather-signals.js                  # SHIPPED — Phase 6 (Modulators); deriveSignals()
 
 src/cartograph/                       # IMPORTED by Meteorologist (no fork):
   TodChannel.jsx                      # the kit primitive
@@ -199,6 +202,6 @@ Expected: `ok: 52 presets, 16 rules`. Schema violations or cross-reference failu
 ## Cross-references
 
 - [`../arborist/SPEC.md`](../arborist/SPEC.md) — sibling helper, similar artifact + schema pattern
-- [`../HANDOFF-clouds-day3-clouddome-v2.md`](../HANDOFF-clouds-day3-clouddome-v2.md) — shader tuning rubric (still authoritative until `<Atmosphere />` ships)
-- [`../HANDOFF-sky-and-light.md`](../HANDOFF-sky-and-light.md) — current sky/light pipeline
+- **Five photoreal levers** (shader tuning rubric) — live home is `src/components/atmosphere-materials.js` + [`FEATURES.md`](./FEATURES.md) § "What `<Atmosphere />` renders today". *(The old `HANDOFF-clouds-day3-clouddome-v2.md` was deleted 2026-05-20; it is no longer the home.)*
+- **Sky / light pipeline** — live home is [`../cartograph/STAGE.md`](../cartograph/STAGE.md) (SC.1 — sky / light / celestial) + [`ARCHITECTURE.md`](./ARCHITECTURE.md). *(There is no `HANDOFF-sky-and-light.md` — that pointer was dead.)*
 - WMO Cloud Atlas: https://cloudatlas.wmo.int/en/clouds-genera.html

@@ -71,7 +71,8 @@ Selecting a Condition now drives the canary the way it drives the LS install, th
 
 | Link | State | Notes |
 |---|---|---|
-| `AtmosphereDirectiveDriver` → `useAtmosphere.tweenedDirective` (45s tween) | ✅ | sourced from live weather via `useAtmosphereDirective` |
+| **Sky renderer = `skyMode` stopgap** (Howard, 2026-05-27) | ✅ | `Scene.jsx:814` / `CartographApp.jsx:1083` / `PreviewApp.jsx:1124` = `{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}`. **Default `'cheap'` → ships `<CloudDome />`** (procedural). `<Atmosphere />` (volumetric slab) only under `?sky=volumetric` / `INSTANCE.skyMode==='volumetric'`. The per-genus volumetric track is **TABLED** (`BACKLOG.md`). CanaryScene ignores this — always `<Atmosphere />`. See `ARCHITECTURE.md §4/§8`. |
+| `AtmosphereDirectiveDriver` → `useAtmosphere.tweenedDirective` (45s tween) | ✅ | sourced from live weather via `useAtmosphereDirective`; feeds `<Atmosphere />` when it's the mounted renderer |
 | `<WeatherEffects>` (rain/snow/lightning/wetness) | ✅ | |
 | `useSkyState` darkening (sun dim + sky desat) | ✅ | from the live weather poller |
 | Trees + Atmosphere consume wind via `wind-field.js` | ✅ | |

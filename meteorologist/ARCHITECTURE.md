@@ -31,7 +31,7 @@ Meteorologist is one of the kit's helper apps. Each helper authors a specific ki
 
 ## 2. Consume-from-Stage pattern (the standalone-shell rationale)
 
-> **The staging-area doctrine (load-bearing — a recurring stumbler).** The Meteorologist is a **staging area for the slab**, not a separate authoring sandbox. Jacob's framing: *rehearsing the play and presenting it on the same stage with different audiences.* Rehearsal (authoring) and performance (the LS skymap install) happen on the **same stage** — same slab, same environment elements, same rendering pipeline; only the *framing/audience* changes (Cloud-Chamber thumbnail · Ground in-situ · the live skymap). The trap, hit repeatedly, is building meteorologist-only stand-ins (a flat unlit tree, a decorative cloud, fake weather) that don't match what ships, so authoring lies about the result. **Always mount the real LS elements driven by the real shared stores** — production tree atlas material (`useTreeAtlas`), production `<Atmosphere>`, production `<WeatherEffects>` + `<CelestialBodies>`, fed by `useAtmosphere` (directive) and `useSkyState` (darkening). What you stage = what ships. The consume-from-Stage pattern below is the *mechanism* of this doctrine; see [[project_meteorologist_is_slab_staging_area]].
+> **The staging-area doctrine (load-bearing — a recurring stumbler).** The Meteorologist is a **staging area for the slab**, not a separate authoring sandbox. Jacob's framing: *rehearsing the play and presenting it on the same stage with different audiences.* Rehearsal (authoring) and performance (the LS skymap install) happen on the **same stage** — same slab, same environment elements, same rendering pipeline; only the *framing/audience* changes (Cloud-Chamber thumbnail · Ground in-situ · the live skymap). The trap, hit repeatedly, is building meteorologist-only stand-ins (a flat unlit tree, a decorative cloud, fake weather) that don't match what ships, so authoring lies about the result. **Always mount the real LS elements driven by the real shared stores** — production tree atlas material (`useTreeAtlas`), production `<Atmosphere>`, production `<WeatherEffects>` + `<CelestialBodies>`, fed by `useAtmosphere` (directive) and `useSkyState` (darkening). What you stage = what ships. The consume-from-Stage pattern below is the *mechanism* of this doctrine; see [[project_meteorologist_is_slab_staging_area]]. **(Disambiguation: "staging area" here is the *rehearsal-stage* metaphor — rehearse-and-perform on the same stage — NOT the deploy-"staging" environment. The deploy staging site is a separate concept; see `deploy-branch-topology`.)**
 
 The original "no app shell — live inside Stage" decision was driven by one concern: *the Teapot author needs clouds rendered against a real sun + real sky gradient + real post-FX, and reproducing that stack outside Stage would be duplication + parity-drift risk.* Valid concern; wrong solution.
 
@@ -120,74 +120,15 @@ Per-Look overrides apply to dome visual-styling values (sun tint, halo, light do
 - **Sun tint / halo / light dome** — authored per Look, override-flavored — apply on top of the Almanac directive at render time.
 - **Wind** — published per Look by Meteorologist (direction + speed uniforms). Trees subscribe via `InstancedTrees` shader uniforms; future precipitation + audio layers subscribe too.
 
-As of 2026-05-20 the runtime renderer everywhere is `<Atmosphere />` (Phase 4b.3); the procedural `CloudDome.jsx` is retired.
+**⚠️ Production renderer (corrected 2026-06-30).** The default production sky is **NOT** `<Atmosphere />`. The `skyMode` stopgap (`src/lib/skyMode.js`, "Howard" 2026-05-27) gates all three production surfaces: `SKY_MODE` defaults to `'cheap'`, which ships the restored procedural **`<CloudDome />`**. The volumetric `<Atmosphere />` slab mounts **only** under `?sky=volumetric` (or deploy-level `INSTANCE.skyMode==='volumetric'`). The per-genus volumetric cloud work is **TABLED** (see `NOTES.md` top + `BACKLOG.md` "Cloud realism"), so cheap dome is what the live map shows today. The slab integration (directive driver, slab-follows-cloud, this whole authoring loop) stays fully intact behind the flag — nothing about `<Atmosphere />` changed; it's just not the default mount. `CanaryScene` (the Meteorologist authoring viewport) mounts `<Atmosphere />` directly and ignores the switch — it's where the volumetric work is authored.
+
+The historical Phase-4b.3 swap below described a moment (2026-05-20) when `<Atmosphere />` *was* the only renderer; the 2026-05-27 stopgap reversed that for production. See §8.
 
 ---
 
 ## 5. Directory layout
 
-> **Stale markers (flagged 2026-06-08):** the `# NOT YET WRITTEN` annotations below predate the ship — `serve.js`, `meteorologist.html`, the whole `src/meteorologist/` tree, `Atmosphere.jsx`, and `atmosphere-materials.js` all shipped in May 2026. For the **current, accurate** file map see `README.md` → "What lives where". Left here pending a rewrite; trust the README.
-
-```
-meteorologist/                        # THIS DIR — backend + docs
-  README.md                           # orientation card
-  ARCHITECTURE.md                     # this file
-  INTERFACE.md                        # operator-facing layout model
-  SPEC.md                             # full work order
-  BACKLOG.md                          # punchlist (spade work + v1/v2 roadmap)
-  NOTES.md                            # historical decisions
-  CANON.md                            # Teapot inclusion principles
-  STAGE_MIGRATION.md                  # cleanup commit spec (executes when v3 lands)
-  package.json                        # ajv dep, validate/bake/serve scripts
-  pipeline/
-    validate.js                       # ajv validators + cross-schema invariants
-    schema/                           # 5 JSON schemas
-  serve.js                            # NOT YET WRITTEN — backend service, port 3335
-  state/                              # GITIGNORED — not used in v1 (no drafts)
-
-public/clouds/                        # PUBLISHED ARTIFACTS — runtime contracts
-  presets.json                        # the Teapot, 52 entries
-  almanac.json                        # 16 conditions + fallback (user-facing: "Conditions")
-  fixtures/                           # NOT YET POPULATED — fake-weather payloads
-
-meteorologist.html                    # NOT YET WRITTEN — standalone app shell
-
-src/meteorologist/                    # NOT YET WRITTEN — UI tree (mirrors src/arborist/)
-  main.jsx                            # imports ../tokens/design.css; renders <MeteorologistApp />
-  MeteorologistApp.jsx                # top bar, mode toggle, library router
-  TeapotLibrary.jsx                   # flat preset list
-  Teacup.jsx                          # per-cloud workstage
-  ConditionsLibrary.jsx               # flat conditions list
-  ConditionEditor.jsx                 # per-condition workstage
-  SlotTabs.jsx                        # shared CLOUD CHAMBER | GROUND
-  CanaryScene.jsx                     # the toy scene (ground + hero tree + sky)
-  stores/
-    useMeteorologistStore.js          # zustand
-
-src/components/
-  Atmosphere.jsx                      # NOT YET WRITTEN — v3 runtime component
-  atmosphere-materials.js             # NOT YET WRITTEN — shader factory
-  atmosphere-shaders/                 # NOT YET WRITTEN — frag/vert source
-  Atmosphere.jsx                      # production renderer (post-4b.3)
-  SpriteClouds.jsx                    # retires in cleanup commit
-  CelestialBodies.jsx                 # IMPORTED — Meteorologist mounts this unchanged
-  InstancedTrees.jsx                  # IMPORTED — Meteorologist mounts in Ground slot
-
-src/cartograph/
-  TodChannel.jsx                      # IMPORTED — Meteorologist's right-rail rows reuse this
-src/components/
-  DawnTimeline.jsx                    # IMPORTED — unified time card (TOD + Year + Playback)
-src/tokens/
-  design.css                          # IMPORTED — shared design tokens
-
-src/lib/
-  almanac-eval.js                     # v3 evaluator interface — shipped 2026-05-13
-                                      # (no production consumer yet; forward-compat)
-  weather-payload.js                  # NOT YET WRITTEN — normalizes useWeather output
-                                      # against weather-payload.schema.json
-```
-
-This shape mirrors `../arborist/` and `../cartograph/` so a contributor (or agent) showing up cold can navigate by analogy.
+**Single owner: `README.md` → "What lives where".** That map is kept current; this section's old copy carried stale `# NOT YET WRITTEN` markers for files that shipped in May 2026, so it was removed (2026-06-30) rather than maintained as a third copy. The shape mirrors `../arborist/` and `../cartograph/` so a cold contributor can navigate by analogy.
 
 ---
 
@@ -211,7 +152,7 @@ const directive  = selectDirective({
 
 `src/lib/weather-signals.js` exports `deriveSignals(payload, currentTime, extras)` — produces the expanded signal payload modulators read against. Derived signals: `pressure_trend_3hr` (mb change over 3hr, walked off the hourly back-fill from open-meteo's `past_hours=4` + `pressure_msl` query), `direct_ratio` (direct/(direct+diffuse+ε); smoke + haze detection), `hour_of_day`, `minute_of_day`. Pass-throughs: all `weather-payload.schema.json` fields plus `weathercode` and `precipitation` aliases used by the ADR-style worked examples.
 
-**Three production mount sites** for `<Atmosphere />` — `Scene.jsx` / `CartographApp.jsx` / `PreviewApp.jsx` — all identical, no fork. CanaryScene is the fourth mount (Meteorologist's authoring canary). Post-4b.3, no procedural fallback path exists.
+**Three production mount sites** — `Scene.jsx:814` / `CartographApp.jsx:1083` / `PreviewApp.jsx:1124` — all identical: each is `{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}` (the `skyMode` stopgap, see §4 ⚠️ note). No fork between the three. CanaryScene is the fourth mount and mounts `<Atmosphere />` unconditionally (ignores the switch). The procedural fallback path is **live, not retired** — `<CloudDome />` is the default; `<Atmosphere />` is behind `?sky=volumetric`.
 
 **Atmosphere has two uniform-source paths** (both wired post-5a):
 
@@ -238,12 +179,21 @@ Meteorologist consumes Stage's published artifacts (§2). The remaining integrat
 
 ---
 
-## 8. Relationship to v1 CloudDome (historical)
+## 8. Relationship to CloudDome (the live default)
 
-`src/components/CloudDome.jsx` WAS the noise-based procedural cloud shipper — the v1 production renderer through 2026-05-19. Retired 2026-05-20 in Phase 4b.3; `<Atmosphere />` is the production renderer now at all three mount sites (Scene.jsx / CartographApp.jsx / PreviewApp.jsx), with CanaryScene having used it since Phase 4b.1.
+`src/components/CloudDome.jsx` is the noise-based procedural cloud shipper — and, as of the 2026-05-27 `skyMode` stopgap, it is once again the **default production renderer** at all three surfaces (see §4 ⚠️ note).
 
-- The `CloudDome.jsx` + `SpriteClouds.jsx` files are deleted.
-- `STAGE_MIGRATION.md` is now historical — see the header note in that file.
+Timeline:
+- Through 2026-05-19 — CloudDome was the v1 production renderer.
+- 2026-05-20 (Phase 4b.3) — `<Atmosphere />` swapped in everywhere; CloudDome was deleted (along with `SpriteClouds.jsx`).
+- 2026-05-27 (Howard stopgap, `29cf31c`) — with the volumetric per-genus work TABLED, **`CloudDome.jsx` was restored** and the three production mounts were put behind `SKY_IS_VOLUMETRIC`, defaulting to the cheap dome so the live map looks good now. The slab integration stays intact behind `?sky=volumetric`.
+
+Current file state (verified 2026-06-30):
+- **`src/components/CloudDome.jsx` EXISTS** — the live default renderer.
+- **`src/components/SpriteClouds.jsx` is genuinely gone** (deleted 2026-05-20, not restored).
+- `STAGE_MIGRATION.md` is historical — see the header note in that file.
+
+When the volumetric species work lands, the plan (per `skyMode.js`'s "delete-on-landing" note) is to drop the stopgap module, collapse the three mounts back to `<Atmosphere />`, and remove CloudDome again.
 
 ---
 

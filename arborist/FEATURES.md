@@ -26,7 +26,9 @@ These are the contract the deployed runtime (`InstancedTrees.jsx`) consumes. The
 
 ---
 
-## Authoring surface: Salon is default; Procedural / LiDAR / Scan are legacy sources
+## Authoring surface: Salon is default; Procedural / LiDAR are kept peer tracks; Scan is legacy
+
+> 🌳 **Doctrine (2026-06):** **Authored-only (Salon) is the active track; Procedural + LiDAR are kept as equal PEER tracks** (reachable, not retired). Only the **Scan** Workstage is genuinely legacy/deprecating. Where the prose below calls Procedural/LiDAR "legacy," read "peer track (kept), reachable via `?legacy=` dev-fallback URL."
 
 **Post-Brief-18A (Mullion, 2026-05-23)**: the Arborist UI (`/arborist`) opens **directly into the Salon Workstage** — there is no Library landing, no mode-selector chrome at the top. The header reads `Arborist / Salon` (brand) + `LookPicker` + `Grove →` button. Procedural, LiDAR, and the legacy Scan Workstage stay reachable only via dev-fallback URL params (`?legacy=procedural`, `?legacy=lidar`, `?legacy=workstage&species=<id>`, `?legacy=grove`) during the transition to Brief 18B (source-picker — merges Procedural + LiDAR's authoring affordances into Salon's slot card; queued). All workspaces' `← Library` buttons now read `← Salon` and route home to the Salon Workstage.
 

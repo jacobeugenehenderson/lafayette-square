@@ -38,7 +38,7 @@
 
 ## 3. The data backend
 
-- **One Google Apps Script web app** (`apps-script/Code.js`), deployed "Execute as: Me / Access: Anyone", fronting **one shared Google Sheet** (`SPREADSHEET_ID` hardcoded in `Code.js`, 14 tabs). **59 endpoints**, all routed via `?action=` (full table in inventory §6).
+- **One Google Apps Script web app** (`apps-script/Code.js`), deployed "Execute as: Me / Access: Anyone", fronting **one shared Google Sheet** (`SPREADSHEET_ID` hardcoded in `Code.js`, 14 tabs). **~54 actions / 57 GET+POST routes** (reconciled 2026-06-30 against `Code.js`), all routed via `?action=` (full table in `reference/INVENTORY-API.md`).
 - **Photos** live in a Google Drive folder (`PHOTO_FOLDER_ID` in Script Properties, created once via `setup-photo-folder`); URLs are stored in the Sheet and are **public** (guessable Drive links).
 - **Supabase** backs the Cary courier system (phone-OTP auth, `courier_profiles`, realtime dispatch/chat) + the live courier count on the masthead.
 - **Open-Meteo** (no key) supplies live weather; polled every 5 min + on tab-focus.

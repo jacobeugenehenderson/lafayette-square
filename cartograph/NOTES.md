@@ -8,6 +8,12 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-30 — doc-canon deep audit + remediation sweep (Boz, fan-out).
+
+A whole-corpus read (5 cluster auditors over root + cartograph + ls + arborist + meteorologist; ~18K lines) then a remediation pass (3 domain agents — Marginalia/ls, Rowan/arborist, Stratus/meteorologist — + Boz on root/cartograph). **Diagnosis:** the doc *system* (BOZ §2–3) is sound; the rot was concentrated in docs not touched in the recent look/publish sprint, and worst where it's most dangerous — the Reference docs a fresh agent trusts *first*. **All findings verified against code before writing** (e.g. the meteorologist "CloudDome deleted" claim was false — `skyMode.js` ships CloudDome by default; ls admin token is `localStorage` not sessionStorage; no `stage-config`/`ground.svg` in `src/`).
+
+Landed: 35 docs edited + 3 HANDOFFs retired (design-dawn, publish-ceremony [folded → `PREVIEW §0.2` + `OPERATIONS §Named-levers#2`], NOTE-to-docs-boz-render). Banners on the stale first-reads (meteorologist ARCHITECTURE/STATUS · arborist SPEC · ls reference-tier/STATUS/BACKLOG); ~10 dead pointers repointed to live homes; orphans indexed (park-path-unify, animator-unify → cartograph BACKLOG; logistician-onboarding → ls BACKLOG); `DOC-CODE-COHERENCE` B1/B2 closed. **Deferred (bannered, not physically moved):** archive RUNTIME-DELTA + the ls-ARCHITECTURE session-diary tables + the misfiled cartograph sky-ADRs (`meteorologist/NOTES` ~473–680); reconcile exact arborist counts. **Untouched by intent:** the SHAPE forensics (archiving PAUSED, `[[project_revisit_skeleton_survey_section]]`).
+
 ## 2026-06-30 — the "Browse look" turned into a look-foundation + panel-taxonomy day.
 
 Set out to author the **overhead Browse** look per time-of-day (Dawn first). The Browse
