@@ -135,6 +135,25 @@ base-following; unforked = byte-identical.
   now). `stars` is a pre-existing gap (factory + bake read it but it's missing
   from DESIGN_FIELDS → never serialized; flag for Boz, not this arc).
 
+## Phase 3 (✅ verified) — bake emits shotLooks
+`cartograph/bake-scene.js`: after building `scene`, emit `scene.shotLooks =
+design.shotLooks` ONLY when present + non-empty (sparse → unforked Looks bake
+byte-identical, no key). Verified on a temp look: shotLooks round-trips verbatim
+(browse: mist/skyGain/ambient/exposure/dof/bloom, full channel-def shapes); a
+design with shotLooks removed bakes WITHOUT the key. The full chain now works:
+Stage edit (records shotLooks) → bake (emits to scene.json) → production
+(useSceneJson resolves active shot).
+
+### ⚑ BOZ — SLAB-CONTRACT note to add (canon is read-only for me)
+`scene.json` / `design.json` gain optional `shotLooks: { browse?, street? }`,
+each a sparse `{ <channel>: <channel-def> }` of per-shot LOOK overrides recorded
+implicitly on edit (inherit base/Hero otherwise). Absent = byte-identical to a
+pre-cascade slab. Resolve = `{...base, ...shotLooks[shot]}` (channel-wise), at
+one point: production's `useSceneJson` (off camera viewMode), Stage's
+`activeChannel` (off the active shot). Not overridable: shape, framing, building
+material (SlabBuildings bypass — deferred). `stars` is a pre-existing serialize
+gap (factory + bake read it but it's missing from DESIGN_FIELDS).
+
 ## Open / next
 - Phase 2 (Stage authoring) — **STANDUP WITH JACOB FIRST** (highest-convergence edit:
   `useCartographStore.createGroupChannelActions` + every panel read site + fork/reset

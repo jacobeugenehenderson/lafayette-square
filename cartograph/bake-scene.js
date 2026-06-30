@@ -147,6 +147,18 @@ export async function bakeScene({ look = 'default' } = {}) {
     // until DawnTimeline grows a "save default hour" or curve surface.
   }
 
+  // Channel-variant cascade (HANDOFF-channel-variant-cascade.md, Phase 3) —
+  // per-shot LOOK overrides. SPARSE: emit only when the Look has forks so an
+  // unforked Look's scene.json stays byte-identical to before (no key). Each
+  // entry is { <shot>: { <channel>: <channel-def> } }; production's
+  // useSceneJson resolves the active shot off these (resolveShotScene =
+  // {...base, ...shotLooks[shot]}). The Stage writes only valid LOOK channels,
+  // so it round-trips verbatim.
+  if (design.shotLooks && typeof design.shotLooks === 'object'
+      && Object.keys(design.shotLooks).length > 0) {
+    scene.shotLooks = design.shotLooks
+  }
+
   const outPath = join(outDir, 'scene.json')
   const wrote = writeIfChanged(outPath, JSON.stringify(scene, null, 2))
   console.log(`[bake-scene] ${wrote ? 'wrote' : 'unchanged'} ${outPath}`)
