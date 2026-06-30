@@ -1661,7 +1661,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
             return (
               <div key={i} className="relative group">
                 <button onClick={() => openLightbox(i)} className="w-full relative rounded-lg overflow-hidden">
-                  <img src={assetUrl(photo.url)} alt={`${name} ${i + 1}`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+                  <img src={assetUrl(photo.url)} alt={`${name} ${i + 1}`} className="w-full aspect-[4/3] object-cover" loading="lazy" decoding="async" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                   {isLast && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -3725,7 +3725,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
       {/* Hero Photo Area */}
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (
-          <img src={assetUrl(heroPhoto)} alt={name} className="w-full h-full object-cover" />
+          <img src={assetUrl(heroPhoto)} alt={name} className="w-full h-full object-cover" decoding="async" loading="eager" />
         ) : hasListingInfo ? (
           <div
             className="w-full h-full flex items-center justify-center"

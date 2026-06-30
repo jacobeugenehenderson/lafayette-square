@@ -676,18 +676,24 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
       return pool[(h >>> 0) % pool.length]
     }
 
-    // Tile bucketing. When the bake carries `tiles`, instances are split
-    // per-(url × tile) so each InstancedMesh's bounding sphere lives over a
-    // ~tileW × tileD footprint and culls naturally off-screen. Without
-    // tiles, fall back to one bucket per url (legacy bakes).
+    // Tile bucketing — COLLAPSED 2026-06-30 (the de-dup fix). VariantInstances
+    // above clones + merges a GLB's geometry into its OWN resident
+    // BufferGeometry per bucket. When trees were split per-(url × tile), 14
+    // unique GLBs spread across the 16-tile grid produced ~173 resident
+    // geometry copies (~400–650 MB) for 14 GLBs' worth of distinct mesh — the
+    // mobile OOM (iOS "page cannot be opened" WebKit kill). The split ONLY ever
+    // existed to scope per-tile bounding spheres for a frustum cull that was
+    // EXCISED 2026-06-27 (see line ~356) — so today it is pure cost, zero
+    // benefit. Collapsing to ONE bucket per url merges each GLB's geometry
+    // EXACTLY ONCE and instances it across all its placements: visually
+    // identical, FEWER draws, ~400–650 MB reclaimed. `tileMeta` is retained
+    // only for the diagnostic log below.
+    // ⚠️ If a real per-tile visibility cull is ever wanted, it must be a MANUAL
+    // world-space `.visible` pass with generous STATIC AABBs — NOT a return to
+    // this clone-per-tile split (which costs resident memory, not just draws).
+    // [[tree-building-frustum-culling]]
     const tileMeta = bake.tiles
-    const tileOf = tileMeta
-      ? (x, z) => {
-          const tx = Math.min(tileMeta.cols - 1, Math.max(0, Math.floor((x - tileMeta.minX) / tileMeta.tileW)))
-          const tz = Math.min(tileMeta.rows - 1, Math.max(0, Math.floor((z - tileMeta.minZ) / tileMeta.tileD)))
-          return tz * tileMeta.cols + tx
-        }
-      : () => 0
+    const tileOf = () => 0
 
     // Geometry by BAKED ROLE (heroTier: mesh|impostor|cull from
     // bake-trees#classifyHeroTiers), NOT live camera distance.
