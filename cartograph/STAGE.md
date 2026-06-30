@@ -24,21 +24,31 @@ Two load-bearing facts:
 
 | Family | Channels | Card (authoring surface) |
 |---|---|---|
-| **SC.1 — sky / light / celestial** | `sky`, `ambient`, `hemi`, `dirSun`, `dirMoon`, `constellations`, `milkyWay`, `skyGain` | Sky & Light |
-| **SC.2 / SC.3 — post-FX** | `bloom`, `ao`, `exposure`, `warmth`, `fill`, `mist`, `halo`, `grade`, `grain`, `shadow` | Post |
+| **SC.1 — sky / light / celestial** | `sky`, `ambient`, `hemi`, `dirSun`, `dirMoon`, `constellations`, `milkyWay`, `skyGain` | Light & Sky |
+| **SC.2 / SC.3 — post-FX** | `bloom`, `ao`, `exposure`, `warmth`, `fill`, `mist`, `halo`, `grade`, `grain`, `shadow` | Image · Light & Sky † |
 | **SC.4 — time defaults** | *(none persisted — see §5)* | DawnTimeline (scrub only) |
 | **SC.5 — camera** | `shots`, `browseHeading`, `heroSubject`, `heroKeyframes`, `heroMotion` | Camera / Shots |
 | **SC.6 — clouds** | `clouds` (forward-compat preset ref) | *(Meteorologist, standalone — §5)* |
-| **SC.7 — arch / horizon / lighting** | `arch`, `archLight`, `horizon` | Hero & Horizon |
-| **(look base)** | `palette`, `materialPhysics`, `materialColors`, `layerColors`, `luColors`, `layerVis`, `lampGlow`, `lantern`, `neon` | Materials / Surfaces / Neon / **Lamps** |
+| **SC.7 — arch / horizon / lighting** | `arch`, `archLight`, `horizon` | Hero & Horizon · Light Sources (`archLight`) |
+| **(look base)** | `palette`, `materialPhysics`, `materialColors`, `layerColors`, `luColors`, `layerVis`, `lampGlow`, `lantern`, `neon` | Materials / Surfaces / Neon / **Light Sources** |
 
-> **Arch Lighting (`archLight`, 2026-06-22).** The cross-aimed foot uplights split off the `arch` *placement* channel into their **own TOD-animatable** group channel (`ARCHLIGHT_*` in `skyLightChannels.js`) so the *wash* rides a day→night curve while placement stays put. Mounted as a `<TodChannel>` in the Hero & Horizon card; `GatewayArch` resolves it per-frame. Legacy Looks migrate via `migrateArchLight` (uplights carried off `arch`; cone radians→degrees).
+> ⭐ **Panel reorganized by operator INTENT (Phase A, 2026-06-30 — `scratch/LOOK-PANEL-TAXONOMY.md`).** The cards were renamed + regrouped from render-mechanism to what the operator is *doing*. **UI-only — channel keys + bake unchanged; the relabels below are display-only.** The live structure:
+> - **Light & Sky** — *Light & Shadow* (`dirSun` "Sun light" · `dirMoon` "Moon light" · `ambient` **"Fill light"** · `hemi` **"Sky fill"** · `shadow` **"Cast shadows"** · `ao` **"Occlusion"** · `fill` **"Shadow lift"**) · *Sky & Air* (sky gradient · `skyGain` **"Sky brightness"** · `mist` · `halo`) · *Night Sky* (`constellations` · `stars`) · *Neon*.
+> - **Image** (was "Post") — *Tone & Color* (`exposure` · `warmth` · `grade`) · *Glow* (`bloom`) · *Lens & Film* (`dof` "Focus" · `grain` · `smaa` "Antialiasing").
+> - **Light Sources** (was "Lamps") — `lantern` · `lampGlow` · `archLight` **"Arch uplights"** (moved out of Hero & Horizon — a source, not framing).
 >
-> **Lamps card (2026-06-22)** — two channels:
+> † the post-FX family **splits by intent**: `ao`/`fill`/`shadow` author under **Light & Sky › Light & Shadow** (with the lights), the rest under **Image**. **`grade` gained `brightness`** — the "B" of HSB (Saturation = "S"), an *additive lift* (raises the black floor, distinct from `exposure`'s multiplicative gain) for un-crushing dark surfaces; its dead **Toe** field was removed (the `fill`/"Shadow lift" channel owns the FilmGrade `uToe`). The per-channel ramp inputs are reframed as **"turn-on/off speed"** (snappy ↔ gradual — a lamp tripping on before dusk). *(Phase B will fold Bloom + Neon into Light Sources and split the lamp into fixture/pool/canopy.)*
+
+> **Arch Lighting (`archLight`, 2026-06-22; moved to Light Sources 2026-06-30).** The cross-aimed foot uplights split off the `arch` *placement* channel into their **own TOD-animatable** group channel (`ARCHLIGHT_*` in `skyLightChannels.js`) so the *wash* rides a day→night curve while placement stays put. Now mounted as a `<TodChannel>` ("Arch uplights") in the **Light Sources** card; `GatewayArch` resolves it per-frame. Legacy Looks migrate via `migrateArchLight` (uplights carried off `arch`; cone radians→degrees).
+>
+> **Light Sources card (was "Lamps"; 2026-06-22, expanded 2026-06-30)** — the man-made emitters:
 > - **`lantern`** — the lamp's own LIGHT SOURCE (the lantern): **Brightness + Glow**, TOD-animatable. Replaces the hardwired `t·0.8`/`t` lantern multipliers in `StreetLights` (operator master × the automatic dusk→night ramp). **The Lantern Brightness also drives the ground POOL's intensity** (the pool IS the lantern's light on the ground — `StreetLights` writes `poolUniform = Brightness × ramp`), and the lamp *colour* (`layerColors.lamp`, the Surfaces swatch) drives the pool's colour. So one light source → lantern + pool, coherent; off by day automatically.
 > - **`lampGlow`** now carries only **`{ trees }`** (the tree CANOPY under-glow). The ground pool is no longer a separate `lampGlow.pool` field — it follows the Lantern (above). The pool renders **baked into the ground** (the contour-correct ring map's R channel; G = contact shadow), not a floating disc — see `BAKE.md` / `SLAB-CONTRACT.md §3.1`.
+> - **`archLight`** ("Arch uplights") — the Gateway Arch's foot uplights; moved here from Hero & Horizon 2026-06-30 (a light source, not framing).
+>
+> ⚠️ **Open (Phase B):** the lamp is conceptually **three** things the panel still conflates as two — the **fixture** (lantern + its aura, which is really Bloom), the **ground pool**, and the **canopy emitter**; and the pool should be its own knob, not slaved to Lantern Brightness (`scratch/LOOK-PANEL-TAXONOMY.md`).
 
-`skyGain` is worth a sentence: it is **exposure scoped to the sky dome only** — it owns "how dark is night" without dimming lamps or lit windows (the single-owner cure for the night-brightness floor sprawl, `ARCHITECTURE.md §7`, 2026-06-07).
+`skyGain` (panel label **"Sky brightness"**) is worth a sentence: it is **exposure scoped to the sky dome only** — it owns "how dark is night" without dimming lamps or lit windows (the single-owner cure for the night-brightness floor sprawl, `ARCHITECTURE.md §7`, 2026-06-07).
 
 ---
 

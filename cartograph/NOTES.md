@@ -8,6 +8,41 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-30 — the "Browse look" turned into a look-foundation + panel-taxonomy day.
+
+Set out to author the **overhead Browse** look per time-of-day (Dawn first). The Browse
+override was a byte-for-byte mirror of Hero, so it inherited Hero's low, cinematic dawn —
+black from above. The chase exposed that the *foundation* wasn't there for "moody directional
+light **and** see everything":
+
+- **Why exposure didn't help:** `exposure` is a *multiplicative* gain — near-0 albedo × any
+  factor stays ~0, so it can't lift crushed blacks. Jacob named the missing lever: an **additive
+  lift** (the "B" of HSB; Saturation already existed). Landed a **`brightness` field on `grade`**
+  (`c + B·(1−c)` in `FilmGradeEffect`) that raises the black floor with the white point intact.
+- **Why the map was colourless:** a hardcoded **white ambient floor** washed everything flat, and
+  the fill colours were muddy. Drove the **hemisphere fill from the live sky gradient** (up-sky
+  colour from above, warm horizon as ground-bounce) + strengthened `hemiBase` 0.35→0.55 — the
+  "surfaces glow with the sky's colour" lever. Distinct from flat `ambient` ("Fill light").
+- **Why surfaces crushed/blew:** albedo runs value ~40–178 with saturated lots. Added a
+  **surface desaturate + value-lift** (`treatAlbedo` in `BakedGround` `FadeMesh`) so layers read
+  as a gentle gray family the sky-light colours. ⚠️ prototype constants — owes a "Surface" knob.
+
+Then Jacob pushed on the panel itself: *"why are Fill, AO, Shadow in different categories — nothing
+works intuitively?"* Diagnosis: the look panel was organized by **render mechanism**, not operator
+**intent** — Fill (a FilmGrade toe), AO (N8AO pass), Shadow (SoftShadows) scattered across cards;
+a **dead Grade Toe** slider (Fill overrode its uniform); a **double-"Shadow"** (a section *and* a
+channel, in different cards); "Fill" mislabeled (the real fill light is Ambient/Hemi). Mapped it
+all in `scratch/LOOK-PANEL-TAXONOMY.md` and shipped **Phase A** (UI-only, slab byte-identical):
+cards **Light & Sky** / **Image** / **Light Sources**; a unified **Light & Shadow** section; relabels
+(Fill→Shadow lift · Ambient→Fill light · Hemisphere→Sky fill · AO→Occlusion · Hero Lighting→Arch
+uplights); removed the dead Grade Toe; reframed the fade inputs → **"turn-on/off speed"**.
+
+Lessons banked: organize authoring by **what the operator is doing**, not by where the knob plugs
+into the renderer; tunable degrees are **knobs, not buried constants** (the surface-treatment debt);
+the lamp is really **three** things (fixture+aura/bloom · ground pool · canopy), not two. Open: the
+actual Dawn Browse look (deferred under the infra), the cascade **per-ToD-per-shot** granularity
+correction, and taxonomy **Phase B**. All on `curb-offset-draw`, committed (not yet pushed/deployed; eye-gate-pending).
+
 ## 2026-06-29 — "Nothing sits on the ground": the conformance arc + a neon regression hunt.
 
 A long day with Jacob (Boz), much of it shipped live (staging + prod, branch `curb-offset-draw`).
