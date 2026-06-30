@@ -775,6 +775,22 @@ function ElevatedGroup({ at, children, footprintRadius = 0 }) {
 // in the world on the terrain (occludable, height/position matter) and want
 // their OWN operator controls, not the shared `labels` toggle. See
 // ls/BACKLOG.md "Landmark labels need their own controls".
+// Pull the landmark label OUT of the terrain-occludable depth stack: terrain
+// (or a foreground tree) was clipping the leading "L" of "LAFAYETTE PARK"
+// because the ground rises under the left of the word and a rigid lift that
+// clears it would float the whole word off the grass. Disabling depthTest on
+// the SDF material makes the label always render (with renderOrder=16 keeping
+// it correctly ordered in the transparent queue) — the documented root fix
+// (ls/BACKLOG.md: render landmark labels in the label/ribbon stack like street
+// labels, which never depth-fight the terrain). Reapplied on every troika sync.
+function flattenLabelDepth(troikaText) {
+  const m = troikaText && troikaText.material
+  if (m) {
+    m.depthTest = false
+    m.depthWrite = false
+  }
+}
+
 export function ParkTitle() {
   return (
     <>
@@ -790,6 +806,7 @@ export function ParkTitle() {
           outlineWidth={0.7}
           outlineColor="#14141c"
           renderOrder={16}
+          onSync={flattenLabelDepth}
         >
           LAFAYETTE PARK
         </Text>
@@ -806,6 +823,7 @@ export function ParkTitle() {
           outlineWidth={0.35}
           outlineColor="#14141c"
           renderOrder={16}
+          onSync={flattenLabelDepth}
         >
           {'EST. 1851 · ST. LOUIS, MO'}
         </Text>
