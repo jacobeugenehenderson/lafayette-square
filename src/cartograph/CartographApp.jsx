@@ -66,7 +66,7 @@ import BakeModal from './BakeModal.jsx'
 import CartographSurfaces from './CartographSurfaces.jsx'
 
 // Hooks + store
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import useCamera from '../hooks/useCamera'
@@ -94,7 +94,7 @@ useTimeOfDay.getState().setHour(12)
 
 function NeonPump() {
   useFrame(() => {
-    const { neon } = useCartographStore.getState()
+    const neon = activeChannel(useCartographStore.getState(), 'neon')
     if (!neon) return
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
@@ -111,7 +111,9 @@ function NeonPump() {
 
 function LampGlowPump() {
   useFrame(() => {
-    const { lampGlow } = useCartographStore.getState()
+    // Resolve the active shot's lampGlow (channel-variant cascade) so a forked
+    // shot's lamp wash pumps live in the Stage; unforked → base.
+    const lampGlow = activeChannel(useCartographStore.getState(), 'lampGlow')
     if (!lampGlow) return
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
@@ -122,6 +124,41 @@ function LampGlowPump() {
     // poolUniform is driven by StreetLights (pool follows the lantern's output).
   })
   return null
+}
+
+// ── Per-shot look override banner (channel-variant cascade, Phase 2) ─────────
+// Implicit fork: editing any LOOK channel while a browse/street shot is active
+// records that change as the shot's override (activeChannel/channelPatch in the
+// store). Hero IS the base look. This banner appears ONLY once the active shot
+// has recorded overrides, offering "Reset to Hero" (drop all of this shot's
+// overrides → follow base again). Per-channel revert lives on each channel's
+// header. Renders nothing otherwise → the panel stays clean until you diverge.
+function ShotLookFork({ shot }) {
+  const overrideCount = useCartographStore(s => {
+    const blk = (shot === 'browse' || shot === 'street') ? s.shotLooks?.[shot] : null
+    return blk ? Object.keys(blk).length : 0
+  })
+  const resetShotToBase = useCartographStore(s => s.resetShotToBase)
+  if (!overrideCount) return null
+  const label = shot[0].toUpperCase() + shot.slice(1)
+  return (
+    <div className="glass-panel rounded-xl p-3 pointer-events-auto flex items-center justify-between gap-2">
+      <div className="text-xs" style={{ color: 'var(--on-surface-subtle)', lineHeight: 1.3 }}>
+        <span style={{ fontWeight: 600, color: 'var(--on-surface)' }}>{label}</span> has its own look
+        {' '}({overrideCount} change{overrideCount === 1 ? '' : 's'} off Hero).
+      </div>
+      <button
+        onClick={() => resetShotToBase(shot)}
+        title={`Drop ${label}'s overrides; follow the Hero (base) look again.`}
+        style={{
+          fontSize: 11, padding: '4px 10px', borderRadius: 8, whiteSpace: 'nowrap',
+          border: '1px solid var(--outline-variant)', background: 'transparent',
+          color: 'var(--on-surface)', cursor: 'pointer',
+        }}>
+        Reset to Hero
+      </button>
+    </div>
+  )
 }
 
 // ── Camera rig ─────────────────────────────────────────────────────────────
@@ -616,13 +653,16 @@ const SCENE_REGISTRY = {
       // scene.json frozen-at-bake. Contained here in the cartograph chunk
       // so LafayetteScene itself never imports useCartographStore.
       // Doctrine: project_authoring_is_live_production_is_static.
-      const paletteOverride         = useCartographStore(s => s.buildingPalette)
-      const materialPhysicsOverride = useCartographStore(s => s.materialPhysics)
-      const materialColorsOverride  = useCartographStore(s => s.materialColors)
-      const archOverride            = useCartographStore(s => s.arch)
-      const archLightOverride       = useCartographStore(s => s.archLight)
-      const lanternOverride         = useCartographStore(s => s.lantern)
-      const horizonOverride         = useCartographStore(s => s.horizon)
+      // activeChannel resolves the active shot's fork (channel-variant cascade)
+      // so the Stage live-renders per-shot looks; non-forkable channels (palette/
+      // material/arch/horizon) resolve to base unchanged.
+      const paletteOverride         = useCartographStore(s => activeChannel(s, 'buildingPalette'))
+      const materialPhysicsOverride = useCartographStore(s => activeChannel(s, 'materialPhysics'))
+      const materialColorsOverride  = useCartographStore(s => activeChannel(s, 'materialColors'))
+      const archOverride            = useCartographStore(s => activeChannel(s, 'arch'))
+      const archLightOverride       = useCartographStore(s => activeChannel(s, 'archLight'))
+      const lanternOverride         = useCartographStore(s => activeChannel(s, 'lantern'))
+      const horizonOverride         = useCartographStore(s => activeChannel(s, 'horizon'))
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       return <>
         {!hiddenLayers.park && (
@@ -674,7 +714,7 @@ const SCENE_REGISTRY = {
     // > Ground); visibility from `layerVis.ground`. Defaults to a cool
     // navy if the operator hasn't customized.
     DesignerBackdrop: () => {
-      const layerColors = useCartographStore(s => s.layerColors)
+      const layerColors = useCartographStore(s => activeChannel(s, 'layerColors'))
       const layerVis    = useCartographStore(s => s.layerVis)
       if (layerVis?.ground === false) return null
       const groundCol = layerColors?.ground || '#1f2530'
@@ -710,7 +750,7 @@ export default function CartographApp() {
   const hoverTarget = useCartographStore(s => s.hoverTarget)
   const bgColor = useCartographStore(s => s.bgColor)
   const layerVis = useCartographStore(s => s.layerVis)
-  const luColors = useCartographStore(s => s.luColors)
+  const luColors = useCartographStore(s => activeChannel(s, 'luColors'))
   const aerialVisible = useCartographStore(s => s.aerialVisible)
   const centerlineData = useCartographStore(s => s.centerlineData)
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
@@ -730,31 +770,33 @@ export default function CartographApp() {
   // frozen-at-bake. Store reach is contained here in the cartograph chunk;
   // CelestialBodies itself never imports useCartographStore.
   // Doctrine: project_stage_consumer_parity, project_authoring_is_live_production_is_static.
-  const skyOverride            = useCartographStore(s => s.sky)
-  const ambientOverride        = useCartographStore(s => s.ambient)
-  const hemiOverride           = useCartographStore(s => s.hemi)
-  const dirSunOverride         = useCartographStore(s => s.dirSun)
-  const dirMoonOverride        = useCartographStore(s => s.dirMoon)
-  const constellationsOverride = useCartographStore(s => s.constellations)
-  const milkyWayOverride       = useCartographStore(s => s.milkyWay)
-  const skyGainOverride        = useCartographStore(s => s.skyGain)
-  const starsOverride          = useCartographStore(s => s.stars)
+  // activeChannel resolves the active shot's fork (channel-variant cascade) so
+  // the Stage live-renders per-shot looks; unforked shots resolve to base.
+  const skyOverride            = useCartographStore(s => activeChannel(s, 'sky'))
+  const ambientOverride        = useCartographStore(s => activeChannel(s, 'ambient'))
+  const hemiOverride           = useCartographStore(s => activeChannel(s, 'hemi'))
+  const dirSunOverride         = useCartographStore(s => activeChannel(s, 'dirSun'))
+  const dirMoonOverride        = useCartographStore(s => activeChannel(s, 'dirMoon'))
+  const constellationsOverride = useCartographStore(s => activeChannel(s, 'constellations'))
+  const milkyWayOverride       = useCartographStore(s => activeChannel(s, 'milkyWay'))
+  const skyGainOverride        = useCartographStore(s => activeChannel(s, 'skyGain'))
+  const starsOverride          = useCartographStore(s => activeChannel(s, 'stars'))
 
   // SC.2 + SC.3 — post-FX channels threaded as overrides into the shared
   // PostProcessing + StageFog consumers. Production passes no overrides
   // and reads scene.json frozen-at-bake.
-  const bloomOverride    = useCartographStore(s => s.bloom)
-  const aoOverride       = useCartographStore(s => s.ao)
-  const exposureOverride = useCartographStore(s => s.exposure)
-  const warmthOverride   = useCartographStore(s => s.warmth)
-  const fillOverride     = useCartographStore(s => s.fill)
-  const mistOverride     = useCartographStore(s => s.mist)
-  const haloOverride     = useCartographStore(s => s.halo)
-  const gradeOverride    = useCartographStore(s => s.grade)
-  const smaaOverride     = useCartographStore(s => s.smaa)
-  const dofOverride      = useCartographStore(s => s.dof)
-  const grainOverride    = useCartographStore(s => s.grain)
-  const shadowOverride   = useCartographStore(s => s.shadow)
+  const bloomOverride    = useCartographStore(s => activeChannel(s, 'bloom'))
+  const aoOverride       = useCartographStore(s => activeChannel(s, 'ao'))
+  const exposureOverride = useCartographStore(s => activeChannel(s, 'exposure'))
+  const warmthOverride   = useCartographStore(s => activeChannel(s, 'warmth'))
+  const fillOverride     = useCartographStore(s => activeChannel(s, 'fill'))
+  const mistOverride     = useCartographStore(s => activeChannel(s, 'mist'))
+  const haloOverride     = useCartographStore(s => activeChannel(s, 'halo'))
+  const gradeOverride    = useCartographStore(s => activeChannel(s, 'grade'))
+  const smaaOverride     = useCartographStore(s => activeChannel(s, 'smaa'))
+  const dofOverride      = useCartographStore(s => activeChannel(s, 'dof'))
+  const grainOverride    = useCartographStore(s => activeChannel(s, 'grain'))
+  const shadowOverride   = useCartographStore(s => activeChannel(s, 'shadow'))
   // Live arch placement → the DoF hero pocket anchors to the SAME (store) arch
   // Stage renders, not the stale baked scene.json one (heroSubject already read
   // above at component scope).
@@ -1087,7 +1129,8 @@ export default function CartographApp() {
             heroMotion={heroMotion} setHeroMotion={setHeroMotion}
             surfacesSlot={<CartographSurfaces />}
             skyLightSlot={<CartographSkyLight />}
-            postSlot={<CartographPost />} />
+            postSlot={<CartographPost />}
+            lookForkSlot={<ShotLookFork shot={shot} />} />
         )}
       </div>
 

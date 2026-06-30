@@ -14,7 +14,7 @@
  * active Look's design.json. No local-state mirror.
  */
 import { useState } from 'react'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
 import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS } from './skyLightChannels.js'
@@ -332,8 +332,8 @@ export default function CartographSurfaces() {
   const [selectedId, setSelectedId] = useState(null)
 
   const layerVis       = useCartographStore(s => s.layerVis)
-  const layerColors    = useCartographStore(s => s.layerColors)
-  const luColors       = useCartographStore(s => s.luColors)
+  const layerColors    = useCartographStore(s => activeChannel(s, 'layerColors'))
+  const luColors       = useCartographStore(s => activeChannel(s, 'luColors'))
   const materialColors = useCartographStore(s => s.materialColors)
   const materialPhysics = useCartographStore(s => s.materialPhysics)
   const buildingPalette = useCartographStore(s => s.buildingPalette)
@@ -519,7 +519,7 @@ export default function CartographSurfaces() {
 // Field schema + defaults now live in skyLightChannels.js (the canonical home
 // for every channel's UI schema); imported above as LAMPGLOW_*.
 export function LampGlowEditor() {
-  const lampGlow              = useCartographStore(s => s.lampGlow)
+  const lampGlow              = useCartographStore(s => activeChannel(s, 'lampGlow'))
   const setLampGlow           = useCartographStore(s => s.setLampGlow)
   const animateLampGlow       = useCartographStore(s => s.animateLampGlow)
   const addLampGlowSlot       = useCartographStore(s => s.addLampGlowSlot)

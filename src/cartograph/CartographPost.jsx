@@ -14,7 +14,7 @@
  * See HANDOFF-sky-and-light.md and project_post_vs_skylight_split.md.
  */
 import TodChannel from './TodChannel.jsx'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import {
   BLOOM_FIELDS, BLOOM_FLAT_DEFAULTS,
   WARMTH_FIELDS, WARMTH_FLAT_DEFAULTS,
@@ -33,7 +33,10 @@ import {
 // to keep this file self-contained.
 function StoreChannel({ name, label, fields, flatDefaults }) {
   const cap = name[0].toUpperCase() + name.slice(1)
-  const channel       = useCartographStore(s => s[name])
+  // Resolve the active shot's channel (channel-variant cascade): a forked shot
+  // edits its own block, hero/unforked edits base — same panel, the binding
+  // follows the active shot.
+  const channel       = useCartographStore(s => activeChannel(s, name))
   const setValue      = useCartographStore(s => s[`set${cap}`])
   const animate       = useCartographStore(s => s[`animate${cap}`])
   const addSlot       = useCartographStore(s => s[`add${cap}Slot`])

@@ -58,13 +58,80 @@ function readActiveLookFromStorage() {
   return DEFAULT_LOOK_ID
 }
 
+// ── Channel-variant cascade (HANDOFF-channel-variant-cascade.md, Phase 2) ──
+// IMPLICIT per-shot override cascade: editing a LOOK channel while a forkable
+// shot (browse/street) is active RECORDS that change as the shot's override —
+// no "make this its own look" step (Jacob, 2026-06-29: "just record changes as
+// the new fork"). Hero IS the base (the top-level channels) — that's where you
+// edit the shared look; browse/street override sparsely on top, inheriting base
+// for every channel they haven't touched. Reads + writes RESOLVE the active shot
+// STATELESSLY — the data always lives in its true place (base = top-level,
+// override = shotLooks[shot][channel]), so there's no swap/flush race; a channel
+// resolves to the shot's override if present, else base. Only LOOK channels
+// override. NOT overridable, by design:
+// shape (frozen geometry), framing (shot identity = shots/hero*/arch/horizon/
+// browseHeading), and building material (materialColors/Physics/buildingPalette
+// render via SlabBuildings, which bypasses the slab adapter → can't fork per
+// shot until that read path is firmed — Jacob isn't after per-shot building
+// color). Add a new LOOK channel here when it should fork; opt-in is the safe
+// failure mode (a missing one just edits base — never an accidental shape fork).
+export const SHOT_LOOK_CHANNELS = new Set([
+  'layerColors', 'luColors', 'lampGlow', 'bloom', 'warmth', 'fill', 'exposure',
+  'ao', 'mist', 'halo', 'skyGain', 'grade', 'grain', 'smaa', 'dof', 'shadow',
+  'constellations', 'milkyWay', 'neon', 'sky', 'ambient', 'hemi', 'dirSun',
+  'dirMoon', 'archLight', 'lantern', 'clouds',
+])
+const FORK_SHOT_KEYS = ['browse', 'street'] // hero + designer → base
+
+// The active shot key when it's an overridable shot (browse/street), else null
+// (→ base) for hero/designer. NOT gated on an existing override block — a
+// forkable shot records overrides IMPLICITLY on first edit.
+function forkableShotKey(s) {
+  return FORK_SHOT_KEYS.includes(s.shot) ? s.shot : null
+}
+// Resolve a channel for the active shot: the shot's override if it has recorded
+// one for this channel, else base. Returns a stored object reference (no merge)
+// → a stable zustand selector result. An overridable shot inherits base for
+// every channel it hasn't touched.
+export function activeChannel(s, name) {
+  const sk = SHOT_LOOK_CHANNELS.has(name) ? forkableShotKey(s) : null
+  if (sk && s.shotLooks?.[sk] && name in s.shotLooks[sk]) return s.shotLooks[sk][name]
+  return s[name]
+}
+// Build the set()-patch that writes `obj` into the right layer for `name` — the
+// active shot's override block (auto-created on first edit) when forkable, else
+// the top-level base. This is what makes editing in a shot implicitly record
+// the override.
+function channelPatch(s, name, obj) {
+  const sk = SHOT_LOOK_CHANNELS.has(name) ? forkableShotKey(s) : null
+  if (!sk) return { [name]: obj }
+  return { shotLooks: { ...s.shotLooks, [sk]: { ...(s.shotLooks?.[sk] || {}), [name]: obj } } }
+}
+// Per-channel revert. In an overridable shot, "revert" DROPS this channel's
+// override → the channel follows base (Hero) again. In base (hero/designer),
+// it resets the channel to defaults (today's behavior).
+function channelRevert(s, name, baseDefaultObj) {
+  const sk = SHOT_LOOK_CHANNELS.has(name) ? forkableShotKey(s) : null
+  if (sk && s.shotLooks?.[sk] && name in s.shotLooks[sk]) {
+    const block = { ...s.shotLooks[sk] }
+    delete block[name]
+    // Drop the shot's whole block once its last override is cleared.
+    const next = { ...s.shotLooks }
+    if (Object.keys(block).length === 0) delete next[sk]
+    else next[sk] = block
+    return { shotLooks: next }
+  }
+  return { [name]: baseDefaultObj }
+}
+
 // Group-channel action factory. See use site below the LampGlow block.
 function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) {
   const cap = name[0].toUpperCase() + name.slice(1)
   const flatTuple = (s) => {
+    const ch = activeChannel(s, name)
     const out = {}
     for (const k of fieldKeys) {
-      const v = s[name]?.values?.[k]
+      const v = ch?.values?.[k]
       out[k] = v == null ? (flatDefaults[k] ?? 0) : Number(v)
     }
     return out
@@ -72,9 +139,9 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
   return {
     [`set${cap}`]: (key, value, slotId) => {
       set(s => {
-        const ch = s[name] || { values: {} }
+        const ch = activeChannel(s, name) || { values: {} }
         if (!ch.animated) {
-          return { [name]: { ...ch, values: { ...(ch.values || {}), [key]: value } } }
+          return channelPatch(s, name, { ...ch, values: { ...(ch.values || {}), [key]: value } })
         }
         // Animated: write to the EXPLICIT edit-target slot the caller passes
         // (TodChannel's selected chip). Keyframes are keyed BY SLOT ID and each
@@ -88,35 +155,33 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
         })()
         if (!sid || !(sid in (ch.values || {}))) return s
         const tuple = { ...(ch.values[sid] || {}), [key]: value }
-        return { [name]: { ...ch, values: { ...ch.values, [sid]: tuple } } }
+        return channelPatch(s, name, { ...ch, values: { ...ch.values, [sid]: tuple } })
       })
       get()._saveDesignDebounced()
     },
     [`animate${cap}`]: (slotId) => {
       if (!slotId || !NAMED_TOD_SLOTS_BY_ID[slotId]) return
       set(s => {
-        if (s[name]?.animated) return s
-        return {
-          [name]: {
-            animated: 'tod',
-            transitionIn: 30,
-            transitionOut: 30,
-            values: { [slotId]: flatTuple(s) },
-          },
-        }
+        if (activeChannel(s, name)?.animated) return s
+        return channelPatch(s, name, {
+          animated: 'tod',
+          transitionIn: 30,
+          transitionOut: 30,
+          values: { [slotId]: flatTuple(s) },
+        })
       })
       get()._saveDesignDebounced()
     },
     [`unanimate${cap}`]: () => {
       set(s => {
-        const ch = s[name]
+        const ch = activeChannel(s, name)
         if (!ch?.animated) return s
         const tod = useTimeOfDay.getState()
         const phId = todSlotAtMinute(tod.getMinuteOfDay(), tod.currentTime)
         const slotIds = Object.keys(ch.values || {})
         const useId = phId && slotIds.includes(phId) ? phId : slotIds[0]
         const tuple = useId ? ch.values[useId] : { ...flatDefaults }
-        return { [name]: { values: { ...tuple } } }
+        return channelPatch(s, name, { values: { ...tuple } })
       })
       get()._saveDesignDebounced()
     },
@@ -126,17 +191,17 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
       const minute = slotMinutes[slotId]
       if (minute == null) return
       set(s => {
-        const ch = s[name]
+        const ch = activeChannel(s, name)
         if (!ch?.animated) return s
         if (slotId in (ch.values || {})) return s
         const seed = resolveGroupAtMinute(ch, minute, slotMinutes, fieldKeys, flatDefaults)
-        return { [name]: { ...ch, values: { ...ch.values, [slotId]: seed } } }
+        return channelPatch(s, name, { ...ch, values: { ...ch.values, [slotId]: seed } })
       })
       get()._saveDesignDebounced()
     },
     [`remove${cap}Slot`]: (slotId) => {
       set(s => {
-        const ch = s[name]
+        const ch = activeChannel(s, name)
         if (!ch?.animated || !(slotId in (ch.values || {}))) return s
         const values = { ...ch.values }
         const removedTuple = values[slotId]
@@ -146,17 +211,17 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
         const next = Object.keys(values).length === 0
           ? { values: { ...removedTuple } }
           : { ...ch, values }
-        return { [name]: next }
+        return channelPatch(s, name, next)
       })
       get()._saveDesignDebounced()
     },
     [`set${cap}Transition`]: (side, minutes) => {
       set(s => {
-        const ch = s[name]
+        const ch = activeChannel(s, name)
         if (!ch?.animated) return s
         const m = Math.max(0, Number(minutes) || 0)
         const patch = side === 'in' ? { transitionIn: m } : { transitionOut: m }
-        return { [name]: { ...ch, ...patch } }
+        return channelPatch(s, name, { ...ch, ...patch })
       })
       get()._saveDesignDebounced()
     },
@@ -164,7 +229,7 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
     // Single button at the channel header (feedback_per_item_revert) —
     // never a card-level "reset everything," never a per-slider revert.
     [`revert${cap}`]: () => {
-      set({ [name]: { values: { ...flatDefaults } } })
+      set(s => channelRevert(s, name, { values: { ...flatDefaults } }))
       get()._saveDesignDebounced()
     },
   }
@@ -272,6 +337,11 @@ const DESIGN_FIELDS = [
   { key: 'clouds', hydrate: (d) => d.clouds?.values
     ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...d.clouds.values } }
     : { values: { ...CLOUDS_FLAT_DEFAULTS } } },
+  // Channel-variant cascade (Phase 2): per-shot whole-look forks. Keyed by shot
+  // (browse|street); each value is a full copy of the SHOT_LOOK_CHANNELS the
+  // operator forked. Absent shot = follows base (the top-level channels). Sparse
+  // → a Look with no forks serializes/bakes byte-identically to before.
+  { key: 'shotLooks', hydrate: (d) => _isObj(d.shotLooks) ? d.shotLooks : {} },
   { key: 'openSections', hydrate: (d) => d.openSections || {} },
 ]
 
@@ -298,6 +368,10 @@ const useCartographStore = create((set, get) => ({
   layerColors: {},
   layerStrokes: {},
   luColors: {},
+  // Per-shot whole-look forks (channel-variant cascade, Phase 2). { browse?,
+  // street? } → a full copy of the forked SHOT_LOOK_CHANNELS; hydrated from /
+  // serialized to design.json via DESIGN_FIELDS. Empty = every shot follows base.
+  shotLooks: {},
   // Look-level multiplier on every street-corner radius. 1 = AASHTO/NACTO
   // baseline (4.5m residential, larger for arterials). >1 → bubblier corners
   // (sponsored-event "retro" mode); <1 → tighter / more square. Applies on
@@ -1018,16 +1092,16 @@ const useCartographStore = create((set, get) => ({
   //     slot — UI also gates this.
   setLampGlow: (channel, value) => {
     set(s => {
-      const lg = s.lampGlow || { values: {} }
+      const lg = activeChannel(s, 'lampGlow') || { values: {} }
       if (!lg.animated) {
-        return { lampGlow: { ...lg, values: { ...(lg.values || {}), [channel]: value } } }
+        return channelPatch(s, 'lampGlow', { ...lg, values: { ...(lg.values || {}), [channel]: value } })
       }
       const tod = useTimeOfDay.getState()
       const minute = tod.getMinuteOfDay()
       const sid = todSlotAtMinute(minute, tod.currentTime)
       if (!sid || !(sid in (lg.values || {}))) return s
       const triple = { ...(lg.values[sid] || {}), [channel]: value }
-      return { lampGlow: { ...lg, values: { ...lg.values, [sid]: triple } } }
+      return channelPatch(s, 'lampGlow', { ...lg, values: { ...lg.values, [sid]: triple } })
     })
     get()._saveDesignDebounced()
   },
@@ -1037,20 +1111,19 @@ const useCartographStore = create((set, get) => ({
   animateLampGlow: (slotId) => {
     if (!slotId || !NAMED_TOD_SLOTS_BY_ID[slotId]) return
     set(s => {
-      if (s.lampGlow?.animated) return s
+      const lg = activeChannel(s, 'lampGlow')
+      if (lg?.animated) return s
       const triple = {
-        grass: Number(s.lampGlow?.values?.grass) || 0,
-        trees: Number(s.lampGlow?.values?.trees) || 0,
-        pool:  s.lampGlow?.values?.pool == null ? 1.0 : Number(s.lampGlow.values.pool),
+        grass: Number(lg?.values?.grass) || 0,
+        trees: Number(lg?.values?.trees) || 0,
+        pool:  lg?.values?.pool == null ? 1.0 : Number(lg.values.pool),
       }
-      return {
-        lampGlow: {
-          animated: 'tod',
-          transitionIn: 30,
-          transitionOut: 30,
-          values: { [slotId]: triple },
-        },
-      }
+      return channelPatch(s, 'lampGlow', {
+        animated: 'tod',
+        transitionIn: 30,
+        transitionOut: 30,
+        values: { [slotId]: triple },
+      })
     })
     get()._saveDesignDebounced()
   },
@@ -1059,14 +1132,14 @@ const useCartographStore = create((set, get) => ({
   // slot's triple.
   unanimateLampGlow: () => {
     set(s => {
-      const lg = s.lampGlow
+      const lg = activeChannel(s, 'lampGlow')
       if (!lg?.animated) return s
       const tod = useTimeOfDay.getState()
       const phId = todSlotAtMinute(tod.getMinuteOfDay(), tod.currentTime)
       const slotIds = Object.keys(lg.values || {})
       const useId = phId && slotIds.includes(phId) ? phId : slotIds[0]
       const triple = useId ? lg.values[useId] : { grass: 0, trees: 0, pool: 1.0 }
-      return { lampGlow: { values: { ...triple } } }
+      return channelPatch(s, 'lampGlow', { values: { ...triple } })
     })
     get()._saveDesignDebounced()
   },
@@ -1079,17 +1152,17 @@ const useCartographStore = create((set, get) => ({
     const minute = slotMinutes[slotId]
     if (minute == null) return
     set(s => {
-      const lg = s.lampGlow
+      const lg = activeChannel(s, 'lampGlow')
       if (!lg?.animated) return s
       if (slotId in (lg.values || {})) return s
       const seed = resolveLampGlowAtMinute(lg, minute, slotMinutes)
-      return { lampGlow: { ...lg, values: { ...lg.values, [slotId]: seed } } }
+      return channelPatch(s, 'lampGlow', { ...lg, values: { ...lg.values, [slotId]: seed } })
     })
     get()._saveDesignDebounced()
   },
   removeLampGlowSlot: (slotId) => {
     set(s => {
-      const lg = s.lampGlow
+      const lg = activeChannel(s, 'lampGlow')
       if (!lg?.animated || !(slotId in (lg.values || {}))) return s
       const values = { ...lg.values }
       const removedTriple = values[slotId]
@@ -1100,22 +1173,22 @@ const useCartographStore = create((set, get) => ({
       const lampGlow = Object.keys(values).length === 0
         ? { values: { ...removedTriple } }
         : { ...lg, values }
-      return { lampGlow }
+      return channelPatch(s, 'lampGlow', lampGlow)
     })
     get()._saveDesignDebounced()
   },
   setLampGlowTransition: (side, minutes) => {
     set(s => {
-      const lg = s.lampGlow
+      const lg = activeChannel(s, 'lampGlow')
       if (!lg?.animated) return s
       const m = Math.max(0, Number(minutes) || 0)
       const patch = side === 'in' ? { transitionIn: m } : { transitionOut: m }
-      return { lampGlow: { ...lg, ...patch } }
+      return channelPatch(s, 'lampGlow', { ...lg, ...patch })
     })
     get()._saveDesignDebounced()
   },
   revertLampGlow: () => {
-    set({ lampGlow: { values: { grass: 0, trees: 0, pool: 1.0 } } })
+    set(s => channelRevert(s, 'lampGlow', { values: { grass: 0, trees: 0, pool: 1.0 } }))
     get()._saveDesignDebounced()
   },
   // ── Group-channel action factory ────────────────────────────
@@ -1219,13 +1292,13 @@ const useCartographStore = create((set, get) => ({
   // (Almanac at runtime). v1 has no UI; these actions exist so a future
   // Stage Clouds row plugs in without further wiring.
   setClouds: (patch) => {
-    set(s => ({
-      clouds: { values: { ...(s.clouds?.values || CLOUDS_FLAT_DEFAULTS), ...(patch || {}) } }
+    set(s => channelPatch(s, 'clouds', {
+      values: { ...(activeChannel(s, 'clouds')?.values || CLOUDS_FLAT_DEFAULTS), ...(patch || {}) }
     }))
     get()._saveDesignDebounced()
   },
   revertClouds: () => {
-    set({ clouds: { values: { ...CLOUDS_FLAT_DEFAULTS } } })
+    set(s => channelRevert(s, 'clouds', { values: { ...CLOUDS_FLAT_DEFAULTS } }))
     get()._saveDesignDebounced()
   },
 
@@ -1320,26 +1393,42 @@ const useCartographStore = create((set, get) => ({
     if (!SKY_BANDS.includes(band)) return
     if (typeof hex !== 'string') return
     set(s => {
-      const sky = s.sky || { overrides: [] }
+      const sky = activeChannel(s, 'sky') || { overrides: [] }
       const existing = Array.isArray(sky.overrides) ? sky.overrides : []
       const filtered = existing.filter(o => !(o.hour === hour && o.band === band))
       filtered.push({ hour, band, hex })
-      return { sky: { ...sky, overrides: filtered } }
+      return channelPatch(s, 'sky', { ...sky, overrides: filtered })
     })
     get()._saveDesignDebounced()
   },
   removeSkyOverride: (hour, band) => {
     set(s => {
-      const sky = s.sky || { overrides: [] }
+      const sky = activeChannel(s, 'sky') || { overrides: [] }
       const existing = Array.isArray(sky.overrides) ? sky.overrides : []
       const filtered = existing.filter(o => !(o.hour === hour && o.band === band))
-      return { sky: { ...sky, overrides: filtered } }
+      return channelPatch(s, 'sky', { ...sky, overrides: filtered })
     })
     get()._saveDesignDebounced()
   },
   // Clear every override; sky reverts to pure procedural-canon mosaic.
   revertSky: () => {
-    set({ sky: { overrides: [] } })
+    set(s => channelRevert(s, 'sky', { overrides: [] }))
+    get()._saveDesignDebounced()
+  },
+
+  // ── Channel-variant cascade — "Reset to Hero" ──────────────────────────────
+  // Drop ALL of a shot's recorded overrides at once → the shot follows base
+  // (Hero) again for every channel. (Per-channel revert lives on each channel's
+  // header via channelRevert; this is the shot-level clear behind the "Reset to
+  // Hero" button that appears once a shot has any override.) Overrides are
+  // recorded implicitly on edit — there is no explicit "fork" action.
+  resetShotToBase: (shotKey) => {
+    set(s => {
+      if (!s.shotLooks?.[shotKey]) return s
+      const next = { ...s.shotLooks }
+      delete next[shotKey]
+      return { shotLooks: next }
+    })
     get()._saveDesignDebounced()
   },
   // Scrub the TOD clock onto a named slot's SunCalc-computed minute. Used

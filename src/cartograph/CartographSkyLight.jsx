@@ -13,7 +13,7 @@
  */
 import TodChannel from './TodChannel.jsx'
 import SkyGradientGrid from './SkyGradientGrid.jsx'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import {
   MIST_FIELDS, MIST_FLAT_DEFAULTS,
   HALO_FIELDS, HALO_FLAT_DEFAULTS,
@@ -32,7 +32,9 @@ import {
 // CartographPost. Reads channel + 6 actions by name.
 function StoreChannel({ name, label, fields, flatDefaults }) {
   const cap = name[0].toUpperCase() + name.slice(1)
-  const channel       = useCartographStore(s => s[name])
+  // Resolve the active shot's channel (channel-variant cascade) — same panel,
+  // binding follows the active shot (forked shot edits its own block).
+  const channel       = useCartographStore(s => activeChannel(s, name))
   const setValue      = useCartographStore(s => s[`set${cap}`])
   const animate       = useCartographStore(s => s[`animate${cap}`])
   const addSlot       = useCartographStore(s => s[`add${cap}Slot`])

@@ -1483,12 +1483,18 @@ function SurfaceGallery() {
 
 // ── Stage Panel ─────────────────────────────────────────────────────────────
 
-export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot }) {
+export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot, lookForkSlot }) {
   const cam = useCameraState()
 
   return (
     <div className="absolute top-4 right-4 bottom-4 w-[400px] flex flex-col gap-3 z-10 pointer-events-none overflow-y-auto"
       style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--outline-variant) transparent' }}>
+
+      {/* Per-shot look override banner (channel-variant cascade) — appears at
+          the top only once the active shot has recorded overrides ("Reset to
+          Hero"). Owns its own container so it can render nothing. Provided by
+          the cartograph chunk (store-bound); standalone /stage passes none. */}
+      {lookForkSlot}
 
       {/* Time of Day — top slot for Preview parity */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">

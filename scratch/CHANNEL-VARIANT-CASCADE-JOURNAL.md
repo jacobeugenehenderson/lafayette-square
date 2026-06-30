@@ -82,6 +82,59 @@ constant dev cacheBust (`development`) let the browser memory-cache serve stale
 scene.json. Same rationale as the Section shape.json no-store. (This footgun ate
 several rounds during the Phase-1 eye-gate.)
 
+## Standup decision (Jacob, 2026-06-29) — whole-look fork, building-firming deferred
+Jacob confirmed the whole-look fork ("it all is exactly the same"): a fork copies
+the ENTIRE channel set; unused channels just sit at base. No curated forkable-subset
+(that allow-list is the complexity trap). Keep all controls incl. building color —
+he won't use per-shot building color (the fork is about **readability/utility**:
+exposure/bloom/fog/AO/grade/lighting/neon/sky). Those all fork live already (read
+through useSceneJson). **Building color/material is the one channel that won't
+render per-shot** until SlabBuildings reads through the adapter (it bypasses today)
+— DEFERRED + flagged, not built this arc (not needed for the purpose; small known
+fix if ever wanted). So: fork seed = whole channel set; SlabBuildings firming = later.
+
+## ⭐ DESIGN PIVOT (Jacob, 2026-06-29, mid-Phase-2) — implicit per-channel override, NOT explicit whole-look fork
+The LOCKED DESIGN said whole-look fork + a "make this shot its own look" toggle.
+On contact with the UI Jacob rejected the toggle: *"I hate that. Why can't it
+just record changes as the new fork?"* + *"On edit: a button appears that says
+Reset to Hero."* So the model is now the IMPLICIT sparse cascade (closer to the
+original superseded notes, but UI-driven): **editing any LOOK channel while a
+browse/street shot is active records THAT channel as the shot's override; every
+untouched channel inherits base (Hero).** No explicit fork step. A **"Reset to
+Hero"** banner appears at the top of the panel only once the shot has overrides
+(clears them all); per-channel revert drops a single channel's override. Boz:
+the LOCKED DESIGN's "whole-look fork / duplicate the interface" is SUPERSEDED —
+update the handoff + SLAB-CONTRACT note to "sparse per-channel override per shot,
+recorded implicitly on edit, inherit base otherwise." Consequence to note:
+because untouched channels INHERIT base, editing the Hero/base look propagates to
+all shots except where they've overridden (CSS-like; intended).
+
+## Phase 2 (built, eye-gate pending) — Stage authoring is shot-aware (implicit override)
+Stateless redirect (NOT a stateful shot-swap): base = top-level store channels,
+forks = `shotLooks[shot]`; reads/writes RESOLVE the active shot. Core logic
+test: 17/17 (`scratch/test-store-fork.mjs`) — forked Browse edits stay in the
+fork, Hero/base untouched; non-fork channels always write base; reset restores
+base-following; unforked = byte-identical.
+
+- `useCartographStore.js`: helpers `SHOT_LOOK_CHANNELS` (the look set — opt-in,
+  exported), `forkedShotKey`, `activeChannel` (exported), `channelPatch`. Factory
+  `createGroupChannelActions` + hand-rolled lampGlow/clouds/sky actions all read
+  via `activeChannel`, write via `channelPatch`. New state `shotLooks:{}` +
+  DESIGN_FIELDS entry (round-trips design.json via the existing serialize/hydrate).
+  New actions `forkShot(shotKey)` (deep-copies the whole look set) / `resetShotToBase`.
+- Read sites (the convergence) all → `activeChannel`: panel edits (`CartographPost`
+  + `CartographSkyLight` StoreChannel, `CartographSurfaces` layerColors/luColors/
+  lampGlow, `SkyGradientGrid` sky), Stage render overrides (`CartographApp` ~25 +
+  backdrop layerColors/luColors), and the `LampGlowPump`/`NeonPump` frame loops.
+- UI: `ShotLookFork` (CartographApp) → new `lookForkSlot` on `StagePanel`
+  (StageApp.jsx, top of panel). Hero = base (no toggle); browse/street get
+  "Make its own look" / "Reset to base".
+- NOT forked (documented in the SHOT_LOOK_CHANNELS comment): shape/geometry,
+  framing (shots/hero*/arch/horizon/browseHeading), building material
+  (SlabBuildings bypass — deferred), and layerVis/labels/layerStrokes (global for
+  now). `stars` is a pre-existing gap (factory + bake read it but it's missing
+  from DESIGN_FIELDS → never serialized; flag for Boz, not this arc).
+
 ## Open / next
 - Phase 2 (Stage authoring) — **STANDUP WITH JACOB FIRST** (highest-convergence edit:
   `useCartographStore.createGroupChannelActions` + every panel read site + fork/reset

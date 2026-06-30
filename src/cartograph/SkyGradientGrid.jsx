@@ -16,7 +16,7 @@
  */
 import { useState, useMemo, useEffect, Fragment } from 'react'
 import SunCalc from 'suncalc'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCalendar from '../hooks/useCalendar'
 import {
@@ -359,7 +359,7 @@ function DayStrip({ sky, tick }) {
 }
 
 export default function SkyGradientGrid() {
-  const sky = useCartographStore(s => s.sky)
+  const sky = useCartographStore(s => activeChannel(s, 'sky'))
   const revert = useCartographStore(s => s.revertSky)
   const [expanded, setExpanded] = useState(false)
   const currentDate = useCalendar(s => s.currentDate)
