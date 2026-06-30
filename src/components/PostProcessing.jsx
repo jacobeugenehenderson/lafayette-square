@@ -95,6 +95,7 @@ const _warmthRef         = { current: WARMTH_FLAT_DEFAULTS.value }
 const _gradeContrastRef  = { current: GRADE_FLAT_DEFAULTS.contrast }
 const _gradeSatRef       = { current: GRADE_FLAT_DEFAULTS.saturation }
 const _gradeVignetteRef  = { current: GRADE_FLAT_DEFAULTS.vignette }
+const _gradeBrightnessRef = { current: GRADE_FLAT_DEFAULTS.brightness }
 const _grainScaleRef     = { current: GRAIN_FLAT_DEFAULTS.scale }
 
 // Exposed ref bag so non-PostProcessing consumers (e.g. PreviewPostFx,
@@ -109,6 +110,7 @@ export const _postFxRefs = {
   gradeContrast: _gradeContrastRef,
   gradeSat:      _gradeSatRef,
   gradeVignette: _gradeVignetteRef,
+  gradeBrightness: _gradeBrightnessRef,
   grainScale:    _grainScaleRef,
 }
 
@@ -122,6 +124,7 @@ class FilmGradeEffect extends Effect {
       uniform float uVignette;
       uniform float uExposure;
       uniform float uWarmth;
+      uniform float uBrightness;
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec3 c = inputColor.rgb * uExposure;
         float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -154,6 +157,9 @@ class FilmGradeEffect extends Effect {
         gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
         c = mix(gray, c, uSat);
         c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
+        // Brightness LIFT (the B of HSB): raise the black floor so crushed dark
+        // surfaces read, white point unchanged. Additive lift, not exposure gain.
+        c = c + uBrightness * (1.0 - c);
         vec2 center = uv - 0.5;
         float vignette = 1.0 - dot(center, center) * uVignette;
         vignette = smoothstep(0.0, 1.0, clamp(vignette, 0.0, 1.0));
@@ -169,6 +175,7 @@ class FilmGradeEffect extends Effect {
         ['uVignette', new THREE.Uniform(1.0)],
         ['uExposure', new THREE.Uniform(0.95)],
         ['uWarmth',   new THREE.Uniform(0.5)],
+        ['uBrightness', new THREE.Uniform(0)],
       ])
     })
   }
@@ -183,6 +190,7 @@ class FilmGradeEffect extends Effect {
     this.uniforms.get('uExposure').value = _exposureRef.current
     this.uniforms.get('uWarmth').value   = _warmthRef.current
     this.uniforms.get('uToe').value      = _fillToeRef.current
+    this.uniforms.get('uBrightness').value = _gradeBrightnessRef.current
   }
 }
 export const FilmGrade = forwardRef((_, ref) => {
@@ -333,6 +341,7 @@ export function PostProcessing({
     _gradeContrastRef.current = grade.contrast
     _gradeSatRef.current      = grade.saturation
     _gradeVignetteRef.current = grade.vignette
+    _gradeBrightnessRef.current = grade.brightness
     // grade.toe is the literal FilmGrade uniform; the Fill channel's
     // piecewise mapping below overrides it (operator-facing "distinct ↔
     // soft shadows" axis). Wire the grade-side toe only as a future

@@ -346,13 +346,22 @@ export const BROWSE_HEADING_FIELD_KEYS = ['value']
 // `toe` is the literal FilmGrade uniform; the operator-facing Fill
 // channel (FILL_FIELDS) is a separate piecewise mapping that overrides
 // toe at apply time for the "distinct ↔ soft shadows" axis.
+// NB: `toe` is intentionally NOT a panel field — the Fill (Shadow lift) channel
+// owns the FilmGrade `uToe` uniform and overrides it at apply time, so a Grade
+// Toe slider would be DEAD (does nothing). Kept in FLAT_DEFAULTS for data
+// back-compat + as a future explicit-override surface; not shown. (Phase A
+// taxonomy cleanup, 2026-06-30 — "kill the control that lies.")
 export const GRADE_FIELDS = [
   { key: 'contrast',   label: 'Contrast',   min: 0,   max: 1,   step: 0.02 },
-  { key: 'toe',        label: 'Toe',        min: 0,   max: 0.6, step: 0.02 },
   { key: 'saturation', label: 'Saturation', min: 0.5, max: 1.5, step: 0.05 },
+  // Brightness = the B of HSB (Saturation above is the S). A LIFT, not a gain:
+  // raises the black floor (c += B·(1−c)) so crushed dark surfaces read while
+  // the white point stays put. Exposure is the multiplicative gain; this is the
+  // additive lift exposure can't do (Jacob 2026-06-30). Default 0 = neutral.
+  { key: 'brightness', label: 'Brightness', min: 0,   max: 0.6, step: 0.01 },
   { key: 'vignette',   label: 'Vignette',   min: 0,   max: 2,   step: 0.1  },
 ]
-export const GRADE_FLAT_DEFAULTS = { contrast: 0.42, toe: 0.28, saturation: 1.1, vignette: 1.0 }
+export const GRADE_FLAT_DEFAULTS = { contrast: 0.42, toe: 0.28, saturation: 1.1, brightness: 0, vignette: 1.0 }
 export const GRADE_FIELD_KEYS = GRADE_FIELDS.map(f => f.key)
 
 // Grain (Post card) — single-value scale multiplier on the FilmGrain

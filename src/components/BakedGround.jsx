@@ -31,6 +31,34 @@ import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 
+// ── Surface treatment: albedo desaturation + value-range lift ────────────────
+// Jacob 2026-06-30 (Option A): surfaces should be DESATURATED and lit by
+// saturated SKY color, not carry their own chroma. The authored layer palette
+// runs value ~40–178 with saturated lots — so dark layers (ground 40, asphalt
+// 74) crush to black under dim TOD light while sidewalk (178) blows white. We
+// pull chroma toward gray and compress lightness UP off black, so every layer
+// reads by a gentle value step and the sky-colored fill does the coloring.
+//
+// ⚠️ PROTOTYPE CONSTANTS — direction-finding only. These three are slated to
+// become the "Surface" look knob (saturation · value floor · value ceil) once
+// the look reads; they are NOT meant to ship buried (feedback-no-hardcoded-ramps).
+const SURFACE_SAT   = 0.30   // fraction of original chroma kept (0 = full gray)
+const SURFACE_FLOOR = 0.22   // darkest surface lifts to this lightness (off black)
+const SURFACE_CEIL  = 0.72   // brightest surface compresses down to this
+const _treatC = new THREE.Color()
+const _treatHSL = {}
+function treatAlbedo(hex) {
+  _treatC.set(hex)
+  _treatC.getHSL(_treatHSL, THREE.SRGBColorSpace)
+  _treatC.setHSL(
+    _treatHSL.h,
+    _treatHSL.s * SURFACE_SAT,
+    SURFACE_FLOOR + _treatHSL.l * (SURFACE_CEIL - SURFACE_FLOOR),
+    THREE.SRGBColorSpace,
+  )
+  return _treatC.getHex()
+}
+
 // Material-kind groups that render with the noise-based grass shader
 // (lawn = block interior, treelawn = curb→sidewalk strip, median = between
 // paired carriageways).
@@ -196,7 +224,7 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   const hasPool = !!poolmap
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-      color: group.color,
+      color: treatAlbedo(group.color),   // desaturate + value-lift (Surface treatment)
       roughness: 0.95,
       metalness: 0,
       // No polygonOffset — it's INERT under the log-depth canvas (the

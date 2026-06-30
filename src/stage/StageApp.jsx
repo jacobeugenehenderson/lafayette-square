@@ -130,7 +130,7 @@ function ArchLightChannel() {
   const revert        = useCartographStore(s => s.revertArchLight)
   return (
     <TodChannel
-      label="Hero Lighting"
+      label="Arch uplights"
       fields={ARCHLIGHT_FIELDS}
       flatDefaults={ARCHLIGHT_FLAT_DEFAULTS}
       channel={channel}
@@ -194,8 +194,8 @@ function ArchHorizonControls() {
           onChange={(v) => setArch('yOffset', v)} />
         <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
           onChange={(v) => setArch('footFade', v)} />
-        <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
-        <ArchLightChannel />
+        {/* Arch uplights moved to the "Light Sources" card (Phase A) — they're a
+            light source, not framing. Placement (above) stays here. */}
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
         <SliderRow label="Horizon Radius" value={h.radius} min={400} max={8000} step={10}
           onChange={(v) => setHorizon('radius', v)} />
@@ -1508,7 +1508,7 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           underlying sky/celestial/haze geometry still skips render in
           Browse for perf — that's a separate concern from panel access. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <Collapsible label="Sky & Light">
+        <Collapsible label="Light & Sky">
           {skyLightSlot}
         </Collapsible>
       </div>
@@ -1519,14 +1519,17 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         <ArchHorizonControls />
       </div>
 
-      {/* Lamps — the street-lamp glow/pool channel as a first-class Stage
-          control (it was reachable only by selecting the lamp_glow material
-          chip under Surfaces). TOD-animatable; drives the warm grass/canopy
-          glow + the ground light pool via LampGlowDriver/Pump. */}
+      {/* Light Sources — the man-made emitters: the lantern fixture, its ground
+          pool + tree canopy glow, and the arch foot uplights. Grouped by intent
+          (Phase A taxonomy reorg, 2026-06-30). Bloom (the global aura) + Neon
+          join here in Phase B once their cascade-aware mounts are consolidated;
+          the lamp fixture/pool/canopy restructure is Phase B too. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <Collapsible label="Lamps">
+        <Collapsible label="Light Sources">
           <LanternChannel />
           <LampGlowEditor />
+          <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
+          <ArchLightChannel />
         </Collapsible>
       </div>
 
@@ -1552,9 +1555,11 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         </Collapsible>
       </div>
 
-      {/* Post — camera/grade-side TOD channels. Visible in all shots. */}
+      {/* Image — camera/grade-side TOD channels (Tone & Color · Glow · Lens & Film).
+          Visible in all shots. Renamed from "Post" (a render-mechanism word) to
+          the intent it serves (Phase A taxonomy reorg, 2026-06-30). */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <Collapsible label="Post">
+        <Collapsible label="Image">
           {postSlot}
         </Collapsible>
       </div>

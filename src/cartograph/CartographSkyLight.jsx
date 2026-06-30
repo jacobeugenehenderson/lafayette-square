@@ -1,15 +1,15 @@
 /**
- * CartographSkyLight — store-bound editor for the Stage Sky & Light card.
- * Hosts the world-atmospheric TOD channels (the magical / colorable
- * stuff). Camera/grade-side channels live in CartographPost.
- *
- * Inventory (per HANDOFF-sky-and-light.md):
- *   Mist           — colorable distance fade (LANDED)
- *   Sky gradient   — top/horizon/bottom (TODO)
- *   Halo           — colorable horizon band (TODO)
- *   Constellations — single (TODO)
- *   Milky Way      — single (TODO)
- *   Neon glow      — group of 3 (LANDED 2026-05-02; see HANDOFF-neon.md)
+ * CartographSkyLight — store-bound editor for the world's light + sky, grouped
+ * by OPERATOR INTENT (Phase A taxonomy reorg, 2026-06-30 — see
+ * scratch/LOOK-PANEL-TAXONOMY.md). Sections:
+ *   LIGHT & SHADOW — Sun · Moon · Fill light (ambient) · Sky fill (hemi) ·
+ *                    Cast shadows · Occlusion (AO) · Shadow lift (fill).
+ *                    AO/Fill/Shadow moved here from the Post card by intent.
+ *   SKY & AIR      — sky gradient · sky brightness · mist · halo
+ *   NIGHT SKY      — constellations · stars
+ *   NEON           — neon (+ force-on QA toggle)
+ * The camera/image-grade channels (exposure/warmth/grade/bloom/dof/grain/smaa)
+ * live in CartographPost.
  */
 import TodChannel from './TodChannel.jsx'
 import SkyGradientGrid from './SkyGradientGrid.jsx'
@@ -26,6 +26,12 @@ import {
   HEMI_FIELDS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FIELDS, DIRSUN_FLAT_DEFAULTS,
   DIRMOON_FIELDS, DIRMOON_FLAT_DEFAULTS,
+  // Pulled in from the Post card (Phase A taxonomy reorg, 2026-06-30): the
+  // "darkness" controls belong WITH the lights, by intent — not filed under
+  // post-processing mechanism. AO = occlusion, Fill = shadow lift, Shadow = cast.
+  AO_FIELDS, AO_FLAT_DEFAULTS,
+  FILL_FIELDS, FILL_FLAT_DEFAULTS,
+  SHADOW_FIELDS, SHADOW_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
 
 // Generic store-bound TodChannel mount — same shape as the one in
@@ -96,33 +102,48 @@ function SectionLabel({ label }) {
 export default function CartographSkyLight() {
   return (
     <div className="space-y-1">
-      <SectionLabel label="Atmosphere" />
+      {/* LIGHT & SHADOW — by intent: the directional lights, the soft fill, and
+          the three "how dark are the darks" controls (cast shadow · occlusion ·
+          shadow lift) together. The last three used to live under the Post card
+          by render-mechanism; they're here now because that's what you reach for
+          when you author light. */}
+      <SectionLabel label="Light & Shadow" />
+      <StoreChannel name="dirSun" label="Sun light"
+        fields={DIRSUN_FIELDS} flatDefaults={DIRSUN_FLAT_DEFAULTS} />
+      <StoreChannel name="dirMoon" label="Moon light"
+        fields={DIRMOON_FIELDS} flatDefaults={DIRMOON_FLAT_DEFAULTS} />
+      <StoreChannel name="ambient" label="Fill light"
+        fields={AMBIENT_FIELDS} flatDefaults={AMBIENT_FLAT_DEFAULTS} />
+      <StoreChannel name="hemi" label="Sky fill (hemisphere)"
+        fields={HEMI_FIELDS} flatDefaults={HEMI_FLAT_DEFAULTS} />
+      <StoreChannel name="shadow" label="Cast shadows"
+        fields={SHADOW_FIELDS} flatDefaults={SHADOW_FLAT_DEFAULTS} />
+      <StoreChannel name="ao" label="Occlusion (AO)"
+        fields={AO_FIELDS} flatDefaults={AO_FLAT_DEFAULTS} />
+      <StoreChannel name="fill" label="Shadow lift"
+        fields={FILL_FIELDS} flatDefaults={FILL_FLAT_DEFAULTS} />
+
+      <SectionLabel label="Sky & Air" />
       <SkyGradientGrid />
+      <StoreChannel name="skyGain" label="Sky brightness"
+        fields={SKY_GAIN_FIELDS} flatDefaults={SKY_GAIN_FLAT_DEFAULTS} />
       <StoreChannel name="mist" label="Mist"
         fields={MIST_FIELDS} flatDefaults={MIST_FLAT_DEFAULTS} />
       <StoreChannel name="halo" label="Halo"
         fields={HALO_FIELDS} flatDefaults={HALO_FLAT_DEFAULTS} />
-      <StoreChannel name="skyGain" label="Sky Layer Gain"
-        fields={SKY_GAIN_FIELDS} flatDefaults={SKY_GAIN_FLAT_DEFAULTS} />
-      <StoreChannel name="neon" label="Neon"
-        fields={NEON_FIELDS} flatDefaults={NEON_FLAT_DEFAULTS} />
-      <NeonForceOnToggle />
 
-      <SectionLabel label="Lighting" />
-      <StoreChannel name="ambient" label="Ambient"
-        fields={AMBIENT_FIELDS} flatDefaults={AMBIENT_FLAT_DEFAULTS} />
-      <StoreChannel name="hemi" label="Hemisphere"
-        fields={HEMI_FIELDS} flatDefaults={HEMI_FLAT_DEFAULTS} />
-      <StoreChannel name="dirMoon" label="Moon light"
-        fields={DIRMOON_FIELDS} flatDefaults={DIRMOON_FLAT_DEFAULTS} />
-      <StoreChannel name="dirSun" label="Sun light"
-        fields={DIRSUN_FIELDS} flatDefaults={DIRSUN_FLAT_DEFAULTS} />
-
-      <SectionLabel label="Celestial" />
+      <SectionLabel label="Night Sky" />
       <StoreChannel name="constellations" label="Constellations"
         fields={CONSTELLATIONS_FIELDS} flatDefaults={CONSTELLATIONS_FLAT_DEFAULTS} />
       <StoreChannel name="stars" label="Stars"
         fields={STARS_FIELDS} flatDefaults={STARS_FLAT_DEFAULTS} />
+
+      {/* Neon — a man-made light SOURCE; lives here for now, flagged to move to
+          a "Glow & Sources" card with Bloom + Lamps + Arch in Phase B. */}
+      <SectionLabel label="Neon" />
+      <StoreChannel name="neon" label="Neon"
+        fields={NEON_FIELDS} flatDefaults={NEON_FLAT_DEFAULTS} />
+      <NeonForceOnToggle />
       {/* Milky Way hidden from operator UI 2026-05-02. Brunier panorama
           shows visible JPEG artifacting + stretched/oversized stars at
           Hero/Street FOV; needs higher-res source or cubemap rebuild

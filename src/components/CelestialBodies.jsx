@@ -1238,7 +1238,11 @@ function CelestialBodies({
   const floorWarmRef  = useRef()
   const floorDirRef   = useRef()
   const ambientBase = (lighting.ambient?.intensity || 0.5) * (1 + cc * 0.4)
-  const hemiBase = (0.35 - lighting.nightFactor * 0.15) * (1 + cc * 0.5)
+  // Hemi is the SKY-COLOR fill lever (Jacob 2026-06-29: "desaturated surfaces
+  // hit with soft saturated light from the sky colors"). Strengthened from the
+  // old 0.35 cap (it read as a dead lever) so the per-slot hemi knob can drive a
+  // real sky wash. ⚠️ couples to every hemi keyframe — eye-gate dawn/noon/night.
+  const hemiBase = (0.55 - lighting.nightFactor * 0.2) * (1 + cc * 0.5)
   useFrame(() => {
     if (ambientRef.current) ambientRef.current.intensity = ambientBase * ambientMulRef.current
     if (hemiRef.current)    hemiRef.current.intensity    = hemiBase    * hemiMulRef.current
@@ -1268,10 +1272,15 @@ function CelestialBodies({
         intensity={ambientBase}
       />}
       <ambientLight ref={floorWarmRef} color="#8a7060" intensity={0.15 * lighting.nightFactor} />
+      {/* Hemisphere fill now driven by the live SKY GRADIENT — the up-sky color
+          washes surfaces from above, the warm horizon color is the ground bounce.
+          This is what makes surfaces "glow with the sky's color" (Jacob's vision)
+          instead of the old muddy #ffeedd→#556688 over dark brown. Saturation
+          degree will become a knob; raw sky colors are the honest baseline. */}
       {debugLevel < 2 && <hemisphereLight
         ref={hemiRef}
-        color={lerpColor('#ffeedd', '#556688', lighting.nightFactor)}
-        groundColor={lerpColor('#443333', '#443322', lighting.nightFactor)}
+        color={lighting.sky?.top || '#88aacc'}
+        groundColor={lighting.sky?.bottom || '#665544'}
         intensity={hemiBase}
       />}
       {debugLevel < 1 && <PrimaryOrb {...primaryWeathered} intensityMulRef={dirSunMulRef} />}

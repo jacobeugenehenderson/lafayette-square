@@ -142,9 +142,13 @@ function SlotChip({ slot, attached, parked, onScrub, onFill, onRemove }) {
 
 function RampInput({ side, value, onChange }) {
   const arrow = side === 'in' ? '↑' : '↓'
+  // Turn-on / turn-off SPEED (Phase A taxonomy reframe, 2026-06-30): the value is
+  // minutes, but the intent is "how sharply this comes on/off around its keyframes"
+  // — small = snaps on (e.g. a lamp tripping ~30 min before dusk), large = eases in
+  // over the long slot tween. Reframed from the old "ramp in/out minutes" jargon.
   const title = side === 'in'
-    ? 'Ramp in (minutes): how long the channel eases in before the first attached slot'
-    : 'Ramp out (minutes): how long the channel eases out after the last attached slot'
+    ? 'Turn-on speed (minutes before the first keyframe): small = snaps on, large = eases in slowly'
+    : 'Turn-off speed (minutes after the last keyframe): small = snaps off, large = eases out slowly'
   return (
     <label className="inline-flex items-center" style={{ gap: 2 }} title={title}>
       {side === 'in' && (
