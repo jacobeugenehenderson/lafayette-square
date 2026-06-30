@@ -70,7 +70,7 @@ A neighborhood request-and-dispatch courier system on Supabase (phone-OTP auth, 
 The neighborhood's trust ladder. Scanning a place's QR check-in card logs a visit; reach **3 distinct check-in days within a rolling 14-day window** and you become a **townie** — which unlocks reviewing places, posting to the bulletin, commenting, and starting DM threads. Status is computed server-side; there's no way to fake your way in. → Full spec (the computation, the gated actions, the data model): [`TOWNIES.md`](TOWNIES.md).
 
 ### Handles + avatars
-Your public face in the neighborhood: a chosen `@handle` plus an emoji avatar set on a colored "vignette" backdrop. Identity is tied to your device (anonymous by design — no email, no password) and can be carried to another device via a short linking token, so the same handle follows you across phone and laptop.
+Your public face in the neighborhood: a chosen `@handle` plus an emoji avatar set on a colored "vignette" backdrop. Identity is tied to your device (anonymous by design — no email, no password) and can be carried to another device via a short linking token, so the same handle follows you across phone and laptop. → Specs: [`IDENTITY.md`](IDENTITY.md) (handle/avatar) · [`DEVICE-LINK.md`](DEVICE-LINK.md) (the cross-device handoff + sign-out). The public privacy/terms pages are [`PUBLIC-PAGES.md`](PUBLIC-PAGES.md).
 
 ---
 
