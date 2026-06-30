@@ -8,7 +8,9 @@ Last verified: 2026-06-29 against the working tree (`curb-offset-draw`).
 
 ## 1. What it is
 
-A **Townie** is a verified local: someone who has checked in on **3 distinct calendar days within a rolling 14-day window**. It's the neighborhood's trust gate — being a townie is what unlocks *participating* (reviewing places, posting to the bulletin, commenting, starting DM threads). Status is **computed server-side** from check-in history; there's no flag to set and no way to fake it. Verifying a residence also auto-grants townie status (`grantTownieStatus`, see [`RESIDENTS.md`](RESIDENTS.md)).
+A **Townie** is a verified local: someone who has checked in on **3 distinct calendar days within a rolling 14-day window**. It's the neighborhood's trust gate — being a townie is what unlocks *participating* (reviewing places, posting to the bulletin, commenting, starting DM threads). Status is **computed server-side** from check-in history.
+
+> ⚠️ **Two other actions auto-grant townie** (via `grantTownieStatus`, which backfills synthetic check-ins): **claiming a listing** (`postClaim` → `grantTownieStatus`, `apps-script/Code.js:636`) and **verifying a residence** (see [`RESIDENTS.md`](RESIDENTS.md)). So a **guardian or keyholder is a townie immediately on claim** — they can review *other* places right away, with no real check-ins. This is as-built; whether auto-granting townie on claim is intended (vs. a loophole to tighten) is **flagged for review** (onboarding arc, 2026-06-29).
 
 Config (`apps-script/Code.js:29`): `LOCAL_THRESHOLD = 3` · `LOCAL_WINDOW_DAYS = 14` · `TIMEZONE = 'America/Chicago'`.
 

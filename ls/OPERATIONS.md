@@ -24,7 +24,7 @@
 | Role | How earned | Powers |
 |------|-----------|--------|
 | **Visitor** | default (anonymous device hash) | browse, search, read everything |
-| **Townie** | 3+ distinct check-in days in a rolling 14-day window (server-computed) | post reviews, post to bulletin + comment + DM threads |
+| **Townie** | 3+ distinct check-in days in a rolling 14-day window (server-computed) — **also auto-granted on claiming a listing or verifying a residence** (`grantTownieStatus`, backfills synthetic check-ins; ⚠️ flagged for review) | post reviews, post to bulletin + comment + DM threads |
 | **Resident** | claim a building → verified by admin, QR invite, an existing verified resident, or a linked already-verified device | building's private lobby (read + post) |
 | **Keyholder** | added by a guardian | exactly the per-field permissions the guardian grants (menu / hours / photos / replies / events) |
 | **Guardian** | first to claim a listing via its QR secret (physical presence) | full edit of the listing + manage its staff (promote/demote/revoke) |

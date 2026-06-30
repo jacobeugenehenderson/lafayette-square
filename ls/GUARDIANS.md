@@ -30,6 +30,8 @@ Claiming proves **physical presence**: the `claim_secret` (8-char hex) is printe
    ```
 4. On success the client stores `{ id, role, permissions }` in `localStorage` (`lsq_guardian_listings`).
 
+> ⚠️ **Claiming also auto-grants townie status.** `postClaim` calls `grantTownieStatus` (`Code.js:636`), backfilling synthetic check-ins — so a guardian/keyholder is a **townie immediately** and can review *other* places right away (no real check-ins required; `postReview` is a pure townie gate). As-built; whether this is intended vs. a loophole is **flagged for review** (onboarding arc, 2026-06-29). See [`TOWNIES.md`](TOWNIES.md).
+
 **The secret** is generated/retrieved by `getClaimSecret` (`Code.js:792`): auto-provisions a listing (admin only), auto-generates an 8-char hex secret if missing (`Utilities.getUuid().split('-')[0]`), persists it to the `claim_secret` column. The **QR Studio** (`PlaceCard.jsx:2299`, `QrTab`) renders the guardian QR pointing at `https://lafayette-square.com/claim/<id>/<secret>`.
 
 ---
