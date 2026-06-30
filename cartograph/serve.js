@@ -37,6 +37,52 @@ function runShell(cmd, opts = {}) {
   })
 }
 
+// Like runShell, but CAPTURES stdout/stderr and RESOLVES with the exit code
+// instead of rejecting on non-zero — so git callers can inspect the result
+// (e.g. "nothing to commit" is code 1, not an exception). Used by the Publish
+// ceremony endpoints below.
+function runCapture(cmd, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, { shell: true, cwd: opts.cwd, env: opts.env })
+    let stdout = '', stderr = ''
+    child.stdout.on('data', d => { stdout += d })
+    child.stderr.on('data', d => { stderr += d })
+    let timer = null
+    if (opts.timeout) timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      reject(new Error(`Command timed out after ${opts.timeout}ms: ${cmd}`))
+    }, opts.timeout)
+    child.on('error', (err) => { if (timer) clearTimeout(timer); reject(err) })
+    child.on('close', (code) => { if (timer) clearTimeout(timer); resolve({ code, stdout, stderr }) })
+  })
+}
+
+// ── Publish ceremony (DEV-ONLY) ────────────────────────────────────────────
+// Preview's "Publish to Staging" / "Promote to Prod" buttons call the git
+// endpoints below. They ship the baked slab the canon way — staging (its own
+// URL) → verify → prod — per PREVIEW.md §0.2 (Preview is the publish gate) +
+// OPERATIONS §Save→ship (strategy B). serve.js runs ONLY under `npm run dev`,
+// never in the CI/prod build, so these endpoints simply don't exist in a
+// deployed context — the live app can't reach them.
+const STAGING_BRANCH = 'cartograph-looks-pass-ab'
+const PROD_BRANCH = 'main'
+const STAGING_SITE_URL = 'https://jacobeugenehenderson.github.io/lafayette-square-staging/'
+const PROD_SITE_URL = 'https://lafayette-square.com/'
+// The coherent slab set a publish commits (SLAB-CONTRACT §9): the per-look
+// bundle + its source design + the registry + shared derived geometry/trees.
+// SCOPED git pathspecs — a publish NEVER sweeps unrelated dirty files (e.g.
+// in-flight authoring code under src/cartograph or src/components).
+function slabPathspecs(id) {
+  return [
+    `public/baked/${id}`,
+    `public/looks/${id}/design.json`,
+    `public/looks/index.json`,
+    `public/baked/default.json`,
+    `src/data/ribbons.json`,
+    `public/photos/og-preview.jpg`,   // the link-preview image (captured from Preview)
+  ]
+}
+
 // Per-look bake lock. A double-click on the Stage button would otherwise
 // kick off two simultaneous bakes against the same `public/baked/<id>/`
 // directory; the second loses races against the first's writes.
@@ -649,6 +695,172 @@ createServer(async (req, res) => {
       res.end(JSON.stringify({ error: err.message }))
     } finally {
       _bakesInFlight.delete(id)
+    }
+    return
+  }
+
+  // GET /looks/<id>/publish/status — the Publish panel's state read. Fetches
+  // the remote (never trust a stale local ref — OPERATIONS §Save→ship) and
+  // reports: unbaked edits? dirty slab files? how far HEAD is ahead of staging
+  // and prod. Pure read — no writes.
+  if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/publish\/status$/))) {
+    const id = m[1]
+    const REPO_ROOT = join(import.meta.dirname, '..')
+    try {
+      await runCapture(`git fetch origin --quiet`, { cwd: REPO_ROOT, timeout: 30000 })
+      const branch = (await runCapture(`git rev-parse --abbrev-ref HEAD`, { cwd: REPO_ROOT })).stdout.trim()
+      const specs = slabPathspecs(id).join(' ')
+      const dirty = (await runCapture(`git status --porcelain -- ${specs}`, { cwd: REPO_ROOT })).stdout
+        .trim().split('\n').map(l => l.slice(3)).filter(Boolean)
+      // "<behind>\t<ahead>" — commits in the ref but not HEAD, and vice-versa.
+      const parse = (s) => { const [b, a] = s.trim().split(/\s+/).map(Number); return { behind: b || 0, ahead: a || 0 } }
+      const vsStaging = parse((await runCapture(`git rev-list --left-right --count origin/${STAGING_BRANCH}...HEAD`, { cwd: REPO_ROOT })).stdout)
+      const vsProd = parse((await runCapture(`git rev-list --left-right --count origin/${PROD_BRANCH}...HEAD`, { cwd: REPO_ROOT })).stdout)
+      let unbaked = false
+      try {
+        const dMs = statSync(join(REPO_ROOT, `public/looks/${id}/design.json`)).mtimeMs
+        const sMs = statSync(join(REPO_ROOT, `public/baked/${id}/scene.json`)).mtimeMs
+        unbaked = dMs > sMs
+      } catch { /* missing files → leave false */ }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, branch, unbaked, dirty, vsStaging, vsProd }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
+  // POST /og-image — save a captured SLAB frame (the hero render, not the UI) as
+  // the static link-preview image at public/photos/og-preview.jpg, referenced by
+  // index.html + worker.js. Body: { dataUrl: "data:image/jpeg;base64,..." }.
+  // Dev-only (serve.js). Ships on the next Publish (it's in the slab pathspecs).
+  if (req.method === 'POST' && path === '/og-image') {
+    let body = ''
+    req.on('data', c => { body += c })
+    req.on('end', () => {
+      try {
+        const { dataUrl } = JSON.parse(body || '{}')
+        const mimg = /^data:image\/\w+;base64,(.+)$/.exec(dataUrl || '')
+        if (!mimg) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'bad dataUrl' })); return }
+        const buf = Buffer.from(mimg[1], 'base64')
+        const out = join(import.meta.dirname, '..', 'public', 'photos', 'og-preview.jpg')
+        mkdirSync(dirname(out), { recursive: true })
+        writeFileSync(out, buf)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, bytes: buf.length, path: 'public/photos/og-preview.jpg' }))
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
+  // GET /og-deployed — is the captured OG image live on prod yet? Compares the
+  // live prod image's byte size to the local committed one (server-side → no
+  // browser CORS). The "Push SMS Hero" button polls this for its ✓ Live state.
+  if (req.method === 'GET' && path === '/og-deployed') {
+    let localBytes = null
+    try { localBytes = statSync(join(import.meta.dirname, '..', 'public', 'photos', 'og-preview.jpg')).size } catch { /* none */ }
+    let prodStatus = null, prodBytes = null
+    try {
+      const r = await fetch(`${PROD_SITE_URL}photos/og-preview.jpg?cb=${Date.now()}`, { cache: 'no-store' })
+      prodStatus = r.status
+      if (r.ok) prodBytes = (await r.arrayBuffer()).byteLength
+    } catch { /* offline */ }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, live: localBytes != null && prodBytes === localBytes, prodStatus, localBytes, prodBytes }))
+    return
+  }
+
+  // GET /looks/<id>/deployed?target=staging|prod — server-side read of the LIVE
+  // site's slab bakedAt (node fetch → no browser CORS). The Publish panel polls
+  // this after a push to detect when the deploy has actually propagated.
+  if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/deployed$/))) {
+    const id = m[1]
+    const target = (req.url.match(/[?&]target=([^&]+)/) || [])[1]
+    const base = target === 'prod' ? PROD_SITE_URL : STAGING_SITE_URL
+    try {
+      const r = await fetch(`${base}baked/${id}/scene.json?t=${Date.now()}`, { cache: 'no-store' })
+      let bakedAt = null
+      if (r.ok) { try { bakedAt = (await r.json()).bakedAt ?? null } catch { /* HTML/404 while building */ } }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, target: target || 'staging', bakedAt }))
+    } catch (err) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, target: target || 'staging', bakedAt: null, error: err.message }))
+    }
+    return
+  }
+
+  // POST /looks/<id>/publish — commit the look's slab (scoped pathspecs only)
+  // and push the current branch to the STAGING trunk. The UI bakes first (the
+  // existing /bake endpoint), then calls this. Staging is the dry-run: its own
+  // URL, not prod. Promote-to-prod is the separate, gated step below.
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/publish$/))) {
+    const id = m[1]
+    const REPO_ROOT = join(import.meta.dirname, '..')
+    try {
+      await runCapture(`git fetch origin --quiet`, { cwd: REPO_ROOT, timeout: 30000 })
+      const branch = (await runCapture(`git rev-parse --abbrev-ref HEAD`, { cwd: REPO_ROOT })).stdout.trim()
+      // Only pass pathspecs that actually exist — `git commit -- <path>` errors
+      // ("pathspec did not match any file(s)") on a spec that matches nothing,
+      // e.g. the optional og-preview.jpg before a capture has been made.
+      const specs = slabPathspecs(id).filter(p => existsSync(join(REPO_ROOT, p)))
+      if (!specs.length) throw new Error('no slab files found to publish')
+      const changed = (await runCapture(`git status --porcelain -- ${specs.join(' ')}`, { cwd: REPO_ROOT })).stdout
+        .trim().split('\n').map(l => l.slice(3)).filter(Boolean)
+      let committed = false
+      if (changed.length) {
+        // Stage first: `git commit -- <paths>` only knows TRACKED files, so a
+        // newly-captured (untracked) og-preview.jpg fails "pathspec did not match
+        // any file(s) known to git". `git add` stages new + modified; the scoped
+        // pathspecs still mean we never sweep unrelated dirty files. Then commit
+        // restricted to the same paths (ignores anything else already staged).
+        const add = await runCapture(`git add -- ${specs.join(' ')}`, { cwd: REPO_ROOT })
+        if (add.code !== 0) throw new Error(`git add failed: ${add.stderr || add.stdout}`)
+        const commit = await runCapture(`git commit -m 'chore(slab): publish ${id} → staging' -- ${specs.join(' ')}`, { cwd: REPO_ROOT })
+        if (commit.code !== 0) throw new Error(`git commit failed: ${commit.stderr || commit.stdout}`)
+        committed = true
+      }
+      const push = await runCapture(`git push origin ${branch}:${STAGING_BRANCH}`, { cwd: REPO_ROOT, timeout: 60000 })
+      if (push.code !== 0) throw new Error(`push to staging failed: ${push.stderr}`)
+      // bakedAt of the just-shipped slab — the UI polls the live site for this
+      // exact value to know when the deploy has actually propagated.
+      let bakedAt = null
+      try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, stagingUrl: STAGING_SITE_URL }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
+  // POST /looks/<id>/promote — fast-forward PROD (main) from the current branch.
+  // The gated final step: only after staging is verified. Guards against a
+  // non-fast-forward (prod carries commits HEAD doesn't) and a no-op.
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/promote$/))) {
+    const id = m[1]
+    const REPO_ROOT = join(import.meta.dirname, '..')
+    try {
+      await runCapture(`git fetch origin --quiet`, { cwd: REPO_ROOT, timeout: 30000 })
+      const branch = (await runCapture(`git rev-parse --abbrev-ref HEAD`, { cwd: REPO_ROOT })).stdout.trim()
+      const [behind, ahead] = (await runCapture(`git rev-list --left-right --count origin/${PROD_BRANCH}...HEAD`, { cwd: REPO_ROOT }))
+        .stdout.trim().split(/\s+/).map(Number)
+      if (behind > 0) throw new Error(`prod has ${behind} commit(s) not in this branch — not a clean fast-forward; reconcile first`)
+      if (!ahead) throw new Error('nothing to promote — prod already matches this branch')
+      const push = await runCapture(`git push origin ${branch}:${PROD_BRANCH}`, { cwd: REPO_ROOT, timeout: 60000 })
+      if (push.code !== 0) throw new Error(`push to prod failed: ${push.stderr}`)
+      let bakedAt = null
+      try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, promoted: ahead, branch, bakedAt, prodUrl: PROD_SITE_URL }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
     }
     return
   }

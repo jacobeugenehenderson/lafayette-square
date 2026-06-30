@@ -29,6 +29,7 @@ import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import { resolveHeroSubject } from '../lib/heroSubject.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import BakedGround from '../components/BakedGround.jsx'
@@ -736,8 +737,209 @@ function usePhoneScale(active) {
   return scale
 }
 
+// The Preview canvas's WebGL renderer, captured at onCreated — so the Publish
+// panel can grab the current SLAB frame (the 3D render only; the UI panels are
+// separate DOM overlays, never on the canvas) for the link-preview image.
+let _ogCaptureGL = null
+// Center-crop the live slab frame to a square JPEG data URL (for og:image).
+function captureOGImage(size = 1200) {
+  const gl = _ogCaptureGL
+  if (!gl?.domElement) throw new Error('scene not ready')
+  const src = gl.domElement
+  const s = Math.min(src.width, src.height)
+  const off = document.createElement('canvas')
+  off.width = size; off.height = size
+  off.getContext('2d').drawImage(src, (src.width - s) / 2, (src.height - s) / 2, s, s, 0, 0, size, size)
+  return off.toDataURL('image/jpeg', 0.9)
+}
+
+// ── Publish panel — the gate (PREVIEW.md §0.2). Preview is the publish gate;
+// this is the button that ships the verified slab the canon way: bake → commit
+// the look's slab → push STAGING (its own URL, the dry-run) → verify there →
+// PROMOTE to prod. Talks to the dev-only serve.js git endpoints via the vite
+// proxy (`/api/cartograph/*`). In a DEPLOYED Preview there is no backend, so
+// the status probe fails and the whole panel renders null — it can't touch the
+// live app. (HANDOFF: gated two-step ceremony, 2026-06-30.)
+function PublishPanel({ lookId }) {
+  const [status, setStatus] = useState(null)   // object = backend up; false = none
+  const [busy, setBusy] = useState(null)        // 'staging' | 'prod' | null
+  const [msg, setMsg] = useState(null)          // { kind:'ok'|'err', text }
+  const [deploys, setDeploys] = useState({ staging: null, prod: null }) // {status:'building'|'ready', bakedAt, url}
+  const [capturing, setCapturing] = useState(false)
+  const [smsStage, setSmsStage] = useState('capture') // capture → push → pushing → live (in-memory; a refresh just resets to capture, by design)
+  const API = `/api/cartograph/looks/${encodeURIComponent(lookId)}`
+
+  async function load() {
+    try {
+      const r = await fetch(`${API}/publish/status`)
+      if (!r.ok) return setStatus(false)
+      setStatus(await r.json())
+    } catch { setStatus(false) }   // no dev backend (deployed Preview) → hide
+  }
+  useEffect(() => { load() }, [lookId])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll the LIVE site (server-side via the backend → no browser CORS) until its
+  // bakedAt matches what we pushed → the deploy has propagated. Flips the row to
+  // "ready" + reveals Visit; never auto-opens (no stale tab, no 10-min ambush).
+  useEffect(() => {
+    const pending = Object.entries(deploys).filter(([, d]) => d && d.status === 'building')
+    if (!pending.length) return
+    let cancelled = false
+    const tick = async () => {
+      for (const [key, d] of pending) {
+        try {
+          const j = await (await fetch(`${API}/deployed?target=${key}`)).json()
+          if (!cancelled && j.bakedAt != null && String(j.bakedAt) === String(d.bakedAt)) {
+            setDeploys(prev => ({ ...prev, [key]: { ...prev[key], status: 'ready' } }))
+          }
+        } catch { /* keep polling */ }
+      }
+    }
+    const iv = setInterval(tick, 15000); tick()
+    return () => { cancelled = true; clearInterval(iv) }
+  }, [deploys, API])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function publishStaging() {
+    setBusy('staging'); setMsg(null)
+    try {
+      const bake = await fetch(`${API}/bake`, { method: 'POST' })
+      if (!bake.ok) throw new Error(`bake failed: ${(await bake.text()).slice(0, 160)}`)
+      const pub = await fetch(`${API}/publish`, { method: 'POST' })
+      const data = await pub.json()
+      if (!pub.ok || data.error) throw new Error(data.error || 'publish failed')
+      const n = data.changed?.length || 0
+      setMsg({ kind: 'ok', text: `Pushed to staging${data.committed ? ` · ${n} file${n === 1 ? '' : 's'}` : ' · no slab change'}` })
+      setDeploys(prev => ({ ...prev, staging: { status: 'building', bakedAt: data.bakedAt, url: data.stagingUrl } }))
+      await load()
+    } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
+    setBusy(null)
+  }
+
+  async function promoteProd() {
+    if (!window.confirm('Promote the current staging build to PRODUCTION (lafayette-square.com)?')) return
+    setBusy('prod'); setMsg(null)
+    try {
+      const r = await fetch(`${API}/promote`, { method: 'POST' })
+      const data = await r.json()
+      if (!r.ok || data.error) throw new Error(data.error || 'promote failed')
+      setMsg({ kind: 'ok', text: `Promoted to prod · ${data.promoted} commit${data.promoted === 1 ? '' : 's'}` })
+      setDeploys(prev => ({ ...prev, prod: { status: 'building', bakedAt: data.bakedAt, url: data.prodUrl } }))
+      await load()
+    } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
+    setBusy(null)
+  }
+
+  // Stage 1: snapshot the current slab frame → center-square JPEG → save it.
+  async function smsCapture() {
+    setCapturing(true); setMsg(null)
+    try {
+      const dataUrl = captureOGImage()  // current slab frame (no UI) → center-square JPEG
+      const r = await fetch('/api/cartograph/og-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl }) })
+      const data = await r.json()
+      if (!r.ok || data.error) throw new Error(data.error || 'save failed')
+      setSmsStage('push')
+      setMsg({ kind: 'ok', text: `Captured · ${Math.round(data.bytes / 1024)} KB` })
+    } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
+    setCapturing(false)
+  }
+
+  // Poll prod (server-side) until the live OG image == the captured one.
+  function pollOgLive() {
+    return new Promise(resolve => {
+      let n = 0
+      const iv = setInterval(async () => {
+        n += 1
+        try { const j = await (await fetch('/api/cartograph/og-deployed')).json(); if (j.live) { clearInterval(iv); resolve(true); return } } catch { /* keep polling */ }
+        if (n >= 40) { clearInterval(iv); resolve(false) }   // ~10 min cap @ 15s
+      }, 15000)
+    })
+  }
+
+  // Stage 2: commit the captured image (+ any slab changes) and ship straight to
+  // PROD. Staging adds nothing for a slab-data publish — Preview is the gate.
+  async function smsPush() {
+    setSmsStage('pushing'); setMsg(null)
+    try {
+      const pub = await (await fetch(`${API}/publish`, { method: 'POST' })).json()
+      if (pub.error) throw new Error(pub.error)
+      const prom = await (await fetch(`${API}/promote`, { method: 'POST' })).json()
+      if (prom.error) throw new Error(prom.error)
+      setMsg({ kind: 'ok', text: 'Going live…' })
+      const live = await pollOgLive()
+      setSmsStage('live')
+      setMsg({ kind: 'ok', text: live ? 'Live ✓' : 'Still deploying…' })
+      await load()
+    } catch (e) { setSmsStage('push'); setMsg({ kind: 'err', text: String(e.message || e) }) }
+  }
+
+  if (!status) return null   // probing or no backend → render nothing
+  const aheadStaging = status.vsStaging?.ahead || 0
+  const aheadProd = status.vsProd?.ahead || 0
+  const btn = (extra) => ({ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 6, ...extra })
+  const deployRow = (key, label) => {
+    const d = deploys[key]
+    if (!d) return null
+    const ready = d.status === 'ready'
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11 }}>
+        <span style={{ color: ready ? '#4ade80' : '#fbbf24' }}>{ready ? '✓' : '○'} {label} {ready ? 'live' : 'deploying…'}</span>
+        {ready && <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', color: '#bfdbfe', textDecoration: 'underline' }}>Visit →</a>}
+      </div>
+    )
+  }
+  // The SMS-hero multistate button: Capture → Push (straight to prod) → Live.
+  const sms = {
+    capture: { label: capturing ? 'Capturing…' : '📷 Capture SMS Hero', onClick: smsCapture, bg: 'rgba(168,85,247,0.18)', color: '#e9d5ff' },
+    push:    { label: '🚀 Push SMS Hero', onClick: smsPush, bg: 'rgba(74,222,128,0.20)', color: '#bbf7d0' },
+    pushing: { label: 'Pushing…', onClick: null, bg: 'rgba(74,222,128,0.10)', color: '#bbf7d0' },
+    live:    { label: '✓ SMS Hero live — recapture', onClick: () => { setSmsStage('capture'); setMsg(null) }, bg: 'rgba(96,165,250,0.16)', color: '#bfdbfe' },
+  }[smsStage]
+
+  return (
+    <div style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 50, width: 236, background: 'rgba(16,14,12,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 12, color: '#e9e6e2', fontSize: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+        <span style={{ fontWeight: 700 }}>Publish</span>
+        <span style={{ opacity: 0.55, fontSize: 11 }}>{status.branch}</span>
+      </div>
+      {status.unbaked && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Unbaked edits — Publish bakes first.</div>}
+      <div style={{ opacity: 0.7, lineHeight: 1.5 }}>
+        {aheadStaging > 0 ? `${aheadStaging} ahead of staging` : 'staging up to date'}<br />
+        {aheadProd > 0 ? `${aheadProd} ahead of prod` : 'prod up to date'}
+      </div>
+      <button disabled={!!busy || capturing || smsStage === 'pushing'} onClick={sms.onClick}
+        style={btn({ background: sms.bg, color: sms.color, opacity: (busy || capturing || smsStage === 'pushing') ? 0.6 : 1 })}
+        title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image, then ship to prod">
+        {sms.label}
+      </button>
+      <button disabled={!!busy} onClick={publishStaging}
+        style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: busy ? 0.6 : 1 })}>
+        {busy === 'staging' ? 'Publishing…' : 'Publish to Staging'}
+      </button>
+      {deployRow('staging', 'Staging')}
+      <button disabled={!!busy || aheadProd === 0} onClick={promoteProd}
+        style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || aheadProd === 0) ? 0.45 : 1 })}>
+        {busy === 'prod' ? 'Promoting…' : 'Promote to Prod'}
+      </button>
+      {deployRow('prod', 'Prod')}
+      {msg && <div style={{ marginTop: 8, color: msg.kind === 'err' ? '#f87171' : '#4ade80', wordBreak: 'break-word' }}>{msg.text}</div>}
+    </div>
+  )
+}
+
 export default function PreviewApp() {
   const [shot, setShot] = useState('hero')
+  // Per-shot look resolve (channel-variant cascade): Preview drives a LOCAL
+  // `shot`, but `useSceneJson` resolves shotLooks off the camera store. Production
+  // drives `useCamera.viewMode`; Preview deliberately does NOT (it owns its own
+  // camera), so without this the browse/street fork never applied in Preview —
+  // every shot showed the base/Hero look. Publish a dedicated `shotOverride`
+  // field that ONLY useSceneJson reads (no other viewMode consumer touches it),
+  // so this can't perturb terrain-exag / clouds / frameloop. Cleared on unmount.
+  useEffect(() => {
+    useCamera.setState({ shotOverride: shot })
+    return () => useCamera.setState({ shotOverride: null })
+  }, [shot])
+  const lookId = resolvePreviewLookId()
   const [mode, setModeRaw] = useState(loadMode)
   const setMode = (m) => { setModeRaw(m); saveMode(m) }
   // The active environment's editable pyramid degree (tuner-backed, persisted).
@@ -800,6 +1002,9 @@ export default function PreviewApp() {
       camera={{ position: SHOTS.hero.position, fov: SHOTS.hero.fov, near: 1, far: 60000 }}
       gl={{
         alpha: false, antialias: true, stencil: true,
+        // Lets "Capture hero → preview" read the current slab frame off the
+        // canvas between renders. Preview-only (production Scene omits it).
+        preserveDrawingBuffer: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
         // toneMappingExposure now derives from scene.exposure (SC.3,
@@ -810,7 +1015,7 @@ export default function PreviewApp() {
       }}
       dpr={[1, 1.5]}
       shadows="soft"
-      onCreated={({ camera }) => camera.lookAt(...SHOTS.hero.target)}
+      onCreated={({ camera, gl }) => { camera.lookAt(...SHOTS.hero.target); _ogCaptureGL = gl }}
     >
       <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} tier={mode} pyramidDegree={activeDegree} />
     </Canvas>
@@ -850,6 +1055,7 @@ export default function PreviewApp() {
       <TopAppBar shot={shot} setShot={setShot} mode={mode} setMode={setMode} />
       <RightPanel layers={layers} setLayer={setLayer} top={panelTop} bottom={panelBottom}
         envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} />
+      {!isPhone && <PublishPanel lookId={lookId} />}
     </div>
   )
 }
