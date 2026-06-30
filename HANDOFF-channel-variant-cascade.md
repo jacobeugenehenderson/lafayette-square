@@ -1,8 +1,50 @@
 # Handoff — The Channel Variant Cascade (per-shot + per-platform channel values)
 
-> **Status: DESIGN LOCKED 2026-06-29 (Jacob + Boz) — build-ready.** Raised 2026-06-22; design reviewed +
-> locked 2026-06-29. The marquee unsolved axis of the channel system. Still the **highest convergence of
-> any arc** — surface to Boz before touching the channel store / `Scene.jsx` / the slab schema.
+> **Status: ✅ LANDED 2026-06-29 (agent "Lumen") — shot axis shipped end-to-end, eye-gate confirmed
+> ("It worked. Great job.").** Raised 2026-06-22; design locked 2026-06-29; built + verified same day.
+> Commits on `curb-offset-draw`: `d44a0dc9` (Phase 1 production resolve), `61dd4b3c` (Phase 2 Stage
+> authoring), `f47e147d` (Phase 3 bake emit). The **per-platform** axis (mobile vs desktop) is the
+> remaining unbuilt half — same `shotLooks` mechanism, see "Platform axis (next)" below.
+>
+> ⚠️ **The as-built design DIVERGED from the locked design below.** On contact with the UI Jacob
+> rejected the explicit "make this its own look" toggle and chose **implicit per-channel override**
+> (edit a channel in a shot → it records as that shot's override; untouched channels inherit base/Hero;
+> a "Reset to Hero" banner appears once a shot has overrides). The "⭐ LOCKED DESIGN — whole-look fork"
+> section below is **SUPERSEDED** — kept for the rationale trail. The **as-built doctrine is in the
+> next block** + `scratch/CHANNEL-VARIANT-CASCADE-JOURNAL.md`.
+
+## ✅ AS-BUILT (2026-06-29) — implicit per-channel override per shot
+
+A shot (Hero = base) overrides look channels **sparsely**: editing any LOOK channel while a `browse`/
+`street` shot is active records THAT channel into `shotLooks[shot]`; every untouched channel inherits
+base (Hero). CSS-like — tweak the base and shots inherit it except where they've diverged. No explicit
+fork step; a **"Reset to Hero"** banner (clears the shot's overrides) appears once a shot has any.
+
+- **Schema (sparse):** `design.json`/`scene.json` gain `shotLooks: { browse?: {<channel>: <channel-def>},
+  street?: {…} }`. Present only where a shot overrides a channel → unforked Looks byte-identical (no key,
+  no bloat). Base = the top-level channels. (`SLAB-CONTRACT` note pending — see journal ⚑ BOZ flag.)
+- **Resolve (ONE point per surface, NOT per-consumer):** `{...base, ...shotLooks[shot]}` channel-wise.
+  Production: folded into the shared `src/lib/useSceneJson.js` adapter (off the camera `viewMode` via
+  `src/lib/shotScene.js`) → every render consumer reads `scene.<channel>` UNCHANGED (the blast-radius
+  win). Stage: `activeChannel(s, name)` in `useCartographStore` (off the active `shot`) — used at every
+  panel-edit read, every Stage render-override read, and the LampGlow/Neon pumps.
+- **Store (the convergence):** `useCartographStore` channel actions (factory + hand-rolled
+  lampGlow/clouds/sky) read via `activeChannel`, write via `channelPatch` (auto-creates the shot's block
+  on first edit), revert via `channelRevert` (drops the override → follows base). New `shotLooks` state +
+  DESIGN_FIELDS entry (round-trips design.json). `resetShotToBase` clears a shot's block.
+- **Bake:** `cartograph/bake-scene.js` emits `scene.shotLooks` only when present (sparse).
+- **NOT overridable (by design):** shape/geometry (frozen at bake), framing (shots/hero*/arch/horizon/
+  browseHeading), and **building material** (materialColors/Physics/buildingPalette — they render via
+  `SlabBuildings`, which fetches scene.json directly and BYPASSES `useSceneJson`, so they can't fork per
+  shot until that read path is firmed; Jacob isn't after per-shot building color). `layerVis`/`labels`/
+  `layerStrokes` are global for now.
+- **Known pre-existing gap (flagged, not this arc):** `stars` has a store factory + bake read but is
+  missing from `DESIGN_FIELDS` → it never serializes to design.json.
+
+### Platform axis (next — unbuilt)
+Same mechanism, second key: `shotLooks[shot]?.[platform] ?? shotLooks[shot] ?? base`. UI = a Stage
+Mobile|Desktop tab (`HANDOFF-mobile-profile.md §2` axis #3). Deferred; the shot axis above is the
+load-bearing half and is shipped.
 
 ## Agent: FRESH
 
@@ -22,7 +64,10 @@
 
 ---
 
-## ⭐ LOCKED DESIGN (2026-06-29) — whole-look fork per shot ("duplicate the interface")
+## ⭐ LOCKED DESIGN (2026-06-29) — whole-look fork per shot ("duplicate the interface") — ⛔ SUPERSEDED
+
+> ⛔ **SUPERSEDED by the AS-BUILT block above** (implicit per-channel override). Jacob rejected the
+> explicit toggle on contact with the UI. Kept for the rationale trail only.
 
 Jacob chose the **simpler-to-build** model over the original sparse per-channel/per-field cascade below: a
 shot is either **following base** or **forked** — a *full independent copy of the whole channel set*, authored

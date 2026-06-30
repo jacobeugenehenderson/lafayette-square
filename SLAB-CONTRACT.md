@@ -188,13 +188,16 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
   "luColors":         { "residential": "#5A8A3A", "commercial": "#A87D3E", … },
   "layerVis":         { "street": true, "edgeline": false, … },
   "lampGlow":         { … },
-  "neon":             { "values": { "core": 1, "tube": 1, "bleed": 1 } }
+  "neon":             { "values": { "core": 1, "tube": 1, "bleed": 1 } },
+  "shotLooks":        { "browse": { "exposure": { … }, "bloom": { … } } }   // optional, sparse
 }
 ```
 
 `bakedAt` is the bake's completion timestamp (epoch ms) written by `cartograph/bake-scene.js`. Consumer-side: this is the canonical `?t=<bakedAt>` cache-bust seed for production fetches of slab artifacts, decoupling production from the in-memory `useCartographStore.bakeLastMs`. Authoring contexts may continue to use the store's value; both should agree by construction (store seeds itself from `Date.now()` on bake completion; the bake writes the same epoch into `scene.json`). Per couplers plan CC.7.
 
 `neon` carries the per-Look neon-pipeline curve. Today: `{values: {core, tube, bleed}}` — three static 0-1 floats per the HANDOFF-neon Path B render model. The `NeonBands` shader's three Gaussian masks (`uCore`, `uTube`, `uBleed`) read these values once at mount. Future TOD-animated curves will replace `values` with a TOD-keyed structure parallel to `lampGlow`'s animated mode.
+
+`shotLooks` (optional, **sparse**) carries **per-shot LOOK overrides** — the channel-variant cascade (`HANDOFF-channel-variant-cascade.md`). Keyed by shot (`browse` / `street`; Hero IS the base, i.e. the top-level channels), each value is a partial map `{ <channel>: <channel-def> }` of just the channels that shot overrides; every un-overridden channel inherits base. **Present only where a shot diverges → a Look with no per-shot looks omits the key entirely and is byte-identical to a pre-cascade slab** (no migration, no 3× bloat). Each `<channel-def>` is the SAME shape as the base channel (flat `{values:{…}}` or `{animated:'tod', values:{slot:…}}`). Resolution is a single channel-wise merge — `effectiveScene = {...base, ...shotLooks[shot]}` — done at ONE point per surface: production resolves off the camera `viewMode` inside the shared `useSceneJson` adapter (`src/lib/shotScene.js`), so every render consumer reads `scene.<channel>` unchanged. **Not overridable per shot:** shape/geometry (frozen), framing (shots/hero*/arch/horizon/browseHeading), and building material (`materialColors`/`materialPhysics`/`palette` — `SlabBuildings` fetches `scene.json` directly and bypasses `useSceneJson`, so they can't fork per shot until that read is firmed).
 
 | Field | Meaning |
 |---|---|
@@ -205,6 +208,7 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
 | `luColors` | Map of land-use category → hex. |
 | `layerVis` | Map of layer name → bool. Layers set false do not get baked into `ground.json` groups, so this is redundant on the slab side; it's surfaced for Designer-side inspection and reference. |
 | `lampGlow` | Lamp emission / bloom parameters (color, intensity, attenuation). Consumed by `BakedLamps` and `StreetLights`. |
+| `shotLooks` | *(optional, sparse)* Per-shot LOOK overrides — `{ browse?: {<channel>: <channel-def>}, street?: … }`. Resolved `{...base, ...shotLooks[shot]}` at the `useSceneJson` adapter off the camera shot. Absent = no per-shot looks (byte-identical to a pre-cascade slab). See the paragraph above + `HANDOFF-channel-variant-cascade.md`. |
 
 ---
 

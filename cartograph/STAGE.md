@@ -42,6 +42,18 @@ Two load-bearing facts:
 
 ---
 
+## 1.5. Per-shot look overrides — the channel-variant cascade
+
+A Look authors **one base look** (Hero), but a shot can need a *different value of the same channel* — the overhead **Browse** map wants its own exposure/bloom/mist for legibility, distinct from the cinematic **Hero**. The Stage records this **implicitly**: while a `browse`/`street` shot is active, **editing any LOOK channel records THAT channel as the shot's override**; every channel the shot hasn't touched **inherits base (Hero)**. No "make this its own look" step — you just author in the shot. A **"Reset to Hero"** banner appears at the top of the panel once a shot has overrides (clears them all); a channel's own revert button drops just that channel's override. *(Landed 2026-06-29; `HANDOFF-channel-variant-cascade.md`.)*
+
+How it persists + resolves (the store is the convergence point — `useCartographStore`):
+- **Base = the top-level channels; overrides = `shotLooks[shot][channel]`.** Reads/writes RESOLVE the active shot *statelessly* via `activeChannel(s, name)` (the override if present, else base) and `channelPatch` (writes to the shot's block, auto-created on first edit). The channel-action factory + the hand-rolled lampGlow/sky/clouds actions all route through these, so every panel-edit read, every Stage render-override read, and the LampGlow/Neon pumps follow the active shot. `channelRevert` drops an override (→ follow base); `resetShotToBase` clears a shot's whole block.
+- **Sparse + round-trips:** `shotLooks` is a `DESIGN_FIELDS` entry → autosaves to `design.json` and bakes (sparsely) to `scene.json` like any channel. A Look with no per-shot looks omits the key → byte-identical to a pre-cascade slab.
+- **Production resolves the same merge** (`{...base, ...shotLooks[shot]}`) at ONE point — the shared `useSceneJson` adapter off the camera shot (`SLAB-CONTRACT.md §4`, `src/lib/shotScene.js`) — so runtime consumers read `scene.<channel>` unchanged.
+- **What does NOT vary per shot:** the look-vs-shape invariant still holds (no geometry). Beyond that, framing (`shots`/`hero*`/`arch`/`horizon`/`browseHeading`) is shot *identity* not look, and **building material** (`materialColors`/`materialPhysics`/`palette`) stays global because `SlabBuildings` reads `scene.json` directly, bypassing `useSceneJson` — a known firming gap, not yet per-shot. The **platform axis** (mobile vs desktop, same `shotLooks` mechanism keyed on profile) is the unbuilt second half (`HANDOFF-mobile-profile.md §2`).
+
+---
+
 ## 2. The artifact chain
 
 | | |
@@ -87,6 +99,7 @@ Where channels persist (verified in `bake-scene.js`):
 - ✅ **SC.7** arch + horizon — promoted off the `archState` module bridge in `StageApp.jsx`; now persists across reloads and reaches production via the slab.
 - ✅ **Neon** — per-Look core/tube/bleed curve; defaults `1/1/1`.
 - ✅ **Materials / surfaces** — per-material PBR + colors, layer/LU colors, `layerVis` (which is also a bake lever — `BAKE.md §2`).
+- ✅ **Per-shot look overrides** (channel-variant cascade, §1.5) — implicit per-channel overrides per shot (`shotLooks`), resolved at `useSceneJson` (production) / `activeChannel` (Stage); shot axis shipped end-to-end. Platform axis still unbuilt.
 
 **PARTIAL (the V1 tail — "Slab completeness" in `BACKLOG.md`):**
 - 🟡 **SC.5 camera** — Browse heading fully baked; Hero keyframes author + bake but runtime motion is minimal; Browse altitude / Hero target / Street position intentionally live (§4). Closing SC.5 = baking the full per-shot framing.
@@ -107,6 +120,7 @@ Where channels persist (verified in `bake-scene.js`):
 - **`design.json` lives; `scene.json` freezes.** Author live (WYSIWYG); the bake snapshots. "Saving the bake" is not a thing — forking a named Look is the deliberate save.
 - **Material-keyed, additive.** New geometry inherits the active Look's rules; Survey/Section → Stage never invalidates a Look.
 - **Single-owner channels.** Each look fact has exactly one owner (`skyGain` owns night darkness; bloom owns bloom) — no emergent sums of hidden floors (`ARCHITECTURE.md §7`).
+- **A shot overrides the base sparsely.** Editing in a `browse`/`street` shot records that channel as the shot's override; untouched channels inherit Hero (the base). One merge (`{...base, ...shotLooks[shot]}`), resolved at one point per surface (§1.5).
 - **Runtime-derived inputs stay live.** Per-device camera math (Browse altitude, Hero target) is computed at runtime, not baked — baking it would be a bug.
 - **Format lives in the contract.** `SLAB-CONTRACT.md §4` is the SSOT for `scene.json`'s bytes; this doc owns *what the operator authors and how it persists*.
 
@@ -118,6 +132,7 @@ Where channels persist (verified in `bake-scene.js`):
 - **`PREVIEW.md`** — the inspection surface that reads the baked Look back (closes `stage → bake → preview`).
 - **`SLAB-CONTRACT.md §4`** — the `scene.json` byte format + the `neon`/`lampGlow`/channel fields (the SSOT this doc points to).
 - **`ARCHITECTURE.md §2` / §2.1 / §3 / §5 / §7** — the Designer/Stage split, the three tools, the Looks model, live-edit rendering, the single-owner-channel doctrine.
+- **`HANDOFF-channel-variant-cascade.md`** (repo root) — the per-shot look-override arc (§1.5); landed 2026-06-29, platform axis still open.
 - **`SECTION.md` / `SURVEY.md`** — the two upstream tools whose frozen shape the Stage styles.
 - **`meteorologist/` (CANON · WEATHER-MODEL · STATUS · STAGE_MIGRATION)** — the clouds staging area and the (historical) in-Stage migration plan.
 - **Code:** `bake-scene.js` (channel inventory) · `src/cartograph/skyLightChannels.js` (`*_FLAT_DEFAULTS`) · `src/cartograph/skyGrid.js` (`migrateSkyChannel`) · `src/stage/StageApp.jsx` · the look consumers (`CelestialBodies`, `PostProcessing`, `GatewayArch`, `NeonBands`).
