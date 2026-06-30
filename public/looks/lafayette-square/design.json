@@ -563,15 +563,15 @@
   },
   "neon": {
     "animated": "tod",
-    "transitionIn": 30,
-    "transitionOut": 30,
+    "transitionIn": 0,
+    "transitionOut": 0,
     "values": {
       "dusk": {
         "core": 0.72,
         "tube": 0.36,
         "bleed": 0.8,
         "emissive": 7,
-        "tubeRadius": 0.15
+        "tubeRadius": 0.25
       }
     }
   },
