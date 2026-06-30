@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 import { useGlassSearch, SearchDropdown } from './GlassSearch'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -189,6 +189,41 @@ function CollapsibleSection({ title, defaultOpen = false, bg = '', highlight = f
 
 // ============ ALMANAC TAB ============
 
+// A justify-between row that scales its font down so its two children always
+// fit on one line — no matter how narrow the device is. (Secondary screen:
+// fitting the width matters more than a fixed type size.)
+function FitRow({ signature, baseFontPx = 20, gapPx = 12, className = '', children }) {
+  const rowRef = useRef(null)
+  useLayoutEffect(() => {
+    const row = rowRef.current
+    if (!row || row.children.length < 2) return
+    let prevAvail = -1
+    const fit = () => {
+      const avail = row.clientWidth
+      if (avail <= 0 || avail === prevAvail) return  // guard the height re-fire loop
+      prevAvail = avail
+      row.style.fontSize = `${baseFontPx}px`
+      const textW = row.children[0].offsetWidth + row.children[1].offsetWidth
+      if (textW <= 0) { prevAvail = -1; return }
+      const scale = Math.min(1, (avail - gapPx - 1) / textW)
+      row.style.fontSize = `${(baseFontPx * scale).toFixed(2)}px`
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(row)
+    return () => ro.disconnect()
+  }, [signature, baseFontPx, gapPx])
+  return (
+    <div
+      ref={rowRef}
+      className={`flex items-center justify-between ${className}`}
+      style={{ fontSize: `${baseFontPx}px`, gap: `${gapPx}px`, whiteSpace: 'nowrap' }}
+    >
+      {children}
+    </div>
+  )
+}
+
 function AlmanacTab() {
   const { currentTime, isLive } = useTimeOfDay()
   const [use24Hour, setUse24Hour] = useState(false)
@@ -341,14 +376,10 @@ function AlmanacTab() {
       {almanacView === 'celestial' && (
         <div style={AlmanacTab._weatherHeight ? { height: `${AlmanacTab._weatherHeight}px`, overflow: 'hidden' } : undefined}>
           <div className="px-4 py-3 border-b border-outline-variant">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-headline font-light text-on-surface whitespace-nowrap truncate min-w-0">
-                {dateString}
-              </span>
-              <span className="text-headline font-light text-on-surface-variant tabular-nums whitespace-nowrap flex-shrink-0">
-                Day {dayOfYear}
-              </span>
-            </div>
+            <FitRow signature={`${dateString}|${dayOfYear}`} baseFontPx={20}>
+              <span className="font-light text-on-surface">{dateString}</span>
+              <span className="font-light text-on-surface-variant tabular-nums">Day {dayOfYear}</span>
+            </FitRow>
           </div>
 
           <div className="px-4 py-3 flex gap-4">
