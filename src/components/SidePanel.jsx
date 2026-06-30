@@ -341,11 +341,11 @@ function AlmanacTab() {
       {almanacView === 'celestial' && (
         <div style={AlmanacTab._weatherHeight ? { height: `${AlmanacTab._weatherHeight}px`, overflow: 'hidden' } : undefined}>
           <div className="px-4 py-3 border-b border-outline-variant">
-            <div className="flex items-center justify-between">
-              <span className="text-display font-light text-on-surface tracking-wider">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-headline font-light text-on-surface whitespace-nowrap truncate min-w-0">
                 {dateString}
               </span>
-              <span className="text-display font-light text-on-surface-variant tracking-wider tabular-nums">
+              <span className="text-headline font-light text-on-surface-variant tabular-nums whitespace-nowrap flex-shrink-0">
                 Day {dayOfYear}
               </span>
             </div>
