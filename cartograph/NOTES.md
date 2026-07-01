@@ -8,6 +8,15 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-06-30 — render-pipeline install: one manifest, fork retired (Fenn, Phases 1–3).
+
+The doctrine said "Preview == Production, byte-for-byte"; the code said post-FX was the exception — Preview ran a forked `PreviewPostFx` composer whose DoF driver was URL-param-based and missing heroDist/gates, so **Preview's DoF was silently wrong**. Fixed structurally, not patched:
+- **Ph1 (`cba425b1`)** — extracted `usePostFxDriver`: the one per-frame driver (channel resolution + all module refs + `dofDriver` absorbed). The hook OWNS the refs (dependency flows one way → acyclic).
+- **Ph2 (`99098910`)** — `renderPipeline.jsx`: `POSTFX_PIPELINE` (the declared ship list) + `RenderPipeline` (the installer, filtered by `platform`+`gate`). `PostProcessing` shrank ~340 lines to a thin mode wrapper. **The `if(IS_MOBILE)` fork collapsed into the `platform` field** — mobile is data now, not a code fork (still stripped; the bracket conversion is later, gated on real device numbers).
+- **Ph3** — Preview mounts the same installer with `inspect={toggles,onCost}`; **`PreviewPostFx` deleted.** Preview's DoF/N8AO adopt production's props — the parity win (Preview *changed*, correctly).
+
+**Eye-gate: green all three (Jacob).** Production+Stage pixel+perf-identical; Preview same look/cost, toggles work, fork gone. ⭐ **Lesson — latent parity:** the `grade.brightness` "parity win" showed *nothing* on `lafayette-square` and that was the correct pass — the Look authors no brightness key → resolves to `GRADE_FLAT_DEFAULTS.brightness=0`, so old fork (never wrote it → boot default 0) and new driver (writes resolved 0) apply the same zero lift, **identical by arithmetic**. The win is real but only becomes visible on a Look that authors a brightness lift (the overhead Browse look). *(Fact → `ARCHITECTURE.md §8 "Render pipeline"` + `PREVIEW.md`; the HANDOFF now tracks the Phase 4/5 follow-on only.)*
+
 ## 2026-06-30 — doc-canon deep audit + remediation sweep (Boz, fan-out).
 
 A whole-corpus read (5 cluster auditors over root + cartograph + ls + arborist + meteorologist; ~18K lines) then a remediation pass (3 domain agents — Marginalia/ls, Rowan/arborist, Stratus/meteorologist — + Boz on root/cartograph). **Diagnosis:** the doc *system* (BOZ §2–3) is sound; the rot was concentrated in docs not touched in the recent look/publish sprint, and worst where it's most dangerous — the Reference docs a fresh agent trusts *first*. **All findings verified against code before writing** (e.g. the meteorologist "CloudDome deleted" claim was false — `skyMode.js` ships CloudDome by default; ls admin token is `localStorage` not sessionStorage; no `stage-config`/`ground.svg` in `src/`).

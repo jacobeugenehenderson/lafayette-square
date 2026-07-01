@@ -73,6 +73,8 @@ Every animatable channel shares one drawer, and **the 7 time-of-day slot chips a
 
 ### Image card — post-processing *(was "Post")*
 
+> *The post-FX passes below are entries in one declared pipeline manifest (`renderPipeline.jsx`), installed identically in production, Stage, and Preview (2026-06-30). Each knob here = a manifest entry's channel; in Preview the same passes appear as the toggle/cost matrix — no separate Preview render path. Mobile is the manifest's `platform` field (currently drops the desktop-only passes; a future low-bracket, not a fork). Mechanism: `ARCHITECTURE.md §8 "Render pipeline"`.*
+
 All Image channels are TOD. Grouped by intent:
 
 **Tone & Color group**

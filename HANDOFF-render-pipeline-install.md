@@ -1,7 +1,7 @@
 # Handoff — The v1 Render-Pipeline Install Method (one pipeline, installed everywhere)
 
-> **Status: DESIGN DRAFT (2026-06-27, Boz + Jacob). Standup + review BEFORE any code — high blast radius.**
-> **Agent: design review with Jacob first; the build is a serialized FRESH dispatch after the manifest shape + mode-parameterization are signed off.**
+> **Status: ✅ CORE LANDED — Phases 1–3 done + eye-gate green (2026-06-30, Fenn; `cba425b1`/`99098910`/Ph3).** One pipeline manifest + installer; `PreviewPostFx` retired; parity structural. **Facts folded → `cartograph/ARCHITECTURE.md §8 "Render pipeline"` + `PREVIEW.md` + `FEATURES.md`/`OPERATIONS.md`; narrative → `NOTES.md` 2026-06-30.** This file now tracks ONLY the **forward follow-on: Phase 4 (scene tree onto the manifest) + Phase 5 (fold render-conformance/preview-measurement in).** Those are clean, non-blocking; dispatch fresh when wanted.
+> **Agent (for Phase 4/5): serialized FRESH dispatch** — still owns `Scene.jsx` / `PostProcessing.jsx` / `renderPipeline.jsx` / `PreviewApp.jsx`; surface to Boz before anyone else edits them.
 >
 > ⛔ **ROUTE FIRST** (`CLAUDE.md`): `ORIENTATION.md` → `README §⭐ START HERE` (Preview / Stage rows) →
 > `cartograph/PREVIEW.md` (the parity keystone — read whole) → `HANDOFF-render-conformance.md` (the parity
@@ -62,7 +62,8 @@ One component (extend `PostProcessing` or a new `RenderPipeline` it delegates to
 - ✅ **Phase 0 — this doc + standup.** Manifest shape + `inspect` contract signed off (2026-06-30).
 - ✅ **Phase 1 — extract `usePostFxDriver`** (Fenn, `cba425b1`). Per-frame driving lifted into one hook (the hook OWNS the refs; `PostProcessing` imports them back → acyclic; `dofDriver` absorbed). Pure refactor. Eye-gate: Jacob — "nothing different, nothing broken."
 - ✅ **Phase 2 — manifest + installer** (Fenn, `99098910`). `POSTFX_PIPELINE` + `RenderPipeline` installer in `renderPipeline.jsx`; the film passes moved there (manifest refs them at module-eval → avoids the cycle; `PostProcessing` re-exports for Preview). **The `if(IS_MOBILE)` fork collapsed into the `platform` field** (mobile drops ao/pyramid/dof/bloom/aerial — still stripped, but now as *data*, not a code fork). `PostProcessing` is now a thin mode wrapper (~340 lines lighter). Pure refactor; eye-gate: production+Stage (pending at time of landing).
-- ▶ **Phase 3 — switch Preview, retire the fork (NEXT).** `PreviewApp` mounts the one installer with `inspect={layerMatrix}`; **delete `PreviewPostFx`**. Verify: the toggle matrix + per-pass cost bars still work, AND Preview's DoF is now correct (heroDist/gates inherited). **⚠️ This is where behavior shifts** — Preview adopts production's props (Preview's fork hardcodes N8AO 15/2.5/0.3 vs the channel defaults → it changes; that's the parity win, not a regression). This is the parity win.
+- ✅ **Phase 3 — switch Preview, retire the fork** (Fenn, eye-gate green). `PreviewApp` mounts the one installer with `inspect={toggles,onCost}`; **`PreviewPostFx` deleted**. Preview's DoF corrected (heroDist/gates inherited) + N8AO adopts the channel defaults (was hardcoded 15/2.5/0.3) — the parity win, confirmed on Jacob's eye (Preview *changed*, correctly). Toggle matrix + cost bars intact.
+- ▶ **Phase 4 (follow-on, NOT started) — the SCENE tree onto the same manifest.** See below.
 - **Phase 4 (follow-on) — the SCENE tree onto the same manifest.** Formalize Ground/Buildings/Trees/Lamps/Arch/Sky/Neon as manifest entries so the *whole* render tree is one declaration; Preview's `LayerRow` becomes the scene-side `inspect` wrapper. Now Preview == Slab is structural end-to-end.
 - **Phase 5 — fold the loose arcs in.** `render-conformance` Ph6 (parity cleanups) and `preview-measurement`'s toggle/gauge + inclusion-manifest become *capabilities of the one installer* (the `platform` field + the `inspect` wrapper), not separate machinery.
 

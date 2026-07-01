@@ -242,6 +242,28 @@ One merged shader mesh per scene (`NeonBands.jsx`), mounted in `LafayetteScene` 
 - **EffectComposer key + HMR.** The composer key is `fx-${smaaOn}-${dofOn}`; flipping dofOn/smaaOn rebuilds it. Under Vite HMR a rebuild can leave a consumer's driver detached (presents as "bloom went dark"), cured by a hard reload — NOT a real DoF↔Bloom coupling. DoF + Bloom share the `DownsamplePyramid` BY DESIGN; do not un-share (see §7 post-FX ladder + the bloom-foliage-freeze shared-pyramid history).
 - **Sky dome = seasonal hour×band grid + sparse overrides.** `skyGrid.js`: a per-season anchor-card grid (24 hours × 5 bands: horizon/low/mid/high/sunGlow), resolved per date+minute. Per-Look colour authoring is `scene.json` `sky.overrides` — a sparse list of `{hour, band, hex}` cells, each feathered spatially + temporally. ⚠️ **Overrides are keyed by CLOCK HOUR** (and apply across all seasons at that hour), **NOT by TOD slot** — so slot-relative colour (sunset/dusk) doesn't track across seasons. Known limitation; the Sky Builder is the season-aware authoring tool.
 
+### Render pipeline — one manifest, installed everywhere (2026-06-30)
+
+The post-FX stack is **declared once and installed identically in production, Stage, and Preview** — parity by construction, not by assertion. (Landed Phases 1–3 of `HANDOFF-render-pipeline-install.md`; commits `cba425b1`/`99098910`/Phase-3.)
+
+- **The manifest** (`renderPipeline.jsx` → `POSTFX_PIPELINE`) is the machine SSoT of *what ships*: an ordered list, each entry `{id, pass, channel, order, platform, gate, props}`. It is the literal ship list — reading it tells you the whole post-FX stack.
+
+  | order | id | pass | channel | platform |
+  |---|---|---|---|---|
+  | 10 | ao | N8AO | ao | desktop |
+  | 20 | pyramid | DownsamplePyramid | (shared resource) | desktop |
+  | 30 | dof | RomanceDoF | dof | desktop |
+  | 40 | bloom | CustomBloom | bloom | (all) |
+  | 50 | aerial | AerialPerspective | halo | desktop |
+  | 60 | grade | FilmGrade | grade | (all) |
+  | 70 | smaa | SMAA | smaa | (all) |
+  | 80 | grain | FilmGrain | grain | (all) |
+
+- **The installer** (`RenderPipeline`) consumes the manifest, filters by `platform` + `gate`, and mounts passes in order with the correct remount key. `PostProcessing.jsx` is now a **thin mode wrapper**: resolve channels → `usePostFxDriver` (the ONE per-frame driver — channel resolution, all module refs, DoF absorbed) → mount `<RenderPipeline>`.
+- **Mobile is a `platform` field, not a code fork.** The old `if (IS_MOBILE) return <minimal composer>` collapsed into the manifest (mobile currently *drops* ao/pyramid/dof/bloom/aerial). ⚠️ **Still stripped on mobile** — but now flipping "drop" → "low bracket" is a one-field edit, not a fork (the mobile-viability lever; gated on `preview-measurement`'s real device numbers).
+- **Inspection is a parameter, not a parallel composer.** Preview mounts the *same* installer with `inspect={ toggles, onCost }`; the toggle gates each pass + joins the remount key. **`PreviewPostFx` is retired** (the fork that silently drifted — its DoF driver was URL-param-based + missing heroDist/gates → Preview's DoF was wrong; folding onto the installer *corrected* it). "Preview == Production" is now structural.
+- **Decision (why):** a fork duplicates the pipeline + the driver and drifts (proven — Preview's DoF rotted). Declaring the pipeline once + installing it by mode makes "add a pass / fix a driver / change an order" touch *one* place, inherited by all three surfaces. The `platform` field also **absorbs `preview-measurement`'s inclusion manifest** (one SSoT, not two). Follow-on Phases 4 (the scene tree onto the same manifest) + 5 (fold render-conformance/preview-measurement in) remain in the HANDOFF.
+
 ### Bake chain — async, cache-bust, dirty-skip
 - **Async handler:** `serve.js` POST `/looks/:id/bake` runs each step via `runShell` (non-blocking); a per-look `_bakesInFlight` set rejects concurrent bakes against the same Look (409) so a double-click can't race two writers.
 - **Cache-bust:** `BakedGround`/`InstancedTrees` fetch `?t=${bakeLastMs}`; **`bakeLastMs` must be `Date.now()` on every bake completion**, never the bake duration (reusing a duration value lets the browser serve stale geometry — "I edited days ago, Stage doesn't show it").
