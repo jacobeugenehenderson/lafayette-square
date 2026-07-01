@@ -38,10 +38,11 @@ import DawnTimeline from '../components/DawnTimeline'
 import { V_EXAG } from '../utils/terrainShader'
 import LafayetteScene from '../components/LafayetteScene'
 import SlabBuildings from '../components/SlabBuildings'
-import PreviewPostFx from './PreviewPostFx'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
 import { setActiveProfileId } from './deviceProfiles'
-import { ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
+// Preview mounts the SHARED PostProcessing consumer with `inspect` (the per-pass
+// toggle matrix) — the retired PreviewPostFx forked its own composer + driver.
+import { PostProcessing, ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
@@ -1068,6 +1069,12 @@ function resolvePreviewLookId() {
 
 function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
   const lookId = resolvePreviewLookId()
+  // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the
+  // shared dofDriver reads window.__dofDebug. (Formerly set by PreviewPostFx's
+  // DofDriver; that fork is retired, so Preview sets it here.)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('dofDebug') === '1') window.__dofDebug = 1
+  }, [])
   return (
     <>
       <TimeTicker />
@@ -1168,12 +1175,14 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
 
       <ShotCamera shot={shot} setShot={setShot} />
 
-      <PreviewPostFx
-        lookId={lookId} tier={tier} pyramidDegree={pyramidDegree}
-        ao={layers.ao} bloom={layers.bloom} aerial={layers.aerial}
-        grade={layers.grade} grain={layers.grain} smaa={layers.smaa}
-        dof={layers.dof}
-      />
+      {/* The SHARED post-FX consumer (no overrides → resolves the baked
+          scene.json channels, exactly like production). `inspect.toggles` is the
+          per-pass visibility matrix — Preview's sanctioned divergence: an FX
+          toggle mounts/unmounts its pass to measure it. tier/pyramidDegree are
+          vestigial for post-FX (DownsamplePyramid renders a fixed ladder,
+          ignoring degree) — kept until the v0.2 measurement regime re-homes the
+          per-platform inclusion here. */}
+      <PostProcessing lookId={lookId} inspect={{ toggles: layers }} />
     </>
   )
 }

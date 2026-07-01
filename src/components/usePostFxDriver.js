@@ -7,14 +7,13 @@
  * module-level refs the Effect classes read + the N8AO/CustomBloom pass configs
  * + gl.toneMappingExposure, and calls the shared DoF driver (dofDriver.js).
  *
- * Why this module owns the refs (2026-06-30, Phase 1 of the render-pipeline
- * install, HANDOFF-render-pipeline-install.md): the driving refs ARE the
- * driver's state — the effect classes in PostProcessing.jsx read them, Preview's
- * PreviewPostFx writes them (via the `_postFxRefs` bag). Keeping refs + the
+ * Why this module owns the refs (2026-06-30, render-pipeline install,
+ * HANDOFF-render-pipeline-install.md): the driving refs ARE the driver's state —
+ * the effect classes (renderPipeline.jsx) read them each pass. Keeping refs + the
  * per-frame writer together in one module makes the dependency one-directional
- * (PostProcessing imports FROM here) and is the seam the Phase-2 installer plugs
- * into. This is a PURE REFACTOR — the per-frame math is byte-identical to the
- * inline useFrame it replaced.
+ * (its readers import FROM here) and is the seam the installer plugs into. This
+ * hook is the SINGLE driver for all three surfaces (production, Stage, Preview) —
+ * there is no second copy to hand-sync (PreviewPostFx's forked driver is retired).
  */
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -50,23 +49,6 @@ export const _grainScaleRef      = { current: GRAIN_FLAT_DEFAULTS.scale }
 export const _haloStrengthRef    = { current: HALO_FLAT_DEFAULTS.strength }
 export const _haloColorRef       = { current: new THREE.Color(HALO_FLAT_DEFAULTS.color) }
 
-// Exposed ref bag so non-PostProcessing consumers (e.g. PreviewPostFx, which
-// mounts FilmGrade/FilmGrain/AerialPerspective without the full chain) can
-// populate the same module-level refs from their own per-frame driver. Without
-// this, Preview's effects render with boot defaults regardless of authored
-// channel values. (Re-exported from PostProcessing.jsx for its import path.)
-export const _postFxRefs = {
-  fillToe:         _fillToeRef,
-  exposure:        _exposureRef,
-  warmth:          _warmthRef,
-  gradeContrast:   _gradeContrastRef,
-  gradeSat:        _gradeSatRef,
-  gradeVignette:   _gradeVignetteRef,
-  gradeBrightness: _gradeBrightnessRef,
-  grainScale:      _grainScaleRef,
-  haloStrength:    _haloStrengthRef,
-  haloColor:       _haloColorRef,
-}
 
 /**
  * Drive all post-FX channels each frame. Called once by PostProcessing (the one
@@ -156,12 +138,12 @@ export function usePostFxDriver({
       }
     }
 
-    // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js), also
-    // called by Preview's PreviewPostFx so the hero-pocket VIEW-Z anchor + the
+    // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js). Since all
+    // three surfaces drive through this hook, the hero-pocket VIEW-Z anchor + the
     // browse look-down gate cannot drift between production and the publish gate.
     // Prefer the LIVE (store) arch + hero subject in Stage; fall back to the
-    // baked scene.json in production (resolved by the caller). Cheap; only
-    // meaningful when dofOn.
+    // baked scene.json in production/Preview (resolved by the caller). Cheap;
+    // only meaningful when dofOn (i.e. the DoF pass is mounted).
     if (dofOn) {
       applyDofFrame({ camera, dofChannel, minute, slotMins, archValues, heroSubject })
     }

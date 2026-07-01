@@ -2,17 +2,17 @@
  * dofDriver — the ONE per-frame DoF driver.
  *
  * Resolves the operator's `dof` channel + the live camera into RomanceDoF's
- * `_dofRefs` (the shader's uniforms). Production (PostProcessing.jsx) and
- * Preview (PreviewPostFx.jsx) BOTH call `applyDofFrame` each frame, so the
- * hero-pocket VIEW-Z anchor and the browse (look-down) gate cannot drift
+ * `_dofRefs` (the shader's uniforms). Called from usePostFxDriver — the ONE
+ * per-frame driver all three surfaces (production, Stage, Preview) run through —
+ * so the hero-pocket VIEW-Z anchor and the browse (look-down) gate cannot drift
  * between the shipping render and the publish-confidence gate.
  *
  * Why this exists (2026-06-27): Preview previously forked its own URL-param
  * driver that read heroDist ONCE on mount with no per-frame VIEW-Z transform
  * and no look-down gate — so Preview's DoF was frozen and unfaithful, exactly
- * where Preview's whole job is parity (PREVIEW.md §0/§7). One driver, two
- * callers, no second copy to hand-sync (the "one knob, never two copies"
- * doctrine the project applies to STREET_SMOOTH).
+ * where Preview's whole job is parity (PREVIEW.md §0/§7). One driver, one place,
+ * no second copy to hand-sync (the "one knob, never two copies" doctrine the
+ * project applies to STREET_SMOOTH). The Preview fork is retired (2026-06-30).
  *
  * NOT here: the pyramid DEGREE (the resolution bracket per device-surface).
  * Everything ships to every surface; only the mip-rung resolution differs,

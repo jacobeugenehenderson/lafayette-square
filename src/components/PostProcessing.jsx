@@ -4,8 +4,9 @@
  * existing TOD/sun-altitude physics modifiers and the grade/grain
  * stage-only sliders.
  *
- * Doctrine: ONE consumer. Production (Scene.jsx), Stage (CartographApp.jsx),
- * and Preview (PreviewApp.jsx via PreviewPostFx) mount this same file.
+ * Doctrine: ONE consumer, made structural. Production (Scene.jsx), Stage
+ * (CartographApp.jsx), and Preview (PreviewApp.jsx, with an `inspect` prop for
+ * the per-pass toggle matrix) all mount THIS file — no forked Preview composer.
  * Per-channel `<channel>Override` props are how Stage retints instantly
  * off the live cartograph store; when absent, the consumer falls back to
  * the channel baked into scene.json (frozen-at-bake), and finally to the
@@ -54,13 +55,12 @@ import {
 // The pipeline is DECLARED once (POSTFX_PIPELINE) and installed by RenderPipeline
 // (renderPipeline.jsx). PostProcessing is now just the mode wrapper: it resolves
 // the authored channels, drives them per-frame via usePostFxDriver, and mounts
-// the one installer. The film-effect passes live in renderPipeline.jsx (the
-// manifest references them) — re-exported here so PreviewPostFx's import path
-// stays intact until Phase 3 retires it. ExposureTicker still writes _exposureRef.
+// the one installer. Production (Scene.jsx), Stage (CartographApp.jsx), AND
+// Preview (PreviewApp.jsx via `inspect`) mount THIS file — the "ONE consumer"
+// doctrine made structural (PreviewPostFx's forked composer + driver retired
+// 2026-06-30). ExposureTicker still writes _exposureRef.
 import { usePostFxDriver, _exposureRef } from './usePostFxDriver.js'
 import { RenderPipeline } from './renderPipeline.jsx'
-export { _postFxRefs } from './usePostFxDriver.js'
-export { FilmGrade, FilmGrain, AerialPerspective } from './renderPipeline.jsx'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 function resolveLookId(propLookId) {
@@ -86,14 +86,15 @@ const GRAIN_DEFAULT_CHANNEL    = Object.freeze({ values: { ...GRAIN_FLAT_DEFAULT
 const SHADOW_DEFAULT_CHANNEL   = Object.freeze({ values: { ...SHADOW_FLAT_DEFAULTS } })
 const DOF_DEFAULT_CHANNEL      = Object.freeze({ values: { ...DOF_FLAT_DEFAULTS } })
 
-// The FilmGrade / FilmGrain / AerialPerspective passes moved to
-// renderPipeline.jsx (the manifest references them). Re-exported above for
-// PreviewPostFx. They read the driving refs owned by usePostFxDriver.js.
+// The FilmGrade / FilmGrain / AerialPerspective passes live in renderPipeline.jsx
+// (the manifest references them); they read the driving refs owned by
+// usePostFxDriver.js.
 
 // ── ExposureTicker — Canvas-level gl.toneMappingExposure ────────────────────
-// Independent of PostProcessing/FilmGrade so Canvas mounts that DON'T
-// run the full chain (e.g. Preview's per-effect-toggle PreviewPostFx)
-// still pick up the authored exposure. SC.3 (2026-05-13).
+// Independent of PostProcessing/FilmGrade so a Canvas mount that DOESN'T run the
+// full PostProcessing chain still picks up the authored exposure. SC.3
+// (2026-05-13). Preview mounts both this and PostProcessing (inspect); both
+// resolve the same exposure channel → same value, harmless double-write.
 
 export function ExposureTicker({ lookId, bakeLastMs, exposureOverride }) {
   const { gl } = useThree()
@@ -118,6 +119,7 @@ export function PostProcessing({
   bloomOverride, aoOverride, exposureOverride, warmthOverride,
   fillOverride, haloOverride, gradeOverride, grainOverride, smaaOverride, dofOverride,
   archOverride, heroSubjectOverride,
+  inspect,   // Preview only: { toggles } — per-pass visibility matrix (see RenderPipeline).
 }) {
   const bloomRef = useRef()
   const aoRef = useRef()
@@ -145,25 +147,33 @@ export function PostProcessing({
     ? Object.values(dofChannel.values || {}).some(s => (s?.enabled ?? 0) > 0.5)
     : (dofChannel?.values?.enabled ?? DOF_FLAT_DEFAULTS.enabled) > 0.5
 
-  // The per-frame post-FX driving — one hook, identical for production and
-  // Stage. It resolves every channel above → the module refs (owned there) →
-  // uniforms, drives the N8AO/CustomBloom pass configs + gl.toneMappingExposure,
-  // and calls the shared DoF driver. Stage passes live-store overrides;
-  // production passes scene.json-baked channels — no behavior fork.
+  // DoF drives (applyDofFrame) exactly when the DoF pass is MOUNTED: in
+  // production/Stage that's the channel gate (dofOn); in Preview it's the
+  // inspect toggle (the operator forces DoF on to tune it, independent of the
+  // Look's authored enable). Drive-when-mounted keeps _dofRefs from going stale.
+  const dofMounted = inspect ? (inspect.toggles?.dof ?? false) : dofOn
+
+  // The per-frame post-FX driving — one hook for all three surfaces. It resolves
+  // every channel above → the module refs (owned there) → uniforms, drives the
+  // N8AO/CustomBloom pass configs + gl.toneMappingExposure, and calls the shared
+  // DoF driver. Stage passes live-store overrides; production + Preview pass
+  // scene.json-baked channels (Preview = no overrides) — no behavior fork.
   usePostFxDriver({
     bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
-    haloChannel, gradeChannel, grainChannel, dofChannel, dofOn,
+    haloChannel, gradeChannel, grainChannel, dofChannel, dofOn: dofMounted,
     viewMode, aoRef, bloomRef,
     archValues: archOverride?.values ?? scene?.arch?.values,
     heroSubject: heroSubjectOverride ?? scene?.heroSubject,
   })
 
   // Mount the ONE installer from the manifest. Ordering, per-platform inclusion
-  // (mobile drops AO/pyramid/DoF/bloom/aerial), the DoF/SMAA mount gates, and
-  // the composer remount key all live in renderPipeline.jsx — production and
-  // Stage install with no `inspect`, byte-identical to the old hand-wired chain.
+  // (mobile drops AO/pyramid/DoF/bloom/aerial), the DoF/SMAA mount gates, the
+  // composer remount key, and Preview's per-pass toggle matrix (`inspect`) all
+  // live in renderPipeline.jsx — production and Stage install with no `inspect`,
+  // byte-identical to the old hand-wired chain.
   return (
     <RenderPipeline
+      inspect={inspect}
       refs={{ ao: aoRef, bloom: bloomRef }}
       viewMode={viewMode}
       smaaOn={smaaOn}

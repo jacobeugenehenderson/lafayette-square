@@ -24,10 +24,10 @@
  * ADD blend (HDR-correct; SCREEN darkened the HDR-bright sky).
  *
  * ── API parity (so the channel wiring is untouched) ────────────────────────
- * The driver sites (PostProcessing.jsx, PreviewPostFx.jsx) set `bloom.intensity`,
- * `bloom.luminanceMaterial.threshold`, `bloom.spread`, and `bloom.warmCool` off
- * the `bloom` channel each frame. This effect exposes those
- * exact accessors (backed by its uniforms), so neither driver changes. The
+ * The driver (usePostFxDriver.js, the one per-frame driver for all surfaces) sets
+ * `bloom.intensity`, `bloom.luminanceMaterial.threshold`, `bloom.spread`, and
+ * `bloom.warmCool` off the `bloom` channel each frame. This effect exposes those
+ * exact accessors (backed by its uniforms), so the driver is untouched. The
  * one-tree-program Bloom constraint is about the tree MATERIAL (untouched here)
  * — the bloom PASS swaps safely.
  */

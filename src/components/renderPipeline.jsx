@@ -17,8 +17,7 @@
  * The three inline film effects (FilmGrade/FilmGrain/AerialPerspective) live
  * here because the manifest references them at module-eval time; keeping them in
  * PostProcessing.jsx (which imports this installer) would be a fatal import
- * cycle. They read the driving refs owned by usePostFxDriver.js. PostProcessing
- * re-exports them so PreviewPostFx's import path (Phase 3 retires it) is stable.
+ * cycle. They read the driving refs owned by usePostFxDriver.js.
  */
 import { forwardRef, useMemo } from 'react'
 import { EffectComposer, N8AO, SMAA } from '@react-three/postprocessing'
@@ -210,9 +209,11 @@ export const POSTFX_PIPELINE = [
     }),
   },
   // Shared full-scene blur pyramid — built after N8AO (post-AO scene). A PURE
-  // RESOURCE both DoF and bloom SAMPLE (never each other's result). Desktop
-  // bracket = full degree; the phone rungs dial it down (preview-equals-pyramid).
-  { id: 'pyramid', pass: DownsamplePyramid, order: 20, platform: 'desktop' },
+  // RESOURCE both DoF and bloom SAMPLE (never each other's result). `dependsOn`
+  // is honored only while inspecting (Preview): the pyramid is pointless when no
+  // consumer is mounted, so a toggle-off of both DoF and bloom drops it too.
+  // Production/Stage mount it unconditionally (bloom always ships).
+  { id: 'pyramid', pass: DownsamplePyramid, order: 20, platform: 'desktop', dependsOn: ['dof', 'bloom'] },
   // DoF — two-focal romance DoF, AFTER the pyramid so it samples it (CoC-weighted
   // lerp toward the shared blur), BEFORE bloom so the glow lands on the defocused
   // scene. Desktop only. Mounts only when the `dof` channel enables it.
@@ -235,24 +236,38 @@ export const POSTFX_PIPELINE = [
  * @param viewMode  production's view mode (undefined in Stage → full-res AO).
  * @param smaaOn    resolved SMAA on/off (drives the SMAA gate + remount key).
  * @param dofOn     resolved DoF on/off (drives the DoF gate + remount key).
- * @param inspect   Preview only (Phase 3): { toggles:{id:bool}, onCost } — the
- *                  per-pass visibility matrix + cost-gauge callbacks. When
- *                  present, each pass additionally gates on its toggle (default
- *                  on) and every pass joins the remount key. Absent for
- *                  production/Stage → byte-identical to the old hand-wired JSX.
+ * @param inspect   Preview only: { toggles:{id:bool} } — the per-pass visibility
+ *                  matrix (Preview's sanctioned divergence: an FX toggle
+ *                  mounts/unmounts its pass to measure it). When present the
+ *                  TOGGLE decides each mount (not the channel gate — the operator
+ *                  chooses what to inspect, e.g. force DoF on to tune it), the
+ *                  whole desktop-shaped pipeline is offered, and every pass joins
+ *                  the remount key. Absent for production/Stage → byte-identical
+ *                  to the old hand-wired JSX. (Per-pass cost is measured
+ *                  externally off renderer.info via GpuMonitor's measureToggle;
+ *                  no in-installer probe needed.)
  */
 export function RenderPipeline({ refs, viewMode, smaaOn, dofOn, inspect }) {
   const ctx = { refs, viewMode, smaaOn, dofOn }
   const platform = IS_MOBILE ? 'mobile' : 'desktop'
-  const included = POSTFX_PIPELINE.filter((e) => !e.platform || e.platform === platform)
+  // Inspecting (Preview) offers the whole desktop-shaped pipeline and lets the
+  // toggle matrix decide what mounts — the operator inspects every pass
+  // regardless of the running device (the tier emulator varies the pyramid
+  // resolution, not the pass SET; the v0.2 measurement regime will let Preview
+  // honor/edit per-platform inclusion). Production/Stage apply platform inclusion
+  // (mobile drops ao/pyramid/dof/bloom/aerial).
+  const included = inspect ? POSTFX_PIPELINE : POSTFX_PIPELINE.filter((e) => !e.platform || e.platform === platform)
 
-  // A pass mounts when its channel-gate is on AND (not inspecting, or its
-  // inspect toggle is on). Inspection just ADDS to the mount condition — never
-  // a second composer.
+  // Mount decision. Production/Stage: the channel gate (dofOn/smaaOn) decides.
+  // Preview: the inspect TOGGLE decides; a shared-resource pass (`dependsOn`, the
+  // pyramid) mounts only while a consumer it feeds is toggled on.
   const mountOn = (e) => {
-    const gateOn = e.gate ? e.gate(ctx) : true
-    const inspectOn = inspect ? (inspect.toggles?.[e.id] ?? true) : true
-    return gateOn && inspectOn
+    if (inspect) {
+      if ((inspect.toggles?.[e.id] ?? true) === false) return false
+      if (e.dependsOn) return e.dependsOn.some((dep) => inspect.toggles?.[dep] ?? false)
+      return true
+    }
+    return e.gate ? e.gate(ctx) : true
   }
   // EffectComposer can only add/remove passes on REMOUNT, so its key must change
   // whenever the mounted set changes. Key only on entries whose mount can vary
@@ -260,10 +275,15 @@ export function RenderPipeline({ refs, viewMode, smaaOn, dofOn, inspect }) {
   // exact remount cadence — flips only with smaaOn / dofOn.
   const varying = inspect ? included : included.filter((e) => e.gate)
   const key = 'fx-' + varying.map((e) => `${e.id}:${mountOn(e) ? 1 : 0}`).join('-')
+  const mounted = included.filter(mountOn)
+  // Empty composer would flip tone-mapping to NoToneMapping and blit for nothing;
+  // Preview with all FX off wants the raw scene (as the old fork's null return
+  // did). Production/Stage always have grade/grain mounted → never null.
+  if (mounted.length === 0) return null
 
   return (
     <EffectComposer key={key}>
-      {included.filter(mountOn).map((e) => {
+      {mounted.map((e) => {
         const Pass = e.pass
         const props = e.props ? e.props(ctx) : null
         return e.ref
