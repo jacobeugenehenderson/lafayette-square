@@ -175,7 +175,7 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 - **[`SLAB-CONTRACT.md`](SLAB-CONTRACT.md)** — the formal cartograph↔LS boundary (the slab format; owned by neither app).
 - **[`AGENT-VALIDATION-SURFACES.md`](AGENT-VALIDATION-SURFACES.md)** — where to validate (toy vs LS); the guardrails.
 - **[`AUDIT-MATRIX.md`](AUDIT-MATRIX.md)** (the instrument) + the filed findings `scratch/audit-{cartograph,arborist,ls-app,docs}.md` — the forensic-audit campaign (the four walks landed; the dispatch briefs retired).
-- **[`plans/`](plans/)** — forward/strategic: productization, basemap-swap, pre-public-cleanout, kit-couplers.
+- **[`plans/`](plans/)** — forward/strategic: productization, basemap-swap, pre-public-cleanout, kit-couplers, **[clean-for-handoff](plans/clean-for-handoff.md)** (the human-dev handoff campaign — leads with render-pipeline-install; DoD = the zero-open corpse-lie ledger + one render pipeline).
 - **[`PUBLISH.md`](PUBLISH.md)** — deploy procedures · `BUSINESS_LISTINGS.md` · `CARY-BRIEF.md`.
 
 ### State layer & working dirs
