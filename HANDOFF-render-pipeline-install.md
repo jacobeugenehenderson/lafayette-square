@@ -74,11 +74,33 @@ One component (extend `PostProcessing` or a new `RenderPipeline` it delegates to
 ## Blast radius / coordination
 `Scene.jsx`, `PostProcessing.jsx`, `PreviewApp.jsx`, **retiring `PreviewPostFx.jsx`**, the new `renderPipeline.js` manifest + installer, `GpuMonitor`/`LayerRow` (the gauge probes). **HIGH convergence** with `HANDOFF-render-conformance.md` (the production Canvas / camera) and `HANDOFF-preview-measurement.md` (the toggle matrix + inclusion manifest) — **serialize; surface to Boz before editing those files.** Canonical off-limits unless the dispatch says so: the slab contract, the one-tree-program bloom constraint.
 
-## Open decisions (Jacob's — for the standup)
-1. **Scope v1 to post-FX only** (the actual fork — Phases 1–3), then the scene tree as a clean follow-on (Phase 4)? Or design both manifests up front? *(Boz recommends post-FX first — it's where the rot is, and it proves the method on the smaller surface.)*
-2. **The `inspect` contract** — installer takes a `{ toggles, onCost }` param and owns all the wrapping (Boz's recommendation), vs. Preview composes the manifest itself. The former keeps the one-installer invariant; the latter re-opens the fork door.
-3. **Does this absorb `preview-measurement`'s inclusion manifest?** The per-platform "what ships to desktop vs mobile" is just the `platform` field per manifest entry — i.e. the *same* SSoT. If yes, `preview-measurement` narrows to the *gauges + device emulator*, and the inclusion-authoring becomes editing this manifest at the Preview gate. *(Boz leans yes — one manifest, not two.)*
-4. **Naming** — extend `PostProcessing` into the installer, or a new `RenderPipeline` that `PostProcessing` becomes a thin mode of? *(Cosmetic; decide at build.)*
+## Open decisions — RULED 2026-06-30 (standup with Jacob)
+1. ✅ **Scope v1 to post-FX only** (Phases 1–3), scene tree as a clean Phase-4 follow-on. *(Jacob: yes.)*
+2. **The `inspect` contract** — default to Boz's recommendation: **the installer takes `{ toggles, onCost }` and owns all the wrapping** (keeps the one-installer invariant; Preview never composes its own manifest). Not explicitly ruled — proceeding on this default; flag at Phase-2 build if it bites.
+3. ✅ **Yes — this absorbs `preview-measurement`'s inclusion manifest.** ONE SSoT: the `platform` field per manifest entry. `preview-measurement` **narrows to the gauges + device emulator**; inclusion-authoring becomes editing this manifest at the Preview gate. *(Jacob: yes. Repoint `preview-measurement` accordingly when this lands.)*
+4. **Naming** — extend `PostProcessing` vs. a new `RenderPipeline`. Cosmetic; decide at build.
+
+**Handoff-target context (Jacob, 2026-06-30):** the aspirational target is a **Kit Release** (arbitrary operators pour neighborhoods), not just contractor onboarding — so the manifest's legibility bar is the higher one (`plans/clean-for-handoff.md` DoD).
+
+---
+
+## ▶ Phase 1 — DISPATCH-READY (extract `usePostFxDriver`)
+
+> **Agent: FRESH — name yourself.** A serialized refactor that owns the render files for this arc. Self-contained; pure refactor, zero behavior change.
+
+**ROUTE FIRST** (`CLAUDE.md`), in order: `ORIENTATION.md` → `README §⭐ START HERE` (Preview/Stage rows) → `cartograph/PREVIEW.md` (**read whole** — the parity keystone) → `HANDOFF-render-conformance.md` (Ph1–3 landed) → this HANDOFF (the principle §"One pipeline manifest…" + the phases) → then this brief. **Do NOT reconstruct the render path from grep** — read PREVIEW to the section first.
+
+**The task:** lift `PostProcessing.jsx`'s per-frame post-FX driving into **one hook** `usePostFxDriver(resolvedChannels, mode)` (new module, e.g. `src/components/usePostFxDriver.js`); `PostProcessing` calls it. It resolves every channel → the module refs → uniforms, per frame: `_dofRefs` (incl. `heroDist`/view-Z + the look-down browse gate), `_postFxRefs`, bloom, grade, grain. **`dofDriver.js` (`applyDofFrame`) already unified the DoF half (2026-06-27) — absorb/wrap it into the one hook so ALL channels drive from one place, not just DoF.**
+
+**Hard constraints:**
+- **PURE REFACTOR, ZERO behavior change.** No manifest, no installer (Phase 2). Do **not** touch `PreviewPostFx` (Phase 3). Do **not** change the `if (IS_MOBILE)` branch (`PostProcessing.jsx:413`) yet. No `scene.json` schema change.
+- Off-limits: the slab contract, the one-tree-program bloom constraint.
+
+**Verify gate (the phase's DoD):** production **and** Stage render **pixel-identical** before/after. Concretely: `window.__dofDebug` shows the same DoF hero-pocket zones as before; bloom/grade/grain visually unchanged; toggle DoF off → bloom still correct (no coupling introduced). It's a refactor — any visible delta is a bug.
+
+**⚠️ Serialization (HIGH):** this arc owns `Scene.jsx` / `PostProcessing.jsx` / `PreviewApp.jsx`. `render-conformance`, `preview-measurement`, and the hero-motion arc all converge here — **surface to Boz before anyone else edits those files.** Commit on the working branch (`curb-offset-draw`; deploys nothing). Canonical docs off-limits unless folding the landed fact (then hit every register — this HANDOFF §Documentation deliverable).
+
+**On landing:** verify byte-identical → commit → tell Boz (Phase 2 = manifest + installer is next, same owner ideally).
 
 ## Documentation deliverable (first-class, not an afterthought — Jacob, 2026-06-27)
 

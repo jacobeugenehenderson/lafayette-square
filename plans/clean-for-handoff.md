@@ -21,6 +21,7 @@ A new developer, given only the repo, can:
 4. **Not trip over dead code** — the figure-ground path is deleted or, where still entangled, clearly quarantined; no dead module mounts as if live.
 5. **Tell live from parked** — TABLED / mid-rethink domains (meteorologist volumetric, arborist v1) are unambiguously marked; a stranger won't build on parked work.
 6. **Build + ship** — `README` dev-setup and `PUBLISH.md` / `OPERATIONS §Save→ship` are accurate end-to-end (spot-verified 2026-06-30).
+7. **Kit-legible (the aspirational bar, decided 2026-06-30).** Because the target is a **Kit Release**, not contractor onboarding: a new operator can understand *how a neighborhood pours* (intake→skeleton→…→slab) and *what's kit vs LS-specific* from the docs alone — the kit↔instance boundary (`plans/kit_couplers_parametrize.md`, `INSTANCE`) is clean and documented, and the correctness-detector story (curated→0) is honest about where it stands. ⚠️ **This is the tallest bar and it loops to the "second pour" experiment** (the appraisal): the kit thesis is only *proven* legible when a second neighborhood actually pours. Treat #7 as aspirational-directional for the code/doc handoff; the proof is a separate arc.
 
 ## The workstreams
 
@@ -74,10 +75,10 @@ NOW ──▶ W1 render-pipeline-install (standup → Ph1–3: the fork dies, pa
 ## The handoff artifact (what the human dev receives)
 Not a document dump — a **navigable, honest repo**: the `ORIENTATION → README → canon` path, a **zero-open corpse-lie ledger** as the trust certificate, the **render manifest** as the recorded SSoT of what ships, and a BACKLOG that reflects real current state at a glance.
 
-## Open decisions (Jacob's)
-1. **W1 scope v1** — post-FX only (Phases 1–3), scene tree as follow-on (Boz recommends; it's where the rot is)? Or design both manifests up front? *(= render-pipeline-install open-decision #1.)*
-2. **W2 timing** — do the figure-ground excision *now* (forcing the tile-T3-authoring migration it's gated on), or defer until after W1 ships and let T3 land on its own schedule? The handoff bar wants it gone; the effort is real.
-3. **Handoff shape** — is the target a *contractor onboarding* (they extend LS) or an *open-source / kit release* (arbitrary devs pour neighborhoods)? The DoD bar is higher for the latter (the kit thesis must be legible, not just LS).
+## Open decisions
+1. ✅ **W1 scope = post-FX first** (Phases 1–3), scene tree as a Phase-4 follow-on. *(Jacob, 2026-06-30.)* Also ruled: **one manifest SSoT absorbs `preview-measurement`'s inclusion manifest** (the `platform` field) — that arc narrows to gauges + device emulator.
+2. **W2 timing** *(still open)* — do the figure-ground excision *now* (forcing the tile-T3-authoring migration it's gated on), or defer until after W1 ships and let T3 land on its own schedule? The handoff bar wants it gone; the effort is real.
+3. ✅ **Handoff target = Kit Release (aspirational)** — arbitrary operators pour neighborhoods, not just contractor-extends-LS. *(Jacob, 2026-06-30.)* This **raises the DoD bar** (see the added check #7 below): the kit *thesis* must be legible, not just the LS instance.
 
 ---
 
