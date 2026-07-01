@@ -261,6 +261,54 @@ Member-types: **Visitor** (anon device) · **Townie** (3-in-14) · **Resident** 
 
 ## Phase 2 — code-verification appendix
 
-*Deferred. Awaits Jacob's approval of the prose above. Will produce a per-step pass/fail with file:line and a gap list, walking each numbered procedure (G.0–G.2, R.1–R.2, T.1–T.2) against the implementation — plus verifying the auto-townie grants (§b) actually fire and the medallions light up.*
+*Verified 2026-06-30 against the working tree (`curb-offset-draw`) — each numbered procedure walked against the implementation. Line numbers below are the **as-read** values (a few drifted from the specs; noted in the doc-accuracy nits at the end).*
 
-*Refocused 2026-06-30 to the trust-role trio (Guardian · Resident · Townie); supersedes the 2026-06-29 meeting-hinge draft (git keeps it). Phase-1 prose. Sources: the `ls/*` diamond specs + targeted code reads (`Code.js`, `ClaimPage.jsx`, `CheckinPage.jsx`, `useHandle.js`, `RoleBadge.jsx`, `vignettePresets.js`, `AvatarEditor.jsx`).*
+### Verdict: **procedures are faithful — with one real gap** (co-resident verify does *not* grant townie). Everything else PASSES.
+
+### Guardian — per-step
+| Step | Claim | Code evidence | Verdict |
+|---|---|---|---|
+| G.1.2 | secret validated on claim | `postClaim` `Code.js:614` `if (result.rowData.claim_secret && result.rowData.claim_secret !== secret) → unauthorized` | ✅ **PASS** (see gap #2 — skips when secret empty) |
+| G.1.3 | 1st = guardian (all perms), rest = keyholder | `Code.js:629–630` `role = existingForListing.length===0 ? 'guardian':'keyholder'`; perms `'menu,events,replies,photos,hours'` | ✅ **PASS** |
+| G.1.4 | handle required before success | `ClaimPage.jsx:37` `needsHandle = claimed && !loading && !handle`; `:71` gates `HandleStep`; avatar skippable `:93` | ✅ **PASS** |
+| G.1.5 | claim auto-grants townie | `postClaim` `Code.js:636` `grantTownieStatus(device_hash)` | ✅ **PASS** |
+| G.1.5 | success copy | `ClaimPage.jsx:135` "…recognized local in the neighborhood." | ✅ **PASS** |
+| G.2.2 | secret is 8-char hex, guardian-or-admin, lazy | `getClaimSecret` `Code.js:816–817` (guardian OR admin), `:822` `Utilities.getUuid().split('-')[0]` | ✅ **PASS** |
+| G.0 | admin auto-provision makes a `residential/houses` stub (wrong for a restaurant) | `Code.js:806–807` `category='residential'`, `subcategory='houses'` | ✅ **PASS** (confirms the G.0 warning — gap #4) |
+
+### Resident — per-step
+| Step | Claim | Code evidence | Verdict |
+|---|---|---|---|
+| R.1.1–2 | residential QR detected → `claimResidence(dh,bid,true)` | `CheckinPage.jsx:186` `isResidential = category==='residential' \|\| !!building`; `:197` `claimResidence(dh, resolvedBuildingId, true)` | ✅ **PASS** |
+| R.1.3 | `auto_verify` → verified, `verified_by`, +1yr | `postClaimResidence` `Code.js:1730` `autoVerify = isAdmin \|\| !!body.auto_verify`; `:1746` status; `:1747` `verified_by`; `:1752` `+1 year` | ✅ **PASS** |
+| R.1.5 | residence-verify auto-grants townie | `Code.js:1758–1760` `if (autoVerify) grantTownieStatus(dh)` | ✅ **PASS** *(autoVerify paths only — see gap #1)* |
+| R.1.6 | Lobby read/write server-gated to verified resident | `getLobbyPosts` `Code.js:1655`; `postLobbyPost` `Code.js:1847` — both `forbidden` unless verified resident of building | ✅ **PASS** |
+| R.2 | four paths present | admin `:1730`/`:1747`; qr-invite `:1730`; linked-device `:1731–1744`; co-resident `postVerifyResident:1798` (verifier gate `:1816–1821`, flip `:1826`) | ✅ **PASS** |
+| R.3 | verified resident sees the invite QR (cascade) | Lobby-tab `QrTab` `PlaceCard.jsx:4013`, gate `isResidentHere\|\|isAdmin` `:3650`; `qrId=buildingId` `:2302` → `/checkin/<buildingId>` | ✅ **PASS** (confirmed earlier) |
+| R.4 | invite copy warns don't-share | `CheckinPage.jsx:286` "…a gesture of trust between neighbors, please don't share it outside your building." | ✅ **PASS** |
+| — | expired residence reads as none | `fetchResidenceData` `Code.js:1631–1633` `exp < now → null`; linked-device resolve `:1612–1626` | ✅ **PASS** |
+
+### Townie — per-step
+| Step | Claim | Code evidence | Verdict |
+|---|---|---|---|
+| T.1.1 | scan check-in QR logs a row | `postCheckin` `Code.js:473`; route `App.jsx:613` | ✅ **PASS** |
+| T.1.3 | 3 distinct days / 14-day rolling window | `Code.js:29–31` `LOCAL_THRESHOLD=3 · LOCAL_WINDOW_DAYS=14`; `CheckinPage.jsx:343` "verified local! Society Pages unlocked." | ✅ **PASS** |
+| T.2 | claim & residence auto-grant (synthetic check-ins) | `grantTownieStatus` `Code.js:1766–1795` backfills up to threshold (`location_id='resident-grant'` `:1793`) | ✅ **PASS** |
+| gate | review needs townie | `postReview` `Code.js:532` `distinct_days < 3 → not_townie` | ✅ **PASS** |
+
+### Massage §a / §c — verified
+- **§a (handle friction):** `postSetHandle` `Code.js:1156` `^[a-zA-Z0-9_]{3,20}$`, uniqueness `:1174` (case-insensitive); **no `starter_name`, no suggestion field** — the friction is real and the fix is client-only, as prosed. ✅
+- **§c (medallions):** `RoleBadge.jsx:21–40` defines exactly **three** themes (`visitor` glass, `resident` `hsl(30,65%,62%)` burnt-orange, `guardian` `hsl(170,55%,60%)` teal) — no townie/keyholder/admin. Composer `PlaceCard.jsx:2567` is binary `role={isGuardian ? 'guardian' : 'resident'}` → a **keyholder renders as a resident medallion**. ✅ (both holes confirmed)
+
+### Gap list (what the code doesn't deliver / what Jacob must do)
+1. **🔴 Co-resident verify does NOT grant townie.** `postVerifyResident` (`Code.js:1826`) flips a pending row to `verified` but **never calls `grantTownieStatus`** — unlike the three `postClaimResidence` auto-verify paths (`:1758`). So the blanket claim "verifying a residence auto-grants townie" (this doc §R.1.5/§b, and `RESIDENTS.md §1`) is **true only for admin/QR-invite/linked-device — NOT the co-resident approval path.** A neighbor onboarded by a co-resident is a verified resident (Lobby unlocks) but **not** a townie (can't review/bulletin/DM until they earn it or re-trigger a grant). **Decision for Jacob:** is that intended (co-resident is a lighter grant) or should `postVerifyResident` also call `grantTownieStatus`? *(One-line fix if the latter.)* This is the one place the implementation diverges from the prose.
+2. **🟡 `postClaim` skips secret validation when the listing's `claim_secret` is empty** (`Code.js:614` — `if (claim_secret && …)`). In practice `getClaimSecret` generates a secret before any QR renders, so a real QR-driven claim always carries one; but a listing whose secret was **never generated** is claimable with *any* string. Guardrail hole, low severity (admin controls provisioning). Tighten by rejecting claims on listings with no secret.
+3. **🟡 Jacob-must-do (Guardian):** for a brand-new restaurant, **create a proper `dining` listing first** — the admin auto-provision path stands up a `residential/houses` stub (`Code.js:806–807`), wrong category + empty card. (Confirmed; = §d hole #6.)
+4. **🟡 Referral gaps (by-design, confirmed):** no guardian→other-business referral affordance (admin-only), and no explicit townie invite (device-link is own-devices). (§d holes #4/#5.)
+5. **🟡 Medallion holes (confirmed):** keyholder shows as a resident medallion (`PlaceCard.jsx:2567`); townie/admin have none (`RoleBadge.jsx:21–40`). Cosmetic, but a keyholder mislabeled "Resident" when posting is a real mismatch. (§d hole #3.)
+
+### Doc-accuracy nits for Boz (line drift in the sibling specs — not gaps)
+- `RESIDENTS.md §2` / this doc cited the residential branch at `CheckinPage.jsx:181` and `claimResidence` at `:197`/checkin `:215`; **as-read**: `isResidential` `:186`, `claimResidence(...,true)` `:197`, `checkin` `:215`. (Minor; `:197`/`:215` hold.)
+- `RESIDENTS.md §1` states "Verifying a residence also auto-grants townie" without the co-resident caveat — **fold gap #1** so the spec matches the code.
+
+*Refocused 2026-06-30 to the trust-role trio (Guardian · Resident · Townie); supersedes the 2026-06-29 meeting-hinge draft (git keeps it). **Phase 1 prose + Phase 2 code-verification complete** (2026-06-30). Sources: the `ls/*` diamond specs + direct code reads (`apps-script/Code.js`, `ClaimPage.jsx`, `CheckinPage.jsx`, `PlaceCard.jsx`, `RoleBadge.jsx`). One as-built gap found: co-resident verify does not grant townie (gap #1).*
