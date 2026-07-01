@@ -610,8 +610,10 @@ function postClaim(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  // Validate claim secret
-  if (result.rowData.claim_secret && result.rowData.claim_secret !== secret) {
+  // Validate claim secret — a listing with no secret set is NOT claimable
+  // (the secret is generated lazily by getClaimSecret before any QR is rendered,
+  //  so a missing secret means no legitimate claim card exists yet)
+  if (!result.rowData.claim_secret || result.rowData.claim_secret !== secret) {
     return errorResponse('Invalid claim secret', 'unauthorized')
   }
 
