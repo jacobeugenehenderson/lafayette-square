@@ -39,14 +39,14 @@ import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState'
 import { INSTANCE } from '../instance.js'
 import {
-  BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
-  AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
+  BLOOM_FLAT_DEFAULTS,
+  AO_FLAT_DEFAULTS,
   EXPOSURE_FLAT_DEFAULTS,
   WARMTH_FLAT_DEFAULTS,
   FILL_FLAT_DEFAULTS,
   MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, MIST_DENSITY_SCALE,
-  HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
-  GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
+  HALO_FLAT_DEFAULTS,
+  GRADE_FLAT_DEFAULTS,
   GRAIN_FLAT_DEFAULTS,
   SMAA_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
@@ -57,7 +57,18 @@ import { IS_MOBILE } from '../lib/isMobile.js'
 import { RomanceDoF } from './RomanceDoF.jsx'
 import { DownsamplePyramid } from './DownsamplePyramid.jsx'
 import { CustomBloom } from './CustomBloom.jsx'
-import { applyDofFrame } from './dofDriver.js'
+// The per-frame post-FX driving lives in usePostFxDriver — it OWNS the module
+// refs the Effect classes below read (and that PreviewPostFx writes via the
+// re-exported `_postFxRefs`). One writer, one place, no fork.
+import {
+  usePostFxDriver, _postFxRefs,
+  _fillToeRef, _exposureRef, _warmthRef,
+  _gradeContrastRef, _gradeSatRef, _gradeVignetteRef, _gradeBrightnessRef,
+  _grainScaleRef, _haloStrengthRef, _haloColorRef,
+} from './usePostFxDriver.js'
+
+// Re-exported for PreviewPostFx's `import { ..., _postFxRefs } from './PostProcessing.jsx'`.
+export { _postFxRefs }
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 function resolveLookId(propLookId) {
@@ -84,35 +95,10 @@ const SHADOW_DEFAULT_CHANNEL   = Object.freeze({ values: { ...SHADOW_FLAT_DEFAUL
 const DOF_DEFAULT_CHANNEL      = Object.freeze({ values: { ...DOF_FLAT_DEFAULTS } })
 
 // ── Effect classes (moved from src/stage/StageApp.jsx) ──────────────────────
-// All operator-authored params flow through module-level refs that the
-// consumer's useFrame populates from the resolved channels. The Effect's
-// own update() pass reads the refs into uniforms — keeps the per-frame
-// path identical to the SC.1 sky/lighting consumer pattern.
-
-const _fillToeRef        = { current: FILL_FLAT_DEFAULTS.value }
-const _exposureRef       = { current: EXPOSURE_FLAT_DEFAULTS.value }
-const _warmthRef         = { current: WARMTH_FLAT_DEFAULTS.value }
-const _gradeContrastRef  = { current: GRADE_FLAT_DEFAULTS.contrast }
-const _gradeSatRef       = { current: GRADE_FLAT_DEFAULTS.saturation }
-const _gradeVignetteRef  = { current: GRADE_FLAT_DEFAULTS.vignette }
-const _gradeBrightnessRef = { current: GRADE_FLAT_DEFAULTS.brightness }
-const _grainScaleRef     = { current: GRAIN_FLAT_DEFAULTS.scale }
-
-// Exposed ref bag so non-PostProcessing consumers (e.g. PreviewPostFx,
-// which mounts FilmGrade/FilmGrain/AerialPerspective without the full
-// chain) can populate the same module-level refs from their own per-
-// frame driver. Without this, Preview's effects render with boot
-// defaults regardless of authored channel values.
-export const _postFxRefs = {
-  fillToe:       _fillToeRef,
-  exposure:      _exposureRef,
-  warmth:        _warmthRef,
-  gradeContrast: _gradeContrastRef,
-  gradeSat:      _gradeSatRef,
-  gradeVignette: _gradeVignetteRef,
-  gradeBrightness: _gradeBrightnessRef,
-  grainScale:    _grainScaleRef,
-}
+// All operator-authored params flow through module-level refs (owned by
+// usePostFxDriver.js) that the driver's useFrame populates from the resolved
+// channels. Each Effect's own update() pass reads those refs into uniforms —
+// keeps the per-frame path identical to the SC.1 sky/lighting consumer pattern.
 
 class FilmGradeEffect extends Effect {
   constructor() {
@@ -226,12 +212,7 @@ export const FilmGrain = forwardRef((_, ref) => {
 
 // AerialPerspective — uHazeStrength × uHazeColor authored by Halo channel.
 // Strength is authored DIRECTLY (no hidden sun-altitude gate) — author day/night
-// via the Halo TOD curve.
-const _haloStrengthRef = { current: HALO_FLAT_DEFAULTS.strength }
-const _haloColorRef    = { current: new THREE.Color(HALO_FLAT_DEFAULTS.color) }
-// Tack halo refs onto the export bag from above.
-_postFxRefs.haloStrength = _haloStrengthRef
-_postFxRefs.haloColor    = _haloColorRef
+// via the Halo TOD curve. (_haloStrengthRef/_haloColorRef live in usePostFxDriver.)
 
 class AerialPerspectiveEffect extends Effect {
   constructor() {
@@ -292,7 +273,6 @@ export function PostProcessing({
 }) {
   const bloomRef = useRef()
   const aoRef = useRef()
-  const { gl, camera } = useThree()
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
 
   const bloomChannel    = bloomOverride    ?? scene?.bloom    ?? BLOOM_DEFAULT_CHANNEL
@@ -317,97 +297,17 @@ export function PostProcessing({
     ? Object.values(dofChannel.values || {}).some(s => (s?.enabled ?? 0) > 0.5)
     : (dofChannel?.values?.enabled ?? DOF_FLAT_DEFAULTS.enabled) > 0.5
 
-  useFrame(() => {
-    const tod = useTimeOfDay.getState()
-    const minute = tod.getMinuteOfDay()
-    const slotMins = getTodSlotMinutes(tod.currentTime)
-
-    // Exposure / Warmth / Fill → module refs consumed by FilmGrade.update().
-    _exposureRef.current = resolveGroupAtMinute(exposureChannel, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
-    _warmthRef.current   = resolveGroupAtMinute(warmthChannel,   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
-    const fillVal        = resolveGroupAtMinute(fillChannel,     minute, slotMins, ['value'], FILL_FLAT_DEFAULTS).value
-    _fillToeRef.current  = fillVal <= 1 ? fillVal * 0.28 : 0.28 + (fillVal - 1) * 0.72
-
-    // Halo strength + color → module refs consumed by AerialPerspective.update().
-    const halo = resolveGroupAtMinute(haloChannel, minute, slotMins, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS)
-    _haloStrengthRef.current = halo.strength
-    _haloColorRef.current.set(halo.color)
-
-    // Grade contrast / sat / vignette + Grain scale → module refs consumed
-    // by FilmGrade.update() / FilmGrain.update(). Same channel + resolver
-    // shape as bloom/ao — operator can flip these to {animated:'tod',...}
-    // through the standard panel UI without touching the consumer.
-    const grade = resolveGroupAtMinute(gradeChannel, minute, slotMins, GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS)
-    _gradeContrastRef.current = grade.contrast
-    _gradeSatRef.current      = grade.saturation
-    _gradeVignetteRef.current = grade.vignette
-    _gradeBrightnessRef.current = grade.brightness
-    // grade.toe is the literal FilmGrade uniform; the Fill channel's
-    // piecewise mapping below overrides it (operator-facing "distinct ↔
-    // soft shadows" axis). Wire the grade-side toe only as a future
-    // explicit-override surface; for now Fill remains canonical.
-    const grain = resolveGroupAtMinute(grainChannel, minute, slotMins, ['scale'], GRAIN_FLAT_DEFAULTS)
-    _grainScaleRef.current = grain.scale
-
-    // gl.toneMappingExposure tracks the authored exposure. EffectComposer
-    // overrides this in the FilmGrade pass; we still mirror it so any
-    // composer-bypass path (none today, but cheap insurance) reads the
-    // same number.
-    gl.toneMappingExposure = _exposureRef.current
-
-    // AO — N8AOPostPass params resolved from the operator's `ao` channel.
-    const ao = aoRef.current
-    if (ao?.configuration) {
-      const aoTriple = resolveGroupAtMinute(aoChannel, minute, slotMins, AO_FIELD_KEYS, AO_FLAT_DEFAULTS)
-      ao.configuration.aoRadius        = aoTriple.radius
-      ao.configuration.intensity       = aoTriple.intensity
-      ao.configuration.distanceFalloff = aoTriple.distanceFalloff
-    }
-
-    // Bloom — operator-authored only (via the `bloom` channel). Planetarium
-    // viewMode preserves Scene.jsx's old dramatic bump (intensity 1.8 /
-    // threshold 0.15 / spread 0.5 neutral).
-    //
-    // Removed 2026-06-07: the hardcoded sun-altitude `dk` night boost
-    // (intensity +0.5, threshold -0.5, smoothing +0.4 below sunAlt -0.15).
-    // It was a hidden hardwire that overrode the authored bloom channel; with
-    // a low authored threshold (LS = 0.3) it drove the luminance threshold
-    // NEGATIVE at night, so the entire frame — including the dark sky dome —
-    // bloomed and washed out, a primary cause of the too-bright deep-night
-    // sky. Night darkness now lives in the Sky Layer Gain channel (sky dome),
-    // and lamp glow (independent geometry, not bloom) carries night
-    // legibility. Author the bloom channel per-TOD if you want night haze.
-    const bloom = bloomRef.current
-    if (bloom) {
-      const lm = bloom.luminanceMaterial
-      if (viewMode === 'planetarium') {
-        bloom.intensity = 1.8
-        bloom.warmCool = 0.5
-        bloom.spread = 0.5
-        if (lm) { lm.threshold = 0.15 }
-      } else {
-        const base = resolveGroupAtMinute(bloomChannel, minute, slotMins, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS)
-        bloom.intensity = base.intensity
-        bloom.warmCool = base.warmCool
-        bloom.spread = base.spread
-        if (lm) {
-          lm.threshold = base.threshold
-        }
-      }
-    }
-
-    // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js), also
-    // called by Preview's PreviewPostFx so the hero-pocket VIEW-Z anchor + the
-    // browse look-down gate cannot drift between production and the publish gate.
-    // Prefer the LIVE (store) arch + hero subject in Stage; fall back to the
-    // baked scene.json in production. Cheap; only meaningful when dofOn.
-    if (dofOn) {
-      applyDofFrame({
-        camera, dofChannel, minute, slotMins,
-        archValues: archOverride?.values ?? scene?.arch?.values,
-        heroSubject: heroSubjectOverride ?? scene?.heroSubject,
-      })
-    }
+  // The per-frame post-FX driving — one hook, identical for production and
+  // Stage. It resolves every channel above → the module refs (owned there) →
+  // uniforms, drives the N8AO/CustomBloom pass configs + gl.toneMappingExposure,
+  // and calls the shared DoF driver. Stage passes live-store overrides;
+  // production passes scene.json-baked channels — no behavior fork.
+  usePostFxDriver({
+    bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
+    haloChannel, gradeChannel, grainChannel, dofChannel, dofOn,
+    viewMode, aoRef, bloomRef,
+    archValues: archOverride?.values ?? scene?.arch?.values,
+    heroSubject: heroSubjectOverride ?? scene?.heroSubject,
   })
 
   if (IS_MOBILE) {
