@@ -15,7 +15,7 @@ The operator's manual for **signing people onto the platform in person** — and
 | Role | On-the-spot? | Verdict | One-line |
 |---|---|---|---|
 | **Guardian** | ✅ instant | 🟡 | Claim is end-to-end wired; claimant becomes guardian **instantly**. Needs: a real `dining` card to claim (not the residential auto-provision stub), the claim QR/secret in hand, a current GAS deploy, and the handle-step friction accepted (§a). |
-| **Resident** | ✅ instant | 🟡 → 🟢 with QR in hand | The **highest-value single scan**: the resident-invite QR auto-verifies residence on scan (`auto_verify=true`) **and** auto-grants townie. Needs: the **building's resident-invite QR** made/posted (no secret, just the building id — makeable on the spot), a current GAS deploy, handle-friction accepted, and the trust caveat honored (a scan = instant verified resident — hand/post it deliberately). |
+| **Resident** | ✅ instant | 🟡 → 🟢 with QR in hand | The **highest-value single scan**: the resident-invite QR auto-verifies residence on scan (`auto_verify=true`) **and** auto-grants townie. **Referral is a confirmed full cascade** — verified residents see the invite QR in their own Lobby (`PlaceCard.jsx:4013`), so a building self-fills without Jacob per-invite. Needs: the **building's resident-invite QR** made/posted to seed it (no secret, just the building id — makeable on the spot), a current GAS deploy, handle-friction accepted, and the static-QR/leakable caveat honored (§R.4). |
 | **Townie** | ⚠️ first-scan only | 🟡 | **Cannot be completed on the spot by check-ins** — it is time-gated (3 distinct days in 14). On the spot you capture their **first check-in + identity** and explain the path — *or* onboard them as a Resident (which auto-grants townie instantly). Needs: check-in QRs posted at places. |
 
 ### Blockers to clear before onboarding someone
@@ -97,13 +97,19 @@ The claim cannot happen without the secret-bearing QR. The trace:
 
 If none qualify, the claim is stored **`pending`** until a co-resident or admin verifies it.
 
-### R.3 Referral loop — how a resident gets others on (the built-in spread)
-- **Co-resident verify** is the designed spread mechanism: an already-verified resident **approves a neighbor's pending claim** (`postVerifyResident`, `Code.js:1798`), surfaced via the Lobby's **co-resident view** (`RESIDENTS.md §4`). So one verified resident can bring the rest of their building on — no admin round-trip.
-- **Resident-invite QR** is the other spread: a verified neighbor can hand/post the building's resident QR (auto_verify) so others self-onboard on scan.
-- This is the **richest referral loop of the three** — a single seeded resident can verify a whole building, and each new resident is also a new townie.
+### R.3 Referral loop — how a resident gets others on (a FULL self-propagating cascade)
+> ✅ **Confirmed in code (2026-06-30) — the decisive question.** A **plain verified resident** (not just guardian/admin) *does* see the resident-invite QR. The invite QR is rendered inside the **Lobby tab** (`QrTab` under "Resident QR", `PlaceCard.jsx:4013`), and the Lobby tab is gated `isResidentHere || isAdmin` (`:3650`), where `isResidentHere` = *verified resident of this building* (`:3635`). For a residential building `QrTab` builds `/checkin/<buildingId>` (`qrId = buildingId`, `:2302`). **So any verified resident can pull the building's invite QR from their own Lobby and hand/post it — the building fills itself; Jacob is not in the loop for each invite.**
+>
+> *(The "(guardian / admin only)" comment Jacob saw belongs to a **different** `QrTab` site — the **Manage** tab, `PlaceCard.jsx:3990`, gated `isFullGuardian`. That's the commercial/guardian QR path, not the resident invite. Two render sites, two gates.)*
 
-### R.4 The trust caveat (state plainly)
-The resident QR carries **no secret** — it encodes only the building id, and scanning it **auto-verifies residence instantly** (and grants townie). The printed card *is* the trust anchor; the app copy warns *"a gesture of trust between neighbors, please don't share it outside your building"* (`CheckinPage.jsx:286`). Same model as the claim secret (physical possession = trust), but with a lower bar (no per-listing secret) — so hand/post it deliberately. *(Flagged in §d holes as a security note, not an on-the-spot blocker.)*
+- **Co-resident verify** — a verified resident **approves a neighbor's pending claim** (`postVerifyResident`, `Code.js:1798`), surfaced via the Lobby's **co-resident view** (`RESIDENTS.md §4`). Brings on neighbors who claimed but landed `pending`.
+- **Resident-invite QR** — a verified resident hands/posts the building's resident QR (auto_verify) so others self-onboard on scan (confirmed resident-visible, above).
+- This is the **richest referral loop of the three** — a single seeded resident can fill a whole building (QR + co-resident verify), and each new resident is also a new townie. **Not admin-mediated.**
+
+### R.4 The trust caveat — a static, leakable QR (flag; don't fix for v1)
+The resident QR carries **no secret and no per-invite token** — it encodes only the building id (`/checkin/<buildingId>`), and scanning it **auto-verifies residence instantly** (and grants townie). Two consequences, both acceptable for v1 under the physical-card trust model, worth stating:
+- **The printed card *is* the trust anchor** — same model as the claim secret (possession = trust), but a *lower* bar (no per-listing secret). The app copy warns *"a gesture of trust between neighbors, please don't share it outside your building"* (`CheckinPage.jsx:286`).
+- **It is leakable.** Because the QR is **static** (one URL per building, never rotates), a resident could screenshot and post it publicly, re-opening a public door to instant residence. **Fine for v1** given the neighbor-trust model. **If it ever matters,** the tightening is **per-invite rotating tokens** (a short-TTL token in the URL, one per invite, consumed on verify) — the same pattern as the device-link token. *Not a fix for now — just the known lever.* *(Also in §d holes #2.)*
 
 ### R.5 Artifact checklist — Resident
 | Artifact | Who makes it | On-the-spot-able? |
@@ -244,7 +250,7 @@ Member-types: **Visitor** (anon device) · **Townie** (3-in-14) · **Resident** 
 
 ### Matrix holes / inconsistencies flagged (for Boz / Phase 2)
 1. **Townie auto-grant on claim & residence** (`Code.js:636` / `:1766`) — as-built, claiming a listing *or* verifying residence makes you a townie immediately. *(Documented across the cluster as of 2026-06-30.)* Open question is design-intent (intended convenience vs. loophole to tighten).
-2. **Resident QR has no secret** (R.4) — a scan of `/checkin/<buildingId>` auto-verifies residence + grants townie with no per-building secret; the physical card is the only trust anchor. Lower bar than the claim secret; flagged as a security note (by-design, but the most permissive on-the-spot grant).
+2. **Resident QR is static + secret-less → leakable** (R.4) — a scan of `/checkin/<buildingId>` auto-verifies residence + grants townie with no per-building secret and **no per-invite token that rotates**; the physical card is the only trust anchor, and a screenshot re-opens a public door. Lower bar than the claim secret; the most permissive on-the-spot grant. **By-design and fine for v1** under the neighbor-trust model — the tightening, *if it ever matters*, is **per-invite rotating tokens** (short-TTL, one-per-invite, consumed on verify). Not a fix for now.
 3. **Keyholder has no distinct medallion** — renders as `resident` in the post composer (`PlaceCard.jsx:2567` binary `isGuardian ? guardian : resident`). Townie and admin also lack medallions (§c).
 4. **No referral affordance for guardian→other-business** (Gap G-R) — spread of new *businesses* is admin-only; only staff-claim self-serves.
 5. **No explicit townie invite** (Gap T-R) — the townie loop is organic check-ins only; device-link is own-devices, not referral.
