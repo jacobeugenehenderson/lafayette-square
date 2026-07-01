@@ -26,10 +26,8 @@
  * `resolveGroupAtMinute` resolver.
  */
 
-import { useRef, useEffect, useMemo, forwardRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { EffectComposer, N8AO, SMAA } from '@react-three/postprocessing'
-import { Effect, SMAAPreset } from 'postprocessing'
 import { SoftShadows } from '@react-three/drei'
 import * as THREE from 'three'
 
@@ -53,22 +51,16 @@ import {
   DOF_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 
-import { IS_MOBILE } from '../lib/isMobile.js'
-import { RomanceDoF } from './RomanceDoF.jsx'
-import { DownsamplePyramid } from './DownsamplePyramid.jsx'
-import { CustomBloom } from './CustomBloom.jsx'
-// The per-frame post-FX driving lives in usePostFxDriver — it OWNS the module
-// refs the Effect classes below read (and that PreviewPostFx writes via the
-// re-exported `_postFxRefs`). One writer, one place, no fork.
-import {
-  usePostFxDriver, _postFxRefs,
-  _fillToeRef, _exposureRef, _warmthRef,
-  _gradeContrastRef, _gradeSatRef, _gradeVignetteRef, _gradeBrightnessRef,
-  _grainScaleRef, _haloStrengthRef, _haloColorRef,
-} from './usePostFxDriver.js'
-
-// Re-exported for PreviewPostFx's `import { ..., _postFxRefs } from './PostProcessing.jsx'`.
-export { _postFxRefs }
+// The pipeline is DECLARED once (POSTFX_PIPELINE) and installed by RenderPipeline
+// (renderPipeline.jsx). PostProcessing is now just the mode wrapper: it resolves
+// the authored channels, drives them per-frame via usePostFxDriver, and mounts
+// the one installer. The film-effect passes live in renderPipeline.jsx (the
+// manifest references them) — re-exported here so PreviewPostFx's import path
+// stays intact until Phase 3 retires it. ExposureTicker still writes _exposureRef.
+import { usePostFxDriver, _exposureRef } from './usePostFxDriver.js'
+import { RenderPipeline } from './renderPipeline.jsx'
+export { _postFxRefs } from './usePostFxDriver.js'
+export { FilmGrade, FilmGrain, AerialPerspective } from './renderPipeline.jsx'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 function resolveLookId(propLookId) {
@@ -94,153 +86,9 @@ const GRAIN_DEFAULT_CHANNEL    = Object.freeze({ values: { ...GRAIN_FLAT_DEFAULT
 const SHADOW_DEFAULT_CHANNEL   = Object.freeze({ values: { ...SHADOW_FLAT_DEFAULTS } })
 const DOF_DEFAULT_CHANNEL      = Object.freeze({ values: { ...DOF_FLAT_DEFAULTS } })
 
-// ── Effect classes (moved from src/stage/StageApp.jsx) ──────────────────────
-// All operator-authored params flow through module-level refs (owned by
-// usePostFxDriver.js) that the driver's useFrame populates from the resolved
-// channels. Each Effect's own update() pass reads those refs into uniforms —
-// keeps the per-frame path identical to the SC.1 sky/lighting consumer pattern.
-
-class FilmGradeEffect extends Effect {
-  constructor() {
-    super('FilmGrade', /* glsl */`
-      uniform float uSunAlt;
-      uniform float uContrast;
-      uniform float uToe;
-      uniform float uSat;
-      uniform float uVignette;
-      uniform float uExposure;
-      uniform float uWarmth;
-      uniform float uBrightness;
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        vec3 c = inputColor.rgb * uExposure;
-        float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
-        vec3 curved = c * c * (3.0 - 2.0 * c);
-        c = mix(c, curved, uContrast);
-        float toe = smoothstep(0.0, 0.25, lum);
-        c *= mix(uToe, 1.0, toe);
-        float shadowSat = 1.0 + (1.0 - toe) * 0.3;
-        vec3 gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, shadowSat);
-        float midBell = 4.0 * lum * (1.0 - lum);
-        c *= 1.0 + midBell * 0.15;
-        vec3 warmTint = vec3(1.04, 0.98, 0.92);
-        vec3 coolTint = vec3(0.96, 0.98, 1.04);
-        vec3 splitTone = mix(warmTint, coolTint, smoothstep(0.3, 0.7, lum));
-        c *= splitTone;
-        float goldenT = exp(-pow((uSunAlt - 0.08) / 0.12, 2.0));
-        float nightT = smoothstep(0.05, -0.15, uSunAlt);
-        c *= mix(vec3(1.0), vec3(1.06, 1.0, 0.88), goldenT * 0.5);
-        c *= mix(vec3(1.0), vec3(0.88, 0.92, 1.08), nightT * 0.4);
-        float warmthBias = (uWarmth - 0.5) * 2.0;
-        vec3 photoTint = warmthBias >= 0.0
-          ? vec3(1.10, 1.00, 0.84)
-          : vec3(0.86, 0.94, 1.12);
-        float photoDensity = abs(warmthBias) * 0.6;
-        vec3 tinted = c * mix(vec3(1.0), photoTint, photoDensity);
-        float lumIn  = dot(c,      vec3(0.2126, 0.7152, 0.0722));
-        float lumOut = dot(tinted, vec3(0.2126, 0.7152, 0.0722));
-        c = tinted * (lumIn / max(lumOut, 1e-4));
-        gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, uSat);
-        c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
-        // Brightness LIFT (the B of HSB): raise the black floor so crushed dark
-        // surfaces read, white point unchanged. Additive lift, not exposure gain.
-        c = c + uBrightness * (1.0 - c);
-        vec2 center = uv - 0.5;
-        float vignette = 1.0 - dot(center, center) * uVignette;
-        vignette = smoothstep(0.0, 1.0, clamp(vignette, 0.0, 1.0));
-        c *= vignette;
-        outputColor = vec4(c, inputColor.a);
-      }
-    `, {
-      uniforms: new Map([
-        ['uSunAlt',   new THREE.Uniform(0.5)],
-        ['uContrast', new THREE.Uniform(0.42)],
-        ['uToe',      new THREE.Uniform(0.28)],
-        ['uSat',      new THREE.Uniform(1.1)],
-        ['uVignette', new THREE.Uniform(1.0)],
-        ['uExposure', new THREE.Uniform(0.95)],
-        ['uWarmth',   new THREE.Uniform(0.5)],
-        ['uBrightness', new THREE.Uniform(0)],
-      ])
-    })
-  }
-  update() {
-    const tod = useTimeOfDay.getState()
-    this.uniforms.get('uSunAlt').value   = tod.getLightingPhase().sunAltitude
-    // All channel-backed refs are populated per-frame by the consumer's
-    // useFrame (grade contrast/sat/vignette/toe, exposure, warmth, fill).
-    this.uniforms.get('uContrast').value = _gradeContrastRef.current
-    this.uniforms.get('uSat').value      = _gradeSatRef.current
-    this.uniforms.get('uVignette').value = _gradeVignetteRef.current
-    this.uniforms.get('uExposure').value = _exposureRef.current
-    this.uniforms.get('uWarmth').value   = _warmthRef.current
-    this.uniforms.get('uToe').value      = _fillToeRef.current
-    this.uniforms.get('uBrightness').value = _gradeBrightnessRef.current
-  }
-}
-export const FilmGrade = forwardRef((_, ref) => {
-  const effect = useMemo(() => new FilmGradeEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-class FilmGrainEffect extends Effect {
-  constructor() {
-    super('FilmGrain', /* glsl */`
-      uniform float uSeed; uniform float uScale;
-      float grainHash(vec2 p) { vec3 p3=fract(vec3(p.xyx)*0.1031); p3+=dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        float lum=dot(inputColor.rgb,vec3(0.2126,0.7152,0.0722));
-        float darkSuppress=smoothstep(0.0,0.08,lum);
-        float strength=mix(0.007,0.002,smoothstep(0.0,0.5,lum))*uScale*darkSuppress;
-        float grain=(grainHash(uv*1000.0+uSeed)-0.5)*strength;
-        outputColor=vec4(inputColor.rgb+grain,inputColor.a);
-      }
-    `, { uniforms: new Map([['uSeed', new THREE.Uniform(0)], ['uScale', new THREE.Uniform(1)]]) })
-  }
-  update() {
-    this.uniforms.get('uSeed').value = Math.random() * 1000
-    const alt = useTimeOfDay.getState().getLightingPhase().sunAltitude
-    const day = alt > 0.1 ? 1 : alt < -0.15 ? 0 : (alt + 0.15) / 0.25
-    this.uniforms.get('uScale').value = (0.4 + day * 0.6) * _grainScaleRef.current
-  }
-}
-export const FilmGrain = forwardRef((_, ref) => {
-  const effect = useMemo(() => new FilmGrainEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-// AerialPerspective — uHazeStrength × uHazeColor authored by Halo channel.
-// Strength is authored DIRECTLY (no hidden sun-altitude gate) — author day/night
-// via the Halo TOD curve. (_haloStrengthRef/_haloColorRef live in usePostFxDriver.)
-
-class AerialPerspectiveEffect extends Effect {
-  constructor() {
-    super('AerialPerspective', /* glsl */`
-      uniform float uHazeStrength; uniform vec3 uHazeColor;
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        float horizonBand=smoothstep(0.15,0.55,uv.y)*smoothstep(0.85,0.55,uv.y);
-        float lum=dot(inputColor.rgb,vec3(0.2126,0.7152,0.0722));
-        float contrastLoss=smoothstep(0.05,0.4,lum)*smoothstep(0.9,0.4,lum);
-        float haze=horizonBand*contrastLoss*uHazeStrength;
-        outputColor=vec4(mix(inputColor.rgb,uHazeColor,haze),inputColor.a);
-      }
-    `, { uniforms: new Map([['uHazeStrength', new THREE.Uniform(0)], ['uHazeColor', new THREE.Uniform(new THREE.Vector3(0.7, 0.75, 0.82))]]) })
-  }
-  update() {
-    // Strength authored directly — the dayFactor sun-altitude multiplier was
-    // removed 2026-06-21 (a hidden hardwire that overrode the authored channel
-    // and forbade night haze — the same anti-pattern as the bloom night-boost
-    // removed 2026-06-07). Author the day→night falloff via the Halo TOD curve.
-    this.uniforms.get('uHazeStrength').value = _haloStrengthRef.current
-    const hc = _haloColorRef.current
-    this.uniforms.get('uHazeColor').value.set(hc.r, hc.g, hc.b)
-  }
-}
-export const AerialPerspective = forwardRef((_, ref) => {
-  const effect = useMemo(() => new AerialPerspectiveEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
+// The FilmGrade / FilmGrain / AerialPerspective passes moved to
+// renderPipeline.jsx (the manifest references them). Re-exported above for
+// PreviewPostFx. They read the driving refs owned by usePostFxDriver.js.
 
 // ── ExposureTicker — Canvas-level gl.toneMappingExposure ────────────────────
 // Independent of PostProcessing/FilmGrade so Canvas mounts that DON'T
@@ -310,56 +158,17 @@ export function PostProcessing({
     heroSubject: heroSubjectOverride ?? scene?.heroSubject,
   })
 
-  if (IS_MOBILE) {
-    return (
-      // key flips with smaaOn so the composer REBUILDS its pass pipeline when the
-      // SMAA pass is added/removed — EffectComposer doesn't reconcile a
-      // conditionally-mounted effect on its own (only value-streaming effects
-      // update live). Stable in production (smaaOn fixed from scene.json); only
-      // remounts on an operator toggle in Stage.
-      <EffectComposer key={smaaOn ? 'fx-aa' : 'fx-noaa'}>
-        <FilmGrade />
-        {/* SMAA — mobile's ONLY antialiasing (Canvas MSAA is off on mobile).
-            ~1 cheap fullscreen pass; after grade, before grain so AA cleans the
-            final contrast and grain stays crisp on top. ULTRA preset = most
-            aggressive edge detection (most visible). Operator on/off via the
-            Stage Post card → scene.json. (2026-06-17.) */}
-        {smaaOn && <SMAA preset={SMAAPreset.ULTRA} />}
-        <FilmGrain />
-      </EffectComposer>
-    )
-  }
-
+  // Mount the ONE installer from the manifest. Ordering, per-platform inclusion
+  // (mobile drops AO/pyramid/DoF/bloom/aerial), the DoF/SMAA mount gates, and
+  // the composer remount key all live in renderPipeline.jsx — production and
+  // Stage install with no `inspect`, byte-identical to the old hand-wired chain.
   return (
-    // key flips with smaaOn + dofOn — forces the composer to rebuild when a
-    // conditional pass (SMAA / DoF) is added/removed (EffectComposer doesn't
-    // reconcile that on its own).
-    <EffectComposer key={`fx-${smaaOn}-${dofOn}`}>
-      <N8AO ref={aoRef}
-        halfRes={viewMode !== undefined && viewMode !== 'hero'}
-        aoRadius={AO_FLAT_DEFAULTS.radius}
-        intensity={AO_FLAT_DEFAULTS.intensity}
-        distanceFalloff={AO_FLAT_DEFAULTS.distanceFalloff}
-        quality="medium" />
-      {/* Shared full-scene blur pyramid — built after N8AO (post-AO scene). A
-          PURE RESOURCE both DoF and bloom SAMPLE (never each other's result).
-          Desktop bracket = full degree; the phone rungs dial it down (memory:
-          preview-equals-pyramid-tier-ladder). */}
-      <DownsamplePyramid />
-      {/* DoF — two-focal romance DoF, AFTER the pyramid so it samples it
-          (CoC-weighted lerp toward the shared blur), BEFORE bloom so the glow
-          lands on the defocused scene. Desktop only; LOG-depth (Phase 2). */}
-      {dofOn && <RomanceDoF />}
-      <CustomBloom ref={bloomRef} />
-      <AerialPerspective />
-      <FilmGrade />
-      {/* SMAA — cleans shader-contrast edges the Canvas's 8× MSAA can't (curb
-          lines, lit/unlit slab seams, thin poles). After grade, before grain.
-          ULTRA preset = most aggressive edge detection. Operator on/off via the
-          Stage Post card → scene.json. */}
-      {smaaOn && <SMAA preset={SMAAPreset.ULTRA} />}
-      <FilmGrain />
-    </EffectComposer>
+    <RenderPipeline
+      refs={{ ao: aoRef, bloom: bloomRef }}
+      viewMode={viewMode}
+      smaaOn={smaaOn}
+      dofOn={dofOn}
+    />
   )
 }
 
