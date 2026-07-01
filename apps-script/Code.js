@@ -1826,6 +1826,8 @@ function postVerifyResident(body) {
       sheet.getRange(j + 1, statusCol + 1).setValue('verified')
       sheet.getRange(j + 1, verifiedByCol + 1).setValue(verifierHash)
       sheet.getRange(j + 1, verifiedAtCol + 1).setValue(nowISO())
+      // Co-resident verify also grants townie — parity with the auto-verify paths (postClaimResidence:1758)
+      grantTownieStatus(targetHash)
       return jsonResponse({ success: true })
     }
   }
