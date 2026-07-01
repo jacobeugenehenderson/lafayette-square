@@ -1157,11 +1157,15 @@ function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
   )
 }
 
-// ─── Reply form (guardians only) ────────────────────────────────────────────
-function ReplyForm({ reviewId, listingId, onSubmitted }) {
+// ─── Reply form (guardian / permitted staff — posts in the business voice) ──
+function ReplyForm({ reviewId, listingId, listing, onSubmitted }) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const businessName = listing?.name || 'the business'
+  const businessLogo = listing?.logo
+    ? (listing.logo.startsWith('http') ? listing.logo : `${BASE}${listing.logo.replace(/^\//, '')}`)
+    : null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -1193,15 +1197,19 @@ function ReplyForm({ reviewId, listingId, onSubmitted }) {
   return (
     <form onSubmit={handleSubmit} className="mt-2 ml-10 pl-3 border-l-2 border-emerald-500/20 space-y-2">
       <div className="flex items-center gap-2">
-        <RoleBadge role="guardian" size={5} />
-        <span className="text-label-sm text-on-surface-variant font-medium">Guardian</span>
+        {businessLogo ? (
+          <img src={businessLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white/5" />
+        ) : (
+          <RoleBadge role="visitor" size={5} />
+        )}
+        <span className="text-label-sm text-on-surface-variant font-medium">Replying as {businessName}</span>
       </div>
       <div className="flex gap-2">
       <input
         autoFocus
         value={text}
         onChange={e => setText(e.target.value)}
-        placeholder="Reply as guardian..."
+        placeholder={`Reply as ${businessName}...`}
         className="input flex-1 py-1.5"
         onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setText('') } }}
       />
@@ -1309,22 +1317,20 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
                 </div>
               </div>
 
-              {/* Guardian replies */}
+              {/* Business replies — always the business voice (logo + name), never the individual staffer's handle/emoji. Managers stay anonymous. */}
               {replies.map((reply, ri) => {
-                const isMyReply = handle && reply.handle === handle
-                const hideReplyIdentity = anonymous && !isMyReply
-                const guardianLogo = listing?.logo
+                const businessLogo = listing?.logo
                   ? (listing.logo.startsWith('http') ? listing.logo : `${BASE}${listing.logo.replace(/^\//, '')}`)
                   : null
                 return (
                 <div key={reply.id || ri} className="flex items-start gap-2.5 mt-3 ml-10 pl-3 border-l-2 border-emerald-500/30">
                   <div className="flex-shrink-0 relative">
-                    {hideReplyIdentity && guardianLogo ? (
-                      <img src={guardianLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white/5" />
+                    {businessLogo ? (
+                      <img src={businessLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white/5" />
                     ) : (
-                      <AvatarCircle emoji={hideReplyIdentity ? null : reply.avatar} vignette={hideReplyIdentity ? null : reply.vignette} size={5} fallback="G" />
+                      <RoleBadge role="visitor" size={5} />
                     )}
-                    {/* Guardian badge */}
+                    {/* Official-response badge */}
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-surface flex items-center justify-center">
                       <svg className="w-1.5 h-1.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1333,7 +1339,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-body-sm font-medium text-emerald-400/90">{hideReplyIdentity ? (listing?.name || 'Guardian') : (reply.handle ? `@${reply.handle}` : 'Guardian')}</span>
+                      <span className="text-body-sm font-medium text-emerald-400/90">{listing?.name || 'Owner'}</span>
                       <span className="text-caption text-on-surface-disabled">{relativeTime(reply.created_at)}</span>
                     </div>
                     <p className="text-body-sm text-on-surface-medium mt-0.5 leading-relaxed">{reply.text}</p>
@@ -1341,7 +1347,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
                 </div>
               )})}
 
-              {canDo('replies') && <ReplyForm reviewId={review.id} listingId={listingId} onSubmitted={fetchReviews} />}
+              {canDo('replies') && <ReplyForm reviewId={review.id} listingId={listingId} listing={listing} onSubmitted={fetchReviews} />}
             </div>
           )
         })}
