@@ -59,10 +59,10 @@ One component (extend `PostProcessing` or a new `RenderPipeline` it delegates to
 
 ## Build phases (each its own commit; serialize on the converging files)
 
-- **Phase 0 — this doc + standup.** Sign off the manifest shape + the `inspect` param contract. (We are here.)
-- **Phase 1 — extract `usePostFxDriver`.** Lift `PostProcessing`'s per-frame `useFrame` driving (channel resolution, `_dofRefs` incl. heroDist + gates, `_postFxRefs`, bloom) into one hook; `PostProcessing` calls it. **Refactor, zero behavior change** — verify production + Stage render byte-identical.
-- **Phase 2 — manifest + installer.** Author `POSTFX_PIPELINE`; build the installer that mounts passes from it in order, parameterized by an optional `inspect` (toggle map + gauge callbacks). Production/Stage use it with no `inspect` (identical output to today).
-- **Phase 3 — switch Preview, retire the fork.** `PreviewApp` mounts the one installer with `inspect={layerMatrix}`; **delete `PreviewPostFx`**. Verify: the toggle matrix + per-pass cost bars still work, AND Preview's DoF is now correct (heroDist/gates inherited). This is the parity win.
+- ✅ **Phase 0 — this doc + standup.** Manifest shape + `inspect` contract signed off (2026-06-30).
+- ✅ **Phase 1 — extract `usePostFxDriver`** (Fenn, `cba425b1`). Per-frame driving lifted into one hook (the hook OWNS the refs; `PostProcessing` imports them back → acyclic; `dofDriver` absorbed). Pure refactor. Eye-gate: Jacob — "nothing different, nothing broken."
+- ✅ **Phase 2 — manifest + installer** (Fenn, `99098910`). `POSTFX_PIPELINE` + `RenderPipeline` installer in `renderPipeline.jsx`; the film passes moved there (manifest refs them at module-eval → avoids the cycle; `PostProcessing` re-exports for Preview). **The `if(IS_MOBILE)` fork collapsed into the `platform` field** (mobile drops ao/pyramid/dof/bloom/aerial — still stripped, but now as *data*, not a code fork). `PostProcessing` is now a thin mode wrapper (~340 lines lighter). Pure refactor; eye-gate: production+Stage (pending at time of landing).
+- ▶ **Phase 3 — switch Preview, retire the fork (NEXT).** `PreviewApp` mounts the one installer with `inspect={layerMatrix}`; **delete `PreviewPostFx`**. Verify: the toggle matrix + per-pass cost bars still work, AND Preview's DoF is now correct (heroDist/gates inherited). **⚠️ This is where behavior shifts** — Preview adopts production's props (Preview's fork hardcodes N8AO 15/2.5/0.3 vs the channel defaults → it changes; that's the parity win, not a regression). This is the parity win.
 - **Phase 4 (follow-on) — the SCENE tree onto the same manifest.** Formalize Ground/Buildings/Trees/Lamps/Arch/Sky/Neon as manifest entries so the *whole* render tree is one declaration; Preview's `LayerRow` becomes the scene-side `inspect` wrapper. Now Preview == Slab is structural end-to-end.
 - **Phase 5 — fold the loose arcs in.** `render-conformance` Ph6 (parity cleanups) and `preview-measurement`'s toggle/gauge + inclusion-manifest become *capabilities of the one installer* (the `platform` field + the `inspect` wrapper), not separate machinery.
 
@@ -76,9 +76,9 @@ One component (extend `PostProcessing` or a new `RenderPipeline` it delegates to
 
 ## Open decisions — RULED 2026-06-30 (standup with Jacob)
 1. ✅ **Scope v1 to post-FX only** (Phases 1–3), scene tree as a clean Phase-4 follow-on. *(Jacob: yes.)*
-2. **The `inspect` contract** — default to Boz's recommendation: **the installer takes `{ toggles, onCost }` and owns all the wrapping** (keeps the one-installer invariant; Preview never composes its own manifest). Not explicitly ruled — proceeding on this default; flag at Phase-2 build if it bites.
+2. ✅ **The `inspect` contract** — BUILT in Phase 2 as `{ toggles, onCost }`, installer owns all the wrapping (each pass gates on its toggle + joins the remount key while inspecting; `onCost` wires up in Phase 3 when Preview connects). Boz's default held — "didn't bite" (Fenn).
 3. ✅ **Yes — this absorbs `preview-measurement`'s inclusion manifest.** ONE SSoT: the `platform` field per manifest entry. `preview-measurement` **narrows to the gauges + device emulator**; inclusion-authoring becomes editing this manifest at the Preview gate. *(Jacob: yes. Repoint `preview-measurement` accordingly when this lands.)*
-4. **Naming** — extend `PostProcessing` vs. a new `RenderPipeline`. Cosmetic; decide at build.
+4. ✅ **Naming** — BUILT as a new `RenderPipeline` installer that `PostProcessing` delegates to (not extending `PostProcessing` in place). Cleaner seam; `PostProcessing` reads as a thin wrapper.
 
 **Handoff-target context (Jacob, 2026-06-30):** the aspirational target is a **Kit Release** (arbitrary operators pour neighborhoods), not just contractor onboarding — so the manifest's legibility bar is the higher one (`plans/clean-for-handoff.md` DoD).
 
