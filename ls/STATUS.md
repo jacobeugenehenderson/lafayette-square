@@ -23,7 +23,9 @@
 
 **Verdict:** the production app is robust, well-architected, and (for the rendered neighborhood) slab-complete (**buildings now render off the slab — `SlabBuildings`, L1.3 shipped 2026-05-26**). No dead paths found in sections 1–7. The gaps that exist are completeness gaps (below), not broken features.
 
-**The 2026-06-29 spec cluster** (the deep per-surface specs that fold this map's sections out): [`PLACE-CARDS.md`](PLACE-CARDS.md) (the Society Pages + card model) · [`GUARDIANS.md`](GUARDIANS.md) · [`RESIDENTS.md`](RESIDENTS.md) · [`TOWNIES.md`](TOWNIES.md) · [`QR-CODES.md`](QR-CODES.md) · [`BULLETIN.md`](BULLETIN.md) · [`CARY.md`](CARY.md) · [`ONBOARDING.md`](ONBOARDING.md) (the field procedure) · [`IDENTITY.md`](IDENTITY.md) · [`DEVICE-LINK.md`](DEVICE-LINK.md).
+**The 2026-06-29 spec cluster** (the deep per-surface specs that fold this map's sections out): [`PLACE-CARDS.md`](PLACE-CARDS.md) (the Society Pages + card model) · [`GUARDIANS.md`](GUARDIANS.md) · [`RESIDENTS.md`](RESIDENTS.md) · [`TOWNIES.md`](TOWNIES.md) · [`QR-CODES.md`](QR-CODES.md) · [`BULLETIN.md`](BULLETIN.md) · [`CARY.md`](CARY.md) · [`ONBOARDING.md`](ONBOARDING.md) (the field procedure — **Phase 1 prose + Phase 2 code-verify complete 2026-06-30**) · [`IDENTITY.md`](IDENTITY.md) · [`DEVICE-LINK.md`](DEVICE-LINK.md).
+
+> **Landed 2026-06-30 (onboarding arc, `curb-offset-draw`):** the trust-role trio playbook + rights matrix ([`ONBOARDING.md`](ONBOARDING.md)); and three code changes ride the next deploy — **co-resident verify now grants townie** (`Code.js:1830`, all four residence paths reach townie), **`postClaim` rejects a listing with no secret set** (`Code.js:616`), and **business-voice replies** (a review reply renders as the business, not the staffer — `PlaceCard.jsx`). Backlogged: generic business place-card templates · admin-bestowed "honorary townie".
 
 ---
 

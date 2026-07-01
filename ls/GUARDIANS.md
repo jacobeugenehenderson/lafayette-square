@@ -19,9 +19,10 @@ Claiming proves **physical presence**: the `claim_secret` (8-char hex) is printe
 1. Scanning opens `/claim/<listingId>/<secret>` → `ClaimPage.jsx` calls `claim(listingId, secret)` (`useGuardianStatus.js:100`) → `postClaim` (`api.js:181`).
 2. Backend `postClaim` (`Code.js:601`) validates the secret against the listing:
    ```js
-   if (result.rowData.claim_secret && result.rowData.claim_secret !== secret)
-     return errorResponse('Invalid claim secret', 'unauthorized')   // Code.js:614
+   if (!result.rowData.claim_secret || result.rowData.claim_secret !== secret)
+     return errorResponse('Invalid claim secret', 'unauthorized')   // Code.js:616
    ```
+   > A listing with **no secret set is not claimable** (hardened 2026-06-30) — the secret is generated lazily by `getClaimSecret` before any QR renders, so a missing secret means no legitimate claim card exists yet.
 3. **First claimant = guardian; subsequent = keyholder** (`Code.js:625`):
    ```js
    var role = existingForListing.length === 0 ? 'guardian' : 'keyholder'
@@ -30,7 +31,7 @@ Claiming proves **physical presence**: the `claim_secret` (8-char hex) is printe
    ```
 4. On success the client stores `{ id, role, permissions }` in `localStorage` (`lsq_guardian_listings`).
 
-> ⚠️ **Claiming also auto-grants townie status.** `postClaim` calls `grantTownieStatus` (`Code.js:636`), backfilling synthetic check-ins — so a guardian/keyholder is a **townie immediately** and can review *other* places right away (no real check-ins required; `postReview` is a pure townie gate). As-built; whether this is intended vs. a loophole is **flagged for review** (onboarding arc, 2026-06-29). See [`TOWNIES.md`](TOWNIES.md).
+> ⚠️ **Claiming also auto-grants townie status.** `postClaim` calls `grantTownieStatus` (`Code.js:636`), backfilling synthetic check-ins — so a guardian/keyholder is a **townie immediately** and can review *other* places right away (no real check-ins required; `postReview` is a pure townie gate). As-built and **intended** — the auto-grant model, embraced by Jacob 2026-06-30 (no longer a loophole to tighten). See [`TOWNIES.md`](TOWNIES.md).
 
 **The secret** is generated/retrieved by `getClaimSecret` (`Code.js:792`): auto-provisions a listing (admin only), auto-generates an 8-char hex secret if missing (`Utilities.getUuid().split('-')[0]`), persists it to the `claim_secret` column. The **QR Studio** (`PlaceCard.jsx:2299`, `QrTab`) renders the guardian QR pointing at `https://lafayette-square.com/claim/<id>/<secret>`.
 
@@ -101,6 +102,8 @@ if (!isFullGuardian) {
 | `listing-staff`, `update-staff-perms`, `promote/demote/revoke-staff` | `Code.js:898–1031` | `isFullGuardianOf` (guardian only) |
 
 > Note on menus: a guardian's menu edits write `menu_json` to GAS, but for the curated listings in `src/data/menus.json` the bundled file **overrides** GAS at boot — see [`PLACE-CARDS.md`](PLACE-CARDS.md) §3.
+
+> Note on replies (2026-06-30): a reply to a review is a business-write (guardian, or a keyholder with the `replies` permission), but it **renders in the business voice** — the listing's logo + name (a generic glass Arch when there's no logo), never the replier's personal `@handle`/emoji — in both the compose preview and the public render (`PlaceCard.jsx:1196`/`:1336`). Staff stay anonymous; a keyholder's reply is indistinguishable from the owner's. This is why there is no keyholder role-medallion — see [`ONBOARDING.md §c`](ONBOARDING.md).
 
 ---
 

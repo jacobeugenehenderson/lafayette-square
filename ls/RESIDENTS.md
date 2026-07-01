@@ -10,7 +10,7 @@ Last verified: 2026-06-29 against the working tree (`curb-offset-draw`).
 
 > ⚠️ **"Residents" (this doc) ≠ "resident place card."** This doc is the **role/system** — claiming residency, the four verify paths, the private Lobby. The **resident place card** is a *card kind* (a residential home's card: rent range + the Lobby tab) and is documented in [`PLACE-CARDS.md`](PLACE-CARDS.md) §1. Same neighborhood, two different things.
 
-A **Resident** is someone verified as living in a specific building. Residence is per-building, **lasts one year**, and unlocks that building's **private Lobby** — a residents-only message board (text + photos), the co-resident view, and a verified-resident count. Anyone can *claim* a home; the claim is only useful once *verified*. Verifying a residence also auto-grants **townie** status (`grantTownieStatus`, `apps-script/Code.js:1766`) — see [`TOWNIES.md`](TOWNIES.md).
+A **Resident** is someone verified as living in a specific building. Residence is per-building, **lasts one year**, and unlocks that building's **private Lobby** — a residents-only message board (text + photos), the co-resident view, and a verified-resident count. Anyone can *claim* a home; the claim is only useful once *verified*. Verifying a residence also auto-grants **townie** status — on **all four** verify paths: the three auto-verify paths call `grantTownieStatus` (`apps-script/Code.js:1766`), and co-resident approval grants it too (`postVerifyResident`, `Code.js:1830`, added 2026-06-30 for parity). See [`TOWNIES.md`](TOWNIES.md).
 
 ---
 
@@ -88,9 +88,9 @@ The frontend tab gate (`isResidentHere`) is convenience; the security boundary i
 | Thing | File | Key lines |
 |---|---|---|
 | Claim + 4 verify paths | `apps-script/Code.js` | `postClaimResidence` 1680–1763 (paths 1729–1747; expiry 1750) |
-| Co-resident verify | `apps-script/Code.js` | `postVerifyResident` 1798 |
+| Co-resident verify | `apps-script/Code.js` | `postVerifyResident` 1798 (also grants townie, 1830) |
 | Status read / resolution | `apps-script/Code.js` | `getResidenceStatus` 1638 · `fetchResidenceData` 1604 (expiry 1631) |
-| Townie grant on verify | `apps-script/Code.js` | `grantTownieStatus` 1766 |
+| Townie grant on verify | `apps-script/Code.js` | `grantTownieStatus` 1766 (auto-verify paths) · 1830 (co-resident path) |
 | Lobby read/write/count | `apps-script/Code.js` | `getLobbyPosts` 1650 · `postLobbyPost` 1836 · `removeLobbyPost` 1865 · `getResidentCount` 1643 |
 | Leave residence | `apps-script/Code.js` | `postLeaveResidence` 1895 |
 | Sheets | `apps-script/Code.js` | Residents 1938 · LobbyPosts 1939 |
