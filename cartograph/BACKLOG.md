@@ -47,9 +47,9 @@ Active branch `curb-offset-draw` (off trunk `cartograph-looks-pass-ab`). Product
 
 ---
 
-## 📐 the kit-correctness track — drive `# curated` → 0 (automate the eye)
+## 📐 the kit-correctness track — shrink automation-debt (automate the eye)
 
-> The SHAPE campaign: make the skeleton produce correct street geometry **automatically** so LS's **35 `source:'curated'` hand-fixes** can be deleted and the auto-pipeline still holds. This is **kit-forward correctness** (town #2…N), distinct from the v1-render frontier above. **The KIT INVARIANT** (`SKELETON §6` · `INTAKE §6.1`): hand-authored SHAPE is a *defect*, never a fix. The data question is CLOSED (no external street source helps — `INTAKE §5.1`); the lever is the skeleton's *interpretation*. North star: *Survey shows the perfected map straight from the skeleton.*
+> The SHAPE campaign: make the skeleton produce correct street geometry **automatically** so LS's *automation-debt* curated hand-fixes can be deleted and the auto-pipeline still holds. This is **kit-forward correctness** (town #2…N), distinct from the v1-render frontier above. **The law** (`NEIGHBORHOOD-INPUTS §0.0/§1.1`): every output is a best guess and overridable — automation should keep improving, but override is first-class, and *idiosyncratic* curated chains (features no source holds) are **kept**, not defects. The data question is CLOSED (no external street source helps — `INTAKE §5.1`); the lever is the skeleton's *interpretation*. North star: *Survey shows the perfected map straight from the skeleton.*
 
 - **⭐⭐ The correctness detector IS the deliverable** (not the 35 fixes) — `POLYGON-FIRST §5`, harness `scratch/correctness-detector.mjs`. 8 invariants seeded; **`junction-band` is the recall instrument** (24/25 structurally-visible curated defects; the defect is pervasive ~60 junctions), **`width-step` the flagship** (the datum-step class). The 35 are mostly **topological** (loops/cul-de-sacs + seam datum-steps), not jagged curves — so the suite's centre of gravity is graph-level. Findings: `SIEVE-DETECTOR` · `LOOM-TOPO` · `THROAT-JUNCTION-FINDINGS`. The detector flags the class everywhere → CI gate → onboarding loop (run-suite → fix-class → green).
 - **The open construction (the bug classes still to kill generally):**

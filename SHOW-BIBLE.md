@@ -66,7 +66,7 @@ Each helper publishes **one canonical artifact**; the slab is the boundary; the 
 ### The factory line (the pipeline)
 Raw data flows downhill; each stage freezes a thing the next trusts (`PIPELINE.md`, `ORIENTATION.md §"dependency chain"`):
 `intake → skeleton → prebake → survey → ⟦THE WALL⟧ → section → bake → THE SLAB → the public app`.
-The hard-won doctrine: *the skeleton is the first bake · chains die at the wall · the curb is a concentric offset of the centerline · shape is automatic, look is hand-made.*
+The hard-won doctrine: *the skeleton is the first bake · chains die at the wall · the curb is a concentric offset of the centerline · every output is a best guess, and everything is overridable* (`NEIGHBORHOOD-INPUTS §0.0`).
 
 ### The inventory at a glance
 The forensic audit walked every rendering environment (Designer · Toy · Stage · Preview · Production) across all domains and inventoried **~108 classified capabilities** (the three code domains; plus 86 docs): **~58 keep · ~31 fix · ~10 queued-for-removal**. The dev-doc spine is healthy; the cruft is contained and tagged. Full rollup + per-item detail: **`AUDIT-MATRIX.md` "THE MASTER MATRIX"** → `scratch/audit-*.md`.

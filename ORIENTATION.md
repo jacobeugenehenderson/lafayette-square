@@ -42,7 +42,7 @@ Read it left-to-right: messy inputs get traced into a clean **frame**, frozen in
 
 ### What's automatic vs. hand-made (this is the kit)
 
-- **Shape is automatic; look is hand-made.** A *kit* must pour any town's street geometry correctly *by machine.* So a hand-fix to a street's **shape** is a bug we owe ourselves to delete (we're tracking 35 of them on Lafayette Square, headed to zero). Only the artistic **look** — colors, sky, materials, lighting — is meant to be hand-authored. → `SKELETON.md §6`
+- **Everything is a best guess, and everything is overridable.** The kit machine-pours any town's geometry, land-use, trees, weather, and content — a strong first draft — and the operator can override *any* of it. Automation's job is to make the guess better; override is first-class at every layer, never a "defect." *(Supersedes "shape is automatic; hand-fixes are bugs-to-zero," retired 2026-07-02.)* → `NEIGHBORHOOD-INPUTS.md §0.0`
 - **Let the machine catch the bugs.** Instead of an operator eyeballing every street, one automatic check per kind-of-bug flags the bad ones. That checker is the real prize — it's what lets the kit work on town #2, #3, #100 without a human re-inspecting everything. → `cartograph/POLYGON-FIRST.md §5`
 - **The inputs are real, not guessed.** Real city parcels and right-of-way, operator-*measured* street widths, real map geometry, ML building footprints — all fortified against high-res aerial photos. A generic 3D map extrudes a default city; ours is grounded in the actual record, block by block. → `cartograph/INTAKE.md`
 

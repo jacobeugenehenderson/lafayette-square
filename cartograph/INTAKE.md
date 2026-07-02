@@ -97,20 +97,20 @@ A pass over every input — what it *carries* vs. what we *consume*. **(Correcte
 3. **Minor enrichment left on the table** (opportunities, not gaps): OSM `architect`/`heritage`/`start_date` extracted but not propagated to `buildings.json`; parcel building-counts + fine-grained historic flags simplified to booleans; Mapillary timestamps unused; the stories *count* (not the height) falls back to `building:levels`→`/3.5` where parcels lack it.
 4. **Cleanup, not gaps:** `elevation.js` (EPQS point-query) is superseded by the GeoTIFF bake; `enrich-*.mjs` / `match-facades.py` invocation is unclear — confirm or archive. No curb/pavement-edge dataset exists locally (osm2streets notes the same) — not pursuable.
 
-### ⭐ 6.1 The 35 curated centerlines are 35 BUGS — the kit invariant
+### ⭐ 6.1 Curated centerlines — automation-debt vs. idiosyncratic authoring
 
-`centerlines.json` carries **35 `source:'curated'`** chains — streets where the automated pipeline produced wrong geometry and a human hand-drew the correction. They are **not random**: they are the **problem streets**, mapping almost 1:1 to the remaining visible tasks —
+`centerlines.json` carries **35 `source:'curated'`** chains — streets where the operator hand-drew the geometry. They are **not random**: they are the **problem streets**, mapping almost 1:1 to the remaining visible tasks —
 - **loops + cul-de-sacs** — Benton · Waverly · Mackay · Vail · Albion · Whittemore · Nicholson · Simpson · Preston · Kennett Place (the LS "Places")
 - **weird junctions** — Dolman · South 18th · Hickory · Carroll · Kennett
 - **divided / perimeter** — Truman Pkwy · Lafayette · Park · Mississippi · Chouteau · S. Jefferson
 
-> ⛔ **THE KIT INVARIANT (Jacob, 2026-06-13): the SHAPE layer must be 100% automated from fetchable sources. Hand-authoring SHAPE is a literal *bug*, not a fix.** Cartograph is a **kit** — it onboards *any* neighborhood — and a human drawing a centerline doesn't scale, so each curated chain is a place the pipeline **failed**: a logged **defect**. So `# curated streets` is a **defect count**, and the target is **0 by construction**, never by effort. The boundary: **SHAPE/data = automated** (geometry, widths, class, land-use, heights — the bug surface) vs. **LOOK/Stage = authored** (materials, sky, neon, camera — the *creative product*, not a bug). Fortification (a width/cap/corner-R nudge) must **default to automated**; if a neighborhood *requires* the nudge to be correct, that's still a bug. (`SKELETON.md §6`.)
+> ⭐ **Curated shape splits two ways (revised 2026-07-02 — `NEIGHBORHOOD-INPUTS.md §0.0/§1.1`).** Everything the kit produces is a best guess, and everything is overridable — so a curated centerline is **not automatically a bug.** It is either **automation-debt** (the pipeline *could* derive it — keep improving the skeleton until the override is unnecessary) or **idiosyncratic authoring** (a feature no fetchable source holds — LS's private "Places", a contested edge — *kept*, first-class, never a defect). The metric is no longer "curated → 0"; it is *triage debt from idiosyncrasy — automate the first, embrace the second.* The pipeline should keep widening what it resolves on its own, but the SHAPE/LOOK split is **not** a bug-vs-authored wall. *(Prior doctrine here called all curated chains defects-to-zero; retired — git holds the verbatim.)*
 
-The two levers that take the defect count to 0: **stack every free authoritative source** (§5) + a **more sophisticated skeleton** interpretation. That *is* the remaining SHAPE campaign — and equals `Survey shows the perfected map straight from the skeleton` (`README §⭐ START HERE`).
+The two levers that shrink the *automation-debt* share (never the idiosyncratic): **stack every free authoritative source** (§5) + a **more sophisticated skeleton** interpretation. That *is* the remaining SHAPE campaign — and approaches `Survey shows the perfected map straight from the skeleton` (`README §⭐ START HERE`).
 
-### 6.2 The per-override worklist — the defect ledger as a finite checklist
+### 6.2 The per-override worklist — triage as a finite checklist
 
-`§6.1` is the *class-level* ledger; this is the **per-override worklist** — the bounded to-do that converts "make the map perfect" into a finite list. **"Close" = the automated pipeline produces the geometry → DELETE the curated chain → verify on the eye.** It is NOT "re-solve from scratch": where a mechanism has landed, closing is *verify + retire*.
+`§6.1` is the *class-level* ledger; this is the **per-override worklist** — the bounded triage of the curated chains. For an **automation-debt** chain, *"close" = the pipeline produces the geometry → DELETE the override → verify on the eye*; an **idiosyncratic** chain is *kept*, not closed (§6.1). It is NOT "re-solve from scratch": where a mechanism has landed, closing is *verify + retire*.
 
 > ⚠️ **Statuses below are FIRST-PASS and need a per-override forensic** (inspect each curated chain: what OSM shape it replaces · is the pipeline now able to produce it · which skeleton rule owns it). That forensic IS the live "where are we" map; until it runs, treat a row's status as a hypothesis, not a fact. **The EYE retires an override, never a metric** (`feedback_proxy_render_is_not_the_operator_eye`).
 
