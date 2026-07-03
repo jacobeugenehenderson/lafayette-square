@@ -869,9 +869,12 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // author/derive their own ribbon fixture under src/data/<scene>/.
   // When promote-ribbons becomes fully scene-keyed (Phase 0e), this can
   // collapse to a single path template.
+  // Default installation keeps the bundled src/data/ribbons.json; every other
+  // installation reads the scene-scoped ribbons promote-ribbons.js writes (and
+  // serve.js serves) under cartograph/data/<scene>/clean/.
   const ribbonsPath = scene === 'lafayette-square'
     ? join(ROOT, 'src', 'data', 'ribbons.json')
-    : join(ROOT, 'src', 'data', scene, `${scene}-ribbons.json`)
+    : join(ROOT, 'cartograph', 'data', scene, 'clean', 'ribbons.json')
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   const designPath  = join(ROOT, 'public', 'looks', look, 'design.json')
   const outDir      = join(ROOT, 'public', 'baked', look)
