@@ -22,16 +22,32 @@ import { BBOX, RAW_DIR, wgs84ToLocal, overpassBbox } from './config.js'
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
 const TIMEOUT = 120
 
-function overpassQuery(queryBody) {
+function overpassQuery(queryBody, attempt = 1) {
+  const MAX_ATTEMPTS = 4
   const full = `[out:json][timeout:${TIMEOUT}];${queryBody}`
-  console.log(`  Overpass query (${full.length} chars)...`)
+  console.log(`  Overpass query (${full.length} chars)${attempt > 1 ? ` [retry ${attempt}/${MAX_ATTEMPTS}]` : ''}...`)
 
+  // Overpass now rejects requests without a User-Agent (HTTP 406); a
+  // descriptive UA is also Overpass etiquette. Without this the public
+  // instance returns an HTML 406 page that fails JSON.parse.
   const result = execSync(
-    `curl -s --max-time ${TIMEOUT + 30} --data-urlencode "data=${full}" "${OVERPASS_URL}"`,
+    `curl -s -A "cartograph/1.0 (neighborhood pour; jacob@jacobhenderson.studio)" --max-time ${TIMEOUT + 30} --data-urlencode "data=${full}" "${OVERPASS_URL}"`,
     { maxBuffer: 50 * 1024 * 1024 }
-  )
+  ).toString()
 
-  const data = JSON.parse(result.toString())
+  // Back-to-back queries can be refused while a prior slot frees (Overpass
+  // returns an HTML/XML error page, not JSON). Retry with backoff.
+  if (!result.trimStart().startsWith('{')) {
+    if (attempt >= MAX_ATTEMPTS) {
+      throw new Error(`Overpass returned non-JSON after ${MAX_ATTEMPTS} attempts: ${result.slice(0, 160)}`)
+    }
+    const waitMs = 4000 * attempt
+    console.log(`  ⚠ non-JSON response (likely rate-limit); waiting ${waitMs / 1000}s...`)
+    execSync(`sleep ${waitMs / 1000}`)
+    return overpassQuery(queryBody, attempt + 1)
+  }
+
+  const data = JSON.parse(result)
   console.log(`  → ${data.elements?.length ?? 0} elements`)
   return data
 }

@@ -1,0 +1,9 @@
+{
+  "_comment": "Per-scene geography SSOT for HiPointe-DeMun (neighborhood #2). The pre-bake home of the fixed-truth geography the fetch pipeline needs (extent + projection) and that later BAKES INTO THE SLAB (multi-instance routing decision, 2026-07-02: geography rides the lookId axis via the slab, not a static instance.js). config.js reads this when CARTOGRAPH_SCENE=hipointe-demun; LS still reads src/instance.js#geography (default scene). Extent provenance + method: HANDOFF-hipointe-pour-step0.md. bbox = circle center +/- radius(1350m); clipping is to neighborhood_boundary.json, this box is the fetch convenience (INTAKE.md 0). lonToMeters recomputed for 38.634N.",
+  "lat": 38.63434,
+  "lon": -90.30165,
+  "timezone": "America/Chicago",
+  "lonToMeters": 86957,
+  "latToMeters": 111000,
+  "bbox": { "minLat": 38.6221, "maxLat": 38.6465, "minLon": -90.3172, "maxLon": -90.2861 }
+}

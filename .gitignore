@@ -69,8 +69,12 @@ cartograph/data/*
 !cartograph/data/hipointe-demun/
 cartograph/data/hipointe-demun/*
 !cartograph/data/hipointe-demun/neighborhood_boundary.json
+!cartograph/data/hipointe-demun/geography.json
 !cartograph/data/hipointe-demun/raw/
 !cartograph/data/hipointe-demun/clean/
+cartograph/data/hipointe-demun/raw/*
+!cartograph/data/hipointe-demun/raw/osm.json
+cartograph/data/hipointe-demun/clean/*
 cartograph/data/lafayette-square/*
 !cartograph/data/lafayette-square/neighborhood_boundary.json
 !cartograph/data/lafayette-square/raw/
