@@ -323,7 +323,7 @@ createServer(async (req, res) => {
   // Verbs split by allowed methods to match the prior per-route behavior
   // exactly: skeleton is GET-only (derived artifact), the rest accept POST
   // for autosave. Empty-payload defaults match the boot-time inits.
-  const READ_VERBS = ['markers', 'measurements', 'skeleton', 'centerlines', 'overlay', 'ribbons']
+  const READ_VERBS = ['markers', 'measurements', 'skeleton', 'centerlines', 'overlay', 'ribbons', 'map']
   const WRITE_VERBS = ['markers', 'measurements', 'centerlines', 'overlay']
   const EMPTY = {
     markers:      '[]',
@@ -331,10 +331,11 @@ createServer(async (req, res) => {
     centerlines:  '{"streets":[]}',
     overlay:      '{"version":1,"streets":{}}',
     ribbons:      '{"streets":[],"tiles":[],"faces":[]}',
+    map:          '{"buildings":[],"layers":{}}',
   }
   // Reserved top-level prefixes that must NOT be mistaken for scene names.
   const RESERVED_PREFIXES = new Set(['looks', 'analyze', 'rebuild'])
-  const sceneRouteMatch = path.match(/^\/(?:([a-z0-9][a-z0-9-]*)\/)?(markers|measurements|skeleton|centerlines|overlay|ribbons)$/)
+  const sceneRouteMatch = path.match(/^\/(?:([a-z0-9][a-z0-9-]*)\/)?(markers|measurements|skeleton|centerlines|overlay|ribbons|map)$/)
   if (sceneRouteMatch && !RESERVED_PREFIXES.has(sceneRouteMatch[1])) {
     const scene = sceneRouteMatch[1] || DEFAULT_SCENE
     const verb = sceneRouteMatch[2]

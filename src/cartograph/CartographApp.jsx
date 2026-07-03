@@ -5,6 +5,7 @@ import * as THREE from 'three'
 
 // Map geometry (rendered in every shot)
 import MapLayers from './MapLayers.jsx'
+import SceneMapLayers from './SceneMapLayers.jsx'
 import OneWayArrows from './OneWayArrows.jsx'
 import BakedGround from '../components/BakedGround.jsx'
 
@@ -1026,6 +1027,11 @@ export default function CartographApp() {
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner}
               measureActive={tool === 'measure' && inDesigner} />
+          )}
+          {/* Buildings + sub-block land-use for non-LS scenes (LS uses MapLayers
+              above; toy has no map.json). Scene-aware, clipped to its boundary. */}
+          {scene !== 'lafayette-square' && scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
+            <SceneMapLayers hiddenLayers={decorationsHidden} />
           )}
 
           {/* ── Designer-only UI overlays. Survey + Measure overlays mount

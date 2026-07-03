@@ -30,6 +30,14 @@ export async function fetchRibbons(scene) {
   return res.json()
 }
 
+// The full derived map (buildings + land-use / paths / parking / barriers). LS
+// bundles this as a static import; a non-bundled scene fetches it per-scene for
+// the Designer building + land-use overlay.
+export async function fetchMap(scene) {
+  const res = await fetch(sceneUrl(scene, 'map'))
+  return res.json()
+}
+
 export async function fetchCenterlines(scene) {
   const res = await fetch(sceneUrl(scene, 'centerlines'))
   return res.json()
