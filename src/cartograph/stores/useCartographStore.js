@@ -4,7 +4,7 @@ import {
   fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
   fetchLooks, fetchLookDesign, saveLookDesign, bakeLook,
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
-  saveShapeFreeze,
+  saveShapeFreeze, fetchRibbons,
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
 import toyRibbonsData from '../../data/toy/toy-ribbons.json'
@@ -357,6 +357,13 @@ function serializeDesign(s) {
   for (const f of DESIGN_FIELDS) out[f.key] = s[f.key]
   return out
 }
+
+// Scenes the cartograph app can open. BUNDLED scenes ship their ribbons as
+// static vite imports (fast, always available); a non-bundled scene fetches
+// clean/ribbons.json per-scene from serve.js (no bundle bloat). New
+// neighborhoods register here.
+const BUNDLED_SCENES = new Set(['lafayette-square', 'toy'])
+const KNOWN_SCENES = new Set(['lafayette-square', 'toy', 'hipointe-demun'])
 
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors ─────────────────────────────
@@ -1554,8 +1561,14 @@ const useCartographStore = create((set, get) => ({
       // covers cold boots where localStorage's `cartograph-scene` may
       // disagree with the persisted active Look (e.g. user closed the tab
       // while on toy, then we set a different default Look later).
+      // A ?scene= URL override is authoritative — don't let the active Look's
+      // scene field pull us back to it. Lets you open a neighborhood the Looks
+      // don't cover yet (e.g. a freshly-poured frame with no Look of its own).
+      let urlScene = null
+      try { urlScene = new URLSearchParams(window.location.search).get('scene') } catch { /* ignore */ }
+      const urlSceneWins = urlScene && KNOWN_SCENES.has(urlScene)
       const lookScene = activeEntry?.scene
-      const sceneUpdate = (lookScene && lookScene !== get().scene) ? { scene: lookScene } : {}
+      const sceneUpdate = (!urlSceneWins && lookScene && lookScene !== get().scene) ? { scene: lookScene } : {}
       if (sceneUpdate.scene) {
         try { localStorage.setItem('cartograph-scene', sceneUpdate.scene) } catch { /* ignore */ }
       }
@@ -1773,17 +1786,27 @@ const useCartographStore = create((set, get) => ({
   // before _loadLooks resolves; the legacy 'neighborhood' value is rewritten
   // to 'lafayette-square' on read for backward compat.
   scene: (() => {
+    // ?scene=<name> wins (lets you open a non-default neighborhood directly),
+    // then the persisted choice, else the default.
+    try {
+      const urlScene = new URLSearchParams(window.location.search).get('scene')
+      if (urlScene && KNOWN_SCENES.has(urlScene)) return urlScene
+    } catch { /* ignore */ }
     try {
       const saved = localStorage.getItem('cartograph-scene')
-      if (saved === 'toy') return 'toy'
-      if (saved === 'lafayette-square' || saved === 'neighborhood') return 'lafayette-square'
+      if (saved === 'neighborhood') return 'lafayette-square'
+      if (saved && KNOWN_SCENES.has(saved)) return saved
     } catch { /* ignore */ }
     return 'lafayette-square'
   })(),
+  // Ribbons for a non-bundled scene (LS + toy ship as static imports;
+  // hipointe-demun and future neighborhoods fetch clean/ribbons.json per-scene
+  // in _loadCenterlines). null until fetched / for bundled scenes.
+  sceneRibbons: null,
   setScene: (scene) => {
-    if (scene !== 'lafayette-square' && scene !== 'toy') return
+    if (!KNOWN_SCENES.has(scene)) return
     try { localStorage.setItem('cartograph-scene', scene) } catch { /* ignore */ }
-    set({ scene })
+    set({ scene, sceneRibbons: null })
   },
   markerActive: false,
   setTool: (newTool) => {
@@ -1928,6 +1951,14 @@ const useCartographStore = create((set, get) => ({
         fetchCenterlines(scene).catch(() => ({ streets: [] })),
         fetchOverlay(scene).catch(() => ({ version: 1, streets: {} })),
       ])
+      // Non-bundled scenes fetch their ribbons artifact per-scene (LS + toy use
+      // static imports). Cache it in the store so SCENE_REGISTRY's live render
+      // reads the same fixture this hydrate used.
+      let fetchedRibbons = get().sceneRibbons
+      if (!BUNDLED_SCENES.has(scene) && !fetchedRibbons) {
+        fetchedRibbons = await fetchRibbons(scene).catch(() => null)
+        if (fetchedRibbons) set({ sceneRibbons: fetchedRibbons })
+      }
       const skelStreets = (skel && skel.streets) || []
       const legacyStreets = (legacy && legacy.streets) || []
       const overlayById = (overlay && overlay.streets) || {}
@@ -1959,7 +1990,9 @@ const useCartographStore = create((set, get) => ({
       // measure-free, a scene-blind LS lookup left every toy chain with
       // `undefined` measure → MeasureOverlay rendered no handles. Mirror
       // CartographApp's sceneCfg.ribbons keying.
-      const ribbonsFixture = scene === 'toy' ? toyRibbonsData : ribbonsData
+      const ribbonsFixture = scene === 'toy' ? toyRibbonsData
+        : BUNDLED_SCENES.has(scene) ? ribbonsData
+        : (fetchedRibbons || { streets: [] })
       const ribbonById = new Map((ribbonsFixture.streets || []).map(r => [r.skelId, r]))
       const streets = skelStreets.map((s) => {
         const ov = overlayById[s.id]
@@ -2085,7 +2118,7 @@ const useCartographStore = create((set, get) => ({
       // their bidirectional continuation are one corridor).
       const corridorByIdx = new Map() // streetIdx → Set<streetIdx>
       const idToIdx = new Map(streets.map((s, i) => [s.id, i]))
-      for (const corridor of (ribbonsData.corridors || [])) {
+      for (const corridor of (ribbonsFixture.corridors || [])) {
         const members = new Set()
         for (const phase of corridor.phases) {
           for (const cid of phase.chainIds) {

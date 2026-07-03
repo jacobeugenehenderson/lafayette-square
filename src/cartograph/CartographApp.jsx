@@ -44,6 +44,7 @@ import { buildings as _allBuildings } from '../data/buildings'
 import toyRibbons from '../data/toy/toy-ribbons.json'
 import ribbonsRaw from '../data/ribbons.json'
 import lsNeighborhoodBoundary from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
+import hipointeNeighborhoodBoundary from '../../cartograph/data/hipointe-demun/neighborhood_boundary.json'
 import toyLamps from '../data/toy/toy-lamps.json'
 import ToyBuildings from '../toy/ToyBuildings.jsx'
 import ToyTrees from '../toy/ToyTrees.jsx'
@@ -621,16 +622,21 @@ const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
 // as bake-side. Without this, V2's `blockRounded = stencil − asphaltRounded`
 // is empty, which kills cornerSidewalkPads (clipped against blockRounded
 // and lands at zero rings) and any other stencil-bound clip.
-const LS_STENCIL = (() => {
-  const poly = lsNeighborhoodBoundary?.boundary
-  const center = lsNeighborhoodBoundary?.center
-  const radius = lsNeighborhoodBoundary?.radius
+// Build a Designer stencil from any neighborhood_boundary.json (the boundary
+// polygon scaled outward to streetFade.outer + buffer). Shared by every
+// center+radius scene so a new neighborhood is a one-line registry add.
+function stencilFromBoundary(nb) {
+  const poly = nb?.boundary
+  const center = nb?.center
+  const radius = nb?.radius
   if (!poly?.length || !center || !radius) return null
-  const targetR = (lsNeighborhoodBoundary?.streetFade?.outer ?? radius) + 50
+  const targetR = (nb?.streetFade?.outer ?? radius) + 50
   const scale = targetR / radius
   const cx = center[0], cz = center[1]
   return poly.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
-})()
+}
+const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
+const HIPOINTE_STENCIL = stencilFromBoundary(hipointeNeighborhoodBoundary)
 
 // Per-scene configuration. The single source of truth for "what's
 // different about this scene" — components above this line should not
@@ -730,6 +736,19 @@ const SCENE_REGISTRY = {
       )
     },
   },
+  // Neighborhood #2. Follows the toy pattern for the 2D Designer: prop-driven
+  // stencil + `useBoundary:false` (the soft-circle fade in BlockGeometryV2Debug
+  // reads LS-hardcoded constants from boundary.js — skipped here until that
+  // module is scene-parameterized). `ribbons: null` → resolved from the store's
+  // fetched sceneRibbons at render. aerial/hero/Stage need per-scene tiles + a
+  // bake — off for now (2D frame authoring only).
+  'hipointe-demun': {
+    ribbons: null,
+    stencil: HIPOINTE_STENCIL,
+    useBoundary: false,
+    hasAerial: false,
+    hasHero: false,
+  },
 }
 function sceneConfig(scene) {
   return SCENE_REGISTRY[scene] || SCENE_REGISTRY['lafayette-square']
@@ -753,6 +772,7 @@ export default function CartographApp() {
   const luColors = useCartographStore(s => activeChannel(s, 'luColors'))
   const aerialVisible = useCartographStore(s => s.aerialVisible)
   const centerlineData = useCartographStore(s => s.centerlineData)
+  const sceneRibbons = useCartographStore(s => s.sceneRibbons)
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const activeLookId = useCartographStore(s => s.activeLookId)
@@ -958,7 +978,7 @@ export default function CartographApp() {
           {inDesigner && !designAerialOnly && (
             <R3FErrorBoundary name="BlockGeometryV2Debug">
               <BlockGeometryV2Debug
-                ribbons={sceneCfg.ribbons}
+                ribbons={sceneCfg.ribbons ?? sceneRibbons}
                 stencil={sceneCfg.stencil}
                 flat={inDesigner}
                 scene={scene}

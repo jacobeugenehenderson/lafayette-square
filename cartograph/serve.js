@@ -103,6 +103,7 @@ function sceneDataPaths(scene) {
     skeleton:     join(clean, 'skeleton.json'),
     overlay:      join(clean, 'overlay.json'),
     map:          join(clean, 'map.json'),
+    ribbons:      join(clean, 'ribbons.json'),
   }
 }
 
@@ -322,17 +323,18 @@ createServer(async (req, res) => {
   // Verbs split by allowed methods to match the prior per-route behavior
   // exactly: skeleton is GET-only (derived artifact), the rest accept POST
   // for autosave. Empty-payload defaults match the boot-time inits.
-  const READ_VERBS = ['markers', 'measurements', 'skeleton', 'centerlines', 'overlay']
+  const READ_VERBS = ['markers', 'measurements', 'skeleton', 'centerlines', 'overlay', 'ribbons']
   const WRITE_VERBS = ['markers', 'measurements', 'centerlines', 'overlay']
   const EMPTY = {
     markers:      '[]',
     measurements: '{"measurements":[]}',
     centerlines:  '{"streets":[]}',
     overlay:      '{"version":1,"streets":{}}',
+    ribbons:      '{"streets":[],"tiles":[],"faces":[]}',
   }
   // Reserved top-level prefixes that must NOT be mistaken for scene names.
   const RESERVED_PREFIXES = new Set(['looks', 'analyze', 'rebuild'])
-  const sceneRouteMatch = path.match(/^\/(?:([a-z0-9][a-z0-9-]*)\/)?(markers|measurements|skeleton|centerlines|overlay)$/)
+  const sceneRouteMatch = path.match(/^\/(?:([a-z0-9][a-z0-9-]*)\/)?(markers|measurements|skeleton|centerlines|overlay|ribbons)$/)
   if (sceneRouteMatch && !RESERVED_PREFIXES.has(sceneRouteMatch[1])) {
     const scene = sceneRouteMatch[1] || DEFAULT_SCENE
     const verb = sceneRouteMatch[2]
