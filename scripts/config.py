@@ -1,8 +1,26 @@
 """
-Shared configuration for Lafayette Square data pipeline.
+Shared configuration for the Cartograph data pipeline.
+
+Single-scene per process. The DEFAULT scene (Lafayette Square) uses the
+hardcoded geography below. A non-default scene selected via the
+CARTOGRAPH_SCENE env var reads its geography from
+cartograph/data/<scene>/geography.json — the same pre-bake extent/projection
+SSOT the JS backend (cartograph/config.js) reads, so the Python and JS
+fetchers agree. With CARTOGRAPH_SCENE unset, everything below is unchanged (LS)
+and outputs still land in scripts/raw + src/data. When it IS set, RAW_DIR /
+DATA_DIR redirect into the scene's own folder so LS is never clobbered.
 """
 import os
+import sys
+import json
 
+DEFAULT_SCENE = 'lafayette-square'
+SCENE = os.environ.get('CARTOGRAPH_SCENE', DEFAULT_SCENE)
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(SCRIPTS_DIR)
+
+# ── Geography: DEFAULT (Lafayette Square) ────────────────────────────────
 # Lafayette Park center (actual park centroid from OSM)
 CENTER_LAT = 38.6160
 CENTER_LON = -90.2161
@@ -19,14 +37,37 @@ BBOX = {
 LON_TO_METERS = 86774
 LAT_TO_METERS = 111000
 
+# ── Non-default scene: load geography.json (camelCase → snake_case BBOX) ──
+if SCENE != DEFAULT_SCENE:
+    _geo_path = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'geography.json')
+    if os.path.exists(_geo_path):
+        with open(_geo_path) as _gf:
+            _g = json.load(_gf)
+        CENTER_LAT = _g['lat']
+        CENTER_LON = _g['lon']
+        LON_TO_METERS = _g['lonToMeters']
+        LAT_TO_METERS = _g['latToMeters']
+        _b = _g['bbox']
+        BBOX = {
+            'min_lat': _b['minLat'], 'max_lat': _b['maxLat'],
+            'min_lon': _b['minLon'], 'max_lon': _b['maxLon'],
+        }
+    else:
+        print(f"[config] CARTOGRAPH_SCENE={SCENE} but no {_geo_path}; "
+              f"using LS geography", file=sys.stderr)
+
 # Overture Maps release
 OVERTURE_RELEASE = '2026-01-21.0'
 
-# Directories
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(SCRIPTS_DIR)
-DATA_DIR = os.path.join(PROJECT_DIR, 'src', 'data')
-RAW_DIR = os.path.join(SCRIPTS_DIR, 'raw')
+# Directories (SCRIPTS_DIR / PROJECT_DIR defined above). Default scene keeps
+# the legacy layout (scripts/raw + src/data); a non-default scene redirects
+# into cartograph/data/<scene>/{raw,clean} so LS's live data is never touched.
+if SCENE == DEFAULT_SCENE:
+    DATA_DIR = os.path.join(PROJECT_DIR, 'src', 'data')
+    RAW_DIR = os.path.join(SCRIPTS_DIR, 'raw')
+else:
+    DATA_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'clean')
+    RAW_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'raw')
 
 # Load .env file if present (for API keys)
 _env_path = os.path.join(SCRIPTS_DIR, '.env')
