@@ -5,6 +5,7 @@ import * as THREE from 'three'
 
 // Map geometry (rendered in every shot)
 import MapLayers from './MapLayers.jsx'
+import OneWayArrows from './OneWayArrows.jsx'
 import BakedGround from '../components/BakedGround.jsx'
 
 // Designer-only (aerial + authoring overlays)
@@ -1046,6 +1047,8 @@ export default function CartographApp() {
               {corridorSelected && <AerialFocus />}
             </>}
             {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
+            {/* One-way direction chevrons — every scene, toggle via layerVis.oneway. */}
+            <OneWayArrows />
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
           </>}
