@@ -61,3 +61,47 @@ export const INSTANCE = {
     email: 'hello@lafayette-square.com',
   },
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// DRAFT — HiPointe-DeMun (neighborhood #2), pour step 0: geography seam only.
+//
+// NOT WIRED IN. `instance.js` is single-instance today ("switching
+// neighborhoods = replace the exported INSTANCE"). This is a parked draft of
+// the geography block so the config seam is real; it does NOT change the
+// running LS app. To pour HiPointe you would today swap the LS values in
+// INSTANCE above for these — see the routing flag below before doing so.
+//
+// ⚠️ OPEN — MULTI-INSTANCE ROUTING (the next brief, not this one). Today the
+// kit assumes ONE instance per build. A second neighborhood forces a choice:
+// (a) build-time replace this module per target, (b) an INSTANCES registry
+// keyed by lookId + a selector (URL host/subpath/env), or (c) runtime
+// hydrate geography from the slab. Per §7-step-8 the deploy target is a
+// `jacobhenderson.studio/<hood>` subpath, which hints (b)/host-based routing.
+// DECIDE THIS BEFORE POURING #2 — do not hand-fork instance.js per town.
+//
+// Extent provenance: minimal-enclosing circle over trusted OSM anchors
+// (Hi-Pointe admin polygon + DeMun anchors + best-guess Skinker E edge).
+// center + radius live in cartograph/data/hipointe-demun/neighborhood_boundary.json.
+// Contested edges (Skinker E, Wydown/DeMun N, the §9 "Big Bend" mismatch —
+// OSM's Big Bend Blvd is ~900m SW in Maplewood, not this east border) are
+// best-guess, operator-nudgeable on the aerial (NEIGHBORHOOD-INPUTS §11).
+// Full method: HANDOFF-hipointe-pour-step0.md.
+export const HIPOINTE_DEMUN_DRAFT = {
+  lookId: 'hipointe-demun',
+  skyMode: 'cheap',
+  geography: {
+    lat: 38.63434,
+    lon: -90.30165,
+    timezone: 'America/Chicago', // shared with LS — same STL tz
+    // Recomputed for THIS latitude (38.634°N): 111320·cos(lat). LS's 86774 is
+    // latitude-specific (38.616°N); HiPointe is ~0.018° north, so ~86957.
+    lonToMeters: 86957,
+    latToMeters: 111000,
+    // Fetch-convenience bbox = circle center ± radius (1350m). Clipping is to
+    // the radius/boundary, not this box (INTAKE §0).
+    bbox: { minLat: 38.6221, maxLat: 38.6465, minLon: -90.3172, maxLon: -90.2861 },
+  },
+  name: 'Hi-Pointe & DeMun',
+  domain: 'TBD', // §7-step-8: jacobhenderson.studio/hipointe-demun subpath (unconfirmed)
+  // cary/contact endpoints: per-instance, provision when #2 goes live.
+}
