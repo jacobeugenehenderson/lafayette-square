@@ -9,12 +9,12 @@
 //   fade          {inner, outer}  — face-fill radial fade band
 //   streetFade    {inner, outer}  — wider band; streets trail past faces
 //
-// The module-level named exports below are the DEFAULT scene (Lafayette
-// Square), kept identical for every existing consumer. `makeBoundary(nb)` +
-// `getSceneBoundary(scene)` build the same bundle for ANY neighborhood so the
-// Designer can clip/fade a second neighborhood to ITS own silhouette.
+// The module-level named exports below are the DEFAULT installation (Lafayette
+// Square), kept identical for every existing LS-context consumer. `makeBoundary(nb)`
+// is the KIT factory: hand it ANY installation's neighborhood_boundary.json —
+// loaded by id, never imported here — and it returns the same clip/fade bundle.
+// No installation but the default is named in this module.
 import boundaryData from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
-import hpBoundaryData from '../../cartograph/data/hipointe-demun/neighborhood_boundary.json'
 
 // Clip a polyline to a CIRCLE (center + radius). Scene-agnostic (params only),
 // so it lives at module scope and is shared by every boundary bundle.
@@ -172,17 +172,10 @@ export function makeBoundary(nb) {
   }
 }
 
-// Registry of scenes with a boundary. New neighborhoods register here.
-const SCENE_BOUNDARIES = {
-  'lafayette-square': makeBoundary(boundaryData),
-  'hipointe-demun': makeBoundary(hpBoundaryData),
-}
-export function getSceneBoundary(scene) {
-  return SCENE_BOUNDARIES[scene] || SCENE_BOUNDARIES['lafayette-square']
-}
-
-// ── Default-scene (Lafayette Square) exports — identical to before ──────────
-const _ls = SCENE_BOUNDARIES['lafayette-square']
+// ── Default-installation (Lafayette Square) exports — identical to before ───
+// Consumers that render a SPECIFIC other installation build their own bundle
+// via makeBoundary(<that installation's boundary, loaded by id>).
+const _ls = makeBoundary(boundaryData)
 export const BOUNDARY_CENTER_XZ = _ls.center
 export const BOUNDARY_RADIUS = _ls.radius
 export const FADE_INNER = _ls.fadeInner

@@ -38,6 +38,18 @@ export async function fetchMap(scene) {
   return res.json()
 }
 
+// A scene's fixed-truth geography (lat/lon/tz/projection/bbox) and silhouette
+// (neighborhood_boundary.json). Every installation carries its OWN — the kit
+// loads them BY ID so no module has to name a specific neighborhood.
+export async function fetchGeography(scene) {
+  const res = await fetch(sceneUrl(scene, 'geography'))
+  return res.json()
+}
+export async function fetchBoundary(scene) {
+  const res = await fetch(sceneUrl(scene, 'boundary'))
+  return res.json()
+}
+
 export async function fetchCenterlines(scene) {
   const res = await fetch(sceneUrl(scene, 'centerlines'))
   return res.json()

@@ -1,0 +1,14 @@
+{
+  "_comment": "Per-installation geography SSOT for Lafayette Square (the default installation). Mirrors src/instance.js#geography so the cartograph Designer loads LS the SAME generic by-id way as every other installation. Runtime app still reads instance.js.",
+  "lat": 38.616,
+  "lon": -90.2161,
+  "timezone": "America/Chicago",
+  "lonToMeters": 86774,
+  "latToMeters": 111000,
+  "bbox": {
+    "minLat": 38.61,
+    "maxLat": 38.623,
+    "minLon": -90.229,
+    "maxLon": -90.207
+  }
+}

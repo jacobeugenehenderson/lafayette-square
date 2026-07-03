@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { INSTANCE } from '../instance.js'
 import useCartographStore from './stores/useCartographStore.js'
-import lsBoundary from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
-import hpBoundary from '../../cartograph/data/hipointe-demun/neighborhood_boundary.json'
-import hpGeography from '../../cartograph/data/hipointe-demun/geography.json'
 
-// ── Per-scene geography + silhouette ────────────────────────────────────────
+// ── Active-installation geography + silhouette ──────────────────────────────
 // The aerial tiles come from a GLOBAL provider (ArcGIS World_Imagery), so the
-// only per-scene inputs are WHERE the neighborhood is (center lat/lon +
-// projection + bbox) and its fade circle (center + inner/outer). Resolve both
-// from the active scene so a new neighborhood shows its own photo. LS reads the
-// instance SSOT; other scenes read their data/<scene>/geography.json +
-// neighborhood_boundary.json. (Registry mirrors CartographApp's SCENE_REGISTRY;
-// toy has no aerial so it isn't listed — resolveSceneGeo falls back to LS.)
+// only per-installation inputs are WHERE the neighborhood is (center lat/lon +
+// projection + bbox) and its fade circle (center + inner/outer). Both are read
+// from the ACTIVE installation's data in the store (fetched by id) — this
+// module names no installation. `makeGeo` turns that raw data into the tile
+// bundle; null until the store has loaded it.
 function makeGeo(g, nb) {
+  if (!g || !nb) return null
   const fadeInner = nb.fade?.inner ?? Math.max(0, (nb.radius || 0) - (nb.innerFadeOffset ?? 134))
   const fadeOuter = nb.fade?.outer ?? (nb.radius || 0)
   const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
@@ -31,12 +27,10 @@ function makeGeo(g, nb) {
     cosLat: Math.cos((g.lat * Math.PI) / 180),
   }
 }
-const SCENE_GEO = {
-  'lafayette-square': makeGeo(INSTANCE.geography, lsBoundary),
-  'hipointe-demun': makeGeo(hpGeography, hpBoundary),
-}
-function resolveSceneGeo(scene) {
-  return SCENE_GEO[scene] || SCENE_GEO['lafayette-square']
+function useSceneGeo() {
+  const g = useCartographStore(s => s.sceneGeography)
+  const nb = useCartographStore(s => s.sceneBoundary)
+  return useMemo(() => makeGeo(g, nb), [g, nb])
 }
 
 function injectCircleCrop(mat, geo) {
@@ -221,9 +215,9 @@ export const BASE_Z = 16
 
 // Whole-disc low-res base. Always rendered while aerial is active.
 export default function AerialBase() {
-  const scene = useCartographStore(s => s.scene)
-  const geo = useMemo(() => resolveSceneGeo(scene), [scene])
-  const tiles = useMemo(() => buildTiles(geo, BASE_Z), [geo])
+  const geo = useSceneGeo()
+  const tiles = useMemo(() => geo ? buildTiles(geo, BASE_Z) : [], [geo])
+  if (!geo) return null
   return (
     <group>
       {tiles.map((t) => <TileMesh key={t.url} tile={t} geo={geo} />)}
@@ -237,6 +231,7 @@ const TILE_PX = 256
 const FOCUS_Z_MAX = 21   // ArcGIS World_Imagery tops out ~z21
 
 function cameraZoomToTileZ(geo, camZoom) {
+  if (!geo) return BASE_Z + 1
   const screenMpp = 1 / Math.max(camZoom, 1e-3)
   const z = Math.log2(EARTH_CIRCUMFERENCE * geo.cosLat / (TILE_PX * screenMpp))
   return Math.max(BASE_Z + 1, Math.min(FOCUS_Z_MAX, Math.round(z)))
@@ -248,8 +243,7 @@ const FOCUS_Z_DEBOUNCE_S = 0.2
 
 export function AerialFocus() {
   const { camera } = useThree()
-  const scene = useCartographStore(s => s.scene)
-  const geo = useMemo(() => resolveSceneGeo(scene), [scene])
+  const geo = useSceneGeo()
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const streets = useCartographStore(s => s.centerlineData?.streets)
   const seed = useCartographStore(s => s.selectedMeasurePoint)
@@ -286,7 +280,7 @@ export function AerialFocus() {
   }, [streets, selectedStreet, seed, cornerEditMode])
 
   const tiles = useMemo(() => {
-    if (!anchors.length) return []
+    if (!geo || !anchors.length) return []
     const patches = anchors.map(([x, z]) => ({
       minX: x - FOCUS_R, maxX: x + FOCUS_R, minZ: z - FOCUS_R, maxZ: z + FOCUS_R,
     }))
@@ -295,6 +289,7 @@ export function AerialFocus() {
     return buildFocusTiles(geo, focusZ, patches, cx, cz, MAX_FOCUS_TILES)
   }, [geo, focusZ, anchors, seed])
 
+  if (!geo) return null
   return (
     <group>
       {tiles.map((t) => <TileMesh key={t.url} tile={t} geo={geo} y={-0.04} />)}

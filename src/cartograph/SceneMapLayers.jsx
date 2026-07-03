@@ -12,7 +12,7 @@ import { useMemo, useEffect, useState } from 'react'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
 import { fetchMap } from './api.js'
-import { getSceneBoundary } from './boundary.js'
+import { makeBoundary } from './boundary.js'
 import { DEFAULT_LU_COLORS } from './m3Colors.js'
 
 const px = (p) => (p.x ?? p[0])
@@ -48,6 +48,7 @@ function mergedGeo(features, y, boundary) {
 
 export default function SceneMapLayers({ hiddenLayers }) {
   const scene = useCartographStore(s => s.scene)
+  const sceneBoundary = useCartographStore(s => s.sceneBoundary)
   const layerColors = useCartographStore(s => s.layerColors) || {}
   const luColors = useCartographStore(s => s.luColors) || {}
   const [map, setMap] = useState(null)
@@ -59,11 +60,12 @@ export default function SceneMapLayers({ hiddenLayers }) {
     return () => { cancelled = true }
   }, [scene])
 
-  const boundary = useMemo(() => getSceneBoundary(scene), [scene])
+  // Clip to the ACTIVE installation's own silhouette (fetched by id).
+  const boundary = useMemo(() => sceneBoundary ? makeBoundary(sceneBoundary) : null, [sceneBoundary])
   const hide = hiddenLayers || {}
 
   const groups = useMemo(() => {
-    if (!map) return []
+    if (!map || !boundary) return []
     const out = []
     const col = (k, d) => luColors[k] || layerColors[k] || DEFAULT_LU_COLORS[k] || d
     // Sub-block land-use overlays, just above the tile surface (parks/water/

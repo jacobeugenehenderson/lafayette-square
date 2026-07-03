@@ -4,7 +4,7 @@ import {
   fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
   fetchLooks, fetchLookDesign, saveLookDesign, bakeLook,
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
-  saveShapeFreeze, fetchRibbons,
+  saveShapeFreeze, fetchRibbons, fetchGeography, fetchBoundary,
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
 import toyRibbonsData from '../../data/toy/toy-ribbons.json'
@@ -358,12 +358,17 @@ function serializeDesign(s) {
   return out
 }
 
-// Scenes the cartograph app can open. BUNDLED scenes ship their ribbons as
-// static vite imports (fast, always available); a non-bundled scene fetches
-// clean/ribbons.json per-scene from serve.js (no bundle bloat). New
-// neighborhoods register here.
-const BUNDLED_SCENES = new Set(['lafayette-square', 'toy'])
-const KNOWN_SCENES = new Set(['lafayette-square', 'toy', 'hipointe-demun'])
+// The kit is installation-agnostic: any neighborhood opens BY ID (its data is
+// fetched per-scene from serve.js). The two names below are NOT a registry of
+// installations — they're the only two with a bundled fast-path: the default
+// installation ('lafayette-square') and the diagnostic fixture ('toy'). A new
+// installation (hipointe-demun, provincetown, …) is never added here; it
+// fetches. Nothing enumerates the set of installations in code.
+const DEFAULT_INSTALLATION = 'lafayette-square'
+const BUNDLED_SCENES = new Set([DEFAULT_INSTALLATION, 'toy'])
+// A scene id is any lowercase slug; existence is validated by the server (a
+// missing installation just serves empty). No hardcoded installation list.
+const isValidSceneId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
 
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors ─────────────────────────────
@@ -1566,7 +1571,7 @@ const useCartographStore = create((set, get) => ({
       // don't cover yet (e.g. a freshly-poured frame with no Look of its own).
       let urlScene = null
       try { urlScene = new URLSearchParams(window.location.search).get('scene') } catch { /* ignore */ }
-      const urlSceneWins = urlScene && KNOWN_SCENES.has(urlScene)
+      const urlSceneWins = isValidSceneId(urlScene)
       const lookScene = activeEntry?.scene
       const sceneUpdate = (!urlSceneWins && lookScene && lookScene !== get().scene) ? { scene: lookScene } : {}
       if (sceneUpdate.scene) {
@@ -1786,27 +1791,29 @@ const useCartographStore = create((set, get) => ({
   // before _loadLooks resolves; the legacy 'neighborhood' value is rewritten
   // to 'lafayette-square' on read for backward compat.
   scene: (() => {
-    // ?scene=<name> wins (lets you open a non-default neighborhood directly),
-    // then the persisted choice, else the default.
+    // ?scene=<id> wins (open any installation directly), then the persisted
+    // choice, else the default installation.
     try {
       const urlScene = new URLSearchParams(window.location.search).get('scene')
-      if (urlScene && KNOWN_SCENES.has(urlScene)) return urlScene
+      if (isValidSceneId(urlScene)) return urlScene
     } catch { /* ignore */ }
     try {
       const saved = localStorage.getItem('cartograph-scene')
-      if (saved === 'neighborhood') return 'lafayette-square'
-      if (saved && KNOWN_SCENES.has(saved)) return saved
+      if (saved === 'neighborhood') return DEFAULT_INSTALLATION
+      if (isValidSceneId(saved)) return saved
     } catch { /* ignore */ }
-    return 'lafayette-square'
+    return DEFAULT_INSTALLATION
   })(),
-  // Ribbons for a non-bundled scene (LS + toy ship as static imports;
-  // hipointe-demun and future neighborhoods fetch clean/ribbons.json per-scene
-  // in _loadCenterlines). null until fetched / for bundled scenes.
+  // Active installation's data, loaded BY ID (null until fetched). The bundled
+  // fast-path scenes (default + toy) leave sceneRibbons null and read their
+  // static import; every other installation fetches these per-scene.
   sceneRibbons: null,
+  sceneGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
+  sceneBoundary: null,    // fetched neighborhood_boundary.json (raw)
   setScene: (scene) => {
-    if (!KNOWN_SCENES.has(scene)) return
+    if (!isValidSceneId(scene)) return
     try { localStorage.setItem('cartograph-scene', scene) } catch { /* ignore */ }
-    set({ scene, sceneRibbons: null })
+    set({ scene, sceneRibbons: null, sceneGeography: null, sceneBoundary: null })
   },
   markerActive: false,
   setTool: (newTool) => {
@@ -1951,13 +1958,21 @@ const useCartographStore = create((set, get) => ({
         fetchCenterlines(scene).catch(() => ({ streets: [] })),
         fetchOverlay(scene).catch(() => ({ version: 1, streets: {} })),
       ])
-      // Non-bundled scenes fetch their ribbons artifact per-scene (LS + toy use
-      // static imports). Cache it in the store so SCENE_REGISTRY's live render
-      // reads the same fixture this hydrate used.
+      // Load the active installation's data BY ID. The bundled fast-path scenes
+      // (default + toy) read static imports for ribbons; every other installation
+      // fetches ribbons + its geography + boundary per-scene. Geography/boundary
+      // are fetched for ALL scenes (small) so the kit reads them uniformly.
       let fetchedRibbons = get().sceneRibbons
       if (!BUNDLED_SCENES.has(scene) && !fetchedRibbons) {
         fetchedRibbons = await fetchRibbons(scene).catch(() => null)
         if (fetchedRibbons) set({ sceneRibbons: fetchedRibbons })
+      }
+      if (!get().sceneGeography || !get().sceneBoundary) {
+        const [geo, bnd] = await Promise.all([
+          fetchGeography(scene).catch(() => null),
+          fetchBoundary(scene).catch(() => null),
+        ])
+        set({ sceneGeography: geo, sceneBoundary: bnd })
       }
       const skelStreets = (skel && skel.streets) || []
       const legacyStreets = (legacy && legacy.streets) || []
