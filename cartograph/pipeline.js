@@ -10,7 +10,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, CLEAN_DIR } from './config.js'
+import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_SCENE } from './config.js'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths } from './derive.js'
@@ -34,10 +34,13 @@ async function main() {
   //      with materials, stories, sqft, addresses). Built for the 3D app.
   //   2. data/raw/msbf.json       — Microsoft Building Footprints (fallback)
   //   3. osm.buildings            — OSM (lowest quality, historical fallback)
+  // The curated src/data/buildings.json is the DEFAULT scene's (Lafayette
+  // Square) hand-enriched building set — it must NOT be pulled into another
+  // scene. A non-default scene uses its own msbf.json / OSM buildings.
   const PROJECT_ROOT = join(RAW_DIR, '..', '..', '..', '..')
   const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')
   const msbfPath = join(RAW_DIR, 'msbf.json')
-  if (existsSync(projectBldgPath)) {
+  if (SCENE === DEFAULT_SCENE && existsSync(projectBldgPath)) {
     const proj = JSON.parse(readFileSync(projectBldgPath, 'utf-8'))
     const list = proj.buildings || []
     raw.buildings = list

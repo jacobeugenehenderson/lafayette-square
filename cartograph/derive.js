@@ -18,7 +18,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
-import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, wgs84ToLocal } from './config.js'
+import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
@@ -1188,7 +1188,7 @@ export function deriveLayers(highways) {
   let boundaryPolyXZ = null
   try {
     const boundaryData = JSON.parse(readFileSync(
-      join(CARTOGRAPH_DIR, 'data', 'lafayette-square', 'neighborhood_boundary.json'), 'utf-8'
+      join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
     ))
     boundaryPolyXZ = boundaryData.boundary
     const boundaryRing = boundaryData.boundary.map(([x, z]) => ({ x, z }))
