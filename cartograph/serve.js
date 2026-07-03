@@ -717,7 +717,10 @@ createServer(async (req, res) => {
           `node arborist/bake-trees.js --look default`,
           { cwd: REPO_ROOT, timeout: 60000 })
       } else if (!isDefaultScene) {
-        skipped.push('trees (LS-only today; toy uses its own static fixture)')
+        // A poured installation bakes NO trees until its own census lands
+        // (deferred follow-up); InstancedTrees reads the LS-global default.json,
+        // so it stays unmounted for poured scenes (honest zero, no LS ghost).
+        skipped.push('trees (poured-scene census deferred — honest zero)')
       } else {
         skipped.push('trees (layer hidden)')
       }

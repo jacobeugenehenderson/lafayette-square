@@ -164,7 +164,8 @@ function makeRng(seed) {
 // ── Bake ────────────────────────────────────────────────────────────
 
 export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
-                                     rays = RAYS_PER_TEXEL } = {}) {
+                                     rays = RAYS_PER_TEXEL, scene = 'lafayette-square' } = {}) {
+  const isDefaultScene = scene === 'lafayette-square'
   const lookDir = join(ROOT, 'public', 'baked', look)
   const manifestPath = join(lookDir, 'ground.json')
   const binPath = join(lookDir, 'ground.bin')
@@ -261,17 +262,25 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
   const LAMP_SHADOW_STR      = 0.6  // per-lamp shadow contribution
   const FX_SIZE = 1024
   try {
+    // Contact-shadow sources are per-installation. The Look's own lamps.json /
+    // the scene's own tree placements — NEVER LS's when this is a poured
+    // installation, or HiPointe's ground bakes LS's tree + lamp shadows (the
+    // vestigial-ghost bug). The LS-global fallbacks apply ONLY to the default
+    // scene; a poured scene with no lamp/tree data bakes NO contact shadows.
     let lamps = []
     const lampsPath = join(lookDir, 'lamps.json')
     if (existsSync(lampsPath)) {
       lamps = JSON.parse(readFileSync(lampsPath, 'utf-8')).lamps || []
-    } else {
+    } else if (isDefaultScene) {
       const sp = join(ROOT, 'src', 'data', 'street_lamps.json')
       if (existsSync(sp)) lamps = JSON.parse(readFileSync(sp, 'utf-8')).lamps || []
     }
     let trees = []
+    // default.json is LS's global (cross-Look) tree placement file; only the
+    // default scene reads it. Poured installations get their own tree file
+    // when their census lands (deferred) — until then, none.
     const treesPath = join(ROOT, 'public', 'baked', 'default.json')
-    if (existsSync(treesPath)) trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
+    if (isDefaultScene && existsSync(treesPath)) trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
 
     if (lamps.length || trees.length) {
       // bbox = union of lamp + tree extents + the largest reach as margin.
@@ -418,16 +427,15 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
 
 // CLI
 async function main() {
-  let look = 'default', size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL, _scene = 'lafayette-square'
+  let look = 'default', size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL, scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/))) look = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) _scene = m[1]
+    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
     else if ((m = arg.match(/^--size=(\d+)$/))) size = parseInt(m[1], 10)
     else if ((m = arg.match(/^--rays=(\d+)$/))) rays = parseInt(m[1], 10)
   }
-  // TODO(0e-followup): scene-keyed map.json + ground.json inputs.
-  await bakeGroundAO({ look, size, rays })
+  await bakeGroundAO({ look, size, rays, scene })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
