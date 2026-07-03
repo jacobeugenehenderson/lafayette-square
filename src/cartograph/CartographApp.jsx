@@ -25,6 +25,7 @@ import LafayettePark from '../components/LafayettePark'
 import InstancedTrees from '../components/InstancedTrees'
 import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
+import SlabBuildings from '../components/SlabBuildings.jsx'
 import GatewayArch from '../components/GatewayArch'
 import CelestialBodies from '../components/CelestialBodies'
 import Atmosphere from '../components/Atmosphere'
@@ -750,6 +751,28 @@ function genericSceneConfig(sceneBoundary) {
     useBoundary: false,
     hasAerial: true,                                // AerialTiles reads the active installation's geography
     hasHero: false,
+    // Generic poured-installation 3D — ONLY slab-driven consumers, read BY
+    // lookId, with NO LS props (no LafayettePark / LafayetteScene content
+    // bundle / GatewayArch). BakedGround mounts separately for every scene.
+    // SlabBuildings + BakedLamps are look-keyed (fetch /baked/<look>/…), so an
+    // installation with no baked lamps just renders none — never LS's. Trees
+    // are intentionally NOT here yet: InstancedTrees reads the GLOBAL
+    // baked/default.json (LS placements), so mounting it would drop LS's trees
+    // onto this neighborhood — added in step C once tree data is scene-keyed.
+    StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => (
+      <>
+        {!hiddenLayers.building && (
+          <R3FErrorBoundary name="SlabBuildings">
+            <SlabBuildings key={`slab-${bakeLastMs || 0}`} lookId={lookId} />
+          </R3FErrorBoundary>
+        )}
+        {!hiddenLayers.lamp && (
+          <R3FErrorBoundary name="BakedLamps">
+            <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} />
+          </R3FErrorBoundary>
+        )}
+      </>
+    ),
   }
 }
 function sceneConfig(scene, sceneBoundary) {

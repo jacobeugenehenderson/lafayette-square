@@ -686,12 +686,18 @@ createServer(async (req, res) => {
       } else {
         skipped.push('buildings (layer hidden)')
       }
-      if (layerOn('lamp')) {
+      if (layerOn('lamp') && isDefaultScene) {
+        // bake-lamps' SOURCE is still LS's street_lamps.json (terrain is
+        // scene-aware; source is scene-keyed in step C). Gate to the default
+        // scene so a poured installation doesn't inherit LS's lamps — it bakes
+        // NONE (→ BakedLamps 404s → empty) until its own lamp intake lands.
         await runIfDirty('lamps',
           [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
           [join(LOOK_DIR, 'lamps.json')],
           `node bake-lamps.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 30000 })
+      } else if (!isDefaultScene) {
+        skipped.push('lamps (source not yet scene-keyed — step C)')
       } else {
         skipped.push('lamps (layer hidden)')
       }

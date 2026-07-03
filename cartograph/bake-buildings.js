@@ -2,8 +2,10 @@
  * bake-buildings.js — extrudes building footprints into runtime-ready
  * geometry, grouped by wall material + roof material.
  *
- * Reads `src/data/buildings.json` (1056 entries: footprint polygon,
- * height, wall_material, roof_material, color). Writes:
+ * Building source is per-installation (loadBuildings / adaptMapBuildings):
+ * the default (LS) reads its enriched `src/data/buildings.json` (footprint,
+ * height, wall/roof material, color); a poured installation adapts the MSBF
+ * footprints in its `clean/map.json`. Writes:
  *
  *   public/baked/<look>/buildings.json — manifest (groups, materials, bbox)
  *   public/baked/<look>/buildings.bin  — Float32 positions + Uint32 indices
@@ -23,21 +25,49 @@ import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../src/lib/foundationGeometry.js'
 import { writeIfChanged } from './io.js'
-import { makeElevationSampler } from '../src/lib/terrainCommon.js'
+import { loadSceneTerrain } from './terrainLoad.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
-// Per-building centroid elevation is emitted as a raw `aCentroidY`
-// per-vertex attribute; SlabBuildings multiplies by `uExag` (the same
-// uniform driving ground displacement) so buildings rise/fall in lockstep
-// with the ground. Hence we use getElevationRaw, NOT getElevation.
-const _terrainMeta = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-const _terrainBin  = readFileSync(join(ROOT, 'src', 'data', 'terrain.bin'))
-const _terrainData = new Float32Array(
-  _terrainBin.buffer, _terrainBin.byteOffset, _terrainBin.byteLength / 4
-)
-const { getElevationRaw } = makeElevationSampler({ ..._terrainMeta, data: _terrainData })
+// Building source, per installation. The default (LS) reads its richly-enriched
+// src/data/buildings.json (materials / stories / footprint). A poured
+// installation has only the MSBF footprints its prebake wrote into map.json
+// ({ring:[{x,z}], msbfId, tags, elev}) — adapt those into the baker's schema
+// (footprint:[[x,z]], id, best-guess height). This is an ADAPTER, not a path
+// swap; every field here is a first-draft guess, overridable later.
+function adaptMapBuildings(mapBuildings) {
+  const out = []
+  for (const b of mapBuildings) {
+    const r = b.ring
+    if (!r || r.length < 3) continue
+    // {x,z} objects → [x,z] arrays; drop the closing duplicate (baker wants an
+    // open ring — LS footprints are open).
+    let fp = r.map(p => [p.x, p.z])
+    if (fp.length > 3) {
+      const a = fp[0], z = fp[fp.length - 1]
+      if (a[0] === z[0] && a[1] === z[1]) fp = fp.slice(0, -1)
+    }
+    if (fp.length < 3) continue
+    // Height: MSBF/OSM tag if present, floored so paper-thin MSBF slivers
+    // (min ~0.02 m) don't bake as slabs; else the baker's own 8 m default.
+    const tagH = b.tags && typeof b.tags.height === 'number' ? b.tags.height : null
+    const size = tagH != null ? [0, Math.max(tagH, 3), 0] : undefined
+    out.push({ id: `msbf-${b.msbfId}`, footprint: fp, size })
+  }
+  return out
+}
+
+function loadBuildings(scene) {
+  if (scene === 'lafayette-square') {
+    const raw = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'buildings.json'), 'utf-8'))
+    return Array.isArray(raw) ? raw : (raw.buildings || [])
+  }
+  const mapPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
+  if (!existsSync(mapPath)) { console.warn(`[bake-buildings] no map.json for scene ${scene}`); return [] }
+  const map = JSON.parse(readFileSync(mapPath, 'utf-8'))
+  return adaptMapBuildings(map.buildings || [])
+}
 
 // Material palette. Wall + roof + foundation. Roughness is reasonable.
 const WALL_MATERIALS = {
@@ -523,13 +553,18 @@ const DEFAULT_PALETTE = [
   '#f5deb3', '#696969', '#b22222', '#808080',
 ]
 
-export async function bakeBuildings({ look = 'default' } = {}) {
-  const dataPath = join(ROOT, 'src', 'data', 'buildings.json')
+export async function bakeBuildings({ look = 'default', scene = 'lafayette-square' } = {}) {
   const outDir   = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
-  const raw = JSON.parse(readFileSync(dataPath, 'utf-8'))
-  const buildings = Array.isArray(raw) ? raw : (raw.buildings || [])
+  const buildings = loadBuildings(scene)
+
+  // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;
+  // SlabBuildings multiplies by `uExag` (the ground-displacement uniform) so
+  // buildings rise/fall in lockstep with the ground. Uses getElevationRaw (NOT
+  // getElevation) — the scene's own terrain; flat if it has none.
+  const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
+  const getElevationRaw = (x, z) => terrain.getElevationRaw(x, z)
   const overridesPath = join(ROOT, 'src', 'data', 'buildingOverrides.json')
   const overrides = existsSync(overridesPath)
     ? (JSON.parse(readFileSync(overridesPath, 'utf-8')).overrides || {})
@@ -923,15 +958,13 @@ export async function bakeBuildings({ look = 'default' } = {}) {
 }
 
 async function main() {
-  let look = 'default', _scene = 'lafayette-square'
+  let look = 'default', scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
     let m
-    if ((m = arg.match(/^--look=(.+)$/)))      look   = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) _scene = m[1]
+    if ((m = arg.match(/^--look=(.+)$/)))      look  = m[1]
+    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
   }
-  // TODO(0e-followup): scene-keyed buildings source (toy uses
-  // src/data/toy/toy-buildings.json; LS uses src/data/buildings.json).
-  await bakeBuildings({ look })
+  await bakeBuildings({ look, scene })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
