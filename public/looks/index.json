@@ -16,6 +16,12 @@
       "createdAt": 1778253900000,
       "bakedAt": 1780279673589,
       "updatedAt": 1780279652370
+    },
+    {
+      "id": "hipointe-demun",
+      "name": "HiPointe-DeMun",
+      "scene": "hipointe-demun",
+      "createdAt": 1782000000000
     }
   ]
 }
