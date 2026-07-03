@@ -71,13 +71,26 @@ export const INSTANCE = {
 // running LS app. To pour HiPointe you would today swap the LS values in
 // INSTANCE above for these — see the routing flag below before doing so.
 //
-// ⚠️ OPEN — MULTI-INSTANCE ROUTING (the next brief, not this one). Today the
-// kit assumes ONE instance per build. A second neighborhood forces a choice:
-// (a) build-time replace this module per target, (b) an INSTANCES registry
-// keyed by lookId + a selector (URL host/subpath/env), or (c) runtime
-// hydrate geography from the slab. Per §7-step-8 the deploy target is a
-// `jacobhenderson.studio/<hood>` subpath, which hints (b)/host-based routing.
-// DECIDE THIS BEFORE POURING #2 — do not hand-fork instance.js per town.
+// MULTI-INSTANCE ROUTING — DECIDED 2026-07-02 (not a from-scratch build).
+// The routing mostly EXISTS: the cartograph backend already has a `scene`
+// axis (data/<scene>/, sceneRawDir/Dir, per-scene routes; toy is a 2nd scene)
+// and every Look carries a `scene` field (serve.js). At runtime the pulldown
+// sets lookId → ?look= → every baked consumer fetches /baked/<lookId>/. So
+// selecting a baked neighborhood already routes geometry/trees/lamps/scene.
+//   The ONE gap: GEOGRAPHY doesn't ride the axis. lat/lon/tz/projection below
+// are read as import-time constants (const LATITUDE = INSTANCE.geography.lat)
+// in ~10 runtime files (Atmosphere/sun, useWeather, Planetarium, GatewayArch,
+// DawnTimeline, splash) — never keyed by lookId.
+//   DECISION: bake geography INTO the slab (scene.json / baked manifest) and
+// make those ~10 consumers read it reactively per-lookId via the existing
+// useSceneJson pattern — NOT a per-town instance.js fork, NOT a client
+// registry. Source of truth stays data/<scene>/neighborhood_boundary.json;
+// the bake copies it into the slab (slab-is-the-identity). So the geography
+// block below is really a DRAFT of what HiPointe's BAKE should emit — its home
+// graduates into the pour/bake, not this module. (Build = a later brief.)
+//   Deploy identity (domain, cary, contact) is per-DEPLOYMENT, NOT viewer-
+// switchable — stays host/subpath-scoped at deploy (§7 jacobhenderson.studio/
+// <hood>). Separate, smaller, deferred.
 //
 // Extent provenance: minimal-enclosing circle over trusted OSM anchors
 // (Hi-Pointe admin polygon + DeMun anchors + best-guess Skinker E edge).
