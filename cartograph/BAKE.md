@@ -53,7 +53,9 @@ The steps, in execution order:
 
 On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks index (`serve.js:616`) — the canonical `?t=` cache-bust seed (`SLAB-CONTRACT.md §4`).
 
-> **`bake-svg.js` is deliberately NOT in the chain** (`serve.js:493`). It's demoted to a CLI-only QA artifact (human-readable / diffable); the runtime consumes `ground.json/bin/lightmap` exclusively. `bake-terrain.js` is likewise a separate concern (terrain heightfield), not in the per-Look bake button.
+> **`bake-svg.js` is deliberately NOT in the chain** (`serve.js:493`). It's demoted to a CLI-only QA artifact (human-readable / diffable); the runtime consumes `ground.json/bin/lightmap` exclusively.
+>
+> **`bake-terrain.js` IS now in the per-Look bake** (2026-07-02, the HiPointe bake→3D phase). Terrain is a **per-installation** artifact: `bake-terrain.js --scene=<id>` writes the scene's own heightfield to the portable folder `cartograph/data/<scene>/clean/terrain.{json,bin}` (was the global `src/data/terrain.*` — retired; LS bakes byte-identical through the same path, no privilege), and the bake **publishes it into the slab** (`public/baked/<look>/terrain.{json,bin}`) so the runtime fetches it BY lookId like `ground.bin`. `src/utils/terrainShader.js` loads the active look's slab terrain (flat fallback if absent) and re-points live on a Stage scene-switch (`reloadTerrain`). Runs before `ground` (its adaptive refine samples the relief). *(Rationale: `feedback_installations_are_independent` — a poured neighborhood must lift on its OWN relief, and the installation folder is portable.)*
 
 ---
 
