@@ -747,7 +747,7 @@ const SCENE_REGISTRY = {
     ribbons: null,
     stencil: HIPOINTE_STENCIL,
     useBoundary: false,
-    hasAerial: false,
+    hasAerial: true,   // AerialTiles is scene-aware (resolves this scene's geography + fade)
     hasHero: false,
   },
 }

@@ -42,7 +42,8 @@ function placements(streets) {
     if (!pts || pts.length < 2) continue
     let carry = SPACING * 0.5   // first chevron offset in from the chain start
     for (let i = 0; i < pts.length - 1; i++) {
-      const x0 = pts[i].x, z0 = pts[i].z, x1 = pts[i + 1].x, z1 = pts[i + 1].z
+      // centerlineData points are [x, z] arrays (useCartographStore _loadCenterlines).
+      const x0 = pts[i][0], z0 = pts[i][1], x1 = pts[i + 1][0], z1 = pts[i + 1][1]
       const dx = x1 - x0, dz = z1 - z0
       const len = Math.hypot(dx, dz)
       if (len < 1e-3) continue
