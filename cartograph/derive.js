@@ -18,7 +18,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
-import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, wgs84ToLocal } from './config.js'
+import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_SCENE, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
@@ -1061,11 +1061,19 @@ export function deriveLayers(highways) {
   }
 
   // ── Load streetlamps (used for width correction + rendering) ──
+  // Scene-aware source (installations are independent). The DEFAULT scene (LS)
+  // reads its manually-exported Overpass file under scripts/raw; a POURED scene
+  // reads its OWN lamp file from its scene raw dir. Projection is always the
+  // ACTIVE scene's wgs84ToLocal, so reading LS's file for a poured scene (the
+  // old hardcoded path) landed LS's lamps ~7 km outside the poured frame. A
+  // poured scene with no lamp file gets honest zero (no cross-installation
+  // ghosts) rather than LS's lamps.
   let streetlamps = []
+  const lampSourcePath = SCENE === DEFAULT_SCENE
+    ? join(CARTOGRAPH_DIR, '..', 'scripts', 'raw', 'osm_street_lamps.json')
+    : join(RAW_DIR, 'osm_street_lamps.json')
   try {
-    const lampRaw = JSON.parse(readFileSync(
-      join(CARTOGRAPH_DIR, '..', 'scripts', 'raw', 'osm_street_lamps.json'), 'utf-8'
-    ))
+    const lampRaw = JSON.parse(readFileSync(lampSourcePath, 'utf-8'))
     const nodes = (lampRaw.elements || []).filter(e => e.type === 'node' && e.lat && e.lon)
     for (const n of nodes) {
       const [x, z] = wgs84ToLocal(n.lon, n.lat)
