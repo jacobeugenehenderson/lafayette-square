@@ -29,27 +29,64 @@
  */
 
 import * as THREE from 'three'
-import terrainMeta from '../data/terrain.json'
-import terrainBinUrl from '../data/terrain.bin?url'
+import { INSTANCE } from '../instance.js'
 
 export { V_EXAG } from '../lib/terrainCommon.js'
 
-// Bin = raw Float32 heightmap, row-major (width * height samples).
-// Vite ships it as a static asset; top-level await blocks the import
-// graph until it arrives. Same one-shot cost as a static import; the
-// payload is just outside the JS chunk so it gzips on its own.
-export const { width, height, bounds } = terrainMeta
-export const data = new Float32Array(
-  await fetch(terrainBinUrl).then(r => r.arrayBuffer())
-)
-const spanX = bounds.maxX - bounds.minX
-const spanZ = bounds.maxZ - bounds.minZ
+// ── Per-installation terrain, loaded by lookId ───────────────────
+//
+// Terrain is a SLAB artifact now, not a bundled global. It travels with the
+// installation (cartograph/data/<scene>/clean/terrain.*, copied into
+// public/baked/<look>/terrain.* by the bake) and is fetched by the active
+// lookId — the same by-lookId contract as ground.bin. No installation is
+// privileged: production LS fetches its own slab terrain (byte-identical to the
+// old bundled bake); Preview / any ?look= fetches that look's; the authoring
+// Stage re-points live via reloadTerrain() on a scene switch. A look with no
+// terrain (toy, un-baked) falls back to FLAT — renders flat, never crashes.
+// (feedback_installations_are_independent; multi-instance routing 2026-07-02.)
 
-// ── Singleton terrain texture ────────────────────────────────────
+// A 2×2 zero heightfield → getElevation()==0 everywhere, exag lifts nothing.
+const FLAT_TERRAIN = { width: 2, height: 2, bounds: { minX: -1, maxX: 1, minZ: -1, maxZ: 1 }, data: new Float32Array([0, 0, 0, 0]) }
 
-export const terrainTexture = (() => {
+// The active look at module load: ?look= override (Preview / any deep-link),
+// else the deployment's default installation. The authoring app drives live
+// changes through reloadTerrain(), so it doesn't need cartograph internals here.
+function resolveLookId() {
+  try {
+    const m = (typeof window !== 'undefined' ? window.location.search : '').match(/[?&]look=([^&]+)/)
+    if (m) return decodeURIComponent(m[1])
+  } catch { /* no window */ }
+  return INSTANCE.lookId
+}
+
+async function fetchTerrain(lookId) {
+  const base = import.meta.env.BASE_URL
+  try {
+    const meta = await fetch(`${base}baked/${lookId}/terrain.json`).then(r => { if (!r.ok) throw new Error(`terrain.json ${r.status}`); return r.json() })
+    const buf  = await fetch(`${base}baked/${lookId}/terrain.bin`).then(r => { if (!r.ok) throw new Error(`terrain.bin ${r.status}`); return r.arrayBuffer() })
+    return { ...meta, data: new Float32Array(buf) }
+  } catch (e) {
+    console.warn(`[terrain] no baked terrain for look "${lookId}" — rendering flat`, e?.message || e)
+    return FLAT_TERRAIN
+  }
+}
+
+// Live terrain state — reassigned by reloadTerrain(). Exported as `let` so late
+// re-reads see fresh values; the heavy consumers (elevation.js CPU sampler)
+// subscribe to onTerrainReload() to rebuild. Top-level await keeps first paint
+// correct (elevation.js builds its sampler from valid initial data).
+let _lookId = resolveLookId()
+let _terrain = await fetchTerrain(_lookId)
+export let width  = _terrain.width
+export let height = _terrain.height
+export let bounds = _terrain.bounds
+export let data   = _terrain.data
+let spanX = bounds.maxX - bounds.minX
+let spanZ = bounds.maxZ - bounds.minZ
+
+function makeTerrainTexture(t) {
   const tex = new THREE.DataTexture(
-    new Float32Array(data), width, height,
+    new Float32Array(t.data), t.width, t.height,
     THREE.RedFormat, THREE.FloatType,
   )
   tex.magFilter = THREE.LinearFilter
@@ -58,14 +95,20 @@ export const terrainTexture = (() => {
   tex.wrapT = THREE.ClampToEdgeWrapping
   tex.needsUpdate = true
   return tex
-})()
+}
+
+// ── Singleton terrain texture (identity stable across reloads) ────
+export const terrainTexture = makeTerrainTexture(_terrain)
 
 // ── Shared exaggeration uniform (mutate .value, all materials follow) ──
 
 export const terrainExag = { value: 0 }
 
 // ── Shared uniform objects ───────────────────────────────────────
-
+// The wrapper objects here are Object.assign'd into every patched shader by
+// reference (assignTerrainUniforms / patchTerrain*), so mutating a wrapper's
+// .value propagates to ALL materials. reloadTerrain() MUST mutate .value on
+// these existing wrappers, never replace the wrapper objects.
 export const UNIFORMS = {
   uTerrainMap: { value: terrainTexture },
   uBMinX: { value: bounds.minX },
@@ -75,6 +118,38 @@ export const UNIFORMS = {
   uExag: terrainExag,
   uTexW: { value: width },
   uTexH: { value: height },
+}
+
+// ── Live re-point (authoring Stage: switch installation without reload) ──
+const _reloadCbs = new Set()
+/** Subscribe to terrain reloads (CPU-sampler consumers rebuild here). Returns an unsubscribe. */
+export function onTerrainReload(cb) { _reloadCbs.add(cb); return () => _reloadCbs.delete(cb) }
+/** The current heightfield payload — read fresh after a reload. */
+export function currentTerrain() { return { width, height, bounds, data } }
+
+/**
+ * Re-point the terrain singleton at another look's baked heightfield, in place.
+ * Skips when already on `lookId` unless `force` (a re-bake of the same look may
+ * have changed the bytes — e.g. a look's first bake filling in previously-404
+ * terrain).
+ */
+export async function reloadTerrain(lookId, { force = false } = {}) {
+  if (!lookId || (lookId === _lookId && !force)) return
+  const t = await fetchTerrain(lookId)
+  _lookId = lookId
+  width = t.width; height = t.height; bounds = t.bounds; data = t.data
+  spanX = bounds.maxX - bounds.minX
+  spanZ = bounds.maxZ - bounds.minZ
+  const prevTex = UNIFORMS.uTerrainMap.value
+  UNIFORMS.uTerrainMap.value = makeTerrainTexture(t)   // mutate .value, keep the wrapper
+  if (prevTex?.dispose) prevTex.dispose()
+  UNIFORMS.uBMinX.value = bounds.minX
+  UNIFORMS.uBMinZ.value = bounds.minZ
+  UNIFORMS.uSpanX.value = spanX
+  UNIFORMS.uSpanZ.value = spanZ
+  UNIFORMS.uTexW.value = width
+  UNIFORMS.uTexH.value = height
+  for (const cb of _reloadCbs) { try { cb() } catch (e) { console.warn('[terrain] reload cb failed', e) } }
 }
 
 /** Assign shared terrain uniforms to a compiled shader. */

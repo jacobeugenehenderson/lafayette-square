@@ -34,7 +34,7 @@ import WeatherPoller from '../components/WeatherPoller'
 import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
-import { V_EXAG } from '../utils/terrainShader'
+import { V_EXAG, reloadTerrain } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject, useHeroAuthoring } from '../stage/StageApp.jsx'
 import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
@@ -860,6 +860,19 @@ export default function CartographApp() {
       .catch(() => { if (!cancelled) setBakedLayerVis({}) })
     // Re-fetch on activeLookId change AND on bake completion (bakeLastMs
     // bumps when runBake succeeds).
+  }, [activeLookId, bakeLastMs])
+
+  // Re-point the terrain singleton at the active Look's baked terrain. Terrain
+  // is a per-installation slab artifact now (not a bundled global), so a Stage
+  // switch to another installation must swap the heightfield the same way
+  // BakedGround swaps ground.bin. Force on a re-bake (bakeLastMs) so a Look's
+  // FIRST bake — which fills in previously-404 (flat) terrain — takes effect.
+  const _prevBakeMs = useRef(bakeLastMs)
+  useEffect(() => {
+    if (!activeLookId) return
+    const bakeChanged = _prevBakeMs.current !== bakeLastMs
+    _prevBakeMs.current = bakeLastMs
+    reloadTerrain(activeLookId, { force: bakeChanged })
   }, [activeLookId, bakeLastMs])
 
   const effectiveLayerVis = inDesigner ? layerVis : (bakedLayerVis || {})

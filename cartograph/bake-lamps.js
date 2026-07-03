@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
-import { makeElevationSampler } from '../src/lib/terrainCommon.js'
+import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -29,27 +29,28 @@ function readAB(path) {
 // runtime rigid-lifts the lamp onto the rendered surface instead of the smooth
 // field — no float. Mutates each lamp with `groundRaw`. Needs the look's ground
 // bake to exist (it runs earlier in the chain); skips with a warning otherwise.
-function anchorLampsToGround(lamps, outDir) {
+function anchorLampsToGround(lamps, outDir, scene) {
   const groundJsonPath = join(outDir, 'ground.json')
   const groundBinPath  = join(outDir, 'ground.bin')
   if (!existsSync(groundJsonPath) || !existsSync(groundBinPath)) return 0
   const gj = JSON.parse(readFileSync(groundJsonPath, 'utf-8'))
   const gAB = readAB(groundBinPath)
-  const tmeta = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-  const tdata = new Float32Array(readAB(join(ROOT, 'src', 'data', 'terrain.bin')))
-  const sampler = makeGroundSampler(gj, gAB, makeElevationSampler({ ...tmeta, data: tdata }))
+  // Per-scene terrain (cartograph/data/<scene>/clean/terrain.*); flat fallback
+  // if this installation has none baked yet.
+  const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
+  const sampler = makeGroundSampler(gj, gAB, terrain)
   for (const l of lamps) l.groundRaw = sampler.groundRawAt(l.x, l.z)
   return lamps.length
 }
 
-export async function bakeLamps({ look = 'default' } = {}) {
+export async function bakeLamps({ look = 'default', scene = 'lafayette-square' } = {}) {
   const inPath  = join(ROOT, 'src', 'data', 'street_lamps.json')
   const outDir  = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   const raw = JSON.parse(readFileSync(inPath, 'utf-8'))
   const lamps = raw.lamps || raw
-  const anchored = anchorLampsToGround(lamps, outDir)
+  const anchored = anchorLampsToGround(lamps, outDir, scene)
   const out = {
     version: 1,
     look,
@@ -62,14 +63,15 @@ export async function bakeLamps({ look = 'default' } = {}) {
 }
 
 async function main() {
-  let look = 'default', _scene = 'lafayette-square'
+  let look = 'default', scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
     let m
-    if ((m = arg.match(/^--look=(.+)$/)))      look   = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) _scene = m[1]
+    if ((m = arg.match(/^--look=(.+)$/)))      look  = m[1]
+    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
   }
-  // TODO(0e-followup): scene-keyed lamps source (toy uses toy-lamps.json).
-  await bakeLamps({ look })
+  // TODO(step C): scene-keyed lamp SOURCE — HiPointe's OSM lamps live in its
+  // map.json (streetlamp layer); LS uses src/data/street_lamps.json.
+  await bakeLamps({ look, scene })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

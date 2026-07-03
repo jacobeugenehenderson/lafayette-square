@@ -1,41 +1,67 @@
 /**
  * Cartograph — bake-terrain
  *
- * One-shot. Reads a per-instance USGS 3DEP GeoTIFF, clips to LS_STENCIL,
- * resamples to a uniform 5 m grid, and writes:
+ * Reads a per-installation USGS 3DEP GeoTIFF, clips to the scene's boundary
+ * stencil, resamples to a uniform 5 m grid, and writes into the installation's
+ * own portable folder:
  *
- *   src/data/terrain.json — metadata only ({width, height, bounds, baseElev})
- *   src/data/terrain.bin  — Float32Array(width*height), row-major, raw
+ *   cartograph/data/<scene>/clean/terrain.json — metadata ({width,height,bounds,baseElev})
+ *   cartograph/data/<scene>/clean/terrain.bin  — Float32Array(width*height), row-major, raw
  *
  * The `.bin` pattern matches the rest of the kit (ground.bin, buildings.bin).
  * Values are normalized to local-min = 0 so uExag scales pure relief;
  * absolute height is reconstructable from `baseElev` in the metadata.
  *
- * Clipping bbox = axis-aligned bbox of LS_STENCIL's scaled polygon
- * (streetFade.outer + 50), rounded outward to whole meters. Kit-shared
- * with CartographApp.jsx's LS_STENCIL.
+ * The terrain artifact is the scene's — it travels WITH the installation
+ * folder (which may live on another drive), never in a shared/global dir.
+ * No installation is privileged: LS bakes through the exact same path as every
+ * poured town. The per-Look bake (serve.js) copies clean/terrain.* into the
+ * slab (public/baked/<look>/terrain.*); the runtime fetches it by lookId.
+ * (feedback_installations_are_independent; multi-instance routing 2026-07-02.)
  *
- * Per-instance raw input:
+ * Clipping bbox = axis-aligned bbox of the scene boundary's scaled polygon
+ * (streetFade.outer + 50), rounded outward to whole meters.
+ *
+ * Per-installation raw input:
  *   cartograph/data/<scene>/raw/elevation.tif
  *
- * Acquire the LS tile (1°×1° 1/3 arc-second, ~10 m source resolution,
- * 453 MB, .gitignored) via:
+ * Acquire the LS/HiPointe tile (both share USGS 3DEP n39w091, 1°×1° 1/3
+ * arc-second, ~10 m source, 453 MB, .gitignored) via:
  *   curl -O https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n39w091/USGS_13_n39w091.tif
  *
- * Run:  node cartograph/bake-terrain.js
+ * Run:  node cartograph/bake-terrain.js --scene=<id>   (or CARTOGRAPH_SCENE=<id>)
  */
 
 import fs from 'fs'
 import { join } from 'path'
 import { fromFile } from 'geotiff'
-import { CARTOGRAPH_DIR, localToWgs84 } from './config.js'
+import { CARTOGRAPH_DIR, DEFAULT_SCENE } from './config.js'
+import { writeIfChanged } from './io.js'
 
-const SCENE = 'lafayette-square'
+// Scene resolution — the installation whose terrain we bake. Resolve order:
+// --scene=<id> flag (how serve.js's bake handler invokes us) > CARTOGRAPH_SCENE
+// env (CLI) > the default installation.
+const _sceneArg = process.argv.slice(2).map(a => a.match(/^--scene=(.+)$/)).find(Boolean)
+const SCENE = _sceneArg?.[1] || process.env.CARTOGRAPH_SCENE || DEFAULT_SCENE
 
-const BOUNDARY_PATH = join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json')
-const TIF_PATH      = join(CARTOGRAPH_DIR, 'data', SCENE, 'raw', 'elevation.tif')
-const OUT_JSON      = join(CARTOGRAPH_DIR, '..', 'src/data/terrain.json')
-const OUT_BIN       = join(CARTOGRAPH_DIR, '..', 'src/data/terrain.bin')
+const SCENE_DIR     = join(CARTOGRAPH_DIR, 'data', SCENE)
+const GEO_PATH      = join(SCENE_DIR, 'geography.json')
+const BOUNDARY_PATH = join(SCENE_DIR, 'neighborhood_boundary.json')
+const TIF_PATH      = join(SCENE_DIR, 'raw', 'elevation.tif')
+const CLEAN_DIR     = join(SCENE_DIR, 'clean')
+const OUT_JSON      = join(CLEAN_DIR, 'terrain.json')
+const OUT_BIN       = join(CLEAN_DIR, 'terrain.bin')
+
+// Per-scene projection. bake-terrain maps its local-meter grid back to lon/lat
+// to sample the GeoTIFF, so it needs THIS installation's geography — not
+// config.js's import-time geography (which resolves from CARTOGRAPH_SCENE only,
+// left unset for serve.js's bake children). Read data/<scene>/geography.json
+// directly; the formula matches config.localToWgs84 exactly. LS's geography.json
+// mirrors instance.js, so LS terrain stays byte-identical to the prior bake.
+const _geo = JSON.parse(fs.readFileSync(GEO_PATH, 'utf8'))
+function localToWgs84(x, z) {
+  return [_geo.lon + x / _geo.lonToMeters, _geo.lat - z / _geo.latToMeters]
+}
 
 const STENCIL_BUFFER_M = 50  // kit-shared with LS_STENCIL
 const M_PER_SAMPLE     = 5   // see prior commit comment in this file
@@ -73,7 +99,7 @@ async function main() {
   const height = Math.ceil(spanZ / M_PER_SAMPLE) + 1
   const total = width * height
 
-  console.log(`Bake terrain  bbox=${JSON.stringify(bounds)}  span=${spanX}×${spanZ}m`)
+  console.log(`Bake terrain  scene=${SCENE}  bbox=${JSON.stringify(bounds)}  span=${spanX}×${spanZ}m`)
   console.log(`              grid=${width}×${height} = ${total} samples  (~${(spanX/(width-1)).toFixed(2)} m/x, ${(spanZ/(height-1)).toFixed(2)} m/z)`)
 
   if (!fs.existsSync(TIF_PATH)) {
@@ -185,8 +211,9 @@ async function main() {
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100 }
-  fs.writeFileSync(OUT_JSON, JSON.stringify(meta))
-  fs.writeFileSync(OUT_BIN, Buffer.from(normalized.buffer))
+  fs.mkdirSync(CLEAN_DIR, { recursive: true })
+  writeIfChanged(OUT_JSON, JSON.stringify(meta))
+  writeIfChanged(OUT_BIN, Buffer.from(normalized.buffer))
 
   const jsonKb = (fs.statSync(OUT_JSON).size / 1024).toFixed(1)
   const binKb  = (fs.statSync(OUT_BIN).size  / 1024).toFixed(1)

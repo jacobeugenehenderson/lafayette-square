@@ -15,7 +15,7 @@ import { readFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
-import { makeElevationSampler } from '../src/lib/terrainCommon.js'
+import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -26,7 +26,7 @@ function readAB(p) {
   return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength)
 }
 
-export async function bakeTreeAnchors({ look = 'lafayette-square' } = {}) {
+export async function bakeTreeAnchors({ look = 'lafayette-square', scene = 'lafayette-square' } = {}) {
   const outDir = join(ROOT, 'public', 'baked', look)
   const groundJsonPath = join(outDir, 'ground.json')
   const groundBinPath  = join(outDir, 'ground.bin')
@@ -39,9 +39,8 @@ export async function bakeTreeAnchors({ look = 'lafayette-square' } = {}) {
 
   const gj = JSON.parse(readFileSync(groundJsonPath, 'utf-8'))
   const gAB = readAB(groundBinPath)
-  const tmeta = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-  const tdata = new Float32Array(readAB(join(ROOT, 'src', 'data', 'terrain.bin')))
-  const sampler = makeGroundSampler(gj, gAB, makeElevationSampler({ ...tmeta, data: tdata }))
+  const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
+  const sampler = makeGroundSampler(gj, gAB, terrain)
 
   const trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
   const anchors = trees.map(t => sampler.groundRawAt(t.x, t.z))
@@ -53,9 +52,13 @@ export async function bakeTreeAnchors({ look = 'lafayette-square' } = {}) {
 }
 
 async function main() {
-  let look = 'lafayette-square'
-  for (const a of process.argv.slice(2)) { const m = a.match(/^--look=(.+)$/); if (m) look = m[1] }
-  await bakeTreeAnchors({ look })
+  let look = 'lafayette-square', scene = 'lafayette-square'
+  for (const a of process.argv.slice(2)) {
+    let m
+    if ((m = a.match(/^--look=(.+)$/)))       look  = m[1]
+    else if ((m = a.match(/^--scene=(.+)$/)))  scene = m[1]
+  }
+  await bakeTreeAnchors({ look, scene })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

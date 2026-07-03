@@ -37,7 +37,7 @@ import { buildTileGround } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
-import { makeElevationSampler } from '../src/lib/terrainCommon.js'  // SSoT: one sampler + one V_EXAG (applied inside getElevation), shared with the runtime — no hand-rolled copy
+import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler + one V_EXAG shared with the runtime
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 
@@ -98,16 +98,10 @@ const GROUND_Y_EPS = 0.002;   // metres per renderOrder slot (~5 cm over ~26 gro
 // ever changes. `getElevation(x,z)` is raw × V_EXAG (world-space lift in m).
 // false if the heightmap is absent.
 let _terrainSampler = null;
-function getTerrainSampler() {
+function getTerrainSampler(scene) {
   if (_terrainSampler !== null) return _terrainSampler;
-  const metaPath = join(ROOT, "src", "data", "terrain.json");
-  const binPath  = join(ROOT, "src", "data", "terrain.bin");
-  if (!existsSync(metaPath) || !existsSync(binPath)) { _terrainSampler = false; return false; }
-  const meta = JSON.parse(readFileSync(metaPath, "utf-8"));
-  const buf  = readFileSync(binPath);
-  const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
-  const { getElevation } = makeElevationSampler({ ...meta, data });
-  _terrainSampler = getElevation;
+  const t = loadSceneTerrain(scene);
+  _terrainSampler = t ? t.getElevation : false;  // false → scene has no terrain (bake flat)
   return _terrainSampler;
 }
 
@@ -848,7 +842,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   const refineTol     = refineOpts.tol     != null ? refineOpts.tol     : GROUND_REFINE_TOL_M
   const refineMinEdge = refineOpts.minEdge != null ? refineOpts.minEdge : GROUND_REFINE_MIN_EDGE_M
   const refineMaxEdge = refineOpts.maxEdge != null ? refineOpts.maxEdge : GROUND_REFINE_MAX_EDGE_M
-  const refineSampler = refineMode === 'adaptive' ? getTerrainSampler() : null
+  const refineSampler = refineMode === 'adaptive' ? getTerrainSampler(scene) : null
   // Bake-target guard (2026-06-01). The app reads `baked/<INSTANCE.lookId>` —
   // for LS that's `baked/lafayette-square`. A bake into a look with no
   // `looks/<look>/` directory silently produces a PHANTOM `baked/<look>/`

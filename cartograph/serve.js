@@ -643,8 +643,37 @@ createServer(async (req, res) => {
         skipped.push('pipeline (scene-specific pipeline not yet implemented)')
         skipped.push('promote-ribbons (depends on pipeline)')
       }
+      // terrain — the installation's own heightfield (clean/terrain.*), lifted
+      // at runtime. Bake from the scene's elevation.tif when present + stale, so
+      // bake-ground's adaptive refine (next) samples the right relief; then copy
+      // it into this Look's slab so the runtime fetches terrain by lookId, like
+      // ground.bin. A scene with no elevation.tif has no terrain → renders flat.
+      const ELEVATION_TIF      = join(bakePaths.raw,   'elevation.tif')
+      const SCENE_TERRAIN_JSON = join(bakePaths.clean, 'terrain.json')
+      const SCENE_TERRAIN_BIN  = join(bakePaths.clean, 'terrain.bin')
+      if (existsSync(ELEVATION_TIF)) {
+        await runIfDirty('terrain',
+          [ELEVATION_TIF, bakePaths.boundary, bakePaths.geography, join(here, 'bake-terrain.js')],
+          [SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
+          `node bake-terrain.js ${sceneFlag}`,
+          { cwd: here, timeout: 120000 })
+      } else {
+        skipped.push('terrain (no elevation.tif — flat)')
+      }
+      // terrain-slab: publish the scene terrain into this Look's slab (the
+      // runtime fetches /baked/<look>/terrain.* by lookId; writeIfChanged keeps
+      // the dirty-graph mtime honest).
+      if (existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
+        const tsj = join(LOOK_DIR, 'terrain.json'), tsb = join(LOOK_DIR, 'terrain.bin')
+        if (force || needsRebuild([SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN], [tsj, tsb])) {
+          mkdirSync(LOOK_DIR, { recursive: true })
+          writeIfChanged(tsj, readFileSync(SCENE_TERRAIN_JSON))
+          writeIfChanged(tsb, readFileSync(SCENE_TERRAIN_BIN))
+          ranSteps.push('terrain-slab')
+        } else { skipped.push('terrain-slab') }
+      }
       await runIfDirty('ground',
-        [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js')],
+        [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 60000 })
