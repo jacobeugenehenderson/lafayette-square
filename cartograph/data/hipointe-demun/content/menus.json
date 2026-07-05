@@ -384,6 +384,593 @@
      ]
     }
    ]
+  },
+  "hpdm-lst-0216": {
+   "taglines": {
+    "all_day": "Smash burgers, street tacos & Latin plates on DeMun",
+    "drinks": "Craft cocktails, local drafts & a serious zero-proof list"
+   },
+   "schedule": {
+    "all_day": {
+     "monday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "tuesday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "wednesday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "thursday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "friday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "saturday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "sunday": {
+      "start": "11:00",
+      "end": "22:00"
+     }
+    },
+    "drinks": {
+     "monday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "tuesday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "wednesday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "thursday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "friday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "saturday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "sunday": {
+      "start": "11:00",
+      "end": "22:00"
+     }
+    }
+   },
+   "sections": [
+    {
+     "name": "Burgers",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Burger",
+       "description": "Lettuce, tomato, onion & pickles on request",
+       "price": 799,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double",
+         "price": 500
+        },
+        {
+         "name": "American cheese",
+         "price": 100
+        },
+        {
+         "name": "Mushrooms",
+         "price": 100
+        },
+        {
+         "name": "Ranch",
+         "price": 100
+        },
+        {
+         "name": "Jalapeños",
+         "price": 100
+        },
+        {
+         "name": "Cheddar",
+         "price": 150
+        },
+        {
+         "name": "Mozzarella",
+         "price": 150
+        },
+        {
+         "name": "Pepper jack",
+         "price": 150
+        },
+        {
+         "name": "Swiss",
+         "price": 150
+        },
+        {
+         "name": "Bacon",
+         "price": 150
+        },
+        {
+         "name": "Gluten-free bun",
+         "price": 100
+        }
+       ]
+      },
+      {
+       "name": "Turkey Burger",
+       "price": 799,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "American cheese",
+         "price": 100
+        },
+        {
+         "name": "Mushrooms",
+         "price": 100
+        },
+        {
+         "name": "Ranch",
+         "price": 100
+        },
+        {
+         "name": "Jalapeños",
+         "price": 100
+        },
+        {
+         "name": "Cheddar",
+         "price": 150
+        },
+        {
+         "name": "Mozzarella",
+         "price": 150
+        },
+        {
+         "name": "Pepper jack",
+         "price": 150
+        },
+        {
+         "name": "Swiss",
+         "price": 150
+        },
+        {
+         "name": "Bacon",
+         "price": 150
+        },
+        {
+         "name": "Gluten-free bun",
+         "price": 100
+        }
+       ]
+      },
+      {
+       "name": "Outlaw Burger",
+       "description": "BBQ sauce, cheddar, bacon & an onion ring",
+       "price": 1199,
+       "tags": []
+      },
+      {
+       "name": "Taco Burger",
+       "description": "Lettuce, pico de gallo, Mexican cheese blend & tortilla strips",
+       "price": 1199,
+       "tags": []
+      },
+      {
+       "name": "Killer B's Burger",
+       "description": "¼ beef patty topped with bacon, brisket, mozzarella & Barrio BBQ",
+       "price": 2099,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double",
+         "price": 500
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Sandwiches",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Smoked BBQ Brisket",
+       "description": "House BBQ on a potato bun",
+       "price": 1799,
+       "tags": []
+      },
+      {
+       "name": "Brisket French Dip",
+       "description": "Smoked brisket with Swiss on a French hoagie, au jus",
+       "price": 1999,
+       "tags": []
+      },
+      {
+       "name": "Chicken Parm",
+       "description": "Fried chicken, mozzarella, marinara, basil & parmesan on a hoagie",
+       "price": 1399,
+       "tags": []
+      },
+      {
+       "name": "Smoked Turkey Breast",
+       "description": "Served hot on sourdough with mayo, lettuce, tomato, onion & Swiss",
+       "price": 1299,
+       "tags": []
+      },
+      {
+       "name": "Fish Sandwich",
+       "description": "Tempura Alaskan cod on a potato bun with tartar",
+       "price": 1199,
+       "tags": []
+      },
+      {
+       "name": "Harvest Shreds BBQ Sandwich",
+       "description": "Umami-based vegan protein, Barrio BBQ, potato bun",
+       "price": 1299,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Buffalo Chicken Wrap",
+       "description": "Fried chicken, buffalo, ranch, tomato, greens & cheese",
+       "price": 1299,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Tacos & More",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Street Tacos (chorizo or chicken)",
+       "description": "Cilantro, onion & salsa on corn — each",
+       "price": 399,
+       "tags": []
+      },
+      {
+       "name": "Street Tacos (asada, birria or harvest shreds)",
+       "description": "Each — harvest shreds is vegan",
+       "price": 449,
+       "tags": []
+      },
+      {
+       "name": "Fish Tacos",
+       "description": "3 tacos — Alaskan cod tempura, cabbage, Mexican cheese & cajun aioli",
+       "price": 1599,
+       "tags": []
+      },
+      {
+       "name": "Quesadilla",
+       "description": "Mexican cheese blend",
+       "price": 1099,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Asada",
+         "price": 800
+        },
+        {
+         "name": "Birria",
+         "price": 800
+        },
+        {
+         "name": "Chicken",
+         "price": 500
+        },
+        {
+         "name": "Chorizo",
+         "price": 500
+        },
+        {
+         "name": "Ground beef",
+         "price": 600
+        },
+        {
+         "name": "Ground turkey",
+         "price": 600
+        },
+        {
+         "name": "Harvest shreds (vegan)",
+         "price": 700
+        }
+       ]
+      },
+      {
+       "name": "BBQ Chicken Quesadilla",
+       "description": "BBQ sauce, 3-cheese blend, chicken & caramelized onions",
+       "price": 1199,
+       "tags": []
+      },
+      {
+       "name": "Nachos",
+       "description": "Chorizo or chicken, cheese sauce, pico & crème fraîche over house chips",
+       "price": 1599,
+       "tags": []
+      },
+      {
+       "name": "Breakfast Burrito",
+       "description": "Scrambled eggs, chorizo, cheddar & pico",
+       "price": 1199,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Bowls & Greens",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Quinoa Bowl",
+       "description": "Edamame, kale, garbanzo, soy-ginger & cilantro",
+       "price": 899,
+       "tags": [
+        "v",
+        "gf"
+       ],
+       "modifiers": [
+        {
+         "name": "Asada",
+         "price": 800
+        },
+        {
+         "name": "Birria",
+         "price": 800
+        },
+        {
+         "name": "Chicken",
+         "price": 500
+        },
+        {
+         "name": "Chorizo",
+         "price": 500
+        },
+        {
+         "name": "Ground beef",
+         "price": 600
+        },
+        {
+         "name": "Ground turkey",
+         "price": 600
+        },
+        {
+         "name": "Harvest shreds (vegan)",
+         "price": 700
+        }
+       ]
+      },
+      {
+       "name": "Mac & Cheese Bowl",
+       "price": 799,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Asada",
+         "price": 800
+        },
+        {
+         "name": "Birria",
+         "price": 800
+        },
+        {
+         "name": "Chicken",
+         "price": 500
+        },
+        {
+         "name": "Chorizo",
+         "price": 500
+        },
+        {
+         "name": "Ground beef",
+         "price": 600
+        },
+        {
+         "name": "Ground turkey",
+         "price": 600
+        },
+        {
+         "name": "Harvest shreds (vegan)",
+         "price": 700
+        }
+       ]
+      },
+      {
+       "name": "Southwest Chicken Salad",
+       "description": "Chicken, greens, black beans, corn, tomato, tortilla strips, chipotle ranch",
+       "price": 1399,
+       "tags": [
+        "gf"
+       ]
+      },
+      {
+       "name": "House Salad",
+       "description": "Mixed greens, tomato, onion — full",
+       "price": 999,
+       "tags": [
+        "v",
+        "gf"
+       ]
+      },
+      {
+       "name": "Fish & Chips",
+       "description": "Alaskan cod tempura, fries & tartar",
+       "price": 1899,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Snacks & Sides",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Crinkle-Cut Fries",
+       "price": 499,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Cheese sauce",
+         "price": 100
+        },
+        {
+         "name": "Bacon & cheese",
+         "price": 250
+        },
+        {
+         "name": "Chili & cheese",
+         "price": 300
+        }
+       ]
+      },
+      {
+       "name": "Onion Rings",
+       "description": "With blooming sauce",
+       "price": 999,
+       "tags": []
+      },
+      {
+       "name": "Fried Cheese Curds",
+       "description": "Beer-battered white cheddar with marinara",
+       "price": 899,
+       "tags": []
+      },
+      {
+       "name": "Toasted Ravioli",
+       "description": "Beef, with marinara",
+       "price": 999,
+       "tags": []
+      },
+      {
+       "name": "Chicken Wings (1 lb)",
+       "description": "Buffalo, BBQ or dry — ranch or bleu",
+       "price": 1699,
+       "tags": []
+      },
+      {
+       "name": "Chips & Salsa",
+       "price": 499,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Tomato Bisque",
+       "description": "With crème fraîche — bowl",
+       "price": 799,
+       "tags": [
+        "v"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Dessert",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "NY Cheesecake",
+       "description": "From in-house French pastry chef FX (desserts rotate — ask)",
+       "price": 799,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Cocktails",
+     "menu": "drinks",
+     "items": [
+      {
+       "name": "Margarita",
+       "price": 1000,
+       "tags": []
+      },
+      {
+       "name": "Sangria",
+       "price": 1000,
+       "tags": []
+      },
+      {
+       "name": "Mule",
+       "price": 1100,
+       "tags": []
+      },
+      {
+       "name": "Aviation",
+       "price": 1200,
+       "tags": []
+      },
+      {
+       "name": "Negroni",
+       "price": 1200,
+       "tags": []
+      },
+      {
+       "name": "Spritz (Aperol or Hugo)",
+       "price": 1200,
+       "tags": []
+      },
+      {
+       "name": "Kentucky Sour",
+       "description": "Buffalo Trace, Luxardo Amaretto & house lemonade",
+       "price": 1300,
+       "tags": []
+      },
+      {
+       "name": "The Cartel",
+       "description": "Dos Hombres Mezcal, Campari, sweet vermouth",
+       "price": 1400,
+       "tags": []
+      },
+      {
+       "name": "NA-perol Spritz (zero-proof)",
+       "price": 900,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Draft & Local Beer",
+     "menu": "drinks",
+     "items": [
+      {
+       "name": "City Wide Pale Ale",
+       "price": 700,
+       "tags": []
+      },
+      {
+       "name": "Perennial / Civil Life rotating draft",
+       "price": 700,
+       "tags": []
+      },
+      {
+       "name": "Modelo Especial",
+       "price": 550,
+       "tags": []
+      },
+      {
+       "name": "Delirium Tremens",
+       "price": 1100,
+       "tags": []
+      }
+     ]
+    }
+   ]
   }
  }
 }

@@ -5171,6 +5171,10 @@
      "open": "11:00",
      "close": "22:00"
     },
+    "sunday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
     "friday": {
      "open": "11:00",
      "close": "23:00"
@@ -5178,27 +5182,60 @@
     "saturday": {
      "open": "11:00",
      "close": "23:00"
-    },
-    "sunday": {
-     "open": "11:00",
-     "close": "21:00"
     }
    },
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [
-    "american",
-    "patio"
+   "opening_hours_raw": "Sun–Thu 11am–10pm · Fri–Sat 11am–11pm",
+   "photos": [
+    "/photos/barrio/01.jpg",
+    "/photos/barrio/02.jpg",
+    "/photos/barrio/03.jpg"
    ],
-   "description": "American restaurant using premium Pierce Creek Cattle Co. beef; cantilevered windows open to a true sidewalk café in good weather.",
-   "history": null,
-   "menu_url": null,
+   "amenities": [
+    "Smash burgers & street tacos",
+    "Full bar — craft cocktails, wine & rotating draft beer",
+    "Strong non-alcoholic / zero-proof program",
+    "Dog-friendly patio",
+    "Kid-friendly",
+    "Sidewalk patio seating",
+    "Online ordering & takeout",
+    "E-gift cards (redeemable at Sasha’s too)",
+    "Rotating desserts by an in-house French pastry chef"
+   ],
+   "tags": [
+    "burgers",
+    "smash-burger",
+    "tacos",
+    "latin",
+    "sandwiches",
+    "full-bar",
+    "patio",
+    "dog-friendly",
+    "takeout",
+    "delivery",
+    "demun",
+    "vegan-options"
+   ],
+   "description": "A lively DeMun Avenue corner spot serving smash burgers, street tacos, and Latin-leaning sandwiches, with a full bar of craft cocktails, wine, and rotating local draft beer (plus a notably good zero-proof list). From restaurateur Alan Richman — sister to the neighboring Sasha’s Wine Bar — with a kitchen led by chef Dan Sammons. The cantilevered front windows open onto a dog-friendly sidewalk patio in good weather. Locally sourced ingredients; vegan \"harvest shreds\" available across the menu.",
+   "history": [
+    {
+     "year": 2018,
+     "event": "Owner Alan Richman and chef Dan Sammons open Barrio in the former DeMun Oyster Bar space (740 De Mun) — a tacos-tequila-and-tapas concept extending Sammons’ farmers-market \"Backdoor Burritos,\" with street tacos, arepas, empanadas, enchiladas and Cuban sandwiches."
+    },
+    {
+     "year": 2022,
+     "event": "Barrio shifts to its now-signature \"Burgers & Tacos\" format — house smash burgers and street tacos alongside the original Latin plates."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0216",
    "reservation_url": null,
    "status": "active",
    "source": "research",
    "osm_type": null,
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/barrioburgersandtacos",
+   "photo_credit": "Barrio (barrioburgersandtacos.com)",
+   "price_range": "$$",
+   "order_url": "https://order.toasttab.com/online/barrio-740-demun-ave"
   },
   {
    "id": "hpdm-lst-0217",
