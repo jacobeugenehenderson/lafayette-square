@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { getListings } from '../lib/api'
-import staticData from '../data/landmarks.json'
-import menuData from '../data/lafayette-square/menus.json'
+import { loadInstanceData } from '../data/loadInstanceData.js'
+import { INSTANCE } from '../instance.js'
 import { buildings as _allBuildings, ready as _buildingsReady } from '../data/buildings'
 
 /**
@@ -17,10 +17,14 @@ import { buildings as _allBuildings, ready as _buildingsReady } from '../data/bu
  *
  * Consumers access `listings` (the array) or use the lookup helpers.
  */
-// Merge bundled menu data into static landmarks
-const landmarksWithMenus = staticData.landmarks.map(lm =>
-  menuData[lm.id] ? { ...lm, menu: menuData[lm.id] } : lm
-)
+// landmarks + menus load via the installation-data seam (loadInstanceData),
+// keyed by INSTANCE.lookId — so a non-LS install supplies its own content.
+// Was a SYNCHRONOUS module-scope seed ("renders without delay"); now fills
+// post-ready and rides the app splash (Scene mounts on splashReady ~1500ms;
+// SidePanel fades ~1.0s) — the same gate that already masks the async buildings
+// load. The API merge (refresh + useInit.runInit) awaits `_landmarksReady` so
+// the static fallback fields are never lost to a race. (Phase 2, Batch B.)
+export let landmarksWithMenus = []
 
 // Hours arrive from the backend as a JSON STRING (`hours_json`, per backend
 // schema: `{"monday":{"open":"11:00","close":"22:00"}}`), but the consumers —
@@ -47,8 +51,8 @@ const ZONING_LABELS = {
   D: 'Commercial / Mixed Use', E: 'Residential', F: 'Neighborhood Commercial',
   G: 'Local Commercial / Retail', H: 'Residential', J: 'Industrial',
 }
-const _landmarkBids = new Set(landmarksWithMenus.map(l => l.building_id).filter(Boolean))
-const _landmarkAddrs = new Set(landmarksWithMenus.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
+let _landmarkBids = new Set()
+let _landmarkAddrs = new Set()
 function _buildBareBuildingListings(buildings) {
   return buildings
     .filter(b => b.address && !_landmarkBids.has(b.id) && !_landmarkAddrs.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim()))
@@ -88,11 +92,31 @@ function _buildBareBuildingListings(buildings) {
     })
 }
 
-// Initially empty — populated once buildings.json loads
+// landmarks + menus resolved → fill the derived lookups and seed the store.
+export const _landmarksReady = Promise.all([
+  loadInstanceData(INSTANCE.lookId, 'landmarks').ready,
+  loadInstanceData(INSTANCE.lookId, 'menus').ready,
+]).then(([staticData, menuData]) => {
+  const menus = menuData || {}
+  landmarksWithMenus = (staticData?.landmarks || []).map(lm =>
+    menus[lm.id] ? { ...lm, menu: menus[lm.id] } : lm
+  )
+  _landmarkBids = new Set(landmarksWithMenus.map(l => l.building_id).filter(Boolean))
+  _landmarkAddrs = new Set(landmarksWithMenus.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
+  // Seed the store with landmarks now they're ready — unless the API init
+  // already populated + fetched (then it owns the list).
+  if (!useListings.getState().fetched) {
+    useListings.setState({ listings: [...landmarksWithMenus, ...bareBuildingListings] })
+  }
+  return landmarksWithMenus
+})
+
+// Bare-building synthetic listings need BOTH buildings (the source) AND
+// landmarks (the dedup sets _landmarkBids/_landmarkAddrs) — so gate on both.
 let bareBuildingListings = []
-_buildingsReady.then(({ buildings }) => {
+Promise.all([_landmarksReady, _buildingsReady]).then(([, { buildings }]) => {
   bareBuildingListings = _buildBareBuildingListings(buildings)
-  // Merge into store if init already ran
+  // Merge into store if init already ran (mirrors the original fetched-gate).
   const state = useListings.getState()
   if (state.fetched) {
     const current = state.listings.filter(l => !l._bare)
@@ -100,12 +124,10 @@ _buildingsReady.then(({ buildings }) => {
   }
 })
 
-const allListings = [...landmarksWithMenus]
-
 export { bareBuildingListings }
 
 const useListings = create((set, get) => ({
-  listings: allListings,
+  listings: [],
   loading: false,
   fetched: false,
 
@@ -114,6 +136,7 @@ const useListings = create((set, get) => ({
     if (get().fetched || get().loading) return
     set({ loading: true })
     try {
+      await _landmarksReady   // static fallback map must be filled before the merge
       const res = await getListings()
       const apiListings = (Array.isArray(res.data) ? res.data
         : Array.isArray(res.data?.listings) ? res.data.listings

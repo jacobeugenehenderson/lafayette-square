@@ -1,18 +1,15 @@
 import { getInit } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 import { supabase } from '../lib/supabase'
-import useListings, { bareBuildingListings } from './useListings'
+import useListings, { bareBuildingListings, landmarksWithMenus, _landmarksReady } from './useListings'
 import useHandle from './useHandle'
 import useEvents from './useEvents'
 import useResidence from './useResidence'
 import useCommunityStats from './useCommunityStats'
-import staticData from '../data/landmarks.json'
-import menuData from '../data/lafayette-square/menus.json'
 
-// Static landmarks enriched with bundled menu data
-const landmarksWithMenus = staticData.landmarks.map(lm =>
-  menuData[lm.id] ? { ...lm, menu: menuData[lm.id] } : lm
-)
+// landmarksWithMenus + bareBuildingListings are live bindings from useListings
+// (single source — no duplicate seam load). They fill post-ready; runInit awaits
+// `_landmarksReady` below before the merge.
 
 let _ran = false
 
@@ -30,7 +27,10 @@ export async function runInit() {
     const res = await getInit(dh)
     const data = res.data || {}
 
-    // Hydrate listings store
+    // Hydrate listings store — the static fallback map (landmarksWithMenus) must
+    // be filled before the merge, or rich static fields (history, photos, menus)
+    // would be lost to a race with the async landmarks load.
+    await _landmarksReady
     const apiListings = Array.isArray(data.listings) ? data.listings : []
     if (apiListings.length > 0) {
       const staticLookup = new Map()
