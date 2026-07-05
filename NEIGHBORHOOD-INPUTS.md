@@ -2,7 +2,7 @@
 
 **What every input to a neighborhood is, where Lafayette Square got it, and whether that well transfers to the next town.** This is the intake SSOT *across all four domains* (Map · Trees · Weather · Content) — the checklist an operator opens on day one of pouring a new slab. It answers Jacob's question directly: *the infrastructure exists; how do we fill it?*
 
-> **Status: v0.3 (2026-07-05) — Boz.** The roster editor + **polygon building-membership** landed (§5.1/§5.2). Grounded in `cartograph/INTAKE.md` (the map layer's deep provenance home — this doc cites it, does not restate it) + a four-domain provenance sweep of the live code. Some content-layer attributions are first-pass — marked **⚠️ confirm**. Not yet wired into `README` doc-map / `ORIENTATION` — do that on ratification (§8).
+> **Status: v0.4 (2026-07-05) — Boz.** The roster editor + **polygon building-membership** landed (§5.1/§5.2); the **content-layer schema is ratified (§5.1.1)** — the canonical collection format (building ledger + listings, joined by slab building id). Grounded in `cartograph/INTAKE.md` (the map layer's deep provenance home — this doc cites it, does not restate it) + a four-domain provenance sweep of the live code. Some content-layer attributions are first-pass — marked **⚠️ confirm**. Not yet wired into `README` doc-map / `ORIENTATION` — do that on ratification (§8).
 >
 > **Scope note:** this is the *intake/authoring* companion to `SLAB-CONTRACT.md`. The contract says what a finished slab **is**; this says what you must **gather and author** to pour one.
 
@@ -135,14 +135,53 @@ Checkins · Reviews · Events · Guardians · Residents · LobbyPosts · Handles
 
 Both are real holes between "LS was bulk-seeded once" and "an operator hand-builds a town."
 
-> **⭐ BUILT (2026-07-05).** No longer "named": **§5.2's first slice — the roster editor — landed** (`HANDOFF-building-roster-editor.md`, Ward): per-building **membership curation** on the Extent tool's top-down footprint overlay. **§5.1's render half also landed** (the render ledger, below). Both ride the render/content boundary (`slab-render-vs-content-boundary`); §5.1's **per-instance content sidecar** remains the open **blank-app arc** (`HANDOFF-blank-app-instance-decoupling.md` — the app becomes a generic look-reader, LS just `?look=lafayette-square`).
+> **⭐ BUILT (2026-07-05).** No longer "named": **§5.2's first slice — the roster editor — landed** (`HANDOFF-building-roster-editor.md`, Ward): per-building **membership curation** on the Extent tool's top-down footprint overlay. **§5.1's render half also landed** (the render ledger, below). Both ride the render/content boundary (`slab-render-vs-content-boundary`); §5.1's **per-instance content sidecar** remains the open **blank-app arc** (`HANDOFF-blank-app-instance-decoupling.md` — the app becomes a generic look-reader, LS just `?look=lafayette-square`) — but its **schema is now ratified (§5.1.1)**, so content collected today lands in the target format.
 
 ### 5.1 Per-building authoring — the "Building Ledger"
 LS's building metadata (historic status, style, architect, year) was **bulk-authored once** from completist records, with **no per-building update UI**. A town without those records needs a **building-by-building surface** to fill this in by hand or LLM-assist — the content-side analog of the Cartograph authoring tools.
 
 **Render half — DONE (2026-07-05).** The building record splits along the render/content boundary (`slab-render-vs-content-boundary`). The **render** fields (footprint · size · stories · wall/roof material · color · zoning) now load from a per-scene **render ledger** at `cartograph/data/<scene>/buildings.json` — `bake-buildings.loadBuildings` reads it uniformly for every scene, retiring the `scene === 'lafayette-square'` source hardwire (`bake-buildings.js:62`; keyed on data, not the proper noun). LS's ledger is the render-field projection of its authored `src/data/buildings.json` (`derive-ls-render-ledger.js`), so LS bakes **byte-identical**. LS is now "a look at the render level," not a code branch (`slab-is-the-instance-identity`).
 
-**Content half — the blank-app arc (open).** The **content** fields (name · address · historic_status · listings) stay in `src/data/buildings.json`, still read by the ~10 townie imports — untouched. Decoupling those into a per-instance content sidecar is the separate `HANDOFF-blank-app-instance-decoupling.md`, NOT this arc.
+**Content half — the blank-app arc (open).** The **content** fields (name · address · historic_status · listings) stay in `src/data/buildings.json`, still read by the ~10 townie imports — untouched. Decoupling those into a per-instance content sidecar is the separate `HANDOFF-blank-app-instance-decoupling.md`, NOT this arc. **The content sidecar's *schema* is now ratified — §5.1.1.**
+
+### 5.1.1 ⭐ The content-layer schema — the canonical collection format (ratified 2026-07-05)
+
+> Ratified by Jacob + Boz, **verified against the live app consumers** (`landmarks.json`/`buildings.json` field sets) **and HPDM's roster** (`content/roster.json`, ids matched to the baked slab 2089/2089). This is the format an operator collects building + business info **into**, and the format the blank-app content sidecar will **read**. Collecting in this shape now avoids re-migrating thousands of records later.
+
+**⭐ The one invariant — the building id is the join key.** The slab carries each building's *spatial identity* (its `id`); the content layer carries **no geometry**, only `id → record`. A click resolves `raycast → building id` (slab); content resolves `id → display record`. **Every content record MUST key on the exact building id the slab assigns** — HPDM `msbf-*` (verified 2089/2089), LS `bldg-*`. Collect ids that match the slab, or nothing joins. (`slab-render-vs-content-boundary`: "slab owns identity, content owns display.")
+
+**Two layers, joined by building id — not one merged file** (a building hosts **0..N** businesses, so a single nested `listing_name` can't represent mixed-use and can't hold the rich fields):
+
+**Layer 1 — Building ledger** (building-centric, one record per building; HPDM's `cartograph/data/<scene>/content/roster.json` is this). Each field classifies **render** (→ baked into the slab) vs **content** (→ the sidecar) per `slab-render-vs-content-boundary`; collect both, the split happens at bake/wire:
+
+| Field(s) | Render / Content | Tier | Notes |
+|---|---|---|---|
+| `id` | **key** | — | must equal the slab building id |
+| footprint · position · size · `stories` | RENDER | ①/② | automated (MSBF + assessor) — don't hand-collect |
+| `wall_material` · `roof_material` · color | RENDER | ①/③ | facade match + overrides |
+| `zoning` · `building_sqft` · `units` · `vacant` · `appraised_value` | RENDER-ledger | ② | assessor; re-point per town |
+| `name`/label · `all_names` | CONTENT | ②/③ | display |
+| `address` · `municipality` · `jurisdiction` | CONTENT | ② | assessor |
+| `historic_status`/`historic_district` · `contributing` · `architect` · `style` · `period` · `year_built` | CONTENT | ③ | 🔴 completist-record luck — LLM-assist or omit for a normal town |
+
+**Layer 2 — Listings** (business content, listing-centric, one record per business, `building_id` → the slab id, **0..N per building**). The rich, hand-compiled **Tier-③ long pole** the app's place cards / search / neon display — collect the FULL shape, never a `listing_name` stub. Companion file `cartograph/data/<scene>/content/listings.json` (sibling to `roster.json`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | listing id |
+| `building_id` | string | → slab building id (the join) |
+| `name` | string | |
+| `category` · `subcategory` | string | drives search filtering + neon color |
+| `phone` · `website` · `logo` | string | |
+| **`hours`** | **object** `{ monday: {open,close}, … }` | ⚠️ **STRUCTURED, not free text** — the open-now / neon logic reads this; keep `opening_hours_raw` alongside for provenance |
+| `photos` | string[] | paths under a per-instance asset root |
+| `amenities` · `tags` | string[] | |
+| `description` · `history` | string | |
+| `menu_url` (or a `menus.json` entry) · `reservation_url` | string | menus optional (~25% of LS) |
+| `status` | string | open / closed / seasonal |
+| `address` | string | listing address (may differ from the building's) |
+
+**Collection guidance (what to spend hand-hours on).** Render fields (footprint / materials / stories) arrive automatically from MSBF + parcels — **don't hand-collect them**. Spend the effort on the **content** fields and the **full listing schema** — especially **structured hours**, photos, description, menus — because that's the expensive Tier-③ work (`§4.2`, ~100–150 operator hours/town) you don't want to redo. LS predates this template (content buried in `src/data`); **HPDM is the first installation collected natively into it** — its `content/roster.json` is Layer 1; add the `content/listings.json` sibling for Layer 2.
 
 ### 5.2 Pre-bake feature add/remove — the roster editor (BUILT, 2026-07-05)
 Was a coarse center+radius clip — all-or-nothing. Now the operator curates **building membership** by hand before the bake. **⭐ The neighborhood is the area inside the boundary-STREET POLYGON** (the corners resolved from the named sides), *not* the circle — the circle stays the slab disc/fade (`project_neighborhood_disc` still holds for the *slab*; **membership** is the polygon). A building belongs if its **centroid is in the polygon**; the operator's overrides layer on top (`feedback_effective_payload_layering`): **`activate`** forces an outside building IN (recover a rim stray), **`hide`** forces an inside one OUT — persisted per scene as `{ activate, hide }` in `cartograph/data/<scene>/building-overrides.json` (robust to radius/polygon edits, never merged into the render-ledger seed).
