@@ -59,6 +59,38 @@ seen from two ends:
 candidate.** That tagged list is the first draft of what the intake screen must collect
 and what settings must exist. No extra work — it's a column in the audit matrix.
 
+## ⭐ The two faces of the decoupling — the operating frame (2026-07-05, Boz + Jacob)
+
+The productization above resolves into **one decoupling with two faces, meeting at one seam.** It is *not* two projects, though it feels like it — the session that clarified this started at "a blank cartograph/slab" and surfaced "a Universal Reader" as if separate. They're the **producer and consumer of the same thing.**
+
+```
+   PRODUCER face                    THE SEAM                      CONSUMER face
+ "blank cartograph/slab"      the INSTALLATION PAYLOAD          "Universal Reader"
+ the kit pours ANY       →    · instance config (identity)  →  the app reads ANY
+ neighborhood into a          · content Layers 0–2              installation, ZERO
+ self-contained               · module manifest (on/off)       hardcodes, deployable
+ installation payload         · branding                       on 3rd-party sites
+```
+
+- **Producer face — "blank cartograph/slab":** the kit pours any neighborhood into a **self-contained installation payload** (data folder + baked slab + look + content + config) — the *installation template*. **HPDM is accidentally the cleaner template; LS is the legacy installation to back-port onto it** (LS predates its own template: content buried in `src/data`, legacy `[-15,-15]` boundary center vs HPDM's Extent-tool `[0,0]` + `content/roster.json`).
+- **Consumer face — "Universal Reader":** the app is a **generic reader with zero hardcodes** that boots any payload. **Governing gate (Jacob, 2026-07-05): nothing installation-specific may be a literal in the reader** — acceptance test = grep the reader for LS literals → zero. New axis this session: the Reader must eventually deploy on **other people's websites/URLs** — a *distinct* deploy story from slab-publishing (bake → Pages, already built). That distribution mechanism is the furthest horizon — **design the seam now, don't build it yet.**
+- **The seam — the INSTALLATION PAYLOAD** (the contract both faces meet at), four parts:
+  1. **Instance config** — geography, id, endpoints, **branding** (title/OG/domain per install; installation #1's value is "Lafayette Square"). `src/instance.js` is the seed.
+  2. **Content — Layers 0–2** — ✅ RATIFIED `NEIGHBORHOOD-INPUTS §5.1.1`: L0 profile (population/name/tagline), L1 building ledger, L2 listings; joined by the slab building id.
+  3. **Module manifest** — which features an installation runs (delivery on/off, …). Design the seam now; LS = all-on.
+  4. **Slab + look** — already kit-clean (HPDM pours + renders through the identical pipeline; the look transfers byte-identical).
+
+**Naming (settled this session):** "Lafayette Square" = the **Product**; the Lafayette Square *neighborhood* = installation #1, eponymous. We are **not de-branding** — we are **de-installation-hardwiring.** Each installation supplies its own branding; #1's happens to equal the Product name.
+
+### Where we are (2026-07-05)
+- **Seam / content slice — DONE:** content schema §5.1.1 ratified + committed (`a5976993`); HPDM example payload committed (`5410301d`); a content researcher is filling it.
+- **Design settled (not coded):** the two-faces frame, the installation-payload contract, Product-vs-installation naming, the module-manifest axis, the zero-hardcode gate.
+- **Not started (code):** the CONSUMER face — runtime instance boot, content-sidecar wiring, the **hardcode audit**, branding templating, module-gate seam (= the blank-app arc, `HANDOFF-blank-app-instance-decoupling.md`, now strengthened to the zero-hardcode gate + module seam). Reader-distribution-to-3rd-party-sites is the horizon beyond.
+
+### The layering (so scope stays honest)
+- **Near-term:** de-hardwire the reader → installation template; unblocks HPDM as installation #2. **Parallelizable:** operator + researcher pour the payload (producer face) while we build the reader to read it (consumer face) — the two don't block each other.
+- **Horizon:** the Universal Reader's *distribution* (deploy on customer URLs, cross-origin slab, injected config, backend multi-tenancy). Design the seam; defer the build.
+
 ## The three documentation purposes (drives the Show Bible shape)
 
 1. **Marketing** — "you can do this and this." Per-app, extractable, consumer-facing.
