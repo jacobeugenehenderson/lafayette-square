@@ -313,7 +313,7 @@
   {
    "id": "hpdm-lst-0014",
    "building_id": "msbf-557",
-   "name": "Cheshire Inn",
+   "name": "The Cheshire",
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "6300 Clayton Road",
@@ -321,23 +321,58 @@
    "website": "https://www.cheshirestl.com",
    "logo": null,
    "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "opening_hours_raw": "Front desk 24/7",
+   "photos": [
+    "photos/cheshire/01.jpg",
+    "photos/cheshire/02.jpg",
+    "photos/cheshire/03.jpg"
+   ],
+   "amenities": [
+    "British-inspired Tudor boutique hotel",
+    "Literary-themed suites (Sherlock Holmes, Brideshead Revisited, Chronicles of Narnia…)",
+    "Fox & Hounds Tavern — candlelit English pub",
+    "Basso — Italian restaurant & bar",
+    "On-site Starbucks",
+    "Outdoor pool (direct room access on select suites)",
+    "7,000+ sq ft of event space across 6 venues",
+    "A favorite wedding & meeting venue",
+    "Steps from Forest Park & the Hi-Pointe Theatre"
+   ],
    "tags": [
+    "hotel",
     "boutique",
     "tudor",
+    "british",
+    "historic",
     "landmark",
-    "bar"
+    "bar",
+    "restaurant",
+    "pool",
+    "events",
+    "weddings",
+    "forest-park"
    ],
-   "description": "Tudor-style boutique hotel at Clayton Rd & Skinker, an English-inn-themed St. Louis landmark. Home to the Fox & Hounds tavern and Basso restaurant.",
-   "history": null,
+   "description": "A Tudor landmark on Clayton Road at the gateway to Forest Park, The Cheshire is a British-inspired boutique hotel of half-timbered gables and literary-themed suites — Sherlock Holmes, Brideshead Revisited, Chronicles of Narnia. A St. Louis icon since 1964 (as the Cheshire Inn) and reborn as a modern boutique hotel, it houses the candlelit Fox & Hounds Tavern, the Italian restaurant Basso, a Starbucks, an outdoor pool, and 7,000+ square feet of event space — a beloved wedding venue moments from the park and the Hi-Pointe Theatre.",
+   "history": [
+    {
+     "year": 1964,
+     "event": "The Cheshire Inn opens on Clayton Road — a Tudor, English-themed inn that becomes a St. Louis landmark at the edge of Forest Park, long known for its Fox & Hounds Tavern."
+    },
+    {
+     "year": 2013,
+     "event": "After a full renovation the property reopens as \"The Cheshire,\" a boutique hotel of literary-themed suites, keeping the Fox & Hounds and adding the Italian restaurant Basso."
+    }
+   ],
    "menu_url": null,
-   "reservation_url": null,
+   "reservation_url": "https://www.cheshirestl.com",
    "status": "active",
-   "source": "osm",
+   "source": "research",
    "osm_type": "hotel",
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/thecheshirestl",
+   "photo_credit": "The Cheshire (cheshirestl.com)",
+   "price_range": "$$$",
+   "order_url": null
   },
   {
    "id": "hpdm-lst-0015",
@@ -5106,23 +5141,57 @@
      "close": "17:00"
     }
    },
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "opening_hours_raw": "Daily 6:30am–5pm",
+   "photos": [
+    "photos/kaldis-coffee/01.jpg",
+    "photos/kaldis-coffee/02.jpg"
+   ],
+   "amenities": [
+    "House-roasted coffee — the original roasting café",
+    "Full espresso bar & drip",
+    "Pastries & light café fare",
+    "Sidewalk patio at DeMun & Northwood",
+    "Retail beans & brew gear",
+    "Free Wi-Fi",
+    "A DeMun community gathering spot since 1994"
+   ],
    "tags": [
     "coffee",
+    "cafe",
     "roaster",
+    "espresso",
+    "breakfast",
     "flagship",
-    "founded-1994"
+    "founded-1994",
+    "demun",
+    "community",
+    "wifi"
    ],
-   "description": "The original Kaldi's Coffee — the regional roaster got its start here in 1994 with one small DeMun café. Coffee, espresso, and light fare.",
-   "history": null,
-   "menu_url": null,
+   "description": "The original Kaldi's — where the St. Louis coffee company began. In 1994 two Mizzou journalism grads, Suzanne Langlois and Howard Lerner, quit their newspaper jobs and opened a café on this DeMun corner (a former travel agency, then a meditation center) with a mission \"to create a place for people.\" A year in they began roasting their own beans in the shop; the operation grew into a roaster that now supplies 14 St. Louis-area cafés and more in Atlanta — since named the best coffee chain in the country. The flagship still pulls espresso on the corner where it all started.",
+   "history": [
+    {
+     "year": 1994,
+     "event": "Journalists Suzanne Langlois and Howard Lerner leave their newspaper jobs and open Kaldi's on the DeMun corner — a community café, \"a place for people.\""
+    },
+    {
+     "year": 1995,
+     "event": "About a year in, they begin roasting their own coffee inside the café, then expand into a shuttered antique store behind it — the start of Kaldi's Coffee Roasting Co."
+    },
+    {
+     "year": 2024,
+     "event": "Now led by co-owner Tyler Zimmer, Kaldi's has grown to 14 St. Louis-area cafés (plus four in Atlanta) and been named the best coffee chain in the U.S. — the DeMun flagship still anchors the block."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0213",
    "reservation_url": null,
    "status": "active",
    "source": "research",
    "osm_type": null,
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/kaldiscoffee",
+   "photo_credit": "Kaldi's Coffee (kaldiscoffee.com)",
+   "price_range": "$$",
+   "order_url": "https://order.kaldiscoffee.com/order/kaldis-coffee-demun"
   },
   {
    "id": "hpdm-lst-0214",
@@ -5602,22 +5671,49 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "photos": [
+    "photos/hi-pointe-drive-in/01.jpg",
+    "photos/hi-pointe-drive-in/02.jpg",
+    "photos/hi-pointe-drive-in/03.jpg"
+   ],
+   "amenities": [
+    "Award-winning smash burgers",
+    "Boozy & classic shakes",
+    "Chef-driven specials",
+    "Converted 1980s drive-in building",
+    "Local ingredients",
+    "Counter service",
+    "Kids meals",
+    "Beer & wine"
+   ],
    "tags": [
     "burgers",
+    "smash-burger",
+    "shakes",
     "drive-in",
+    "local",
+    "sugarfire",
+    "casual",
     "marquee",
-    "local-ingredients"
+    "hi-pointe",
+    "delivery"
    ],
-   "description": "Cult-favorite burgers and sandwiches from a converted 1980s drive-in at the foot of McCausland — local ingredients, inventive specials, a St. Louis destination.",
-   "history": null,
+   "description": "A cult-favorite burger stand at the foot of McCausland, from Mike Johnson and Adam Pritchett of Sugarfire Smokehouse. Built around the smash burger that had been Sugarfire's best-seller, it turns out inventive chef specials and boozy shakes from a converted 1980s drive-in — the owners kept the old name to honor the building and the Hi-Pointe neighborhood. A St. Louis burger destination and the flagship of a growing local chain.",
+   "history": [
+    {
+     "year": 2017,
+     "event": "Mike Johnson and Adam Pritchett (of Sugarfire Smokehouse) open Hi-Pointe Drive-In on Jan 5 in a converted 1980s drive-in at Clayton & McCausland — built around Sugarfire's award-winning smash burger, and keeping the old name to honor the building and neighborhood."
+    }
+   ],
    "menu_url": "content/menus.json#hpdm-lst-0221",
    "reservation_url": null,
    "status": "active",
    "source": "research",
    "osm_type": null,
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/hipointedrivein",
+   "photo_credit": "Hi-Pointe Drive-In (hipointedrivein.com)",
+   "price_range": "$$"
   },
   {
    "id": "hpdm-lst-0222",

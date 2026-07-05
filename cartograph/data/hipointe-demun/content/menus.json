@@ -1747,6 +1747,243 @@
      ]
     }
    ]
+  },
+  "hpdm-lst-0213": {
+   "taglines": {
+    "all_day": "House-roasted espresso, drip & café fare"
+   },
+   "schedule": {
+    "all_day": {
+     "monday": {
+      "start": "06:30",
+      "end": "17:00"
+     },
+     "tuesday": {
+      "start": "06:30",
+      "end": "17:00"
+     },
+     "wednesday": {
+      "start": "06:30",
+      "end": "17:00"
+     },
+     "thursday": {
+      "start": "06:30",
+      "end": "17:00"
+     },
+     "friday": {
+      "start": "06:30",
+      "end": "17:00"
+     },
+     "saturday": {
+      "start": "06:30",
+      "end": "17:00"
+     },
+     "sunday": {
+      "start": "06:30",
+      "end": "17:00"
+     }
+    }
+   },
+   "_note": "Representative café menu; prices are best-guess seeds (§0.0) — confirm on claim.",
+   "sections": [
+    {
+     "name": "Espresso & Coffee",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Drip Coffee",
+       "price": 325,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large",
+         "price": 50
+        }
+       ]
+      },
+      {
+       "name": "Latte",
+       "price": 500,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large (16oz)",
+         "price": 75
+        },
+        {
+         "name": "Oat milk",
+         "price": 75
+        }
+       ]
+      },
+      {
+       "name": "Cappuccino",
+       "price": 475,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large (16oz)",
+         "price": 75
+        },
+        {
+         "name": "Oat milk",
+         "price": 75
+        }
+       ]
+      },
+      {
+       "name": "Americano",
+       "price": 400,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large (16oz)",
+         "price": 75
+        },
+        {
+         "name": "Oat milk",
+         "price": 75
+        }
+       ]
+      },
+      {
+       "name": "Mocha",
+       "price": 550,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large (16oz)",
+         "price": 75
+        },
+        {
+         "name": "Oat milk",
+         "price": 75
+        }
+       ]
+      },
+      {
+       "name": "Cold Brew",
+       "price": 500,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large (16oz)",
+         "price": 75
+        },
+        {
+         "name": "Oat milk",
+         "price": 75
+        }
+       ]
+      },
+      {
+       "name": "Pour Over",
+       "price": 525,
+       "tags": [
+        "v"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Not Coffee",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Chai Latte",
+       "price": 525,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large (16oz)",
+         "price": 75
+        },
+        {
+         "name": "Oat milk",
+         "price": 75
+        }
+       ]
+      },
+      {
+       "name": "Hot Tea",
+       "price": 375,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Hot Chocolate",
+       "price": 450,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large (16oz)",
+         "price": 75
+        },
+        {
+         "name": "Oat milk",
+         "price": 75
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Food",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Butter Croissant",
+       "price": 400,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Muffin",
+       "price": 375,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Avocado Toast",
+       "price": 900,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Breakfast Sandwich",
+       "price": 750,
+       "tags": []
+      },
+      {
+       "name": "Bagel & Cream Cheese",
+       "price": 400,
+       "tags": [
+        "v"
+       ]
+      }
+     ]
+    }
+   ]
   }
  }
 }
