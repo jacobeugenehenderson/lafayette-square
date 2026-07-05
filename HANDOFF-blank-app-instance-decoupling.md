@@ -66,6 +66,8 @@ Note: `profile.*` overlaps content **Layer 0** (`§5.1.1`) — decide whether it
 ### ⛔ Decide the loader seam FIRST — standup before mass-migration
 13 sites is 13× the cost if the seam is wrong. Before touching any consumer, inspect how the **slab is already fetched by `INSTANCE.lookId`** (the ~40 Phase-1 call sites) and **mirror that path** — do not invent a second hydration route (`project_kit_deploy_path_agnostic`: fetch via BASE_URL; `feedback_dual_hydration_paths_drift`). Propose the mechanism (one `loadInstanceData(lookId, name)` helper vs. per-file dynamic `import()`), align with Jacob, **then** migrate. This is the phase's one real architecture decision.
 
+> **✅ RESOLVED (Jacob, 2026-07-05) — Option 1: generalize `buildings.js`, behind a swappable contract.** The seam's deliverable is the **contract `loadInstanceData(lookId, name) → { value, ready }`, not its guts.** The expensive, irreversible work (the async `ready.then(...)` refactor of the 5 module-scope consumers — LafayettePark/SidePanel/useListings/useInit/LafayetteScene) is **identical for `import()` (Opt 1) and `fetch()` (Opt 3)**; consumers bind to `{value, ready}`, blind to the internals. So reuse `buildings.js`'s **proven, documented** async lazy-loader (dynamic `import()` + ready promise + mutable exports; its 6 consumers already handle async) — lowest risk, fastest green — and refold `buildings.js` as `loadInstanceData`'s **first caller**, not a parallel bespoke loader. Swapping the guts to the slab's `fetch()` later (Opt 3, the served-payload destination) is then a **loader-internal change, invisible to all 13** — and that served-payload/no-rebuild property is this arc's explicit out-of-scope horizon (line 109), so don't pre-build it; the contract preserves it for free. **Rejected: Opt 2 (eager `import.meta.glob`)** — bundles every installation into LS's main bundle, dies at HPDM (installation #2), maximizes rework.
+
 ### The target list (13 sites, verified 2026-07-05)
 | File | Import |
 |---|---|
@@ -96,9 +98,27 @@ Note: `profile.*` overlaps content **Layer 0** (`§5.1.1`) — decide whether it
 3. **`vite build` green.**
 4. **Phase gate:** grep the reader for static `from '../data/…'` on the 13 files → **zero** (astronomy exception aside).
 
+### ⚠️ Ownership-split finding (pre-move importer sweep, 2026-07-05) — the seam moves, the files mostly don't
+The "relocate the 13 into `src/data/lafayette-square/`" directive assumed they were reader-owned data. **They're not: 10 of 12 are the producer's working source** the reader happens to `import` directly. Importer sweep:
+
+| Camp | Files | Non-reader importers |
+|---|---|---|
+| **Reader-private ✓** | `menus.json`, `seedEvents.json` | none — safe to relocate now |
+| **Shared w/ authoring + pipeline ⚠️** | `buildings`, `buildingOverrides`, `streets`, `landmarks`, `ribbons`, `street_lamps`, `park_water`, `park-feature-elev`, `facade_mapping`, `park-polygon` | `src/cartograph/*` (MapLayers, useCartographStore, SurveyorPanel, measureModel…), render libs (`parkPaths`, `buildBlockGeometryV2`, `mergeLiveRibbons…`), runtime components (InstancedTrees, SlabBuildings, lampLightmap), bake pipeline (`cartograph/*.js`, `scripts/*`). `ribbons.json` ~15 importers; `buildings.json` ~20. |
+
+A flat `git mv` breaks the authoring app + bake pipeline, and repointing those importers **crosses the render/producer stream this handoff fences off** (line 107). This is the **two-faces boundary running through `src/data/`**: reader-face reads a payload; producer-face emits it. The direct `import` *is* the coupling Phase 2 severs — **on the reader side only.**
+
+**Decision (Jacob, 2026-07-05) — split relocation by ownership; the seam contract is identical across all 13:**
+- **Move now** (⟺ **zero** non-reader importers): `menus.json`, `seedEvents.json` → `src/data/lafayette-square/`. Prove the seam + `buildings.js` refold against these.
+- **In-place, by-lookId** (any outside importer — incl. `landmarks`, whose authoring-panel + scripts touch keeps it here, and `buildings` at 20+ importers): loaded through the same `loadInstanceData(lookId, name)` contract; **files stay put.** The reader is lookId-generic today regardless of physical home.
+- **Manifest keeps "deferred" from rotting:** `loadInstanceData` carries a **per-lookId path map**. LS entries for in-place files point at `src/data/X.json` today, marked `// in-place, pending producer emit`. The producer-emit arc flips them to the payload path in **one file** — no consumer, no seam change.
+
+**→ Hand-off to the producer/render (roster) arc:** physical relocation of the in-place set (`landmarks` + `buildings` + the 9 render-geometry files) into the per-look emitted payload is **producer-stream work** — one coherent move + one repoint pass across `cartograph/*` + `scripts/*`, owned by the arc that can e2e the bake. The reader seam is already lookId-generic; this arc only flips the manifest paths when the emit lands. End-state extends "the slab is the contract" (`slab-render-vs-content-boundary`) to content: producer emits a per-look content payload; reader reads only that; the direct `src/data/*` import disappears.
+
 ### Commit boundaries
-- One commit for the **loader seam** (helper + payload wiring, LS pointed at it).
-- Migrate consumers in **coherent batches** (buildings-consumers, then landmarks/menus, then geometry files) — each batch its own commit, each proving gate 1. Additive first (load alongside), flip, then delete the static import.
+- One commit for the **loader seam** (the `loadInstanceData` contract + per-lookId manifest + `buildings.js` refold as first caller; LS pointed at it in-place).
+- Then consumers in **coherent batches** (buildings-consumers, then landmarks, then the geometry files) — each batch its own commit, each proving gate 1. Additive first (load alongside), flip, then delete the static import.
+- Physical relocation of `menus`/`seedEvents` rides the batch that migrates their consumers; the in-place set's physical move is **deferred to the producer-emit arc** (above), not this phase.
 
 ### The demun researcher
 **Stays on standby.** HPDM `content/roster.json` + `listings.json` (§5.1.1, ids matched 2089/2089) only become *loadable* once this seam lands. When Phase 2 is green, the researcher's payload dropped at `?look=hipointe-demun` is the **live proof the reader is generic** — installation #2 through the exact path LS uses. Don't dispatch them until the seam is in.
