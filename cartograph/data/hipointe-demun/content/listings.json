@@ -316,7 +316,7 @@
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "6300 Clayton Road",
-   "phone": null,
+   "phone": "(314) 647-7300",
    "website": "https://www.cheshirestl.com",
    "logo": null,
    "hours": null,
@@ -4983,10 +4983,39 @@
    "category": "dining",
    "subcategory": "cafes",
    "address": "700 De Mun Avenue",
-   "phone": null,
+   "phone": "(314) 727-9955",
    "website": "https://www.kaldiscoffee.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "06:30",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
@@ -5012,10 +5041,35 @@
    "category": "dining",
    "subcategory": "restaurants",
    "address": "706 De Mun Avenue",
-   "phone": null,
+   "phone": "(314) 300-8188",
    "website": "https://www.louiedemun.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "17:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "17:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
@@ -5028,7 +5082,7 @@
    "description": "Acclaimed Italian restaurant with a fiery pizza oven, house pastas, and a widely praised roast chicken; comfy bar and cozy room on DeMun.",
    "history": null,
    "menu_url": null,
-   "reservation_url": null,
+   "reservation_url": "https://resy.com/cities/clayton-mo/venues/louie",
    "status": "active",
    "source": "research",
    "osm_type": null,
@@ -5041,10 +5095,39 @@
    "category": "dining",
    "subcategory": "bars",
    "address": "706 De Mun Avenue",
-   "phone": null,
+   "phone": "(314) 863-7274",
    "website": "https://www.sashaswinebar.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "00:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
@@ -5068,10 +5151,39 @@
    "category": "dining",
    "subcategory": "restaurants",
    "address": "740 De Mun Avenue",
-   "phone": null,
-   "website": null,
+   "phone": "(314) 725-0322",
+   "website": "https://www.barrioburgersandtacos.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
@@ -5107,11 +5219,11 @@
     "oysters",
     "raw-bar"
    ],
-   "description": "Neighborhood oyster & seafood bar on DeMun Avenue.",
+   "description": "Former oyster & seafood bar at 740 De Mun — permanently closed; the space is now Barrio.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "active",
+   "status": "closed",
    "source": "research",
    "osm_type": null,
    "enriched": true
@@ -5123,10 +5235,39 @@
    "category": "dining",
    "subcategory": "desserts",
    "address": "730 De Mun Avenue",
-   "phone": null,
+   "phone": "(314) 858-6100",
    "website": "https://www.clementinescreamery.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "sunday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "monday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
@@ -5206,7 +5347,7 @@
    "category": "dining",
    "subcategory": "restaurants",
    "address": "1033 McCausland Avenue",
-   "phone": null,
+   "phone": "(314) 349-2720",
    "website": "https://hipointedrivein.com",
    "logo": null,
    "hours": {
@@ -5250,7 +5391,7 @@
    ],
    "description": "Cult-favorite burgers and sandwiches from a converted 1980s drive-in at the foot of McCausland — local ingredients, inventive specials, a St. Louis destination.",
    "history": null,
-   "menu_url": null,
+   "menu_url": "content/menus.json#hpdm-lst-0221",
    "reservation_url": null,
    "status": "active",
    "source": "research",

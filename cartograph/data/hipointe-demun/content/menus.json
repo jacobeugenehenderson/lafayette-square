@@ -1,0 +1,389 @@
+{
+ "meta": {
+  "scene": "hipointe-demun",
+  "schema": "NEIGHBORHOOD-INPUTS §5.1.1 / ls/PLACE-CARDS.md menu model",
+  "generated": "2026-07-05",
+  "note": "Menus keyed by listing id (mirrors LS src/data/menus.json). Prices are integer CENTS; schedule = the per-menu-type delivery window; modifiers price = cents delta. Best-guess/overridable (§0.0)."
+ },
+ "menus": {
+  "hpdm-lst-0221": {
+   "taglines": {
+    "all_day": "Cult-favorite smashburgers, sandwiches & shakes from a converted drive-in"
+   },
+   "schedule": {
+    "all_day": {
+     "monday": {
+      "start": "11:00",
+      "end": "21:00"
+     },
+     "tuesday": {
+      "start": "11:00",
+      "end": "21:00"
+     },
+     "wednesday": {
+      "start": "11:00",
+      "end": "21:00"
+     },
+     "thursday": {
+      "start": "11:00",
+      "end": "21:00"
+     },
+     "friday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "saturday": {
+      "start": "11:00",
+      "end": "22:00"
+     },
+     "sunday": {
+      "start": "11:00",
+      "end": "21:00"
+     }
+    }
+   },
+   "sections": [
+    {
+     "name": "Burgers",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Single Burger",
+       "description": "Create your own",
+       "price": 679,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Cheese",
+         "price": 100
+        },
+        {
+         "name": "Grilled onions",
+         "price": 100
+        },
+        {
+         "name": "Jalapeños",
+         "price": 100
+        },
+        {
+         "name": "Mushrooms",
+         "price": 100
+        },
+        {
+         "name": "Onion straws",
+         "price": 200
+        },
+        {
+         "name": "Fried egg",
+         "price": 200
+        },
+        {
+         "name": "Bacon",
+         "price": 250
+        },
+        {
+         "name": "Avocado",
+         "price": 250
+        },
+        {
+         "name": "Gluten-free bun",
+         "price": 250
+        }
+       ]
+      },
+      {
+       "name": "Double Burger",
+       "description": "Create your own",
+       "price": 879,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Cheese",
+         "price": 100
+        },
+        {
+         "name": "Grilled onions",
+         "price": 100
+        },
+        {
+         "name": "Jalapeños",
+         "price": 100
+        },
+        {
+         "name": "Mushrooms",
+         "price": 100
+        },
+        {
+         "name": "Onion straws",
+         "price": 200
+        },
+        {
+         "name": "Fried egg",
+         "price": 200
+        },
+        {
+         "name": "Bacon",
+         "price": 250
+        },
+        {
+         "name": "Avocado",
+         "price": 250
+        },
+        {
+         "name": "Gluten-free bun",
+         "price": 250
+        }
+       ]
+      },
+      {
+       "name": "Turkey Burger",
+       "price": 799,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Cheese",
+         "price": 100
+        },
+        {
+         "name": "Grilled onions",
+         "price": 100
+        },
+        {
+         "name": "Jalapeños",
+         "price": 100
+        },
+        {
+         "name": "Mushrooms",
+         "price": 100
+        },
+        {
+         "name": "Onion straws",
+         "price": 200
+        },
+        {
+         "name": "Fried egg",
+         "price": 200
+        },
+        {
+         "name": "Bacon",
+         "price": 250
+        },
+        {
+         "name": "Avocado",
+         "price": 250
+        },
+        {
+         "name": "Gluten-free bun",
+         "price": 250
+        }
+       ]
+      },
+      {
+       "name": "Impossible™ Burger",
+       "price": 1249,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Cheese",
+         "price": 100
+        },
+        {
+         "name": "Grilled onions",
+         "price": 100
+        },
+        {
+         "name": "Jalapeños",
+         "price": 100
+        },
+        {
+         "name": "Mushrooms",
+         "price": 100
+        },
+        {
+         "name": "Onion straws",
+         "price": 200
+        },
+        {
+         "name": "Fried egg",
+         "price": 200
+        },
+        {
+         "name": "Bacon",
+         "price": 250
+        },
+        {
+         "name": "Avocado",
+         "price": 250
+        },
+        {
+         "name": "Gluten-free bun",
+         "price": 250
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Chef Creations",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Frisco Melt",
+       "price": 1099,
+       "tags": []
+      },
+      {
+       "name": "Toklahoma",
+       "price": 1099,
+       "tags": []
+      },
+      {
+       "name": "Arch D-Lux",
+       "price": 1229,
+       "tags": []
+      },
+      {
+       "name": "Cowboy Burger",
+       "price": 1229,
+       "tags": []
+      },
+      {
+       "name": "The Taco Burger",
+       "price": 879,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Sandwiches",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Turkey Club",
+       "price": 1099,
+       "tags": []
+      },
+      {
+       "name": "Chicken Sandwich",
+       "description": "Fried or grilled",
+       "price": 999,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Fried",
+         "price": 0
+        },
+        {
+         "name": "Grilled",
+         "price": 0
+        }
+       ]
+      },
+      {
+       "name": "Chopped Cheese",
+       "price": 1229,
+       "tags": []
+      },
+      {
+       "name": "Grilled Cheese Tacos",
+       "price": 1099,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Salads",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Greens & Grains",
+       "price": 1149,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Griddled Salmon Salad",
+       "price": 1499,
+       "tags": [
+        "gf"
+       ]
+      },
+      {
+       "name": "Caesar",
+       "price": 899,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Add Chicken",
+         "price": 499
+        },
+        {
+         "name": "Add Salmon",
+         "price": 599
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Sides",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "French Fries",
+       "price": 350,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Mac & Cheese",
+       "price": 350,
+       "tags": []
+      },
+      {
+       "name": "Green Beans",
+       "price": 350,
+       "tags": [
+        "v",
+        "gf"
+       ]
+      },
+      {
+       "name": "Sweet Potato Tots",
+       "price": 350,
+       "tags": [
+        "v"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Shakes & Floats",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Classic Shake",
+       "description": "Vanilla, chocolate or strawberry",
+       "price": 599,
+       "tags": []
+      },
+      {
+       "name": "Specialty Shake",
+       "price": 699,
+       "tags": []
+      },
+      {
+       "name": "Soda Float",
+       "price": 699,
+       "tags": []
+      }
+     ]
+    }
+   ]
+  }
+ }
+}
