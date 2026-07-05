@@ -29,6 +29,7 @@ import {
   fetchSkeletonLabels, fetchExtentCorners, fetchStreetNames, geocodeZip, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourScene, fetchRibbons, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
+  fetchBuildingOverrides, saveBuildingOverrides,
 } from './api.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
@@ -280,6 +281,23 @@ function ExtentDim({ centroid, radiusM }) {
 // → hide gesture in the next step). Footprints sit just above the dim ring, below
 // labels/boundary lines.
 const FOOTPRINT_Y = 1.5
+// Ray-cast point-in-polygon (poly = array of {x,z}); the neighborhood's default
+// membership is "centroid inside the boundary-street polygon".
+function pointInPolygon(px, pz, poly) {
+  if (!poly || poly.length < 3) return false
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z
+    if (((zi > pz) !== (zj > pz)) && (px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi)) inside = !inside
+  }
+  return inside
+}
+// Average of a footprint ring [[x,z],…] — the building's representative point.
+function ringCentroid(ring) {
+  let sx = 0, sz = 0
+  for (const [x, z] of ring) { sx += x; sz += z }
+  return { x: sx / ring.length, z: sz / ring.length }
+}
 function buildFootprintGeometry(buildings) {
   const positions = []
   const ids = []
@@ -308,18 +326,41 @@ function buildFootprintGeometry(buildings) {
   geom.setAttribute('aBuildingId', new THREE.Float32BufferAttribute(ids, 1))
   return geom
 }
-function ExtentBuildings({ footprints, centroid, radiusM }) {
+function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds, onToggle }) {
+  const buildings = footprints?.buildings
   const geom = useMemo(
-    () => (footprints?.buildings?.length ? buildFootprintGeometry(footprints.buildings) : null),
-    [footprints],
+    () => (buildings?.length ? buildFootprintGeometry(buildings) : null),
+    [buildings],
   )
+  const count = buildings?.length || 1
+  // Per-building hidden flag as a data texture, indexed by aBuildingId (the
+  // building index). Toggling a hide rewrites this texture — NEVER the geometry
+  // — so a click is instant. R channel: 255 = hidden.
+  const hiddenTex = useMemo(() => {
+    const tex = new THREE.DataTexture(new Uint8Array(count * 4), count, 1, THREE.RGBAFormat)
+    tex.magFilter = THREE.NearestFilter
+    tex.minFilter = THREE.NearestFilter
+    tex.needsUpdate = true
+    return tex
+  }, [count])
+  useEffect(() => {
+    if (!buildings) return
+    const data = hiddenTex.image.data
+    for (let i = 0; i < buildings.length; i++) data[i * 4] = excludedIds.has(buildings[i].id) ? 255 : 0
+    hiddenTex.needsUpdate = true
+  }, [hiddenTex, buildings, excludedIds])
+
   const mat = useMemo(() => new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, depthTest: false,
+    transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
     uniforms: {
       uCenter: { value: new THREE.Vector2(0, 0) },
       uRadius: { value: 1e9 },
       uInside: { value: new THREE.Color('#ffd9a0') },
       uOutside: { value: new THREE.Color('#5a6b7a') },
+      uGhost: { value: new THREE.Color('#ff5a5a') },
+      uHidden: { value: null },
+      uCount: { value: 1 },
+      uCurating: { value: 0 },
     },
     vertexShader: `
       attribute float aBuildingId;
@@ -335,10 +376,21 @@ function ExtentBuildings({ footprints, centroid, radiusM }) {
       uniform float uRadius;
       uniform vec3 uInside;
       uniform vec3 uOutside;
+      uniform vec3 uGhost;
+      uniform sampler2D uHidden;
+      uniform float uCount;
+      uniform float uCurating;
       varying vec2 vWorldXZ;
+      varying float vId;
       void main() {
+        float hidden = texture2D(uHidden, vec2((vId + 0.5) / uCount, 0.5)).r;
+        // Hidden + not editing → truly gone (what the bake will drop).
+        if (hidden > 0.5 && uCurating < 0.5) discard;
         float inside = step(distance(vWorldXZ, uCenter), uRadius);
-        gl_FragColor = vec4(mix(uOutside, uInside, inside), mix(0.14, 0.42, inside));
+        vec3 base = mix(uOutside, uInside, inside);
+        vec3 c = mix(base, uGhost, step(0.5, hidden));       // ghost tint while editing
+        float a = hidden > 0.5 ? 0.10 : mix(0.14, 0.42, inside);
+        gl_FragColor = vec4(c, a);
       }`,
   }), [])
   useEffect(() => {
@@ -347,9 +399,29 @@ function ExtentBuildings({ footprints, centroid, radiusM }) {
     // operator resolves a boundary.
     mat.uniforms.uRadius.value = radiusM > 0 ? radiusM : 1e9
   }, [mat, centroid, radiusM])
-  useEffect(() => () => geom?.dispose(), [geom])
+  useEffect(() => { mat.uniforms.uHidden.value = hiddenTex; mat.uniforms.uCount.value = count }, [mat, hiddenTex, count])
+  useEffect(() => { mat.uniforms.uCurating.value = curating ? 1 : 0 }, [mat, curating])
+  useEffect(() => () => { geom?.dispose(); hiddenTex?.dispose() }, [geom, hiddenTex])
+
+  const handleClick = (e) => {
+    if (!curating || !geom || !buildings) return
+    e.stopPropagation()
+    const bi = geom.getAttribute('aBuildingId').getX(e.face.a)   // building index off the hit face
+    const b = buildings[bi]
+    if (b) onToggle(b.id)
+  }
+
   if (!geom) return null
-  return <mesh geometry={geom} material={mat} renderOrder={6} />
+  return (
+    <mesh
+      geometry={geom}
+      material={mat}
+      renderOrder={6}
+      onClick={curating ? handleClick : undefined}
+      // Off edit-mode: no-op raycast so the overlay never intercepts map drags.
+      raycast={curating ? THREE.Mesh.prototype.raycast : () => null}
+    />
+  )
 }
 
 // One boundary-street combobox. Reuses the suite's row/input/button/dropdown
@@ -473,6 +545,29 @@ export default function ExtentApp() {
     return () => { cancelled = true }
   }, [scene, seedToken])
 
+  // Roster editor. The neighborhood's DEFAULT building membership is "centroid
+  // inside the boundary-street polygon"; the operator's overrides layer on top —
+  // `activate` = force-IN an outside building, `hide` = force-OUT an inside one —
+  // stored per scene as { activate, hide } (robust to radius/polygon edits).
+  const [curating, setCurating] = useState(false)
+  const [activate, setActivate] = useState(() => new Set())
+  const [hide, setHide] = useState(() => new Set())
+  const ovHydrated = useRef(false)
+  useEffect(() => {
+    let cancelled = false
+    ovHydrated.current = false
+    setCurating(false); setActivate(new Set()); setHide(new Set())
+    fetchBuildingOverrides(scene)
+      .then(r => { if (!cancelled) { setActivate(new Set(r.activate || [])); setHide(new Set(r.hide || [])); ovHydrated.current = true } })
+      .catch(() => { ovHydrated.current = true })
+    return () => { cancelled = true }
+  }, [scene])
+  useEffect(() => {
+    if (!ovHydrated.current) return
+    const t = setTimeout(() => { saveBuildingOverrides(scene, { activate: [...activate], hide: [...hide] }).catch(() => {}) }, 400)
+    return () => clearTimeout(t)
+  }, [activate, hide, scene])
+
   // Autocomplete pool — skeleton-sourced + corridor-collapsed, GROUPED
   // (arterials, then the rest), each A→Z. A directional corridor shows as ONE
   // entry ("Big Bend Boulevard"). A custom combobox renders the groups (native
@@ -506,10 +601,45 @@ export default function ExtentApp() {
   const [radiusTouched, setRadiusTouched] = useState(false)
   const draftHydrated = useRef(false)
 
+  // Roster membership (must follow `corners`): default = centroid in the
+  // boundary-street polygon; overrides layer on top.
+  const defaultIn = useMemo(() => {
+    const set = new Set()
+    const poly = corners?.corners
+    const bs = footprints?.buildings
+    if (!poly || poly.length < 3 || !bs) return set
+    for (const b of bs) {
+      const c = ringCentroid(b.ring)
+      if (pointInPolygon(c.x, c.z, poly)) set.add(b.id)
+    }
+    return set
+  }, [footprints, corners])
+  // Effective EXCLUDED set (renders ghost; the bake drops these):
+  //   excluded = in `hide`  OR  (not default-in AND not in `activate`)
+  const excludedIds = useMemo(() => {
+    const set = new Set()
+    const bs = footprints?.buildings
+    if (!bs) return set
+    for (const b of bs) {
+      const inc = (defaultIn.has(b.id) || activate.has(b.id)) && !hide.has(b.id)
+      if (!inc) set.add(b.id)
+    }
+    return set
+  }, [footprints, defaultIn, activate, hide])
+  // Click flips a building's membership, recording it as the minimal override.
+  const toggleBuilding = (id) => {
+    const isDefault = defaultIn.has(id)
+    const excluded = excludedIds.has(id)
+    const a = new Set(activate), h = new Set(hide)
+    if (excluded) { h.delete(id); if (!isDefault) a.add(id) }        // re-include
+    else { a.delete(id); if (isDefault) h.add(id) }                  // exclude
+    setActivate(a); setHide(h)
+  }
+
   // On scene open: reset, then restore the auto-saved draft (sides/radius) so the
   // operator's selections survive reloads.
   useEffect(() => {
-    setZip(''); setSeedError(null); setLocated(false); setCommitted(false)
+    setSeedError(null); setLocated(false); setCommitted(false)
     setSides(['', '', '', '']); setCorners(null); setRadiusTouched(false); setPreviewStreet(null)
     draftHydrated.current = false
     let cancelled = false
@@ -519,7 +649,7 @@ export default function ExtentApp() {
         const s = [...nb.sides]; while (s.length < 4) s.push('')
         setSides(s)
       }
-      if (typeof nb.zip === 'string' && nb.zip) setZip(nb.zip)
+      setZip(nb.zip || '')
       if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
       if (nb.committed) setCommitted(true)
       draftHydrated.current = true
@@ -635,6 +765,10 @@ export default function ExtentApp() {
     if (!corners?.closed || !corners.centroid || !(radiusM > 0) || building || !geo) return
     setBuilding(true); setSeedError(null)
     try {
+      // Flush the roster overrides BEFORE the pour — the debounced autosave may
+      // not have landed, and the pipeline reads building-overrides.json to decide
+      // membership (feedback_debounced_save_must_flush_before_dependent_post).
+      await saveBuildingOverrides(scene, { activate: [...activate], hide: [...hide] }).catch(() => {})
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
       setBuildStage('Committing extent…')
@@ -723,7 +857,7 @@ export default function ExtentApp() {
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
-      <div className="carto-canvas-wrap" style={{ cursor: 'grab' }}>
+      <div className="carto-canvas-wrap" style={{ cursor: curating ? 'pointer' : 'grab' }}>
         <Canvas
           orthographic
           frameloop="always"
@@ -737,7 +871,8 @@ export default function ExtentApp() {
           <ambientLight intensity={1} />
           {located && <ExtentAerial geo={geo} />}
           {located && corners?.closed && <ExtentDim centroid={corners.centroid} radiusM={radiusM} />}
-          {located && <ExtentBuildings footprints={footprints} centroid={corners?.centroid} radiusM={radiusM} />}
+          {located && <ExtentBuildings footprints={footprints} centroid={corners?.centroid} radiusM={radiusM}
+            curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
           {located && <ExtentStreets streets={corners?.streets} preview={previewStreet} />}
           {located && <ExtentBoundary corners={corners?.corners} centroid={corners?.centroid} radiusM={radiusM} />}
@@ -827,6 +962,21 @@ export default function ExtentApp() {
                   value={radiusM}
                   onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
                 <button className="carto-btn-sm" onClick={() => { if (corners?.radius) setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to streets</button>
+              </div>
+            )}
+
+            {footprints?.buildings?.length > 0 && (
+              <div className="carto-row carto-row--wrap" style={{ marginTop: 12 }}>
+                <button className="carto-btn-sm" onClick={() => setCurating(c => !c)}
+                  style={curating ? { background: '#ff5a5a', color: '#12140f', fontWeight: 600 } : undefined}
+                  title="Curate the neighborhood — the street polygon is included by default; click an outside ghost to re-activate it, an inside building to hide it">
+                  {curating ? '✓ Done editing' : '✎ Edit buildings'}
+                </button>
+                {curating
+                  ? <span className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 4 }}>
+                      +{activate.size} re-activated · −{hide.size} hidden · click a ghost to add, a building to drop
+                    </span>
+                  : (activate.size + hide.size) > 0 && <span className="carto-meta--value">+{activate.size} / −{hide.size}</span>}
               </div>
             )}
 
