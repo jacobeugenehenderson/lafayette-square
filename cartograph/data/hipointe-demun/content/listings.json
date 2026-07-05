@@ -83,25 +83,52 @@
   {
    "id": "hpdm-lst-0004",
    "building_id": "msbf-231",
-   "name": "The Church of St. Michael and St. George",
+   "name": "The Church of St. Michael & St. George",
    "category": "community",
    "subcategory": "churches",
    "address": "6345 Wydown Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://www.csmsg.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "church",
+    "episcopal",
+    "gothic",
+    "historic",
+    "landmark",
+    "wydown"
+   ],
+   "description": "One of St. Louis’s most prominent Episcopal parishes, an English Gothic landmark on Wydown Boulevard designed by architect James P. Jamieson. It was formed in 1928 by the merger of St. Michael & All Angels (founded in Clayton, 1913) and St. George’s (founded in the City of St. Louis, 1845); the nave was later extended and the Jay Herndon Smith Memorial Tower links the church to its parish hall. The parish also runs the St. Michael School of Clayton (1969).",
+   "history": [
+    {
+     "year": 1845,
+     "event": "St. George’s Episcopal Church is established in the City of St. Louis."
+    },
+    {
+     "year": 1913,
+     "event": "St. Michael & All Angels begins in Clayton."
+    },
+    {
+     "year": 1928,
+     "event": "The two parishes merge to form The Church of St. Michael & St. George on Wydown Boulevard (architect James P. Jamieson)."
+    },
+    {
+     "year": 1969,
+     "event": "The parish founds the St. Michael School of Clayton."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Episcopal",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0005",
@@ -111,20 +138,33 @@
    "subcategory": "schools",
    "address": "6345 Wydown Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://stmichaelschool.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "school",
+    "episcopal",
+    "independent",
+    "wydown"
+   ],
+   "description": "An Episcopal parish day school (junior-kindergarten through grade 6) founded in 1969 by The Church of St. Michael & St. George, sharing the parish’s Wydown campus.",
+   "history": [
+    {
+     "year": 1969,
+     "event": "The Church of St. Michael & St. George founds the school for children of the parish and community."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "school"
+   "source": "research",
+   "osm_type": "school",
+   "school_type": "Episcopal parish day school (JK–grade 6)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0006",
@@ -755,10 +795,10 @@
   {
    "id": "hpdm-lst-0029",
    "building_id": "msbf-1716",
-   "name": "Central Seventh Day Adventist",
+   "name": "Central Seventh-day Adventist Church",
    "category": "community",
    "subcategory": "churches",
-   "address": "5 North Skinker Boulevard",
+   "address": "5 N Skinker Boulevard",
    "phone": null,
    "website": null,
    "logo": null,
@@ -766,14 +806,21 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "church",
+    "adventist",
+    "skinker"
+   ],
+   "description": "A Seventh-day Adventist congregation on North Skinker Boulevard at the edge of Forest Park.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Seventh-day Adventist",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0030",
@@ -783,20 +830,29 @@
    "subcategory": "schools",
    "address": "6345 Northwood Avenue",
    "phone": null,
-   "website": null,
+   "website": "https://www.claytonschools.net/cpt",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "school",
+    "public",
+    "elementary",
+    "clayton",
+    "blue-ribbon"
+   ],
+   "description": "A public elementary school in the School District of Clayton — a two-time National Blue Ribbon School (2015, 2024) that ranks among the top 5% in Missouri.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "school"
+   "source": "research",
+   "osm_type": "school",
+   "school_type": "Public elementary (School District of Clayton)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0031",
@@ -804,22 +860,36 @@
    "name": "Vedanta Society of St. Louis",
    "category": "community",
    "subcategory": "churches",
-   "address": "205 South Skinker Boulevard",
+   "address": "205 S Skinker Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://vedantastl.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "temple",
+    "hindu",
+    "vedanta",
+    "ramakrishna",
+    "skinker"
+   ],
+   "description": "A Hindu temple and spiritual center on South Skinker Boulevard, a branch of the Ramakrishna Order of India, offering Sunday services, classes, meditation, study circles, retreats and lectures in a serene setting across from Forest Park.",
+   "history": [
+    {
+     "year": 1938,
+     "event": "The Vedanta Society of St. Louis is founded by Swami Satprakashananda, a monk of the Ramakrishna Order and disciple of Swami Brahmananda."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Hindu (Ramakrishna Order / Vedanta)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0032",
@@ -873,7 +943,7 @@
    "name": "Clayton Child Center",
    "category": "community",
    "subcategory": "schools",
-   "address": "1 Oak Knoll Park",
+   "address": "Oak Knoll Park",
    "phone": null,
    "website": null,
    "logo": null,
@@ -881,14 +951,22 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "school",
+    "preschool",
+    "early-childhood",
+    "clayton"
+   ],
+   "description": "An early-childhood center serving Clayton families, set by Oak Knoll Park.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "kindergarten"
+   "source": "research",
+   "osm_type": "kindergarten",
+   "school_type": "Early-childhood / preschool",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0035",
@@ -918,7 +996,7 @@
    "building_id": "msbf-1946",
    "name": "Last House",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": "665 S SKINKER BLVD",
    "phone": null,
    "website": null,
@@ -934,7 +1012,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0037",
@@ -1271,7 +1350,7 @@
    "building_id": "msbf-2761",
    "name": "Next House",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": "665 S SKINKER BLVD",
    "phone": null,
    "website": null,
@@ -1287,7 +1366,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0052",
@@ -1432,7 +1512,7 @@
    "name": "Memorial Presbyterian Church",
    "category": "community",
    "subcategory": "churches",
-   "address": "201 South Skinker Boulevard",
+   "address": "201 S Skinker Boulevard",
    "phone": null,
    "website": null,
    "logo": null,
@@ -1440,14 +1520,22 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "church",
+    "presbyterian",
+    "gothic",
+    "skinker"
+   ],
+   "description": "A Gothic-styled Presbyterian congregation on South Skinker Boulevard at the edge of Forest Park, near the Wash U campus.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Presbyterian (PC-USA)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0057",
@@ -1885,22 +1973,44 @@
    "name": "The Wilson School",
    "category": "community",
    "subcategory": "schools",
-   "address": "6312 ALAMO AVE",
+   "address": "6312 Alamo Avenue",
    "phone": null,
-   "website": null,
+   "website": "https://www.wilsonschool.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "school",
+    "independent",
+    "historic",
+    "early-childhood",
+    "demun"
+   ],
+   "description": "An independent, coeducational preparatory school (pre-K through grade 6) in the DeMun neighborhood — the oldest formalized early-childhood program in the St. Louis metro. Founded in 1913 by kindergarten pioneer Mabel Wilson as “Miss Wilson’s School” in her home; its landmark 1916 building was designed by noted school architect William B. Ittner.",
+   "history": [
+    {
+     "year": 1913,
+     "event": "Mabel Wilson founds “Miss Wilson’s School” in her St. Louis home — the metro’s first formalized early-childhood program."
+    },
+    {
+     "year": 1916,
+     "event": "Its historic building is designed by school-architecture pioneer William B. Ittner."
+    },
+    {
+     "year": 1960,
+     "event": "The Wilson School moves to its current DeMun/Clayton campus on Alamo Avenue."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "school"
+   "source": "research",
+   "osm_type": "school",
+   "school_type": "Independent (JK–grade 6)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0076",
@@ -1953,7 +2063,7 @@
    "building_id": "msbf-3690",
    "name": "Science Building",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": null,
    "phone": null,
    "website": null,
@@ -1969,7 +2079,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0079",
@@ -2539,20 +2650,34 @@
    "subcategory": "schools",
    "address": "6500 Wydown Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://wms.claytonschools.net",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "school",
+    "public",
+    "middle-school",
+    "clayton",
+    "wydown"
+   ],
+   "description": "The School District of Clayton’s middle school on Wydown Boulevard, opened in 1936 in the former Hosmer Hall (a private girls’ school the district acquired).",
+   "history": [
+    {
+     "year": 1936,
+     "event": "The district opens Wydown by purchasing Hosmer Hall, a private girls’ school."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "school"
+   "source": "research",
+   "osm_type": "school",
+   "school_type": "Public middle school (School District of Clayton)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0104",
@@ -2629,22 +2754,45 @@
    "name": "Graham Chapel",
    "category": "community",
    "subcategory": "churches",
-   "address": "60 ABERDEEN PL",
+   "address": "60 Aberdeen Place",
    "phone": null,
-   "website": null,
+   "website": "https://eventmanagement.wustl.edu/items/graham-memorial-chapel/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    "photos/graham-chapel/01.jpg"
+   ],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "chapel",
+    "collegiate-gothic",
+    "historic",
+    "landmark",
+    "wash-u",
+    "weddings",
+    "events"
+   ],
+   "description": "Washington University’s beloved Collegiate Gothic chapel, designed by Cope & Stewardson and completed in 1909 as the 12th building on the Danforth campus. Funded by Christine Blair Graham in memory of her husband Benjamin Graham (founder of the Graham Paper Company), its soaring nave, tracery windows and twin towers make it one of St. Louis’s favorite settings for concerts, ceremonies and weddings.",
+   "history": [
+    {
+     "year": 1905,
+     "event": "Christine Blair Graham offers to fund a university chapel in memory of her husband, Benjamin Graham."
+    },
+    {
+     "year": 1909,
+     "event": "Graham Memorial Chapel is completed — Collegiate Gothic Revival by Cope & Stewardson, the 12th building at Washington University."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Non-denominational (Washington University chapel)",
+   "photo_credit": "Warren LeMay / Flickr (public domain)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0108",
@@ -2706,14 +2854,21 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "church",
+    "ucc",
+    "wydown"
+   ],
+   "description": "A neighborhood United Church of Christ congregation on Wydown Boulevard in Clayton.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "United Church of Christ",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0111",
@@ -3028,7 +3183,7 @@
    "name": "Bethel Lutheran Church",
    "category": "community",
    "subcategory": "churches",
-   "address": "6800 WYDOWN BLVD",
+   "address": "6800 Wydown Boulevard",
    "phone": null,
    "website": null,
    "logo": null,
@@ -3036,14 +3191,21 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "church",
+    "lutheran",
+    "wydown"
+   ],
+   "description": "A Lutheran congregation on Wydown Boulevard in Clayton, near the Wash U campus.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Lutheran",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0125",
@@ -3096,7 +3258,7 @@
    "building_id": "msbf-5492",
    "name": "Gerdine House",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": "625 S SKINKER BLVD",
    "phone": null,
    "website": null,
@@ -3112,7 +3274,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0128",
@@ -3503,14 +3666,20 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "church",
+    "christian-science"
+   ],
+   "description": "A Christian Science church and Reading Room serving the Clayton/DeMun area.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Christian Science",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0145",
@@ -3658,20 +3827,37 @@
    "subcategory": "churches",
    "address": "7148 Forsyth Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://ucitylourdes.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "church",
+    "catholic",
+    "parish",
+    "historic"
+   ],
+   "description": "A Roman Catholic parish just west of the DeMun/Clayton line, with its permanent church dedicated in 1919; the parish also runs Our Lady of Lourdes School.",
+   "history": [
+    {
+     "year": 1916,
+     "event": "Our Lady of Lourdes parish is founded; the first Mass is celebrated by Father Francis J. O’Connor."
+    },
+    {
+     "year": 1919,
+     "event": "Archbishop John J. Glennon dedicates the permanent church (cornerstone laid 1917)."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Roman Catholic (Archdiocese of St. Louis)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0152",
@@ -4082,7 +4268,7 @@
    "building_id": "msbf-7471",
    "name": "New House",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": null,
    "phone": null,
    "website": null,
@@ -4098,14 +4284,15 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0170",
    "building_id": "msbf-7471",
    "name": "Filmore House",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": null,
    "phone": null,
    "website": null,
@@ -4121,7 +4308,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0171",
@@ -4267,29 +4455,46 @@
    "name": "Forsyth School",
    "category": "community",
    "subcategory": "schools",
-   "address": null,
+   "address": "Forsyth Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://www.forsythschool.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "school",
+    "independent",
+    "wydown",
+    "forsyth"
+   ],
+   "description": "An independent coeducational school (age 3 through grade 6) on the Wydown/Forsyth corridor, known for hands-on, creative learning across a campus of converted historic houses.",
+   "history": [
+    {
+     "year": 1961,
+     "event": "Mary Dunbar founds Forsyth School as a small preschool in a house leased from Unity Christ Church on Forsyth Boulevard."
+    },
+    {
+     "year": 1970,
+     "event": "Having added a grade level each year, Forsyth graduates its first sixth-grade class."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "school"
+   "source": "research",
+   "osm_type": "school",
+   "school_type": "Independent (age 3–grade 6)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0178",
    "building_id": "msbf-7996",
    "name": "Rand Center",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": null,
    "phone": null,
    "website": null,
@@ -4305,7 +4510,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0179",
@@ -4479,7 +4685,7 @@
    "name": "Washington University Catholic Student Center",
    "category": "community",
    "subcategory": "churches",
-   "address": "6304 NORTHWOOD AVE 1",
+   "address": "6304 Northwood Avenue",
    "phone": null,
    "website": null,
    "logo": null,
@@ -4487,14 +4693,22 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "church",
+    "catholic",
+    "campus-ministry",
+    "wash-u"
+   ],
+   "description": "The Catholic campus ministry and chapel serving Washington University students, just off the Danforth campus.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Roman Catholic (campus ministry)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0187",
@@ -4594,10 +4808,10 @@
   {
    "id": "hpdm-lst-0191",
    "building_id": "msbf-8961",
-   "name": "Chapel of Saint Timothy and Saint Titus",
+   "name": "Chapel of Saint Timothy & Saint Titus",
    "category": "community",
    "subcategory": "churches",
-   "address": "1131 BELLEVUE AVE",
+   "address": "1131 Bellevue Avenue",
    "phone": null,
    "website": null,
    "logo": null,
@@ -4605,14 +4819,23 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "chapel",
+    "lutheran",
+    "collegiate-gothic",
+    "concordia",
+    "seminary"
+   ],
+   "description": "The chapel of Concordia Seminary, part of the seminary’s 1926 Collegiate Gothic campus in the DeMun neighborhood — a Lutheran (LCMS) house of worship for the seminary community.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Lutheran (LCMS — Concordia Seminary)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0192",
@@ -4651,14 +4874,21 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "church",
+    "lutheran",
+    "clayton-road"
+   ],
+   "description": "A Lutheran congregation on Clayton Road in the Hi-Pointe/DeMun area.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "place_of_worship"
+   "source": "research",
+   "osm_type": "place_of_worship",
+   "denomination": "Lutheran",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0194",
@@ -4856,20 +5086,27 @@
    "subcategory": "schools",
    "address": "7157 Northmoor Drive",
    "phone": null,
-   "website": null,
+   "website": "https://ucitylourdes.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "school",
+    "catholic",
+    "parish-school"
+   ],
+   "description": "The parish school of Our Lady of Lourdes — a Catholic K–8 school on the Clayton/University City edge.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "school"
+   "source": "research",
+   "osm_type": "school",
+   "school_type": "Catholic parish school (K–8)",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0203",
@@ -5014,7 +5251,7 @@
    "building_id": "msbf-9695",
    "name": "Dunbar House",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "university",
    "address": null,
    "phone": null,
    "website": null,
@@ -5030,7 +5267,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "_reclassified": "Wash U building — not a school"
   },
   {
    "id": "hpdm-lst-0210",
