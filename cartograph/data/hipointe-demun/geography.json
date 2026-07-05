@@ -1,9 +1,9 @@
 {
-  "_comment": "Per-installation geography SSOT for HiPointe-DeMun. Re-centered 2026-07-03 to the boundary-street box (W Big Bend / E Skinker-McCausland), correcting the step-0 center that sat out in Forest Park. center is the local [0,0] origin; bbox covers the fetch extent (~±1750m).",
-  "lat": 38.63727,
-  "lon": -90.30973,
+  "_comment": "Committed extent — center = the boundary-polygon centroid; bbox = the fetch extent.",
+  "lat": 38.64229,
+  "lon": -90.30968,
   "timezone": "America/Chicago",
-  "lonToMeters": 86957,
+  "lonToMeters": 86948,
   "latToMeters": 111000,
   "bbox": {
     "minLat": 38.62286,

@@ -21,7 +21,16 @@
       "id": "hipointe-demun",
       "name": "HiPointe-DeMun",
       "scene": "hipointe-demun",
-      "createdAt": 1782000000000
+      "createdAt": 1782000000000,
+      "bakedAt": 1783218064499,
+      "updatedAt": 1783192011387
+    },
+    {
+      "id": "demo",
+      "name": "Demo",
+      "scene": "demo",
+      "createdAt": 1783115928687,
+      "bakedAt": 1783220090643
     }
   ]
 }

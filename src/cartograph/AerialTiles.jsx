@@ -54,7 +54,7 @@ function injectCircleCrop(mat, geo) {
   return mat
 }
 
-function wgs84ToLocal(geo, lon, lat) {
+export function wgs84ToLocal(geo, lon, lat) {
   return [
     (lon - geo.center.lon) * geo.lonToMeters,
     (geo.center.lat - lat) * geo.latToMeters,
@@ -65,11 +65,11 @@ function wgs84ToLocal(geo, lon, lat) {
 // derive the tile-index range directly from a small handle patch instead of
 // scanning the whole-BBOX tile grid (which at z21 is tens of thousands of
 // cells before culling).
-function localToWgs84(geo, x, z) {
+export function localToWgs84(geo, x, z) {
   return [geo.center.lon + x / geo.lonToMeters, geo.center.lat - z / geo.latToMeters]
 }
 
-function lonLatToTile(lon, lat, z) {
+export function lonLatToTile(lon, lat, z) {
   const n = 2 ** z
   const x = Math.floor((lon + 180) / 360 * n)
   const latRad = lat * Math.PI / 180
@@ -77,7 +77,7 @@ function lonLatToTile(lon, lat, z) {
   return [x, y]
 }
 
-function tileToLonLat(x, y, z) {
+export function tileToLonLat(x, y, z) {
   const n = 2 ** z
   const lon = x / n * 360 - 180
   const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n)))
@@ -102,7 +102,7 @@ function tileTouchesRegion(x, z, w, h, region) {
     && tMaxZ >= region.minZ && tMinZ <= region.maxZ
 }
 
-const TILE_URL = (tx, ty, z) =>
+export const TILE_URL = (tx, ty, z) =>
   `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`
 
 // Build one tile record (world rect + url) for tile (tx,ty,z), or null if it
@@ -162,7 +162,10 @@ function buildFocusTiles(geo, z, patches, cx, cz, maxTiles) {
 }
 
 // Cancelable tile texture (AbortController + createImageBitmap; freed on unmount).
-function TileMesh({ tile, geo, y = -0.05 }) {
+// `crop` (default true) applies the neighborhood fade-circle shader — the shipping
+// Designer/LS path. The Extent editor passes crop={false} to show the full fetched
+// square uncropped (there's no boundary circle yet — the operator is authoring it).
+export function TileMesh({ tile, geo, y = -0.05, crop = true }) {
   const [texture, setTexture] = useState(null)
 
   useEffect(() => {
@@ -192,8 +195,12 @@ function TileMesh({ tile, geo, y = -0.05 }) {
   }, [tile.url])
 
   const material = useMemo(
-    () => texture ? injectCircleCrop(new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }), geo) : null,
-    [texture, geo]
+    () => {
+      if (!texture) return null
+      const mat = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
+      return crop ? injectCircleCrop(mat, geo) : mat
+    },
+    [texture, geo, crop]
   )
   useEffect(() => () => material?.dispose(), [material])
 

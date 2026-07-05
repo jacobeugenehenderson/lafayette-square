@@ -42,11 +42,120 @@ export async function fetchMap(scene) {
 // (neighborhood_boundary.json). Every installation carries its OWN — the kit
 // loads them BY ID so no module has to name a specific neighborhood.
 export async function fetchGeography(scene) {
-  const res = await fetch(sceneUrl(scene, 'geography'))
+  // Cache-bust: after a re-fetch the geography.json is rewritten, and a stale
+  // cached copy would put the aerial in a different frame than the fresh skeleton.
+  const res = await fetch(`${sceneUrl(scene, 'geography')}?t=${Date.now()}`, { cache: 'no-store' })
   return res.json()
 }
 export async function fetchBoundary(scene) {
   const res = await fetch(sceneUrl(scene, 'boundary'))
+  return res.json()
+}
+
+// Extent editor: the pre-skeleton street-label set (one per named street,
+// local coords + `major` arterial flag). Extracted server-side from raw OSM
+// so the client fetches a few KB, not the ~18 MB dump.
+export async function fetchOsmLabels(scene) {
+  const res = await fetch(sceneUrl(scene, 'osm-labels'))
+  if (!res.ok) return { labels: [] }
+  return res.json()
+}
+
+// Extent editor: ZIP → centroid (Zippopotam, keyless). Used only to JUMP the
+// camera to the right area — the operator then frames the neighborhood by eye
+// and fetches the framed view. No fetch/write here.
+export async function geocodeZip(zip) {
+  const res = await fetch(`https://api.zippopotam.us/us/${encodeURIComponent(zip)}`)
+  if (!res.ok) throw new Error(`ZIP ${zip} not found`)
+  const j = await res.json()
+  const p = j.places && j.places[0]
+  if (!p) throw new Error(`ZIP ${zip} has no centroid`)
+  return { lat: parseFloat(p.latitude), lon: parseFloat(p.longitude) }
+}
+
+// Extent editor: the Phalanges over the operator-framed square — write
+// geography (centered on the bbox) → fetch OSM → skeleton. Long-running.
+export async function fetchExtent(scene, bbox) {
+  const res = await fetch(sceneUrl(scene, 'fetch-extent'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bbox }),
+  })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `fetch-extent ${res.status}`)
+  return j
+}
+
+// Extent editor: one street's geometry (corridor-aware) for the dropdown
+// hover-preview — see where a candidate lies before selecting it.
+export async function fetchStreetGeom(scene, name) {
+  const res = await fetch(sceneUrl(scene, 'street-geom'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+  })
+  if (!res.ok) return { polylines: [] }
+  return res.json()
+}
+
+// Extent editor: the extent DRAFT + metadata (name/blurb/sides/radius). Auto-
+// saved from the panel; loaded on open to restore selections across reloads.
+export async function fetchNeighborhood(scene) {
+  const res = await fetch(`${sceneUrl(scene, 'neighborhood')}?t=${Date.now()}`, { cache: 'no-store' })
+  if (!res.ok) return {}
+  return res.json()
+}
+export async function saveNeighborhood(scene, data) {
+  await fetch(sceneUrl(scene, 'neighborhood'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+  })
+}
+
+// Extent editor: the one-click pour — pipeline (clipped to the boundary) →
+// promote-ribbons → the map the Designer renders. Long-running.
+export async function pourScene(scene) {
+  const res = await fetch(sceneUrl(scene, 'pour'), { method: 'POST' })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `pour ${res.status}`)
+  return j
+}
+
+// Extent editor: the deliberate finalize — re-center to the centroid, reproject
+// + skeleton, write the boundary circle + metadata. Long-running.
+export async function commitExtent(scene, payload) {
+  const res = await fetch(sceneUrl(scene, 'commit-extent'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `commit-extent ${res.status}`)
+  return j
+}
+
+// Extent editor: corridor-collapsed aerial labels (skeleton-sourced, current-
+// frame x/z). One label per corridor/street, `major` = arterial.
+export async function fetchSkeletonLabels(scene) {
+  const res = await fetch(sceneUrl(scene, 'skeleton-labels'))
+  if (!res.ok) return { labels: [] }
+  return res.json()
+}
+
+// Extent editor: the boundary-street dropdown pool — skeleton-sourced +
+// corridor-collapsed ({ major, minor }, alphabetized). One entry per corridor
+// (Big Bend Boulevard), not per directional segment.
+export async function fetchStreetNames(scene) {
+  const res = await fetch(sceneUrl(scene, 'street-names'))
+  if (!res.ok) return { major: [], minor: [] }
+  return res.json()
+}
+
+// Extent editor: resolve the boundary corners from ordered side names via the
+// scene's skeleton junctions (the real path — no marks). Returns
+// { corners, centroid, radius, edges, closed }.
+export async function fetchExtentCorners(scene, sides) {
+  const res = await fetch(sceneUrl(scene, 'extent-corners'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sides }),
+  })
+  if (!res.ok) return { error: `extent-corners ${res.status}`, corners: [], edges: [] }
   return res.json()
 }
 
@@ -157,11 +266,11 @@ export async function bakeLook(lookId, { force = false } = {}) {
 
 // Create a new Look. Body: { name, fromLookId? } — fromLookId seeds the new
 // Look's design.json (defaults to the active/default Look). Returns { id }.
-export async function createLook({ name, fromLookId }) {
+export async function createLook({ name, fromLookId, scene }) {
   const res = await fetch(`${BASE}/looks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, fromLookId }),
+    body: JSON.stringify({ name, fromLookId, scene }),
   })
   if (!res.ok) throw new Error(`create look failed: ${res.status}`)
   return res.json()

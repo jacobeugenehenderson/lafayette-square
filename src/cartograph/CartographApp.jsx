@@ -54,6 +54,7 @@ import ToyTerrain from '../toy/ToyTerrain.jsx'
 
 // UI
 import Toolbar from './Toolbar.jsx'
+import ExtentApp from './ExtentApp.jsx'
 import StatusBar from './StatusBar.jsx'
 import Panel from './Panel.jsx'
 import StagePanelReal, { defaultKeyframes } from './StagePanel.jsx'
@@ -182,6 +183,9 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // before the async design fetch resolves — without this the rig reads the
   // store-default keyframes and never re-applies (appliedShot guards re-entry).
   const designHydrated = useCartographStore(s => s._designHydrated)
+  // Poured-scene shot framing scales to the boundary radius; subscribe so the
+  // shot RE-APPLIES once the async boundary lands (else browse keeps LS's pose).
+  const sceneBoundary = useCartographStore(s => s.sceneBoundary)
   // Grab the Canvas's default ortho camera once.
   useEffect(() => {
     if (!orthoRef.current) {
@@ -222,7 +226,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // target (and on Designer, also re-assert the ortho's orientation) here
   // after a frame delay — giving the new MapControls instance time to mount.
   useEffect(() => {
-    const key = `${sceneKey}:${shot}:${designHydrated}`
+    const key = `${sceneKey}:${shot}:${designHydrated}:${sceneBoundary?.radius || 0}`
     if (appliedShot.current === key) return
     appliedShot.current = key
     const applyTarget = () => {
@@ -311,6 +315,29 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         } else {
           toPos = [...s.position]
         }
+        // Poured scene (not LS, not toy): the SHOTS above are LS-authored
+        // ABSOLUTE poses — browse sits on LS's building centroid (95,-158) with
+        // LS's 1292×1025 bounds; hero is an LS oblique. A fresh hood is centered
+        // at origin (0,0) with its OWN radius, so reframe generically: browse =
+        // true overhead over center fit to the circle; hero = scaled oblique;
+        // street = ground-level at center. Until per-scene shot authoring lands.
+        const nb = sceneBoundary
+        if (sceneKey !== 'lafayette-square' && sceneKey !== 'toy' && nb?.radius > 0) {
+          const R = nb.radius
+          if (shot === 'browse') {
+            const aspect = size.width / Math.max(size.height, 1)
+            const t = Math.tan((fov * Math.PI / 180) / 2)
+            // fit the 2R circle in the binding viewport axis (portrait-safe) + pad
+            toPos = [0, (R * 1.12) / (Math.min(1, aspect) * t), 0]
+            toTarget = [0, 0, 0]
+          } else if (shot === 'hero') {
+            toPos = [-R * 0.75, R * 0.5, R * 0.75]
+            toTarget = [0, R * 0.02, 0]
+          } else {
+            toPos = [0, 1.73, R * 0.08]
+            toTarget = [0, 1.73, R * 0.08 - 0.5]
+          }
+        }
         const toUp = s.up || [0, 1, 0]
 
         // Snap (no tween) on first entry into a perspective shot from
@@ -371,7 +398,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     const id = requestAnimationFrame(applyTarget)
     useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
     return () => cancelAnimationFrame(id)
-  }, [shot, sceneKey, designHydrated, orthoRef, perspRef, controlsRef])
+  }, [shot, sceneKey, designHydrated, sceneBoundary, orthoRef, perspRef, controlsRef])
 
   // Drive the in-flight shot tween. Same vernacular as Preview's
   // ShotCamera + production CameraRig — easeInOutCubic position/target/
@@ -937,6 +964,13 @@ export default function CartographApp() {
   // (decoration suppressed in-component), and the block faces always show. The
   // toggle only governs the no-tool / Measure aerial-focus modes.
   const surveyMode = inDesigner && tool === 'surveyor' && sceneCfg.hasAerial
+
+  // Extent is a top-level DESTINATION (its own nav button, like Designer /
+  // Stage), not a Designer tool-mode — so it renders as its own minimal
+  // top-down Canvas instead of threading through the shot-branched scene
+  // below. Placed after every hook above so hook order stays stable across
+  // the designer⇄extent switch.
+  if (shot === 'extent') return <ExtentApp />
 
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'

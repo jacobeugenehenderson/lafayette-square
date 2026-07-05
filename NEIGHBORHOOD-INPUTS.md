@@ -235,3 +235,13 @@ Intake stops being a headless `scripts/` step and becomes the **mouth of Cartogr
 **Connective navigation.** The intake front lives in the Cartograph server, but the operator crosses the local topology — **`:5173` web (main app) · `:3333` cartograph · `:3334` arborist · `:3335` meteorologist** (`PIP.md`). Intake needs nav links wiring Cartograph ↔ main app ↔ the authoring helpers (cartograph + arborist most of all) so the operator moves between extent/acquisition, tree authoring, and the lit app without losing neighborhood context.
 
 **⭐ The boundary is living, not a one-time setup.** The operator can **always go back and edit the fundamental layout** — the box/circle re-draws anytime, so a neighborhood **grows or shrinks over time.** This is §0.0 applied to the extent itself: nothing about the pour is frozen. A re-edit re-scopes the fetch/clip and re-bakes — data entering the new extent is acquired, data leaving it is dropped. **Design consequence:** acquisition + bake must be **re-runnable against a changed extent**, never assume a fixed one.
+
+---
+
+> ✅ **BUILT (2026-07-04) — this §10/§11 Box/Circle spec is now the Extent tool.** `src/cartograph/ExtentApp.jsx` + the Extent flow (`◎ Extent` in the Toolbar) realizes it:
+> - **Box** = the named-boundary-street polygon; its corners are resolved from **skeleton junctions** (where consecutive named sides meet), **not** from marks or raw-OSM crossings (`skeleton.json junctions[]`).
+> - **Circle** = the geographic (shoelace) **centroid** + the **containing radius**.
+> - **Commit** re-centers `geography.json` to the centroid → reprojects the raw OSM (`reproject-raw.js`, the §11 "living boundary" recenter lever) → re-derives the skeleton → writes `neighborhood_boundary.json` (center always `[0,0]`, radius) + `neighborhood.json`.
+> - **Re-editing / re-pouring against a changed extent works** via the **one-click Pour** (pipeline → promote-ribbons → bake, scene-generic), satisfying the §11 "acquisition + bake must be re-runnable against a changed extent" requirement.
+>
+> Deep home: **`cartograph/INTAKE.md`** (+ `HANDOFF-neighborhood-perimeter-builder.md`). This graduates §5.2's "curated-centerline file-hack → first-class gesture" for the *extent* layer. ⚠️ **One open bug:** poured-scene **3D browse camera framing** is off-center ("too high & left") — the Extent/Pour arc is not fully done.

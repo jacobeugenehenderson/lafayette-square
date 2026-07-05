@@ -58,6 +58,17 @@ export default function Toolbar() {
             active={aerialVisible}
             onClick={() => setAerialVisible(!aerialVisible)} />
 
+          {/* Extent → the Neighborhood Perimeter Builder (Cartograph's step 0:
+              define the neighborhood's extent on a labeled aerial). A top-level
+              destination, peer to Designer / Stage. */}
+          <div className="carto-toolgroup">
+            <button
+              onClick={() => setShot('extent')}
+              title="Neighborhood Extent — define this installation's boundary + circle (pre-skeleton).">
+              ◎ Extent
+            </button>
+          </div>
+
           {/* Looks pulldown also surfaces the Toy scene as an option, so
               one consolidated context switcher replaces the old separate
               Toy button. */}

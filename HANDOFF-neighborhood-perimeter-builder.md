@@ -1,5 +1,20 @@
 # HANDOFF — Neighborhood Perimeter Builder (the extent editor UI)
 
+> ## ✅ BUILT + FRAMING BUG RESOLVED (2026-07-04) — `src/cartograph/ExtentApp.jsx`.
+> The tool is **built and the whole intake→3D arc works from the UI, no CLI.** `◎ Extent` nav → **ZIP→Locate** (pan only, no fetch) → **frame** → **Fetch this view** (Phalanges: geography+OSM+skeleton over the framed bbox) → **name 4+ boundary streets** (corridor-collapsed pool, hover-preview) → **corners resolve from skeleton junctions** (the real path — NOT marks) → geographic centroid + circle → **Commit** (recenter geography · `reproject-raw.js` · `skeleton.js` · write `neighborhood_boundary.json` + `neighborhood.json`) → **Pour → Designer** (one-click `pipeline`→`promote-ribbons`→ensure Look→`bake`; **scene-generic — WORKS**). Supporting: **Data-Wall boundary clip** in `pipeline.js` (drop out-of-boundary · buildings→centroid<R · **streets polyline-clipped** — neuters overshooting named arterials, S Big Bend 3882m→2144m); `bake-buildings.js` hard boundary cull; `skeleton.js` **directional-corridor kit fix** (opposite-prefix N/S streets → one road; LS byte-identical). Canon updated this session: `cartograph/INTAKE.md §0.5`, `PIPELINE.md` (intake+prebake+pour), `PREBAKE.md §2.5`, `SKELETON.md §3 step 14`, `STAGE.md §5`, `BAKE.md`, `OPERATIONS.md`, `ARCHITECTURE.md`, `FEATURES.md`, `README`, `NEIGHBORHOOD-INPUTS §11`.
+>
+> **✅ THE FRAMING BUG IS RESOLVED (2026-07-04, session close).** It was **not** a camera bug — the *content* was genuinely off-center on the disc (2D looked right because it fits-to-content; 3D browse frames the origin-centered disc). Two root causes, both fixed at source:
+> 1. **hipointe-demun was never corner-committed** — its center was the raw fetch-frame midpoint, not the named-street box. Fix: committed the box **Big Bend / Forest Park Pkwy / Skinker / Clayton** (Jacob's eye) → geography re-centered to the box centroid → content sits on `[0,0]` (building centroid verified `≈(2,85)`, matching demo on the same box).
+> 2. **Buildings drifted ~557 m off their blocks** after the re-center — `reproject-raw.js` re-projected `osm.json` but **not `msbf.json`** (the building source), so streets moved to the new frame and buildings stayed behind. Fix: **generalized `reproject-raw.js` to reproject every frame-dependent raw file** (osm + msbf + admin_boundaries) via a deep lon/lat→x/z walk — verified `MATCH`. A re-center now moves *all* layers together.
+>
+> **Also landed this session:** `PUBLISH.md §0.5` (the multi-neighborhood deploy doctrine — "one factory, many destinations"); the Extent tool's **Commit + Pour merged into one "Pour → Designer" action** (`ExtentApp onBuild`, staged progress) — the two-button seam *was* the "2D updated, 3D stale" confusion.
+>
+> **▶ NEXT ARC — the Building Roster Editor** (per-building select → hide; the §5.2 first slice): **`HANDOFF-building-roster-editor.md`.** Motivated by the couple of SW buildings clipped just past the rim + the operator's "show all buildings inside the pre-gradient circle, then hide by hand" model. Still open/minor: marker tool in Stage (3D); per-scene hero keyframes; the post-commit **radius-edit-doesn't-persist** gap in the Extent tool (bump the slider → nothing writes until commit). **This work COMMITTED on `curb-offset-draw` + shipped to staging this session.**
+>
+> *The original build brief below is kept for the design rationale + the artifact contract — still accurate.*
+
+---
+
 **Agent: FRESH.** New builder, clean context — this is a UI build, not a continuation. Name yourself (one word) and answer to it. **You will be supervised live** (Jacob + Boz): propose the UX for approval **before** building (Phase 0 below), then build in reviewable steps.
 
 ## Why this exists (read this first)

@@ -557,7 +557,21 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
   const outDir   = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
-  const buildings = loadBuildings(scene)
+  let buildings = loadBuildings(scene)
+
+  // Hard-cull buildings to the neighborhood boundary (KIT) — a poured scene's
+  // map.json can carry a fade-margin ring, and a building must NOT render past
+  // the boundary circle. Drop any building with a footprint point outside the
+  // circle (strict, so nothing pokes past). LS reads its own culled buildings.
+  const nbP = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
+  if (scene !== 'lafayette-square' && existsSync(nbP)) {
+    const nb = JSON.parse(readFileSync(nbP, 'utf-8'))
+    const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
+    const R2 = (nb.radius ?? Infinity) ** 2
+    const before = buildings.length
+    buildings = buildings.filter(b => (b.footprint || []).every(([x, z]) => (x - cx) ** 2 + (z - cz) ** 2 <= R2))
+    console.log(`[bake-buildings] boundary cull: ${before} → ${buildings.length} (R=${Math.round(nb.radius || 0)}m)`)
+  }
 
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;
   // SlabBuildings multiplies by `uExag` (the ground-displacement uniform) so

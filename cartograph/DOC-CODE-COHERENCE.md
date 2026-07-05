@@ -84,6 +84,13 @@ Triggered by Jacob: *"we can't take the BACKLOG's word for it; we need a forensi
 | B5 | The bake **chain + `shape.json` emission** had no keystone Reference doc — its home was "README · ARCHITECTURE · FEATURES" (BOZ §0 Suite) | **Landmine** (truth lived only in code/orchestration) | now documented | → **`BAKE.md`** | ✅ documented 2026-06-10 |
 | B6 | The Stage tool + the SC.1–SC.7 channel inventory had no keystone Reference doc | **Landmine** | now documented | → **`STAGE.md`** | ✅ documented 2026-06-10 |
 
+### Extent tool + the Pour (seeded 2026-07-04, the intake-front session — uncommitted on `curb-offset-draw`)
+
+| # | Divergence | Type | The truth | Locus | Status |
+|---|---|---|---|---|---|
+| B7 | bake-route skips `pipeline` with the message *"scene-specific pipeline not yet implemented"* | **Corpse-lie (conservative — now known FALSE)** | the **Pour** runs `pipeline.js` + `promote-ribbons.js` + the whole bake **scene-generically** for a non-default scene (verified 2026-07-04 — the `demo` scene poured: clipped buildings + full slab). The comment is over-cautious; the scene-generic path works. | `cartograph/serve.js:1171` | 🔎 update the message — the pour is scene-generic |
+| B8 | **Poured-scene 3D browse camera framing is off-center** ("too high & slightly left"); the `CameraRig` poured-scene perspective override does not produce a centered frame | **Open bug (landmine — not a done feature)** | LANDED context: baked ground is a centered ±1461 disc + the ribbons content bounds are symmetric after the street polyline-clip; browse still frames off-center — **root cause NOT found** (Jacob: *"don't correct the wrong symptom"* — do not just tweak the altitude factor). | `src/cartograph/CartographApp.jsx` `CameraRig` (poured-scene branch) | ⚠️ **OPEN** — do NOT read the Extent/Pour arc as done; owner note in `HANDOFF-neighborhood-perimeter-builder.md` |
+
 ---
 
 *Seeded 2026-06-05 from the front-half spec session (Skeleton/Prebake/Survey), all code rows code-verified except ⚠️. Bake/Stage rows added 2026-06-10 (the keystone session). Add a row whenever a landed truth exposes a contradiction; clear a row only when both places agree.*

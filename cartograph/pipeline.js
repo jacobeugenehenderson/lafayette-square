@@ -79,7 +79,7 @@ async function main() {
   // ── Derive ──────────────────────────────────────────────────────────
   console.log('\n[3/5] Deriving layers from centerlines + standards...')
   const layers = deriveLayers(snapped.ground.highway || [])
-  const buildings = deriveBuildings(snapped.buildings, raw.buildingSource)
+  let buildings = deriveBuildings(snapped.buildings, raw.buildingSource)
 
   // ── Elevation ───────────────────────────────────────────────────────
   console.log('\n[4/4] Elevation...')
@@ -104,6 +104,96 @@ async function main() {
       const cz = b.ring.reduce((s, p) => s + p.z, 0) / b.ring.length
       b.elev = Math.round(interpolateElevation(cx, cz, elevationGrid) * 100) / 100
     }
+  }
+
+  // ── Clip to the neighborhood boundary (KIT) ─────────────────────────
+  // If the scene has a committed neighborhood_boundary.json, drop every feature
+  // OUTSIDE the circle (+ the street-fade margin) so map.json/ribbons carry only
+  // the neighborhood, not the whole fetched square (a wide fetch otherwise pours
+  // 100s of MB). INCLUSIVE — keep anything TOUCHING the margin — so tile→street
+  // edge refs and crossing arterials survive. No boundary (uncommitted) = no clip.
+  const nbPath = join(RAW_DIR, '..', 'neighborhood_boundary.json')
+  if (existsSync(nbPath)) {
+    const nb = JSON.parse(readFileSync(nbPath, 'utf-8'))
+    const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
+    const keepR = (nb.streetFade?.outer ?? nb.radius ?? Infinity) + 30
+    const R2 = keepR * keepR
+    const touches = (pts) => {
+      if (!Array.isArray(pts)) return false
+      for (const p of pts) {
+        const x = Array.isArray(p) ? p[0] : p.x, z = Array.isArray(p) ? p[1] : p.z
+        if ((x - cx) ** 2 + (z - cz) ** 2 <= R2) return true
+      }
+      return false
+    }
+    const keep = (item) => {
+      if (typeof item.x === 'number' && typeof item.z === 'number') return (item.x - cx) ** 2 + (item.z - cz) ** 2 <= R2
+      return touches(item.ring || item.points || item.coords)
+    }
+    let dropped = 0, kept = 0
+    for (const cat of Object.keys(layers || {})) {
+      const arr = layers[cat]
+      if (Array.isArray(arr)) { const before = arr.length; layers[cat] = arr.filter(keep); dropped += before - layers[cat].length; kept += layers[cat].length }
+    }
+    // ⭐ Polyline CLIP (the Data-Wall neuter): trim a street/path polyline to the
+    // circle, keeping the longest inside run — so a named BOUNDARY ARTERIAL isn't
+    // carried through at full city length (South Big Bend ran 3882 m across a
+    // 2502 m hood, sticking out and skewing the 3D framing). Whole-street keep/drop
+    // is not enough; the geometry itself must stop at the boundary. [x,z] arrays.
+    const clipRun = (pts) => {
+      if (!Array.isArray(pts) || pts.length < 2) return pts
+      const inC = (x, z) => (x - cx) ** 2 + (z - cz) ** 2 <= R2
+      const pieces = []; let cur = null
+      const close = () => { if (cur && cur.length >= 2) pieces.push(cur); cur = null }
+      const push = (p) => { if (!cur) { cur = [p]; return } const l = cur[cur.length - 1]; if (l[0] !== p[0] || l[1] !== p[1]) cur.push(p) }
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], A = dx * dx + dz * dz
+        const ts = []
+        if (A > 1e-12) {
+          const fx = a[0] - cx, fz = a[1] - cz, B = 2 * (fx * dx + fz * dz), C = fx * fx + fz * fz - R2, disc = B * B - 4 * A * C
+          if (disc > 0) { const sq = Math.sqrt(disc); for (const t of [(-B - sq) / (2 * A), (-B + sq) / (2 * A)]) if (t > 1e-9 && t < 1 - 1e-9) ts.push(t) }
+        }
+        ts.sort((x, y) => x - y)
+        const stops = [0, ...ts, 1]
+        for (let s = 0; s < stops.length - 1; s++) {
+          const t0 = stops[s], t1 = stops[s + 1]; if (t1 - t0 < 1e-9) continue
+          const mt = (t0 + t1) / 2
+          if (inC(a[0] + dx * mt, a[1] + dz * mt)) { push([a[0] + dx * t0, a[1] + dz * t0]); push([a[0] + dx * t1, a[1] + dz * t1]) } else close()
+        }
+      }
+      close()
+      if (!pieces.length) return null
+      return pieces.reduce((p, q) => (q.length > p.length ? q : p))
+    }
+    const POLYLINE = new Set(['streets', 'alleys', 'paths'])
+    const rb = layers.ribbons
+    if (rb && typeof rb === 'object' && !Array.isArray(rb)) {
+      for (const key of ['streets', 'faces', 'tiles', 'medians', 'corridors', 'alleys', 'paths', 'intersections', 'junctions', 'nameTransitions']) {
+        if (!Array.isArray(rb[key])) continue
+        const before = rb[key].length
+        if (POLYLINE.has(key)) {
+          rb[key] = rb[key].map(it => { const run = clipRun(it.points); return run ? { ...it, points: run } : null }).filter(Boolean)
+        } else {
+          rb[key] = rb[key].filter(keep)
+        }
+        dropped += before - rb[key].length; kept += rb[key].length
+      }
+    }
+    // Buildings STOP at the neighborhood circle (radius R), NOT the street-fade
+    // margin — else they float ~200 m outside the boundary fade in 3D. Centroid-
+    // in-circle test (streets can trail past the rim; buildings can't).
+    const bR2 = (nb.radius ?? Infinity) ** 2
+    const bBefore = buildings.length
+    buildings = buildings.filter((b) => {
+      const pts = b.ring || []
+      if (!pts.length) return true
+      let sx = 0, sz = 0
+      for (const p of pts) { sx += Array.isArray(p) ? p[0] : p.x; sz += Array.isArray(p) ? p[1] : p.z }
+      const dx = sx / pts.length - cx, dz = sz / pts.length - cz
+      return dx * dx + dz * dz <= bR2
+    })
+    dropped += bBefore - buildings.length
+    console.log(`  Boundary clip: streets/ground R=${Math.round(keepR)}m, buildings R=${Math.round(nb.radius)}m — kept ${kept + buildings.length}, dropped ${dropped}`)
   }
 
   // ── World-coord bbox (derived from projected layers + buildings) ────

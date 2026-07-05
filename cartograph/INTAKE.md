@@ -2,13 +2,39 @@
 
 **The pipeline's first stage: external sources → a cleaned local frame.** This is the SSOT for *data provenance* — every source we pull, how we fetch it, what we transform it into, and (the load-bearing part) **which layer is authoritative vs. which is OSM-default.** Written because "how do we troubleshoot if we don't even know where the data comes from?" (Jacob, 2026-06-13) — provenance you can't see is provenance you can't debug.
 
-> **Status: v0.1 (2026-06-13) — new.** Grounded in `scripts/`, `cartograph/fetch-msbf.js`, `config.py`, and the `data/lafayette-square/{raw,clean}` artifacts. Some source attributions are marked **⚠️ confirm**. The developer-reference home for the **intake** pipeline stage (`PIPELINE §intake`); FEATURES carries the one-line pitch.
+> **Status: v0.2 (2026-07-04) — intake is now a UI.** The **Extent / Neighborhood Perimeter Builder** (`src/cartograph/ExtentApp.jsx`) is the realized front-end of this stage (§0.5) — intake is no longer "hand-edit two JSON files + CLI." Grounded in `scripts/`, `cartograph/fetch-msbf.js`, `config.py`, `serve.js`, and the `data/lafayette-square/{raw,clean}` artifacts. Some source attributions are marked **⚠️ confirm**. The developer-reference home for the **intake** pipeline stage (`PIPELINE §intake`); FEATURES carries the one-line pitch. *(Forward state + the open 3D-framing bug: `HANDOFF-neighborhood-perimeter-builder.md`.)*
 
 ---
 
 ## 0. What intake is
 
 The neighborhood frame is **assembled from many open + measured sources**, not one. Intake fetches each, normalizes to the local metric frame (`config.py`: `CENTER 38.6160,-90.2161`; `x = (lon−CENTER_LON)·86774`, `z = (CENTER_LAT−lat)·111000`), and lands raw + merged artifacts that `skeleton.js` and `derive.js` consume. The neighborhood **extent is a center + radius** (`neighborhood_boundary.json`), **not a bounding box** — `config.py`'s `BBOX` is a legacy fetch convenience; clipping is to the radius/boundary. *"Lean on the industry/cartographer's data as the primary source — before getting creative"* (Jacob, 2026-06-13) is the governing doctrine: prefer authoritative data; invent geometry only where the sources genuinely have nothing.
+
+---
+
+## 0.5 ⭐ The Extent tool — intake is now an operator UI (LANDED 2026-07-04)
+
+**Intake used to be "hand-edit `geography.json` + `neighborhood_boundary.json`, then run the CLI." It is now a screen: the `◎ Extent` tool (`src/cartograph/ExtentApp.jsx`, ~730 lines).** It is the intake/step-0 destination — the operator-driven onboarding of a *new* place, front-to-back, with no JSON hand-editing and no CLI. This IS the "intake — onboard a place" stage `PIPELINE.md` had marked deferred; it is no longer deferred.
+
+**Nav:** `◎ Extent` button in `Toolbar.jsx` → `setShot('extent')` → `CartographApp` early-returns `<ExtentApp/>`. Fresh arrival = **no map** (nothing fetched yet); every overlay is gated on `located` — a blank global aerial until the operator locates.
+
+### The flow (ZIP → Locate → frame → Fetch → name sides → corners → Commit → Pour)
+1. **ZIP → Locate** — `geocodeZip` (Zippopotam, keyless, client-side) **pans the camera** to the area on the global aerial. **No fetch, no frame change** — just navigation.
+2. **Frame the neighborhood** on the global aerial (viewport-driven tiles, adaptive zoom `viewportTileZ` clamped 12–19). The operator composes the extent by eye.
+3. **Fetch this view** (Phalanges) — read the ortho camera viewport → bbox via `localToWgs84` → `fetchExtent` → fetch OSM → skeleton. **Frame-then-fetch:** *"if you can see it on screen, it's in the list."*
+4. **Name the 4+ boundary streets** — custom combobox `SideInput` (native datalist rejected — it re-sorts flat). Pool = `fetchStreetNames` (skeleton-sourced, corridor-collapsed `{major,minor}`, alphabetized, arterials grouped with A–Z sub-dropdowns). Hover a candidate → `fetchStreetGeom` highlights it (yellow) on the aerial so the operator sees *where it lies* before selecting (fixes "Clayton Road vs Clayton Avenue — how would I have known?"). A selected side shows cyan; the aerial dims outside the boundary (`ExtentDim`).
+5. **Corners resolve from the SKELETON, not from marks** (`fetchExtentCorners` → server `computeExtentCorners`): junctions where **consecutive named sides** meet, clustered within 45 m, nearest-origin cluster selection, area-weighted (shoelace) **centroid**. Yields polygon + geographic centroid + containing circle + radius. *(Jacob's correction: "look at the streets there and find the intersections… the centroid should be from the geographic center of the shape" — the real-path skeleton protocol, `feedback_real_path_not_fast_path`.)*
+6. **Commit extent** (`commitExtent` → `POST /:scene/commit-extent`) — re-center `geography.json` to the centroid → `reproject-raw.js` → `skeleton.js` → write `neighborhood_boundary.json` (circle, center **always `[0,0]`**, radius) + `neighborhood.json` (name/blurb/sides/radius/`committed:true`). Sets the Designer camera to open framed on the hood.
+7. **Pour → Designer** (appears once `committed`) — the one-click pour (`PIPELINE §prebake`/`§pour`): pipeline (boundary-clipped) → promote-ribbons → Look → bake → Designer. The whole intake→3D arc is now ONE tool.
+
+**Draft auto-save** is implicit: debounced 500 ms `saveNeighborhood(scene,{sides,radius})` → `neighborhood.json`, restored on scene open (`fetchNeighborhood`); `committed` hydrates from the draft. **Implicit auto-save for cheap edits, explicit Commit/Pour for the heavy ops.**
+
+### ⭐ Frame-then-fetch, and `geography.json` is written centered on the framed bbox
+The load-bearing model: **the operator frames on the *global* aerial first, then fetches only what's framed.** `fetchExtent` writes `geography.json` centered on the framed bbox (`writeGeographyFromBbox` in `serve.js`), so the local metric frame is derived from the operator's composition rather than a hard-coded `config.py CENTER`. On **Commit**, `geography.json` is re-centered again to the resolved **centroid** (`reproject-raw.js` recomputes `raw/osm.json` x/z through the new `geography.json` so skeleton/aerial stay aligned — "the boundary is living", `NEIGHBORHOOD-INPUTS §11`). The extent remains a **center + radius circle**, not a bbox (§0) — the bbox is only the fetch/frame convenience; `neighborhood_boundary.json` center is always `[0,0]` post-commit.
+
+**Installation-agnostic (kit):** no St. Louis defaults in the flow — ZIP-driven geocode, skeleton-sourced names, OSM everywhere. A `demo` test scene (Big Bend / Forest Park Pkwy / Skinker / Clayton Road) was committed, poured and baked this way. ⚠️ demo was framed **too wide** (~5.4 km → large artifacts); a real ~3 km hood is ~10× smaller — **frame tighter** is operator guidance.
+
+✅ **RESOLVED (2026-07-04):** the poured-scene **3D framing** bug was a *content*-centering issue, not a camera one — hipointe was never corner-committed (center = raw fetch frame). Fixed by committing the named-street box (centroid → `[0,0]`). A second bug surfaced + fixed: **`reproject-raw.js` now re-projects EVERY frame-dependent raw file** (osm **+ msbf + admin_boundaries**), not just osm — a re-center used to move the streets but leave the `msbf.json` buildings ~557 m behind (buildings off their blocks). The Extent tool also merged **Commit into Pour** (one `onBuild` action). Committed + staged this session. **▶ Next arc:** per-building select→hide (`HANDOFF-building-roster-editor.md`). Still open/minor: post-commit **radius-edit doesn't persist** (draft slider writes nothing until commit). See `HANDOFF-neighborhood-perimeter-builder.md`.
 
 ---
 

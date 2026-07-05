@@ -45,10 +45,12 @@ PHASE D — PUBLISH (the slab)
 
 > ⭐ **This is the one place to learn what each pipeline stage is, whether it's working, and its doctrine — without hunting across files.** (Doctrine being diffuse is what kept causing mistakes.) §Wall + the P-ladder + `RIBBONS`/`SKELETON`/`SECTION` are the deeper detail this points into. Indexed from the repo-root README "Documentation map".
 
-**Jacob's order:** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage/preview/production`. *(Formal intake is skipped for now; we are currently STUCK on **skeleton** + **survey**.)*
+**Jacob's order:** `intake → skeleton → prebake → survey → ⟦WALL⟧ → section → bake → stage/preview/production`.
 
-### intake — onboard a place *(skipped for now)*
-Author a place: center+radius circle → fetch OSM → freeze the protoslab container. Deferred; LS already has its `osm.json`. Refs: BACKLOG "Onboarding/Intake", `INTAKE.md`.
+### intake — onboard a place  (`◎ Extent` tool → `ExtentApp.jsx`) — **NOW A UI (2026-07-04)**
+- **What / job:** author a place front-to-back with **no JSON hand-editing, no CLI**: ZIP → Locate → **frame** the hood on the global aerial → **Fetch this view** (frame-then-fetch: OSM + skeleton) → name the 4+ boundary streets (skeleton-sourced combobox) → corners **resolve from skeleton junctions** (area-weighted centroid + containing circle) → **Commit** (`geography.json` re-centered to centroid; `neighborhood_boundary.json` center `[0,0]`+radius) → **Pour** (one-click into the 3D Designer, §prebake).
+- **STATUS:** **LANDED** (was "deferred; LS already has its `osm.json`"). The Extent tool IS this stage — the operator-driven realization. Corners come from `skeleton.json junctions[]`, never marks (`feedback_real_path_not_fast_path`). Installation-agnostic (kit); a `demo` scene was onboarded, poured and baked this way. ⚠️ **UNCOMMITTED** on `curb-offset-draw`; one OPEN bug (3D browse framing off for poured scenes).
+- **Refs:** ⭐ **`INTAKE.md §0.5`** (the flow + frame-then-fetch) · `HANDOFF-neighborhood-perimeter-builder.md` · BACKLOG "Onboarding/Intake".
 
 ### skeleton — the frame  (`skeleton.js`: `osm.json → skeleton.json`)
 - **What / job:** trace the real street network from OSM into canonical chains (skelId-keyed) and produce an **extremely simplified, polygon-ready** frame. *"The Skeleton is The First Bake."*
@@ -58,9 +60,15 @@ Author a place: center+radius circle → fetch OSM → freeze the protoslab cont
 
 ### prebake — the First Bake  (`pipeline.js` + `promote-ribbons.js` → `ribbons.json`)
 - **What / job:** compile the skeleton (+ operator `overlay.json`) into **`ribbons.json {streets, intersections, faces}`** — the single geometry artifact downstream consumes (the live 2D render + the bake both read it). `derive.js` inserts an IX vertex at every intersection and freezes the tiles.
-- **STATUS:** working. ⭐ The 2D Survey/Design view renders **LIVE from `ribbons.json` via `buildTileGround`** — the *ground bake* is irrelevant to the 2D screen; only `ribbons.json` + `tileGround.js` matter there (the bake feeds 3D Stage/Preview).
+- **STATUS:** working, and now **scene-generic** — the whole prebake→bake arc runs for a fresh non-LS neighborhood (verified this session; the demo scene poured a full slab). ⭐ The 2D Survey/Design view renders **LIVE from `ribbons.json` via `buildTileGround`** — the *ground bake* is irrelevant to the 2D screen; only `ribbons.json` + `tileGround.js` matter there (the bake feeds 3D Stage/Preview).
+- **⭐ The boundary clip = the Data-Wall neuter (`pipeline.js`, after `deriveLayers`, before `map.json`).** A **KIT** step: if the scene has `neighborhood_boundary.json`, prune everything outside the hood. Three cuts: (1) **Drop** features entirely outside the circle + street-fade margin (`keepR = streetFade.outer + 30 ≈ 1441 m`) — top-level layers **and** ribbons faces/tiles/medians/corridors/junctions/nameTransitions (inclusive `touches` test so edge refs survive). (2) **Buildings clip TIGHTER** — centroid within radius **R (≈1251 m)**, not the fade margin, else they float ~200 m past the boundary in 3D. (3) **Streets/alleys/paths are polyline-CLIPPED, not kept whole** (`clipRun`): trim each polyline to the circle, keep the longest inside run. **This is where an overshooting named arterial gets neutered** — South Big Bend ran **3882 m** across a **2502 m** hood (Forsyth 3677, Wydown 2905); kept whole they skewed the content bounds SE. Post-clip the ribbons street bbox is symmetric (`x[-1439..1434] z[-1441..1441]`, center ≈ origin); map.json 180→52 MB on a wide demo fetch. ⚠️ The **3D ground mesh is stencil-bounded to ±1461 (a clean disc) regardless** — the clip changes the *content/ribbons* bounds, not the ground mesh. *(Belt-and-suspenders: `bake-buildings.js` also hard-culls any building with a footprint point outside the circle.)*
 - **Doctrine / gotchas:** **two-step** — run `skeleton.js` **then** `pipeline.js` (pipeline does NOT re-run the extractor), then `promote-ribbons.js`. `ribbons.json` is a bundled vite import — run the dev server from the worktree whose frame you want to view, or restart.
-- **Refs:** **`PREBAKE.md`** · P3 below.
+- **Refs:** **`PREBAKE.md`** · P3 below · §pour.
+
+### pour — one-click intake→3D  (`POST /:scene/pour` → the Extent "Pour → Designer" button)
+- **What / job:** collapse the whole prebake→bake arc into one operator click. `pipeline.js --skip-elevation` (boundary-clipped, above) → `promote-ribbons.js --scene=<s>` → ensure a Look bound to the scene (`createLook` now forwards `scene`) → `setActiveLook` → `bakeLook(force)` (ground/AO/buildings/lamps/scene) → load fresh ribbons → open the Designer. **The whole intake→3D arc is now ONE tool, no CLI.**
+- **STATUS:** **LANDED + scene-generic.** The old bake-route comment "scene-specific pipeline not yet implemented" was **conservative — it works** (uses the scene's OSM buildings, OSM land-use, STL parcels if in STL). Guarded per-scene (`_seedsInFlight`). ⚠️ The pour is **long** (derive processes the whole fetch *before* clipping — the bottleneck; clipping the INPUT for speed is OPEN); a too-wide fetch OOM'd the dev stack once — **frame tighter**. UNCOMMITTED on `curb-offset-draw`.
+- **Refs:** `INTAKE.md §0.5` · `HANDOFF-neighborhood-perimeter-builder.md`.
 
 ### survey — the SHAPE tool  (`surveyor` pill → `SurveyorPanel.jsx`)
 - **What / job:** author the **hardscape SHAPE** off the prebaked frame — asphalt/curb silhouette, smoothing, caps, anchor, road metadata, corner radius, hero-pick. Strokes chains outward into the curb `iA`; freezes at the WALL (chains die).
@@ -186,4 +194,5 @@ This doc is the first of a family of address-maps:
 
 ---
 
+*Updated 2026-07-04 — intake is now the `◎ Extent` UI (no longer "skipped"); added §pour (one-click intake→3D) + the boundary-clip Data-Wall neuter under prebake. All UNCOMMITTED on `curb-offset-draw`; one OPEN bug (3D browse framing off for poured scenes — `HANDOFF-neighborhood-perimeter-builder.md`).*
 *Updated 2026-06-15 — the tile-model rewrite (v0.2). The ladder + §Tile now describe the live `tileGround.js` construction; the figure-ground ladder is archived. Verify the addresses against `src/lib/tileGround.js` before building.*

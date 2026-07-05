@@ -1768,7 +1768,7 @@ const useCartographStore = create((set, get) => ({
   shot: (() => {
     try {
       const saved = localStorage.getItem('cartograph-shot')
-      if (['designer', 'browse', 'hero', 'street'].includes(saved)) return saved
+      if (['designer', 'browse', 'hero', 'street', 'extent'].includes(saved)) return saved
     } catch { /* ignore */ }
     return 'designer'
   })(),
@@ -1867,7 +1867,9 @@ const useCartographStore = create((set, get) => ({
     }
     try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
     // Remember the last Stage shot so Designer's "Stage →" returns to it.
-    if (shot !== 'designer') {
+    // Only the 3D Stage shots qualify — 'extent' is a pre-skeleton destination,
+    // not a Stage shot, so it must never become the Stage-return target.
+    if (['browse', 'hero', 'street'].includes(shot)) {
       try { localStorage.setItem('cartograph-last-stage-shot', shot) } catch { /* ignore */ }
       set({ shot, status: '', lastStageShot: shot })
     } else {

@@ -2,7 +2,7 @@
 
 **The compile that turns the Skeleton's clean frame into the document Survey opens — and the stage where the Data Wall belongs.** Today it is a thin, **two-source** compile that freezes the *wrong* polygons; the program is to elevate it into the **polygon-ization + freeze** stage. This is its single-source-of-truth reference: what it does now (grounded in code), what `ribbons.json` actually holds, the gap, and the target.
 
-> **Status: v0.1 (2026-06-05) — new, the topic-doc.** The SSOT for the prebake stage. **Grounded in code** (`pipeline.js`, `derive.js`, `promote-ribbons.js`, `io.js`), verified against `ribbons.json` 2026-06-05. The middle of the front-half rebuild spec: **`SKELETON.md` → this → `SURVEY.md`.** Register docs (`PIPELINE` execution · `ARCHITECTURE` build · `FEATURES` what-it-is) reference this; they carry only their audience's slice.
+> **Status: v0.2 (2026-07-04) — + the boundary clip / Data-Wall neuter (§2.5).** The SSOT for the prebake stage. **Grounded in code** (`pipeline.js`, `derive.js`, `promote-ribbons.js`, `io.js`), verified against `ribbons.json` 2026-06-05. The middle of the front-half rebuild spec: **`SKELETON.md` → this → `SURVEY.md`.** Register docs (`PIPELINE` execution · `ARCHITECTURE` build · `FEATURES` what-it-is) reference this; they carry only their audience's slice.
 
 ---
 
@@ -42,6 +42,23 @@ Intake → Skeleton → ⟦ PREBAKE ⟧ → Survey → ⟦DATA WALL⟧ → Secti
    - **Serializer** (`:3029`–`:3103`) — whitelists fields into `ribbonsLayer`. Keeps the enriched marrow (`lanes`/`surface`/`maxspeed`/`seed`/`caps`/`gradeSeparated`/`phase` incl. **`spineAtStart`/`spineAtEnd`**, `:3046`); emits `junctions`/`nameTransitions` only if the skeleton carried them.
 3. **`promote-ribbons.js`** (`:1`–`38`) — copies `map.layers.ribbons` verbatim → **`src/data/ribbons.json`** (`:23`–`:32`, `writeIfChanged`).
 4. **`io.js writeIfChanged`** — skips the disk write when bytes are byte-identical **but bumps mtime to now** (canonical-`make` behavior), so a no-op rebuild doesn't cascade-rerun downstream.
+
+---
+
+## 2.5 ⭐ The boundary clip — the Data-Wall neuter (2026-07-04)
+
+`pipeline.js` runs a **boundary clip** immediately **after `deriveLayers(...)` and before the `map.json` write** — a **KIT** step, **gated on the scene carrying a `neighborhood_boundary.json`** (LS/default, which has none for this purpose, is untouched). It is the Data Wall doing its defining job (§0): **neutering a spurious polygon *at the wall* rather than carrying it whole downstream.**
+
+The canonical spur is a named **boundary arterial** that enters the fetch at full *city* length and overshoots the hood. **South Big Bend ran 3882 m across a 2502 m hood** (Forsyth 3677 m, Wydown 2905 m); kept whole, these arterials stick out asymmetrically (south + east) and **skew the entire content bbox SE.** The clip has three moves, keyed to the layer:
+
+- **⭐ Streets / alleys / paths are polyline-CLIPPED, not kept whole** (`clipRun`): each polyline is trimmed to the boundary circle and the **longest inside run** is kept. **This is the neuter** — the overshooting arterial is cut back to the hood instead of carried at city length. After it, the ribbons street bbox is **symmetric** — `x[-1439..1434] z[-1441..1441]`, center ≈ origin (was `x[-2110..1770] z[-1940..1940]`, skewed SE); max street span **3882 → 2144 m**.
+- **Faces / tiles / features drop-if-outside** — a feature entirely outside the circle + street-fade margin (`keepR = streetFade.outer + 30 ≈ 1441 m`) is **removed**: top-level `layers[cat]` arrays + ribbons faces / tiles / medians / corridors / junctions / nameTransitions. The `touches` test is **inclusive** so a tile→street edge ref straddling the edge survives.
+- **Buildings clip TIGHTER — to radius R** (centroid within **R ≈ 1251 m**, *not* the street-fade margin) — else buildings float ~200 m past the boundary fade and poke past the circle in 3D (a symptom Jacob caught). `bake-buildings.js` adds a belt-and-suspenders hard cull for a non-default scene (drop any building with *any* footprint point outside the circle).
+- **The 3D ground mesh is stencil-bounded to ±1461 regardless** (a clean disc) — the clip changes the **ribbons/content bounds**, not the ground mesh.
+
+Result on a wide 5.4 km demo fetch: `map.json` **180 → 52 MB**, ribbons **22 → 8 MB**, streets **2117 → 300**.
+
+> **Doctrine (ties §0 to §6).** The Data Wall is where a **spurious / overshooting polygon gets neutered** — polyline-clip the boundary arterial *to the hood*, don't keep it whole. Drop what's fully outside; clip what straddles; hold buildings to R. The wall **neuters**, it doesn't merely pass geometry through.
 
 ---
 
@@ -100,6 +117,7 @@ The split this buys: **corner identity (topology) = prebake, frozen once; curb p
 - **Freezing serves perf, not just correctness** — it's the precondition for activated-only live redraw (`SURVEY.md §4.1`), which the sticky high-res Designer needs.
 - **One source for faces: the skeleton.** Retire the raw-OSM face path; the two-source seam is the palimpsest.
 - **The Data Wall belongs at the prebake→Survey boundary (~P3).** Past it, no geometry derived from chains.
+- **⭐ The Data Wall neuters spurious polygons (§2.5).** A boundary arterial carried in at full city length is **polyline-clipped to the hood** at the wall, never kept whole; features fully outside drop, buildings clip tighter to R. A KIT step gated on `neighborhood_boundary.json`.
 - **Two-step rebuild, always:** `skeleton.js` → `pipeline.js` → `promote-ribbons.js`.
 
 ---
@@ -110,4 +128,5 @@ The split this buys: **corner identity (topology) = prebake, frozen once; curb p
 - `PIPELINE.md §prebake` + `§Wall` + `P3` — the execution spine.
 - `OSM-FORENSICS-EVAL.md` — the two-source seam + the Layer-2 (faces-on-frame) cleanup, in detail.
 - `src/lib/tileGround.js` — the downstream consumer that today re-derives the polygon.
+- `pipeline.js` (the boundary clip, §2.5) · `bake-buildings.js` (the belt-and-suspenders building cull) · `neighborhood_boundary.json` (the gate — center/radius disc).
 - Memory: `[[project_two_bakes_two_walls]]`, `[[project_the_palimpsest_code_path_multiplicity]]`, `[[project_skeleton_is_the_first_bake]]`.

@@ -1,24 +1,21 @@
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 
-function CompassRose() {
-  const azimuth = useCamera((state) => state.azimuth)
-  const viewMode = useCamera((state) => state.viewMode)
-  const showCard = useSelectedBuilding((state) => state.showCard)
-  const rotationDeg = (azimuth * 180) / Math.PI
-
-  // Only show floating compass in planetarium; browse uses BrowseHeader
-  if (viewMode !== 'planetarium' || showCard) return null
-
+// Presentational rose. `rotationDeg` orients it (0 = north up). Reused by the
+// planetarium overlay (camera-driven, below) and Cartograph's Extent view
+// (static, north-up compass frame) so both draw the identical rose.
+export function CompassRoseSVG({ rotationDeg = 0, size }) {
   return (
-    <div className="absolute top-4 left-4 select-none z-50" role="img" aria-label="Compass rose">
-      <div className="relative w-16 h-16">
-        <svg
-          viewBox="0 0 100 100"
-          className="w-full h-full"
-          style={{ transform: `rotate(${rotationDeg}deg)` }}
-        >
-          <circle
+    <svg
+      viewBox="0 0 100 100"
+      className={size ? undefined : 'w-full h-full'}
+      width={size}
+      height={size}
+      role="img"
+      aria-label="Compass rose"
+      style={{ transform: `rotate(${rotationDeg}deg)`, display: 'block' }}
+    >
+      <circle
             cx="50"
             cy="50"
             r="45"
@@ -63,11 +60,27 @@ function CompassRose() {
             strokeWidth="0.5"
           />
           <circle cx="50" cy="50" r="4" fill="#444" stroke="#666" strokeWidth="1" />
-          <text x="50" y="7" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold" fontFamily="system-ui">N</text>
-          <text x="50" y="99" textAnchor="middle" fill="#888888" fontSize="7" fontFamily="system-ui">S</text>
-          <text x="97" y="53" textAnchor="middle" fill="#888888" fontSize="7" fontFamily="system-ui">E</text>
-          <text x="3" y="53" textAnchor="middle" fill="#888888" fontSize="7" fontFamily="system-ui">W</text>
-        </svg>
+      <text x="50" y="7" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold" fontFamily="system-ui">N</text>
+      <text x="50" y="99" textAnchor="middle" fill="#888888" fontSize="7" fontFamily="system-ui">S</text>
+      <text x="97" y="53" textAnchor="middle" fill="#888888" fontSize="7" fontFamily="system-ui">E</text>
+      <text x="3" y="53" textAnchor="middle" fill="#888888" fontSize="7" fontFamily="system-ui">W</text>
+    </svg>
+  )
+}
+
+function CompassRose() {
+  const azimuth = useCamera((state) => state.azimuth)
+  const viewMode = useCamera((state) => state.viewMode)
+  const showCard = useSelectedBuilding((state) => state.showCard)
+  const rotationDeg = (azimuth * 180) / Math.PI
+
+  // Only show floating compass in planetarium; browse uses BrowseHeader
+  if (viewMode !== 'planetarium' || showCard) return null
+
+  return (
+    <div className="absolute top-4 left-4 select-none z-50">
+      <div className="relative w-16 h-16">
+        <CompassRoseSVG rotationDeg={rotationDeg} />
       </div>
     </div>
   )

@@ -1997,6 +1997,50 @@ function main() {
     console.log(`  name-transitions: ${nameTransitions.length} [${nameTransitions.map(t => `${t.from}→${t.to}`).join(', ')}]`)
   }
 
+  // --- Directional-corridor linking (KIT, installation-agnostic) -----------
+  // A single physical arterial is often split by a DIRECTIONAL name prefix at a
+  // baseline — "North Big Bend Boulevard" ↔ "South Big Bend Boulevard" — and the
+  // split frequently lands ON a junction (degree ≥ 3), which the degree-2
+  // name-transition pass above skips. For boundary/corridor purposes the two are
+  // ONE street ("a name is a label; the road is the line" — §5a). We stamp a
+  // `corridor` field (= the base name, directional prefix stripped) on chains
+  // that share a node with CONTINUOUS heading — the SAME tangent guard the
+  // name-transition pass uses. That guard is load-bearing: LS's only same-base
+  // directional pair, South 18th × West 18th, meets PERPENDICULARLY and must NOT
+  // link (verified byte-identical). Sparse — absent on a street with no
+  // directional sibling, so scenes without such corridors are unchanged.
+  const DIR_PREFIX = /^(North|South|East|West)\s+/i
+  const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' }
+  const dirOf = (nm) => { const m = nm.match(DIR_PREFIX); return m ? m[1].toLowerCase() : null }
+  const corridorBase = (nm) => nm.replace(DIR_PREFIX, '')
+  const corridors = []
+  for (const [k, ends] of endpointChains) {
+    if (ends.length < 2) continue
+    for (let i = 0; i < ends.length; i++) {
+      for (let j = i + 1; j < ends.length; j++) {
+        const a = ends[i], b = ends[j]
+        if (a.id === b.id) continue
+        const da = dirOf(a.name), db = dirOf(b.name)
+        // OPPOSITE directional prefixes on the SAME base — a baseline split (N↔S
+        // or E↔W), the canonical "one arterial, two directional names" case.
+        // Adjacent prefixes (South↔West = an L-bend, e.g. LS's 18th St) are NOT a
+        // baseline split and must NOT link — that guard keeps LS byte-identical.
+        if (!da || !db || OPPOSITE[da] !== db) continue
+        if (corridorBase(a.name) !== corridorBase(b.name)) continue
+        const ta = outwardTangent(a), tb = outwardTangent(b)
+        if (ta.x * tb.x + ta.z * tb.z > -0.6) continue   // continuous heading only
+        const base = corridorBase(a.name)
+        byId.get(a.id).corridor = base
+        byId.get(b.id).corridor = base
+        const [x, z] = k.split(',').map(Number)
+        corridors.push({ base, at: [Math.round(x), Math.round(z)] })
+      }
+    }
+  }
+  if (corridors.length) {
+    console.log(`  directional corridors: ${corridors.length} [${[...new Set(corridors.map(c => c.base))].join(', ')}]`)
+  }
+
   console.log('\nSkeleton:')
   console.log(`  streets: ${streets.length}`)
   console.log(`  paths:   ${paths.length}`)

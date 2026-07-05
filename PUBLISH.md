@@ -48,6 +48,35 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 ---
 
+## 0.5 The multi-neighborhood deploy model — one factory, many destinations
+
+> **The "end process" doctrine** (2026-07-04, prompted by the HiPointe-DeMun URL purchase). The rest of this doc is the LS-specific mechanics; this section is the *frame* those mechanics serve once there is more than one neighborhood. Reference — the developer/operator model for how a poured neighborhood reaches the public.
+
+**Two independent axes, never one decision.** They *feel* fused because "move Bake onto the live site" touches both at once — keep them apart and each has a clean answer:
+
+- **Axis A — WHERE it deploys (destination/domain).** `jacobhenderson.studio/<hood>` vs. the neighborhood's own apex (`hipointedemun.com`). **This is a per-instance *variable*, not a fork.**
+- **Axis B — WHO holds the authoring keys (the install *tier*).** *Guided install* (you at the wheel, sharing the rendered result) vs. *full 3rd-party self-serve* (the "front-front-end"). This is about **where the factory lives**, and the higher tier is deferred (`plans/front-front-end-and-productization.md`).
+
+**Axis A — one factory, many destinations.** A neighborhood is a data folder (`cartograph/data/<hood>`) → bakes to a slab (`public/baked/<hood>`) → pointed to by `INSTANCE.lookId` (`src/instance.js`), `?look=`/`?scene=` override. **One build already serves LS + toy + hipointe-demun + demo.** The deploy destination is *not* wired into the artifact — it's a CNAME + the domain field in `instance.js`. The **same built bytes** get re-homed at a different target; this is literally how staging already works today (`staging.yml` builds `dist/` and pushes it to a *separate* repo with its own `--base`). So a per-neighborhood destination is that same move with a different target — **config, not architecture.**
+
+- **The concrete surface for Axis A:** the Publish endpoints in `cartograph/serve.js` (dev-only) hardcode `STAGING_BRANCH = cartograph-looks-pass-ab` and `PROD_BRANCH = main` and commit a scoped `slabPathspecs` for one look. **Parameterizing those two constants + the pathspecs by scene is the whole job.** Small, well-bounded — not yet built.
+
+**Axis B — keep the factory local (that's the point of the tiers).** *Guided install* ships **slabs, not tools** — the authoring app (Stage/Bake) never leaves your machine, so you're never anchored to a client's project; the "shared creative" happens through the preview/publish loop (they react to the staging URL, you iterate). "Move Bake onto the live site" is **Tier B, deferred** — the only tier where live-site authoring makes sense, and the tier where the anchoring worry is solved by design (they drive, not you). Don't build it to serve a guided install.
+
+**The one real tradeoff — a neighborhood's *default* home:**
+
+| | Subpath (`studio/<hood>`) | Own apex (`<hood>.com`) |
+|---|---|---|
+| Infra now | ~zero (one build, one Pages target) | per-hood Pages target + CNAME + `--base` |
+| Product story | weaker (shares studio identity) | strong ("this is HiPointe's civic thing") |
+| Worth it when | proving the pour · guided installs | a client who's paid for their own home |
+
+> **Recommendation (settled):** default to the **subpath now**, make the deploy target a **per-instance variable**, and **promote to an apex only when a client commits** — so promotion is a one-line config change, never a re-architecture. That keeps everything in "one factory, many destinations" and never anchors you.
+
+**On buying the domain:** buy `<hood>.com` for the *name* if you want (cheap option value), but it's **decoupled** from the technical work — the pour ships to the studio subpath regardless, and the domain just becomes a CNAME you flip later. Don't let the purchase gate or reshape the build. *(HiPointe stages first to `jacobhenderson.studio/hipointe-demun`; see `NEIGHBORHOOD-INPUTS.md §7` step 8 for the pour sequence, `HANDOFF-hipointe-pour-step0.md` for step-0 state.)*
+
+---
+
 ## 1. Frontend (GitHub Pages)
 
 Deploys automatically on every push to `main`. **Per the working loop (strategy B, 2026-06-26), promote to `main` only after verifying on staging** (`cartograph-looks-pass-ab`) — see the Quick reference above + [`cartograph/OPERATIONS.md §Save → ship`](cartograph/OPERATIONS.md). Both branches are slab-era and stay a few commits apart, so prod promotion is a clean fast-forward.

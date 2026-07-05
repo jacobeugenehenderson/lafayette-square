@@ -12,6 +12,8 @@ Cartograph + Stage produce a **slab** — a baked, flattened, fortified, secure,
 
 **The architecture is the deliverable. Lafayette Square is the v1 instance.** Other neighborhoods will pour their own slabs from the same toolkit; other operators will do the pouring. Every design decision is in service of that kit ambition.
 
+**Define a new neighborhood by eye, then pour it in one click — "the next town pours itself" made real.** The **Extent** tool is the front door: land on a labeled aerial photo, frame the neighborhood you want, and **name its boundary streets** — nothing more. The corners resolve *from the map itself* (the intersections where those streets actually meet), the geographic center falls out, and a circle draws itself around the whole thing. Then one button — **Pour** — runs the entire build (derive the geometry, clip it to that circle, bake the 3D slab) and drops the operator straight into the finished, rendered neighborhood. No terminal, no scripts, no hand-drawing a boundary. This is the kit ambition's sharpest test — *a different operator, a different city, almost no hand-work* — turned into a tool you drive by eye. *(As-built + the open camera-framing bug: `ARCHITECTURE.md §8` "The Extent tool & the Pour"; the operator flow: `OPERATIONS.md §Extent`.)*
+
 ## The conceptual model
 
 Cartograph is recursive — each authoring step makes a truth-claim the next builds on:

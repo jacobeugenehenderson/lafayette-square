@@ -136,6 +136,313 @@ function needsRebuild(inputs, outputs) {
   const maxIn = inMtimes.length ? Math.max(...inMtimes) : 0
   return maxIn > minOut
 }
+// ── Extent editor: OSM label extraction ─────────────────────────────────────
+// One label per named street, from raw/osm.json's ground.highway (coords carry
+// the scene's local x/z). Mirrors src/lib/streetLabels.js's placement (longest
+// way per name → arclength-midpoint + local angle normalized to read L→R), but
+// scene-agnostic and PRE-skeleton. `major` = the arterial classes a neighborhood
+// is bounded on. Cached by file mtime (the 18 MB parse runs once per fetch).
+const OSM_LABEL_MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
+const _osmLabelCache = new Map()   // scene → { mtime, labels }
+function computeLabelsFromOsm(osm) {
+  const feats = (osm.ground && osm.ground.highway) || []
+  const byName = new Map()
+  for (const f of feats) {
+    const name = f.tags && f.tags.name
+    const coords = f.coords
+    if (!name || !coords || coords.length < 2) continue
+    const segLens = []
+    let total = 0
+    for (let i = 0; i < coords.length - 1; i++) {
+      const L = Math.hypot(coords[i + 1].x - coords[i].x, coords[i + 1].z - coords[i].z)
+      segLens.push(L); total += L
+    }
+    if (total === 0) continue
+    const prev = byName.get(name)
+    if (prev && prev._total >= total) continue
+    let acc = 0, si = 0
+    const half = total / 2
+    for (; si < segLens.length - 1; si++) { if (acc + segLens[si] >= half) break; acc += segLens[si] }
+    const t = segLens[si] > 0 ? (half - acc) / segLens[si] : 0
+    const a = coords[si], b = coords[si + 1]
+    let angle = Math.atan2(b.z - a.z, b.x - a.x)
+    if (angle > Math.PI / 2) angle -= Math.PI
+    if (angle < -Math.PI / 2) angle += Math.PI
+    // Return the midpoint as lon/lat (frame-independent). The baked x/z here may
+    // be in a STALE projection (fetched before a re-center), so the client
+    // re-projects lon/lat through the LIVE geography — the same frame the aerial
+    // uses — guaranteeing labels sit on their roads. Angle is translation-
+    // invariant so the metric value is safe to pass through.
+    byName.set(name, {
+      name,
+      lon: a.lon + (b.lon - a.lon) * t,
+      lat: a.lat + (b.lat - a.lat) * t,
+      angle,
+      major: OSM_LABEL_MAJOR.has(f.tags.highway),
+      cls: f.tags.highway,
+      _total: total,
+    })
+  }
+  return [...byName.values()].map(({ _total, ...l }) => l)
+}
+function getOsmLabels(scene) {
+  const p = join(sceneRawDir(scene), 'osm.json')
+  if (!existsSync(p)) return []
+  const mtime = statSync(p).mtimeMs
+  const cached = _osmLabelCache.get(scene)
+  if (cached && cached.mtime === mtime) return cached.labels
+  const labels = computeLabelsFromOsm(JSON.parse(readFileSync(p, 'utf-8')))
+  _osmLabelCache.set(scene, { mtime, labels })
+  return labels
+}
+
+// ── Extent editor: boundary corners from named sides (the REAL path) ─────────
+// The corner between two consecutive boundary streets is a typed skeleton
+// JUNCTION both streets pass through — the protocol's own intersection, not an
+// ad-hoc raw-OSM segment crossing. Marks are not needed: the operator names the
+// sides in order (reading them off the labeled aerial); the tool finds the
+// junction where each consecutive pair meets, clusters near-duplicates, and
+// returns the polygon + its area-weighted centroid (the neighborhood's
+// geographic center) + a circumscribing radius. A pair that shares no junction
+// returns no corner → the polygon won't close → the operator fixes the list by
+// eye. Reads the CURRENT-frame skeleton (reproject-raw + skeleton must be fresh).
+// Synthetic names the skeleton mints for UNNAMED vehicular ways ("primary_link
+// 2", "motorway 3") — noise for a boundary picker. A REAL name (Forest Park
+// Parkway, Daniel Boone Expressway) never matches, so named expressways/parkways
+// — legit boundaries — are kept. (Filtering by highway CLASS wrongly dropped
+// those; filter by the synthetic-name shape instead.)
+const SYNTHETIC_NAME = /^(motorway|trunk|primary|secondary|tertiary)(_link)? \d+$/i
+const _skelCache = new Map()   // scene → { mtime, skel }
+function getSkeleton(scene) {
+  const p = join(sceneCleanDir(scene), 'skeleton.json')
+  if (!existsSync(p)) return null
+  const mtime = statSync(p).mtimeMs
+  const cached = _skelCache.get(scene)
+  if (cached && cached.mtime === mtime) return cached.skel
+  const skel = JSON.parse(readFileSync(p, 'utf8'))
+  _skelCache.set(scene, { mtime, skel })
+  return skel
+}
+function distPointToChains(j, chains) {
+  let best = Infinity
+  for (const s of chains) {
+    const pts = s.points
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1]
+      const dx = b.x - a.x, dz = b.z - a.z
+      const len2 = dx * dx + dz * dz || 1
+      let t = ((j.x - a.x) * dx + (j.z - a.z) * dz) / len2
+      t = Math.max(0, Math.min(1, t))
+      const d = Math.hypot(j.x - (a.x + t * dx), j.z - (a.z + t * dz))
+      if (d < best) best = d
+    }
+  }
+  return best
+}
+const CORNER_EPS = 12       // a junction is "on" a street if within this (m)
+const CORNER_CLUSTER = 45   // merge junctions closer than this into one corner
+function computeExtentCorners(scene, sides) {
+  const skel = getSkeleton(scene)
+  if (!skel) return { error: `no skeleton.json for scene '${scene}'` }
+  // Match by exact name OR by corridor (the directional-corridor kit link), so a
+  // side named "Big Bend Boulevard" gathers both North + South Big Bend chains.
+  const chainsOf = (nm) => skel.streets.filter(s => (s.name === nm || s.corridor === nm) && s.points && s.points.length >= 2)
+  const junctions = skel.junctions.filter(j => j.degree >= 3)
+  const edges = [], corners = []
+  for (let i = 0; i < sides.length; i++) {
+    const A = sides[i], B = sides[(i + 1) % sides.length]
+    const cA = chainsOf(A), cB = chainsOf(B)
+    const hits = (cA.length && cB.length)
+      ? junctions.filter(j => distPointToChains(j, cA) < CORNER_EPS && distPointToChains(j, cB) < CORNER_EPS)
+      : []
+    // Cluster near-duplicate junctions (a complex/divided node splits into a few).
+    const clusters = []
+    for (const j of hits) {
+      let put = false
+      for (const cl of clusters) {
+        if (Math.hypot(cl.x - j.x, cl.z - j.z) < CORNER_CLUSTER) {
+          cl.x = (cl.x * cl.n + j.x) / (cl.n + 1); cl.z = (cl.z * cl.n + j.z) / (cl.n + 1); cl.n++; put = true; break
+        }
+      }
+      if (!put) clusters.push({ x: j.x, z: j.z, n: 1 })
+    }
+    // Two long arterials can cross more than once (e.g. Big Bend × Clayton near
+    // the neighborhood AND again far south). The boundary corner is the crossing
+    // that bounds the neighborhood — nearest the framed center (origin = the
+    // geography center = what the operator framed), not the biggest cluster.
+    clusters.sort((a, b) => (a.x * a.x + a.z * a.z) - (b.x * b.x + b.z * b.z))
+    const corner = clusters.length ? { x: Math.round(clusters[0].x * 100) / 100, z: Math.round(clusters[0].z * 100) / 100 } : null
+    edges.push({ from: A, to: B, corner, candidates: clusters.length })
+    if (corner) corners.push(corner)
+  }
+  // Area-weighted polygon centroid — the geographic center of the shape.
+  let centroid = null
+  if (corners.length >= 3) {
+    let Ar = 0, cx = 0, cz = 0
+    for (let i = 0; i < corners.length; i++) {
+      const p = corners[i], q = corners[(i + 1) % corners.length]
+      const cr = p.x * q.z - q.x * p.z
+      Ar += cr; cx += (p.x + q.x) * cr; cz += (p.z + q.z) * cr
+    }
+    Ar *= 0.5
+    if (Math.abs(Ar) > 1) centroid = { x: cx / (6 * Ar), z: cz / (6 * Ar) }
+  }
+  if (!centroid && corners.length) {
+    let cx = 0, cz = 0
+    for (const c of corners) { cx += c.x; cz += c.z }
+    centroid = { x: cx / corners.length, z: cz / corners.length }
+  }
+  let radius = 0
+  if (centroid) for (const c of corners) radius = Math.max(radius, Math.hypot(c.x - centroid.x, c.z - centroid.z))
+  if (centroid) { centroid.x = Math.round(centroid.x * 100) / 100; centroid.z = Math.round(centroid.z * 100) / 100 }
+  // Each named side's resolved geometry, so the client can HIGHLIGHT it on the
+  // aerial — the operator sees exactly which street they picked (and catches a
+  // wrong one, e.g. Clayton Avenue vs Clayton Road, that won't close).
+  const r2 = (v) => Math.round(v * 100) / 100
+  const streets = sides.map((nm) => ({
+    name: nm,
+    polylines: (chainsOf(nm) || []).map(c => c.points.map(p => [r2(p.x), r2(p.z)])),
+  }))
+  return { corners, centroid, radius: Math.round(radius), edges, streets, closed: corners.length === sides.length && sides.length >= 3 }
+}
+
+// Aerial labels for the Extent view — sourced from the SKELETON (welded chains,
+// corridor-collapsed) so a directional corridor shows ONE label ("Big Bend
+// Boulevard") instead of North/South separately. One label per corridor/street
+// at the longest chain's arclength-midpoint + local angle (normalized to read
+// L→R). Coords are the skeleton's current-frame x/z (reproject-raw keeps them
+// aligned to the live geography / aerial). `major` = arterial class.
+function skeletonLabelsFor(scene) {
+  const skel = getSkeleton(scene)
+  if (!skel) return []
+  const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
+  const groups = new Map()   // label → { chains, major }
+  for (const s of skel.streets) {
+    if (!s.name || !s.points || s.points.length < 2) continue
+    const hw = s.highway || ''
+    if (SYNTHETIC_NAME.test(s.name)) continue
+    const label = s.corridor || s.name
+    let g = groups.get(label)
+    if (!g) { g = { chains: [], major: false }; groups.set(label, g) }
+    g.chains.push(s)
+    if (MAJOR.has(hw)) g.major = true
+  }
+  const labels = []
+  for (const [label, g] of groups) {
+    let best = null
+    for (const s of g.chains) {
+      const pts = s.points, segLens = []
+      let total = 0
+      for (let i = 0; i < pts.length - 1; i++) {
+        const L = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].z - pts[i].z)
+        segLens.push(L); total += L
+      }
+      if (total === 0 || (best && total <= best.total)) continue
+      let acc = 0, si = 0
+      const half = total / 2
+      for (; si < segLens.length - 1; si++) { if (acc + segLens[si] >= half) break; acc += segLens[si] }
+      const t = segLens[si] > 0 ? (half - acc) / segLens[si] : 0
+      const a = pts[si], b = pts[si + 1]
+      let angle = Math.atan2(b.z - a.z, b.x - a.x)
+      if (angle > Math.PI / 2) angle -= Math.PI
+      if (angle < -Math.PI / 2) angle += Math.PI
+      best = { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, angle, total }
+    }
+    if (best) labels.push({
+      name: label,
+      x: Math.round(best.x * 100) / 100,
+      z: Math.round(best.z * 100) / 100,
+      angle: Math.round(best.angle * 1000) / 1000,
+      major: g.major,
+    })
+  }
+  return labels
+}
+
+// ── Extent editor: ZIP seed (intake head) ───────────────────────────────────
+// zip → centroid (geocode) → provisional geography.json → fetch.js → skeleton.js.
+// The cold-start for a new hood; also the re-scope for an existing one. A fresh
+// fetch projects x/z through the just-written geography, so no reproject-raw is
+// needed here (that lever is for a re-center WITHOUT a re-fetch, §11).
+const _seedsInFlight = new Set()
+// Frame-then-fetch: the operator frames the neighborhood on the (global) aerial;
+// we fetch over EXACTLY that bbox, centered on it. Guarantee: a street visible in
+// the framed view falls in the bbox → is fetched → is nameable. Center = bbox
+// midpoint; a re-center within this bbox later = reproject-raw + skeleton (no
+// re-fetch), growing beyond it needs a re-fetch (§11).
+function writeGeographyFromBbox(scene, bbox) {
+  const r5 = (v) => Math.round(v * 1e5) / 1e5
+  const lat = (bbox.minLat + bbox.maxLat) / 2, lon = (bbox.minLon + bbox.maxLon) / 2
+  const lonToMeters = Math.round(111320 * Math.cos((lat * Math.PI) / 180))
+  const latToMeters = 111000
+  const geo = {
+    _comment: `Provisional — the operator FRAMED this extent on the aerial; fetched over exactly this bbox (frame-then-fetch: a street visible in-frame is in the data). Re-center to the boundary-polygon centroid on commit. ⚠️ timezone is a Central-US default — set per location when tz lookup lands.`,
+    lat: r5(lat), lon: r5(lon),
+    timezone: 'America/Chicago',
+    lonToMeters, latToMeters,
+    bbox: { minLat: r5(bbox.minLat), maxLat: r5(bbox.maxLat), minLon: r5(bbox.minLon), maxLon: r5(bbox.maxLon) },
+  }
+  const p = sceneDataPaths(scene).geography
+  mkdirSync(dirname(p), { recursive: true })
+  writeFileSync(p, JSON.stringify(geo, null, 2))
+  return geo
+}
+
+// One street's geometry (its chains, corridor-aware) for the Extent dropdown
+// HOVER preview — the operator sees exactly where a candidate lies before
+// selecting it (Clayton Road vs Clayton Avenue), so they never have to guess.
+function streetGeom(scene, name) {
+  const skel = getSkeleton(scene)
+  if (!skel || !name) return { polylines: [] }
+  const r2 = (v) => Math.round(v * 100) / 100
+  const chains = skel.streets.filter(s => (s.name === name || s.corridor === name) && s.points && s.points.length >= 2)
+  return { polylines: chains.map(c => c.points.map(p => [r2(p.x), r2(p.z)])) }
+}
+
+// The neighborhood stencil — a 256-gon circle of radius R around local [0,0]
+// (the geo center after re-center), with the two feather bands the slab clip
+// reads (SLAB-CONTRACT §2.1). center is ALWAYS [0,0] == the geo center.
+function makeCircleBoundary(radius) {
+  const R = Math.round(radius)
+  const r2 = (v) => Math.round(v * 100) / 100
+  const boundary = []
+  for (let i = 0; i < 256; i++) {
+    const a = (i / 256) * 2 * Math.PI
+    boundary.push([r2(R * Math.cos(a)), r2(R * Math.sin(a))])
+  }
+  return {
+    version: 2,
+    center: [0, 0],
+    radius: R,
+    innerFadeOffset: 200,
+    fade: { inner: Math.max(0, R - 200), outer: R },
+    streetFade: { inner: Math.max(0, R - 140), outer: R + 160 },
+    boundary,
+  }
+}
+
+// Street names for the Extent dropdown — sourced from the skeleton (welded,
+// corridor-collapsed) so a directional corridor shows as ONE entry ("Big Bend
+// Boulevard", not North/South separately). Grouped major (arterials) / minor,
+// each A→Z; synthetic motorway/link names excluded (not boundary streets).
+function streetNamesFor(scene) {
+  const skel = getSkeleton(scene)
+  if (!skel) return { major: [], minor: [] }
+  const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
+  const byLabel = new Map()   // label → isMajor (a corridor is major if any member is)
+  for (const s of skel.streets) {
+    if (!s.name) continue
+    const hw = s.highway || ''
+    if (SYNTHETIC_NAME.test(s.name)) continue
+    const label = s.corridor || s.name
+    byLabel.set(label, (byLabel.get(label) || false) || MAJOR.has(hw))
+  }
+  const major = [], minor = []
+  for (const [label, isMajor] of byLabel) (isMajor ? major : minor).push(label)
+  const az = (a, b) => a.localeCompare(b)
+  return { major: major.sort(az), minor: minor.sort(az) }
+}
+
 // Looks: each Look is a styling snapshot — a complete material palette plus
 // the per-Look bake bundle (ground.json + bin + lightmap + buildings + lamps
 // + scene snapshot) under public/baked/<id>/. design.json (authoring state)
@@ -409,6 +716,227 @@ createServer(async (req, res) => {
         res.end(JSON.stringify({ error: err.message }))
       }
     })
+    return
+  }
+
+  // ── Extent editor: OSM street labels ────────────────────────────────────
+  // GET /<scene>/osm-labels — the label set for the Neighborhood Perimeter
+  // Builder (Cartograph step 0). Extracted PRE-skeleton from raw/osm.json's
+  // ground.highway (coords already in the scene's local frame), so labels are
+  // available the moment a hood is fetched — before any pipeline runs. One
+  // label per named street (longest way's arclength-midpoint + local angle);
+  // `major` flags the arterial classes the operator frames boundaries on. The
+  // payload is a few KB even though raw OSM is ~18 MB; cached by file mtime so
+  // the 18 MB parse happens once per fetch, not per request.
+  const osmLabelsMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/osm-labels$/)
+  if (req.method === 'GET' && osmLabelsMatch && !RESERVED_PREFIXES.has(osmLabelsMatch[1])) {
+    const scene = osmLabelsMatch[1]
+    try {
+      const labels = getOsmLabels(scene)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ labels: labels || [] }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message, labels: [] }))
+    }
+    return
+  }
+
+  // POST /<scene>/extent-corners — body { sides: [orderedStreetNames] } →
+  // { corners, centroid, radius, edges, closed }. The Neighborhood Perimeter
+  // Builder's corner resolver (skeleton junctions; see computeExtentCorners).
+  const cornersMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/extent-corners$/)
+  if (req.method === 'POST' && cornersMatch && !RESERVED_PREFIXES.has(cornersMatch[1])) {
+    const scene = cornersMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { sides } = JSON.parse(body || '{}')
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(computeExtentCorners(scene, Array.isArray(sides) ? sides : [])))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
+  // GET /<scene>/street-names — { major, minor } for the Extent side dropdown
+  // (skeleton-sourced, corridor-collapsed, alphabetized).
+  const namesMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/street-names$/)
+  if (req.method === 'GET' && namesMatch && !RESERVED_PREFIXES.has(namesMatch[1])) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(streetNamesFor(namesMatch[1])))
+    return
+  }
+
+  // POST /<scene>/fetch-extent — body { bbox:{minLat,maxLat,minLon,maxLon} } →
+  // write geography.json (centered on the framed bbox) → fetch.js → skeleton.js.
+  // The Phalanges over the operator-framed square. Long-running (a fresh OSM
+  // fetch); the client awaits with a spinner. Guarded per scene.
+  const fetchExtentMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/fetch-extent$/)
+  if (req.method === 'POST' && fetchExtentMatch && !RESERVED_PREFIXES.has(fetchExtentMatch[1])) {
+    const scene = fetchExtentMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', async () => {
+      if (_seedsInFlight.has(scene)) {
+        res.writeHead(409, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'a fetch is already running for this scene' }))
+        return
+      }
+      _seedsInFlight.add(scene)
+      try {
+        const { bbox } = JSON.parse(body || '{}')
+        const ok = bbox && ['minLat', 'maxLat', 'minLon', 'maxLon'].every(k => Number.isFinite(bbox[k]))
+          && bbox.maxLat > bbox.minLat && bbox.maxLon > bbox.minLon
+        if (!ok) throw new Error('need a valid bbox {minLat,maxLat,minLon,maxLon}')
+        const geo = writeGeographyFromBbox(scene, bbox)
+        const here = import.meta.dirname
+        const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+        mkdirSync(sceneRawDir(scene), { recursive: true })
+        mkdirSync(sceneCleanDir(scene), { recursive: true })
+        await runShell('node fetch.js', { cwd: here, env, timeout: 240000 })
+        await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
+        _skelCache.delete(scene)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      } finally {
+        _seedsInFlight.delete(scene)
+      }
+    })
+    return
+  }
+
+  // GET /<scene>/skeleton-labels — corridor-collapsed aerial labels for Extent.
+  const skLabelsMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/skeleton-labels$/)
+  if (req.method === 'GET' && skLabelsMatch && !RESERVED_PREFIXES.has(skLabelsMatch[1])) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ labels: skeletonLabelsFor(skLabelsMatch[1]) }))
+    return
+  }
+
+  // POST /<scene>/street-geom — body { name } → { polylines } for the dropdown
+  // hover-preview (see which street a candidate is before selecting it).
+  const geomMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/street-geom$/)
+  if (req.method === 'POST' && geomMatch && !RESERVED_PREFIXES.has(geomMatch[1])) {
+    const scene = geomMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { name } = JSON.parse(body || '{}')
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(streetGeom(scene, name)))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message, polylines: [] }))
+      }
+    })
+    return
+  }
+
+  // GET/POST /<scene>/neighborhood — the extent DRAFT + descriptive metadata
+  // (name/blurb/border streets/radius). Auto-saved from the Extent panel; loaded
+  // on open to restore the operator's selections across reloads.
+  const nbdMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/neighborhood$/)
+  if (nbdMatch && !RESERVED_PREFIXES.has(nbdMatch[1])) {
+    const scene = nbdMatch[1]
+    const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(existsSync(nPath) ? readFileSync(nPath) : '{}')
+      return
+    }
+    if (req.method === 'POST') {
+      let body = ''
+      req.on('data', c => body += c)
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body || '{}')
+          mkdirSync(dirname(nPath), { recursive: true })
+          writeIfChanged(nPath, JSON.stringify(parsed, null, 2))
+          res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}')
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+        }
+      })
+      return
+    }
+  }
+
+  // POST /<scene>/commit-extent — the deliberate finalize: re-center geography to
+  // the boundary-polygon centroid → reproject-raw + skeleton (neighborhood lands
+  // at origin) → write neighborhood_boundary.json (the circle) + neighborhood.json.
+  // Body { center:{lat,lon}, radius, sides, name, blurb }. Long-running; guarded.
+  const commitMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/commit-extent$/)
+  if (req.method === 'POST' && commitMatch && !RESERVED_PREFIXES.has(commitMatch[1])) {
+    const scene = commitMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', async () => {
+      if (_seedsInFlight.has(scene)) {
+        res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return
+      }
+      _seedsInFlight.add(scene)
+      try {
+        const { center, radius, sides, name, blurb } = JSON.parse(body || '{}')
+        if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
+        if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
+        const r5 = (v) => Math.round(v * 1e5) / 1e5
+        const geoPath = sceneDataPaths(scene).geography
+        const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
+        geo.lat = r5(center.lat); geo.lon = r5(center.lon)
+        geo.lonToMeters = Math.round(111320 * Math.cos((center.lat * Math.PI) / 180))
+        geo._comment = 'Committed extent — center = the boundary-polygon centroid; bbox = the fetch extent.'
+        writeFileSync(geoPath, JSON.stringify(geo, null, 2))
+        const here = import.meta.dirname
+        const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+        await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
+        await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
+        _skelCache.delete(scene)
+        writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(makeCircleBoundary(radius), null, 2))
+        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], radius: Math.round(radius), committed: true }, null, 2))
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, radius: Math.round(radius) }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      } finally {
+        _seedsInFlight.delete(scene)
+      }
+    })
+    return
+  }
+
+  // POST /<scene>/pour — the one-click pour: pipeline.js (derive → map.json,
+  // clipped to the committed boundary) → promote-ribbons.js (→ clean/ribbons.json
+  // the Designer renders). Long-running (the derive stage); guarded per scene.
+  const pourMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/pour$/)
+  if (req.method === 'POST' && pourMatch && !RESERVED_PREFIXES.has(pourMatch[1])) {
+    const scene = pourMatch[1]
+    if (_seedsInFlight.has(scene)) {
+      res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return
+    }
+    _seedsInFlight.add(scene)
+    ;(async () => {
+      try {
+        const here = import.meta.dirname
+        const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+        await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
+        await runShell(`node promote-ribbons.js --scene=${scene}`, { cwd: here, env, timeout: 60000 })
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      } finally {
+        _seedsInFlight.delete(scene)
+      }
+    })()
     return
   }
 
