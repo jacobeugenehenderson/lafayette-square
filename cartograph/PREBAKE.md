@@ -56,7 +56,7 @@ The canonical spur is a named **boundary arterial** that enters the fetch at ful
 - **Buildings clip TIGHTER — to radius R** (centroid within **R ≈ 1251 m**, *not* the street-fade margin) — else buildings float ~200 m past the boundary fade and poke past the circle in 3D (a symptom Jacob caught). `bake-buildings.js` adds a belt-and-suspenders hard cull for a non-default scene (drop any building with *any* footprint point outside the circle).
 - **The 3D ground mesh is stencil-bounded to ±1461 regardless** (a clean disc) — the clip changes the **ribbons/content bounds**, not the ground mesh.
 
-Result on a wide 5.4 km demo fetch: `map.json` **180 → 52 MB**, ribbons **22 → 8 MB**, streets **2117 → 300**.
+Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 → 8 MB**, streets **2117 → 300**.
 
 > **Doctrine (ties §0 to §6).** The Data Wall is where a **spurious / overshooting polygon gets neutered** — polyline-clip the boundary arterial *to the hood*, don't keep it whole. Drop what's fully outside; clip what straddles; hold buildings to R. The wall **neuters**, it doesn't merely pass geometry through.
 

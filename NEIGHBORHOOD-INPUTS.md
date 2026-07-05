@@ -51,6 +51,8 @@ Deep home: **`cartograph/INTAKE.md`** (provenance SSOT + the GEOMETRY-vs-ATTRIBU
 
 **Doctrine (revised 2026-07-02 — see §1.1):** the map has an **automated backbone** (geometry, widths, class, land-use, heights — all fetchable) *plus* a **legitimate authoring layer** for the idiosyncratic features a historical neighborhood carries that street data simply doesn't hold. The extent is a **center + radius** (`neighborhood_boundary.json`) — the neighborhood's named-street edges sit *inside* that circle, the soft stencil fading the rim (§9).
 
+> **✅ Terrain/elevation is per-scene and already wired (2026-07-04) — don't re-investigate.** `bake-terrain.js` reads the installation's own USGS 3DEP GeoTIFF (`data/<scene>/raw/elevation.tif`), clips to that scene's geography+boundary, resamples to a 5 m grid → `clean/terrain.{json,bin}`, copied into the slab per-Look; `bake-buildings.js` (`loadSceneTerrain`) drapes buildings onto it. No installation is privileged — LS bakes through the exact same path. **HiPointe shares LS's exact tile** (`n39w091`), associated via a symlink (`hipointe-demun/raw/elevation.tif → lafayette-square/raw/elevation.tif`), and already renders on real relief (baseElev 143 m). The pour's `--skip-elevation` flag skips only the *legacy EPQS per-building* path (superseded by the GeoTIFF drape), **not** the terrain — so it is not a gap.
+
 ### 1.1 ⭐ Curated shape is authoring, not a bug (Jacob, 2026-07-02)
 
 Prior canon (`cartograph/INTAKE.md §6.1`, `cartograph/SKELETON.md §6`) framed every hand-curated centerline as a *logged defect*, target 0 — a kit that onboards town #100 can't require hand-drawing. **Jacob revises this: a historical or idiosyncratic neighborhood has features simply not captured by the street data, so hand-authoring SHAPE is an expected, first-class capability — not debt to eliminate.** (This is the SHAPE-layer instance of the §0.0 governing law — best guess, always overridable.) The synthesis that keeps both truths:
@@ -131,7 +133,9 @@ Checkins · Reviews · Events · Guardians · Residents · LobbyPosts · Handles
 
 ## 5. ⭐ The two capability gaps (Jacob, 2026-07-02)
 
-Both are real holes between "LS was bulk-seeded once" and "an operator hand-builds a town." Named here as workstreams; neither is specced yet.
+Both are real holes between "LS was bulk-seeded once" and "an operator hand-builds a town."
+
+> **⭐ PROMOTED to live workstreams (2026-07-04).** No longer just "named": **§5.2's first slice** — per-building **select → hide** — is being built (`HANDOFF-building-roster-editor.md`, Ward; backend landed, Designer curation UI in progress). **§5.1 (the Building Ledger)** splits along the render/content boundary (`slab-render-vs-content-boundary`): its **render-source unification** (retire the `bake-buildings.js` LS hardwire → per-look) rides the roster arc; its **per-instance content sidecar** is the **blank-app arc** (`HANDOFF-blank-app-instance-decoupling.md` — the app becomes a generic look-reader, LS just `?look=lafayette-square`).
 
 ### 5.1 Per-building authoring — the "Building Ledger"
 LS's building metadata (historic status, style, architect, year) was **bulk-authored once** from completist records, with **no per-building update UI**. A town without those records needs a **building-by-building surface** to fill this in by hand or LLM-assist — the content-side analog of the Cartograph authoring tools. The townie app has *guardian listing* edits but nothing for *core building* fields. **New tool.**
