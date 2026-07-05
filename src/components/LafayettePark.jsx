@@ -62,7 +62,7 @@ const TAU = Math.PI * 2
 // Lamp lightmap moved to ./lampLightmap.js for sharing with StreetRibbons.
 
 // ── SVG clip mask for park boundary ──────────────────────────────────
-const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg?v=${Date.now()}`
+const svgUrl = `${import.meta.env.BASE_URL}${INSTANCE.branding.assetSlug}.svg?v=${Date.now()}`
 const SVG_WORLD_X = -843.2
 const SVG_WORLD_Z = -1156.1
 const SVG_VB_W = 2000
@@ -808,7 +808,7 @@ export function ParkTitle() {
           renderOrder={16}
           onSync={flattenLabelDepth}
         >
-          LAFAYETTE PARK
+          {INSTANCE.profile.landmarkName.toUpperCase()}
         </Text>
       </ElevatedGroup>
       <ElevatedGroup at={LABEL_SUBTITLE_POS} footprintRadius={24}>
@@ -825,7 +825,7 @@ export function ParkTitle() {
           renderOrder={16}
           onSync={flattenLabelDepth}
         >
-          {'EST. 1851 · ST. LOUIS, MO'}
+          {`EST. ${INSTANCE.profile.founded} · ${INSTANCE.geography.cityState.toUpperCase()}`}
         </Text>
       </ElevatedGroup>
     </>

@@ -550,7 +550,7 @@ function Splash() {
       ))}
       <img
         src={import.meta.env.BASE_URL + 'favicon.svg'}
-        alt="Lafayette Square"
+        alt={INSTANCE.name}
         className="w-20 h-20"
         style={{ filter: 'invert(1) brightness(0.87)', opacity: 0.7 }}
       />

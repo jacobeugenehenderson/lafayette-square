@@ -746,7 +746,7 @@ function Scene() {
   const frameloop = (!IS_MOBILE && viewMode === 'hero') ? 'always' : 'demand'
 
   return (
-    <div role="img" aria-label="3D visualization of Lafayette Square neighborhood" style={{
+    <div role="img" aria-label={`3D visualization of ${INSTANCE.name} neighborhood`} style={{
       position: 'relative', width: '100%', height: '100%', background: '#000',
     }}>
     <Canvas

@@ -13,6 +13,7 @@
 
 import { useState, useCallback } from 'react'
 import useCary from '../hooks/useCary'
+import { INSTANCE } from '../instance.js'
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
@@ -186,7 +187,7 @@ function IdentityStep({ onNext, preview }) {
 
 function LicenseStep({ onNext, preview }) {
   const { onboardingAction, loading, error } = useCary()
-  const [state, setState] = useState('MO')
+  const [state, setState] = useState(INSTANCE.geography.stateCode)
   const [expiry, setExpiry] = useState('')
 
   const handleSubmit = useCallback(async () => {

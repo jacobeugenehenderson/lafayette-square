@@ -7,6 +7,7 @@
 
 import { useState, useCallback } from 'react'
 import useCary from '../hooks/useCary'
+import { INSTANCE } from '../instance.js'
 
 export default function CaryAuth() {
   const { sendOtp, verifyOtp, createProfile, user, profile, loading, error } = useCary()
@@ -79,7 +80,7 @@ export default function CaryAuth() {
           className="w-full rounded-lg bg-surface-container border border-outline-variant px-3 py-2 text-body text-on-surface placeholder:text-on-surface-disabled focus:outline-none focus:border-on-surface-subtle text-center tracking-wider"
         />
         <p className="text-[11px] leading-snug text-on-surface-disabled text-center px-2">
-          By tapping "Send code," you consent to receive SMS messages from Cary at Lafayette Square, including a one-time verification code and occasional account notifications. Message frequency varies. Message & data rates may apply. Reply STOP to opt out at any time. Reply HELP for support.
+          {`By tapping "Send code," you consent to receive SMS messages from Cary at ${INSTANCE.name}, including a one-time verification code and occasional account notifications. Message frequency varies. Message & data rates may apply. Reply STOP to opt out at any time. Reply HELP for support.`}
         </p>
         <button
           onClick={handleSendOtp}

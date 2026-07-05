@@ -2327,7 +2327,7 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isH
   }, [])
 
   useEffect(() => {
-    const vanity = 'https://lafayette-square.com'
+    const vanity = `https://${INSTANCE.domain}`
     let cancelled = false
 
     async function loadQrs() {
@@ -2948,7 +2948,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   }, [cart, sections, orderableSections])
 
   const MIN_ORDER = 4000 // $40 minimum order for delivery
-  const STL_TAX_RATE = 0.08725 // Missouri 4.225% + St. Louis city 4.5%
+  const STL_TAX_RATE = INSTANCE.commerce.salesTaxRate // per-installation sales-tax jurisdiction
   const salesTax = Math.round(cartTotal * STL_TAX_RATE) // tax on food only, not delivery
   const caryFee = Math.round(cartTotal * 0.22) // 22% service charge — courier keeps 75%, platform keeps 25%
   const processingFee = cartTotal > 0 ? Math.round((cartTotal + salesTax + caryFee) * 0.029) + 30 : 0 // Stripe 2.9% + $0.30
@@ -4103,7 +4103,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           ) : (
             <div className="flex-1 space-y-1.5">
               <a
-                href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
+                href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on ${INSTANCE.name}.`)}`}
                 className="flex items-center gap-2 text-on-surface-subtle text-body-sm hover:text-on-surface-variant transition-colors"
               >
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4112,7 +4112,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 Live here?
               </a>
               <a
-                href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I manage ${name}. I'd love to get set up on Lafayette Square.`)}`}
+                href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I manage ${name}. I'd love to get set up on ${INSTANCE.name}.`)}`}
                 className="flex items-center gap-2 text-on-surface-disabled text-caption hover:text-on-surface-subtle transition-colors"
               >
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -4127,7 +4127,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Residential: verified resident — manage link */}
         {isResidential && isResidentHere && (
           <a
-            href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
+            href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on ${INSTANCE.name}.`)}`}
             className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
           >
             Manage?
@@ -4157,7 +4157,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Non-residential: claim CTA */}
         {(!isResidential || isHouse) && hasListingInfo && !isStaff && (
           <button
-            onClick={() => useContact.getState().setOpen(true, `Hi, this is my place \u2014 ${name}. I'd love to get set up on Lafayette Square.`)}
+            onClick={() => useContact.getState().setOpen(true, `Hi, this is my place \u2014 ${name}. I'd love to get set up on ${INSTANCE.name}.`)}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4170,7 +4170,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Bare building: house CTA */}
         {!hasListingInfo && (
           <button
-            onClick={() => useContact.getState().setOpen(true, `Hi, this is my building \u2014 ${cleanAddress(building?.address) || 'Unknown'}. I'd love to get set up on Lafayette Square.`)}
+            onClick={() => useContact.getState().setOpen(true, `Hi, this is my building \u2014 ${cleanAddress(building?.address) || 'Unknown'}. I'd love to get set up on ${INSTANCE.name}.`)}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4184,9 +4184,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         <button
           onClick={() => {
             const typeLabel = hasListingInfo ? 'place' : 'house'
-            const vanity = 'https://lafayette-square.com'
+            const vanity = `https://${INSTANCE.domain}`
             const placeUrl = listingId ? `${vanity}/place/${listingId}` : vanity
-            const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${placeUrl}`
+            const shareText = `Check out this ${typeLabel} in ${INSTANCE.name}!\n${placeUrl}`
 
             if (navigator.share) {
               navigator.share({ text: shareText }).catch(() => {})

@@ -5,6 +5,7 @@ import useHandle from '../hooks/useHandle'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useCamera from '../hooks/useCamera'
 import AvatarCircle from './AvatarCircle'
+import { INSTANCE } from '../instance.js'
 
 // Two-level bulletin board: groups → sub-sections
 // Sub-section IDs are stable (existing posts keep their section ID)
@@ -739,7 +740,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                   <span className="pinned-post-badge text-caption px-1.5 py-0.5 rounded">pinned</span>
                 </div>
                 <div className="text-label-sm leading-relaxed space-y-1.5">
-                  <p className="pinned-post-body">Lafayette Square's neighborhood delivery service is looking for couriers.</p>
+                  <p className="pinned-post-body">{`${INSTANCE.name}'s neighborhood delivery service is looking for couriers.`}</p>
                   <p className="pinned-post-detail">How it works: a resident orders from a local restaurant through the map. You pick it up and deliver it within the neighborhood. You earn <span className="pinned-post-highlight">the majority of the service charge</span> on every order, plus 100% of tips.</p>
                   <p className="pinned-post-detail">Walk, bike, or drive. Set your own schedule. Nightly payouts.</p>
                   <p className="pinned-post-detail">16+ for Deliver tier (free to join) · 18+ for Drive tier · 21+ for alcohol deliveries</p>
@@ -1174,7 +1175,7 @@ export default function BulletinModal() {
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
-              const shareText = `Check out the Bulletin Board in Lafayette Square!\nhttps://lafayette-square.com/bulletin`
+              const shareText = `Check out the Bulletin Board in ${INSTANCE.name}!\nhttps://${INSTANCE.domain}/bulletin`
               if (navigator.share) {
                 navigator.share({ text: shareText }).catch(() => {})
               } else {

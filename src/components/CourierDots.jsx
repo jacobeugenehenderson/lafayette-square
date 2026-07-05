@@ -15,10 +15,12 @@ import { INSTANCE } from '../instance.js'
 // Same coordinate system as useUserLocation
 const CENTER_LAT = INSTANCE.geography.lat
 const CENTER_LON = INSTANCE.geography.lon
-const LON_TO_METERS = 86774
-const LAT_TO_METERS = 111000
+const LON_TO_METERS = INSTANCE.geography.lonToMeters
+const LAT_TO_METERS = INSTANCE.geography.latToMeters
 
-// Idle courier default position — Lafayette Park center
+// Idle courier default position — the neighborhood's park/privacy snap point.
+// TODO(universal-reader Phase 2): installation-specific coordinate — promote to
+// an INSTANCE field (kept literal here to preserve LS's exact idle position).
 const IDLE_LAT = 38.6158
 const IDLE_LON = -90.2155
 const IDLE_X = (IDLE_LON - CENTER_LON) * LON_TO_METERS

@@ -335,7 +335,7 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
         style={{ fontSize: 13, textDecoration: 'none' }}>← Stage</a>
       {divider('d1')}
       <span className="rounded-lg px-3 py-1 glass-text-dim"
-        style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>Lafayette Square ▼</span>
+        style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>{INSTANCE.name} ▼</span>
       <div style={{ flex: 1 }} />
       {btn('desktop',  'Desktop',  mode === 'desktop',  () => { setMode('desktop');  noteEvent('mode→desktop') })}
       {btn('phone-hi', 'Phone hi', mode === 'phone-hi', () => { setMode('phone-hi'); noteEvent('mode→phone-hi') })}
@@ -817,7 +817,7 @@ function PublishPanel({ lookId }) {
   }
 
   async function promoteProd() {
-    if (!window.confirm('Promote the current staging build to PRODUCTION (lafayette-square.com)?')) return
+    if (!window.confirm(`Promote the current staging build to PRODUCTION (${INSTANCE.domain})?`)) return
     setBusy('prod'); setMsg(null)
     try {
       const r = await fetch(`${API}/promote`, { method: 'POST' })

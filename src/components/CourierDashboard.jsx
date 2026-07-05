@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { create } from 'zustand'
 import useCary from '../hooks/useCary'
+import { INSTANCE } from '../instance.js'
 import { computeFare, computeBreakdown } from '../../cary/lib/meter.js'
 import { filterPoint } from '../../cary/lib/geo.js'
 import SafetyReport from './SafetyReport'
@@ -273,7 +274,7 @@ function LiveMeter() {
                 if (navigator.share) {
                   navigator.share({
                     title: 'My Cary trip',
-                    text: `I'm on a ${request?.type || 'trip'} near ${request?.place_name || 'Lafayette Square'}`,
+                    text: `I'm on a ${request?.type || 'trip'} near ${request?.place_name || INSTANCE.name}`,
                   }).catch(() => {})
                 }
               }}
@@ -344,7 +345,7 @@ function OnboardingFlow({ user, profile, courierProfile, onboardingStatus, curre
         <div className="rounded-lg bg-amber-500/10 border border-amber-400/25 px-3 py-3 space-y-2">
           <p className="text-body-sm text-amber-200/90 font-medium">Early access — not yet live</p>
           <p className="text-[12px] leading-relaxed text-amber-200/60">
-            Cary is Lafayette Square's neighborhood delivery service. We're onboarding couriers now so you're credentialed and ready when we launch. Completing the process gets you independently verified — your credentials belong to you, not the platform. When we go live, you'll be first in the network.
+            {`Cary is ${INSTANCE.name}'s neighborhood delivery service. We're onboarding couriers now so you're credentialed and ready when we launch. Completing the process gets you independently verified — your credentials belong to you, not the platform. When we go live, you'll be first in the network.`}
           </p>
         </div>
       )}

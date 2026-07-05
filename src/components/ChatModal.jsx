@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { getDeviceHash } from '../lib/device'
+import { INSTANCE } from '../instance.js'
 
 export const useChat = create((set) => ({
   open: false,
@@ -179,7 +180,7 @@ function ChatModalInner() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
-          <span style={{ fontSize: 'var(--type-body)', fontWeight: 500 }}>Lafayette Square</span>
+          <span style={{ fontSize: 'var(--type-body)', fontWeight: 500 }}>{INSTANCE.name}</span>
           <button
             onClick={close}
             className="w-7 h-7 rounded-full flex items-center justify-center"
