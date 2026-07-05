@@ -559,18 +559,27 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
 
   let buildings = loadBuildings(scene)
 
-  // Hard-cull buildings to the neighborhood boundary (KIT) — a poured scene's
-  // map.json can carry a fade-margin ring, and a building must NOT render past
-  // the boundary circle. Drop any building with a footprint point outside the
-  // circle (strict, so nothing pokes past). LS reads its own culled buildings.
+  // Cull buildings to the neighborhood boundary (KIT). The neighborhood is
+  // "every building that touches the circle" — KEEP a building if ANY footprint
+  // vertex is inside the radius (it intersects the hood), so rim-straddling
+  // buildings survive and the edge fills clean to the circle instead of going
+  // bald. (Was the reverse — drop if ANY vertex outside — which shaved every
+  // building the rim crossed. The per-building roster editor is how the operator
+  // then hides the strays this keeps.)
+  //
+  // The `scene !== 'lafayette-square'` gate is a HARDWIRE, twin of the source-
+  // select at :62 — LS is the one legacy install still loading a hand-curated
+  // buildings.json (already finalized), so the poured-path cull doesn't apply to
+  // it. Both hardwires retire together when LS becomes a poured scene; the real
+  // condition is "buildings came from the poured map.json", 1:1 with the name today.
   const nbP = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
   if (scene !== 'lafayette-square' && existsSync(nbP)) {
     const nb = JSON.parse(readFileSync(nbP, 'utf-8'))
     const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
     const R2 = (nb.radius ?? Infinity) ** 2
     const before = buildings.length
-    buildings = buildings.filter(b => (b.footprint || []).every(([x, z]) => (x - cx) ** 2 + (z - cz) ** 2 <= R2))
-    console.log(`[bake-buildings] boundary cull: ${before} → ${buildings.length} (R=${Math.round(nb.radius || 0)}m)`)
+    buildings = buildings.filter(b => (b.footprint || []).some(([x, z]) => (x - cx) ** 2 + (z - cz) ** 2 <= R2))
+    console.log(`[bake-buildings] boundary cull: ${before} → ${buildings.length} (R=${Math.round(nb.radius || 0)}m, keep-if-intersects)`)
   }
 
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;
