@@ -49,11 +49,12 @@ Read it left-to-right: messy inputs get traced into a clean **frame**, frozen in
 ### How it ships
 
 - **The slab is the contract.** We pour a flat, dumb, fast "slab" the public app trusts blindly and can't argue with. The catch: **if it isn't baked into the slab, the public never sees it** — what the operator sees in authoring only ships if it travels through the bake. → `SLAB-CONTRACT.md`
+- **The slab is the *render*; content rides alongside.** A building's *render* side (footprint, materials, stories) belongs in the slab; its *content* side (name, history, listings) is a separate per-instance layer the app reads — not baked in. The upshot: the public app is a generic **look-reader**, and Lafayette Square is just `?look=lafayette-square`. → `SLAB-CONTRACT.md §C2`, `NEIGHBORHOOD-INPUTS §5.1`
 - **One compass frame, no trick rotations.** Every coordinate sits at its true GPS position; there are no secret rotation constants hiding in the math. → `cartograph/ARCHITECTURE.md`
 - **Everything sits on the ground we actually draw.** On a rolling site, objects look fake the instant they float. So every object — tree, lamp, path — is anchored to the **one rendered ground surface** (a height baked per object), not each guessing its own elevation off a smoother field the coarse ground only approximates. The buildings always worked this way (their foundations); it now covers everything that stands on the ground. → `cartograph/ARCHITECTURE.md §8 "Ground conformance"`
 
 ### A few more, settled (won't reopen)
-Divided roads stay two centerlines with the median between them · grade-separated roads (bridges/ramps) are pulled out of the block grid and drawn flat · street smoothing rides **one knob** (`STREET_SMOOTH`), never two copies kept in sync by hand · the practice scene ("toy") routes through the *same* pipeline, never a private one. *(Where each lives: the `README` cross-cutting feature index.)*
+Divided roads stay two centerlines with the median between them · grade-separated roads (bridges/ramps) are pulled out of the block grid and drawn flat · street smoothing rides **one knob** (`STREET_SMOOTH`), never two copies kept in sync by hand · the practice scene ("toy") routes through the *same* pipeline, never a private one · a neighborhood is bounded by its **streets** — the polygon those boundary streets enclose is what decides which buildings are in it (the circle is just the slab's disc/fade), and the operator hand-curates the edge building-by-building (`NEIGHBORHOOD-INPUTS §5.2`). *(Where each lives: the `README` cross-cutting feature index.)*
 
 ---
 

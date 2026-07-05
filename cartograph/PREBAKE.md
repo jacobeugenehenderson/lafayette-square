@@ -53,12 +53,12 @@ The canonical spur is a named **boundary arterial** that enters the fetch at ful
 
 - **⭐ Streets / alleys / paths are polyline-CLIPPED, not kept whole** (`clipRun`): each polyline is trimmed to the boundary circle and the **longest inside run** is kept. **This is the neuter** — the overshooting arterial is cut back to the hood instead of carried at city length. After it, the ribbons street bbox is **symmetric** — `x[-1439..1434] z[-1441..1441]`, center ≈ origin (was `x[-2110..1770] z[-1940..1940]`, skewed SE); max street span **3882 → 2144 m**.
 - **Faces / tiles / features drop-if-outside** — a feature entirely outside the circle + street-fade margin (`keepR = streetFade.outer + 30 ≈ 1441 m`) is **removed**: top-level `layers[cat]` arrays + ribbons faces / tiles / medians / corridors / junctions / nameTransitions. The `touches` test is **inclusive** so a tile→street edge ref straddling the edge survives.
-- **Buildings clip TIGHTER — to radius R** (centroid within **R ≈ 1251 m**, *not* the street-fade margin) — else buildings float ~200 m past the boundary fade and poke past the circle in 3D (a symptom Jacob caught). `bake-buildings.js` adds a belt-and-suspenders hard cull for a non-default scene (drop any building with *any* footprint point outside the circle).
+- **Building MEMBERSHIP — the boundary-street POLYGON** (2026-07-05, supersedes centroid-within-R): keep a building if its centroid is inside `nb.polygon` (the corners resolved from the named sides), *plus* the roster editor's `activate`/`hide` overrides (`NEIGHBORHOOD-INPUTS §5.2`). The **circle** stays the slab disc/fade; the **street polygon** decides which buildings are in. Applied in `pipeline.js` so `map.json` is the single filtered source (2D Designer + bake); falls back to centroid-within-**R ≈ 1251 m** if no polygon persisted. `bake-buildings.js` re-applies the same membership belt-and-suspenders.
 - **The 3D ground mesh is stencil-bounded to ±1461 regardless** (a clean disc) — the clip changes the **ribbons/content bounds**, not the ground mesh.
 
 Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 → 8 MB**, streets **2117 → 300**.
 
-> **Doctrine (ties §0 to §6).** The Data Wall is where a **spurious / overshooting polygon gets neutered** — polyline-clip the boundary arterial *to the hood*, don't keep it whole. Drop what's fully outside; clip what straddles; hold buildings to R. The wall **neuters**, it doesn't merely pass geometry through.
+> **Doctrine (ties §0 to §6).** The Data Wall is where a **spurious / overshooting polygon gets neutered** — polyline-clip the boundary arterial *to the hood*, don't keep it whole. Drop what's fully outside; clip what straddles; hold buildings to the **boundary polygon** (+ roster overrides, §5.2). The wall **neuters**, it doesn't merely pass geometry through.
 
 ---
 
@@ -117,7 +117,7 @@ The split this buys: **corner identity (topology) = prebake, frozen once; curb p
 - **Freezing serves perf, not just correctness** — it's the precondition for activated-only live redraw (`SURVEY.md §4.1`), which the sticky high-res Designer needs.
 - **One source for faces: the skeleton.** Retire the raw-OSM face path; the two-source seam is the palimpsest.
 - **The Data Wall belongs at the prebake→Survey boundary (~P3).** Past it, no geometry derived from chains.
-- **⭐ The Data Wall neuters spurious polygons (§2.5).** A boundary arterial carried in at full city length is **polyline-clipped to the hood** at the wall, never kept whole; features fully outside drop, buildings clip tighter to R. A KIT step gated on `neighborhood_boundary.json`.
+- **⭐ The Data Wall neuters spurious polygons (§2.5).** A boundary arterial carried in at full city length is **polyline-clipped to the hood** at the wall, never kept whole; features fully outside drop, buildings held to the **boundary polygon** (+ roster `activate`/`hide`, §5.2). A KIT step gated on `neighborhood_boundary.json`.
 - **Two-step rebuild, always:** `skeleton.js` → `pipeline.js` → `promote-ribbons.js`.
 
 ---

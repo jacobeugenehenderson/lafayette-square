@@ -1,4 +1,9 @@
-# HANDOFF — Building Roster Editor (per-building select → hide, the §5.2 first slice)
+# HANDOFF — Building Roster Editor (per-building membership, the §5.2 first slice)
+
+> ## ✅ DONE + FOLDED INTO CANON (2026-07-05, Ward). This brief is retired; live doctrine now lives in:
+> - **`NEIGHBORHOOD-INPUTS.md §5.2`** (the roster editor — polygon membership + `activate`/`hide`) **& `§5.1`** (the render ledger — retired the LS source hardwire).
+> - **`cartograph/PIPELINE.md §prebake`** (membership applied in `pipeline.js` → the single `map.json` source) · **`BAKE.md` step 4** (render ledger + belt-and-suspenders cull) · **`PREBAKE.md §2.5`** · **`ARCHITECTURE.md`** (bake-buildings) · **`OPERATIONS.md`** (the operator flow, step 7 "Edit buildings") · **`INTAKE.md`** (commit persists the polygon).
+> **What shipped:** the neighborhood is the boundary-STREET polygon (not the circle); toggle-ghost curation in the Extent tool; `{activate,hide}` per-scene overrides; per-scene render ledger (LS byte-identical). Branch `roster-editor` (commits `1e3ff4b1`→`f75d5358`). *The body below is the historical brief — kept for context; the canon supersedes it.*
 
 > **Agent: WARM → Ward** (in the `roster-editor` worktree). Supervised live (Jacob + Boz); build in reviewable steps.
 >
