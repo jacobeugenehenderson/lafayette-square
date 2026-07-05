@@ -18,6 +18,16 @@ import { fetchElevationGrid, interpolateElevation } from './elevation.js'
 
 const skipElevation = process.argv.includes('--skip-elevation')
 
+// Ray-cast point-in-polygon (poly = [{x,z}]) — building membership test.
+function pointInPolygon(px, pz, poly) {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z
+    if (((zi > pz) !== (zj > pz)) && (px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi)) inside = !inside
+  }
+  return inside
+}
+
 async function main() {
   console.log('='.repeat(60))
   console.log('cartograph/pipeline.js — Centerline-out pipeline')
@@ -179,21 +189,33 @@ async function main() {
         dropped += before - rb[key].length; kept += rb[key].length
       }
     }
-    // Buildings STOP at the neighborhood circle (radius R), NOT the street-fade
-    // margin — else they float ~200 m outside the boundary fade in 3D. Centroid-
-    // in-circle test (streets can trail past the rim; buildings can't).
+    // Building MEMBERSHIP (KIT): the neighborhood is the area inside the
+    // boundary-street POLYGON; the roster editor's overrides layer on top
+    // (activate = force-in an outside building, hide = force-out an inside one).
+    // Applied HERE (map.json) so it's the single source the 2D Designer AND the
+    // bake both inherit. Falls back to the boundary circle if no polygon persisted.
+    const ovPath = join(RAW_DIR, '..', 'building-overrides.json')
+    let activate = new Set(), hide = new Set()
+    if (existsSync(ovPath)) {
+      try { const ov = JSON.parse(readFileSync(ovPath, 'utf8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) }
+      catch (e) { console.warn(`  building-overrides unreadable: ${e.message}`) }
+    }
+    const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
     const bR2 = (nb.radius ?? Infinity) ** 2
     const bBefore = buildings.length
     buildings = buildings.filter((b) => {
       const pts = b.ring || []
       if (!pts.length) return true
+      const id = b.msbfId != null ? `msbf-${b.msbfId}` : null
+      if (id && hide.has(id)) return false
       let sx = 0, sz = 0
       for (const p of pts) { sx += Array.isArray(p) ? p[0] : p.x; sz += Array.isArray(p) ? p[1] : p.z }
-      const dx = sx / pts.length - cx, dz = sz / pts.length - cz
-      return dx * dx + dz * dz <= bR2
+      const bx = sx / pts.length, bz = sz / pts.length
+      if (id && activate.has(id)) return true
+      return poly ? pointInPolygon(bx, bz, poly) : (bx - cx) ** 2 + (bz - cz) ** 2 <= bR2
     })
     dropped += bBefore - buildings.length
-    console.log(`  Boundary clip: streets/ground R=${Math.round(keepR)}m, buildings R=${Math.round(nb.radius)}m — kept ${kept + buildings.length}, dropped ${dropped}`)
+    console.log(`  Building membership: poly=${!!poly} +${activate.size}/−${hide.size} — kept ${buildings.length}, dropped ${bBefore - buildings.length}`)
   }
 
   // ── World-coord bbox (derived from projected layers + buildings) ────

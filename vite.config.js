@@ -104,7 +104,7 @@ export default defineConfig(({ command }) => ({
       // surfaced to the browser. Fresh connection per request is cheap
       // here and rock-solid.
       '/api/cartograph': {
-        target: 'http://localhost:3333',
+        target: process.env.CARTO_API || 'http://localhost:3333',
         rewrite: (path) => path.replace(/^\/api\/cartograph/, ''),
         agent: false,
       },

@@ -59,12 +59,21 @@ function adaptMapBuildings(mapBuildings) {
 }
 
 function loadBuildings(scene) {
-  if (scene === 'lafayette-square') {
-    const raw = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'buildings.json'), 'utf-8'))
+  // Per-scene RENDER ledger (KIT): every scene loads its buildings from the same
+  // render record at data/<scene>/buildings.json — no scene-name branch. LS's
+  // ledger is the render-field projection of its authored src/data content
+  // (derive-ls-render-ledger.js); the ~10 townie CONTENT imports still read
+  // src/data/buildings.json untouched (render/content split). Poured scenes have
+  // no ledger yet, so they fall back to adapting map.json below (until the pour
+  // emits a ledger too). The branch is now DATA (does a ledger exist?), not the
+  // 'lafayette-square' proper noun — the hardwire retired.
+  const ledgerP = join(ROOT, 'cartograph', 'data', scene, 'buildings.json')
+  if (existsSync(ledgerP)) {
+    const raw = JSON.parse(readFileSync(ledgerP, 'utf-8'))
     return Array.isArray(raw) ? raw : (raw.buildings || [])
   }
   const mapPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
-  if (!existsSync(mapPath)) { console.warn(`[bake-buildings] no map.json for scene ${scene}`); return [] }
+  if (!existsSync(mapPath)) { console.warn(`[bake-buildings] no render ledger or map.json for scene ${scene}`); return [] }
   const map = JSON.parse(readFileSync(mapPath, 'utf-8'))
   return adaptMapBuildings(map.buildings || [])
 }
@@ -553,24 +562,57 @@ const DEFAULT_PALETTE = [
   '#f5deb3', '#696969', '#b22222', '#808080',
 ]
 
+// Ray-cast point-in-polygon (poly = [{x,z}]) — building membership test.
+function pointInPolygon(px, pz, poly) {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z
+    if (((zi > pz) !== (zj > pz)) && (px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi)) inside = !inside
+  }
+  return inside
+}
+
 export async function bakeBuildings({ look = 'default', scene = 'lafayette-square' } = {}) {
   const outDir   = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   let buildings = loadBuildings(scene)
 
-  // Hard-cull buildings to the neighborhood boundary (KIT) — a poured scene's
-  // map.json can carry a fade-margin ring, and a building must NOT render past
-  // the boundary circle. Drop any building with a footprint point outside the
-  // circle (strict, so nothing pokes past). LS reads its own culled buildings.
+  // Membership cull (KIT). The neighborhood is the area inside the boundary-street
+  // POLYGON (persisted on commit); a building belongs if its centroid is in the
+  // polygon. The roster editor's overrides layer on top (feedback_effective_payload
+  // _layering): `activate` forces an outside building IN, `hide` forces an inside
+  // one OUT. Keep if (centroid-in-polygon OR activated) AND NOT hidden. Falls back
+  // to the boundary CIRCLE if no polygon was persisted (older scenes).
+  //
+  // The `scene !== 'lafayette-square'` gate is a HARDWIRE, twin of the source-select
+  // at :62 — LS is the one legacy install on a hand-curated buildings.json, so the
+  // poured-path membership cull doesn't apply. Both retire when LS becomes poured.
   const nbP = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
   if (scene !== 'lafayette-square' && existsSync(nbP)) {
     const nb = JSON.parse(readFileSync(nbP, 'utf-8'))
-    const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
+    let activate = new Set(), hide = new Set()
+    const ovP = join(ROOT, 'cartograph', 'data', scene, 'building-overrides.json')
+    if (existsSync(ovP)) {
+      try { const ov = JSON.parse(readFileSync(ovP, 'utf-8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) }
+      catch (e) { console.warn(`[bake-buildings] building-overrides unreadable: ${e.message}`) }
+    }
+    const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
+    const cx0 = nb.center?.[0] ?? 0, cz0 = nb.center?.[1] ?? 0
     const R2 = (nb.radius ?? Infinity) ** 2
+    const defaultIn = (fp) => {
+      let sx = 0, sz = 0
+      for (const [x, z] of fp) { sx += x; sz += z }
+      const cx = sx / fp.length, cz = sz / fp.length
+      return poly ? pointInPolygon(cx, cz, poly) : (cx - cx0) ** 2 + (cz - cz0) ** 2 <= R2
+    }
     const before = buildings.length
-    buildings = buildings.filter(b => (b.footprint || []).every(([x, z]) => (x - cx) ** 2 + (z - cz) ** 2 <= R2))
-    console.log(`[bake-buildings] boundary cull: ${before} → ${buildings.length} (R=${Math.round(nb.radius || 0)}m)`)
+    buildings = buildings.filter(b => {
+      const fp = b.footprint || []
+      if (fp.length < 3 || hide.has(b.id)) return false
+      return defaultIn(fp) || activate.has(b.id)
+    })
+    console.log(`[bake-buildings] membership: ${before} → ${buildings.length} (poly=${!!poly}, +${activate.size}/−${hide.size})`)
   }
 
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;

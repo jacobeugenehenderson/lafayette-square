@@ -146,6 +146,28 @@ export async function fetchStreetNames(scene) {
   return res.json()
 }
 
+// Extent overlay / roster editor: every building footprint as a current-frame
+// ring, tagged msbf-<id>. { buildings: [{ id, ring:[[x,z],…] }] }.
+export async function fetchBuildingFootprints(scene) {
+  const res = await fetch(sceneUrl(scene, 'building-footprints'))
+  if (!res.ok) return { buildings: [] }
+  return res.json()
+}
+
+// Roster editor: per-scene building membership overrides { activate:[], hide:[] }.
+export async function fetchBuildingOverrides(scene) {
+  const res = await fetch(sceneUrl(scene, 'building-overrides'))
+  if (!res.ok) return { activate: [], hide: [] }
+  return res.json()
+}
+export async function saveBuildingOverrides(scene, body) {
+  const res = await fetch(sceneUrl(scene, 'building-overrides'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`save building-overrides ${res.status}`)
+  return res.json()
+}
+
 // Extent editor: resolve the boundary corners from ordered side names via the
 // scene's skeleton junctions (the real path — no marks). Returns
 // { corners, centroid, radius, edges, closed }.

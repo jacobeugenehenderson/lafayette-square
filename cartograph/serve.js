@@ -443,6 +443,29 @@ function streetNamesFor(scene) {
   return { major: major.sort(az), minor: minor.sort(az) }
 }
 
+// Building footprints for the Extent tool's live overlay + roster editor — every
+// MSBF footprint as a CURRENT-FRAME (x/z) ring, tagged `msbf-<id>` (the same id
+// space the pour bakes + buildingOverrides keys on). Reads raw/msbf.json, whose
+// x/z reproject-raw keeps aligned to the live geography/aerial (no projection
+// here). mtime-cached — the 9.5 MB parse runs once per fetch, not per request.
+const _footprintCache = new Map()   // scene → { mtime, payload }
+function buildingFootprintsFor(scene) {
+  const p = join(sceneRawDir(scene), 'msbf.json')
+  if (!existsSync(p)) return { buildings: [] }
+  const mtime = statSync(p).mtimeMs
+  const cached = _footprintCache.get(scene)
+  if (cached && cached.mtime === mtime) return cached.payload
+  const msbf = JSON.parse(readFileSync(p, 'utf-8'))
+  const buildings = []
+  for (const b of (msbf.buildings || [])) {
+    const ring = (b.coords || []).map(c => [c.x, c.z])
+    if (ring.length >= 3) buildings.push({ id: `msbf-${b.msbfId}`, ring })
+  }
+  const payload = { buildings }
+  _footprintCache.set(scene, { mtime, payload })
+  return payload
+}
+
 // Looks: each Look is a styling snapshot — a complete material palette plus
 // the per-Look bake bundle (ground.json + bin + lightmap + buildings + lamps
 // + scene snapshot) under public/baked/<id>/. design.json (authoring state)
@@ -453,7 +476,7 @@ const PUBLIC_DIR = join(import.meta.dirname, '..', 'public')
 const LOOKS_DIR = join(PUBLIC_DIR, 'looks')
 const LOOKS_INDEX = join(LOOKS_DIR, 'index.json')
 const DEFAULT_LOOK_ID = 'lafayette-square'
-const PORT = 3333
+const PORT = Number(process.env.CARTO_PORT) || 3333
 
 // ── Looks helpers ──────────────────────────────────────────────────────────
 function readJsonOrNull(path) {
@@ -772,6 +795,48 @@ createServer(async (req, res) => {
     return
   }
 
+  // GET /<scene>/building-footprints — current-frame footprint rings for the
+  // Extent overlay + roster editor (one merged geometry client-side).
+  const bldgFpMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/building-footprints$/)
+  if (req.method === 'GET' && bldgFpMatch && !RESERVED_PREFIXES.has(bldgFpMatch[1])) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(buildingFootprintsFor(bldgFpMatch[1])))
+    return
+  }
+
+  // GET/POST /<scene>/building-overrides — per-scene building membership overrides
+  // { activate: [msbf-id…], hide: [msbf-id…] }. `activate` forces an outside-polygon
+  // building IN; `hide` forces an inside one OUT. Layers OVER the geometric default
+  // (centroid in the boundary polygon) — feedback_effective_payload_layering — so it
+  // survives radius/polygon edits; the bake applies it. Never merged into the ledger.
+  const bldgOvMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/building-overrides$/)
+  if (bldgOvMatch && !RESERVED_PREFIXES.has(bldgOvMatch[1])) {
+    const scene = bldgOvMatch[1]
+    const ovPath = join(sceneCleanDir(scene), '..', 'building-overrides.json')
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(existsSync(ovPath) ? readFileSync(ovPath) : '{"activate":[],"hide":[]}')
+      return
+    }
+    if (req.method === 'POST') {
+      let body = ''
+      req.on('data', c => body += c)
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body || '{}')
+          const activate = Array.isArray(parsed.activate) ? parsed.activate : []
+          const hide = Array.isArray(parsed.hide) ? parsed.hide : []
+          mkdirSync(dirname(ovPath), { recursive: true })
+          writeIfChanged(ovPath, JSON.stringify({ activate, hide }, null, 2))
+          res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}')
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+        }
+      })
+      return
+    }
+  }
+
   // POST /<scene>/fetch-extent — body { bbox:{minLat,maxLat,minLon,maxLon} } →
   // write geography.json (centered on the framed bbox) → fetch.js → skeleton.js.
   // The Phalanges over the operator-framed square. Long-running (a fresh OSM
@@ -900,7 +965,14 @@ createServer(async (req, res) => {
         await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
         _skelCache.delete(scene)
-        writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(makeCircleBoundary(radius), null, 2))
+        // Persist the boundary-street polygon (re-resolved in the NOW re-centered
+        // frame, so it aligns with the reprojected buildings) alongside the circle.
+        // The bake culls building MEMBERSHIP by point-in-this-polygon; the circle
+        // stays the slab disc / fade.
+        const boundary = makeCircleBoundary(radius)
+        const cornerRes = computeExtentCorners(scene, (sides || []).map(s => (s || '').trim()).filter(Boolean))
+        if (cornerRes && Array.isArray(cornerRes.corners) && cornerRes.corners.length >= 3) boundary.polygon = cornerRes.corners
+        writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
         writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], radius: Math.round(radius), committed: true }, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
