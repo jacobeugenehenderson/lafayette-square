@@ -1,5 +1,17 @@
 import { create } from 'zustand'
-import seedEvents from '../data/lafayette-square/seedEvents.json'
+import { loadInstanceData } from '../data/loadInstanceData.js'
+import { INSTANCE } from '../instance.js'
+
+// Seed events load via the installation-data seam. LS's seed set is empty ([]),
+// so this is byte-identical ([] → []); a different install ships its own.
+let _seedEvents = []
+loadInstanceData(INSTANCE.lookId, 'seedEvents').ready.then(v => {
+  _seedEvents = Array.isArray(v) ? v : []
+  const s = useEvents.getState()
+  if (!s.fetched && s.events.length === 0 && _seedEvents.length > 0) {
+    useEvents.setState({ events: _seedEvents })
+  }
+})
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 
@@ -36,11 +48,11 @@ export function isActiveEvent(e, dateStr, timeStr) {
  * Falls back to bundled seed events when API has none.
  */
 const useEvents = create((set, get) => ({
-  events: seedEvents,
+  events: [],
   fetched: false,
 
   setEvents: (events) => set({
-    events: events.length > 0 ? events : seedEvents,
+    events: events.length > 0 ? events : _seedEvents,
     fetched: true,
   }),
 

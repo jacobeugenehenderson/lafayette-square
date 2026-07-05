@@ -4,6 +4,11 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+// ⚠️ DEFERRED-TO-PRODUCER (Universal Reader Phase 2). street_lamps is render
+// geometry shared with the bake pipeline + the lamp-lightmap subsystem
+// (lampLightmap.js → BakedGround/gravelPathMaterial, outside the reader scope).
+// Kept static + LS-guarded so a non-LS look shows no lamps; its by-lookId load
+// belongs to the roster/render-emit arc alongside the lightmap. Owner: that arc.
 import lampData from '../data/street_lamps.json'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
@@ -63,7 +68,10 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
   // Effect that re-applies tint lives below the lampModel useState so the
   // dep array can include it (re-runs when the GLB finishes loading).
 
-  const allLamps = lampsProp || lampData.lamps
+  // HPDM-safety guard (byte-identical for LS today — INSTANCE.lookId is always
+  // 'lafayette-square' until instance-boot lands): a non-LS look shows no lamps
+  // rather than LS's.
+  const allLamps = lampsProp || (INSTANCE.lookId === 'lafayette-square' ? lampData.lamps : [])
   // Baked ground anchor per lamp (groundSampler): the raw field where the DRAWN
   // ground sits under each lamp → rigid-lift onto the rendered surface, no float
   // (the buildings/foundations regime for point objects). Falls back to the

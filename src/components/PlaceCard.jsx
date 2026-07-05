@@ -21,14 +21,16 @@ import RoleBadge from './RoleBadge'
 import QRCode from 'qrcode'
 import { useCourierAvailable } from './CourierDots'
 import { useCodeDesk } from './CodeDeskModal'
-import facadeMapping from '../data/facade_mapping.json'
+import { loadInstanceData } from '../data/loadInstanceData.js'
 
 const BASE = import.meta.env.BASE_URL
 const assetUrl = (url) => url?.startsWith('http') ? url : `${BASE}${url?.replace(/^\//, '')}`
 
 // Facade photo lookup: building_id -> { image path, description }
+// facade_mapping loads via the seam; place cards open long after it resolves,
+// so a plain .value read with the existing null-guard is safe (no reactivity).
 function getFacadeInfo(buildingId) {
-  const entry = facadeMapping[buildingId]
+  const entry = loadInstanceData(INSTANCE.lookId, 'facadeMapping').value?.[buildingId]
   if (!entry) return null
   // Strip /public/ prefix — Vite serves public/ at root
   const photo = entry.image.replace(/^\/public\//, '/')

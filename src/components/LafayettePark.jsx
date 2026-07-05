@@ -4,6 +4,14 @@ import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
+// ⚠️ DEFERRED-TO-PRODUCER exception (Universal Reader Phase 2, Jacob's ruling).
+// LafayettePark is LS-specific landmark RENDER: park_water / ribbons / park-polygon
+// / park-feature-elev (below) are installation-specific geometry (shared with the
+// bake pipeline) feeding a module-scope cascade (_PARK_AXIS_RAD / PARK_HALF / label
+// positions). Making it generic needs the geometry pipeline restructured (per-look
+// park + ready-gates) — the producer/render-emit arc's job, not this reader phase.
+// Left static; the component is mount-guarded to LS (below) so a non-LS look
+// renders no park rather than LS's. Owner: roster/render arc.
 import parkWaterData from '../data/park_water.json'
 import ribbonsData from '../data/ribbons.json'
 import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
@@ -792,6 +800,7 @@ function flattenLabelDepth(troikaText) {
 }
 
 export function ParkTitle() {
+  if (INSTANCE.lookId !== 'lafayette-square') return null   // HPDM-safety (see LafayettePark)
   return (
     <>
       <ElevatedGroup at={LABEL_TITLE_POS} footprintRadius={34}>
@@ -833,6 +842,10 @@ export function ParkTitle() {
 }
 
 function LafayettePark({ lookId, bakeLastMs } = {}) {
+  // HPDM-safety: LS-specific landmark render (see deferred-to-producer note at the
+  // imports). Guarded to LS — byte-identical today (INSTANCE.lookId is always
+  // 'lafayette-square' until instance-boot lands); a non-LS look renders no park.
+  if (INSTANCE.lookId !== 'lafayette-square') return null
   return (
     <group>
       {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}

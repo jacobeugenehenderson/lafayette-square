@@ -24,7 +24,15 @@
 // centroid. Falls back to the nearest-endpoint pair if two
 // corridors T into each other without a true crossing.
 
+// ⚠️ DEFERRED-TO-PRODUCER exception (Universal Reader Phase 2, Jacob's ruling).
+// `ribbons` is installation-specific RENDER geometry (2.5MB, shared with the bake
+// pipeline + cartograph). It can't join the loadInstanceData seam here because
+// STREET_LABELS is computed at MODULE LOAD (below) — making it generic needs a
+// lazy getStreetLabels() reading ribbons by lookId + a re-render gate, which the
+// producer/render-emit arc owns (it can e2e the geometry). Left static, guarded
+// to LS so a non-LS look shows no labels rather than LS's. Owner: roster/render arc.
 import ribbonsData from '../data/ribbons.json'
+import { INSTANCE } from '../instance.js'
 
 const NO_LABEL_HIGHWAY = new Set(['motorway_link', 'trunk_link', 'motorway'])
 const BOUNDARY_CORRIDORS = ['South Jefferson Avenue', 'Lafayette Avenue', 'Truman Parkway', 'Chouteau Avenue']
@@ -149,7 +157,10 @@ function compute() {
   return labels
 }
 
-const STREET_LABELS = compute()
+// HPDM-safety guard: only compute LS's labels under the LS look (byte-identical
+// for LS today — INSTANCE.lookId is always 'lafayette-square' until instance-boot
+// lands). A non-LS look gets no labels rather than LS street names on its map.
+const STREET_LABELS = INSTANCE.lookId === 'lafayette-square' ? compute() : []
 
 export default function getStreetLabels() {
   return STREET_LABELS
