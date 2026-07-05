@@ -5070,23 +5070,52 @@
      "close": "23:00"
     }
    },
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "opening_hours_raw": "Dinner Mon–Thu 5–10pm · Fri–Sat 5–11pm · Closed Sun",
+   "photos": [
+    "/photos/louie/01.jpg"
+   ],
+   "amenities": [
+    "Wood-burning pizza oven imported from Italy",
+    "Neapolitan-style pizza",
+    "House-made pasta",
+    "Full bar & Italian-focused wine list",
+    "First-come patio seating (weather permitting)",
+    "Free lot parking south of the building",
+    "Reservations via Resy",
+    "Walk-ins welcome"
+   ],
    "tags": [
     "italian",
     "pizza",
+    "pasta",
+    "wood-fired",
     "wine",
-    "marquee"
+    "date-night",
+    "neighborhood",
+    "demun",
+    "james-beard"
    ],
-   "description": "Acclaimed Italian restaurant with a fiery pizza oven, house pastas, and a widely praised roast chicken; comfy bar and cozy room on DeMun.",
-   "history": null,
-   "menu_url": null,
+   "description": "A warm, Italian-inspired neighborhood restaurant on DeMun from Matt McGuire (former service director at Niche Food Group), recognized by the James Beard Foundation for its hospitality. A wood-burning oven imported from Italy turns out slightly-thick Neapolitan-style pizzas; the kitchen also sends out antipasti, house pastas, and larger plates — the roast chicken is a St. Louis favorite. Cozy room, lively bar, and a first-come patio.",
+   "history": [
+    {
+     "year": 2018,
+     "event": "Matt McGuire opens Louie at 706 DeMun, in part of the former Jimmy's on the Park space — an Italian-inspired neighborhood joint with a wood-burning pizza oven brought over from Italy."
+    },
+    {
+     "year": 2023,
+     "event": "Louie earns James Beard Foundation recognition for outstanding hospitality, cementing its reputation as one of Clayton's most beloved restaurants."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0214",
    "reservation_url": "https://resy.com/cities/clayton-mo/venues/louie",
    "status": "active",
    "source": "research",
    "osm_type": null,
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/louiedemun",
+   "photo_credit": "Louie (louiedemun.com)",
+   "price_range": "$$$",
+   "order_url": null
   },
   {
    "id": "hpdm-lst-0215",
@@ -5128,21 +5157,53 @@
      "close": "00:00"
     }
    },
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "opening_hours_raw": "Mon–Sat 11am–1:30am · Sun 11am–midnight",
+   "photos": [
+    "/photos/sashas/01.jpg",
+    "/photos/sashas/02.jpg"
+   ],
+   "amenities": [
+    "3,000+ bottle cellar",
+    "Wine flights (Cellar Series — 3 wines side-by-side)",
+    "Wines by the glass & bottle",
+    "Cheese & charcuterie boards",
+    "Small plates & light fare",
+    "Lively sidewalk patio",
+    "Late-night hours",
+    "Private events & wine dinners"
+   ],
    "tags": [
     "wine-bar",
-    "patio"
+    "wine",
+    "charcuterie",
+    "cheese",
+    "small-plates",
+    "patio",
+    "late-night",
+    "date-night",
+    "demun"
    ],
-   "description": "DeMun wine bar with flights and small plates and a lively sidewalk patio.",
-   "history": null,
-   "menu_url": null,
+   "description": "The original Sasha's — a DeMun institution since 1993 and the anchor of Alan Richman's wine-bar family (sister to the neighboring Barrio). A 3,000-plus-bottle cellar drives an ever-changing list of wines by the glass, bottle, and side-by-side \"Cellar Series\" flights, paired with cheese and charcuterie boards, house chicken-liver pâté, prosciutto, and small plates. Buzzy, candlelit, and open late, with one of DeMun's liveliest patios.",
+   "history": [
+    {
+     "year": 1993,
+     "event": "Sasha's Wine Bar opens on DeMun Avenue, becoming a neighborhood cornerstone and the flagship of what grows into Alan Richman's family of St. Louis wine bars."
+    },
+    {
+     "year": 2018,
+     "event": "Barrio opens next door as a sister concept, extending the DeMun corner into a combined wine-bar-and-kitchen destination."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0215",
    "reservation_url": null,
    "status": "active",
    "source": "research",
    "osm_type": null,
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/sashaswinebar",
+   "photo_credit": "Sasha's Wine Bar (sashaswinebar.com)",
+   "price_range": "$$",
+   "order_url": "https://www.toasttab.com/local/order/sashas-de-mun-706-de-mun-ave"
   },
   {
    "id": "hpdm-lst-0216",
@@ -5273,7 +5334,7 @@
    "subcategory": "desserts",
    "address": "730 De Mun Avenue",
    "phone": "(314) 858-6100",
-   "website": "https://www.clementinescreamery.com",
+   "website": "https://www.clementinescreamery.com/pages/clayton",
    "logo": null,
    "hours": {
     "sunday": {
@@ -5305,22 +5366,55 @@
      "close": "23:00"
     }
    },
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "opening_hours_raw": "Sun–Thu 10am–10pm · Fri–Sat 10am–11pm",
+   "photos": [
+    "/photos/clementines-demun/01.jpg"
+   ],
+   "amenities": [
+    "24 chef-inspired flavors daily",
+    "\"Naughty\" boozy ice creams (21+)",
+    "\"Nice\" classic flavors",
+    "Vegan & dairy-free options",
+    "Gluten-free & sorbet options",
+    "Hand-packed pints",
+    "Ice cream cakes & catering",
+    "Online shipping nationwide"
+   ],
    "tags": [
     "ice-cream",
+    "dessert",
     "boozy",
-    "vegan"
+    "vegan",
+    "gluten-free",
+    "family-friendly",
+    "local",
+    "demun"
    ],
-   "description": "Micro-creamery with 'naughty' (boozy) and 'nice' (non-alcoholic, incl. vegan) small-batch ice creams — the St. Louis brand's DeMun scoop shop.",
-   "history": null,
-   "menu_url": null,
+   "description": "St. Louis's original micro-creamery, from founder Tamara Keefe (Missouri's 2025 Small Business Person of the Year). Clementine's makes small-batch \"Naughty\" (boozy, 21+) and \"Nice\" (family-friendly, with vegan & dairy-free) ice creams — 24 chef-inspired flavors daily. Its Gooey Butter Cake, a nod to the St. Louis classic, was crowned by Oprah the \"sexiest ice cream alive.\" The DeMun scoop shop is one of seven area parlors.",
+   "history": [
+    {
+     "year": 2015,
+     "event": "Tamara Keefe opens the first Clementine's — a 550-sq-ft, fresh-yet-vintage parlor in Lafayette Square — after cashing out her 401(k) to build an FDA-certified kitchen. Named for its \"Naughty\" (boozy) and \"Nice\" ice creams."
+    },
+    {
+     "year": 2017,
+     "event": "Clementine's opens its DeMun Avenue parlor at 730 De Mun as the brand expands across the St. Louis area."
+    },
+    {
+     "year": 2025,
+     "event": "Founder Tamara Keefe is named Missouri's Small Business Person of the Year."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0218",
    "reservation_url": null,
    "status": "active",
    "source": "research",
    "osm_type": null,
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/clementinescreamery",
+   "photo_credit": "Clementine's Creamery (clementinescreamery.com)",
+   "price_range": "$$",
+   "order_url": "https://www.clementinescreamery.com/pages/clayton"
   },
   {
    "id": "hpdm-lst-0219",

@@ -971,6 +971,624 @@
      ]
     }
    ]
+  },
+  "hpdm-lst-0214": {
+   "taglines": {
+    "dinner": "Wood-fired pizza, house pasta & Italian plates on DeMun"
+   },
+   "schedule": {
+    "dinner": {
+     "monday": {
+      "start": "17:00",
+      "end": "22:00"
+     },
+     "tuesday": {
+      "start": "17:00",
+      "end": "22:00"
+     },
+     "wednesday": {
+      "start": "17:00",
+      "end": "22:00"
+     },
+     "thursday": {
+      "start": "17:00",
+      "end": "22:00"
+     },
+     "friday": {
+      "start": "17:00",
+      "end": "23:00"
+     },
+     "saturday": {
+      "start": "17:00",
+      "end": "23:00"
+     },
+     "sunday": null
+    }
+   },
+   "sections": [
+    {
+     "name": "Antipasti",
+     "menu": "dinner",
+     "items": [
+      {
+       "name": "Castelvetrano Olives",
+       "price": 900,
+       "tags": [
+        "v",
+        "gf"
+       ]
+      },
+      {
+       "name": "Italian Salad",
+       "description": "Romaine, radicchio, chickpeas, sweet peppers",
+       "price": 1400,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Brussels Sprouts",
+       "description": "Lemon, caper, pecorino",
+       "price": 1400,
+       "tags": [
+        "gf"
+       ]
+      },
+      {
+       "name": "Charred Eggplant Dip",
+       "description": "Pickled vegetables, chili oil, hearth bread",
+       "price": 1900,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Broccolini",
+       "description": "Calabrian vinaigrette",
+       "price": 1600,
+       "tags": [
+        "v",
+        "gf"
+       ]
+      },
+      {
+       "name": "Grilled Spanish Octopus",
+       "description": "Potato, chickpeas, soppressata, Calabrian",
+       "price": 2700,
+       "tags": [
+        "gf"
+       ]
+      },
+      {
+       "name": "White Bean Hummus",
+       "description": "Mint, hearth bread",
+       "price": 1800,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Cauliflower Frito",
+       "description": "Dill aioli",
+       "price": 1600,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Prosciutto di Parma",
+       "description": "Parmigiano Reggiano",
+       "price": 1800,
+       "tags": [
+        "gf"
+       ],
+       "modifiers": [
+        {
+         "name": "Large",
+         "price": 1100
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Pizza",
+     "menu": "dinner",
+     "items": [
+      {
+       "name": "Margherita",
+       "description": "Tomato, mozzarella, basil, garlic",
+       "price": 2100,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Salsiccia",
+       "description": "Red onion, cherry pepper, mozzarella",
+       "price": 2300,
+       "tags": []
+      },
+      {
+       "name": "Broccolini Pizza",
+       "description": "Ricotta, lemon, Calabrian chili",
+       "price": 2400,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Pomodoro Fresco",
+       "description": "Heirloom cherry tomato, burrata, basil, garlic",
+       "price": 2400,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Pumpkin",
+       "description": "Red onion, caciocavallo, ricotta, sage, pepitas",
+       "price": 2500,
+       "tags": [
+        "v"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Pasta & Mains",
+     "menu": "dinner",
+     "items": [
+      {
+       "name": "Chitarra",
+       "description": "Tomato, basil, chili, Parmigiano Reggiano",
+       "price": 2500,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Pappardelle Bolognese",
+       "description": "Parmigiano Reggiano",
+       "price": 2900,
+       "tags": []
+      },
+      {
+       "name": "Roman Gnocco",
+       "description": "Pork ragù, béchamel, pecorino",
+       "price": 2900,
+       "tags": []
+      },
+      {
+       "name": "Anson Mills Polenta",
+       "description": "Roasted mushrooms, Parmigiano Reggiano",
+       "price": 2900,
+       "tags": [
+        "gf",
+        "v"
+       ]
+      },
+      {
+       "name": "Roast Chicken",
+       "description": "Rapini, chicken jus",
+       "price": 3500,
+       "tags": [
+        "gf"
+       ]
+      },
+      {
+       "name": "Mussels",
+       "description": "Shallot, garlic, tomato, white wine, parsley, grilled focaccia",
+       "price": 3600,
+       "tags": []
+      },
+      {
+       "name": "Grilled Pork Chop",
+       "description": "Shishito peppers, chermoula",
+       "price": 3900,
+       "tags": [
+        "gf"
+       ]
+      },
+      {
+       "name": "Grilled Beef Tenderloin",
+       "description": "Roasted potatoes, salsa verde",
+       "price": 4500,
+       "tags": [
+        "gf"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "hpdm-lst-0215": {
+   "taglines": {
+    "drinks": "A 3,000-bottle cellar by the glass, bottle & flight",
+    "small_plates": "Cheese, charcuterie & small plates"
+   },
+   "schedule": {
+    "drinks": {
+     "monday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "tuesday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "wednesday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "thursday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "friday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "saturday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "sunday": {
+      "start": "11:00",
+      "end": "00:00"
+     }
+    },
+    "small_plates": {
+     "monday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "tuesday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "wednesday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "thursday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "friday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "saturday": {
+      "start": "11:00",
+      "end": "01:30"
+     },
+     "sunday": {
+      "start": "11:00",
+      "end": "00:00"
+     }
+    }
+   },
+   "_note": "Wine list rotates continuously; flights & by-the-glass are market-priced. Food prices are best-guess seeds (§0.0) — confirm on claim.",
+   "sections": [
+    {
+     "name": "Wine",
+     "menu": "drinks",
+     "items": [
+      {
+       "name": "Cellar Series Flight",
+       "description": "3 wines side-by-side, chosen to showcase a vintage, vineyard or producer",
+       "price": 1800,
+       "tags": []
+      },
+      {
+       "name": "Wine by the Glass",
+       "description": "Rotating selection — reds, whites, sparkling",
+       "price": 1200,
+       "tags": []
+      },
+      {
+       "name": "Bottle from the Cellar",
+       "description": "3,000+ bottles; ask a server",
+       "price": null,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Boards & Small Plates",
+     "menu": "small_plates",
+     "items": [
+      {
+       "name": "Cheese Board",
+       "description": "Selection of three cheeses with accompaniments",
+       "price": 1800,
+       "tags": [
+        "v"
+       ]
+      },
+      {
+       "name": "Charcuterie Board",
+       "description": "Cured meats with accompaniments",
+       "price": 1800,
+       "tags": []
+      },
+      {
+       "name": "Chicken Liver Pâté",
+       "description": "Locally sourced, with toast",
+       "price": 1200,
+       "tags": []
+      },
+      {
+       "name": "Prosciutto Plate",
+       "price": 1400,
+       "tags": [
+        "gf"
+       ]
+      },
+      {
+       "name": "Marinated Olives",
+       "price": 800,
+       "tags": [
+        "v",
+        "gf"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "hpdm-lst-0218": {
+   "taglines": {
+    "all_day": "Small-batch Naughty (boozy) & Nice ice creams, 24 flavors daily"
+   },
+   "schedule": {
+    "all_day": {
+     "monday": {
+      "start": "10:00",
+      "end": "22:00"
+     },
+     "tuesday": {
+      "start": "10:00",
+      "end": "22:00"
+     },
+     "wednesday": {
+      "start": "10:00",
+      "end": "22:00"
+     },
+     "thursday": {
+      "start": "10:00",
+      "end": "22:00"
+     },
+     "friday": {
+      "start": "10:00",
+      "end": "23:00"
+     },
+     "saturday": {
+      "start": "10:00",
+      "end": "23:00"
+     },
+     "sunday": {
+      "start": "10:00",
+      "end": "22:00"
+     }
+    }
+   },
+   "sections": [
+    {
+     "name": "Ways to Order",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Single Scoop",
+       "price": 525,
+       "tags": []
+      },
+      {
+       "name": "Double Scoop",
+       "price": 750,
+       "tags": []
+      },
+      {
+       "name": "Flight of 5",
+       "description": "Five mini scoops",
+       "price": 1100,
+       "tags": []
+      },
+      {
+       "name": "Hand-Packed Pint",
+       "price": 1050,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Nice — Signature Flavors",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Gooey Butter Cake",
+       "description": "Scratch-made gooey butter cake in tangy cream-cheese ice cream — Oprah's \"sexiest ice cream alive\"",
+       "price": 525,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      },
+      {
+       "name": "Italian Butter Cookie",
+       "description": "A house signature",
+       "price": 525,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      },
+      {
+       "name": "Salted Cracker Caramel",
+       "description": null,
+       "price": 525,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      },
+      {
+       "name": "Wedding Cake",
+       "description": null,
+       "price": 525,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      },
+      {
+       "name": "Vanilla Bean",
+       "description": null,
+       "price": 525,
+       "tags": [
+        "gf"
+       ],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Naughty — Boozy (21+)",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Maple Bourbon with Candied Pecans",
+       "description": null,
+       "price": 525,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      },
+      {
+       "name": "Whiskey & Salted Caramel",
+       "description": null,
+       "price": 525,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Vegan & Dairy-Free",
+     "menu": "all_day",
+     "items": [
+      {
+       "name": "Lemon Poppyseed",
+       "description": null,
+       "price": 525,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      },
+      {
+       "name": "Tahini–Chocolate Chip",
+       "description": null,
+       "price": 525,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      },
+      {
+       "name": "Raspberry Push Pop",
+       "description": null,
+       "price": 525,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Double scoop",
+         "price": 225
+        },
+        {
+         "name": "Hand-packed pint",
+         "price": 525
+        }
+       ]
+      }
+     ]
+    }
+   ]
   }
  }
 }
