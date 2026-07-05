@@ -1,6 +1,6 @@
 # HANDOFF / BRIEF — Universal Reader (instance + content decoupling)
 
-> **Status: DISPATCH-READY (2026-07-05, Boz).** The consumer-face arc of the two-faces frame (`plans/front-front-end-and-productization.md §The two faces`). Audit complete — the target list below is authoritative (reader-scope sweep, 2026-07-05). Producer-side content schema is ratified (`NEIGHBORHOOD-INPUTS §5.1.1`); a researcher is filling the HPDM payload in parallel.
+> **Status: Phase 1 LANDED (`207374bd`); Phase 2 DISPATCH-READY (2026-07-05) — see `## Phase 2 dispatch`.** The consumer-face arc of the two-faces frame (`plans/front-front-end-and-productization.md §The two faces`). Audit complete — the target list below is authoritative (reader-scope sweep, 2026-07-05). Producer-side content schema is ratified (`NEIGHBORHOOD-INPUTS §5.1.1`); a researcher is filling the HPDM payload in parallel.
 
 ## The goal
 The public app is a **generic reader** of an installation payload; LS is just installation #1 (`?look=lafayette-square`). **"Lafayette Square" is the Product name; the LS neighborhood is installation #1, eponymous** — this is **de-installation-hardwiring, not de-branding.** Each installation supplies its own identity/branding/content/modules.
@@ -52,10 +52,56 @@ Note: `profile.*` overlaps content **Layer 0** (`§5.1.1`) — decide whether it
 
 ## Phasing (additive before destructive, each phase proves the gates)
 - **Phase 1 — INSTANCE + literal migration (identity + branding offenders). ✅ LANDED 2026-07-05 (`207374bd`).** Extended `instance.js` (geography.cityState/stateCode · branding · legal · commerce · profile[=L0] · modules stub); migrated 12 reader files' identity/branding offenders to read INSTANCE. "Cary" kept literal (Product constant). **Gates verified:** `vite build` green + node assertion = every migrated value byte-identical to its former literal. Deferred (flagged in-code): CourierDots idle privacy-point coordinate; the Legal/Info/CourierOnboarding legal-copy → Phase 4.
-- **Phase 2 — content sidecar.** The ~13 reader→`src/data/` static imports load by `INSTANCE.lookId` from the installation payload (LS mirrors byte-identical). The producer-side schema (`§5.1.1`) is the shape.
+- **Phase 2 — content sidecar. ⭐ DISPATCH-READY (2026-07-05) — see `## Phase 2 dispatch` below.** The ~13 reader→`src/data/` static imports load by `INSTANCE.lookId` from the installation payload (LS mirrors byte-identical). The producer-side schema (`§5.1.1`) is the shape.
 - **Phase 3 — module manifest.** `INSTANCE.modules.*` gates the `App.jsx:584-604` mounts (LS = all-on). Design the seam; delivery/backends stay single-tenant for now.
 - **Phase 4 — branding copy + `index.html` templating.** The `branding.copy` bundle for Legal/Info prose; a build-time inject step for `index.html` title/OG (it can't read the JS module).
 - **Deep residuals (own arcs):** the STL zoning taxonomy → config; `lsq-*` localStorage prefix; the fleur/flag theming.
+
+## Phase 2 dispatch (READY, 2026-07-05)
+
+**Continuation** of the Phase 1 agent (`207374bd`) — via `SendMessage` if warm (keeps its INSTANCE context), else a fresh worktree agent reading this HANDOFF → `§5.1.1` → this section. Worktree isolation; **don't edit canon** (flag drift, Boz folds).
+
+**Goal (one line):** every reader `import … from '../data/X'` for LS-specific data becomes a **load-by-`INSTANCE.lookId`** from the installation payload; LS (`?look=lafayette-square`) resolves byte-identical. After this phase the generic reader holds **zero static imports of installation-specific data**.
+
+### ⛔ Decide the loader seam FIRST — standup before mass-migration
+13 sites is 13× the cost if the seam is wrong. Before touching any consumer, inspect how the **slab is already fetched by `INSTANCE.lookId`** (the ~40 Phase-1 call sites) and **mirror that path** — do not invent a second hydration route (`project_kit_deploy_path_agnostic`: fetch via BASE_URL; `feedback_dual_hydration_paths_drift`). Propose the mechanism (one `loadInstanceData(lookId, name)` helper vs. per-file dynamic `import()`), align with Jacob, **then** migrate. This is the phase's one real architecture decision.
+
+### The target list (13 sites, verified 2026-07-05)
+| File | Import |
+|---|---|
+| `LafayetteScene.jsx:5,85` | `buildings`, `buildingOverrides.json` |
+| `SceneNeon.jsx:25` | `buildings` |
+| `Controls.jsx:5` | `buildings` |
+| `GlassSearch.jsx:7` | `buildings` |
+| `SidePanel.jsx:10,11` | `buildings`, `streets.json` |
+| `useListings.js:3,4,5` | `landmarks.json`, `menus.json`, `buildings` |
+| `useInit.js:9,10` | `landmarks.json`, `menus.json` |
+| `useEvents.js:2` | `seedEvents.json` |
+| `streetLabels.js:27` | `ribbons.json` |
+| `StreetLights.jsx:7` | `street_lamps.json` |
+| `LafayettePark.jsx:7,8,19` + `:9` | `park_water.json`, `ribbons.json`, `park-feature-elev.json` + hardcoded `cartograph/data/lafayette-square/…/park-polygon.json` |
+| `PlaceCard.jsx:24` | `facade_mapping.json` |
+
+**Exception — leave:** `CelestialBodies`/`PlanetariumOverlay` (universal astronomy, not LS).
+
+### Carried decisions & guardrails (do NOT re-open)
+- **`LafayettePark.jsx:9`** is the Bucket-1 identity offender (hardcoded `cartograph/data/lafayette-square/` path). Folding it into the lookId loader **closes that offender too** — do it here, not separately.
+- **`profile.*` stays on INSTANCE for v1** (line 51). This phase is *data imports only* — do **not** move profile into `content/profile.json`; that churns Phase 1.
+- **STL zoning taxonomy — LEAVE UNTOUCHED.** It lives in `useListings.js:16,42-45` and `SceneNeon.jsx:51-63`, right beside content imports you're editing → highest scope-creep risk. Its own deep-residual arc (line 58). Touch only the listed `import` lines in those files.
+- **Render vs content — don't re-litigate the slab boundary.** Some targets are render geometry (`ribbons`, `park-polygon`, `street_lamps`, `park_water`), others content (`landmarks`, `menus`, `buildingOverrides`, `seedEvents`). Phase 2 is a **path de-hardcode, not a semantic split** — move the import to load-by-look without changing what flows or where the boundary sits (`slab-render-vs-content-boundary`). If a file genuinely straddles and can't move cleanly (`buildings.json` mixes baked geometry + content fields — §5.1 line 145), **surface it, don't guess** (`feedback_baby_must_surface_scope_drift`).
+
+### ⛔ Gates (prove at each cut, additive before destructive)
+1. **LS renders + reads byte-identical** — the look-keyed load returns the same object the static import did; prove with a node assertion (Phase-1 technique).
+2. **Townie app keeps working** — place cards, listings, residences, search, bulletin, park all function in the **lit app**, verified by eye, not a proxy render (`feedback_proxy_render_is_not_the_operator_eye`).
+3. **`vite build` green.**
+4. **Phase gate:** grep the reader for static `from '../data/…'` on the 13 files → **zero** (astronomy exception aside).
+
+### Commit boundaries
+- One commit for the **loader seam** (helper + payload wiring, LS pointed at it).
+- Migrate consumers in **coherent batches** (buildings-consumers, then landmarks/menus, then geometry files) — each batch its own commit, each proving gate 1. Additive first (load alongside), flip, then delete the static import.
+
+### The demun researcher
+**Stays on standby.** HPDM `content/roster.json` + `listings.json` (§5.1.1, ids matched 2089/2089) only become *loadable* once this seam lands. When Phase 2 is green, the researcher's payload dropped at `?look=hipointe-demun` is the **live proof the reader is generic** — installation #2 through the exact path LS uses. Don't dispatch them until the seam is in.
 
 ## Boundaries & doctrine
 - **Render/geometry hardwires belong to the roster arc** (done: `bake-buildings.js` render ledger) — don't cross streams.
