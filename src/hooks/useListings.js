@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { getListings } from '../lib/api'
 import staticData from '../data/landmarks.json'
-import menuData from '../data/menus.json'
+import menuData from '../data/lafayette-square/menus.json'
 import { buildings as _allBuildings, ready as _buildingsReady } from '../data/buildings'
 
 /**

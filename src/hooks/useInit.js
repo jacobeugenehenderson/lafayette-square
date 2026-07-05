@@ -7,7 +7,7 @@ import useEvents from './useEvents'
 import useResidence from './useResidence'
 import useCommunityStats from './useCommunityStats'
 import staticData from '../data/landmarks.json'
-import menuData from '../data/menus.json'
+import menuData from '../data/lafayette-square/menus.json'
 
 // Static landmarks enriched with bundled menu data
 const landmarksWithMenus = staticData.landmarks.map(lm =>

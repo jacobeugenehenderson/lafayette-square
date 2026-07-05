@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import seedEvents from '../data/seedEvents.json'
+import seedEvents from '../data/lafayette-square/seedEvents.json'
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 
