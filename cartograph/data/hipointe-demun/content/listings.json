@@ -4,8 +4,10 @@
   "schema": "NEIGHBORHOOD-INPUTS §5.1.1",
   "generated": "2026-07-05",
   "layer": "Layer 2 — listings (one record per business, building_id -> slab id, 0..N per building)",
-  "count": 212,
-  "note": "category/subcategory + name/address seeded from OSM; the rest is the Tier-③ hand-collection long pole (structured hours, photos, description, menus)."
+  "count": 225,
+  "note": "category/subcategory + name/address seeded from OSM; the rest is the Tier-③ hand-collection long pole (structured hours, photos, description, menus).",
+  "enriched": 34,
+  "enrichment_note": "Real commercial listings enriched (category/website/description/tags/status) + OSM-missed DeMun Ave row & Hi-Pointe Drive-In added (source:research). Structured hours filled where reliably sourced; the rest await guardian claim (§0.0). Institutional entries (dorms/halls/churches) left as building-grained records."
  },
  "listings": [
   {
@@ -315,20 +317,26 @@
    "subcategory": "hotels",
    "address": "6300 Clayton Road",
    "phone": null,
-   "website": null,
+   "website": "https://www.cheshirestl.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "boutique",
+    "tudor",
+    "landmark",
+    "bar"
+   ],
+   "description": "Tudor-style boutique hotel at Clayton Rd & Skinker, an English-inn-themed St. Louis landmark. Home to the Fox & Hounds tavern and Basso restaurant.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "hotel"
+   "osm_type": "hotel",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0015",
@@ -407,20 +415,26 @@
    "subcategory": "cinema",
    "address": "1005 McCausland Avenue",
    "phone": null,
-   "website": null,
+   "website": "https://hipointetheatre.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "historic",
+    "single-screen",
+    "art-house",
+    "landmark"
+   ],
+   "description": "Built in 1922 by the Warner Bros. Circuit at Clayton Rd & McCausland — the oldest continually operating single-screen movie theater in St. Louis and its oldest art-house. Owned since its centennial by the nonprofit Cinema St. Louis; independent and repertory film programming.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "cinema"
+   "osm_type": "cinema",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0019",
@@ -959,20 +973,24 @@
    "subcategory": "cafes",
    "address": "7036 Clayton Avenue",
    "phone": null,
-   "website": null,
+   "website": "https://www.starbucks.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "coffee",
+    "chain"
+   ],
+   "description": "Coffeehouse chain location near the Hi-Pointe / Clayton commercial node.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "cafe"
+   "osm_type": "cafe",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0043",
@@ -1028,20 +1046,24 @@
    "subcategory": "grocery",
    "address": "6600 Clayton Road",
    "phone": null,
-   "website": null,
+   "website": "https://nourish.schnucks.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "supermarket",
+    "chain"
+   ],
+   "description": "Full-service supermarket anchoring the Clayton Rd retail node — the St. Louis-founded grocery chain.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "supermarket"
+   "osm_type": "supermarket",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0046",
@@ -1264,14 +1286,20 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "historic",
+    "gas-station",
+    "landmark",
+    "art-deco"
+   ],
+   "description": "Historic 1936 enamel-and-tile Phillips 66 service station at Clayton Rd & McCausland — a preserved Art Deco/streamline auto-service landmark, still an operating repair shop.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "fuel"
+   "osm_type": "fuel",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0056",
@@ -1304,20 +1332,23 @@
    "subcategory": "financial",
    "address": "7230 DALE AVE",
    "phone": null,
-   "website": null,
+   "website": "https://www.busey.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "bank"
+   ],
+   "description": "Bank branch on Dale Ave.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "bank"
+   "osm_type": "bank",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0058",
@@ -1540,14 +1571,18 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "campus",
+    "wash-u"
+   ],
+   "description": "Full-service restaurant in Washington University's Danforth University Center (Arundel Pl) — campus fine-casual dining.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "restaurant"
+   "osm_type": "restaurant",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0068",
@@ -1563,14 +1598,19 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "coffee",
+    "campus",
+    "wash-u"
+   ],
+   "description": "Café in Washington University's Danforth University Center.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "cafe"
+   "osm_type": "cafe",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0069",
@@ -1649,20 +1689,24 @@
    "subcategory": "retail",
    "address": "1024 South Big Bend Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://www.officedepot.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "office-supply",
+    "chain"
+   ],
+   "description": "Office-supply retailer near Big Bend.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "stationery"
+   "osm_type": "stationery",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0073",
@@ -2109,20 +2153,24 @@
    "subcategory": "cinema",
    "address": "6706 Clayton Road",
    "phone": null,
-   "website": null,
+   "website": "https://www.amctheatres.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "multiplex",
+    "chain"
+   ],
+   "description": "Seven-screen AMC multiplex on Clayton Rd, a longtime St. Louis moviegoing fixture (the Esquire dates to 1929).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "cinema"
+   "osm_type": "cinema",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0093",
@@ -2198,23 +2246,27 @@
    "building_id": "msbf-4548",
    "name": "Panera Bread",
    "category": "dining",
-   "subcategory": "restaurants",
+   "subcategory": "cafes",
    "address": "6734 Clayton Road",
    "phone": null,
-   "website": null,
+   "website": "https://www.panerabread.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "bakery-cafe",
+    "chain"
+   ],
+   "description": "Bakery-café chain (St. Louis-founded as the St. Louis Bread Co.) on the Clayton Rd retail strip.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "fast_food"
+   "osm_type": "fast_food",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0097",
@@ -2730,20 +2782,24 @@
    "subcategory": "pharmacy",
    "address": "6733 Clayton Road",
    "phone": null,
-   "website": null,
+   "website": "https://www.walgreens.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "pharmacy",
+    "chain"
+   ],
+   "description": "Pharmacy and convenience store on Clayton Rd.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "pharmacy"
+   "osm_type": "pharmacy",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0120",
@@ -2759,14 +2815,18 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "chinese",
+    "takeout"
+   ],
+   "description": "Neighborhood Chinese takeout on the Hi-Pointe strip.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "restaurant"
+   "osm_type": "restaurant",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0121",
@@ -2989,14 +3049,18 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "convenience",
+    "fuel"
+   ],
+   "description": "Convenience store / fuel mart.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "convenience"
+   "osm_type": "convenience",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0131",
@@ -3265,14 +3329,17 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "bank"
+   ],
+   "description": "Community bank branch (Lindell Bank & Trust) near the Hi-Pointe node.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "bank"
+   "osm_type": "bank",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0143",
@@ -3604,20 +3671,24 @@
    "subcategory": "cinema",
    "address": "1002 Hi Pointe Place",
    "phone": null,
-   "website": null,
+   "website": "https://hipointetheatre.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "art-house",
+    "second-screen"
+   ],
+   "description": "The Hi-Pointe Theatre's second, smaller screening room next door — added programming and events beside the historic 1922 auditorium.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "cinema"
+   "osm_type": "cinema",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0158",
@@ -3719,20 +3790,25 @@
    "subcategory": "restaurants",
    "address": "6701 Clayton Road",
    "phone": null,
-   "website": null,
+   "website": "https://www.qdoba.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "mexican",
+    "fast-casual",
+    "chain"
+   ],
+   "description": "Fast-casual Mexican grill.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "fast_food"
+   "osm_type": "fast_food",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0163",
@@ -3748,14 +3824,18 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "paint",
+    "hardware"
+   ],
+   "description": "Paint & coatings store (PPG Porter Paints) — verify current operation.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "paint"
+   "osm_type": "paint",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0164",
@@ -4185,14 +4265,19 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "campus",
+    "wash-u",
+    "gym"
+   ],
+   "description": "Washington University's main recreation & athletics center on Wydown Blvd.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "sports_hall"
+   "osm_type": "sports_hall",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0183",
@@ -4317,20 +4402,23 @@
    "subcategory": "financial",
    "address": "6369 Clayton Road",
    "phone": null,
-   "website": null,
+   "website": "https://www.commercebank.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "bank"
+   ],
+   "description": "Full-service bank branch on Clayton Rd.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "bank"
+   "osm_type": "bank",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0189",
@@ -4570,20 +4658,24 @@
    "subcategory": "health",
    "address": "1005 South Big Bend Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://www.totalaccessurgentcare.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "urgent-care",
+    "clinic"
+   ],
+   "description": "Walk-in urgent-care clinic near Big Bend.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
-   "status": "unverified",
+   "status": "active",
    "source": "osm",
-   "osm_type": "clinic"
+   "osm_type": "clinic",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0200",
@@ -4883,6 +4975,397 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "apartments"
+  },
+  {
+   "id": "hpdm-lst-0213",
+   "building_id": "msbf-3698",
+   "name": "Kaldi's Coffee Roasting Co.",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "700 De Mun Avenue",
+   "phone": null,
+   "website": "https://www.kaldiscoffee.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "coffee",
+    "roaster",
+    "flagship",
+    "founded-1994"
+   ],
+   "description": "The original Kaldi's Coffee — the regional roaster got its start here in 1994 with one small DeMun café. Coffee, espresso, and light fare.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0214",
+   "building_id": "msbf-707",
+   "name": "Louie",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "706 De Mun Avenue",
+   "phone": null,
+   "website": "https://www.louiedemun.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "italian",
+    "pizza",
+    "wine",
+    "marquee"
+   ],
+   "description": "Acclaimed Italian restaurant with a fiery pizza oven, house pastas, and a widely praised roast chicken; comfy bar and cozy room on DeMun.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0215",
+   "building_id": "msbf-707",
+   "name": "Sasha's Wine Bar",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "706 De Mun Avenue",
+   "phone": null,
+   "website": "https://www.sashaswinebar.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "wine-bar",
+    "patio"
+   ],
+   "description": "DeMun wine bar with flights and small plates and a lively sidewalk patio.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0216",
+   "building_id": "msbf-2676",
+   "name": "Barrio",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "740 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "american",
+    "patio"
+   ],
+   "description": "American restaurant using premium Pierce Creek Cattle Co. beef; cantilevered windows open to a true sidewalk café in good weather.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0217",
+   "building_id": "msbf-2676",
+   "name": "DeMun Oyster Bar",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "740 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "seafood",
+    "oysters",
+    "raw-bar"
+   ],
+   "description": "Neighborhood oyster & seafood bar on DeMun Avenue.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0218",
+   "building_id": "msbf-3487",
+   "name": "Clementine's Naughty & Nice Creamery",
+   "category": "dining",
+   "subcategory": "desserts",
+   "address": "730 De Mun Avenue",
+   "phone": null,
+   "website": "https://www.clementinescreamery.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "ice-cream",
+    "boozy",
+    "vegan"
+   ],
+   "description": "Micro-creamery with 'naughty' (boozy) and 'nice' (non-alcoholic, incl. vegan) small-batch ice creams — the St. Louis brand's DeMun scoop shop.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0219",
+   "building_id": "msbf-5212",
+   "name": "How Sweet Is This Candy Shoppe",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "804 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "candy",
+    "sweets"
+   ],
+   "description": "A tiny ~300-sq-ft candy shop packed with classic and new sweets.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0220",
+   "building_id": "msbf-5810",
+   "name": "Seedz Cafe",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "710 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "vegan",
+    "juice",
+    "healthy"
+   ],
+   "description": "100% vegan, nutrient-dense café — veggie burgers, chili-mac, tempeh Reubens, fresh-pressed juices and smoothies.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0221",
+   "building_id": "msbf-4491",
+   "name": "Hi-Pointe Drive-In",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "1033 McCausland Avenue",
+   "phone": null,
+   "website": "https://hipointedrivein.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "burgers",
+    "drive-in",
+    "marquee",
+    "local-ingredients"
+   ],
+   "description": "Cult-favorite burgers and sandwiches from a converted 1980s drive-in at the foot of McCausland — local ingredients, inventive specials, a St. Louis destination.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0222",
+   "building_id": "msbf-2502",
+   "name": "Abigail's On De Mun",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "923 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair"
+   ],
+   "description": "Full-service hair salon on DeMun, open since January 2009.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0223",
+   "building_id": "msbf-2502",
+   "name": "Kathy Taylor Salon",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "923 De Mun Avenue",
+   "phone": null,
+   "website": "https://kathytaylorsalon.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair",
+    "beauty"
+   ],
+   "description": "Full beauty salon — hair, color, styling, makeup, mani/pedi, skin care.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0224",
+   "building_id": "msbf-2502",
+   "name": "Samantha's Other Place",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "927 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair",
+    "color"
+   ],
+   "description": "Hair salon specializing in color and foiling, Keratin smoothers, lash/brow tints, waxing, blowouts.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
+  },
+  {
+   "id": "hpdm-lst-0225",
+   "building_id": "msbf-2502",
+   "name": "Strands Hair Salon",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "De Mun Avenue",
+   "phone": null,
+   "website": "https://www.strands-hair.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair"
+   ],
+   "description": "DeMun hair salon of certified stylists.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "osm_type": null,
+   "enriched": true
   }
  ]
 }

@@ -1,0 +1,38 @@
+{
+ "meta": {
+  "scene": "hipointe-demun",
+  "schema": "NEIGHBORHOOD-INPUTS §5.1.1 — Layer 0 (installation profile)",
+  "generated": "2026-07-05",
+  "note": "Singular per-installation record. De-hardcodes the reader's Bulletin masthead + InfoModal. Every value is a best-guess, operator-overridable (§0.0). Buildings/Places/Streets stats auto-derive from the slab+content — only population and the about-copy are hardcoded in the reader today."
+ },
+ "name": "Hi-Pointe–DeMun",
+ "short_name": "Hi-Pointe / DeMun",
+ "slug": "hipointe-demun",
+ "city": "St. Louis",
+ "state": "MO",
+ "population": 6500,
+ "population_note": "Estimate spanning the rendered extent (three municipalities + the Wash U South 40). Components: Hi-Pointe City nbhd #44 = 2,151 (2020 Census); DeMun/Clayton + South 40 students ≈ 4,500. Refine if a tighter figure is wanted.",
+ "population_source": "2020 U.S. Census (Hi-Pointe #44) + neighborhood estimate",
+ "municipalities": ["St. Louis (City)", "Clayton", "Richmond Heights"],
+ "platted": "1917 (Hi-Pointe) · 1923 (DeMun Park)",
+ "established": "National Register district listed 2005",
+ "designer": "Henry Wright (landscape architect; later co-planner of Radburn, NJ)",
+ "tagline": "A 1920s garden-city district at the southwest corner of Forest Park.",
+ "about": "Hi-Pointe–DeMun is a streetcar-era historic district straddling the St. Louis city limit and Clayton at Forest Park's southwest corner. Platted 1917–1923 and largely built in the 1920s, its brick-and-limestone homes, terra-cotta and slate roofs, and three-story apartments around DeMun Park reflect landscape architect Henry Wright's \"new town\" plan of curved, traffic-calmed streets and shared greens. Anchors include the 1922 Hi-Pointe Theatre — the oldest continually operating single-screen cinema in St. Louis — the Tudor Cheshire Inn, the walkable DeMun Avenue shops, and the Collegiate Gothic campus of Concordia Seminary.",
+ "national_register": {
+  "district": "Hi-Pointe–DeMun Historic District",
+  "nrhp": "05000370",
+  "listed": "2005-05-07",
+  "boundary_increase": "06001207",
+  "boundary_increase_listed": "2007-03-22",
+  "contributing_buildings": 552,
+  "acres": 105.5
+ },
+ "boundaries": {
+  "north": "Forest Park Parkway / Northwood Avenue",
+  "east": "South Skinker Boulevard",
+  "south": "Clayton Road",
+  "west": "Big Bend Boulevard / McCausland Avenue"
+ },
+ "landmarks_headline": ["Hi-Pointe Theatre", "Cheshire Inn", "Concordia Seminary", "DeMun Park", "DeMun Avenue shops"]
+}
