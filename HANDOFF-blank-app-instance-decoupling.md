@@ -51,7 +51,7 @@ INSTANCE = {
 Note: `profile.*` overlaps content **Layer 0** (`§5.1.1`) — decide whether it rides INSTANCE or a `content/profile.json` the loader merges (small; INSTANCE is fine for v1).
 
 ## Phasing (additive before destructive, each phase proves the gates)
-- **Phase 1 — INSTANCE + literal migration (identity + branding offenders).** Extend `instance.js` with the schema; swap the Bucket-1/2 offending call sites to read it (the ones INSTANCE already/newly owns). Lowest risk, proves the pattern. **Dispatch first.**
+- **Phase 1 — INSTANCE + literal migration (identity + branding offenders). ✅ LANDED 2026-07-05 (`207374bd`).** Extended `instance.js` (geography.cityState/stateCode · branding · legal · commerce · profile[=L0] · modules stub); migrated 12 reader files' identity/branding offenders to read INSTANCE. "Cary" kept literal (Product constant). **Gates verified:** `vite build` green + node assertion = every migrated value byte-identical to its former literal. Deferred (flagged in-code): CourierDots idle privacy-point coordinate; the Legal/Info/CourierOnboarding legal-copy → Phase 4.
 - **Phase 2 — content sidecar.** The ~13 reader→`src/data/` static imports load by `INSTANCE.lookId` from the installation payload (LS mirrors byte-identical). The producer-side schema (`§5.1.1`) is the shape.
 - **Phase 3 — module manifest.** `INSTANCE.modules.*` gates the `App.jsx:584-604` mounts (LS = all-on). Design the seam; delivery/backends stay single-tenant for now.
 - **Phase 4 — branding copy + `index.html` templating.** The `branding.copy` bundle for Legal/Info prose; a build-time inject step for `index.html` title/OG (it can't read the JS module).
