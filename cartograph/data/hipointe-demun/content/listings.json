@@ -272,14 +272,21 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "lofts",
+    "apartments",
+    "hi-pointe",
+    "clayton-road"
+   ],
+   "description": "Loft-style apartments on Clayton Road at the Hi-Pointe/DeMun edge, near the McCausland commercial node and steps from Forest Park.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0011",
@@ -685,20 +692,28 @@
    "subcategory": "apartments",
    "address": "665 South Skinker Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://www.macapartments.com/property/Dorchester",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments",
+    "high-rise",
+    "forest-park",
+    "skinker",
+    "luxury"
+   ],
+   "description": "A 23-story luxury apartment tower on South Skinker Boulevard, perched between Forest Park and the DeMun neighborhood — one of the tallest residences on the park’s western edge, with sweeping views over the park and Washington University.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0025",
@@ -714,14 +729,22 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "condominium",
+    "historic",
+    "1920s",
+    "forest-park",
+    "skinker"
+   ],
+   "description": "A stately pre-war apartment building on South Skinker Boulevard overlooking Forest Park, now operated as a condominium — part of the boulevard’s celebrated row of 1920s \"grand apartments\" at the park’s edge.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0026",
@@ -920,7 +943,7 @@
    "name": "Oak Knoll Park",
    "category": "parks",
    "subcategory": "parks",
-   "address": "1 Oak Knoll Park",
+   "address": "1 Oak Knoll (Clayton Rd at Big Bend)",
    "phone": null,
    "website": null,
    "logo": null,
@@ -928,14 +951,36 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "park",
+    "historic",
+    "gardens",
+    "pond",
+    "clayton",
+    "post-oak"
+   ],
+   "description": "A 14.5-acre Clayton park at Clayton Road and Big Bend, home to one of the region’s largest native stands of post oak and a pond with a lighted fountain and gardens. Two early-20th-century stone mansions on the grounds — once a natural-history museum (1959–1992, whose collection helped seed the St. Louis Science Center) — now house the Greater St. Louis Community Foundation and the Clayton Early Childhood Center.",
+   "history": [
+    {
+     "year": 1905,
+     "event": "Lawyer Charles Rice buys the land — part of the old 300-acre Kennedy Farm — and builds 1 Oak Knoll."
+    },
+    {
+     "year": 1958,
+     "event": "The City of Clayton establishes Oak Knoll Park (14.5 acres)."
+    },
+    {
+     "year": 1959,
+     "event": "The Academy of Science installs part of its collection in the park’s stone mansions — a museum that runs until the collection moves toward the new St. Louis Science Center (1992)."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "park"
+   "source": "research",
+   "osm_type": "park",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0034",
@@ -1274,7 +1319,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "apartments"
+   "osm_type": "apartments",
+   "_duplicate_of": "hpdm-lst-0010"
   },
   {
    "id": "hpdm-lst-0048",
@@ -1313,14 +1359,20 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 3).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0050",
@@ -1330,20 +1382,34 @@
    "subcategory": "apartments",
    "address": "701 South Skinker Boulevard",
    "phone": null,
-   "website": null,
+   "website": "https://www.versailles-stl.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "condominium",
+    "historic",
+    "1920s",
+    "forest-park",
+    "skinker"
+   ],
+   "description": "One of the grand 1920s apartment buildings facing Forest Park along South Skinker Boulevard, built as luxury apartments and converted to a 45-unit condominium in 1980 — a classic of the boulevard’s stately pre-war residential wall.",
+   "history": [
+    {
+     "year": 1980,
+     "event": "The Versailles converts from luxury apartments to a 45-unit condominium (declaration recorded January 1981)."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "units": 45,
+   "price_range": "$$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0051",
@@ -1419,8 +1485,8 @@
    "id": "hpdm-lst-0054",
    "building_id": "msbf-3023",
    "name": "Millbrook Apartment 1",
-   "category": "community",
-   "subcategory": "other",
+   "category": "residential",
+   "subcategory": "apartments",
    "address": null,
    "phone": null,
    "website": null,
@@ -1429,14 +1495,20 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 1).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "yes"
+   "source": "research",
+   "osm_type": "yes",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0055",
@@ -2422,14 +2494,21 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "condominium",
+    "historic",
+    "forest-park",
+    "skinker"
+   ],
+   "description": "A South Skinker Boulevard apartment building facing Forest Park, now condominiums — another of the boulevard’s early-20th-century residential landmarks along the park.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0094",
@@ -2716,14 +2795,20 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 4).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0106",
@@ -3291,14 +3376,20 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 2).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0129",
@@ -3942,14 +4033,19 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments",
+    "demun"
+   ],
+   "description": "A named apartment building in the DeMun/Clayton area.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "residential"
+   "source": "research",
+   "osm_type": "residential",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0156",
@@ -4550,14 +4646,21 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments",
+    "1920s",
+    "demun",
+    "brick"
+   ],
+   "description": "A DeMun apartment building on Clayton Road, typical of the neighborhood’s defining 1920s three-story brick-and-limestone apartment blocks laid out under Henry Wright’s plan.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0181",
@@ -4624,14 +4727,22 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "park",
+    "green",
+    "garden-city",
+    "demun",
+    "historic"
+   ],
+   "description": "A small neighborhood green in the heart of DeMun, named for landscape architect Henry Wright — whose 1920s \"Garden City\" plan for the district wove inward-facing streets and shared greens like this one between the brick apartment blocks.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "park"
+   "source": "research",
+   "osm_type": "park",
+   "price_range": null,
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0184",
@@ -5330,14 +5441,18 @@
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
-   "tags": [],
-   "description": null,
+   "tags": [
+    "apartments"
+   ],
+   "description": "A named apartment building in the DeMun/Clayton area.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
-   "source": "osm",
-   "osm_type": "apartments"
+   "source": "research",
+   "osm_type": "apartments",
+   "price_range": "$$",
+   "enriched": true
   },
   {
    "id": "hpdm-lst-0213",
