@@ -59,12 +59,21 @@ function adaptMapBuildings(mapBuildings) {
 }
 
 function loadBuildings(scene) {
-  if (scene === 'lafayette-square') {
-    const raw = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'buildings.json'), 'utf-8'))
+  // Per-scene RENDER ledger (KIT): every scene loads its buildings from the same
+  // render record at data/<scene>/buildings.json — no scene-name branch. LS's
+  // ledger is the render-field projection of its authored src/data content
+  // (derive-ls-render-ledger.js); the ~10 townie CONTENT imports still read
+  // src/data/buildings.json untouched (render/content split). Poured scenes have
+  // no ledger yet, so they fall back to adapting map.json below (until the pour
+  // emits a ledger too). The branch is now DATA (does a ledger exist?), not the
+  // 'lafayette-square' proper noun — the hardwire retired.
+  const ledgerP = join(ROOT, 'cartograph', 'data', scene, 'buildings.json')
+  if (existsSync(ledgerP)) {
+    const raw = JSON.parse(readFileSync(ledgerP, 'utf-8'))
     return Array.isArray(raw) ? raw : (raw.buildings || [])
   }
   const mapPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
-  if (!existsSync(mapPath)) { console.warn(`[bake-buildings] no map.json for scene ${scene}`); return [] }
+  if (!existsSync(mapPath)) { console.warn(`[bake-buildings] no render ledger or map.json for scene ${scene}`); return [] }
   const map = JSON.parse(readFileSync(mapPath, 'utf-8'))
   return adaptMapBuildings(map.buildings || [])
 }
