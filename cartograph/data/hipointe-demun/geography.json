@@ -1,14 +1,14 @@
 {
   "_comment": "Committed extent — center = the boundary-polygon centroid; bbox = the fetch extent.",
-  "lat": 38.64229,
+  "lat": 38.64231,
   "lon": -90.30968,
   "timezone": "America/Chicago",
   "lonToMeters": 86948,
   "latToMeters": 111000,
   "bbox": {
-    "minLat": 38.62286,
-    "maxLat": 38.65168,
-    "minLon": -90.32813,
-    "maxLon": -90.29133
+    "minLat": 38.6199,
+    "maxLat": 38.66469,
+    "minLon": -90.34789,
+    "maxLon": -90.27148
   }
 }
