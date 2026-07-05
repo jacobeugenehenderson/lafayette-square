@@ -82,6 +82,8 @@ The productization above resolves into **one decoupling with two faces, meeting 
 
 **Naming (settled this session):** "Lafayette Square" = the **Product**; the Lafayette Square *neighborhood* = installation #1, eponymous. We are **not de-branding** — we are **de-installation-hardwiring.** Each installation supplies its own branding; #1's happens to equal the Product name.
 
+**⭐ Product-level constant vs installation-specific (Jacob, 2026-07-05).** The zero-hardcode gate targets *installation-specific* literals only — **Product-level constants legitimately stay literal.** Examples: the Product name "Lafayette Square"; **"Cary"** = the delivery program's name/structure (fixed across installations). Neighborhoods vary their *participants* (SMS number, couriers, zone) — not the program's name. So there's no INSTANCE field for "Cary"; `modules.delivery.enabled` gates presence, participant data carries the variation. The audit's job is to sort literals along this axis, not blindly parameterize every LS-adjacent string.
+
 ### Where we are (2026-07-05)
 - **Seam / content slice — DONE:** content schema §5.1.1 ratified + committed (`a5976993`); HPDM example payload committed (`5410301d`); a content researcher is filling it.
 - **Design settled (not coded):** the two-faces frame, the installation-payload contract, Product-vs-installation naming, the module-manifest axis, the zero-hardcode gate.

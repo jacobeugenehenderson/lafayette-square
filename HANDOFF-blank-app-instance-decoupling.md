@@ -8,7 +8,9 @@ The public app is a **generic reader** of an installation payload; LS is just in
 ## ⛔ The gates (non-negotiable, prove at each cut)
 1. **LS renders + reads byte-identical** — every LS value, once sourced from config/content, must equal today's literal. Additive before destructive.
 2. **The townie app keeps working for LS** — place cards, listings, residences, search, bulletin, delivery all still function.
-3. **The acceptance gate (Jacob, 2026-07-05):** the reader is universal — **grep the reader for LS literals → zero.** Every field below exists because its hardcoded twin must come out.
+3. **The acceptance gate (Jacob, 2026-07-05):** the reader is universal — **grep the reader for *installation-specific* literals → zero.**
+
+> ⭐ **Product-level constant vs installation-specific (Jacob, 2026-07-05).** The gate targets *installation-specific* literals only. **Product-level constants legitimately stay literal** — they're fixed across every installation. Two settled examples: **"Lafayette Square"** as the *Product* name (the neighborhood name that varies is a different thing); **"Cary"** = the delivery program's name/structure, a Product constant. Neighborhoods vary their *participants* (SMS number, couriers, **zone**) — **not** the program's name. So: **no INSTANCE field for the "Cary" name**; `modules.delivery.enabled` gates *presence* only, and per-installation participant data (`INSTANCE.cary.sms*`, `modules.delivery.zoneDescription`) carries the variation. In copy like "Cary at Lafayette Square" / "Cary is Lafayette Square's delivery service", **"Cary" stays literal; only the neighborhood name → `INSTANCE.name`.**
 
 ## The target list (audit, 2026-07-05 — reader scope: `App.jsx`, `components/`, `hooks/`, `lib/`, `pages/`, `preview/`, `index.html`)
 
@@ -41,7 +43,7 @@ INSTANCE = {
   commerce:  { salesTaxRate },                                              // NEW
   profile:   { population, buildingCount, founded, parkAcres,
                landmarkName, historicDistrictName },                        // NEW (= content L0)
-  modules:   { bulletin, delivery:{enabled,zoneDescription,brandCopy},
+  modules:   { bulletin, delivery:{enabled,zoneDescription},  // "Cary" name is a PRODUCT constant, NOT a field
                contact, codedesk, sms, chat, info, events, society, residences }, // NEW
   cary, contact, mobileQuality,                                            // present
 }
