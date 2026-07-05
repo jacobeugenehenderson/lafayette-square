@@ -2,7 +2,7 @@
 
 **What every input to a neighborhood is, where Lafayette Square got it, and whether that well transfers to the next town.** This is the intake SSOT *across all four domains* (Map · Trees · Weather · Content) — the checklist an operator opens on day one of pouring a new slab. It answers Jacob's question directly: *the infrastructure exists; how do we fill it?*
 
-> **Status: v0.1 (2026-07-02) — new, Boz.** Grounded in `cartograph/INTAKE.md` (the map layer's deep provenance home — this doc cites it, does not restate it) + a four-domain provenance sweep of the live code. Some content-layer attributions are first-pass — marked **⚠️ confirm**. Not yet wired into `README` doc-map / `ORIENTATION` — do that on ratification (§8).
+> **Status: v0.3 (2026-07-05) — Boz.** The roster editor + **polygon building-membership** landed (§5.1/§5.2). Grounded in `cartograph/INTAKE.md` (the map layer's deep provenance home — this doc cites it, does not restate it) + a four-domain provenance sweep of the live code. Some content-layer attributions are first-pass — marked **⚠️ confirm**. Not yet wired into `README` doc-map / `ORIENTATION` — do that on ratification (§8).
 >
 > **Scope note:** this is the *intake/authoring* companion to `SLAB-CONTRACT.md`. The contract says what a finished slab **is**; this says what you must **gather and author** to pour one.
 
