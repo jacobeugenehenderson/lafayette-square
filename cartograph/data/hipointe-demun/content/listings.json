@@ -415,27 +415,77 @@
    "category": "arts",
    "subcategory": "cinema",
    "address": "1005 McCausland Avenue",
-   "phone": null,
+   "phone": "(314) 644-1100",
    "website": "https://hipointetheatre.org",
    "logo": null,
    "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [
-    "historic",
-    "single-screen",
-    "art-house",
-    "landmark"
+   "opening_hours_raw": "Showtimes vary — doors open 30 min before each screening (arrive 15 min early); box office by phone during business hours",
+   "photos": [
+    "photos/hi-pointe-theatre/01.jpg",
+    "photos/hi-pointe-theatre/02.jpg",
+    "photos/hi-pointe-theatre/03.jpg"
    ],
-   "description": "Built in 1922 by the Warner Bros. Circuit at Clayton Rd & McCausland — the oldest continually operating single-screen movie theater in St. Louis and its oldest art-house. Owned since its centennial by the nonprofit Cinema St. Louis; independent and repertory film programming.",
-   "history": null,
-   "menu_url": null,
+   "amenities": [
+    "Single-screen, 414-seat auditorium",
+    "35mm film + 2K digital projection (3D capable)",
+    "Dolby Digital sound",
+    "Art Deco décor & the iconic neon marquee",
+    "Full-service concession stand",
+    "Local beer & wine (21+)",
+    "Snacks & drinks welcome in the auditorium",
+    "Wheelchair accessible (lobby, restrooms, reserved seating)",
+    "Repertory + first-run independent programming",
+    "Free evening/weekend parking (Lindell Bank lot across McCausland)"
+   ],
+   "tags": [
+    "cinema",
+    "art-house",
+    "single-screen",
+    "historic",
+    "landmark",
+    "repertory",
+    "35mm",
+    "neon-marquee",
+    "art-deco",
+    "beer-wine",
+    "nonprofit",
+    "hi-pointe"
+   ],
+   "description": "The oldest continuously operating single-screen movie theater in the St. Louis area — built in 1922 on \"the highest point in the City of St. Louis,\" and always meant for movies, never vaudeville. A beautifully preserved Art Deco house with an iconic neon marquee and a 414-seat auditorium, it screens 35mm film and 2K digital, pours local beer and wine, and runs a repertory-plus-independent program. Since 2023 it has been operated by the nonprofit Cinema St. Louis, carrying a 100-year tradition forward.",
+   "history": [
+    {
+     "year": 1922,
+     "event": "The Hi-Pointe Theatre opens at Clayton Road & McCausland — purpose-built for movies (not vaudeville or plays) on the highest point in the City of St. Louis."
+    },
+    {
+     "year": 1926,
+     "event": "Joins the St. Louis Amusement Co. chain; later operated by Fanchon & Marco and Arthur Enterprises."
+    },
+    {
+     "year": 1963,
+     "event": "The auditorium is refitted with its signature aquamarine seating."
+    },
+    {
+     "year": 1977,
+     "event": "The James family buys the Hi-Pointe and runs it for three generations — some 45 years — keeping the single screen alive through the multiplex era."
+    },
+    {
+     "year": 2023,
+     "event": "The nonprofit Cinema St. Louis acquires the theater just past its 100th birthday, preserving it as a repertory art house."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0018",
    "reservation_url": null,
    "status": "active",
-   "source": "osm",
+   "source": "research",
    "osm_type": "cinema",
-   "enriched": true
+   "enriched": true,
+   "instagram": "https://www.instagram.com/hipointetheatre",
+   "photo_credit": "Hi-Pointe Theatre / Cinema St. Louis (hipointetheatre.org)",
+   "price_range": "$$",
+   "seating_capacity": 414,
+   "ticket_url": "https://hipointetheatre.org",
+   "order_url": null
   },
   {
    "id": "hpdm-lst-0019",
@@ -1276,31 +1326,70 @@
   {
    "id": "hpdm-lst-0055",
    "building_id": "msbf-3050",
-   "name": "Stevenson's Hi-Pointe Service",
+   "name": "Stevenson's Hi-Pointe Amoco",
    "category": "services",
    "subcategory": "automotive",
-   "address": "981 South Skinker Boulevard",
-   "phone": null,
+   "address": "981 S Skinker Boulevard",
+   "phone": "(314) 647-5005",
    "website": null,
    "logo": null,
    "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [
-    "historic",
-    "gas-station",
-    "landmark",
-    "art-deco"
+   "opening_hours_raw": "Open daily — fuel, convenience & auto service",
+   "photos": [
+    "photos/stevensons-hi-pointe-amoco/01.jpg"
    ],
-   "description": "Historic 1936 enamel-and-tile Phillips 66 service station at Clayton Rd & McCausland — a preserved Art Deco/streamline auto-service landmark, still an operating repair shop.",
-   "history": null,
+   "amenities": [
+    "Home of the World's Largest Amoco Sign — 40 ft × 60 ft, 44 tons of steel",
+    "5,800 bulbs · 2,900 ft of neon tubing · 5 miles of wiring",
+    "Full-service & self-serve fuel",
+    "Auto service & repair",
+    "Convenience store",
+    "Illuminated at night — a beacon visible across Forest Park",
+    "Family-run since 1951"
+   ],
+   "tags": [
+    "landmark",
+    "historic",
+    "amoco",
+    "neon-sign",
+    "roadside-attraction",
+    "gas-station",
+    "automotive",
+    "hi-pointe",
+    "skinker"
+   ],
+   "description": "Home of the World's Largest Amoco Sign — a 40-by-60-foot, 44-ton neon beacon (5,800 bulbs, 2,900 feet of tubing, five miles of wiring) that has towered over the Skinker–Clayton–Oakland triangle at the edge of Forest Park since 1961. Fuel has been sold on this lot since Standard Oil bought the triangle in 1921; L.C. Stevenson opened the current station in 1951, and the family-run Stevenson's Hi-Pointe Amoco still pumps gas beneath the sign. One of St. Louis's most beloved roadside icons, refreshed in 2019 with new colors and energy-efficient lighting.",
+   "history": [
+    {
+     "year": 1921,
+     "event": "Standard Oil (John D. Rockefeller's company) buys the Skinker & Clayton triangle and erects its first double-sided Standard Oil sign."
+    },
+    {
+     "year": 1926,
+     "event": "A service station is added beneath the sign."
+    },
+    {
+     "year": 1951,
+     "event": "L.C. Stevenson opens the service station that still bears the family name."
+    },
+    {
+     "year": 1961,
+     "event": "The giant Amoco sign is raised — 44 tons of steel, 5,800 bulbs, 2,900 feet of neon tubing and five miles of wiring — the largest Amoco sign in the world."
+    },
+    {
+     "year": 2019,
+     "event": "The sign is refreshed with updated colors and energy-efficient lighting; Stevenson's Hi-Pointe Amoco keeps pumping beneath it."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "active",
-   "source": "osm",
+   "source": "research",
    "osm_type": "fuel",
-   "enriched": true
+   "enriched": true,
+   "photo_credit": "Warren LeMay / Flickr (public domain)",
+   "price_range": "$",
+   "order_url": null
   },
   {
    "id": "hpdm-lst-0056",

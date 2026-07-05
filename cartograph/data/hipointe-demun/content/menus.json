@@ -1589,6 +1589,164 @@
      ]
     }
    ]
+  },
+  "hpdm-lst-0018": {
+   "taglines": {
+    "tickets": "Single-screen repertory & first-run cinema",
+    "concessions": "Classic concessions + local beer & wine"
+   },
+   "schedule": {
+    "tickets": {
+     "monday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "tuesday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "wednesday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "thursday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "friday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "saturday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "sunday": {
+      "start": "11:00",
+      "end": "23:00"
+     }
+    },
+    "concessions": {
+     "monday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "tuesday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "wednesday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "thursday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "friday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "saturday": {
+      "start": "11:00",
+      "end": "23:00"
+     },
+     "sunday": {
+      "start": "11:00",
+      "end": "23:00"
+     }
+    }
+   },
+   "_note": "Ticket & concession prices are best-guess seeds (§0.0) — a guardian confirms on claim. Showtimes & live pricing at hipointetheatre.org.",
+   "sections": [
+    {
+     "name": "Admission",
+     "menu": "tickets",
+     "items": [
+      {
+       "name": "General Admission",
+       "price": 1200,
+       "tags": []
+      },
+      {
+       "name": "Matinee (before 5pm)",
+       "price": 900,
+       "tags": []
+      },
+      {
+       "name": "Student / Senior",
+       "price": 900,
+       "tags": []
+      },
+      {
+       "name": "Cinema St. Louis Member",
+       "price": 900,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Concessions",
+     "menu": "concessions",
+     "items": [
+      {
+       "name": "Popcorn",
+       "price": 550,
+       "tags": [
+        "v"
+       ],
+       "modifiers": [
+        {
+         "name": "Large",
+         "price": 200
+        },
+        {
+         "name": "Real butter",
+         "price": 0
+        }
+       ]
+      },
+      {
+       "name": "Candy",
+       "price": 400,
+       "tags": []
+      },
+      {
+       "name": "Fountain Soda",
+       "price": 450,
+       "tags": [],
+       "modifiers": [
+        {
+         "name": "Large",
+         "price": 100
+        }
+       ]
+      },
+      {
+       "name": "Bottled Water",
+       "price": 300,
+       "tags": []
+      }
+     ]
+    },
+    {
+     "name": "Beer & Wine (21+)",
+     "menu": "concessions",
+     "items": [
+      {
+       "name": "Local Draft Beer",
+       "price": 700,
+       "tags": []
+      },
+      {
+       "name": "Wine",
+       "description": "Red or white",
+       "price": 800,
+       "tags": []
+      }
+     ]
+    }
+   ]
   }
  }
 }
