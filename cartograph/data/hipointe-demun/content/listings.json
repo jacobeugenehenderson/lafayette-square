@@ -7,7 +7,8 @@
   "count": 225,
   "note": "category/subcategory + name/address seeded from OSM; the rest is the Tier-③ hand-collection long pole (structured hours, photos, description, menus).",
   "enriched": 34,
-  "enrichment_note": "Real commercial listings enriched (category/website/description/tags/status) + OSM-missed DeMun Ave row & Hi-Pointe Drive-In added (source:research). Structured hours filled where reliably sourced; the rest await guardian claim (§0.0). Institutional entries (dorms/halls/churches) left as building-grained records."
+  "enrichment_note": "Real commercial listings enriched (category/website/description/tags/status) + OSM-missed DeMun Ave row & Hi-Pointe Drive-In added (source:research). Structured hours filled where reliably sourced; the rest await guardian claim (§0.0). Institutional entries (dorms/halls/churches) left as building-grained records.",
+  "asset_root": "cartograph/data/hipointe-demun/content/ — photos are instance-relative paths (photos/<slug>/NN.jpg) under the installation's OWN content payload; the reader roots them per-look. Installations never share an asset root or reference another's slugs."
  },
  "listings": [
   {
@@ -5072,7 +5073,7 @@
    },
    "opening_hours_raw": "Dinner Mon–Thu 5–10pm · Fri–Sat 5–11pm · Closed Sun",
    "photos": [
-    "/photos/louie/01.jpg"
+    "photos/louie/01.jpg"
    ],
    "amenities": [
     "Wood-burning pizza oven imported from Italy",
@@ -5159,8 +5160,8 @@
    },
    "opening_hours_raw": "Mon–Sat 11am–1:30am · Sun 11am–midnight",
    "photos": [
-    "/photos/sashas/01.jpg",
-    "/photos/sashas/02.jpg"
+    "photos/sashas/01.jpg",
+    "photos/sashas/02.jpg"
    ],
    "amenities": [
     "3,000+ bottle cellar",
@@ -5247,9 +5248,9 @@
    },
    "opening_hours_raw": "Sun–Thu 11am–10pm · Fri–Sat 11am–11pm",
    "photos": [
-    "/photos/barrio/01.jpg",
-    "/photos/barrio/02.jpg",
-    "/photos/barrio/03.jpg"
+    "photos/barrio/01.jpg",
+    "photos/barrio/02.jpg",
+    "photos/barrio/03.jpg"
    ],
    "amenities": [
     "Smash burgers & street tacos",
@@ -5368,7 +5369,7 @@
    },
    "opening_hours_raw": "Sun–Thu 10am–10pm · Fri–Sat 10am–11pm",
    "photos": [
-    "/photos/clementines-demun/01.jpg"
+    "photos/clementines/01.jpg"
    ],
    "amenities": [
     "24 chef-inspired flavors daily",
