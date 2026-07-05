@@ -1,36 +1,61 @@
-# HANDOFF / SPEC — Blank Canonical App (instance + content decoupling)
+# HANDOFF / BRIEF — Universal Reader (instance + content decoupling)
 
-> **Status: SPEC / catalog (2026-07-04, Boz). Not yet dispatched.** The productization-frontier arc. This is the running worklist of LS-hardwires; it *becomes* the brief when we pick it up. Related: `plans/front-front-end-and-productization.md`, Couplers §6 (the INSTANCE module).
+> **Status: DISPATCH-READY (2026-07-05, Boz).** The consumer-face arc of the two-faces frame (`plans/front-front-end-and-productization.md §The two faces`). Audit complete — the target list below is authoritative (reader-scope sweep, 2026-07-05). Producer-side content schema is ratified (`NEIGHBORHOOD-INPUTS §5.1.1`); a researcher is filling the HPDM payload in parallel.
 
-## The goal (Jacob, 2026-07-04)
-**"A blank canonical app that loads looks. LS in a non-LS look environment is a red herring."** The app is a **generic reader** of a slab; LS is just `?look=lafayette-square`. Everything in the reader that hardcodes LS's identity is **drift** to remove — not to protect. This is settled doctrine, not a new idea:
-- `slab-is-the-instance-identity` — "the reader isn't load-bearing on being LS-specific… anything in the reader that hardcodes the instance's identity (the literal `'lafayette-square'`, `LATITUDE=38.6160`, `St. Louis`) is drift."
-- `hardwires-come-out-when-channels-install` — LS constants come out in "their own dedicated coupler (§6 INSTANCE module)."
-- `slab-render-vs-content-boundary` — **the key nuance that splits the work:** `src/data/buildings.json` does TWO jobs — a **render record** (→ the slab, already look-driven) and a **content record** (name/listings/historic → a per-instance **content layer**, NOT the slab). This arc is the **content + instance** half; the **render** half (building geometry/hide) is the roster arc.
+## The goal
+The public app is a **generic reader** of an installation payload; LS is just installation #1 (`?look=lafayette-square`). **"Lafayette Square" is the Product name; the LS neighborhood is installation #1, eponymous** — this is **de-installation-hardwiring, not de-branding.** Each installation supplies its own identity/branding/content/modules.
 
-## The two gates (non-negotiable)
-1. **LS renders byte-identical** — LS-as-a-look must produce exactly today's LS.
-2. **The townie app keeps reading LS content unchanged** — place cards, listings, residences, search all still work for LS. Additive before destructive; prove parity before cutting (Ward's sequence in the ledger note).
+## ⛔ The gates (non-negotiable, prove at each cut)
+1. **LS renders + reads byte-identical** — every LS value, once sourced from config/content, must equal today's literal. Additive before destructive.
+2. **The townie app keeps working for LS** — place cards, listings, residences, search, bulletin, delivery all still function.
+3. **The acceptance gate (Jacob, 2026-07-05):** the reader is universal — **grep the reader for LS literals → zero.** Every field below exists because its hardcoded twin must come out.
 
-## The catalog — LS-hardwires in the reader (the worklist)
-*(Verified 2026-07-04. Each is a place the "generic reader" still pretends to be LS.)*
+## The target list (audit, 2026-07-05 — reader scope: `App.jsx`, `components/`, `hooks/`, `lib/`, `pages/`, `preview/`, `index.html`)
 
-### A. Content layer — `src/data/buildings.json` (the ~10 consumers)
-The content record read directly by the app instead of a per-instance content sidecar:
-`Controls.jsx`, `LafayetteScene.jsx`, `SceneNeon.jsx`, `GlassSearch.jsx`, `SidePanel.jsx`, `useListings.js`, `heroSubject.js` (Stage fallback), `StageApp.jsx`, `CheckinPage.jsx`, `CartographApp.jsx` — all `import … from '../data/buildings'` (wrapper `src/data/buildings.js` → `buildings.json`). **Target:** a per-instance content sidecar the loaded look points at; the render path already reads the slab (`SlabBuildings`). This is the "separate brief" `slab-render-vs-content-boundary` explicitly names ("geometry-source + deploy-bundled content sidecar, zero GPU benefit").
+**Already solved — `src/instance.js` carries** `lookId · skyMode · geography{lat,lon,tz,proj,bbox} · name · domain · cary{sms,email} · contact · mobileQuality`, cleanly read at ~40 geography/weather/planetarium/slab call sites. **Don't re-list those.** But some call sites still hardcode values INSTANCE already owns — those are offenders below.
 
-### B. Hero roster — `SurveyorPanel.jsx` (the one Jacob spotted)
-`SurveyorPanel.jsx:3` imports `../data/landmarks.json` (LS's 87), and `:29` hardcodes a **`'Gateway Arch'`** entry — so the Hero Subject Picker shows LS's cast on *every* scene. **Target:** the picker defaults **empty + upload-a-prop** per scene (the `§10` brought-GLB path), listing the **loaded scene's** buildings (`useSlabBuildingIndex` is already scene-aware). The Gateway Arch becomes a **per-scene hero prop** (LS keeps it; this install reuses it — placed east/closer/bigger for drama), not a hardcoded universal option.
+**Bucket 1 — IDENTITY** (8): `CourierDots.jsx:22-23` idle lat/lon (offender → `INSTANCE.geography`) · `LafayettePark.jsx:9` hardcoded `cartograph/data/lafayette-square/…` import path · `LafayettePark.jsx:828` `EST. 1851 · ST. LOUIS, MO` · `LegalPage.jsx:124` city/state · `LegalPage/CourierOnboarding` "State of Missouri" governing law · `CourierOnboarding.jsx:189` `'MO'` · `PlaceCard.jsx:2951` `STL_TAX_RATE=0.08725` · `streetLabels.js:30` boundary-corridor names.
 
-### C. Instance constants — `'lafayette-square'`, lat/lon, St. Louis
-Scattered scene defaults + geography hardcodes. **Target:** the INSTANCE module (Couplers §6, `src/instance.js` is the seed) — one config the reader reads, no literals.
+**Bucket 2 — BRANDING** (~18 literals + ~25 prose refs): `index.html:5,10,13,14,16,18,19` title/OG/favicon/domain (build-time inject — HTML can't read JS) · offenders reading a literal instead of existing `INSTANCE.name`/`.domain`: `App.jsx:553`, `Scene.jsx:749`, `ChatModal.jsx:182`, `PreviewApp.jsx:338`, `PlaceCard.jsx:2330,4187` (vanity domain ×2), `BulletinModal.jsx:1177`, `CourierDashboard.jsx:276,347`, `CaryAuth.jsx:82` · legal entity `Jacob Henderson LLC / DBA Lafayette Square Deliveries` (`LegalPage.jsx:123`, `CourierOnboarding.jsx:587`) · `LafayettePark.jsx:65` `lafayette-square.svg` asset name · **prose-copy density: `LegalPage.jsx`, `InfoModal.jsx:157-229`, `CheckinPage.jsx`** → a `branding.copy` bundle, not token swaps.
 
-### D. Render-source hardwire — `bake-buildings.js:62` (handled by the roster arc, noted here)
-`if (scene === 'lafayette-square')` load `src/data/buildings.json` for the RENDER record. Retired in `HANDOFF-building-roster-editor.md` (make LS's render source per-look). Listed here for completeness; do NOT double-own it.
+**Bucket 3 — CONTENT literal** (8): `SidePanel.jsx:750` `'2,164'` residents → `profile.population` · `InfoModal.jsx:170` "roughly 2,000 residents" + `:163` "~1,000 buildings" · `LafayettePark.jsx:811,828` `LAFAYETTE PARK`/`EST. 1851` → `profile.landmarkName`/`.founded` · `useListings.js:83` historic-district blurb → `profile.historicDistrictName` · `LegalPage.jsx:24` delivery-zone description → `modules.delivery.zoneDescription`.
 
-## Sequence (when dispatched)
-Additive before destructive, parity-gated at each cut: (1) INSTANCE module reads for the literals; (2) per-instance content sidecar; (3) migrate the ~10 content consumers to read the loaded look's content (LS's mirrors byte-identical); (4) Hero roster → scene-driven + per-scene prop. Each step proves both gates before the next.
+**Bucket 4 — MODULE assumption** (11, all hard-mounted at `App.jsx:584-604`, no gate): bulletin · delivery(Cary) · contact · codedesk · sms · chat · info · events · society tab (`SidePanel.jsx:812`) · residences (`PlaceCard.jsx:2497`) · checkin/claim/link routes → `INSTANCE.modules.*`.
 
-## Boundaries
-- This is the **content + instance** arc. The **render/geometry** hardwires (building hide, `bake-buildings.js:62`) belong to the roster arc — don't cross the streams.
-- Worktree; canon is Boz's; flag drift.
+**Bucket 5 — ENDPOINT/SECRET** (6, already env-injected — inventory only): `VITE_API_URL`, `VITE_SUPABASE_*`; open-meteo + jsdelivr are universal (clean).
+
+**⚠️ Surprises (deep/non-obvious coupling — own phases):**
+- **St. Louis ZONING taxonomy as the categorization engine** — `useListings.js:16,42-45` (`ZONING_CAT/SUB/LABELS`) + `SceneNeon.jsx:51-63` (`_NEON_ZONING_CATEGORY`): the A–J single-letter STL zoning table drives **listing categorization AND neon color**. Not a string — a whole classification assumption. Deepest coupling.
+- **`lsq-*` localStorage namespace** (`index.html:22`, `App.jsx:70,179,261`, `ChatModal`, `CodeDeskModal`, `PlaceCard:2323`) — two installations on one origin collide; derive prefix from `INSTANCE.lookId`.
+- **`FLEUR_BG='#0055A4'` St. Louis-flag blue** + fleur-de-lis rating motif (`PlaceCard.jsx:147`) — cultural theming; structurally a color+emoji.
+- **Reader → `src/data/` static imports** (the content-sidecar migration list, ~13): `LafayetteScene.jsx:5,85`, `SceneNeon.jsx:25`, `Controls.jsx:5`, `GlassSearch.jsx:7`, `SidePanel.jsx:10-11`, `useListings.js:3-5`, `useInit.js:9-10`, `useEvents.js:2`, `streetLabels.js:27`, `StreetLights.jsx:7`, `LafayettePark.jsx:7-19`, `PlaceCard.jsx:24`. Must load by `INSTANCE.lookId`, not `import`. **Exception (leave):** `CelestialBodies`/`PlanetariumOverlay` import universal astronomy data, not LS.
+
+## INSTANCE schema — the target (extend `src/instance.js`)
+```
+INSTANCE = {
+  lookId, skyMode,
+  geography: { …present…, cityState:'St. Louis, MO', stateCode:'MO' },      // +2
+  branding:  { name, title, domain, faviconUrl, ogImage, assetSlug,
+               copy:{ about, guidelines, … } },                             // NEW (name/domain promote)
+  legal:     { entityName, dba, governingState },                           // NEW
+  commerce:  { salesTaxRate },                                              // NEW
+  profile:   { population, buildingCount, founded, parkAcres,
+               landmarkName, historicDistrictName },                        // NEW (= content L0)
+  modules:   { bulletin, delivery:{enabled,zoneDescription,brandCopy},
+               contact, codedesk, sms, chat, info, events, society, residences }, // NEW
+  cary, contact, mobileQuality,                                            // present
+}
+```
+Note: `profile.*` overlaps content **Layer 0** (`§5.1.1`) — decide whether it rides INSTANCE or a `content/profile.json` the loader merges (small; INSTANCE is fine for v1).
+
+## Phasing (additive before destructive, each phase proves the gates)
+- **Phase 1 — INSTANCE + literal migration (identity + branding offenders).** Extend `instance.js` with the schema; swap the Bucket-1/2 offending call sites to read it (the ones INSTANCE already/newly owns). Lowest risk, proves the pattern. **Dispatch first.**
+- **Phase 2 — content sidecar.** The ~13 reader→`src/data/` static imports load by `INSTANCE.lookId` from the installation payload (LS mirrors byte-identical). The producer-side schema (`§5.1.1`) is the shape.
+- **Phase 3 — module manifest.** `INSTANCE.modules.*` gates the `App.jsx:584-604` mounts (LS = all-on). Design the seam; delivery/backends stay single-tenant for now.
+- **Phase 4 — branding copy + `index.html` templating.** The `branding.copy` bundle for Legal/Info prose; a build-time inject step for `index.html` title/OG (it can't read the JS module).
+- **Deep residuals (own arcs):** the STL zoning taxonomy → config; `lsq-*` localStorage prefix; the fleur/flag theming.
+
+## Boundaries & doctrine
+- **Render/geometry hardwires belong to the roster arc** (done: `bake-buildings.js` render ledger) — don't cross streams.
+- Worktree isolation; canon docs are **Boz's** (flag drift, don't edit canon). This HANDOFF + `NEIGHBORHOOD-INPUTS §5.1.1` + `plans/front-front-end… §The two faces` are the agent's first reads.
+- Reader distribution to 3rd-party sites (cross-origin slab, injected config, backend multi-tenancy) is **out of scope** — the horizon beyond this arc.
