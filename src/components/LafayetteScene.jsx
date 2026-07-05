@@ -82,12 +82,26 @@ function isDrag(e) {
   const dx = ce.clientX - _pdx, dy = ce.clientY - _pdy
   return dx * dx + dy * dy > 36
 }
+// ⚠️ DEFERRED-TO-PRODUCER exception (Universal Reader Phase 2). This is the
+// ONE reader data file left as a SYNC static import instead of the
+// loadInstanceData seam. It is NOT a universal file (like astronomy) — it is
+// installation-specific RENDER data (per-building foundation/roof overrides)
+// whose by-lookId loading is OWED by the roster/render emit arc, not this
+// reader phase. It can't go async here: `_overrides` feeds Foundations
+// geometry synchronously (getFoundationHeight → periodPedestalFor) through a
+// `useMemo([source])`, so the safe fix is a proper Foundations/buildings
+// ready-gate (not just a path flip) — exactly the geometry-pipeline
+// restructuring that arc is positioned to do and e2e against the bake.
+// Owner: roster/render producer-emit arc. See the HANDOFF producer-emit list.
 import buildingOverridesData from '../data/buildingOverrides.json'
 
 // ============ PER-BUILDING OVERRIDES ============
 // Override lookup: individual buildings can have custom roof_shape, foundation_height, etc.
 // Add entries to src/data/buildingOverrides.json to refine beyond rule-based defaults.
-const _overrides = buildingOverridesData.overrides || {}
+// Guard: these overrides are LS-specific, so apply them ONLY under the LS look —
+// a non-LS look (`?look=…`) must never misapply them (the map is empty today,
+// so this is future-proofing that keeps "leave static" correct for install #2).
+const _overrides = (INSTANCE.lookId === 'lafayette-square' && buildingOverridesData.overrides) || {}
 
 function getOverride(buildingId, key) {
   const o = _overrides[buildingId]

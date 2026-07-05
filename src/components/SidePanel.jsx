@@ -8,7 +8,7 @@ import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
 import { CATEGORY_LIST, COLOR_CLASSES } from '../tokens/categories'
 import { buildings as _buildings, buildingMap as _buildingMap, buildingCount as _buildingCount, ready as _buildingsReady } from '../data/buildings'
-import streetsData from '../data/streets.json'
+import { loadInstanceData } from '../data/loadInstanceData.js'
 import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
 import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './BulletinModal'
@@ -158,7 +158,15 @@ function _isWithinHours(hours, time) {
 // Buildings with hours — computed lazily
 let _buildingsWithHours = []
 _buildingsReady.then(({ buildings }) => { _buildingsWithHours = buildings.filter(b => b.hours) })
-const _namedStreetCount = new Set(streetsData.streets.map(s => s.name).filter(Boolean)).size
+// Post-ready fill (same timing-class as _buildingsWithHours above and the
+// _buildingCount stat): the BulletinMasthead re-renders when listings populate
+// (which itself waits on buildings ready), by which point streets — smaller and
+// loaded in parallel — has resolved, so the "Streets" stat fills in lockstep
+// with "Buildings" rather than flashing independently.
+let _namedStreetCount = 0
+loadInstanceData(INSTANCE.lookId, 'streets').ready.then(streetsData => {
+  if (streetsData) _namedStreetCount = new Set(streetsData.streets.map(s => s.name).filter(Boolean)).size
+})
 
 // ============ COLLAPSIBLE SECTION ============
 
