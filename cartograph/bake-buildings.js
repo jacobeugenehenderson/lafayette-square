@@ -562,33 +562,57 @@ const DEFAULT_PALETTE = [
   '#f5deb3', '#696969', '#b22222', '#808080',
 ]
 
+// Ray-cast point-in-polygon (poly = [{x,z}]) — building membership test.
+function pointInPolygon(px, pz, poly) {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z
+    if (((zi > pz) !== (zj > pz)) && (px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi)) inside = !inside
+  }
+  return inside
+}
+
 export async function bakeBuildings({ look = 'default', scene = 'lafayette-square' } = {}) {
   const outDir   = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   let buildings = loadBuildings(scene)
 
-  // Cull buildings to the neighborhood boundary (KIT). The neighborhood is
-  // "every building that touches the circle" — KEEP a building if ANY footprint
-  // vertex is inside the radius (it intersects the hood), so rim-straddling
-  // buildings survive and the edge fills clean to the circle instead of going
-  // bald. (Was the reverse — drop if ANY vertex outside — which shaved every
-  // building the rim crossed. The per-building roster editor is how the operator
-  // then hides the strays this keeps.)
+  // Membership cull (KIT). The neighborhood is the area inside the boundary-street
+  // POLYGON (persisted on commit); a building belongs if its centroid is in the
+  // polygon. The roster editor's overrides layer on top (feedback_effective_payload
+  // _layering): `activate` forces an outside building IN, `hide` forces an inside
+  // one OUT. Keep if (centroid-in-polygon OR activated) AND NOT hidden. Falls back
+  // to the boundary CIRCLE if no polygon was persisted (older scenes).
   //
-  // The `scene !== 'lafayette-square'` gate is a HARDWIRE, twin of the source-
-  // select at :62 — LS is the one legacy install still loading a hand-curated
-  // buildings.json (already finalized), so the poured-path cull doesn't apply to
-  // it. Both hardwires retire together when LS becomes a poured scene; the real
-  // condition is "buildings came from the poured map.json", 1:1 with the name today.
+  // The `scene !== 'lafayette-square'` gate is a HARDWIRE, twin of the source-select
+  // at :62 — LS is the one legacy install on a hand-curated buildings.json, so the
+  // poured-path membership cull doesn't apply. Both retire when LS becomes poured.
   const nbP = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
   if (scene !== 'lafayette-square' && existsSync(nbP)) {
     const nb = JSON.parse(readFileSync(nbP, 'utf-8'))
-    const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
+    let activate = new Set(), hide = new Set()
+    const ovP = join(ROOT, 'cartograph', 'data', scene, 'building-overrides.json')
+    if (existsSync(ovP)) {
+      try { const ov = JSON.parse(readFileSync(ovP, 'utf-8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) }
+      catch (e) { console.warn(`[bake-buildings] building-overrides unreadable: ${e.message}`) }
+    }
+    const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
+    const cx0 = nb.center?.[0] ?? 0, cz0 = nb.center?.[1] ?? 0
     const R2 = (nb.radius ?? Infinity) ** 2
+    const defaultIn = (fp) => {
+      let sx = 0, sz = 0
+      for (const [x, z] of fp) { sx += x; sz += z }
+      const cx = sx / fp.length, cz = sz / fp.length
+      return poly ? pointInPolygon(cx, cz, poly) : (cx - cx0) ** 2 + (cz - cz0) ** 2 <= R2
+    }
     const before = buildings.length
-    buildings = buildings.filter(b => (b.footprint || []).some(([x, z]) => (x - cx) ** 2 + (z - cz) ** 2 <= R2))
-    console.log(`[bake-buildings] boundary cull: ${before} → ${buildings.length} (R=${Math.round(nb.radius || 0)}m, keep-if-intersects)`)
+    buildings = buildings.filter(b => {
+      const fp = b.footprint || []
+      if (fp.length < 3 || hide.has(b.id)) return false
+      return defaultIn(fp) || activate.has(b.id)
+    })
+    console.log(`[bake-buildings] membership: ${before} → ${buildings.length} (poly=${!!poly}, +${activate.size}/−${hide.size})`)
   }
 
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;

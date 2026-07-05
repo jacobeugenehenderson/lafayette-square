@@ -154,6 +154,20 @@ export async function fetchBuildingFootprints(scene) {
   return res.json()
 }
 
+// Roster editor: per-scene building membership overrides { activate:[], hide:[] }.
+export async function fetchBuildingOverrides(scene) {
+  const res = await fetch(sceneUrl(scene, 'building-overrides'))
+  if (!res.ok) return { activate: [], hide: [] }
+  return res.json()
+}
+export async function saveBuildingOverrides(scene, body) {
+  const res = await fetch(sceneUrl(scene, 'building-overrides'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`save building-overrides ${res.status}`)
+  return res.json()
+}
+
 // Extent editor: resolve the boundary corners from ordered side names via the
 // scene's skeleton junctions (the real path — no marks). Returns
 // { corners, centroid, radius, edges, closed }.
