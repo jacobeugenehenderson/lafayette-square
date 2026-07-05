@@ -146,6 +146,14 @@ export async function fetchStreetNames(scene) {
   return res.json()
 }
 
+// Extent overlay / roster editor: every building footprint as a current-frame
+// ring, tagged msbf-<id>. { buildings: [{ id, ring:[[x,z],…] }] }.
+export async function fetchBuildingFootprints(scene) {
+  const res = await fetch(sceneUrl(scene, 'building-footprints'))
+  if (!res.ok) return { buildings: [] }
+  return res.json()
+}
+
 // Extent editor: resolve the boundary corners from ordered side names via the
 // scene's skeleton junctions (the real path — no marks). Returns
 // { corners, centroid, radius, edges, closed }.

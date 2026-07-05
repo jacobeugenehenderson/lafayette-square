@@ -443,6 +443,29 @@ function streetNamesFor(scene) {
   return { major: major.sort(az), minor: minor.sort(az) }
 }
 
+// Building footprints for the Extent tool's live overlay + roster editor — every
+// MSBF footprint as a CURRENT-FRAME (x/z) ring, tagged `msbf-<id>` (the same id
+// space the pour bakes + buildingOverrides keys on). Reads raw/msbf.json, whose
+// x/z reproject-raw keeps aligned to the live geography/aerial (no projection
+// here). mtime-cached — the 9.5 MB parse runs once per fetch, not per request.
+const _footprintCache = new Map()   // scene → { mtime, payload }
+function buildingFootprintsFor(scene) {
+  const p = join(sceneRawDir(scene), 'msbf.json')
+  if (!existsSync(p)) return { buildings: [] }
+  const mtime = statSync(p).mtimeMs
+  const cached = _footprintCache.get(scene)
+  if (cached && cached.mtime === mtime) return cached.payload
+  const msbf = JSON.parse(readFileSync(p, 'utf-8'))
+  const buildings = []
+  for (const b of (msbf.buildings || [])) {
+    const ring = (b.coords || []).map(c => [c.x, c.z])
+    if (ring.length >= 3) buildings.push({ id: `msbf-${b.msbfId}`, ring })
+  }
+  const payload = { buildings }
+  _footprintCache.set(scene, { mtime, payload })
+  return payload
+}
+
 // Looks: each Look is a styling snapshot — a complete material palette plus
 // the per-Look bake bundle (ground.json + bin + lightmap + buildings + lamps
 // + scene snapshot) under public/baked/<id>/. design.json (authoring state)
@@ -453,7 +476,7 @@ const PUBLIC_DIR = join(import.meta.dirname, '..', 'public')
 const LOOKS_DIR = join(PUBLIC_DIR, 'looks')
 const LOOKS_INDEX = join(LOOKS_DIR, 'index.json')
 const DEFAULT_LOOK_ID = 'lafayette-square'
-const PORT = 3333
+const PORT = Number(process.env.CARTO_PORT) || 3333
 
 // ── Looks helpers ──────────────────────────────────────────────────────────
 function readJsonOrNull(path) {
@@ -769,6 +792,15 @@ createServer(async (req, res) => {
   if (req.method === 'GET' && namesMatch && !RESERVED_PREFIXES.has(namesMatch[1])) {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(streetNamesFor(namesMatch[1])))
+    return
+  }
+
+  // GET /<scene>/building-footprints — current-frame footprint rings for the
+  // Extent overlay + roster editor (one merged geometry client-side).
+  const bldgFpMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/building-footprints$/)
+  if (req.method === 'GET' && bldgFpMatch && !RESERVED_PREFIXES.has(bldgFpMatch[1])) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(buildingFootprintsFor(bldgFpMatch[1])))
     return
   }
 
