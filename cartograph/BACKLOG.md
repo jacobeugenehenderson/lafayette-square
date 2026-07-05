@@ -4,7 +4,7 @@
 >
 > *Rewritten 2026-06-22 (the doc-pristineness campaign): the NOW reframed from the SHAPE closeout to the publish-confidence frontier; landed narratives moved out (the pre-DataWall closeout, the tri-cut, the Section build, the code-landed ledger → `_archive/` + Reference); the HANDOFF index reconciled to the 15 live briefs (27→15 prune, wave 1+2). Deep pre-rewrite history: git + `NOTES.md`.*
 
-Active branch `curb-offset-draw` (off trunk `cartograph-looks-pass-ab`). Production (`main`) is intentionally pre-slab + stale; the marriage-leap (merge → deploy) waits until the whole platform is up on staging (LS-side gate — `ls/BACKLOG.md`).
+Active branch `curb-offset-draw` (off trunk `cartograph-looks-pass-ab`). **Production is NOT pre-slab (corrected 2026-07-05):** `origin/main` = `7b2ae01e` (2026-06-30) already ships the LS slab, the full looks pass, the 7-slot TOD day-cycle, and the Publish ceremony — the wedding is mostly done. It's a **clean fast-forward, 59 commits behind head, no divergence.** Those 59: HiPointe/DeMun #2 (18, kit/authoring — not LS-public) · ls onboarding/trust-roles/reviews (10, **user-facing**) · render-pipeline install (7, **render-path**) · roster editor (6, authoring) · security migration (1, unapplied) · docs/accord sweeps. The remaining marriage-leap is now **incremental** (which of those 59 to push), not "wait for the whole platform." ⚠️ *A stale local `main` fossil sits at April 27 — `git fetch` before trusting it.* *(This line previously claimed "main is intentionally pre-slab; the leap waits until the whole platform is up" — true when written, superseded by the June-30 publish.)*
 
 ---
 
