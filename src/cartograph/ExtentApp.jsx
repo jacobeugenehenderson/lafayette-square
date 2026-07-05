@@ -21,13 +21,14 @@
  * labels, Sides→Phalanges→centroid, and the radius control land in later steps.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
 import {
   fetchSkeletonLabels, fetchExtentCorners, fetchStreetNames, geocodeZip, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
-  pourScene, fetchRibbons, fetchLooks, createLook, bakeLook,
+  pourScene, fetchRibbons, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
 } from './api.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
@@ -272,6 +273,85 @@ function ExtentDim({ centroid, radiusM }) {
   )
 }
 
+// The live building-footprint overlay — every MSBF footprint (current-frame x/z)
+// merged into ONE geometry, colored inside-vs-outside the boundary circle so the
+// neighborhood's buildings read as the subject. Built once per fetch; the SAME
+// mesh serves the roster editor (per-vertex aBuildingId survives for the raycast
+// → hide gesture in the next step). Footprints sit just above the dim ring, below
+// labels/boundary lines.
+const FOOTPRINT_Y = 1.5
+function buildFootprintGeometry(buildings) {
+  const positions = []
+  const ids = []
+  for (let bi = 0; bi < buildings.length; bi++) {
+    let ring = buildings[bi].ring
+    if (!ring || ring.length < 3) continue
+    // Drop a duplicate closing vertex (MSBF rings are closed) so triangulation
+    // doesn't choke on a zero-length edge.
+    const a = ring[0], z = ring[ring.length - 1]
+    if (a[0] === z[0] && a[1] === z[1]) ring = ring.slice(0, -1)
+    if (ring.length < 3) continue
+    const contour = ring.map(([x, zz]) => new THREE.Vector2(x, zz))
+    let tris
+    try { tris = THREE.ShapeUtils.triangulateShape(contour, []) } catch { tris = null }
+    if (!tris || !tris.length) continue
+    for (const t of tris) {
+      for (const idx of t) {
+        const [x, zz] = ring[idx]
+        positions.push(x, FOOTPRINT_Y, zz)
+        ids.push(bi)
+      }
+    }
+  }
+  const geom = new THREE.BufferGeometry()
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geom.setAttribute('aBuildingId', new THREE.Float32BufferAttribute(ids, 1))
+  return geom
+}
+function ExtentBuildings({ footprints, centroid, radiusM }) {
+  const geom = useMemo(
+    () => (footprints?.buildings?.length ? buildFootprintGeometry(footprints.buildings) : null),
+    [footprints],
+  )
+  const mat = useMemo(() => new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, depthTest: false,
+    uniforms: {
+      uCenter: { value: new THREE.Vector2(0, 0) },
+      uRadius: { value: 1e9 },
+      uInside: { value: new THREE.Color('#ffd9a0') },
+      uOutside: { value: new THREE.Color('#5a6b7a') },
+    },
+    vertexShader: `
+      attribute float aBuildingId;
+      varying vec2 vWorldXZ;
+      varying float vId;
+      void main() {
+        vId = aBuildingId;
+        vWorldXZ = (modelMatrix * vec4(position, 1.0)).xz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec2 uCenter;
+      uniform float uRadius;
+      uniform vec3 uInside;
+      uniform vec3 uOutside;
+      varying vec2 vWorldXZ;
+      void main() {
+        float inside = step(distance(vWorldXZ, uCenter), uRadius);
+        gl_FragColor = vec4(mix(uOutside, uInside, inside), mix(0.14, 0.42, inside));
+      }`,
+  }), [])
+  useEffect(() => {
+    mat.uniforms.uCenter.value.set(centroid?.x ?? 0, centroid?.z ?? 0)
+    // No circle yet → treat every building as inside (all warm) until the
+    // operator resolves a boundary.
+    mat.uniforms.uRadius.value = radiusM > 0 ? radiusM : 1e9
+  }, [mat, centroid, radiusM])
+  useEffect(() => () => geom?.dispose(), [geom])
+  if (!geom) return null
+  return <mesh geometry={geom} material={mat} renderOrder={6} />
+}
+
 // One boundary-street combobox. Reuses the suite's row/input/button/dropdown
 // system (carto-row · carto-input · carto-btn-sm · carto-looks-option ·
 // carto-section-caret · carto-glass). Two modes: TYPE → flat filtered matches
@@ -380,6 +460,19 @@ export default function ExtentApp() {
     return () => { cancelled = true }
   }, [scene, seedToken])
 
+  // Building footprints for the live overlay (+ the roster editor). Re-fetched
+  // per scene and after a fresh Fetch (seedToken) — msbf.json's x/z is reprojected
+  // into the live frame, so the overlay registers on the aerial.
+  const [footprints, setFootprints] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    setFootprints(null)
+    fetchBuildingFootprints(scene)
+      .then(r => { if (!cancelled) setFootprints(r) })
+      .catch(() => { if (!cancelled) setFootprints(null) })
+    return () => { cancelled = true }
+  }, [scene, seedToken])
+
   // Autocomplete pool — skeleton-sourced + corridor-collapsed, GROUPED
   // (arterials, then the rest), each A→Z. A directional corridor shows as ONE
   // entry ("Big Bend Boulevard"). A custom combobox renders the groups (native
@@ -426,6 +519,7 @@ export default function ExtentApp() {
         const s = [...nb.sides]; while (s.length < 4) s.push('')
         setSides(s)
       }
+      if (typeof nb.zip === 'string' && nb.zip) setZip(nb.zip)
       if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
       if (nb.committed) setCommitted(true)
       draftHydrated.current = true
@@ -442,9 +536,9 @@ export default function ExtentApp() {
   useEffect(() => {
     if (!draftHydrated.current) return
     const clean = sides.map(s => s.trim()).filter(Boolean)
-    const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0 }).catch(() => {}) }, 500)
+    const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, zip: zip.trim() }).catch(() => {}) }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, scene])
+  }, [sides, radiusM, zip, scene])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -590,11 +684,14 @@ export default function ExtentApp() {
     return () => clearTimeout(t)
   }, [sides, scene, seedToken])
 
-  // Default the radius to circumscribe + margin when a fresh polygon resolves,
-  // unless the operator has taken the radius control.
+  // Default the radius to circumscribe + margin — ONLY for a fresh polygon that
+  // has no radius yet. Never clobber an existing radius (persisted-then-hydrated,
+  // or operator-set): a scene-reopen can transiently reset radiusTouched, which
+  // used to let this overwrite the restored value on reload. "fit to streets"
+  // re-seeds the default explicitly (below), so it no longer needs this effect.
   useEffect(() => {
-    if (corners?.radius && !radiusTouched) setRadiusM(corners.radius + 120)
-  }, [corners, radiusTouched])
+    if (corners?.radius && !radiusTouched && !(radiusM > 0)) setRadiusM(corners.radius + 120)
+  }, [corners, radiusTouched, radiusM])
 
   // When the boundary CLOSES, scale the view to the circle so the neighborhood
   // fills the viewport — the frame we hand to skeleton/survey. Fires once per
@@ -640,6 +737,7 @@ export default function ExtentApp() {
           <ambientLight intensity={1} />
           {located && <ExtentAerial geo={geo} />}
           {located && corners?.closed && <ExtentDim centroid={corners.centroid} radiusM={radiusM} />}
+          {located && <ExtentBuildings footprints={footprints} centroid={corners?.centroid} radiusM={radiusM} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
           {located && <ExtentStreets streets={corners?.streets} preview={previewStreet} />}
           {located && <ExtentBoundary corners={corners?.corners} centroid={corners?.centroid} radiusM={radiusM} />}
@@ -728,7 +826,7 @@ export default function ExtentApp() {
                   min={corners.radius} max={Math.max(corners.radius * 2.5, 1500)} step={10}
                   value={radiusM}
                   onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
-                <button className="carto-btn-sm" onClick={() => setRadiusTouched(false)}>fit to streets</button>
+                <button className="carto-btn-sm" onClick={() => { if (corners?.radius) setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to streets</button>
               </div>
             )}
 
