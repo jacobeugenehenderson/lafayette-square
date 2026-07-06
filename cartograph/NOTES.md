@@ -8,6 +8,20 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-07-05 — building-membership curation: the polygon must be persisted (HiPointe fix + suite fold, Klein→Boz).
+
+The roster editor (Ward, `HANDOFF-building-roster-editor` — retired to `_archive/handoffs/`) let the operator curate building membership: the neighborhood is the boundary-street POLYGON (not the circle) + per-building `activate`/`hide`. Tonight surfaced the gotcha that makes it work — and a stale-data trap.
+
+**Symptom:** HiPointe-DeMun's curation (16 `activate` exposures, saved) showed in the Extent builder but the 2D Designer + 3D slab rendered the *whole circle* (2111/2112 buildings).
+
+**Root cause:** HPDM's `neighborhood_boundary.json` was committed 2026-07-04 23:49 — ~1.5h *before* the polygon-persist code landed (`20cd2c1d`, 01:23) — so it carried no `nb.polygon`. `pipeline.js` + `bake-buildings.js` both fall back to the circle when the polygon is absent, and `activate` only re-includes an *outside-polygon* building — so with nothing excluded, the 16 exposures were inert and the whole circle showed. *(I initially mis-diagnosed this as "the polygon" vs "the ghosts" — Jacob's correction + reading the empty overrides file showed it's both: the ghosts ARE the polygon membership, and `activate` needs the polygon to layer on.)*
+
+**Fix (polygon-only persist, no re-center):** resolved the 4 boundary-street corners in the current frame via the Extent tool's own `computeExtentCorners`, wrote them into `neighborhood_boundary.json.polygon`, re-poured (`map.json` 2112→1281) + re-baked the buildings slab (2111→1281). Both now = polygon-inside + the 16 activations, matching the builder. `d4f59afc`.
+
+**Also:** `building-overrides.json` was gitignored — the operator's curation lived only in the working dir (lost on a clean re-bake). Excepted it in `.gitignore` (alongside `neighborhood_boundary.json`) + committed the 16 activations as tracked source. `67a4fd6d`.
+
+**⭐ Lesson (folded to Reference across the suite):** membership curation is a **pour/bake-time filter, not live** — re-pour + re-bake to apply — and it **hangs on the polygon being persisted** (Commit writes it; a scene poured before the feature needs a re-Commit). Facts now live in FEATURES (user), OPERATIONS §7 (operator), PIPELINE §prebake + BAKE step 4 (wiring), NEIGHBORHOOD-INPUTS §5.2 (spec).
+
 ## 2026-06-30 — render-pipeline install: one manifest, fork retired (Fenn, Phases 1–3).
 
 The doctrine said "Preview == Production, byte-for-byte"; the code said post-FX was the exception — Preview ran a forked `PreviewPostFx` composer whose DoF driver was URL-param-based and missing heroDist/gates, so **Preview's DoF was silently wrong**. Fixed structurally, not patched:

@@ -9,7 +9,7 @@
 >
 > **Also landed this session:** `PUBLISH.md §0.5` (the multi-neighborhood deploy doctrine — "one factory, many destinations"); the Extent tool's **Commit + Pour merged into one "Pour → Designer" action** (`ExtentApp onBuild`, staged progress) — the two-button seam *was* the "2D updated, 3D stale" confusion.
 >
-> **▶ NEXT ARC — the Building Roster Editor** (per-building select → hide; the §5.2 first slice): **`HANDOFF-building-roster-editor.md`.** Motivated by the couple of SW buildings clipped just past the rim + the operator's "show all buildings inside the pre-gradient circle, then hide by hand" model. Still open/minor: marker tool in Stage (3D); per-scene hero keyframes; the post-commit **radius-edit-doesn't-persist** gap in the Extent tool (bump the slider → nothing writes until commit). **This work COMMITTED on `curb-offset-draw` + shipped to staging this session.**
+> **✅ LANDED — the Building Roster Editor** (per-building select → hide; the §5.2 first slice): doctrine now in `NEIGHBORHOOD-INPUTS §5.2` + the suite (FEATURES/OPERATIONS §7/PIPELINE/BAKE); brief retired → `cartograph/_archive/handoffs/HANDOFF-building-roster-editor-2026-07-05.md`. Motivated by the couple of SW buildings clipped just past the rim + the operator's "show all buildings inside the pre-gradient circle, then hide by hand" model. Still open/minor: marker tool in Stage (3D); per-scene hero keyframes; the post-commit **radius-edit-doesn't-persist** gap in the Extent tool (bump the slider → nothing writes until commit). **This work COMMITTED on `curb-offset-draw` + shipped to staging this session.**
 >
 > *The original build brief below is kept for the design rationale + the artifact contract — still accurate.*
 
