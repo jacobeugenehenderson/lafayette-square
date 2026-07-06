@@ -27,12 +27,14 @@ import {
   applyBarkUniforms,
   applyDeformerUniforms,
   applyOverheadDeformerUniforms,
+  injectFoliageSway,
   stampTreeVertexAttrs,
   treeSwayUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
 import { buildOverheadHulaGeometry } from '../components/impostorGeometry.js'
+import { captureTreeOverhead } from '../components/captureImpostor.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -943,16 +945,17 @@ function Skeleton({
   }, [anchorScene])
 
   // ── Overhead "hula" impostor (Browse preset) ────────────────────────────
-  // Derive this tree's canopy dims + leaf-tile UV rect straight from the loaded
-  // chassis, so the overhead disc-stack is skinned with the SAME leaf, on the
-  // SAME preview-atlas material, lit by the SAME studio rig — full optical
-  // parity (HANDOFF-overhead-hula-impostor.md). Built in the GLB's local frame
-  // so it drops into the same scale/center groups and lines up with the tree.
+  // The overhead look is the REAL tree from above: we render a one-shot top-down
+  // RTT CAPTURE of the loaded chassis (captureImpostor.js) — carrying the authored
+  // bark/leaves/size/density by construction — and skin a short stack of
+  // tessellated ruched discs with it. The shared deformer shader then ripples it
+  // (ruche/hula/wind). Reuses the captured-impostor arc rather than re-deriving a
+  // procedural canopy. (HANDOFF-overhead-hula-impostor.md.)
+  const gl = useThree((s) => s.gl)
+
   const overheadRec = useMemo(() => {
     if (!overheadMode) return null
-    // Detect leaf meshes the same multi-location way stampTreeVertexAttrs /
-    // ChassisPlate do (atlasKind can sit on geometry.userData, o.userData, or
-    // gltfExtras; raw chassis fall back to a name/material keyword).
+    // Canopy radius = max XZ extent over leaf meshes (fallback: all meshes).
     const LEAF_RE = /leaf|leaves|foliage|frond|needle/i
     const isLeaf = (o) => {
       const k = o.geometry?.userData?.atlasKind ?? o.userData?.atlasKind ?? o.userData?.gltfExtras?.atlasKind
@@ -961,55 +964,58 @@ function Skeleton({
       const mn = Array.isArray(o.material) ? o.material.map(m => m?.name).join(' ') : o.material?.name
       return LEAF_RE.test(o.name || '') || LEAF_RE.test(mn || '')
     }
-    // Pass 1: prefer explicit leaf meshes. Pass 2 (fallback): if none matched,
-    // use the highest-vertex mesh (the canopy usually dominates) so Browse never
-    // renders blank on an unstamped chassis.
-    const uvBox = (meshes) => {
-      let uMin = Infinity, uMax = -Infinity, vMin = Infinity, vMax = -Infinity, xz = 0
-      for (const o of meshes) {
-        const uv = o.geometry.attributes.uv, pos = o.geometry.attributes.position
-        if (uv) for (let i = 0; i < uv.count; i++) {
-          const u = uv.getX(i), v = uv.getY(i)
-          if (u < uMin) uMin = u; if (u > uMax) uMax = u
-          if (v < vMin) vMin = v; if (v > vMax) vMax = v
-        }
-        for (let i = 0; i < pos.count; i++) {
-          const r = Math.hypot(pos.getX(i), pos.getZ(i)); if (r > xz) xz = r
-        }
-      }
-      return { uMin, uMax, vMin, vMax, xz }
-    }
-    const leaves = [], all = []
+    let xzLeaf = 0, xzAll = 0
     scene.traverse((o) => {
       if (!o.isMesh || !o.geometry?.attributes?.position) return
-      all.push(o); if (isLeaf(o)) leaves.push(o)
+      const pos = o.geometry.attributes.position
+      const leaf = isLeaf(o)
+      for (let i = 0; i < pos.count; i++) {
+        const r = Math.hypot(pos.getX(i), pos.getZ(i))
+        if (r > xzAll) xzAll = r
+        if (leaf && r > xzLeaf) xzLeaf = r
+      }
     })
-    let picked = leaves
-    if (!picked.length && all.length) {
-      picked = [all.reduce((a, b) =>
-        (b.geometry.attributes.position.count > a.geometry.attributes.position.count ? b : a))]
-    }
-    if (!picked.length) return null
-    const { uMin, uMax, vMin, vMax, xz } = uvBox(picked)
-    if (!isFinite(uMin)) return null
-    return {
-      heightM: (typeof topY === 'number' ? topY : 12),
-      canopyRadiusM: Math.max(1, xz),
-      trunkFrac: 0.12,
-      leafRect: { offsetU: uMin, offsetV: vMin, scaleU: Math.max(1e-4, uMax - uMin), scaleV: Math.max(1e-4, vMax - vMin) },
-    }
+    const canopyRadiusM = Math.max(1, xzLeaf || xzAll)
+    return { heightM: (typeof topY === 'number' ? topY : 12), canopyRadiusM, trunkFrac: 0.12 }
   }, [overheadMode, scene, topY])
 
   const overheadGeo = useMemo(
     () => (overheadRec ? buildOverheadHulaGeometry(overheadRec, 'summer') : null),
     [overheadRec],
   )
-  // Bind the two knobs to the shared material each frame (gated per-vertex by
-  // aOverhead, so this never perturbs a mesh tree sharing the material).
-  useFrame(() => {
-    if (overheadMode && atlas.treeMaterial) {
-      applyOverheadDeformerUniforms(atlas.treeMaterial, overhead)
+
+  // Top-down RTT capture of the real tree → the disc skin. Re-captures when the
+  // chassis, authored material, or dims change; disposed on change/unmount.
+  const [captureTex, setCaptureTex] = useState(null)
+  useEffect(() => {
+    if (!overheadMode || !gl || !atlas.treeMaterial || !anchorScene || !overheadRec) {
+      setCaptureTex(null); return
     }
+    let tex = null
+    try {
+      tex = captureTreeOverhead(gl, anchorScene, atlas.treeMaterial, { canopyRadiusM: overheadRec.canopyRadiusM })
+    } catch (e) { console.warn('[overhead] capture failed', e) }
+    setCaptureTex(tex)
+    return () => { try { tex?.dispose() } catch {} }
+  }, [overheadMode, gl, atlas.treeMaterial, anchorScene, overheadRec])
+
+  // Disc material = the capture on a deformer-enabled MeshStandard (injectFoliageSway
+  // gives it the ruche/hula/wind vertex path; aBark=0 on the disc → the bark
+  // fragment path is skipped, so it shows the raw capture).
+  const captureMat = useMemo(() => {
+    if (!captureTex) return null
+    const m = new THREE.MeshStandardMaterial({
+      map: captureTex, alphaTest: 0.3, transparent: false,
+      side: THREE.DoubleSide, roughness: 1, metalness: 0,
+    })
+    injectFoliageSway(m)
+    return m
+  }, [captureTex])
+  useEffect(() => () => { try { captureMat?.dispose() } catch {} }, [captureMat])
+
+  // Bind the two knobs to the disc material each frame.
+  useFrame(() => {
+    if (overheadMode && captureMat) applyOverheadDeformerUniforms(captureMat, overhead)
   })
 
   const rot = forestryRotation ? [-Math.PI / 2, 0, 0] : [0, 0, 0]
@@ -1047,8 +1053,8 @@ function Skeleton({
     return (
       <group rotation={[rx, ry, rz]}>
         <group scale={[scale, scale, scale]}>
-          {overheadGeo && atlas.treeMaterial && Array.from({ length: n }, (_, i) => (
-            <mesh key={i} geometry={overheadGeo} material={atlas.treeMaterial}
+          {overheadGeo && captureMat && Array.from({ length: n }, (_, i) => (
+            <mesh key={i} geometry={overheadGeo} material={captureMat}
               position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
               rotation={[0, i * 2.399963267, 0]}
               castShadow receiveShadow />

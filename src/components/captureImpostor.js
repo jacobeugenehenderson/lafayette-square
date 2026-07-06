@@ -88,7 +88,7 @@ export function invalidateImpostorCaptures(lookName) {
  * @param {number} heightM            real tree height (metres) for the ortho fit
  * @param {number} canopyRadiusM      real half-width (metres) for the ortho fit
  */
-function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM) {
+function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   // Throwaway scene + ONE neutral light. Hemisphere (sky/ground) only — no
   // directional, so no baked-in shadow and no side that goes black. Flat-lit is
   // the v1 tradeoff (TOD relight via captured normals is deferred).
@@ -98,21 +98,34 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM) {
   scene.add(hemi, amb)
   scene.add(glbScene)
 
-  // Fit an ortho frustum to the tree's real box: width = 2·canopyRadius,
-  // height = heightM, both padded. The capture frame is wider of the two so the
-  // whole silhouette fits with the same metres-per-pixel on both axes (square
-  // RT), then the billboard quad is sized to the SAME real metres so it lands
-  // 1:1 on the world tree.
-  const halfW = Math.max(0.5, canopyRadiusM + FRAME_PAD_M)
-  const halfH = Math.max(0.5, heightM / 2 + FRAME_PAD_M)
-  const half = Math.max(halfW, halfH)
-  const cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 1000)
-  // Centre the frustum on the tree's mid-height; look down -Z (front-on), the
-  // GLB's +Y up. Distance is arbitrary for ortho — sit well outside the box.
-  const midY = heightM / 2
-  cam.position.set(0, midY, half * 4 + 50)
-  cam.up.set(0, 1, 0)
-  cam.lookAt(0, midY, 0)
+  let cam
+  if (opts.topDown) {
+    // OVERHEAD (plan-view) capture — the canopy from directly above, the skin
+    // for the overhead "hula" impostor (HANDOFF-overhead-hula-impostor.md). Frame
+    // the canopy FOOTPRINT (2·canopyRadius) square; camera high above looking
+    // straight down, up = -Z so +X reads image-right (mirrors the Browse camera).
+    const half = Math.max(0.5, canopyRadiusM + FRAME_PAD_M)
+    cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 4000)
+    cam.position.set(0, heightM + half * 2 + 50, 0)
+    cam.up.set(0, 0, -1)
+    cam.lookAt(0, 0, 0)
+  } else {
+    // Fit an ortho frustum to the tree's real box: width = 2·canopyRadius,
+    // height = heightM, both padded. The capture frame is wider of the two so the
+    // whole silhouette fits with the same metres-per-pixel on both axes (square
+    // RT), then the billboard quad is sized to the SAME real metres so it lands
+    // 1:1 on the world tree.
+    const halfW = Math.max(0.5, canopyRadiusM + FRAME_PAD_M)
+    const halfH = Math.max(0.5, heightM / 2 + FRAME_PAD_M)
+    const half = Math.max(halfW, halfH)
+    cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 1000)
+    // Centre the frustum on the tree's mid-height; look down -Z (front-on), the
+    // GLB's +Y up. Distance is arbitrary for ortho — sit well outside the box.
+    const midY = heightM / 2
+    cam.position.set(0, midY, half * 4 + 50)
+    cam.up.set(0, 1, 0)
+    cam.lookAt(0, midY, 0)
+  }
   cam.updateMatrixWorld(true)
   cam.updateProjectionMatrix()
 
@@ -201,6 +214,27 @@ function materializeForCapture(gltfScene, treeMaterial) {
   })
   const heightM = Number.isFinite(chMaxY) ? Math.max(1, chMaxY) : 12
   return { scene: root, heightM }
+}
+
+/**
+ * captureTreeOverhead — one-shot OVERHEAD (plan-view) RTT capture of a loaded
+ * tree GLB, skinned with the shared atlas material so the captured canopy carries
+ * the authored bark/leaves/size/density. This is the "overhead look": the REAL
+ * tree from directly above, the photographic skin for the overhead hula impostor
+ * (returns a THREE.Texture the caller owns + disposes). See the Salon Browse
+ * preset in SpecimenViewport.
+ *
+ * @param {THREE.WebGLRenderer} gl
+ * @param {THREE.Object3D} gltfScene    a loaded GLB scene (e.g. useGLTF().scene)
+ * @param {THREE.Material}  treeMaterial the shared/preview atlas material
+ * @param {object} dims                 { canopyRadiusM }
+ */
+export function captureTreeOverhead(gl, gltfScene, treeMaterial, { canopyRadiusM } = {}) {
+  if (!gl || !gltfScene || !treeMaterial) return null
+  const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial)
+  const tex = renderTreeToTexture(gl, scene, heightM, Math.max(1, canopyRadiusM || 5), { topDown: true })
+  tex.name = 'impostor-overhead-capture'
+  return tex
 }
 
 /**

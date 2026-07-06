@@ -801,36 +801,6 @@ function SlotCard({
           )}
         </div>
 
-        {/* Overhead-impostor knobs (lifted, bottom-right) — only meaningful in the
-            Browse (top-down) preset, where the GLB is replaced by the overhead
-            hula disc-stack. Ruffle depth + hula amount autosave to
-            composition.deformer.overhead (HANDOFF-overhead-hula-impostor.md). */}
-        <div style={{
-          position: 'absolute', bottom: 12, right: 12,
-          background: 'rgba(0,0,0,0.55)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 4, padding: '8px 10px',
-          display: 'flex', flexDirection: 'column', gap: 6,
-          fontSize: 10, color: '#bbb', pointerEvents: 'auto', width: 210,
-        }}>
-          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase', color: '#999' }}>
-            Overhead impostor · Browse view
-          </span>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 66 }}>Ruffle</span>
-            <input type="range" min={0} max={1} step={0.01} value={ruffleDepth}
-              onChange={(e) => { const v = parseFloat(e.target.value); setRuffleDepth(v); persistOverhead({ ruffleDepth: v }) }}
-              style={{ flex: 1 }} />
-            <span style={{ width: 30, textAlign: 'right', color: '#888' }}>{ruffleDepth.toFixed(2)}</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 66 }}>Hula</span>
-            <input type="range" min={0} max={3} step={0.02} value={hulaAmount}
-              onChange={(e) => { const v = parseFloat(e.target.value); setHulaAmount(v); persistOverhead({ hulaAmount: v }) }}
-              style={{ flex: 1 }} />
-            <span style={{ width: 30, textAlign: 'right', color: '#888' }}>{hulaAmount.toFixed(2)}</span>
-          </label>
-        </div>
       </div>
 
       {/* Controls rail */}
@@ -879,6 +849,10 @@ function SlotCard({
           onApprovedOnlyChange={onApprovedOnlyChange}
           candidateScope={candidateScope}
           recommendedNames={recommendedNames}
+          ruffleDepth={ruffleDepth}
+          hulaAmount={hulaAmount}
+          onRuffleChange={(v) => { setRuffleDepth(v); persistOverhead({ ruffleDepth: v }) }}
+          onHulaChange={(v) => { setHulaAmount(v); persistOverhead({ hulaAmount: v }) }}
         />
 
         {/* Reference dossier — educational, not a comparison tool (2026-06-25),
@@ -959,6 +933,7 @@ function SalonControlsPanel({
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
   candidateScope, recommendedNames,
   barkOpen, onBarkOpenChange,
+  ruffleDepth = 0.35, hulaAmount = 0.5, onRuffleChange, onHulaChange,
 }) {
   const matchOptions = useArboristStore(s => s.salonOptions)   // §9 matcher ranked options (null if no dossier)
   // Chassis picker filtered by morphology suggestion: matching-morphology
@@ -1250,6 +1225,34 @@ function SalonControlsPanel({
           onChange={(e) => onParams({ leaves: { tintBack: e.target.value } })}
           style={colorStyle} />
       </Row>
+      </CollapsibleSection>
+      {/* Overhead impostor — the ruche + hula motion for the top-down (Browse)
+          view. The canopy skin + size/density come from the capture of the real
+          tree (chassis / Leaves controls above); these two dials shape the MOTION.
+          HANDOFF-overhead-hula-impostor.md. */}
+      <CollapsibleSection title="Overhead (Browse view)">
+        <div style={{ fontSize: 10, color: '#8a93a0', margin: '0 0 4px', lineHeight: 1.3 }}>
+          Switch the viewport to <b>Browse</b> to see these. The canopy is a top-down
+          capture of this tree; the dials add the ruffle + hula motion.
+        </div>
+        <Row label="Ruffle">
+          <input type="range" min={0} max={1} step={0.01} value={ruffleDepth}
+            onChange={(e) => onRuffleChange?.(parseFloat(e.target.value))}
+            style={{ flex: 1, accentColor: '#e8b860' }}
+            title="Depth of the standing rim scallop (the ruche). Flexes the canopy edge." />
+          <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
+            {ruffleDepth.toFixed(2)}
+          </span>
+        </Row>
+        <Row label="Hula">
+          <input type="range" min={0} max={3} step={0.02} value={hulaAmount}
+            onChange={(e) => onHulaChange?.(parseFloat(e.target.value))}
+            style={{ flex: 1, accentColor: '#e8b860' }}
+            title="Amount of the base-anchored canopy rock (the hula)." />
+          <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
+            {hulaAmount.toFixed(2)}
+          </span>
+        </Row>
       </CollapsibleSection>
     </div>
   )

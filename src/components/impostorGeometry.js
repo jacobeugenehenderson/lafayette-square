@@ -121,136 +121,95 @@ export function buildImpostorGeometry(rec, season = 'summer') {
   return g
 }
 
-// Deterministic pseudo-random in [0,1) — stable across rebuilds so the foliage
-// layout doesn't shuffle every render (no Math.random).
-function _h3(a, b, c) {
-  const x = Math.sin(a * 12.9898 + b * 78.233 + c * 37.719) * 43758.5453
-  return x - Math.floor(x)
-}
-
 /**
- * buildOverheadHulaGeometry — the OVERHEAD impostor: a stack of horizontal
- * "cake-layer" canopies of FLAT LEAF CARDS, seen from directly above (Browse /
- * plan view). Doctrine: HANDOFF-overhead-hula-impostor.md.
+ * buildOverheadHulaGeometry — the OVERHEAD impostor's carrier geometry: a short
+ * stack of tessellated horizontal discs ("cake-layers"), each meant to be SKINNED
+ * with a top-down RTT CAPTURE of the real tree (captureImpostor.js#captureTreeOverhead)
+ * — the actual canopy-from-above, not procedural leaves. Doctrine + history:
+ * HANDOFF-overhead-hula-impostor.md, and the captured-impostor arc (bake-impostors
+ * / captureImpostor). The disc carries planar [0,1] UVs so the square capture maps
+ * straight on. The shared-material vertex shader then layers three deformers:
+ *   1. ruche-flex — a STANDING rim scallop (aRuffle = sin(FOLDS·θ)·radialFrac, NO
+ *                   travel term) whose amplitude flexes with uRuffleDepth
+ *   2. hula-rock  — each disc rocks base-anchored + phase-lagged up the stack (uHulaAmount)
+ *   3. shared wind — treeSwayUniforms leans + gusts the stack downwind.
+ * Per-instance fold phase is free: the scallop is baked local; instance rotY
+ * shifts its world phase → no stamped grid across a neighbourhood.
  *
- * Where the front-on `buildImpostorGeometry` emits vertical cross-cards, this
- * fills each cake-layer with a field of small alpha-cutout leaf cards (each card
- * samples the WHOLE leaf tile, so it reads as foliage from above — not one
- * stretched leaf) scattered on a jittered polar grid, at rising heights. Cards
- * get slightly varied normals so the studio light DAPPLES them into a canopy
- * instead of a flat plate. The shared-material vertex shader layers three
- * animated deformers on top (treeAtlasMaterial.js#injectFoliageSway):
- *   1. ruche-flex   — the shader flexes a STANDING azimuthal scallop baked per
- *                     card (aRuffle = sin(FOLDS·θ), NO travel term) → uRuffleDepth
- *   2. hula-rock    — each layer rocks on a slowly-drifting horizontal axis,
- *                     base-anchored + phase-lagged up the stack → uHulaAmount
- *   3. shared wind  — the SAME treeSwayUniforms the mesh trees use leans + gusts
- *                     the whole stack downwind (aWindTier=3 → full canopy flutter).
- * Per-instance fold phase is FREE: the scallop is baked in local space; the
- * per-placement rotY (instance matrix) shifts its world phase → no stamped grid.
- *
- * @param {object} rec     { heightM, canopyRadiusM, trunkFrac, leafRect } (or an
- *                         impostorBySpecies[species] record with those fields)
- * @param {string} season  'summer' | 'winter' | 'spring' | 'fall'
- * @param {object} opts    { folds, layers, rings, sectors, cardScale } overrides
+ * @param {object} rec     { heightM, canopyRadiusM, trunkFrac }
+ * @param {string} season  'summer' | 'winter' | 'spring' | 'fall' (unused here; kept for parity)
+ * @param {object} opts    { folds, layers, perimeter, radialRings, pad } overrides
  */
 export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
   if (!rec) return null
 
   const H = rec.heightM || 14
   const R = Math.max(0.5, rec.canopyRadiusM || 5)
-  const trunkFrac = Math.min(0.6, Math.max(0, rec.trunkFrac ?? 0.15))
-  const leafRect = rec.leafRect
-    || (rec.seasons?.[season] || rec.seasons?.summer || []).find(l => l.kind !== 'bark')?.atlasRect
-    || { offsetU: 0, offsetV: 0, scaleU: 1, scaleV: 1 }
+  const pad = opts.pad ?? 1.5                     // must match captureTreeOverhead's FRAME_PAD_M
+  const discR = R + pad                           // disc extent = capture frame half-extent
 
-  const FOLDS = Math.max(3, Math.round(opts.folds ?? 7))       // azimuthal scallop count
-  const canopySlabs = (rec.seasons?.[season] || rec.seasons?.summer || [])
-    .filter(l => l.kind !== 'bark').length
-  const NLAYERS = Math.max(3, opts.layers ?? canopySlabs ?? 5)  // cake layers up the crown
-  const RINGS = Math.max(2, Math.round(opts.rings ?? 4))        // radial rings of cards / layer
-  const BASE_SECTORS = Math.max(6, Math.round(opts.sectors ?? 16))
-  const cardScale = opts.cardScale ?? 0.55                      // card footprint as frac of R
+  const FOLDS = Math.max(3, Math.round(opts.folds ?? 7))          // rim scallop count
+  const P = Math.max(3 * FOLDS, Math.round(opts.perimeter ?? 48)) // angular segments
+  const RR = Math.max(1, Math.round(opts.radialRings ?? 4))       // radial tessellation
+  const NLAYERS = Math.max(1, Math.round(opts.layers ?? 3))       // stacked discs (parallax)
+  // The stack sits at the crown — a thin canopy shell [yLo,1] so the hula is
+  // base-anchored (lower discs barely move, the top rocks) but all discs read
+  // from above. yLo defaults just below the crown.
+  const yLo = opts.yLo ?? 0.78
 
   const positions = []
   const uvs = []
-  const normals = []
-  const aBark = []
-  const aBarkRegion = []
   const aWindTier = []
   const aTreeHeightNorm = []
   const aRuffle = []
   const aOverhead = []
+  const aBark = []
   const indices = []
 
-  const { offsetU, offsetV, scaleU, scaleV } = leafRect
-  // Leaf-tile UV corners (bl, br, tr, tl) — the whole tile per card.
-  const uvBL = [offsetU, offsetV + scaleV]
-  const uvBR = [offsetU + scaleU, offsetV + scaleV]
-  const uvTR = [offsetU + scaleU, offsetV]
-  const uvTL = [offsetU, offsetV]
-
-  // One flat leaf card: a quad centred at (cx,cy,cz), lying near-horizontal,
-  // rotated by phi about Y, with a slightly tilted normal `n` for dapple.
-  const pushCard = (cx, cy, cz, size, phi, n, ruffle, yNorm) => {
-    const half = size * 0.5
-    const c = Math.cos(phi), s = Math.sin(phi)
-    // Two in-plane axes (horizontal card, rotated about Y).
-    const ux = c * half, uz = s * half
-    const vx = -s * half, vz = c * half
-    const base = positions.length / 3
-    // 4 corners: (-u-v)(+u-v)(+u+v)(-u+v)
-    positions.push(cx - ux - vx, cy, cz - uz - vz)
-    positions.push(cx + ux - vx, cy, cz + uz - vz)
-    positions.push(cx + ux + vx, cy, cz + uz + vz)
-    positions.push(cx - ux + vx, cy, cz - uz + vz)
-    uvs.push(uvBL[0], uvBL[1], uvBR[0], uvBR[1], uvTR[0], uvTR[1], uvTL[0], uvTL[1])
-    for (let v = 0; v < 4; v++) {
-      normals.push(n[0], n[1], n[2])
-      aBark.push(0); aBarkRegion.push(0); aWindTier.push(3)
-      aTreeHeightNorm.push(yNorm); aRuffle.push(ruffle); aOverhead.push(1)
-    }
-    indices.push(base, base + 1, base + 2, base, base + 2, base + 3)
-  }
-
-  const profile = (t) => 0.55 + 0.45 * Math.sin(Math.PI * (0.15 + 0.85 * t))
-  const layerThk = Math.max(0.4, H * 0.06)   // vertical scatter within a layer
-
   for (let li = 0; li < NLAYERS; li++) {
-    const t = NLAYERS === 1 ? 0.5 : li / (NLAYERS - 1)
-    const yNorm = trunkFrac + (1 - trunkFrac) * t
+    const lt = NLAYERS === 1 ? 1 : li / (NLAYERS - 1)
+    const yNorm = yLo + (1 - yLo) * lt
     const y = yNorm * H
-    const radius = R * profile(t)
+    // Slight per-layer size taper (upper discs a touch smaller) for gentle dome.
+    const layerR = discR * (0.9 + 0.1 * lt)
+    const base = positions.length / 3
 
-    // Centre card (fills the middle so the crown isn't hollow from above).
-    pushCard(0, y + (_h3(li, 0, 9) - 0.5) * layerThk, 0,
-      R * cardScale * 1.1, _h3(li, 0, 1) * Math.PI * 2, [0, 1, 0], 0, yNorm)
+    // Center vertex.
+    positions.push(0, y, 0)
+    uvs.push(0.5, 0.5)
+    aWindTier.push(3); aTreeHeightNorm.push(yNorm); aRuffle.push(0); aOverhead.push(1); aBark.push(0)
 
-    for (let ring = 0; ring < RINGS; ring++) {
-      const rFrac = (ring + 0.5) / RINGS
-      const ringR = radius * rFrac
-      const sectors = Math.max(4, Math.round(BASE_SECTORS * rFrac))
-      for (let sct = 0; sct < sectors; sct++) {
-        const jr = _h3(li, ring, sct + 1)
-        const jt = _h3(li, ring, sct + 51)
-        const jp = _h3(li, ring, sct + 101)
-        const jn1 = _h3(li, ring, sct + 151)
-        const jn2 = _h3(li, ring, sct + 201)
-        const theta = (sct + (jt - 0.5) * 0.8) / sectors * Math.PI * 2
-        const rr = ringR * (0.85 + 0.3 * jr)
-        const cx = rr * Math.cos(theta)
-        const cz = rr * Math.sin(theta)
-        const cy = y + (jp - 0.5) * layerThk
-        // Slightly tilted normal → the studio directional light dapples the
-        // canopy instead of lighting every card identically.
-        const nx = (jn1 - 0.5) * 0.8, nz = (jn2 - 0.5) * 0.8
-        const nl = Math.hypot(nx, 1.5, nz)
-        const n = [nx / nl, 1.5 / nl, nz / nl]
-        const size = R * cardScale * (0.7 + 0.5 * jr)
-        const phi = jp * Math.PI * 2
-        // Standing azimuthal scallop, baked local; rotY rotates it per instance.
-        const ruffle = Math.sin(FOLDS * theta)
-        pushCard(cx, cy, cz, size, phi, n, ruffle, yNorm)
+    // Radial rings × angular segments.
+    for (let ri = 1; ri <= RR; ri++) {
+      const rFrac = ri / RR
+      const rad = layerR * rFrac
+      for (let j = 0; j < P; j++) {
+        const theta = (j / P) * Math.PI * 2
+        const cx = rad * Math.cos(theta)
+        const cz = rad * Math.sin(theta)
+        positions.push(cx, y, cz)
+        // Planar UV [0,1] over the disc's own extent → the full square capture.
+        uvs.push(0.5 + 0.5 * cx / layerR, 0.5 + 0.5 * cz / layerR)
+        aWindTier.push(3); aTreeHeightNorm.push(yNorm)
+        // Rim-weighted standing scallop: 0 at center, full at the rim.
+        aRuffle.push(Math.sin(FOLDS * theta) * rFrac)
+        aOverhead.push(1); aBark.push(0)
+      }
+    }
+
+    // Indices: center fan to ring 1, then quad strips between rings.
+    for (let j = 0; j < P; j++) {
+      const a = base + 1 + j
+      const b = base + 1 + ((j + 1) % P)
+      indices.push(base, a, b)
+    }
+    for (let ri = 0; ri < RR - 1; ri++) {
+      const r0 = base + 1 + ri * P
+      const r1 = base + 1 + (ri + 1) * P
+      for (let j = 0; j < P; j++) {
+        const jn = (j + 1) % P
+        indices.push(r0 + j, r0 + jn, r1 + j)
+        indices.push(r0 + jn, r1 + jn, r1 + j)
       }
     }
   }
@@ -260,15 +219,17 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
-  g.setAttribute('aBark', new THREE.Float32BufferAttribute(aBark, 1))
-  g.setAttribute('aBarkRegion', new THREE.Float32BufferAttribute(aBarkRegion, 1))
+  // Discs face up (+Y) — lit from the sky in the plan view.
+  const nrm = new Float32Array(positions.length)
+  for (let i = 0; i < nrm.length; i += 3) { nrm[i + 1] = 1 }
+  g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
   g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
   g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
-  // Overhead-only deformer attributes. Mesh trees lack these (default 0) → the
-  // shader's ruche+hula block is a no-op on them (bit-exact regression-safe).
   g.setAttribute('aRuffle', new THREE.Float32BufferAttribute(aRuffle, 1))
   g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  // aBark=0 everywhere → the shared material's bark path is skipped; the disc
+  // shows the raw map sample (the overhead capture) on the leaf path.
+  g.setAttribute('aBark', new THREE.Float32BufferAttribute(aBark, 1))
   g.setIndex(indices)
   g.computeBoundingSphere()
   return g
