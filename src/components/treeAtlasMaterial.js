@@ -170,7 +170,7 @@ if (typeof window !== 'undefined') {
   }
 }
 
-function injectFoliageSway(material) {
+export function injectFoliageSway(material) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTreeSanitizeOn    = treeSanitizeUniform
     shader.uniforms.uTime              = treeSwayUniforms.uTime
@@ -288,6 +288,15 @@ function injectFoliageSway(material) {
     shader.uniforms.uDeformTwistRange  = { value: new THREE.Vector2(0, 0) }
     shader.uniforms.uDeformWanderRange = { value: new THREE.Vector2(0, 0) }
     shader.uniforms.uDeformSeed        = { value: new THREE.Vector2(0, 0) }
+    // Overhead "hula" impostor deformers (HANDOFF-overhead-hula-impostor.md).
+    // Two authored knobs, both metres-as-fraction: uRuffleDepth flexes the
+    // baked rim scallop (the ruche), uHulaAmount drives the base-anchored
+    // per-layer disc rock (the hula). Gated per-vertex by aOverhead (only the
+    // overhead disc geometry carries it), so on every mesh tree — which lacks
+    // aOverhead/aRuffle → both default 0 → the block is a no-op, bit-exact
+    // regression-safe. Default 0 here too (belt-and-suspenders identity).
+    shader.uniforms.uRuffleDepth = { value: 0 }
+    shader.uniforms.uHulaAmount  = { value: 0 }
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -318,6 +327,11 @@ function injectFoliageSway(material) {
          uniform vec2 uDeformTwistRange;
          uniform vec2 uDeformWanderRange;
          uniform vec2 uDeformSeed;
+         // Overhead "hula" impostor — per-vertex gate + baked standing scallop.
+         attribute float aOverhead;   // 1 on overhead disc verts; absent → 0 on mesh
+         attribute float aRuffle;     // baked sin(FOLDS·θ) rim scallop, [-1,1]
+         uniform float uRuffleDepth;  // ruche flex amplitude (knob 1)
+         uniform float uHulaAmount;   // hula rock amplitude (knob 2)
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vLocalY;
@@ -403,6 +417,36 @@ function injectFoliageSway(material) {
          // (same main() scope). Wind then oscillates around this deformed pose.
          transformed = cantRot * transformed;
          transformed.xz += cantWander;
+         // ── Overhead "hula" impostor deformers (ruche → hula → [wind below]) ──
+         // Layered in order of intrinsic-ness, BEFORE the shared wind sway, so
+         // wind oscillates around this deformed pose (exactly as cantRot does).
+         // Gated by aOverhead: on mesh trees (aOverhead=0) this whole block is a
+         // no-op — bit-exact regression-safe. See HANDOFF-overhead-hula-impostor.md.
+         if (aOverhead > 0.5) {
+           // 1. RUCHE — the tree's resting shape. Flex the amplitude of the
+           //    baked standing scallop (aRuffle = sin(FOLDS·θ)); NO travel term,
+           //    so fold #3 stays fold #3 (Jacob rejected the −ωt "swimming").
+           //    Displaced both radially (a flower from above) and vertically (a
+           //    relief the wind can catch). Gentle breathing over time — the
+           //    shader flexes amplitude; it does not move the folds around.
+           float ovR    = length(position.xz);
+           vec2  ovDir  = ovR > 1e-4 ? position.xz / ovR : vec2(0.0);
+           float breathe = 1.0 + 0.12 * sin(uTime * 0.6 + aTreeHeightNorm * 4.0);
+           float ovAmp  = ovR * uRuffleDepth * breathe;
+           transformed.xz += ovDir * (aRuffle * ovAmp);
+           transformed.y  += aRuffle * ovAmp * 0.45;
+           // 2. HULA — the tree's own gentle life. The whole disc-stack rocks on
+           //    a horizontal axis whose direction slowly DRIFTS (non-directional),
+           //    base-anchored (amplitude ∝ aTreeHeightNorm → trunk-height layers
+           //    barely move, the crown rocks) and phase-LAGGED up the stack so
+           //    the column bends in a soft S-wave rather than swinging rigidly.
+           float hulaT   = uTime * 0.7;
+           float hulaDrA = uTime * 0.22;                 // slow drift of the bend axis
+           vec2  hulaDir = vec2(cos(hulaDrA), sin(hulaDrA));
+           float hulaLag = aTreeHeightNorm * 2.4;        // lag up the column → S-curve
+           float hulaBend = uHulaAmount * aTreeHeightNorm * sin(hulaT - hulaLag);
+           transformed.xz += hulaDir * hulaBend;
+         }
          vLampGlow = aLampGlow;
          vBark = aBark;
          vBarkRegion = aBarkRegion;
@@ -1301,6 +1345,20 @@ export function applyDeformerUniforms(material, deformerRange, seed = null) {
     if (Array.isArray(seed) && seed.length >= 2) shader.uniforms.uDeformSeed.value.set(seed[0], seed[1])
     else shader.uniforms.uDeformSeed.value.set(0, 0)
   }
+}
+
+// Overhead "hula" impostor — per-draw knob binding (HANDOFF-overhead-hula-impostor.md).
+// Sibling of applyDeformerUniforms: the overhead disc preview (and, later, the LS
+// impostor-tier draw) sets uRuffleDepth/uHulaAmount right before its draw. Gated
+// per-vertex by aOverhead, so setting these never touches a mesh tree that shares
+// the material. Absent/nullish → 0 → identity (the discs sit flat + still).
+export function applyOverheadDeformerUniforms(material, overhead) {
+  const shader = material?.userData?.shader
+  if (!shader) return
+  const o = overhead || {}
+  const num = (v, d) => (Number.isFinite(v) ? v : d)
+  if (shader.uniforms.uRuffleDepth) shader.uniforms.uRuffleDepth.value = num(o.ruffleDepth, 0)
+  if (shader.uniforms.uHulaAmount)  shader.uniforms.uHulaAmount.value  = num(o.hulaAmount, 0)
 }
 
 // Applies per-draw bark uniforms. Moved here from InstancedTrees.jsx by

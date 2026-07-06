@@ -43,6 +43,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import SpecimenViewport from './SpecimenViewport.jsx'
+import OverheadHulaPreview from './OverheadHulaPreview.jsx'
 import ChassisPlate from './ChassisPlate.jsx'
 
 // Same heuristic mapping ProceduralWorkstage uses to drive the yardstick
@@ -569,6 +570,10 @@ function SlotCard({
   // uses. One shader implementation across both surfaces — Birch's interim
   // chunk-replication in SpecimenViewport retires with this commit.
   const [previewUrls, setPreviewUrls] = useState(null)  // { glbUrl, atlasUrl, normalUrl, manifestUrl }
+  // Overhead-hula plan-view surface (HANDOFF-overhead-hula-impostor.md) — swaps
+  // over the chassis preview so the operator can perfect the overhead impostor's
+  // ruche + hula motion looking straight down, with its two knobs.
+  const [overheadMode, setOverheadMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
   const [perfSample, setPerfSample] = useState(null)
@@ -721,9 +726,20 @@ function SlotCard({
       <div style={{
         flex: 1, minWidth: 0, position: 'relative', background: '#0d0d10',
       }}>
-        {loading && <div style={loaderStyle}>regenerating…</div>}
-        {previewError && <div style={{ ...loaderStyle, color: '#f88' }}>{previewError}</div>}
-        {previewUrls && !previewError && (
+        {/* Chassis ⇄ Overhead toggle — always available, top-right. Overhead
+            swaps in the plan-view hula surface + its two knobs. */}
+        <button type="button"
+          onClick={() => setOverheadMode(v => !v)}
+          style={overheadToggleStyle(overheadMode)}
+          title="Perfect the OVERHEAD impostor (ruched hula discs) looking straight down.">
+          {overheadMode ? '← Chassis' : 'Overhead ▦'}
+        </button>
+        {overheadMode && (
+          <OverheadHulaPreview deformer={deformer} onParams={onParams} />
+        )}
+        {!overheadMode && loading && <div style={loaderStyle}>regenerating…</div>}
+        {!overheadMode && previewError && <div style={{ ...loaderStyle, color: '#f88' }}>{previewError}</div>}
+        {!overheadMode && previewUrls && !previewError && (
           <SpecimenViewport
             mode="skeleton"
             glbUrl={previewUrls.glbUrl}
@@ -751,9 +767,11 @@ function SlotCard({
             pipeline. One chassis at a time exerts no GPU budget pressure
             in the workstage; the perf gauge below still reports actual
             loaded counts. */}
-        <PerfGauge sample={perfSample} />
+        {!overheadMode && <PerfGauge sample={perfSample} />}
 
-        {/* Wind toggle (lifted) */}
+        {/* Wind toggle (lifted) — chassis-preview only; the overhead surface
+            carries its own live-gust toggle. */}
+        {!overheadMode && (
         <div style={{
           position: 'absolute', bottom: 12, left: 12,
           background: 'rgba(0,0,0,0.55)',
@@ -779,6 +797,7 @@ function SlotCard({
             </>
           )}
         </div>
+        )}
       </div>
 
       {/* Controls rail */}
@@ -1261,6 +1280,20 @@ const loaderStyle = {
   display: 'grid', placeItems: 'center',
   color: '#888', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
   pointerEvents: 'none',
+}
+
+// Chassis ⇄ Overhead toggle, pinned top-right of the viewport (above both the
+// chassis preview and the overhead plan-view surface — z-order via zIndex).
+function overheadToggleStyle(active) {
+  return {
+    position: 'absolute', top: 12, right: 12, zIndex: 5,
+    padding: '4px 10px', fontSize: 10,
+    background: active ? 'rgba(232,184,96,0.20)' : 'rgba(20,20,24,0.85)',
+    color: active ? '#fff' : '#ccc',
+    border: '1px solid ' + (active ? 'rgba(232,184,96,0.6)' : 'rgba(255,255,255,0.15)'),
+    borderRadius: 3, fontFamily: 'inherit', cursor: 'pointer',
+    letterSpacing: '0.08em', textTransform: 'uppercase',
+  }
 }
 
 function btnStyle() {
