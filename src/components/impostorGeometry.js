@@ -290,27 +290,41 @@ export function buildBranchSkeleton(rec, opts = {}) {
   const aOverhead = []
   const indices = []
 
-  // Emit tapered horizontal ribbons along a node path [{x,y,z,w}, …].
+  // Emit ONE continuous tapered ribbon along a node path [{x,y,z,w}, …], with
+  // MITERED joins (each node shares one L/R vertex pair, perpendicular averaged
+  // across the bend) so there are no V-gaps at the segment joints.
   const emitLimb = (nodes) => {
-    for (let k = 0; k < nodes.length - 1; k++) {
-      const p0 = nodes[k], p1 = nodes[k + 1]
-      let dx = p1.x - p0.x, dz = p1.z - p0.z
-      const dl = Math.hypot(dx, dz) || 1
-      dx /= dl; dz /= dl
-      const px = -dz, pz = dx                 // perp in XZ
-      const b = positions.length / 3
-      const w0 = p0.w * 0.5, w1 = p1.w * 0.5
-      positions.push(p0.x - px * w0, p0.y, p0.z - pz * w0)
-      positions.push(p0.x + px * w0, p0.y, p0.z + pz * w0)
-      positions.push(p1.x + px * w1, p1.y, p1.z + pz * w1)
-      positions.push(p1.x - px * w1, p1.y, p1.z - pz * w1)
-      const h0 = Math.min(1, Math.max(0, p0.y / H)), h1 = Math.min(1, Math.max(0, p1.y / H))
-      const hh = [h0, h0, h1, h1]
-      for (let v = 0; v < 4; v++) {
-        normals.push(0, 1, 0)
-        aWindTier.push(1); aTreeHeightNorm.push(hh[v]); aRuffle.push(0); aOverhead.push(1)
+    const L = nodes.length
+    if (L < 2) return
+    const startBase = positions.length / 3
+    for (let k = 0; k < L; k++) {
+      // Incoming + outgoing segment directions (XZ), averaged → miter direction.
+      let ix = 0, iz = 0, ox = 0, oz = 0
+      if (k > 0) {
+        ix = nodes[k].x - nodes[k - 1].x; iz = nodes[k].z - nodes[k - 1].z
+        const l = Math.hypot(ix, iz) || 1; ix /= l; iz /= l
       }
-      indices.push(b, b + 1, b + 2, b, b + 2, b + 3)
+      if (k < L - 1) {
+        ox = nodes[k + 1].x - nodes[k].x; oz = nodes[k + 1].z - nodes[k].z
+        const l = Math.hypot(ox, oz) || 1; ox /= l; oz /= l
+      }
+      let dx = ix + ox, dz = iz + oz
+      const dl = Math.hypot(dx, dz)
+      if (dl < 1e-4) { dx = ox || ix; dz = oz || iz } else { dx /= dl; dz /= dl }
+      const px = -dz, pz = dx                 // perp
+      const n = nodes[k], w = n.w * 0.5
+      positions.push(n.x - px * w, n.y, n.z - pz * w)  // left
+      positions.push(n.x + px * w, n.y, n.z + pz * w)  // right
+      const h = Math.min(1, Math.max(0, n.y / H))
+      for (let v = 0; v < 2; v++) {
+        normals.push(0, 1, 0)
+        aWindTier.push(1); aTreeHeightNorm.push(h); aRuffle.push(0); aOverhead.push(1)
+      }
+    }
+    for (let k = 0; k < L - 1; k++) {
+      const a = startBase + k * 2, b = a + 1
+      const c = startBase + (k + 1) * 2, d = c + 1
+      indices.push(a, b, d, a, d, c)         // shared verts → seamless
     }
   }
 
