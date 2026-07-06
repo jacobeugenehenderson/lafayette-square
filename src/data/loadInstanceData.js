@@ -57,6 +57,29 @@ const MANIFESTS = {
     // hardcodes the `cartograph/data/lafayette-square/` path (LafayettePark:9).
     parkPolygon:      () => import('../../cartograph/data/lafayette-square/clean/park-polygon.json'),
   },
+
+  'hipointe-demun': {
+    // Installation #2 — content in its OWN payload (cartograph/data/hipointe-demun/
+    // content/), authored in §5.1.1 shape. The envelope normalizer (below) unwraps
+    // {meta,listings}/{meta,menus} into the reader's {landmarks}/flat-menus shape.
+    landmarks: () => import('../../cartograph/data/hipointe-demun/content/listings.json'),
+    menus:     () => import('../../cartograph/data/hipointe-demun/content/menus.json'),
+    buildings: () => import('../../cartograph/data/hipointe-demun/content/roster.json'),
+    // seedEvents / streets / facadeMapping / render geometry: HPDM has none here —
+    // loadInstanceData returns null and consumers guard (empty events, no facade
+    // photo, streets stat 0). Park/labels/lamps are LS-guarded off for non-LS looks.
+  },
+}
+
+// Different installations wrap their content differently (LS: `{landmarks}` / flat
+// menus; HPDM §5.1.1: `{meta,listings}` / `{meta,menus}`). Unwrap to the reader's
+// expected shape here — one place — so consumers stay installation-blind. LS
+// objects pass through unchanged (identity preserved).
+function normalizeEnvelope(name, raw) {
+  if (!raw) return raw
+  if (name === 'landmarks') return raw.landmarks ? raw : { landmarks: raw.listings ?? [] }
+  if (name === 'menus') return raw.menus ?? raw
+  return raw
 }
 
 const _cache = new Map() // `${lookId}/${name}` → { value, ready }
@@ -77,7 +100,7 @@ export function loadInstanceData(lookId, name) {
   }
 
   record.ready = thunk()
-    .then(m => { record.value = m.default; return record.value })
+    .then(m => { record.value = normalizeEnvelope(name, m.default); return record.value })
     .catch(e => {
       console.warn(`[loadInstanceData] load failed for ${key}:`, e)
       return null

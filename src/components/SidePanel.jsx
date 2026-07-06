@@ -755,7 +755,8 @@ function BulletinMasthead() {
   const places = listings.filter(l => l.category !== 'residential').length
 
   const stats = [
-    { value: '2,164', label: 'Residents', color: 'rgba(180,160,140,0.12)' },      // warm taupe
+    { value: INSTANCE.profile.population.toLocaleString(), label: 'Residents', color: 'rgba(180,160,140,0.12)' },      // warm taupe — profile Layer 0
+
     { value: (_buildingCount || _buildings.length).toLocaleString(), label: 'Buildings', color: 'rgba(160,130,100,0.12)' }, // sandstone
     { value: places, label: 'Places', color: 'rgba(61,175,138,0.12)' },          // verdigris
     { value: _namedStreetCount, label: 'Streets', color: 'rgba(140,150,170,0.12)' }, // slate blue

@@ -84,7 +84,7 @@ function _buildBareBuildingListings(buildings) {
           stories ? `${stories}-story` : null,
           style ? `${style} style.` : null,
           zoningLabel ? `Zoned ${zoningLabel}.` : null,
-          historicStatus === 'contributing' ? 'Contributing structure in the Lafayette Square Historic District.' : null,
+          historicStatus === 'contributing' ? `Contributing structure in the ${INSTANCE.profile.historicDistrictName}.` : null,
           sqft ? `${sqft.toLocaleString()} sq ft.` : null,
         ].filter(Boolean).join(' '),
         _bare: true,
