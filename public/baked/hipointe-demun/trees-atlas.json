@@ -1,0 +1,7212 @@
+{
+  "generatedAt": "2026-07-06T02:28:37.900Z",
+  "lookName": "hipointe-demun",
+  "rosterSize": 30,
+  "materialDefaults": {
+    "roughness": 0.85,
+    "metalness": 0
+  },
+  "atlas": {
+    "width": 4091,
+    "height": 4408,
+    "colorPath": "/baked/hipointe-demun/trees-atlas-color.png",
+    "normalPath": "/baked/hipointe-demun/trees-atlas-normal.png",
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.5,
+    "alphaTest": 0.5,
+    "doubleSided": true
+  },
+  "tiles": [
+    {
+      "tileIndex": 0,
+      "key": "f24561453b5f|026eed9e6935",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "maple_sugar",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 2,
+          "matName": "salonBark"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 3,
+          "matName": "salonBark"
+        },
+        {
+          "species": "blackgum",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "maple_silver",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "oak_white",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "birch",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "oak_bur",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 1,
+      "key": "abf702366ce6|2e6d9d5efe05",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.2551943290149108,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 2,
+      "key": "19ec8d128907|9baa036ecb92",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "maple_red",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2876,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 3,
+      "key": "3d7d8613ae27|a0320064e00d",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "ash_green",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 4,
+      "key": "9c0dbb9fa2fa|4248af0d275f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 5,
+      "key": "3fa6c3baed73|5c578a0f839f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "quercus_alba",
+          "variantId": 1,
+          "matName": "White-Oak_Bark"
+        },
+        {
+          "species": "quercus_alba",
+          "variantId": 2,
+          "matName": "White-Oak_Bark"
+        }
+      ],
+      "content": {
+        "x": 1836,
+        "y": 4,
+        "w": 512,
+        "h": 838
+      },
+      "uvTransform": {
+        "offsetU": 0.4487900268882914,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.1901088929219601
+      },
+      "sourceColorDims": "1251×2048",
+      "sourceNormalDims": "1251×2048"
+    },
+    {
+      "tileIndex": 6,
+      "key": "3b7c8f7988b9|ae418d353754",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2876,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 7,
+      "key": "f6f2a529a147|9e073346f30b",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmBark_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmBark_Mat"
+        }
+      ],
+      "content": {
+        "x": 1308,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.3197262283060377,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 8,
+      "key": "0328268e5175|665bbd989f18",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FrondStem_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FrondStem_Mat"
+        }
+      ],
+      "content": {
+        "x": 3916,
+        "y": 4,
+        "w": 128,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.9572231728183818,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.03128819359569787,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 9,
+      "key": "ef08006b3f66|264c1d5ff928",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "StemCap_01_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "StemCap_01_Mat"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 524,
+        "w": 169,
+        "h": 169
+      },
+      "uvTransform": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.041310193106819854,
+        "scaleV": 0.0383393829401089
+      },
+      "sourceColorDims": "169×169",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 10,
+      "key": "42788cae31b1|44d10fcb4523",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_01_Mat"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 11,
+      "key": "c936750534a1|d8d5b8abe1ab",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_03_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 12,
+      "key": "8e42e34af47b|333848840bc7",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "MimosaBark"
+        }
+      ],
+      "content": {
+        "x": 1572,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.3842581275971645,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 0,
+      "key": "c228f537c0bf|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "maple_red",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "maple_sugar",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "ash_green",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 2,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 3,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "blackgum",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "maple_silver",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "birch",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "oak_bur",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 1,
+      "key": "3b70158cae63|58277515a126",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "Cap_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 2,
+      "key": "0a11d01fbf70|61006c8e394a",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2551943290149108,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 3,
+      "key": "52af98ccfd22|bf646285c0a2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.3823026154974334,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 4,
+      "key": "383eadd8d437|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 2084,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 5,
+      "key": "ba98615d97e8|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 2604,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6365191884624786,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 6,
+      "key": "d07eace4f8a3|34123512ef93",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "quercus_alba",
+          "variantId": 1,
+          "matName": "White-Oak_Leaf"
+        },
+        {
+          "species": "quercus_alba",
+          "variantId": 2,
+          "matName": "White-Oak_Leaf"
+        }
+      ],
+      "content": {
+        "x": 3644,
+        "y": 4,
+        "w": 307,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.8907357614275239,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.07504277682718162,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×854",
+      "sourceNormalDims": "512×854"
+    },
+    {
+      "tileIndex": 7,
+      "key": "415674677609|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 3124,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7636274749450013,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 8,
+      "key": "11d1fa6f4019|edab7ea7a5b2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_4_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_4_Mat"
+        }
+      ],
+      "content": {
+        "x": 2612,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6384747005622097,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 9,
+      "key": "6f4632c3c374|4afd72379ab0",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_1_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_1_Mat"
+        }
+      ],
+      "content": {
+        "x": 2684,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6560743094597897,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 10,
+      "key": "37297574619b|970bef1b05cb",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_2_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_2_Mat"
+        }
+      ],
+      "content": {
+        "x": 2756,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6736739183573698,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 11,
+      "key": "c725ad8f3847|9f3eba1ffdb0",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "Cap_02_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "Cap_02_Mat"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 12,
+      "key": "0a1a4a31d8a6|a0feb7d22fbc",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_3_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_3_Mat"
+        }
+      ],
+      "content": {
+        "x": 2828,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6912735272549498,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 13,
+      "key": "0ecef2de0d01|c84336f17870",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "branches_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 14,
+      "key": "905c0922f185|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "Cap_03"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2551943290149108,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 15,
+      "key": "2600b0207445|133cc2c51a15",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "LeafHD"
+        }
+      ],
+      "content": {
+        "x": 2084,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "256×512"
+    },
+    {
+      "tileIndex": 16,
+      "key": "5a8e111a5abb|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "LeafHD2"
+        }
+      ],
+      "content": {
+        "x": 2348,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5739428012710829,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 17,
+      "key": "8fa96661715b|0a41c39bca08",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "Branches_11"
+        }
+      ],
+      "content": {
+        "x": 3959,
+        "y": 4,
+        "w": 128,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.9677340503544366,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.03128819359569787,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "256×1024"
+    },
+    {
+      "tileIndex": 18,
+      "key": "c72d35aea393|44a46f379cb8",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "Flowers"
+        }
+      ],
+      "content": {
+        "x": 2900,
+        "y": 524,
+        "w": 258,
+        "h": 258
+      },
+      "uvTransform": {
+        "offsetU": 0.7088731361525299,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.06306526521632852,
+        "scaleV": 0.05852994555353903
+      },
+      "sourceColorDims": "258×258",
+      "sourceNormalDims": "258×258"
+    },
+    {
+      "tileIndex": 19,
+      "key": "a1fd4b5f3457|d9ba0cc67845",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "PeaPod"
+        }
+      ],
+      "content": {
+        "x": 3166,
+        "y": 524,
+        "w": 128,
+        "h": 256
+      },
+      "uvTransform": {
+        "offsetU": 0.7738939134685896,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.03128819359569787,
+        "scaleV": 0.058076225045372055
+      },
+      "sourceColorDims": "128×256",
+      "sourceNormalDims": "128×256"
+    },
+    {
+      "tileIndex": 20,
+      "key": "5b69e7aac573|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "oak_white",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.3823026154974334,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": null
+    }
+  ],
+  "tilesByKey": {
+    "f24561453b5f|026eed9e6935": {
+      "tileIndex": 0,
+      "key": "f24561453b5f|026eed9e6935",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "maple_sugar",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 2,
+          "matName": "salonBark"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 3,
+          "matName": "salonBark"
+        },
+        {
+          "species": "blackgum",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "maple_silver",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "oak_white",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "birch",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "oak_bur",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "abf702366ce6|2e6d9d5efe05": {
+      "tileIndex": 1,
+      "key": "abf702366ce6|2e6d9d5efe05",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.2551943290149108,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "19ec8d128907|9baa036ecb92": {
+      "tileIndex": 2,
+      "key": "19ec8d128907|9baa036ecb92",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "maple_red",
+          "variantId": 1,
+          "matName": "salonBark"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2876,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "3d7d8613ae27|a0320064e00d": {
+      "tileIndex": 3,
+      "key": "3d7d8613ae27|a0320064e00d",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "ash_green",
+          "variantId": 1,
+          "matName": "salonBark"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "9c0dbb9fa2fa|4248af0d275f": {
+      "tileIndex": 4,
+      "key": "9c0dbb9fa2fa|4248af0d275f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "3fa6c3baed73|5c578a0f839f": {
+      "tileIndex": 5,
+      "key": "3fa6c3baed73|5c578a0f839f",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "quercus_alba",
+          "variantId": 1,
+          "matName": "White-Oak_Bark"
+        },
+        {
+          "species": "quercus_alba",
+          "variantId": 2,
+          "matName": "White-Oak_Bark"
+        }
+      ],
+      "content": {
+        "x": 1836,
+        "y": 4,
+        "w": 512,
+        "h": 838
+      },
+      "uvTransform": {
+        "offsetU": 0.4487900268882914,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.1901088929219601
+      },
+      "sourceColorDims": "1251×2048",
+      "sourceNormalDims": "1251×2048"
+    },
+    "3b7c8f7988b9|ae418d353754": {
+      "tileIndex": 6,
+      "key": "3b7c8f7988b9|ae418d353754",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2876,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "f6f2a529a147|9e073346f30b": {
+      "tileIndex": 7,
+      "key": "f6f2a529a147|9e073346f30b",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmBark_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmBark_Mat"
+        }
+      ],
+      "content": {
+        "x": 1308,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.3197262283060377,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "0328268e5175|665bbd989f18": {
+      "tileIndex": 8,
+      "key": "0328268e5175|665bbd989f18",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FrondStem_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FrondStem_Mat"
+        }
+      ],
+      "content": {
+        "x": 3916,
+        "y": 4,
+        "w": 128,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.9572231728183818,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.03128819359569787,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    "ef08006b3f66|264c1d5ff928": {
+      "tileIndex": 9,
+      "key": "ef08006b3f66|264c1d5ff928",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "StemCap_01_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "StemCap_01_Mat"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 524,
+        "w": 169,
+        "h": 169
+      },
+      "uvTransform": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.041310193106819854,
+        "scaleV": 0.0383393829401089
+      },
+      "sourceColorDims": "169×169",
+      "sourceNormalDims": "1024×1024"
+    },
+    "42788cae31b1|44d10fcb4523": {
+      "tileIndex": 10,
+      "key": "42788cae31b1|44d10fcb4523",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_01_Mat"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "c936750534a1|d8d5b8abe1ab": {
+      "tileIndex": 11,
+      "key": "c936750534a1|d8d5b8abe1ab",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_03_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "8e42e34af47b|333848840bc7": {
+      "tileIndex": 12,
+      "key": "8e42e34af47b|333848840bc7",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "MimosaBark"
+        }
+      ],
+      "content": {
+        "x": 1572,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.3842581275971645,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "c228f537c0bf|": {
+      "tileIndex": 0,
+      "key": "c228f537c0bf|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "maple_red",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "maple_sugar",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "ash_green",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 2,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "linden_american",
+          "variantId": 3,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "blackgum",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "maple_silver",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "birch",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        },
+        {
+          "species": "oak_bur",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "3b70158cae63|58277515a126": {
+      "tileIndex": 1,
+      "key": "3b70158cae63|58277515a126",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "Cap_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    "0a11d01fbf70|61006c8e394a": {
+      "tileIndex": 2,
+      "key": "0a11d01fbf70|61006c8e394a",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2551943290149108,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "52af98ccfd22|bf646285c0a2": {
+      "tileIndex": 3,
+      "key": "52af98ccfd22|bf646285c0a2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.3823026154974334,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "383eadd8d437|": {
+      "tileIndex": 4,
+      "key": "383eadd8d437|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 2084,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "ba98615d97e8|": {
+      "tileIndex": 5,
+      "key": "ba98615d97e8|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 2604,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6365191884624786,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "d07eace4f8a3|34123512ef93": {
+      "tileIndex": 6,
+      "key": "d07eace4f8a3|34123512ef93",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "quercus_alba",
+          "variantId": 1,
+          "matName": "White-Oak_Leaf"
+        },
+        {
+          "species": "quercus_alba",
+          "variantId": 2,
+          "matName": "White-Oak_Leaf"
+        }
+      ],
+      "content": {
+        "x": 3644,
+        "y": 4,
+        "w": 307,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.8907357614275239,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.07504277682718162,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×854",
+      "sourceNormalDims": "512×854"
+    },
+    "415674677609|": {
+      "tileIndex": 7,
+      "key": "415674677609|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 3124,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7636274749450013,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "11d1fa6f4019|edab7ea7a5b2": {
+      "tileIndex": 8,
+      "key": "11d1fa6f4019|edab7ea7a5b2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_4_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_4_Mat"
+        }
+      ],
+      "content": {
+        "x": 2612,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6384747005622097,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "6f4632c3c374|4afd72379ab0": {
+      "tileIndex": 9,
+      "key": "6f4632c3c374|4afd72379ab0",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_1_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_1_Mat"
+        }
+      ],
+      "content": {
+        "x": 2684,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6560743094597897,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "37297574619b|970bef1b05cb": {
+      "tileIndex": 10,
+      "key": "37297574619b|970bef1b05cb",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_2_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_2_Mat"
+        }
+      ],
+      "content": {
+        "x": 2756,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6736739183573698,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "c725ad8f3847|9f3eba1ffdb0": {
+      "tileIndex": 11,
+      "key": "c725ad8f3847|9f3eba1ffdb0",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "Cap_02_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "Cap_02_Mat"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    "0a1a4a31d8a6|a0feb7d22fbc": {
+      "tileIndex": 12,
+      "key": "0a1a4a31d8a6|a0feb7d22fbc",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 5,
+          "matName": "FanPalmLeaflet_3_Mat"
+        },
+        {
+          "species": "garden_mix",
+          "variantId": 6,
+          "matName": "FanPalmLeaflet_3_Mat"
+        }
+      ],
+      "content": {
+        "x": 2828,
+        "y": 524,
+        "w": 64,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6912735272549498,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "128×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "0ecef2de0d01|c84336f17870": {
+      "tileIndex": 13,
+      "key": "0ecef2de0d01|c84336f17870",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "branches_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "905c0922f185|": {
+      "tileIndex": 14,
+      "key": "905c0922f185|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "Cap_03"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2551943290149108,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": null
+    },
+    "2600b0207445|133cc2c51a15": {
+      "tileIndex": 15,
+      "key": "2600b0207445|133cc2c51a15",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "LeafHD"
+        }
+      ],
+      "content": {
+        "x": 2084,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "256×512"
+    },
+    "5a8e111a5abb|": {
+      "tileIndex": 16,
+      "key": "5a8e111a5abb|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "LeafHD2"
+        }
+      ],
+      "content": {
+        "x": 2348,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5739428012710829,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": null
+    },
+    "8fa96661715b|0a41c39bca08": {
+      "tileIndex": 17,
+      "key": "8fa96661715b|0a41c39bca08",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "Branches_11"
+        }
+      ],
+      "content": {
+        "x": 3959,
+        "y": 4,
+        "w": 128,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.9677340503544366,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.03128819359569787,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "256×1024"
+    },
+    "c72d35aea393|44a46f379cb8": {
+      "tileIndex": 18,
+      "key": "c72d35aea393|44a46f379cb8",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "Flowers"
+        }
+      ],
+      "content": {
+        "x": 2900,
+        "y": 524,
+        "w": 258,
+        "h": 258
+      },
+      "uvTransform": {
+        "offsetU": 0.7088731361525299,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.06306526521632852,
+        "scaleV": 0.05852994555353903
+      },
+      "sourceColorDims": "258×258",
+      "sourceNormalDims": "258×258"
+    },
+    "a1fd4b5f3457|d9ba0cc67845": {
+      "tileIndex": 19,
+      "key": "a1fd4b5f3457|d9ba0cc67845",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "garden_mix",
+          "variantId": 4,
+          "matName": "PeaPod"
+        }
+      ],
+      "content": {
+        "x": 3166,
+        "y": 524,
+        "w": 128,
+        "h": 256
+      },
+      "uvTransform": {
+        "offsetU": 0.7738939134685896,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.03128819359569787,
+        "scaleV": 0.058076225045372055
+      },
+      "sourceColorDims": "128×256",
+      "sourceNormalDims": "128×256"
+    },
+    "5b69e7aac573|": {
+      "tileIndex": 20,
+      "key": "5b69e7aac573|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "oak_white",
+          "variantId": 1,
+          "matName": "salonLeaves"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.3823026154974334,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": null
+    }
+  },
+  "barkBySpecies": {
+    "procedural_ornamental": {
+      "materialRef": "Bark003",
+      "uvScale": [
+        1,
+        1
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.1,
+      "roughnessOverride": -1
+    },
+    "maple_red": {
+      "materialRef": "Bark015",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "maple_sugar": {
+      "materialRef": "Bark007",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "procedural_columnar": {
+      "materialRef": "Bark004",
+      "uvScale": [
+        1,
+        1
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.05,
+      "roughnessOverride": -1
+    },
+    "ash_green": {
+      "materialRef": "Bark004",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "linden_american": {
+      "materialRef": "Bark007",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "blackgum": {
+      "materialRef": "Bark007",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "procedural_conifer": {
+      "materialRef": "Bark012",
+      "uvScale": [
+        1,
+        1
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.06,
+      "roughnessOverride": -1
+    },
+    "maple_silver": {
+      "materialRef": "Bark007",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "oak_white": {
+      "materialRef": "Bark007",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "birch": {
+      "materialRef": "Bark007",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "oak_bur": {
+      "materialRef": "Bark007",
+      "uvScale": [
+        1.5,
+        4
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.08,
+      "roughnessOverride": 0.85
+    },
+    "procedural_weeping": {
+      "materialRef": "Bark015",
+      "uvScale": [
+        1,
+        1
+      ],
+      "tintBase": "#ffffff",
+      "tintJitterRange": 0.07,
+      "roughnessOverride": -1
+    }
+  },
+  "barkGradientByVariant": {},
+  "barkDetailBySpecies": {
+    "procedural_ornamental": {
+      "uvTransform": {
+        "offsetU": 0.0009777560498655587,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "maple_red": {
+      "uvTransform": {
+        "offsetU": 0.2532388169151797,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "procedural_weeping": {
+      "uvTransform": {
+        "offsetU": 0.2532388169151797,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "maple_sugar": {
+      "uvTransform": {
+        "offsetU": 0.5054998777804938,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "linden_american": {
+      "uvTransform": {
+        "offsetU": 0.5054998777804938,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "blackgum": {
+      "uvTransform": {
+        "offsetU": 0.5054998777804938,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "maple_silver": {
+      "uvTransform": {
+        "offsetU": 0.5054998777804938,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "oak_white": {
+      "uvTransform": {
+        "offsetU": 0.5054998777804938,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "birch": {
+      "uvTransform": {
+        "offsetU": 0.5054998777804938,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "oak_bur": {
+      "uvTransform": {
+        "offsetU": 0.5054998777804938,
+        "offsetV": 0.0009074410163339383,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "procedural_columnar": {
+      "uvTransform": {
+        "offsetU": 0.0009777560498655587,
+        "offsetV": 0.23502722323049002,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "ash_green": {
+      "uvTransform": {
+        "offsetU": 0.0009777560498655587,
+        "offsetV": 0.23502722323049002,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "procedural_conifer": {
+      "uvTransform": {
+        "offsetU": 0.2532388169151797,
+        "offsetV": 0.23502722323049002,
+        "scaleU": 0.25030554876558303,
+        "scaleV": 0.2323049001814882
+      },
+      "barkTileUV": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    }
+  },
+  "barkPosterizedBySpecies": {
+    "procedural_ornamental": {
+      "uvTransform": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "maple_red": {
+      "uvTransform": {
+        "offsetU": 0.06550965534099241,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "procedural_weeping": {
+      "uvTransform": {
+        "offsetU": 0.06550965534099241,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "maple_sugar": {
+      "uvTransform": {
+        "offsetU": 0.13004155463211928,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "linden_american": {
+      "uvTransform": {
+        "offsetU": 0.13004155463211928,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "blackgum": {
+      "uvTransform": {
+        "offsetU": 0.13004155463211928,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "maple_silver": {
+      "uvTransform": {
+        "offsetU": 0.13004155463211928,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "oak_white": {
+      "uvTransform": {
+        "offsetU": 0.13004155463211928,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "birch": {
+      "uvTransform": {
+        "offsetU": 0.13004155463211928,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "oak_bur": {
+      "uvTransform": {
+        "offsetU": 0.13004155463211928,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "procedural_columnar": {
+      "uvTransform": {
+        "offsetU": 0.19457345392324613,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "ash_green": {
+      "uvTransform": {
+        "offsetU": 0.19457345392324613,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    },
+    "procedural_conifer": {
+      "uvTransform": {
+        "offsetU": 0.259105353214373,
+        "offsetV": 0.941016333938294,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.058076225045372055
+      },
+      "barkTileUV": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      }
+    }
+  },
+  "deformerBySpecies": {
+    "maple_red": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "maple_sugar": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "ash_green": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "linden_american": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "blackgum": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "maple_silver": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "oak_white": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "birch": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    },
+    "oak_bur": {
+      "range": {
+        "lean": [
+          0,
+          0.08
+        ],
+        "twist": [
+          0,
+          0.1
+        ],
+        "wander": [
+          0,
+          0.15
+        ]
+      }
+    }
+  },
+  "canopyByVariant": {
+    "procedural_ornamental": {
+      "1": {
+        "heightM": 12,
+        "canopyRadiusM": 6.9
+      },
+      "2": {
+        "heightM": 12,
+        "canopyRadiusM": 8.2
+      }
+    },
+    "generic_tree_2": {
+      "1": {
+        "heightM": 12.3,
+        "canopyRadiusM": 3.4
+      }
+    },
+    "maple_red": {
+      "1": {
+        "heightM": 12.9,
+        "canopyRadiusM": 4.7
+      }
+    },
+    "quercus_alba": {
+      "1": {
+        "heightM": 10.8,
+        "canopyRadiusM": 6.9
+      },
+      "2": {
+        "heightM": 10.3,
+        "canopyRadiusM": 8
+      }
+    },
+    "platanus_acerifolia": {
+      "1": {
+        "heightM": 12,
+        "canopyRadiusM": 3.8
+      },
+      "2": {
+        "heightM": 12,
+        "canopyRadiusM": 3.4
+      },
+      "3": {
+        "heightM": 11.9,
+        "canopyRadiusM": 3.7
+      },
+      "4": {
+        "heightM": 11.9,
+        "canopyRadiusM": 3.1
+      }
+    },
+    "maple_sugar": {
+      "1": {
+        "heightM": 17.6,
+        "canopyRadiusM": 9.4
+      }
+    },
+    "procedural_columnar": {
+      "1": {
+        "heightM": 12,
+        "canopyRadiusM": 1.8
+      },
+      "2": {
+        "heightM": 12,
+        "canopyRadiusM": 1.6
+      }
+    },
+    "ash_green": {
+      "1": {
+        "heightM": 16.1,
+        "canopyRadiusM": 10.2
+      }
+    },
+    "linden_american": {
+      "1": {
+        "heightM": 19,
+        "canopyRadiusM": 7.8
+      },
+      "2": {
+        "heightM": 19,
+        "canopyRadiusM": 7.8
+      },
+      "3": {
+        "heightM": 19,
+        "canopyRadiusM": 7.8
+      }
+    },
+    "blackgum": {
+      "1": {
+        "heightM": 13.7,
+        "canopyRadiusM": 5
+      }
+    },
+    "procedural_conifer": {
+      "1": {
+        "heightM": 18,
+        "canopyRadiusM": 4
+      },
+      "2": {
+        "heightM": 18,
+        "canopyRadiusM": 5
+      }
+    },
+    "maple_silver": {
+      "1": {
+        "heightM": 18,
+        "canopyRadiusM": 6.6
+      }
+    },
+    "garden_mix": {
+      "3": {
+        "heightM": 12,
+        "canopyRadiusM": 5.6
+      },
+      "4": {
+        "heightM": 11.8,
+        "canopyRadiusM": 8.2
+      },
+      "5": {
+        "heightM": 11.9,
+        "canopyRadiusM": 3.1
+      },
+      "6": {
+        "heightM": 12.1,
+        "canopyRadiusM": 3.6
+      }
+    },
+    "oak_white": {
+      "1": {
+        "heightM": 22.9,
+        "canopyRadiusM": 14.4
+      }
+    },
+    "birch": {
+      "1": {
+        "heightM": 8.2,
+        "canopyRadiusM": 1.9
+      }
+    },
+    "oak_bur": {
+      "1": {
+        "heightM": 20.2,
+        "canopyRadiusM": 12.7
+      }
+    },
+    "procedural_weeping": {
+      "1": {
+        "heightM": 9.9,
+        "canopyRadiusM": 9.8
+      },
+      "2": {
+        "heightM": 10,
+        "canopyRadiusM": 9
+      }
+    }
+  },
+  "impostorBySpecies": {
+    "maple_sugar": {
+      "species": "maple_sugar",
+      "variantId": 1,
+      "heightM": 17.6,
+      "canopyRadiusM": 9.4,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "linden_american": {
+      "species": "linden_american",
+      "variantId": 1,
+      "heightM": 19,
+      "canopyRadiusM": 7.8,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "blackgum": {
+      "species": "blackgum",
+      "variantId": 1,
+      "heightM": 13.7,
+      "canopyRadiusM": 5,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "maple_silver": {
+      "species": "maple_silver",
+      "variantId": 1,
+      "heightM": 18,
+      "canopyRadiusM": 6.6,
+      "trunkFrac": 0.11234712307701725,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701725
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.11234712307701725,
+            "yHi": 0.3342603423077629
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.3342603423077629,
+            "yHi": 0.5561735615385086
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5561735615385086,
+            "yHi": 0.7780867807692543
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7780867807692543,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701725
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701725
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.11234712307701725,
+            "yHi": 0.3342603423077629
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.3342603423077629,
+            "yHi": 0.5561735615385086
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5561735615385086,
+            "yHi": 0.7780867807692543
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7780867807692543,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701725
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.11234712307701725,
+            "yHi": 0.3342603423077629
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.3342603423077629,
+            "yHi": 0.5561735615385086
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5561735615385086,
+            "yHi": 0.7780867807692543
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7780867807692543,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "oak_white": {
+      "species": "oak_white",
+      "variantId": 1,
+      "heightM": 22.9,
+      "canopyRadiusM": 14.4,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.3823026154974334,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.3823026154974334,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "birch": {
+      "species": "birch",
+      "variantId": 1,
+      "heightM": 8.2,
+      "canopyRadiusM": 1.9,
+      "trunkFrac": 0.7,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.7
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7,
+            "yHi": 0.7749999999999999
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7749999999999999,
+            "yHi": 0.85
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.85,
+            "yHi": 0.925
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.925,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.7
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.7
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7,
+            "yHi": 0.7749999999999999
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7749999999999999,
+            "yHi": 0.85
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.85,
+            "yHi": 0.925
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.925,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.7
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7,
+            "yHi": 0.7749999999999999
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7749999999999999,
+            "yHi": 0.85
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.85,
+            "yHi": 0.925
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.925,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "oak_bur": {
+      "species": "oak_bur",
+      "variantId": 1,
+      "heightM": 20.2,
+      "canopyRadiusM": 12.7,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "platanus_acerifolia": {
+      "species": "platanus_acerifolia",
+      "variantId": 1,
+      "heightM": 12,
+      "canopyRadiusM": 3.8,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.2551943290149108,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "leafRect": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.2551943290149108,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.2551943290149108,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.2551943290149108,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.2551943290149108,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "maple_red": {
+      "species": "maple_red",
+      "variantId": 1,
+      "heightM": 12.9,
+      "canopyRadiusM": 4.7,
+      "trunkFrac": 0.11234712307701723,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701723
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.11234712307701723,
+            "yHi": 0.3342603423077629
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.3342603423077629,
+            "yHi": 0.5561735615385086
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5561735615385086,
+            "yHi": 0.7780867807692543
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7780867807692543,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701723
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701723
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.11234712307701723,
+            "yHi": 0.3342603423077629
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.3342603423077629,
+            "yHi": 0.5561735615385086
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5561735615385086,
+            "yHi": 0.7780867807692543
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7780867807692543,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.11234712307701723
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.11234712307701723,
+            "yHi": 0.3342603423077629
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.3342603423077629,
+            "yHi": 0.5561735615385086
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5561735615385086,
+            "yHi": 0.7780867807692543
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7780867807692543,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "procedural_weeping": {
+      "species": "procedural_weeping",
+      "variantId": 1,
+      "heightM": 9.9,
+      "canopyRadiusM": 9.8,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "procedural_columnar": {
+      "species": "procedural_columnar",
+      "variantId": 1,
+      "heightM": 12,
+      "canopyRadiusM": 1.8,
+      "trunkFrac": 0.407904066080469,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.407904066080469
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.407904066080469,
+            "yHi": 0.5559280495603518
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5559280495603518,
+            "yHi": 0.7039520330402345
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7039520330402345,
+            "yHi": 0.8519760165201173
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.8519760165201173,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.407904066080469
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.407904066080469
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.407904066080469,
+            "yHi": 0.5559280495603518
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5559280495603518,
+            "yHi": 0.7039520330402345
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7039520330402345,
+            "yHi": 0.8519760165201173
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.8519760165201173,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.407904066080469
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.407904066080469,
+            "yHi": 0.5559280495603518
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5559280495603518,
+            "yHi": 0.7039520330402345
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7039520330402345,
+            "yHi": 0.8519760165201173
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.509410901979956,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.8519760165201173,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "ash_green": {
+      "species": "ash_green",
+      "variantId": 1,
+      "heightM": 16.1,
+      "canopyRadiusM": 10.2,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.8301148863358593,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.8301148863358593,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "procedural_ornamental": {
+      "species": "procedural_ornamental",
+      "variantId": 1,
+      "heightM": 12,
+      "canopyRadiusM": 6.9,
+      "trunkFrac": 0.4226302554676921,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.575898313370814,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.6365191884624786,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.4226302554676921
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.4226302554676921,
+            "yHi": 0.5669726916007691
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5669726916007691,
+            "yHi": 0.7113151277338461
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7113151277338461,
+            "yHi": 0.855657563866923
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.855657563866923,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.4226302554676921
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.4226302554676921
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.4226302554676921,
+            "yHi": 0.5669726916007691
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5669726916007691,
+            "yHi": 0.7113151277338461
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7113151277338461,
+            "yHi": 0.855657563866923
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.855657563866923,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.575898313370814,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.4226302554676921
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.4226302554676921,
+            "yHi": 0.5669726916007691
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5669726916007691,
+            "yHi": 0.7113151277338461
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7113151277338461,
+            "yHi": 0.855657563866923
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6365191884624786,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.855657563866923,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "quercus_alba": {
+      "species": "quercus_alba",
+      "variantId": 1,
+      "heightM": 10.8,
+      "canopyRadiusM": 6.9,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.4487900268882914,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.1901088929219601
+      },
+      "leafRect": {
+        "offsetU": 0.8907357614275239,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.07504277682718162,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.4487900268882914,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.1901088929219601
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.4487900268882914,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.1901088929219601
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.4487900268882914,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.1901088929219601
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.4487900268882914,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.1901088929219601
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.8907357614275239,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.07504277682718162,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "procedural_conifer": {
+      "species": "procedural_conifer",
+      "variantId": 1,
+      "heightM": 18,
+      "canopyRadiusM": 4,
+      "trunkFrac": 0.5577831633988293,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.7030065998533366,
+        "offsetV": 0.823049001814882,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "leafRect": {
+        "offsetU": 0.7636274749450013,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.5577831633988293
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5577831633988293,
+            "yHi": 0.668337372549122
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.668337372549122,
+            "yHi": 0.7788915816994146
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7788915816994146,
+            "yHi": 0.8894457908497073
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.8894457908497073,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.5577831633988293
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.5577831633988293
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5577831633988293,
+            "yHi": 0.668337372549122
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.668337372549122,
+            "yHi": 0.7788915816994146
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7788915816994146,
+            "yHi": 0.8894457908497073
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.8894457908497073,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.7030065998533366,
+              "offsetV": 0.823049001814882,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0,
+            "yHi": 0.5577831633988293
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.5577831633988293,
+            "yHi": 0.668337372549122
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.668337372549122,
+            "yHi": 0.7788915816994146
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.7788915816994146,
+            "yHi": 0.8894457908497073
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.7636274749450013,
+              "offsetV": 0.4691470054446461,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.8894457908497073,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "garden_mix": {
+      "species": "garden_mix",
+      "variantId": 3,
+      "heightM": 12,
+      "canopyRadiusM": 5.6,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.3197262283060377,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.06257638719139574,
+        "scaleV": 0.23230490018148822
+      },
+      "leafRect": {
+        "offsetU": 0.6384747005622097,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.3197262283060377,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.3197262283060377,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.3197262283060377,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.3197262283060377,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.06257638719139574,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.6384747005622097,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.015644096797848936,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    },
+    "generic_tree_2": {
+      "species": "generic_tree_2",
+      "variantId": 1,
+      "heightM": 12.3,
+      "canopyRadiusM": 3.4,
+      "trunkFrac": 0.1,
+      "capture": "camera-facing",
+      "canopySlabs": 4,
+      "barkRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.70508166969147,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.23230490018148822
+      },
+      "leafRect": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "winter": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          }
+        ],
+        "spring": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ],
+        "fall": [
+          {
+            "kind": "bark",
+            "atlasRect": {
+              "offsetU": 0.0009777560498655585,
+              "offsetV": 0.70508166969147,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.23230490018148822
+            },
+            "yLo": 0,
+            "yHi": 0.1
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.1,
+            "yHi": 0.325
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.325,
+            "yHi": 0.55
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.55,
+            "yHi": 0.775
+          },
+          {
+            "kind": "leaf",
+            "atlasRect": {
+              "offsetU": 0.12808604253238817,
+              "offsetV": 0.5871143375680581,
+              "scaleU": 0.1251527743827915,
+              "scaleV": 0.11615245009074411
+            },
+            "yLo": 0.775,
+            "yHi": 1
+          }
+        ]
+      }
+    }
+  },
+  "opaqueBySpecies": {
+    "maple_sugar": {
+      "species": "maple_sugar",
+      "heightM": 17.6,
+      "canopyRadiusM": 9.4,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 9.680000000000001,
+        "radiusXZ": 9.4,
+        "radiusY": 7.920000000000001
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "linden_american": {
+      "species": "linden_american",
+      "heightM": 19,
+      "canopyRadiusM": 7.8,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 10.45,
+        "radiusXZ": 7.8,
+        "radiusY": 8.55
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "blackgum": {
+      "species": "blackgum",
+      "heightM": 13.7,
+      "canopyRadiusM": 5,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 7.535,
+        "radiusXZ": 5,
+        "radiusY": 6.164999999999999
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "maple_silver": {
+      "species": "maple_silver",
+      "heightM": 18,
+      "canopyRadiusM": 6.6,
+      "trunkFrac": 0.11234712307701725,
+      "shell": {
+        "centerY": 10.011124107693155,
+        "radiusXZ": 6.6,
+        "radiusY": 7.988875892306845
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "oak_white": {
+      "species": "oak_white",
+      "heightM": 22.9,
+      "canopyRadiusM": 14.4,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 12.594999999999999,
+        "radiusXZ": 14.4,
+        "radiusY": 10.305
+      },
+      "leafRect": {
+        "offsetU": 0.3823026154974334,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "birch": {
+      "species": "birch",
+      "heightM": 8.2,
+      "canopyRadiusM": 1.9,
+      "trunkFrac": 0.7,
+      "shell": {
+        "centerY": 6.969999999999999,
+        "radiusXZ": 1.9,
+        "radiusY": 1.23
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "oak_bur": {
+      "species": "oak_bur",
+      "heightM": 20.2,
+      "canopyRadiusM": 12.7,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 11.11,
+        "radiusXZ": 12.7,
+        "radiusY": 9.09
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "platanus_acerifolia": {
+      "species": "platanus_acerifolia",
+      "heightM": 12,
+      "canopyRadiusM": 3.8,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 6.6,
+        "radiusXZ": 3.8,
+        "radiusY": 5.4
+      },
+      "leafRect": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "maple_red": {
+      "species": "maple_red",
+      "heightM": 12.9,
+      "canopyRadiusM": 4.7,
+      "trunkFrac": 0.11234712307701723,
+      "shell": {
+        "centerY": 7.1746389438467615,
+        "radiusXZ": 4.7,
+        "radiusY": 5.725361056153239
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "procedural_weeping": {
+      "species": "procedural_weeping",
+      "heightM": 9.9,
+      "canopyRadiusM": 9.8,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 5.445,
+        "radiusXZ": 9.8,
+        "radiusY": 4.455
+      },
+      "leafRect": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "procedural_columnar": {
+      "species": "procedural_columnar",
+      "heightM": 12,
+      "canopyRadiusM": 1.8,
+      "trunkFrac": 0.407904066080469,
+      "shell": {
+        "centerY": 8.447424396482814,
+        "radiusXZ": 1.8,
+        "radiusY": 3.552575603517186
+      },
+      "leafRect": {
+        "offsetU": 0.509410901979956,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "ash_green": {
+      "species": "ash_green",
+      "heightM": 16.1,
+      "canopyRadiusM": 10.2,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 8.855,
+        "radiusXZ": 10.2,
+        "radiusY": 7.245000000000001
+      },
+      "leafRect": {
+        "offsetU": 0.0009777560498655585,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "procedural_ornamental": {
+      "species": "procedural_ornamental",
+      "heightM": 12,
+      "canopyRadiusM": 6.9,
+      "trunkFrac": 0.4226302554676921,
+      "shell": {
+        "centerY": 8.535781532806153,
+        "radiusXZ": 6.9,
+        "radiusY": 3.4642184671938474
+      },
+      "leafRect": {
+        "offsetU": 0.6365191884624786,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "quercus_alba": {
+      "species": "quercus_alba",
+      "heightM": 10.8,
+      "canopyRadiusM": 6.9,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 5.94,
+        "radiusXZ": 6.9,
+        "radiusY": 4.86
+      },
+      "leafRect": {
+        "offsetU": 0.8907357614275239,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.07504277682718162,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "procedural_conifer": {
+      "species": "procedural_conifer",
+      "heightM": 18,
+      "canopyRadiusM": 4,
+      "trunkFrac": 0.5577831633988293,
+      "shell": {
+        "centerY": 14.020048470589463,
+        "radiusXZ": 4,
+        "radiusY": 3.9799515294105365
+      },
+      "leafRect": {
+        "offsetU": 0.7636274749450013,
+        "offsetV": 0.4691470054446461,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "garden_mix": {
+      "species": "garden_mix",
+      "heightM": 12,
+      "canopyRadiusM": 5.6,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 6.6,
+        "radiusXZ": 5.6,
+        "radiusY": 5.4
+      },
+      "leafRect": {
+        "offsetU": 0.6384747005622097,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.015644096797848936,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    },
+    "generic_tree_2": {
+      "species": "generic_tree_2",
+      "heightM": 12.3,
+      "canopyRadiusM": 3.4,
+      "trunkFrac": 0.1,
+      "shell": {
+        "centerY": 6.765000000000001,
+        "radiusXZ": 3.4,
+        "radiusY": 5.535
+      },
+      "leafRect": {
+        "offsetU": 0.12808604253238817,
+        "offsetV": 0.5871143375680581,
+        "scaleU": 0.1251527743827915,
+        "scaleV": 0.11615245009074411
+      },
+      "seasons": {
+        "summer": {
+          "shell": true
+        },
+        "winter": {
+          "shell": false
+        },
+        "spring": {
+          "shell": true
+        },
+        "fall": {
+          "shell": true
+        }
+      }
+    }
+  }
+}
