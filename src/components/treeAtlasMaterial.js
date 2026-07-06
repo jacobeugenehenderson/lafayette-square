@@ -1385,7 +1385,9 @@ export function injectOverheadWiggle(material) {
          uniform float uHulaAmount;
          attribute float aOverhead;
          attribute float aRuffle;
-         attribute float aTreeHeightNorm;`)
+         attribute float aTreeHeightNorm;
+         attribute float aLeafBody;   // 0 at the glued stem → 1 at the blade tip
+         attribute float aLeafPhase;  // per-leaf random flutter phase`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
          if (aOverhead > 0.5) {
            // Hula — base-anchored x/y wiggle, direction slowly drifting, phase-
@@ -1400,6 +1402,16 @@ export function injectOverheadWiggle(material) {
            // Shared wind — base-anchored lean downwind.
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
            transformed.xz += wd * (uWindIntensity * 0.03 * aTreeHeightNorm);
+           // Leaf-body flutter — the blade shimmers about its glued stem, each
+           //   leaf on its own random phase (the "alive" quality). Absent
+           //   attribute → aLeafBody 0 → branches/umbrella untouched. Amplitude
+           //   grows a touch with wind.
+           if (aLeafBody > 0.001) {
+             float ft  = uTime * 3.4 + aLeafPhase;
+             float amp = (0.13 + uWindIntensity * 0.05) * aLeafBody;
+             transformed.y  += sin(ft) * amp;
+             transformed.xz += vec2(cos(ft * 0.9), sin(ft * 1.3)) * (amp * 0.55);
+           }
          }`)
   }
 }

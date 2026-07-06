@@ -765,8 +765,12 @@ function SlotCard({
             overhead={{
               ruffleDepth, hulaAmount,
               // Connect the overhead impostor to the selected chassis: match its
-              // leaf arrangement + tints so the canopy reads like this tree.
+              // leaf arrangement, density, size, pack + tints so the canopy reads
+              // like this tree.
               ways: leaves?.ways,
+              pack: leaves?.pack,
+              occupancy: leaves?.occupancy,
+              scale: leaves?.scale,
               tintFront: leaves?.tintFront,
               tintBack: leaves?.tintBack,
             }}

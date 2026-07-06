@@ -33,7 +33,7 @@ import {
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
-import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud } from '../components/impostorGeometry.js'
+import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters } from '../components/impostorGeometry.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -1030,6 +1030,15 @@ function Skeleton({
     () => (overheadRec ? buildGradientCloud(overheadRec, overheadOpts) : null),
     [overheadRec, overheadOpts],
   )
+  // Stage 3 — leaf clusters at the branch tips; density/size ← the chassis's
+  // leaf controls (occupancy / scale).
+  const leafGeo = useMemo(
+    () => (overheadRec ? buildLeafClusters(overheadRec, {
+      ...overheadOpts, occupancy: overhead?.occupancy, leafScale: overhead?.scale,
+    }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [overheadRec, overheadOpts, overhead?.occupancy, overhead?.scale],
+  )
   const branchMat = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({
       color: '#4f3a28', roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide,
@@ -1056,11 +1065,31 @@ function Skeleton({
     injectOverheadWiggle(m)
     return m
   }, [canopyTex])
+  // Leaf shell — the selected chassis's leaf PACK silhouette (shape.png), tinted
+  // to tintFront; transparent + renderOrder above the umbrella so it reads on top.
+  const leafTex = useMemo(() => {
+    const pack = overhead?.pack
+    if (!pack) return null
+    const t = new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}textures/leaves/shapes/${pack}/shape.png`)
+    t.colorSpace = THREE.SRGBColorSpace
+    return t
+  }, [overhead?.pack])
+  const leafMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({
+      map: leafTex || null, alphaTest: leafTex ? 0.4 : 0,
+      color: '#3f7a34', roughness: 1, metalness: 0,
+      transparent: true, depthWrite: true, side: THREE.DoubleSide,
+    })
+    injectOverheadWiggle(m)
+    return m
+  }, [leafTex])
   useEffect(() => () => {
     try { branchMat?.dispose() } catch {}
     try { umbrellaMat?.dispose() } catch {}
     try { cloudMat?.dispose() } catch {}
-  }, [branchMat, umbrellaMat, cloudMat])
+    try { leafMat?.dispose() } catch {}
+    try { leafTex?.dispose() } catch {}
+  }, [branchMat, umbrellaMat, cloudMat, leafMat, leafTex])
 
   // Bind the two knobs (hula wiggle / ruffle) to all overhead materials each
   // frame, and match the canopy tints to the chassis's authored leaf tints.
@@ -1069,7 +1098,8 @@ function Skeleton({
     applyOverheadDeformerUniforms(branchMat, overhead)
     applyOverheadDeformerUniforms(umbrellaMat, overhead)
     applyOverheadDeformerUniforms(cloudMat, overhead)
-    if (overhead?.tintFront) umbrellaMat.color.set(overhead.tintFront)
+    applyOverheadDeformerUniforms(leafMat, overhead)
+    if (overhead?.tintFront) { umbrellaMat.color.set(overhead.tintFront); leafMat.color.set(overhead.tintFront) }
     if (overhead?.tintBack) cloudMat.color.set(overhead.tintBack)
   })
 
@@ -1113,10 +1143,12 @@ function Skeleton({
               position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
               rotation={[0, i * 2.399963267, 0]}>
               {/* Branches opaque (write depth) first; translucent cloud then
-                  umbrella composite over — branches glimpsed through the canopy. */}
+                  umbrella composite over — branches glimpsed through the canopy;
+                  leaf clusters on top (outermost shell). */}
               <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
               {cloudGeo && <mesh geometry={cloudGeo} material={cloudMat} renderOrder={1} />}
               {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
+              {leafGeo && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
             </group>
           ))}
         </group>

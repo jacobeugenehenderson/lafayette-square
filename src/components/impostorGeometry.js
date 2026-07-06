@@ -514,3 +514,92 @@ export function buildGradientCloud(rec, opts = {}) {
     folds: 5, windTier: 2, ruffleRim: false,
   })
 }
+
+/**
+ * buildLeafClusters — the outer leaf shell (stage 3). Leaf cards CLUSTER at the
+ * branch tips (real trees leaf at the twig ends), each card's STEM glued to a
+ * point near the tip and its BODY free to flutter on a per-leaf random phase
+ * (aLeafBody 0→1 ramps the flutter; aLeafPhase seeds it — see injectOverheadWiggle).
+ * Blades fan outward + up so from directly above you read leaf silhouettes
+ * radiating at the crown edge. Density ← leaves.occupancy, size ← leaves.scale.
+ *
+ * @param {object} rec  { heightM, canopyRadiusM, trunkFrac }
+ * @param {object} opts { seed, occupancy, leafScale, leavesPerTip } (+ generateBranches opts)
+ */
+export function buildLeafClusters(rec, opts = {}) {
+  if (!rec) return null
+  const { tips, H, R } = generateBranches(rec, opts)
+  if (!tips.length) return null
+  const occupancy = Math.min(1, Math.max(0.15, opts.occupancy ?? 0.7))
+  const leafScale = opts.leafScale ?? 1
+  const perTip = Math.max(2, Math.round((opts.leavesPerTip ?? 12) * occupancy))
+  const leafSize = Math.max(0.3, R * 0.17 * leafScale)
+
+  const positions = [], uvs = [], normals = []
+  const aWindTier = [], aTreeHeightNorm = [], aRuffle = [], aOverhead = []
+  const aLeafBody = [], aLeafPhase = [], indices = []
+
+  // One leaf card: stem edge (aLeafBody 0) at anchor, blade edge (aLeafBody 1)
+  // at anchor + dir·size; `side` is the in-plane width axis.
+  const pushLeaf = (ax, ay, az, dir, side, size, w, phase, hnorm) => {
+    const base = positions.length / 3
+    const hw = w * 0.5
+    const bx = ax + dir[0] * size, by = ay + dir[1] * size, bz = az + dir[2] * size
+    positions.push(ax - side[0] * hw, ay - side[1] * hw, az - side[2] * hw)  // stem L
+    positions.push(ax + side[0] * hw, ay + side[1] * hw, az + side[2] * hw)  // stem R
+    positions.push(bx + side[0] * hw, by + side[1] * hw, bz + side[2] * hw)  // blade R
+    positions.push(bx - side[0] * hw, by - side[1] * hw, bz - side[2] * hw)  // blade L
+    uvs.push(0, 1, 1, 1, 1, 0, 0, 0)                    // stem at v=1, tip at v=0
+    // Face normal = side × dir.
+    let nx = side[1] * dir[2] - side[2] * dir[1]
+    let ny = side[2] * dir[0] - side[0] * dir[2]
+    let nz = side[0] * dir[1] - side[1] * dir[0]
+    const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl
+    const lb = [0, 0, 1, 1]
+    for (let v = 0; v < 4; v++) {
+      normals.push(nx, ny, nz)
+      aWindTier.push(3); aTreeHeightNorm.push(hnorm); aRuffle.push(0); aOverhead.push(1)
+      aLeafBody.push(lb[v]); aLeafPhase.push(phase)
+    }
+    indices.push(base, base + 1, base + 2, base, base + 2, base + 3)
+  }
+
+  for (let ti = 0; ti < tips.length; ti++) {
+    const tip = tips[ti]
+    for (let k = 0; k < perTip; k++) {
+      const salt = ti * 131 + k * 7 + (opts.seed ?? 1) * 3
+      const jr = _bh(salt, 1), ja = _bh(salt, 2), jy = _bh(salt, 3)
+      // Scatter the anchor in a small cluster around the tip.
+      const spreadAz = tip.az + (ja - 0.5) * 1.3
+      const spreadR = (0.3 + 1.0 * jr) * leafSize * 1.8
+      const ax = tip.x + Math.cos(spreadAz) * spreadR
+      const az = tip.z + Math.sin(spreadAz) * spreadR
+      const ay = tip.y + (jy - 0.5) * leafSize * 1.6
+      // Blade fans outward + up.
+      const bladeAz = spreadAz + (_bh(salt, 4) - 0.5) * 0.9
+      const upAmt = 0.25 + 0.55 * _bh(salt, 5)
+      let dx = Math.cos(bladeAz), dz = Math.sin(bladeAz), dy = upAmt
+      const dl = Math.hypot(dx, dy, dz) || 1; dx /= dl; dy /= dl; dz /= dl
+      const side = [-Math.sin(bladeAz), 0, Math.cos(bladeAz)]
+      const size = leafSize * (0.7 + 0.6 * _bh(salt, 6))
+      const phase = _bh(salt, 7) * 6.2831853
+      const hnorm = Math.min(1, Math.max(0, ay / H))
+      pushLeaf(ax, ay, az, [dx, dy, dz], side, size, size * 0.7, phase, hnorm)
+    }
+  }
+
+  if (!positions.length) return null
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+  g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
+  g.setAttribute('aRuffle', new THREE.Float32BufferAttribute(aRuffle, 1))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  g.setAttribute('aLeafBody', new THREE.Float32BufferAttribute(aLeafBody, 1))
+  g.setAttribute('aLeafPhase', new THREE.Float32BufferAttribute(aLeafPhase, 1))
+  g.setIndex(indices)
+  g.computeBoundingSphere()
+  return g
+}
