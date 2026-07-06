@@ -269,12 +269,15 @@ function _bh(a, b) {
  * @param {object} rec  { heightM, canopyRadiusM, trunkFrac }
  * @param {object} opts { primary, seed, baseWidth, tipWidth, forkChance } overrides
  */
-export function buildBranchSkeleton(rec, opts = {}) {
-  if (!rec) return null
+// Shared procedural branch LAYOUT — the limb node-paths + their tip positions.
+// Both buildBranchSkeleton (draws the ribbons) and buildUmbrellaShell (bulges its
+// lobes at the tips) consume this, so the canopy shape follows the branches. Same
+// seed → same layout, so they register perfectly.
+function generateBranches(rec, opts = {}) {
   const H = rec.heightM || 14
   const R = Math.max(0.5, rec.canopyRadiusM || 5)
   const trunkFrac = Math.min(0.6, Math.max(0, rec.trunkFrac ?? 0.15))
-  const crownBaseY = trunkFrac * H            // limbs spring from the top of the trunk
+  const crownBaseY = trunkFrac * H
   const crownSpan = Math.max(1, H - crownBaseY)
   const NPRIMARY = Math.max(3, Math.round(opts.primary ?? 6))
   const seed = opts.seed ?? 1
@@ -282,92 +285,38 @@ export function buildBranchSkeleton(rec, opts = {}) {
   const tipW = opts.tipWidth ?? baseW * 0.18
   const forkChance = opts.forkChance ?? 0.6
 
-  const positions = []
-  const normals = []
-  const aWindTier = []
-  const aTreeHeightNorm = []
-  const aRuffle = []
-  const aOverhead = []
-  const indices = []
-
-  // Emit ONE continuous tapered ribbon along a node path [{x,y,z,w}, …], with
-  // MITERED joins (each node shares one L/R vertex pair, perpendicular averaged
-  // across the bend) so there are no V-gaps at the segment joints.
-  const emitLimb = (nodes) => {
-    const L = nodes.length
-    if (L < 2) return
-    const startBase = positions.length / 3
-    for (let k = 0; k < L; k++) {
-      // Incoming + outgoing segment directions (XZ), averaged → miter direction.
-      let ix = 0, iz = 0, ox = 0, oz = 0
-      if (k > 0) {
-        ix = nodes[k].x - nodes[k - 1].x; iz = nodes[k].z - nodes[k - 1].z
-        const l = Math.hypot(ix, iz) || 1; ix /= l; iz /= l
-      }
-      if (k < L - 1) {
-        ox = nodes[k + 1].x - nodes[k].x; oz = nodes[k + 1].z - nodes[k].z
-        const l = Math.hypot(ox, oz) || 1; ox /= l; oz /= l
-      }
-      let dx = ix + ox, dz = iz + oz
-      const dl = Math.hypot(dx, dz)
-      if (dl < 1e-4) { dx = ox || ix; dz = oz || iz } else { dx /= dl; dz /= dl }
-      const px = -dz, pz = dx                 // perp
-      const n = nodes[k], w = n.w * 0.5
-      positions.push(n.x - px * w, n.y, n.z - pz * w)  // left
-      positions.push(n.x + px * w, n.y, n.z + pz * w)  // right
-      const h = Math.min(1, Math.max(0, n.y / H))
-      for (let v = 0; v < 2; v++) {
-        normals.push(0, 1, 0)
-        aWindTier.push(1); aTreeHeightNorm.push(h); aRuffle.push(0); aOverhead.push(1)
-      }
-    }
-    for (let k = 0; k < L - 1; k++) {
-      const a = startBase + k * 2, b = a + 1
-      const c = startBase + (k + 1) * 2, d = c + 1
-      indices.push(a, b, d, a, d, c)         // shared verts → seamless
-    }
-  }
-
-  // Build one limb path from the crown centre out to a tip at azimuth `az`.
   const buildPath = (az, reach, rise, segs, wBase, wTip, salt) => {
     const nodes = []
-    // Per-limb bending character — a low-freq lateral S-wander (organic curve)
-    // plus per-node noise, so limbs aren't smooth arcs or dead-straight spokes.
     const bendPhase = _bh(salt, 30) * 6.2831853
-    const bendAmp = 0.18 + 0.30 * _bh(salt, 31)     // radians of lateral swing
+    const bendAmp = 0.18 + 0.30 * _bh(salt, 31)
     const bendFreq = 1.0 + 1.6 * _bh(salt, 32)
     for (let s = 0; s <= segs; s++) {
       const t = s / segs
       const r = reach * t
-      // Rise fast then level (ease-out), with a little vertical wobble.
       const y = crownBaseY + crownSpan * rise * (t * (2 - t))
                 + (_bh(salt, s + 40) - 0.5) * crownSpan * 0.07
-      // Organic azimuth wander: an S-swing that grows outward + fine noise.
       const azWander = Math.sin(t * Math.PI * bendFreq + bendPhase) * bendAmp * t
       const azNoise = (_bh(salt, s + 3) - 0.5) * 0.18
       const azS = az + azWander + azNoise
-      // Width: uniform taper × per-node profile irregularity (bulges/pinches).
       const taperW = wBase + (wTip - wBase) * t
-      const wJit = 0.72 + 0.56 * _bh(salt, s + 50)   // ~0.72–1.28
-      nodes.push({
-        x: r * Math.cos(azS),
-        z: r * Math.sin(azS),
-        y,
-        w: taperW * wJit,
-      })
+      const wJit = 0.72 + 0.56 * _bh(salt, s + 50)
+      nodes.push({ x: r * Math.cos(azS), z: r * Math.sin(azS), y, w: taperW * wJit })
     }
     return nodes
   }
 
+  const limbs = []
+  const tips = []
   for (let i = 0; i < NPRIMARY; i++) {
     const salt = seed * 17 + i * 7
     const az = ((i + 0.5) / NPRIMARY) * Math.PI * 2 + (_bh(salt, 1) - 0.5) * 0.4
     const reach = R * (0.72 + 0.36 * _bh(salt, 2))
     const rise = 0.55 + 0.35 * _bh(salt, 5)
     const primary = buildPath(az, reach, rise, 6, baseW, tipW, salt)
-    emitLimb(primary)
+    limbs.push(primary)
+    const pt = primary[primary.length - 1]
+    tips.push({ x: pt.x, z: pt.z, y: pt.y, az, reach })
 
-    // One fork off the mid/outer third, thinner + splayed.
     if (_bh(salt, 9) < forkChance) {
       const anchor = primary[Math.min(primary.length - 1, 3)]
       const fAz = az + (_bh(salt, 11) < 0.5 ? -1 : 1) * (0.4 + 0.3 * _bh(salt, 12))
@@ -387,9 +336,66 @@ export function buildBranchSkeleton(rec, opts = {}) {
           w: anchor.w * 0.7 * (1 - 0.7 * t) * wJit,
         })
       }
-      emitLimb(fork)
+      limbs.push(fork)
+      const ft = fork[fork.length - 1]
+      tips.push({ x: ft.x, z: ft.z, y: ft.y, az: Math.atan2(ft.z, ft.x), reach: Math.hypot(ft.x, ft.z) })
     }
   }
+  return { limbs, tips, H, R, crownBaseY, crownSpan }
+}
+
+/**
+ * buildBranchSkeleton — draws the procedural limbs as continuous mitered ribbons
+ * (see generateBranches). Flat, tapered, opaque; the woody backbone read from
+ * directly above (and the whole impostor in winter).
+ */
+export function buildBranchSkeleton(rec, opts = {}) {
+  if (!rec) return null
+  const { limbs, H } = generateBranches(rec, opts)
+
+  const positions = []
+  const normals = []
+  const aWindTier = []
+  const aTreeHeightNorm = []
+  const aRuffle = []
+  const aOverhead = []
+  const indices = []
+
+  const emitLimb = (nodes) => {
+    const L = nodes.length
+    if (L < 2) return
+    const startBase = positions.length / 3
+    for (let k = 0; k < L; k++) {
+      let ix = 0, iz = 0, ox = 0, oz = 0
+      if (k > 0) {
+        ix = nodes[k].x - nodes[k - 1].x; iz = nodes[k].z - nodes[k - 1].z
+        const l = Math.hypot(ix, iz) || 1; ix /= l; iz /= l
+      }
+      if (k < L - 1) {
+        ox = nodes[k + 1].x - nodes[k].x; oz = nodes[k + 1].z - nodes[k].z
+        const l = Math.hypot(ox, oz) || 1; ox /= l; oz /= l
+      }
+      let dx = ix + ox, dz = iz + oz
+      const dl = Math.hypot(dx, dz)
+      if (dl < 1e-4) { dx = ox || ix; dz = oz || iz } else { dx /= dl; dz /= dl }
+      const px = -dz, pz = dx
+      const n = nodes[k], w = n.w * 0.5
+      positions.push(n.x - px * w, n.y, n.z - pz * w)
+      positions.push(n.x + px * w, n.y, n.z + pz * w)
+      const h = Math.min(1, Math.max(0, n.y / H))
+      for (let v = 0; v < 2; v++) {
+        normals.push(0, 1, 0)
+        aWindTier.push(1); aTreeHeightNorm.push(h); aRuffle.push(0); aOverhead.push(1)
+      }
+    }
+    for (let k = 0; k < L - 1; k++) {
+      const a = startBase + k * 2, b = a + 1
+      const c = startBase + (k + 1) * 2, d = c + 1
+      indices.push(a, b, d, a, d, c)
+    }
+  }
+
+  for (const limb of limbs) emitLimb(limb)
 
   if (positions.length === 0) return null
   const g = new THREE.BufferGeometry()
@@ -402,4 +408,109 @@ export function buildBranchSkeleton(rec, opts = {}) {
   g.setIndex(indices)
   g.computeBoundingSphere()
   return g
+}
+
+// Shared radial-dome mesh builder for the translucent canopy layers (umbrella +
+// cloud). radiusFn(theta)→{r, rimY} gives the per-azimuth outer radius + rim
+// height; centerY is the dome apex. Planar RADIAL uv (center→0.5, rim→edge) so a
+// soft radial-gradient texture reads as opaque-core → transparent-rim. windTier
+// sets the sway scale; ruffleRim toggles the standing rim scallop.
+function _radialDome({ radiusFn, centerY, H, rings, perim, folds, windTier, ruffleRim }) {
+  const positions = [], normals = [], uvs = []
+  const aWindTier = [], aTreeHeightNorm = [], aRuffle = [], aOverhead = [], indices = []
+  const RR = Math.max(2, rings), P = Math.max(8, perim)
+
+  positions.push(0, centerY, 0); uvs.push(0.5, 0.5); normals.push(0, 1, 0)
+  aWindTier.push(windTier); aTreeHeightNorm.push(Math.min(1, centerY / H)); aRuffle.push(0); aOverhead.push(1)
+
+  for (let ri = 1; ri <= RR; ri++) {
+    const rFrac = ri / RR
+    for (let j = 0; j < P; j++) {
+      const theta = (j / P) * Math.PI * 2
+      const { r, rimY } = radiusFn(theta)
+      const rad = r * rFrac
+      const cx = rad * Math.cos(theta), cz = rad * Math.sin(theta)
+      // Parabolic dome: apex at centre, drooping to rimY at the rim.
+      const y = rimY + (centerY - rimY) * (1 - rFrac * rFrac)
+      positions.push(cx, y, cz)
+      normals.push(0, 1, 0)                    // translucent layer — soft flat lighting
+      uvs.push(0.5 + 0.5 * rFrac * Math.cos(theta), 0.5 + 0.5 * rFrac * Math.sin(theta))
+      aWindTier.push(windTier); aTreeHeightNorm.push(Math.min(1, Math.max(0, y / H)))
+      aRuffle.push(ruffleRim ? Math.sin(folds * theta) * rFrac : 0); aOverhead.push(1)
+    }
+  }
+  for (let j = 0; j < P; j++) indices.push(0, 1 + j, 1 + ((j + 1) % P))
+  for (let ri = 0; ri < RR - 1; ri++) {
+    const r0 = 1 + ri * P, r1 = 1 + (ri + 1) * P
+    for (let j = 0; j < P; j++) {
+      const jn = (j + 1) % P
+      indices.push(r0 + j, r0 + jn, r1 + j, r0 + jn, r1 + jn, r1 + j)
+    }
+  }
+
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
+  g.setAttribute('aRuffle', new THREE.Float32BufferAttribute(aRuffle, 1))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  g.setIndex(indices)
+  g.computeBoundingSphere()
+  return g
+}
+
+/**
+ * buildUmbrellaShell — the irregular umbrella: a domed surface whose lobes BULGE
+ * at the branch tips (nearest-tip raised-cosine radius) and dip between, apex at
+ * the crown top drooping to the tip heights. Semi-transparent, soft-alpha rim
+ * (radial-gradient skin), rim-ruched. Rides the hula wiggle.
+ */
+export function buildUmbrellaShell(rec, opts = {}) {
+  if (!rec) return null
+  const { tips, H, R, crownBaseY, crownSpan } = generateBranches(rec, opts)
+  if (!tips.length) return null
+  const meanReach = tips.reduce((a, t) => a + t.reach, 0) / tips.length
+  const rmin = meanReach * (opts.dip ?? 0.55)
+  const sigma = (Math.PI / Math.max(3, tips.length)) * (opts.lobeWidth ?? 1.0)
+  const centerY = crownBaseY + crownSpan * (opts.centerRise ?? 0.98)
+  const folds = Math.max(3, Math.round(opts.folds ?? 7))
+  const radiusFn = (theta) => {
+    let best = 1e9, tip = tips[0]
+    for (const t of tips) {
+      let d = Math.abs(theta - t.az); d = Math.min(d, 2 * Math.PI - d)
+      if (d < best) { best = d; tip = t }
+    }
+    const inf = Math.exp(-(best / sigma) * (best / sigma))
+    return { r: rmin + (tip.reach - rmin) * inf, rimY: tip.y }
+  }
+  return _radialDome({
+    radiusFn, centerY, H,
+    rings: opts.rings ?? 6, perim: opts.perimeter ?? 72,
+    folds, windTier: 3, ruffleRim: true,
+  })
+}
+
+/**
+ * buildGradientCloud — the hazy mass filling between the limbs: a broad, low,
+ * very translucent dome (soft radial-gradient skin), the innermost layer the
+ * umbrella + leaves composite over for depth. Doesn't ruffle.
+ */
+export function buildGradientCloud(rec, opts = {}) {
+  if (!rec) return null
+  const H = rec.heightM || 14
+  const R = Math.max(0.5, rec.canopyRadiusM || 5)
+  const trunkFrac = Math.min(0.6, Math.max(0, rec.trunkFrac ?? 0.15))
+  const crownBaseY = trunkFrac * H
+  const crownSpan = Math.max(1, H - crownBaseY)
+  const cloudR = R * (opts.spread ?? 0.95)
+  const centerY = crownBaseY + crownSpan * (opts.rise ?? 0.72)
+  const rimY = crownBaseY + crownSpan * (opts.rimRise ?? 0.4)
+  const radiusFn = () => ({ r: cloudR, rimY })
+  return _radialDome({
+    radiusFn, centerY, H,
+    rings: opts.rings ?? 4, perim: opts.perimeter ?? 48,
+    folds: 5, windTier: 2, ruffleRim: false,
+  })
 }

@@ -33,7 +33,7 @@ import {
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
-import { buildBranchSkeleton } from '../components/impostorGeometry.js'
+import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud } from '../components/impostorGeometry.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -53,6 +53,28 @@ function getSugarMapleLeafTex() {
   _sugarMapleLeafTex.flipY = false
   _sugarMapleLeafTex.colorSpace = THREE.SRGBColorSpace
   return _sugarMapleLeafTex
+}
+
+// Soft radial-alpha disc for the translucent canopy layers (umbrella + cloud):
+// white, opaque core → transparent rim, so material.color tints it and the layers
+// composite with a soft edge. One shared texture (module-level).
+let _canopyGradientTex = null
+function getCanopyGradientTex() {
+  if (_canopyGradientTex) return _canopyGradientTex
+  const c = document.createElement('canvas')
+  c.width = c.height = 128
+  const ctx = c.getContext('2d')
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
+  g.addColorStop(0.0, 'rgba(255,255,255,1)')
+  g.addColorStop(0.55, 'rgba(255,255,255,0.95)')
+  g.addColorStop(0.85, 'rgba(255,255,255,0.45)')
+  g.addColorStop(1.0, 'rgba(255,255,255,0)')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, 128, 128)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  _canopyGradientTex = tex
+  return tex
 }
 
 // Realistic tree heights (meters) per category — yardstick highlights this band.
@@ -978,6 +1000,16 @@ function Skeleton({
     () => (overheadRec ? buildBranchSkeleton(overheadRec) : null),
     [overheadRec],
   )
+  // Stage 2 — the translucent canopy layers hung on the branch layout: an
+  // irregular umbrella shell (lobes at the tips) over a green-gradient cloud.
+  const umbrellaGeo = useMemo(
+    () => (overheadRec ? buildUmbrellaShell(overheadRec) : null),
+    [overheadRec],
+  )
+  const cloudGeo = useMemo(
+    () => (overheadRec ? buildGradientCloud(overheadRec) : null),
+    [overheadRec],
+  )
   const branchMat = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({
       color: '#4f3a28', roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide,
@@ -985,11 +1017,37 @@ function Skeleton({
     injectOverheadWiggle(m)
     return m
   }, [])
-  useEffect(() => () => { try { branchMat?.dispose() } catch {} }, [branchMat])
+  // Umbrella + cloud share a soft radial-alpha disc, tinted + faded per layer, so
+  // looking down composites leaves→umbrella→cloud (depthWrite off → real blend).
+  const canopyTex = useMemo(() => getCanopyGradientTex(), [])
+  const umbrellaMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({
+      map: canopyTex, color: '#3f7a34', roughness: 1, metalness: 0,
+      transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide,
+    })
+    injectOverheadWiggle(m)
+    return m
+  }, [canopyTex])
+  const cloudMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({
+      map: canopyTex, color: '#2c5324', roughness: 1, metalness: 0,
+      transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide,
+    })
+    injectOverheadWiggle(m)
+    return m
+  }, [canopyTex])
+  useEffect(() => () => {
+    try { branchMat?.dispose() } catch {}
+    try { umbrellaMat?.dispose() } catch {}
+    try { cloudMat?.dispose() } catch {}
+  }, [branchMat, umbrellaMat, cloudMat])
 
-  // Bind the two knobs (hula wiggle / ruffle) to the branch material each frame.
+  // Bind the two knobs (hula wiggle / ruffle) to all overhead materials each frame.
   useFrame(() => {
-    if (overheadMode && branchMat) applyOverheadDeformerUniforms(branchMat, overhead)
+    if (!overheadMode) return
+    applyOverheadDeformerUniforms(branchMat, overhead)
+    applyOverheadDeformerUniforms(umbrellaMat, overhead)
+    applyOverheadDeformerUniforms(cloudMat, overhead)
   })
 
   const rot = forestryRotation ? [-Math.PI / 2, 0, 0] : [0, 0, 0]
@@ -1027,11 +1085,16 @@ function Skeleton({
     return (
       <group rotation={[rx, ry, rz]}>
         <group scale={[scale, scale, scale]}>
-          {branchGeo && branchMat && Array.from({ length: n }, (_, i) => (
-            <mesh key={i} geometry={branchGeo} material={branchMat}
+          {branchGeo && Array.from({ length: n }, (_, i) => (
+            <group key={i}
               position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
-              rotation={[0, i * 2.399963267, 0]}
-              castShadow receiveShadow />
+              rotation={[0, i * 2.399963267, 0]}>
+              {/* Branches opaque (write depth) first; translucent cloud then
+                  umbrella composite over — branches glimpsed through the canopy. */}
+              <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
+              {cloudGeo && <mesh geometry={cloudGeo} material={cloudMat} renderOrder={1} />}
+              {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
+            </group>
           ))}
         </group>
       </group>
