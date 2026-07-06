@@ -30,6 +30,12 @@
 >
 > **Recommended path:** (1) **City side — go now**, mirror LS against `maps9` layer 1 clipped to the HiPointe boundary. (2) **County side — take OSM as the honest floor immediately**; file "obtain Clayton's Davey inventory" as a non-blocking follow-up. (3) **Verdancy is a SEPARATE arc** — see the caveat below.
 >
+> **▶ BUILT 2026-07-05 (both fetchers land; wiring is what's left).**
+> - `scripts/13-fetch-city-trees.py` — City (maps9 layer 1) → `<scene>/clean/park_trees.json`. HiPointe: **560 trees** (clipped to the disc, Dead/Stump dropped). Same schema as LS `park_trees.json`.
+> - `scripts/14-fetch-osm-trees.py` — OSM `natural=tree` (Overpass) → `<scene>/clean/osm_trees.json`. Kept **only the County/DeMun side** (WEST of the City/County divide in `raw/admin_boundaries.json`) so it's **spatially disjoint from the City census** (verified: min City↔OSM separation 11 m — no double-count). DeMun: **870 trees**, species-sparse (2/870 tagged) — honest positions, `shape` defaults broad, no DBH/condition. ⚠️ **Overpass 406s the default `python-requests`/curl UA — a real `User-Agent` header is required** (fixed in-script).
+> - `scripts/tree_shape.py` — shared `COMMON→shape` taxonomy (12-process still has an inline copy; fold in when LS `clean/map.json` is regenerable).
+> - **Combined scene census = 560 + 870 = 1,430 trees.** The two `clean/*.json` layers are DISJOINT by construction → **wire #1 (`bake-trees.js`) should UNION `park_trees.json` + `osm_trees.json`** (no dedup needed). Data artifacts are gitignored (regenerable by re-running the fetchers).
+>
 > ⚠️ **All three are public/managed trees only (or OSM's volunteer subset) — NONE include the private-yard canopy**, which in Hi-Pointe/DeMun is most of what reads as "verdant." A faithful-census layer will look *sparser* than the real neighborhood. To actually read green, a **derived canopy** (treelawn spacing + parcels + parks, modulated by a tree-canopy raster) is needed *on top* of the census — its own piece of work, do not couple it to the fetch.
 
 - **⚠️ Data source is NOT in the repo.** LS's trees came from a **manual ArcGIS REST export** (`scripts/raw/lafayette_park_trees.json` → `scripts/12-process-park-trees.py`), and it's **PARK trees only** (point-in-park-polygon filtered), not a neighborhood street-tree census. So there is no captured endpoint to mirror for a whole neighborhood. *(2026-07-05: the endpoint is now known live — see the scouted table above.)*
