@@ -70,6 +70,7 @@ cartograph/data/*
 cartograph/data/hipointe-demun/*
 !cartograph/data/hipointe-demun/neighborhood_boundary.json
 !cartograph/data/hipointe-demun/geography.json
+!cartograph/data/hipointe-demun/building-overrides.json
 # content/ — track only the hand-authored content files, keep bulk out
 !cartograph/data/hipointe-demun/content/
 cartograph/data/hipointe-demun/content/*
