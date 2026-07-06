@@ -150,15 +150,20 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
 
   const FOLDS = Math.max(3, Math.round(opts.folds ?? 7))          // rim scallop count
   const P = Math.max(3 * FOLDS, Math.round(opts.perimeter ?? 48)) // angular segments
-  const RR = Math.max(1, Math.round(opts.radialRings ?? 4))       // radial tessellation
-  const NLAYERS = Math.max(1, Math.round(opts.layers ?? 3))       // stacked discs (parallax)
+  const RR = Math.max(2, Math.round(opts.radialRings ?? 6))       // radial tessellation
+  const NLAYERS = Math.max(1, Math.round(opts.layers ?? 2))       // stacked discs (parallax)
   // The stack sits at the crown — a thin canopy shell [yLo,1] so the hula is
   // base-anchored (lower discs barely move, the top rocks) but all discs read
   // from above. yLo defaults just below the crown.
-  const yLo = opts.yLo ?? 0.78
+  const yLo = opts.yLo ?? 0.82
+  // Dome height — the canopy mounds toward its centre (a parabolic cap) so it
+  // reads as a 3D crown from above (catches light, tilts under the hula) instead
+  // of a flat plate. Fraction of canopy radius.
+  const domeH = discR * (opts.dome ?? 0.4)
 
   const positions = []
   const uvs = []
+  const normals = []
   const aWindTier = []
   const aTreeHeightNorm = []
   const aRuffle = []
@@ -174,22 +179,32 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
     const layerR = discR * (0.9 + 0.1 * lt)
     const base = positions.length / 3
 
-    // Center vertex.
-    positions.push(0, y, 0)
+    // Slope of the dome normal's horizontal component (∂y/∂r = -2·domeH·r/R²).
+    const nh = domeH > 0 ? 2 * domeH / (layerR * layerR) : 0
+
+    // Center vertex — top of the dome.
+    positions.push(0, y + domeH, 0)
     uvs.push(0.5, 0.5)
+    normals.push(0, 1, 0)
     aWindTier.push(3); aTreeHeightNorm.push(yNorm); aRuffle.push(0); aOverhead.push(1); aBark.push(0)
 
     // Radial rings × angular segments.
     for (let ri = 1; ri <= RR; ri++) {
       const rFrac = ri / RR
       const rad = layerR * rFrac
+      // Parabolic dome: full height at the centre, 0 at the rim.
+      const domeY = y + domeH * (1 - rFrac * rFrac)
       for (let j = 0; j < P; j++) {
         const theta = (j / P) * Math.PI * 2
         const cx = rad * Math.cos(theta)
         const cz = rad * Math.sin(theta)
-        positions.push(cx, y, cz)
+        positions.push(cx, domeY, cz)
         // Planar UV [0,1] over the disc's own extent → the full square capture.
         uvs.push(0.5 + 0.5 * cx / layerR, 0.5 + 0.5 * cz / layerR)
+        // Dome normal — points up + radially outward (mound shading).
+        const nx = nh * cx, nz = nh * cz
+        const nl = Math.hypot(nx, 1, nz)
+        normals.push(nx / nl, 1 / nl, nz / nl)
         aWindTier.push(3); aTreeHeightNorm.push(yNorm)
         // Rim-weighted standing scallop: 0 at center, full at the rim.
         aRuffle.push(Math.sin(FOLDS * theta) * rFrac)
@@ -219,10 +234,8 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  // Discs face up (+Y) — lit from the sky in the plan view.
-  const nrm = new Float32Array(positions.length)
-  for (let i = 0; i < nrm.length; i += 3) { nrm[i + 1] = 1 }
-  g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
+  // Dome normals (up + radially outward) so the crown catches light as a mound.
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
   g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
   g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
   g.setAttribute('aRuffle', new THREE.Float32BufferAttribute(aRuffle, 1))

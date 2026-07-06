@@ -423,18 +423,15 @@ export function injectFoliageSway(material) {
          // Gated by aOverhead: on mesh trees (aOverhead=0) this whole block is a
          // no-op — bit-exact regression-safe. See HANDOFF-overhead-hula-impostor.md.
          if (aOverhead > 0.5) {
-           // 1. RUCHE — the tree's resting shape. Flex the amplitude of the
-           //    baked standing scallop (aRuffle = sin(FOLDS·θ)); NO travel term,
-           //    so fold #3 stays fold #3 (Jacob rejected the −ωt "swimming").
-           //    Displaced both radially (a flower from above) and vertically (a
-           //    relief the wind can catch). Gentle breathing over time — the
-           //    shader flexes amplitude; it does not move the folds around.
-           float ovR    = length(position.xz);
-           vec2  ovDir  = ovR > 1e-4 ? position.xz / ovR : vec2(0.0);
-           float breathe = 1.0 + 0.12 * sin(uTime * 0.6 + aTreeHeightNorm * 4.0);
-           float ovAmp  = ovR * uRuffleDepth * breathe;
-           transformed.xz += ovDir * (aRuffle * ovAmp);
-           transformed.y  += aRuffle * ovAmp * 0.45;
+           // 1. RUCHE — a gentle VERTICAL undulation of the canopy surface
+           //    (aRuffle is the rim-weighted standing scallop sin(FOLDS·θ)·rFrac);
+           //    NO travel term (fold #3 stays fold #3) and, deliberately, NO
+           //    radial displacement — pushing verts outward stretched the capture
+           //    into a starfish (Jacob, 2026-07-06). Vertical-only keeps the
+           //    canopy silhouette intact and just ripples the surface up/down.
+           //    Amplitude in metres, flexed gently over time. Scale ~2 m at full.
+           float breathe = 1.0 + 0.15 * sin(uTime * 0.5);
+           transformed.y += aRuffle * uRuffleDepth * 2.0 * breathe;
            // 2. HULA — the tree's own gentle life. The whole disc-stack rocks on
            //    a horizontal axis whose direction slowly DRIFTS (non-directional),
            //    base-anchored (amplitude ∝ aTreeHeightNorm → trunk-height layers
