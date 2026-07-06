@@ -996,19 +996,39 @@ function Skeleton({
     return { heightM: (typeof topY === 'number' ? topY : 12), canopyRadiusM, trunkFrac: 0.12 }
   }, [overheadMode, scene, topY])
 
+  // Connect the overhead to the SELECTED chassis: seed the procedural layout off
+  // the chassis identity (the GLB url), so each chassis gets its own consistent
+  // branch/umbrella structure (not a generic default) that changes when you pick
+  // a different chassis. Leaf-ways nudges the crown character.
+  const overheadSeed = useMemo(() => {
+    let h = 5381; const s = url || ''
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0
+    return (h % 4093) + 1
+  }, [url])
+  const overheadOpts = useMemo(() => {
+    // Leaf arrangement → crown character: weeping droops + spreads, columnar/
+    // upright pulls in + rises, fastigiate tighter. Default balanced.
+    const ways = overhead?.ways
+    const o = { seed: overheadSeed }
+    if (ways === 'weeping') { o.centerRise = 0.7; o.dip = 0.45 }
+    else if (ways === 'upright' || ways === 'columnar' || ways === 'fastigiate') { o.centerRise = 1.05; o.dip = 0.7 }
+    return o
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overheadSeed, overhead?.ways])
+
   const branchGeo = useMemo(
-    () => (overheadRec ? buildBranchSkeleton(overheadRec) : null),
-    [overheadRec],
+    () => (overheadRec ? buildBranchSkeleton(overheadRec, overheadOpts) : null),
+    [overheadRec, overheadOpts],
   )
   // Stage 2 — the translucent canopy layers hung on the branch layout: an
   // irregular umbrella shell (lobes at the tips) over a green-gradient cloud.
   const umbrellaGeo = useMemo(
-    () => (overheadRec ? buildUmbrellaShell(overheadRec) : null),
-    [overheadRec],
+    () => (overheadRec ? buildUmbrellaShell(overheadRec, overheadOpts) : null),
+    [overheadRec, overheadOpts],
   )
   const cloudGeo = useMemo(
-    () => (overheadRec ? buildGradientCloud(overheadRec) : null),
-    [overheadRec],
+    () => (overheadRec ? buildGradientCloud(overheadRec, overheadOpts) : null),
+    [overheadRec, overheadOpts],
   )
   const branchMat = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({
@@ -1042,12 +1062,15 @@ function Skeleton({
     try { cloudMat?.dispose() } catch {}
   }, [branchMat, umbrellaMat, cloudMat])
 
-  // Bind the two knobs (hula wiggle / ruffle) to all overhead materials each frame.
+  // Bind the two knobs (hula wiggle / ruffle) to all overhead materials each
+  // frame, and match the canopy tints to the chassis's authored leaf tints.
   useFrame(() => {
     if (!overheadMode) return
     applyOverheadDeformerUniforms(branchMat, overhead)
     applyOverheadDeformerUniforms(umbrellaMat, overhead)
     applyOverheadDeformerUniforms(cloudMat, overhead)
+    if (overhead?.tintFront) umbrellaMat.color.set(overhead.tintFront)
+    if (overhead?.tintBack) cloudMat.color.set(overhead.tintBack)
   })
 
   const rot = forestryRotation ? [-Math.PI / 2, 0, 0] : [0, 0, 0]

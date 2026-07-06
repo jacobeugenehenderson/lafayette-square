@@ -762,7 +762,14 @@ function SlotCard({
             windStrength={windEnabled ? windStrength : 0}
             deformerRange={deformer?.range || null}
             deformerSeed={deformSeed}
-            overhead={{ ruffleDepth, hulaAmount }}
+            overhead={{
+              ruffleDepth, hulaAmount,
+              // Connect the overhead impostor to the selected chassis: match its
+              // leaf arrangement + tints so the canopy reads like this tree.
+              ways: leaves?.ways,
+              tintFront: leaves?.tintFront,
+              tintBack: leaves?.tintBack,
+            }}
             onPerfSample={setPerfSample}
           />
         )}
