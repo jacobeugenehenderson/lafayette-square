@@ -20,6 +20,8 @@ Last verified: 2026-05-26 (L1.3 shipped — `buildings.json` → **version 2** r
 
 **Scene vs. Look:** a *scene* is a dataset (the neighborhood — `lafayette-square`, `toy`, future others). A *Look* is a styling snapshot keyed by scene. The slab artifacts are scene-keyed, not look-keyed: `public/baked/lafayette-square/` is the LS scene; `public/baked/toy/` is the toy scene; per-Look variation today is folded into the single set of artifacts for each scene via the active design.json.
 
+**The slab is one of three payloads.** This contract governs the **slab** — the baked *render* (`public/baked/<look>/`). The consumer app is a generic player that reads two more the slab does not carry: **content** (names / listings / menus / roster / profile — a per-installation layer read *alongside* the slab, loaded by `INSTANCE.lookId`; the render↔content line is the §6.3 "C2 boundary" below) and the **installation config** (`src/instances/<look>.js`, selected by `?look=` — identity / geography / branding / legal + the module manifest; `ls/ARCHITECTURE.md §2` + §6). A slab consumer trusts the slab blindly; content and config resolve on the reader side and never reach back into the bake.
+
 ---
 
 ## 1. Directory layout

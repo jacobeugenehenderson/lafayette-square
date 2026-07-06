@@ -75,6 +75,8 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 **On buying the domain:** buy `<hood>.com` for the *name* if you want (cheap option value), but it's **decoupled** from the technical work — the pour ships to the studio subpath regardless, and the domain just becomes a CNAME you flip later. Don't let the purchase gate or reshape the build. *(HiPointe stages first to `jacobhenderson.studio/hipointe-demun`; see `NEIGHBORHOOD-INPUTS.md §7` step 8 for the pour sequence, `HANDOFF-hipointe-pour-step0.md` for step-0 state.)*
 
+> **Interim — the Preview Publish buttons for a non-LS look (decided 2026-07-06, Boz + Jacob).** Because the domain is decoupled (above), the "Push"/Publish button does **not** no-op. **Staging stays live for every look** — one build serves all, so `?look=hipointe-demun` already previews on the staging site. **Prod-promote for a non-LS look is disabled with an honest label** ("ships to its own home once its deploy target's set"), *never* a silent no-op — a button that lies about working is the misleading-UI anti-pattern (`feedback_stale_opaque_overlay_worse_than_hidden`). The real unblock is the per-scene destination (`STAGING_BRANCH`/`PROD_BRANCH`/pathspecs parameterized by scene, above) — small, well-bounded, not yet built. ⏳ **Guard not yet wired in code** — this note records the *decision*; the Preview Publish panel still shows the LS-scoped buttons. Tracked in `HANDOFF-blank-app-instance-decoupling.md`.
+
 ---
 
 ## 1. Frontend (GitHub Pages)
