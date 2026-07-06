@@ -64,9 +64,9 @@ export default {
     about: "Hi-Pointe–DeMun is a streetcar-era historic district straddling the St. Louis city limit and Clayton at Forest Park's southwest corner. Platted 1917–1923 and largely built in the 1920s, its brick-and-limestone homes, terra-cotta and slate roofs, and three-story apartments around DeMun Park reflect landscape architect Henry Wright's “new town” plan of curved, traffic-calmed streets and shared greens. Anchors include the 1922 Hi-Pointe Theatre — the oldest continually operating single-screen cinema in St. Louis — the Tudor Cheshire Inn, the walkable DeMun Avenue shops, and the Collegiate Gothic campus of Concordia Seminary.",
   },
 
-  // Delivery OFF (no courier program here yet); other modules on. Mount-gating is
-  // Phase 3 — these flags document intent; the App.jsx mounts don't gate on them
-  // yet, so delivery UI still renders ungated until that lands.
+  // Delivery OFF (no courier program here yet); other modules on. The App.jsx
+  // mounts gate on these flags (Phase 3, landed) via `moduleOn` — delivery=false
+  // hides the /cary route, the CourierDashboard overlay, and the CourierDots.
   modules: {
     bulletin: true,
     delivery: {
@@ -84,7 +84,7 @@ export default {
   },
 
   // No Cary program → placeholder endpoints (Cary-dependent UI is delivery-module
-  // territory that Phase 3 gating will hide; inert until then).
+  // territory, hidden by the Phase 3 mount-gating above; inert here).
   cary: {
     smsNumber: null,
     smsNumberDisplay: null,

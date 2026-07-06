@@ -13,7 +13,7 @@ import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
 import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './BulletinModal'
 import useSkyState from '../hooks/useSkyState'
-import { INSTANCE } from '../instance.js'
+import { INSTANCE, moduleOn } from '../instance.js'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
 import { TodStrip } from './DawnTimeline'
@@ -815,11 +815,13 @@ function BulletinTab({ isFull }) {
 
 // ============ MAIN SIDEPANEL ============
 
+// Tabs carry an optional `module` \u2014 filtered out when that module is off for
+// the installation (Phase 3 manifest gating; almanac is universal, no flag).
 const TABS = [
   { id: 'almanac', label: 'Almanac', icon: '\u25D0' },
-  { id: 'bulletin', label: 'Bulletin', icon: '\u25A6' },
-  { id: 'lafayettepages', label: 'Society', icon: '\u25C8' },
-]
+  { id: 'bulletin', label: 'Bulletin', icon: '\u25A6', module: 'bulletin' },
+  { id: 'lafayettepages', label: 'Society', icon: '\u25C8', module: 'society' },
+].filter(t => !t.module || moduleOn(t.module))
 
 const PANEL_HEIGHTS = {
   collapsed: 'auto',

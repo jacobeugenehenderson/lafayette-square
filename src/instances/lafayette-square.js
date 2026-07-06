@@ -72,9 +72,10 @@ export default {
     historicDistrictName: 'Lafayette Square Historic District',
   },
 
-  // Module manifest — which features this installation runs. LS = all-on.
-  // App.jsx mount-gating is Phase 3. "Cary" is a Product constant, not a field —
-  // delivery.enabled gates PRESENCE; participant data (cary.*) carries variation.
+  // Module manifest — which features this installation runs. LS = all-on (so the
+  // Phase 3 mount-gating is a no-op here — byte-identical render). "Cary" is a
+  // Product constant, not a field — delivery.enabled gates PRESENCE; participant
+  // data (cary.*) carries variation.
   modules: {
     bulletin: true,
     delivery: {

@@ -2,7 +2,7 @@ import { useRef, useEffect, Suspense, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { INSTANCE } from '../instance.js'
+import { INSTANCE, moduleOn } from '../instance.js'
 import { IS_MOBILE } from '../lib/isMobile.js'
 import { browseAltitude } from '../lib/browseAltitude.js'
 import { SHOT_TRANSITION_MS } from '../camera/transitions.js'
@@ -829,7 +829,7 @@ function Scene() {
           production mounts the same InstancedTrees Stage/Preview do. */}
       {!IS_GROUND && <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
       {!IS_GROUND && <UserDot />}
-      {!IS_GROUND && <CourierDots />}
+      {!IS_GROUND && moduleOn('delivery') && <CourierDots />}
       {/* Buildings: production renders the merged-mesh slab (L1.3 cutover).
           LafayetteScene stays mounted for neon / street labels / landmark
           markers / click-catcher, with its live Building+Foundations hidden;

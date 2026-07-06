@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import SunCalc from 'suncalc'
-import { INSTANCE } from './instance.js'
+import { INSTANCE, moduleOn } from './instance.js'
 import Scene from './components/Scene'
 import SceneBoundary from './components/SceneBoundary'
 import Controls from './components/Controls'
@@ -573,7 +573,7 @@ function App() {
   if (route.page === 'privacy') return <PrivacyPage />
   if (route.page === 'terms-courier') return <CourierTermsPage />
   if (route.page === 'terms-restaurant') return <RestaurantTermsPage />
-  if (route.page === 'cary') return <CaryStandalone />
+  if (route.page === 'cary' && moduleOn('delivery')) return <CaryStandalone />
 
   const isGround = window.location.search.includes('ground')
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
@@ -584,22 +584,22 @@ function App() {
       <ClockCalendarPump mode="live" />
       {!adminPromptOpen && splashReady && <SceneBoundary><Scene /></SceneBoundary>}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
-      {route.page === 'bulletin' && <BulletinOpener />}
-      {/* cary routes now render standalone — see CaryStandalone above */}
+      {route.page === 'bulletin' && moduleOn('bulletin') && <BulletinOpener />}
+      {/* cary routes now render standalone — see CaryStandalone above (gated on modules.delivery) */}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.2s' }}><Controls /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
       {/* Search moved to ticker pulldown drawer */}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.6s' }}><BrowseHeader /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
-      {!isGround && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}
-      {!isGround && <BulletinModal />}
-      {!isGround && <ContactModal />}
-      {!isGround && <CodeDeskModal />}
-      {!isGround && <SmsInbox />}
-      {!isGround && <ChatModal />}
+      {!isGround && moduleOn('events') && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}
+      {!isGround && moduleOn('bulletin') && <BulletinModal />}
+      {!isGround && moduleOn('contact') && <ContactModal />}
+      {!isGround && moduleOn('codedesk') && <CodeDeskModal />}
+      {!isGround && moduleOn('sms') && <SmsInbox />}
+      {!isGround && moduleOn('chat') && <ChatModal />}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
-      {!isGround && <InfoModal />}
-      <CourierDashboard />
+      {!isGround && moduleOn('info') && <InfoModal />}
+      {moduleOn('delivery') && <CourierDashboard />}
       <AdminPrompt />
       <Splash />
     </div>

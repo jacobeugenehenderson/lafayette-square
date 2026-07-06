@@ -41,3 +41,16 @@ function resolveLookId() {
 }
 
 export const INSTANCE = INSTANCES[resolveLookId()] || INSTANCES[DEFAULT_LOOK]
+
+/**
+ * Module presence for mount-gating (Phase 3). The manifest (`INSTANCE.modules`)
+ * declares which features an installation runs; the app gates its mounts on
+ * these (LS = all-on → byte-identical render). `delivery` carries a nested
+ * `{ enabled, ... }` object (participant data rides alongside the flag); the
+ * rest are plain booleans. `moduleOn` normalizes both shapes to one predicate
+ * so call sites read a single flat flag.
+ */
+export function moduleOn(name) {
+  const m = INSTANCE.modules?.[name]
+  return (m && typeof m === 'object') ? !!m.enabled : !!m
+}
