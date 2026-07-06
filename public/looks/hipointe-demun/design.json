@@ -779,57 +779,25 @@
   "openSections": {
     "Streets": false,
     "Blocks": false,
-    "Paths": true,
+    "Paths": false,
     "Features": false,
     "Labels": false,
     "HeroSubject": false,
     "Look": false,
-    "Land Cover": true,
-    "Furniture": true
+    "Land Cover": false,
+    "Furniture": false
   },
   "trees": [
     {
-      "species": "platanus_acerifolia",
-      "variantId": 6
+      "species": "procedural_ornamental",
+      "variantId": 1
     },
     {
-      "species": "platanus_acerifolia",
-      "variantId": 7
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 8
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 9
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 10
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 3
-    },
-    {
-      "species": "platanus_acerifolia",
+      "species": "procedural_ornamental",
       "variantId": 2
     },
     {
-      "species": "platanus_acerifolia",
-      "variantId": 1
-    },
-    {
-      "species": "maple_sugar",
-      "variantId": 1
-    },
-    {
-      "species": "ash_green",
-      "variantId": 1
-    },
-    {
-      "species": "maple_silver",
+      "species": "generic_tree_2",
       "variantId": 1
     },
     {
@@ -837,11 +805,43 @@
       "variantId": 1
     },
     {
-      "species": "birch",
+      "species": "quercus_alba",
       "variantId": 1
     },
     {
-      "species": "blackgum",
+      "species": "quercus_alba",
+      "variantId": 2
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 1
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 2
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 3
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 4
+    },
+    {
+      "species": "maple_sugar",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_columnar",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_columnar",
+      "variantId": 2
+    },
+    {
+      "species": "ash_green",
       "variantId": 1
     },
     {
@@ -857,12 +857,56 @@
       "variantId": 3
     },
     {
-      "species": "oak_bur",
+      "species": "blackgum",
       "variantId": 1
+    },
+    {
+      "species": "procedural_conifer",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_conifer",
+      "variantId": 2
+    },
+    {
+      "species": "maple_silver",
+      "variantId": 1
+    },
+    {
+      "species": "garden_mix",
+      "variantId": 3
+    },
+    {
+      "species": "garden_mix",
+      "variantId": 4
+    },
+    {
+      "species": "garden_mix",
+      "variantId": 5
+    },
+    {
+      "species": "garden_mix",
+      "variantId": 6
     },
     {
       "species": "oak_white",
       "variantId": 1
+    },
+    {
+      "species": "birch",
+      "variantId": 1
+    },
+    {
+      "species": "oak_bur",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_weeping",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_weeping",
+      "variantId": 2
     }
   ]
 }
