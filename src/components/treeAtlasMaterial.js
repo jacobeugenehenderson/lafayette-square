@@ -1358,6 +1358,52 @@ export function applyOverheadDeformerUniforms(material, overhead) {
   if (shader.uniforms.uHulaAmount)  shader.uniforms.uHulaAmount.value  = num(o.hulaAmount, 0)
 }
 
+// injectOverheadWiggle — the FLAT-shader deformer for the overhead impostor's
+// procedural parts (branch skeleton, umbrella shells): the SAME base-anchored
+// hula wiggle + shared wind + vertical ruffle as injectFoliageSway's overhead
+// block, but with NO atlas/bark fragment machinery — a plain MeshStandard
+// fragment (flat-shaded, solid color, no map). Reuses the shared treeSwayUniforms
+// (one weather system) and the same uRuffleDepth/uHulaAmount the knobs drive via
+// applyOverheadDeformerUniforms. Gated per-vertex by aOverhead. Cheap: opaque,
+// flat, writes depth (early-Z) — the branch structure you see from directly above.
+export function injectOverheadWiggle(material) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime              = treeSwayUniforms.uTime
+    shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
+    shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
+    shader.uniforms.uGustFrontVelocity = treeSwayUniforms.uGustFrontVelocity
+    shader.uniforms.uRuffleDepth       = { value: 0 }
+    shader.uniforms.uHulaAmount        = { value: 0 }
+    material.userData.shader = shader
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+         uniform float uTime;
+         uniform vec3  uWindForce;
+         uniform float uWindIntensity;
+         uniform vec3  uGustFrontVelocity;
+         uniform float uRuffleDepth;
+         uniform float uHulaAmount;
+         attribute float aOverhead;
+         attribute float aRuffle;
+         attribute float aTreeHeightNorm;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+         if (aOverhead > 0.5) {
+           // Hula — base-anchored x/y wiggle, direction slowly drifting, phase-
+           //   lagged up the crown (aTreeHeightNorm: trunk-height barely moves).
+           float hulaT   = uTime * 0.7;
+           float hulaDrA = uTime * 0.22;
+           vec2  hulaDir = vec2(cos(hulaDrA), sin(hulaDrA));
+           float hulaLag = aTreeHeightNorm * 2.4;
+           transformed.xz += hulaDir * (uHulaAmount * aTreeHeightNorm * sin(hulaT - hulaLag));
+           // Ruffle — gentle vertical undulation (no radial push).
+           transformed.y  += aRuffle * uRuffleDepth * 2.0 * (1.0 + 0.15 * sin(uTime * 0.5));
+           // Shared wind — base-anchored lean downwind.
+           vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
+           transformed.xz += wd * (uWindIntensity * 0.03 * aTreeHeightNorm);
+         }`)
+  }
+}
+
 // Applies per-draw bark uniforms. Moved here from InstancedTrees.jsx by
 // Brief 7 so the Salon preview path (SpecimenViewport) reuses the SAME
 // per-draw uniform setup. Single implementation across LS runtime and

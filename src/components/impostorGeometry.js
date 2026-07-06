@@ -247,3 +247,132 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
   g.computeBoundingSphere()
   return g
 }
+
+// Deterministic hash in [0,1) for the procedural branch layout (no Math.random,
+// so the skeleton is stable across rebuilds; per-instance variety comes from the
+// instance rotY, not a reseed).
+function _bh(a, b) {
+  const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
+
+/**
+ * buildBranchSkeleton — the procedural woody backbone of the overhead impostor
+ * (Stage 1). A few primary limbs radiate from the crown centre, tapering
+ * uniformly base→tip, rising then reaching outward, forking once; flat, tapered
+ * horizontal ribbons so from directly above they read as branches radiating out
+ * through the canopy gaps (and, in winter, ARE the impostor). Opaque + flat-
+ * shaded (cheap, writes depth). The umbrella lobes + leaf clusters hang off the
+ * tips in later stages. Carries aOverhead/aTreeHeightNorm/aRuffle/aWindTier so the
+ * flat wiggle material (injectOverheadWiggle) sways the whole skeleton in x/y.
+ *
+ * @param {object} rec  { heightM, canopyRadiusM, trunkFrac }
+ * @param {object} opts { primary, seed, baseWidth, tipWidth, forkChance } overrides
+ */
+export function buildBranchSkeleton(rec, opts = {}) {
+  if (!rec) return null
+  const H = rec.heightM || 14
+  const R = Math.max(0.5, rec.canopyRadiusM || 5)
+  const trunkFrac = Math.min(0.6, Math.max(0, rec.trunkFrac ?? 0.15))
+  const crownBaseY = trunkFrac * H            // limbs spring from the top of the trunk
+  const crownSpan = Math.max(1, H - crownBaseY)
+  const NPRIMARY = Math.max(3, Math.round(opts.primary ?? 6))
+  const seed = opts.seed ?? 1
+  const baseW = opts.baseWidth ?? Math.max(0.25, R * 0.05)
+  const tipW = opts.tipWidth ?? baseW * 0.18
+  const forkChance = opts.forkChance ?? 0.6
+
+  const positions = []
+  const normals = []
+  const aWindTier = []
+  const aTreeHeightNorm = []
+  const aRuffle = []
+  const aOverhead = []
+  const indices = []
+
+  // Emit tapered horizontal ribbons along a node path [{x,y,z,w}, …].
+  const emitLimb = (nodes) => {
+    for (let k = 0; k < nodes.length - 1; k++) {
+      const p0 = nodes[k], p1 = nodes[k + 1]
+      let dx = p1.x - p0.x, dz = p1.z - p0.z
+      const dl = Math.hypot(dx, dz) || 1
+      dx /= dl; dz /= dl
+      const px = -dz, pz = dx                 // perp in XZ
+      const b = positions.length / 3
+      const w0 = p0.w * 0.5, w1 = p1.w * 0.5
+      positions.push(p0.x - px * w0, p0.y, p0.z - pz * w0)
+      positions.push(p0.x + px * w0, p0.y, p0.z + pz * w0)
+      positions.push(p1.x + px * w1, p1.y, p1.z + pz * w1)
+      positions.push(p1.x - px * w1, p1.y, p1.z - pz * w1)
+      const h0 = Math.min(1, Math.max(0, p0.y / H)), h1 = Math.min(1, Math.max(0, p1.y / H))
+      const hh = [h0, h0, h1, h1]
+      for (let v = 0; v < 4; v++) {
+        normals.push(0, 1, 0)
+        aWindTier.push(1); aTreeHeightNorm.push(hh[v]); aRuffle.push(0); aOverhead.push(1)
+      }
+      indices.push(b, b + 1, b + 2, b, b + 2, b + 3)
+    }
+  }
+
+  // Build one limb path from the crown centre out to a tip at azimuth `az`.
+  const buildPath = (az, reach, rise, segs, wBase, wTip, salt) => {
+    const nodes = []
+    for (let s = 0; s <= segs; s++) {
+      const t = s / segs
+      const r = reach * t
+      // Rise fast then level (ease-out) so limbs lift off the trunk then reach out.
+      const y = crownBaseY + crownSpan * rise * (t * (2 - t))
+      // Gentle lateral curve so limbs aren't dead-straight spokes.
+      const azS = az + (_bh(salt, s + 3) - 0.5) * 0.5 * t
+      nodes.push({
+        x: r * Math.cos(azS),
+        z: r * Math.sin(azS),
+        y,
+        w: wBase + (wTip - wBase) * t,
+      })
+    }
+    return nodes
+  }
+
+  for (let i = 0; i < NPRIMARY; i++) {
+    const salt = seed * 17 + i * 7
+    const az = ((i + 0.5) / NPRIMARY) * Math.PI * 2 + (_bh(salt, 1) - 0.5) * 0.4
+    const reach = R * (0.72 + 0.36 * _bh(salt, 2))
+    const rise = 0.55 + 0.35 * _bh(salt, 5)
+    const primary = buildPath(az, reach, rise, 4, baseW, tipW, salt)
+    emitLimb(primary)
+
+    // One fork off the mid/outer third, thinner + splayed.
+    if (_bh(salt, 9) < forkChance) {
+      const anchor = primary[Math.min(primary.length - 1, 2)]
+      const fAz = az + (_bh(salt, 11) < 0.5 ? -1 : 1) * (0.4 + 0.3 * _bh(salt, 12))
+      const fReach = reach * (0.35 + 0.25 * _bh(salt, 13))
+      const fork = []
+      const segs = 3
+      for (let s = 0; s <= segs; s++) {
+        const t = s / segs
+        const azS = fAz + (_bh(salt, s + 20) - 0.5) * 0.4 * t
+        const r = fReach * t
+        fork.push({
+          x: anchor.x + r * Math.cos(azS),
+          z: anchor.z + r * Math.sin(azS),
+          y: anchor.y + crownSpan * 0.12 * t,
+          w: anchor.w * 0.7 * (1 - 0.7 * t),
+        })
+      }
+      emitLimb(fork)
+    }
+  }
+
+  if (positions.length === 0) return null
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+  g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
+  g.setAttribute('aRuffle', new THREE.Float32BufferAttribute(aRuffle, 1))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  g.setIndex(indices)
+  g.computeBoundingSphere()
+  return g
+}

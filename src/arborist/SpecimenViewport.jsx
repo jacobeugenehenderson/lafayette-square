@@ -27,14 +27,13 @@ import {
   applyBarkUniforms,
   applyDeformerUniforms,
   applyOverheadDeformerUniforms,
-  injectFoliageSway,
+  injectOverheadWiggle,
   stampTreeVertexAttrs,
   treeSwayUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
-import { buildOverheadHulaGeometry } from '../components/impostorGeometry.js'
-import { captureTreeOverhead } from '../components/captureImpostor.js'
+import { buildBranchSkeleton } from '../components/impostorGeometry.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -944,15 +943,11 @@ function Skeleton({
     }
   }, [anchorScene])
 
-  // ── Overhead "hula" impostor (Browse preset) ────────────────────────────
-  // The overhead look is the REAL tree from above: we render a one-shot top-down
-  // RTT CAPTURE of the loaded chassis (captureImpostor.js) — carrying the authored
-  // bark/leaves/size/density by construction — and skin a short stack of
-  // tessellated ruched discs with it. The shared deformer shader then ripples it
-  // (ruche/hula/wind). Reuses the captured-impostor arc rather than re-deriving a
-  // procedural canopy. (HANDOFF-overhead-hula-impostor.md.)
-  const gl = useThree((s) => s.gl)
-
+  // ── Overhead "hula" impostor (Browse preset) — procedural canopy ─────────
+  // Stage 1: the BRANCH SKELETON. A procedural woody backbone (radial tapered
+  // flat limbs) that from directly above reads as branches radiating out; the
+  // umbrella lobes + leaf clusters hang off its tips in later stages. Flat-shaded
+  // + opaque (cheap). Wiggles in x/y via the shared hula (injectOverheadWiggle).
   const overheadRec = useMemo(() => {
     if (!overheadMode) return null
     // Canopy radius = max XZ extent over leaf meshes (fallback: all meshes).
@@ -979,43 +974,22 @@ function Skeleton({
     return { heightM: (typeof topY === 'number' ? topY : 12), canopyRadiusM, trunkFrac: 0.12 }
   }, [overheadMode, scene, topY])
 
-  const overheadGeo = useMemo(
-    () => (overheadRec ? buildOverheadHulaGeometry(overheadRec, 'summer') : null),
+  const branchGeo = useMemo(
+    () => (overheadRec ? buildBranchSkeleton(overheadRec) : null),
     [overheadRec],
   )
-
-  // Top-down RTT capture of the real tree → the disc skin. Re-captures when the
-  // chassis, authored material, or dims change; disposed on change/unmount.
-  const [captureTex, setCaptureTex] = useState(null)
-  useEffect(() => {
-    if (!overheadMode || !gl || !atlas.treeMaterial || !anchorScene || !overheadRec) {
-      setCaptureTex(null); return
-    }
-    let tex = null
-    try {
-      tex = captureTreeOverhead(gl, anchorScene, atlas.treeMaterial, { canopyRadiusM: overheadRec.canopyRadiusM })
-    } catch (e) { console.warn('[overhead] capture failed', e) }
-    setCaptureTex(tex)
-    return () => { try { tex?.dispose() } catch {} }
-  }, [overheadMode, gl, atlas.treeMaterial, anchorScene, overheadRec])
-
-  // Disc material = the capture on a deformer-enabled MeshStandard (injectFoliageSway
-  // gives it the ruche/hula/wind vertex path; aBark=0 on the disc → the bark
-  // fragment path is skipped, so it shows the raw capture).
-  const captureMat = useMemo(() => {
-    if (!captureTex) return null
+  const branchMat = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({
-      map: captureTex, alphaTest: 0.3, transparent: false,
-      side: THREE.DoubleSide, roughness: 1, metalness: 0,
+      color: '#4f3a28', roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide,
     })
-    injectFoliageSway(m)
+    injectOverheadWiggle(m)
     return m
-  }, [captureTex])
-  useEffect(() => () => { try { captureMat?.dispose() } catch {} }, [captureMat])
+  }, [])
+  useEffect(() => () => { try { branchMat?.dispose() } catch {} }, [branchMat])
 
-  // Bind the two knobs to the disc material each frame.
+  // Bind the two knobs (hula wiggle / ruffle) to the branch material each frame.
   useFrame(() => {
-    if (overheadMode && captureMat) applyOverheadDeformerUniforms(captureMat, overhead)
+    if (overheadMode && branchMat) applyOverheadDeformerUniforms(branchMat, overhead)
   })
 
   const rot = forestryRotation ? [-Math.PI / 2, 0, 0] : [0, 0, 0]
@@ -1053,8 +1027,8 @@ function Skeleton({
     return (
       <group rotation={[rx, ry, rz]}>
         <group scale={[scale, scale, scale]}>
-          {overheadGeo && captureMat && Array.from({ length: n }, (_, i) => (
-            <mesh key={i} geometry={overheadGeo} material={captureMat}
+          {branchGeo && branchMat && Array.from({ length: n }, (_, i) => (
+            <mesh key={i} geometry={branchGeo} material={branchMat}
               position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
               rotation={[0, i * 2.399963267, 0]}
               castShadow receiveShadow />
