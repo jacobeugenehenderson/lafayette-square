@@ -98,8 +98,45 @@ function serveInstallationContent() {
   }
 }
 
+// Build-time counterpart to serveInstallationContent (above): mirror each
+// installation's content payload (cartograph/data/<look>/content/) into
+// dist/content/<look>/ so the STATIC build (staging/prod) serves the same
+// /content/<look>/… tree the dev middleware serves. LS (contentRoot '') keeps
+// its assets under public/ and needs no mirror; HPDM + future installs resolve
+// their logos/photos here (assetUrl.js → BASE + contentRoot + url). The content
+// JSON (listings/menus/roster) is already bundled via loadInstanceData's
+// dynamic import(); this handles the runtime-fetched MEDIA the bundle can't.
+// Scene-generic — globs every data/<look>/content dir, no per-scene fork.
+function mirrorInstallationContent() {
+  let outDir = 'dist'
+  const copyDir = (src, dest) => {
+    fs.mkdirSync(dest, { recursive: true })
+    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+      const s = path.join(src, entry.name), d = path.join(dest, entry.name)
+      if (entry.isDirectory()) copyDir(s, d)
+      else if (entry.isFile()) fs.copyFileSync(s, d)
+    }
+  }
+  return {
+    name: 'mirror-installation-content',
+    apply: 'build',
+    configResolved(cfg) { outDir = cfg.build.outDir },
+    closeBundle() {
+      const dataRoot = path.resolve('cartograph/data')
+      if (!fs.existsSync(dataRoot)) return
+      for (const look of fs.readdirSync(dataRoot, { withFileTypes: true })) {
+        if (!look.isDirectory()) continue
+        const contentDir = path.join(dataRoot, look.name, 'content')
+        if (!fs.existsSync(contentDir)) continue
+        copyDir(contentDir, path.resolve(outDir, 'content', look.name))
+        console.log(`[mirror-content] content/${look.name}/ → ${outDir}/content/${look.name}/`)
+      }
+    },
+  }
+}
+
 export default defineConfig(({ command }) => ({
-  plugins: [serveHelperApps(), serveCodedesk(), serveInstallationContent(), react()],
+  plugins: [serveHelperApps(), serveCodedesk(), serveInstallationContent(), mirrorInstallationContent(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
     // poly2tri's UMD shim references `global`; polyfill to globalThis so
