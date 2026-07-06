@@ -29,6 +29,7 @@
  */
 import { promises as fs } from 'node:fs'
 import { readFileSync } from 'node:fs'
+import { makeForbiddenTester } from '../cartograph/forbidden-surface.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 // Shared hero-pan math — the SAME Catmull-Rom the runtime plays
@@ -65,80 +66,9 @@ function lampGlowAt(wx, wz) {
   }
   return Math.min(acc, LAMP_MAX)
 }
-// ── Forbidden-surface filter ─────────────────────────────────────────────
-// Trees can't occupy buildings, streets, alleys, sidewalks, footways, paths,
-// or water. Tested in WORLD coords against polygons sourced from the
-// cartograph clean map + park water capture. Returns a function (wx, wz) →
-// reason string ('building'|'pavement'|'alley'|'sidewalk'|'footway'|'path'|
-// 'water') or null when the location is allowed.
-function pointInRing(px, pz, ring) {
-  let inside = false
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], zi = ring[i][1]
-    const xj = ring[j][0], zj = ring[j][1]
-    if ((zi > pz) !== (zj > pz) && px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi) {
-      inside = !inside
-    }
-  }
-  return inside
-}
-function pointInPolygon(px, pz, poly) {
-  // poly: { ring, holes? } — outer ring with optional holes (e.g. water with island)
-  const ring = poly.ring || poly
-  if (!pointInRing(px, pz, ring)) return false
-  if (poly.holes) for (const h of poly.holes) if (pointInRing(px, pz, h)) return false
-  return true
-}
-function makeForbiddenTester() {
-  // TODO(0e): resolve scene from the active Look's scene field.
-  const map = JSON.parse(readFileSync(path.join(REPO_ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'map.json'), 'utf-8'))
-  const water = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src', 'data', 'park_water.json'), 'utf-8'))
-
-  // pointInRing below indexes ring[i][0] / [1]. park_water.json uses
-  // [x, z] arrays directly; map.json uses {x, z} objects. Normalize to
-  // arrays here so the test works against every polygon source.
-  const toArr = (ring) => ring.map(p => Array.isArray(p) ? p : [p.x, p.z])
-
-  // park_water.json is in compass frame, same as map.json.
-  const lakeOuter  = water.lake?.outer  || []
-  const lakeIsland = water.lake?.island || []
-  const grotto     = water.grotto       || []
-  const waterPolys = []
-  if (lakeOuter.length) waterPolys.push({ ring: toArr(lakeOuter), holes: lakeIsland.length ? [toArr(lakeIsland)] : null })
-  if (grotto.length)    waterPolys.push({ ring: toArr(grotto) })
-
-  // map.json layers (compass frame). Each entry is { ring, holes? }.
-  const buildings = (map.buildings || [])
-    .map(b => ({ ring: toArr(b.footprint || b.ring || []) }))
-    .filter(b => b.ring.length >= 3)
-  const layer = (k) => (map.layers?.[k] || [])
-    .map(p => ({ ring: toArr(p.ring || []), holes: p.holes ? p.holes.map(toArr) : null }))
-    .filter(p => p.ring.length >= 3)
-  const pavement = layer('pavement')
-  const alley    = layer('alley')
-  // Note: `parkSidewalk` is a single polygon covering the park interior,
-  // not a perimeter strip — including it would forbid every park tree.
-  // Trees on park-internal walks are filtered via `path` + `footway` instead.
-  const sidewalk = layer('sidewalk')
-  const footway  = layer('footway')
-  const pathway  = layer('path')
-
-  const checks = [
-    ['water',    waterPolys],
-    ['building', buildings],
-    ['pavement', pavement],
-    ['alley',    alley],
-    ['sidewalk', sidewalk],
-    ['footway',  footway],
-    ['path',     pathway],
-  ]
-  return function classify(wx, wz) {
-    for (const [reason, polys] of checks) {
-      for (const p of polys) if (pointInPolygon(wx, wz, p)) return reason
-    }
-    return null
-  }
-}
+// Forbidden-surface filter (a tree can never stand on hardscape/water/building)
+// lives in cartograph/forbidden-surface.mjs — shared with the canopy-fill
+// scatter (scripts/17), which uses it to RELOCATE candidates off hardscape.
 
 const SHAPE_TO_CATEGORY = {
   broad: 'broadleaf',
@@ -434,8 +364,10 @@ export async function bakeTrees({
   styles = ['realistic'],
   lod = 'lod2',
   heroLook = 'lafayette-square', // which Look's baked hero pan + canopy dims drive heroTier
-  placements,    // override path, e.g. 'src/data/toy/toy-trees.json'
+  placements,    // override path (string) or paths (array, unioned)
   output,        // override output path; defaults to public/baked/<look>.json
+  speciesMapPath, // override COMMON->library routing; defaults to LS's global map
+  forbiddenMapPath, // poured scene's clean/map.json for the hardscape/water mask
   verbose = false,
 } = {}) {
   const lookName = look
@@ -449,7 +381,9 @@ export async function bakeTrees({
   const parkPaths = placements
     ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))
     : [path.join(REPO_ROOT, 'src', 'data', 'park_trees.json')]
-  const mapPath = path.join(REPO_ROOT, 'src', 'data', 'park_species_map.json')
+  const mapPath = speciesMapPath
+    ? path.resolve(REPO_ROOT, speciesMapPath)
+    : path.join(REPO_ROOT, 'src', 'data', 'park_species_map.json')
 
   const index = JSON.parse(await fs.readFile(indexPath, 'utf8'))
   const park = { trees: [] }
@@ -464,9 +398,14 @@ export async function bakeTrees({
     console.log(`[bake-trees] pool: ${index.variants.length} variants, ${park.trees.length} placements`)
   }
 
-  // Forbidden-surface tester. Skip for non-default placements (toy fixture
-  // doesn't have street/sidewalk polygons in the same world frame).
-  const isForbidden = placements ? null : makeForbiddenTester()
+  // Forbidden-surface tester. A poured scene passes its own clean/map.json
+  // (--forbidden-map) so census + canopy-fill trees are masked off hardscape/
+  // water/buildings. LS (no placements) uses the default LS tester. The toy
+  // fixture (placements, no forbidden-map) skips it — its centerlines are
+  // hand-authored without hardscape polygons in this world frame.
+  const isForbidden = forbiddenMapPath
+    ? makeForbiddenTester({ mapPath: path.resolve(REPO_ROOT, forbiddenMapPath) })
+    : (placements ? null : makeForbiddenTester())
 
   const instances = []
   // Parallel to `instances` (pushed in lock-step) — per-tree canopy bounding
@@ -686,6 +625,8 @@ if (isDirect) {
       ? args.placements.split(',').map(s => s.trim()).filter(Boolean)
       : undefined,
     output: args.output,
+    speciesMapPath: args['species-map'],
+    forbiddenMapPath: args['forbidden-map'],
     verbose: true,
   }).catch(e => { console.error('[bake-trees] fatal:', e); process.exit(1) })
 }

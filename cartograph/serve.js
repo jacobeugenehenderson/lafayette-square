@@ -1324,15 +1324,21 @@ createServer(async (req, res) => {
         // disk yet → honest zero (skip). InstancedTrees mounts in the generic
         // env reading this scoped path, so no LS ghost.
         const censusLayers = [
-          join(bakePaths.clean, 'park_trees.json'),  // City (Hi-Pointe)
-          join(bakePaths.clean, 'osm_trees.json'),   // County (DeMun) floor
+          join(bakePaths.clean, 'park_trees.json'),    // City (Hi-Pointe) census
+          join(bakePaths.clean, 'osm_trees.json'),     // County (DeMun) OSM floor
+          join(bakePaths.clean, 'derived_trees.json'), // NLCD canopy fill (parks/yards)
         ].filter(existsSync)
+        // Per-scene species routing (15-derive-tree-mix.py) collapses the
+        // census onto the scene's library palette; falls back to LS's global
+        // map when absent.
+        const sceneMap = join(bakePaths.clean, '..', 'tree-species-map.json')
+        const mapArg = existsSync(sceneMap) ? ` --species-map ${sceneMap}` : ''
         if (censusLayers.length) {
           await runIfDirty('trees',
-            [...censusLayers, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
+            [...censusLayers, existsSync(sceneMap) ? sceneMap : MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
             [join(LOOK_DIR, 'trees.json')],
-            `node arborist/bake-trees.js --look ${id} --placements ${censusLayers.join(',')} --output public/baked/${id}/trees.json`,
-            { cwd: REPO_ROOT, timeout: 60000 })
+            `node arborist/bake-trees.js --look ${id} --placements ${censusLayers.join(',')}${mapArg} --forbidden-map ${MAP_JSON} --output public/baked/${id}/trees.json`,
+            { cwd: REPO_ROOT, timeout: 90000 })
         } else {
           skipped.push('trees (no scene census on disk — honest zero)')
         }
