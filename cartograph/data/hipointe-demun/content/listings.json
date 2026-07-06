@@ -9,7 +9,7 @@
   "enriched": 34,
   "enrichment_note": "Real commercial listings enriched (category/website/description/tags/status) + OSM-missed DeMun Ave row & Hi-Pointe Drive-In added (source:research). Structured hours filled where reliably sourced; the rest await guardian claim (§0.0). Institutional entries (dorms/halls/churches) left as building-grained records.",
   "asset_root": "cartograph/data/hipointe-demun/content/ — photos are instance-relative paths (photos/<slug>/NN.jpg) under the installation's OWN content payload; the reader roots them per-look. Installations never share an asset root or reference another's slugs.",
-  "logos_note": "Verified brand logos under content/logos/, instance-relative logo paths (logos/<slug>.<ext>) per §5.1.2. Still needed: Barrio, Sasha's, Hi-Pointe Drive-In, Stevenson's Amoco (their sites yielded promo/header graphics, not clean marks)."
+  "logos_note": "Verified brand logos under content/logos/ (instance-relative logo paths, §5.1.2): kaldis-coffee, clementines, louie, hi-pointe-theatre, cheshire(svg), hi-pointe-drive-in, stevensons-hi-pointe-amoco, barrio. STILL MISSING: Sasha’s Wine Bar (Wix text logo; IG profile is a storefront photo) — guardian-upload on claim."
  },
  "listings": [
   {
@@ -1520,7 +1520,7 @@
    "address": "981 S Skinker Boulevard",
    "phone": "(314) 647-5005",
    "website": null,
-   "logo": null,
+   "logo": "logos/stevensons-hi-pointe-amoco.jpg",
    "hours": null,
    "opening_hours_raw": "Open daily — fuel, convenience & auto service",
    "photos": [
@@ -5727,7 +5727,7 @@
    "address": "740 De Mun Avenue",
    "phone": "(314) 725-0322",
    "website": "https://www.barrioburgersandtacos.com",
-   "logo": null,
+   "logo": "logos/barrio.jpg",
    "hours": {
     "monday": {
      "open": "11:00",
@@ -5993,7 +5993,7 @@
    "address": "1033 McCausland Avenue",
    "phone": "(314) 349-2720",
    "website": "https://hipointedrivein.com",
-   "logo": null,
+   "logo": "logos/hi-pointe-drive-in.png",
    "hours": {
     "monday": {
      "open": "11:00",
