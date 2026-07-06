@@ -317,18 +317,29 @@ export function buildBranchSkeleton(rec, opts = {}) {
   // Build one limb path from the crown centre out to a tip at azimuth `az`.
   const buildPath = (az, reach, rise, segs, wBase, wTip, salt) => {
     const nodes = []
+    // Per-limb bending character — a low-freq lateral S-wander (organic curve)
+    // plus per-node noise, so limbs aren't smooth arcs or dead-straight spokes.
+    const bendPhase = _bh(salt, 30) * 6.2831853
+    const bendAmp = 0.18 + 0.30 * _bh(salt, 31)     // radians of lateral swing
+    const bendFreq = 1.0 + 1.6 * _bh(salt, 32)
     for (let s = 0; s <= segs; s++) {
       const t = s / segs
       const r = reach * t
-      // Rise fast then level (ease-out) so limbs lift off the trunk then reach out.
+      // Rise fast then level (ease-out), with a little vertical wobble.
       const y = crownBaseY + crownSpan * rise * (t * (2 - t))
-      // Gentle lateral curve so limbs aren't dead-straight spokes.
-      const azS = az + (_bh(salt, s + 3) - 0.5) * 0.5 * t
+                + (_bh(salt, s + 40) - 0.5) * crownSpan * 0.07
+      // Organic azimuth wander: an S-swing that grows outward + fine noise.
+      const azWander = Math.sin(t * Math.PI * bendFreq + bendPhase) * bendAmp * t
+      const azNoise = (_bh(salt, s + 3) - 0.5) * 0.18
+      const azS = az + azWander + azNoise
+      // Width: uniform taper × per-node profile irregularity (bulges/pinches).
+      const taperW = wBase + (wTip - wBase) * t
+      const wJit = 0.72 + 0.56 * _bh(salt, s + 50)   // ~0.72–1.28
       nodes.push({
         x: r * Math.cos(azS),
         z: r * Math.sin(azS),
         y,
-        w: wBase + (wTip - wBase) * t,
+        w: taperW * wJit,
       })
     }
     return nodes
@@ -339,25 +350,27 @@ export function buildBranchSkeleton(rec, opts = {}) {
     const az = ((i + 0.5) / NPRIMARY) * Math.PI * 2 + (_bh(salt, 1) - 0.5) * 0.4
     const reach = R * (0.72 + 0.36 * _bh(salt, 2))
     const rise = 0.55 + 0.35 * _bh(salt, 5)
-    const primary = buildPath(az, reach, rise, 4, baseW, tipW, salt)
+    const primary = buildPath(az, reach, rise, 6, baseW, tipW, salt)
     emitLimb(primary)
 
     // One fork off the mid/outer third, thinner + splayed.
     if (_bh(salt, 9) < forkChance) {
-      const anchor = primary[Math.min(primary.length - 1, 2)]
+      const anchor = primary[Math.min(primary.length - 1, 3)]
       const fAz = az + (_bh(salt, 11) < 0.5 ? -1 : 1) * (0.4 + 0.3 * _bh(salt, 12))
       const fReach = reach * (0.35 + 0.25 * _bh(salt, 13))
       const fork = []
-      const segs = 3
+      const segs = 4
       for (let s = 0; s <= segs; s++) {
         const t = s / segs
-        const azS = fAz + (_bh(salt, s + 20) - 0.5) * 0.4 * t
+        const azS = fAz + Math.sin(t * Math.PI * 1.4 + _bh(salt, 15) * 6.28) * 0.22 * t
+                        + (_bh(salt, s + 20) - 0.5) * 0.18
         const r = fReach * t
+        const wJit = 0.72 + 0.56 * _bh(salt, s + 60)
         fork.push({
           x: anchor.x + r * Math.cos(azS),
           z: anchor.z + r * Math.sin(azS),
-          y: anchor.y + crownSpan * 0.12 * t,
-          w: anchor.w * 0.7 * (1 - 0.7 * t),
+          y: anchor.y + crownSpan * 0.12 * t + (_bh(salt, s + 70) - 0.5) * crownSpan * 0.05,
+          w: anchor.w * 0.7 * (1 - 0.7 * t) * wJit,
         })
       }
       emitLimb(fork)
