@@ -36,6 +36,10 @@ export default {
   // Deploy-side hostname.
   domain: 'lafayette-square.com',
 
+  // Content asset root (§5.1.2), relative to BASE_URL. LS is the legacy install —
+  // its logos/photos live at the web root (public/logos, public/photos), so ''.
+  contentRoot: '',
+
   // Branding assets (the reader's chrome). copy: the Legal/Info prose bundle is
   // DEFERRED to Phase 4 — it stays literal in the components until then.
   branding: {

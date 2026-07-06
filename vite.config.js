@@ -68,8 +68,38 @@ function serveCodedesk() {
   }
 }
 
+// Serve an installation's OWN content assets (§5.1.2). A payload keeps its
+// logos/photos under cartograph/data/<look>/content/; the reader references them
+// instance-relative and resolves to /content/<look>/… (see src/lib/assetUrl.js +
+// INSTANCE.contentRoot). Dev only — the publish step mirrors content/ into the
+// deployed payload for production. Source stays single (no copy to public/).
+function serveInstallationContent() {
+  const MIME = {
+    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+    '.svg': 'image/svg+xml', '.webp': 'image/webp', '.gif': 'image/gif', '.avif': 'image/avif',
+  }
+  return {
+    name: 'serve-installation-content',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || '').split('?')[0]
+        const m = url.match(/^\/content\/([^/]+)\/(.+)$/)
+        if (!m) return next()
+        const [, look, rest] = m
+        const root = path.resolve('cartograph/data', look, 'content')
+        const filePath = path.resolve(root, decodeURIComponent(rest))
+        // Confine to the installation's content root (no path traversal).
+        if (filePath !== root && !filePath.startsWith(root + path.sep)) return next()
+        if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return next()
+        res.setHeader('Content-Type', MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream')
+        res.end(fs.readFileSync(filePath))
+      })
+    }
+  }
+}
+
 export default defineConfig(({ command }) => ({
-  plugins: [serveHelperApps(), serveCodedesk(), react()],
+  plugins: [serveHelperApps(), serveCodedesk(), serveInstallationContent(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
     // poly2tri's UMD shim references `global`; polyfill to globalThis so

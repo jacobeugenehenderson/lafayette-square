@@ -5,6 +5,7 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import CATEGORIES from '../tokens/categories'
 
 import { buildings, buildingMap as _buildingMap } from '../data/buildings'
+import { assetUrl } from '../lib/assetUrl.js'
 
 function computeCenterOn(building) {
   const fp = building.footprint || []
@@ -214,9 +215,7 @@ function CategoryIcon({ hex, icon, logo }) {
 
 function resolveLogoUrl(listing) {
   if (!listing?.logo) return null
-  return listing.logo.startsWith('http')
-    ? listing.logo
-    : `${import.meta.env.BASE_URL}${listing.logo.replace(/^\//, '')}`
+  return assetUrl(listing.logo)
 }
 
 // ── Search results dropdown — shared by EventTicker drawer ───────────

@@ -22,9 +22,7 @@ import QRCode from 'qrcode'
 import { useCourierAvailable } from './CourierDots'
 import { useCodeDesk } from './CodeDeskModal'
 import { loadInstanceData } from '../data/loadInstanceData.js'
-
-const BASE = import.meta.env.BASE_URL
-const assetUrl = (url) => url?.startsWith('http') ? url : `${BASE}${url?.replace(/^\//, '')}`
+import { assetUrl } from '../lib/assetUrl.js'
 
 // Facade photo lookup: building_id -> { image path, description }
 // facade_mapping loads via the seam; place cards open long after it resolves,
@@ -1166,7 +1164,7 @@ function ReplyForm({ reviewId, listingId, listing, onSubmitted }) {
   const [submitting, setSubmitting] = useState(false)
   const businessName = listing?.name || 'the business'
   const businessLogo = listing?.logo
-    ? (listing.logo.startsWith('http') ? listing.logo : `${BASE}${listing.logo.replace(/^\//, '')}`)
+    ? assetUrl(listing.logo)
     : null
 
   const handleSubmit = async (e) => {
@@ -1322,7 +1320,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
               {/* Business replies — always the business voice (logo + name), never the individual staffer's handle/emoji. Managers stay anonymous. */}
               {replies.map((reply, ri) => {
                 const businessLogo = listing?.logo
-                  ? (listing.logo.startsWith('http') ? listing.logo : `${BASE}${listing.logo.replace(/^\//, '')}`)
+                  ? assetUrl(listing.logo)
                   : null
                 return (
                 <div key={reply.id || ri} className="flex items-start gap-2.5 mt-3 ml-10 pl-3 border-l-2 border-emerald-500/30">
