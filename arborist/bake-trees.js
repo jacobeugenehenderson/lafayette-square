@@ -443,13 +443,20 @@ export async function bakeTrees({
   const targetLod = lod
 
   const indexPath = path.join(REPO_ROOT, 'public', 'trees', 'index.json')
-  const parkPath = placements
-    ? path.resolve(REPO_ROOT, placements)
-    : path.join(REPO_ROOT, 'src', 'data', 'park_trees.json')
+  // placements may be a single path OR an array of paths to UNION — a poured
+  // scene's City Forestry census + OSM County-side floor are two spatially-
+  // disjoint layers baked together. Each file is {meta, trees:[]}; concat trees.
+  const parkPaths = placements
+    ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))
+    : [path.join(REPO_ROOT, 'src', 'data', 'park_trees.json')]
   const mapPath = path.join(REPO_ROOT, 'src', 'data', 'park_species_map.json')
 
   const index = JSON.parse(await fs.readFile(indexPath, 'utf8'))
-  const park = JSON.parse(await fs.readFile(parkPath, 'utf8'))
+  const park = { trees: [] }
+  for (const p of parkPaths) {
+    const layer = JSON.parse(await fs.readFile(p, 'utf8'))
+    park.trees.push(...(layer.trees || []))
+  }
   const speciesMap = JSON.parse(await fs.readFile(mapPath, 'utf8'))
 
   if (verbose) {
@@ -644,9 +651,12 @@ export async function bakeTrees({
     instances,
   }
 
-  const outDir = path.join(REPO_ROOT, 'public', 'baked')
-  await fs.mkdir(outDir, { recursive: true })
-  const outPath = path.join(outDir, `${lookName}.json`)
+  // Honor an explicit --output (poured scenes write a look-scoped
+  // baked/<look>/trees.json); default stays the LS-global baked/<look>.json.
+  const outPath = output
+    ? path.resolve(REPO_ROOT, output)
+    : path.join(REPO_ROOT, 'public', 'baked', `${lookName}.json`)
+  await fs.mkdir(path.dirname(outPath), { recursive: true })
   await fs.writeFile(outPath, JSON.stringify(out, null, 2))
 
   const totalForbidden = Object.values(forbiddenCounts).reduce((a, b) => a + b, 0)
@@ -672,7 +682,9 @@ if (isDirect) {
     styles: (args.styles || 'realistic').split(',').map(s => s.trim()).filter(Boolean),
     lod: args.lod,
     heroLook: args.heroLook,
-    placements: args.placements,
+    placements: typeof args.placements === 'string'
+      ? args.placements.split(',').map(s => s.trim()).filter(Boolean)
+      : undefined,
     output: args.output,
     verbose: true,
   }).catch(e => { console.error('[bake-trees] fatal:', e); process.exit(1) })

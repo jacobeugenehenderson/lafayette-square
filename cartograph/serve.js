@@ -1316,11 +1316,26 @@ createServer(async (req, res) => {
           [join(REPO_ROOT, 'public', 'baked', 'default.json')],
           `node arborist/bake-trees.js --look default`,
           { cwd: REPO_ROOT, timeout: 60000 })
-      } else if (!isDefaultScene) {
-        // A poured installation bakes NO trees until its own census lands
-        // (deferred follow-up); InstancedTrees reads the LS-global default.json,
-        // so it stays unmounted for poured scenes (honest zero, no LS ghost).
-        skipped.push('trees (poured-scene census deferred — honest zero)')
+      } else if (!isDefaultScene && layerOn('tree')) {
+        // Poured installation: union whichever census layers exist — the City
+        // Forestry census (13-fetch-city-trees.py) + the OSM County-side floor
+        // (14-fetch-osm-trees.py), spatially disjoint — into a LOOK-SCOPED
+        // baked/<id>/trees.json (never LS's global default.json). No census on
+        // disk yet → honest zero (skip). InstancedTrees mounts in the generic
+        // env reading this scoped path, so no LS ghost.
+        const censusLayers = [
+          join(bakePaths.clean, 'park_trees.json'),  // City (Hi-Pointe)
+          join(bakePaths.clean, 'osm_trees.json'),   // County (DeMun) floor
+        ].filter(existsSync)
+        if (censusLayers.length) {
+          await runIfDirty('trees',
+            [...censusLayers, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
+            [join(LOOK_DIR, 'trees.json')],
+            `node arborist/bake-trees.js --look ${id} --placements ${censusLayers.join(',')} --output public/baked/${id}/trees.json`,
+            { cwd: REPO_ROOT, timeout: 60000 })
+        } else {
+          skipped.push('trees (no scene census on disk — honest zero)')
+        }
       } else {
         skipped.push('trees (layer hidden)')
       }

@@ -781,11 +781,11 @@ function genericSceneConfig(sceneBoundary) {
     // Generic poured-installation 3D — ONLY slab-driven consumers, read BY
     // lookId, with NO LS props (no LafayettePark / LafayetteScene content
     // bundle / GatewayArch). BakedGround mounts separately for every scene.
-    // SlabBuildings + BakedLamps are look-keyed (fetch /baked/<look>/…), so an
-    // installation with no baked lamps just renders none — never LS's. Trees
-    // are intentionally NOT here yet: InstancedTrees reads the GLOBAL
-    // baked/default.json (LS placements), so mounting it would drop LS's trees
-    // onto this neighborhood — added in step C once tree data is scene-keyed.
+    // SlabBuildings + BakedLamps + InstancedTrees are all look-keyed (fetch
+    // /baked/<look>/…), so an installation with no baked lamps/trees just
+    // renders none — never LS's. Trees read the LOOK-SCOPED baked/<look>/
+    // trees.json (bakeUrl below), NOT the LS-global baked/default.json, so a
+    // poured scene never inherits LS placements (no ghost).
     StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => (
       <>
         {!hiddenLayers.building && (
@@ -796,6 +796,15 @@ function genericSceneConfig(sceneBoundary) {
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps">
             <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} />
+          </R3FErrorBoundary>
+        )}
+        {!hiddenLayers.tree && (
+          <R3FErrorBoundary name="InstancedTrees">
+            <InstancedTrees
+              lookId={lookId}
+              bakeLastMs={bakeLastMs}
+              bakeUrl={`${import.meta.env.BASE_URL}baked/${lookId}/trees.json`}
+            />
           </R3FErrorBoundary>
         )}
       </>

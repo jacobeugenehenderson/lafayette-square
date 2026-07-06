@@ -276,11 +276,16 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
       if (existsSync(sp)) lamps = JSON.parse(readFileSync(sp, 'utf-8')).lamps || []
     }
     let trees = []
-    // default.json is LS's global (cross-Look) tree placement file; only the
-    // default scene reads it. Poured installations get their own tree file
-    // when their census lands (deferred) — until then, none.
-    const treesPath = join(ROOT, 'public', 'baked', 'default.json')
-    if (isDefaultScene && existsSync(treesPath)) trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
+    // Poured installations bake their census to a LOOK-SCOPED trees.json
+    // (mirrors lamps.json above); LS's global cross-Look file is default.json,
+    // read only for the default scene. A poured scene with no census → none.
+    const treesLookPath = join(lookDir, 'trees.json')
+    const treesDefaultPath = join(ROOT, 'public', 'baked', 'default.json')
+    if (existsSync(treesLookPath)) {
+      trees = (JSON.parse(readFileSync(treesLookPath, 'utf-8')).instances) || []
+    } else if (isDefaultScene && existsSync(treesDefaultPath)) {
+      trees = (JSON.parse(readFileSync(treesDefaultPath, 'utf-8')).instances) || []
+    }
 
     if (lamps.length || trees.length) {
       // bbox = union of lamp + tree extents + the largest reach as margin.
