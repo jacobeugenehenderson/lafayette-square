@@ -8,7 +8,8 @@
   "note": "category/subcategory + name/address seeded from OSM; the rest is the Tier-③ hand-collection long pole (structured hours, photos, description, menus).",
   "enriched": 34,
   "enrichment_note": "Real commercial listings enriched (category/website/description/tags/status) + OSM-missed DeMun Ave row & Hi-Pointe Drive-In added (source:research). Structured hours filled where reliably sourced; the rest await guardian claim (§0.0). Institutional entries (dorms/halls/churches) left as building-grained records.",
-  "asset_root": "cartograph/data/hipointe-demun/content/ — photos are instance-relative paths (photos/<slug>/NN.jpg) under the installation's OWN content payload; the reader roots them per-look. Installations never share an asset root or reference another's slugs."
+  "asset_root": "cartograph/data/hipointe-demun/content/ — photos are instance-relative paths (photos/<slug>/NN.jpg) under the installation's OWN content payload; the reader roots them per-look. Installations never share an asset root or reference another's slugs.",
+  "logos_note": "Verified brand logos under content/logos/, instance-relative logo paths (logos/<slug>.<ext>) per §5.1.2. Still needed: Barrio, Sasha's, Hi-Pointe Drive-In, Stevenson's Amoco (their sites yielded promo/header graphics, not clean marks)."
  },
  "listings": [
   {
@@ -366,7 +367,7 @@
    "address": "6300 Clayton Road",
    "phone": "(314) 647-7300",
    "website": "https://www.cheshirestl.com",
-   "logo": null,
+   "logo": "logos/cheshire.svg",
    "hours": null,
    "opening_hours_raw": "Front desk 24/7",
    "photos": [
@@ -499,7 +500,7 @@
    "address": "1005 McCausland Avenue",
    "phone": "(314) 644-1100",
    "website": "https://hipointetheatre.org",
-   "logo": null,
+   "logo": "logos/hi-pointe-theatre.png",
    "hours": null,
    "opening_hours_raw": "Showtimes vary — doors open 30 min before each screening (arrive 15 min early); box office by phone during business hours",
    "photos": [
@@ -5463,7 +5464,7 @@
    "address": "700 De Mun Avenue",
    "phone": "(314) 727-9955",
    "website": "https://www.kaldiscoffee.com",
-   "logo": null,
+   "logo": "logos/kaldis-coffee.jpg",
    "hours": {
     "monday": {
      "open": "06:30",
@@ -5555,7 +5556,7 @@
    "address": "706 De Mun Avenue",
    "phone": "(314) 300-8188",
    "website": "https://www.louiedemun.com",
-   "logo": null,
+   "logo": "logos/louie.png",
    "hours": {
     "monday": {
      "open": "17:00",
@@ -5847,7 +5848,7 @@
    "address": "730 De Mun Avenue",
    "phone": "(314) 858-6100",
    "website": "https://www.clementinescreamery.com/pages/clayton",
-   "logo": null,
+   "logo": "logos/clementines.png",
    "hours": {
     "sunday": {
      "open": "10:00",
