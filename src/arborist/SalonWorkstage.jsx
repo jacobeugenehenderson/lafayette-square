@@ -43,7 +43,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import SpecimenViewport from './SpecimenViewport.jsx'
-import OverheadHulaPreview from './OverheadHulaPreview.jsx'
 import ChassisPlate from './ChassisPlate.jsx'
 
 // Same heuristic mapping ProceduralWorkstage uses to drive the yardstick
@@ -570,10 +569,6 @@ function SlotCard({
   // uses. One shader implementation across both surfaces — Birch's interim
   // chunk-replication in SpecimenViewport retires with this commit.
   const [previewUrls, setPreviewUrls] = useState(null)  // { glbUrl, atlasUrl, normalUrl, manifestUrl }
-  // Overhead-hula plan-view surface (HANDOFF-overhead-hula-impostor.md) — swaps
-  // over the chassis preview so the operator can perfect the overhead impostor's
-  // ruche + hula motion looking straight down, with its two knobs.
-  const [overheadMode, setOverheadMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
   const [perfSample, setPerfSample] = useState(null)
@@ -702,6 +697,26 @@ function SlotCard({
     } })
   }
 
+  // Overhead "hula" impostor knobs (HANDOFF-overhead-hula-impostor.md) — live in
+  // the SlotCard so they drive the Browse-preset overhead disc-stack + autosave
+  // to composition.deformer.overhead. Hydrate on slot/chassis switch (identity
+  // to the shipped defaults when unset).
+  const OVERHEAD_DEFAULTS = { ruffleDepth: 0.35, hulaAmount: 0.5 }
+  const [ruffleDepth, setRuffleDepth] = useState(OVERHEAD_DEFAULTS.ruffleDepth)
+  const [hulaAmount, setHulaAmount] = useState(OVERHEAD_DEFAULTS.hulaAmount)
+  useEffect(() => {
+    const o = deformer?.overhead || {}
+    setRuffleDepth(Number.isFinite(o.ruffleDepth) ? o.ruffleDepth : OVERHEAD_DEFAULTS.ruffleDepth)
+    setHulaAmount(Number.isFinite(o.hulaAmount) ? o.hulaAmount : OVERHEAD_DEFAULTS.hulaAmount)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [species, slot, chassis])
+  const persistOverhead = (patch) => {
+    onParams({ deformer: { overhead: {
+      ruffleDepth: patch.ruffleDepth ?? ruffleDepth,
+      hulaAmount:  patch.hulaAmount  ?? hulaAmount,
+    } } })
+  }
+
   // Botanical height (2026-06-25): the PREVIEW scales the chassis to its species'
   // mature height — dossier `chassis.size.target` (m) ÷ the chassis's native
   // height (`meta.heightRange[1]`) — so species render RELATIVELY CORRECT to one
@@ -726,20 +741,9 @@ function SlotCard({
       <div style={{
         flex: 1, minWidth: 0, position: 'relative', background: '#0d0d10',
       }}>
-        {/* Chassis ⇄ Overhead toggle — always available, top-right. Overhead
-            swaps in the plan-view hula surface + its two knobs. */}
-        <button type="button"
-          onClick={() => setOverheadMode(v => !v)}
-          style={overheadToggleStyle(overheadMode)}
-          title="Perfect the OVERHEAD impostor (ruched hula discs) looking straight down.">
-          {overheadMode ? '← Chassis' : 'Overhead ▦'}
-        </button>
-        {overheadMode && (
-          <OverheadHulaPreview deformer={deformer} onParams={onParams} />
-        )}
-        {!overheadMode && loading && <div style={loaderStyle}>regenerating…</div>}
-        {!overheadMode && previewError && <div style={{ ...loaderStyle, color: '#f88' }}>{previewError}</div>}
-        {!overheadMode && previewUrls && !previewError && (
+        {loading && <div style={loaderStyle}>regenerating…</div>}
+        {previewError && <div style={{ ...loaderStyle, color: '#f88' }}>{previewError}</div>}
+        {previewUrls && !previewError && (
           <SpecimenViewport
             mode="skeleton"
             glbUrl={previewUrls.glbUrl}
@@ -758,6 +762,7 @@ function SlotCard({
             windStrength={windEnabled ? windStrength : 0}
             deformerRange={deformer?.range || null}
             deformerSeed={deformSeed}
+            overhead={{ ruffleDepth, hulaAmount }}
             onPerfSample={setPerfSample}
           />
         )}
@@ -767,11 +772,9 @@ function SlotCard({
             pipeline. One chassis at a time exerts no GPU budget pressure
             in the workstage; the perf gauge below still reports actual
             loaded counts. */}
-        {!overheadMode && <PerfGauge sample={perfSample} />}
+        <PerfGauge sample={perfSample} />
 
-        {/* Wind toggle (lifted) — chassis-preview only; the overhead surface
-            carries its own live-gust toggle. */}
-        {!overheadMode && (
+        {/* Wind toggle (lifted) */}
         <div style={{
           position: 'absolute', bottom: 12, left: 12,
           background: 'rgba(0,0,0,0.55)',
@@ -797,7 +800,37 @@ function SlotCard({
             </>
           )}
         </div>
-        )}
+
+        {/* Overhead-impostor knobs (lifted, bottom-right) — only meaningful in the
+            Browse (top-down) preset, where the GLB is replaced by the overhead
+            hula disc-stack. Ruffle depth + hula amount autosave to
+            composition.deformer.overhead (HANDOFF-overhead-hula-impostor.md). */}
+        <div style={{
+          position: 'absolute', bottom: 12, right: 12,
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 4, padding: '8px 10px',
+          display: 'flex', flexDirection: 'column', gap: 6,
+          fontSize: 10, color: '#bbb', pointerEvents: 'auto', width: 210,
+        }}>
+          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase', color: '#999' }}>
+            Overhead impostor · Browse view
+          </span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 66 }}>Ruffle</span>
+            <input type="range" min={0} max={1} step={0.01} value={ruffleDepth}
+              onChange={(e) => { const v = parseFloat(e.target.value); setRuffleDepth(v); persistOverhead({ ruffleDepth: v }) }}
+              style={{ flex: 1 }} />
+            <span style={{ width: 30, textAlign: 'right', color: '#888' }}>{ruffleDepth.toFixed(2)}</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 66 }}>Hula</span>
+            <input type="range" min={0} max={3} step={0.02} value={hulaAmount}
+              onChange={(e) => { const v = parseFloat(e.target.value); setHulaAmount(v); persistOverhead({ hulaAmount: v }) }}
+              style={{ flex: 1 }} />
+            <span style={{ width: 30, textAlign: 'right', color: '#888' }}>{hulaAmount.toFixed(2)}</span>
+          </label>
+        </div>
       </div>
 
       {/* Controls rail */}
@@ -1280,20 +1313,6 @@ const loaderStyle = {
   display: 'grid', placeItems: 'center',
   color: '#888', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
   pointerEvents: 'none',
-}
-
-// Chassis ⇄ Overhead toggle, pinned top-right of the viewport (above both the
-// chassis preview and the overhead plan-view surface — z-order via zIndex).
-function overheadToggleStyle(active) {
-  return {
-    position: 'absolute', top: 12, right: 12, zIndex: 5,
-    padding: '4px 10px', fontSize: 10,
-    background: active ? 'rgba(232,184,96,0.20)' : 'rgba(20,20,24,0.85)',
-    color: active ? '#fff' : '#ccc',
-    border: '1px solid ' + (active ? 'rgba(232,184,96,0.6)' : 'rgba(255,255,255,0.15)'),
-    borderRadius: 3, fontFamily: 'inherit', cursor: 'pointer',
-    letterSpacing: '0.08em', textTransform: 'uppercase',
-  }
 }
 
 function btnStyle() {

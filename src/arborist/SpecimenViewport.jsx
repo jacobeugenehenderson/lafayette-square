@@ -26,11 +26,13 @@ import {
   useSalonPreviewAtlas,
   applyBarkUniforms,
   applyDeformerUniforms,
+  applyOverheadDeformerUniforms,
   stampTreeVertexAttrs,
   treeSwayUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
+import { buildOverheadHulaGeometry } from '../components/impostorGeometry.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -804,6 +806,8 @@ function Skeleton({
   deformerSeed = null,
   variantCount = 1,
   variantHeightSpread = false,
+  overheadMode = false,           // Browse preset → show the overhead hula impostor
+  overhead = null,                // { ruffleDepth, hulaAmount } — the two knobs
 }) {
   const { scene } = useGLTF(url)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
@@ -938,6 +942,76 @@ function Skeleton({
     }
   }, [anchorScene])
 
+  // ── Overhead "hula" impostor (Browse preset) ────────────────────────────
+  // Derive this tree's canopy dims + leaf-tile UV rect straight from the loaded
+  // chassis, so the overhead disc-stack is skinned with the SAME leaf, on the
+  // SAME preview-atlas material, lit by the SAME studio rig — full optical
+  // parity (HANDOFF-overhead-hula-impostor.md). Built in the GLB's local frame
+  // so it drops into the same scale/center groups and lines up with the tree.
+  const overheadRec = useMemo(() => {
+    if (!overheadMode) return null
+    // Detect leaf meshes the same multi-location way stampTreeVertexAttrs /
+    // ChassisPlate do (atlasKind can sit on geometry.userData, o.userData, or
+    // gltfExtras; raw chassis fall back to a name/material keyword).
+    const LEAF_RE = /leaf|leaves|foliage|frond|needle/i
+    const isLeaf = (o) => {
+      const k = o.geometry?.userData?.atlasKind ?? o.userData?.atlasKind ?? o.userData?.gltfExtras?.atlasKind
+      if (k === 'leaf') return true
+      if (k === 'bark') return false
+      const mn = Array.isArray(o.material) ? o.material.map(m => m?.name).join(' ') : o.material?.name
+      return LEAF_RE.test(o.name || '') || LEAF_RE.test(mn || '')
+    }
+    // Pass 1: prefer explicit leaf meshes. Pass 2 (fallback): if none matched,
+    // use the highest-vertex mesh (the canopy usually dominates) so Browse never
+    // renders blank on an unstamped chassis.
+    const uvBox = (meshes) => {
+      let uMin = Infinity, uMax = -Infinity, vMin = Infinity, vMax = -Infinity, xz = 0
+      for (const o of meshes) {
+        const uv = o.geometry.attributes.uv, pos = o.geometry.attributes.position
+        if (uv) for (let i = 0; i < uv.count; i++) {
+          const u = uv.getX(i), v = uv.getY(i)
+          if (u < uMin) uMin = u; if (u > uMax) uMax = u
+          if (v < vMin) vMin = v; if (v > vMax) vMax = v
+        }
+        for (let i = 0; i < pos.count; i++) {
+          const r = Math.hypot(pos.getX(i), pos.getZ(i)); if (r > xz) xz = r
+        }
+      }
+      return { uMin, uMax, vMin, vMax, xz }
+    }
+    const leaves = [], all = []
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes?.position) return
+      all.push(o); if (isLeaf(o)) leaves.push(o)
+    })
+    let picked = leaves
+    if (!picked.length && all.length) {
+      picked = [all.reduce((a, b) =>
+        (b.geometry.attributes.position.count > a.geometry.attributes.position.count ? b : a))]
+    }
+    if (!picked.length) return null
+    const { uMin, uMax, vMin, vMax, xz } = uvBox(picked)
+    if (!isFinite(uMin)) return null
+    return {
+      heightM: (typeof topY === 'number' ? topY : 12),
+      canopyRadiusM: Math.max(1, xz),
+      trunkFrac: 0.12,
+      leafRect: { offsetU: uMin, offsetV: vMin, scaleU: Math.max(1e-4, uMax - uMin), scaleV: Math.max(1e-4, vMax - vMin) },
+    }
+  }, [overheadMode, scene, topY])
+
+  const overheadGeo = useMemo(
+    () => (overheadRec ? buildOverheadHulaGeometry(overheadRec, 'summer') : null),
+    [overheadRec],
+  )
+  // Bind the two knobs to the shared material each frame (gated per-vertex by
+  // aOverhead, so this never perturbs a mesh tree sharing the material).
+  useFrame(() => {
+    if (overheadMode && atlas.treeMaterial) {
+      applyOverheadDeformerUniforms(atlas.treeMaterial, overhead)
+    }
+  })
+
   const rot = forestryRotation ? [-Math.PI / 2, 0, 0] : [0, 0, 0]
   const [ox, oy, oz] = positionOffset
   const [rx, ry, rz] = rotationOffset
@@ -963,6 +1037,27 @@ function Skeleton({
   // Stack (outer → inner): rotation → scale → position → auto-center.
   const variantSpacing = Math.max(7, (typeof topY === 'number' ? topY : 12) * 0.95)
   const autoCenter = [centerX, groundOffset, centerZ]
+
+  // Browse preset → the overhead hula impostor replaces the GLB. One disc-stack
+  // (or N, when the "3 variants" review is on), each at a different rotY so the
+  // baked fold-phase reads differently tree-to-tree (the anti-stamping eye-gate).
+  // Built centred at the trunk (origin) so no autoCenter offset is applied.
+  if (overheadMode) {
+    const n = Math.max(1, variantCount)
+    return (
+      <group rotation={[rx, ry, rz]}>
+        <group scale={[scale, scale, scale]}>
+          {overheadGeo && atlas.treeMaterial && Array.from({ length: n }, (_, i) => (
+            <mesh key={i} geometry={overheadGeo} material={atlas.treeMaterial}
+              position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
+              rotation={[0, i * 2.399963267, 0]}
+              castShadow receiveShadow />
+          ))}
+        </group>
+      </group>
+    )
+  }
+
   return (
     <group rotation={[rx, ry, rz]}>
       <group scale={[scale, scale, scale]}>
@@ -1048,6 +1143,7 @@ export default function SpecimenViewport({
   // Brief 3A (Cant): live authored deformer range + preview re-roll seed.
   deformerRange = null,
   deformerSeed = null,
+  overhead = null,              // overhead hula impostor knobs { ruffleDepth, hulaAmount }
   variantHeightSpread = false,  // 3-variants also vary in HEIGHT (a real stand isn't size-cloned)
   // Brief 7 (Cambium): SpecimenViewport now mounts the shared
   // treeAtlasMaterial via the per-composition preview atlas. atlasUrl /
@@ -1150,6 +1246,8 @@ export default function SpecimenViewport({
               windStrength={windStrength}
               deformerRange={deformerRange}
               deformerSeed={deformerSeed}
+              overheadMode={camPreset === 'browse'}
+              overhead={overhead}
               variantCount={variantCount}
               variantHeightSpread={variantHeightSpread}
             />
@@ -1188,7 +1286,7 @@ export default function SpecimenViewport({
           ['worm',   'Worm',   'Worm POV — low to the ground, looking at the trunk base, to check the tree sits flat.'],
           ['street', 'Street', 'Eye-level, close — Street context (tier 2, full detail). What street-view sees: full-sized trees.'],
           ['hero',   'Hero',   'Studio mid framing — Hero context (tier 1, size-managed). The authoring default.'],
-          ['browse', 'Browse', 'Top-down plan — Browse context (tier 0, aerial / overhead). Wheel zooms altitude.'],
+          ['browse', 'Browse', 'Top-down plan — Browse context (tier 0, aerial / overhead). Shows the OVERHEAD hula impostor (ruffle/hula knobs, bottom-right). Wheel zooms altitude.'],
         ].map(([key, label, title]) => (
           <button key={key}
             onClick={() => setCamPreset(key)}
