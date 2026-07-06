@@ -41,9 +41,11 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-// Trees are baked once globally (not per-Look) since species placement
-// is data, not styling. Path stays at /baked/default.json for now —
-// Arborist's auto-bake hook writes there.
+// Tree placements are baked per-Look (/baked/<look>/trees.json). BAKE_URL is
+// the legacy GLOBAL fallback for looks with no per-look file — LS, whose auto-
+// bake still writes default.json. ParkPopulation resolves per-look first, then
+// falls back here, so LS stays byte-identical while other installs (e.g.
+// hipointe-demun) read their OWN placements. Mirrors the atlas/GLB resolution.
 const BAKE_URL = `${import.meta.env.BASE_URL}baked/default.json`
 
 // URL → species. The rewritten GLB path is
@@ -583,7 +585,7 @@ function SwayDriver() {
   return null
 }
 
-function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl = BAKE_URL }) {
+function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }) {
   // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
   // default 'lafayette-square'. Cartograph passes the active Look explicitly
   // via the StageEnvironment thread; Preview reads ?look= from the URL.
@@ -591,17 +593,30 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
   const scene = useSceneJson(lookName, bakeLastMs)
   const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
 
+  // Placement source: an explicit bakeUrl prop (Preview/Stage) wins as-is;
+  // otherwise resolve per-Look, falling back to the legacy global default.json
+  // for looks with no per-look file (LS → byte-identical). See BAKE_URL note.
+  const placementsUrl = bakeUrl || `${import.meta.env.BASE_URL}baked/${lookName}/trees.json`
+
   const [bake, setBake] = useState(null)
   useEffect(() => {
     if (cacheBust == null) return
     let cancelled = false
-    // Tree placements are GLOBAL (default.json); the ground anchor that seats
-    // each trunk on the DRAWN ground is PER-LOOK (tree-anchors.json, groundSampler
-    // bake). Fetch both and inject groundRaw into each instance; if anchors are
-    // absent/stale, the per-instance memos fall back to the smooth field.
+    // The ground anchor that seats each trunk on the DRAWN ground is PER-LOOK
+    // (tree-anchors.json, groundSampler bake). Fetch placements + anchors and
+    // inject groundRaw into each instance; if anchors are absent/stale, the
+    // per-instance memos fall back to the smooth field.
     const anchorsUrl = `${import.meta.env.BASE_URL}baked/${lookName}/tree-anchors.json`
+    // A missing per-look file may 404 OR (on SPA-fallback hosts) return a 200
+    // HTML page — so validate the parsed JSON has `instances` and fall back to
+    // the legacy global default.json when the per-look file is absent/invalid.
+    // An explicit bakeUrl (Preview/Stage) is final — no fallback.
+    const tryJson = (url) => fetch(url + '?t=' + cacheBust).then(r => r.ok ? r.json().catch(() => null) : null)
+    const fetchPlacements = bakeUrl
+      ? tryJson(placementsUrl)
+      : tryJson(placementsUrl).then(j => (j && j.instances) ? j : tryJson(BAKE_URL))
     Promise.all([
-      fetch(bakeUrl + '?t=' + cacheBust).then(r => r.ok ? r.json() : null),
+      fetchPlacements,
       fetch(anchorsUrl + '?t=' + cacheBust).then(r => r.ok ? r.json() : null).catch(() => null),
     ])
       .then(([j, anchorsDoc]) => {
@@ -614,7 +629,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
       })
       .catch(e => console.warn('[InstancedTrees] bake fetch failed:', e))
     return () => { cancelled = true }
-  }, [bakeUrl, cacheBust, lookName])
+  }, [placementsUrl, cacheBust, lookName, bakeUrl])
 
   const atlas = useTreeAtlas(lookName)
 
