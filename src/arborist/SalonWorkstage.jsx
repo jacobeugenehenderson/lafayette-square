@@ -221,7 +221,6 @@ export default function SalonWorkstage() {
   const setSlotName         = useArboristStore(s => s.setSalonSlotName)
   const resetSlot           = useArboristStore(s => s.resetSalonSlot)
   const addSlot             = useArboristStore(s => s.addSalonSlot)
-  const adoptSlot           = useArboristStore(s => s.adoptSalonSlot)
   // Re-publish + its publishing-state subscription retired 2026-06-25 (autosave + Grove bake regenerate-from-source).
   const error               = useArboristStore(s => s.salonError)
   const activeLookId        = useArboristStore(s => s.activeLookId)
@@ -504,7 +503,6 @@ export default function SalonWorkstage() {
                     onParams={(patch) => setSlotParams(activeSpecies, activeComposition.slot, patch)}
                     onNameChange={(name) => setSlotName(activeSpecies, activeComposition.slot, name)}
                     onReset={() => resetSlot(activeSpecies, activeComposition.slot)}
-                    onAdopt={() => adoptSlot(activeSpecies, activeComposition.slot)}
                     onSetCanary={() => setSalonCanary(activeSpecies, activeComposition.slot, activeLookId)}
                     canaryDisabledReason={
                       !activeLookId ? 'No active Look — open a Look in the cartograph first' : null
@@ -557,7 +555,7 @@ function SlotCard({
   chassisCatalog, speciesMorphology, barkRefs, leafPacks,
   dirty, targetCategory,
   windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange,
-  onParams, onNameChange, onReset, onAdopt,
+  onParams, onNameChange, onReset,
   onSetCanary, canaryDisabledReason, isCanary,
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
   candidateScope, recommendedNames,
