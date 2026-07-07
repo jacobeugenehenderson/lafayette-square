@@ -74,6 +74,18 @@ var CURRENT_LOOK = DEFAULT_LOOK
 // look. (Link tokens live in CacheService, not a tab — no tenancy concern.)
 var GLOBAL_SHEETS = { 'Handles': true }
 
+/**
+ * Normalize a client-declared look into a safe tab-name slug. Canonical
+ * INSTANCE.lookId values (lafayette-square, hipointe-demun) pass through
+ * unchanged; casing/whitespace/illegal-char variants collapse to a clean slug
+ * (or fall back to the default look) so a look can never error a request or
+ * silently fragment a tenant into a junk tab.
+ */
+function normalizeLook(raw) {
+  var s = String(raw || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
+  return s || DEFAULT_LOOK
+}
+
 /** Resolve a logical sheet name to the current look's physical tab name. */
 function tabNameFor(name) {
   if (GLOBAL_SHEETS[name]) return name
@@ -220,7 +232,7 @@ function deleteRowsByColumn(sheet, columnName, value) {
 
 function doGet(e) {
   // Resolve tenancy for this request before any getSheet call (default = LS).
-  CURRENT_LOOK = (e && e.parameter && e.parameter.look) || DEFAULT_LOOK
+  CURRENT_LOOK = normalizeLook(e && e.parameter && e.parameter.look)
   const action = (e.parameter.action || '').toLowerCase()
 
   try {
@@ -267,7 +279,7 @@ function doPost(e) {
   }
 
   // Resolve tenancy for this request before any getSheet call (default = LS).
-  CURRENT_LOOK = body.look || DEFAULT_LOOK
+  CURRENT_LOOK = normalizeLook(body.look)
 
   const action = (body.action || '').toLowerCase()
 

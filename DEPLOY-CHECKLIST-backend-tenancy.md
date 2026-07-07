@@ -9,6 +9,7 @@ Each neighborhood now gets its **own area of the one shared backend**, selected 
   - default look → **bare** tab (`Listings`) → **LS data never moves, zero migration**.
   - other look → **suffixed** tab (`Listings__hipointe-demun`), auto-created on demand by **cloning the bare tab's header row** (no manual setup, no seeding).
   - `Handles` is in `GLOBAL_SHEETS` → always bare (identity is one-per-person across neighborhoods). Link tokens live in `CacheService`, not a tab — no tenancy concern.
+  - The client `look` is sanitized at the door (`normalizeLook`: trim → lowercase → strip non-`[a-z0-9-]`, empty→default) before it becomes a tab name — canonical `lookId`s pass through unchanged; a casing/whitespace/illegal-char variant collapses to a safe slug instead of erroring the request or fragmenting a tenant.
   - Bypasses audited: `setupSheets()` stays look-unaware **on purpose** (it provisions the default-tenant bare tabs, which are the header-clone source) — commented. `saveDesign()`'s unreachable fallback routed through `tabNameFor` so it can't escape the tenant — commented.
 - **`src/lib/api.js`** — `get()` adds `?look=INSTANCE.lookId`; `post()` adds `look` to the body. Plus the `INSTANCE` import. Nothing else.
 
