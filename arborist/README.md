@@ -1,5 +1,7 @@
 # Arborist
 
+> 🧭 **New here? Read [`ORIENTATION.md`](ORIENTATION.md) first** — the agreed end-to-end mental model (Cartograph census ⇄ Arborist [Library → Salon → Grove] → bake → Slab → Reader), the boundary law, the two daylight seams, and an honest live-vs-parked state. This README is the **contract** (inputs/outputs, API, CLI); ORIENTATION is the **model**. *(2026-07-07 — the doc-consolidation this front-door pass kicks off will conform the sections below to it.)*
+
 The **tree kit** for the neighborhood — the helper that turns curated parts into the trees standing in Lafayette Square (and the next town after). It is the **Forest Builder kit-matcher**: one shared botanical vocabulary → robust species dossiers → parts auto-tagged on ingest → a matcher that turns a species name into ranked workable parts → the operator picks + tunes → the publish/bake spine pours them into the slab the public app renders.
 
 > 🎯 **The goal** (everything below serves it): **the LS trees render reliably and look as good as possible.** "Reliably" = the same authored tree bakes to the same slab every time, no vanishing leaves, no stale-cache surprises. "As good as possible" = correct silhouette, bark, and leaves (size · arrangement · color · season), across the species that fill the real park.
