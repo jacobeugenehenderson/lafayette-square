@@ -530,16 +530,13 @@ export function buildGradientCloud(rec, opts = {}) {
  */
 export function buildLeafClusters(rec, opts = {}) {
   if (!rec) return null
-  const { tips, H, R, crownBaseY, crownSpan } = generateBranches(rec, opts)
-  if (!tips.length) return null
+  const { limbs, H, R } = generateBranches(rec, opts)
+  if (!limbs.length) return null
   const occupancy = Math.min(1, Math.max(0.15, opts.occupancy ?? 0.7))
   const leafScale = opts.leafScale ?? 1
-  // Cover the whole crown (not just the tips) so the leaves ARE the canopy
-  // surface — a dense domed field of leaf cards.
-  const count = Math.max(24, Math.round((opts.leafCount ?? 380) * occupancy))
-  const leafSize = Math.max(0.3, R * 0.22 * leafScale)
-  const crownTopY = crownBaseY + crownSpan * 0.96
-  const edgeY = crownBaseY + crownSpan * 0.5
+  const way = opts.ways || 'alternate'
+  const leafSize = Math.max(0.35, R * 0.2 * leafScale)
+  const twigLen = R * 0.42                          // how far a twig reaches off a limb
 
   const positions = [], uvs = [], normals = []
   const aWindTier = [], aTreeHeightNorm = [], aRuffle = [], aOverhead = []
@@ -571,31 +568,72 @@ export function buildLeafClusters(rec, opts = {}) {
   }
 
   const seed = opts.seed ?? 1
-  for (let k = 0; k < count; k++) {
-    const s = seed * 3 + k * 13
-    const jr = _bh(s, 1), jt = _bh(s, 2), jy = _bh(s, 3)
-    // Slightly centre-weighted radius so the crown fills toward the middle (not
-    // a donut). Nearest-tip lobe bulge nudges the outline toward the branches.
-    const rFrac = Math.pow(jr, 0.62)
-    const theta = jt * Math.PI * 2
-    let best = 1e9, tip = tips[0]
-    for (const t of tips) { let d = Math.abs(theta - t.az); d = Math.min(d, 2 * Math.PI - d); if (d < best) { best = d; tip = t } }
-    const lobe = 0.82 + 0.24 * Math.exp(-(best / 0.5) * (best / 0.5))
-    const rad = R * rFrac * lobe
-    const ax = rad * Math.cos(theta)
-    const az = rad * Math.sin(theta)
-    // Domed height: centre high, edge lower, with a little vertical scatter.
-    const ay = crownTopY - (crownTopY - edgeY) * rFrac * rFrac + (jy - 0.5) * leafSize * 0.9
-    // Blade fans outward + up.
-    const bladeAz = theta + (_bh(s, 4) - 0.5) * 1.3
-    const upAmt = 0.3 + 0.5 * _bh(s, 5)
-    let dx = Math.cos(bladeAz), dz = Math.sin(bladeAz), dy = upAmt
-    const dl = Math.hypot(dx, dy, dz) || 1; dx /= dl; dy /= dl; dz /= dl
-    const side = [-Math.sin(bladeAz), 0, Math.cos(bladeAz)]
-    const size = leafSize * (0.7 + 0.6 * _bh(s, 6))
-    const phase = _bh(s, 7) * 6.2831853
-    const hnorm = Math.min(1, Math.max(0, ay / H))
-    pushLeaf(ax, ay, az, [dx, dy, dz], side, size, size * 0.75, phase, hnorm)
+
+  // Point + XZ tangent along a limb path by param u∈[0,1].
+  const limbAt = (limb, u) => {
+    const f = u * (limb.length - 1)
+    const i = Math.min(limb.length - 2, Math.max(0, Math.floor(f)))
+    const fr = f - i
+    const a = limb[i], b = limb[i + 1]
+    return {
+      x: a.x + (b.x - a.x) * fr, y: a.y + (b.y - a.y) * fr, z: a.z + (b.z - a.z) * fr,
+      tx: b.x - a.x, tz: b.z - a.z,
+    }
+  }
+  // Leaf-way → which sides carry a leaf at each twig node (the coefficient is the
+  // blade's tilt off the twig axis toward that side). This is what makes the
+  // arrangement read as REAL — leaves emerge from the twig in an ordered pattern.
+  const sidesForWay = (w, ni) => {
+    if (w === 'opposite') return [0.95, -0.95]                 // pairs each node
+    if (w === 'whorled') return [0.95, -0.95, 0.0]             // 3 around each node
+    return [ni % 2 === 0 ? 0.95 : -0.95]                       // alternate: flip each node
+  }
+
+  const NODES = 3                                              // leaf nodes per twig
+  const SPAWN = 5                                              // twig spawn points along a limb
+  const twigsPerSpawn = Math.max(1, Math.round(2 * occupancy) + 1)
+
+  for (let li = 0; li < limbs.length; li++) {
+    const limb = limbs[li]
+    for (let sp = 0; sp < SPAWN; sp++) {
+      const u = 0.12 + 0.84 * ((sp + 0.5) / SPAWN)             // twigs along most of the limb (fills the centre)
+      const p = limbAt(limb, u)
+      let tx = p.tx, tz = p.tz; const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl
+      const tangAz = Math.atan2(tz, tx)
+      for (let tw = 0; tw < twigsPerSpawn; tw++) {
+        const salt = seed * 7 + li * 53 + sp * 11 + tw * 3
+        // Twig fans off the limb to alternating sides + up into the crown.
+        const twigAz = tangAz + (tw % 2 ? 1 : -1) * (0.45 + 0.6 * _bh(salt, 1))
+        const up = 0.28 + 0.4 * _bh(salt, 2)
+        let dx = Math.cos(twigAz), dz = Math.sin(twigAz), dy = up
+        const dl = Math.hypot(dx, dy, dz) || 1; dx /= dl; dy /= dl; dz /= dl
+        const twigSideX = -Math.sin(twigAz), twigSideZ = Math.cos(twigAz)
+        const len = twigLen * (0.7 + 0.5 * _bh(salt, 3))
+        const step = len / NODES
+        for (let ni = 1; ni <= NODES; ni++) {
+          const dd = ni * step
+          const curve = Math.sin((ni / NODES) * Math.PI) * len * 0.12
+          const nx = p.x + dx * dd + twigSideX * curve * (_bh(salt, ni + 10) - 0.5)
+          const ny = p.y + dy * dd
+          const nz = p.z + dz * dd + twigSideZ * curve * (_bh(salt, ni + 20) - 0.5)
+          const sides = sidesForWay(way, ni)
+          for (let si = 0; si < sides.length; si++) {
+            const coef = sides[si]
+            // Blade points along the twig, tilted to its side + a little up; the
+            // petiole (stem edge) sits AT the node on the twig.
+            let bx = dx + twigSideX * coef, by = dy + 0.25, bz = dz + twigSideZ * coef
+            const bl = Math.hypot(bx, by, bz) || 1; bx /= bl; by /= bl; bz /= bl
+            // Card width axis = horizontal perpendicular to the blade azimuth.
+            const bAz = Math.atan2(bz, bx)
+            const side = [-Math.sin(bAz), 0, Math.cos(bAz)]
+            const size = leafSize * (0.8 + 0.4 * _bh(salt, ni * 7 + si + 30))
+            const phase = _bh(salt, ni * 5 + si + 40) * 6.2831853
+            const hnorm = Math.min(1, Math.max(0, ny / H))
+            pushLeaf(nx, ny, nz, [bx, by, bz], side, size, size * 0.72, phase, hnorm)
+          }
+        }
+      }
+    }
   }
 
   if (!positions.length) return null
