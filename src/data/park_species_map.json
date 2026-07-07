@@ -1,148 +1,55 @@
 {
-  "_doc": "Maps park_trees.json species names → preferred library species_ids. Empty array = no preferred match, runtime falls through to category-based picker (using park_trees.shape). Operator-edit by hand; this is the kind of curation no auto-guess gets right.",
-  "_libraryAt": "2026-04-29",
+  "_doc": "Maps park_trees.json species names → the CURRENT roster/library species_ids (the ids the LS design.json roster + trees-atlas.json + published pool are keyed on). This is the Cartograph↔Arborist SPECIES-KEY HANDOFF (arborist/ORIENTATION.md seam #2): keys are the RAW park_trees names; values MUST be current roster ids or the placement needlessly substitutes at bake/runtime. Empty array = no roster match → the category picker (park_trees.shape) fills it (a genuine coverage gap, not a bug). Operator-edit by hand.",
+  "_libraryAt": "2026-07-07",
+  "_fix": "2026-07-07 (Ruche/Jacob): repointed off the stale 2026-04-29 namespace (quercus_alba, acer_rubrum, acer_saccharum, tilia_americana, pinus_*, etc. — none in the current roster) onto the live roster ids below. ~111 placements were substituting only because of the dead ids. Verify end-to-end with a bake+LS render (binaries are gitignored; see arborist/README ship-to-slab).",
+  "_rosterIds": ["maple_sugar", "maple_silver", "maple_red", "birch", "blackgum", "linden_american", "oak_bur", "oak_white", "platanus_acerifolia", "ash_green"],
+  "_coverageGaps": "No roster asset yet for: conifers (pine/spruce/juniper/redcedar/cypress), and ornamentals/others (crabapple, redbud, dogwood, sweetgum, tuliptree, ginkgo, hackberry, elm, cottonwood, locust, willow, magnolia, serviceberry, pear, catalpa, walnut, zelkova, …). These fall to the category picker until an asset exists.",
   "map": {
-    "Maple, Sugar": [
-      "maple_sugar"
-    ],
-    "Maple, Silver": [
-      "maple_silver"
-    ],
-    "Maple, Red": [
-      "maple_red"
-    ],
-    "Maple, Red 'October Glory'": [
-      "acer_rubrum"
-    ],
-    "Maple, Norway": [
-      "acer_saccharum",
-      "acer_rubrum"
-    ],
-    "Maple, Amur": [
-      "acer_rubrum"
-    ],
-    "Maple, Hedge": [
-      "acer_rubrum"
-    ],
-    "maple, Japanese": [
-      "acer_rubrum"
-    ],
-    "Oak, Pin": [
-      "quercus_alba"
-    ],
-    "Oak, Pin (restricted use)": [
-      "quercus_alba"
-    ],
-    "Oak, Willow": [
-      "quercus_alba"
-    ],
-    "Oak, White": [
-      "quercus_alba"
-    ],
-    "Oak, English": [
-      "quercus_alba"
-    ],
-    "Oak, Sawtooth": [
-      "quercus_alba"
-    ],
-    "Oak, Shingle": [
-      "quercus_alba"
-    ],
-    "Oak, Swamp White": [
-      "quercus_alba"
-    ],
-    "Oak, Northern Red": [
-      "quercus_alba"
-    ],
-    "oak, northern red": [
-      "quercus_alba"
-    ],
-    "oak, bur": [
-      "oak_bur"
-    ],
-    "oak, water": [
-      "quercus_alba"
-    ],
-    "oak, shingle": [
-      "quercus_alba"
-    ],
-    "Birch": [
-      "birch"
-    ],
-    "Pine, White": [
-      "pinus_sp",
-      "pinus_sylvestris"
-    ],
-    "Pine, Austrian": [
-      "pinus_sp",
-      "pinus_sylvestris"
-    ],
-    "Pine, Scotch": [
-      "pinus_sylvestris"
-    ],
-    "pine, loblolly": [
-      "pinus_sp"
-    ],
-    "Linden, American": [
-      "linden_american"
-    ],
-    "Linden, Littleleaf": [
-      "tilia_americana"
-    ],
-    "sycamore, American": [
-      "platanus_acerifolia"
-    ],
-    "Sycamore American (restricted use)": [
-      "platanus_acerifolia"
-    ],
-    "juniper, Chinese": [
-      "juniperus_hollywood",
-      "juniperus_occidentalis"
-    ],
-    "redcedar, eastern": [
-      "juniperus_occidentalis"
-    ],
-    "Cottonwood, Eastern": [
-      "populus_alba_fall",
-      "populus_canescens",
-      "populus_tremuloides"
-    ],
-    "Blackgum": [
-      "blackgum"
-    ],
-    "Elm, American": [
-      "ulmus_americana"
-    ],
-    "Elm, Siberian": [
-      "ulmus_americana"
-    ],
-    "locust, black": [
-      "gleditsia_triacanthos"
-    ],
-    "honeylocust, thornless": [
-      "gleditsia_triacanthos"
-    ],
-    "Honeylocust": [
-      "gleditsia_triacanthos"
-    ],
-    "Willow, Weeping": [
-      "salix_babylonica"
-    ],
-    "willow, corkscrew": [
-      "salix_alba",
-      "salix_babylonica"
-    ],
-    "magnolia, star": [
-      "magnolia_sp"
-    ],
-    "magnolia, saucer": [
-      "magnolia_sp"
-    ],
-    "Spruce, Norway": [
-      "picea_abies"
-    ],
-    "Ash, Green": [
-      "ash_green"
-    ]
+    "Maple, Sugar": ["maple_sugar"],
+    "Maple, Silver": ["maple_silver"],
+    "Maple, Red": ["maple_red"],
+    "Maple, Red 'October Glory'": ["maple_red"],
+    "Maple, Norway": ["maple_sugar"],
+    "Maple, Amur": ["maple_red"],
+    "Maple, Hedge": ["maple_red"],
+    "maple, Japanese": ["maple_red"],
+    "Oak, White": ["oak_white"],
+    "Oak, Swamp White": ["oak_white"],
+    "oak, bur": ["oak_bur"],
+    "Oak, Pin": ["oak_white", "oak_bur"],
+    "Oak, Pin (restricted use)": ["oak_white", "oak_bur"],
+    "Oak, Willow": ["oak_white", "oak_bur"],
+    "Oak, English": ["oak_white", "oak_bur"],
+    "Oak, Sawtooth": ["oak_white", "oak_bur"],
+    "Oak, Shingle": ["oak_white", "oak_bur"],
+    "oak, shingle": ["oak_white", "oak_bur"],
+    "Oak, Northern Red": ["oak_white", "oak_bur"],
+    "oak, northern red": ["oak_white", "oak_bur"],
+    "oak, water": ["oak_white", "oak_bur"],
+    "Birch": ["birch"],
+    "Blackgum": ["blackgum"],
+    "Linden, American": ["linden_american"],
+    "Linden, Littleleaf": ["linden_american"],
+    "sycamore, American": ["platanus_acerifolia"],
+    "Sycamore American (restricted use)": ["platanus_acerifolia"],
+    "Ash, Green": ["ash_green"],
+    "Ash, Blue": ["ash_green"],
+    "Pine, White": [],
+    "Pine, Austrian": [],
+    "Pine, Scotch": [],
+    "pine, loblolly": [],
+    "juniper, Chinese": [],
+    "redcedar, eastern": [],
+    "Spruce, Norway": [],
+    "Cottonwood, Eastern": [],
+    "Elm, American": [],
+    "Elm, Siberian": [],
+    "locust, black": [],
+    "honeylocust, thornless": [],
+    "Honeylocust": [],
+    "Willow, Weeping": [],
+    "willow, corkscrew": [],
+    "magnolia, star": [],
+    "magnolia, saucer": []
   }
 }
