@@ -536,7 +536,7 @@ export function buildLeafClusters(rec, opts = {}) {
   const leafScale = opts.leafScale ?? 1
   const way = opts.ways || 'alternate'
   const leafSize = Math.max(0.35, R * 0.2 * leafScale)
-  const twigLen = R * 0.42                          // how far a twig reaches off a limb
+  const twigLen = R * 0.32                          // how far a twig reaches off a limb (kept short → tighter edge)
 
   const positions = [], uvs = [], normals = []
   const aWindTier = [], aTreeHeightNorm = [], aRuffle = [], aOverhead = []
@@ -613,9 +613,17 @@ export function buildLeafClusters(rec, opts = {}) {
         for (let ni = 1; ni <= NODES; ni++) {
           const dd = ni * step
           const curve = Math.sin((ni / NODES) * Math.PI) * len * 0.12
-          const nx = p.x + dx * dd + twigSideX * curve * (_bh(salt, ni + 10) - 0.5)
+          let nx = p.x + dx * dd + twigSideX * curve * (_bh(salt, ni + 10) - 0.5)
           const ny = p.y + dy * dd
-          const nz = p.z + dz * dd + twigSideZ * curve * (_bh(salt, ni + 20) - 0.5)
+          let nz = p.z + dz * dd + twigSideZ * curve * (_bh(salt, ni + 20) - 0.5)
+          // Tighten the perimeter — pull any leaf that strays past the canopy
+          // radius back to just inside it (with a little jitter for a natural,
+          // not dead-circular, edge). Kills the "loose" outlier leaves.
+          const rr = Math.hypot(nx, nz)
+          if (rr > R) {
+            const k = R * (0.9 + 0.08 * _bh(salt, ni + 80)) / rr
+            nx *= k; nz *= k
+          }
           const sides = sidesForWay(way, ni)
           for (let si = 0; si < sides.length; si++) {
             const coef = sides[si]

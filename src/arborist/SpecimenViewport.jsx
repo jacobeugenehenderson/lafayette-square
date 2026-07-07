@@ -1078,9 +1078,12 @@ function Skeleton({
   }, [overhead?.pack])
   const leafMat = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({
-      map: leafTex || null, alphaTest: leafTex ? 0.4 : 0,
+      // alphaTest 0.6 chokes the cutout past the light fringe texels at the leaf
+      // edge (the white alpha halo). transparent:false → alphaTest hard-cut, no
+      // blended halo. Crisp silhouette.
+      map: leafTex || null, alphaTest: leafTex ? 0.6 : 0,
       color: '#3f7a34', roughness: 1, metalness: 0,
-      transparent: true, depthWrite: true, side: THREE.DoubleSide,
+      transparent: false, depthWrite: true, side: THREE.DoubleSide,
     })
     injectOverheadWiggle(m)
     return m
