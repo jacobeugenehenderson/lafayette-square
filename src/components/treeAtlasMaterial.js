@@ -1371,44 +1371,39 @@ export function injectOverheadWiggle(material) {
     shader.uniforms.uTime              = treeSwayUniforms.uTime
     shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
     shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
-    shader.uniforms.uGustFrontVelocity = treeSwayUniforms.uGustFrontVelocity
-    shader.uniforms.uRuffleDepth       = { value: 0 }
-    shader.uniforms.uHulaAmount        = { value: 0 }
+    shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
+    shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
          uniform float uTime;
          uniform vec3  uWindForce;
          uniform float uWindIntensity;
-         uniform vec3  uGustFrontVelocity;
-         uniform float uRuffleDepth;
-         uniform float uHulaAmount;
+         uniform float uGustsScale;
+         uniform float uGustEnvelope;
          attribute float aOverhead;
-         attribute float aRuffle;
          attribute float aTreeHeightNorm;
          attribute float aLeafBody;   // 0 at the glued stem → 1 at the blade tip
          attribute float aLeafPhase;  // per-leaf random flutter phase`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
          if (aOverhead > 0.5) {
-           // Hula — base-anchored x/y wiggle, direction slowly drifting, phase-
-           //   lagged up the crown (aTreeHeightNorm: trunk-height barely moves).
-           float hulaT   = uTime * 0.7;
-           float hulaDrA = uTime * 0.22;
-           vec2  hulaDir = vec2(cos(hulaDrA), sin(hulaDrA));
-           float hulaLag = aTreeHeightNorm * 2.4;
-           transformed.xz += hulaDir * (uHulaAmount * aTreeHeightNorm * sin(hulaT - hulaLag));
-           // Ruffle — gentle vertical undulation (no radial push).
-           transformed.y  += aRuffle * uRuffleDepth * 2.0 * (1.0 + 0.15 * sin(uTime * 0.5));
-           // Shared wind — base-anchored lean downwind.
+           // MOTION = the shared WEATHER (authored elsewhere; the Salon's Wind
+           // toggle previews it), NOT an intrinsic dial. The canopy leans, sways
+           // and gusts downwind, base-anchored (aTreeHeightNorm: trunk-height
+           // barely moves, the crown swings). Calm weather → ~still (only the
+           // leaf-flutter floor below).
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
-           transformed.xz += wd * (uWindIntensity * 0.03 * aTreeHeightNorm);
+           float wt    = uTime * 1.1;
+           float sway  = uWindIntensity * (0.55 + 0.45 * sin(wt + aTreeHeightNorm * 2.0));
+           float spike = sin(uTime * 1.5) * 0.6 + sin(uTime * 2.3 + 1.0) * 0.4;
+           float gust  = uGustsScale * uGustEnvelope * max(spike - 0.3, 0.0) * 2.0;
+           transformed.xz += wd * ((sway + gust) * 0.06 * aTreeHeightNorm);
            // Leaf-body flutter — the blade shimmers about its glued stem, each
-           //   leaf on its own random phase (the "alive" quality). Absent
-           //   attribute → aLeafBody 0 → branches/umbrella untouched. Amplitude
-           //   grows a touch with wind.
+           //   leaf on its own random phase (the always-on "alive" floor; grows
+           //   a touch with wind). Absent aLeafBody → branches/umbrella untouched.
            if (aLeafBody > 0.001) {
              float ft  = uTime * 3.4 + aLeafPhase;
-             float amp = (0.13 + uWindIntensity * 0.05) * aLeafBody;
+             float amp = (0.1 + uWindIntensity * 0.06) * aLeafBody;
              transformed.y  += sin(ft) * amp;
              transformed.xz += vec2(cos(ft * 0.9), sin(ft * 1.3)) * (amp * 0.55);
            }

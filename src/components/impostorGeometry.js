@@ -552,7 +552,7 @@ export function buildLeafClusters(rec, opts = {}) {
     positions.push(ax + side[0] * hw, ay + side[1] * hw, az + side[2] * hw)  // stem R
     positions.push(bx + side[0] * hw, by + side[1] * hw, bz + side[2] * hw)  // blade R
     positions.push(bx - side[0] * hw, by - side[1] * hw, bz - side[2] * hw)  // blade L
-    uvs.push(0, 1, 1, 1, 1, 0, 0, 0)                    // stem at v=1, tip at v=0
+    uvs.push(0, 0, 1, 0, 1, 1, 0, 1)                    // petiole graphic at the stem (anchor) end
     // Face normal = side × dir.
     let nx = side[1] * dir[2] - side[2] * dir[1]
     let ny = side[2] * dir[0] - side[0] * dir[2]

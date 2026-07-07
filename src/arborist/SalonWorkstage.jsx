@@ -697,25 +697,8 @@ function SlotCard({
     } })
   }
 
-  // Overhead "hula" impostor knobs (HANDOFF-overhead-hula-impostor.md) — live in
-  // the SlotCard so they drive the Browse-preset overhead disc-stack + autosave
-  // to composition.deformer.overhead. Hydrate on slot/chassis switch (identity
-  // to the shipped defaults when unset).
-  const OVERHEAD_DEFAULTS = { ruffleDepth: 0.35, hulaAmount: 0.5 }
-  const [ruffleDepth, setRuffleDepth] = useState(OVERHEAD_DEFAULTS.ruffleDepth)
-  const [hulaAmount, setHulaAmount] = useState(OVERHEAD_DEFAULTS.hulaAmount)
-  useEffect(() => {
-    const o = deformer?.overhead || {}
-    setRuffleDepth(Number.isFinite(o.ruffleDepth) ? o.ruffleDepth : OVERHEAD_DEFAULTS.ruffleDepth)
-    setHulaAmount(Number.isFinite(o.hulaAmount) ? o.hulaAmount : OVERHEAD_DEFAULTS.hulaAmount)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [species, slot, chassis])
-  const persistOverhead = (patch) => {
-    onParams({ deformer: { overhead: {
-      ruffleDepth: patch.ruffleDepth ?? ruffleDepth,
-      hulaAmount:  patch.hulaAmount  ?? hulaAmount,
-    } } })
-  }
+  // The overhead impostor is driven by the LEAF section controls (shape) + the
+  // Wind toggle (motion, shared weather) — no separate overhead knobs.
 
   // Botanical height (2026-06-25): the PREVIEW scales the chassis to its species'
   // mature height — dossier `chassis.size.target` (m) ÷ the chassis's native
@@ -763,10 +746,10 @@ function SlotCard({
             deformerRange={deformer?.range || null}
             deformerSeed={deformSeed}
             overhead={{
-              ruffleDepth, hulaAmount,
-              // Connect the overhead impostor to the selected chassis: match its
-              // leaf arrangement, density, size, pack + tints so the canopy reads
-              // like this tree.
+              // The overhead impostor reads the selected chassis's LEAF controls
+              // (arrangement, density, size, pack, tints, show) — those ARE its
+              // controllers. Motion comes from the shared wind (Wind toggle).
+              show: leaves?.show,
               ways: leaves?.ways,
               pack: leaves?.pack,
               occupancy: leaves?.occupancy,
@@ -860,10 +843,6 @@ function SlotCard({
           onApprovedOnlyChange={onApprovedOnlyChange}
           candidateScope={candidateScope}
           recommendedNames={recommendedNames}
-          ruffleDepth={ruffleDepth}
-          hulaAmount={hulaAmount}
-          onRuffleChange={(v) => { setRuffleDepth(v); persistOverhead({ ruffleDepth: v }) }}
-          onHulaChange={(v) => { setHulaAmount(v); persistOverhead({ hulaAmount: v }) }}
         />
 
         {/* Reference dossier — educational, not a comparison tool (2026-06-25),
@@ -944,7 +923,6 @@ function SalonControlsPanel({
   chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
   candidateScope, recommendedNames,
   barkOpen, onBarkOpenChange,
-  ruffleDepth = 0.35, hulaAmount = 0.5, onRuffleChange, onHulaChange,
 }) {
   const matchOptions = useArboristStore(s => s.salonOptions)   // §9 matcher ranked options (null if no dossier)
   // Chassis picker filtered by morphology suggestion: matching-morphology
@@ -1237,33 +1215,18 @@ function SalonControlsPanel({
           style={colorStyle} />
       </Row>
       </CollapsibleSection>
-      {/* Overhead impostor — the ruche + hula motion for the top-down (Browse)
-          view. The canopy skin + size/density come from the capture of the real
-          tree (chassis / Leaves controls above); these two dials shape the MOTION.
-          HANDOFF-overhead-hula-impostor.md. */}
+      {/* Overhead impostor — the top-down (Browse) canopy. It has no dials of its
+          own: its SHAPE follows the Leaf controls above (Ways · Occupancy · Leaf
+          size · pack · tints), and its MOTION is the shared wind — preview it with
+          the Wind toggle over the viewport. */}
       <CollapsibleSection title="Overhead (Browse view)">
-        <div style={{ fontSize: 10, color: '#8a93a0', margin: '0 0 4px', lineHeight: 1.3 }}>
-          Switch the viewport to <b>Browse</b> to see these. The canopy is a top-down
-          capture of this tree; the dials add the ruffle + hula motion.
+        <div style={{ fontSize: 10, color: '#8a93a0', lineHeight: 1.4 }}>
+          Switch the viewport to <b>Browse</b> to see the overhead canopy. It's built
+          from the <b>Leaves</b> controls above — <b>Ways</b> sets the leaf arrangement,
+          <b>Occupancy</b> the density, <b>Leaf size</b> the scale, pack + tints the look.
+          Its motion is the shared weather — hit the <b>Wind</b> toggle over the viewport
+          to preview a generic breeze before blessing.
         </div>
-        <Row label="Ruffle">
-          <input type="range" min={0} max={1} step={0.01} value={ruffleDepth}
-            onChange={(e) => onRuffleChange?.(parseFloat(e.target.value))}
-            style={{ flex: 1, accentColor: '#e8b860' }}
-            title="Depth of the standing rim scallop (the ruche). Flexes the canopy edge." />
-          <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
-            {ruffleDepth.toFixed(2)}
-          </span>
-        </Row>
-        <Row label="Hula">
-          <input type="range" min={0} max={3} step={0.02} value={hulaAmount}
-            onChange={(e) => onHulaChange?.(parseFloat(e.target.value))}
-            style={{ flex: 1, accentColor: '#e8b860' }}
-            title="Amount of the base-anchored canopy rock (the hula)." />
-          <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
-            {hulaAmount.toFixed(2)}
-          </span>
-        </Row>
       </CollapsibleSection>
     </div>
   )

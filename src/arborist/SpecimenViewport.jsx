@@ -26,7 +26,6 @@ import {
   useSalonPreviewAtlas,
   applyBarkUniforms,
   applyDeformerUniforms,
-  applyOverheadDeformerUniforms,
   injectOverheadWiggle,
   stampTreeVertexAttrs,
   treeSwayUniforms,
@@ -1094,14 +1093,11 @@ function Skeleton({
     try { leafTex?.dispose() } catch {}
   }, [branchMat, umbrellaMat, cloudMat, leafMat, leafTex])
 
-  // Bind the two knobs (hula wiggle / ruffle) to all overhead materials each
-  // frame, and match the canopy tints to the chassis's authored leaf tints.
+  // Match the canopy tints to the chassis's authored leaf tints. (Motion is the
+  // shared wind — driven by the Wind toggle via treeSwayUniforms — not per-material
+  // dials, so nothing to bind here beyond colour.)
   useFrame(() => {
     if (!overheadMode) return
-    applyOverheadDeformerUniforms(branchMat, overhead)
-    applyOverheadDeformerUniforms(umbrellaMat, overhead)
-    applyOverheadDeformerUniforms(leafMat, overhead)
-    // Only the leaves take the lit leaf colour; the umbrella stays a dark fill.
     if (overhead?.tintFront) leafMat.color.set(overhead.tintFront)
   })
 
@@ -1149,7 +1145,7 @@ function Skeleton({
                   the actual textured canopy surface. Cloud smudge retired. */}
               <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
               {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
-              {leafGeo && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
+              {leafGeo && overhead?.show !== false && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
             </group>
           ))}
         </group>
