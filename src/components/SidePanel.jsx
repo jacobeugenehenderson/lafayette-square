@@ -8,6 +8,8 @@ import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
 import { CATEGORY_LIST, COLOR_CLASSES } from '../tokens/categories'
 import { buildings as _buildings, buildingMap as _buildingMap, buildingCount as _buildingCount, ready as _buildingsReady } from '../data/buildings'
+import { resolveBuildingPosition } from '../lib/buildingPosition'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { loadInstanceData } from '../data/loadInstanceData.js'
 import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
@@ -23,22 +25,44 @@ import useCommunityStats from '../hooks/useCommunityStats'
 // ── Camera helpers ──────────────────────────────────────────────────
 // _buildingMap imported from shared buildings module
 
-// Neighborhood bounding box (computed lazily after buildings load)
-let _neighborhoodBounds = { minX: -200, maxX: 200, minZ: -200, maxZ: 200 }
+// Neighborhood bounding box. Prefer content-carried positions (LS legacy →
+// byte-identical); content-only installations (HiPointe roster carries no
+// coordinates) fall back to the slab-index footprints — position is a render
+// fact from the slab. null until a source is ready.
+let _neighborhoodBounds = null
 _buildingsReady.then(({ buildings }) => {
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
   for (const b of buildings) {
+    if (!b.position) continue   // content-only installation → resolve via slab below
     minX = Math.min(minX, b.position[0])
     maxX = Math.max(maxX, b.position[0])
     minZ = Math.min(minZ, b.position[2])
     maxZ = Math.max(maxZ, b.position[2])
   }
-  _neighborhoodBounds = { minX, maxX, minZ, maxZ }
+  if (Number.isFinite(minX)) _neighborhoodBounds = { minX, maxX, minZ, maxZ }
 })
+
+// Resolve neighborhood XZ bounds — content positions if present, else the
+// slab index footprints (published async by SlabBuildings).
+function neighborhoodBounds() {
+  if (_neighborhoodBounds) return _neighborhoodBounds
+  const idx = useSlabBuildingIndex.getState().index
+  if (!idx?.byNum?.length) return null
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
+  for (const e of idx.byNum) {
+    for (const [x, z] of e.footprint) {
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x)
+      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z)
+    }
+  }
+  return Number.isFinite(minX) ? { minX, maxX, minZ, maxZ } : null
+}
 
 // Compute neighborhood framing using actual viewport dimensions
 function getNeighborhoodTarget() {
-  const { minX, maxX, minZ, maxZ } = _neighborhoodBounds
+  const bounds = neighborhoodBounds()
+  if (!bounds) return { position: [0, 800, 1], lookAt: [0, 0, 0] }
+  const { minX, maxX, minZ, maxZ } = bounds
   const cx = (minX + maxX) / 2
   const cz = (minZ + maxZ) / 2
   const spanX = maxX - minX
@@ -102,10 +126,14 @@ function computeZoomToFit(buildings) {
   }
 }
 
-// Center on a single building — featured in viewport, not zoomed in too close
+// Center on a single building — featured in viewport, not zoomed in too close.
+// Position resolves from the slab (via content when LS carries it); null when
+// the building has no resolvable coordinates (caller opens the card, no fly).
 function computeCenterOn(building) {
-  const x = building.position[0]
-  const z = building.position[2]
+  const pos = resolveBuildingPosition(building)
+  if (!pos) return null
+  const x = pos[0]
+  const z = pos[2]
   const height = 250
   const zOff = panelOffset(height)
   return {
@@ -492,16 +520,17 @@ function LafayetteSubsection({ section, color, scrollToSelected }) {
 
   const handleSelectPlace = (biz) => {
     const building = _buildingMap[biz.building_id]
-    if (building) {
-      // Has geometry → highlight on map, fly to it, drop panel to browse
+    const target = building ? computeCenterOn(building) : null
+    if (target) {
+      // Resolvable position → highlight on map, fly to it, drop panel to browse
       highlight(biz.id, biz.building_id)
       const cam = useCamera.getState()
       if (cam.viewMode !== 'browse') cam.setMode('browse')
       cam.setPanelState('browse')
-      const target = computeCenterOn(building)
       flyTo(target.position, target.lookAt)
     } else {
-      // No geometry → open PlaceCard directly so user sees listing info
+      // No resolvable geometry (content-only listing / dropped building) →
+      // open PlaceCard directly so the user still sees listing info.
       useSelectedBuilding.getState().select(biz.id, biz.building_id)
     }
   }
@@ -864,8 +893,8 @@ function SidePanel() {
       const sel = useSelectedBuilding.getState()
       if (sel.selectedId) {
         const building = _buildingMap[sel.selectedId]
-        if (building) {
-          const target = computeCenterOn(building)
+        const target = building ? computeCenterOn(building) : null
+        if (target) {
           useCamera.getState().flyTo(target.position, target.lookAt)
         }
       }

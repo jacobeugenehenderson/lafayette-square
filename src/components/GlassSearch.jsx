@@ -5,14 +5,16 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import CATEGORIES from '../tokens/categories'
 
 import { buildings, buildingMap as _buildingMap } from '../data/buildings'
+import { resolveBuildingPosition } from '../lib/buildingPosition'
 import { assetUrl } from '../lib/assetUrl.js'
 
+// Position resolves from the slab (via content when LS carries it) — unified
+// with SidePanel's fly-to on the one shared resolver. null → no camera move
+// (caller still selects the listing). Keeps GlassSearch's own framing.
 function computeCenterOn(building) {
-  const fp = building.footprint || []
-  if (!fp.length) return { position: [0, 250, 0], lookAt: [0, 0, 0] }
-  let cx = 0, cz = 0
-  fp.forEach(([x, z]) => { cx += x; cz += z })
-  cx /= fp.length; cz /= fp.length
+  const pos = resolveBuildingPosition(building)
+  if (!pos) return null
+  const cx = pos[0], cz = pos[2]
   return {
     position: [cx, 250, cz + 1],
     lookAt: [cx, 0, cz],
@@ -169,7 +171,7 @@ export function useGlassSearch() {
     if (cam.panelState === 'full') cam.setPanelState('neutral')
     if (bldg) {
       const target = computeCenterOn(bldg)
-      flyTo(target.position, target.lookAt)
+      if (target) flyTo(target.position, target.lookAt)
     }
     if (isMenuResult && listing) {
       selectBuilding(listing.id, listing.building_id, 'menu')

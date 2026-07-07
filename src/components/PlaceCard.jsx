@@ -22,6 +22,7 @@ import QRCode from 'qrcode'
 import { useCourierAvailable } from './CourierDots'
 import { useCodeDesk } from './CodeDeskModal'
 import { loadInstanceData } from '../data/loadInstanceData.js'
+import { resolveBuildingPosition } from '../lib/buildingPosition'
 import { assetUrl } from '../lib/assetUrl.js'
 
 // Facade photo lookup: building_id -> { image path, description }
@@ -4028,7 +4029,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 <CaryButton
                   placeName={name}
                   placeId={building?.id}
-                  buildingPosition={building?.position}
+                  buildingPosition={resolveBuildingPosition(building)}
                   isResidential={true}
                 />
               </div>

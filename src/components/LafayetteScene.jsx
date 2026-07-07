@@ -21,6 +21,8 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { terrainExag } from '../utils/terrainShader'
 import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
+import { resolveBuildingPosition } from '../lib/buildingPosition'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import SceneNeon, { useNeonLookup } from './SceneNeon.jsx'
 
@@ -1032,10 +1034,21 @@ function getInitials(name) {
 
 const PIN_STEM_GEO = new THREE.CylinderGeometry(0.12, 0.12, 1, 4)
 
-function MapPin({ listing, building, xOffset = 0, zOffset = 0 }) {
+// Approx storey height (m) — pin-stem estimate for content-only installations
+// (roster carries no `size`; pins are billboards, so an estimate reads fine).
+const PIN_STORY_M = 3.4
+
+function MapPin({ listing, building, position, xOffset = 0, zOffset = 0 }) {
   const select = useSelectedBuilding((state) => state.select)
   const categoryHex = CATEGORY_HEX[listing.category] || '#888888'
-  const roofY = getFoundationHeight(building) + building.size[1] + getRoofPeakHeight(building)
+  // Wall height + roof peak come from content geometry when the installation
+  // carries it (LS → exact, unchanged); content-only installations estimate
+  // the wall from `stories` and skip the roof peak. Foundation reads only
+  // `year_built`, so it is safe for both.
+  const hasGeom = Array.isArray(building.size)
+  const wallH = hasGeom ? building.size[1] : (building.stories || 1) * PIN_STORY_M
+  const roofPeak = hasGeom ? getRoofPeakHeight(building) : 0
+  const roofY = getFoundationHeight(building) + wallH + roofPeak
   const stemHeight = 18
   const initials = getInitials(listing.name)
   const thumbnail = listing.logo || null
@@ -1069,7 +1082,7 @@ function MapPin({ listing, building, xOffset = 0, zOffset = 0 }) {
   const hasLogo = thumbnail && !logoFailed && logoSize
 
   return (
-    <group position={[building.position[0] + xOffset, 0, building.position[2] + zOffset]}>
+    <group position={[position[0] + xOffset, 0, position[2] + zOffset]}>
       {/* Stem line from roof to pin */}
       <mesh
         position={[0, roofY + stemHeight / 2, 0]}
@@ -1146,6 +1159,9 @@ function LandmarkMarkers() {
   const activeTags = useLandmarkFilter((state) => state.activeTags)
   const selectedListingId = useSelectedBuilding((state) => state.selectedListingId)
   const listings = useListings((s) => s.listings)
+  // Subscribe so pins (re)appear once SlabBuildings publishes the async index —
+  // the position source for content-only installations (HiPointe roster).
+  const slabIndex = useSlabBuildingIndex((s) => s.index)
 
   const filteredLandmarks = useMemo(() => {
     return listings.filter(l =>
@@ -1159,13 +1175,27 @@ function LandmarkMarkers() {
     return map
   }, [])
 
+  // Resolved world XZ per visible listing — content position (LS) or slab
+  // footprint centroid (content-only installations); listings with no
+  // resolvable coordinates drop out (no pin). Recomputes when the slab index
+  // publishes (`slabIndex` dep).
+  const positions = useMemo(() => {
+    const m = new Map()
+    for (const l of filteredLandmarks) {
+      const b = buildingMap[l.building_id]
+      const pos = b ? resolveBuildingPosition(b) : null
+      if (pos) m.set(l.id, pos)
+    }
+    return m
+  }, [filteredLandmarks, buildingMap, slabIndex])
+
   // De-overlap: spread pins that are too close in XZ space
   const pinOffsets = useMemo(() => {
     const THRESH = 25  // detection radius
     const SPREAD = 20  // spacing between spread pins
     const entries = filteredLandmarks.map(l => {
-      const b = buildingMap[l.building_id]
-      return b ? { id: l.id, x: b.position[0], z: b.position[2] } : null
+      const pos = positions.get(l.id)
+      return pos ? { id: l.id, x: pos[0], z: pos[2] } : null
     }).filter(Boolean)
 
     const dx = {}, dz = {}
@@ -1194,7 +1224,7 @@ function LandmarkMarkers() {
       })
     }
     return { dx, dz }
-  }, [filteredLandmarks, buildingMap])
+  }, [filteredLandmarks, positions])
 
   if (filteredLandmarks.length === 0) return null
 
@@ -1202,12 +1232,14 @@ function LandmarkMarkers() {
     <group>
       {filteredLandmarks.map(listing => {
         const building = buildingMap[listing.building_id]
-        if (!building) return null
+        const position = positions.get(listing.id)
+        if (!building || !position) return null   // no resolvable coordinates → no pin
         return (
           <MapPin
             key={listing.id}
             listing={listing}
             building={building}
+            position={position}
             xOffset={pinOffsets.dx[listing.id] || 0}
             zOffset={pinOffsets.dz[listing.id] || 0}
           />
