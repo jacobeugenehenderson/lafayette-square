@@ -310,7 +310,9 @@ function generateBranches(rec, opts = {}) {
   for (let i = 0; i < NPRIMARY; i++) {
     const salt = seed * 17 + i * 7
     const az = ((i + 0.5) / NPRIMARY) * Math.PI * 2 + (_bh(salt, 1) - 0.5) * 0.4
-    const reach = R * (0.72 + 0.36 * _bh(salt, 2))
+    // Reach stays INSIDE the canopy (leaves extend past the tips), so branches
+    // don't poke out as spider-legs.
+    const reach = R * (0.5 + 0.22 * _bh(salt, 2))
     const rise = 0.55 + 0.35 * _bh(salt, 5)
     const primary = buildPath(az, reach, rise, 6, baseW, tipW, salt)
     limbs.push(primary)
@@ -528,12 +530,16 @@ export function buildGradientCloud(rec, opts = {}) {
  */
 export function buildLeafClusters(rec, opts = {}) {
   if (!rec) return null
-  const { tips, H, R } = generateBranches(rec, opts)
+  const { tips, H, R, crownBaseY, crownSpan } = generateBranches(rec, opts)
   if (!tips.length) return null
   const occupancy = Math.min(1, Math.max(0.15, opts.occupancy ?? 0.7))
   const leafScale = opts.leafScale ?? 1
-  const perTip = Math.max(2, Math.round((opts.leavesPerTip ?? 12) * occupancy))
-  const leafSize = Math.max(0.3, R * 0.17 * leafScale)
+  // Cover the whole crown (not just the tips) so the leaves ARE the canopy
+  // surface — a dense domed field of leaf cards.
+  const count = Math.max(24, Math.round((opts.leafCount ?? 380) * occupancy))
+  const leafSize = Math.max(0.3, R * 0.22 * leafScale)
+  const crownTopY = crownBaseY + crownSpan * 0.96
+  const edgeY = crownBaseY + crownSpan * 0.5
 
   const positions = [], uvs = [], normals = []
   const aWindTier = [], aTreeHeightNorm = [], aRuffle = [], aOverhead = []
@@ -564,28 +570,32 @@ export function buildLeafClusters(rec, opts = {}) {
     indices.push(base, base + 1, base + 2, base, base + 2, base + 3)
   }
 
-  for (let ti = 0; ti < tips.length; ti++) {
-    const tip = tips[ti]
-    for (let k = 0; k < perTip; k++) {
-      const salt = ti * 131 + k * 7 + (opts.seed ?? 1) * 3
-      const jr = _bh(salt, 1), ja = _bh(salt, 2), jy = _bh(salt, 3)
-      // Scatter the anchor in a small cluster around the tip.
-      const spreadAz = tip.az + (ja - 0.5) * 1.3
-      const spreadR = (0.3 + 1.0 * jr) * leafSize * 1.8
-      const ax = tip.x + Math.cos(spreadAz) * spreadR
-      const az = tip.z + Math.sin(spreadAz) * spreadR
-      const ay = tip.y + (jy - 0.5) * leafSize * 1.6
-      // Blade fans outward + up.
-      const bladeAz = spreadAz + (_bh(salt, 4) - 0.5) * 0.9
-      const upAmt = 0.25 + 0.55 * _bh(salt, 5)
-      let dx = Math.cos(bladeAz), dz = Math.sin(bladeAz), dy = upAmt
-      const dl = Math.hypot(dx, dy, dz) || 1; dx /= dl; dy /= dl; dz /= dl
-      const side = [-Math.sin(bladeAz), 0, Math.cos(bladeAz)]
-      const size = leafSize * (0.7 + 0.6 * _bh(salt, 6))
-      const phase = _bh(salt, 7) * 6.2831853
-      const hnorm = Math.min(1, Math.max(0, ay / H))
-      pushLeaf(ax, ay, az, [dx, dy, dz], side, size, size * 0.7, phase, hnorm)
-    }
+  const seed = opts.seed ?? 1
+  for (let k = 0; k < count; k++) {
+    const s = seed * 3 + k * 13
+    const jr = _bh(s, 1), jt = _bh(s, 2), jy = _bh(s, 3)
+    // Slightly centre-weighted radius so the crown fills toward the middle (not
+    // a donut). Nearest-tip lobe bulge nudges the outline toward the branches.
+    const rFrac = Math.pow(jr, 0.62)
+    const theta = jt * Math.PI * 2
+    let best = 1e9, tip = tips[0]
+    for (const t of tips) { let d = Math.abs(theta - t.az); d = Math.min(d, 2 * Math.PI - d); if (d < best) { best = d; tip = t } }
+    const lobe = 0.82 + 0.24 * Math.exp(-(best / 0.5) * (best / 0.5))
+    const rad = R * rFrac * lobe
+    const ax = rad * Math.cos(theta)
+    const az = rad * Math.sin(theta)
+    // Domed height: centre high, edge lower, with a little vertical scatter.
+    const ay = crownTopY - (crownTopY - edgeY) * rFrac * rFrac + (jy - 0.5) * leafSize * 0.9
+    // Blade fans outward + up.
+    const bladeAz = theta + (_bh(s, 4) - 0.5) * 1.3
+    const upAmt = 0.3 + 0.5 * _bh(s, 5)
+    let dx = Math.cos(bladeAz), dz = Math.sin(bladeAz), dy = upAmt
+    const dl = Math.hypot(dx, dy, dz) || 1; dx /= dl; dy /= dl; dz /= dl
+    const side = [-Math.sin(bladeAz), 0, Math.cos(bladeAz)]
+    const size = leafSize * (0.7 + 0.6 * _bh(s, 6))
+    const phase = _bh(s, 7) * 6.2831853
+    const hnorm = Math.min(1, Math.max(0, ay / H))
+    pushLeaf(ax, ay, az, [dx, dy, dz], side, size, size * 0.75, phase, hnorm)
   }
 
   if (!positions.length) return null

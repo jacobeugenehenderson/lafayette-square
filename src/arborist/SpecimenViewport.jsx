@@ -1049,10 +1049,13 @@ function Skeleton({
   // Umbrella + cloud share a soft radial-alpha disc, tinted + faded per layer, so
   // looking down composites leaves→umbrella→cloud (depthWrite off → real blend).
   const canopyTex = useMemo(() => getCanopyGradientTex(), [])
+  // Umbrella = the DARK under-canopy fill behind the leaves (shadowed interior
+  // showing through gaps → depth). Fixed dark green, NOT tinted to the lit leaf
+  // colour — that's what made it read as a bright blob.
   const umbrellaMat = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({
-      map: canopyTex, color: '#3f7a34', roughness: 1, metalness: 0,
-      transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide,
+      map: canopyTex, color: '#20401c', roughness: 1, metalness: 0,
+      transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide,
     })
     injectOverheadWiggle(m)
     return m
@@ -1097,10 +1100,9 @@ function Skeleton({
     if (!overheadMode) return
     applyOverheadDeformerUniforms(branchMat, overhead)
     applyOverheadDeformerUniforms(umbrellaMat, overhead)
-    applyOverheadDeformerUniforms(cloudMat, overhead)
     applyOverheadDeformerUniforms(leafMat, overhead)
-    if (overhead?.tintFront) { umbrellaMat.color.set(overhead.tintFront); leafMat.color.set(overhead.tintFront) }
-    if (overhead?.tintBack) cloudMat.color.set(overhead.tintBack)
+    // Only the leaves take the lit leaf colour; the umbrella stays a dark fill.
+    if (overhead?.tintFront) leafMat.color.set(overhead.tintFront)
   })
 
   const rot = forestryRotation ? [-Math.PI / 2, 0, 0] : [0, 0, 0]
@@ -1142,11 +1144,10 @@ function Skeleton({
             <group key={i}
               position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
               rotation={[0, i * 2.399963267, 0]}>
-              {/* Branches opaque (write depth) first; translucent cloud then
-                  umbrella composite over — branches glimpsed through the canopy;
-                  leaf clusters on top (outermost shell). */}
+              {/* Branches (opaque, write depth) → a subtle umbrella fill so the
+                  canopy isn't see-through → the DENSE leaf field on top, which is
+                  the actual textured canopy surface. Cloud smudge retired. */}
               <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
-              {cloudGeo && <mesh geometry={cloudGeo} material={cloudMat} renderOrder={1} />}
               {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
               {leafGeo && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
             </group>
