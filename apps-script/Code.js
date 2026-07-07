@@ -49,19 +49,68 @@ function isValidAdminToken(token) {
   return CacheService.getScriptCache().get('admin_' + token) === 'valid'
 }
 
+// ─── Per-look tenancy ────────────────────────────────────────────────────────
+// Each neighborhood ("look") gets its own area of this one shared backend, so a
+// non-LS install (e.g. ?look=hipointe-demun) reads/writes its OWN live rows and
+// is physically incapable of touching another neighborhood's. Isolation is
+// structural: every sheet access flows through getSheet → tabNameFor, which maps
+// a logical sheet name to the current look's physical tab.
+//
+//   - DEFAULT_LOOK uses the BARE tab names → zero migration; LS's data never
+//     moves (getSheet('Listings') → the existing 'Listings' tab).
+//   - Other looks resolve to a suffixed tab ('Listings__hipointe-demun'),
+//     auto-created on demand by cloning the bare tab's header row (no manual
+//     setup, no seeding — local content is the display base; the tab accrues
+//     live activity only). See HANDOFF-neighborhood-backend-tenancy.md.
+//
+// CURRENT_LOOK is a request-scoped global: Apps Script runs one execution per
+// request, and doGet/doPost set it from the client-declared `look` before any
+// getSheet call (defaulting to DEFAULT_LOOK for old clients + LS back-compat).
+var DEFAULT_LOOK = 'lafayette-square'
+var CURRENT_LOOK = DEFAULT_LOOK
+
+// Sheets whose rows are shared across ALL neighborhoods. Identity is one-per-
+// person everywhere, so Handles always resolves to the bare tab regardless of
+// look. (Link tokens live in CacheService, not a tab — no tenancy concern.)
+var GLOBAL_SHEETS = { 'Handles': true }
+
+/** Resolve a logical sheet name to the current look's physical tab name. */
+function tabNameFor(name) {
+  if (GLOBAL_SHEETS[name]) return name
+  if (!CURRENT_LOOK || CURRENT_LOOK === DEFAULT_LOOK) return name
+  return name + '__' + CURRENT_LOOK
+}
+
+/**
+ * Header row for a freshly-created tab. Prefer cloning the default-look (bare)
+ * tab's header row so a new neighborhood inherits the exact schema with no
+ * manual setup; fall back to the known HEADERS map (the two tabs the original
+ * auto-create seeded) when the bare tab doesn't exist yet.
+ */
+function headersFor(name, ss) {
+  var bare = ss.getSheetByName(name)
+  if (bare && bare.getLastRow() >= 1 && bare.getLastColumn() >= 1) {
+    return bare.getRange(1, 1, 1, bare.getLastColumn()).getValues()[0]
+  }
+  var HEADERS = {
+    'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
+    'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
+  }
+  return HEADERS[name] || null
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function getSheet(name) {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID)
-  var sheet = ss.getSheetByName(name)
+  var physical = tabNameFor(name)
+  var sheet = ss.getSheetByName(physical)
   if (!sheet) {
-    // Auto-create missing sheets with known headers
-    var HEADERS = {
-      'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
-      'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
-    }
-    sheet = ss.insertSheet(name)
-    if (HEADERS[name]) sheet.appendRow(HEADERS[name])
+    // Auto-create the look's tab on demand, seeding its header row (cloned from
+    // the bare tab for non-default looks — see headersFor).
+    sheet = ss.insertSheet(physical)
+    var headers = headersFor(name, ss)
+    if (headers && headers.length) sheet.appendRow(headers)
   }
   return sheet
 }
@@ -170,6 +219,8 @@ function deleteRowsByColumn(sheet, columnName, value) {
 // ─── GET handler ────────────────────────────────────────────────────────────
 
 function doGet(e) {
+  // Resolve tenancy for this request before any getSheet call (default = LS).
+  CURRENT_LOOK = (e && e.parameter && e.parameter.look) || DEFAULT_LOOK
   const action = (e.parameter.action || '').toLowerCase()
 
   try {
@@ -214,6 +265,9 @@ function doPost(e) {
   } catch (err) {
     return errorResponse('Invalid JSON body', 'bad_request')
   }
+
+  // Resolve tenancy for this request before any getSheet call (default = LS).
+  CURRENT_LOOK = body.look || DEFAULT_LOOK
 
   const action = (body.action || '').toLowerCase()
 
@@ -1576,8 +1630,11 @@ function saveDesign(body) {
 
   var sheet = getSheet('Designs')
   if (!sheet) {
+    // Defensive/unreachable: getSheet auto-creates the (look-aware) tab and never
+    // returns null. Kept as a guard — route through tabNameFor so it stays in the
+    // current tenant rather than writing the bare LS 'Designs' tab.
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID)
-    sheet = ss.insertSheet('Designs')
+    sheet = ss.insertSheet(tabNameFor('Designs'))
     sheet.getRange(1, 1, 1, 3).setValues([['biz_id', 'design_json', 'updated_at']])
     sheet.getRange(1, 1, 1, 3).setFontWeight('bold')
   }
@@ -1917,6 +1974,10 @@ function postLeaveResidence(body) {
 
 // ─── Utility: Create all tabs with headers ──────────────────────────────────
 
+// Provisions the DEFAULT-LOOK (bare) tabs and their canonical headers. These
+// bare tabs double as the header-clone source for every per-look tab (see
+// headersFor), so this is intentionally look-UNAWARE: it sets up the default
+// tenant. Manual admin utility, not reachable from doGet/doPost.
 function setupSheets() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID)
 

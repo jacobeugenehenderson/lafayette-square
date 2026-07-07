@@ -1,7 +1,12 @@
 /**
  * API client for the Google Apps Script backend.
  * Set VITE_API_URL in .env to the deployed Apps Script web app URL.
+ *
+ * Every request carries the active installation's `look` so the backend serves
+ * this neighborhood's own tenant (its per-look Sheet tabs). LS is the default
+ * look → bare tabs → byte-identical behavior. See the backend's getSheet.
  */
+import { INSTANCE } from '../instance.js'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const USE_MOCKS = !API_URL && import.meta.env.DEV
@@ -146,6 +151,7 @@ async function get(action, params = {}) {
   if (USE_MOCKS && MOCKS[action]) return MOCKS[action](params)
   const url = new URL(API_URL)
   url.searchParams.set('action', action)
+  url.searchParams.set('look', INSTANCE.lookId)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
   url.searchParams.set('_t', Date.now())
 
@@ -160,7 +166,7 @@ async function post(action, body = {}) {
     method: 'POST',
     credentials: 'omit',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action, ...body }),
+    body: JSON.stringify({ action, look: INSTANCE.lookId, ...body }),
   })
   if (!res.ok) throw new Error(`API POST ${action} failed: ${res.status}`)
   return res.json()
