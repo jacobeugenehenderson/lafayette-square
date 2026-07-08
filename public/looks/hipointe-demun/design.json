@@ -789,18 +789,6 @@
   },
   "trees": [
     {
-      "species": "procedural_ornamental",
-      "variantId": 1
-    },
-    {
-      "species": "procedural_ornamental",
-      "variantId": 2
-    },
-    {
-      "species": "generic_tree_2",
-      "variantId": 1
-    },
-    {
       "species": "maple_red",
       "variantId": 1
     },
@@ -833,14 +821,6 @@
       "variantId": 1
     },
     {
-      "species": "procedural_columnar",
-      "variantId": 1
-    },
-    {
-      "species": "procedural_columnar",
-      "variantId": 2
-    },
-    {
       "species": "ash_green",
       "variantId": 1
     },
@@ -859,14 +839,6 @@
     {
       "species": "blackgum",
       "variantId": 1
-    },
-    {
-      "species": "procedural_conifer",
-      "variantId": 1
-    },
-    {
-      "species": "procedural_conifer",
-      "variantId": 2
     },
     {
       "species": "maple_silver",
@@ -901,12 +873,24 @@
       "variantId": 1
     },
     {
-      "species": "procedural_weeping",
+      "species": "abies_concolor",
       "variantId": 1
     },
     {
-      "species": "procedural_weeping",
-      "variantId": 2
+      "species": "picea_abies",
+      "variantId": 1
+    },
+    {
+      "species": "pseudotsuga_menziesii",
+      "variantId": 1
+    },
+    {
+      "species": "cupressus_sempervirens",
+      "variantId": 1
+    },
+    {
+      "species": "salix_babylonica",
+      "variantId": 1
     }
   ]
 }
