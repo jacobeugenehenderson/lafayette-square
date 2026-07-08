@@ -24,14 +24,30 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const TREES_DIR = path.resolve(__dirname, '..', 'public', 'trees')
 
+// ── NO-FILLER gate (2026-07-07) ─────────────────────────────────────────────
+// The procedural + generic placeholder trees are doctrine-parked: "our
+// procedural generator is not usable and its workspace is hidden … leave hidden"
+// (arborist/ORIENTATION.md). But "no procedurals" was only ever enforced by
+// HIDING THE UI — the rated procedural/generic GLBs stayed in this pool, so any
+// look's intake could (and HiPointe's did) route census species straight onto
+// them (the "~40% filler" bug). This is the structural gate that was always
+// missing: fillers never enter the runtime pool, so no map / bake / look can
+// select one. When a real procedural pipeline ships, flip EXCLUDE_FILLER — the
+// destination is still procedural (feedback_procedural_trees_are_the_destination),
+// just not this v1 stopgap.
+const EXCLUDE_FILLER = true
+const isFillerSpecies = (id) => /procedural|^generic_|_rt\d+/i.test(String(id))
+
 export async function rebuildIndex() {
   const entries = await fs.readdir(TREES_DIR, { withFileTypes: true })
   const speciesDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name)
 
   const species = []
   const variants = []
+  const excludedFiller = []
 
   for (const sp of speciesDirs) {
+    if (EXCLUDE_FILLER && isFillerSpecies(sp)) { excludedFiller.push(sp); continue }
     const manifestPath = path.join(TREES_DIR, sp, 'manifest.json')
     let manifest
     try {
@@ -90,13 +106,14 @@ export async function rebuildIndex() {
   }
   const out = path.join(TREES_DIR, 'index.json')
   await fs.writeFile(out, JSON.stringify(index, null, 2))
-  return { speciesCount: species.length, variantCount: variants.length, out }
+  return { speciesCount: species.length, variantCount: variants.length, excludedFiller, out }
 }
 
 const isDirect = process.argv[1] && path.resolve(process.argv[1]) === __filename
 if (isDirect) {
-  rebuildIndex().then(({ speciesCount, variantCount, out }) => {
+  rebuildIndex().then(({ speciesCount, variantCount, excludedFiller, out }) => {
     console.log(`[build-index] ${speciesCount} species, ${variantCount} variants → ${out}`)
+    if (excludedFiller?.length) console.log(`[build-index] excluded ${excludedFiller.length} filler species (NO-FILLER gate): ${excludedFiller.join(', ')}`)
   }).catch((e) => {
     console.error('[build-index] failed:', e)
     process.exit(1)
