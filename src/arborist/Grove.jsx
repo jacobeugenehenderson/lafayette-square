@@ -105,6 +105,17 @@ export default function Grove() {
   const visible = useMemo(() => {
     let rows = variants
     if (scope === 'look') rows = rows.filter(v => inLook(v))
+    // One representative per species — no duplicate / variant-group tiles.
+    // Keep the highest-quality variant (ties → lowest variantId) so the gallery
+    // reads as distinct trees, not 5× the same birch.
+    const bySpecies = new Map()
+    for (const v of rows) {
+      const cur = bySpecies.get(v.speciesId)
+      if (!cur || v.quality > cur.quality || (v.quality === cur.quality && v.variantId < cur.variantId)) {
+        bySpecies.set(v.speciesId, v)
+      }
+    }
+    rows = [...bySpecies.values()]
     return [...rows].sort((a, b) => {
       if (b.quality !== a.quality) return b.quality - a.quality
       const s = (a.speciesLabel || a.speciesId).localeCompare(b.speciesLabel || b.speciesId)

@@ -212,6 +212,10 @@ function scanBakedManifests() {
   return out
 }
 
+// NO-FILLER: procedural + generic placeholders never appear in the Grove or the
+// runtime pool (mirrors build-index.js). Same doctrine, applied to the gallery.
+const isFillerSpecies = (id) => /procedural|^generic_|_rt\d+/i.test(String(id))
+
 function listSpecies() {
   const baked = scanBakedManifests()
   const SPECIES_DECL = readSpeciesDecl()
@@ -288,6 +292,7 @@ const server = createServer(async (req, res) => {
       const baked = scanBakedManifests()
       const variants = []
       for (const [speciesId, m] of baked) {
+        if (isFillerSpecies(speciesId)) continue   // no procedural/generic fillers
         if (m.source !== 'glb' || !Array.isArray(m.variants)) continue
         const speciesLabel = m.displayName || m.label || speciesId
         const speciesCategory = m.category || null
