@@ -71,6 +71,24 @@ This is fine — reskinning can look great **if the ~239 chassis cover the speci
 
 ---
 
+## The operating model — the four surfaces + where we're headed (settled 2026-07-08)
+
+The aspirational shape, agreed in prose with Jacob. **Each surface makes ONE kind of judgment:**
+
+**Intake → Salon → Grove → Bake.**
+1. **Intake SEEDS the Look.** A neighborhood census becomes a Look with a *mandatory-real* seed roster: every census species resolves to its nearest real chassis (via `bake-trees CATEGORY_FALLBACK`) or an **honest gap** — **never a filler**. A Look is born clean + bakeable; the Salon only *refines*. This is where the no-filler rule belongs — at Look-birth, not a cleanup you keep redoing.
+2. **Salon ADDS / composes** — build a species one tree at a time (a focused, blind judgment). The only add-surface.
+3. **Grove CULLS in context** — seeing trees next to their siblings at neighborhood scale is a *gestalt* judgment you can't make one-at-a-time. Add-nothing, remove-freely: **demote per-Look** (wrong here) or **globally** (bad chassis), both **reversible / non-destructive**.
+4. **Bake SHIPS** — nothing after the Grove alters an asset (the law above).
+
+**Vocabulary = Promote / Demote. No ratings.** The 0–4 Fill/Mid/Hero scale was false precision — nobody decides "3 vs 4." **Promote** = vouch eligible. **Demote** = set aside (reversible). Untouched = the default. That's the whole language.
+
+**⭐ Categorize, don't recommend.** A per-species *match score* is brittle and never trusted (the "Recommended (0)" everywhere). The rubric already **closes the set**, so there's nothing to score: **9 chassis HABITS** — `vase · columnar · oval · spreading · weeping · multi-stem · pyramidal · rounded · irregular` — plus **10 leaf shapes** and **~8 bark types**, all finite + complete. Parts live on **shelves**; each chassis is assigned ONE habit (a *fact*, once); a species declares its habit → you land on that shelf, browse others freely. **No Recommended toggle, no matcher.** This supersedes the kit-matcher *recommendation* framing.
+
+**The composition workspace (the big build):** pick a species → *"we have a model (+ the other chassises on its habit shelf · bark/leaf options)"* **or** *"no model, but its habit → these chassises, its bark → these barks, **just need the leaves**."* Per-species **part-level coverage** (chassis ✓ / bark ✓ / leaf ✗) is the roster's real signal. The tagging that unlocks it = **assign-1-of-N per part** (the ~80-chassis habit backlog), not ML. Full spec + open items: `BACKLOG.md § THE BIG JOB`.
+
+---
+
 ## The LsoD — one honest paragraph
 
 "LsoD" tangles three different axes: viewing **contexts** (Street / Hero / Browse) × geometry **LODs** (lod0/1/2) × render **tiers** (mesh / impostor / cull). Today it collapses to the simplest thing: **everything ships mesh + lod1; impostors are off (parked); ~37% of *instances* are hero-pan-culled.** The clean split to hold: **the LOD *ladder* is a Grove/prep product** (baked into the pristine asset); **LOD *selection* is runtime** (the Reader picks per camera). Settling the LsoD properly is open work.
@@ -79,10 +97,11 @@ This is fine — reskinning can look great **if the ~239 chassis cover the speci
 
 ## Honest state — live / parked / not-delivered
 
-- **Live + real:** the rubric / matcher / coverage tools; the publish → bake → slab **spine** (byte-verified); the **Salon** plate-rack; the **Grove** bake (regenerate-from-source).
-- **Parked / hidden:** the **procedural** + **LiDAR** workspaces (URL-only, hidden — leave hidden); the **impostor render arc** (built → reverted → parked); `BATON` + `FOREST-BUILDER-KIT-MATCHER` (design records → archive).
-- **Dead knobs (being swept):** leaf **tint** (does nothing to the main tree), bark **gradient** (no control), the three **Add +** stubs, **Adopt** (removed 2026-07-07).
-- **Not yet delivered:** "species from parts" proven perfect (the Sugar-Maple vertical slice was never signed off); leaf **color / season** ramp; **asset tagging**; and both **daylight-gap** closures above.
+- **Live + real:** the rubric / coverage tools; the publish → bake → slab **spine** (byte-verified); the **Salon** plate-rack (deep interface cleanup 2026-07-08); the **Grove** bake (regenerate-from-source, now no-filler + one-tile-per-species). **NO-FILLER gate live** (`build-index.js` + `serve.js#/grove`): procedural/generic never enter the runtime pool — the structural enforcement "no procedurals" always needed. Real conifer/columnar/weeping chassis rated in; 49 chassis relabeled (common + botanical) + 17 evergreen/deciduous flags fixed.
+- **Parked / hidden:** the **procedural** + **LiDAR** workspaces (URL-only, hidden — leave hidden; procedural v1 assets now *also* hard-gated out of the pool, not just the UI); the **impostor render arc** (built → reverted → parked); `BATON` + `FOREST-BUILDER-KIT-MATCHER` (design records → archive; the *recommendation* framing superseded by the 9-habit shelves above).
+- **Dead knobs (swept / to sweep):** **Adopt** fully removed; the `Recommended/Show all` + `Mark not-available` + species-slug/state chrome swept (2026-07-08). ⚠️ **Still lying:** the **bark knobs** (tint / UV / roughness / jitter) are runtime uniforms keyed by a per-species bark manifest entry — **no entry → they do nothing**, so they're **dead on every Native/substituted tree** (`generate-salon.js:1571`). Fix = hide-when-inert or seed a bark entry. (Bark **ref swap** works everywhere.)
+- **Rating → Promote/Demote:** the 0–4 scale is retired in doctrine (see the operating model above); the code still carries `quality`/`excluded` under the hood until the vocabulary lands.
+- **Not yet delivered:** "species from parts" proven perfect (Sugar-Maple slice never signed off); the **composition workspace** on the 9-habit shelves; **habit-tagging the library** (~80 chassis, assign-1-of-9 — the unlock); **intake-seeds-the-Look** (yellow/green species should open pre-loaded, not blank); leaf **color / season** ramp; the light **species-intro fallback**; the Meteorologist **canary picker**; both **daylight-seam** closures.
 
 ---
 

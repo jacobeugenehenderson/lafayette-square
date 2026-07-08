@@ -10,6 +10,36 @@
 
 ---
 
+## ▶ 2026-07-08 — the operating model + the Salon/Grove interface pass (Jacob walkthrough)
+
+**The settled operating model (design, agreed in prose 2026-07-07):**
+- **Intake seeds the Look.** A neighborhood census becomes a Look with a *mandatory-real* seed roster: every census species → nearest real chassis (via `bake-trees CATEGORY_FALLBACK`) or an honest gap — **never a filler** (the no-filler pool + [[project_no_filler_gate_and_chassis_curation]] is this gate, moved to Look-birth). A Look opens complete + bakeable; the Salon only *refines*.
+- **Three surfaces, one judgment each:** Intake **seeds** · Salon **adds/composes** (add blind, one tree) · Grove **culls in context** (see it next to siblings) · Bake **ships**.
+- **Vocabulary = Promote / Demote, no ratings.** Kill the 0–4 Fill/Mid/Hero scale (false precision). **Promote** = vouch eligible (Salon). **Demote** = set aside, **reversible/non-destructive** (Grove, per-Look *and* global). Default = untouched. No hero bit.
+- **Grove is add-nothing, remove-freely** (read-only for adds; keeps demotion). Adds happen in the Salon.
+
+**▶ THE BIG JOB — the composition workspace, built on the 9 habit SHELVES (NOT a matcher).** Jacob 2026-07-08: a per-species fuzzy-match / recommendation score is brittle — "Recommended (0)" everywhere is that fragility showing. **Categorize, don't recommend.** The rubric already closes the set, so there's nothing to score:
+> - **The counts are finite + complete:** **9 chassis HABITS** — `vase · columnar · oval · spreading · weeping · multi-stem · pyramidal · rounded · irregular` (rubric axis 0); **10 leaf shapes** (palmate · lobed · heart · ovate · lanceolate · compound · fan · star · needle · scale, axis 10); **~8 bark types**. Every silhouette is one of the nine — a closed botanical set, not a growing list.
+> - **Parts live on shelves.** Each chassis is assigned ONE of the 9 habits (a *fact*, assigned once — not a score recomputed); leaves → 1 of 10; bark → 1 of ~8. The chassis picker is a plate grid **grouped by shelf** (like bark/leaves already are).
+> - **A species declares its habit** (also a fact — White Oak = rounded/spreading). Selecting it lands you on that shelf; browse other shelves freely. **No Recommended toggle, no match engine.**
+> - **Coverage per species = "is there a part on each of its shelves?"** → chassis ✓ / bark ✓ / leaf ✗ surfaced in the roster list (the "just need leaves" read). The console reads: *"we have a model (+ the other chassises on its habit shelf · bark/leaf options)"* OR *"no model, but its habit → these chassises, its bark → these barks, **just need the leaves**."*
+>
+> **The tagging is the reliable kind of work — assign-one-of-N, no ML:** the existing **~80-chassis habit-untag backlog** (1 of 9) + leaf-shape + bark-type per part. Bounded, checkable, a curation afternoon. Species carry their habit via the dossier/rubric ([[project_dossier_annotation_is_first_class_ip]]).
+>
+> Also in the workspace: roster list gets **All / By-Look** scope over the **growing cross-intake species library**; the `SLOT`-header spot → **collapsible species header** (light now: name · botanical · category · coverage; full dossier — reference photos + descriptor — when the species is tagged). Supersedes the [[project_arborist_kit_matcher]] recommendation framing.
+
+**◻ Canary picker → Meteorologist side.** Removed the Salon's `→ Set canary` (2026-07-08). The Meteorologist has `CanaryScene` (reads the `meteorologist-canary-tree` localStorage pref, renders it) but **no picker** — needs a species/variant selector there (list from the Look's atlas/roster) that writes the same payload. Until built, the canary still *renders* the last-set value but can't be *changed* from the UI.
+
+**✅ LANDED 2026-07-08 (Salon interface pass, `SalonWorkstage.jsx` + `generate-salon.js`):** Leaf Source → 3-way `Bare · Native · Synthetic` (Bare ships bare — authored, `hideLeaves` in preview+publish; dropped the preview-only Visible toggle); Leaf + Bark pack libraries → collapsible; removed the Overhead (Browse) section, the Name/Reset/Set-Canary footer, the "SLOT · adopted" header, the "all adopted" counter, and the leaf helper-text; roster list dropped the Todo/Done/N/A task-status tabs (→ scope All/By-Look is part of the big job); **species intro (ReferencePanel) → top of the tools stack** (blank on un-dossiered species until the light fallback lands); removed the species-header **`Recommended / Show all`** toggle + **`Mark not-available`** (chassis picker defaults to show-all; recommendation → the 9-habit shelves, above). Grove earlier: no-filler + one-tile-per-species dedupe. Species intro (ReferencePanel) → top of stack; `Recommended/Show all` + `Mark not-available` cut; `1 tree/3 variants` → `Solo/Group`; chassis thumbnails re-centered; Fix-orientation re-aligned; Chassis/Bark/Leaf **libraries → collapsible + called-out chips**; roster rows trimmed to `species · N placements` (slug + state words gone).
+
+**◻ OPEN — surfaced in the 2026-07-08 interface pass (verified findings):**
+- **Bark knobs hide-when-inert** (or seed a bark entry). `tint / uvScale / roughness / jitter` are runtime uniforms keyed by a per-species bark manifest entry; **no entry → they do nothing**, so they're **dead on every Native/substituted tree** — the code says so at `generate-salon.js:1571`. The bark **ref swap** works everywhere. Fix: hide the four knobs when there's no entry, or give every composed species a bark entry.
+- **Yellow/green species → seed the Salon composition** (this IS intake-seeds-the-Look). A 🟡 (composite/substitute) species opens **blank** because the substitute is a bake-time routing, not a seeded composition. Wire: 🟡 → pre-load the substitute · 🟢 → pre-load the literal · only 🔴 empty. "If there's a yellow light, there should be something in the Salon" (Jacob).
+- **Species-intro light fallback** — `ReferencePanel` returns `null` without a dossier (~10 of 84 have one), so the top-of-stack intro is blank for most species. Show **name · botanical · category · coverage** always; upgrade to the full dossier card (reference photos + descriptor) when the species is tagged.
+- **Meteorologist canary picker** — canary *setting* was removed from the Salon (2026-07-08). The Meteorologist renders the canary (`CanaryScene`, reads `meteorologist-canary-tree` localStorage) but has **no picker**. Build a species/variant selector there that writes the same payload. Interim: the last-set canary still renders; it just can't be changed from any UI.
+
+---
+
 ## ▶ 2026-06-25 — the Salon "fashion plates" rebuild + a deep vestigia sweep (LANDED). Front door: **`SALON-INTERFACE.md`**
 
 The Salon became the rubric-forward **plate-rack** the kit-matcher always implied. **Full design + decisions + open threads: `SALON-INTERFACE.md` (root); narrative: `NOTES.md` 2026-06-25.** Commits `curb-offset-draw`: `ab3bbbd5` `4631b688` `62dd9988` `65d00f06` `6c29f7a7`.
