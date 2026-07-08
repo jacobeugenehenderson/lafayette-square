@@ -259,7 +259,7 @@ export default function SalonWorkstage() {
   const [approvedOnly, setApprovedOnly] = useState(true)
   // Brief 26: candidate scope for the chassis picker — 'recommended' (chassis
   // fitting THIS roster species, from the coverage join) vs 'all' (full library).
-  const [candidateScope, setCandidateScope] = useState('recommended')
+  const [candidateScope, setCandidateScope] = useState('all')
 
   // The selected roster row + its recommended-chassis names (computed by the
   // coverage join). The navigator drives salonActiveSpecies = row.canonicalId.
@@ -320,18 +320,8 @@ export default function SalonWorkstage() {
           fontSize: 12, color: '#fff',
         }}>Arborist <span style={{ color: '#666', margin: '0 4px' }}>/</span> Salon</strong>
 
-        {/* Brief 26: the SPECIES dropdown is gone — navigation is the roster
-            list in the left column. Show the selected roster species here. */}
-        <span style={{ marginLeft: 16, color: activeRosterName ? '#e8c878' : '#666', fontSize: 12, letterSpacing: '0.04em' }}>
-          {activeRosterName || 'Select a roster species →'}
-        </span>
 
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ color: '#888', fontSize: 11 }}>
-            {anyDirty
-              ? <span style={{ color: '#e8b860' }}>{Object.keys(dirty).length} unadopted</span>
-              : 'all adopted'}
-          </span>
           <LookPicker />
           <button onClick={() => setGroveOpen(true)}
             title="See every rated variant on one ground plane"
@@ -802,21 +792,9 @@ function SlotCard({
         display: 'flex', flexDirection: 'column',
         overflow: 'auto',
       }}>
-        <div style={{
-          padding: '10px 12px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          display: 'flex', alignItems: 'center', gap: 10,
-          fontSize: 11, color: '#bbb',
-        }}>
-          <strong style={{
-            letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ddd',
-          }}>{slotName || `Slot ${slot}`}</strong>
-          <span style={{
-            marginLeft: 'auto',
-            color: dirty ? '#e8b860' : '#666',
-            fontSize: 11,
-          }}>{dirty ? 'unadopted' : 'adopted'}</span>
-        </div>
+        {/* Species intro / reference dossier — the "here's your species" anchor,
+            top of the tools stack (moved up 2026-07-08). Collapsible. */}
+        <ReferencePanel />
 
         <SalonControlsPanel
           chassis={chassis}
@@ -843,66 +821,6 @@ function SlotCard({
           recommendedNames={recommendedNames}
         />
 
-        {/* Reference dossier — educational, not a comparison tool (2026-06-25),
-            so it lives at the bottom of the tools rail, not floating over the
-            viewport. Collapsible; reference photos are external links. */}
-        <ReferencePanel />
-
-        {/* Footer: name + reset + adopt */}
-        <div style={{
-          marginTop: 'auto',
-          padding: '10px 12px',
-          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-        }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888', width: '100%' }}>
-            <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Name</span>
-            <input type="text"
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              onBlur={commitName}
-              onKeyDown={(e) => { if (e.key === 'Enter') { commitName(); e.currentTarget.blur() } }}
-              style={{
-                flex: 1,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: dirty ? '#e8b860' : '#ddd',
-                padding: '4px 6px', borderRadius: 3,
-                fontFamily: 'inherit', fontSize: 12,
-              }} />
-          </label>
-          <button
-            onClick={() => {
-              if (window.confirm('Reset this slot? Operator overlay will be cleared and persisted.')) onReset()
-            }}
-            title="Drop operator overlay; snap chassis/bark/leaves back to DEFAULTS"
-            style={btnStyle()}>
-            ↺ Reset
-          </button>
-          {/* Adopt retired 2026-06-25 — autosave (_saveSalonDebounced) persists
-              every edit; the explicit commit gesture is vestigial. */}
-          {/* Brief 8 (Linnet): set this composition as the Meteorologist
-              canary. Same payload Grove writes — see ARCHITECTURE.md
-              §canary contract. Disabled until composition is adopted +
-              re-published in the active Look. */}
-          <button
-            onClick={onSetCanary}
-            disabled={!!canaryDisabledReason}
-            title={canaryDisabledReason
-              || (isCanary
-                  ? 'Already the Meteorologist canary — click to re-fire (refreshes lookId)'
-                  : 'Set this composition as Meteorologist canary')}
-            style={{
-              ...btnStyle(),
-              background: isCanary ? 'rgba(200,192,224,0.18)' : 'rgba(255,255,255,0.04)',
-              border: '1px solid ' + (isCanary ? 'rgba(200,192,224,0.5)' : 'rgba(255,255,255,0.1)'),
-              color: canaryDisabledReason ? '#666' : (isCanary ? '#c8c0e0' : '#bbb'),
-              cursor: canaryDisabledReason ? 'not-allowed' : 'pointer',
-              opacity: canaryDisabledReason ? 0.5 : 1,
-            }}>
-            → Set canary
-          </button>
-        </div>
       </div>
     </div>
   )
@@ -1010,6 +928,7 @@ function SalonControlsPanel({
           (Add +) + "Browse all" (the full library via the legacy dropdown) hang
           off the bottom. Replaces the matcher-text + dropdown + CURATE card.
           SALON-INTERFACE.md §5. */}
+      <CollapsibleSection title="Chassis library" emphasis>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 0 6px' }}>
         {chassisPlateList.map(c => {
           const k = curationKey(c)
@@ -1038,6 +957,7 @@ function SalonControlsPanel({
           <span style={{ fontSize: 9, color: '#99a', textAlign: 'center' }}>Add</span>
         </button>
       </div>
+      </CollapsibleSection>
       {/* Browse-all / Approved-only / Pick-dropdown cluster removed 2026-06-25 —
           the deduped matcher plates above ARE the workable options. A proper
           full-library browser (lazy / baked thumbnails) is a future feature. */}
@@ -1048,12 +968,10 @@ function SalonControlsPanel({
       {/* Orientation fixers (tilt + Y-up flip) demoted to an advanced drawer
           2026-06-25 — Brief 20 recentering handles position; these only fix the
           rare mis-ORIENTED vendor chassis, so they collapse by default. */}
-      <Row label="">
-        <button onClick={() => setOrientOpen(o => !o)}
-          style={{ ...btnStyle({ block: true }), fontSize: 10, color: '#8a93a0' }}>
-          {orientOpen ? '▾' : '▸'} Fix orientation (advanced)
-        </button>
-      </Row>
+      <button onClick={() => setOrientOpen(o => !o)}
+        style={{ ...btnStyle({ block: true }), width: '100%', margin: '2px 0', textAlign: 'left', fontSize: 10, color: '#8a93a0' }}>
+        {orientOpen ? '▾' : '▸'} Fix orientation (advanced)
+      </button>
       {orientOpen && (
         <>
           <Row label="Ground">
@@ -1099,13 +1017,15 @@ function SalonControlsPanel({
 
       </CollapsibleSection>
       <CollapsibleSection title="Bark" open={barkOpen} onToggle={onBarkOpenChange}>
-      <PlatePicker
-        items={barkRefs.map(ref => ({ id: ref, label: ref }))}
-        current={bark?.ref}
-        onPick={(id) => onParams({ bark: { ref: id } })}
-        onAdd={() => salonAddStub('bark')}
-        thumb={(id) => `/textures/bark/${id}/color.jpg`}
-        fit="cover" />
+      <CollapsibleSection title="Bark library" defaultOpen={false} emphasis>
+        <PlatePicker
+          items={barkRefs.map(ref => ({ id: ref, label: ref }))}
+          current={bark?.ref}
+          onPick={(id) => onParams({ bark: { ref: id } })}
+          onAdd={() => salonAddStub('bark')}
+          thumb={(id) => `/textures/bark/${id}/color.jpg`}
+          fit="cover" />
+      </CollapsibleSection>
       <Row label="UV X">
         <DraftSlider min={0.5} max={6} step={0.1}
           value={bark?.uvScale?.[0] ?? 1.5}
@@ -1139,41 +1059,27 @@ function SalonControlsPanel({
 
       </CollapsibleSection>
       <CollapsibleSection title="Leaves">
-      {/* Brief 5: bare-chassis inspection toggle (workstage preview only;
-          published artifact always carries leaves). */}
-      <Row label="Show">
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
-          <input type="checkbox"
-            checked={leaves?.show !== false}
-            onChange={(e) => onParams({ leaves: { show: e.target.checked } })}
-            style={{ margin: 0 }} />
-          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {leaves?.show !== false ? 'Visible' : 'Hidden (preview only)'}
-          </span>
-        </label>
-      </Row>
       <Row label="Leaf source">
         <select
           value={leaves?.mode ?? 'authored'}
           onChange={(e) => onParams({ leaves: { mode: e.target.value } })}
-          style={selectStyle}
-          title="Authored = the model's own leaves, retextured to the pack, resized in place by Leaf size (Ways does NOT apply — the cards keep their authored placement + stems). Synthesized = kit-generated spray from the pack + Ways + leaf size.">
-          <option value="authored">Authored (model's own leaves)</option>
-          <option value="synthesized">Synthesized (kit spray: pack · Ways · size)</option>
+          style={selectStyle}>
+          <option value="bare">Bare (no leaves)</option>
+          <option value="authored">Native (the model's own leaves)</option>
+          <option value="synthesized">Synthetic (kit spray)</option>
         </select>
       </Row>
-      {leaves?.mode !== 'synthesized' && (
-        <div style={{ fontSize: 10, color: '#c8a83a', margin: '-3px 0 3px', lineHeight: 1.3 }}>
-          ↳ Authored keeps the model's own leaves on their stems. <b>Leaf size</b> resizes them in place; <b>Ways</b> applies to Synthesized only.
-        </div>
+      {leaves?.mode !== 'bare' && (
+        <CollapsibleSection title="Leaf library" defaultOpen={false} emphasis>
+          <PlatePicker
+            items={leafPacks.map(p => ({ id: p.packId, label: p.packId, missing: p.kind === 'flat' }))}
+            current={leaves?.pack}
+            onPick={(id) => onParams({ leaves: { pack: id } })}
+            onAdd={() => salonAddStub('leaf')}
+            thumb={(id) => `/textures/leaves/shapes/${id}/shape.png`}
+            fit="contain" />
+        </CollapsibleSection>
       )}
-      <PlatePicker
-        items={leafPacks.map(p => ({ id: p.packId, label: p.packId, missing: p.kind === 'flat' }))}
-        current={leaves?.pack}
-        onPick={(id) => onParams({ leaves: { pack: id } })}
-        onAdd={() => salonAddStub('leaf')}
-        thumb={(id) => `/textures/leaves/shapes/${id}/shape.png`}
-        fit="contain" />
       <Row label="Ways">
         <select
           value={leaves?.ways ?? 'alternate'}
@@ -1212,19 +1118,6 @@ function SalonControlsPanel({
           onChange={(e) => onParams({ leaves: { tintBack: e.target.value } })}
           style={colorStyle} />
       </Row>
-      </CollapsibleSection>
-      {/* Overhead impostor — the top-down (Browse) canopy. It has no dials of its
-          own: its SHAPE follows the Leaf controls above (Ways · Occupancy · Leaf
-          size · pack · tints), and its MOTION is the shared wind — preview it with
-          the Wind toggle over the viewport. */}
-      <CollapsibleSection title="Overhead (Browse view)">
-        <div style={{ fontSize: 10, color: '#8a93a0', lineHeight: 1.4 }}>
-          Switch the viewport to <b>Browse</b> to see the overhead canopy. It's built
-          from the <b>Leaves</b> controls above — <b>Ways</b> sets the leaf arrangement,
-          <b>Occupancy</b> the density, <b>Leaf size</b> the scale, pack + tints the look.
-          Its motion is the shared weather — hit the <b>Wind</b> toggle over the viewport
-          to preview a generic breeze before blessing.
-        </div>
       </CollapsibleSection>
     </div>
   )
@@ -1314,7 +1207,7 @@ function SectionLabel({ children }) {
 
 // Collapsible section (2026-06-25) — the controls rail had too much at once;
 // each part section (Chassis / Bark / Leaves) collapses under a clickable header.
-function CollapsibleSection({ title, open: openProp, defaultOpen = true, onToggle, children }) {
+function CollapsibleSection({ title, open: openProp, defaultOpen = true, onToggle, emphasis = false, children }) {
   const [openLocal, setOpenLocal] = useState(defaultOpen)
   const open = openProp !== undefined ? openProp : openLocal
   const toggle = () => { if (onToggle) onToggle(!open); else setOpenLocal(o => !o) }
@@ -1323,11 +1216,19 @@ function CollapsibleSection({ title, open: openProp, defaultOpen = true, onToggl
       <button type="button" onClick={toggle}
         style={{
           display: 'flex', alignItems: 'center', gap: 6, width: '100%',
-          background: 'none', border: 'none', cursor: 'pointer',
-          padding: '8px 0 2px', marginTop: 2, color: '#9aa3ad',
-          fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+          cursor: 'pointer', letterSpacing: '0.12em', textTransform: 'uppercase',
+          // `emphasis` calls out the part-LIBRARY headers (Chassis/Bark/Leaf) as
+          // distinct chips so they don't blend into the settings rows (2026-07-08).
+          background: emphasis ? 'rgba(255,255,255,0.055)' : 'none',
+          border: emphasis ? '1px solid rgba(255,255,255,0.12)' : 'none',
+          borderRadius: emphasis ? 4 : 0,
+          padding: emphasis ? '6px 8px' : '8px 0 2px',
+          marginTop: emphasis ? 6 : 2,
+          color: emphasis ? '#d6dde4' : '#9aa3ad',
+          fontSize: emphasis ? 10.5 : 10,
+          fontWeight: emphasis ? 600 : 400,
         }}>
-        <span style={{ fontSize: 9, color: '#778' }}>{open ? '▾' : '▸'}</span>{title}
+        <span style={{ fontSize: 9, color: emphasis ? '#9aa3ad' : '#778' }}>{open ? '▾' : '▸'}</span>{title}
       </button>
       {open && children}
     </>
@@ -1609,12 +1510,7 @@ const STATE_META = {
 
 function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
   const [q, setQ] = useState('')
-  const [stateFilter, setStateFilter] = useState('all')
-  const rows = species.filter(s => {
-    if (q && !s.species.toLowerCase().includes(q.toLowerCase())) return false
-    if (stateFilter !== 'all' && s.authoringState !== stateFilter) return false
-    return true
-  })
+  const rows = species.filter(s => !q || s.species.toLowerCase().includes(q.toLowerCase()))
   return (
     <div style={{
       width: 300, flexShrink: 0,
@@ -1631,16 +1527,6 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
         </div>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="filter species…"
           style={{ ...selectStyle, padding: '4px 6px' }} />
-        <div style={{ display: 'flex', gap: 4 }}>
-          {[['all', 'All'], ['unauthored', 'Todo'], ['composed', 'Done'], ['not-available', 'N/A']].map(([v, l]) => (
-            <button key={v} onClick={() => setStateFilter(v)}
-              style={{
-                flex: 1, ...btnStyle(), fontSize: 10, padding: '3px 4px',
-                background: stateFilter === v ? 'rgba(232,184,96,0.18)' : 'rgba(255,255,255,0.04)',
-                color: stateFilter === v ? '#e8c878' : '#aaa',
-              }}>{l}</button>
-          ))}
-        </div>
       </div>
       <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
         {loading && <div style={{ padding: 12, color: '#888', fontSize: 11 }}>Loading roster…</div>}
@@ -1664,7 +1550,7 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
                   fontSize: 12, color: active ? '#e8c878' : '#ddd',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{s.species}</div>
-                <div style={{ fontSize: 10, color: sm.color }}>{s.count} placements · {sm.label}</div>
+                <div style={{ fontSize: 10, color: '#7d848d' }}>{s.count} placements</div>
               </span>
             </button>
           )
@@ -1686,27 +1572,7 @@ function InsideHeader({ row, candidateScope, onCandidateScope, recommendedCount,
     }}>
       <span style={{ fontSize: 13, color: '#fff' }}>{COVERAGE_DOT[row.coverage]} {row.species}</span>
       <span style={{ fontSize: 11, color: '#888' }}>
-        {row.count} placements · canonical <code style={{ color: '#aaa' }}>{row.canonicalId}</code>
-        {row.authoringState === 'not-available' && <span style={{ color: '#c89a3a' }}> · NOT-AVAILABLE</span>}
-        {row.authoringState === 'composed' && <span style={{ color: '#9ed8b0' }}> · composed</span>}
-      </span>
-      <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
-          {[['recommended', `Recommended (${recommendedCount})`], ['all', 'Show all']].map(([v, l]) => (
-            <button key={v} onClick={() => onCandidateScope(v)}
-              style={{
-                border: 'none', padding: '5px 10px', fontSize: 11,
-                background: candidateScope === v ? 'rgba(255,255,255,0.14)' : 'transparent',
-                color: candidateScope === v ? '#fff' : '#aaa',
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}>{l}</button>
-          ))}
-        </div>
-        <button onClick={onNotAvailable}
-          title="Mark this roster species as a deliberate gap (routes to no tree)"
-          style={{ ...btnStyle(), color: '#c89a3a', border: '1px solid rgba(200,154,58,0.4)' }}>
-          Mark not-available
-        </button>
+        {row.count} placements
       </span>
     </div>
   )

@@ -1410,7 +1410,7 @@ export default function SpecimenViewport({
             }}
             style={presetBtnStyle(variantCount === n)}
             title={n > 1 ? 'Show 3 deformed variants side by side — review the per-tree variation' : 'Single tree (authoring + gizmo)'}>
-            {n === 1 ? '1 tree' : '3 variants'}
+            {n === 1 ? 'Solo' : 'Group'}
           </button>
         ))}
       </div>

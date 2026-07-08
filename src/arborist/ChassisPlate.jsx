@@ -40,14 +40,15 @@ function Silhouette({ url }) {
     // Strip leaves UNLESS the chassis is one merged mesh (can't separate → keep,
     // else the plate goes blank).
     if (leaves.length < all.length) leaves.forEach((o) => o.removeFromParent())
-    // Normalize: fit the (wood) chassis into a ~2-unit-tall frame, base on the
-    // floor, centered in X/Z, so every plate frames consistently.
+    // Normalize: fit the (wood) chassis into a ~2-unit frame and center the
+    // SUBJECT (all axes at origin) — these are ID thumbnails, so centering the
+    // tree reads better than anchoring its feet to the floor (2026-07-08).
     const box = new THREE.Box3().setFromObject(s)
     const size = new THREE.Vector3(); box.getSize(size)
     const center = new THREE.Vector3(); box.getCenter(center)
-    const k = 2.0 / (Math.max(size.x, size.y, size.z) || 1)
+    const k = 1.85 / (Math.max(size.x, size.y, size.z) || 1)
     s.scale.setScalar(k)
-    s.position.set(-center.x * k, -box.min.y * k, -center.z * k)
+    s.position.set(-center.x * k, -center.y * k, -center.z * k)
     return s
   }, [scene])
   // demand-render: paint once the silhouette is built (Suspense resolved).
@@ -72,7 +73,7 @@ export default function ChassisPlate({ name, label, selected, approved, onPick, 
         background: 'rgba(255,255,255,0.04)', position: 'relative',
       }}>
         <Canvas frameloop="demand" dpr={[1, 1.5]}
-          camera={{ position: [0, 1.0, 3.4], fov: 32, near: 0.1, far: 50 }}
+          camera={{ position: [0, 0, 3.4], fov: 32, near: 0.1, far: 50 }}
           gl={{ alpha: true, antialias: true }} style={{ background: 'transparent' }}>
           <ambientLight intensity={0.75} />
           <directionalLight position={[2, 4, 3]} intensity={1.1} />

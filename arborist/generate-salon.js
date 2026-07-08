@@ -1427,6 +1427,9 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
       bark: c.effective.bark,
       leaves: c.effective.leaves,
       slotName,
+      // Leaf Source 'bare' (2026-07-07) ships leafless — an authored state, not
+      // a preview-only peek. Drops vendor + skips spray in buildCompositionDocument.
+      hideLeaves: c.effective.leaves?.mode === 'bare',
       transform: c.effective.transform,
     })
     // Serialize the sub-doc and reload into the master as an embedded
@@ -1500,10 +1503,9 @@ export async function generateSingleCompositionGLB({ chassis, bark, leaves, lod 
     leaves:  { ...DEFAULTS.leaves,  ...(leaves  || {}) },
     deformer: { ...DEFAULTS.deformer, ...(/* reserved */ {}) },
   }
-  // Brief 5: workstage-only leaves.show toggle. When false, drop vendor
-  // leaf prims from the preview. Publish path (writeMultiCompositionGLB)
-  // never sets this — baked artifact always carries leaves.
-  const hideLeaves = effective.leaves.show === false
+  // Leaf Source 'bare' (2026-07-07): no leaves — an authored state now (ships
+  // bare via the same flag in the publish path), not a preview-only toggle.
+  const hideLeaves = effective.leaves.mode === 'bare'
   const doc = await buildCompositionDocument({
     chassis,
     bark: effective.bark,
