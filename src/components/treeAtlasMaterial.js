@@ -932,7 +932,129 @@ export function injectImpostorBillboard(material) {
   }
 }
 
-function loadTexture(url) {
+// ── Coverage-preserving mipmaps (Castano/NVIDIA alpha-to-coverage) ──────────
+// The leaf atlas is alpha-tested at a FIXED cutoff (0.5). GPU auto-mipmaps
+// box-average the alpha channel, so as the camera backs away each leaf card's
+// coverage-at-cutoff shrinks and the canopy erodes to specks — "far leaves
+// useless" (2026-07-07). A single global alphaTest can't fix it: lower it and
+// dense-leaf species halo up close; raise it and sparse species vanish far
+// away (the "not all trees got it" result). So we build the mip chain on the
+// CPU and rescale each level's alpha so its coverage-at-cutoff MATCHES mip 0 —
+// per-texel, independent of each tile's alpha density. Bark tiles (alpha 1)
+// and empty atlas gutters (alpha 0) are invariant under the scale; only the
+// intermediate leaf-edge alpha is corrected. Texture-DATA only — no shader /
+// program change (honors Bloom's single-program constraint), one-time CPU cost
+// at atlas load, zero per-frame cost.
+function alphaCoverage(data, threshold) {
+  let covered = 0
+  for (let i = 3; i < data.length; i += 4) if (data[i] >= threshold) covered++
+  return covered / (data.length / 4)
+}
+
+// Rescale `data`'s alpha in place so coverage-at-`threshold` matches
+// `targetCoverage`. Uses an alpha histogram + suffix sums so each candidate
+// scale is evaluated in O(1), not O(texels).
+function scaleAlphaToCoverage(data, threshold, targetCoverage) {
+  const n = data.length / 4
+  const hist = new Float64Array(256)
+  for (let i = 3; i < data.length; i += 4) hist[data[i]]++
+  const atLeast = new Float64Array(258)   // atLeast[a] = # texels with alpha >= a
+  for (let a = 255; a >= 0; a--) atLeast[a] = atLeast[a + 1] + hist[a]
+  const coverageForScale = (s) => {
+    // alpha*s >= threshold  ⇔  alpha >= ceil(threshold / s)
+    let cut = Math.ceil(threshold / s)
+    if (cut < 0) cut = 0
+    if (cut > 256) return 0
+    return atLeast[cut] / n
+  }
+  let lo = 0, hi = 64, s = 1
+  for (let it = 0; it < 24; it++) {
+    s = (lo + hi) / 2
+    if (coverageForScale(s) < targetCoverage) lo = s; else hi = s
+  }
+  if (Math.abs(s - 1) < 1e-3) return
+  for (let i = 3; i < data.length; i += 4) {
+    const v = data[i] * s
+    data[i] = v > 255 ? 255 : v
+  }
+}
+
+// 2×2 box downsample. RGB is ALPHA-WEIGHTED (premultiplied): transparent gutter
+// texels around a leaf contribute ZERO colour, so foliage keeps its saturated
+// green at coarse mips instead of washing to the neutral gutter grey as the
+// camera backs away ("leaves are there but grey, fade to green on pan-in",
+// 2026-07-07 — the actual far-tree defect; straight RGB averaging, GPU auto-mips
+// included, bled the gutter into the leaves). Alpha stays a straight box average
+// (coverage-corrected afterwards). Bark tiles are α=255 → weighting is a no-op.
+function boxDownsampleRGBA(src, sw, sh) {
+  const dw = Math.max(1, sw >> 1), dh = Math.max(1, sh >> 1)
+  const dst = new Uint8ClampedArray(dw * dh * 4)
+  for (let y = 0; y < dh; y++) {
+    const y0 = y * 2, y1 = Math.min(y0 + 1, sh - 1)
+    for (let x = 0; x < dw; x++) {
+      const x0 = x * 2, x1 = Math.min(x0 + 1, sw - 1)
+      const i00 = (y0 * sw + x0) << 2, i10 = (y0 * sw + x1) << 2
+      const i01 = (y1 * sw + x0) << 2, i11 = (y1 * sw + x1) << 2
+      const a00 = src[i00 + 3], a10 = src[i10 + 3], a01 = src[i01 + 3], a11 = src[i11 + 3]
+      const aSum = a00 + a10 + a01 + a11
+      const o = (y * dw + x) << 2
+      if (aSum > 0) {
+        dst[o]     = (src[i00] * a00 + src[i10] * a10 + src[i01] * a01 + src[i11] * a11) / aSum
+        dst[o + 1] = (src[i00 + 1] * a00 + src[i10 + 1] * a10 + src[i01 + 1] * a01 + src[i11 + 1] * a11) / aSum
+        dst[o + 2] = (src[i00 + 2] * a00 + src[i10 + 2] * a10 + src[i01 + 2] * a01 + src[i11 + 2] * a11) / aSum
+      } else {
+        dst[o] = dst[o + 1] = dst[o + 2] = 0
+      }
+      dst[o + 3] = (aSum + 2) >> 2
+    }
+  }
+  return { data: dst, width: dw, height: dh }
+}
+
+// Full chain, base → 1×1 (LinearMipmapLinear + texStorage2D require a complete
+// pyramid; three's getMipLevels uses mipmaps.length). GL floor/clamp mip dims
+// are matched by the >>1 / max(1,…) downsample.
+// STOP the chain before tiles collapse to the desaturated atlas mean. Below
+// ~this size a leaf tile is a few texels and box-averages together with its
+// OPAQUE neighbour tiles (bark / other leaves) — no gutter, so alpha-weighting
+// can't save it — converging every leaf to a grey ~(130,130,120). Measured on
+// the LS atlas: saturation holds ≥0.86 through the 113px level (m5) then crashes
+// to 0.26 at 56px (m6). Capping here makes GL clamp far minification to the last
+// green level (slightly aliased, but green — not grey). Cap on the FINE-side dim
+// so it's atlas-size agnostic (LS 3640² and HiPointe 4091² both stop at m5).
+const MIN_MIP_DIM = 96
+
+// DIAGNOSTIC (?mipTint=1): paint the coarse/far mip levels magenta so it's
+// visually unmistakable whether these custom mips are sampled at distance at
+// all (breaks the "is the fix even live?" ambiguity without reading the noisy
+// console). Distant trees magenta → live. Distant trees still grey → the custom
+// mip chain is NOT in use (silent fallback / stale bundle) and THAT is the bug.
+const MIP_TINT = typeof window !== 'undefined' && /[?&]mipTint=1\b/.test(window.location.search)
+
+function buildCoveragePreservingMipmaps(image, alphaTest) {
+  const threshold = Math.round(alphaTest * 255)
+  const w0 = image.width, h0 = image.height
+  const canvas = document.createElement('canvas')
+  canvas.width = w0; canvas.height = h0
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.drawImage(image, 0, 0)
+  const base = ctx.getImageData(0, 0, w0, h0)   // sRGB bytes, straight alpha
+  const refCoverage = alphaCoverage(base.data, threshold)
+
+  const mipmaps = [base]
+  let src = base.data, sw = w0, sh = h0
+  while ((sw > 1 || sh > 1) && Math.max(sw >> 1, sh >> 1) >= MIN_MIP_DIM) {
+    const { data, width, height } = boxDownsampleRGBA(src, sw, sh)
+    if (refCoverage > 0 && refCoverage < 1) scaleAlphaToCoverage(data, threshold, refCoverage)
+    mipmaps.push(new ImageData(data, width, height))
+    src = data; sw = width; sh = height
+  }
+  const last = mipmaps[mipmaps.length - 1]
+  console.log(`[treeAtlas] coverage mips ✓ ${mipmaps.length} levels (alpha-weighted colour, capped), ${w0}×${h0} → ${last.width}×${last.height}`)
+  return mipmaps
+}
+
+function loadTexture(url, { coveragePreserving = false, alphaTest = 0.5 } = {}) {
   return new Promise((resolve, reject) => {
     const loader = new THREE.TextureLoader()
     loader.load(
@@ -941,6 +1063,19 @@ function loadTexture(url) {
         tex.colorSpace = THREE.SRGBColorSpace
         tex.flipY = false  // GLTF convention — matches the rewritten UVs
         tex.anisotropy = 4
+        // Coverage-preserving CPU mip chain for the alpha-tested leaf atlas so
+        // the far canopy keeps its silhouette instead of eroding to specks.
+        if (coveragePreserving) {
+          try {
+            tex.mipmaps = buildCoveragePreservingMipmaps(tex.image, alphaTest)
+            tex.generateMipmaps = false
+            tex.minFilter = THREE.LinearMipmapLinearFilter
+            tex.magFilter = THREE.LinearFilter
+            tex.needsUpdate = true
+          } catch (e) {
+            console.warn('[treeAtlas] coverage-preserving mipmaps failed; using auto mipmaps', e)
+          }
+        }
         resolve(tex)
       },
       undefined,
@@ -997,7 +1132,7 @@ async function buildMaterials(lookName) {
   const base = import.meta.env.BASE_URL
   const withBase = (p) => `${base}${String(p).replace(/^\//, '')}`
   const [color, normal] = await Promise.all([
-    loadTexture(withBase(atlas.colorPath)),
+    loadTexture(withBase(atlas.colorPath), { coveragePreserving: true, alphaTest: atlas.alphaTest ?? 0.5 }),
     loadNormalTexture(withBase(atlas.normalPath)),
   ])
 
@@ -1168,7 +1303,7 @@ async function buildPreviewMaterials(manifestUrl) {
   // PNG fetched earlier would serve from the browser cache).
   const cacheBust = manifestUrl.includes('?') ? manifestUrl.slice(manifestUrl.indexOf('?')) : ''
   const [color, normal] = await Promise.all([
-    loadTexture(atlas.colorPath + cacheBust),
+    loadTexture(atlas.colorPath + cacheBust, { coveragePreserving: true, alphaTest: atlas.alphaTest ?? 0.5 }),
     loadNormalTexture(atlas.normalPath + cacheBust),
   ])
 
