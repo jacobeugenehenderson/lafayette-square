@@ -23,6 +23,12 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const TREES_DIR = path.resolve(__dirname, '..', 'public', 'trees')
+// TRACKED species-curation overlay. Hand-authored identity (label · scientific ·
+// deciduous) + Promote (`promoted:true` → into the pool) live here, in git, while
+// the `public/trees/<sp>/manifest.json` base stays GENERATED + gitignored.
+// build-index merges the overlay over the manifest so no human decision lives in
+// an ignored file (2026-07-08). Chassis-level equivalent: state/_chassis-curation.json.
+const CURATION_PATH = path.resolve(__dirname, 'state', '_species-curation.json')
 
 // ── NO-FILLER gate (2026-07-07) ─────────────────────────────────────────────
 // The procedural + generic placeholder trees are doctrine-parked: "our
@@ -42,6 +48,9 @@ export async function rebuildIndex() {
   const entries = await fs.readdir(TREES_DIR, { withFileTypes: true })
   const speciesDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name)
 
+  let curation = {}
+  try { curation = JSON.parse(await fs.readFile(CURATION_PATH, 'utf8')).species || {} } catch {}
+
   const species = []
   const variants = []
   const excludedFiller = []
@@ -55,47 +64,57 @@ export async function rebuildIndex() {
     } catch {
       continue
     }
+    const cur = curation[sp] || {}   // tracked overlay: identity + Promote
 
     species.push({
       species: manifest.species,
-      label: manifest.displayName || manifest.label,
-      scientific: manifest.scientific ?? null,
+      label: cur.label || manifest.displayName || manifest.label,
+      scientific: cur.scientific ?? manifest.scientific ?? null,
       category: manifest.category ?? null,
       tints: manifest.tints ?? null,
-      deciduous: manifest.deciduous ?? true,
+      deciduous: cur.deciduous ?? manifest.deciduous ?? true,
     })
 
-    for (const v of manifest.variants ?? []) {
-      // Runtime gate: only Fill (2) / Mid (3) / Hero (4) ship.
-      //   excluded=true        — operator hard-killed this variant
-      //   effective rating 0   — Untouched, must be rated before use
-      //   effective rating 1   — Trash, operator rejected
-      if (v.excluded === true) continue
-      const effQuality = v.qualityOverride ?? v.quality ?? 0
-      if (effQuality < 2) continue
+    const entryOf = (v, quality) => {
       const skeletons = {}
       for (const lod of ['lod0', 'lod1', 'lod2']) {
-        if (v.skeletons?.[lod]) {
-          skeletons[lod] = `/trees/${manifest.species}/${v.skeletons[lod]}`
-        }
+        if (v.skeletons?.[lod]) skeletons[lod] = `/trees/${manifest.species}/${v.skeletons[lod]}`
       }
       const entry = {
         species: manifest.species,
         variantId: v.id,
         category: v.category ?? manifest.category ?? null,
-        quality: v.qualityOverride ?? v.quality ?? 4,
+        quality,
         styles: v.stylesOverride ?? v.styles ?? manifest.defaultStyles ?? ['realistic'],
         approxHeightM: v.approxHeightM ?? null,
         normalizeScale: v.normalizeScale ?? 1,
         skeletons,
       }
-      // Operator overrides — preserved separately so the bake step can
-      // distinguish "operator vouched" from "auto-computed" and decide
-      // whether to clamp / jitter / replace.
+      // Operator overrides — preserved separately so the bake step can distinguish
+      // "operator vouched" from "auto-computed" (clamp / jitter / replace).
       if (v.scaleOverride !== undefined) entry.scaleOverride = v.scaleOverride
       if (v.rotationOverride !== undefined) entry.rotationOverride = v.rotationOverride
       if (v.positionOverride !== undefined) entry.positionOverride = v.positionOverride
-      variants.push(entry)
+      return entry
+    }
+
+    let pushed = 0
+    for (const v of manifest.variants ?? []) {
+      // Runtime gate: only Fill (2) / Mid (3) / Hero (4) ship. excluded=true =
+      // hard-killed; effective rating 0 = Untouched; 1 = Trash.
+      if (v.excluded === true) continue
+      const effQuality = v.qualityOverride ?? v.quality ?? 0
+      if (effQuality < 2) continue
+      variants.push(entryOf(v, v.qualityOverride ?? v.quality ?? 4))
+      pushed++
+    }
+    // Tracked Promote fallback: the overlay says this species is promoted but no
+    // variant passed the quality gate (e.g. the manifest regenerated without the
+    // qualityOverride) — include its primary skeleton variant so the Promote
+    // survives a manifest rebuild without hand-editing the ignored manifest.
+    if (cur.promoted && pushed === 0) {
+      const v = (manifest.variants ?? []).find(x => x.excluded !== true && (x.skeletons?.lod0 || x.skeletons?.lod1 || x.skeletons?.lod2))
+      if (v) variants.push(entryOf(v, 2))
     }
   }
 

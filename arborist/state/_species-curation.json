@@ -1,0 +1,329 @@
+{
+  "_doc": "TRACKED species-curation overlay (Cartograph↔Arborist). build-index.js merges this over the GENERATED, gitignored public/trees/<sp>/manifest.json so hand-authored identity (label·scientific·deciduous) + Promote (promoted:true → into the pool) live in git, not in the regenerable manifests. Chassis-level equivalent: arborist/state/_chassis-curation.json. Operator-edit by hand or via the Salon.",
+  "_at": "2026-07-08",
+  "species": {
+    "_spindle_check": {
+      "deciduous": true
+    },
+    "abies_concolor": {
+      "label": "White Fir",
+      "scientific": "Abies concolor",
+      "deciduous": false,
+      "promoted": true
+    },
+    "acer_rubrum": {
+      "label": "Red Maple",
+      "scientific": "Acer rubrum",
+      "deciduous": true
+    },
+    "acer_saccharum": {
+      "label": "Sugar Maple",
+      "scientific": "Acer saccharum",
+      "deciduous": true,
+      "promoted": true
+    },
+    "acer_saccharum_lowpoly": {
+      "label": "Sugar Maple (low-poly forest)",
+      "deciduous": true
+    },
+    "acer_saccharum_multistem": {
+      "label": "Sugar Maple (multistem)",
+      "scientific": "Acer saccharum",
+      "deciduous": true,
+      "promoted": true
+    },
+    "alaskan_cedar_2": {
+      "label": "Alaskan Cedar",
+      "scientific": "Callitropsis nootkatensis",
+      "deciduous": false
+    },
+    "ash_green": {
+      "label": "Ash Green",
+      "deciduous": true,
+      "promoted": true
+    },
+    "betula_papyrifera": {
+      "label": "Paper Birch",
+      "scientific": "Betula papyrifera",
+      "deciduous": true
+    },
+    "betula_pendula": {
+      "label": "European White Birch",
+      "scientific": "Betula pendula",
+      "deciduous": true,
+      "promoted": true
+    },
+    "birch": {
+      "label": "Birch",
+      "deciduous": true,
+      "promoted": true
+    },
+    "blackgum": {
+      "label": "Blackgum",
+      "deciduous": true,
+      "promoted": true
+    },
+    "blue_spruce": {
+      "label": "Blue Spruce",
+      "scientific": "Picea pungens",
+      "deciduous": false,
+      "promoted": true
+    },
+    "blue_spruce_winter": {
+      "label": "Blue Spruce (winter)",
+      "scientific": "Picea pungens",
+      "deciduous": false
+    },
+    "broadleaf_03": {
+      "label": "Flowering Peach",
+      "deciduous": true
+    },
+    "broadleaf_04": {
+      "label": "Peach Tree",
+      "deciduous": true
+    },
+    "burnt_tree": {
+      "label": "Burnt Tree",
+      "deciduous": true
+    },
+    "callitropsis_nootkatensis": {
+      "label": "Alaskan Cedar",
+      "scientific": "Callitropsis nootkatensis",
+      "deciduous": false
+    },
+    "candicands": {
+      "label": "Candicands",
+      "deciduous": true
+    },
+    "cedar_generic": {
+      "label": "Cedar",
+      "deciduous": false
+    },
+    "conifer_generic": {
+      "label": "Conifer",
+      "scientific": "Pinaceae sp.",
+      "deciduous": false
+    },
+    "conifer_generic_2": {
+      "label": "Conifer (2)",
+      "scientific": "Pinaceae sp.",
+      "deciduous": false
+    },
+    "conifer_generic_3": {
+      "label": "Conifer (3)",
+      "scientific": "Pinaceae sp.",
+      "deciduous": false
+    },
+    "cupressus_sempervirens": {
+      "label": "Italian Cypress",
+      "scientific": "Cupressus sempervirens",
+      "deciduous": false,
+      "promoted": true
+    },
+    "elderberry": {
+      "label": "Elderberry",
+      "scientific": "Sambucus sp.",
+      "deciduous": true
+    },
+    "fagus_sylvatica": {
+      "label": "European Beech",
+      "scientific": "Fagus sylvatica",
+      "deciduous": true
+    },
+    "garden_mix": {
+      "label": "Garden Trees Mix",
+      "deciduous": true,
+      "promoted": true
+    },
+    "gleditsia_triacanthos": {
+      "label": "Honey Locust",
+      "scientific": "Gleditsia triacanthos",
+      "deciduous": true
+    },
+    "juniperus_hollywood": {
+      "label": "Hollywood Juniper",
+      "scientific": "Juniperus chinensis",
+      "deciduous": false
+    },
+    "juniperus_occidentalis": {
+      "label": "Western Juniper",
+      "scientific": "Juniperus occidentalis",
+      "deciduous": false
+    },
+    "linden_american": {
+      "label": "Linden American",
+      "deciduous": true,
+      "promoted": true
+    },
+    "magnolia_sp": {
+      "label": "Magnolia",
+      "scientific": "Magnolia sp.",
+      "deciduous": true,
+      "promoted": true
+    },
+    "maple_red": {
+      "label": "Maple Red",
+      "deciduous": true,
+      "promoted": true
+    },
+    "maple_silver": {
+      "label": "Maple Silver",
+      "deciduous": true,
+      "promoted": true
+    },
+    "maple_sugar": {
+      "label": "Maple Sugar",
+      "deciduous": true,
+      "promoted": true
+    },
+    "nyssa_sylvatica": {
+      "label": "Black Gum",
+      "scientific": "Nyssa sylvatica",
+      "deciduous": true,
+      "promoted": true
+    },
+    "oak_bur": {
+      "label": "Oak Bur",
+      "deciduous": true,
+      "promoted": true
+    },
+    "oak_white": {
+      "label": "Oak White",
+      "deciduous": true,
+      "promoted": true
+    },
+    "picea_abies": {
+      "label": "Norway Spruce",
+      "scientific": "Picea abies",
+      "deciduous": false,
+      "promoted": true
+    },
+    "pine_corona": {
+      "label": "Pine (Corona)",
+      "deciduous": true
+    },
+    "pinus_sp": {
+      "label": "Pine",
+      "scientific": "Pinus sp.",
+      "deciduous": false
+    },
+    "pinus_sylvestris": {
+      "label": "Scots Pine",
+      "scientific": "Pinus sylvestris",
+      "deciduous": false,
+      "promoted": true
+    },
+    "platanus_acerifolia": {
+      "label": "London Plane",
+      "scientific": "Platanus × acerifolia",
+      "deciduous": true,
+      "promoted": true
+    },
+    "populus_alba_fall": {
+      "label": "White Poplar",
+      "scientific": "Populus alba",
+      "deciduous": true
+    },
+    "populus_canescens": {
+      "label": "Gray Poplar",
+      "scientific": "Populus × canescens",
+      "deciduous": true
+    },
+    "populus_tremuloides": {
+      "label": "Quaking Aspen",
+      "scientific": "Populus tremuloides",
+      "deciduous": true
+    },
+    "pseudotsuga_menziesii": {
+      "label": "Douglas Fir",
+      "scientific": "Pseudotsuga menziesii",
+      "deciduous": false,
+      "promoted": true
+    },
+    "pseudotsuga_oregon": {
+      "label": "Douglas Fir (Oregon)",
+      "scientific": "Pseudotsuga menziesii",
+      "deciduous": false
+    },
+    "quercus_alba": {
+      "label": "White Oak",
+      "scientific": "Quercus alba",
+      "deciduous": true,
+      "promoted": true
+    },
+    "quercus_winter_fall": {
+      "label": "Oak (winter/fall)",
+      "scientific": "Quercus sp.",
+      "deciduous": true
+    },
+    "robinia_pseudoacacia": {
+      "label": "Black Locust",
+      "scientific": "Robinia pseudoacacia",
+      "deciduous": true
+    },
+    "salix_alba": {
+      "label": "White Willow",
+      "scientific": "Salix alba",
+      "deciduous": true
+    },
+    "salix_babylonica": {
+      "label": "Weeping Willow",
+      "scientific": "Salix babylonica",
+      "deciduous": true,
+      "promoted": true
+    },
+    "spruce_corona": {
+      "label": "Spruce",
+      "scientific": "Picea sp.",
+      "deciduous": false
+    },
+    "stump_sycamore": {
+      "label": "Sycamore Stump Field",
+      "deciduous": true
+    },
+    "stylized_trees_1": {
+      "label": "Stylized Trees 1",
+      "deciduous": true
+    },
+    "stylized_trees_2": {
+      "label": "Stylized Trees 2",
+      "deciduous": true
+    },
+    "tilia_americana": {
+      "label": "American Linden",
+      "scientific": "Tilia americana",
+      "deciduous": true,
+      "promoted": true
+    },
+    "tree_brown_bark": {
+      "label": "Tree Brown Bark",
+      "deciduous": true
+    },
+    "tree_hz": {
+      "label": "HZ Tree",
+      "deciduous": true
+    },
+    "tree_variation": {
+      "label": "Tree (variation)",
+      "deciduous": true
+    },
+    "tree_with_wind": {
+      "label": "Tree with Wind",
+      "deciduous": true
+    },
+    "ulmus_americana": {
+      "label": "American Elm",
+      "scientific": "Ulmus americana",
+      "deciduous": true
+    },
+    "willow_stylized": {
+      "label": "Weeping Willow (stylized)",
+      "scientific": "Salix sp.",
+      "deciduous": true
+    },
+    "yellow_autumn_tree": {
+      "label": "Yellow Autumn Tree",
+      "deciduous": true
+    }
+  }
+}
