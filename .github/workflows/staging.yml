@@ -2,7 +2,7 @@ name: Deploy staging
 
 on:
   push:
-    branches: [cartograph-looks-pass-ab]
+    branches: [curb-offset-draw]
   workflow_dispatch:
 
 concurrency:
