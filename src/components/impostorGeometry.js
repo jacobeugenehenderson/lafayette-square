@@ -253,9 +253,10 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
  * the 3-slice overhead snapshot (branch / mid / canopy), positioned at the band's
  * real height so three of them stack as parallax layers. It's just the carrier
  * plane for the baked-ahead full-res STAMP — flat, planar [0,1] UVs so the square
- * band capture maps straight on. No dome, no ruche, no deformer attributes: the
- * ruche/hula/wind/parallax are the RUNTIME consumer's job, applied to the stamp
- * later — the bake is only the clean stamp.
+ * band capture maps straight on. No dome, no ruche. It DOES carry aOverhead +
+ * aTreeHeightNorm (= the band's centre height) so the shared WIND deformer
+ * (injectOverheadWiggle) can preview the eventual wind wiggle: the disc sways in
+ * xz, base-anchored, so the high canopy band moves more than the low branch band.
  *
  * @param {object} rec   { heightM, canopyRadiusM }
  * @param {object} opts  { yLoNorm, yHiNorm, perimeter, radialRings, pad }
@@ -273,25 +274,27 @@ export function buildOverheadBandDisc(rec, opts = {}) {
 
   const yLoN = Math.min(1, Math.max(0, opts.yLoNorm ?? 0.7))
   const yHiN = Math.min(1, Math.max(yLoN, opts.yHiNorm ?? 1.0))
-  const y = ((yLoN + yHiN) / 2) * H               // flat plane at the band's centre height
+  const centerNorm = (yLoN + yHiN) / 2
+  const y = centerNorm * H                          // flat plane at the band's centre height
 
   const positions = []
   const uvs = []
+  const aOverhead = []
+  const aTreeHeightNorm = []
   const indices = []
 
-  // Centre vertex.
-  positions.push(0, y, 0)
-  uvs.push(0.5, 0.5)
+  const pushVert = (px, pz) => {
+    positions.push(px, y, pz)
+    uvs.push(0.5 + 0.5 * px / discR, 0.5 + 0.5 * pz / discR)   // planar [0,1] → full square capture
+    aOverhead.push(1); aTreeHeightNorm.push(centerNorm)
+  }
 
+  pushVert(0, 0)   // centre
   for (let ri = 1; ri <= RR; ri++) {
     const rad = discR * (ri / RR)
     for (let j = 0; j < P; j++) {
       const theta = (j / P) * Math.PI * 2
-      const cx = rad * Math.cos(theta)
-      const cz = rad * Math.sin(theta)
-      positions.push(cx, y, cz)
-      // Planar UV [0,1] over the disc's own extent → the full square band capture.
-      uvs.push(0.5 + 0.5 * cx / discR, 0.5 + 0.5 * cz / discR)
+      pushVert(rad * Math.cos(theta), rad * Math.sin(theta))
     }
   }
 
@@ -314,6 +317,8 @@ export function buildOverheadBandDisc(rec, opts = {}) {
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
   g.setIndex(indices)
   g.computeBoundingSphere()
   return g
