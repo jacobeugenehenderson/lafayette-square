@@ -142,16 +142,20 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   cam.updateMatrixWorld(true)
   cam.updateProjectionMatrix()
 
-  const rt = new THREE.WebGLRenderTarget(CAPTURE_SIZE, CAPTURE_SIZE, {
-    minFilter: THREE.LinearMipmapLinearFilter,
+  // Overhead-band captures pass a smaller, mipmap-free RT (opts.size/noMipmap) —
+  // 3 renders/tree, so keep each cheap (a lighter GPU load, no TDR watchdog trip).
+  const size = opts.size || CAPTURE_SIZE
+  const noMip = !!opts.noMipmap
+  const rt = new THREE.WebGLRenderTarget(size, size, {
+    minFilter: noMip ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter,
     magFilter: THREE.LinearFilter,
     format: THREE.RGBAFormat,
     type: THREE.UnsignedByteType,
     colorSpace: THREE.SRGBColorSpace,   // match the main scene's output space
-    generateMipmaps: true,
+    generateMipmaps: !noMip,
     depthBuffer: true,
   })
-  rt.texture.anisotropy = 4
+  if (!noMip) rt.texture.anisotropy = 4
 
   // ── Save every renderer state we mutate ──────────────────────────────────
   const prevTarget = gl.getRenderTarget()
@@ -319,7 +323,9 @@ export function captureTreeOverheadBands(gl, gltfScene, treeMaterial, { canopyRa
     { key: 'canopy', yLo: Cb + (2 * s) / 3,              yHi: maxY },
   ]
   const bands = cuts.map(({ key, yLo, yHi }) => {
-    const tex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band: { yLo, yHi } })
+    const tex = renderTreeToTexture(gl, scene, heightM, rM, {
+      topDown: true, band: { yLo, yHi }, size: 256, noMipmap: true,
+    })
     tex.name = `overhead-band:${key}`
     return {
       key, tex, yLo, yHi,
@@ -328,6 +334,22 @@ export function captureTreeOverheadBands(gl, gltfScene, treeMaterial, { canopyRa
     }
   })
   return { bands, heightM, canopyBaseY: Cb }
+}
+
+/**
+ * captureTreeOverheadBandsFromUrl — load a tree GLB FRESH (its own independent
+ * geometry) and capture its 3 overhead bands. Critical: the Salon's live preview
+ * is rendering its GLB every frame; capturing off the SAME object would clone-
+ * share its geometry buffers and materializeForCapture's attribute mutations
+ * (stamp + delete-color) on in-use buffers crash the WebGL context. Loading fresh
+ * (mirrors useImpostorCaptures) fully decouples the capture from the live canvas.
+ *
+ * @returns {Promise<{ bands, heightM, canopyBaseY }|null>}
+ */
+export async function captureTreeOverheadBandsFromUrl(gl, url, treeMaterial, { canopyRadiusM } = {}) {
+  if (!gl || !url || !treeMaterial) return null
+  const gltf = await loadGltf(url)
+  return captureTreeOverheadBands(gl, gltf.scene, treeMaterial, { canopyRadiusM })
 }
 
 /**

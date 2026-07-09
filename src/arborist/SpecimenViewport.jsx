@@ -34,7 +34,7 @@ import {
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
 import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc } from '../components/impostorGeometry.js'
-import { captureTreeOverheadBands } from '../components/captureImpostor.js'
+import { captureTreeOverheadBandsFromUrl } from '../components/captureImpostor.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -1013,20 +1013,27 @@ function Skeleton({
   const [snapshot, setSnapshot] = useState(null)   // { bands:[{key,tex,yLoNorm,yHiNorm}], heightM }
   const snapKeyRef = useRef(null)
   useEffect(() => {
-    if (!overheadMode || !gl || !scene || !atlas.treeMaterial || !overheadRec) return
+    if (!overheadMode || !gl || !atlas.treeMaterial || !overheadRec || !url) return
     if (snapKeyRef.current === url) return   // already captured this chassis
     let cancelled = false
-    // Defer one frame so the atlas material + GLB are fully live before we RTT.
-    const id = requestAnimationFrame(() => {
+    // Defer a frame, then load the GLB FRESH + capture off that independent copy
+    // (never the live rendered `scene`) — mutating a live-rendered geometry's
+    // buffers mid-frame crashes the WebGL context. Guarded: a capture failure
+    // degrades to the procedural fallback, never takes down the canvas.
+    const id = requestAnimationFrame(async () => {
       if (cancelled) return
-      const result = captureTreeOverheadBands(gl, scene, atlas.treeMaterial, {
-        canopyRadiusM: overheadRec.canopyRadiusM,
-      })
-      if (!cancelled && result) { snapKeyRef.current = url; setSnapshot(result) }
+      try {
+        const result = await captureTreeOverheadBandsFromUrl(gl, url, atlas.treeMaterial, {
+          canopyRadiusM: overheadRec.canopyRadiusM,
+        })
+        if (!cancelled && result) { snapKeyRef.current = url; setSnapshot(result) }
+      } catch (err) {
+        console.error('[overhead-snapshot] capture failed — falling back to procedural', err)
+      }
     })
     return () => { cancelled = true; cancelAnimationFrame(id) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overheadMode, gl, scene, atlas.treeMaterial, overheadRec, url])
+  }, [overheadMode, gl, atlas.treeMaterial, overheadRec, url])
 
   useEffect(() => () => {
     if (snapshot) for (const b of snapshot.bands) { try { b.tex?.dispose() } catch {} }
