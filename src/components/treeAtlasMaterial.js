@@ -1508,6 +1508,11 @@ export function injectOverheadWiggle(material) {
     shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
     shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
     shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
+    // Ruche/hula knob uniforms — the SAME two the shared atlas material carries,
+    // so applyOverheadDeformerUniforms drives this material identically. Default
+    // 0 → identity (a still, flat disc) until the knobs bind.
+    shader.uniforms.uRuffleDepth = { value: 0 }
+    shader.uniforms.uHulaAmount  = { value: 0 }
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
@@ -1516,17 +1521,35 @@ export function injectOverheadWiggle(material) {
          uniform float uWindIntensity;
          uniform float uGustsScale;
          uniform float uGustEnvelope;
+         uniform float uRuffleDepth;  // ruche flex amplitude (knob 1)
+         uniform float uHulaAmount;   // hula rock amplitude (knob 2)
          attribute float aOverhead;
          attribute float aTreeHeightNorm;
+         attribute float aRuffle;     // baked sin(FOLDS·θ)·rFrac rim scallop, [-1,1]
          attribute float aLeafBody;   // 0 at the glued stem → 1 at the blade tip
          attribute float aLeafPhase;  // per-leaf random flutter phase`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
          if (aOverhead > 0.5) {
-           // MOTION = the shared WEATHER (authored elsewhere; the Salon's Wind
-           // toggle previews it), NOT an intrinsic dial. The canopy leans, sways
-           // and gusts downwind, base-anchored (aTreeHeightNorm: trunk-height
-           // barely moves, the crown swings). Calm weather → ~still (only the
-           // leaf-flutter floor below).
+           // ── Overhead deformers (ruche → hula → wind) — the SAME layering + math
+           //    as the shared atlas material's aOverhead block, so the snapshot
+           //    discs animate exactly as an atlas-skinned disc would. ──
+           // 1. RUCHE — a gentle VERTICAL undulation of the surface (aRuffle is the
+           //    rim-weighted standing scallop); NO travel term, NO radial push
+           //    (radial stretched the capture into a starfish — Jacob, 2026-07-06).
+           float breathe = 1.0 + 0.15 * sin(uTime * 0.5);
+           transformed.y += aRuffle * uRuffleDepth * 2.0 * breathe;
+           // 2. HULA — the whole stack rocks on a slowly-DRIFTING horizontal axis,
+           //    base-anchored (∝ aTreeHeightNorm) and phase-LAGGED up the stack so
+           //    it bends in a soft S-wave rather than swinging rigidly.
+           float hulaT   = uTime * 0.7;
+           float hulaDrA = uTime * 0.22;
+           vec2  hulaDir = vec2(cos(hulaDrA), sin(hulaDrA));
+           float hulaLag = aTreeHeightNorm * 2.4;
+           float hulaBend = uHulaAmount * aTreeHeightNorm * sin(hulaT - hulaLag);
+           transformed.xz += hulaDir * hulaBend;
+           // 3. WIND = the shared WEATHER (the Salon's Wind toggle previews it),
+           //    NOT an intrinsic dial. The canopy leans/gusts downwind, base-
+           //    anchored. Calm weather → ~still (only the leaf-flutter floor below).
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
            float wt    = uTime * 1.1;
            float sway  = uWindIntensity * (0.55 + 0.45 * sin(wt + aTreeHeightNorm * 2.0));
@@ -1535,7 +1558,7 @@ export function injectOverheadWiggle(material) {
            transformed.xz += wd * ((sway + gust) * 0.06 * aTreeHeightNorm);
            // Leaf-body flutter — the blade shimmers about its glued stem, each
            //   leaf on its own random phase (the always-on "alive" floor; grows
-           //   a touch with wind). Absent aLeafBody → branches/umbrella untouched.
+           //   a touch with wind). Absent aLeafBody → branches/discs untouched.
            if (aLeafBody > 0.001) {
              float ft  = uTime * 3.4 + aLeafPhase;
              float amp = (0.1 + uWindIntensity * 0.06) * aLeafBody;

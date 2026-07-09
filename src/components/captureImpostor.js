@@ -105,8 +105,21 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     // the canopy FOOTPRINT (2·canopyRadius) square; camera high above looking
     // straight down, up = -Z so +X reads image-right (mirrors the Browse camera).
     const half = Math.max(0.5, canopyRadiusM + FRAME_PAD_M)
-    cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 4000)
-    cam.position.set(0, heightM + half * 2 + 50, 0)
+    const camY = heightM + half * 2 + 50
+    // Optional height-BAND slice (canopy / mid / branch) for the 3-slice overhead
+    // snapshot (HANDOFF-overhead-snapshot-impostor-wireup.md). The camera looks
+    // straight DOWN (-Y), so a world height wy sits at view-distance (camY − wy);
+    // clamping near/far to [camY−yHi, camY−yLo] renders ONLY that horizontal slab,
+    // leaving the rest transparent. No geometry mutation — three renders, three
+    // slabs, stacked as parallax planes at runtime. Absent band → whole tree.
+    let near = 0.01, far = 4000
+    if (opts.band) {
+      const { yLo, yHi } = opts.band
+      near = Math.max(0.01, camY - yHi)
+      far = Math.max(near + 0.05, camY - yLo)
+    }
+    cam = new THREE.OrthographicCamera(-half, half, half, -half, near, far)
+    cam.position.set(0, camY, 0)
     cam.up.set(0, 0, -1)
     cam.lookAt(0, 0, 0)
   } else {
@@ -235,6 +248,86 @@ export function captureTreeOverhead(gl, gltfScene, treeMaterial, { canopyRadiusM
   const tex = renderTreeToTexture(gl, scene, heightM, Math.max(1, canopyRadiusM || 5), { topDown: true })
   tex.name = 'impostor-overhead-capture'
   return tex
+}
+
+/**
+ * Measure the canopy-base Y (where foliage starts) off a MATERIALIZED capture
+ * scene — the runtime twin of bake-impostors.js#measureCanopyBase, but reading
+ * the stamped `aBark` vertex attribute (1 = bark, 0 = leaf) instead of a
+ * gltf-transform doc. Returns { minY, maxY, canopyBaseY } in the scene's local
+ * frame (chassis GLBs are baked flat, base ≈ 0 — the same frame the ortho
+ * framing + band clips use). Falls back to a ~1/3-up broadleaf break when no
+ * classified foliage is present.
+ */
+function measureCanopyBaseLocal(scene) {
+  let minY = Infinity, maxY = -Infinity, leafMinY = Infinity, sawLeaf = false
+  scene.traverse((o) => {
+    const g = o.isMesh ? o.geometry : null
+    const pos = g?.attributes?.position
+    if (!pos) return
+    const bark = g.attributes.aBark
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+      const isLeaf = bark ? bark.getX(i) < 0.5 : false
+      if (isLeaf) { sawLeaf = true; if (y < leafMinY) leafMinY = y }
+    }
+  })
+  if (!isFinite(minY) || !isFinite(maxY)) return { minY: 0, maxY: 12, canopyBaseY: 4 }
+  const H = maxY - minY
+  if (!sawLeaf || !isFinite(leafMinY) || H <= 0) {
+    return { minY, maxY, canopyBaseY: minY + H * 0.35 }
+  }
+  const frac = Math.min(0.7, Math.max(0.1, (leafMinY - minY) / H))
+  return { minY, maxY, canopyBaseY: minY + H * frac }
+}
+
+/**
+ * captureTreeOverheadBands — the 3-SLICE overhead snapshot: three top-down RTT
+ * captures of the SAME tree, each clipped to a height band (branch / mid /
+ * canopy), the layered skin for the overhead snapshot impostor
+ * (HANDOFF-overhead-snapshot-impostor-wireup.md). Stacked as parallax planes at
+ * runtime, the branches (lowest band) still read through the crown and the
+ * canopy (top band) still catches the wind — real vertical motion parallax from
+ * above that one flat snapshot can't give.
+ *
+ * Band cuts are derived from the measured canopy base + total height: the crown
+ * [canopyBase, top] splits into thirds, and the lowest (branch) band dips a
+ * touch below the leaf base to catch the main limbs. Returned BOTTOM→TOP so the
+ * caller stacks them low→high.
+ *
+ * @param {THREE.WebGLRenderer} gl
+ * @param {THREE.Object3D}  gltfScene    a loaded GLB scene (e.g. useGLTF().scene)
+ * @param {THREE.Material}   treeMaterial the shared/preview atlas material
+ * @param {object} dims                  { canopyRadiusM }
+ * @returns {{ bands: Array<{key,tex,yLo,yHi,yLoNorm,yHiNorm}>, heightM, canopyBaseY }|null}
+ */
+export function captureTreeOverheadBands(gl, gltfScene, treeMaterial, { canopyRadiusM } = {}) {
+  if (!gl || !gltfScene || !treeMaterial) return null
+  const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial)
+  const rM = Math.max(1, canopyRadiusM || 5)
+  const { minY, maxY, canopyBaseY } = measureCanopyBaseLocal(scene)
+  const H = Math.max(1e-3, maxY - minY)
+  const Cb = canopyBaseY
+  const s = Math.max(1e-3, maxY - Cb)           // crown vertical span
+  // Bottom→top. The branch band dips ~12% of tree height below the leaf base so
+  // the woody structure (main limbs) reads through the crown from above.
+  const cuts = [
+    { key: 'branch', yLo: Math.max(minY, Cb - 0.12 * H), yHi: Cb + s / 3 },
+    { key: 'mid',    yLo: Cb + s / 3,                    yHi: Cb + (2 * s) / 3 },
+    { key: 'canopy', yLo: Cb + (2 * s) / 3,              yHi: maxY },
+  ]
+  const bands = cuts.map(({ key, yLo, yHi }) => {
+    const tex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band: { yLo, yHi } })
+    tex.name = `overhead-band:${key}`
+    return {
+      key, tex, yLo, yHi,
+      yLoNorm: (yLo - minY) / H,
+      yHiNorm: (yHi - minY) / H,
+    }
+  })
+  return { bands, heightM, canopyBaseY: Cb }
 }
 
 /**

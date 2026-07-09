@@ -248,6 +248,113 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
   return g
 }
 
+/**
+ * buildOverheadBandDisc — ONE ruched, domed, tessellated disc for a single height
+ * BAND of the 3-slice overhead snapshot impostor (branch / mid / canopy). Sibling
+ * of buildOverheadHulaGeometry, but a single band-plane positioned at its real
+ * height so three of them stack as parallax layers (the branch band low, the
+ * canopy band high — branches read through the crown, the crown catches the wind).
+ * Each disc carries planar [0,1] UVs so its OWN band capture
+ * (captureImpostor.js#captureTreeOverheadBands) maps straight on, and the same
+ * aOverhead/aRuffle/aTreeHeightNorm/aWindTier the shared overhead deformers read
+ * (ruche → hula → shared wind). aTreeHeightNorm = the band's centre height, so the
+ * hula amplitude grows up the stack (base-anchored) like real wood.
+ *
+ * @param {object} rec   { heightM, canopyRadiusM }
+ * @param {object} opts  { yLoNorm, yHiNorm, folds, perimeter, radialRings, pad, dome }
+ */
+export function buildOverheadBandDisc(rec, opts = {}) {
+  if (!rec) return null
+
+  const H = rec.heightM || 14
+  const R = Math.max(0.5, rec.canopyRadiusM || 5)
+  const pad = opts.pad ?? 1.5                     // must match captureTreeOverheadBands' FRAME_PAD_M
+  const discR = R + pad                           // disc extent = capture frame half-extent
+
+  const FOLDS = Math.max(3, Math.round(opts.folds ?? 7))          // rim scallop count
+  const P = Math.max(3 * FOLDS, Math.round(opts.perimeter ?? 48)) // angular segments
+  const RR = Math.max(2, Math.round(opts.radialRings ?? 6))       // radial tessellation
+
+  const yLoN = Math.min(1, Math.max(0, opts.yLoNorm ?? 0.7))
+  const yHiN = Math.min(1, Math.max(yLoN, opts.yHiNorm ?? 1.0))
+  const centerNorm = (yLoN + yHiN) / 2
+  const y = centerNorm * H
+  // Dome height — the band mounds toward its centre (a shallow parabolic cap) so
+  // it tilts under the hula + catches light, instead of a dead flat plate.
+  const domeH = discR * (opts.dome ?? 0.28)
+
+  const positions = []
+  const uvs = []
+  const normals = []
+  const aWindTier = []
+  const aTreeHeightNorm = []
+  const aRuffle = []
+  const aOverhead = []
+  const aBark = []
+  const indices = []
+
+  // Slope of the dome normal's horizontal component (∂y/∂r = -2·domeH·r/R²).
+  const nh = domeH > 0 ? 2 * domeH / (discR * discR) : 0
+
+  // Center vertex — top of the dome.
+  positions.push(0, y + domeH, 0)
+  uvs.push(0.5, 0.5)
+  normals.push(0, 1, 0)
+  aWindTier.push(3); aTreeHeightNorm.push(centerNorm); aRuffle.push(0); aOverhead.push(1); aBark.push(0)
+
+  for (let ri = 1; ri <= RR; ri++) {
+    const rFrac = ri / RR
+    const rad = discR * rFrac
+    const domeY = y + domeH * (1 - rFrac * rFrac)   // parabolic: full at centre, 0 at rim
+    for (let j = 0; j < P; j++) {
+      const theta = (j / P) * Math.PI * 2
+      const cx = rad * Math.cos(theta)
+      const cz = rad * Math.sin(theta)
+      positions.push(cx, domeY, cz)
+      // Planar UV [0,1] over the disc's own extent → the full square band capture.
+      uvs.push(0.5 + 0.5 * cx / discR, 0.5 + 0.5 * cz / discR)
+      const nx = nh * cx, nz = nh * cz
+      const nl = Math.hypot(nx, 1, nz)
+      normals.push(nx / nl, 1 / nl, nz / nl)
+      aWindTier.push(3); aTreeHeightNorm.push(centerNorm)
+      // Rim-weighted standing scallop: 0 at centre, full at the rim.
+      aRuffle.push(Math.sin(FOLDS * theta) * rFrac)
+      aOverhead.push(1); aBark.push(0)
+    }
+  }
+
+  // Center fan to ring 1, then quad strips between rings.
+  for (let j = 0; j < P; j++) {
+    const a = 1 + j
+    const b = 1 + ((j + 1) % P)
+    indices.push(0, a, b)
+  }
+  for (let ri = 0; ri < RR - 1; ri++) {
+    const r0 = 1 + ri * P
+    const r1 = 1 + (ri + 1) * P
+    for (let j = 0; j < P; j++) {
+      const jn = (j + 1) % P
+      indices.push(r0 + j, r0 + jn, r1 + j)
+      indices.push(r0 + jn, r1 + jn, r1 + j)
+    }
+  }
+
+  if (positions.length === 0) return null
+
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+  g.setAttribute('aWindTier', new THREE.Float32BufferAttribute(aWindTier, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
+  g.setAttribute('aRuffle', new THREE.Float32BufferAttribute(aRuffle, 1))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  g.setAttribute('aBark', new THREE.Float32BufferAttribute(aBark, 1))
+  g.setIndex(indices)
+  g.computeBoundingSphere()
+  return g
+}
+
 // Deterministic hash in [0,1) for the procedural branch layout (no Math.random,
 // so the skeleton is stable across rebuilds; per-instance variety comes from the
 // instance rotY, not a reseed).

@@ -26,13 +26,15 @@ import {
   useSalonPreviewAtlas,
   applyBarkUniforms,
   applyDeformerUniforms,
+  applyOverheadDeformerUniforms,
   injectOverheadWiggle,
   stampTreeVertexAttrs,
   treeSwayUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
-import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters } from '../components/impostorGeometry.js'
+import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc } from '../components/impostorGeometry.js'
+import { captureTreeOverheadBands } from '../components/captureImpostor.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -828,10 +830,13 @@ function Skeleton({
   deformerSeed = null,
   variantCount = 1,
   variantHeightSpread = false,
-  overheadMode = false,           // Browse preset → show the overhead hula impostor
-  overhead = null,                // { ruffleDepth, hulaAmount } — the two knobs
+  overheadMode = false,           // Browse preset → show the overhead snapshot impostor
+  overhead = null,                // leaf controls (procedural-relic canopy) + tints
+  overheadRuffle = 0.15,          // ruche knob (vertical rim-scallop flex amplitude)
+  overheadHula = 0.35,            // hula knob (base-anchored disc-stack rock amplitude)
 }) {
   const { scene } = useGLTF(url)
+  const gl = useThree(s => s.gl)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
   // have slightly different decimated geometry) doesn't shift the
   // visible position.
@@ -995,6 +1000,82 @@ function Skeleton({
     return { heightM: (typeof topY === 'number' ? topY : 12), canopyRadiusM, trunkFrac: 0.12 }
   }, [overheadMode, scene, topY])
 
+  // ── Overhead 3-slice SNAPSHOT impostor (Browse preset) — the CANONICAL path ──
+  // Three top-down RTT captures of the REAL tree (branch / mid / canopy height
+  // bands) skinned onto three parallax disc-planes stacked at their real heights,
+  // riding the shared overhead deformers (ruche → hula → shared wind). This is the
+  // canonical RTT-skinned disc the doctrine blesses (HANDOFF-overhead-snapshot-
+  // impostor-wireup.md §Two decisions #2) — the procedural branch/umbrella/leaf
+  // canopy below stays as a Salon-only relic + a until-captured fallback. The
+  // capture runs once per (chassis × overheadMode) on the LIVE GL context + the
+  // materialized preview material — the same in-browser capture the eventual bake
+  // POSTs into the slab atlas (Jacob's chosen ship path, 2026-07-09).
+  const [snapshot, setSnapshot] = useState(null)   // { bands:[{key,tex,yLoNorm,yHiNorm}], heightM }
+  const snapKeyRef = useRef(null)
+  useEffect(() => {
+    if (!overheadMode || !gl || !scene || !atlas.treeMaterial || !overheadRec) return
+    if (snapKeyRef.current === url) return   // already captured this chassis
+    let cancelled = false
+    // Defer one frame so the atlas material + GLB are fully live before we RTT.
+    const id = requestAnimationFrame(() => {
+      if (cancelled) return
+      const result = captureTreeOverheadBands(gl, scene, atlas.treeMaterial, {
+        canopyRadiusM: overheadRec.canopyRadiusM,
+      })
+      if (!cancelled && result) { snapKeyRef.current = url; setSnapshot(result) }
+    })
+    return () => { cancelled = true; cancelAnimationFrame(id) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overheadMode, gl, scene, atlas.treeMaterial, overheadRec, url])
+
+  useEffect(() => () => {
+    if (snapshot) for (const b of snapshot.bands) { try { b.tex?.dispose() } catch {} }
+  }, [snapshot])
+
+  // One ruched, domed disc per band, positioned at its real height (branch low →
+  // canopy high) for vertical parallax.
+  const snapshotDiscs = useMemo(() => {
+    if (!snapshot || !overheadRec) return null
+    const rec = { heightM: snapshot.heightM || overheadRec.heightM, canopyRadiusM: overheadRec.canopyRadiusM }
+    return snapshot.bands.map((b) => ({
+      key: b.key,
+      tex: b.tex,
+      geo: buildOverheadBandDisc(rec, { yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm }),
+    }))
+  }, [snapshot, overheadRec])
+
+  // One snapshot material per band — MeshStandard skinned with the band capture +
+  // the shared overhead deformers (injectOverheadWiggle: ruche/hula/wind). Hard
+  // alphaTest cutout (transparent:false, depthWrite:true) — like the procedural
+  // leafMat precedent — so the crown's opaque pixels write depth and OCCLUDE the
+  // lower bands, while its transparent gaps REVEAL them: depth-correct parallax
+  // across the 3 stacked discs, order-independent (no transparent-sort artifacts).
+  const snapshotMats = useMemo(() => {
+    if (!snapshotDiscs) return null
+    return snapshotDiscs.map(({ tex }) => {
+      const m = new THREE.MeshStandardMaterial({
+        map: tex, transparent: false, alphaTest: 0.4,
+        roughness: 1, metalness: 0, side: THREE.DoubleSide, depthWrite: true,
+      })
+      injectOverheadWiggle(m)
+      return m
+    })
+  }, [snapshotDiscs])
+
+  useEffect(() => () => {
+    if (snapshotMats) for (const m of snapshotMats) { try { m.dispose() } catch {} }
+  }, [snapshotMats])
+
+  // Bind the two knobs onto each band material every frame — the shaders compile
+  // lazily on first draw, so useFrame is the reliable bind point (same reason as
+  // the bark-uniform useFrame above). Wind flows via the shared treeSwayUniforms.
+  useFrame(() => {
+    if (!snapshotMats) return
+    for (const m of snapshotMats) {
+      applyOverheadDeformerUniforms(m, { ruffleDepth: overheadRuffle, hulaAmount: overheadHula })
+    }
+  })
+
   // Connect the overhead to the SELECTED chassis: seed the procedural layout off
   // the chassis identity (the GLB url), so each chassis gets its own consistent
   // branch/umbrella structure (not a generic default) that changes when you pick
@@ -1136,21 +1217,36 @@ function Skeleton({
   // Built centred at the trunk (origin) so no autoCenter offset is applied.
   if (overheadMode) {
     const n = Math.max(1, variantCount)
+    // Each variant is rotated by the golden angle so the baked rim scallop + the
+    // capture land at a DIFFERENT world phase tree-to-tree — the anti-stamping
+    // eye-gate (overhead shows all trees at once; a synced grid is the failure).
+    const ready = snapshotDiscs && snapshotMats
     return (
       <group rotation={[rx, ry, rz]}>
         <group scale={[scale, scale, scale]}>
-          {branchGeo && Array.from({ length: n }, (_, i) => (
-            <group key={i}
-              position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
-              rotation={[0, i * 2.399963267, 0]}>
-              {/* Branches (opaque, write depth) → a subtle umbrella fill so the
-                  canopy isn't see-through → the DENSE leaf field on top, which is
-                  the actual textured canopy surface. Cloud smudge retired. */}
-              <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
-              {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
-              {leafGeo && overhead?.show !== false && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
-            </group>
-          ))}
+          {ready
+            ? Array.from({ length: n }, (_, i) => (
+                <group key={i}
+                  position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
+                  rotation={[0, i * 2.399963267, 0]}>
+                  {/* branch band low → canopy band high; alphaTest lets the crown's
+                      gaps reveal the mid + branch discs beneath → real parallax. */}
+                  {snapshotDiscs.map((d, bi) => d.geo && (
+                    <mesh key={d.key} geometry={d.geo} material={snapshotMats[bi]} renderOrder={bi} />
+                  ))}
+                </group>
+              ))
+            // Until the RTT capture lands, fall back to the procedural relic canopy
+            // (keeps the Browse preview populated for the ~1 frame before capture).
+            : branchGeo && Array.from({ length: n }, (_, i) => (
+                <group key={i}
+                  position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
+                  rotation={[0, i * 2.399963267, 0]}>
+                  <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
+                  {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
+                  {leafGeo && overhead?.show !== false && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
+                </group>
+              ))}
         </group>
       </group>
     )
@@ -1276,6 +1372,11 @@ export default function SpecimenViewport({
   // LoD build lands. (Evolved from Brief 13 Vantage's two ground/overhead
   // presets — the Hero/Street distinction is now explicit, not just a dolly.)
   const [camPreset, setCamPreset] = useState('hero')
+  // Overhead snapshot impostor — the two resting-character knobs (the ruche flex +
+  // the hula rock). Local state (no store/autosave) so Jacob can dial them live
+  // during the Phase-1 eye-gate; the numbers are his eye's call to lock later.
+  const [ohRuffle, setOhRuffle] = useState(0.15)
+  const [ohHula, setOhHula] = useState(0.35)
   // Auto-fit camera whenever the chassis changes. Triggers on viewKey
   // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
   // remounts the Canvas) AND on the first topY emission per chassis.
@@ -1346,6 +1447,8 @@ export default function SpecimenViewport({
               deformerSeed={deformerSeed}
               overheadMode={camPreset === 'browse'}
               overhead={overhead}
+              overheadRuffle={ohRuffle}
+              overheadHula={ohHula}
               variantCount={variantCount}
               variantHeightSpread={variantHeightSpread}
             />
@@ -1414,6 +1517,32 @@ export default function SpecimenViewport({
           </button>
         ))}
       </div>
+      {/* Overhead snapshot knobs — only in Browse. Ruche = the resting rim
+          scallop's flex; Hula = the base-anchored disc-stack rock. Local, live —
+          Jacob dials the resting character; the numbers are his to lock. */}
+      {camPreset === 'browse' && (
+        <div style={{
+          position: 'absolute', bottom: 12, right: 12, width: 190,
+          display: 'flex', flexDirection: 'column', gap: 8,
+          padding: '10px 12px', borderRadius: 8,
+          background: 'rgba(12,12,16,0.72)', border: '1px solid rgba(255,255,255,0.1)',
+          font: '11px system-ui, sans-serif', color: 'rgba(255,255,255,0.82)',
+        }}>
+          {[
+            ['Ruche', ohRuffle, setOhRuffle, 0, 0.6, 'Rim-scallop flex (vertical undulation of the crown surface)'],
+            ['Hula', ohHula, setOhHula, 0, 1.2, 'Base-anchored disc-stack rock (the tree’s own gentle life)'],
+          ].map(([label, val, set, min, max, title]) => (
+            <label key={label} title={title} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{label}</span><span style={{ opacity: 0.6 }}>{val.toFixed(2)}</span>
+              </span>
+              <input type="range" min={min} max={max} step={0.01} value={val}
+                onChange={(e) => set(parseFloat(e.target.value))}
+                style={{ width: '100%' }} />
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
