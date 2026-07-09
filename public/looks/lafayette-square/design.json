@@ -988,38 +988,6 @@
   },
   "trees": [
     {
-      "species": "platanus_acerifolia",
-      "variantId": 6
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 7
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 8
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 9
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 10
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 3
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 2
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 1
-    },
-    {
       "species": "maple_sugar",
       "variantId": 1
     },
@@ -1062,6 +1030,22 @@
     {
       "species": "oak_white",
       "variantId": 1
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 1
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 2
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 3
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 4
     }
   ]
 }
