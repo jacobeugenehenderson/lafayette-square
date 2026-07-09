@@ -93,9 +93,24 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   // directional, so no baked-in shadow and no side that goes black. Flat-lit is
   // the v1 tradeoff (TOD relight via captured normals is deferred).
   const scene = new THREE.Scene()
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0)
-  const amb = new THREE.AmbientLight(0xffffff, 0.6)
-  scene.add(hemi, amb)
+  const lights = []
+  if (opts.shaded) {
+    // SHADED (luminance) pass — an angled directional key so the atlas NORMAL MAP
+    // shades each leaf by its orientation ("the leaves themselves"); ambient keeps
+    // the shadowed sides off pure black. The coarse light-direction gradient this
+    // introduces is removed later by the pyramid high-pass, leaving only the
+    // leaf-scale micro-contrast burned into the stamp.
+    lights.push(new THREE.AmbientLight(0xffffff, 0.45))
+    const key = new THREE.DirectionalLight(0xffffff, 1.5)
+    key.position.set(0.5, 1.0, 0.35)
+    lights.push(key)
+  } else {
+    // COLOR (albedo) pass — flat hemisphere, no directional, so no shading bakes
+    // into the base colour (the leaf shading rides in via the shaded pass above).
+    lights.push(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0))
+    lights.push(new THREE.AmbientLight(0xffffff, 0.6))
+  }
+  for (const l of lights) scene.add(l)
   scene.add(glbScene)
 
   let cam
@@ -193,7 +208,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   // shared GLB geometry with it (the GLB scene is a fresh clone owned here, but
   // its geometry/material are shared — detach to be safe before GC).
   scene.remove(glbScene)
-  hemi.dispose?.()
+  for (const l of lights) l.dispose?.()
   // The RT keeps its own depth/color buffers alive; the texture is what we cache.
   return rt.texture
 }
@@ -344,15 +359,100 @@ export function prepareOverheadBands(gltfScene, treeMaterial, { canopyRadiusM, a
  *
  * @returns {{ key, tex, yLo, yHi, yLoNorm, yHiNorm }}
  */
+// ── Leaf-luminance composite (the "second pass" + pyramid cleverness) ─────────
+// A reused fullscreen pass that burns leaf-scale shading into the flat albedo
+// stamp. DETAIL = luma(lum@mip0) − luma(lum@coarseMip): the texture's own GPU mip
+// chain IS the pyramid, so we keep the crisp between-leaf micro-contrast + per-leaf
+// shading but DROP the coarse light-direction gradient (no fake sun baked in).
+// out.rgb = color.rgb × (1 + detail·strength); alpha from the colour pass. Subtle.
+let _composite = null
+function getLeafLumaComposite() {
+  if (_composite) return _composite
+  const scene = new THREE.Scene()
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: null }, uLum: { value: null },
+      uStrength: { value: 0.85 },                     // subtle multiply around 1.0
+      uLumTexel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
+    },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: /* glsl */`
+      precision highp float;
+      uniform sampler2D uColor; uniform sampler2D uLum;
+      uniform float uStrength; uniform vec2 uLumTexel;
+      varying vec2 vUv;
+      float luma(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+      void main(){
+        vec4 col = texture2D(uColor, vUv);
+        float l0 = luma(texture2D(uLum, vUv).rgb);
+        // Low-freq reference: a 5×5 box at ~4-texel spacing (leaf-CLUMP scale).
+        // detail = l0 − boxBlur keeps only the leaf-scale micro-contrast (between +
+        // on leaves) and drops the coarse light-direction gradient. texture2D only
+        // (no LOD) — matches the DownsamplePyramid precedent, WebGL1/2 safe.
+        float acc = 0.0;
+        for (int dy = -2; dy <= 2; dy++) {
+          for (int dx = -2; dx <= 2; dx++) {
+            acc += luma(texture2D(uLum, vUv + uLumTexel * vec2(float(dx), float(dy)) * 4.0).rgb);
+          }
+        }
+        float detail = l0 - acc / 25.0;
+        float m = clamp(1.0 + detail * uStrength, 0.35, 1.65);
+        gl_FragColor = vec4(col.rgb * m, col.a);       // keep the cutout alpha
+      }`,
+    depthTest: false, depthWrite: false,
+  })
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat))
+  _composite = { scene, cam, mat }
+  return _composite
+}
+
+function compositeLeafLuma(gl, colorTex, lumTex, size) {
+  const { scene, cam, mat } = getLeafLumaComposite()
+  mat.uniforms.uColor.value = colorTex
+  mat.uniforms.uLum.value = lumTex
+  const rt = new THREE.WebGLRenderTarget(size, size, {
+    minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+    colorSpace: THREE.SRGBColorSpace, generateMipmaps: true, depthBuffer: false,
+  })
+  rt.texture.anisotropy = 4
+  const prevTarget = gl.getRenderTarget()
+  const prevAutoClear = gl.autoClear
+  const prevTone = gl.toneMapping
+  const prevCS = gl.outputColorSpace
+  try {
+    gl.setRenderTarget(rt)
+    gl.toneMapping = THREE.NoToneMapping
+    gl.outputColorSpace = THREE.SRGBColorSpace
+    gl.autoClear = true
+    gl.setClearColor(0x000000, 0)
+    gl.clear(true, true, true)
+    gl.render(scene, cam)
+  } finally {
+    gl.setRenderTarget(prevTarget)
+    gl.autoClear = prevAutoClear
+    gl.toneMapping = prevTone
+    gl.outputColorSpace = prevCS
+  }
+  return rt.texture
+}
+
 export function captureOverheadBand(gl, prep, i) {
   const { scene, heightM, rM, minY, H, cuts } = prep
   const { key, yLo, yHi } = cuts[i]
-  // These are BAKED AHEAD, so capture a clean FULL-RES stamp (1024², mipmapped) —
-  // the runtime consumer applies the disc/parallax/ruche/hula/wind later. One
-  // render per frame off the shared geometry keeps it crash-safe even at 1024².
-  const tex = renderTreeToTexture(gl, scene, heightM, rM, {
-    topDown: true, band: { yLo, yHi }, size: 1024,
-  })
+  // BAKED AHEAD → get it right: two full-res (1024²) passes — a flat ALBEDO stamp
+  // and a normal-map-SHADED luminance pass — composited so leaf-scale shading
+  // (between + on the leaves) is burned in via the pyramid high-pass. One frame's
+  // worth of work per band (stepped one-per-frame upstream), off shared geometry.
+  const band = { yLo, yHi }
+  const colorTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 1024 })
+  // Luminance pass at half-res — it's high-passed + coarse-sampled, so 512² is
+  // plenty, and it keeps per-frame GPU load down (two full-tree renders/frame).
+  const lumTex   = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 512, shaded: true })
+  const tex = compositeLeafLuma(gl, colorTex, lumTex, 1024)
+  try { colorTex.dispose() } catch {}
+  try { lumTex.dispose() } catch {}
   tex.name = `overhead-band:${key}`
   return { key, tex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
 }
