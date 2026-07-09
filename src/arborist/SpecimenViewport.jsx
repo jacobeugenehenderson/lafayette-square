@@ -26,7 +26,6 @@ import {
   useSalonPreviewAtlas,
   applyBarkUniforms,
   applyDeformerUniforms,
-  applyOverheadDeformerUniforms,
   injectOverheadWiggle,
   stampTreeVertexAttrs,
   treeSwayUniforms,
@@ -830,10 +829,8 @@ function Skeleton({
   deformerSeed = null,
   variantCount = 1,
   variantHeightSpread = false,
-  overheadMode = false,           // Browse preset → show the overhead snapshot impostor
+  overheadMode = false,           // Browse preset → show the overhead snapshot stamps
   overhead = null,                // leaf controls (procedural-relic canopy) + tints
-  overheadRuffle = 0.15,          // ruche knob (vertical rim-scallop flex amplitude)
-  overheadHula = 0.35,            // hula knob (base-anchored disc-stack rock amplitude)
 }) {
   const { scene } = useGLTF(url)
   const gl = useThree(s => s.gl)
@@ -1065,8 +1062,9 @@ function Skeleton({
     if (snapshot) for (const b of snapshot.bands) { try { b.tex?.dispose() } catch {} }
   }, [snapshot])
 
-  // One ruched, domed disc per band, positioned at its real height (branch low →
-  // canopy high) for vertical parallax.
+  // FLAT disc per band, stacked at its real height (branch low → canopy high).
+  // These are the BAKED-AHEAD STAMPS — flat, full-res; the runtime consumer adds
+  // the dome / parallax / ruche / hula / wind LATER (dome:0, no ruche flex here).
   const snapshotDiscs = useMemo(() => {
     if (!snapshot || !overheadRec) return null
     const rec = { heightM: snapshot.heightM || overheadRec.heightM, canopyRadiusM: overheadRec.canopyRadiusM }
@@ -1077,37 +1075,21 @@ function Skeleton({
     }))
   }, [snapshot, overheadRec])
 
-  // One snapshot material per band — MeshStandard skinned with the band capture +
-  // the shared overhead deformers (injectOverheadWiggle: ruche/hula/wind). Hard
-  // alphaTest cutout (transparent:false, depthWrite:true) — like the procedural
-  // leafMat precedent — so the crown's opaque pixels write depth and OCCLUDE the
-  // lower bands, while its transparent gaps REVEAL them: depth-correct parallax
-  // across the 3 stacked discs, order-independent (no transparent-sort artifacts).
+  // One material per band — UNLIT (MeshBasic) so the stamp shows EXACTLY as
+  // captured (the tree's own lit color is baked into the texture); a lit material
+  // re-shades it and adds the dark dome/normal artifacts. Hard alphaTest cutout so
+  // the crown occludes the lower bands and its gaps reveal them (flat parallax).
   const snapshotMats = useMemo(() => {
     if (!snapshotDiscs) return null
-    return snapshotDiscs.map(({ tex }) => {
-      const m = new THREE.MeshStandardMaterial({
-        map: tex, transparent: false, alphaTest: 0.4,
-        roughness: 1, metalness: 0, side: THREE.DoubleSide, depthWrite: true,
-      })
-      injectOverheadWiggle(m)
-      return m
-    })
+    return snapshotDiscs.map(({ tex }) => new THREE.MeshBasicMaterial({
+      map: tex, transparent: false, alphaTest: 0.4,
+      side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
+    }))
   }, [snapshotDiscs])
 
   useEffect(() => () => {
     if (snapshotMats) for (const m of snapshotMats) { try { m.dispose() } catch {} }
   }, [snapshotMats])
-
-  // Bind the two knobs onto each band material every frame — the shaders compile
-  // lazily on first draw, so useFrame is the reliable bind point (same reason as
-  // the bark-uniform useFrame above). Wind flows via the shared treeSwayUniforms.
-  useFrame(() => {
-    if (!snapshotMats) return
-    for (const m of snapshotMats) {
-      applyOverheadDeformerUniforms(m, { ruffleDepth: overheadRuffle, hulaAmount: overheadHula })
-    }
-  })
 
   // Connect the overhead to the SELECTED chassis: seed the procedural layout off
   // the chassis identity (the GLB url), so each chassis gets its own consistent
@@ -1405,11 +1387,6 @@ export default function SpecimenViewport({
   // LoD build lands. (Evolved from Brief 13 Vantage's two ground/overhead
   // presets — the Hero/Street distinction is now explicit, not just a dolly.)
   const [camPreset, setCamPreset] = useState('hero')
-  // Overhead snapshot impostor — the two resting-character knobs (the ruche flex +
-  // the hula rock). Local state (no store/autosave) so Jacob can dial them live
-  // during the Phase-1 eye-gate; the numbers are his eye's call to lock later.
-  const [ohRuffle, setOhRuffle] = useState(0.15)
-  const [ohHula, setOhHula] = useState(0.35)
   // Auto-fit camera whenever the chassis changes. Triggers on viewKey
   // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
   // remounts the Canvas) AND on the first topY emission per chassis.
@@ -1480,8 +1457,6 @@ export default function SpecimenViewport({
               deformerSeed={deformerSeed}
               overheadMode={camPreset === 'browse'}
               overhead={overhead}
-              overheadRuffle={ohRuffle}
-              overheadHula={ohHula}
               variantCount={variantCount}
               variantHeightSpread={variantHeightSpread}
             />
@@ -1550,32 +1525,6 @@ export default function SpecimenViewport({
           </button>
         ))}
       </div>
-      {/* Overhead snapshot knobs — only in Browse. Ruche = the resting rim
-          scallop's flex; Hula = the base-anchored disc-stack rock. Local, live —
-          Jacob dials the resting character; the numbers are his to lock. */}
-      {camPreset === 'browse' && (
-        <div style={{
-          position: 'absolute', bottom: 12, right: 12, width: 190,
-          display: 'flex', flexDirection: 'column', gap: 8,
-          padding: '10px 12px', borderRadius: 8,
-          background: 'rgba(12,12,16,0.72)', border: '1px solid rgba(255,255,255,0.1)',
-          font: '11px system-ui, sans-serif', color: 'rgba(255,255,255,0.82)',
-        }}>
-          {[
-            ['Ruche', ohRuffle, setOhRuffle, 0, 0.6, 'Rim-scallop flex (vertical undulation of the crown surface)'],
-            ['Hula', ohHula, setOhHula, 0, 1.2, 'Base-anchored disc-stack rock (the tree’s own gentle life)'],
-          ].map(([label, val, set, min, max, title]) => (
-            <label key={label} title={title} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>{label}</span><span style={{ opacity: 0.6 }}>{val.toFixed(2)}</span>
-              </span>
-              <input type="range" min={min} max={max} step={0.01} value={val}
-                onChange={(e) => set(parseFloat(e.target.value))}
-                style={{ width: '100%' }} />
-            </label>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

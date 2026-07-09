@@ -347,8 +347,11 @@ export function prepareOverheadBands(gltfScene, treeMaterial, { canopyRadiusM, a
 export function captureOverheadBand(gl, prep, i) {
   const { scene, heightM, rM, minY, H, cuts } = prep
   const { key, yLo, yHi } = cuts[i]
+  // These are BAKED AHEAD, so capture a clean FULL-RES stamp (1024², mipmapped) —
+  // the runtime consumer applies the disc/parallax/ruche/hula/wind later. One
+  // render per frame off the shared geometry keeps it crash-safe even at 1024².
   const tex = renderTreeToTexture(gl, scene, heightM, rM, {
-    topDown: true, band: { yLo, yHi }, size: 256, noMipmap: true,
+    topDown: true, band: { yLo, yHi }, size: 1024,
   })
   tex.name = `overhead-band:${key}`
   return { key, tex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
