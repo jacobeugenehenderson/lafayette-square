@@ -95,18 +95,26 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   const scene = new THREE.Scene()
   const lights = []
   if (opts.shaded) {
-    // SHADED (luminance) pass — an angled directional key so the atlas NORMAL MAP
-    // shades each leaf by its orientation ("the leaves themselves"); ambient keeps
-    // the shadowed sides off pure black. The coarse light-direction gradient this
-    // introduces is removed later by the pyramid high-pass, leaving only the
-    // leaf-scale micro-contrast burned into the stamp.
-    lights.push(new THREE.AmbientLight(0xffffff, 0.45))
+    // SHADED + SHADOW-CASTING pass (the stamp): an angled directional key with real
+    // shadow maps so the LEAVES CAST SHADOWS on each other + on the branches
+    // beneath, and LOW ambient so those darks are actually dark (branches read dark,
+    // not flat grey). The atlas normal map also shades each leaf by orientation.
+    lights.push(new THREE.AmbientLight(0xffffff, 0.32))
     const key = new THREE.DirectionalLight(0xffffff, 1.5)
-    key.position.set(0.5, 1.0, 0.35)
-    lights.push(key)
+    const D = Math.max(1, heightM, canopyRadiusM * 2)
+    key.position.set(0.45 * D, 1.25 * D, 0.35 * D)     // above + angled → shadows fall sideways
+    key.target.position.set(0, heightM * 0.4, 0)
+    key.castShadow = true
+    const S = canopyRadiusM + FRAME_PAD_M + heightM * 0.5 + 1   // cover the angled projection
+    key.shadow.camera.left = -S; key.shadow.camera.right = S
+    key.shadow.camera.top = S; key.shadow.camera.bottom = -S
+    key.shadow.camera.near = 0.1
+    key.shadow.camera.far = D * 5
+    key.shadow.mapSize.set(2048, 2048)
+    key.shadow.bias = -0.0008
+    lights.push(key, key.target)
   } else {
-    // COLOR (albedo) pass — flat hemisphere, no directional, so no shading bakes
-    // into the base colour (the leaf shading rides in via the shaded pass above).
+    // COLOR (albedo) pass — flat hemisphere, no directional, so no shading bakes in.
     lights.push(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0))
     lights.push(new THREE.AmbientLight(0xffffff, 0.6))
   }
@@ -182,6 +190,8 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   const prevClearAlpha = gl.getClearAlpha()
   const prevToneMapping = gl.toneMapping
   const prevOutputColorSpace = gl.outputColorSpace
+  const prevShadowEnabled = gl.shadowMap.enabled
+  const prevShadowType = gl.shadowMap.type
 
   try {
     // Capture in a KNOWN, neutral state: no tone-mapping (the texture is the
@@ -191,6 +201,9 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     gl.setRenderTarget(rt)
     gl.toneMapping = THREE.NoToneMapping
     gl.outputColorSpace = THREE.SRGBColorSpace
+    // Soft shadow maps for the shaded (stamp) pass → leaves cast shadows.
+    gl.shadowMap.enabled = !!opts.shaded
+    gl.shadowMap.type = THREE.PCFSoftShadowMap
     gl.autoClear = true
     gl.setClearColor(0x000000, 0)   // transparent
     gl.clear(true, true, true)
@@ -202,6 +215,8 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     gl.setClearColor(prevClearColor, prevClearAlpha)
     gl.toneMapping = prevToneMapping
     gl.outputColorSpace = prevOutputColorSpace
+    gl.shadowMap.enabled = prevShadowEnabled
+    gl.shadowMap.type = prevShadowType
   }
 
   // Detach the GLB so disposing the throwaway scene's lights doesn't take the
@@ -247,8 +262,8 @@ function materializeForCapture(gltfScene, treeMaterial, { skipStamp = false } = 
       if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
     }
     o.material = treeMaterial
-    o.castShadow = false
-    o.receiveShadow = false
+    o.castShadow = true      // leaves cast shadows on each other + the branches
+    o.receiveShadow = true
   })
   const heightM = Number.isFinite(chMaxY) ? Math.max(1, chMaxY) : 12
   return { scene: root, heightM }
@@ -441,18 +456,14 @@ function compositeLeafLuma(gl, colorTex, lumTex, size) {
 export function captureOverheadBand(gl, prep, i) {
   const { scene, heightM, rM, minY, H, cuts } = prep
   const { key, yLo, yHi } = cuts[i]
-  // BAKED AHEAD → get it right: two full-res (1024²) passes — a flat ALBEDO stamp
-  // and a normal-map-SHADED luminance pass — composited so leaf-scale shading
-  // (between + on the leaves) is burned in via the pyramid high-pass. One frame's
-  // worth of work per band (stepped one-per-frame upstream), off shared geometry.
-  const band = { yLo, yHi }
-  const colorTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 1024 })
-  // Luminance pass at half-res — it's high-passed + coarse-sampled, so 512² is
-  // plenty, and it keeps per-frame GPU load down (two full-tree renders/frame).
-  const lumTex   = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 512, shaded: true })
-  const tex = compositeLeafLuma(gl, colorTex, lumTex, 1024)
-  try { colorTex.dispose() } catch {}
-  try { lumTex.dispose() } catch {}
+  // BAKED AHEAD → get it right: a single full-res (1024²) SHADED + SHADOW-CASTING
+  // capture is the stamp. Leaves cast shadows on each other + the branches, low
+  // ambient keeps the darks dark. (The earlier flat-albedo × high-pass composite
+  // washed the darkness out to grey — that's why there was no black.) One render
+  // per band, stepped one-per-frame upstream, off the shared geometry.
+  const tex = renderTreeToTexture(gl, scene, heightM, rM, {
+    topDown: true, band: { yLo, yHi }, size: 1024, shaded: true,
+  })
   tex.name = `overhead-band:${key}`
   return { key, tex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
 }
