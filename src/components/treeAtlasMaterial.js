@@ -1535,15 +1535,16 @@ export function injectOverheadWiggle(material) {
            //   dimensional read from overhead.
            float drift  = uTime * 0.25;
            vec2  hulaDir = vec2(cos(drift), sin(drift));
-           float amp    = (0.06 * wI + 0.12 * gust) * aTreeHeightNorm;   // metres
+           float amp    = (0.035 * wI + 0.07 * gust) * aTreeHeightNorm;   // metres, wind-only
            vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4));
            // Downwind LEAN — the shared compass direction (all trees lean the same).
            vec2  lean   = wd * (amp * 0.7);
            // FLUTTER — fast fine surface shimmer (leaves catching the wind). A stamp
            //   has no per-leaf geo, so vary by vertex position → a spatial ripple of
            //   the canopy surface. xz only (invisible in y from straight overhead).
+           //   NO floor: purely wind-scaled, so wind 0 → dead still.
            float fph     = dot(position.xz, vec2(0.9, 1.7));
-           float flutAmp = (0.02 + 0.05 * wI) * aTreeHeightNorm;
+           float flutAmp = 0.03 * wI * aTreeHeightNorm;
            vec2  flutter = vec2(sin(uTime * 6.0 + fph), cos(uTime * 5.3 + fph * 1.3)) * flutAmp;
            transformed.xz += hula + lean + flutter;
            // Legacy per-leaf flutter for the procedural relic (aLeafBody geos only).
