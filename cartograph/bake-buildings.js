@@ -58,7 +58,7 @@ function adaptMapBuildings(mapBuildings) {
   return out
 }
 
-function loadBuildings(scene) {
+export function loadBuildings(scene) {
   // Per-scene RENDER ledger (KIT): every scene loads its buildings from the same
   // render record at data/<scene>/buildings.json — no scene-name branch. LS's
   // ledger is the render-field projection of its authored src/data content

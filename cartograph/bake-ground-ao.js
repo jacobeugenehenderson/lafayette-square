@@ -20,6 +20,7 @@ import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { PNG } from 'pngjs'
+import { loadBuildings } from './bake-buildings.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -175,9 +176,13 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
   const binBuf = readFileSync(binPath)
   const groundBin = binBuf.buffer.slice(binBuf.byteOffset, binBuf.byteOffset + binBuf.byteLength)
 
-  const buildingsPath = join(ROOT, 'src', 'data', 'buildings.json')
-  const buildings = JSON.parse(readFileSync(buildingsPath, 'utf-8'))
-  const buildingList = Array.isArray(buildings) ? buildings : (buildings.buildings || [])
+  // Occluders are PER-SCENE: the same buildings the scene renders (render
+  // ledger → clean/map.json fallback), NOT LS's src/data/buildings.json — or a
+  // poured installation raycasts its AO against Lafayette Square's footprints
+  // and bakes LS's building AO onto its own ground (the vestigial-ghost bug,
+  // sibling to the FX-map fix below). Shared with bake-buildings.js so the AO
+  // occluders and the rendered mesh come from ONE source.
+  const buildingList = loadBuildings(scene)
 
   console.log(`[bake-ao] building occluder mesh from ${manifest.groups.length} ground groups + ${buildingList.length} buildings…`)
   const { geom, triCount } = buildOccluderGeometry(manifest, groundBin, buildingList)
