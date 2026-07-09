@@ -207,7 +207,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
  * Returns { scene, heightM } where heightM is the chassis Y-extent (the real
  * height the ortho frames + the billboard is sized to).
  */
-function materializeForCapture(gltfScene, treeMaterial) {
+function materializeForCapture(gltfScene, treeMaterial, { skipStamp = false } = {}) {
   const root = gltfScene.clone(true)
   root.updateMatrixWorld(true)
   // Chassis-wide Y range so aTreeHeightNorm normalizes consistently (mirrors
@@ -223,8 +223,14 @@ function materializeForCapture(gltfScene, treeMaterial) {
   const chassisYRange = Math.max(1e-4, chMaxY - chMinY)
   root.traverse((o) => {
     if (!o.isMesh || !o.geometry) return
-    stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
-    if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+    // skipStamp: when the source is the LIVE, already-stamped preview scene, the
+    // clone SHARES its geometry buffers — re-stamping / deleting attributes would
+    // mutate buffers the live canvas is drawing (→ GL crash). The attrs are
+    // already present, so only swap the material (cheap, per-clone-mesh).
+    if (!skipStamp) {
+      stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+      if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+    }
     o.material = treeMaterial
     o.castShadow = false
     o.receiveShadow = false
@@ -301,19 +307,25 @@ function measureCanopyBaseLocal(scene) {
  * touch below the leaf base to catch the main limbs. Returned BOTTOM→TOP so the
  * caller stacks them low→high.
  *
- * @param {THREE.WebGLRenderer} gl
- * @param {THREE.Object3D}  gltfScene    a loaded GLB scene (e.g. useGLTF().scene)
- * @param {THREE.Material}   treeMaterial the shared/preview atlas material
- * @param {object} dims                  { canopyRadiusM }
- * @returns {{ bands: Array<{key,tex,yLo,yHi,yLoNorm,yHiNorm}>, heightM, canopyBaseY }|null}
+ * ⚠️ Do the 3 renders ONE-PER-FRAME (via captureOverheadBand across successive
+ * frames), off the ALREADY-LOADED live scene (skipStamp) — NOT a fresh 2nd copy
+ * of the (21MB) GLB, and NOT 3 heavy renders in one blocking frame. Either of
+ * those bursts the GPU alongside the live preview render → WebGL context loss.
+ * This split (prepareOverheadBands + captureOverheadBand) is the crash-safe path.
+ *
+ * @param {THREE.Object3D}  gltfScene    the LIVE preview scene (useGLTF().scene)
+ * @param {THREE.Material}  treeMaterial the shared/preview atlas material
+ * @param {object} opts                  { canopyRadiusM, alreadyStamped }
+ * @returns {{ scene, heightM, rM, minY, H, canopyBaseY, cuts }|null}
  */
-export function captureTreeOverheadBands(gl, gltfScene, treeMaterial, { canopyRadiusM } = {}) {
-  if (!gl || !gltfScene || !treeMaterial) return null
-  const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial)
+export function prepareOverheadBands(gltfScene, treeMaterial, { canopyRadiusM, alreadyStamped = false } = {}) {
+  if (!gltfScene || !treeMaterial) return null
+  // Clone SHARES geometry (no 2nd GPU copy of the heavy tree); skipStamp avoids
+  // mutating those shared, live-rendered buffers.
+  const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial, { skipStamp: alreadyStamped })
   const rM = Math.max(1, canopyRadiusM || 5)
-  const { minY, maxY, canopyBaseY } = measureCanopyBaseLocal(scene)
+  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseLocal(scene)
   const H = Math.max(1e-3, maxY - minY)
-  const Cb = canopyBaseY
   const s = Math.max(1e-3, maxY - Cb)           // crown vertical span
   // Bottom→top. The branch band dips ~12% of tree height below the leaf base so
   // the woody structure (main limbs) reads through the crown from above.
@@ -322,37 +334,24 @@ export function captureTreeOverheadBands(gl, gltfScene, treeMaterial, { canopyRa
     { key: 'mid',    yLo: Cb + s / 3,                    yHi: Cb + (2 * s) / 3 },
     { key: 'canopy', yLo: Cb + (2 * s) / 3,              yHi: maxY },
   ]
-  console.log('[overhead-snapshot] materialized: heightM', heightM, 'canopyBaseY', Cb, 'minY', minY, 'maxY', maxY, '→ bands', cuts.map(c => c.key))
-  const bands = cuts.map(({ key, yLo, yHi }) => {
-    console.log('[overhead-snapshot] rendering band', key, 'yLo', yLo.toFixed(2), 'yHi', yHi.toFixed(2))
-    const tex = renderTreeToTexture(gl, scene, heightM, rM, {
-      topDown: true, band: { yLo, yHi }, size: 256, noMipmap: true,
-    })
-    console.log('[overhead-snapshot] band', key, 'done')
-    tex.name = `overhead-band:${key}`
-    return {
-      key, tex, yLo, yHi,
-      yLoNorm: (yLo - minY) / H,
-      yHiNorm: (yHi - minY) / H,
-    }
-  })
-  return { bands, heightM, canopyBaseY: Cb }
+  return { scene, heightM, rM, minY, H, canopyBaseY: Cb, cuts }
 }
 
 /**
- * captureTreeOverheadBandsFromUrl — load a tree GLB FRESH (its own independent
- * geometry) and capture its 3 overhead bands. Critical: the Salon's live preview
- * is rendering its GLB every frame; capturing off the SAME object would clone-
- * share its geometry buffers and materializeForCapture's attribute mutations
- * (stamp + delete-color) on in-use buffers crash the WebGL context. Loading fresh
- * (mirrors useImpostorCaptures) fully decouples the capture from the live canvas.
+ * captureOverheadBand — render ONE band (index i) of a prepared overhead capture
+ * to a light 256² texture. Call once per frame across successive frames so the
+ * three slice renders never burst the GPU in one blocking frame.
  *
- * @returns {Promise<{ bands, heightM, canopyBaseY }|null>}
+ * @returns {{ key, tex, yLo, yHi, yLoNorm, yHiNorm }}
  */
-export async function captureTreeOverheadBandsFromUrl(gl, url, treeMaterial, { canopyRadiusM } = {}) {
-  if (!gl || !url || !treeMaterial) return null
-  const gltf = await loadGltf(url)
-  return captureTreeOverheadBands(gl, gltf.scene, treeMaterial, { canopyRadiusM })
+export function captureOverheadBand(gl, prep, i) {
+  const { scene, heightM, rM, minY, H, cuts } = prep
+  const { key, yLo, yHi } = cuts[i]
+  const tex = renderTreeToTexture(gl, scene, heightM, rM, {
+    topDown: true, band: { yLo, yHi }, size: 256, noMipmap: true,
+  })
+  tex.name = `overhead-band:${key}`
+  return { key, tex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
 }
 
 /**

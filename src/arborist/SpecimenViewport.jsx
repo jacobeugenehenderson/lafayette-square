@@ -34,7 +34,7 @@ import {
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
 import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc } from '../components/impostorGeometry.js'
-import { captureTreeOverheadBandsFromUrl } from '../components/captureImpostor.js'
+import { prepareOverheadBands, captureOverheadBand } from '../components/captureImpostor.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -1022,27 +1022,44 @@ function Skeleton({
     return () => canvas.removeEventListener('webglcontextlost', onLost)
   }, [gl])
   useEffect(() => {
-    if (!overheadMode || !gl || !atlas.treeMaterial || !overheadRec || !url) return
+    if (!overheadMode || !gl || !scene || !atlas.treeMaterial || !overheadRec || !url) return
     if (snapKeyRef.current === url) return   // already captured this chassis
     let cancelled = false
-    // Defer a frame, then load the GLB FRESH + capture off that independent copy
-    // (never the live rendered `scene`) — mutating a live-rendered geometry's
-    // buffers mid-frame crashes the WebGL context. Guarded: a capture failure
-    // degrades to the procedural fallback, never takes down the canvas.
-    const id = requestAnimationFrame(async () => {
+    let raf = 0
+    // Prepare once (clone shares the live geometry — no 2nd 21MB GPU copy; skip the
+    // attribute re-stamp so we never mutate the live-rendered buffers), then render
+    // ONE band per frame so the three slice renders never burst the GPU alongside
+    // the live preview (that burst was the "full crash" = WebGL context loss).
+    let prep = null
+    try {
+      prep = prepareOverheadBands(scene, atlas.treeMaterial, {
+        canopyRadiusM: overheadRec.canopyRadiusM, alreadyStamped: true,
+      })
+    } catch (err) {
+      console.error('[overhead-snapshot] prepare failed — procedural fallback', err)
+      return
+    }
+    if (!prep) return
+    const acc = []
+    const step = () => {
       if (cancelled) return
       try {
-        const result = await captureTreeOverheadBandsFromUrl(gl, url, atlas.treeMaterial, {
-          canopyRadiusM: overheadRec.canopyRadiusM,
-        })
-        if (!cancelled && result) { snapKeyRef.current = url; setSnapshot(result) }
+        acc.push(captureOverheadBand(gl, prep, acc.length))
       } catch (err) {
-        console.error('[overhead-snapshot] capture failed — falling back to procedural', err)
+        console.error('[overhead-snapshot] band capture failed — procedural fallback', err)
+        return
       }
-    })
-    return () => { cancelled = true; cancelAnimationFrame(id) }
+      if (acc.length < prep.cuts.length) {
+        raf = requestAnimationFrame(step)         // next slice, next frame
+      } else if (!cancelled) {
+        snapKeyRef.current = url
+        setSnapshot({ bands: acc, heightM: prep.heightM, canopyBaseY: prep.canopyBaseY })
+      }
+    }
+    raf = requestAnimationFrame(step)
+    return () => { cancelled = true; cancelAnimationFrame(raf) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overheadMode, gl, atlas.treeMaterial, overheadRec, url])
+  }, [overheadMode, gl, scene, atlas.treeMaterial, overheadRec, url])
 
   useEffect(() => () => {
     if (snapshot) for (const b of snapshot.bands) { try { b.tex?.dispose() } catch {} }
