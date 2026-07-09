@@ -1522,25 +1522,36 @@ export function injectOverheadWiggle(material) {
          attribute float aLeafPhase;  // per-leaf random flutter phase`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
          if (aOverhead > 0.5) {
-           // MOTION = the shared WEATHER (authored elsewhere; the Salon's Wind
-           // toggle previews it), NOT an intrinsic dial. The canopy leans, sways
-           // and gusts downwind, base-anchored (aTreeHeightNorm: trunk-height
-           // barely moves, the crown swings). Calm weather → ~still (only the
-           // leaf-flutter floor below).
+           // MOTION = the shared WEATHER, base-anchored (aTreeHeightNorm), all
+           // wind-driven so calm ≈ still. What makes it read ALIVE from above (not
+           // a flat rigid slide) is HULA + FLUTTER — NOT the ruche (cut: starfish).
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
-           float wt    = uTime * 1.1;
-           float sway  = uWindIntensity * (0.55 + 0.45 * sin(wt + aTreeHeightNorm * 2.0));
+           float wI    = uWindIntensity;
            float spike = sin(uTime * 1.5) * 0.6 + sin(uTime * 2.3 + 1.0) * 0.4;
-           float gust  = uGustsScale * uGustEnvelope * max(spike - 0.3, 0.0) * 2.0;
-           transformed.xz += wd * ((sway + gust) * 0.06 * aTreeHeightNorm);
-           // Leaf-body flutter — the blade shimmers about its glued stem, each
-           //   leaf on its own random phase (the always-on "alive" floor; grows
-           //   a touch with wind). Absent aLeafBody → branches/umbrella untouched.
+           float gust  = uGustsScale * uGustEnvelope * max(spike - 0.3, 0.0);
+           // HULA — the stacked bands bend OUT OF PHASE: base-anchored (∝ height),
+           //   phase-LAGGED up the stack, on a slowly DRIFTING axis. So the 3 discs
+           //   ripple as a living column instead of sliding rigidly together — the
+           //   dimensional read from overhead.
+           float drift  = uTime * 0.25;
+           vec2  hulaDir = vec2(cos(drift), sin(drift));
+           float amp    = (0.06 * wI + 0.12 * gust) * aTreeHeightNorm;   // metres
+           vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4));
+           // Downwind LEAN — the shared compass direction (all trees lean the same).
+           vec2  lean   = wd * (amp * 0.7);
+           // FLUTTER — fast fine surface shimmer (leaves catching the wind). A stamp
+           //   has no per-leaf geo, so vary by vertex position → a spatial ripple of
+           //   the canopy surface. xz only (invisible in y from straight overhead).
+           float fph     = dot(position.xz, vec2(0.9, 1.7));
+           float flutAmp = (0.02 + 0.05 * wI) * aTreeHeightNorm;
+           vec2  flutter = vec2(sin(uTime * 6.0 + fph), cos(uTime * 5.3 + fph * 1.3)) * flutAmp;
+           transformed.xz += hula + lean + flutter;
+           // Legacy per-leaf flutter for the procedural relic (aLeafBody geos only).
            if (aLeafBody > 0.001) {
              float ft  = uTime * 3.4 + aLeafPhase;
-             float amp = (0.1 + uWindIntensity * 0.06) * aLeafBody;
-             transformed.y  += sin(ft) * amp;
-             transformed.xz += vec2(cos(ft * 0.9), sin(ft * 1.3)) * (amp * 0.55);
+             float amp2 = (0.1 + wI * 0.06) * aLeafBody;
+             transformed.y  += sin(ft) * amp2;
+             transformed.xz += vec2(cos(ft * 0.9), sin(ft * 1.3)) * (amp2 * 0.55);
            }
          }`)
   }

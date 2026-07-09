@@ -1079,13 +1079,19 @@ function Skeleton({
   // captured (the tree's own lit color is baked into the texture); a lit material
   // re-shades it and adds the dark dome/normal artifacts. Hard alphaTest cutout so
   // the crown occludes the lower bands and its gaps reveal them (flat parallax).
-  // injectOverheadWiggle adds the shared WIND sway (base-anchored by aTreeHeightNorm)
-  // so the WIND button previews the eventual runtime wiggle on the stamps.
+  // Per-band BRIGHTNESS ramp (branch darkest → canopy brightest): the lower bands
+  // sit in the crown's shadow, so darkening them reads as real depth — where the
+  // top has gaps you glimpse the darker layer beneath. injectOverheadWiggle adds
+  // the shared WIND (hula + flutter) so the WIND button previews the live wiggle.
   const snapshotMats = useMemo(() => {
     if (!snapshotDiscs) return null
-    return snapshotDiscs.map(({ tex }) => {
+    const n = snapshotDiscs.length
+    return snapshotDiscs.map(({ tex }, i) => {
+      // bands are bottom→top (branch=0 … canopy=n-1): 0.72 → 1.0
+      const b = n > 1 ? 0.72 + 0.28 * (i / (n - 1)) : 1.0
       const m = new THREE.MeshBasicMaterial({
-        map: tex, transparent: false, alphaTest: 0.4,
+        map: tex, color: new THREE.Color(b, b, b),
+        transparent: false, alphaTest: 0.4,
         side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
       })
       injectOverheadWiggle(m)

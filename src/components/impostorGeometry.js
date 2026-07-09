@@ -269,8 +269,8 @@ export function buildOverheadBandDisc(rec, opts = {}) {
   const pad = opts.pad ?? 1.5                     // must match captureTreeOverheadBands' FRAME_PAD_M
   const discR = R + pad                           // disc extent = capture frame half-extent
 
-  const P = Math.max(12, Math.round(opts.perimeter ?? 48))       // angular segments
-  const RR = Math.max(1, Math.round(opts.radialRings ?? 4))      // radial tessellation
+  const P = Math.max(12, Math.round(opts.perimeter ?? 72))       // angular segments (finer → smoother flutter)
+  const RR = Math.max(1, Math.round(opts.radialRings ?? 10))     // radial tessellation
 
   const yLoN = Math.min(1, Math.max(0, opts.yLoNorm ?? 0.7))
   const yHiN = Math.min(1, Math.max(yLoN, opts.yHiNorm ?? 1.0))
