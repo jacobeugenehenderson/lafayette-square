@@ -1455,7 +1455,7 @@
   },
   {
    "id": "hpdm-lst-0213",
-   "building_id": "msbf-3698",
+   "building_id": "",
    "name": "Kaldi's Coffee Roasting Co.",
    "category": "dining",
    "subcategory": "cafes",
@@ -1544,14 +1544,12 @@
    "price_range": "$$",
    "order_url": "https://order.kaldiscoffee.com/order/kaldis-coffee-demun",
    "anchor": {
-    "address": "700 De Mun Avenue",
-    "x": 205.5,
-    "z": -419.6333333333334
+    "address": "700 De Mun Avenue"
    }
   },
   {
    "id": "hpdm-lst-0214",
-   "building_id": "msbf-707",
+   "building_id": "",
    "name": "Louie",
    "category": "dining",
    "subcategory": "restaurants",
@@ -1631,14 +1629,12 @@
    "price_range": "$$$",
    "order_url": null,
    "anchor": {
-    "address": "706 De Mun Avenue",
-    "x": 155.84000000000003,
-    "z": -383.62
+    "address": "706 De Mun Avenue"
    }
   },
   {
    "id": "hpdm-lst-0215",
-   "building_id": "msbf-707",
+   "building_id": "",
    "name": "Sasha's Wine Bar",
    "category": "dining",
    "subcategory": "bars",
@@ -1723,14 +1719,12 @@
    "price_range": "$$",
    "order_url": "https://www.toasttab.com/local/order/sashas-de-mun-706-de-mun-ave",
    "anchor": {
-    "address": "706 De Mun Avenue",
-    "x": 155.84000000000003,
-    "z": -383.62
+    "address": "706 De Mun Avenue"
    }
   },
   {
    "id": "hpdm-lst-0216",
-   "building_id": "msbf-5558",
+   "building_id": "msbf-7903",
    "name": "Barrio",
    "category": "dining",
    "subcategory": "restaurants",
@@ -1820,14 +1814,14 @@
    "price_range": "$$",
    "order_url": "https://order.toasttab.com/online/barrio-740-demun-ave",
    "anchor": {
-    "address": "740 De Mun Avenue",
-    "x": 158.0,
-    "z": -285.4
+    "address": "734 De Mun Avenue",
+    "x": 166.5,
+    "z": 509.7
    }
   },
   {
    "id": "hpdm-lst-0217",
-   "building_id": "msbf-5558",
+   "building_id": "msbf-7903",
    "name": "DeMun Oyster Bar",
    "category": "dining",
    "subcategory": "restaurants",
@@ -1852,14 +1846,14 @@
    "source": "research",
    "enriched": true,
    "anchor": {
-    "address": "740 De Mun Avenue",
-    "x": 158.0,
-    "z": -285.4
+    "address": "734 De Mun Avenue",
+    "x": 166.5,
+    "z": 509.7
    }
   },
   {
    "id": "hpdm-lst-0218",
-   "building_id": "msbf-3487",
+   "building_id": "msbf-1370",
    "name": "Clementine's Naughty & Nice Creamery",
    "category": "dining",
    "subcategory": "desserts",
@@ -1946,14 +1940,14 @@
    "price_range": "$$",
    "order_url": "https://www.clementinescreamery.com/pages/clayton",
    "anchor": {
-    "address": "730 De Mun Avenue",
-    "x": 142.56,
-    "z": -287.36
+    "address": "734 De Mun Avenue",
+    "x": 177.0,
+    "z": 513.0
    }
   },
   {
    "id": "hpdm-lst-0219",
-   "building_id": "msbf-5212",
+   "building_id": "msbf-5556",
    "name": "How Sweet Is This Candy Shoppe",
    "category": "shopping",
    "subcategory": "retail",
@@ -1978,8 +1972,8 @@
    "enriched": true,
    "anchor": {
     "address": "804 De Mun Avenue",
-    "x": 153.38888888888889,
-    "z": -216.90000000000003
+    "x": 203.0,
+    "z": 468.0
    }
   },
   {
@@ -2135,38 +2129,6 @@
    }
   },
   {
-   "id": "hpdm-lst-0223",
-   "building_id": "msbf-2502",
-   "name": "Kathy Taylor Salon",
-   "category": "services",
-   "subcategory": "beauty",
-   "address": "923 De Mun Avenue",
-   "phone": null,
-   "website": "https://kathytaylorsalon.com",
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [
-    "salon",
-    "hair",
-    "beauty"
-   ],
-   "description": "Full beauty salon — hair, color, styling, makeup, mani/pedi, skin care.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "active",
-   "source": "research",
-   "enriched": true,
-   "anchor": {
-    "address": "923 De Mun Avenue",
-    "x": 22.160000000000004,
-    "z": 61.16000000000001
-   }
-  },
-  {
    "id": "hpdm-lst-0224",
    "building_id": "msbf-2502",
    "name": "Samantha's Other Place",
@@ -2200,8 +2162,8 @@
   },
   {
    "id": "hpdm-lst-0225",
-   "building_id": "msbf-2502",
-   "name": "Strands Hair Salon",
+   "building_id": "msbf-2201",
+   "name": "Heads Unlimited",
    "category": "services",
    "subcategory": "beauty",
    "address": "De Mun Avenue",
@@ -2225,8 +2187,8 @@
    "enriched": true,
    "anchor": {
     "address": "De Mun Avenue",
-    "x": 22.160000000000004,
-    "z": 61.16000000000001
+    "x": 173.0,
+    "z": 469.0
    }
   }
  ],

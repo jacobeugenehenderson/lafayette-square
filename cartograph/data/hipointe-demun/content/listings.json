@@ -5,7 +5,7 @@
   "layer": "Layer 2 — listings (business POIs, building_id → slab id, 0..N per building)",
   "generated": "2026-07-07",
   "generator": "bake-content.js",
-  "count": 193,
+  "count": 192,
   "enriched": 57,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
@@ -331,7 +331,7 @@
    "osm_type": "library"
   },
   {
-   "id": "hpdm-lst-0124",
+   "id": "hpdm-lst-0125",
    "building_id": "msbf-7137",
    "name": "Missouri Historical Society Library and Research Center",
    "category": "community",
@@ -382,7 +382,7 @@
    "enriched": true
   },
   {
-   "id": "hpdm-lst-0133",
+   "id": "hpdm-lst-0134",
    "building_id": "msbf-4179",
    "name": "West Parking Garage",
    "category": "services",
@@ -405,7 +405,7 @@
    "osm_type": "parking"
   },
   {
-   "id": "hpdm-lst-0134",
+   "id": "hpdm-lst-0135",
    "building_id": "msbf-5088",
    "name": "Hospital Parking",
    "category": "services",
@@ -2705,7 +2705,7 @@
    "osm_type": null
   },
   {
-   "id": "hpdm-lst-0125",
+   "id": "hpdm-lst-0126",
    "building_id": "msbf-8369",
    "name": "Power House (maintenance building)",
    "category": "community",
@@ -2755,7 +2755,7 @@
    "enriched": true
   },
   {
-   "id": "hpdm-lst-0126",
+   "id": "hpdm-lst-0127",
    "building_id": "msbf-238",
    "name": "Buenger Hall - Dorm D",
    "category": "community",
@@ -2778,7 +2778,7 @@
    "osm_type": null
   },
   {
-   "id": "hpdm-lst-0127",
+   "id": "hpdm-lst-0129",
    "building_id": "msbf-238",
    "name": "Brohm Hall - Dorm C",
    "category": "community",
@@ -2801,7 +2801,7 @@
    "osm_type": null
   },
   {
-   "id": "hpdm-lst-0129",
+   "id": "hpdm-lst-0130",
    "building_id": "msbf-238",
    "name": "O. Fuerbringer Hall - Dorm B",
    "category": "community",
@@ -2824,7 +2824,7 @@
    "osm_type": null
   },
   {
-   "id": "hpdm-lst-0130",
+   "id": "hpdm-lst-0131",
    "building_id": "msbf-5088",
    "name": "SSM Health St. Mary's Hospital: Hospital Building",
    "category": "services",
@@ -2847,7 +2847,7 @@
    "osm_type": null
   },
   {
-   "id": "hpdm-lst-0131",
+   "id": "hpdm-lst-0132",
    "building_id": "msbf-3442",
    "name": "1027 Medical Building",
    "category": "services",
@@ -2870,35 +2870,12 @@
    "osm_type": null
   },
   {
-   "id": "hpdm-lst-0132",
+   "id": "hpdm-lst-0133",
    "building_id": "msbf-4179",
    "name": "1031 Medical Building",
    "category": "services",
    "subcategory": "health",
    "address": "1031 Bellevue Avenue",
-   "phone": null,
-   "website": null,
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "unverified",
-   "source": "osm",
-   "osm_type": null
-  },
-  {
-   "id": "hpdm-lst-0135",
-   "building_id": "msbf-2584",
-   "name": "Hi-Pointe Lofts",
-   "category": "residential",
-   "subcategory": "apartments",
-   "address": "6340 Clayton Road",
    "phone": null,
    "website": null,
    "logo": null,
@@ -3576,7 +3553,7 @@
   },
   {
    "id": "hpdm-lst-0010",
-   "building_id": "msbf-5680",
+   "building_id": "msbf-2584",
    "name": "Hi-Pointe Lofts",
    "category": "residential",
    "subcategory": "apartments",
@@ -3668,7 +3645,7 @@
   },
   {
    "id": "hpdm-lst-0018",
-   "building_id": "msbf-4690",
+   "building_id": "msbf-5167",
    "name": "Hi-Pointe Theatre",
    "category": "arts",
    "subcategory": "cinema",
@@ -4301,6 +4278,35 @@
    "enriched": true
   },
   {
+   "id": "hpdm-lst-0124",
+   "building_id": "msbf-4544",
+   "name": "Bethel Lutheran Church",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "6800 Wydown Boulevard",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "lutheran",
+    "wydown"
+   ],
+   "description": "A Lutheran congregation on Wydown Boulevard in Clayton, near the Wash U campus.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Lutheran",
+   "price_range": null,
+   "enriched": true
+  },
+  {
    "id": "hpdm-lst-0128",
    "building_id": "msbf-5505",
    "name": "Millbrook Apartment 2",
@@ -4599,7 +4605,7 @@
   },
   {
    "id": "hpdm-lst-0213",
-   "building_id": "msbf-3698",
+   "building_id": "msbf-766",
    "name": "Kaldi's Coffee Roasting Co.",
    "category": "dining",
    "subcategory": "cafes",
@@ -4690,7 +4696,7 @@
   },
   {
    "id": "hpdm-lst-0214",
-   "building_id": "msbf-707",
+   "building_id": "msbf-5679",
    "name": "Louie",
    "category": "dining",
    "subcategory": "restaurants",
@@ -4772,7 +4778,7 @@
   },
   {
    "id": "hpdm-lst-0215",
-   "building_id": "msbf-707",
+   "building_id": "msbf-5679",
    "name": "Sasha's Wine Bar",
    "category": "dining",
    "subcategory": "bars",
@@ -4859,7 +4865,7 @@
   },
   {
    "id": "hpdm-lst-0216",
-   "building_id": "msbf-5558",
+   "building_id": "msbf-7903",
    "name": "Barrio",
    "category": "dining",
    "subcategory": "restaurants",
@@ -4951,7 +4957,7 @@
   },
   {
    "id": "hpdm-lst-0217",
-   "building_id": "msbf-5558",
+   "building_id": "msbf-7903",
    "name": "DeMun Oyster Bar",
    "category": "dining",
    "subcategory": "restaurants",
@@ -4978,7 +4984,7 @@
   },
   {
    "id": "hpdm-lst-0218",
-   "building_id": "msbf-3487",
+   "building_id": "msbf-1370",
    "name": "Clementine's Naughty & Nice Creamery",
    "category": "dining",
    "subcategory": "desserts",
@@ -5067,7 +5073,7 @@
   },
   {
    "id": "hpdm-lst-0219",
-   "building_id": "msbf-5212",
+   "building_id": "msbf-5556",
    "name": "How Sweet Is This Candy Shoppe",
    "category": "shopping",
    "subcategory": "retail",
@@ -5229,33 +5235,6 @@
    "enriched": true
   },
   {
-   "id": "hpdm-lst-0223",
-   "building_id": "msbf-2502",
-   "name": "Kathy Taylor Salon",
-   "category": "services",
-   "subcategory": "beauty",
-   "address": "923 De Mun Avenue",
-   "phone": null,
-   "website": "https://kathytaylorsalon.com",
-   "logo": null,
-   "hours": null,
-   "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [
-    "salon",
-    "hair",
-    "beauty"
-   ],
-   "description": "Full beauty salon — hair, color, styling, makeup, mani/pedi, skin care.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
-   "status": "active",
-   "source": "research",
-   "enriched": true
-  },
-  {
    "id": "hpdm-lst-0224",
    "building_id": "msbf-2502",
    "name": "Samantha's Other Place",
@@ -5284,8 +5263,8 @@
   },
   {
    "id": "hpdm-lst-0225",
-   "building_id": "msbf-2502",
-   "name": "Strands Hair Salon",
+   "building_id": "msbf-2201",
+   "name": "Heads Unlimited",
    "category": "services",
    "subcategory": "beauty",
    "address": "De Mun Avenue",

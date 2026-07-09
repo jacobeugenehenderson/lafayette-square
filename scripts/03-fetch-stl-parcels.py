@@ -237,7 +237,12 @@ def extract_parcel(feature):
             "certified_local": bool(attrs.get("CertLocalHistDist")),
         },
         "centroid": [round(cx, 2), round(cz, 2)],
+        # WGS84 ground truth (frame-independent) so reproject-raw.js can
+        # re-derive centroid/rings on any re-center. Without this the parcels
+        # get stranded in the pre-re-center frame → address-join offset.
+        "centroid_ll": [round(clon, 7), round(clat, 7)],
         "rings": local_rings,
+        "rings_ll": [[[round(pt[0], 7), round(pt[1], 7)] for pt in ring] for ring in rings],
     }
 
 

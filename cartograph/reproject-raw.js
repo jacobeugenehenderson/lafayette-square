@@ -45,9 +45,8 @@ function reprojectDeep(node) {
   }
 }
 
-// Every frame-dependent raw file (carries baked x/z alongside lon/lat). Lamps +
-// parcels project from lon/lat at pipeline time (no stale baked x/z), so they
-// need no reprojection here.
+// Frame-dependent raw files whose coords are {lon,lat,x,z} objects — the deep
+// walker re-derives x/z from lon/lat in place.
 const FRAME_DEPENDENT = ['osm.json', 'msbf.json', 'admin_boundaries.json']
 
 for (const name of FRAME_DEPENDENT) {
@@ -59,4 +58,33 @@ for (const name of FRAME_DEPENDENT) {
   const wrote = writeIfChanged(path, JSON.stringify(data, null, 2))
   console.log(`[reproject] ${name}: ${reprojected - before} coords → ${wrote ? 'wrote' : 'no change'}`)
 }
+
+// Parcels are JUST AS frame-dependent (centroid/rings drive the address→building
+// join) but store [x,z] ARRAYS readers depend on, with WGS84 siblings
+// (centroid_ll / rings_ll) as the frame-independent ground truth. Leaving them
+// out is exactly the "one layer moves, another stays" trap above — it stranded
+// the parcels ~800m off after a re-center and scrambled every roster address
+// (2026-07-08). Re-derive their x/z from the WGS84 siblings on every re-center.
+const projectXZ = (lon, lat) => {
+  const [x, z] = wgs84ToLocal(lon, lat)
+  return [Math.round(x * 100) / 100, Math.round(z * 100) / 100]
+}
+for (const name of ['stl_parcels.json', 'stlco_parcels.json']) {
+  const path = join(sceneRawDir(SCENE), name)
+  if (!existsSync(path)) continue
+  const data = JSON.parse(readFileSync(path, 'utf8'))
+  let n = 0, stale = 0
+  for (const par of (data.parcels || [])) {
+    if (Array.isArray(par.centroid_ll)) {
+      par.centroid = projectXZ(par.centroid_ll[0], par.centroid_ll[1]); reprojected++; n++
+    } else stale++
+    if (Array.isArray(par.rings_ll)) {
+      par.rings = par.rings_ll.map(ring => ring.map(([lon, lat]) => projectXZ(lon, lat)))
+    }
+  }
+  const wrote = writeIfChanged(path, JSON.stringify(data, null, 2))
+  const warn = stale ? `, ⚠️ ${stale} MISSING centroid_ll (pre-fix fetch — re-run scripts/03*)` : ''
+  console.log(`[reproject] ${name}: ${n} parcels${warn} → ${wrote ? 'wrote' : 'no change'}`)
+}
+
 console.log(`[reproject] scene=${SCENE}: reprojected ${reprojected} coords total via current geography`)
