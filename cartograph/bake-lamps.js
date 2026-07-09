@@ -43,13 +43,67 @@ function anchorLampsToGround(lamps, outDir, scene) {
   return lamps.length
 }
 
+// Scene-keyed lamp SOURCE (the old TODO step C, resolved 2026-07-09). A scene
+// with its own municipal/OSM lamps (`raw/osm_street_lamps.json`) derives real
+// placements PROJECTED THROUGH ITS CURRENT `geography.json` — so lamps share the
+// building frame and re-derive correctly on every re-center (the raw keeps
+// lon/lat, so there's no stale-frame trap like the assessor parcels had; see
+// cartograph/INTAKE.md). LS has no OSM lamp file → falls back to its hand/
+// procedural `src/data/street_lamps.json` (already in the local frame).
+// Clip lamps to the neighborhood — the OSM fetch is wider than the poured hood,
+// so keep only lamps inside the boundary-street polygon (the SAME membership test
+// buildings use — `pipeline.js`/§5.2), radius fallback if no polygon persisted.
+function clipToBoundary(lamps, scene) {
+  const bp = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
+  if (!existsSync(bp)) return lamps
+  const b = JSON.parse(readFileSync(bp, 'utf-8'))
+  const poly = b.polygon
+  if (Array.isArray(poly) && poly.length >= 3) {
+    const pts = poly.map(p => [p.x, p.z])
+    const inside = (x, z) => {
+      let c = false
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const [xi, zi] = pts[i], [xj, zj] = pts[j]
+        if (((zi > z) !== (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi)) c = !c
+      }
+      return c
+    }
+    return lamps.filter(l => inside(l.x, l.z))
+  }
+  return b.radius ? lamps.filter(l => Math.hypot(l.x, l.z) <= b.radius) : lamps
+}
+
+function loadLampsForScene(scene) {
+  const osmPath = join(ROOT, 'cartograph', 'data', scene, 'raw', 'osm_street_lamps.json')
+  const geoPath = join(ROOT, 'cartograph', 'data', scene, 'geography.json')
+  if (existsSync(osmPath) && existsSync(geoPath)) {
+    const g = JSON.parse(readFileSync(geoPath, 'utf-8'))
+    const toLocal = (lon, lat) => [
+      Math.round((lon - g.lon) * g.lonToMeters * 10) / 10,
+      Math.round((g.lat - lat) * g.latToMeters * 10) / 10,
+    ]
+    const raw = JSON.parse(readFileSync(osmPath, 'utf-8'))
+    const els = raw.elements || raw
+    const lamps = []
+    for (const e of (Array.isArray(els) ? els : [])) {
+      if (e?.tags?.highway !== 'street_lamp') continue
+      if (typeof e.lat !== 'number' || typeof e.lon !== 'number') continue
+      const [x, z] = toLocal(e.lon, e.lat)
+      lamps.push({ x, z, park: false })
+    }
+    const clipped = clipToBoundary(lamps, scene)
+    console.log(`[bake-lamps] scene=${scene}: derived ${lamps.length} OSM street lamps → ${clipped.length} inside the boundary (projected to current frame)`)
+    return clipped
+  }
+  const raw = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'street_lamps.json'), 'utf-8'))
+  return raw.lamps || raw
+}
+
 export async function bakeLamps({ look = 'default', scene = 'lafayette-square' } = {}) {
-  const inPath  = join(ROOT, 'src', 'data', 'street_lamps.json')
   const outDir  = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
-  const raw = JSON.parse(readFileSync(inPath, 'utf-8'))
-  const lamps = raw.lamps || raw
+  const lamps = loadLampsForScene(scene)
   const anchored = anchorLampsToGround(lamps, outDir, scene)
   const out = {
     version: 1,
@@ -69,8 +123,6 @@ async function main() {
     if ((m = arg.match(/^--look=(.+)$/)))      look  = m[1]
     else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
   }
-  // TODO(step C): scene-keyed lamp SOURCE — HiPointe's OSM lamps live in its
-  // map.json (streetlamp layer); LS uses src/data/street_lamps.json.
   await bakeLamps({ look, scene })
 }
 

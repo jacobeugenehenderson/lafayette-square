@@ -1308,18 +1308,17 @@ createServer(async (req, res) => {
       } else {
         skipped.push('content (LS content is hand-curated — not regenerated)')
       }
-      if (layerOn('lamp') && isDefaultScene) {
-        // bake-lamps' SOURCE is still LS's street_lamps.json (terrain is
-        // scene-aware; source is scene-keyed in step C). Gate to the default
-        // scene so a poured installation doesn't inherit LS's lamps — it bakes
-        // NONE (→ BakedLamps 404s → empty) until its own lamp intake lands.
+      if (layerOn('lamp')) {
+        // Scene-keyed lamp source (step C, done 2026-07-09): bake-lamps derives a
+        // poured scene's lamps from its OWN raw/osm_street_lamps.json (projected
+        // through geography.json + boundary-clipped), or falls back to LS's
+        // src/data/street_lamps.json for the default scene. Every installation
+        // gets real lamps — no longer gated to LS.
         await runIfDirty('lamps',
           [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
           [join(LOOK_DIR, 'lamps.json')],
           `node bake-lamps.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 30000 })
-      } else if (!isDefaultScene) {
-        skipped.push('lamps (source not yet scene-keyed — step C)')
       } else {
         skipped.push('lamps (layer hidden)')
       }
