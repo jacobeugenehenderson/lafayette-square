@@ -1415,17 +1415,21 @@ createServer(async (req, res) => {
           ranSteps.push('terrain-slab')
         } else { skipped.push('terrain-slab') }
       }
+      // Scene-size-sensitive bake steps get a generous ceiling: a large hood
+      // (a wide extent, tens of thousands of footprints) legitimately needs
+      // minutes for the ground/building/AO bakes. LS/HPDM finish in seconds; the
+      // cap only stops a big scene from being falsely killed at 60 s.
       await runIfDirty('ground',
         [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 60000 })
+        { cwd: here, timeout: 300000 })
       if (layerOn('building')) {
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
-          { cwd: here, timeout: 60000 })
+          { cwd: here, timeout: 300000 })
       } else {
         skipped.push('buildings (layer hidden)')
       }
@@ -1447,7 +1451,7 @@ createServer(async (req, res) => {
            join(here, 'bake-content.js')],
           [join(CONTENT_DIR, 'roster.json'), join(CONTENT_DIR, 'listings.json')],
           `node bake-content.js ${sceneFlag}`,
-          { cwd: here, timeout: 60000 })
+          { cwd: here, timeout: 180000 })
       } else {
         skipped.push('content (LS content is hand-curated — not regenerated)')
       }
@@ -1514,7 +1518,7 @@ createServer(async (req, res) => {
         [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'), join(here, 'bake-ground-ao.js')],
         [join(LOOK_DIR, 'ground.lightmap.png')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 120000 })
+        { cwd: here, timeout: 300000 })
       const ms = Date.now() - t0
       const idx2 = readLooksIndex()
       const entry = idx2.looks.find(l => l.id === id)
