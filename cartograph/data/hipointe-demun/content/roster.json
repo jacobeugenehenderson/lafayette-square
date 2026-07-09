@@ -12195,18 +12195,12 @@
   },
   {
    "id": "msbf-2676",
-   "name": "Barrio",
+   "name": null,
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [
-    "Barrio",
-    "DeMun Oyster Bar"
-   ],
-   "listing_ids": [
-    "hpdm-lst-0216",
-    "hpdm-lst-0217"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -12222,13 +12216,13 @@
    "stories": 3,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "restaurants",
+   "category": "residential",
+   "subcategory": "unnamed",
    "mixed_use": false,
-   "use": "commercial",
+   "use": "unknown",
    "use_subtype": null,
-   "use_confidence": "high",
-   "use_source": "osm",
+   "use_confidence": "low",
+   "use_source": "none",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null
@@ -25801,12 +25795,18 @@
   },
   {
    "id": "msbf-5558",
-   "name": null,
+   "name": "Barrio",
    "address": "734 734 DE MUN AVE",
    "municipality": "CLAYTON",
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Barrio",
+    "DeMun Oyster Bar"
+   ],
+   "listing_ids": [
+    "hpdm-lst-0216",
+    "hpdm-lst-0217"
+   ],
    "historic_district": "Hi-Pointe–DeMun Historic District",
    "contributing": null,
    "style": null,
@@ -25822,8 +25822,8 @@
    "stories": 3,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,

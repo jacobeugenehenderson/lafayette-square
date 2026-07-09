@@ -1165,7 +1165,7 @@ function LandmarkMarkers() {
 
   const filteredLandmarks = useMemo(() => {
     return listings.filter(l =>
-      !l._bare && (activeTags.has(l.subcategory) || activeTags.has(l.category) || l.id === selectedListingId)
+      !l._bare && l.status !== 'closed' && (activeTags.has(l.subcategory) || activeTags.has(l.category) || l.id === selectedListingId)
     )
   }, [activeTags, listings, selectedListingId])
 

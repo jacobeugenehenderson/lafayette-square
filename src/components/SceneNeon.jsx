@@ -78,6 +78,7 @@ export function useNeonLookup() {
   return useMemo(() => {
     const map = {}
     listings.forEach(l => {
+      if (l.status === 'closed') return
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
       if (!bid || !hex) return
