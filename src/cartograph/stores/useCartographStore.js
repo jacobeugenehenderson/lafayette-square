@@ -51,6 +51,12 @@ const ACTIVE_LOOK_KEY = 'cartograph-active-look'
 const DEFAULT_LOOK_ID = 'lafayette-square'
 
 function readActiveLookFromStorage() {
+  // ?look=<id> wins (deep-link any installation's baked Look directly, symmetric
+  // with ?scene=) — transient, not persisted; a nav without it reverts to storage.
+  try {
+    const urlLook = new URLSearchParams(window.location.search).get('look')
+    if (urlLook) return urlLook
+  } catch { /* ignore */ }
   try {
     const v = localStorage.getItem(ACTIVE_LOOK_KEY)
     if (v && typeof v === 'string') return v
