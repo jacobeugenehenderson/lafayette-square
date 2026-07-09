@@ -1,0 +1,9 @@
+{
+ "meta": {
+  "scene": "hipointe-demun",
+  "schema": "NEIGHBORHOOD-INPUTS §5.1.1 — roster override layer",
+  "generated": "2026-07-08",
+  "note": "Per-building hand corrections (keyed by slab id) applied over the raw roster join. Empty at migration; fill via place cards (§0.0)."
+ },
+ "patches": {}
+}

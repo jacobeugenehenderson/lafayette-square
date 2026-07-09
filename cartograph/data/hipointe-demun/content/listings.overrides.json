@@ -1,0 +1,2685 @@
+{
+ "meta": {
+  "scene": "hipointe-demun",
+  "schema": "NEIGHBORHOOD-INPUTS §5.1.1 — override layer (the §0.0 \"override wins\" seam)",
+  "generated": "2026-07-08",
+  "note": "Hand-authored SSOT that bake-content applies OVER the raw join and never clobbers. adds = records OSM never surfaced (each carries an anchor so building_id re-resolves against the current baked set). patches = enrichment on machine-found OSM listings, keyed by name-match. Migrated once from the pre-pipeline listings.json.",
+  "adds": 49,
+  "patches": 18
+ },
+ "adds": [
+  {
+   "id": "hpdm-lst-0004",
+   "building_id": "msbf-231",
+   "name": "The Church of St. Michael & St. George",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "6345 Wydown Boulevard",
+   "phone": null,
+   "website": "https://www.csmsg.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "episcopal",
+    "gothic",
+    "historic",
+    "landmark",
+    "wydown"
+   ],
+   "description": "One of St. Louis’s most prominent Episcopal parishes, an English Gothic landmark on Wydown Boulevard designed by architect James P. Jamieson. It was formed in 1928 by the merger of St. Michael & All Angels (founded in Clayton, 1913) and St. George’s (founded in the City of St. Louis, 1845); the nave was later extended and the Jay Herndon Smith Memorial Tower links the church to its parish hall. The parish also runs the St. Michael School of Clayton (1969).",
+   "history": [
+    {
+     "year": 1845,
+     "event": "St. George’s Episcopal Church is established in the City of St. Louis."
+    },
+    {
+     "year": 1913,
+     "event": "St. Michael & All Angels begins in Clayton."
+    },
+    {
+     "year": 1928,
+     "event": "The two parishes merge to form The Church of St. Michael & St. George on Wydown Boulevard (architect James P. Jamieson)."
+    },
+    {
+     "year": 1969,
+     "event": "The parish founds the St. Michael School of Clayton."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Episcopal",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6345 Wydown Boulevard",
+    "x": 327.49375000000003,
+    "z": -253.48437499999997
+   }
+  },
+  {
+   "id": "hpdm-lst-0005",
+   "building_id": "msbf-231",
+   "name": "The St. Michael School of Clayton",
+   "category": "community",
+   "subcategory": "schools",
+   "address": "6345 Wydown Boulevard",
+   "phone": null,
+   "website": "https://stmichaelschool.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "school",
+    "episcopal",
+    "independent",
+    "wydown"
+   ],
+   "description": "An Episcopal parish day school (junior-kindergarten through grade 6) founded in 1969 by The Church of St. Michael & St. George, sharing the parish’s Wydown campus.",
+   "history": [
+    {
+     "year": 1969,
+     "event": "The Church of St. Michael & St. George founds the school for children of the parish and community."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "school_type": "Episcopal parish day school (JK–grade 6)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6345 Wydown Boulevard",
+    "x": 327.49375000000003,
+    "z": -253.48437499999997
+   }
+  },
+  {
+   "id": "hpdm-lst-0010",
+   "building_id": "msbf-337",
+   "name": "Hi-Pointe Lofts",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": "6340 Clayton Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "lofts",
+    "apartments",
+    "hi-pointe",
+    "clayton-road"
+   ],
+   "description": "Loft-style apartments on Clayton Road at the Hi-Pointe/DeMun edge, near the McCausland commercial node and steps from Forest Park.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "address": "6340 Clayton Road"
+   },
+   "_stale_building_id": "msbf-337"
+  },
+  {
+   "id": "hpdm-lst-0014",
+   "building_id": "msbf-557",
+   "name": "The Cheshire",
+   "category": "hospitality",
+   "subcategory": "hotels",
+   "address": "6300 Clayton Road",
+   "phone": "(314) 647-7300",
+   "website": "https://www.cheshirestl.com",
+   "logo": "logos/cheshire.svg",
+   "hours": null,
+   "opening_hours_raw": "Front desk 24/7",
+   "photos": [
+    "photos/cheshire/01.jpg",
+    "photos/cheshire/02.jpg",
+    "photos/cheshire/03.jpg"
+   ],
+   "amenities": [
+    "British-inspired Tudor boutique hotel",
+    "Literary-themed suites (Sherlock Holmes, Brideshead Revisited, Chronicles of Narnia…)",
+    "Fox & Hounds Tavern — candlelit English pub",
+    "Basso — Italian restaurant & bar",
+    "On-site Starbucks",
+    "Outdoor pool (direct room access on select suites)",
+    "7,000+ sq ft of event space across 6 venues",
+    "A favorite wedding & meeting venue",
+    "Steps from Forest Park & the Hi-Pointe Theatre"
+   ],
+   "tags": [
+    "hotel",
+    "boutique",
+    "tudor",
+    "british",
+    "historic",
+    "landmark",
+    "bar",
+    "restaurant",
+    "pool",
+    "events",
+    "weddings",
+    "forest-park"
+   ],
+   "description": "A Tudor landmark on Clayton Road at the gateway to Forest Park, The Cheshire is a British-inspired boutique hotel of half-timbered gables and literary-themed suites — Sherlock Holmes, Brideshead Revisited, Chronicles of Narnia. A St. Louis icon since 1964 (as the Cheshire Inn) and reborn as a modern boutique hotel, it houses the candlelit Fox & Hounds Tavern, the Italian restaurant Basso, a Starbucks, an outdoor pool, and 7,000+ square feet of event space — a beloved wedding venue moments from the park and the Hi-Pointe Theatre.",
+   "history": [
+    {
+     "year": 1964,
+     "event": "The Cheshire Inn opens on Clayton Road — a Tudor, English-themed inn that becomes a St. Louis landmark at the edge of Forest Park, long known for its Fox & Hounds Tavern."
+    },
+    {
+     "year": 2013,
+     "event": "After a full renovation the property reopens as \"The Cheshire,\" a boutique hotel of literary-themed suites, keeping the Fox & Hounds and adding the Italian restaurant Basso."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": "https://www.cheshirestl.com",
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/thecheshirestl",
+   "photo_credit": "The Cheshire (cheshirestl.com)",
+   "price_range": "$$$",
+   "order_url": null,
+   "anchor": {
+    "address": "6300 Clayton Road",
+    "x": 239.23846153846154,
+    "z": 1009.9615384615385
+   }
+  },
+  {
+   "id": "hpdm-lst-0018",
+   "building_id": "msbf-820",
+   "name": "Hi-Pointe Theatre",
+   "category": "arts",
+   "subcategory": "cinema",
+   "address": "1005 McCausland Avenue",
+   "phone": "(314) 644-1100",
+   "website": "https://hipointetheatre.org",
+   "logo": "logos/hi-pointe-theatre.png",
+   "hours": null,
+   "opening_hours_raw": "Showtimes vary — doors open 30 min before each screening (arrive 15 min early); box office by phone during business hours",
+   "photos": [
+    "photos/hi-pointe-theatre/01.jpg",
+    "photos/hi-pointe-theatre/02.jpg",
+    "photos/hi-pointe-theatre/03.jpg"
+   ],
+   "amenities": [
+    "Single-screen, 414-seat auditorium",
+    "35mm film + 2K digital projection (3D capable)",
+    "Dolby Digital sound",
+    "Art Deco décor & the iconic neon marquee",
+    "Full-service concession stand",
+    "Local beer & wine (21+)",
+    "Snacks & drinks welcome in the auditorium",
+    "Wheelchair accessible (lobby, restrooms, reserved seating)",
+    "Repertory + first-run independent programming",
+    "Free evening/weekend parking (Lindell Bank lot across McCausland)"
+   ],
+   "tags": [
+    "cinema",
+    "art-house",
+    "single-screen",
+    "historic",
+    "landmark",
+    "repertory",
+    "35mm",
+    "neon-marquee",
+    "art-deco",
+    "beer-wine",
+    "nonprofit",
+    "hi-pointe"
+   ],
+   "description": "The oldest continuously operating single-screen movie theater in the St. Louis area — built in 1922 on \"the highest point in the City of St. Louis,\" and always meant for movies, never vaudeville. A beautifully preserved Art Deco house with an iconic neon marquee and a 414-seat auditorium, it screens 35mm film and 2K digital, pours local beer and wine, and runs a repertory-plus-independent program. Since 2023 it has been operated by the nonprofit Cinema St. Louis, carrying a 100-year tradition forward.",
+   "history": [
+    {
+     "year": 1922,
+     "event": "The Hi-Pointe Theatre opens at Clayton Road & McCausland — purpose-built for movies (not vaudeville or plays) on the highest point in the City of St. Louis."
+    },
+    {
+     "year": 1926,
+     "event": "Joins the St. Louis Amusement Co. chain; later operated by Fanchon & Marco and Arthur Enterprises."
+    },
+    {
+     "year": 1963,
+     "event": "The auditorium is refitted with its signature aquamarine seating."
+    },
+    {
+     "year": 1977,
+     "event": "The James family buys the Hi-Pointe and runs it for three generations — some 45 years — keeping the single screen alive through the multiplex era."
+    },
+    {
+     "year": 2023,
+     "event": "The nonprofit Cinema St. Louis acquires the theater just past its 100th birthday, preserving it as a repertory art house."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0018",
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/hipointetheatre",
+   "photo_credit": "Hi-Pointe Theatre / Cinema St. Louis (hipointetheatre.org)",
+   "price_range": "$$",
+   "seating_capacity": 414,
+   "ticket_url": "https://hipointetheatre.org",
+   "order_url": null,
+   "anchor": {
+    "address": "1005 McCausland Avenue"
+   },
+   "_stale_building_id": "msbf-820"
+  },
+  {
+   "id": "hpdm-lst-0024",
+   "building_id": "msbf-1180",
+   "name": "The Dorchester on Forest Park",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": "665 South Skinker Boulevard",
+   "phone": null,
+   "website": "https://www.macapartments.com/property/Dorchester",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments",
+    "high-rise",
+    "forest-park",
+    "skinker",
+    "luxury"
+   ],
+   "description": "A 23-story luxury apartment tower on South Skinker Boulevard, perched between Forest Park and the DeMun neighborhood — one of the tallest residences on the park’s western edge, with sweeping views over the park and Washington University.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$$",
+   "enriched": true,
+   "anchor": {
+    "address": "665 South Skinker Boulevard",
+    "x": 491.93684210526334,
+    "z": 507.3263157894738
+   }
+  },
+  {
+   "id": "hpdm-lst-0025",
+   "building_id": "msbf-1272",
+   "name": "625 South Skinker Condominium",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": "625 South Skinker Boulevard",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "condominium",
+    "historic",
+    "1920s",
+    "forest-park",
+    "skinker"
+   ],
+   "description": "A stately pre-war apartment building on South Skinker Boulevard overlooking Forest Park, now operated as a condominium — part of the boulevard’s celebrated row of 1920s \"grand apartments\" at the park’s edge.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$$",
+   "enriched": true,
+   "anchor": {
+    "address": "625 South Skinker Boulevard",
+    "x": 477.12962962962956,
+    "z": 397.11851851851867
+   }
+  },
+  {
+   "id": "hpdm-lst-0029",
+   "building_id": "msbf-1716",
+   "name": "Central Seventh-day Adventist Church",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "5 N Skinker Boulevard",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "adventist",
+    "skinker"
+   ],
+   "description": "A Seventh-day Adventist congregation on North Skinker Boulevard at the edge of Forest Park.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Seventh-day Adventist",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "5 N Skinker Boulevard",
+    "x": 676.4727272727273,
+    "z": -306.60909090909087
+   }
+  },
+  {
+   "id": "hpdm-lst-0030",
+   "building_id": "msbf-1855",
+   "name": "Ralph M. Captain Elementary School",
+   "category": "community",
+   "subcategory": "schools",
+   "address": "6345 Northwood Avenue",
+   "phone": null,
+   "website": "https://www.claytonschools.net/cpt",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "school",
+    "public",
+    "elementary",
+    "clayton",
+    "blue-ribbon"
+   ],
+   "description": "A public elementary school in the School District of Clayton — a two-time National Blue Ribbon School (2015, 2024) that ranks among the top 5% in Missouri.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "school_type": "Public elementary (School District of Clayton)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6345 Northwood Avenue",
+    "x": 297.20909090909095,
+    "z": 371.2484848484848
+   }
+  },
+  {
+   "id": "hpdm-lst-0031",
+   "building_id": "msbf-1908",
+   "name": "Vedanta Society of St. Louis",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "205 S Skinker Boulevard",
+   "phone": null,
+   "website": "https://vedantastl.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "temple",
+    "hindu",
+    "vedanta",
+    "ramakrishna",
+    "skinker"
+   ],
+   "description": "A Hindu temple and spiritual center on South Skinker Boulevard, a branch of the Ramakrishna Order of India, offering Sunday services, classes, meditation, study circles, retreats and lectures in a serene setting across from Forest Park.",
+   "history": [
+    {
+     "year": 1938,
+     "event": "The Vedanta Society of St. Louis is founded by Swami Satprakashananda, a monk of the Ramakrishna Order and disciple of Swami Brahmananda."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Hindu (Ramakrishna Order / Vedanta)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "205 S Skinker Boulevard",
+    "x": 615.009090909091,
+    "z": -100.36363636363639
+   }
+  },
+  {
+   "id": "hpdm-lst-0033",
+   "building_id": "msbf-1925",
+   "name": "Oak Knoll Park",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": "1 Oak Knoll (Clayton Rd at Big Bend)",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "park",
+    "historic",
+    "gardens",
+    "pond",
+    "clayton",
+    "post-oak"
+   ],
+   "description": "A 14.5-acre Clayton park at Clayton Road and Big Bend, home to one of the region’s largest native stands of post oak and a pond with a lighted fountain and gardens. Two early-20th-century stone mansions on the grounds — once a natural-history museum (1959–1992, whose collection helped seed the St. Louis Science Center) — now house the Greater St. Louis Community Foundation and the Clayton Early Childhood Center.",
+   "history": [
+    {
+     "year": 1905,
+     "event": "Lawyer Charles Rice buys the land — part of the old 300-acre Kennedy Farm — and builds 1 Oak Knoll."
+    },
+    {
+     "year": 1958,
+     "event": "The City of Clayton establishes Oak Knoll Park (14.5 acres)."
+    },
+    {
+     "year": 1959,
+     "event": "The Academy of Science installs part of its collection in the park’s stone mansions — a museum that runs until the collection moves toward the new St. Louis Science Center (1992)."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "1 Oak Knoll (Clayton Rd at Big Bend)"
+   },
+   "_stale_building_id": "msbf-1925"
+  },
+  {
+   "id": "hpdm-lst-0034",
+   "building_id": "msbf-1925",
+   "name": "Clayton Child Center",
+   "category": "community",
+   "subcategory": "schools",
+   "address": "Oak Knoll Park",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "school",
+    "preschool",
+    "early-childhood",
+    "clayton"
+   ],
+   "description": "An early-childhood center serving Clayton families, set by Oak Knoll Park.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "school_type": "Early-childhood / preschool",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "Oak Knoll Park"
+   },
+   "_stale_building_id": "msbf-1925"
+  },
+  {
+   "id": "hpdm-lst-0049",
+   "building_id": "msbf-2629",
+   "name": "Millbrook Apartment 3",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 3).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "x": -320.72727272727275,
+    "z": -958.9000000000001
+   }
+  },
+  {
+   "id": "hpdm-lst-0050",
+   "building_id": "msbf-2671",
+   "name": "The Versailles Condominium",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": "701 South Skinker Boulevard",
+   "phone": null,
+   "website": "https://www.versailles-stl.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "condominium",
+    "historic",
+    "1920s",
+    "forest-park",
+    "skinker"
+   ],
+   "description": "One of the grand 1920s apartment buildings facing Forest Park along South Skinker Boulevard, built as luxury apartments and converted to a 45-unit condominium in 1980 — a classic of the boulevard’s stately pre-war residential wall.",
+   "history": [
+    {
+     "year": 1980,
+     "event": "The Versailles converts from luxury apartments to a 45-unit condominium (declaration recorded January 1981)."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "units": 45,
+   "price_range": "$$$",
+   "enriched": true,
+   "anchor": {
+    "address": "701 South Skinker Boulevard",
+    "x": 485.53636363636366,
+    "z": 579.0818181818182
+   }
+  },
+  {
+   "id": "hpdm-lst-0054",
+   "building_id": "msbf-3023",
+   "name": "Millbrook Apartment 1",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 1).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "x": -272.69090909090914,
+    "z": -901.7363636363636
+   }
+  },
+  {
+   "id": "hpdm-lst-0055",
+   "building_id": "msbf-3050",
+   "name": "Stevenson's Hi-Pointe Amoco",
+   "category": "services",
+   "subcategory": "automotive",
+   "address": "981 S Skinker Boulevard",
+   "phone": "(314) 647-5005",
+   "website": null,
+   "logo": "logos/stevensons-hi-pointe-amoco.jpg",
+   "hours": null,
+   "opening_hours_raw": "Open daily — fuel, convenience & auto service",
+   "photos": [
+    "photos/stevensons-hi-pointe-amoco/01.jpg"
+   ],
+   "amenities": [
+    "Home of the World's Largest Amoco Sign — 40 ft × 60 ft, 44 tons of steel",
+    "5,800 bulbs · 2,900 ft of neon tubing · 5 miles of wiring",
+    "Full-service & self-serve fuel",
+    "Auto service & repair",
+    "Convenience store",
+    "Illuminated at night — a beacon visible across Forest Park",
+    "Family-run since 1951"
+   ],
+   "tags": [
+    "landmark",
+    "historic",
+    "amoco",
+    "neon-sign",
+    "roadside-attraction",
+    "gas-station",
+    "automotive",
+    "hi-pointe",
+    "skinker"
+   ],
+   "description": "Home of the World's Largest Amoco Sign — a 40-by-60-foot, 44-ton neon beacon (5,800 bulbs, 2,900 feet of tubing, five miles of wiring) that has towered over the Skinker–Clayton–Oakland triangle at the edge of Forest Park since 1961. Fuel has been sold on this lot since Standard Oil bought the triangle in 1921; L.C. Stevenson opened the current station in 1951, and the family-run Stevenson's Hi-Pointe Amoco still pumps gas beneath the sign. One of St. Louis's most beloved roadside icons, refreshed in 2019 with new colors and energy-efficient lighting.",
+   "history": [
+    {
+     "year": 1921,
+     "event": "Standard Oil (John D. Rockefeller's company) buys the Skinker & Clayton triangle and erects its first double-sided Standard Oil sign."
+    },
+    {
+     "year": 1926,
+     "event": "A service station is added beneath the sign."
+    },
+    {
+     "year": 1951,
+     "event": "L.C. Stevenson opens the service station that still bears the family name."
+    },
+    {
+     "year": 1961,
+     "event": "The giant Amoco sign is raised — 44 tons of steel, 5,800 bulbs, 2,900 feet of neon tubing and five miles of wiring — the largest Amoco sign in the world."
+    },
+    {
+     "year": 2019,
+     "event": "The sign is refreshed with updated colors and energy-efficient lighting; Stevenson's Hi-Pointe Amoco keeps pumping beneath it."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "photo_credit": "Warren LeMay / Flickr (public domain)",
+   "price_range": "$",
+   "order_url": null,
+   "anchor": {
+    "address": "981 S Skinker Boulevard",
+    "x": 427.79090909090917,
+    "z": 1018.2636363636365
+   }
+  },
+  {
+   "id": "hpdm-lst-0056",
+   "building_id": "msbf-3101",
+   "name": "Memorial Presbyterian Church",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "201 S Skinker Boulevard",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "presbyterian",
+    "gothic",
+    "skinker"
+   ],
+   "description": "A Gothic-styled Presbyterian congregation on South Skinker Boulevard at the edge of Forest Park, near the Wash U campus.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Presbyterian (PC-USA)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "201 S Skinker Boulevard",
+    "x": 606.5481481481482,
+    "z": -140.66666666666666
+   }
+  },
+  {
+   "id": "hpdm-lst-0075",
+   "building_id": "msbf-3647",
+   "name": "The Wilson School",
+   "category": "community",
+   "subcategory": "schools",
+   "address": "6312 Alamo Avenue",
+   "phone": null,
+   "website": "https://www.wilsonschool.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "school",
+    "independent",
+    "historic",
+    "early-childhood",
+    "demun"
+   ],
+   "description": "An independent, coeducational preparatory school (pre-K through grade 6) in the DeMun neighborhood — the oldest formalized early-childhood program in the St. Louis metro. Founded in 1913 by kindergarten pioneer Mabel Wilson as “Miss Wilson’s School” in her home; its landmark 1916 building was designed by noted school architect William B. Ittner.",
+   "history": [
+    {
+     "year": 1913,
+     "event": "Mabel Wilson founds “Miss Wilson’s School” in her St. Louis home — the metro’s first formalized early-childhood program."
+    },
+    {
+     "year": 1916,
+     "event": "Its historic building is designed by school-architecture pioneer William B. Ittner."
+    },
+    {
+     "year": 1960,
+     "event": "The Wilson School moves to its current DeMun/Clayton campus on Alamo Avenue."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "school_type": "Independent (JK–grade 6)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6312 Alamo Avenue",
+    "x": 256.69565217391306,
+    "z": 77.0217391304348
+   }
+  },
+  {
+   "id": "hpdm-lst-0093",
+   "building_id": "msbf-4314",
+   "name": "Wiltshire Condominium",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": "725 South Skinker Boulevard",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "condominium",
+    "historic",
+    "forest-park",
+    "skinker"
+   ],
+   "description": "A South Skinker Boulevard apartment building facing Forest Park, now condominiums — another of the boulevard’s early-20th-century residential landmarks along the park.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$$",
+   "enriched": true,
+   "anchor": {
+    "address": "725 South Skinker Boulevard",
+    "x": 476.6555555555555,
+    "z": 637.7333333333333
+   }
+  },
+  {
+   "id": "hpdm-lst-0103",
+   "building_id": "msbf-4592",
+   "name": "Wydown Middle School",
+   "category": "community",
+   "subcategory": "schools",
+   "address": "6500 Wydown Boulevard",
+   "phone": null,
+   "website": "https://wms.claytonschools.net",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "school",
+    "public",
+    "middle-school",
+    "clayton",
+    "wydown"
+   ],
+   "description": "The School District of Clayton’s middle school on Wydown Boulevard, opened in 1936 in the former Hosmer Hall (a private girls’ school the district acquired).",
+   "history": [
+    {
+     "year": 1936,
+     "event": "The district opens Wydown by purchasing Hosmer Hall, a private girls’ school."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "school_type": "Public middle school (School District of Clayton)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6500 Wydown Boulevard",
+    "x": -179.99200000000002,
+    "z": 4.255999999999999
+   }
+  },
+  {
+   "id": "hpdm-lst-0105",
+   "building_id": "msbf-4595",
+   "name": "Millbrook Apartment 4",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 4).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "x": -273.32307692307694,
+    "z": -954.0307692307692
+   }
+  },
+  {
+   "id": "hpdm-lst-0107",
+   "building_id": "msbf-4642",
+   "name": "Graham Chapel",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "60 Aberdeen Place",
+   "phone": null,
+   "website": "https://eventmanagement.wustl.edu/items/graham-memorial-chapel/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [
+    "photos/graham-chapel/01.jpg"
+   ],
+   "amenities": [],
+   "tags": [
+    "chapel",
+    "collegiate-gothic",
+    "historic",
+    "landmark",
+    "wash-u",
+    "weddings",
+    "events"
+   ],
+   "description": "Washington University’s beloved Collegiate Gothic chapel, designed by Cope & Stewardson and completed in 1909 as the 12th building on the Danforth campus. Funded by Christine Blair Graham in memory of her husband Benjamin Graham (founder of the Graham Paper Company), its soaring nave, tracery windows and twin towers make it one of St. Louis’s favorite settings for concerts, ceremonies and weddings.",
+   "history": [
+    {
+     "year": 1905,
+     "event": "Christine Blair Graham offers to fund a university chapel in memory of her husband, Benjamin Graham."
+    },
+    {
+     "year": 1909,
+     "event": "Graham Memorial Chapel is completed — Collegiate Gothic Revival by Cope & Stewardson, the 12th building at Washington University."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Non-denominational (Washington University chapel)",
+   "photo_credit": "Warren LeMay / Flickr (public domain)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "60 Aberdeen Place",
+    "x": 65.74000000000001,
+    "z": -654.38
+   }
+  },
+  {
+   "id": "hpdm-lst-0110",
+   "building_id": "msbf-4887",
+   "name": "Wydown United Church",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "6501 Wydown Boulevard",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "ucc",
+    "wydown"
+   ],
+   "description": "A neighborhood United Church of Christ congregation on Wydown Boulevard in Clayton.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "United Church of Christ",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6501 Wydown Boulevard",
+    "x": -143.06363636363636,
+    "z": -99.9090909090909
+   }
+  },
+  {
+   "id": "hpdm-lst-0124",
+   "building_id": "msbf-5276",
+   "name": "Bethel Lutheran Church",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "6800 Wydown Boulevard",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "lutheran",
+    "wydown"
+   ],
+   "description": "A Lutheran congregation on Wydown Boulevard in Clayton, near the Wash U campus.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Lutheran",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6800 Wydown Boulevard"
+   },
+   "_stale_building_id": "msbf-5276"
+  },
+  {
+   "id": "hpdm-lst-0128",
+   "building_id": "msbf-5505",
+   "name": "Millbrook Apartment 2",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments",
+    "demun",
+    "millbrook"
+   ],
+   "description": "Part of the Millbrook — a cluster of 1920s-era brick apartment buildings in the DeMun neighborhood (Millbrook Apartment 2).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "x": -220.58571428571426,
+    "z": -944.4285714285716
+   }
+  },
+  {
+   "id": "hpdm-lst-0144",
+   "building_id": "msbf-6529",
+   "name": "Eighth Church of Christ, Scientist",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "6221 Alexander Drive",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "christian-science"
+   ],
+   "description": "A Christian Science church and Reading Room serving the Clayton/DeMun area.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Christian Science",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6221 Alexander Drive",
+    "x": 589.5030303030304,
+    "z": -213.1333333333333
+   }
+  },
+  {
+   "id": "hpdm-lst-0151",
+   "building_id": "msbf-6807",
+   "name": "Our Lady of Lourdes Parish",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "7148 Forsyth Boulevard",
+   "phone": null,
+   "website": "https://ucitylourdes.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "catholic",
+    "parish",
+    "historic"
+   ],
+   "description": "A Roman Catholic parish just west of the DeMun/Clayton line, with its permanent church dedicated in 1919; the parish also runs Our Lady of Lourdes School.",
+   "history": [
+    {
+     "year": 1916,
+     "event": "Our Lady of Lourdes parish is founded; the first Mass is celebrated by Father Francis J. O’Connor."
+    },
+    {
+     "year": 1919,
+     "event": "Archbishop John J. Glennon dedicates the permanent church (cornerstone laid 1917)."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Roman Catholic (Archdiocese of St. Louis)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "7148 Forsyth Boulevard"
+   },
+   "_stale_building_id": "msbf-6807"
+  },
+  {
+   "id": "hpdm-lst-0155",
+   "building_id": "msbf-6996",
+   "name": "Harbison House",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments",
+    "demun"
+   ],
+   "description": "A named apartment building in the DeMun/Clayton area.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "x": 99.9521739130435,
+    "z": -433.3391304347825
+   }
+  },
+  {
+   "id": "hpdm-lst-0177",
+   "building_id": "msbf-7996",
+   "name": "Forsyth School",
+   "category": "community",
+   "subcategory": "schools",
+   "address": "Forsyth Boulevard",
+   "phone": null,
+   "website": "https://www.forsythschool.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "school",
+    "independent",
+    "wydown",
+    "forsyth"
+   ],
+   "description": "An independent coeducational school (age 3 through grade 6) on the Wydown/Forsyth corridor, known for hands-on, creative learning across a campus of converted historic houses.",
+   "history": [
+    {
+     "year": 1961,
+     "event": "Mary Dunbar founds Forsyth School as a small preschool in a house leased from Unity Christ Church on Forsyth Boulevard."
+    },
+    {
+     "year": 1970,
+     "event": "Having added a grade level each year, Forsyth graduates its first sixth-grade class."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "school_type": "Independent (age 3–grade 6)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "Forsyth Boulevard",
+    "x": 592.3000000000001,
+    "z": -326.36
+   }
+  },
+  {
+   "id": "hpdm-lst-0180",
+   "building_id": "msbf-8367",
+   "name": "DeMun Pointe",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": "6451 Clayton Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments",
+    "1920s",
+    "demun",
+    "brick"
+   ],
+   "description": "A DeMun apartment building on Clayton Road, typical of the neighborhood’s defining 1920s three-story brick-and-limestone apartment blocks laid out under Henry Wright’s plan.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "address": "6451 Clayton Road",
+    "x": -156.6952380952381,
+    "z": 879.8904761904761
+   }
+  },
+  {
+   "id": "hpdm-lst-0183",
+   "building_id": "msbf-8554",
+   "name": "Henry Wright Park",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": "6424 Alamo Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "park",
+    "green",
+    "garden-city",
+    "demun",
+    "historic"
+   ],
+   "description": "A small neighborhood green in the heart of DeMun, named for landscape architect Henry Wright — whose 1920s \"Garden City\" plan for the district wove inward-facing streets and shared greens like this one between the brick apartment blocks.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6424 Alamo Avenue",
+    "x": -85.1,
+    "z": 846.1200000000001
+   }
+  },
+  {
+   "id": "hpdm-lst-0186",
+   "building_id": "msbf-8744",
+   "name": "Washington University Catholic Student Center",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "6304 Northwood Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "catholic",
+    "campus-ministry",
+    "wash-u"
+   ],
+   "description": "The Catholic campus ministry and chapel serving Washington University students, just off the Danforth campus.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Roman Catholic (campus ministry)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6304 Northwood Avenue",
+    "x": 344.02857142857147,
+    "z": -411.6571428571429
+   }
+  },
+  {
+   "id": "hpdm-lst-0191",
+   "building_id": "msbf-8961",
+   "name": "Chapel of Saint Timothy & Saint Titus",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "1131 Bellevue Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "chapel",
+    "lutheran",
+    "collegiate-gothic",
+    "concordia",
+    "seminary"
+   ],
+   "description": "The chapel of Concordia Seminary, part of the seminary’s 1926 Collegiate Gothic campus in the DeMun neighborhood — a Lutheran (LCMS) house of worship for the seminary community.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Lutheran (LCMS — Concordia Seminary)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "1131 Bellevue Avenue",
+    "x": -228.8470588235294,
+    "z": 461.26470588235287
+   }
+  },
+  {
+   "id": "hpdm-lst-0193",
+   "building_id": "msbf-9001",
+   "name": "St. Mark's Evangelical Lutheran Church",
+   "category": "community",
+   "subcategory": "churches",
+   "address": "6337 Clayton Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "church",
+    "lutheran",
+    "clayton-road"
+   ],
+   "description": "A Lutheran congregation on Clayton Road in the Hi-Pointe/DeMun area.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "denomination": "Lutheran",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "6337 Clayton Road",
+    "x": 179.5636363636364,
+    "z": 918.2454545454547
+   }
+  },
+  {
+   "id": "hpdm-lst-0202",
+   "building_id": "msbf-9480",
+   "name": "Our Lady of Lourdes School",
+   "category": "community",
+   "subcategory": "schools",
+   "address": "7157 Northmoor Drive",
+   "phone": null,
+   "website": "https://ucitylourdes.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "school",
+    "catholic",
+    "parish-school"
+   ],
+   "description": "The parish school of Our Lady of Lourdes — a Catholic K–8 school on the Clayton/University City edge.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "school_type": "Catholic parish school (K–8)",
+   "price_range": null,
+   "enriched": true,
+   "anchor": {
+    "address": "7157 Northmoor Drive"
+   },
+   "_stale_building_id": "msbf-9480"
+  },
+  {
+   "id": "hpdm-lst-0212",
+   "building_id": "msbf-9851",
+   "name": "Village House",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "apartments"
+   ],
+   "description": "A named apartment building in the DeMun/Clayton area.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "research",
+   "price_range": "$$",
+   "enriched": true,
+   "anchor": {
+    "x": -399.77826086956526,
+    "z": -920.8478260869565
+   }
+  },
+  {
+   "id": "hpdm-lst-0213",
+   "building_id": "msbf-3698",
+   "name": "Kaldi's Coffee Roasting Co.",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "700 De Mun Avenue",
+   "phone": "(314) 727-9955",
+   "website": "https://www.kaldiscoffee.com",
+   "logo": "logos/kaldis-coffee.jpg",
+   "hours": {
+    "monday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "06:30",
+     "close": "17:00"
+    }
+   },
+   "opening_hours_raw": "Daily 6:30am–5pm",
+   "photos": [
+    "photos/kaldis-coffee/01.jpg",
+    "photos/kaldis-coffee/02.jpg"
+   ],
+   "amenities": [
+    "House-roasted coffee — the original roasting café",
+    "Full espresso bar & drip",
+    "Pastries & light café fare",
+    "Sidewalk patio at DeMun & Northwood",
+    "Retail beans & brew gear",
+    "Free Wi-Fi",
+    "A DeMun community gathering spot since 1994"
+   ],
+   "tags": [
+    "coffee",
+    "cafe",
+    "roaster",
+    "espresso",
+    "breakfast",
+    "flagship",
+    "founded-1994",
+    "demun",
+    "community",
+    "wifi"
+   ],
+   "description": "The original Kaldi's — where the St. Louis coffee company began. In 1994 two Mizzou journalism grads, Suzanne Langlois and Howard Lerner, quit their newspaper jobs and opened a café on this DeMun corner (a former travel agency, then a meditation center) with a mission \"to create a place for people.\" A year in they began roasting their own beans in the shop; the operation grew into a roaster that now supplies 14 St. Louis-area cafés and more in Atlanta — since named the best coffee chain in the country. The flagship still pulls espresso on the corner where it all started.",
+   "history": [
+    {
+     "year": 1994,
+     "event": "Journalists Suzanne Langlois and Howard Lerner leave their newspaper jobs and open Kaldi's on the DeMun corner — a community café, \"a place for people.\""
+    },
+    {
+     "year": 1995,
+     "event": "About a year in, they begin roasting their own coffee inside the café, then expand into a shuttered antique store behind it — the start of Kaldi's Coffee Roasting Co."
+    },
+    {
+     "year": 2024,
+     "event": "Now led by co-owner Tyler Zimmer, Kaldi's has grown to 14 St. Louis-area cafés (plus four in Atlanta) and been named the best coffee chain in the U.S. — the DeMun flagship still anchors the block."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0213",
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/kaldiscoffee",
+   "photo_credit": "Kaldi's Coffee (kaldiscoffee.com)",
+   "price_range": "$$",
+   "order_url": "https://order.kaldiscoffee.com/order/kaldis-coffee-demun",
+   "anchor": {
+    "address": "700 De Mun Avenue",
+    "x": 205.5,
+    "z": -419.6333333333334
+   }
+  },
+  {
+   "id": "hpdm-lst-0214",
+   "building_id": "msbf-707",
+   "name": "Louie",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "706 De Mun Avenue",
+   "phone": "(314) 300-8188",
+   "website": "https://www.louiedemun.com",
+   "logo": "logos/louie.png",
+   "hours": {
+    "monday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "17:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "17:00",
+     "close": "23:00"
+    }
+   },
+   "opening_hours_raw": "Dinner Mon–Thu 5–10pm · Fri–Sat 5–11pm · Closed Sun",
+   "photos": [
+    "photos/louie/01.jpg"
+   ],
+   "amenities": [
+    "Wood-burning pizza oven imported from Italy",
+    "Neapolitan-style pizza",
+    "House-made pasta",
+    "Full bar & Italian-focused wine list",
+    "First-come patio seating (weather permitting)",
+    "Free lot parking south of the building",
+    "Reservations via Resy",
+    "Walk-ins welcome"
+   ],
+   "tags": [
+    "italian",
+    "pizza",
+    "pasta",
+    "wood-fired",
+    "wine",
+    "date-night",
+    "neighborhood",
+    "demun",
+    "james-beard"
+   ],
+   "description": "A warm, Italian-inspired neighborhood restaurant on DeMun from Matt McGuire (former service director at Niche Food Group), recognized by the James Beard Foundation for its hospitality. A wood-burning oven imported from Italy turns out slightly-thick Neapolitan-style pizzas; the kitchen also sends out antipasti, house pastas, and larger plates — the roast chicken is a St. Louis favorite. Cozy room, lively bar, and a first-come patio.",
+   "history": [
+    {
+     "year": 2018,
+     "event": "Matt McGuire opens Louie at 706 DeMun, in part of the former Jimmy's on the Park space — an Italian-inspired neighborhood joint with a wood-burning pizza oven brought over from Italy."
+    },
+    {
+     "year": 2023,
+     "event": "Louie earns James Beard Foundation recognition for outstanding hospitality, cementing its reputation as one of Clayton's most beloved restaurants."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0214",
+   "reservation_url": "https://resy.com/cities/clayton-mo/venues/louie",
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/louiedemun",
+   "photo_credit": "Louie (louiedemun.com)",
+   "price_range": "$$$",
+   "order_url": null,
+   "anchor": {
+    "address": "706 De Mun Avenue",
+    "x": 155.84000000000003,
+    "z": -383.62
+   }
+  },
+  {
+   "id": "hpdm-lst-0215",
+   "building_id": "msbf-707",
+   "name": "Sasha's Wine Bar",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "706 De Mun Avenue",
+   "phone": "(314) 863-7274",
+   "website": "https://www.sashaswinebar.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "01:30"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "00:00"
+    }
+   },
+   "opening_hours_raw": "Mon–Sat 11am–1:30am · Sun 11am–midnight",
+   "photos": [
+    "photos/sashas/01.jpg",
+    "photos/sashas/02.jpg"
+   ],
+   "amenities": [
+    "3,000+ bottle cellar",
+    "Wine flights (Cellar Series — 3 wines side-by-side)",
+    "Wines by the glass & bottle",
+    "Cheese & charcuterie boards",
+    "Small plates & light fare",
+    "Lively sidewalk patio",
+    "Late-night hours",
+    "Private events & wine dinners"
+   ],
+   "tags": [
+    "wine-bar",
+    "wine",
+    "charcuterie",
+    "cheese",
+    "small-plates",
+    "patio",
+    "late-night",
+    "date-night",
+    "demun"
+   ],
+   "description": "The original Sasha's — a DeMun institution since 1993 and the anchor of Alan Richman's wine-bar family (sister to the neighboring Barrio). A 3,000-plus-bottle cellar drives an ever-changing list of wines by the glass, bottle, and side-by-side \"Cellar Series\" flights, paired with cheese and charcuterie boards, house chicken-liver pâté, prosciutto, and small plates. Buzzy, candlelit, and open late, with one of DeMun's liveliest patios.",
+   "history": [
+    {
+     "year": 1993,
+     "event": "Sasha's Wine Bar opens on DeMun Avenue, becoming a neighborhood cornerstone and the flagship of what grows into Alan Richman's family of St. Louis wine bars."
+    },
+    {
+     "year": 2018,
+     "event": "Barrio opens next door as a sister concept, extending the DeMun corner into a combined wine-bar-and-kitchen destination."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0215",
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/sashaswinebar",
+   "photo_credit": "Sasha's Wine Bar (sashaswinebar.com)",
+   "price_range": "$$",
+   "order_url": "https://www.toasttab.com/local/order/sashas-de-mun-706-de-mun-ave",
+   "anchor": {
+    "address": "706 De Mun Avenue",
+    "x": 155.84000000000003,
+    "z": -383.62
+   }
+  },
+  {
+   "id": "hpdm-lst-0216",
+   "building_id": "msbf-2676",
+   "name": "Barrio",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "740 De Mun Avenue",
+   "phone": "(314) 725-0322",
+   "website": "https://www.barrioburgersandtacos.com",
+   "logo": "logos/barrio.jpg",
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "23:00"
+    }
+   },
+   "opening_hours_raw": "Sun–Thu 11am–10pm · Fri–Sat 11am–11pm",
+   "photos": [
+    "photos/barrio/01.jpg",
+    "photos/barrio/02.jpg",
+    "photos/barrio/03.jpg"
+   ],
+   "amenities": [
+    "Smash burgers & street tacos",
+    "Full bar — craft cocktails, wine & rotating draft beer",
+    "Strong non-alcoholic / zero-proof program",
+    "Dog-friendly patio",
+    "Kid-friendly",
+    "Sidewalk patio seating",
+    "Online ordering & takeout",
+    "E-gift cards (redeemable at Sasha’s too)",
+    "Rotating desserts by an in-house French pastry chef"
+   ],
+   "tags": [
+    "burgers",
+    "smash-burger",
+    "tacos",
+    "latin",
+    "sandwiches",
+    "full-bar",
+    "patio",
+    "dog-friendly",
+    "takeout",
+    "delivery",
+    "demun",
+    "vegan-options"
+   ],
+   "description": "A lively DeMun Avenue corner spot serving smash burgers, street tacos, and Latin-leaning sandwiches, with a full bar of craft cocktails, wine, and rotating local draft beer (plus a notably good zero-proof list). From restaurateur Alan Richman — sister to the neighboring Sasha’s Wine Bar — with a kitchen led by chef Dan Sammons. The cantilevered front windows open onto a dog-friendly sidewalk patio in good weather. Locally sourced ingredients; vegan \"harvest shreds\" available across the menu.",
+   "history": [
+    {
+     "year": 2018,
+     "event": "Owner Alan Richman and chef Dan Sammons open Barrio in the former DeMun Oyster Bar space (740 De Mun) — a tacos-tequila-and-tapas concept extending Sammons’ farmers-market \"Backdoor Burritos,\" with street tacos, arepas, empanadas, enchiladas and Cuban sandwiches."
+    },
+    {
+     "year": 2022,
+     "event": "Barrio shifts to its now-signature \"Burgers & Tacos\" format — house smash burgers and street tacos alongside the original Latin plates."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0216",
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/barrioburgersandtacos",
+   "photo_credit": "Barrio (barrioburgersandtacos.com)",
+   "price_range": "$$",
+   "order_url": "https://order.toasttab.com/online/barrio-740-demun-ave",
+   "anchor": {
+    "address": "740 De Mun Avenue",
+    "x": 119.10000000000001,
+    "z": -290.5111111111112
+   }
+  },
+  {
+   "id": "hpdm-lst-0217",
+   "building_id": "msbf-2676",
+   "name": "DeMun Oyster Bar",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "740 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "seafood",
+    "oysters",
+    "raw-bar"
+   ],
+   "description": "Former oyster & seafood bar at 740 De Mun — permanently closed; the space is now Barrio.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "closed",
+   "source": "research",
+   "enriched": true,
+   "anchor": {
+    "address": "740 De Mun Avenue",
+    "x": 119.10000000000001,
+    "z": -290.5111111111112
+   }
+  },
+  {
+   "id": "hpdm-lst-0218",
+   "building_id": "msbf-3487",
+   "name": "Clementine's Naughty & Nice Creamery",
+   "category": "dining",
+   "subcategory": "desserts",
+   "address": "730 De Mun Avenue",
+   "phone": "(314) 858-6100",
+   "website": "https://www.clementinescreamery.com/pages/clayton",
+   "logo": "logos/clementines.png",
+   "hours": {
+    "sunday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "monday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "23:00"
+    }
+   },
+   "opening_hours_raw": "Sun–Thu 10am–10pm · Fri–Sat 10am–11pm",
+   "photos": [
+    "photos/clementines/01.jpg"
+   ],
+   "amenities": [
+    "24 chef-inspired flavors daily",
+    "\"Naughty\" boozy ice creams (21+)",
+    "\"Nice\" classic flavors",
+    "Vegan & dairy-free options",
+    "Gluten-free & sorbet options",
+    "Hand-packed pints",
+    "Ice cream cakes & catering",
+    "Online shipping nationwide"
+   ],
+   "tags": [
+    "ice-cream",
+    "dessert",
+    "boozy",
+    "vegan",
+    "gluten-free",
+    "family-friendly",
+    "local",
+    "demun"
+   ],
+   "description": "St. Louis's original micro-creamery, from founder Tamara Keefe (Missouri's 2025 Small Business Person of the Year). Clementine's makes small-batch \"Naughty\" (boozy, 21+) and \"Nice\" (family-friendly, with vegan & dairy-free) ice creams — 24 chef-inspired flavors daily. Its Gooey Butter Cake, a nod to the St. Louis classic, was crowned by Oprah the \"sexiest ice cream alive.\" The DeMun scoop shop is one of seven area parlors.",
+   "history": [
+    {
+     "year": 2015,
+     "event": "Tamara Keefe opens the first Clementine's — a 550-sq-ft, fresh-yet-vintage parlor in Lafayette Square — after cashing out her 401(k) to build an FDA-certified kitchen. Named for its \"Naughty\" (boozy) and \"Nice\" ice creams."
+    },
+    {
+     "year": 2017,
+     "event": "Clementine's opens its DeMun Avenue parlor at 730 De Mun as the brand expands across the St. Louis area."
+    },
+    {
+     "year": 2025,
+     "event": "Founder Tamara Keefe is named Missouri's Small Business Person of the Year."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0218",
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/clementinescreamery",
+   "photo_credit": "Clementine's Creamery (clementinescreamery.com)",
+   "price_range": "$$",
+   "order_url": "https://www.clementinescreamery.com/pages/clayton",
+   "anchor": {
+    "address": "730 De Mun Avenue",
+    "x": 142.56,
+    "z": -287.36
+   }
+  },
+  {
+   "id": "hpdm-lst-0219",
+   "building_id": "msbf-5212",
+   "name": "How Sweet Is This Candy Shoppe",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "804 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "candy",
+    "sweets"
+   ],
+   "description": "A tiny ~300-sq-ft candy shop packed with classic and new sweets.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "anchor": {
+    "address": "804 De Mun Avenue",
+    "x": 153.38888888888889,
+    "z": -216.90000000000003
+   }
+  },
+  {
+   "id": "hpdm-lst-0220",
+   "building_id": "msbf-5810",
+   "name": "Seedz Cafe",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "710 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "vegan",
+    "juice",
+    "healthy"
+   ],
+   "description": "100% vegan, nutrient-dense café — veggie burgers, chili-mac, tempeh Reubens, fresh-pressed juices and smoothies.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "anchor": {
+    "address": "710 De Mun Avenue",
+    "x": 166.7555555555556,
+    "z": -350.4222222222222
+   }
+  },
+  {
+   "id": "hpdm-lst-0221",
+   "building_id": "msbf-4491",
+   "name": "Hi-Pointe Drive-In",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "1033 McCausland Avenue",
+   "phone": "(314) 349-2720",
+   "website": "https://hipointedrivein.com",
+   "logo": "logos/hi-pointe-drive-in.png",
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [
+    "photos/hi-pointe-drive-in/01.jpg",
+    "photos/hi-pointe-drive-in/02.jpg",
+    "photos/hi-pointe-drive-in/03.jpg"
+   ],
+   "amenities": [
+    "Award-winning smash burgers",
+    "Boozy & classic shakes",
+    "Chef-driven specials",
+    "Converted 1980s drive-in building",
+    "Local ingredients",
+    "Counter service",
+    "Kids meals",
+    "Beer & wine"
+   ],
+   "tags": [
+    "burgers",
+    "smash-burger",
+    "shakes",
+    "drive-in",
+    "local",
+    "sugarfire",
+    "casual",
+    "marquee",
+    "hi-pointe",
+    "delivery"
+   ],
+   "description": "A cult-favorite burger stand at the foot of McCausland, from Mike Johnson and Adam Pritchett of Sugarfire Smokehouse. Built around the smash burger that had been Sugarfire's best-seller, it turns out inventive chef specials and boozy shakes from a converted 1980s drive-in — the owners kept the old name to honor the building and the Hi-Pointe neighborhood. A St. Louis burger destination and the flagship of a growing local chain.",
+   "history": [
+    {
+     "year": 2017,
+     "event": "Mike Johnson and Adam Pritchett (of Sugarfire Smokehouse) open Hi-Pointe Drive-In on Jan 5 in a converted 1980s drive-in at Clayton & McCausland — built around Sugarfire's award-winning smash burger, and keeping the old name to honor the building and neighborhood."
+    }
+   ],
+   "menu_url": "content/menus.json#hpdm-lst-0221",
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "instagram": "https://www.instagram.com/hipointedrivein",
+   "photo_credit": "Hi-Pointe Drive-In (hipointedrivein.com)",
+   "price_range": "$$",
+   "anchor": {
+    "address": "1033 McCausland Avenue",
+    "x": 365.2200000000001,
+    "z": 348.58000000000004
+   }
+  },
+  {
+   "id": "hpdm-lst-0222",
+   "building_id": "msbf-2502",
+   "name": "Abigail's On De Mun",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "923 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair"
+   ],
+   "description": "Full-service hair salon on DeMun, open since January 2009.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "anchor": {
+    "address": "923 De Mun Avenue",
+    "x": 22.160000000000004,
+    "z": 61.16000000000001
+   }
+  },
+  {
+   "id": "hpdm-lst-0223",
+   "building_id": "msbf-2502",
+   "name": "Kathy Taylor Salon",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "923 De Mun Avenue",
+   "phone": null,
+   "website": "https://kathytaylorsalon.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair",
+    "beauty"
+   ],
+   "description": "Full beauty salon — hair, color, styling, makeup, mani/pedi, skin care.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "anchor": {
+    "address": "923 De Mun Avenue",
+    "x": 22.160000000000004,
+    "z": 61.16000000000001
+   }
+  },
+  {
+   "id": "hpdm-lst-0224",
+   "building_id": "msbf-2502",
+   "name": "Samantha's Other Place",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "927 De Mun Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair",
+    "color"
+   ],
+   "description": "Hair salon specializing in color and foiling, Keratin smoothers, lash/brow tints, waxing, blowouts.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "anchor": {
+    "address": "927 De Mun Avenue",
+    "x": 22.160000000000004,
+    "z": 61.16000000000001
+   }
+  },
+  {
+   "id": "hpdm-lst-0225",
+   "building_id": "msbf-2502",
+   "name": "Strands Hair Salon",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "De Mun Avenue",
+   "phone": null,
+   "website": "https://www.strands-hair.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "salon",
+    "hair"
+   ],
+   "description": "DeMun hair salon of certified stylists.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "anchor": {
+    "address": "De Mun Avenue",
+    "x": 22.160000000000004,
+    "z": 61.16000000000001
+   }
+  }
+ ],
+ "patches": {
+  "starbucks": {
+   "id": "hpdm-lst-0042",
+   "name": "Starbucks",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "7036 Clayton Avenue",
+   "phone": null,
+   "website": "https://www.starbucks.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "coffee",
+    "chain"
+   ],
+   "description": "Coffeehouse chain location near the Hi-Pointe / Clayton commercial node.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Starbucks"
+  },
+  "schnucks": {
+   "id": "hpdm-lst-0045",
+   "name": "Schnucks",
+   "category": "shopping",
+   "subcategory": "grocery",
+   "address": "6600 Clayton Road",
+   "phone": null,
+   "website": "https://nourish.schnucks.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "supermarket",
+    "chain"
+   ],
+   "description": "Full-service supermarket anchoring the Clayton Rd retail node — the St. Louis-founded grocery chain.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Schnucks"
+  },
+  "busey-bank": {
+   "id": "hpdm-lst-0057",
+   "name": "Busey Bank",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "7230 DALE AVE",
+   "phone": null,
+   "website": "https://www.busey.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "bank"
+   ],
+   "description": "Bank branch on Dale Ave.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Busey Bank"
+  },
+  "ibbys": {
+   "id": "hpdm-lst-0067",
+   "name": "Ibby's",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "75 ARUNDEL PL",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "campus",
+    "wash-u"
+   ],
+   "description": "Full-service restaurant in Washington University's Danforth University Center (Arundel Pl) — campus fine-casual dining.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Ibby's"
+  },
+  "caf-bergson": {
+   "id": "hpdm-lst-0068",
+   "name": "Café Bergson",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "75 ARUNDEL PL",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "coffee",
+    "campus",
+    "wash-u"
+   ],
+   "description": "Café in Washington University's Danforth University Center.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Café Bergson"
+  },
+  "office-depot": {
+   "id": "hpdm-lst-0072",
+   "name": "Office Depot",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "1024 South Big Bend Boulevard",
+   "phone": null,
+   "website": "https://www.officedepot.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "office-supply",
+    "chain"
+   ],
+   "description": "Office-supply retailer near Big Bend.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Office Depot"
+  },
+  "amc-esquire-7": {
+   "id": "hpdm-lst-0092",
+   "name": "AMC Esquire 7",
+   "category": "arts",
+   "subcategory": "cinema",
+   "address": "6706 Clayton Road",
+   "phone": null,
+   "website": "https://www.amctheatres.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "multiplex",
+    "chain"
+   ],
+   "description": "Seven-screen AMC multiplex on Clayton Rd, a longtime St. Louis moviegoing fixture (the Esquire dates to 1929).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "AMC Esquire 7"
+  },
+  "panera-bread": {
+   "id": "hpdm-lst-0096",
+   "name": "Panera Bread",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "6734 Clayton Road",
+   "phone": null,
+   "website": "https://www.panerabread.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "bakery-cafe",
+    "chain"
+   ],
+   "description": "Bakery-café chain (St. Louis-founded as the St. Louis Bread Co.) on the Clayton Rd retail strip.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Panera Bread"
+  },
+  "walgreens": {
+   "id": "hpdm-lst-0119",
+   "name": "Walgreens",
+   "category": "shopping",
+   "subcategory": "pharmacy",
+   "address": "6733 Clayton Road",
+   "phone": null,
+   "website": "https://www.walgreens.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "pharmacy",
+    "chain"
+   ],
+   "description": "Pharmacy and convenience store on Clayton Rd.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Walgreens"
+  },
+  "chinese-express": {
+   "id": "hpdm-lst-0120",
+   "name": "Chinese Express",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "7022 Clayton Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "chinese",
+    "takeout"
+   ],
+   "description": "Neighborhood Chinese takeout on the Hi-Pointe strip.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Chinese Express"
+  },
+  "mobil-mart": {
+   "id": "hpdm-lst-0130",
+   "name": "Mobil Mart",
+   "category": "shopping",
+   "subcategory": "grocery",
+   "address": "1405 SILVERTON PL",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "convenience",
+    "fuel"
+   ],
+   "description": "Convenience store / fuel mart.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Mobil Mart"
+  },
+  "lindell-bank": {
+   "id": "hpdm-lst-0142",
+   "name": "Lindell Bank",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "6900 Clayton Avenue",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "bank"
+   ],
+   "description": "Community bank branch (Lindell Bank & Trust) near the Hi-Pointe node.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Lindell Bank"
+  },
+  "hi-pointe-backlot": {
+   "id": "hpdm-lst-0157",
+   "name": "Hi-Pointe Backlot",
+   "category": "arts",
+   "subcategory": "cinema",
+   "address": "1002 Hi Pointe Place",
+   "phone": null,
+   "website": "https://hipointetheatre.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "art-house",
+    "second-screen"
+   ],
+   "description": "The Hi-Pointe Theatre's second, smaller screening room next door — added programming and events beside the historic 1922 auditorium.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Hi-Pointe Backlot"
+  },
+  "qdoba": {
+   "id": "hpdm-lst-0162",
+   "name": "Qdoba",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "6701 Clayton Road",
+   "phone": null,
+   "website": "https://www.qdoba.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "mexican",
+    "fast-casual",
+    "chain"
+   ],
+   "description": "Fast-casual Mexican grill.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Qdoba"
+  },
+  "porter-paints": {
+   "id": "hpdm-lst-0163",
+   "name": "Porter Paints",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "6701 Clayton Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "paint",
+    "hardware"
+   ],
+   "description": "Paint & coatings store (PPG Porter Paints) — verify current operation.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "enriched": true,
+   "_match_name": "Porter Paints"
+  },
+  "sumers-recreation-center": {
+   "id": "hpdm-lst-0182",
+   "name": "Sumers Recreation Center",
+   "category": "services",
+   "subcategory": "fitness",
+   "address": "6800 WYDOWN BLVD",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "campus",
+    "wash-u",
+    "gym"
+   ],
+   "description": "Washington University's main recreation & athletics center on Wydown Blvd.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Sumers Recreation Center"
+  },
+  "commerce-bank": {
+   "id": "hpdm-lst-0188",
+   "name": "Commerce Bank",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "6369 Clayton Road",
+   "phone": null,
+   "website": "https://www.commercebank.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "bank"
+   ],
+   "description": "Full-service bank branch on Clayton Rd.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Commerce Bank"
+  },
+  "total-access-urgent-care": {
+   "id": "hpdm-lst-0199",
+   "name": "Total Access Urgent Care",
+   "category": "services",
+   "subcategory": "health",
+   "address": "1005 South Big Bend Boulevard",
+   "phone": null,
+   "website": "https://www.totalaccessurgentcare.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "urgent-care",
+    "clinic"
+   ],
+   "description": "Walk-in urgent-care clinic near Big Bend.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "enriched": true,
+   "_match_name": "Total Access Urgent Care"
+  }
+ }
+}
