@@ -1519,7 +1519,21 @@ export function injectOverheadWiggle(material) {
          attribute float aOverhead;
          attribute float aTreeHeightNorm;
          attribute float aLeafBody;   // 0 at the glued stem → 1 at the blade tip
-         attribute float aLeafPhase;  // per-leaf random flutter phase`)
+         attribute float aLeafPhase;  // per-leaf random flutter phase
+         // Fractal (fBm) value-noise — real wind is turbulent, not a clean sine.
+         float ovHash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+         float ovVNoise(vec2 p){
+           vec2 i = floor(p), f = fract(p);
+           float a = ovHash21(i), b = ovHash21(i + vec2(1.0, 0.0));
+           float c = ovHash21(i + vec2(0.0, 1.0)), d = ovHash21(i + vec2(1.0, 1.0));
+           vec2 u = f * f * (3.0 - 2.0 * f);
+           return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+         }
+         float ovFbm(vec2 p){
+           float v = 0.0, a = 0.5;
+           for (int o = 0; o < 3; o++) { v += a * ovVNoise(p); p *= 2.0; a *= 0.5; }
+           return v;   // ~[0,1]
+         }`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
          if (aOverhead > 0.5) {
            // MOTION = the shared WEATHER, base-anchored (aTreeHeightNorm), all
@@ -1527,8 +1541,9 @@ export function injectOverheadWiggle(material) {
            // a flat rigid slide) is HULA + FLUTTER — NOT the ruche (cut: starfish).
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
            float wI    = uWindIntensity;
-           float spike = sin(uTime * 1.5) * 0.6 + sin(uTime * 2.3 + 1.0) * 0.4;
-           float gust  = uGustsScale * uGustEnvelope * max(spike - 0.3, 0.0);
+           // GUST — a turbulent fBm pulse (not a clean sine) so the wind swells and
+           //   lulls irregularly. Advected downwind. 0 when wind is off.
+           float gust  = uGustsScale * uGustEnvelope * ovFbm(vec2(uTime * 0.4) + wd * uTime * 0.2);
            // HULA — the stacked bands bend OUT OF PHASE: base-anchored (∝ height),
            //   phase-LAGGED up the stack, on a slowly DRIFTING axis. So the 3 discs
            //   ripple as a living column instead of sliding rigidly together — the
@@ -1539,13 +1554,13 @@ export function injectOverheadWiggle(material) {
            vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4));
            // Downwind LEAN — the shared compass direction (all trees lean the same).
            vec2  lean   = wd * (amp * 0.7);
-           // FLUTTER — fast fine surface shimmer (leaves catching the wind). A stamp
-           //   has no per-leaf geo, so vary by vertex position → a spatial ripple of
-           //   the canopy surface. xz only (invisible in y from straight overhead).
-           //   NO floor: purely wind-scaled, so wind 0 → dead still.
-           float fph     = dot(position.xz, vec2(0.9, 1.7));
-           float flutAmp = 0.03 * wI * aTreeHeightNorm;
-           vec2  flutter = vec2(sin(uTime * 6.0 + fph), cos(uTime * 5.3 + fph * 1.3)) * flutAmp;
+           // FLUTTER — turbulent fBm shimmer (leaves catching the wind), ADVECTED
+           //   downwind so it flows across the canopy + never repeats. A stamp has no
+           //   per-leaf geo, so it varies by vertex position → a spatial ripple. xz
+           //   only (invisible in y from overhead). NO floor: wind 0 → dead still.
+           vec2  np      = position.xz * 0.55 + wd * uTime * 1.2;
+           float flutAmp = 0.05 * wI * aTreeHeightNorm;
+           vec2  flutter = (vec2(ovFbm(np), ovFbm(np + 41.7)) - 0.5) * (2.0 * flutAmp);
            transformed.xz += hula + lean + flutter;
            // Legacy per-leaf flutter for the procedural relic (aLeafBody geos only).
            if (aLeafBody > 0.001) {
