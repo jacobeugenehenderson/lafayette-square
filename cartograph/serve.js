@@ -1286,6 +1286,28 @@ createServer(async (req, res) => {
       } else {
         skipped.push('buildings (layer hidden)')
       }
+      // content — the content-join (bake-content.js): spatially joins the raw
+      // sources (OSM POIs · assessor parcels · NR survey) onto the just-baked
+      // building set → content/{roster,listings}.json, so content MEMBERSHIP ==
+      // slab membership by construction (0 orphans). Runs AFTER buildings (needs
+      // the baked id set). LS is guarded (its content is hand-curated) — the step
+      // + bake-content both skip the default scene. Hand-authoring survives via
+      // the committed override sidecars (listings.overrides.json).
+      if (!isDefaultScene) {
+        const SCENE_BAKED_BUILDINGS = join(REPO_ROOT, 'public', 'baked', bakeScene, 'buildings.json')
+        const CONTENT_DIR = join(bakePaths.raw, '..', 'content')
+        await runIfDirty('content',
+          [SCENE_BAKED_BUILDINGS, MAP_JSON,
+           join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'stl_parcels.json'), join(bakePaths.raw, 'stlco_parcels.json'),
+           join(CONTENT_DIR, 'nr-inventory.json'), join(CONTENT_DIR, 'county-land-use-codes.csv'),
+           join(CONTENT_DIR, 'listings.overrides.json'), join(CONTENT_DIR, 'roster.overrides.json'),
+           join(here, 'bake-content.js')],
+          [join(CONTENT_DIR, 'roster.json'), join(CONTENT_DIR, 'listings.json')],
+          `node bake-content.js ${sceneFlag}`,
+          { cwd: here, timeout: 60000 })
+      } else {
+        skipped.push('content (LS content is hand-curated — not regenerated)')
+      }
       if (layerOn('lamp') && isDefaultScene) {
         // bake-lamps' SOURCE is still LS's street_lamps.json (terrain is
         // scene-aware; source is scene-keyed in step C). Gate to the default

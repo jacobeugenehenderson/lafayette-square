@@ -78,6 +78,10 @@ cartograph/data/hipointe-demun/content/*
 !cartograph/data/hipointe-demun/content/listings.json
 !cartograph/data/hipointe-demun/content/nr-inventory.json
 !cartograph/data/hipointe-demun/content/county-land-use-codes.csv
+# override sidecars — the hand-authored SSOT bake-content applies over the
+# raw join and never clobbers (reproducible source, like building-overrides).
+!cartograph/data/hipointe-demun/content/listings.overrides.json
+!cartograph/data/hipointe-demun/content/roster.overrides.json
 !cartograph/data/hipointe-demun/raw/
 !cartograph/data/hipointe-demun/clean/
 cartograph/data/hipointe-demun/raw/*
