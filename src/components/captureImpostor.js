@@ -99,8 +99,8 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     // shadow maps so the LEAVES CAST SHADOWS on each other + on the branches
     // beneath, and LOW ambient so those darks are actually dark (branches read dark,
     // not flat grey). The atlas normal map also shades each leaf by orientation.
-    lights.push(new THREE.AmbientLight(0xffffff, 0.32))
-    const key = new THREE.DirectionalLight(0xffffff, 1.5)
+    lights.push(new THREE.AmbientLight(0xffffff, 0.22))
+    const key = new THREE.DirectionalLight(0xffffff, 1.6)
     const D = Math.max(1, heightM, canopyRadiusM * 2)
     key.position.set(0.45 * D, 1.25 * D, 0.35 * D)     // above + angled → shadows fall sideways
     key.target.position.set(0, heightM * 0.4, 0)

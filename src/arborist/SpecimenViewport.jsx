@@ -1087,10 +1087,11 @@ function Skeleton({
     if (!snapshotDiscs) return null
     const n = snapshotDiscs.length
     return snapshotDiscs.map(({ tex }, i) => {
-      // bands are bottom→top (branch=0 … canopy=n-1): 0.5 → 1.0 — the lower bands
-      // sit in the crown's shadow, so glimpsing them through the top's gaps reads
-      // as dark depth (paired with the shadows now baked into each stamp).
-      const b = n > 1 ? 0.5 + 0.5 * (i / (n - 1)) : 1.0
+      // bands are bottom→top (branch=0 … canopy=n-1): 0.3 → 1.0 — the lower bands
+      // (where the main limbs live) sit in the crown's shadow, so glimpsing them
+      // through the top's gaps reads as dark depth. Branches you see in gaps are
+      // mostly in these darkened lower bands.
+      const b = n > 1 ? 0.3 + 0.7 * (i / (n - 1)) : 1.0
       const m = new THREE.MeshBasicMaterial({
         map: tex, color: new THREE.Color(b, b, b),
         transparent: false, alphaTest: 0.4,
