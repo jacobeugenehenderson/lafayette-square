@@ -2,23 +2,24 @@
  * ExtentApp — the Neighborhood Perimeter Builder (a top-level destination screen).
  *
  * Cartograph's step 0, PRE-skeleton / PRE-pour: the operator defines a
- * neighborhood's extent on a labeled aerial. The flow (settled with Jacob,
- * 2026-07-03):
+ * neighborhood's extent on a labeled aerial, then pours it — the whole
+ * intake→3D arc in one screen, no hand-CLI. The flow:
  *
- *   ZIP → centroid → fetch the generic square → name the boundary Sides →
- *   Phalanges (a smallified skeleton pass on the bounding region — reuse the
- *   real protocol, don't re-derive off raw OSM) → centroid of the resulting
- *   polygon → radius control → persist geography.json + neighborhood_boundary.json
- *   + neighborhood.json.
+ *   SEARCH a place ('+'-joined anchors → union bbox; a named place also yields
+ *   its OFFICIAL boundary as a best-guess) → frame the aerial → FETCH THIS VIEW
+ *   (the full bundle: OSM+skeleton + MSBF buildings + assessor parcels, with
+ *   per-source status) → name the boundary Sides (corners resolve from skeleton
+ *   junctions) OR adopt the official boundary → radius → name/blurb →
+ *   POUR → DESIGNER (commit: re-center + reproject + boundary + derived tz;
+ *   then pipeline → ribbons → bake).
  *
  * This is a DESTINATION, not a Designer tool-mode (its own nav button, like
  * Designer / Stage) — so it renders as an early return from CartographApp with
  * its own minimal top-down Canvas, never threaded through the shot-branched
  * main scene.
  *
- * Build status: STEP 1 — the screen shell + the full-square aerial of the
- * active scene (no boundary circle: the operator is authoring it). ZIP seed,
- * labels, Sides→Phalanges→centroid, and the radius control land in later steps.
+ * Persists: geography.json (projection + derived timezone), neighborhood_boundary.json
+ * (the circle + membership polygon), neighborhood.json (name/blurb/sides/radius/tz).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -26,7 +27,7 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
 import {
-  fetchSkeletonLabels, fetchExtentCorners, fetchStreetNames, geocodeZip, fetchExtent, fetchGeography,
+  fetchSkeletonLabels, fetchExtentCorners, fetchStreetNames, geocodePlace, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourScene, fetchRibbons, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides,
@@ -215,7 +216,7 @@ function circlePts(cx, cz, r, n = 96) {
   for (let i = 0; i <= n; i++) { const t = (i / n) * Math.PI * 2; out.push([cx + r * Math.cos(t), 4, cz + r * Math.sin(t)]) }
   return out
 }
-function ExtentBoundary({ corners, centroid, radiusM }) {
+function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
   if (!corners?.length) return null
   const poly = corners.map(c => [c.x, 4, c.z])
   if (corners.length >= 3) poly.push([corners[0].x, 4, corners[0].z])
@@ -225,7 +226,7 @@ function ExtentBoundary({ corners, centroid, radiusM }) {
       {centroid && radiusM > 0 && (
         <Line points={circlePts(centroid.x, centroid.z, radiusM)} color="#ffd23f" lineWidth={2} />
       )}
-      {corners.map((c, i) => (
+      {showVertices && corners.map((c, i) => (
         <mesh key={i} position={[c.x, 4.5, c.z]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={40}>
           <circleGeometry args={[16, 20]} />
           <meshBasicMaterial color="#38e1ff" transparent opacity={0.95} depthTest={false} />
@@ -585,21 +586,55 @@ export default function ExtentApp() {
 
   // The boundary streets, in order around the perimeter (the operator names them
   // reading the labeled aerial). Corners resolve server-side from the skeleton.
-  const [zip, setZip] = useState('')
+  const [query, setQuery] = useState('')
   const [seeding, setSeeding] = useState(false)
   const [seedError, setSeedError] = useState(null)
+  const [fetchSources, setFetchSources] = useState(null)   // per-source ✓/count/error after a Fetch
   // Intake starts BLANK: nothing has been fetched yet, so show no map until the
-  // operator Locates a ZIP (or Fetches). No defaulting to the active scene's map.
+  // operator Searches (or Fetches). No defaulting to the active scene's map.
   const [located, setLocated] = useState(false)
   const [committed, setCommitted] = useState(false)
   const [building, setBuilding] = useState(false)
   const [buildStage, setBuildStage] = useState(null)
   const [previewStreet, setPreviewStreet] = useState(null)
   const [sides, setSides] = useState(['', '', '', ''])
-  const [corners, setCorners] = useState(null)
+  const [streetCorners, setStreetCorners] = useState(null)   // resolved from named boundary streets
+  // The official boundary (best-guess fill from the geocoder) + whether we're
+  // adopting it. Named streets OVERRIDE it when the operator resolves ≥3 (§0.0).
+  const [official, setOfficial] = useState(null)     // { ring:[[lon,lat]…], centroidLL, displayName }
+  const [useOfficial, setUseOfficial] = useState(false)
+  const [anchors, setAnchors] = useState(null)       // matched place names, for the "matched:" line
+  // Descriptive metadata — name + short blurb (the blurb doubles as SEO/description).
+  const [name, setName] = useState('')
+  const [blurb, setBlurb] = useState('')
   const [radiusM, setRadiusM] = useState(0)
   const [radiusTouched, setRadiusTouched] = useState(false)
   const draftHydrated = useRef(false)
+
+  // The official boundary projected into the CURRENT frame (for drawing + as the
+  // best-guess `corners`). Recomputed if the geography re-frames (e.g. a re-fetch).
+  const officialCorners = useMemo(() => {
+    if (!official?.ring || !geo) return null
+    const pts = official.ring.map(([lon, lat]) => {
+      const [x, z] = wgs84ToLocal(geo, lon, lat)
+      return { x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100 }
+    })
+    if (pts.length < 3) return null
+    const [cx, cz] = wgs84ToLocal(geo, official.centroidLL.lon, official.centroidLL.lat)
+    const centroid = { x: Math.round(cx * 100) / 100, z: Math.round(cz * 100) / 100 }
+    let radius = 0
+    for (const p of pts) radius = Math.max(radius, Math.hypot(p.x - centroid.x, p.z - centroid.z))
+    return { corners: pts, centroid, radius: Math.round(radius), closed: true, source: 'official' }
+  }, [official, geo])
+
+  // Effective boundary: named streets (precise, once ≥3 resolve) OVERRIDE the
+  // official best-guess; else the official boundary if adopted; else the partial
+  // street result (so the "not closed" hint still shows while naming).
+  const corners = useMemo(() => {
+    if (streetCorners?.closed) return streetCorners
+    if (useOfficial && officialCorners) return officialCorners
+    return streetCorners
+  }, [streetCorners, useOfficial, officialCorners])
 
   // Roster membership (must follow `corners`): default = centroid in the
   // boundary-street polygon; overrides layer on top.
@@ -639,8 +674,9 @@ export default function ExtentApp() {
   // On scene open: reset, then restore the auto-saved draft (sides/radius) so the
   // operator's selections survive reloads.
   useEffect(() => {
-    setSeedError(null); setLocated(false); setCommitted(false)
-    setSides(['', '', '', '']); setCorners(null); setRadiusTouched(false); setPreviewStreet(null)
+    setSeedError(null); setLocated(false); setCommitted(false); setFetchSources(null)
+    setSides(['', '', '', '']); setStreetCorners(null); setRadiusTouched(false); setPreviewStreet(null)
+    setOfficial(null); setUseOfficial(false); setAnchors(null); setName(''); setBlurb('')
     draftHydrated.current = false
     let cancelled = false
     fetchNeighborhood(scene).then(nb => {
@@ -649,7 +685,7 @@ export default function ExtentApp() {
         const s = [...nb.sides]; while (s.length < 4) s.push('')
         setSides(s)
       }
-      setZip(nb.zip || '')
+      setName(nb.name || ''); setBlurb(nb.blurb || '')
       if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
       if (nb.committed) setCommitted(true)
       draftHydrated.current = true
@@ -666,9 +702,9 @@ export default function ExtentApp() {
   useEffect(() => {
     if (!draftHydrated.current) return
     const clean = sides.map(s => s.trim()).filter(Boolean)
-    const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, zip: zip.trim() }).catch(() => {}) }, 500)
+    const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim() }).catch(() => {}) }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, zip, scene])
+  }, [sides, radiusM, name, blurb, scene])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -680,50 +716,43 @@ export default function ExtentApp() {
     }, 50)
   }
 
-  const [locating, setLocating] = useState(false)
-  const zipValid = /^\d{5}$/.test(zip)
+  const [searching, setSearching] = useState(false)
 
-  // A ±2 km provisional frame for a fresh location — just an initial camera
-  // framing; the aerial follows the camera, so the operator pans/zooms freely.
-  const provisionalGeo = (lat, lon, halfM = 2000) => {
-    const lonToMeters = Math.round(111320 * Math.cos((lat * Math.PI) / 180))
-    const latToMeters = 111000
-    const dLat = halfM / latToMeters, dLon = halfM / lonToMeters
+  // A frame (geography) spanning a bbox — used to re-frame the aerial on a search.
+  // The aerial follows the camera over the global photo, so this is only the
+  // initial camera framing; the local metric frame is finalized on Commit.
+  const geoFromBbox = (bbox) => {
+    const lat = (bbox.minLat + bbox.maxLat) / 2, lon = (bbox.minLon + bbox.maxLon) / 2
     return {
-      lat, lon, timezone: 'America/Chicago', lonToMeters, latToMeters,
-      bbox: { minLat: lat - dLat, maxLat: lat + dLat, minLon: lon - dLon, maxLon: lon + dLon },
+      lat, lon, timezone: 'America/Chicago',
+      lonToMeters: Math.round(111320 * Math.cos((lat * Math.PI) / 180)), latToMeters: 111000,
+      bbox: { ...bbox },
     }
   }
 
-  // ZIP → jump the camera to the centroid (NO fetch). Sets a provisional frame so
-  // the aerial renders there; the operator then frames the neighborhood by eye.
-  const onLocate = async () => {
-    if (!zipValid || locating) return
-    setLocating(true); setSeedError(null)
+  // SEARCH → geocode the '+'-joined anchors → union bbox → re-frame the aerial
+  // (NO fetch — the carve-out is the explicit "Fetch this view" over the framed
+  // viewport). A single named place also returns its OFFICIAL boundary, adopted
+  // as the best-guess extent (the operator overrides by naming streets). Replaces
+  // the ZIP field — a hood spans several ZIPs; a ZIP spans several hoods.
+  const onSearch = async () => {
+    const q = query.trim()
+    if (!q || searching) return
+    setSearching(true); setSeedError(null); setAnchors(null)
     try {
-      const { lat, lon } = await geocodeZip(zip)
-      const g = useCartographStore.getState().sceneGeography
-      const cam = orthoRef.current
-      if (g && cam) {
-        // PAN the camera to the ZIP within the CURRENT frame — no geography
-        // change, so the aerial + any existing labels stay in one frame (old
-        // labels just move off-screen if you jump far). The aerial follows the
-        // camera over the global photo; the frame only changes on Fetch.
-        const x = (lon - g.lon) * g.lonToMeters
-        const z = (g.lat - lat) * g.latToMeters
-        cam.position.set(x, 500, z)
-        cam.updateProjectionMatrix()
-        const ctl = controlsRef.current
-        if (ctl) { ctl.target.set(x, 0, z); ctl.update() }
-      } else {
-        // Brand-new scene with no frame yet — establish a provisional one on the ZIP.
-        useCartographStore.setState({ sceneGeography: provisionalGeo(lat, lon) })
-      }
+      const r = await geocodePlace(q)
+      if (!r?.bbox) throw new Error('nothing matched')
+      useCartographStore.setState({ sceneGeography: geoFromBbox(r.bbox) })
+      setAnchors(r.anchors || null)
+      // Fresh place — clear any prior boundary work.
+      setSides(['', '', '', '']); setStreetCorners(null); setRadiusTouched(false); setFetchSources(null)
+      if (r.official) { setOfficial(r.official); setUseOfficial(true) }
+      else { setOfficial(null); setUseOfficial(false) }
       setLocated(true)
     } catch (e) {
-      setSeedError(e.message || 'ZIP lookup failed')
+      setSeedError(e.message || 'search failed')
     } finally {
-      setLocating(false)
+      setSearching(false)
     }
   }
 
@@ -744,10 +773,11 @@ export default function ExtentApp() {
         minLat: Math.min(latA, latB), maxLat: Math.max(latA, latB),
         minLon: Math.min(lonA, lonB), maxLon: Math.max(lonA, lonB),
       }
-      await fetchExtent(scene, bbox)
+      const r = await fetchExtent(scene, bbox)
+      setFetchSources(r?.sources || null)
       const g = await fetchGeography(scene).catch(() => null)
       if (g) useCartographStore.setState({ sceneGeography: g })
-      setSides(['', '', '', '']); setCorners(null); setRadiusTouched(false)
+      setSides(['', '', '', '']); setStreetCorners(null); setRadiusTouched(false)
       setSeedToken(t => t + 1)
     } catch (e) {
       setSeedError(e.message || 'fetch failed')
@@ -772,9 +802,17 @@ export default function ExtentApp() {
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
       setBuildStage('Committing extent…')
+      const usingOfficial = corners.source === 'official'
       const [lon, lat] = localToWgs84(geo, corners.centroid.x, corners.centroid.z)
-      const cleanSides = sides.map(s => s.trim()).filter(Boolean)
-      await commitExtent(scene, { center: { lat, lon }, radius: Math.round(radiusM), sides: cleanSides })
+      // Named streets → precise skeleton-snapped polygon; official boundary →
+      // the geocoder's lon/lat ring, projected server-side into the re-centered
+      // frame (§0.0 best guess). tz is derived from `center` at commit.
+      const cleanSides = usingOfficial ? [] : sides.map(s => s.trim()).filter(Boolean)
+      await commitExtent(scene, {
+        center: { lat, lon }, radius: Math.round(radiusM), sides: cleanSides,
+        name: name.trim(), blurb: blurb.trim(),
+        polygon: usingOfficial ? official.ring : undefined,
+      })
       const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
       const update = {}
       if (g) update.sceneGeography = g
@@ -811,9 +849,9 @@ export default function ExtentApp() {
   // Debounced corner resolve whenever the named sides change.
   useEffect(() => {
     const clean = sides.map(s => s.trim()).filter(Boolean)
-    if (clean.length < 3) { setCorners(null); return }
+    if (clean.length < 3) { setStreetCorners(null); return }
     const t = setTimeout(() => {
-      fetchExtentCorners(scene, clean).then(setCorners).catch(() => setCorners(null))
+      fetchExtentCorners(scene, clean).then(setStreetCorners).catch(() => setStreetCorners(null))
     }, 350)
     return () => clearTimeout(t)
   }, [sides, scene, seedToken])
@@ -875,7 +913,8 @@ export default function ExtentApp() {
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
           {located && <ExtentStreets streets={corners?.streets} preview={previewStreet} />}
-          {located && <ExtentBoundary corners={corners?.corners} centroid={corners?.centroid} radiusM={radiusM} />}
+          {located && <ExtentBoundary corners={corners?.corners} centroid={corners?.centroid} radiusM={radiusM}
+            showVertices={corners?.source !== 'official'} />}
           <MapControls
             ref={controlsRef}
             makeDefault
@@ -910,31 +949,69 @@ export default function ExtentApp() {
           </div>
         </div>
 
-        {/* Side panel — the ZIP / Sides / Radius controls land here in later
-            steps. Step 1 shows the active scene + the flow so the surface reads. */}
+        {/* Side panel — search → fetch bundle → name streets / official boundary
+            → radius → name/blurb → pour. */}
         <div className="carto-panel">
           <h1>Neighborhood Extent</h1>
           <div className="carto-section">
             <h2>{scene}</h2>
+            {/* Place search — '+'-join anchors (e.g. "High Point + De Mun"); a
+                named place also seeds its official boundary. Replaces the ZIP box. */}
             <div className="carto-row">
-              <input className="carto-input" value={zip} placeholder="5-digit zip"
-                inputMode="numeric" maxLength={5} spellCheck={false}
-                onChange={e => setZip(e.target.value.replace(/[^0-9]/g, ''))}
-                onKeyDown={e => { if (e.key === 'Enter') onLocate() }} />
-              <button className="carto-btn-sm" disabled={!zipValid || locating} onClick={onLocate}
-                title="Jump the camera to this ZIP (no fetch — then frame the neighborhood)">
-                {locating ? '…' : 'Locate'}
+              <input className="carto-input" value={query} placeholder="search a place  ·  A + B to combine"
+                spellCheck={false}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') onSearch() }} />
+              <button className="carto-btn-sm" disabled={!query.trim() || searching} onClick={onSearch}
+                title="Find the place and frame the aerial (no fetch). Join anchors with + for a composite hood.">
+                {searching ? '…' : 'Search'}
               </button>
             </div>
+            {anchors && anchors.some(a => a.displayName || a.ok === false) && (
+              <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.85 }}>
+                {anchors.map((a, i) => (
+                  <div key={i}>{a.ok ? '✓' : '✗'} {a.displayName || `${a.q} — no match`}</div>
+                ))}
+              </div>
+            )}
             <div className="carto-row">
               <button className="carto-btn carto-btn--grow" disabled={!located || !geo || seeding} onClick={onFetchView}
-                title="Fetch street data over the framed view — anything visible here becomes nameable">
-                {seeding ? 'Fetching…' : 'Fetch this view'}
+                title="Fetch the full data bundle (OSM + buildings + parcels) over the framed view — anything visible here becomes nameable">
+                {seeding ? 'Fetching bundle…' : 'Fetch this view'}
               </button>
             </div>
+            {fetchSources && (
+              <div className="carto-extent-status ok" style={{ fontSize: 11, lineHeight: 1.5 }}>
+                {[['OSM', fetchSources.osm], ['buildings', fetchSources.buildings], ['parcels', fetchSources.parcels]].map(([label, s]) => (
+                  <div key={label}>
+                    {s?.ok ? '✓' : '✗'} {label}
+                    {s?.ok && Number.isFinite(s.count) ? ` · ${s.count.toLocaleString()}` : ''}
+                    {s?.note ? ` — ${s.note}` : ''}
+                    {!s?.ok && s?.error ? ` — ${s.error}` : ''}
+                  </div>
+                ))}
+              </div>
+            )}
             {seedError && <div className="carto-extent-status warn">{seedError}</div>}
+
+            {/* Official boundary — the best-guess fill (§0.0). Adopt with a click;
+                naming ≥3 streets below overrides it with the skeleton-snapped one. */}
+            {official && (
+              <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
+                <button className="carto-btn-sm" onClick={() => setUseOfficial(v => !v)}
+                  style={useOfficial ? { background: '#ffd23f', color: '#12140f', fontWeight: 600 } : undefined}
+                  title="Use the place's official boundary as the extent — a best guess you can refine by naming streets or dragging the radius">
+                  {useOfficial ? '✓ Official boundary' : '○ Use official boundary'}
+                </button>
+                {streetCorners?.closed && useOfficial &&
+                  <span className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 4 }}>
+                    named streets override the official boundary
+                  </span>}
+              </div>
+            )}
+
             <div className="carto-label" style={{ cursor: 'default', flex: 'none', margin: '10px 0 8px' }}>
-              Boundary streets
+              Boundary streets{official ? ' (override the official boundary)' : ''}
             </div>
             {sides.map((s, i) => (
               <SideInput key={i} index={i} value={s} names={names}
@@ -948,7 +1025,7 @@ export default function ExtentApp() {
             {corners && (
               <div className={`carto-extent-status ${corners.closed ? 'ok' : 'warn'}`}>
                 {corners.closed
-                  ? `✓ closed · centroid (${Math.round(corners.centroid.x)}, ${Math.round(corners.centroid.z)}) · fits ⌀${corners.radius} m`
+                  ? `✓ ${corners.source === 'official' ? 'official boundary' : 'closed'} · centroid (${Math.round(corners.centroid.x)}, ${Math.round(corners.centroid.z)}) · fits ⌀${corners.radius} m`
                   : `⚠ not closed — ${gapCount} pair(s) share no corner. Pick the street that actually meets there.`}
               </div>
             )}
@@ -977,6 +1054,24 @@ export default function ExtentApp() {
                       +{activate.size} re-activated · −{hide.size} hidden · click a ghost to add, a building to drop
                     </span>
                   : (activate.size + hide.size) > 0 && <span className="carto-meta--value">+{activate.size} / −{hide.size}</span>}
+              </div>
+            )}
+
+            {/* Descriptive metadata — the hood's display name + a short blurb
+                (the blurb doubles as the public SEO/description). Persisted to
+                neighborhood.json; independent of the geometry above. */}
+            {corners?.closed && (
+              <div style={{ marginTop: 12 }}>
+                <div className="carto-label" style={{ cursor: 'default', flex: 'none', marginBottom: 6 }}>Name & blurb</div>
+                <div className="carto-row">
+                  <input className="carto-input" value={name} placeholder="neighborhood name" spellCheck={false}
+                    onChange={e => setName(e.target.value)} />
+                </div>
+                <div className="carto-row" style={{ marginTop: 6 }}>
+                  <textarea className="carto-input" value={blurb} placeholder="short blurb — bounded by…, the history in a line"
+                    rows={2} spellCheck={false} style={{ resize: 'vertical', minHeight: 44 }}
+                    onChange={e => setBlurb(e.target.value)} />
+                </div>
               </div>
             )}
 

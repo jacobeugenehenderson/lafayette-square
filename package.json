@@ -25,6 +25,7 @@
     "react-dom": "^18.2.0",
     "suncalc": "^1.9.0",
     "three": "^0.160.0",
+    "tz-lookup": "^6.1.25",
     "zustand": "^4.4.0"
   },
   "overrides": {

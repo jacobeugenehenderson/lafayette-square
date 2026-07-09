@@ -73,6 +73,19 @@ export async function geocodeZip(zip) {
   return { lat: parseFloat(p.latitude), lon: parseFloat(p.longitude) }
 }
 
+// Extent editor: place-name search (server-side Nominatim). '+'-joined anchors
+// unioned to a framing bbox; a single named place also returns its OFFICIAL
+// boundary as the best-guess extent. Returns { bbox, anchors:[{q,ok,displayName}],
+// official:{ring:[[lon,lat]…],centroidLL,displayName}|null }.
+export async function geocodePlace(query) {
+  const res = await fetch(`${BASE}/geocode`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: query }),
+  })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `geocode ${res.status}`)
+  return j
+}
+
 // Extent editor: the Phalanges over the operator-framed square — write
 // geography (centered on the bbox) → fetch OSM → skeleton. Long-running.
 export async function fetchExtent(scene, bbox) {
