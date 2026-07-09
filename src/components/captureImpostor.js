@@ -322,10 +322,13 @@ export function captureTreeOverheadBands(gl, gltfScene, treeMaterial, { canopyRa
     { key: 'mid',    yLo: Cb + s / 3,                    yHi: Cb + (2 * s) / 3 },
     { key: 'canopy', yLo: Cb + (2 * s) / 3,              yHi: maxY },
   ]
+  console.log('[overhead-snapshot] materialized: heightM', heightM, 'canopyBaseY', Cb, 'minY', minY, 'maxY', maxY, '→ bands', cuts.map(c => c.key))
   const bands = cuts.map(({ key, yLo, yHi }) => {
+    console.log('[overhead-snapshot] rendering band', key, 'yLo', yLo.toFixed(2), 'yHi', yHi.toFixed(2))
     const tex = renderTreeToTexture(gl, scene, heightM, rM, {
       topDown: true, band: { yLo, yHi }, size: 256, noMipmap: true,
     })
+    console.log('[overhead-snapshot] band', key, 'done')
     tex.name = `overhead-band:${key}`
     return {
       key, tex, yLo, yHi,

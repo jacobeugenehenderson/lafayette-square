@@ -1012,6 +1012,15 @@ function Skeleton({
   // POSTs into the slab atlas (Jacob's chosen ship path, 2026-07-09).
   const [snapshot, setSnapshot] = useState(null)   // { bands:[{key,tex,yLoNorm,yHiNorm}], heightM }
   const snapKeyRef = useRef(null)
+  // Diagnostic: surface a WebGL context loss (the "full crash") in the console so
+  // we can tell a GPU death from a JS throw. Remove once the capture is stable.
+  useEffect(() => {
+    const canvas = gl?.domElement
+    if (!canvas) return
+    const onLost = (e) => { console.error('[overhead-snapshot] ⚠️ WEBGL CONTEXT LOST during capture', e) }
+    canvas.addEventListener('webglcontextlost', onLost)
+    return () => canvas.removeEventListener('webglcontextlost', onLost)
+  }, [gl])
   useEffect(() => {
     if (!overheadMode || !gl || !atlas.treeMaterial || !overheadRec || !url) return
     if (snapKeyRef.current === url) return   // already captured this chassis
