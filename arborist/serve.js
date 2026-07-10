@@ -1314,6 +1314,54 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    // POST /overhead/:look/:species — persist a PREBAKED overhead-snapshot asset
+    // into the look's slab. The Salon Browse capture auto-POSTs here (no publish
+    // button — everything autopersists until pour). Body:
+    //   { heightM, canopyRadiusM, bands:[{key, yLoNorm, yHiNorm,
+    //     albedo:<png dataURL>, ao:<png dataURL>}] }  (bottom→top)
+    // Writes the band PNGs under public/baked/<look>/trees/overhead/<species>/ and
+    // merges an overheadBySpecies[species] entry into that look's trees-atlas.json.
+    // The runtime (OverheadTrees) reads that manifest + lazy-loads the PNGs.
+    if (req.method === 'POST' && (m = path.match(/^\/overhead\/([^/]+)\/([^/]+)$/))) {
+      const look = m[1], species = m[2]
+      const body = await readBody(req)
+      try {
+        const dir = join(ROOT, 'public', 'baked', look, 'trees', 'overhead', species)
+        mkdirSync(dir, { recursive: true })
+        const decode = (dataUrl) => Buffer.from(String(dataUrl).replace(/^data:image\/png;base64,/, ''), 'base64')
+        const bands = (body.bands || []).map((b) => {
+          const write = (kind, dataUrl) => {
+            const file = `${b.key}.${kind}.png`
+            writeFileSync(join(dir, file), decode(dataUrl))
+            return `/trees/overhead/${species}/${file}`
+          }
+          return {
+            key: b.key, yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
+            albedo: write('albedo', b.albedo),
+            ao: write('ao', b.ao),
+          }
+        })
+        // Merge into the look's trees-atlas.json (read-modify-write). bake-look
+        // regenerates that file on a full re-bake — it must preserve
+        // overheadBySpecies the same way it preserves impostorBySpecies (TODO).
+        const atlasPath = join(ROOT, 'public', 'baked', look, 'trees-atlas.json')
+        let atlas = {}
+        if (existsSync(atlasPath)) { try { atlas = JSON.parse(readFileSync(atlasPath, 'utf8')) } catch {} }
+        atlas.overheadBySpecies = atlas.overheadBySpecies || {}
+        atlas.overheadBySpecies[species] = {
+          heightM: body.heightM ?? null,
+          canopyRadiusM: body.canopyRadiusM ?? null,
+          bands,
+        }
+        writeFileSync(atlasPath, JSON.stringify(atlas))
+        console.log('[overhead] persisted', look, species, '→', bands.length, 'bands')
+        return jsonRes(res, 200, { ok: true, look, species, bands: bands.length })
+      } catch (err) {
+        console.warn('[overhead] persist failed', look, species, err.message)
+        return jsonRes(res, 500, { error: 'overhead persist failed', look, species, message: err.message })
+      }
+    }
+
     // Brief 7 (Cambium): POST /salon/:species/:slot/preview-atlas
     //
     // Rebuilds the Salon-side per-composition atlas + UV-rewritten chassis

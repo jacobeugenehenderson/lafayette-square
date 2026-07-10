@@ -1532,15 +1532,26 @@ const OVERHEAD_WIND_BEGIN = `
            // MOTION = the shared WEATHER, base-anchored (aTreeHeightNorm), all
            // wind-driven so calm ≈ still. What makes it read ALIVE from above (not
            // a flat rigid slide) is HULA + FLUTTER — NOT the ruche (cut: starfish).
+           // WORLD-XZ of this tree (instance translation at runtime, model at Salon)
+           // seeds the turbulence + hula phase so 7,000 instanced trees DE-SYNC and
+           // the weather ADVECTS across the neighbourhood — while the downwind LEAN
+           // stays shared (all trees lean the same way = one moving front).
+           #ifdef USE_INSTANCING
+             vec2 ovWorldXZ = instanceMatrix[3].xz;
+           #else
+             vec2 ovWorldXZ = modelMatrix[3].xz;
+           #endif
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
            float wI    = uWindIntensity;
            float gust  = uGustsScale * uGustEnvelope * ovFbm(vec2(uTime * 0.4) + wd * uTime * 0.2);
            float drift  = uTime * 0.25;
            vec2  hulaDir = vec2(cos(drift), sin(drift));
            float amp    = (0.035 * wI + 0.07 * gust) * aTreeHeightNorm;
-           vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4));
+           float hulaPh = dot(ovWorldXZ, vec2(0.017, 0.011));   // per-tree phase de-sync
+           vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4 + hulaPh));
            vec2  lean   = wd * (amp * 0.7);
-           vec2  np      = position.xz * 0.55 + wd * uTime * 1.2;
+           // Flutter noise sampled at WORLD coords → advects downwind across the map.
+           vec2  np      = (ovWorldXZ + position.xz) * 0.55 + wd * uTime * 1.2;
            float flutAmp = 0.05 * wI * aTreeHeightNorm;
            vec2  flutter = (vec2(ovFbm(np), ovFbm(np + 41.7)) - 0.5) * (2.0 * flutAmp);
            transformed.xz += hula + lean + flutter;

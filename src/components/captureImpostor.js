@@ -208,6 +208,13 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     gl.setClearColor(0x000000, 0)   // transparent
     gl.clear(true, true, true)
     gl.render(scene, cam)
+    // Read back the pixels for PERSISTENCE (the Salon encodes → PNG → POSTs into the
+    // slab). WebGL origin is bottom-left, so this buffer is Y-flipped vs a canvas.
+    if (opts.readback) {
+      const px = new Uint8Array(size * size * 4)
+      gl.readRenderTargetPixels(rt, 0, 0, size, size, px)
+      rt.texture.userData.readback = { data: px, width: size, height: size }
+    }
   } finally {
     // ── Restore — main scene render must be undisturbed ─────────────────────
     gl.setRenderTarget(prevTarget, prevActiveCubeFace, prevActiveMipLevel)
@@ -409,7 +416,7 @@ function getAOComposite() {
   return _aoComposite
 }
 
-function compositeAO(gl, albedoTex, shadedTex, size) {
+function compositeAO(gl, albedoTex, shadedTex, size, readback = false) {
   const { scene, cam, mat } = getAOComposite()
   mat.uniforms.uAlbedo.value = albedoTex
   mat.uniforms.uShaded.value = shadedTex
@@ -432,6 +439,11 @@ function compositeAO(gl, albedoTex, shadedTex, size) {
     gl.setClearColor(0x000000, 0)
     gl.clear(true, true, true)
     gl.render(scene, cam)
+    if (readback) {
+      const px = new Uint8Array(size * size * 4)
+      gl.readRenderTargetPixels(rt, 0, 0, size, size, px)
+      rt.texture.userData.readback = { data: px, width: size, height: size }
+    }
   } finally {
     gl.setRenderTarget(prevTarget)
     gl.autoClear = prevAutoClear
@@ -453,11 +465,13 @@ export function captureOverheadBand(gl, prep, i) {
   const { scene, heightM, rM, minY, H, cuts } = prep
   const { key, yLo, yHi } = cuts[i]
   const band = { yLo, yHi }
-  const albedoTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 1024 })
+  // readback:true → keep the pixels so the Salon can encode + auto-POST the layers
+  // into the slab (persistence). The albedo pass carries the cutout alpha.
+  const albedoTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 1024, readback: true })
   // Shaded pass at half-res — it only feeds the (smooth) AO, so 512² is plenty and
   // keeps the per-frame GPU load down (the shaded pass also renders a shadow map).
   const shadedTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 512, shaded: true })
-  const aoTex = compositeAO(gl, albedoTex, shadedTex, 512)
+  const aoTex = compositeAO(gl, albedoTex, shadedTex, 512, true)
   try { shadedTex.dispose() } catch {}
   albedoTex.name = `overhead-albedo:${key}`
   aoTex.name = `overhead-ao:${key}`
