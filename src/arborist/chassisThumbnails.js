@@ -11,9 +11,15 @@
  * serialized (one GPU job at a time) and driven lazily by the plate's
  * IntersectionObserver, so only scrolled-into-view chassis ever bake.
  *
- * Visual parity with ChassisPlate.Silhouette: same gray material, same leaf-strip
- * heuristic, same ~1.85-unit centered framing, same camera (fov 32 @ z=3.4) and
- * lights — so a Shelves plate reads identically to a Salon plate.
+ * WHAT it renders — the WHOLE chassis, wood AND leaf geometry (2026-07-10, Jacob).
+ * The gauntlet classifies CROWN SILHOUETTE (vase/oval/rounded/…), and the
+ * silhouette is the OUTLINE of the leafed tree — a maple reads as a rounded gray
+ * mass, a cedar as a cone. Stripping to bare wood (the Salon's "pure structure"
+ * view) showed internal branching, not the crown outline, and rendered
+ * inconsistently across the library (bare branches / blob / bare pole). So here
+ * we keep every prim, gray + double-sided, and frame the full canopy. Wood-only
+ * fragments (poplar trunk-splits, willow scaffolds) still read as bare structure
+ * — honestly, because that's all they are.
  */
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -22,17 +28,9 @@ const SIZE = 176               // thumbnail px (dpr baked in)
 const CACHE = new Map()        // url -> dataURL
 const INFLIGHT = new Map()     // url -> Promise<dataURL>
 
-// One shared gray material — pure structure, no surface (silhouette = branching
-// habit only). Matches ChassisPlate.GRAY.
-const GRAY = new THREE.MeshStandardMaterial({ color: '#9aa0a6', roughness: 0.85, metalness: 0 })
-const LEAF_RE = /leaf|leaves|foliage|frond|needle/i
-function isLeafMesh(o) {
-  if (o.geometry?.userData?.atlasKind === 'leaf') return true
-  if (LEAF_RE.test(o.name || '')) return true
-  const m = o.material
-  const mname = Array.isArray(m) ? m.map((x) => x?.name).join(' ') : m?.name
-  return LEAF_RE.test(mname || '')
-}
+// One shared gray material. DoubleSide so single-sided leaf/needle cards fill the
+// crown from any angle (else a leaves-on canopy renders half-missing).
+const GRAY = new THREE.MeshStandardMaterial({ color: '#9aa0a6', roughness: 0.85, metalness: 0, side: THREE.DoubleSide })
 
 let _renderer, _scene, _camera, _loader
 function ensure() {
@@ -64,12 +62,8 @@ async function renderOne(url) {
   } catch {
     return null
   }
-  const all = [], leaves = []
-  root.traverse((o) => { if (o.isMesh) { all.push(o); if (isLeafMesh(o)) leaves.push(o) } })
-  all.forEach((o) => { o.material = GRAY; o.castShadow = false; o.receiveShadow = false })
-  // Strip leaves UNLESS the chassis is one merged mesh (can't separate → keep,
-  // else the plate goes blank). Mirrors ChassisPlate.
-  if (leaves.length < all.length) leaves.forEach((o) => o.removeFromParent())
+  // Every prim gray — the whole chassis (wood + leaf), so the crown outline reads.
+  root.traverse((o) => { if (o.isMesh) { o.material = GRAY; o.castShadow = false; o.receiveShadow = false } })
   // Fit into a ~1.85-unit frame, subject centered on all axes (ID thumbnail).
   const box = new THREE.Box3().setFromObject(root)
   const size = new THREE.Vector3(); box.getSize(size)
