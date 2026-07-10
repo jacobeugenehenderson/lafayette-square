@@ -47,15 +47,15 @@ const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 const CONFIG_PATH  = join(__dirname, 'config.json')
 const PORT = Number(process.env.ARB_PORT) || 3334
 
-// ── The closed part-shelf sets (chassis-tagging gauntlet) ──────────────────
-// Finite, complete, closed botanical sets — mirror rubric.json's
-// chassis.habit / leaf.silhouette / bark.type value-lists. A chassis gets
-// exactly ONE of each (a fact, not a score — "categorize, don't recommend").
-// The POST /salon/curation validator rejects off-set values so the shelves
-// stay honest. Keep in lockstep with rubric.json + the Shelves UI constants.
+// ── The closed silhouette set (chassis-tagging gauntlet) ───────────────────
+// The 9 chassis SILHOUETTES — a finite, complete, closed botanical crown-form
+// set, mirroring rubric.json's chassis.habit value-list. A chassis is pure
+// woody structure, so its ONE meaningful classification is its silhouette (a
+// fact, assigned once — "categorize, don't recommend"). Leaf-shape and
+// bark-type are SEPARATE part libraries, not properties of a chassis, so they
+// are deliberately NOT tagged here. The POST /salon/curation validator rejects
+// off-set values so the shelves stay honest.
 const CHASSIS_HABITS = new Set(['vase', 'columnar', 'oval', 'spreading', 'weeping', 'multi-stem', 'pyramidal', 'rounded', 'irregular'])
-const LEAF_SHAPES    = new Set(['palmate', 'lobed', 'heart', 'ovate', 'lanceolate', 'compound', 'fan', 'star', 'needle', 'scale'])
-const BARK_TYPES     = new Set(['smooth', 'furrowed', 'plated', 'scaly', 'ridged', 'exfoliating', 'fibrous', 'mottled'])
 
 // ── First-boot scaffolding ─────────────────────────────────────────────────
 function ensureDir(d) { if (!existsSync(d)) mkdirSync(d, { recursive: true }) }
@@ -1305,18 +1305,15 @@ const server = createServer(async (req, res) => {
         next.notes = body.notes == null ? '' : String(body.notes)
       }
       // Chassis-tagging gauntlet (HANDOFF-chassis-tagging-gauntlet.md): the
-      // part-shelf tags — habit (1-of-9), leafShape (1-of-10), barkType (1-of-8).
-      // A tag is a FACT assigned once ("categorize, don't recommend"), persisted
-      // as curation so it survives survey-deleaf re-runs. `null` clears the tag;
-      // an off-set value is rejected to keep the shelves closed + honest.
-      const validate = (v, set) => (set.has(v) ? v : null)
-      if ('habit' in body)     next.habit     = validate(body.habit, CHASSIS_HABITS)
-      if ('leafShape' in body) next.leafShape = validate(body.leafShape, LEAF_SHAPES)
-      if ('barkType' in body)  next.barkType  = validate(body.barkType, BARK_TYPES)
+      // silhouette tag — habit (1-of-9). A tag is a FACT assigned once
+      // ("categorize, don't recommend"), persisted as curation so it survives
+      // survey-deleaf re-runs. `null` clears it; an off-set value is rejected so
+      // the shelves stay closed + honest. (Leaf/bark are separate libraries —
+      // not chassis attributes — so they are not tagged here.)
+      if ('habit' in body) next.habit = CHASSIS_HABITS.has(body.habit) ? body.habit : null
       // Prune entries that revert to fully-unreviewed defaults so the
       // file doesn't accumulate empty stubs from operator-cancelled edits.
-      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes)
-        && !next.habit && !next.leafShape && !next.barkType
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit
       if (isEmpty) delete file.chassis[chassisName]
       else file.chassis[chassisName] = next
       writeJson(p, file)

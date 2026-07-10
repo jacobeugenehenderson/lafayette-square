@@ -661,14 +661,10 @@ const useArboristStore = create((set, get) => ({
       if ('displayName' in patch) next.displayName = patch.displayName == null ? '' : String(patch.displayName)
       if ('approved'    in patch) next.approved    = patch.approved === true ? true : patch.approved === false ? false : null
       if ('notes'       in patch) next.notes       = patch.notes == null ? '' : String(patch.notes)
-      // Chassis-tagging gauntlet: the part-shelf tags. `null`/absent clears
-      // (mirrors the server's absent-preserved / null-clears merge). The server
-      // validates against the closed sets; the optimistic mirror trusts them.
-      if ('habit'     in patch) next.habit     = patch.habit     || null
-      if ('leafShape' in patch) next.leafShape = patch.leafShape || null
-      if ('barkType'  in patch) next.barkType  = patch.barkType  || null
-      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes)
-        && !next.habit && !next.leafShape && !next.barkType
+      // Chassis-tagging gauntlet: the silhouette tag (1-of-9). `null`/absent
+      // clears (mirrors the server's absent-preserved / null-clears merge).
+      if ('habit' in patch) next.habit = patch.habit || null
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit
       const map = { ...s.salonChassisCuration }
       if (isEmpty) delete map[chassisName]
       else map[chassisName] = next

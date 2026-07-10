@@ -1,44 +1,80 @@
 /**
- * ShelvesWorkstage — THE tagging gauntlet + the browse-all library, one surface.
+ * ShelvesWorkstage — THE silhouette-classification gauntlet + the browse-all
+ * library, one surface.
  *
  * The unlock for the Species Builder (HANDOFF-chassis-tagging-gauntlet.md). Two
  * things were both false: you couldn't SEE all 241 chassis anywhere, and 0/241
- * carried a habit tag. This surface fixes both at once — a grid of every chassis,
- * grouped into HABIT SHELVES, each plate assignable to habit (1-of-9) · leaf-shape
- * (1-of-10) · bark-type (1-of-8), persisted to _chassis-curation.json. Untagged
- * chassis land in an "Untagged" shelf at top; as you tag, the habit shelves fill.
+ * were sorted into a silhouette group. This surface fixes both at once — a grid
+ * of every chassis, grouped into the 9 SILHOUETTE SHELVES, each plate assigned
+ * its crown form (1-of-9), persisted to _chassis-curation.json. Untagged chassis
+ * land in an "Unclassified" shelf at top; as you classify, the shelves fill.
  *
- * Doctrine (settled, do not re-litigate): CATEGORIZE, DON'T RECOMMEND — no matcher,
- * no ranking, no score. A tag is a FACT assigned once. The sets are closed, finite,
- * complete. The Species Builder then lands on a species' declared-habit shelf and
- * browses the others freely.
+ * A chassis is pure woody STRUCTURE, so its one meaningful classification is its
+ * silhouette. Leaf-shape and bark-type are SEPARATE part libraries, not chassis
+ * attributes — deliberately NOT tagged here.
  *
- * Perf: 241 plates cannot each hold a live WebGL Canvas (browser ~16-context cap).
- * Each silhouette is baked ONCE to a PNG via the shared offscreen renderer
- * (chassisThumbnails.js), lazily, when the plate scrolls into view.
+ * Doctrine (settled, do not re-litigate): CATEGORIZE, DON'T RECOMMEND — no
+ * matcher, no ranking, no score. The silhouette is a FACT assigned once. The set
+ * is closed, finite, complete (9 crown forms, rubric.json chassis.habit). The
+ * grouping is meant to be SCIENTIFIC — the classification key below defines each
+ * form so the sort is reproducible, not vibes.
+ *
+ * Perf: 241 plates cannot each hold a live WebGL Canvas (browser ~16-context
+ * cap), so each silhouette bakes ONCE to a PNG via the shared offscreen renderer
+ * (chassisThumbnails.js), lazily on scroll-into-view.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import { chassisThumb } from './chassisThumbnails.js'
 
-// The closed sets — mirror rubric.json (chassis.habit / leaf.silhouette /
-// bark.type) + the serve.js validator. Keep all three in lockstep.
-const HABITS = ['vase', 'columnar', 'oval', 'spreading', 'weeping', 'multi-stem', 'pyramidal', 'rounded', 'irregular']
-const LEAF_SHAPES = ['palmate', 'lobed', 'heart', 'ovate', 'lanceolate', 'compound', 'fan', 'star', 'needle', 'scale']
-const BARK_TYPES = ['smooth', 'furrowed', 'plated', 'scaly', 'ridged', 'exfoliating', 'fibrous', 'mottled']
+// The 9 crown-form silhouettes — the closed set (rubric.json chassis.habit),
+// each with the botanical definition that makes the sort scientific. `id` is the
+// persisted token (matches rubric + the serve.js validator).
+const FORMS = [
+  { id: 'columnar',   name: 'Columnar',   def: 'Tall and narrow, near-parallel sides — height much greater than width (Lombardy poplar, fastigiate oak).' },
+  { id: 'pyramidal',  name: 'Pyramidal',  def: 'Broad base tapering to a single point — conical, one dominant leader (spruce, sweetgum, young pin oak).' },
+  { id: 'oval',       name: 'Oval',       def: 'Egg-shaped — rounded top, slightly taller than wide. The default upright street tree (linden, red maple).' },
+  { id: 'rounded',    name: 'Rounded',    def: 'Roughly circular crown, height ≈ width — a compact ball of canopy (many maples, callery pear).' },
+  { id: 'vase',       name: 'Vase',       def: 'Narrow at the base, branches ascend then arch out wide toward the top (American elm, zelkova).' },
+  { id: 'spreading',  name: 'Spreading',  def: 'Wider than tall — a broad, horizontal canopy on a low frame (mature white oak, honey locust).' },
+  { id: 'weeping',    name: 'Weeping',    def: 'Branches cascade downward from an arched crown (weeping willow, weeping cherry).' },
+  { id: 'multi-stem', name: 'Multi-stem', def: 'Several trunks diverging from the base — no single leader (river birch clump, serviceberry).' },
+  { id: 'irregular',  name: 'Irregular',  def: 'Asymmetric, picturesque — no regular geometry (old pine, wind-shaped or open-grown specimen).' },
+]
+const FORM_IDS = FORMS.map(f => f.id)
+const FORM_BY_ID = Object.fromEntries(FORMS.map(f => [f.id, f]))
 
-// A one-click suggestion for the habit, seeded from the coarse `morphology` the
-// chassis meta already carries — so tagging is a CONFIRM, not a blank pick, where
-// morphology maps cleanly. Only the unambiguous maps; broadleaf/ornamental read
-// as several habits, so they get no suggestion (the operator's eye decides).
-const MORPH_TO_HABIT = {
-  weeping: 'weeping',
-  columnar: 'columnar',
-  conifer: 'pyramidal',   // most conifers read pyramidal (spruce/fir); operator overrides
-}
-function suggestHabit(morphology) { return MORPH_TO_HABIT[morphology] || null }
+// A one-click suggestion for the silhouette, seeded from the coarse `morphology`
+// the chassis meta already carries — so classifying is a CONFIRM, not a blank
+// pick, where morphology maps cleanly. Only the unambiguous maps.
+const MORPH_TO_FORM = { weeping: 'weeping', columnar: 'columnar', conifer: 'pyramidal' }
+function suggestForm(morphology) { return MORPH_TO_FORM[morphology] || null }
 
 const curationKey = (c) => `${c.name}.glb`
+
+// ── Schematic crown-form icons for the classification key + shelf headers ──
+// Simple, consistent silhouettes drawn on a trunk — a visual reference of each
+// form, not a render. 40×52 viewBox, trunk baseline at y=50.
+function FormIcon({ form, size = 40 }) {
+  const s = '#aeb8c2'
+  const crown = {
+    columnar:   <ellipse cx="20" cy="24" rx="7" ry="22" fill={s} />,
+    pyramidal:  <polygon points="20,4 33,46 7,46" fill={s} />,
+    oval:       <ellipse cx="20" cy="24" rx="13" ry="20" fill={s} />,
+    rounded:    <circle cx="20" cy="24" r="15" fill={s} />,
+    vase:       <path d="M20 46 C 8 30 6 6 6 6 C 14 18 26 18 34 6 C 34 6 32 30 20 46 Z" fill={s} />,
+    spreading:  <ellipse cx="20" cy="26" rx="18" ry="12" fill={s} />,
+    weeping:    <path d="M4 20 C 4 8 36 8 36 20 C 34 22 33 40 31 44 M31 20 C 31 34 29 42 28 46 M20 22 C 20 36 20 44 20 50 M9 20 C 9 34 11 42 12 46 M12 20 C 12 32 10 40 9 44" fill="none" stroke={s} strokeWidth="2" />,
+    'multi-stem': <g fill={s}><circle cx="12" cy="20" r="9" /><circle cx="27" cy="17" r="9" /><circle cx="20" cy="27" r="9" /></g>,
+    irregular:  <path d="M10 30 C 2 22 8 10 16 12 C 16 4 30 4 30 13 C 40 12 38 26 30 28 C 34 36 22 40 18 34 C 12 40 6 36 10 30 Z" fill={s} />,
+  }[form]
+  return (
+    <svg width={size} height={size * 52 / 40} viewBox="0 0 40 52" style={{ display: 'block', flex: 'none' }}>
+      <rect x="18.5" y="42" width="3" height="10" fill="#6b7280" />
+      {crown}
+    </svg>
+  )
+}
 
 export default function ShelvesWorkstage() {
   const setShelvesOpen = useArboristStore(s => s.setShelvesOpen)
@@ -52,34 +88,30 @@ export default function ShelvesWorkstage() {
 
   useEffect(() => { loadCatalog(); loadCuration() }, [loadCatalog, loadCuration])
 
-  // Filters: text search + "untagged only" (the working queue).
   const [q, setQ] = useState('')
-  const [untaggedOnly, setUntaggedOnly] = useState(false)
+  const [unclassifiedOnly, setUnclassifiedOnly] = useState(false)
+  const [keyOpen, setKeyOpen] = useState(true)
 
-  // Group the catalog into shelves by the COMMITTED habit tag (Untagged first,
-  // then the 9 habits in canonical order). A chassis is "tagged" ⇔ it carries a
-  // habit — leaf/bark are additional facts that don't gate shelf membership.
-  const { shelves, tallies } = useMemo(() => {
+  // Group the catalog into shelves by the committed silhouette (Unclassified
+  // first, then the 9 forms in the classification-key order).
+  const { shelves, classified } = useMemo(() => {
     const ql = q.trim().toLowerCase()
-    const byHabit = new Map([['_untagged', []], ...HABITS.map(h => [h, []])])
-    let habitTagged = 0, leafTagged = 0, barkTagged = 0
+    const byForm = new Map([['_none', []], ...FORM_IDS.map(f => [f, []])])
+    let classified = 0
     for (const c of catalog) {
       const cur = curation[curationKey(c)] || {}
-      if (cur.habit) habitTagged++
-      if (cur.leafShape) leafTagged++
-      if (cur.barkType) barkTagged++
+      if (cur.habit) classified++
       if (ql && !c.name.toLowerCase().includes(ql)) continue
-      if (untaggedOnly && cur.habit) continue
-      const shelf = cur.habit && byHabit.has(cur.habit) ? cur.habit : '_untagged'
-      byHabit.get(shelf).push(c)
+      if (unclassifiedOnly && cur.habit) continue
+      const shelf = cur.habit && byForm.has(cur.habit) ? cur.habit : '_none'
+      byForm.get(shelf).push(c)
     }
-    return {
-      shelves: byHabit,
-      tallies: { total: catalog.length, habitTagged, leafTagged, barkTagged },
-    }
-  }, [catalog, curation, q, untaggedOnly])
+    return { shelves: byForm, classified }
+  }, [catalog, curation, q, unclassifiedOnly])
 
-  const shelfOrder = ['_untagged', ...HABITS]
+  const shelfOrder = ['_none', ...FORM_IDS]
+  const total = catalog.length
+  const pct = total ? Math.round((classified / total) * 100) : 0
 
   return (
     <div style={{
@@ -97,14 +129,19 @@ export default function ShelvesWorkstage() {
           Arborist <span style={{ color: '#666', margin: '0 4px' }}>/</span> Shelves
         </strong>
         <span style={{ fontSize: 11, color: '#8a93a0' }}>
-          the tagging gauntlet — assign every chassis a habit · leaf · bark
+          classify every chassis into its crown-form silhouette
         </span>
 
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Progress: the whole point — watch it climb toward 241/241. */}
-          <ProgressChip label="habit" n={tallies.habitTagged} total={tallies.total} accent="#bce0a0" />
-          <ProgressChip label="leaf"  n={tallies.leafTagged}  total={tallies.total} accent="#a0c8e0" />
-          <ProgressChip label="bark"  n={tallies.barkTagged}  total={tallies.total} accent="#e0c8a0" />
+          <span title={`${classified} of ${total} chassis sorted into a silhouette group`} style={{
+            display: 'inline-flex', alignItems: 'baseline', gap: 6, fontSize: 12,
+            padding: '4px 10px', borderRadius: 4, background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            <b style={{ color: '#bce0a0', fontVariantNumeric: 'tabular-nums' }}>{classified}/{total}</b>
+            <span style={{ color: '#889', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 9 }}>classified</span>
+            <span style={{ color: '#667', fontSize: 10 }}>{pct}%</span>
+          </span>
           <button onClick={() => setGroveOpen(true)} style={groveBtn}>Grove →</button>
         </span>
       </header>
@@ -112,7 +149,7 @@ export default function ShelvesWorkstage() {
       {/* Controls */}
       <div style={{
         padding: '8px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', gap: 12, fontSize: 12,
+        display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, flexWrap: 'wrap',
       }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="filter by name…"
           style={{
@@ -120,11 +157,33 @@ export default function ShelvesWorkstage() {
             borderRadius: 4, color: '#ddd', padding: '5px 9px', fontSize: 12, minWidth: 200,
           }} />
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: '#aab' }}>
-          <input type="checkbox" checked={untaggedOnly} onChange={(e) => setUntaggedOnly(e.target.checked)} />
-          untagged only
+          <input type="checkbox" checked={unclassifiedOnly} onChange={(e) => setUnclassifiedOnly(e.target.checked)} />
+          unclassified only
         </label>
+        <button onClick={() => setKeyOpen(o => !o)} style={{
+          background: 'none', border: 'none', color: '#9ab', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit',
+        }}>{keyOpen ? '▾' : '▸'} classification key</button>
         {error && <span style={{ color: '#e87878', fontSize: 11 }}>⚠ {error}</span>}
       </div>
+
+      {/* The classification key — the 9 crown forms defined, so the sort is scientific */}
+      {keyOpen && (
+        <div style={{
+          padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'rgba(255,255,255,0.015)',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '10px 16px',
+        }}>
+          {FORMS.map(f => (
+            <div key={f.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <FormIcon form={f.id} size={34} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#cdd6df', textTransform: 'capitalize' }}>{f.name}</div>
+                <div style={{ fontSize: 10, color: '#8a93a0', lineHeight: 1.35 }}>{f.def}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Shelves */}
       <div style={{ flex: 1, overflow: 'auto', padding: '4px 18px 60px' }}>
@@ -134,56 +193,44 @@ export default function ShelvesWorkstage() {
             <code>public/trees/_chassis</code> — run <code>node arborist/survey-deleaf.js</code>)
           </div>
         )}
-        {shelfOrder.map(h => {
-          const items = shelves.get(h) || []
+        {shelfOrder.map(f => {
+          const items = shelves.get(f) || []
           if (items.length === 0) return null
-          return <Shelf key={h} habit={h} items={items} curation={curation} setCuration={setCuration} />
+          return <Shelf key={f} form={f} items={items} curation={curation} setCuration={setCuration} />
         })}
       </div>
     </div>
   )
 }
 
-function ProgressChip({ label, n, total, accent }) {
-  const pct = total ? Math.round((n / total) * 100) : 0
-  return (
-    <span title={`${n} of ${total} chassis tagged with a ${label}`} style={{
-      display: 'inline-flex', alignItems: 'baseline', gap: 5, fontSize: 11,
-      padding: '3px 8px', borderRadius: 4, background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.08)',
-    }}>
-      <b style={{ color: accent, fontVariantNumeric: 'tabular-nums' }}>{n}/{total}</b>
-      <span style={{ color: '#889', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 9 }}>{label}</span>
-      <span style={{ color: '#667', fontSize: 9 }}>{pct}%</span>
-    </span>
-  )
-}
-
-function Shelf({ habit, items, curation, setCuration }) {
-  const isUntagged = habit === '_untagged'
-  const title = isUntagged ? 'Untagged' : habit
+function Shelf({ form, items, curation, setCuration }) {
+  const none = form === '_none'
+  const def = FORM_BY_ID[form]
   return (
     <section style={{ marginTop: 18 }}>
       <div style={{
-        display: 'flex', alignItems: 'baseline', gap: 10, padding: '4px 2px 8px',
+        display: 'flex', alignItems: 'center', gap: 10, padding: '4px 2px 8px',
         borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 0,
         background: '#111', zIndex: 1,
       }}>
+        {!none && <FormIcon form={form} size={26} />}
         <h3 style={{
           margin: 0, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase',
-          color: isUntagged ? '#e0b070' : '#cdd6df', fontWeight: 600,
-        }}>{title}</h3>
+          color: none ? '#e0b070' : '#cdd6df', fontWeight: 600,
+        }}>{none ? 'Unclassified' : def.name}</h3>
         <span style={{ fontSize: 11, color: '#778' }}>{items.length}</span>
-        {isUntagged && <span style={{ fontSize: 10, color: '#8a6a3a' }}>← assign a habit to shelve these</span>}
+        {none
+          ? <span style={{ fontSize: 10, color: '#8a6a3a' }}>← assign a silhouette to shelve these</span>
+          : <span style={{ fontSize: 10, color: '#66707a', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{def.def}</span>}
       </div>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))',
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
         gap: 10, padding: '10px 0',
       }}>
         {items.map(c => (
           <ShelfPlate key={c.name} chassis={c}
             entry={curation[curationKey(c)] || null}
-            onTag={(patch) => setCuration(curationKey(c), patch)} />
+            onSet={(habit) => setCuration(curationKey(c), { habit })} />
         ))}
       </div>
     </section>
@@ -218,7 +265,7 @@ function LazySilhouette({ name, isForest }) {
       {src ? <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         : <span style={{ fontSize: 10, color: failed ? '#a55' : '#556' }}>{failed ? 'no render' : '…'}</span>}
       {isForest && (
-        <span title="Merged-mesh forest (group shot) — one mesh, many trunks. Tag it, but it's usable only once split (Brief 23a)."
+        <span title="Merged-mesh forest (group shot) — one mesh, many trunks. Classify it, but it's usable only once split (Brief 23a)."
           style={{
             position: 'absolute', top: 3, left: 3, fontSize: 8, letterSpacing: '0.04em',
             padding: '1px 4px', borderRadius: 3, background: 'rgba(200,140,60,0.25)',
@@ -229,17 +276,15 @@ function LazySilhouette({ name, isForest }) {
   )
 }
 
-function ShelfPlate({ chassis, entry, onTag }) {
-  const habit = entry?.habit || ''
-  const leafShape = entry?.leafShape || ''
-  const barkType = entry?.barkType || ''
-  const suggested = !habit ? suggestHabit(chassis.morphology) : null
+function ShelfPlate({ chassis, entry, onSet }) {
+  const form = entry?.habit || ''
+  const suggested = !form ? suggestForm(chassis.morphology) : null
   const height = chassis.heightRange ? ` · ${chassis.heightRange[1].toFixed(0)}m` : ''
   return (
     <div style={{
       borderRadius: 6, padding: 6, display: 'flex', flexDirection: 'column', gap: 5,
-      background: habit ? 'rgba(120,160,110,0.07)' : 'rgba(255,255,255,0.025)',
-      border: '1px solid ' + (habit ? 'rgba(120,160,110,0.28)' : 'rgba(255,255,255,0.08)'),
+      background: form ? 'rgba(120,160,110,0.07)' : 'rgba(255,255,255,0.025)',
+      border: '1px solid ' + (form ? 'rgba(120,160,110,0.28)' : 'rgba(255,255,255,0.08)'),
     }}>
       <LazySilhouette name={chassis.name} isForest={chassis.isForest} />
       <span title={chassis.name} style={{
@@ -247,41 +292,24 @@ function ShelfPlate({ chassis, entry, onTag }) {
         overflow: 'hidden', textOverflow: 'ellipsis',
       }}>{chassis.name}<span style={{ color: '#667' }}>{height}</span></span>
 
-      {/* The three assignment pickers — habit · leaf · bark. */}
-      <TagRow label="habit" value={habit} options={HABITS}
-        onChange={(v) => onTag({ habit: v || null })} strong />
+      {/* The single classification control — assign 1 of the 9 crown forms. */}
+      <select value={form} onChange={(e) => onSet(e.target.value || null)}
+        style={{
+          width: '100%', background: form ? 'rgba(120,160,110,0.14)' : 'rgba(255,255,255,0.05)',
+          border: '1px solid ' + (form ? 'rgba(120,160,110,0.45)' : 'rgba(255,255,255,0.14)'),
+          borderRadius: 4, color: form ? '#dbe6cf' : '#9aa', padding: '4px 5px', fontSize: 11,
+          fontFamily: 'inherit', cursor: 'pointer', textTransform: 'capitalize',
+        }}>
+        <option value="">— silhouette —</option>
+        {FORMS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+      </select>
       {suggested && (
-        <button onClick={() => onTag({ habit: suggested })} style={suggestBtn}
+        <button onClick={() => onSet(suggested)} style={suggestBtn}
           title={`Its meta reads "${chassis.morphology}" → suggest ${suggested}`}>
-          ↩ {suggested}?
+          ↩ {FORM_BY_ID[suggested].name}?
         </button>
       )}
-      <TagRow label="leaf" value={leafShape} options={LEAF_SHAPES}
-        onChange={(v) => onTag({ leafShape: v || null })} />
-      <TagRow label="bark" value={barkType} options={BARK_TYPES}
-        onChange={(v) => onTag({ barkType: v || null })} />
     </div>
-  )
-}
-
-function TagRow({ label, value, options, onChange, strong }) {
-  return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10 }}>
-      <span style={{
-        width: 30, color: value ? (strong ? '#bce0a0' : '#9ab') : '#667',
-        textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 8,
-      }}>{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)}
-        style={{
-          flex: 1, minWidth: 0, background: value ? 'rgba(120,160,110,0.12)' : 'rgba(255,255,255,0.05)',
-          border: '1px solid ' + (value ? 'rgba(120,160,110,0.4)' : 'rgba(255,255,255,0.12)'),
-          borderRadius: 3, color: value ? '#dbe6cf' : '#99a', padding: '3px 4px', fontSize: 10,
-          fontFamily: 'inherit', cursor: 'pointer',
-        }}>
-        <option value="">—</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </label>
   )
 }
 
