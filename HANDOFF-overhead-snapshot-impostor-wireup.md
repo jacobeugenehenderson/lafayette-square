@@ -123,3 +123,28 @@ Iterated the overhead stamp look live with Jacob to a passing eye-gate ("Look ho
 **Env notes (worktree gotchas, for whoever runs this next):** the worktree needs the main checkout's gitignored data symlinked — `public/trees` (chassis, 241 GLBs) and per-species `arborist/state/*/compositions.json` — and **vite must be (re)started with those symlinks already in place** (its publicDir listing is cached at boot; otherwise tree GLBs 404 → SPA-HTML → the chassis-plate rack crashes the WebGL context = black screen). Backends must be launched via detached subshell, not `run_in_background` (the latter exits). Meteorologist (:3335) is down on a pre-existing missing `ajv` dep — the Salon doesn't need it.
 
 **NOT started (next):** POST the 3 baked band PNGs → `public/baked/<look>/trees/…` + manifest (the "pack into the slab" step); runtime camera-height SELECT in `InstancedTrees` for the 7k-tree Browse swap.
+
+## Slab-packing plan (next step) — right-sizing folded in (Jacob, 2026-07-09)
+
+The Salon captures at author quality (1024² albedo ×3 + 512² AO ×3 ≈ 21 MiB/asset uncompressed → ~310 MiB across a ~15-asset roster). The **slab bake must right-size for the plan view**, NOT ship the author-res captures:
+
+1. **Right-size** — plan view = 7k tiny trees, so **512² albedo / 256² AO** (÷4).
+2. **AO → single-channel R8** (it's grayscale data), not RGBA.
+3. **KTX2 / Basis GPU compression** (ASTC/BC) — GPU-resident, the shippable win (÷~5). → whole roster in the **tens of MiB**.
+4. **Pack the 3 bands into ONE atlas** per channel — same bytes, 1 texture bind not 3 (draw-call win).
+
+**The pack step itself** (Jacob's chosen path — in-browser capture → POST → baked PNG/KTX2):
+- On Browse capture, the in-browser albedo+AO band textures get **downsized + (optionally) encoded**, POSTed to the arborist backend, written to `public/baked/<look>/trees/overhead/<species>_{branch,mid,canopy}.{albedo,ao}.*` + an `overheadBySpecies` manifest entry (band rects, yLoNorm/yHiNorm, heightM, canopyRadiusM).
+- Runtime (`InstancedTrees`) reads `overheadBySpecies`, builds the disc stack, relights via `overheadLightUniforms` fed from the atmosphere, selects impostor-vs-mesh by camera height.
+
+**Relight architecture is LANDED (`f92d2637`)**: bake = albedo + AO (light-independent); runtime = `albedo × (uAmbient + uSun·AO)` via shared `overheadLightUniforms`; Salon "Light" slider previews overcast↔sunny parity. LS feeds those uniforms from the TOD/meteorologist.
+
+### Slab-packing addendum — mip reuse + per-device tier (Jacob, 2026-07-09)
+
+**Hitch onto the atlas mip machinery, NOT the pixel pyramid.** Two different pyramids:
+- The **DownsamplePyramid** ("pixel pyramid") is a runtime **scene-space** blur ladder for DoF/Bloom (HDR, alpha-BLIND). Wrong tool for per-texture minification, and its kernel would bleed the transparent gutter into our cutout leaves.
+- The tree atlas's **coverage-preserving mip builder** (`treeAtlasMaterial.js#boxDownsampleRGBA` / `buildCoveragePreservingMipmaps`) is the right ride: alpha-weighted, built to stop far/minified foliage greying out to gutter-grey. The overhead stamps are the SAME cutout foliage — in plan view 7k tiny trees = heavy minification — so:
+  - **Right-size** (1024²→512²) THROUGH the coverage-preserving box (not a naive resize).
+  - **Build the stamp mip chain** with the same coverage-preserving downsample (else far plan-view trees grey out — the old far-leaf bug, re-run on the stamps).
+
+**Per-device stamp res = a TIER** (the "tier ladder ≡ blur pyramid" doctrine, `[[preview-equals-pyramid-tier-ladder]]`): mobile bakes/loads a smaller rung, desktop a larger one — one ladder, pick the rung — applied to bake-texture SIZE instead of blur radius. So the slab carries a stamp-res tier the runtime picks per device, same as the mobile profile does elsewhere.
