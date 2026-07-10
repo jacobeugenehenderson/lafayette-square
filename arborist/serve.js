@@ -45,7 +45,17 @@ const PREVIEW_PY   = join(__dirname, 'preview-laz.py')
 const SPECIES_MAP  = join(__dirname, 'species-map.json')
 const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 const CONFIG_PATH  = join(__dirname, 'config.json')
-const PORT = 3334
+const PORT = Number(process.env.ARB_PORT) || 3334
+
+// ── The closed part-shelf sets (chassis-tagging gauntlet) ──────────────────
+// Finite, complete, closed botanical sets — mirror rubric.json's
+// chassis.habit / leaf.silhouette / bark.type value-lists. A chassis gets
+// exactly ONE of each (a fact, not a score — "categorize, don't recommend").
+// The POST /salon/curation validator rejects off-set values so the shelves
+// stay honest. Keep in lockstep with rubric.json + the Shelves UI constants.
+const CHASSIS_HABITS = new Set(['vase', 'columnar', 'oval', 'spreading', 'weeping', 'multi-stem', 'pyramidal', 'rounded', 'irregular'])
+const LEAF_SHAPES    = new Set(['palmate', 'lobed', 'heart', 'ovate', 'lanceolate', 'compound', 'fan', 'star', 'needle', 'scale'])
+const BARK_TYPES     = new Set(['smooth', 'furrowed', 'plated', 'scaly', 'ridged', 'exfoliating', 'fibrous', 'mottled'])
 
 // ── First-boot scaffolding ─────────────────────────────────────────────────
 function ensureDir(d) { if (!existsSync(d)) mkdirSync(d, { recursive: true }) }
@@ -1172,8 +1182,24 @@ const server = createServer(async (req, res) => {
     // ranking, so server-side filter is only useful for tooling.
     if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/chassis$/))) {
       try {
-        const filter = new URL(req.url, 'http://x').searchParams.get('morphology') || null
+        const url = new URL(req.url, 'http://x')
+        const filter = url.searchParams.get('morphology') || null
+        // ?all=1 — the BROWSE-ALL / tagging-gauntlet catalog: every chassis on
+        // disk (all 241), nothing dropped. The Shelves surface needs to SEE the
+        // whole library to tag it — you can't label what a filter hides
+        // (HANDOFF-chassis-tagging-gauntlet.md). Forests are MARKED, not hidden
+        // (`isForest`), so the operator can still tag them; they stay
+        // usable-only-once-split (Brief 23a). The species DROPDOWN keeps its
+        // procedural/LiDAR exclusion (listSalonSpecies) — that's a separate gate.
+        const all = url.searchParams.get('all') === '1'
         let chassis = await listSalonChassis()
+        const forestChassis = await listForestChassis()
+        if (all) {
+          chassis = chassis.map(c => ({ ...c, isForest: forestChassis.has(c.name) }))
+          if (filter) chassis = chassis.filter(c => c.morphology === filter)
+          return jsonRes(res, 200, { chassis })
+        }
+        // ── The Salon per-species picker path (default): the four reducers ──
         // Brief 15 extension (Boz inline 2026-05-25): the species dropdown
         // already excludes procedural + LiDAR species, but the chassis catalog
         // was never filtered — so after Brief 20's regen, procedural variants
@@ -1188,7 +1214,6 @@ const server = createServer(async (req, res) => {
         // burnt_tree) until Brief 23a splits them into per-tree singles. Keys on
         // survey-deleaf's producer-derived forest worklist, so it hits ONLY the
         // merged meshes — the 58 already-separable splits stay in the catalog.
-        const forestChassis = await listForestChassis()
         chassis = chassis.filter(c => !forestChassis.has(c.name))
         if (filter) chassis = chassis.filter(c => c.morphology === filter)
         return jsonRes(res, 200, { chassis })
@@ -1279,9 +1304,19 @@ const server = createServer(async (req, res) => {
       if ('notes' in body) {
         next.notes = body.notes == null ? '' : String(body.notes)
       }
+      // Chassis-tagging gauntlet (HANDOFF-chassis-tagging-gauntlet.md): the
+      // part-shelf tags — habit (1-of-9), leafShape (1-of-10), barkType (1-of-8).
+      // A tag is a FACT assigned once ("categorize, don't recommend"), persisted
+      // as curation so it survives survey-deleaf re-runs. `null` clears the tag;
+      // an off-set value is rejected to keep the shelves closed + honest.
+      const validate = (v, set) => (set.has(v) ? v : null)
+      if ('habit' in body)     next.habit     = validate(body.habit, CHASSIS_HABITS)
+      if ('leafShape' in body) next.leafShape = validate(body.leafShape, LEAF_SHAPES)
+      if ('barkType' in body)  next.barkType  = validate(body.barkType, BARK_TYPES)
       // Prune entries that revert to fully-unreviewed defaults so the
       // file doesn't accumulate empty stubs from operator-cancelled edits.
       const isEmpty = (!next.displayName) && next.approved == null && (!next.notes)
+        && !next.habit && !next.leafShape && !next.barkType
       if (isEmpty) delete file.chassis[chassisName]
       else file.chassis[chassisName] = next
       writeJson(p, file)
