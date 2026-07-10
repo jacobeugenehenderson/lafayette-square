@@ -28,6 +28,7 @@ import {
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
+import { useOverheadMode, useOverheadAssets, OverheadSpecies } from './OverheadTrees.jsx'
 import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -726,6 +727,10 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
 
     const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
     const impostors = new Map()  // species -> instances[]  (impostor role)
+    // ALL non-culled instances by rendered species — the WHOLE-SCENE overhead
+    // (Browse) path swaps every tree to its species' 3-slice snapshot at once, so
+    // it groups by species independent of the mesh/impostor role split below.
+    const bySpecies = new Map()  // species -> instances[]  (overhead snapshot)
     let dropped = 0
     let substituted = 0
     let impostorCount = 0
@@ -745,6 +750,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         substituted++
       }
       const renderSpecies = inRoster ? inst.species : sub.species
+
+      // WHOLE-SCENE overhead: every non-culled placement joins its species bucket
+      // (regardless of mesh/impostor role) so plan-view can swap all trees at once.
+      if (!bySpecies.has(renderSpecies)) bySpecies.set(renderSpecies, [])
+      bySpecies.get(renderSpecies).push(inst)
 
       // Impostor ROLE → stamped-2D billboard path. One bucket per rendered
       // species; the per-species geometry samples that species' atlas rects.
@@ -787,8 +797,8 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       meshCount += byTile.size
       for (const tid of byTile.keys()) tileSet.add(tid)
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
-    return { meshGroups: m, impostors }
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overheadSp=${bySpecies.size} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    return { meshGroups: m, impostors, bySpecies }
   }, [bake, maxVariants, atlas, lookName, impostorRecords])
 
   // ── Cold-load reconcile flush (the REAL fix) ───────────────────────────
@@ -866,15 +876,32 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     return atlas?.manifest?.deformerBySpecies || {}
   }, [atlas?.manifest?.deformerBySpecies])
 
+  // ── Overhead SNAPSHOT (Browse) — whole-scene camera-height swap ─────────────
+  // The 3-slice overhead asset (baked into the slab as overheadBySpecies) swaps in
+  // when the camera pulls up to plan height. Hooks run unconditionally (Rules of
+  // Hooks) with graceful nulls; enabled only when the look actually carries the
+  // baked asset (so LS stays all-mesh until its slab is baked + the flag flips).
+  const overheadBySpecies = useMemo(() => atlas?.manifest?.overheadBySpecies || null, [atlas?.manifest?.overheadBySpecies])
+  const overheadEnabled = !!overheadBySpecies && scene?.overheadImpostor !== false
+  const overheadMode = useOverheadMode(overheadEnabled)
+  const overheadSpeciesList = useMemo(
+    () => (groups?.bySpecies ? Array.from(groups.bySpecies.keys()) : []),
+    [groups],
+  )
+  const overheadAssets = useOverheadAssets({ enabled: overheadEnabled, lookName, overheadBySpecies, species: overheadSpeciesList })
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
-  const { meshGroups, impostors } = groups
+  const { meshGroups, impostors, bySpecies } = groups
 
   return (
     <>
       <SwayDriver />
       <TierDriver />
+      {/* All-mesh (+ hero impostor) render — hidden as a GROUP when the camera pulls
+          up to plan height and the whole scene swaps to the overhead snapshot. */}
+      <group visible={!overheadMode}>
       {/* Mesh-role trees: real 3D geometry (lod1). */}
       {Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {
@@ -925,6 +952,20 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
           />
         )
       })}
+      </group>
+      {/* Overhead SNAPSHOT (Browse): one instanced disc-stack per species, shown as
+          a group when the camera is at plan height. Lazy-loaded behind the hero
+          shot; a species with no baked asset simply stays on mesh (never blank). */}
+      {overheadAssets && (
+        <group visible={overheadMode}>
+          {Array.from(bySpecies.entries()).map(([species, instances]) => {
+            const asset = overheadAssets.get(species)
+            return asset
+              ? <OverheadSpecies key={`overhead#${species}`} asset={asset} instances={instances} visible={overheadMode} />
+              : null
+          })}
+        </group>
+      )}
     </>
   )
 }
