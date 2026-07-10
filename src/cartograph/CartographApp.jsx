@@ -27,6 +27,7 @@ import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
 import SlabBuildings from '../components/SlabBuildings.jsx'
 import GatewayArch from '../components/GatewayArch'
+import MountainBackdrop from '../components/MountainBackdrop'
 import CelestialBodies from '../components/CelestialBodies'
 import Atmosphere from '../components/Atmosphere'
 import CloudDome from '../components/CloudDome'
@@ -786,7 +787,12 @@ function genericSceneConfig(sceneBoundary) {
     // renders none — never LS's. Trees read the LOOK-SCOPED baked/<look>/
     // trees.json (bakeUrl below), NOT the LS-global baked/default.json, so a
     // poured scene never inherits LS placements (no ghost).
-    StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => (
+    StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => {
+      // Live landscape override off the store — Stage retints/re-places the
+      // range instantly as the operator drags the Hero Controls sliders
+      // (production reads scene.json frozen-at-bake; same seam as arch/horizon).
+      const landscapeOverride = useCartographStore(s => activeChannel(s, 'landscape'))
+      return (
       <>
         {!hiddenLayers.building && (
           <R3FErrorBoundary name="SlabBuildings">
@@ -807,8 +813,14 @@ function genericSceneConfig(sceneBoundary) {
             />
           </R3FErrorBoundary>
         )}
+        {/* Landscape backdrop (§10 third hero kind) — a look-keyed slab
+            consumer; renders nothing unless /baked/<look>/landscape exists. */}
+        <R3FErrorBoundary name="MountainBackdrop">
+          <MountainBackdrop lookId={lookId} bakeLastMs={bakeLastMs} landscapeOverride={landscapeOverride} />
+        </R3FErrorBoundary>
       </>
-    ),
+      )
+    },
   }
 }
 function sceneConfig(scene, sceneBoundary) {
