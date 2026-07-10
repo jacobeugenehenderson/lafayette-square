@@ -175,25 +175,61 @@ function ArchHorizonControls() {
   // persist to design.json via the debounced save path; reload Stage and
   // the values are still there. (SC.7 fix: previously archState was
   // module-scope and reload lost everything.)
-  const archChannel    = useCartographStore(s => s.arch)
-  const horizonChannel = useCartographStore(s => s.horizon)
+  const archChannel      = useCartographStore(s => s.arch)
+  const horizonChannel   = useCartographStore(s => s.horizon)
+  const landscapeChannel = useCartographStore(s => s.landscape)
+  const heroSubject      = useCartographStore(s => s.heroSubject)
   const setArch       = useCartographStore(s => s.setArch)
   const setHorizon    = useCartographStore(s => s.setHorizon)
+  const setLandscape  = useCartographStore(s => s.setLandscape)
   const a = archChannel?.values || {}
   const h = horizonChannel?.values || {}
+  const ls = landscapeChannel?.values || {}
+  // The Hero Controls render the active subject KIND's per-type knobs: the
+  // landscape backdrop's placement/snowline/atmosphere when the hero is the
+  // landscape, else the Arch's prop sliders. (§10 third subject kind.)
+  const isLandscape = heroSubject?.kind === 'landscape'
   return (
     <Collapsible label="Hero & Horizon">
       <div className="space-y-1">
-        <SliderRow label="Hero Distance" value={a.distance} min={400} max={2000} step={10}
-          onChange={(v) => setArch('distance', v)} />
-        <SliderRow label="Hero Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
-          onChange={(v) => setArch('scale', v)} />
-        <SliderRow label="Hero Rotation" value={a.rotation} min={0} max={Math.PI * 2} step={0.01}
-          onChange={(v) => setArch('rotation', v)} />
-        <SliderRow label="Hero Y Offset" value={a.yOffset} min={-200} max={200} step={1}
-          onChange={(v) => setArch('yOffset', v)} />
-        <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
-          onChange={(v) => setArch('footFade', v)} />
+        {isLandscape ? (<>
+          {/* Landscape backdrop — placement (geo-anchor seeded) + snowline + atmosphere */}
+          <SliderRow label="Distance" value={ls.distance} min={500} max={20000} step={50}
+            onChange={(v) => setLandscape('distance', v)} />
+          <SliderRow label="Scale" value={ls.scale} min={0.2} max={4.0} step={0.05}
+            onChange={(v) => setLandscape('scale', v)} />
+          <SliderRow label="Bearing X" value={ls.bearingX} min={-1} max={1} step={0.01}
+            onChange={(v) => setLandscape('bearingX', v)} />
+          <SliderRow label="Bearing Z (N=−)" value={ls.bearingZ} min={-1} max={1} step={0.01}
+            onChange={(v) => setLandscape('bearingZ', v)} />
+          <SliderRow label="Rotation" value={ls.rotation} min={0} max={Math.PI * 2} step={0.01}
+            onChange={(v) => setLandscape('rotation', v)} />
+          <SliderRow label="Y Offset" value={ls.yOffset} min={-500} max={500} step={5}
+            onChange={(v) => setLandscape('yOffset', v)} />
+          <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
+          <SliderRow label="Snowline (m)" value={ls.snowline} min={0} max={3000} step={10}
+            onChange={(v) => setLandscape('snowline', v)} />
+          <SliderRow label="Snow Softness" value={ls.snowSoftness} min={0} max={800} step={10}
+            onChange={(v) => setLandscape('snowSoftness', v)} />
+          <ColorRow label="Snow" value={ls.snowColor} onChange={(v) => setLandscape('snowColor', v)} />
+          <ColorRow label="Rock" value={ls.rockColor} onChange={(v) => setLandscape('rockColor', v)} />
+          <ColorRow label="Scrub" value={ls.scrubColor} onChange={(v) => setLandscape('scrubColor', v)} />
+          <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
+          <SliderRow label="Backdrop Haze" value={ls.haze} min={0} max={1} step={0.01}
+            onChange={(v) => setLandscape('haze', v)} />
+          <ColorRow label="Haze" value={ls.hazeColor} onChange={(v) => setLandscape('hazeColor', v)} />
+        </>) : (<>
+          <SliderRow label="Hero Distance" value={a.distance} min={400} max={2000} step={10}
+            onChange={(v) => setArch('distance', v)} />
+          <SliderRow label="Hero Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
+            onChange={(v) => setArch('scale', v)} />
+          <SliderRow label="Hero Rotation" value={a.rotation} min={0} max={Math.PI * 2} step={0.01}
+            onChange={(v) => setArch('rotation', v)} />
+          <SliderRow label="Hero Y Offset" value={a.yOffset} min={-200} max={200} step={1}
+            onChange={(v) => setArch('yOffset', v)} />
+          <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
+            onChange={(v) => setArch('footFade', v)} />
+        </>)}
         {/* Arch uplights moved to the "Light Sources" card (Phase A) — they're a
             light source, not framing. Placement (above) stays here. */}
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
@@ -540,6 +576,16 @@ function SliderRow({ label, value, onChange, min, max, step = 1, suffix = '' }) 
         className="w-full" style={{ accentColor: 'var(--vic-gold)' }}
         onChange={(e) => onChange(parseFloat(e.target.value))}
       />
+    </div>
+  )
+}
+
+function ColorRow({ label, value, onChange }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{label}</span>
+      <input type="color" value={value || '#ffffff'} onChange={(e) => onChange(e.target.value)}
+        style={{ width: 40, height: 20, padding: 0, border: 'none', background: 'none' }} />
     </div>
   )
 }

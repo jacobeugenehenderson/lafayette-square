@@ -99,6 +99,38 @@ Raw `ShaderMaterial` (`feedback_raw_shadermaterial_needs_logdepth_chunks`, `NEIG
 - **Canonical docs OFF-LIMITS** (`NEIGHBORHOOD-INPUTS.md`, `SLAB-CONTRACT.md`, `README.md`, `heroSubject` doctrine) — **Boz folds the canon on trunk** when this lands (the `§10` third-subject-kind + the brought-GLB pipeline becoming real). Keep notes in a **"Build log" appended here** or a `scratch/` co-journal.
 - **Surface scope drift immediately** (`feedback_baby_must_surface_scope_drift`) — flag if the greenfield hero-pipeline (piece 2) or the subject-kind wiring (piece 1) balloons.
 
+---
+
+## Build log (pieces 1+2 — thread-2 agent "Wren", 2026-07-09)
+
+Branch `altadena-mountain` (worktree off `curb-offset-draw`). Pieces 1+2 landed; piece 3 (render, `src/components`) untouched — the sibling's lane.
+
+### ⚠️ FRAME CORRECTION — the range sits NORTH = −z, not +z
+Line 53 says "+x=WEST, +z=NORTH … range lands north (+z)", citing `reference_ls_local_frame_axes`. **That memo file is EMPTY, and the code disproves it:** `ARCH_FLAT_DEFAULTS.bearingX=0.9487, bearingZ=−0.3163` places the Gateway Arch at world `(+996, −332)`; the real Arch is **NE of Lafayette Square** → **+x=EAST, +z=SOUTH, so NORTH = −z** (same frame as `config.js`/`config.py` and the north-up Extent aerial). Piece 2 anchors the San Gabriels at **−z** (bearingZ ≈ −0.98). **Boz: fix/repopulate the `reference_ls_local_frame_axes` memo and correct §10/handoff line 53 when folding.** Piece 3 must place at −z for north.
+
+### Piece 1 — the landscape subject kind + knob contract (DONE)
+- **`heroSubject.js`**: `kind:'landscape'` resolves to `[0,40,0]` — a backdrop frames the HOOD (origin), not itself; its render controls live in the `landscape` scene channel.
+- **`skyLightChannels.js`**: `LANDSCAPE_FLAT_DEFAULTS` / `LANDSCAPE_FIELD_KEYS` — a non-TOD channel (like the arch): **placement** (bearingX, bearingZ, distance, scale, rotation, yOffset) + **snowline** (snowline, snowSoftness, snowColor, rockColor, scrubColor) + **atmosphere** (haze, hazeColor). Colors are hex strings.
+- **`useCartographStore.js`**: registered like `arch` — hydration `_grp('landscape',…)`, state init, `createGroupChannelActions` → `setLandscape`. Persists to design.json, hydrates on reload.
+- **`bake-scene.js`**: `landscape` → scene.json (so it ships; unbaked = unshipped).
+- **`StageApp.jsx` (`ArchHorizonControls`)**: now **subject-kind-aware** — when `heroSubject.kind==='landscape'` it renders the landscape placement/snowline/atmosphere knobs (SliderRows + a new `ColorRow`), else the Arch's prop sliders. Extends the existing Hero Controls, no new card (per the brief).
+- **`SurveyorPanel.jsx`**: the hero picker offers **"San Gabriel Range" (landscape)** ONLY when the active look has a baked `landscape/landscape.json` (fetched per-look) — generic, no LS hardcode.
+
+### Piece 2 — bake the mountain → slab (DONE)
+- **`bake-landscape.js`** (new): parses `terrain/sangabriel.obj` (328,812 v / 655,332 f, no normals → computes smooth normals) → a **minimal glTF-2.0 GLB** (POSITION+NORMAL+u32 indices, one `MeshStandardMaterial` metallic 0 / rough 1, native PBR) at `public/baked/<look>/landscape/sangabriel.glb` + a **`landscape.json` manifest**. **Validated: loads via three's `GLTFLoader.parse` in node** (the exact piece-3 loader) — mesh, normals, indexed, bbox correct.
+- **Geo-anchor** (the manifest `placement`): DEM center (meta `centerLatLon`) − hood center (`geography.json`) → ENU → world (`+x=E`, `−z=N`). Altadena: **947 m E, 5315 m N → world (947, −5315), distance 5398, bearing (0.176, −0.985), scale 1.0, yOffset −428** (from a `heights.f32` sample at the hood center = 428 m ASL, so the DEM at the hood sits at y≈0 — the seam for a future terrained margin).
+- **`serve.js`**: a `runIfDirty('landscape', …)` bake step (after buildings) runs `bake-landscape.js` when the scene has `terrain/sangabriel.obj`; else skipped.
+- **Mesh untouched (Jacob):** no decimation/clip in the bake — the full mesh ships; culling / LOD / "the camera never sees the back" are worked out in the **render regimes (piece 3)** — single-sided `MeshStandardMaterial` (FrontSide default) already culls back faces for free.
+
+### The piece-3 resolution contract (how to consume 1+2)
+Piece 3 fetches `/baked/<look>/landscape/landscape.json?t=<bakeLastMs>` (asset + geo-anchor `placement` + `bounds`) and reads the `landscape` channel off the resolved scene (`useSceneJson`). **Resolved placement = manifest.placement, with `scene.json.landscape.values` layered on top** (§0.0: geo-anchor default → operator override). Snowline + atmosphere come straight from the channel. Load the GLB with `GLTFLoader`, `frustumCulled={false}` (giant off-center bounds), apply `onBeforeCompile` snowline + backdrop-haze patches on the stock PBR material reading the channel uniforms (keeps auto-TOD lighting, dodges log-depth). Place at world `distance·[bearingX,_,bearingZ] + [0,yOffset,0]`, `scale`, `rotateY(rotation)`.
+
+### Follow-on flagged (Jacob, 2026-07-09) — MARGIN TERRAIN (distinct thread)
+"Keep elevation/terrain **in browse** in the space **between the neighborhood and the faded edge of the world-circle**." → the hood's own DEM-driven ground in the annulus (currently `--skip-elevation`, flat). This is **NOT** the backdrop mesh — it's re-enabling `bake-terrain` off the same `heights.f32` for the disc+margin (own thread, pour/terrain lane, not `src/components`). Piece 2's `yOffset` already targets y≈0 at the hood so the backdrop joins a terrained margin cleanly. Schedule as its own piece.
+
+### Validation
+`node bake-landscape.js --look=altadena --scene=altadena` → 15.0 MB GLB + manifest; GLB structurally valid (magic/chunks/accessor byteLengths) AND loads via `GLTFLoader`. All piece-1 files transform (esbuild) / parse (node). serve.js parses; the landscape asset path resolves. Not yet eye-gated (needs piece 3 to render).
+
 ## Definition of done
 
 The San Gabriel range stands **due north of Altadena at its true bearing/scale**, **hazes atmospherically** (global mist + backdrop trim, per-TOD color), **takes the full TOD cycle** (alpenglow / blue dusk / moonlit night) on **native PBR**, carries **snow on the high peaks** (knob ramp), is **baked into the Altadena slab**, and its **placement + snowline + atmosphere are live knobs in the subject-kind-aware Hero Controls section** (extending the Arch's). Pieces 1+2 land first (thread-2 lane); piece 3 renders it once `src/components` frees. The landscape subject kind + brought-GLB pipeline exist as reusable machinery for the next prop. **Jacob's eye passes it across the day cycle.**

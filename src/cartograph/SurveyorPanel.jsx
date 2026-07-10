@@ -22,12 +22,29 @@ const TYPES = [
 function HeroSubjectPicker() {
   const heroSubject = useCartographStore(s => s.heroSubject)
   const setHeroSubject = useCartographStore(s => s.setHeroSubject)
+  const activeLookId = useCartographStore(s => s.activeLookId)
+  // Offer the landscape (backdrop) hero ONLY when the active look has a baked
+  // landscape asset (piece-2 manifest). A backdrop is the §10 third subject kind;
+  // selecting it swaps the Hero Controls to its placement/snowline/atmosphere knobs.
+  const [landscape, setLandscape] = useState(null)   // { label } | null
+  useEffect(() => {
+    let ok = true
+    setLandscape(null)
+    if (!activeLookId) return
+    fetch(`${import.meta.env.BASE_URL}baked/${activeLookId}/landscape/landscape.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(m => { if (ok && m) setLandscape({ label: m.label || 'Mountain Backdrop' }) })
+      .catch(() => {})
+    return () => { ok = false }
+  }, [activeLookId])
   const options = useMemo(() => {
     const landmarks = (landmarksData.landmarks || [])
       .map(l => ({ kind: 'landmark', id: l.id, label: l.name }))
       .sort((a, b) => a.label.localeCompare(b.label))
-    return [{ kind: 'arch', id: 'arch', label: 'Gateway Arch' }, ...landmarks]
-  }, [])
+    const base = [{ kind: 'arch', id: 'arch', label: 'Gateway Arch' }, ...landmarks]
+    if (landscape) base.push({ kind: 'landscape', id: 'backdrop', label: landscape.label })
+    return base
+  }, [landscape])
   const currentKey = heroSubject ? `${heroSubject.kind}:${heroSubject.id}` : ''
   return (
     <div className="carto-section">

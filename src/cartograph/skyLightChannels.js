@@ -246,6 +246,24 @@ export const ARCH_FLAT_DEFAULTS = {
 }
 export const ARCH_FIELD_KEYS = Object.keys(ARCH_FLAT_DEFAULTS)
 
+// Landscape (Hero Controls — the THIRD hero subject kind: a backdrop MESH, not a
+// point-to-frame). The per-type controls of a `kind:'landscape'` hero: placement
+// (seeded from the geo-anchor at bake, §0.0 overridable) + a snowline elevation
+// ramp (knobs, never hardcoded) + a backdrop-only haze trim (independent of the
+// hood fog). Non-TOD like the arch — the range doesn't drift; its per-TOD COLOR
+// comes free from the light rig + the global `mist` channel. Placement frame:
+// world = distance·[bearingX, _, bearingZ]; +x=EAST, +z=SOUTH → NORTH is −z
+// (verified from ARCH_FLAT_DEFAULTS' real bearing, not the empty frame memo).
+export const LANDSCAPE_FLAT_DEFAULTS = {
+  // A. Placement — geo-anchor seeds these at bake (bake-landscape.js); overridable.
+  bearingX: 0.18, bearingZ: -0.98, distance: 5400, scale: 1.0, rotation: 0, yOffset: -20,
+  // B. Elevation shading / snowline — a KNOB ramp.
+  snowline: 1500, snowSoftness: 180, snowColor: '#eef3f7', rockColor: '#6d655a', scrubColor: '#586348',
+  // C. Atmosphere — backdrop-only haze trim (the hood fog rides the `mist` channel).
+  haze: 0.35, hazeColor: '#bcd0e0',
+}
+export const LANDSCAPE_FIELD_KEYS = Object.keys(LANDSCAPE_FLAT_DEFAULTS)
+
 // Arch Lighting (Hero & Horizon card) — the cross-aimed foot uplights that
 // wash the arch from the feet up. TOD-animatable group channel so the wash
 // can warm up at dusk and fade by day (rides the same TodChannel UX as

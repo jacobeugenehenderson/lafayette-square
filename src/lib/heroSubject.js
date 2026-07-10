@@ -57,6 +57,11 @@ export function resolveHeroSubject(subject, { slabIndex, buildings, archValues }
   // needed). The old [400,45,-100] literal is retired as the default.
   if (!subject) return archPoint(archValues)
   if (subject.kind === 'arch') return archPoint(archValues)
+  // A landscape is the THIRD kind: a backdrop MESH, not a point to frame ON. The
+  // camera frames the hood (origin, mid-height) and the range fills the sky
+  // behind it (north = −z). Its render controls live in the scene.json `landscape`
+  // channel (placement/snowline/atmosphere), resolved by the piece-3 renderer.
+  if (subject.kind === 'landscape') return [0, 40, 0]
   if (subject.kind === 'building' || subject.kind === 'landmark') {
     // Slab path (production/Preview): resolve from the render-scoped index.
     if (slabIndex) {
