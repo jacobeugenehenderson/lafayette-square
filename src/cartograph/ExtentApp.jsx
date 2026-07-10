@@ -30,7 +30,7 @@ import {
   fetchSkeletonLabels, fetchExtentCorners, fetchStreetNames, geocodePlace, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourScene, fetchRibbons, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
-  fetchBuildingOverrides, saveBuildingOverrides,
+  fetchBuildingOverrides, saveBuildingOverrides, rescopeScene, rollbackExtent,
 } from './api.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
@@ -217,16 +217,19 @@ function circlePts(cx, cz, r, n = 96) {
   return out
 }
 function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
-  if (!corners?.length) return null
-  const poly = corners.map(c => [c.x, 4, c.z])
-  if (corners.length >= 3) poly.push([corners[0].x, 4, corners[0].z])
+  const hasPoly = corners?.length >= 2
+  // Draw when there's a polygon OR just a circle (a reopened committed hood has
+  // no live corners but should still show its circle so radius re-scope isn't blind).
+  if (!hasPoly && !(centroid && radiusM > 0)) return null
+  const poly = hasPoly ? corners.map(c => [c.x, 4, c.z]) : []
+  if (hasPoly && corners.length >= 3) poly.push([corners[0].x, 4, corners[0].z])
   return (
     <group>
-      {corners.length >= 2 && <Line points={poly} color="#38e1ff" lineWidth={2} dashed={false} />}
+      {hasPoly && <Line points={poly} color="#38e1ff" lineWidth={2} dashed={false} />}
       {centroid && radiusM > 0 && (
         <Line points={circlePts(centroid.x, centroid.z, radiusM)} color="#ffd23f" lineWidth={2} />
       )}
-      {showVertices && corners.map((c, i) => (
+      {showVertices && hasPoly && corners.map((c, i) => (
         <mesh key={i} position={[c.x, 4.5, c.z]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={40}>
           <circleGeometry args={[16, 20]} />
           <meshBasicMaterial color="#38e1ff" transparent opacity={0.95} depthTest={false} />
@@ -430,7 +433,7 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
 // carto-section-caret · carto-glass). Two modes: TYPE → flat filtered matches
 // (arterials first); EMPTY → Arterials up top, then the rest as collapsible
 // A–Z sub-dropdowns so hundreds of streets stay navigable.
-function SideInput({ index, value, placeholder, names, onChange, onRemove, onHover }) {
+function SideInput({ index, value, placeholder, names, onChange, onRemove, onHover, dir }) {
   const [open, setOpen] = useState(false)
   const [letter, setLetter] = useState(null)
   // `browsing` = the field was clicked/focused to RE-pick (a value is already
@@ -474,6 +477,7 @@ function SideInput({ index, value, placeholder, names, onChange, onRemove, onHov
         onChange={e => { onChange(index, e.target.value); setOpen(true); setBrowsing(false) }}
         onFocus={e => { setOpen(true); setBrowsing(true); e.target.select() }}
         onClick={() => { setOpen(true); setBrowsing(true) }} />
+      {dir && <span className="carto-meta--value" style={{ minWidth: 26, textAlign: 'center', opacity: 0.85 }} title="derived side (from geometry)">{dir}</span>}
       <button className="carto-btn-sm" onClick={() => onRemove(index)} title="Remove this street">×</button>
       {open && (
         <div className="carto-extent-combo carto-glass">
@@ -609,6 +613,10 @@ export default function ExtentApp() {
   const [blurb, setBlurb] = useState('')
   const [radiusM, setRadiusM] = useState(0)
   const [radiusTouched, setRadiusTouched] = useState(false)
+  // §4 live re-scope: the radius the committed circle was last baked at. When the
+  // operator drags radiusM away from this on a committed scene, offer "Re-scope".
+  const [committedRadius, setCommittedRadius] = useState(0)
+  const [rescoping, setRescoping] = useState(false)
   const draftHydrated = useRef(false)
 
   // The official boundary projected into the CURRENT frame (for drawing + as the
@@ -677,6 +685,7 @@ export default function ExtentApp() {
     setSeedError(null); setLocated(false); setCommitted(false); setFetchSources(null)
     setSides(['', '', '', '']); setStreetCorners(null); setRadiusTouched(false); setPreviewStreet(null)
     setOfficial(null); setUseOfficial(false); setAnchors(null); setName(''); setBlurb('')
+    setCommittedRadius(0); setRescoping(false)
     draftHydrated.current = false
     let cancelled = false
     fetchNeighborhood(scene).then(nb => {
@@ -687,7 +696,7 @@ export default function ExtentApp() {
       }
       setName(nb.name || ''); setBlurb(nb.blurb || '')
       if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
-      if (nb.committed) setCommitted(true)
+      if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0) }
       draftHydrated.current = true
     }).catch(() => { draftHydrated.current = true })
     return () => { cancelled = true }
@@ -794,6 +803,10 @@ export default function ExtentApp() {
   const onBuild = async () => {
     if (!corners?.closed || !corners.centroid || !(radiusM > 0) || building || !geo) return
     setBuilding(true); setSeedError(null)
+    // §6 atomicity: commit re-centers geography + reprojects raw (destructive). If
+    // a later stage throws, roll back to the pre-commit frame so we never strand a
+    // re-centered-but-slab-less scene. `committedThisRun` gates the rollback.
+    let committedThisRun = false
     try {
       // Flush the roster overrides BEFORE the pour — the debounced autosave may
       // not have landed, and the pipeline reads building-overrides.json to decide
@@ -813,6 +826,7 @@ export default function ExtentApp() {
         name: name.trim(), blurb: blurb.trim(),
         polygon: usingOfficial ? official.ring : undefined,
       })
+      committedThisRun = true
       const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
       const update = {}
       if (g) update.sceneGeography = g
@@ -838,11 +852,47 @@ export default function ExtentApp() {
       await bakeLook(lookId, { force: true })
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
+      setCommittedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
       setShot('designer')
     } catch (e) {
-      setSeedError(e.message || 'build failed')
+      if (committedThisRun) {
+        // Roll the destructive commit back so the scene isn't left re-centered but
+        // slab-less. Then reload the restored frame + clear the committed marker.
+        setBuildStage('Rolling back…')
+        await rollbackExtent(scene).catch(() => {})
+        const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
+        useCartographStore.setState({ sceneGeography: g || null, sceneBoundary: b || null })
+        setCommitted(false); setSeedToken(t => t + 1)
+        setSeedError(`Pour failed — rolled back to before commit. ${e.message || ''}`.trim())
+      } else {
+        setSeedError(e.message || 'build failed')
+      }
     } finally {
       setBuilding(false); setBuildStage(null)
+    }
+  }
+
+  // §4 live radius re-scope — rewrite the boundary circle at the new radius +
+  // re-clip + re-bake, WITHOUT re-naming streets or re-centering. The lightweight
+  // path the §11 "living boundary" needs: grow/shrink a committed hood in place.
+  const onRescope = async () => {
+    if (!committed || rescoping || !(radiusM > 0) || Math.round(radiusM) === committedRadius) return
+    setRescoping(true); setSeedError(null); setBuildStage('Re-scoping…')
+    try {
+      await rescopeScene(scene, Math.round(radiusM))
+      const b = await fetchBoundary(scene).catch(() => null)
+      if (b) useCartographStore.setState({ sceneBoundary: b })
+      setBuildStage('Re-baking…')
+      const idx = await fetchLooks().catch(() => null)
+      const lookId = idx?.looks?.find(l => l.scene === scene)?.id
+      if (lookId) await bakeLook(lookId, { force: true })
+      const rb = await fetchRibbons(scene).catch(() => null)
+      if (rb) useCartographStore.setState({ sceneRibbons: rb })
+      setCommittedRadius(Math.round(radiusM))
+    } catch (e) {
+      setSeedError(e.message || 're-scope failed')
+    } finally {
+      setRescoping(false); setBuildStage(null)
     }
   }
 
@@ -888,10 +938,20 @@ export default function ExtentApp() {
     if (ctl) { ctl.target.set(c.x, 0, c.z); ctl.update() }
   }, [corners, radiusM])
 
+  // §5: each named side's derived cardinal, keyed by name (robust to empty slots /
+  // reordering — corners.streets is the CLEANED list, not index-aligned to sides).
+  const dirByName = useMemo(() => {
+    const m = {}
+    for (const s of (corners?.streets || [])) if (s.name && s.direction) m[s.name] = s.direction
+    return m
+  }, [corners])
   const setSide = (i, v) => setSides(prev => prev.map((s, k) => (k === i ? v : s)))
   const removeSide = (i) => setSides(prev => prev.filter((_, k) => k !== i))
   const addSide = () => setSides(prev => [...prev, ''])
   const gapCount = corners?.edges ? corners.edges.filter(e => !e.corner).length : 0
+  // The circle's center for drawing: the live polygon centroid, or the origin for
+  // a reopened committed hood (its geo is re-centered so the circle sits at [0,0]).
+  const boundaryCentroid = corners?.centroid || (committed ? { x: 0, z: 0 } : null)
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
@@ -908,12 +968,12 @@ export default function ExtentApp() {
           <ExtentCamera geo={geo} controlsRef={controlsRef} orthoRef={orthoRef} />
           <ambientLight intensity={1} />
           {located && <ExtentAerial geo={geo} />}
-          {located && corners?.closed && <ExtentDim centroid={corners.centroid} radiusM={radiusM} />}
-          {located && <ExtentBuildings footprints={footprints} centroid={corners?.centroid} radiusM={radiusM}
+          {located && (corners?.closed || committed) && <ExtentDim centroid={boundaryCentroid} radiusM={radiusM} />}
+          {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
           {located && <ExtentStreets streets={corners?.streets} preview={previewStreet} />}
-          {located && <ExtentBoundary corners={corners?.corners} centroid={corners?.centroid} radiusM={radiusM}
+          {located && <ExtentBoundary corners={corners?.corners} centroid={boundaryCentroid} radiusM={radiusM}
             showVertices={corners?.source !== 'official'} />}
           <MapControls
             ref={controlsRef}
@@ -1016,7 +1076,7 @@ export default function ExtentApp() {
             {sides.map((s, i) => (
               <SideInput key={i} index={i} value={s} names={names}
                 placeholder={['west side', 'north side', 'east side', 'south side'][i] || 'street'}
-                onChange={setSide} onRemove={removeSide} onHover={onHoverStreet} />
+                onChange={setSide} onRemove={removeSide} onHover={onHoverStreet} dir={dirByName[s.trim()]} />
             ))}
             <div className="carto-row">
               <button className="carto-look-add" onClick={addSide}>+ add street</button>
@@ -1030,17 +1090,33 @@ export default function ExtentApp() {
               </div>
             )}
 
-            {corners?.centroid && corners.radius > 0 && (
+            {/* Radius — shown once a boundary exists (live streets/official) OR
+                for a reopened committed hood (so it can be re-scoped in place, §4). */}
+            {((corners?.centroid && corners.radius > 0) || (committed && committedRadius > 0)) && (() => {
+              const rMin = corners?.radius ?? Math.max(200, Math.round(committedRadius * 0.3))
+              const rMax = Math.max((corners?.radius || committedRadius) * 2.5, 1500)
+              return (
               <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
                 <span className="carto-label" style={{ cursor: 'default' }}>Radius</span>
                 <span className="carto-meta--value">{radiusM} m</span>
                 <input className="carto-range" type="range" style={{ flexBasis: '100%' }}
-                  min={corners.radius} max={Math.max(corners.radius * 2.5, 1500)} step={10}
+                  min={rMin} max={rMax} step={10}
                   value={radiusM}
                   onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
-                <button className="carto-btn-sm" onClick={() => { if (corners?.radius) setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to streets</button>
+                {corners?.radius
+                  ? <button className="carto-btn-sm" onClick={() => { setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to streets</button>
+                  : (committed && Math.round(radiusM) !== committedRadius &&
+                      <button className="carto-btn-sm" onClick={() => setRadiusM(committedRadius)}>reset</button>)}
+                {committed && Math.round(radiusM) !== committedRadius && (
+                  <button className="carto-btn carto-btn--grow" disabled={rescoping || building} style={{ flexBasis: '100%', marginTop: 6 }}
+                    onClick={onRescope}
+                    title="Rewrite the boundary at this radius + re-bake in place — no re-naming, no re-center (§11 living boundary)">
+                    {rescoping ? (buildStage || 'Re-scoping…') : `Re-scope radius → ${Math.round(radiusM)} m`}
+                  </button>
+                )}
               </div>
-            )}
+              )
+            })()}
 
             {footprints?.buildings?.length > 0 && (
               <div className="carto-row carto-row--wrap" style={{ marginTop: 12 }}>

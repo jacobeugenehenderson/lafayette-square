@@ -36,5 +36,20 @@ Numerically centered (building centroid mean ≈ (83, 418) m, well inside r=4483
 - **Mountain model available** — `cartograph/data/altadena/terrain/`: `sangabriel.obj` (328,812-vert San Gabriel front DEM mesh, 286–1880 m) + `heights.f32`/`heightmap.png` (ground DEM, peak 1880 m) + meta. Per §10 this is the brought-mesh/hero-backdrop thread (native materials, own slab artifact) — **out of scope for the selector; noted as the natural next thread for Altadena's identity.** The ground DEM also means Altadena *could* pour with real elevation (currently flat, `--skip-elevation`).
 - **LA-County parcels** (addresses for Altadena) — a separate assessor-well thread.
 
-## Phase 2 — not yet started
-4. Live radius re-scope (rewrite boundary + re-bake, no re-name) · 5. Directional-street semantics · 6. Atomic/rollback on partial-pour failure · (7. docstring — done).
+## Interlude — viewability fixes (while Jacob eye-gated Altadena)
+- **`?look=` deep-link** (`useCartographStore`) — open any installation's baked Look by URL, symmetric with `?scene=`. Enabled a single-URL handoff.
+- **Bake-timeout lift** (serve.js) — ground/buildings/AO → 300s, content → 180s. The 60s cap falsely killed a large hood's ground bake. *The full CDP (r=4483) is separately too big — 397MB ground, groundSampler overflow — so Altadena was re-committed as a tight r=1600 placeholder circle for viewing; the operator frames the real extent by eye.*
+- **Camera pullback clamps** (`CartographApp`) — Designer minZoom 0.5→0.03, browse/shot maxDistance 4000/5000→20000. Recurring "can't scroll back far enough" on any hood bigger than LS. Purely additive; LS unaffected. Eye-gated ✓.
+- Served the whole thing on `:5199` (worktree vite, `CARTO_API=:3344`) so Jacob could open `cartograph.html?scene=altadena&look=altadena` with no local setup.
+
+## Phase 2 — shipped (this branch)
+All in `src/cartograph/*` + `serve.js`. Backend endpoints + client wiring + UI.
+- **#7 docstring** — corrected in the Phase 1 commit. ✓
+- **#4 live radius re-scope** — `POST /:scene/rescope {radius}`: rewrite `neighborhood_boundary.json` at the new radius (membership polygon PRESERVED) → pipeline re-clip → ribbons; client re-bakes. No re-name, no re-center. UI: a "Re-scope radius → N m" button appears when a committed hood's radius is dragged off its baked value (`committedRadius`). **Validated e2e** on Altadena 1600→1400 (boundary + neighborhood.radius synced, re-clipped faces 601→243).
+- **#5 directional-street semantics** — `computeExtentCorners` derives each side's cardinal (`cardinalOf`, 8-way, data frame +x=E/+z=S → N=−z; **note: contradicts the stale `reference_ls_local_frame_axes` memory which says +x=W — the CODE + rendered aerial say +x=E**). Persisted as structural `borderStreets:[{name,direction}]` in neighborhood.json (flat ordered `sides[]` kept for the corner solver). UI: a direction chip on each resolved side. Field + math verified; `borderStreets` written (empty for official/no-sides hoods).
+- **#6 atomic/rollback Pour** — commit-extent snapshots geography/boundary/neighborhood → `.prebak` before the destructive re-center; `POST /:scene/rollback-extent` restores them + re-projects raw + skeleton back to the pre-commit frame. `onBuild` calls it on any post-commit failure (rolls back + clears the committed marker + reloads), so a failed Pour never strands a re-centered-but-slab-less scene. Also fixed a latent clobber: the `neighborhood` POST now MERGES (draft autosaves were replacing the file wholesale, dropping committed/timezone/borderStreets). Backup creation + graceful rollback verified; full failure-injection not run (would downgrade the good committed state).
+
+## Open / deferred
+- Mountains / hero-prop = a dedicated later session (Boz drafts a §10 brought-GLB brief); NOT in this branch. `src/components` is the tree-sibling's live lane — untouched.
+- Proper camera follow-up: derive zoom clamps + auto-fit-on-open from the boundary radius (loosened statically for now).
+- The full Altadena CDP is oversized; the r=1400 placeholder is for viewing — Jacob frames the real extent by eye. LA-County parcels (addresses) still a separate assessor-well thread.

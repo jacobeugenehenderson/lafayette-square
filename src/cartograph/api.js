@@ -142,6 +142,24 @@ export async function commitExtent(scene, payload) {
   return j
 }
 
+// Extent editor: live radius re-scope — rewrite the boundary circle (membership
+// polygon preserved) + re-clip + ribbons, no re-name/re-center. Client re-bakes.
+export async function rescopeScene(scene, radius) {
+  const res = await fetch(sceneUrl(scene, 'rescope'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ radius }),
+  })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `rescope ${res.status}`)
+  return j
+}
+
+// Extent editor: roll back a failed commit — restore the pre-commit frame from
+// the .prebak snapshots + re-project raw back to it. Best-effort recovery.
+export async function rollbackExtent(scene) {
+  const res = await fetch(sceneUrl(scene, 'rollback-extent'), { method: 'POST' })
+  return res.json().catch(() => ({ ok: false }))
+}
+
 // Extent editor: corridor-collapsed aerial labels (skeleton-sourced, current-
 // frame x/z). One label per corridor/street, `major` = arterial.
 export async function fetchSkeletonLabels(scene) {

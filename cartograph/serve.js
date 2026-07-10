@@ -242,6 +242,12 @@ function distPointToChains(j, chains) {
 }
 const CORNER_EPS = 12       // a junction is "on" a street if within this (m)
 const CORNER_CLUSTER = 45   // merge junctions closer than this into one corner
+// Cardinal (8-way) of an offset in the DATA frame — +x = EAST, +z = SOUTH
+// (config.js: x=(lon−lon0)·k east+, z=(lat0−lat)·k south+). So North = −z.
+function cardinalOf(dx, dz) {
+  const deg = (Math.atan2(-dz, dx) * 180 / Math.PI + 360) % 360   // 0°=E, 90°=N
+  return ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'][Math.round(deg / 45) % 8]
+}
 function computeExtentCorners(scene, sides) {
   const skel = getSkeleton(scene)
   if (!skel) return { error: `no skeleton.json for scene '${scene}'` }
@@ -300,10 +306,18 @@ function computeExtentCorners(scene, sides) {
   // aerial — the operator sees exactly which street they picked (and catches a
   // wrong one, e.g. Clayton Avenue vs Clayton Road, that won't close).
   const r2 = (v) => Math.round(v * 100) / 100
-  const streets = sides.map((nm) => ({
-    name: nm,
-    polylines: (chainsOf(nm) || []).map(c => c.points.map(p => [r2(p.x), r2(p.z)])),
-  }))
+  const streets = sides.map((nm) => {
+    const polylines = (chainsOf(nm) || []).map(c => c.points.map(p => [r2(p.x), r2(p.z)]))
+    // Directional identity — the side's mean position relative to the polygon
+    // centroid → a cardinal (the structural W/N/E/S the flat sides[] can't carry).
+    let direction = null
+    if (centroid && polylines.length) {
+      let sx = 0, sz = 0, n = 0
+      for (const pl of polylines) for (const [x, z] of pl) { sx += x; sz += z; n++ }
+      if (n) direction = cardinalOf(sx / n - centroid.x, sz / n - centroid.z)
+    }
+    return { name: nm, polylines, direction }
+  })
   return { corners, centroid, radius: Math.round(radius), edges, streets, closed: corners.length === sides.length && sides.length >= 3 }
 }
 
@@ -1050,7 +1064,11 @@ createServer(async (req, res) => {
         try {
           const parsed = JSON.parse(body || '{}')
           mkdirSync(dirname(nPath), { recursive: true })
-          writeIfChanged(nPath, JSON.stringify(parsed, null, 2))
+          // MERGE onto the existing record — a draft autosave carries only the
+          // fields it touches (sides/radius/name/blurb) and must NOT drop the
+          // committed flag, derived timezone, or borderStreets that commit wrote.
+          const prior = existsSync(nPath) ? (() => { try { return JSON.parse(readFileSync(nPath, 'utf8')) } catch { return {} } })() : {}
+          writeIfChanged(nPath, JSON.stringify({ ...prior, ...parsed }, null, 2))
           res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}')
         } catch (err) {
           res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
@@ -1080,6 +1098,14 @@ createServer(async (req, res) => {
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
         const geoPath = sceneDataPaths(scene).geography
+        // Snapshot the pre-commit frame so a failure mid-Pour can roll back
+        // (commit re-centers geography + reprojects raw — destructive). Consumed
+        // by /rollback-extent when onBuild throws before the bake lands. Stale
+        // .prebak from a prior run is cleared first so only one generation exists.
+        const nPathC = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        for (const src of [geoPath, sceneDataPaths(scene).boundary, nPathC]) {
+          try { rmSync(src + '.prebak', { force: true }); if (existsSync(src)) writeFileSync(src + '.prebak', readFileSync(src)) } catch { /* best-effort */ }
+        }
         const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
         geo.lat = r5(center.lat); geo.lon = r5(center.lon)
         geo.lonToMeters = Math.round(111320 * Math.cos((center.lat * Math.PI) / 180))
@@ -1116,8 +1142,15 @@ createServer(async (req, res) => {
           boundary.polygonSource = 'official'
         }
         writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
+        // Structural directional identity — each named side + the cardinal it lies
+        // on (derived from geometry, §5). The flat ordered sides[] is kept for the
+        // corner solver's around-perimeter adjacency; borderStreets adds the W/N/E/S
+        // the flat list can't carry (SEO/description: "bounded by X on the west…").
+        const borderStreets = (cornerRes && Array.isArray(cornerRes.streets))
+          ? cornerRes.streets.filter(s => s.name && s.direction).map(s => ({ name: s.name, direction: s.direction }))
+          : []
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
-        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], radius: Math.round(radius), timezone: geo.timezone || null, committed: true }, null, 2))
+        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], borderStreets, radius: Math.round(radius), timezone: geo.timezone || null, committed: true }, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, radius: Math.round(radius) }))
       } catch (err) {
@@ -1152,6 +1185,78 @@ createServer(async (req, res) => {
         _seedsInFlight.delete(scene)
       }
     })()
+    return
+  }
+
+  // POST /<scene>/rollback-extent — undo a failed commit (§6 atomicity). commit
+  // re-centers geography + reprojects raw destructively; if the ensuing Pour/bake
+  // throws, the scene is left re-centered + committed but slab-less. This restores
+  // geography/boundary/neighborhood from the .prebak snapshots commit made, then
+  // re-projects raw + re-derives skeleton back to the restored frame.
+  const rollbackMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/rollback-extent$/)
+  if (req.method === 'POST' && rollbackMatch && !RESERVED_PREFIXES.has(rollbackMatch[1])) {
+    const scene = rollbackMatch[1]
+    if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
+    _seedsInFlight.add(scene)
+    ;(async () => {
+      try {
+        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        let restored = false
+        for (const src of [sceneDataPaths(scene).geography, sceneDataPaths(scene).boundary, nPath]) {
+          const bak = src + '.prebak'
+          if (existsSync(bak)) { writeFileSync(src, readFileSync(bak)); rmSync(bak, { force: true }); restored = true }
+        }
+        if (restored) {
+          const here = import.meta.dirname
+          const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+          await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
+          await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
+          _skelCache.delete(scene)
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, restored }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      } finally { _seedsInFlight.delete(scene) }
+    })()
+    return
+  }
+
+  // POST /<scene>/rescope — live radius re-scope (§4, the §11 living boundary):
+  // rewrite neighborhood_boundary.json with a new radius circle — PRESERVING the
+  // membership polygon (streets/official boundary unchanged) — then re-clip
+  // (pipeline) + ribbons. No re-name, no re-center, no skeleton; the client then
+  // re-bakes. Body { radius }. Long-running (the derive stage); guarded per scene.
+  const rescopeMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/rescope$/)
+  if (req.method === 'POST' && rescopeMatch && !RESERVED_PREFIXES.has(rescopeMatch[1])) {
+    const scene = rescopeMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', async () => {
+      if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
+      _seedsInFlight.add(scene)
+      try {
+        const { radius } = JSON.parse(body || '{}')
+        if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
+        const bPath = sceneDataPaths(scene).boundary
+        if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
+        const prev = JSON.parse(readFileSync(bPath, 'utf8'))
+        const boundary = makeCircleBoundary(radius)
+        if (prev.polygon) boundary.polygon = prev.polygon            // membership unchanged
+        if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
+        writeFileSync(bPath, JSON.stringify(boundary, null, 2))
+        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        if (existsSync(nPath)) {
+          try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.radius = Math.round(radius); writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
+        }
+        const here = import.meta.dirname
+        const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+        await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
+        await runShell(`node promote-ribbons.js --scene=${scene}`, { cwd: here, env, timeout: 60000 })
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, radius: Math.round(radius) }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      } finally { _seedsInFlight.delete(scene) }
+    })
     return
   }
 
