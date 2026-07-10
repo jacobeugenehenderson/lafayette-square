@@ -62,6 +62,8 @@ Senders manage their own menus/catalog, prices, specials, and availability throu
 ## 8. Availability & Order Preparation
 Senders control their own availability; orders are offered to customers only when the Sender is accepting orders and couriers are available. Senders prepare orders promptly, package appropriately for transport, clearly label for pickup, and provide orders to couriers in a condition suitable for transport.
 
+> **▸ Mechanism (how the order reaches the kitchen).** Orders are delivered into the Sender's own point-of-sale as a *third-party / externally-paid* ticket (the Platform never routes payment through the Sender's merchant account — see §5.2). The technical canon is `cary/pos/README.md`; the Sender authorizes this once via a scoped connection ("one click to connect"). Where a Sender's POS is not integrated, the order is relayed by an agreed channel (e.g. printed ticket / message).
+
 ## 9. Alcohol Orders
 Where alcohol is offered, the **Sender is the licensed seller** and is responsible for all alcohol compliance; **the Platform holds no liquor license** and is delivery-only. The Courier must be **21+** and must verify ID at the door (Courier Agreement §8).
 

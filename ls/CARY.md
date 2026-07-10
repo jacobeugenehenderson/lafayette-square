@@ -34,6 +34,7 @@ Cary is **separate from the GAS backend**. Tables (canonical schema in `cary/sup
 | **Courier dots (3D map)** | `src/components/CourierDots.jsx:79` | Realtime subscriber to `courier_locations`; delivering vs idle color; idle couriers snap to the park center (privacy); stale after 5 min | ✅ live |
 | **Masthead "Couriers" count** | `src/components/SidePanel.jsx:578` | The four-stat widget reads `useCommunityStats()` | ⏳ stub (store inits `couriers: 0`, never populated) |
 | **Delivery CTA on cards** | `src/components/PlaceCard.jsx:2003` (`CaryButton`) | "Deliver from …" / "Pick me up here" | ⏳ "coming soon" overlay — no request form wired |
+| **Menu ordering surface** | `src/components/PlaceCard.jsx:2836` (`MenuTab`) | Full **cart + priced order** (subtotal · tax · 22% service charge · processing · total; $40 min; kitchen note) — see §6 | ⏳ **capture built, submit stubbed** — "Place order" dead-ends at a "coming soon" card (admin-gated CTA) |
 | **Courier auth** | `src/components/CaryAuth.jsx` | phone → OTP → profile | ✅ live |
 | **Courier onboarding** | `src/components/CourierOnboarding.jsx` | 7-step wizard (Deliver tier: account → identity → agreement; Drive tier adds license → background → insurance → vehicle) | ✅ live (`/cary/deliver`, `/cary/drive`) |
 | **Courier dashboard** | `src/components/CourierDashboard.jsx` | online/offline + GPS, request cards, live meter (time/distance/fare), safety reports; always mounted, opens on `useCourierDash.open` | ✅ live |
@@ -48,14 +49,49 @@ Cary is **separate from the GAS backend**. Tables (canonical schema in `cary/sup
 
 - ✅ **Live:** courier onboarding (both tiers), the courier dashboard (GPS, request accept, meter, safety), live courier dots, phone-OTP auth.
 - ⏳ **Placeholder:** the **requester** delivery CTA (`CaryButton` shows "coming soon"); the masthead courier count (stub store).
-- ❌ **Unbuilt:** requester-side **request creation** (the critical blocker — couriers can sit ready but have nothing to accept), settlement ledger / payouts, restaurant onboarding, ride-request creation + matching.
+- 🟨 **Built but not wired (client-only):** the **menu ordering surface** (§6) — cart, the full priced order (subtotal/tax/service-charge/processing/total), the $40 minimum, the kitchen note. It computes a complete, legal-canon-accurate order **but nothing leaves the browser**: "Place order" is a stub.
+- ❌ **Unbuilt:** the **order submit and everything after it** — no persistence, no Stripe food-PaymentIntent, no `requests`/`sessions` row, no dispatch, no POS injection. Also: settlement ledger / payouts, restaurant onboarding, ride-request creation + matching.
 
-The **delivery hookup from place cards** (`PLACE-CARDS.md` §3: a menu order needs the `delivery` tag + a live courier + an in-window menu) terminates at `CaryButton`'s placeholder today — the order→dispatch path is the unbuilt requester side above.
+The **delivery hookup from place cards** (`PLACE-CARDS.md` §3: a menu order needs the `delivery` tag + a live courier + an in-window menu) captures a full priced cart in `MenuTab` today, then terminates at a "coming soon" card — the **submit → persist → pay → dispatch → inject** path is the unbuilt requester side above.
 
 ---
 
 ## 5. Known gaps / next (app side)
 Requester request-creation UI (the place-card → pickup/destination form) · wire the masthead count to Supabase · settlement ledger · restaurant onboarding. The program-level roadmap is `CARY-BRIEF.md §"What's next"`.
+
+**Order → kitchen.** The requester flow ends at a *checkout*; how that order then reaches the restaurant's line is the **POS-injection canon** — `../cary/pos/README.md`. Key invariant: payment stays on Cary's Stripe, the order is injected into the POS as *paid-external* (POS never touches the money). Pilot POS = Toast + Lightspeed; head-direct / tail-aggregator.
+
+## 6. The ordering surface (order capture — built client-side)
+
+Formalized 2026-07-09 from the code (`PlaceCard.jsx` `MenuTab`, ~L2836–3237). This is the requester **order-capture** flow — real and complete client-side; only the *submit* is stubbed. It is also the de-facto source of the **canonical order shape** that `../cary/pos/README.md` (POS injection) consumes.
+
+**Gates (all must hold to reach the order UI):**
+- `hasDelivery` — the place carries the `delivery` tag (`L2842`).
+- `courierAvailable` — `useCourierAvailable()` (`CourierDots`) → `canOrder` (`L2843–2844`): capacity-first, orders only when a courier is standing by.
+- **In-schedule now** — the menu type's `schedule[menuKey][day]` window contains the current time (`orderableMenus`, `L2908`); the cart only counts items from currently-orderable menus.
+- **CTA is admin-gated** — non-admins see "Cary delivery — coming soon" (`L2980–3004`). *Code comment:* "To go live for everyone: remove the isAdmin gate."
+
+**Cart:** `cart` = `{ "sectionIdx-itemIdx": qty }` (`L2900`), per-item ± controls, section cart counts.
+
+**The price stack** (all integer cents — this is the money model, and it matches the legal canon exactly):
+
+| Field | Formula | Source |
+|---|---|---|
+| `MIN_ORDER` | `4000` ($40) | `L2951` |
+| `cartTotal` (subtotal) | Σ `item.price × qty` over orderable sections | `L2938` |
+| `salesTax` | `round(cartTotal × INSTANCE.commerce.salesTaxRate)` — **food only, not delivery** | `L2953` |
+| `caryFee` (service charge) | `round(cartTotal × 0.22)` — 22%, courier 75% / platform 25% | `L2954` |
+| `processingFee` | `round((cartTotal + salesTax + caryFee) × 0.029) + 30` — Stripe 2.9% + $0.30 | `L2955` |
+| `orderTotal` | `cartTotal + salesTax + caryFee + processingFee` | `L2956` |
+| `belowMinimum` | `cartTotal > 0 && cartTotal < MIN_ORDER` (blocks submit) | `L2957` |
+
+`salesTaxRate` is **per-installation** via `INSTANCE.commerce.salesTaxRate` (LS `0.08725`; HiPointe `0.09238` placeholder) — already instance-parameterized, not hardwired.
+
+**Kitchen note:** free text ≤500 chars, "goes directly to the kitchen" (allergies/substitutions) — the current special-requests / modifiers channel (`L3166`).
+
+**The gap (everything past "Place order"):** the button sets `orderPlaced = true` → a terminal **"Coming soon — Cary delivery is launching this spring"** card (`L3179–3196`). **No persistence, no Stripe PaymentIntent, no `requests`/`sessions` row, no dispatch, no POS injection.** Nothing leaves the browser.
+
+**The implied `CaryOrder` shape** (the client already computes every field except the IDs): `{ restaurant place_id/name/lat/lon (from listing) · line_items[]{ section, name, unit_price_cents, qty } · order_note · subtotal/tax/serviceCharge/processing/total (cents) · in-schedule window }`. **Missing for POS injection:** structured **modifiers** (today only the free note), a **Cary order ID**, and the **food PaymentIntent id**. This is the schema to formalize when the submit path is built (`CARY-BRIEF.md §"What's next" #2`; POS side in `../cary/pos/README.md`).
 
 ## Source map
 | Thing | File | Notes |
@@ -63,6 +99,7 @@ Requester request-creation UI (the place-card → pickup/destination form) · wi
 | Store + lifecycle | `src/hooks/useCary.js` | auth state listener; auto-init |
 | Map dots | `src/components/CourierDots.jsx:79–154` | `courier_locations` realtime |
 | Delivery CTA | `src/components/PlaceCard.jsx:2003–2031` | `CaryButton` (placeholder) |
+| Menu ordering surface | `src/components/PlaceCard.jsx:2836–3237` (`MenuTab`) | cart + priced order; submit stubbed — §6 |
 | Onboarding / dashboard / auth / safety | `CourierOnboarding.jsx` · `CourierDashboard.jsx` · `CaryAuth.jsx` · `SafetyReport.jsx` | |
 | Routes | `src/App.jsx:602,623–627` | dashboard always mounted |
 | Supabase client | `src/lib/supabase.js` | safe-stub when env unset |

@@ -60,7 +60,7 @@ What to build:
 **Goal:** Get 2-3 restaurants on board for a pilot.
 
 - [ ] Talk to Sasha's, Bellwether, 1-2 others
-- [ ] Explain the model: 20% service charge, nightly Venmo, no tech changes on their end
+- [ ] Explain the model: 20% service charge, nightly Venmo, and — for order delivery to the kitchen — *"nothing to install, nothing to learn: one click to connect, then orders just appear on your line like any other ticket"* (the POS-injection wire, canon in `cary/pos/README.md`; NOT "no tech changes" — there's a one-time OAuth authorize)
 - [ ] Discuss packaging (Cary provides containers? Or restaurant handles?)
 - [ ] Get Venmo handles for settlement
 
