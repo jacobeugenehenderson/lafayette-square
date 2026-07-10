@@ -24,8 +24,30 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
-import { injectOverheadStamp } from './treeAtlasMaterial.js'
+import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.js'
 import { getElevationRaw } from '../utils/elevation'
+import useAtmosphere from '../hooks/useAtmosphere.js'
+
+// ── Weather relight driver ───────────────────────────────────────────────────
+// Feeds the shared overheadLightUniforms from the atmosphere directive so the
+// plan-view canopy tracks the weather: overcast (high ambient floor) → flat,
+// clear (low ambient floor / strong sun) → the baked AO deepens → contrast. Same
+// directive the sky (Atmosphere.jsx) + the wind (SwayDriver) read — one weather
+// system. No directive (e.g. the Salon, which has no weather) → leaves the shared
+// uniforms alone so the Salon's Light slider / the default still governs.
+// uAmbient + uSun ≈ 1 keeps brightness; the ratio is the CONTRAST. Curve tunable.
+export function OverheadLightDriver({ enabled = true }) {
+  useFrame(() => {
+    if (!enabled) return
+    const d = useAtmosphere.getState().tweenedDirective
+    const af = d?.lightDome?.ambientFloor
+    if (af == null) return
+    const amb = Math.min(0.92, Math.max(0.34, af))
+    overheadLightUniforms.uAmbient.value = amb
+    overheadLightUniforms.uSun.value = 1.0 - amb
+  })
+  return null
+}
 
 // ── Camera-height selection (whole-scene Browse switch, with hysteresis) ──────
 // Calibrated against Scene.jsx PRESETS (browse default y≈600m, hero y≈55m). The

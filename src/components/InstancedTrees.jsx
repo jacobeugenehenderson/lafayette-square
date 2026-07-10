@@ -28,7 +28,7 @@ import {
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
-import { useOverheadMode, useOverheadAssets, OverheadSpecies } from './OverheadTrees.jsx'
+import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver } from './OverheadTrees.jsx'
 import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -899,6 +899,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     <>
       <SwayDriver />
       <TierDriver />
+      <OverheadLightDriver enabled={overheadEnabled} />
       {/* All-mesh (+ hero impostor) render — hidden as a GROUP when the camera pulls
           up to plan height and the whole scene swaps to the overhead snapshot. */}
       <group visible={!overheadMode}>
