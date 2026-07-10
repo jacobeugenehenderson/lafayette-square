@@ -1538,6 +1538,21 @@ createServer(async (req, res) => {
       } else {
         skipped.push('buildings (layer hidden)')
       }
+      // Landscape backdrop — the §10 THIRD hero kind: a brought DEM mesh (the
+      // mountain range) baked into the look's slab as a native-PBR GLB + a
+      // manifest (geo-anchored placement defaults). Only when the scene carries
+      // terrain/sangabriel.obj. Unbaked = unshipped. (The renderer is piece 3 —
+      // src/components — a separate lane; this only produces the asset + knobs.)
+      const LANDSCAPE_OBJ = join(bakePaths.raw, '..', 'terrain', 'sangabriel.obj')
+      if (existsSync(LANDSCAPE_OBJ)) {
+        await runIfDirty('landscape',
+          [LANDSCAPE_OBJ, bakePaths.geography, join(here, 'bake-landscape.js')],
+          [join(LOOK_DIR, 'landscape', 'landscape.json'), join(LOOK_DIR, 'landscape', 'sangabriel.glb')],
+          `node bake-landscape.js --look=${id} ${sceneFlag}`,
+          { cwd: here, timeout: 180000 })
+      } else {
+        skipped.push('landscape (no terrain/sangabriel.obj)')
+      }
       // content — the content-join (bake-content.js): spatially joins the raw
       // sources (OSM POIs · assessor parcels · NR survey) onto the just-baked
       // building set → content/{roster,listings}.json, so content MEMBERSHIP ==
