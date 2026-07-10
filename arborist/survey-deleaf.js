@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url'
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { classifyPrim, buildMeshAncestorNames } from './atlas-kind-classifier.js'
+import { attachOrphansToScene } from './glb-scene-utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -257,6 +258,10 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
   const chassisPath = path.join(CHASSIS_DIR, `${baseName}.glb`)
   const metaPath = path.join(CHASSIS_DIR, `${baseName}.meta.json`)
   const usedCommonName = !!label && label !== speciesId
+
+  // Defensive: single-tree sources are normally scene-attached, but a stray
+  // orphan-rooted mesh would render blank all the same. (glb-scene-utils.js)
+  attachOrphansToScene(doc)
 
   if (!DRY_RUN) {
     await fs.mkdir(CHASSIS_DIR, { recursive: true })
@@ -846,6 +851,11 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
     const chassisPath = path.join(CHASSIS_DIR, `${baseName}.glb`)
     const metaPath = path.join(CHASSIS_DIR, `${baseName}.meta.json`)
     const usedCommonName = !!label && label !== speciesId
+
+    // Vendor bundle roots are often ORPHAN nodes (not scene children) — a mesh
+    // with no scene path renders blank everywhere (the 47-chassis bug). Attach
+    // the retained subtree to the scene before writing. (glb-scene-utils.js)
+    attachOrphansToScene(doc)
 
     if (!DRY_RUN) {
       await fs.mkdir(CHASSIS_DIR, { recursive: true })
