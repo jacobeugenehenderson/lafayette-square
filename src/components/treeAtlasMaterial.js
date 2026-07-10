@@ -1501,16 +1501,9 @@ export function applyOverheadDeformerUniforms(material, overhead) {
 // (one weather system) and the same uRuffleDepth/uHulaAmount the knobs drive via
 // applyOverheadDeformerUniforms. Gated per-vertex by aOverhead. Cheap: opaque,
 // flat, writes depth (early-Z) — the branch structure you see from directly above.
-export function injectOverheadWiggle(material) {
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime              = treeSwayUniforms.uTime
-    shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
-    shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
-    shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
-    shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
-    material.userData.shader = shader
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>
+// Shared overhead-wind vertex GLSL (used by both the procedural relic wiggle and
+// the stamp material). fBm turbulence + hula + flutter; wind-only, no floor.
+const OVERHEAD_WIND_COMMON = `
          uniform float uTime;
          uniform vec3  uWindForce;
          uniform float uWindIntensity;
@@ -1533,43 +1526,81 @@ export function injectOverheadWiggle(material) {
            float v = 0.0, a = 0.5;
            for (int o = 0; o < 3; o++) { v += a * ovVNoise(p); p *= 2.0; a *= 0.5; }
            return v;   // ~[0,1]
-         }`)
-      .replace('#include <begin_vertex>', `#include <begin_vertex>
+         }`
+const OVERHEAD_WIND_BEGIN = `
          if (aOverhead > 0.5) {
            // MOTION = the shared WEATHER, base-anchored (aTreeHeightNorm), all
            // wind-driven so calm ≈ still. What makes it read ALIVE from above (not
            // a flat rigid slide) is HULA + FLUTTER — NOT the ruche (cut: starfish).
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
            float wI    = uWindIntensity;
-           // GUST — a turbulent fBm pulse (not a clean sine) so the wind swells and
-           //   lulls irregularly. Advected downwind. 0 when wind is off.
            float gust  = uGustsScale * uGustEnvelope * ovFbm(vec2(uTime * 0.4) + wd * uTime * 0.2);
-           // HULA — the stacked bands bend OUT OF PHASE: base-anchored (∝ height),
-           //   phase-LAGGED up the stack, on a slowly DRIFTING axis. So the 3 discs
-           //   ripple as a living column instead of sliding rigidly together — the
-           //   dimensional read from overhead.
            float drift  = uTime * 0.25;
            vec2  hulaDir = vec2(cos(drift), sin(drift));
-           float amp    = (0.035 * wI + 0.07 * gust) * aTreeHeightNorm;   // metres, wind-only
+           float amp    = (0.035 * wI + 0.07 * gust) * aTreeHeightNorm;
            vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4));
-           // Downwind LEAN — the shared compass direction (all trees lean the same).
            vec2  lean   = wd * (amp * 0.7);
-           // FLUTTER — turbulent fBm shimmer (leaves catching the wind), ADVECTED
-           //   downwind so it flows across the canopy + never repeats. A stamp has no
-           //   per-leaf geo, so it varies by vertex position → a spatial ripple. xz
-           //   only (invisible in y from overhead). NO floor: wind 0 → dead still.
            vec2  np      = position.xz * 0.55 + wd * uTime * 1.2;
            float flutAmp = 0.05 * wI * aTreeHeightNorm;
            vec2  flutter = (vec2(ovFbm(np), ovFbm(np + 41.7)) - 0.5) * (2.0 * flutAmp);
            transformed.xz += hula + lean + flutter;
-           // Legacy per-leaf flutter for the procedural relic (aLeafBody geos only).
-           if (aLeafBody > 0.001) {
+           if (aLeafBody > 0.001) {   // legacy per-leaf flutter (procedural relic)
              float ft  = uTime * 3.4 + aLeafPhase;
              float amp2 = (0.1 + wI * 0.06) * aLeafBody;
              transformed.y  += sin(ft) * amp2;
              transformed.xz += vec2(cos(ft * 0.9), sin(ft * 1.3)) * (amp2 * 0.55);
            }
-         }`)
+         }`
+
+function bindOverheadWindUniforms(shader) {
+  shader.uniforms.uTime          = treeSwayUniforms.uTime
+  shader.uniforms.uWindForce     = treeSwayUniforms.uWindForce
+  shader.uniforms.uWindIntensity = treeSwayUniforms.uWindIntensity
+  shader.uniforms.uGustsScale    = treeSwayUniforms.uGustsScale
+  shader.uniforms.uGustEnvelope  = treeSwayUniforms.uGustEnvelope
+}
+
+export function injectOverheadWiggle(material) {
+  material.onBeforeCompile = (shader) => {
+    bindOverheadWindUniforms(shader)
+    material.userData.shader = shader
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN)
+  }
+}
+
+// Runtime atmosphere for the overhead stamp — ONE shared light state (like
+// treeSwayUniforms is one shared wind). The Salon preview drives it via a Light
+// control; in LS it's fed from the TOD/meteorologist so the plan-view trees track
+// the weather. uAmbient + uSun ≈ 1 keeps brightness; the ratio sets CONTRAST.
+export const overheadLightUniforms = {
+  uAmbient: { value: 0.5 },
+  uSun:     { value: 0.5 },
+}
+
+// injectOverheadStamp — the RUNTIME-RELIT overhead stamp material (MeshBasic +
+// map=ALBEDO). Vertex: the shared overhead wind. Fragment: albedo × (ambient +
+// sun·AO), sampling the baked AO channel — so overcast light (high ambient / low
+// sun) flattens the tree and strong sun deepens the occlusion (optical parity).
+export function injectOverheadStamp(material, aoTex) {
+  material.onBeforeCompile = (shader) => {
+    bindOverheadWindUniforms(shader)
+    shader.uniforms.uAO      = { value: aoTex }
+    shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
+    shader.uniforms.uSun     = overheadLightUniforms.uSun
+    material.userData.shader = shader
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN)
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+         uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+         // RELIGHT — albedo × (ambient + sun·AO). Occlusion is light-independent
+         //   (baked); the atmosphere sets the contrast → parity with the weather.
+         float ovAO = texture2D(uAO, vMapUv).r;
+         diffuseColor.rgb *= (uAmbient + uSun * ovAO);`)
   }
 }
 

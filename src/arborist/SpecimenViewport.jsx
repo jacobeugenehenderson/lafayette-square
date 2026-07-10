@@ -27,6 +27,8 @@ import {
   applyBarkUniforms,
   applyDeformerUniforms,
   injectOverheadWiggle,
+  injectOverheadStamp,
+  overheadLightUniforms,
   stampTreeVertexAttrs,
   treeSwayUniforms,
   treeBarkTierUniform,
@@ -1059,45 +1061,42 @@ function Skeleton({
   }, [overheadMode, gl, scene, atlas.treeMaterial, overheadRec, url])
 
   useEffect(() => () => {
-    if (snapshot) for (const b of snapshot.bands) { try { b.tex?.dispose() } catch {} }
+    if (snapshot) for (const b of snapshot.bands) {
+      try { b.albedoTex?.dispose() } catch {}
+      try { b.aoTex?.dispose() } catch {}
+    }
   }, [snapshot])
 
-  // FLAT disc per band, stacked at its real height (branch low → canopy high).
-  // These are the BAKED-AHEAD STAMPS — flat, full-res; the runtime consumer adds
-  // the dome / parallax / ruche / hula / wind LATER (dome:0, no ruche flex here).
+  // FLAT disc per band, stacked at its real height (branch low → canopy high) — the
+  // carrier for the baked ALBEDO + AO channels.
   const snapshotDiscs = useMemo(() => {
     if (!snapshot || !overheadRec) return null
     const rec = { heightM: snapshot.heightM || overheadRec.heightM, canopyRadiusM: overheadRec.canopyRadiusM }
     return snapshot.bands.map((b) => ({
       key: b.key,
-      tex: b.tex,
+      albedoTex: b.albedoTex,
+      aoTex: b.aoTex,
       geo: buildOverheadBandDisc(rec, { yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm }),
     }))
   }, [snapshot, overheadRec])
 
-  // One material per band — UNLIT (MeshBasic) so the stamp shows EXACTLY as
-  // captured (the tree's own lit color is baked into the texture); a lit material
-  // re-shades it and adds the dark dome/normal artifacts. Hard alphaTest cutout so
-  // the crown occludes the lower bands and its gaps reveal them (flat parallax).
-  // Per-band BRIGHTNESS ramp (branch darkest → canopy brightest): the lower bands
-  // sit in the crown's shadow, so darkening them reads as real depth — where the
-  // top has gaps you glimpse the darker layer beneath. injectOverheadWiggle adds
-  // the shared WIND (hula + flutter) so the WIND button previews the live wiggle.
+  // One RUNTIME-RELIT material per band — MeshBasic(map=ALBEDO) + injectOverheadStamp:
+  // fragment relights albedo × (ambient + sun·AO) from the shared overhead light
+  // state (so overcast → flat, sun → contrast: weather parity), vertex adds the wind
+  // (hula + flutter). Per-band BRIGHTNESS ramp (branch 0.3 → canopy 1.0) stays as a
+  // structural multiplier — the lower bands sit in the crown's shadow, so glimpsing
+  // them through the top's gaps reads as dark depth.
   const snapshotMats = useMemo(() => {
     if (!snapshotDiscs) return null
     const n = snapshotDiscs.length
-    return snapshotDiscs.map(({ tex }, i) => {
-      // bands are bottom→top (branch=0 … canopy=n-1): 0.3 → 1.0 — the lower bands
-      // (where the main limbs live) sit in the crown's shadow, so glimpsing them
-      // through the top's gaps reads as dark depth. Branches you see in gaps are
-      // mostly in these darkened lower bands.
+    return snapshotDiscs.map(({ albedoTex, aoTex }, i) => {
       const b = n > 1 ? 0.3 + 0.7 * (i / (n - 1)) : 1.0
       const m = new THREE.MeshBasicMaterial({
-        map: tex, color: new THREE.Color(b, b, b),
+        map: albedoTex, color: new THREE.Color(b, b, b),
         transparent: false, alphaTest: 0.4,
         side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
       })
-      injectOverheadWiggle(m)
+      injectOverheadStamp(m, aoTex)
       return m
     })
   }, [snapshotDiscs])
@@ -1402,6 +1401,15 @@ export default function SpecimenViewport({
   // LoD build lands. (Evolved from Brief 13 Vantage's two ground/overhead
   // presets — the Hero/Street distinction is now explicit, not just a dolly.)
   const [camPreset, setCamPreset] = useState('hero')
+  // Overhead relight PREVIEW — one slider from overcast (flat, all ambient) to
+  // sunny (low ambient + strong sun → the baked AO deepens → contrast). Drives the
+  // shared overheadLightUniforms; in LS this comes from the atmosphere instead.
+  // Proves the parity behaviour Jacob asked about (low-contrast light → flat trees).
+  const [ohLight, setOhLight] = useState(0.6)
+  useEffect(() => {
+    overheadLightUniforms.uSun.value = ohLight * 0.65
+    overheadLightUniforms.uAmbient.value = 1.0 - ohLight * 0.65
+  }, [ohLight])
   // Auto-fit camera whenever the chassis changes. Triggers on viewKey
   // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
   // remounts the Canvas) AND on the first topY emission per chassis.
@@ -1540,6 +1548,27 @@ export default function SpecimenViewport({
           </button>
         ))}
       </div>
+      {/* Overhead RELIGHT preview (Browse only) — drag overcast ↔ sunny to eye-gate
+          parity: the baked AO stays, the atmosphere sets the contrast. In LS this
+          is driven by the TOD/meteorologist, not this slider. */}
+      {camPreset === 'browse' && (
+        <div style={{
+          position: 'absolute', bottom: 12, right: 12, width: 172,
+          display: 'flex', flexDirection: 'column', gap: 4,
+          padding: '9px 12px', borderRadius: 8,
+          background: 'rgba(12,12,16,0.72)', border: '1px solid rgba(255,255,255,0.1)',
+          font: '11px system-ui, sans-serif', color: 'rgba(255,255,255,0.82)',
+        }}>
+          <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Light</span>
+            <span style={{ opacity: 0.6 }}>{ohLight < 0.34 ? 'overcast' : ohLight > 0.66 ? 'sunny' : 'hazy'}</span>
+          </span>
+          <input type="range" min={0} max={1} step={0.01} value={ohLight}
+            onChange={(e) => setOhLight(parseFloat(e.target.value))}
+            title="Overcast (flat) → sunny (contrast). Previews how the plan-view trees track the weather."
+            style={{ width: '100%' }} />
+        </div>
+      )}
     </div>
   )
 }

@@ -374,62 +374,50 @@ export function prepareOverheadBands(gltfScene, treeMaterial, { canopyRadiusM, a
  *
  * @returns {{ key, tex, yLo, yHi, yLoNorm, yHiNorm }}
  */
-// ── Leaf-luminance composite (the "second pass" + pyramid cleverness) ─────────
-// A reused fullscreen pass that burns leaf-scale shading into the flat albedo
-// stamp. DETAIL = luma(lum@mip0) − luma(lum@coarseMip): the texture's own GPU mip
-// chain IS the pyramid, so we keep the crisp between-leaf micro-contrast + per-leaf
-// shading but DROP the coarse light-direction gradient (no fake sun baked in).
-// out.rgb = color.rgb × (1 + detail·strength); alpha from the colour pass. Subtle.
-let _composite = null
-function getLeafLumaComposite() {
-  if (_composite) return _composite
+// ── AO extraction (the parity-correct bake) ──────────────────────────────────
+// We bake TWO light-INDEPENDENT channels per band so the runtime can RELIGHT the
+// impostor with the live atmosphere (parity: overcast light → flat trees, sun →
+// contrast): the ALBEDO (flat colour) and the AO (structural occlusion). AO is
+// derived here as luma(SHADED) / luma(ALBEDO) — how much the shadow-cast pass
+// darkens vs the flat pass, i.e. the occlusion factor (1 = exposed, →0 = deep in
+// the crown / under branches), which holds under ANY light because it's geometry,
+// not a baked sun. Output: AO in rgb, cutout alpha carried from the albedo pass.
+let _aoComposite = null
+function getAOComposite() {
+  if (_aoComposite) return _aoComposite
   const scene = new THREE.Scene()
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
   const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: null }, uLum: { value: null },
-      uStrength: { value: 0.85 },                     // subtle multiply around 1.0
-      uLumTexel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
-    },
+    uniforms: { uAlbedo: { value: null }, uShaded: { value: null } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: /* glsl */`
       precision highp float;
-      uniform sampler2D uColor; uniform sampler2D uLum;
-      uniform float uStrength; uniform vec2 uLumTexel;
+      uniform sampler2D uAlbedo; uniform sampler2D uShaded;
       varying vec2 vUv;
       float luma(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
       void main(){
-        vec4 col = texture2D(uColor, vUv);
-        float l0 = luma(texture2D(uLum, vUv).rgb);
-        // Low-freq reference: a 5×5 box at ~4-texel spacing (leaf-CLUMP scale).
-        // detail = l0 − boxBlur keeps only the leaf-scale micro-contrast (between +
-        // on leaves) and drops the coarse light-direction gradient. texture2D only
-        // (no LOD) — matches the DownsamplePyramid precedent, WebGL1/2 safe.
-        float acc = 0.0;
-        for (int dy = -2; dy <= 2; dy++) {
-          for (int dx = -2; dx <= 2; dx++) {
-            acc += luma(texture2D(uLum, vUv + uLumTexel * vec2(float(dx), float(dy)) * 4.0).rgb);
-          }
-        }
-        float detail = l0 - acc / 25.0;
-        float m = clamp(1.0 + detail * uStrength, 0.35, 1.65);
-        gl_FragColor = vec4(col.rgb * m, col.a);       // keep the cutout alpha
+        vec4 a = texture2D(uAlbedo, vUv);
+        float al = luma(a.rgb);
+        float sl = luma(texture2D(uShaded, vUv).rgb);
+        float ao = clamp(sl / max(al, 0.02), 0.0, 1.0);   // occlusion factor, light-independent
+        gl_FragColor = vec4(vec3(ao), a.a);               // AO in rgb, cutout alpha from albedo
       }`,
     depthTest: false, depthWrite: false,
   })
   scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat))
-  _composite = { scene, cam, mat }
-  return _composite
+  _aoComposite = { scene, cam, mat }
+  return _aoComposite
 }
 
-function compositeLeafLuma(gl, colorTex, lumTex, size) {
-  const { scene, cam, mat } = getLeafLumaComposite()
-  mat.uniforms.uColor.value = colorTex
-  mat.uniforms.uLum.value = lumTex
+function compositeAO(gl, albedoTex, shadedTex, size) {
+  const { scene, cam, mat } = getAOComposite()
+  mat.uniforms.uAlbedo.value = albedoTex
+  mat.uniforms.uShaded.value = shadedTex
   const rt = new THREE.WebGLRenderTarget(size, size, {
     minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter,
     format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
-    colorSpace: THREE.SRGBColorSpace, generateMipmaps: true, depthBuffer: false,
+    colorSpace: THREE.LinearSRGBColorSpace,   // AO is data, not colour → linear
+    generateMipmaps: true, depthBuffer: false,
   })
   rt.texture.anisotropy = 4
   const prevTarget = gl.getRenderTarget()
@@ -439,7 +427,7 @@ function compositeLeafLuma(gl, colorTex, lumTex, size) {
   try {
     gl.setRenderTarget(rt)
     gl.toneMapping = THREE.NoToneMapping
-    gl.outputColorSpace = THREE.SRGBColorSpace
+    gl.outputColorSpace = THREE.LinearSRGBColorSpace
     gl.autoClear = true
     gl.setClearColor(0x000000, 0)
     gl.clear(true, true, true)
@@ -453,19 +441,27 @@ function compositeLeafLuma(gl, colorTex, lumTex, size) {
   return rt.texture
 }
 
+/**
+ * captureOverheadBand — bake ONE band's two RELIGHT channels: a flat ALBEDO stamp
+ * (1024²) and an AO occlusion map (512², derived shaded/albedo). Stepped one band
+ * per frame upstream so the renders never burst the GPU. The runtime disc then
+ * relights albedo × (ambient + sun·AO) with the live atmosphere → weather parity.
+ *
+ * @returns {{ key, albedoTex, aoTex, yLo, yHi, yLoNorm, yHiNorm }}
+ */
 export function captureOverheadBand(gl, prep, i) {
   const { scene, heightM, rM, minY, H, cuts } = prep
   const { key, yLo, yHi } = cuts[i]
-  // BAKED AHEAD → get it right: a single full-res (1024²) SHADED + SHADOW-CASTING
-  // capture is the stamp. Leaves cast shadows on each other + the branches, low
-  // ambient keeps the darks dark. (The earlier flat-albedo × high-pass composite
-  // washed the darkness out to grey — that's why there was no black.) One render
-  // per band, stepped one-per-frame upstream, off the shared geometry.
-  const tex = renderTreeToTexture(gl, scene, heightM, rM, {
-    topDown: true, band: { yLo, yHi }, size: 1024, shaded: true,
-  })
-  tex.name = `overhead-band:${key}`
-  return { key, tex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
+  const band = { yLo, yHi }
+  const albedoTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 1024 })
+  // Shaded pass at half-res — it only feeds the (smooth) AO, so 512² is plenty and
+  // keeps the per-frame GPU load down (the shaded pass also renders a shadow map).
+  const shadedTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 512, shaded: true })
+  const aoTex = compositeAO(gl, albedoTex, shadedTex, 512)
+  try { shadedTex.dispose() } catch {}
+  albedoTex.name = `overhead-albedo:${key}`
+  aoTex.name = `overhead-ao:${key}`
+  return { key, albedoTex, aoTex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
 }
 
 /**
