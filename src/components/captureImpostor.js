@@ -93,9 +93,32 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   // directional, so no baked-in shadow and no side that goes black. Flat-lit is
   // the v1 tradeoff (TOD relight via captured normals is deferred).
   const scene = new THREE.Scene()
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0)
-  const amb = new THREE.AmbientLight(0xffffff, 0.6)
-  scene.add(hemi, amb)
+  const lights = []
+  if (opts.shaded) {
+    // SHADED + SHADOW-CASTING pass (the stamp): an angled directional key with real
+    // shadow maps so the LEAVES CAST SHADOWS on each other + on the branches
+    // beneath, and LOW ambient so those darks are actually dark (branches read dark,
+    // not flat grey). The atlas normal map also shades each leaf by orientation.
+    lights.push(new THREE.AmbientLight(0xffffff, 0.22))
+    const key = new THREE.DirectionalLight(0xffffff, 1.6)
+    const D = Math.max(1, heightM, canopyRadiusM * 2)
+    key.position.set(0.45 * D, 1.25 * D, 0.35 * D)     // above + angled → shadows fall sideways
+    key.target.position.set(0, heightM * 0.4, 0)
+    key.castShadow = true
+    const S = canopyRadiusM + FRAME_PAD_M + heightM * 0.5 + 1   // cover the angled projection
+    key.shadow.camera.left = -S; key.shadow.camera.right = S
+    key.shadow.camera.top = S; key.shadow.camera.bottom = -S
+    key.shadow.camera.near = 0.1
+    key.shadow.camera.far = D * 5
+    key.shadow.mapSize.set(2048, 2048)
+    key.shadow.bias = -0.0008
+    lights.push(key, key.target)
+  } else {
+    // COLOR (albedo) pass — flat hemisphere, no directional, so no shading bakes in.
+    lights.push(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0))
+    lights.push(new THREE.AmbientLight(0xffffff, 0.6))
+  }
+  for (const l of lights) scene.add(l)
   scene.add(glbScene)
 
   let cam
@@ -105,8 +128,21 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     // the canopy FOOTPRINT (2·canopyRadius) square; camera high above looking
     // straight down, up = -Z so +X reads image-right (mirrors the Browse camera).
     const half = Math.max(0.5, canopyRadiusM + FRAME_PAD_M)
-    cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 4000)
-    cam.position.set(0, heightM + half * 2 + 50, 0)
+    const camY = heightM + half * 2 + 50
+    // Optional height-BAND slice (canopy / mid / branch) for the 3-slice overhead
+    // snapshot (HANDOFF-overhead-snapshot-impostor-wireup.md). The camera looks
+    // straight DOWN (-Y), so a world height wy sits at view-distance (camY − wy);
+    // clamping near/far to [camY−yHi, camY−yLo] renders ONLY that horizontal slab,
+    // leaving the rest transparent. No geometry mutation — three renders, three
+    // slabs, stacked as parallax planes at runtime. Absent band → whole tree.
+    let near = 0.01, far = 4000
+    if (opts.band) {
+      const { yLo, yHi } = opts.band
+      near = Math.max(0.01, camY - yHi)
+      far = Math.max(near + 0.05, camY - yLo)
+    }
+    cam = new THREE.OrthographicCamera(-half, half, half, -half, near, far)
+    cam.position.set(0, camY, 0)
     cam.up.set(0, 0, -1)
     cam.lookAt(0, 0, 0)
   } else {
@@ -129,16 +165,20 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   cam.updateMatrixWorld(true)
   cam.updateProjectionMatrix()
 
-  const rt = new THREE.WebGLRenderTarget(CAPTURE_SIZE, CAPTURE_SIZE, {
-    minFilter: THREE.LinearMipmapLinearFilter,
+  // Overhead-band captures pass a smaller, mipmap-free RT (opts.size/noMipmap) —
+  // 3 renders/tree, so keep each cheap (a lighter GPU load, no TDR watchdog trip).
+  const size = opts.size || CAPTURE_SIZE
+  const noMip = !!opts.noMipmap
+  const rt = new THREE.WebGLRenderTarget(size, size, {
+    minFilter: noMip ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter,
     magFilter: THREE.LinearFilter,
     format: THREE.RGBAFormat,
     type: THREE.UnsignedByteType,
     colorSpace: THREE.SRGBColorSpace,   // match the main scene's output space
-    generateMipmaps: true,
+    generateMipmaps: !noMip,
     depthBuffer: true,
   })
-  rt.texture.anisotropy = 4
+  if (!noMip) rt.texture.anisotropy = 4
 
   // ── Save every renderer state we mutate ──────────────────────────────────
   const prevTarget = gl.getRenderTarget()
@@ -150,6 +190,8 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   const prevClearAlpha = gl.getClearAlpha()
   const prevToneMapping = gl.toneMapping
   const prevOutputColorSpace = gl.outputColorSpace
+  const prevShadowEnabled = gl.shadowMap.enabled
+  const prevShadowType = gl.shadowMap.type
 
   try {
     // Capture in a KNOWN, neutral state: no tone-mapping (the texture is the
@@ -159,10 +201,20 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     gl.setRenderTarget(rt)
     gl.toneMapping = THREE.NoToneMapping
     gl.outputColorSpace = THREE.SRGBColorSpace
+    // Soft shadow maps for the shaded (stamp) pass → leaves cast shadows.
+    gl.shadowMap.enabled = !!opts.shaded
+    gl.shadowMap.type = THREE.PCFSoftShadowMap
     gl.autoClear = true
     gl.setClearColor(0x000000, 0)   // transparent
     gl.clear(true, true, true)
     gl.render(scene, cam)
+    // Read back the pixels for PERSISTENCE (the Salon encodes → PNG → POSTs into the
+    // slab). WebGL origin is bottom-left, so this buffer is Y-flipped vs a canvas.
+    if (opts.readback) {
+      const px = new Uint8Array(size * size * 4)
+      gl.readRenderTargetPixels(rt, 0, 0, size, size, px)
+      rt.texture.userData.readback = { data: px, width: size, height: size }
+    }
   } finally {
     // ── Restore — main scene render must be undisturbed ─────────────────────
     gl.setRenderTarget(prevTarget, prevActiveCubeFace, prevActiveMipLevel)
@@ -170,13 +222,15 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     gl.setClearColor(prevClearColor, prevClearAlpha)
     gl.toneMapping = prevToneMapping
     gl.outputColorSpace = prevOutputColorSpace
+    gl.shadowMap.enabled = prevShadowEnabled
+    gl.shadowMap.type = prevShadowType
   }
 
   // Detach the GLB so disposing the throwaway scene's lights doesn't take the
   // shared GLB geometry with it (the GLB scene is a fresh clone owned here, but
   // its geometry/material are shared — detach to be safe before GC).
   scene.remove(glbScene)
-  hemi.dispose?.()
+  for (const l of lights) l.dispose?.()
   // The RT keeps its own depth/color buffers alive; the texture is what we cache.
   return rt.texture
 }
@@ -190,7 +244,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
  * Returns { scene, heightM } where heightM is the chassis Y-extent (the real
  * height the ortho frames + the billboard is sized to).
  */
-function materializeForCapture(gltfScene, treeMaterial) {
+function materializeForCapture(gltfScene, treeMaterial, { skipStamp = false } = {}) {
   const root = gltfScene.clone(true)
   root.updateMatrixWorld(true)
   // Chassis-wide Y range so aTreeHeightNorm normalizes consistently (mirrors
@@ -206,11 +260,17 @@ function materializeForCapture(gltfScene, treeMaterial) {
   const chassisYRange = Math.max(1e-4, chMaxY - chMinY)
   root.traverse((o) => {
     if (!o.isMesh || !o.geometry) return
-    stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
-    if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+    // skipStamp: when the source is the LIVE, already-stamped preview scene, the
+    // clone SHARES its geometry buffers — re-stamping / deleting attributes would
+    // mutate buffers the live canvas is drawing (→ GL crash). The attrs are
+    // already present, so only swap the material (cheap, per-clone-mesh).
+    if (!skipStamp) {
+      stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+      if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+    }
     o.material = treeMaterial
-    o.castShadow = false
-    o.receiveShadow = false
+    o.castShadow = true      // leaves cast shadows on each other + the branches
+    o.receiveShadow = true
   })
   const heightM = Number.isFinite(chMaxY) ? Math.max(1, chMaxY) : 12
   return { scene: root, heightM }
@@ -235,6 +295,187 @@ export function captureTreeOverhead(gl, gltfScene, treeMaterial, { canopyRadiusM
   const tex = renderTreeToTexture(gl, scene, heightM, Math.max(1, canopyRadiusM || 5), { topDown: true })
   tex.name = 'impostor-overhead-capture'
   return tex
+}
+
+/**
+ * Measure the canopy-base Y (where foliage starts) off a MATERIALIZED capture
+ * scene — the runtime twin of bake-impostors.js#measureCanopyBase, but reading
+ * the stamped `aBark` vertex attribute (1 = bark, 0 = leaf) instead of a
+ * gltf-transform doc. Returns { minY, maxY, canopyBaseY } in the scene's local
+ * frame (chassis GLBs are baked flat, base ≈ 0 — the same frame the ortho
+ * framing + band clips use). Falls back to a ~1/3-up broadleaf break when no
+ * classified foliage is present.
+ */
+function measureCanopyBaseLocal(scene) {
+  let minY = Infinity, maxY = -Infinity, leafMinY = Infinity, sawLeaf = false
+  scene.traverse((o) => {
+    const g = o.isMesh ? o.geometry : null
+    const pos = g?.attributes?.position
+    if (!pos) return
+    const bark = g.attributes.aBark
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+      const isLeaf = bark ? bark.getX(i) < 0.5 : false
+      if (isLeaf) { sawLeaf = true; if (y < leafMinY) leafMinY = y }
+    }
+  })
+  if (!isFinite(minY) || !isFinite(maxY)) return { minY: 0, maxY: 12, canopyBaseY: 4 }
+  const H = maxY - minY
+  if (!sawLeaf || !isFinite(leafMinY) || H <= 0) {
+    return { minY, maxY, canopyBaseY: minY + H * 0.35 }
+  }
+  const frac = Math.min(0.7, Math.max(0.1, (leafMinY - minY) / H))
+  return { minY, maxY, canopyBaseY: minY + H * frac }
+}
+
+/**
+ * captureTreeOverheadBands — the 3-SLICE overhead snapshot: three top-down RTT
+ * captures of the SAME tree, each clipped to a height band (branch / mid /
+ * canopy), the layered skin for the overhead snapshot impostor
+ * (HANDOFF-overhead-snapshot-impostor-wireup.md). Stacked as parallax planes at
+ * runtime, the branches (lowest band) still read through the crown and the
+ * canopy (top band) still catches the wind — real vertical motion parallax from
+ * above that one flat snapshot can't give.
+ *
+ * Band cuts are derived from the measured canopy base + total height: the crown
+ * [canopyBase, top] splits into thirds, and the lowest (branch) band dips a
+ * touch below the leaf base to catch the main limbs. Returned BOTTOM→TOP so the
+ * caller stacks them low→high.
+ *
+ * ⚠️ Do the 3 renders ONE-PER-FRAME (via captureOverheadBand across successive
+ * frames), off the ALREADY-LOADED live scene (skipStamp) — NOT a fresh 2nd copy
+ * of the (21MB) GLB, and NOT 3 heavy renders in one blocking frame. Either of
+ * those bursts the GPU alongside the live preview render → WebGL context loss.
+ * This split (prepareOverheadBands + captureOverheadBand) is the crash-safe path.
+ *
+ * @param {THREE.Object3D}  gltfScene    the LIVE preview scene (useGLTF().scene)
+ * @param {THREE.Material}  treeMaterial the shared/preview atlas material
+ * @param {object} opts                  { canopyRadiusM, alreadyStamped }
+ * @returns {{ scene, heightM, rM, minY, H, canopyBaseY, cuts }|null}
+ */
+export function prepareOverheadBands(gltfScene, treeMaterial, { canopyRadiusM, alreadyStamped = false } = {}) {
+  if (!gltfScene || !treeMaterial) return null
+  // Clone SHARES geometry (no 2nd GPU copy of the heavy tree); skipStamp avoids
+  // mutating those shared, live-rendered buffers.
+  const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial, { skipStamp: alreadyStamped })
+  const rM = Math.max(1, canopyRadiusM || 5)
+  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseLocal(scene)
+  const H = Math.max(1e-3, maxY - minY)
+  const s = Math.max(1e-3, maxY - Cb)           // crown vertical span
+  // Bottom→top. The branch band dips ~12% of tree height below the leaf base so
+  // the woody structure (main limbs) reads through the crown from above.
+  const cuts = [
+    { key: 'branch', yLo: Math.max(minY, Cb - 0.12 * H), yHi: Cb + s / 3 },
+    { key: 'mid',    yLo: Cb + s / 3,                    yHi: Cb + (2 * s) / 3 },
+    { key: 'canopy', yLo: Cb + (2 * s) / 3,              yHi: maxY },
+  ]
+  return { scene, heightM, rM, minY, H, canopyBaseY: Cb, cuts }
+}
+
+/**
+ * captureOverheadBand — render ONE band (index i) of a prepared overhead capture
+ * to a light 256² texture. Call once per frame across successive frames so the
+ * three slice renders never burst the GPU in one blocking frame.
+ *
+ * @returns {{ key, tex, yLo, yHi, yLoNorm, yHiNorm }}
+ */
+// ── AO extraction (the parity-correct bake) ──────────────────────────────────
+// We bake TWO light-INDEPENDENT channels per band so the runtime can RELIGHT the
+// impostor with the live atmosphere (parity: overcast light → flat trees, sun →
+// contrast): the ALBEDO (flat colour) and the AO (structural occlusion). AO is
+// derived here as luma(SHADED) / luma(ALBEDO) — how much the shadow-cast pass
+// darkens vs the flat pass, i.e. the occlusion factor (1 = exposed, →0 = deep in
+// the crown / under branches), which holds under ANY light because it's geometry,
+// not a baked sun. Output: AO in rgb, cutout alpha carried from the albedo pass.
+let _aoComposite = null
+function getAOComposite() {
+  if (_aoComposite) return _aoComposite
+  const scene = new THREE.Scene()
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uAlbedo: { value: null }, uShaded: { value: null } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: /* glsl */`
+      precision highp float;
+      uniform sampler2D uAlbedo; uniform sampler2D uShaded;
+      varying vec2 vUv;
+      float luma(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+      void main(){
+        vec4 a = texture2D(uAlbedo, vUv);
+        float al = luma(a.rgb);
+        float sl = luma(texture2D(uShaded, vUv).rgb);
+        float ao = clamp(sl / max(al, 0.02), 0.0, 1.0);   // occlusion factor, light-independent
+        gl_FragColor = vec4(vec3(ao), a.a);               // AO in rgb, cutout alpha from albedo
+      }`,
+    depthTest: false, depthWrite: false,
+  })
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat))
+  _aoComposite = { scene, cam, mat }
+  return _aoComposite
+}
+
+function compositeAO(gl, albedoTex, shadedTex, size, readback = false) {
+  const { scene, cam, mat } = getAOComposite()
+  mat.uniforms.uAlbedo.value = albedoTex
+  mat.uniforms.uShaded.value = shadedTex
+  const rt = new THREE.WebGLRenderTarget(size, size, {
+    minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat, type: THREE.UnsignedByteType,
+    colorSpace: THREE.LinearSRGBColorSpace,   // AO is data, not colour → linear
+    generateMipmaps: true, depthBuffer: false,
+  })
+  rt.texture.anisotropy = 4
+  const prevTarget = gl.getRenderTarget()
+  const prevAutoClear = gl.autoClear
+  const prevTone = gl.toneMapping
+  const prevCS = gl.outputColorSpace
+  try {
+    gl.setRenderTarget(rt)
+    gl.toneMapping = THREE.NoToneMapping
+    gl.outputColorSpace = THREE.LinearSRGBColorSpace
+    gl.autoClear = true
+    gl.setClearColor(0x000000, 0)
+    gl.clear(true, true, true)
+    gl.render(scene, cam)
+    if (readback) {
+      const px = new Uint8Array(size * size * 4)
+      gl.readRenderTargetPixels(rt, 0, 0, size, size, px)
+      rt.texture.userData.readback = { data: px, width: size, height: size }
+    }
+  } finally {
+    gl.setRenderTarget(prevTarget)
+    gl.autoClear = prevAutoClear
+    gl.toneMapping = prevTone
+    gl.outputColorSpace = prevCS
+  }
+  return rt.texture
+}
+
+/**
+ * captureOverheadBand — bake ONE band's two RELIGHT channels: a flat ALBEDO stamp
+ * (1024²) and an AO occlusion map (512², derived shaded/albedo). Stepped one band
+ * per frame upstream so the renders never burst the GPU. The runtime disc then
+ * relights albedo × (ambient + sun·AO) with the live atmosphere → weather parity.
+ *
+ * @returns {{ key, albedoTex, aoTex, yLo, yHi, yLoNorm, yHiNorm }}
+ */
+export function captureOverheadBand(gl, prep, i) {
+  const { scene, heightM, rM, minY, H, cuts } = prep
+  const { key, yLo, yHi } = cuts[i]
+  const band = { yLo, yHi }
+  // readback:true → keep the pixels so the Salon can encode + auto-POST the layers
+  // into the slab (persistence). The albedo pass carries the cutout alpha.
+  const albedoTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 1024, readback: true })
+  // Shaded pass at half-res — it only feeds the (smooth) AO, so 512² is plenty and
+  // keeps the per-frame GPU load down (the shaded pass also renders a shadow map).
+  const shadedTex = renderTreeToTexture(gl, scene, heightM, rM, { topDown: true, band, size: 512, shaded: true })
+  const aoTex = compositeAO(gl, albedoTex, shadedTex, 512, true)
+  try { shadedTex.dispose() } catch {}
+  albedoTex.name = `overhead-albedo:${key}`
+  aoTex.name = `overhead-ao:${key}`
+  return { key, albedoTex, aoTex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
 }
 
 /**

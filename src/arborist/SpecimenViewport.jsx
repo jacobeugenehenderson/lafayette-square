@@ -27,12 +27,15 @@ import {
   applyBarkUniforms,
   applyDeformerUniforms,
   injectOverheadWiggle,
+  injectOverheadStamp,
+  overheadLightUniforms,
   stampTreeVertexAttrs,
   treeSwayUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
-import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters } from '../components/impostorGeometry.js'
+import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc } from '../components/impostorGeometry.js'
+import { prepareOverheadBands, captureOverheadBand } from '../components/captureImpostor.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -828,10 +831,11 @@ function Skeleton({
   deformerSeed = null,
   variantCount = 1,
   variantHeightSpread = false,
-  overheadMode = false,           // Browse preset → show the overhead hula impostor
-  overhead = null,                // { ruffleDepth, hulaAmount } — the two knobs
+  overheadMode = false,           // Browse preset → show the overhead snapshot stamps
+  overhead = null,                // leaf controls (procedural-relic canopy) + tints
 }) {
   const { scene } = useGLTF(url)
+  const gl = useThree(s => s.gl)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
   // have slightly different decimated geometry) doesn't shift the
   // visible position.
@@ -995,6 +999,115 @@ function Skeleton({
     return { heightM: (typeof topY === 'number' ? topY : 12), canopyRadiusM, trunkFrac: 0.12 }
   }, [overheadMode, scene, topY])
 
+  // ── Overhead 3-slice SNAPSHOT impostor (Browse preset) — the CANONICAL path ──
+  // Three top-down RTT captures of the REAL tree (branch / mid / canopy height
+  // bands) skinned onto three parallax disc-planes stacked at their real heights,
+  // riding the shared overhead deformers (ruche → hula → shared wind). This is the
+  // canonical RTT-skinned disc the doctrine blesses (HANDOFF-overhead-snapshot-
+  // impostor-wireup.md §Two decisions #2) — the procedural branch/umbrella/leaf
+  // canopy below stays as a Salon-only relic + a until-captured fallback. The
+  // capture runs once per (chassis × overheadMode) on the LIVE GL context + the
+  // materialized preview material — the same in-browser capture the eventual bake
+  // POSTs into the slab atlas (Jacob's chosen ship path, 2026-07-09).
+  const [snapshot, setSnapshot] = useState(null)   // { bands:[{key,tex,yLoNorm,yHiNorm}], heightM }
+  const snapKeyRef = useRef(null)
+  // Diagnostic: surface a WebGL context loss (the "full crash") in the console so
+  // we can tell a GPU death from a JS throw. Remove once the capture is stable.
+  useEffect(() => {
+    const canvas = gl?.domElement
+    if (!canvas) return
+    const onLost = (e) => { console.error('[overhead-snapshot] ⚠️ WEBGL CONTEXT LOST during capture', e) }
+    canvas.addEventListener('webglcontextlost', onLost)
+    return () => canvas.removeEventListener('webglcontextlost', onLost)
+  }, [gl])
+  useEffect(() => {
+    if (!overheadMode || !gl || !scene || !atlas.treeMaterial || !overheadRec || !url) return
+    if (snapKeyRef.current === url) return   // already captured this chassis
+    let cancelled = false
+    let raf = 0
+    // Prepare once (clone shares the live geometry — no 2nd 21MB GPU copy; skip the
+    // attribute re-stamp so we never mutate the live-rendered buffers), then render
+    // ONE band per frame so the three slice renders never burst the GPU alongside
+    // the live preview (that burst was the "full crash" = WebGL context loss).
+    let prep = null
+    try {
+      prep = prepareOverheadBands(scene, atlas.treeMaterial, {
+        canopyRadiusM: overheadRec.canopyRadiusM, alreadyStamped: true,
+      })
+    } catch (err) {
+      console.error('[overhead-snapshot] prepare failed — procedural fallback', err)
+      return
+    }
+    if (!prep) return
+    const acc = []
+    const step = () => {
+      if (cancelled) return
+      try {
+        acc.push(captureOverheadBand(gl, prep, acc.length))
+      } catch (err) {
+        console.error('[overhead-snapshot] band capture failed — procedural fallback', err)
+        return
+      }
+      if (acc.length < prep.cuts.length) {
+        raf = requestAnimationFrame(step)         // next slice, next frame
+      } else if (!cancelled) {
+        snapKeyRef.current = url
+        setSnapshot({ bands: acc, heightM: prep.heightM, canopyBaseY: prep.canopyBaseY })
+      }
+    }
+    raf = requestAnimationFrame(step)
+    return () => { cancelled = true; cancelAnimationFrame(raf) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overheadMode, gl, scene, atlas.treeMaterial, overheadRec, url])
+
+  useEffect(() => () => {
+    if (snapshot) for (const b of snapshot.bands) {
+      try { b.albedoTex?.dispose() } catch {}
+      try { b.aoTex?.dispose() } catch {}
+    }
+  }, [snapshot])
+
+  // (Overhead PERSISTENCE moved to the Grove Bake→Slab button — OverheadBaker.jsx.
+  // The Salon Browse preview is eye-gate only; it never writes to the slab.)
+
+  // FLAT disc per band, stacked at its real height (branch low → canopy high) — the
+  // carrier for the baked ALBEDO + AO channels.
+  const snapshotDiscs = useMemo(() => {
+    if (!snapshot || !overheadRec) return null
+    const rec = { heightM: snapshot.heightM || overheadRec.heightM, canopyRadiusM: overheadRec.canopyRadiusM }
+    return snapshot.bands.map((b) => ({
+      key: b.key,
+      albedoTex: b.albedoTex,
+      aoTex: b.aoTex,
+      geo: buildOverheadBandDisc(rec, { yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm }),
+    }))
+  }, [snapshot, overheadRec])
+
+  // One RUNTIME-RELIT material per band — MeshBasic(map=ALBEDO) + injectOverheadStamp:
+  // fragment relights albedo × (ambient + sun·AO) from the shared overhead light
+  // state (so overcast → flat, sun → contrast: weather parity), vertex adds the wind
+  // (hula + flutter). Per-band BRIGHTNESS ramp (branch 0.3 → canopy 1.0) stays as a
+  // structural multiplier — the lower bands sit in the crown's shadow, so glimpsing
+  // them through the top's gaps reads as dark depth.
+  const snapshotMats = useMemo(() => {
+    if (!snapshotDiscs) return null
+    const n = snapshotDiscs.length
+    return snapshotDiscs.map(({ albedoTex, aoTex }, i) => {
+      const b = n > 1 ? 0.3 + 0.7 * (i / (n - 1)) : 1.0
+      const m = new THREE.MeshBasicMaterial({
+        map: albedoTex, color: new THREE.Color(b, b, b),
+        transparent: false, alphaTest: 0.4,
+        side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
+      })
+      injectOverheadStamp(m, aoTex)
+      return m
+    })
+  }, [snapshotDiscs])
+
+  useEffect(() => () => {
+    if (snapshotMats) for (const m of snapshotMats) { try { m.dispose() } catch {} }
+  }, [snapshotMats])
+
   // Connect the overhead to the SELECTED chassis: seed the procedural layout off
   // the chassis identity (the GLB url), so each chassis gets its own consistent
   // branch/umbrella structure (not a generic default) that changes when you pick
@@ -1136,21 +1249,36 @@ function Skeleton({
   // Built centred at the trunk (origin) so no autoCenter offset is applied.
   if (overheadMode) {
     const n = Math.max(1, variantCount)
+    // Each variant is rotated by the golden angle so the baked rim scallop + the
+    // capture land at a DIFFERENT world phase tree-to-tree — the anti-stamping
+    // eye-gate (overhead shows all trees at once; a synced grid is the failure).
+    const ready = snapshotDiscs && snapshotMats
     return (
       <group rotation={[rx, ry, rz]}>
         <group scale={[scale, scale, scale]}>
-          {branchGeo && Array.from({ length: n }, (_, i) => (
-            <group key={i}
-              position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
-              rotation={[0, i * 2.399963267, 0]}>
-              {/* Branches (opaque, write depth) → a subtle umbrella fill so the
-                  canopy isn't see-through → the DENSE leaf field on top, which is
-                  the actual textured canopy surface. Cloud smudge retired. */}
-              <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
-              {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
-              {leafGeo && overhead?.show !== false && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
-            </group>
-          ))}
+          {ready
+            ? Array.from({ length: n }, (_, i) => (
+                <group key={i}
+                  position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
+                  rotation={[0, i * 2.399963267, 0]}>
+                  {/* branch band low → canopy band high; alphaTest lets the crown's
+                      gaps reveal the mid + branch discs beneath → real parallax. */}
+                  {snapshotDiscs.map((d, bi) => d.geo && (
+                    <mesh key={d.key} geometry={d.geo} material={snapshotMats[bi]} renderOrder={bi} />
+                  ))}
+                </group>
+              ))
+            // Until the RTT capture lands, fall back to the procedural relic canopy
+            // (keeps the Browse preview populated for the ~1 frame before capture).
+            : branchGeo && Array.from({ length: n }, (_, i) => (
+                <group key={i}
+                  position={[(i - (n - 1) / 2) * variantSpacing, 0, 0]}
+                  rotation={[0, i * 2.399963267, 0]}>
+                  <mesh geometry={branchGeo} material={branchMat} renderOrder={0} />
+                  {umbrellaGeo && <mesh geometry={umbrellaGeo} material={umbrellaMat} renderOrder={2} />}
+                  {leafGeo && overhead?.show !== false && <mesh geometry={leafGeo} material={leafMat} renderOrder={3} />}
+                </group>
+              ))}
         </group>
       </group>
     )
@@ -1276,6 +1404,15 @@ export default function SpecimenViewport({
   // LoD build lands. (Evolved from Brief 13 Vantage's two ground/overhead
   // presets — the Hero/Street distinction is now explicit, not just a dolly.)
   const [camPreset, setCamPreset] = useState('hero')
+  // Overhead relight PREVIEW — one slider from overcast (flat, all ambient) to
+  // sunny (low ambient + strong sun → the baked AO deepens → contrast). Drives the
+  // shared overheadLightUniforms; in LS this comes from the atmosphere instead.
+  // Proves the parity behaviour Jacob asked about (low-contrast light → flat trees).
+  const [ohLight, setOhLight] = useState(0.6)
+  useEffect(() => {
+    overheadLightUniforms.uSun.value = ohLight * 0.65
+    overheadLightUniforms.uAmbient.value = 1.0 - ohLight * 0.65
+  }, [ohLight])
   // Auto-fit camera whenever the chassis changes. Triggers on viewKey
   // (encodes species:slot:chassis:bark.ref:leaves.pack — anything that
   // remounts the Canvas) AND on the first topY emission per chassis.
@@ -1414,6 +1551,27 @@ export default function SpecimenViewport({
           </button>
         ))}
       </div>
+      {/* Overhead RELIGHT preview (Browse only) — drag overcast ↔ sunny to eye-gate
+          parity: the baked AO stays, the atmosphere sets the contrast. In LS this
+          is driven by the TOD/meteorologist, not this slider. */}
+      {camPreset === 'browse' && (
+        <div style={{
+          position: 'absolute', bottom: 12, right: 12, width: 172,
+          display: 'flex', flexDirection: 'column', gap: 4,
+          padding: '9px 12px', borderRadius: 8,
+          background: 'rgba(12,12,16,0.72)', border: '1px solid rgba(255,255,255,0.1)',
+          font: '11px system-ui, sans-serif', color: 'rgba(255,255,255,0.82)',
+        }}>
+          <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Light</span>
+            <span style={{ opacity: 0.6 }}>{ohLight < 0.34 ? 'overcast' : ohLight > 0.66 ? 'sunny' : 'hazy'}</span>
+          </span>
+          <input type="range" min={0} max={1} step={0.01} value={ohLight}
+            onChange={(e) => setOhLight(parseFloat(e.target.value))}
+            title="Overcast (flat) → sunny (contrast). Previews how the plan-view trees track the weather."
+            style={{ width: '100%' }} />
+        </div>
+      )}
     </div>
   )
 }

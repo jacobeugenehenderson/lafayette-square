@@ -23,6 +23,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
+import { OverheadBaker } from './OverheadBaker.jsx'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
 import CoverageView from './CoverageView.jsx'
@@ -68,6 +69,30 @@ export default function Grove() {
   const [hovered, setHovered] = useState(null)
   const [selected, setSelected] = useState(null)  // {speciesId, variantId} — click-selected tile; drives the fixed editor panel
   const [toast, setToast] = useState(null)
+  // Overhead bake — the Grove Bake→Slab ALSO captures each roster species' 3-slice
+  // overhead snapshot (GPU, in this Canvas) and POSTs it into the look's slab. Runs
+  // AFTER the HTTP bake (so it merges into the fresh manifest). One per species.
+  const [overheadTick, setOverheadTick] = useState(0)
+  const [overheadProg, setOverheadProg] = useState(null)   // {done,total} | 'done' | null
+  const overheadSpecies = useMemo(() => {
+    if (!activeLookId) return []
+    const base = import.meta.env.BASE_URL
+    const seen = new Set(), out = []
+    for (const t of activeLookTrees) {
+      if (seen.has(t.species)) continue
+      seen.add(t.species)
+      // The BAKED per-look GLB (UVs rewritten to the unified atlas) — capture parity
+      // with the runtime, which loads this same GLB + the baked atlas material.
+      out.push({ species: t.species, glbUrl: `${base}baked/${activeLookId}/trees/${t.species}/skeleton-${t.variantId}-lod1.glb` })
+    }
+    return out
+  }, [activeLookId, activeLookTrees])
+  // Bake→Slab: run the HTTP roster bake, THEN kick the in-Canvas overhead capture.
+  const bakeAll = async () => {
+    setOverheadProg(null)
+    await bakeGroveToSlab()
+    if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1) }
+  }
 
   // Per-operator UI preference: tell the Meteorologist helper which tree
   // to use as its CanaryScene hero. Cross-tab via the `storage` event
@@ -207,9 +232,9 @@ export default function Grove() {
             {scope === 'look' ? `${visible.length} in roster` : `${visible.length} of ${variants.length}`}
           </span>
           <button
-            onClick={bakeGroveToSlab}
-            disabled={groveBaking || !activeLookId}
-            title={`Bake this Look's roster to the slab (atlas + placements) — what LS renders. Takes ~10-30s.`}
+            onClick={bakeAll}
+            disabled={groveBaking || !!(overheadProg && overheadProg !== 'done') || !activeLookId}
+            title={`Bake this Look's roster to the slab (atlas + placements + overhead snapshots) — what LS renders. Takes ~10-30s.`}
             style={{
               border: '1px solid rgba(150,220,130,0.4)', borderRadius: 4,
               padding: '6px 14px', fontSize: 11, fontWeight: 600,
@@ -218,13 +243,14 @@ export default function Grove() {
               cursor: (groveBaking || !activeLookId) ? 'not-allowed' : 'pointer',
               opacity: (groveBaking || !activeLookId) ? 0.5 : 1,
             }}>
-            {groveBaking ? 'Baking…' : 'Bake → Slab'}
+            {groveBaking ? 'Baking…' : (overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…` : 'Bake → Slab'}
           </button>
           {groveBakeResult && !groveBaking && (
             <span style={{ color: groveBakeResult.error ? '#f88' : '#bce0a0', fontSize: 11 }}>
               {groveBakeResult.error
                 ? `bake failed: ${groveBakeResult.error}`
                 : `✓ ${groveBakeResult.count} trees placed (${groveBakeResult.uniqueVariants} variants, ${(groveBakeResult.totalMs/1000).toFixed(0)}s)`}
+              {overheadProg === 'done' && ' · overhead ✓'}
             </span>
           )}
         </span>
@@ -266,6 +292,15 @@ export default function Grove() {
           }}
         >
           <color attach="background" args={['#f7f5f1']} />
+          {/* Rides the Bake→Slab button: captures each roster species' overhead
+              (GPU, this Canvas) → POSTs into the look's slab. See OverheadBaker. */}
+          <OverheadBaker
+            runTick={overheadTick}
+            lookId={activeLookId}
+            species={overheadSpecies}
+            onProgress={(done, total) => setOverheadProg({ done, total })}
+            onDone={({ ok, fail }) => { setOverheadProg('done'); console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`) }}
+          />
           <hemisphereLight args={['#ffffff', '#e8e4dc', 0.85]} />
           <directionalLight
             position={[40, 80, 30]} intensity={0.55} castShadow

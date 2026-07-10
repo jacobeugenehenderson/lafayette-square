@@ -248,6 +248,82 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
   return g
 }
 
+/**
+ * buildOverheadBandDisc — ONE FLAT, tessellated disc for a single height BAND of
+ * the 3-slice overhead snapshot (branch / mid / canopy), positioned at the band's
+ * real height so three of them stack as parallax layers. It's just the carrier
+ * plane for the baked-ahead full-res STAMP — flat, planar [0,1] UVs so the square
+ * band capture maps straight on. No dome, no ruche. It DOES carry aOverhead +
+ * aTreeHeightNorm (= the band's centre height) so the shared WIND deformer
+ * (injectOverheadWiggle) can preview the eventual wind wiggle: the disc sways in
+ * xz, base-anchored, so the high canopy band moves more than the low branch band.
+ *
+ * @param {object} rec   { heightM, canopyRadiusM }
+ * @param {object} opts  { yLoNorm, yHiNorm, perimeter, radialRings, pad }
+ */
+export function buildOverheadBandDisc(rec, opts = {}) {
+  if (!rec) return null
+
+  const H = rec.heightM || 14
+  const R = Math.max(0.5, rec.canopyRadiusM || 5)
+  const pad = opts.pad ?? 1.5                     // must match captureTreeOverheadBands' FRAME_PAD_M
+  const discR = R + pad                           // disc extent = capture frame half-extent
+
+  const P = Math.max(12, Math.round(opts.perimeter ?? 72))       // angular segments (finer → smoother flutter)
+  const RR = Math.max(1, Math.round(opts.radialRings ?? 10))     // radial tessellation
+
+  const yLoN = Math.min(1, Math.max(0, opts.yLoNorm ?? 0.7))
+  const yHiN = Math.min(1, Math.max(yLoN, opts.yHiNorm ?? 1.0))
+  const centerNorm = (yLoN + yHiN) / 2
+  const y = centerNorm * H                          // flat plane at the band's centre height
+
+  const positions = []
+  const uvs = []
+  const aOverhead = []
+  const aTreeHeightNorm = []
+  const indices = []
+
+  const pushVert = (px, pz) => {
+    positions.push(px, y, pz)
+    uvs.push(0.5 + 0.5 * px / discR, 0.5 + 0.5 * pz / discR)   // planar [0,1] → full square capture
+    aOverhead.push(1); aTreeHeightNorm.push(centerNorm)
+  }
+
+  pushVert(0, 0)   // centre
+  for (let ri = 1; ri <= RR; ri++) {
+    const rad = discR * (ri / RR)
+    for (let j = 0; j < P; j++) {
+      const theta = (j / P) * Math.PI * 2
+      pushVert(rad * Math.cos(theta), rad * Math.sin(theta))
+    }
+  }
+
+  // Centre fan to ring 1, then quad strips between rings.
+  for (let j = 0; j < P; j++) {
+    indices.push(0, 1 + j, 1 + ((j + 1) % P))
+  }
+  for (let ri = 0; ri < RR - 1; ri++) {
+    const r0 = 1 + ri * P
+    const r1 = 1 + (ri + 1) * P
+    for (let j = 0; j < P; j++) {
+      const jn = (j + 1) % P
+      indices.push(r0 + j, r0 + jn, r1 + j)
+      indices.push(r0 + jn, r1 + jn, r1 + j)
+    }
+  }
+
+  if (positions.length === 0) return null
+
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
+  g.setIndex(indices)
+  g.computeBoundingSphere()
+  return g
+}
+
 // Deterministic hash in [0,1) for the procedural branch layout (no Math.random,
 // so the skeleton is stable across rebuilds; per-instance variety comes from the
 // instance rotY, not a reseed).
