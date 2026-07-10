@@ -4,23 +4,30 @@
  *
  * The unlock for the Species Builder (HANDOFF-chassis-tagging-gauntlet.md). Two
  * things were both false: you couldn't SEE all 241 chassis anywhere, and 0/241
- * were sorted into a silhouette group. This surface fixes both at once — a grid
- * of every chassis, grouped into the 9 SILHOUETTE SHELVES, each plate assigned
- * its crown form (1-of-9), persisted to _chassis-curation.json. Untagged chassis
- * land in an "Unclassified" shelf at top; as you classify, the shelves fill.
+ * were sorted into a silhouette group. This surface fixes both — a grid of every
+ * chassis, grouped into the 9 SILHOUETTE SHELVES, each plate assigned its crown
+ * form (1-of-9), persisted to _chassis-curation.json.
  *
  * A chassis is pure woody STRUCTURE, so its one meaningful classification is its
- * silhouette. Leaf-shape and bark-type are SEPARATE part libraries, not chassis
- * attributes — deliberately NOT tagged here.
+ * silhouette. Leaf-shape and bark-type are separate part libraries, not chassis
+ * attributes — not tagged here.
  *
- * Doctrine (settled, do not re-litigate): CATEGORIZE, DON'T RECOMMEND — no
- * matcher, no ranking, no score. The silhouette is a FACT assigned once. The set
- * is closed, finite, complete (9 crown forms, rubric.json chassis.habit). The
- * grouping is meant to be SCIENTIFIC — the classification key below defines each
- * form so the sort is reproducible, not vibes.
+ * THE JUNK PROBLEM (operator, 2026-07-10): the library is full of non-real assets
+ * — procedural fakes, bark-only extractions, merged-mesh forests, low-poly and
+ * burnt art junk. They're "tags" that should let a chassis be left OUT of the
+ * sorts. So each chassis carries AUTO-FLAGS (procedural / bark / low-poly /
+ * forest / burnt, derived from its name + isForest), hidden by default behind a
+ * filter bar; and a manual SET-ASIDE (persisted, reversible) drops real-named
+ * stragglers out of the classification shelves. What's left is the working set
+ * worth classifying.
  *
- * Perf: 241 plates cannot each hold a live WebGL Canvas (browser ~16-context
- * cap), so each silhouette bakes ONCE to a PNG via the shared offscreen renderer
+ * Doctrine (settled): CATEGORIZE, DON'T RECOMMEND — no matcher, no ranking. The
+ * silhouette is a FACT assigned once. The set is closed + complete (9 crown
+ * forms, rubric.json chassis.habit). The classification key defines each form so
+ * the sort is reproducible.
+ *
+ * Perf: 241 plates can't each hold a live WebGL Canvas (~16-context cap), so each
+ * silhouette bakes ONCE to a PNG via the shared offscreen renderer
  * (chassisThumbnails.js), lazily on scroll-into-view.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -44,17 +51,26 @@ const FORMS = [
 const FORM_IDS = FORMS.map(f => f.id)
 const FORM_BY_ID = Object.fromEntries(FORMS.map(f => [f.id, f]))
 
+// Auto-flags — non-real asset classes derived from the chassis name + isForest.
+// A chassis carrying any of these is hidden from the working set by default (the
+// filter bar reveals a class on demand). These are the "left out of sorts" tags.
+const FLAGS = [
+  { id: 'procedural', label: 'Procedural', test: (c) => /procedural/i.test(c.name) },
+  { id: 'bark',       label: 'Bark-only',  test: (c) => /bark/i.test(c.name) },
+  { id: 'lowpoly',    label: 'Low-poly',   test: (c) => /low[_-]?poly/i.test(c.name) },
+  { id: 'forest',     label: 'Forest',     test: (c) => c.isForest || /forest/i.test(c.name) },
+  { id: 'burnt',      label: 'Burnt/dead', test: (c) => /burnt|snag/i.test(c.name) },
+]
+function flagsFor(c) { return FLAGS.filter(f => f.test(c)).map(f => f.id) }
+
 // A one-click suggestion for the silhouette, seeded from the coarse `morphology`
-// the chassis meta already carries — so classifying is a CONFIRM, not a blank
-// pick, where morphology maps cleanly. Only the unambiguous maps.
+// the chassis meta already carries — a CONFIRM, not a blank pick, where it maps.
 const MORPH_TO_FORM = { weeping: 'weeping', columnar: 'columnar', conifer: 'pyramidal' }
 function suggestForm(morphology) { return MORPH_TO_FORM[morphology] || null }
 
 const curationKey = (c) => `${c.name}.glb`
 
 // ── Schematic crown-form icons for the classification key + shelf headers ──
-// Simple, consistent silhouettes drawn on a trunk — a visual reference of each
-// form, not a render. 40×52 viewBox, trunk baseline at y=50.
 function FormIcon({ form, size = 40 }) {
   const s = '#aeb8c2'
   const crown = {
@@ -90,28 +106,45 @@ export default function ShelvesWorkstage() {
 
   const [q, setQ] = useState('')
   const [unclassifiedOnly, setUnclassifiedOnly] = useState(false)
-  const [keyOpen, setKeyOpen] = useState(true)
+  const [keyOpen, setKeyOpen] = useState(false)
+  const [reveal, setReveal] = useState(() => new Set())   // which flag classes are shown
+  const [showSetAside, setShowSetAside] = useState(false)
 
-  // Group the catalog into shelves by the committed silhouette (Unclassified
-  // first, then the 9 forms in the classification-key order).
-  const { shelves, classified } = useMemo(() => {
+  const toggleReveal = (id) => setReveal(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n
+  })
+
+  // Sort the catalog into: the 9 silhouette shelves (real, working set) + an
+  // Unclassified shelf, a Set-aside bucket, and per-flag counts for the bar.
+  const { shelves, setAside, counts, realTotal, classified } = useMemo(() => {
     const ql = q.trim().toLowerCase()
     const byForm = new Map([['_none', []], ...FORM_IDS.map(f => [f, []])])
-    let classified = 0
+    const setAside = []
+    const counts = Object.fromEntries(FLAGS.map(f => [f.id, 0]))
+    let realTotal = 0, classified = 0, setAsideCount = 0
     for (const c of catalog) {
       const cur = curation[curationKey(c)] || {}
-      if (cur.habit) classified++
+      const cflags = flagsFor(c)
+      const isSetAside = cur.approved === false
+      cflags.forEach(f => { counts[f]++ })
+      if (cflags.length === 0 && !isSetAside) { realTotal++; if (cur.habit) classified++ }
+      if (isSetAside) setAsideCount++
+
       if (ql && !c.name.toLowerCase().includes(ql)) continue
+      if (isSetAside) { setAside.push(c); continue }
+      // Flag gate: a flagged chassis shows only if at least one of its classes
+      // is revealed. Real (unflagged) chassis always show.
+      if (cflags.length > 0 && !cflags.some(f => reveal.has(f))) continue
       if (unclassifiedOnly && cur.habit) continue
       const shelf = cur.habit && byForm.has(cur.habit) ? cur.habit : '_none'
       byForm.get(shelf).push(c)
     }
-    return { shelves: byForm, classified }
-  }, [catalog, curation, q, unclassifiedOnly])
+    counts._setAside = setAsideCount
+    return { shelves: byForm, setAside, counts, realTotal, classified }
+  }, [catalog, curation, q, unclassifiedOnly, reveal])
 
   const shelfOrder = ['_none', ...FORM_IDS]
-  const total = catalog.length
-  const pct = total ? Math.round((classified / total) * 100) : 0
+  const pct = realTotal ? Math.round((classified / realTotal) * 100) : 0
 
   return (
     <div style={{
@@ -129,16 +162,16 @@ export default function ShelvesWorkstage() {
           Arborist <span style={{ color: '#666', margin: '0 4px' }}>/</span> Shelves
         </strong>
         <span style={{ fontSize: 11, color: '#8a93a0' }}>
-          classify every chassis into its crown-form silhouette
+          classify every real chassis into its crown-form silhouette
         </span>
 
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span title={`${classified} of ${total} chassis sorted into a silhouette group`} style={{
+          <span title={`${classified} of ${realTotal} REAL chassis sorted into a silhouette group (junk excluded)`} style={{
             display: 'inline-flex', alignItems: 'baseline', gap: 6, fontSize: 12,
             padding: '4px 10px', borderRadius: 4, background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.08)',
           }}>
-            <b style={{ color: '#bce0a0', fontVariantNumeric: 'tabular-nums' }}>{classified}/{total}</b>
+            <b style={{ color: '#bce0a0', fontVariantNumeric: 'tabular-nums' }}>{classified}/{realTotal}</b>
             <span style={{ color: '#889', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 9 }}>classified</span>
             <span style={{ color: '#667', fontSize: 10 }}>{pct}%</span>
           </span>
@@ -154,7 +187,7 @@ export default function ShelvesWorkstage() {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="filter by name…"
           style={{
             background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 4, color: '#ddd', padding: '5px 9px', fontSize: 12, minWidth: 200,
+            borderRadius: 4, color: '#ddd', padding: '5px 9px', fontSize: 12, minWidth: 180,
           }} />
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: '#aab' }}>
           <input type="checkbox" checked={unclassifiedOnly} onChange={(e) => setUnclassifiedOnly(e.target.checked)} />
@@ -166,7 +199,22 @@ export default function ShelvesWorkstage() {
         {error && <span style={{ color: '#e87878', fontSize: 11 }}>⚠ {error}</span>}
       </div>
 
-      {/* The classification key — the 9 crown forms defined, so the sort is scientific */}
+      {/* Filter bar — the junk lives here, hidden by default. Reveal a class to
+          see/classify it; the count tells you how much is set aside. */}
+      <div style={{
+        padding: '7px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(255,255,255,0.012)', display: 'flex', alignItems: 'center',
+        gap: 8, fontSize: 11, flexWrap: 'wrap',
+      }}>
+        <span style={{ color: '#66707a', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 9 }}>show non-real:</span>
+        {FLAGS.map(f => (
+          <FlagToggle key={f.id} label={f.label} n={counts[f.id]} on={reveal.has(f.id)} onClick={() => toggleReveal(f.id)} />
+        ))}
+        <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)', margin: '0 2px' }} />
+        <FlagToggle label="Set aside" n={counts._setAside} on={showSetAside} onClick={() => setShowSetAside(v => !v)} accent="#e0a0a0" />
+      </div>
+
+      {/* The classification key */}
       {keyOpen && (
         <div style={{
           padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -198,14 +246,34 @@ export default function ShelvesWorkstage() {
           if (items.length === 0) return null
           return <Shelf key={f} form={f} items={items} curation={curation} setCuration={setCuration} />
         })}
+        {showSetAside && setAside.length > 0 && (
+          <Shelf form="_setaside" items={setAside} curation={curation} setCuration={setCuration} />
+        )}
       </div>
     </div>
   )
 }
 
+function FlagToggle({ label, n, on, onClick, accent = '#c0ccf0' }) {
+  return (
+    <button onClick={onClick} title={`${on ? 'Hide' : 'Show'} ${label.toLowerCase()} (${n})`} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+      padding: '2px 8px', borderRadius: 999, fontFamily: 'inherit', fontSize: 10,
+      background: on ? 'rgba(120,140,200,0.18)' : 'rgba(255,255,255,0.03)',
+      border: '1px solid ' + (on ? accent + '88' : 'rgba(255,255,255,0.1)'),
+      color: on ? accent : '#889',
+    }}>
+      {label} <b style={{ fontVariantNumeric: 'tabular-nums', color: on ? accent : '#667' }}>{n}</b>
+    </button>
+  )
+}
+
 function Shelf({ form, items, curation, setCuration }) {
   const none = form === '_none'
+  const aside = form === '_setaside'
   const def = FORM_BY_ID[form]
+  const title = aside ? 'Set aside' : none ? 'Unclassified' : def.name
+  const color = aside ? '#e0a0a0' : none ? '#e0b070' : '#cdd6df'
   return (
     <section style={{ marginTop: 18 }}>
       <div style={{
@@ -213,15 +281,12 @@ function Shelf({ form, items, curation, setCuration }) {
         borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 0,
         background: '#111', zIndex: 1,
       }}>
-        {!none && <FormIcon form={form} size={26} />}
-        <h3 style={{
-          margin: 0, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase',
-          color: none ? '#e0b070' : '#cdd6df', fontWeight: 600,
-        }}>{none ? 'Unclassified' : def.name}</h3>
+        {!none && !aside && <FormIcon form={form} size={26} />}
+        <h3 style={{ margin: 0, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', color, fontWeight: 600 }}>{title}</h3>
         <span style={{ fontSize: 11, color: '#778' }}>{items.length}</span>
-        {none
-          ? <span style={{ fontSize: 10, color: '#8a6a3a' }}>← assign a silhouette to shelve these</span>
-          : <span style={{ fontSize: 10, color: '#66707a', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{def.def}</span>}
+        {none && <span style={{ fontSize: 10, color: '#8a6a3a' }}>← assign a silhouette to shelve these</span>}
+        {aside && <span style={{ fontSize: 10, color: '#8a5a5a' }}>excluded from the sorts — restore any to bring it back</span>}
+        {!none && !aside && <span style={{ fontSize: 10, color: '#66707a', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{def.def}</span>}
       </div>
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
@@ -230,7 +295,8 @@ function Shelf({ form, items, curation, setCuration }) {
         {items.map(c => (
           <ShelfPlate key={c.name} chassis={c}
             entry={curation[curationKey(c)] || null}
-            onSet={(habit) => setCuration(curationKey(c), { habit })} />
+            onSet={(habit) => setCuration(curationKey(c), { habit })}
+            onSetAside={(v) => setCuration(curationKey(c), { approved: v ? false : null })} />
         ))}
       </div>
     </section>
@@ -238,7 +304,7 @@ function Shelf({ form, items, curation, setCuration }) {
 }
 
 // A lazy silhouette: bakes its PNG (shared renderer) only once scrolled into view.
-function LazySilhouette({ name, isForest }) {
+function LazySilhouette({ name, flags }) {
   const url = `/trees/_chassis/${name}.glb`
   const ref = useRef(null)
   const [src, setSrc] = useState(null)
@@ -264,50 +330,68 @@ function LazySilhouette({ name, isForest }) {
     }}>
       {src ? <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         : <span style={{ fontSize: 10, color: failed ? '#a55' : '#556' }}>{failed ? 'no render' : '…'}</span>}
-      {isForest && (
-        <span title="Merged-mesh forest (group shot) — one mesh, many trunks. Classify it, but it's usable only once split (Brief 23a)."
-          style={{
-            position: 'absolute', top: 3, left: 3, fontSize: 8, letterSpacing: '0.04em',
-            padding: '1px 4px', borderRadius: 3, background: 'rgba(200,140,60,0.25)',
-            border: '1px solid rgba(200,140,60,0.5)', color: '#e0b070', textTransform: 'uppercase',
-          }}>⚠ forest</span>
+      {flags.length > 0 && (
+        <span style={{
+          position: 'absolute', top: 3, left: 3, display: 'flex', gap: 3, flexWrap: 'wrap', maxWidth: '90%',
+        }}>
+          {flags.map(f => (
+            <span key={f} style={{
+              fontSize: 8, letterSpacing: '0.03em', padding: '1px 4px', borderRadius: 3,
+              background: 'rgba(200,140,60,0.22)', border: '1px solid rgba(200,140,60,0.45)',
+              color: '#e0b070', textTransform: 'uppercase',
+            }}>{f}</span>
+          ))}
+        </span>
       )}
     </div>
   )
 }
 
-function ShelfPlate({ chassis, entry, onSet }) {
+function ShelfPlate({ chassis, entry, onSet, onSetAside }) {
   const form = entry?.habit || ''
+  const isSetAside = entry?.approved === false
+  const flags = flagsFor(chassis)
   const suggested = !form ? suggestForm(chassis.morphology) : null
   const height = chassis.heightRange ? ` · ${chassis.heightRange[1].toFixed(0)}m` : ''
   return (
     <div style={{
-      borderRadius: 6, padding: 6, display: 'flex', flexDirection: 'column', gap: 5,
-      background: form ? 'rgba(120,160,110,0.07)' : 'rgba(255,255,255,0.025)',
-      border: '1px solid ' + (form ? 'rgba(120,160,110,0.28)' : 'rgba(255,255,255,0.08)'),
+      borderRadius: 6, padding: 6, display: 'flex', flexDirection: 'column', gap: 5, position: 'relative',
+      background: isSetAside ? 'rgba(200,120,120,0.05)' : form ? 'rgba(120,160,110,0.07)' : 'rgba(255,255,255,0.025)',
+      border: '1px solid ' + (isSetAside ? 'rgba(200,120,120,0.25)' : form ? 'rgba(120,160,110,0.28)' : 'rgba(255,255,255,0.08)'),
+      opacity: isSetAside ? 0.6 : 1,
     }}>
-      <LazySilhouette name={chassis.name} isForest={chassis.isForest} />
+      <LazySilhouette name={chassis.name} flags={flags} />
       <span title={chassis.name} style={{
         fontSize: 9, color: '#99a', textAlign: 'center', whiteSpace: 'nowrap',
         overflow: 'hidden', textOverflow: 'ellipsis',
       }}>{chassis.name}<span style={{ color: '#667' }}>{height}</span></span>
 
-      {/* The single classification control — assign 1 of the 9 crown forms. */}
-      <select value={form} onChange={(e) => onSet(e.target.value || null)}
-        style={{
-          width: '100%', background: form ? 'rgba(120,160,110,0.14)' : 'rgba(255,255,255,0.05)',
-          border: '1px solid ' + (form ? 'rgba(120,160,110,0.45)' : 'rgba(255,255,255,0.14)'),
-          borderRadius: 4, color: form ? '#dbe6cf' : '#9aa', padding: '4px 5px', fontSize: 11,
-          fontFamily: 'inherit', cursor: 'pointer', textTransform: 'capitalize',
-        }}>
-        <option value="">— silhouette —</option>
-        {FORMS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-      </select>
-      {suggested && (
-        <button onClick={() => onSet(suggested)} style={suggestBtn}
-          title={`Its meta reads "${chassis.morphology}" → suggest ${suggested}`}>
-          ↩ {FORM_BY_ID[suggested].name}?
-        </button>
+      {isSetAside ? (
+        <button onClick={() => onSetAside(false)} style={restoreBtn}>↩ restore</button>
+      ) : (
+        <>
+          {/* The single classification control — assign 1 of the 9 crown forms. */}
+          <select value={form} onChange={(e) => onSet(e.target.value || null)}
+            style={{
+              width: '100%', background: form ? 'rgba(120,160,110,0.14)' : 'rgba(255,255,255,0.05)',
+              border: '1px solid ' + (form ? 'rgba(120,160,110,0.45)' : 'rgba(255,255,255,0.14)'),
+              borderRadius: 4, color: form ? '#dbe6cf' : '#9aa', padding: '4px 5px', fontSize: 11,
+              fontFamily: 'inherit', cursor: 'pointer', textTransform: 'capitalize',
+            }}>
+            <option value="">— silhouette —</option>
+            {FORMS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            {suggested && (
+              <button onClick={() => onSet(suggested)} style={suggestBtn}
+                title={`Its meta reads "${chassis.morphology}" → suggest ${suggested}`}>
+                ↩ {FORM_BY_ID[suggested].name}?
+              </button>
+            )}
+            <button onClick={() => onSetAside(true)} style={{ ...asideBtn, marginLeft: 'auto' }}
+              title="Set aside — exclude this chassis from the sorts (reversible)">⊘ set aside</button>
+          </div>
+        </>
       )}
     </div>
   )
@@ -325,6 +409,13 @@ const groveBtn = {
 }
 const suggestBtn = {
   background: 'rgba(200,160,60,0.14)', border: '1px solid rgba(200,160,60,0.4)',
-  color: '#e0c890', padding: '2px 5px', borderRadius: 3, fontFamily: 'inherit', fontSize: 9,
-  cursor: 'pointer', alignSelf: 'flex-start',
+  color: '#e0c890', padding: '2px 5px', borderRadius: 3, fontFamily: 'inherit', fontSize: 9, cursor: 'pointer',
+}
+const asideBtn = {
+  background: 'none', border: '1px solid rgba(200,120,120,0.25)', color: '#b88',
+  padding: '2px 5px', borderRadius: 3, fontFamily: 'inherit', fontSize: 9, cursor: 'pointer',
+}
+const restoreBtn = {
+  background: 'rgba(120,140,200,0.14)', border: '1px solid rgba(120,140,200,0.4)',
+  color: '#c0ccf0', padding: '4px 5px', borderRadius: 4, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer',
 }
