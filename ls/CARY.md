@@ -89,7 +89,7 @@ Formalized 2026-07-09 from the code (`PlaceCard.jsx` `MenuTab`, ~L2836–3237). 
 
 **Kitchen note:** free text ≤500 chars, "goes directly to the kitchen" (allergies/substitutions) — the current special-requests / modifiers channel (`L3166`).
 
-**The gap (everything past "Place order"):** the button sets `orderPlaced = true` → a terminal **"Coming soon — Cary delivery is launching this spring"** card (`L3179–3196`). **No persistence, no Stripe PaymentIntent, no `requests`/`sessions` row, no dispatch, no POS injection.** Nothing leaves the browser.
+**The gap (everything past "Place order"):** the button sets `orderPlaced = true` → a terminal **"Coming soon — Cary delivery is launching this spring"** card (`L3179–3196`). **No persistence, no Stripe PaymentIntent, no `requests`/`sessions` row, no dispatch, no POS injection.** Nothing leaves the browser. → the design for closing this gap is **[`../cary/ORDER-PIPELINE.md`](../cary/ORDER-PIPELINE.md)** (the submit pipeline).
 
 **The implied `CaryOrder` shape** (the client already computes every field except the IDs): `{ restaurant place_id/name/lat/lon (from listing) · line_items[]{ section, name, unit_price_cents, qty } · order_note · subtotal/tax/serviceCharge/processing/total (cents) · in-schedule window }`. **Missing for POS injection:** structured **modifiers** (today only the free note), a **Cary order ID**, and the **food PaymentIntent id**. This is the schema to formalize when the submit path is built (`CARY-BRIEF.md §"What's next" #2`; POS side in `../cary/pos/README.md`).
 

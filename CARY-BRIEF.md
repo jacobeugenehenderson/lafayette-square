@@ -40,6 +40,8 @@
 ### 2. Build the delivery request flow
 **Goal:** A resident can request a delivery from a Place on the map.
 
+> **▶ Design canon: [`cary/ORDER-PIPELINE.md`](cary/ORDER-PIPELINE.md)** — the full submit pipeline (gate · re-price · capacity gate · persist · pay · inject · dispatch), the state machine, and the destination model. The order-*capture* surface is already built client-side (`ls/CARY.md §6`); this is the missing middle. The checklist below predates that canon — defer to it.
+
 What to build:
 - [ ] Add destination fields to `requests` table (destination address, unit number, or destination place_id)
 - [ ] Add `order_total_cents` to requests (for calculating 20% delivery fee)
