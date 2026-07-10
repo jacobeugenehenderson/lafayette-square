@@ -217,6 +217,7 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
   // Compute height range from the recentered geometry (now base-at-origin →
   // [~0, H], matching the bundle path's form).
   const heightRange = computeHeightRange(doc)
+  const woodCoverage = computeWoodCoverage(doc)
 
   // Brief 23 (Mistral, 2026-05-25): flag the MERGED single-mesh FOREST — the
   // genuinely-hard case where N trunks are baked into ONE primitive (e.g.
@@ -263,6 +264,7 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
     const meta = {
       morphology: category || 'unknown',
       heightRange,
+      woodCoverage,
       source: { species: speciesId, variant: variantIdx + 1, ...(unitRescale > 1 ? { unitRescale } : {}) },
       scaffoldCount: null,
       canopyStart: null,
@@ -839,6 +841,7 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
     // Compute final height range from the recentered geometry
     const bb2 = primBboxAcc(remainingPrims)
     const heightRange = isFinite(bb2.minY) ? [round4(bb2.minY), round4(bb2.maxY)] : [0, 0]
+    const woodCoverage = woodCoverageFromPrims(remainingPrims)
 
     const chassisPath = path.join(CHASSIS_DIR, `${baseName}.glb`)
     const metaPath = path.join(CHASSIS_DIR, `${baseName}.meta.json`)
@@ -850,6 +853,7 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
       const meta = {
         morphology: category || 'unknown',
         heightRange,
+        woodCoverage,
         source: { species: speciesId, variant: variantIdx + 1, bundleNode: rootName || `node${rootIdx}`, ...(unitRescale > 1 ? { unitRescale } : {}) },
         scaffoldCount: null,
         canopyStart: null,
@@ -917,6 +921,56 @@ function computeHeightRange(doc) {
   }
   if (!isFinite(minY) || !isFinite(maxY)) return [0, 0]
   return [round4(minY), round4(maxY)]
+}
+
+// Wood-height COVERAGE = (Y-span of WOOD prims) / (Y-span of the whole chassis).
+// Stub wood — a leaves-first vendor variant whose branch stub stops under the
+// canopy (black_gum f/g/h/i) — reads < ~0.65; real wood reaches the crown (≥0.85).
+// Thin conifers pass (their spire spans the full height even at low tri-count),
+// so this is the honest discriminator, not poly count. Returns null when there's
+// no distinct WOOD prim to measure (a single merged mesh). Home for the "get rid
+// of those trees" checker (Jacob 2026-07-10, Black Gum). backfill-wood-coverage.js
+// stamps the same value onto chassis whose vendor source is already gone.
+function computeWoodCoverage(doc) {
+  let wMin = Infinity, wMax = -Infinity, aMin = Infinity, aMax = -Infinity, hasWood = false
+  const walk = (node, parentMat) => {
+    const world = mul4(parentMat, matrixFromNode(node))
+    const mesh = node.getMesh()
+    if (mesh) for (const prim of mesh.listPrimitives()) {
+      const pos = prim.getAttribute('POSITION'); if (!pos) continue
+      const isWood = (prim.getExtras() || {}).atlasKind === 'bark'
+      const arr = pos.getArray()
+      for (let i = 0; i < arr.length; i += 3) {
+        const y = world[1] * arr[i] + world[5] * arr[i + 1] + world[9] * arr[i + 2] + world[13]
+        if (y < aMin) aMin = y; if (y > aMax) aMax = y
+        if (isWood) { if (y < wMin) wMin = y; if (y > wMax) wMax = y; hasWood = true }
+      }
+    }
+    for (const child of node.listChildren()) walk(child, world)
+  }
+  for (const scene of doc.getRoot().listScenes()) for (const node of scene.listChildren()) walk(node, identity4())
+  const totH = aMax - aMin
+  if (!hasWood || !isFinite(totH) || totH <= 0) return null
+  return round4((wMax - wMin) / totH)
+}
+
+// Same metric from an explicit prim list with BAKED positions (the bundle path —
+// where the doc still holds sibling roots, so a whole-doc walk would over-measure).
+function woodCoverageFromPrims(prims) {
+  let wMin = Infinity, wMax = -Infinity, aMin = Infinity, aMax = -Infinity, hasWood = false
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION'); if (!pos) continue
+    const isWood = (prim.getExtras() || {}).atlasKind === 'bark'
+    const arr = pos.getArray()
+    for (let i = 1; i < arr.length; i += 3) {
+      const y = arr[i]
+      if (y < aMin) aMin = y; if (y > aMax) aMax = y
+      if (isWood) { if (y < wMin) wMin = y; if (y > wMax) wMax = y; hasWood = true }
+    }
+  }
+  const totH = aMax - aMin
+  if (!hasWood || !isFinite(totH) || totH <= 0) return null
+  return round4((wMax - wMin) / totH)
 }
 
 // Column-major 4×4 helpers. gltf-transform Node carries TRS; bake to matrix.

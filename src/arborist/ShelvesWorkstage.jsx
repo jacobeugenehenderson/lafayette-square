@@ -54,12 +54,17 @@ const FORM_BY_ID = Object.fromEntries(FORMS.map(f => [f.id, f]))
 // Auto-flags — non-real asset classes derived from the chassis name + isForest.
 // A chassis carrying any of these is hidden from the working set by default (the
 // filter bar reveals a class on demand). These are the "left out of sorts" tags.
+const STUB_WOOD_FLOOR = 0.65   // wood spans < 65% of tree height → leaves-first stub proxy
 const FLAGS = [
   { id: 'procedural', label: 'Procedural', test: (c) => /procedural/i.test(c.name) },
   { id: 'bark',       label: 'Bark-only',  test: (c) => /bark/i.test(c.name) },
   { id: 'lowpoly',    label: 'Low-poly',   test: (c) => /low[_-]?poly/i.test(c.name) },
   { id: 'forest',     label: 'Forest',     test: (c) => c.isForest || /forest/i.test(c.name) },
   { id: 'burnt',      label: 'Burnt/dead', test: (c) => /burnt|snag/i.test(c.name) },
+  // Measured, not name-based: wood-height coverage from meta.woodCoverage. Catches
+  // the "loose branches" — vendor variants whose wood is a stub under a leaf blob
+  // (black_gum f/g/h/i). Thin conifers pass (their spire reaches the crown ~0.95).
+  { id: 'stubwood',   label: 'Stub-wood',  test: (c) => c.woodCoverage != null && c.woodCoverage < STUB_WOOD_FLOOR },
 ]
 function flagsFor(c) { return FLAGS.filter(f => f.test(c)).map(f => f.id) }
 
