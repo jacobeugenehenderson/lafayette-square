@@ -688,7 +688,7 @@ export default function ExtentApp() {
     setCommittedRadius(0); setRescoping(false)
     draftHydrated.current = false
     let cancelled = false
-    fetchNeighborhood(scene).then(nb => {
+    fetchNeighborhood(scene).then(async (nb) => {
       if (cancelled || !nb) return
       if (Array.isArray(nb.sides) && nb.sides.some(Boolean)) {
         const s = [...nb.sides]; while (s.length < 4) s.push('')
@@ -696,14 +696,33 @@ export default function ExtentApp() {
       }
       setName(nb.name || ''); setBlurb(nb.blurb || '')
       if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
-      if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0) }
+      if (nb.committed) {
+        setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0)
+        // A committed hood ALWAYS shows its built extent when you return to Extent
+        // (never the fresh-place blank). Ensure the store has the frame + circle —
+        // a nav elsewhere in cartograph can leave them absent — then reveal.
+        const st = useCartographStore.getState()
+        if (!st.sceneGeography || !st.sceneBoundary) {
+          const [g, b] = await Promise.all([
+            st.sceneGeography ? Promise.resolve(st.sceneGeography) : fetchGeography(scene).catch(() => null),
+            st.sceneBoundary ? Promise.resolve(st.sceneBoundary) : fetchBoundary(scene).catch(() => null),
+          ])
+          if (cancelled) return
+          const upd = {}
+          if (g && !st.sceneGeography) upd.sceneGeography = g
+          if (b && !st.sceneBoundary) upd.sceneBoundary = b
+          if (Object.keys(upd).length) useCartographStore.setState(upd)
+        }
+        if (!cancelled) setLocated(true)
+      }
       draftHydrated.current = true
     }).catch(() => { draftHydrated.current = true })
     return () => { cancelled = true }
   }, [scene])
 
   // An already-committed neighborhood (has a boundary) shows its map on open;
-  // a fresh/uncommitted scene stays blank until the operator Locates.
+  // a fresh/uncommitted scene stays blank until the operator searches. (The
+  // committed hydration above is the robust path; this catches a later boundary load.)
   useEffect(() => { if (sceneBoundary) setLocated(true) }, [sceneBoundary])
 
   // Draft auto-save (implicit) — sides + radius, debounced. Skips the initial
