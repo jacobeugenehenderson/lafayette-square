@@ -210,6 +210,7 @@ function PlatePicker({ items, current, onPick, onAdd, thumb, fit = 'cover', empt
 
 export default function SalonWorkstage() {
   const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
+  const setShelvesOpen      = useArboristStore(s => s.setShelvesOpen)
   const speciesList         = useArboristStore(s => s.salonSpeciesList)
   const activeSpecies       = useArboristStore(s => s.salonActiveSpecies)
   const compositionsBySpecies = useArboristStore(s => s.salonCompositions)
@@ -323,6 +324,19 @@ export default function SalonWorkstage() {
 
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <LookPicker />
+          <button onClick={() => setShelvesOpen(true)}
+            title="Browse all 241 chassis + tag each one's habit / leaf / bark (the tagging gauntlet)"
+            style={{
+              background: 'rgba(120,140,200,0.15)',
+              border: '1px solid rgba(120,140,200,0.4)',
+              color: '#c0ccf0',
+              padding: '5px 12px', borderRadius: 4,
+              fontFamily: 'inherit', fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}>
+            Shelves →
+          </button>
           <button onClick={() => setGroveOpen(true)}
             title="See every rated variant on one ground plane"
             style={{

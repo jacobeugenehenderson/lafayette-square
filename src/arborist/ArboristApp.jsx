@@ -23,6 +23,7 @@ import Grove from './Grove.jsx'
 import ProceduralWorkstage from './ProceduralWorkstage.jsx'
 import LidarWorkstage from './LidarWorkstage.jsx'
 import SalonWorkstage from './SalonWorkstage.jsx'
+import ShelvesWorkstage from './ShelvesWorkstage.jsx'
 
 export default function ArboristApp() {
   const activeSpeciesId = useArboristStore(s => s.activeSpeciesId)
@@ -32,6 +33,8 @@ export default function ArboristApp() {
   const setProceduralOpen  = useArboristStore(s => s.setProceduralOpen)
   const lidarOpen          = useArboristStore(s => s.lidarOpen)
   const setLidarOpen       = useArboristStore(s => s.setLidarOpen)
+  const shelvesOpen        = useArboristStore(s => s.shelvesOpen)
+  const setShelvesOpen     = useArboristStore(s => s.setShelvesOpen)
   const loadSpecies     = useArboristStore(s => s.loadSpecies)
   const setActiveSpecies = useArboristStore(s => s.setActiveSpecies)
   const loadLooks       = useArboristStore(s => s.loadLooks)
@@ -55,17 +58,19 @@ export default function ArboristApp() {
     if (legacy === 'procedural') setProceduralOpen(true)
     else if (legacy === 'lidar') setLidarOpen(true)
     else if (legacy === 'grove') setGroveOpen(true)
+    else if (legacy === 'shelves') setShelvesOpen(true)
     else if (legacy === 'workstage') {
       const sp = params.get('species')
       if (sp) setActiveSpecies(sp)
     }
-  }, [setProceduralOpen, setLidarOpen, setGroveOpen, setActiveSpecies])
+  }, [setProceduralOpen, setLidarOpen, setGroveOpen, setShelvesOpen, setActiveSpecies])
 
   // Mode-route ladder. Salon is the default (always-true salonOpen flag)
   // and sits at the bottom; a legacy URL or stale localStorage *Open flag
   // wins precedence above it.
   if (lidarOpen) return <LidarWorkstage />
   if (proceduralOpen) return <ProceduralWorkstage />
+  if (shelvesOpen) return <ShelvesWorkstage />
   if (groveOpen) return <Grove />
   if (activeSpeciesId) return <Workstage />
   return <SalonWorkstage />
