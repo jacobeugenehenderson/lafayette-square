@@ -37,46 +37,6 @@ import {
 import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc } from '../components/impostorGeometry.js'
 import { prepareOverheadBands, captureOverheadBand } from '../components/captureImpostor.js'
 
-// Overhead PERSISTENCE — auto-POST the prebaked band layers into the look's slab
-// (no publish button; everything autopersists until pour). Encode a capture's
-// readback pixels → a right-sized PNG dataURL: WebGL readback is bottom-up, so we
-// flip Y drawing into the (downsized) target canvas. NOTE: this naive box downsize
-// is the interim — the slab-packing step swaps in the coverage-preserving mip box
-// (so far/minified plan-view trees don't grey out) + R8 AO + KTX2 (see the spec).
-function readbackToPngDataURL(rb, target) {
-  if (!rb?.data) return null
-  const { data, width, height } = rb
-  const src = document.createElement('canvas'); src.width = width; src.height = height
-  src.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(data), width, height), 0, 0)
-  const dst = document.createElement('canvas'); dst.width = target; dst.height = target
-  const d = dst.getContext('2d')
-  d.translate(0, target); d.scale(1, -1)        // flip Y (bottom-up → top-down)
-  d.drawImage(src, 0, 0, target, target)        // downsize
-  return dst.toDataURL('image/png')
-}
-// Which look the captured asset persists into. Author for a look via ?look=<name>
-// on the arborist page; defaults to the pain scene (hipointe-demun).
-function overheadTargetLook() {
-  if (typeof window === 'undefined') return 'hipointe-demun'
-  return new URLSearchParams(window.location.search).get('look') || 'hipointe-demun'
-}
-async function persistOverhead({ look, species, heightM, canopyRadiusM, bands }) {
-  const body = {
-    heightM, canopyRadiusM,
-    bands: bands.map((b) => ({
-      key: b.key, yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
-      albedo: readbackToPngDataURL(b.albedoTex?.userData?.readback, 512),
-      ao: readbackToPngDataURL(b.aoTex?.userData?.readback, 256),
-    })).filter((b) => b.albedo && b.ao),
-  }
-  if (!body.bands.length) return
-  const res = await fetch(`/api/arborist/overhead/${encodeURIComponent(look)}/${encodeURIComponent(species)}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  })
-  if (!res.ok) throw new Error(`overhead POST ${res.status}`)
-  return res.json()
-}
-
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
 // Skeleton instance shares one GPU texture. flipY=false matches glTF UV
@@ -1107,25 +1067,8 @@ function Skeleton({
     }
   }, [snapshot])
 
-  // AUTO-PERSIST — the moment a Browse capture completes, POST its band layers into
-  // the look's slab (no button). Once per chassis (snapKeyRef mirror). The readback
-  // pixels live on the textures' userData; dispose runs on the NEXT snapshot, so
-  // they're valid here. Fire-and-forget; a failure just logs (never blocks preview).
-  const postedRef = useRef(null)
-  useEffect(() => {
-    if (!snapshot || !overheadRec) return
-    const species = atlas.manifest?.previewKey?.species
-    if (!species || postedRef.current === url) return
-    postedRef.current = url
-    persistOverhead({
-      look: overheadTargetLook(), species,
-      heightM: snapshot.heightM || overheadRec.heightM,
-      canopyRadiusM: overheadRec.canopyRadiusM,
-      bands: snapshot.bands,
-    }).then((r) => r && console.log('[overhead] persisted →', species, r))
-      .catch((e) => console.warn('[overhead] persist failed', e))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snapshot, overheadRec, atlas.manifest, url])
+  // (Overhead PERSISTENCE moved to the Grove Bake→Slab button — OverheadBaker.jsx.
+  // The Salon Browse preview is eye-gate only; it never writes to the slab.)
 
   // FLAT disc per band, stacked at its real height (branch low → canopy high) — the
   // carrier for the baked ALBEDO + AO channels.
