@@ -27,6 +27,7 @@ import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.js'
 import { getElevationRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
+import useCamera from '../hooks/useCamera'
 
 // ── Weather relight driver ───────────────────────────────────────────────────
 // Feeds the shared overheadLightUniforms from the atmosphere directive so the
@@ -49,29 +50,18 @@ export function OverheadLightDriver({ enabled = true }) {
   return null
 }
 
-// ── Camera-height selection (whole-scene Browse switch, with hysteresis) ──────
-// Calibrated against Scene.jsx PRESETS (browse default y≈600m, hero y≈55m). The
-// swap needs a DEAD BAND so trees don't pop/thrash when the camera hovers near the
-// boundary: rising past HIGH → overhead, falling below LOW → mesh, in-between holds
-// whatever it was. (Mirrors the TierDriver altitude read; SEPARATE concern — this
-// is a Browse-context representation SELECT, not the retired GeoTierDriver geometry
-// swap.)
-const OVERHEAD_ENTER_Y = 220   // rise above → snapshot
-const OVERHEAD_EXIT_Y  = 150   // fall below → mesh
-
+// ── Selection = the CAMERA VIEW, not a height heuristic ───────────────────────
+// The swap keys off the app's own view-context signal: useCamera().viewMode. In
+// the 'browse' view we show the overhead snapshot imposters; in 'hero'/street we
+// render the authored mesh trees (close enough to draw them easily). Browse is
+// straight-down by construction (the camera SSOT holds it there), so there's no
+// angle/height to guess — this is the browse-vs-hero seam the camera mode already
+// carries (the LsoD's Street/Hero/Browse contexts; do NOT invent a parallel one).
+// If the user hot-key-overrides Browse into a tilt, billboarding the discs to face
+// the camera is a later refinement — for now the view context is the whole gate.
 export function useOverheadMode(enabled) {
-  const camera = useThree(s => s.camera)
-  const [overhead, setOverhead] = useState(false)
-  const ref = useRef(false)
-  useFrame(() => {
-    if (!enabled) { if (ref.current) { ref.current = false; setOverhead(false) } return }
-    const y = camera.position.y
-    let next = ref.current
-    if (!ref.current && y > OVERHEAD_ENTER_Y) next = true
-    else if (ref.current && y < OVERHEAD_EXIT_Y) next = false
-    if (next !== ref.current) { ref.current = next; setOverhead(next) }
-  })
-  return overhead
+  const viewMode = useCamera(s => s.viewMode)
+  return enabled && viewMode === 'browse'
 }
 
 // ── Lazy asset load (behind the hero shot) ───────────────────────────────────
