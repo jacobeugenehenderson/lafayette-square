@@ -8,6 +8,20 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-07-10 — a huge parallel day: overhead impostor + boundary selector + Altadena mountain, all merged (Boz coordinating).
+
+Three independent threads ran in parallel worktrees off `curb-offset-draw`, each unlocking a different gate. Boz coordinated (drafted briefs, Jacob dispatched), merging each back to trunk as it landed (audited/local/**not pushed** — Jacob pushes when happy).
+
+1. **Overhead plan-view SNAPSHOT impostor** (`a4458f4a`). The recurring day-killer — too many trees in plan/Browse view — got its real fix. NOT the old octahedral hero-cross (junk, "stupid and ridiculous"); a fresh **3-slice layered OVERHEAD snapshot** (canopy/mid/branch via RTT) per unique tree, **baked ladder + runtime camera-height SELECTION** — the doctrine-legal split (`ORIENTATION §LsoD`: ladder baked, selection runtime). Most of it was already built-but-unwired on disk (`buildOverheadHulaGeometry`, `captureTreeOverhead`). Eye-gated "amazing." The finish (the "rows of trees" polish) rolls into tomorrow's chassis-tagging root-fix.
+
+2. **Boundary SELECTOR Phase 1+2** (`1274aef5`). The Extent tool made **self-contained for a fresh drop-in**: full fetch bundle (OSM+msbf+parcels, was OSM-only), timezone via `tz-lookup` (was hardcoded St. Louis), name/blurb capture, official boundary, committed-hood repopulate/rescope, the draft-clobber fix. Altadena poured as validation — **still wrong** (→ `HANDOFF-extent-altadena-wrong.md`, tomorrow B).
+
+3. **Altadena MOUNTAIN backdrop** (`dae46d5c` + `93b2a69c`) — the gem. A **THIRD `§10` hero subject kind, the LANDSCAPE** (a mesh-behind, not a point-to-frame), making the **brought-GLB hero pipeline real** (was spec-only, proven only by the bespoke Arch). `bake-landscape.js` (sangabriel.obj → native-PBR GLB + geo-anchored manifest); a **subject-kind-aware Hero Controls section** (placement/snowline/atmosphere knobs — Jacob's "add the knob" law); `MountainBackdrop.jsx` renders it; native PBR auto-takes the TOD rig (alpenglow free). Eye-gated "really beautiful." Detail: `[[project_altadena_mountain_landscape_hero]]`.
+
+**The frame-axes save (verify-your-own-premises).** The morning mountain brief said north=+z, sourced from the `reference_ls_local_frame_axes` memo. The bake agent flagged −z (from the arch bearing). Boz almost "corrected" the memo the WRONG way — but **read it first**, found the conflict, and verified against the CODE: `config.js wgs84ToLocal` is authoritative — **+x=EAST / +z=SOUTH / north=−z**, used flip-free by the whole pipeline (derive/buildings/render). The memo had **mislabeled a street** (its raw numbers actually supported +x=EAST). Fixed at source. Lesson: trust the code, not street-name memory; and the arch is framing-placed, never a frame proof.
+
+**Coordination pattern that worked:** parallel worktrees split **by lane** (impostor=`src/components`, selector=`src/cartograph`+`serve.js`, mountain split 3 ways with piece 3 waiting for `src/components` to free), **merge-back-to-trunk-as-landed**, Boz owns the git. The friction: **16-worktree sprawl** turned "see my work on `:5173`" into a scavenger hunt — the antidote is merging landed branches back promptly so the trunk stays the single source of truth. A branch-audit-and-prune pass is queued.
+
 ## 2026-07-05 — building-membership curation: the polygon must be persisted (HiPointe fix + suite fold, Klein→Boz).
 
 The roster editor (Ward, `HANDOFF-building-roster-editor` — retired to `_archive/handoffs/`) let the operator curate building membership: the neighborhood is the boundary-street POLYGON (not the circle) + per-building `activate`/`hide`. Tonight surfaced the gotcha that makes it work — and a stale-data trap.
