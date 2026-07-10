@@ -44,7 +44,7 @@ export function runIngest(opts = {}) {
     const partId = f.replace(/\.meta\.json$/, '')
     const meta = readJSON(join(CHASSIS_DIR, f))
     const cur = curation[partId + '.glb']
-    if (cur && cur.approved === false) continue // operator-rejected core — skip
+    if (cur && (cur.approved === false || cur.setAside)) continue // operator-rejected or set-aside — skip
     const conformReport = {
       recentered: Array.isArray(meta.heightRange) && meta.heightRange[0] === 0,
       rescaled: false,

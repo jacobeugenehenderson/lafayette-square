@@ -664,7 +664,10 @@ const useArboristStore = create((set, get) => ({
       // Chassis-tagging gauntlet: the silhouette tag (1-of-9). `null`/absent
       // clears (mirrors the server's absent-preserved / null-clears merge).
       if ('habit' in patch) next.habit = patch.habit || null
-      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit
+      // setAside — the exclude-from-sorts tag, kept distinct from `approved`
+      // (whose false paints the Salon red). Stored only when true.
+      if ('setAside' in patch) { if (patch.setAside === true) next.setAside = true; else delete next.setAside }
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit && !next.setAside
       const map = { ...s.salonChassisCuration }
       if (isEmpty) delete map[chassisName]
       else map[chassisName] = next

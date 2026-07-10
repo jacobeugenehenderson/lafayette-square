@@ -1311,9 +1311,14 @@ const server = createServer(async (req, res) => {
       // the shelves stay closed + honest. (Leaf/bark are separate libraries —
       // not chassis attributes — so they are not tagged here.)
       if ('habit' in body) next.habit = CHASSIS_HABITS.has(body.habit) ? body.habit : null
+      // setAside — the gauntlet's "exclude this chassis from the sorts" tag. Kept
+      // DISTINCT from `approved` (whose `false` = a Salon reject, painted red ✗):
+      // a set-aside must not turn the Salon red. Both, however, exclude from
+      // ingest (glb-scene-utils / ingest.js). Stored only when true.
+      if ('setAside' in body) { if (body.setAside === true) next.setAside = true; else delete next.setAside }
       // Prune entries that revert to fully-unreviewed defaults so the
       // file doesn't accumulate empty stubs from operator-cancelled edits.
-      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit && !next.setAside
       if (isEmpty) delete file.chassis[chassisName]
       else file.chassis[chassisName] = next
       writeJson(p, file)

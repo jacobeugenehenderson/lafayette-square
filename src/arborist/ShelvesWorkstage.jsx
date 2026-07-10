@@ -130,7 +130,7 @@ export default function ShelvesWorkstage() {
     for (const c of catalog) {
       const cur = curation[curationKey(c)] || {}
       const cflags = flagsFor(c)
-      const isSetAside = cur.approved === false
+      const isSetAside = cur.setAside === true
       cflags.forEach(f => { counts[f]++ })
       if (cflags.length === 0 && !isSetAside) { realTotal++; if (cur.habit) classified++ }
       if (isSetAside) setAsideCount++
@@ -301,7 +301,7 @@ function Shelf({ form, items, curation, setCuration }) {
           <ShelfPlate key={c.name} chassis={c}
             entry={curation[curationKey(c)] || null}
             onSet={(habit) => setCuration(curationKey(c), { habit })}
-            onSetAside={(v) => setCuration(curationKey(c), { approved: v ? false : null })} />
+            onSetAside={(v) => setCuration(curationKey(c), { setAside: v })} />
         ))}
       </div>
     </section>
@@ -354,7 +354,7 @@ function LazySilhouette({ name, flags }) {
 
 function ShelfPlate({ chassis, entry, onSet, onSetAside }) {
   const form = entry?.habit || ''
-  const isSetAside = entry?.approved === false
+  const isSetAside = entry?.setAside === true
   const flags = flagsFor(chassis)
   const suggested = !form ? suggestForm(chassis.morphology) : null
   const height = chassis.heightRange ? ` · ${chassis.heightRange[1].toFixed(0)}m` : ''
