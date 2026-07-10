@@ -460,7 +460,7 @@ function Controls({ controlsRef }) {
         enablePan={panEnabled}
         enableZoom
         screenSpacePanning
-        minZoom={0.5}
+        minZoom={0.03}
         maxZoom={40}
       />
     )
@@ -541,7 +541,7 @@ function BrowseControls({ controlsRef }) {
       enableZoom
       screenSpacePanning
       minDistance={50}
-      maxDistance={4000}
+      maxDistance={20000}
       touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
     />
   )
@@ -586,7 +586,7 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
       zoomSpeed={0.6}
       screenSpacePanning
       minDistance={0.5}
-      maxDistance={5000}
+      maxDistance={20000}
       minPolarAngle={0}
       maxPolarAngle={Math.PI}
     />

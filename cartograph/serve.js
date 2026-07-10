@@ -5,6 +5,7 @@ import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
 import { writeIfChanged } from './io.js'
+import tzLookup from 'tz-lookup'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -241,6 +242,12 @@ function distPointToChains(j, chains) {
 }
 const CORNER_EPS = 12       // a junction is "on" a street if within this (m)
 const CORNER_CLUSTER = 45   // merge junctions closer than this into one corner
+// Cardinal (8-way) of an offset in the DATA frame — +x = EAST, +z = SOUTH
+// (config.js: x=(lon−lon0)·k east+, z=(lat0−lat)·k south+). So North = −z.
+function cardinalOf(dx, dz) {
+  const deg = (Math.atan2(-dz, dx) * 180 / Math.PI + 360) % 360   // 0°=E, 90°=N
+  return ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'][Math.round(deg / 45) % 8]
+}
 function computeExtentCorners(scene, sides) {
   const skel = getSkeleton(scene)
   if (!skel) return { error: `no skeleton.json for scene '${scene}'` }
@@ -299,10 +306,18 @@ function computeExtentCorners(scene, sides) {
   // aerial — the operator sees exactly which street they picked (and catches a
   // wrong one, e.g. Clayton Avenue vs Clayton Road, that won't close).
   const r2 = (v) => Math.round(v * 100) / 100
-  const streets = sides.map((nm) => ({
-    name: nm,
-    polylines: (chainsOf(nm) || []).map(c => c.points.map(p => [r2(p.x), r2(p.z)])),
-  }))
+  const streets = sides.map((nm) => {
+    const polylines = (chainsOf(nm) || []).map(c => c.points.map(p => [r2(p.x), r2(p.z)]))
+    // Directional identity — the side's mean position relative to the polygon
+    // centroid → a cardinal (the structural W/N/E/S the flat sides[] can't carry).
+    let direction = null
+    if (centroid && polylines.length) {
+      let sx = 0, sz = 0, n = 0
+      for (const pl of polylines) for (const [x, z] of pl) { sx += x; sz += z; n++ }
+      if (n) direction = cardinalOf(sx / n - centroid.x, sz / n - centroid.z)
+    }
+    return { name: nm, polylines, direction }
+  })
   return { corners, centroid, radius: Math.round(radius), edges, streets, closed: corners.length === sides.length && sides.length >= 3 }
 }
 
@@ -386,6 +401,85 @@ function writeGeographyFromBbox(scene, bbox) {
   mkdirSync(dirname(p), { recursive: true })
   writeFileSync(p, JSON.stringify(geo, null, 2))
   return geo
+}
+
+// Best-effort record count of a fetched artifact — so fetch-extent can report a
+// per-source "buildings ✓ 6,340". Robust to the various shapes (raw array /
+// {elements} / {buildings} / {parcels} / {features}); 0 if absent or unreadable.
+function countJson(p) {
+  try {
+    if (!existsSync(p)) return 0
+    const j = JSON.parse(readFileSync(p, 'utf8'))
+    if (Array.isArray(j)) return j.length
+    for (const k of ['elements', 'buildings', 'parcels', 'features']) if (Array.isArray(j[k])) return j[k].length
+    return 0
+  } catch { return 0 }
+}
+
+// ── Extent editor: place-name geocode (Nominatim) ───────────────────────────
+// The search box that replaces the ZIP field (a hood spans several ZIPs; a ZIP
+// spans several hoods — ZIP is the wrong seed). The operator types one or more
+// anchors joined by '+', each an independent geocode; we UNION their bounding
+// boxes into a framing bbox. It only has to get CLOSE — the boundary streets (or
+// the operator's eye) do the real defining — so a coarse union that CONTAINS the
+// area is the goal, not precision. Composite hoods (HiPointe + De Mun) are
+// literally searched as the sum of their parts. A SINGLE anchor that resolves to
+// a real boundary relation (a place with an OFFICIAL boundary — a town, a CDP, a
+// named neighborhood) ALSO returns that polygon as the best-guess extent (§0.0):
+// Altadena / Provincetown / LS do the lifting, and the operator overrides by
+// naming streets. Nominatim etiquette: a descriptive UA + spaced requests.
+async function geocodePlace(q) {
+  const anchors = String(q || '').split('+').map(s => s.trim()).filter(Boolean)
+  if (!anchors.length) throw new Error('empty search')
+  const UA = 'cartograph/1.0 (neighborhood pour; jacob@jacobhenderson.studio)'
+  const out = []
+  let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity
+  let official = null
+  for (let i = 0; i < anchors.length; i++) {
+    const a = anchors[i]
+    if (i > 0) await new Promise(r => setTimeout(r, 500))
+    let r = null
+    try {
+      const u = `https://nominatim.openstreetmap.org/search?format=json&limit=1&polygon_geojson=1&q=${encodeURIComponent(a)}`
+      const resp = await fetch(u, { headers: { 'User-Agent': UA } })
+      const j = await resp.json()
+      r = Array.isArray(j) && j[0] ? j[0] : null
+    } catch { r = null }
+    if (!r || !r.boundingbox) { out.push({ q: a, ok: false }); continue }
+    let [s, n, w, e] = r.boundingbox.map(Number)
+    // A point-like result (POI/address) has a razor-thin bbox — pad to ~1.2 km so
+    // it still frames a neighborhood-scale area.
+    if ((n - s) * 111000 < 200) {
+      const lat = Number(r.lat), lon = Number(r.lon)
+      const dLat = 600 / 111000, dLon = 600 / (111320 * Math.cos(lat * Math.PI / 180))
+      s = lat - dLat; n = lat + dLat; w = lon - dLon; e = lon + dLon
+    }
+    minLat = Math.min(minLat, s); maxLat = Math.max(maxLat, n)
+    minLon = Math.min(minLon, w); maxLon = Math.max(maxLon, e)
+    out.push({ q: a, ok: true, displayName: r.display_name })
+    // Official boundary — only for a SINGLE anchor (a composite has no one clean
+    // polygon). Take the largest outer ring of a Polygon/MultiPolygon boundary.
+    if (anchors.length === 1 && r.class === 'boundary' && r.geojson) {
+      const g = r.geojson
+      let ring = null
+      if (g.type === 'Polygon') ring = g.coordinates[0]
+      else if (g.type === 'MultiPolygon') ring = g.coordinates.map(pp => pp[0]).sort((A, B) => B.length - A.length)[0]
+      if (ring && ring.length >= 3) {
+        let Ar = 0, cx = 0, cy = 0
+        for (let k = 0; k < ring.length; k++) {
+          const [x1, y1] = ring[k], [x2, y2] = ring[(k + 1) % ring.length]
+          const cr = x1 * y2 - x2 * y1; Ar += cr; cx += (x1 + x2) * cr; cy += (y1 + y2) * cr
+        }
+        Ar *= 0.5
+        const centroidLL = Math.abs(Ar) > 1e-12
+          ? { lon: cx / (6 * Ar), lat: cy / (6 * Ar) }
+          : { lon: (w + e) / 2, lat: (s + n) / 2 }
+        official = { ring, centroidLL, displayName: r.display_name }
+      }
+    }
+  }
+  if (!isFinite(minLat)) throw new Error('no anchor matched')
+  return { bbox: { minLat, maxLat, minLon, maxLon }, anchors: out, official }
 }
 
 // One street's geometry (its chains, corridor-aware) for the Extent dropdown
@@ -837,10 +931,31 @@ createServer(async (req, res) => {
     }
   }
 
+  // POST /geocode — body { q } → { bbox, anchors, official }. The Extent search
+  // box: '+'-joined anchors unioned to a framing bbox (frames the aerial; the
+  // carve-out reads the viewport, not this bbox). A single named place also
+  // returns its official boundary as the best-guess extent. Scene-independent.
+  if (req.method === 'POST' && path === '/geocode') {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', async () => {
+      try {
+        const { q } = JSON.parse(body || '{}')
+        const geocoded = await geocodePlace(q)
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(geocoded))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
   // POST /<scene>/fetch-extent — body { bbox:{minLat,maxLat,minLon,maxLon} } →
-  // write geography.json (centered on the framed bbox) → fetch.js → skeleton.js.
-  // The Phalanges over the operator-framed square. Long-running (a fresh OSM
-  // fetch); the client awaits with a spinner. Guarded per scene.
+  // write geography.json (centered on the framed bbox) → the FULL bundle: OSM +
+  // skeleton (required backbone → nameable streets) + MSBF buildings + assessor
+  // parcels, each fetched best-effort and reported per-source so a fresh drop-in
+  // lands the whole bundle with no hand-CLI. Long-running (a fresh OSM fetch);
+  // the client awaits with a spinner. Guarded per scene.
   const fetchExtentMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/fetch-extent$/)
   if (req.method === 'POST' && fetchExtentMatch && !RESERVED_PREFIXES.has(fetchExtentMatch[1])) {
     const scene = fetchExtentMatch[1]
@@ -860,14 +975,38 @@ createServer(async (req, res) => {
         if (!ok) throw new Error('need a valid bbox {minLat,maxLat,minLon,maxLon}')
         const geo = writeGeographyFromBbox(scene, bbox)
         const here = import.meta.dirname
+        const scriptsDir = join(here, '..', 'scripts')
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        mkdirSync(sceneRawDir(scene), { recursive: true })
+        const raw = sceneRawDir(scene)
+        mkdirSync(raw, { recursive: true })
         mkdirSync(sceneCleanDir(scene), { recursive: true })
+        const lastLine = (r) => (r.stderr || r.stdout || '').trim().split('\n').filter(Boolean).pop() || 'failed'
+        const sources = {}
+        // ── OSM (REQUIRED backbone: streets → skeleton → nameable) ──
         await runShell('node fetch.js', { cwd: here, env, timeout: 240000 })
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
         _skelCache.delete(scene)
+        sources.osm = { ok: true, count: countJson(join(raw, 'osm.json')) }
+        // ── Buildings (MSBF — generic ML footprints, works ANY region) ──
+        const bR = await runCapture('node fetch-msbf.js', { cwd: here, env, timeout: 240000 })
+        sources.buildings = bR.code === 0
+          ? { ok: true, count: countJson(join(raw, 'msbf.json')) }
+          : { ok: false, error: lastLine(bR) }
+        // ── Parcels (assessor — region-specific authority; the wired wells are
+        //    St. Louis City + County. A region with no wired authority returns
+        //    empty — that's EXPECTED degradation, not an error, and the scene
+        //    still pours: addresses are absent, the per-source status says so. ──
+        await runCapture('python3 03-fetch-stl-parcels.py', { cwd: scriptsDir, env, timeout: 180000 })
+        await runCapture('python3 03b-fetch-stlco-parcels.py', { cwd: scriptsDir, env, timeout: 180000 })
+        const pCount = countJson(join(raw, 'stl_parcels.json')) + countJson(join(raw, 'stlco_parcels.json'))
+        // 0 parcels = EXPECTED degradation when no assessor authority is wired
+        // for the region (the wells are St. Louis City + County). The scene still
+        // pours — addresses are just absent — so this is a soft note, not a fault.
+        sources.parcels = pCount > 0
+          ? { ok: true, count: pCount }
+          : { ok: false, count: 0, note: 'no parcel authority for this region (St. Louis City/County only)' }
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox }))
+        res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: err.message }))
@@ -925,7 +1064,11 @@ createServer(async (req, res) => {
         try {
           const parsed = JSON.parse(body || '{}')
           mkdirSync(dirname(nPath), { recursive: true })
-          writeIfChanged(nPath, JSON.stringify(parsed, null, 2))
+          // MERGE onto the existing record — a draft autosave carries only the
+          // fields it touches (sides/radius/name/blurb) and must NOT drop the
+          // committed flag, derived timezone, or borderStreets that commit wrote.
+          const prior = existsSync(nPath) ? (() => { try { return JSON.parse(readFileSync(nPath, 'utf8')) } catch { return {} } })() : {}
+          writeIfChanged(nPath, JSON.stringify({ ...prior, ...parsed }, null, 2))
           res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}')
         } catch (err) {
           res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
@@ -950,15 +1093,27 @@ createServer(async (req, res) => {
       }
       _seedsInFlight.add(scene)
       try {
-        const { center, radius, sides, name, blurb } = JSON.parse(body || '{}')
+        const { center, radius, sides, name, blurb, polygon } = JSON.parse(body || '{}')
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
         const geoPath = sceneDataPaths(scene).geography
+        // Snapshot the pre-commit frame so a failure mid-Pour can roll back
+        // (commit re-centers geography + reprojects raw — destructive). Consumed
+        // by /rollback-extent when onBuild throws before the bake lands. Stale
+        // .prebak from a prior run is cleared first so only one generation exists.
+        const nPathC = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        for (const src of [geoPath, sceneDataPaths(scene).boundary, nPathC]) {
+          try { rmSync(src + '.prebak', { force: true }); if (existsSync(src)) writeFileSync(src + '.prebak', readFileSync(src)) } catch { /* best-effort */ }
+        }
         const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
         geo.lat = r5(center.lat); geo.lon = r5(center.lon)
         geo.lonToMeters = Math.round(111320 * Math.cos((center.lat * Math.PI) / 180))
-        geo._comment = 'Committed extent — center = the boundary-polygon centroid; bbox = the fetch extent.'
+        // Derive the timezone from the committed center — replaces the Central-US
+        // default so weather/TOD are right for any region (Altadena → Pacific,
+        // Cape Cod → Eastern). A lat/lon→IANA resolution (offline), scene-generic.
+        try { geo.timezone = tzLookup(center.lat, center.lon) } catch { /* keep prior tz */ }
+        geo._comment = 'Committed extent — center = the boundary centroid; bbox = the fetch extent; timezone derived from center.'
         writeFileSync(geoPath, JSON.stringify(geo, null, 2))
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
@@ -971,10 +1126,31 @@ createServer(async (req, res) => {
         // stays the slab disc / fade.
         const boundary = makeCircleBoundary(radius)
         const cornerRes = computeExtentCorners(scene, (sides || []).map(s => (s || '').trim()).filter(Boolean))
-        if (cornerRes && Array.isArray(cornerRes.corners) && cornerRes.corners.length >= 3) boundary.polygon = cornerRes.corners
+        if (cornerRes && Array.isArray(cornerRes.corners) && cornerRes.corners.length >= 3) {
+          // Named streets, when the operator provides them, are the precise
+          // (skeleton-snapped) membership boundary — the explicit override.
+          boundary.polygon = cornerRes.corners
+        } else if (Array.isArray(polygon) && polygon.length >= 3) {
+          // Best-guess fill: the official boundary (lon/lat rings from the
+          // geocoder), projected into the NOW re-centered frame so it aligns with
+          // the reprojected buildings. §0.0 — a strong default, overridden by
+          // named streets above when the operator refines by eye.
+          boundary.polygon = polygon.map(([lon, lat]) => ({
+            x: Math.round((lon - geo.lon) * geo.lonToMeters * 100) / 100,
+            z: Math.round((geo.lat - lat) * 111000 * 100) / 100,
+          }))
+          boundary.polygonSource = 'official'
+        }
         writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
+        // Structural directional identity — each named side + the cardinal it lies
+        // on (derived from geometry, §5). The flat ordered sides[] is kept for the
+        // corner solver's around-perimeter adjacency; borderStreets adds the W/N/E/S
+        // the flat list can't carry (SEO/description: "bounded by X on the west…").
+        const borderStreets = (cornerRes && Array.isArray(cornerRes.streets))
+          ? cornerRes.streets.filter(s => s.name && s.direction).map(s => ({ name: s.name, direction: s.direction }))
+          : []
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
-        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], radius: Math.round(radius), committed: true }, null, 2))
+        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], borderStreets, radius: Math.round(radius), timezone: geo.timezone || null, committed: true }, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, radius: Math.round(radius) }))
       } catch (err) {
@@ -1009,6 +1185,78 @@ createServer(async (req, res) => {
         _seedsInFlight.delete(scene)
       }
     })()
+    return
+  }
+
+  // POST /<scene>/rollback-extent — undo a failed commit (§6 atomicity). commit
+  // re-centers geography + reprojects raw destructively; if the ensuing Pour/bake
+  // throws, the scene is left re-centered + committed but slab-less. This restores
+  // geography/boundary/neighborhood from the .prebak snapshots commit made, then
+  // re-projects raw + re-derives skeleton back to the restored frame.
+  const rollbackMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/rollback-extent$/)
+  if (req.method === 'POST' && rollbackMatch && !RESERVED_PREFIXES.has(rollbackMatch[1])) {
+    const scene = rollbackMatch[1]
+    if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
+    _seedsInFlight.add(scene)
+    ;(async () => {
+      try {
+        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        let restored = false
+        for (const src of [sceneDataPaths(scene).geography, sceneDataPaths(scene).boundary, nPath]) {
+          const bak = src + '.prebak'
+          if (existsSync(bak)) { writeFileSync(src, readFileSync(bak)); rmSync(bak, { force: true }); restored = true }
+        }
+        if (restored) {
+          const here = import.meta.dirname
+          const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+          await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
+          await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
+          _skelCache.delete(scene)
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, restored }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      } finally { _seedsInFlight.delete(scene) }
+    })()
+    return
+  }
+
+  // POST /<scene>/rescope — live radius re-scope (§4, the §11 living boundary):
+  // rewrite neighborhood_boundary.json with a new radius circle — PRESERVING the
+  // membership polygon (streets/official boundary unchanged) — then re-clip
+  // (pipeline) + ribbons. No re-name, no re-center, no skeleton; the client then
+  // re-bakes. Body { radius }. Long-running (the derive stage); guarded per scene.
+  const rescopeMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/rescope$/)
+  if (req.method === 'POST' && rescopeMatch && !RESERVED_PREFIXES.has(rescopeMatch[1])) {
+    const scene = rescopeMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', async () => {
+      if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
+      _seedsInFlight.add(scene)
+      try {
+        const { radius } = JSON.parse(body || '{}')
+        if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
+        const bPath = sceneDataPaths(scene).boundary
+        if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
+        const prev = JSON.parse(readFileSync(bPath, 'utf8'))
+        const boundary = makeCircleBoundary(radius)
+        if (prev.polygon) boundary.polygon = prev.polygon            // membership unchanged
+        if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
+        writeFileSync(bPath, JSON.stringify(boundary, null, 2))
+        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        if (existsSync(nPath)) {
+          try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.radius = Math.round(radius); writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
+        }
+        const here = import.meta.dirname
+        const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+        await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
+        await runShell(`node promote-ribbons.js --scene=${scene}`, { cwd: here, env, timeout: 60000 })
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, radius: Math.round(radius) }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      } finally { _seedsInFlight.delete(scene) }
+    })
     return
   }
 
@@ -1272,17 +1520,21 @@ createServer(async (req, res) => {
           ranSteps.push('terrain-slab')
         } else { skipped.push('terrain-slab') }
       }
+      // Scene-size-sensitive bake steps get a generous ceiling: a large hood
+      // (a wide extent, tens of thousands of footprints) legitimately needs
+      // minutes for the ground/building/AO bakes. LS/HPDM finish in seconds; the
+      // cap only stops a big scene from being falsely killed at 60 s.
       await runIfDirty('ground',
         [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 60000 })
+        { cwd: here, timeout: 300000 })
       if (layerOn('building')) {
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
-          { cwd: here, timeout: 60000 })
+          { cwd: here, timeout: 300000 })
       } else {
         skipped.push('buildings (layer hidden)')
       }
@@ -1304,7 +1556,7 @@ createServer(async (req, res) => {
            join(here, 'bake-content.js')],
           [join(CONTENT_DIR, 'roster.json'), join(CONTENT_DIR, 'listings.json')],
           `node bake-content.js ${sceneFlag}`,
-          { cwd: here, timeout: 60000 })
+          { cwd: here, timeout: 180000 })
       } else {
         skipped.push('content (LS content is hand-curated — not regenerated)')
       }
@@ -1371,7 +1623,7 @@ createServer(async (req, res) => {
         [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'), join(here, 'bake-ground-ao.js')],
         [join(LOOK_DIR, 'ground.lightmap.png')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 120000 })
+        { cwd: here, timeout: 300000 })
       const ms = Date.now() - t0
       const idx2 = readLooksIndex()
       const entry = idx2.looks.find(l => l.id === id)
