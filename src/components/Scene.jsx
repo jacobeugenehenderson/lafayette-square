@@ -14,6 +14,7 @@ import { getElevation } from '../utils/elevation'
 import LafayettePark from './LafayettePark'
 import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
+import MountainBackdrop from './MountainBackdrop'
 import Atmosphere from './Atmosphere'
 import CloudDome from './CloudDome'
 import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
@@ -842,6 +843,10 @@ function Scene() {
       {!IS_GROUND && <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
       {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
+      {/* Landscape backdrop (§10 third hero kind) — a mesh behind everything,
+          standing at its true geo spot. Renders NOTHING unless the look ships a
+          baked landscape manifest (LS has none), so this is a no-op for LS. */}
+      {!IS_GROUND && <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop /></R3FErrorBoundary>}
       <CameraRig />
       {!IS_GROUND && <LampGlowDriver />}
       {!IS_GROUND && <PostProcessing viewMode={viewMode} />}
