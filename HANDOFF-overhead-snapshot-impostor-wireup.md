@@ -79,3 +79,47 @@ The scout's map (2026-07-09) found the doctrine-correct path was finished and pa
 ## Definition of done
 
 Plan-view over `hipointe-demun` renders the 7k trees as the **3-slice overhead snapshot** (branches read, canopy sways with the neighborhood wind, weather legibly moves across), zoom-in restores the `lod1` mesh with a clean hysteresis transition, **both reps are baked into the slab**, device frame-ms in plan view drops materially vs all-mesh, and **Jacob's eye passes** the snapshot look + the transition. LS parity confirmed before its flag flips on.
+
+---
+
+## Build log — Atlas (2026-07-09)
+
+**Agent:** Atlas (fresh). **Worktree:** `.claude/worktrees/overhead-snapshot` on branch `overhead-snapshot-impostor` (off `curb-offset-draw`). **Phase 1 complete → CHECKPOINT (awaiting Jacob's eye-gate before Phase 2).**
+
+### Standup decisions (Jacob, 2026-07-09)
+- **Capture/ship path = in-browser capture → POST → baked PNG.** Surfaced that the handoff's stated "bake via `bake-impostors.js`" isn't literally possible — that module is *analytic-only* (its own docstring: no headless GL rasterizer in-repo; `gl`/`canvas`/`puppeteer` deliberately absent). The overhead snapshot is fundamentally an RTT render, so it's captured where a GL context lives (Salon/authoring), then persisted to the slab atlas. No new native deps.
+- **Eye-gate surface = existing Salon Browse preview**, repointed from the procedural canopy to the canonical RTT-skinned 3-slice disc stack.
+
+### What landed (commit `f8c971b1`)
+- **`captureImpostor.js`** — `renderTreeToTexture` topDown now takes an `opts.band {yLo,yHi}` and slices via the ortho camera's **near/far clip** (no geometry mutation). New **`captureTreeOverheadBands`** emits 3 top-down captures (branch / mid / canopy); band cuts derived from the measured leaf-base (`measureCanopyBaseLocal`, reads the stamped `aBark` attr) + total height; branch band dips ~12%·H below the leaf base to catch the main limbs.
+- **`impostorGeometry.js`** — **`buildOverheadBandDisc`**: one ruched + domed + tessellated disc per band, placed at its **real height** (parallax stack), planar [0,1] UV so its band capture maps straight on, carrying `aOverhead/aRuffle/aTreeHeightNorm/aWindTier`. (Left the old `buildOverheadHulaGeometry` untouched.)
+- **`treeAtlasMaterial.js`** — extended **`injectOverheadWiggle`** to also carry the knob-driven **ruche + hula** (copied Jacob's tuned *vertical-only ruche* + *drifting base-anchored hula* math verbatim from the shared atlas material's `aOverhead` block), + `uRuffleDepth`/`uHulaAmount` uniforms → so a `map=capture` MeshStandard animates in parity and `applyOverheadDeformerUniforms` drives it.
+- **`SpecimenViewport.jsx`** — Salon **Browse** preview repointed to the 3-slice stack: captures once per (chassis × overheadMode) on the live GL context + the materialized preview material; renders 3 band discs (hard alphaTest cutout, depth-correct parallax); procedural canopy kept as an **until-captured fallback**. Two **live sliders (Ruche / Hula)** bottom-right for Jacob to dial; shared wind flows via `treeSwayUniforms` (Wind toggle). Per-variant **golden-angle rotation** so fold-phase/capture differ tree-to-tree (anti-stamping eye-gate → use the **Group** button + Wind on).
+
+### Verification done (code-level — the *visual* gate is Jacob's, per doctrine)
+- All 4 modules transform cleanly under real vite (no parse/dark-screen errors); `/arborist` serves 200. esbuild bundle of the JSX passes. **No browser automation in-repo, so I did not screenshot the WebGL canvas — the snapshot look is the operator's eye to gate (`feedback_proxy_render_is_not_the_operator_eye`).**
+
+### ⏸ CHECKPOINT — for Jacob's eye
+Dev server is live on my branch: **`http://localhost:5173/arborist`** → open the Salon → pick a chassis → **Browse** preset (top-down). You should see the 3-slice snapshot (branch/mid/canopy) stacked; toggle **Wind** + **Group** to check motion + anti-stamping; dial **Ruche/Hula** bottom-right. Gate: *do the snapshots read like the tree from above, and does the stack move like weather?* Then I proceed to **Phase 2** (runtime camera-height SELECT in `InstancedTrees` + the POST→slab-atlas persistence).
+
+### NOT started (Phase 2+, deliberately)
+Runtime selection by camera height in `InstancedTrees.jsx`; the POST→`public/baked/<look>/trees/…` atlas-packing persistence; per-look enable flag. LS untouched.
+
+## Build log — Atlas (2026-07-09, cont.) — LOOK EYE-GATED ✅
+
+Iterated the overhead stamp look live with Jacob to a passing eye-gate ("Look how amazing it looks!!"). All on worktree branch `overhead-snapshot-impostor`.
+
+**The look, as landed (per-band 3-slice stamp, all baked at capture):**
+- **Shadow-cast capture** (`captureImpostor.js`): each band is a single 1024² top-down render with an angled directional key + **PCF-soft shadow maps** + low ambient → leaves cast shadows on each other + the branches; darks are dark. (Replaced the flat-albedo × pyramid-high-pass composite, which *washed the darkness out to grey* — that was the "no black" bug. The composite code is left in the file, unused, in case the high-pass is useful later.)
+- **Flat unlit stamp discs** (`impostorGeometry.js#buildOverheadBandDisc` + MeshBasic `toneMapped:false`): the disc is just a flat carrier; the shading is baked into the texture. Per-band **brightness ramp** (branch 0.3 → canopy 1.0) so the crown-shadowed lower layers read as dark depth through the top's gaps.
+- **Fractal wind** (`treeAtlasMaterial.js#injectOverheadWiggle`): fBm value-noise drives a turbulent **flutter** (advected downwind, never repeats) + irregular **gust**, plus the **hula** (base-anchored, phase-lagged, drifting-axis bend so the 3 bands ripple out of phase). **Wind-only, no floor** → dead still at wind 0. Ruche is OUT (the starfish); hula + flutter are what make the wind read alive.
+
+**Capture is crash-safe**: off the LIVE loaded geometry via a non-mutating shared clone (no 2nd GPU copy), one band **stepped per frame**.
+
+**Doctrine reaffirmed with Jacob:** clicking **Browse** generates the current-state overhead sections in the Salon (single tree = the asset); those get **packed into the Grove + slab**; the Universal Reader places the 7,000 instances. The 7k only exist in the slab.
+
+**Parked (by choice):** darkening the **bark albedo** directly (aBark-gated) — held in reserve; Jacob didn't want it going too dark.
+
+**Env notes (worktree gotchas, for whoever runs this next):** the worktree needs the main checkout's gitignored data symlinked — `public/trees` (chassis, 241 GLBs) and per-species `arborist/state/*/compositions.json` — and **vite must be (re)started with those symlinks already in place** (its publicDir listing is cached at boot; otherwise tree GLBs 404 → SPA-HTML → the chassis-plate rack crashes the WebGL context = black screen). Backends must be launched via detached subshell, not `run_in_background` (the latter exits). Meteorologist (:3335) is down on a pre-existing missing `ajv` dep — the Salon doesn't need it.
+
+**NOT started (next):** POST the 3 baked band PNGs → `public/baked/<look>/trees/…` + manifest (the "pack into the slab" step); runtime camera-height SELECT in `InstancedTrees` for the 7k-tree Browse swap.
