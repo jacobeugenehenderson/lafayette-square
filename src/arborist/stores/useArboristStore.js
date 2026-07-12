@@ -534,7 +534,14 @@ const useArboristStore = create((set, get) => ({
   salonActiveSpecies: null,
   setSalonActiveSpecies: (s) => {
     set({ salonActiveSpecies: s })
-    if (s) get().loadSalonCompositions(s)
+    if (s) {
+      get().loadSalonCompositions(s)
+      // Refresh the per-species dossier (+ options) for the new species — the
+      // declared habit the Phase-4 picker lands on lives in salonDossier, and it
+      // was only ever loaded once at mount. (Also fixes the ReferencePanel /
+      // matcher options going stale on species change.)
+      get().loadSalonLibraries()
+    }
   },
 
   // ── Roster-driven Salon navigator (Brief 26, Cadastre 2026-05-25) ─────────

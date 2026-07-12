@@ -17,13 +17,15 @@
     },
     "generic_leaf_tree_c.glb": {
       "displayName": "Red Maple",
-      "approved": false,
-      "notes": ""
+      "approved": null,
+      "notes": "",
+      "setAside": true
     },
     "generic_leaf_tree_d.glb": {
       "displayName": "",
-      "approved": false,
-      "notes": ""
+      "approved": null,
+      "notes": "",
+      "setAside": true
     },
     "london_plane_c.glb": {
       "displayName": "",
@@ -179,6 +181,120 @@
       "displayName": "European Linden",
       "approved": true,
       "notes": "first tree in european-linden/ pack, vendor-leaf-preservation verified 2026-05-22"
+    },
+    "black_gum_i.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_trees_1_a.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_trees_1_b.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_trees_1_c.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_willow_b.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_willow_d.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_willow_f.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_willow_h.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_willow_j.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "stylized_willow_l.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "sycamore_stump_field_a.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "generic_tree_1_a.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "weeping_willow_a.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "habit": "weeping"
+    },
+    "weeping_willow_b.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "habit": "weeping"
+    },
+    "weeping_willow_c.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "habit": "weeping"
+    },
+    "weeping_willow_d.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "habit": "weeping"
+    },
+    "weeping_willow_e.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "habit": "weeping"
+    },
+    "yellow_autumn_tree_d.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
+    },
+    "white_oak_d.glb": {
+      "displayName": "",
+      "approved": null,
+      "notes": "",
+      "setAside": true
     }
   }
 }

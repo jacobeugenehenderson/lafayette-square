@@ -849,34 +849,32 @@ function SlotCard({
 
 function ChassisShelfPicker({ shelves, declaredHabit, selected, chassisCuration, onPick, onApprove, onAdd }) {
   const hasDeclared = declaredHabit && FORM_IDS.includes(declaredHabit)
-  const order = [
-    ...(hasDeclared ? [declaredHabit] : []),
-    ...FORM_IDS.filter(f => f !== declaredHabit),
-    '_none',
-  ]
+  const declaredItems = hasDeclared ? (shelves.get(declaredHabit) || []) : []
+  // "Other" = every chassis NOT on the declared shelf, flat (the other 8 habits
+  // are visual buzz for this species — one browse group, not nine chips).
+  const otherItems = []
+  for (const f of [...FORM_IDS, '_none']) {
+    if (f === declaredHabit) continue
+    otherItems.push(...(shelves.get(f) || []))
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0 6px' }}>
-      {order.map(form => {
-        const items = shelves.get(form) || []
-        const isDeclared = form === declaredHabit
-        if (items.length === 0 && !isDeclared) return null   // hide empty shelves, but always show the declared one
-        return (
-          <ChassisShelf key={form} form={form} items={items} isDeclared={isDeclared}
-            defaultOpen={isDeclared || (!hasDeclared && form === '_none')}
-            selected={selected} chassisCuration={chassisCuration}
-            onPick={onPick} onApprove={onApprove} />
-        )
-      })}
+      {hasDeclared && (
+        <ChassisShelf label={FORM_BY_ID[declaredHabit].name} form={declaredHabit} isDeclared
+          items={declaredItems} defaultOpen selected={selected} chassisCuration={chassisCuration}
+          onPick={onPick} onApprove={onApprove} />
+      )}
+      <ChassisShelf label={hasDeclared ? 'Other' : 'All chassis'} form={null}
+        items={otherItems} defaultOpen={!hasDeclared} selected={selected} chassisCuration={chassisCuration}
+        onPick={onPick} onApprove={onApprove} />
       <button type="button" onClick={onAdd} title="Add a new chassis (procure / author) — behavior TBD"
         style={{ ...btnStyle({ block: true }), width: '100%', marginTop: 2, fontSize: 11, color: '#8a93a0' }}>+ Add chassis</button>
     </div>
   )
 }
 
-function ChassisShelf({ form, items, isDeclared, defaultOpen, selected, chassisCuration, onPick, onApprove }) {
+function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, chassisCuration, onPick, onApprove }) {
   const [open, setOpen] = useState(defaultOpen)
-  const none = form === '_none'
-  const def = FORM_BY_ID[form]
   return (
     <div style={{
       border: '1px solid ' + (isDeclared ? 'rgba(120,160,110,0.4)' : 'rgba(255,255,255,0.08)'),
@@ -886,16 +884,16 @@ function ChassisShelf({ form, items, isDeclared, defaultOpen, selected, chassisC
         display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '5px 8px',
         background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11,
       }}>
-        {!none && <FormIcon form={form} size={18} />}
+        {form && <FormIcon form={form} size={18} />}
         <span style={{ fontWeight: isDeclared ? 600 : 500, textTransform: 'capitalize',
-          color: isDeclared ? '#bce0a0' : none ? '#c8a060' : '#cdd6df' }}>{none ? 'Unclassified' : def.name}</span>
+          color: isDeclared ? '#bce0a0' : '#cdd6df' }}>{label}</span>
         {isDeclared && <span style={{ fontSize: 8, color: '#8fb87f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>this species</span>}
         <span style={{ marginLeft: 'auto', fontSize: 10, color: '#778' }}>{items.length}</span>
         <span style={{ color: '#667', fontSize: 10 }}>{open ? '▾' : '▸'}</span>
       </button>
       {open && (items.length === 0
         ? <div style={{ fontSize: 10, color: '#889', padding: '0 8px 8px', lineHeight: 1.4 }}>
-            No chassis tagged <b style={{ color: '#9ab' }}>{def?.name?.toLowerCase()}</b> yet — classify some in the Shelves gauntlet, or open another shelf.
+            No chassis tagged <b style={{ color: '#9ab' }}>{(label || '').toLowerCase()}</b> yet — classify some in the Shelves gauntlet, or open <b style={{ color: '#9ab' }}>Other</b>.
           </div>
         : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 6px 8px' }}>
             {items.map(c => (
