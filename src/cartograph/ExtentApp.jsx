@@ -40,6 +40,11 @@ import {
   TileMesh, TILE_URL, lonLatToTile, tileToLonLat, wgs84ToLocal, localToWgs84,
 } from './AerialTiles.jsx'
 
+// Extent's OWN persisted working scene — separate from the global `cartograph-scene`
+// (which the Look loader can reset to the default installation). This is what makes
+// a cold restart reappear on the hood being built here, and blank when there's none.
+const EXTENT_SCENE_KEY = 'cartograph-extent-scene'
+
 // The Extent aerial reads ONLY the scene's geography (lat/lon/projection/bbox)
 // — NOT neighborhood_boundary.json, which is the very thing being authored. So
 // a brand-new hood with no boundary yet still gets a full aerial to frame on.
@@ -599,18 +604,41 @@ function NeighborhoodSelector({ scenes, current, currentName, onOpen, onNew }) {
 
 export default function ExtentApp() {
   const setStoreScene = useCartographStore(s => s.setScene)
-  // The neighborhood being edited. Entering Extent FROM an extant hood loads THAT
-  // hood's seed (init from the active render scene); "New neighborhood" clears to
-  // null = the EMPTY WORKSPACE (a gray grid + search + the list of existing hoods).
-  // A search establishes a new hood's OWN scene (slug); everything scene-keyed
-  // follows it, so authoring one hood never reads or overwrites another.
+  // The neighborhood being edited. Extent reappears on the LAST hood being built
+  // here, else a BLANK workspace — it NEVER falls back to the default installation
+  // (LS). The global store scene defaults to LS on a cold boot, so keying off it
+  // would wrongly open LS; Extent persists its OWN working scene (`EXTENT_SCENE_KEY`,
+  // untouched by the Look loader) and reads that. "New neighborhood" clears to null
+  // = the EMPTY WORKSPACE; a search establishes a new hood's OWN scene (slug).
   const [scene, setSceneLocal] = useState(() => {
-    try { const s = useCartographStore.getState().scene; return (s && s !== 'toy') ? s : null } catch { return null }
+    const ok = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s) && s !== 'toy'
+    try {
+      const ext = localStorage.getItem(EXTENT_SCENE_KEY)
+      if (ok(ext)) return ext
+      // First-ever entry (no Extent history): honour an EXPLICIT non-default store
+      // scene (a ?scene= deep-link or a real neighborhood), else blank — never the
+      // bare LS default.
+      const s = useCartographStore.getState().scene
+      if (ok(s) && s !== 'lafayette-square') return s
+    } catch { /* ignore */ }
+    return null
   })
   const setShot = useCartographStore(s => s.setShot)
   const sceneGeography = useCartographStore(s => s.sceneGeography)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
   const geo = useMemo(() => extentGeo(sceneGeography), [sceneGeography])
+  // Persist Extent's own working scene (incl. the blank workspace, null → '') so a
+  // cold restart reappears here — never on the LS default.
+  useEffect(() => {
+    try { localStorage.setItem(EXTENT_SCENE_KEY, scene || '') } catch { /* ignore */ }
+  }, [scene])
+  // On entry, make the global store scene match the scene we restored (openScene
+  // does this for clicks; the initial restore needs it too so the aerial/camera/
+  // looks track the right hood, and localStorage isn't left pointing at LS).
+  useEffect(() => {
+    if (scene && useCartographStore.getState().scene !== scene) setStoreScene(scene)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const markerActive = useCartographStore(s => s.markerActive)
   const controlsRef = useRef(null)
   const orthoRef = useRef(null)
@@ -1299,7 +1327,7 @@ export default function ExtentApp() {
               {sides.length === 0 ? (
                 <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.8 }}>
                   {allStreets.length
-                    ? 'Click the streets on the map that form the boundary — any order. They assemble into the perimeter automatically.'
+                    ? 'Click the streets on the map that form the boundary.'
                     : 'Fetch this view first, then click the boundary streets on the map.'}
                 </div>
               ) : (

@@ -1587,7 +1587,13 @@ const useCartographStore = create((set, get) => ({
       try { urlScene = new URLSearchParams(window.location.search).get('scene') } catch { /* ignore */ }
       const urlSceneWins = isValidSceneId(urlScene)
       const lookScene = activeEntry?.scene
-      const sceneUpdate = (!urlSceneWins && lookScene && lookScene !== get().scene) ? { scene: lookScene } : {}
+      // The persisted user scene WINS over the active Look's scene — the Look's
+      // scene only fills in when there's no valid persisted scene. Without this,
+      // a neighborhood the Looks don't cover yet (freshly poured, or being built
+      // in the Extent tool — e.g. Altadena, which has only the LS Look) gets
+      // yanked back to the Look's scene (LS) on every COLD boot (a warm refresh
+      // races ahead of _loadLooks and survives; a restart loses the race).
+      const sceneUpdate = (!urlSceneWins && lookScene && !isValidSceneId(get().scene)) ? { scene: lookScene } : {}
       if (sceneUpdate.scene) {
         try { localStorage.setItem('cartograph-scene', sceneUpdate.scene) } catch { /* ignore */ }
       }
