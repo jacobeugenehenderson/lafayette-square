@@ -548,6 +548,55 @@ function sluggifyPlace(anchors, query) {
   return slug || 'neighborhood'
 }
 
+// Neighborhood selector — the persistent switcher at the top of the Extent panel.
+// Neighborhoods (not Looks) live HERE (the Look pulldown is per-neighborhood presets).
+// Same chrome as the Look pulldown (carto-looks-*) for visual consistency: the current
+// hood + a popup listing every existing hood (✓ = committed) + "＋ New neighborhood".
+function NeighborhoodSelector({ scenes, current, currentName, onOpen, onNew }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+  // Prettify an unnamed hood's slug for display (hipointe-demun → "Hipointe Demun");
+  // an authored name (from Name & blurb) always wins.
+  const label = currentName
+    || (current ? current.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Select a neighborhood')
+  return (
+    <div className="carto-looks-menu" ref={wrapRef} style={{ position: 'relative', width: '100%' }}>
+      <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(o => !o)}
+        title="Switch neighborhood — or start a new one"
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+          background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,${open ? 0.22 : 0.12})`,
+          color: '#e7efe0', fontSize: 15, fontWeight: 600,
+        }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+        <span aria-hidden="true" style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
+      </button>
+      {open && (
+        <div className="carto-looks-popup carto-glass" role="listbox">
+          {scenes.map(s => (
+            <button key={s.id} type="button" role="option" aria-selected={s.id === current}
+              className={`carto-looks-option${s.id === current ? ' is-active' : ''}`}
+              onClick={() => { onOpen(s.id); setOpen(false) }}>
+              {s.name || s.id}{s.committed ? ' ✓' : ''}
+            </button>
+          ))}
+          {scenes.length > 0 && <div className="carto-looks-sep" />}
+          <button type="button" className="carto-looks-option" onClick={() => { onNew(); setOpen(false) }}>
+            ＋ New neighborhood…
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ExtentApp() {
   const setStoreScene = useCartographStore(s => s.setScene)
   // The neighborhood being edited. Entering Extent FROM an extant hood loads THAT
@@ -829,11 +878,14 @@ export default function ExtentApp() {
     setSceneLocal(id)
   }
   // New neighborhood — the empty workspace: no scene bound, the gray grid + search.
+  // setScene(null) is a no-op (invalid id), so clear the store frame directly —
+  // otherwise the previous hood's geography/boundary lingers and the grid never shows.
   const newNeighborhood = () => {
     setSceneLocal(null)
+    useCartographStore.setState({ sceneGeography: null, sceneBoundary: null, sceneRibbons: null })
     setLocated(false); setOfficial(null); setUseOfficial(false); setAnchors(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
-    setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null)
+    setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null); setCurating(false)
   }
 
   // A frame (geography) spanning a bbox — used to re-frame the aerial on a search.
@@ -1085,6 +1137,9 @@ export default function ExtentApp() {
   const removeStreet = (i) => setSides(prev => prev.filter((_, k) => k !== i))
   // Gaps = selected streets that don't yet close the ring (from the resolver).
   const gaps = streetCorners?.gaps || []
+  // Has this hood been hydrated yet? Streets exist → we're past setup (search/fetch),
+  // so those setup-time controls collapse and the boundary work takes the panel.
+  const hasData = allStreets.length > 0
   // The circle's center for drawing: the live polygon centroid, or the origin for
   // a reopened committed hood (its geo is re-centered so the circle sits at [0,0]).
   const boundaryCentroid = corners?.centroid || (committed ? { x: 0, z: 0 } : null)
@@ -1151,185 +1206,191 @@ export default function ExtentApp() {
         <div className="carto-panel">
           <h1>Neighborhood Extent</h1>
           <div className="carto-section">
-            <div className="carto-row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <h2 style={{ margin: 0 }}>{name || scene || 'New neighborhood'}</h2>
-              {scene && (
-                <button className="carto-btn-sm" onClick={newNeighborhood}
-                  title="Start a new neighborhood — an empty workspace + search">＋ New</button>
+            {/* Neighborhood selector — the persistent switcher (Neighborhoods live in
+                Extent; the Look pulldown is per-neighborhood presets). */}
+            <NeighborhoodSelector scenes={scenesList} current={scene} currentName={name}
+              onOpen={openScene} onNew={newNeighborhood} />
+            {!scene && (
+              <div className="carto-extent-status" style={{ fontSize: 12, opacity: 0.8, margin: '8px 0' }}>
+                Pick a neighborhood above, or search a place to begin a new one — it opens in its own scene; no other neighborhood is touched.
+              </div>
+            )}
+            {/* ── SETUP ── search + fetch: setup-time only, collapses to a lone
+                re-fetch once streets are hydrated (established hood = no clutter). */}
+            {!hasData ? (
+              <div className="carto-subsection">
+                <div className="carto-subsection-header">Setup</div>
+                {/* Place search — a named place seeds its own scene + official boundary best-guess. */}
+                <div className="carto-row">
+                  <input className="carto-input" value={query} placeholder="search a place to begin…"
+                    spellCheck={false}
+                    onChange={e => setQuery(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') onSearch() }} />
+                  <button className="carto-btn-sm" disabled={!query.trim() || searching} onClick={onSearch}
+                    title="Find the place, open it in its own scene, and adopt its official boundary as a best-guess first pass.">
+                    {searching ? '…' : 'Search'}
+                  </button>
+                </div>
+                {anchors && anchors.some(a => a.displayName || a.ok === false) && (
+                  <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.85 }}>
+                    {anchors.map((a, i) => (
+                      <div key={i}>{a.ok ? '✓' : '✗'} {a.displayName || `${a.q} — no match`}</div>
+                    ))}
+                  </div>
+                )}
+                <div className="carto-row" style={{ marginTop: 6 }}>
+                  <button className="carto-btn carto-btn--grow" disabled={!located || !geo || seeding} onClick={onFetchView}
+                    title="Fetch the full data bundle (OSM + buildings + parcels) over the framed view — anything visible here becomes nameable">
+                    {seeding ? 'Fetching bundle…' : 'Fetch this view'}
+                  </button>
+                </div>
+                {fetchSources && (
+                  <div className="carto-extent-status ok" style={{ fontSize: 11, lineHeight: 1.5 }}>
+                    {[['OSM', fetchSources.osm], ['buildings', fetchSources.buildings], ['parcels', fetchSources.parcels]].map(([label, s]) => (
+                      <div key={label}>
+                        {s?.ok ? '✓' : '✗'} {label}
+                        {s?.ok && Number.isFinite(s.count) ? ` · ${s.count.toLocaleString()}` : ''}
+                        {s?.note ? ` — ${s.note}` : ''}
+                        {!s?.ok && s?.error ? ` — ${s.error}` : ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {seedError && <div className="carto-extent-status warn">{seedError}</div>}
+              </div>
+            ) : located && !committed && (
+              // Pre-commit only — re-fetch re-pulls raw + regenerates the skeleton
+              // over the current camera bbox and clears named sides. Safe while
+              // nothing's baked; on a COMMITTED hood it would clobber the finalized
+              // frame the slab depends on, so there the re-pull path is ＋New / Search.
+              <div className="carto-row" style={{ margin: '4px 0 10px' }}>
+                <button className="carto-btn-sm carto-btn-muted" disabled={seeding} onClick={onFetchView}
+                  title="Re-pull the OSM + buildings + parcels bundle over the current view (clears named streets). Pre-commit only.">
+                  {seeding ? 'Fetching…' : '↻ Re-fetch view'}
+                </button>
+              </div>
+            )}
+
+            {/* ── BOUNDARY ── the core extent work: official best-guess, the named
+                boundary streets, closure status, radius, and building curation. */}
+            {(hasData || official) && (
+            <div className="carto-subsection">
+              <div className="carto-subsection-header">Boundary</div>
+
+              {/* Official boundary — the best-guess fill (§0.0). Adopt with a click;
+                  naming ≥3 streets below overrides it with the skeleton-snapped one. */}
+              {official && (
+                <div className="carto-row carto-row--wrap" style={{ marginBottom: 8 }}>
+                  <button className="carto-btn-sm" onClick={() => setUseOfficial(v => !v)}
+                    style={useOfficial ? { background: '#ffd23f', color: '#12140f', fontWeight: 600 } : undefined}
+                    title="Use the place's official boundary as the extent — a best guess you can refine by naming streets or dragging the radius">
+                    {useOfficial ? '✓ Official boundary' : '○ Use official boundary'}
+                  </button>
+                  {streetCorners?.closed && useOfficial &&
+                    <span className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 4 }}>
+                      named streets override the official boundary
+                    </span>}
+                </div>
+              )}
+
+              <div className="carto-label" style={{ cursor: 'default', flex: 'none', margin: '0 0 8px' }}>
+                Boundary streets{official ? ' (refine the official best guess)' : ''}
+              </div>
+              {sides.length === 0 ? (
+                <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.8 }}>
+                  {allStreets.length
+                    ? 'Click the streets on the map that form the boundary — any order. They assemble into the perimeter automatically.'
+                    : 'Fetch this view first, then click the boundary streets on the map.'}
+                </div>
+              ) : (
+                <div className="carto-row carto-row--wrap" style={{ gap: 6 }}>
+                  {sides.map((n, i) => {
+                    const st = streetCorners?.streets?.find(s => s.name === n)
+                    const bad = streetCorners && st && st.connected === false
+                    return (
+                      <span key={`${n}-${i}`} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 8px',
+                        borderRadius: 5, fontSize: 11, color: '#e7efe0',
+                        background: bad ? '#4a2a24' : '#26402c', border: `1px solid ${bad ? '#a86a48' : '#3f6a48'}`,
+                      }} title={bad ? 'this street does not connect to the ring yet' : (st?.direction ? `${st.direction} side` : '')}>
+                        {n}{st?.direction ? ` · ${st.direction}` : ''}
+                        <button className="carto-btn-sm" style={{ padding: '0 4px', minWidth: 0 }}
+                          onClick={() => removeStreet(i)} title="Remove">×</button>
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
+              {streetCorners && (
+                <div className={`carto-extent-status ${streetCorners.closed ? 'ok' : 'warn'}`} style={{ marginTop: 8 }}>
+                  {streetCorners.closed
+                    ? `✓ closed · ${streetCorners.corners.length} corners · centroid (${Math.round(streetCorners.centroid.x)}, ${Math.round(streetCorners.centroid.z)}) · fits ⌀${streetCorners.radius} m`
+                    : `⚠ not closed — ${gaps.length} street(s) don't connect: ${gaps.join(', ') || '—'}. Click the streets that meet them.`}
+                </div>
+              )}
+              {!streetCorners && useOfficial && official && (
+                <div className="carto-extent-status ok" style={{ marginTop: 8 }}>
+                  ✓ official boundary (best guess) · click boundary streets to refine, or pour as-is
+                </div>
+              )}
+
+              {/* Radius — shown once a boundary exists (live streets/official) OR
+                  for a reopened committed hood (so it can be re-scoped in place, §4). */}
+              {((corners?.centroid && corners.radius > 0) || (committed && committedRadius > 0)) && (() => {
+                const rMin = corners?.radius ?? Math.max(200, Math.round(committedRadius * 0.3))
+                const rMax = Math.max((corners?.radius || committedRadius) * 2.5, 1500)
+                return (
+                <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
+                  <span className="carto-label" style={{ cursor: 'default' }}>Radius</span>
+                  <span className="carto-meta--value">{radiusM} m</span>
+                  <input className="carto-range" type="range" style={{ flexBasis: '100%' }}
+                    min={rMin} max={rMax} step={10}
+                    value={radiusM}
+                    onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
+                  {corners?.radius
+                    ? <button className="carto-btn-sm" onClick={() => { setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to streets</button>
+                    : (committed && Math.round(radiusM) !== committedRadius &&
+                        <button className="carto-btn-sm" onClick={() => setRadiusM(committedRadius)}>reset</button>)}
+                  {committed && Math.round(radiusM) !== committedRadius && (
+                    <button className="carto-btn carto-btn--grow" disabled={rescoping || building} style={{ flexBasis: '100%', marginTop: 6 }}
+                      onClick={onRescope}
+                      title="Rewrite the boundary at this radius + re-bake in place — no re-naming, no re-center (§11 living boundary)">
+                      {rescoping ? (buildStage || 'Re-scoping…') : `Re-scope radius → ${Math.round(radiusM)} m`}
+                    </button>
+                  )}
+                </div>
+                )
+              })()}
+
+              {footprints?.buildings?.length > 0 && (
+                <div className="carto-row carto-row--wrap" style={{ marginTop: 12 }}>
+                  <button className="carto-btn-sm" onClick={() => setCurating(c => !c)}
+                    style={curating ? { background: '#ff5a5a', color: '#12140f', fontWeight: 600 } : undefined}
+                    title="Curate the neighborhood — the street polygon is included by default; click an outside ghost to re-activate it, an inside building to hide it">
+                    {curating ? '✓ Done editing' : '✎ Edit buildings'}
+                  </button>
+                  {curating
+                    ? <span className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 4 }}>
+                        +{activate.size} re-activated · −{hide.size} hidden · click a ghost to add, a building to drop
+                      </span>
+                    : (activate.size + hide.size) > 0 && <span className="carto-meta--value">+{activate.size} / −{hide.size}</span>}
+                </div>
               )}
             </div>
-
-            {/* HUB (no scene loaded) — open an existing neighborhood, or search a new one. */}
-            {!scene && scenesList.length > 0 && (
-              <div style={{ margin: '8px 0 10px' }}>
-                <div className="carto-label" style={{ cursor: 'default', flex: 'none', marginBottom: 6 }}>Open a neighborhood</div>
-                <div className="carto-row carto-row--wrap" style={{ gap: 6 }}>
-                  {scenesList.map(s => (
-                    <button key={s.id} className="carto-btn-sm" onClick={() => openScene(s.id)}
-                      title={s.committed ? 'committed' : (s.hasData ? 'in progress' : 'empty')}
-                      style={{ opacity: s.hasData ? 1 : 0.6 }}>
-                      {s.name || s.id}{s.committed ? ' ✓' : ''}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {!scene && (
-              <div className="carto-extent-status" style={{ fontSize: 12, opacity: 0.8, marginBottom: 8 }}>
-                …or search a place to begin a new one — it opens in its own scene; no other neighborhood is touched.
-              </div>
-            )}
-            {/* Place search — a named place seeds its own scene + official boundary best-guess. */}
-            <div className="carto-row">
-              <input className="carto-input" value={query} placeholder="search a place to begin…"
-                spellCheck={false}
-                onChange={e => setQuery(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') onSearch() }} />
-              <button className="carto-btn-sm" disabled={!query.trim() || searching} onClick={onSearch}
-                title="Find the place, open it in its own scene, and adopt its official boundary as a best-guess first pass.">
-                {searching ? '…' : 'Search'}
-              </button>
-            </div>
-            {anchors && anchors.some(a => a.displayName || a.ok === false) && (
-              <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.85 }}>
-                {anchors.map((a, i) => (
-                  <div key={i}>{a.ok ? '✓' : '✗'} {a.displayName || `${a.q} — no match`}</div>
-                ))}
-              </div>
-            )}
-            <div className="carto-row">
-              <button className="carto-btn carto-btn--grow" disabled={!located || !geo || seeding} onClick={onFetchView}
-                title="Fetch the full data bundle (OSM + buildings + parcels) over the framed view — anything visible here becomes nameable">
-                {seeding ? 'Fetching bundle…' : 'Fetch this view'}
-              </button>
-            </div>
-            {fetchSources && (
-              <div className="carto-extent-status ok" style={{ fontSize: 11, lineHeight: 1.5 }}>
-                {[['OSM', fetchSources.osm], ['buildings', fetchSources.buildings], ['parcels', fetchSources.parcels]].map(([label, s]) => (
-                  <div key={label}>
-                    {s?.ok ? '✓' : '✗'} {label}
-                    {s?.ok && Number.isFinite(s.count) ? ` · ${s.count.toLocaleString()}` : ''}
-                    {s?.note ? ` — ${s.note}` : ''}
-                    {!s?.ok && s?.error ? ` — ${s.error}` : ''}
-                  </div>
-                ))}
-              </div>
-            )}
-            {seedError && <div className="carto-extent-status warn">{seedError}</div>}
-
-            {/* Official boundary — the best-guess fill (§0.0). Adopt with a click;
-                naming ≥3 streets below overrides it with the skeleton-snapped one. */}
-            {official && (
-              <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
-                <button className="carto-btn-sm" onClick={() => setUseOfficial(v => !v)}
-                  style={useOfficial ? { background: '#ffd23f', color: '#12140f', fontWeight: 600 } : undefined}
-                  title="Use the place's official boundary as the extent — a best guess you can refine by naming streets or dragging the radius">
-                  {useOfficial ? '✓ Official boundary' : '○ Use official boundary'}
-                </button>
-                {streetCorners?.closed && useOfficial &&
-                  <span className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 4 }}>
-                    named streets override the official boundary
-                  </span>}
-              </div>
             )}
 
-            <div className="carto-label" style={{ cursor: 'default', flex: 'none', margin: '10px 0 8px' }}>
-              Boundary streets{official ? ' (refine the official best guess)' : ''}
-            </div>
-            {sides.length === 0 ? (
-              <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.8 }}>
-                {allStreets.length
-                  ? 'Click the streets on the map that form the boundary — any order. They assemble into the perimeter automatically.'
-                  : 'Fetch this view first, then click the boundary streets on the map.'}
-              </div>
-            ) : (
-              <div className="carto-row carto-row--wrap" style={{ gap: 6 }}>
-                {sides.map((n, i) => {
-                  const st = streetCorners?.streets?.find(s => s.name === n)
-                  const bad = streetCorners && st && st.connected === false
-                  return (
-                    <span key={`${n}-${i}`} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 8px',
-                      borderRadius: 5, fontSize: 11, color: '#e7efe0',
-                      background: bad ? '#4a2a24' : '#26402c', border: `1px solid ${bad ? '#a86a48' : '#3f6a48'}`,
-                    }} title={bad ? 'this street does not connect to the ring yet' : (st?.direction ? `${st.direction} side` : '')}>
-                      {n}{st?.direction ? ` · ${st.direction}` : ''}
-                      <button className="carto-btn-sm" style={{ padding: '0 4px', minWidth: 0 }}
-                        onClick={() => removeStreet(i)} title="Remove">×</button>
-                    </span>
-                  )
-                })}
-              </div>
-            )}
-
-            {streetCorners && (
-              <div className={`carto-extent-status ${streetCorners.closed ? 'ok' : 'warn'}`} style={{ marginTop: 8 }}>
-                {streetCorners.closed
-                  ? `✓ closed · ${streetCorners.corners.length} corners · centroid (${Math.round(streetCorners.centroid.x)}, ${Math.round(streetCorners.centroid.z)}) · fits ⌀${streetCorners.radius} m`
-                  : `⚠ not closed — ${gaps.length} street(s) don't connect: ${gaps.join(', ') || '—'}. Click the streets that meet them.`}
-              </div>
-            )}
-            {!streetCorners && useOfficial && official && (
-              <div className="carto-extent-status ok" style={{ marginTop: 8 }}>
-                ✓ official boundary (best guess) · click boundary streets to refine, or pour as-is
-              </div>
-            )}
-
-            {/* Radius — shown once a boundary exists (live streets/official) OR
-                for a reopened committed hood (so it can be re-scoped in place, §4). */}
-            {((corners?.centroid && corners.radius > 0) || (committed && committedRadius > 0)) && (() => {
-              const rMin = corners?.radius ?? Math.max(200, Math.round(committedRadius * 0.3))
-              const rMax = Math.max((corners?.radius || committedRadius) * 2.5, 1500)
-              return (
-              <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
-                <span className="carto-label" style={{ cursor: 'default' }}>Radius</span>
-                <span className="carto-meta--value">{radiusM} m</span>
-                <input className="carto-range" type="range" style={{ flexBasis: '100%' }}
-                  min={rMin} max={rMax} step={10}
-                  value={radiusM}
-                  onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
-                {corners?.radius
-                  ? <button className="carto-btn-sm" onClick={() => { setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to streets</button>
-                  : (committed && Math.round(radiusM) !== committedRadius &&
-                      <button className="carto-btn-sm" onClick={() => setRadiusM(committedRadius)}>reset</button>)}
-                {committed && Math.round(radiusM) !== committedRadius && (
-                  <button className="carto-btn carto-btn--grow" disabled={rescoping || building} style={{ flexBasis: '100%', marginTop: 6 }}
-                    onClick={onRescope}
-                    title="Rewrite the boundary at this radius + re-bake in place — no re-naming, no re-center (§11 living boundary)">
-                    {rescoping ? (buildStage || 'Re-scoping…') : `Re-scope radius → ${Math.round(radiusM)} m`}
-                  </button>
-                )}
-              </div>
-              )
-            })()}
-
-            {footprints?.buildings?.length > 0 && (
-              <div className="carto-row carto-row--wrap" style={{ marginTop: 12 }}>
-                <button className="carto-btn-sm" onClick={() => setCurating(c => !c)}
-                  style={curating ? { background: '#ff5a5a', color: '#12140f', fontWeight: 600 } : undefined}
-                  title="Curate the neighborhood — the street polygon is included by default; click an outside ghost to re-activate it, an inside building to hide it">
-                  {curating ? '✓ Done editing' : '✎ Edit buildings'}
-                </button>
-                {curating
-                  ? <span className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 4 }}>
-                      +{activate.size} re-activated · −{hide.size} hidden · click a ghost to add, a building to drop
-                    </span>
-                  : (activate.size + hide.size) > 0 && <span className="carto-meta--value">+{activate.size} / −{hide.size}</span>}
-              </div>
-            )}
-
-            {/* Descriptive metadata — the hood's display name + a short blurb
-                (the blurb doubles as the public SEO/description). Persisted to
-                neighborhood.json; independent of the geometry above. */}
+            {/* ── DETAILS ── public display name + a short blurb (doubles as the SEO
+                description). Persisted to neighborhood.json; independent of geometry. */}
             {corners?.closed && (
-              <div style={{ marginTop: 12 }}>
-                <div className="carto-label" style={{ cursor: 'default', flex: 'none', marginBottom: 6 }}>Name & blurb</div>
+              <div className="carto-subsection">
+                <div className="carto-subsection-header">Details</div>
                 <div className="carto-row">
                   <input className="carto-input" value={name} placeholder="neighborhood name" spellCheck={false}
                     onChange={e => setName(e.target.value)} />
                 </div>
                 <div className="carto-row" style={{ marginTop: 6 }}>
-                  <textarea className="carto-input" value={blurb} placeholder="short blurb — bounded by…, the history in a line"
+                  <textarea className="carto-input" value={blurb} placeholder="short SEO blurb"
                     rows={2} spellCheck={false} style={{ resize: 'vertical', minHeight: 44 }}
                     onChange={e => setBlurb(e.target.value)} />
                 </div>
