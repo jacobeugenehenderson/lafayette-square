@@ -166,10 +166,16 @@ export default function Toolbar() {
  */
 function LooksMenu() {
   const looks = useCartographStore(s => s.looks)
+  const scene = useCartographStore(s => s.scene)
   const activeLookId = useCartographStore(s => s.activeLookId)
   const setActiveLook = useCartographStore(s => s.setActiveLook)
   const createLook = useCartographStore(s => s.createLook)
   const deleteActiveLook = useCartographStore(s => s.deleteActiveLook)
+  // Looks ≠ Neighborhoods. This menu is the LOOKS of the CURRENT neighborhood
+  // (its seasonal/sponsor presets — "Spring", "Prom", "Schnuck's Sponsorship");
+  // NEIGHBORHOOD switching lives in the Extent tool. So filter to the active
+  // scene's looks — never list another neighborhood's looks here.
+  const sceneLooks = (looks || []).filter(l => l.scene === scene)
 
   // Custom dropdown — a <button> + absolute-positioned popup, NOT a native
   // <select>. The native control's macOS UA stylesheet renders taller than
@@ -180,7 +186,10 @@ function LooksMenu() {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef(null)
   const activeEntry = (looks || []).find(l => l.id === activeLookId)
-  const label = activeEntry?.name || 'Lafayette Square'
+  // Before `looks` finishes loading, activeEntry is undefined — fall back to the
+  // persisted active id (the ACTUAL look/scene being loaded), NOT a hardcoded
+  // 'Lafayette Square' that flashed the wrong name until load settled.
+  const label = activeEntry?.name || activeLookId || '…'
 
   // Close on outside click + Escape.
   useEffect(() => {
@@ -228,7 +237,7 @@ function LooksMenu() {
       </button>
       {open && (
         <div className="carto-looks-popup carto-glass" role="listbox">
-          {(looks || []).map(l => (
+          {sceneLooks.map(l => (
             <button
               key={l.id}
               type="button"
