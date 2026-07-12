@@ -644,6 +644,20 @@ export default function ExtentApp() {
     if (scene && useCartographStore.getState().scene !== scene) setStoreScene(scene)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // Space-to-pan (design-tool convention): the map pans ONLY while SPACE is held,
+  // so the plain cursor stays a precise picker for clicking boundary streets. Scroll
+  // wheel still zooms. Guarded so Space typed in the panel's text fields is unaffected.
+  const [panMode, setPanMode] = useState(false)
+  useEffect(() => {
+    const typing = (t) => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+    const down = (e) => { if (e.code === 'Space' && !typing(e.target)) { e.preventDefault(); setPanMode(true) } }
+    const up = (e) => { if (e.code === 'Space') setPanMode(false) }
+    const clear = () => setPanMode(false)
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    window.addEventListener('blur', clear)
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', clear) }
+  }, [])
   const markerActive = useCartographStore(s => s.markerActive)
   const controlsRef = useRef(null)
   const orthoRef = useRef(null)
@@ -1185,7 +1199,7 @@ export default function ExtentApp() {
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
-      <div className="carto-canvas-wrap" style={{ cursor: curating ? 'pointer' : 'grab' }}>
+      <div className="carto-canvas-wrap" style={{ cursor: panMode ? 'grab' : (curating ? 'pointer' : 'crosshair') }}>
         <Canvas
           orthographic
           frameloop="always"
@@ -1210,7 +1224,7 @@ export default function ExtentApp() {
             ref={controlsRef}
             makeDefault
             enableRotate={false}
-            enablePan={!markerActive}
+            enablePan={panMode && !markerActive}
             enableZoom
             screenSpacePanning
             minZoom={0.01}
