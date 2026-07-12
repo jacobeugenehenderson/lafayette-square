@@ -798,19 +798,36 @@ export default function ExtentApp() {
     return { corners: pts, centroid, radius: Math.round(radius), closed: true, source: 'official' }
   }, [official, geo])
 
-  // Effective boundary: named streets (precise, once ≥3 resolve) OVERRIDE the
-  // official best-guess; else the official boundary if adopted; else the partial
-  // street result (so the "not closed" hint still shows while naming).
+  // A COMMITTED hood's boundary IS the polygon written at commit —
+  // neighborhood_boundary.json → sceneBoundary.polygon (the snap-routed, street-
+  // following MEMBERSHIP polygon). That's what the prebake view must show + clip
+  // buildings to, NOT the live official/street corners (which would re-derive the
+  // raw admin ring). Centroid = the polygon's own area-weighted centroid.
+  const committedCorners = useMemo(() => {
+    const poly = sceneBoundary?.polygon
+    if (!committed || !Array.isArray(poly) || poly.length < 3) return null
+    let A = 0, gx = 0, gz = 0
+    for (let i = 0; i < poly.length; i++) { const p = poly[i], q = poly[(i + 1) % poly.length]; const cr = p.x * q.z - q.x * p.z; A += cr; gx += (p.x + q.x) * cr; gz += (p.z + q.z) * cr }
+    A *= 0.5
+    const centroid = Math.abs(A) > 1 ? { x: gx / (6 * A), z: gz / (6 * A) } : { x: 0, z: 0 }
+    let radius = 0; for (const p of poly) radius = Math.max(radius, Math.hypot(p.x - centroid.x, p.z - centroid.z))
+    return { corners: poly, centroid, radius: Math.round(radius), closed: true, source: 'committed' }
+  }, [committed, sceneBoundary])
+
+  // Effective boundary: a COMMITTED hood shows the polygon it was committed with;
+  // else named streets (once ≥3 resolve) OVERRIDE the official best-guess; else the
+  // official geocoded ring.
   // INVARIANT: the boundary is always an enclosed polygon — never an open state.
   // Selected streets REFINE it (win only when they form a CLOSED ring, clean for a
   // simple arterial loop like LS); otherwise the official geocoded ring is the
   // polygon — unconditionally, not gated on the `useOfficial` toggle. So a hood with
   // an official boundary can always Pour to a closed polygon; streets never gate it.
   const corners = useMemo(() => {
+    if (committedCorners) return committedCorners
     if (streetCorners?.closed) return streetCorners
     if (officialCorners) return officialCorners
     return streetCorners
-  }, [streetCorners, officialCorners])
+  }, [committedCorners, streetCorners, officialCorners])
 
   // Roster membership (must follow `corners`): default = centroid in the
   // boundary-street polygon; overrides layer on top.
