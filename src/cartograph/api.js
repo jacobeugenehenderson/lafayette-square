@@ -109,6 +109,31 @@ export async function fetchStreetGeom(scene, name) {
   return res.json()
 }
 
+// Extent hub: the neighborhoods that exist (scene data dirs) — openable even
+// without a baked Look (the Look pulldown can't reach a fetched-but-unpoured hood).
+export async function fetchScenes() {
+  const res = await fetch(`${BASE}/scenes`)
+  if (!res.ok) return { scenes: [] }
+  return res.json()
+}
+
+// Extent editor: all named street polylines for the clickable boundary layer.
+export async function fetchStreets(scene) {
+  const res = await fetch(sceneUrl(scene, 'streets'))
+  if (!res.ok) return { streets: [] }
+  return res.json()
+}
+
+// Extent editor: the HEALED boundary-street process — visually-selected street
+// names (any order) → order-independent perimeter polygon (+ gaps/connected).
+export async function fetchBoundaryFromStreets(scene, names) {
+  const res = await fetch(sceneUrl(scene, 'boundary-from-streets'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ names }),
+  })
+  if (!res.ok) return { corners: [], closed: false, gaps: [], streets: [] }
+  return res.json()
+}
+
 // Extent editor: the extent DRAFT + metadata (name/blurb/sides/radius). Auto-
 // saved from the panel; loaded on open to restore selections across reloads.
 export async function fetchNeighborhood(scene) {

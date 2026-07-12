@@ -321,6 +321,118 @@ function computeExtentCorners(scene, sides) {
   return { corners, centroid, radius: Math.round(radius), edges, streets, closed: corners.length === sides.length && sides.length >= 3 }
 }
 
+// The HEALED boundary-street process — ORDER-INDEPENDENT visual selection.
+// The operator clicks the real boundary streets on the aerial (any order, N of
+// them, not 4 cardinal slots). We assemble the perimeter ring from the junctions
+// the selected streets share: a corner is a degree≥3 junction that TWO selected
+// streets both touch; two streets are adjacent if they share a corner; a clean
+// perimeter is a single cycle where every street has exactly two boundary
+// neighbours. Returns the polygon + per-street `connected` + the `gaps` (streets
+// that don't yet close), so the operator sees exactly what to fix. This sidesteps
+// the name-unreliability the perimeter doctrine warns about — selection is on the
+// hydrated geometry, not typed names driving geometry.
+function computeBoundaryFromSelection(scene, names) {
+  const skel = getSkeleton(scene)
+  if (!skel) return { error: `no skeleton.json for scene '${scene}'` }
+  const r2 = (v) => Math.round(v * 100) / 100
+  const uniq = [...new Set((names || []).map(n => (n || '').trim()).filter(Boolean))]
+  const chainsOf = (nm) => skel.streets.filter(s => (s.name === nm || s.corridor === nm) && s.points && s.points.length >= 2)
+  const junctions = skel.junctions.filter(j => j.degree >= 3)
+  // Per selected street: the junctions it touches (a corner candidate is a junction
+  // two streets share). Precomputed once so pairwise adjacency is set-intersection.
+  const info = uniq.map(nm => {
+    const chains = chainsOf(nm)
+    const touched = new Set()
+    for (let ji = 0; ji < junctions.length; ji++) if (distPointToChains(junctions[ji], chains) < CORNER_EPS) touched.add(ji)
+    return { name: nm, touched, polylines: chains.map(c => c.points.map(p => [r2(p.x), r2(p.z)])) }
+  })
+  const byName = new Map(info.map(s => [s.name, s]))
+  // The corner between two streets = the junction they share NEAREST the framed
+  // center (origin) — two long arterials can cross twice; the boundary corner is
+  // the one that bounds the neighborhood.
+  const cornerBetween = (a, b) => {
+    const A = byName.get(a), B = byName.get(b)
+    if (!A || !B) return null
+    let best = null
+    for (const ji of A.touched) {
+      if (!B.touched.has(ji)) continue
+      const j = junctions[ji], d2 = j.x * j.x + j.z * j.z
+      if (!best || d2 < best.d2) best = { d2, pt: { x: r2(j.x), z: r2(j.z) } }
+    }
+    return best ? best.pt : null
+  }
+  const adj = new Map(uniq.map(n => [n, []]))
+  for (let i = 0; i < uniq.length; i++) for (let k = i + 1; k < uniq.length; k++) {
+    if (cornerBetween(uniq[i], uniq[k])) { adj.get(uniq[i]).push(uniq[k]); adj.get(uniq[k]).push(uniq[i]) }
+  }
+  // Gaps: streets not sitting on exactly two boundary neighbours (a clean ring is
+  // degree-2 everywhere). 0 or 1 → dangling; 3+ → an interior street was picked.
+  const gaps = uniq.filter(n => adj.get(n).length !== 2)
+  // Walk the ring (order-independent): from any street, follow un-visited neighbours.
+  let ordered = uniq
+  if (uniq.length >= 3 && gaps.length === 0) {
+    const visited = new Set(); const walk = []
+    let prev = null, cur = uniq[0]
+    while (cur && !visited.has(cur)) {
+      walk.push(cur); visited.add(cur)
+      const nbrs = adj.get(cur).filter(n => n !== prev)
+      prev = cur
+      cur = nbrs.find(n => !visited.has(n))
+    }
+    if (walk.length === uniq.length) ordered = walk   // a single clean cycle
+  }
+  const closed = uniq.length >= 3 && gaps.length === 0 && ordered.length === uniq.length
+    && !!cornerBetween(ordered[ordered.length - 1], ordered[0])
+  const corners = []
+  if (closed) for (let i = 0; i < ordered.length; i++) {
+    const c = cornerBetween(ordered[i], ordered[(i + 1) % ordered.length])
+    if (c) corners.push(c)
+  }
+  // Area-weighted centroid + circumscribing radius (same construction as the sides path).
+  let centroid = null
+  if (corners.length >= 3) {
+    let Ar = 0, cx = 0, cz = 0
+    for (let i = 0; i < corners.length; i++) {
+      const p = corners[i], q = corners[(i + 1) % corners.length]
+      const cr = p.x * q.z - q.x * p.z
+      Ar += cr; cx += (p.x + q.x) * cr; cz += (p.z + q.z) * cr
+    }
+    Ar *= 0.5
+    if (Math.abs(Ar) > 1) centroid = { x: r2(cx / (6 * Ar)), z: r2(cz / (6 * Ar)) }
+  }
+  if (!centroid && corners.length) {
+    let cx = 0, cz = 0; for (const c of corners) { cx += c.x; cz += c.z }
+    centroid = { x: r2(cx / corners.length), z: r2(cz / corners.length) }
+  }
+  let radius = 0
+  if (centroid) for (const c of corners) radius = Math.max(radius, Math.hypot(c.x - centroid.x, c.z - centroid.z))
+  const streets = info.map(s => {
+    let direction = null
+    if (centroid && s.polylines.length) {
+      let sx = 0, sz = 0, n = 0
+      for (const pl of s.polylines) for (const [x, z] of pl) { sx += x; sz += z; n++ }
+      if (n) direction = cardinalOf(sx / n - centroid.x, sz / n - centroid.z)
+    }
+    return { name: s.name, polylines: s.polylines, direction, connected: adj.get(s.name).length === 2 }
+  })
+  return { corners, centroid, radius: Math.round(radius), ordered, gaps, streets, closed, source: 'selected' }
+}
+
+// All named streets' polylines for the clickable boundary-selection layer — one
+// entry per chain (corridor-collapsed name), synthetic-highway names dropped.
+function streetsGeomFor(scene) {
+  const skel = getSkeleton(scene)
+  if (!skel) return { streets: [] }
+  const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
+  const r2 = (v) => Math.round(v * 100) / 100
+  const streets = []
+  for (const s of skel.streets) {
+    if (!s.name || SYNTHETIC_NAME.test(s.name) || !s.points || s.points.length < 2) continue
+    streets.push({ name: s.corridor || s.name, major: MAJOR.has(s.highway || ''), points: s.points.map(p => [r2(p.x), r2(p.z)]) })
+  }
+  return { streets }
+}
+
 // Aerial labels for the Extent view — sourced from the SKELETON (welded chains,
 // corridor-collapsed) so a directional corridor shows ONE label ("Big Bend
 // Boulevard") instead of North/South separately. One label per corridor/street
@@ -889,6 +1001,34 @@ createServer(async (req, res) => {
     return
   }
 
+  // GET /<scene>/streets — all named street polylines for the clickable boundary layer.
+  const streetsMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/streets$/)
+  if (req.method === 'GET' && streetsMatch && !RESERVED_PREFIXES.has(streetsMatch[1])) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(streetsGeomFor(streetsMatch[1])))
+    return
+  }
+
+  // POST /<scene>/boundary-from-streets — body { names:[...] } → the ORDER-INDEPENDENT
+  // perimeter polygon (the healed boundary-street process; visual multi-segment selection).
+  const bfsMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/boundary-from-streets$/)
+  if (req.method === 'POST' && bfsMatch && !RESERVED_PREFIXES.has(bfsMatch[1])) {
+    const scene = bfsMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { names } = JSON.parse(body || '{}')
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(computeBoundaryFromSelection(scene, Array.isArray(names) ? names : [])))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
   // GET /<scene>/building-footprints — current-frame footprint rings for the
   // Extent overlay + roster editor (one merged geometry client-side).
   const bldgFpMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/building-footprints$/)
@@ -929,6 +1069,31 @@ createServer(async (req, res) => {
       })
       return
     }
+  }
+
+  // GET /scenes — the neighborhoods that EXIST (scene data dirs), for the Extent
+  // hub: open any of them, not just the ones with a baked Look (the Look pulldown
+  // can't reach a fetched-but-unpoured hood like Altadena). Reports name/committed/
+  // hasData so the hub can label + sort them. Scene-independent.
+  if (req.method === 'GET' && path === '/scenes') {
+    const dataDir = join(import.meta.dirname, 'data')
+    const scenes = []
+    try {
+      for (const id of readdirSync(dataDir)) {
+        if (id.startsWith('_') || id.startsWith('.') || id === 'toy') continue
+        let st; try { st = statSync(join(dataDir, id)) } catch { continue }
+        if (!st.isDirectory()) continue
+        const hasData = existsSync(join(dataDir, id, 'geography.json'))
+        let name = '', committed = false
+        const nbP = join(dataDir, id, 'neighborhood.json')
+        if (existsSync(nbP)) { try { const nb = JSON.parse(readFileSync(nbP, 'utf8')); name = nb.name || ''; committed = !!nb.committed } catch { /* ignore */ } }
+        scenes.push({ id, name, committed, hasData })
+      }
+    } catch { /* ignore */ }
+    scenes.sort((a, b) => (b.committed - a.committed) || a.id.localeCompare(b.id))
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ scenes }))
+    return
   }
 
   // POST /geocode — body { q } → { bbox, anchors, official }. The Extent search
@@ -973,6 +1138,39 @@ createServer(async (req, res) => {
         const ok = bbox && ['minLat', 'maxLat', 'minLon', 'maxLon'].every(k => Number.isFinite(bbox[k]))
           && bbox.maxLat > bbox.minLat && bbox.maxLon > bbox.minLon
         if (!ok) throw new Error('need a valid bbox {minLat,maxLat,minLon,maxLon}')
+        // Area guard — a neighborhood fetch is bounded. An unbounded frame (e.g.
+        // "Cape Cod" → a 63×70 km region with no official boundary) asks Overpass
+        // for thousands of km²; it rejects the oversized query and fetch.js dies
+        // with a swallowed code=1. Refuse it up front with an actionable message
+        // instead. LS ≈ 10 km²; a large CDP (Altadena r=4483) ≈ 63 km²; the cap
+        // is generous enough for a real hood, tight enough to catch a whole region.
+        const midLat = (bbox.minLat + bbox.maxLat) / 2
+        const latKm = (bbox.maxLat - bbox.minLat) * 111.0
+        const lonKm = (bbox.maxLon - bbox.minLon) * 111.32 * Math.cos((midLat * Math.PI) / 180)
+        const areaKm2 = latKm * lonKm
+        const MAX_FETCH_KM2 = 200
+        if (areaKm2 > MAX_FETCH_KM2) {
+          throw new Error(`Framed area is ${Math.round(areaKm2)} km² — too large to fetch as one neighborhood (max ${MAX_FETCH_KM2} km²). Search a specific neighborhood, or frame a smaller area.`)
+        }
+        // Relocation guard — a fetch-extent NEVER moves an existing installation to
+        // a different city. If this scene already has a geography.json and the new
+        // bbox center is >50 km from its current center, refuse: that's authoring a
+        // DIFFERENT place into an existing scene (the LS→Altadena clobber). A
+        // legitimate re-frame/re-scope of the SAME hood moves metres, never 50 km.
+        // The Extent tool now authors per-search scenes, so this is defense-in-depth.
+        const geoPath = sceneDataPaths(scene).geography
+        if (existsSync(geoPath)) {
+          try {
+            const cur = JSON.parse(readFileSync(geoPath, 'utf8'))
+            if (Number.isFinite(cur.lat) && Number.isFinite(cur.lon)) {
+              const newLat = midLat, newLon = (bbox.minLon + bbox.maxLon) / 2
+              const dKm = Math.hypot((newLat - cur.lat) * 111, (newLon - cur.lon) * 111.32 * Math.cos((midLat * Math.PI) / 180))
+              if (dKm > 50) {
+                throw new Error(`Refusing to relocate the existing '${scene}' installation ${Math.round(dKm)} km to a different place. Author a new neighborhood in its own scene instead of overwriting '${scene}'.`)
+              }
+            }
+          } catch (e) { if (/Refusing to relocate/.test(e.message)) throw e /* else: unreadable geo, allow */ }
+        }
         const geo = writeGeographyFromBbox(scene, bbox)
         const here = import.meta.dirname
         const scriptsDir = join(here, '..', 'scripts')
@@ -983,8 +1181,13 @@ createServer(async (req, res) => {
         const lastLine = (r) => (r.stderr || r.stdout || '').trim().split('\n').filter(Boolean).pop() || 'failed'
         const sources = {}
         // ── OSM (REQUIRED backbone: streets → skeleton → nameable) ──
-        await runShell('node fetch.js', { cwd: here, env, timeout: 240000 })
-        await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
+        // runCapture (not runShell) so a failure surfaces fetch.js's OWN last line
+        // — the real reason (Overpass rate-limit, oversized query, network) — to
+        // the client, instead of runShell's generic "Command failed (code=1)".
+        const osmR = await runCapture('node fetch.js', { cwd: here, env, timeout: 240000 })
+        if (osmR.code !== 0) throw new Error(`OSM fetch failed — ${lastLine(osmR)}`)
+        const skelR = await runCapture('node skeleton.js', { cwd: here, env, timeout: 120000 })
+        if (skelR.code !== 0) throw new Error(`skeleton build failed — ${lastLine(skelR)}`)
         _skelCache.delete(scene)
         sources.osm = { ok: true, count: countJson(join(raw, 'osm.json')) }
         // ── Buildings (MSBF — generic ML footprints, works ANY region) ──
@@ -1125,9 +1328,11 @@ createServer(async (req, res) => {
         // The bake culls building MEMBERSHIP by point-in-this-polygon; the circle
         // stays the slab disc / fade.
         const boundary = makeCircleBoundary(radius)
-        const cornerRes = computeExtentCorners(scene, (sides || []).map(s => (s || '').trim()).filter(Boolean))
+        // The healed process: re-resolve the polygon ORDER-INDEPENDENTLY from the
+        // visually-selected boundary streets, in the NOW re-centered frame.
+        const cornerRes = computeBoundaryFromSelection(scene, (sides || []).map(s => (s || '').trim()).filter(Boolean))
         if (cornerRes && Array.isArray(cornerRes.corners) && cornerRes.corners.length >= 3) {
-          // Named streets, when the operator provides them, are the precise
+          // Selected streets, when the operator provides them, are the precise
           // (skeleton-snapped) membership boundary — the explicit override.
           boundary.polygon = cornerRes.corners
         } else if (Array.isArray(polygon) && polygon.length >= 3) {

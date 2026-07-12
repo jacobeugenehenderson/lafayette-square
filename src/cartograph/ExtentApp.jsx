@@ -31,6 +31,7 @@ import {
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourScene, fetchRibbons, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeScene, rollbackExtent,
+  fetchStreets, fetchBoundaryFromStreets, fetchScenes,
 } from './api.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
@@ -245,23 +246,31 @@ function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
   )
 }
 
-// The named sides drawn on the aerial (confirm which street each pick IS) + the
-// dropdown HOVER preview in a brighter colour (see a candidate before selecting).
-function ExtentStreets({ streets, preview }) {
+// The HEALED boundary-street process — every hydrated street drawn as a CLICKABLE
+// line. The operator clicks the real boundary streets (any order); selected ones
+// light up cyan, gaps (a selected street that doesn't yet close the ring) go amber.
+// This is the visual multi-segment selection the doctrine calls for — picking on
+// hydrated geometry, never typed names driving geometry. Clicking a chain toggles
+// its whole (corridor-collapsed) name, so the entire street selects at once.
+function ExtentClickableStreets({ streets, selected, gaps, onToggle }) {
+  const sel = useMemo(() => new Set(selected), [selected])
+  const gapSet = useMemo(() => new Set(gaps), [gaps])
+  if (!streets?.length) return null
   return (
     <group>
-      {(streets || []).flatMap((s, i) => (s.polylines || []).map((poly, j) => (
-        poly.length >= 2 && (
-          <Line key={`sel-${i}-${j}`} points={poly.map(([x, z]) => [x, 3, z])}
-            color="#38e1ff" lineWidth={2.5} transparent opacity={0.7} />
+      {streets.map((s, i) => {
+        const isSel = sel.has(s.name)
+        const isGap = isSel && gapSet.has(s.name)
+        const color = isGap ? '#ffb038' : isSel ? '#38e1ff' : (s.major ? '#cbd3cd' : '#79827a')
+        const width = isSel ? 4.5 : (s.major ? 2.2 : 1.4)
+        const opacity = isSel ? 0.98 : (s.major ? 0.7 : 0.48)
+        const y = isSel ? 3.2 : 2.6
+        return (
+          <Line key={`${i}-${s.name}`} points={s.points.map(([x, z]) => [x, y, z])}
+            color={color} lineWidth={width} transparent opacity={opacity}
+            onClick={(e) => { e.stopPropagation(); onToggle(s.name) }} />
         )
-      )))}
-      {preview && (preview.polylines || []).map((poly, j) => (
-        poly.length >= 2 && (
-          <Line key={`prev-${j}`} points={poly.map(([x, z]) => [x, 3.6, z])}
-            color="#ffe14d" lineWidth={4} />
-        )
-      ))}
+      })}
     </group>
   )
 }
@@ -512,8 +521,43 @@ function SideInput({ index, value, placeholder, names, onChange, onRemove, onHov
   )
 }
 
+// The EMPTY WORKSPACE — a neutral gray grid shown before any place is searched.
+// The tool opens to THIS, not to Lafayette Square: nothing is loaded, nothing can
+// be touched. A search replaces it with the place's aerial. A large plane + grid,
+// centered on the origin (the default camera looks straight down at it).
+function WorkspaceGrid() {
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.3, 0]}>
+        <planeGeometry args={[40000, 40000]} />
+        <meshBasicMaterial color="#43463f" />
+      </mesh>
+      <gridHelper args={[40000, 160, '#585c53', '#4a4d45']} position={[0, -0.1, 0]} />
+    </group>
+  )
+}
+
+// Slug a searched place into a scene id: primary place name (before the first
+// comma) → lowercase → non-alnum to hyphens → collapse. "Altadena, Los Angeles
+// County…" → "altadena"; "Hi-Pointe + De Mun" → "hi-pointe-de-mun". Falls back
+// to the raw query. This is the NEW neighborhood's own scene — never the active
+// (Lafayette Square) one — so authoring it can't touch any other installation.
+function sluggifyPlace(anchors, query) {
+  const primary = (anchors?.[0]?.displayName || query || '').split(',')[0]
+  const slug = primary.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return slug || 'neighborhood'
+}
+
 export default function ExtentApp() {
-  const scene = useCartographStore(s => s.scene)
+  const setStoreScene = useCartographStore(s => s.setScene)
+  // The neighborhood being edited. Entering Extent FROM an extant hood loads THAT
+  // hood's seed (init from the active render scene); "New neighborhood" clears to
+  // null = the EMPTY WORKSPACE (a gray grid + search + the list of existing hoods).
+  // A search establishes a new hood's OWN scene (slug); everything scene-keyed
+  // follows it, so authoring one hood never reads or overwrites another.
+  const [scene, setSceneLocal] = useState(() => {
+    try { const s = useCartographStore.getState().scene; return (s && s !== 'toy') ? s : null } catch { return null }
+  })
   const setShot = useCartographStore(s => s.setShot)
   const sceneGeography = useCartographStore(s => s.sceneGeography)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
@@ -531,9 +575,24 @@ export default function ExtentApp() {
   useEffect(() => {
     let cancelled = false
     setLabels([])
+    if (!scene) return
     fetchSkeletonLabels(scene)
       .then(r => { if (!cancelled) setLabels(r.labels || []) })
       .catch(() => { if (!cancelled) setLabels([]) })
+    return () => { cancelled = true }
+  }, [scene, seedToken])
+
+  // All hydrated street polylines — the CLICKABLE boundary-selection layer (the
+  // healed process). Loaded per scene + after a fresh Fetch; empty until a fetch
+  // hydrates the skeleton (search alone shows only the official best-guess).
+  const [allStreets, setAllStreets] = useState([])
+  useEffect(() => {
+    let cancelled = false
+    setAllStreets([])
+    if (!scene) return
+    fetchStreets(scene)
+      .then(r => { if (!cancelled) setAllStreets(r.streets || []) })
+      .catch(() => { if (!cancelled) setAllStreets([]) })
     return () => { cancelled = true }
   }, [scene, seedToken])
 
@@ -544,6 +603,7 @@ export default function ExtentApp() {
   useEffect(() => {
     let cancelled = false
     setFootprints(null)
+    if (!scene) return
     fetchBuildingFootprints(scene)
       .then(r => { if (!cancelled) setFootprints(r) })
       .catch(() => { if (!cancelled) setFootprints(null) })
@@ -562,6 +622,7 @@ export default function ExtentApp() {
     let cancelled = false
     ovHydrated.current = false
     setCurating(false); setActivate(new Set()); setHide(new Set())
+    if (!scene) return
     fetchBuildingOverrides(scene)
       .then(r => { if (!cancelled) { setActivate(new Set(r.activate || [])); setHide(new Set(r.hide || [])); ovHydrated.current = true } })
       .catch(() => { ovHydrated.current = true })
@@ -582,6 +643,7 @@ export default function ExtentApp() {
   useEffect(() => {
     let cancelled = false
     setNames({ major: [], minor: [] })
+    if (!scene) return
     fetchStreetNames(scene)
       .then(r => { if (!cancelled) setNames(r || { major: [], minor: [] }) })
       .catch(() => { if (!cancelled) setNames({ major: [], minor: [] }) })
@@ -601,7 +663,7 @@ export default function ExtentApp() {
   const [building, setBuilding] = useState(false)
   const [buildStage, setBuildStage] = useState(null)
   const [previewStreet, setPreviewStreet] = useState(null)
-  const [sides, setSides] = useState(['', '', '', ''])
+  const [sides, setSides] = useState([])   // selected boundary streets (visual, order-independent)
   const [streetCorners, setStreetCorners] = useState(null)   // resolved from named boundary streets
   // The official boundary (best-guess fill from the geocoder) + whether we're
   // adopting it. Named streets OVERRIDE it when the operator resolves ≥3 (§0.0).
@@ -679,56 +741,58 @@ export default function ExtentApp() {
     setActivate(a); setHide(h)
   }
 
-  // On scene open: reset, then restore the auto-saved draft (sides/radius) so the
-  // operator's selections survive reloads.
+  // On scene establish (a search sets it) or committed re-open: clear transient
+  // geometry and, for a COMMITTED hood, restore its saved extent from disk. It
+  // deliberately does NOT touch official / name / blurb / located — the SEARCH
+  // owns those and this effect fires right after onSearch sets the scene, so
+  // clearing them here would wipe the best-guess first pass (the old race).
+  // `scene === null` (empty workspace) is a clean no-op: nothing loads.
   useEffect(() => {
-    setSeedError(null); setLocated(false); setCommitted(false); setFetchSources(null)
-    setSides(['', '', '', '']); setStreetCorners(null); setRadiusTouched(false); setPreviewStreet(null)
-    setOfficial(null); setUseOfficial(false); setAnchors(null); setName(''); setBlurb('')
+    if (!scene) return
+    setSeedError(null); setFetchSources(null)
+    setSides([]); setStreetCorners(null); setPreviewStreet(null)
     setCommittedRadius(0); setRescoping(false)
     draftHydrated.current = false
     let cancelled = false
-    fetchNeighborhood(scene).then(async (nb) => {
-      if (cancelled || !nb) return
-      if (Array.isArray(nb.sides) && nb.sides.some(Boolean)) {
-        const s = [...nb.sides]; while (s.length < 4) s.push('')
-        setSides(s)
+    ;(async () => {
+      const nb = await fetchNeighborhood(scene).catch(() => null)
+      if (cancelled) return
+      if (nb) {
+        if (Array.isArray(nb.sides) && nb.sides.some(Boolean)) setSides(nb.sides.filter(Boolean))
+        if (nb.name) setName(nb.name)
+        if (nb.blurb) setBlurb(nb.blurb)
+        if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
+        // Committed hood → prefer its OWN boundary over any official best-guess.
+        if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0); setUseOfficial(false) }
       }
-      setName(nb.name || ''); setBlurb(nb.blurb || '')
-      if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
-      if (nb.committed) {
-        setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0)
-        // A committed hood ALWAYS shows its built extent when you return to Extent
-        // (never the fresh-place blank). Ensure the store has the frame + circle —
-        // a nav elsewhere in cartograph can leave them absent — then reveal.
-        const st = useCartographStore.getState()
-        if (!st.sceneGeography || !st.sceneBoundary) {
-          const [g, b] = await Promise.all([
-            st.sceneGeography ? Promise.resolve(st.sceneGeography) : fetchGeography(scene).catch(() => null),
-            st.sceneBoundary ? Promise.resolve(st.sceneBoundary) : fetchBoundary(scene).catch(() => null),
-          ])
-          if (cancelled) return
-          const upd = {}
-          if (g && !st.sceneGeography) upd.sceneGeography = g
-          if (b && !st.sceneBoundary) upd.sceneBoundary = b
-          if (Object.keys(upd).length) useCartographStore.setState(upd)
-        }
-        if (!cancelled) setLocated(true)
-      }
+      // Load the frame + boundary so an EXISTING hood (committed OR fetched-but-
+      // in-progress, like Altadena) shows its aerial + circle on entry. For a fresh
+      // SEARCH the store geo is already set (disk has none yet) → we keep it and
+      // never touch official/located, so the best-guess first pass isn't wiped.
+      const st = useCartographStore.getState()
+      const [g, b] = await Promise.all([
+        st.sceneGeography ? Promise.resolve(st.sceneGeography) : fetchGeography(scene).catch(() => null),
+        fetchBoundary(scene).catch(() => null),
+      ])
+      if (cancelled) return
+      const upd = {}
+      if (g && !st.sceneGeography) upd.sceneGeography = g
+      if (b) upd.sceneBoundary = b
+      if (Object.keys(upd).length) useCartographStore.setState(upd)
+      if (g || st.sceneGeography) setLocated(true)
       draftHydrated.current = true
-    }).catch(() => { draftHydrated.current = true })
+    })().catch(() => { draftHydrated.current = true })
     return () => { cancelled = true }
   }, [scene])
 
-  // An already-committed neighborhood (has a boundary) shows its map on open;
-  // a fresh/uncommitted scene stays blank until the operator searches. (The
-  // committed hydration above is the robust path; this catches a later boundary load.)
-  useEffect(() => { if (sceneBoundary) setLocated(true) }, [sceneBoundary])
+  // A committed boundary that loads later also reveals the map (belt-and-suspenders
+  // to the committed hydration above). Gated on a scene so the empty workspace stays blank.
+  useEffect(() => { if (scene && sceneBoundary) setLocated(true) }, [scene, sceneBoundary])
 
   // Draft auto-save (implicit) — sides + radius, debounced. Skips the initial
-  // hydration so it doesn't immediately re-write what it just loaded.
+  // hydration + the empty workspace (no scene → nothing to save).
   useEffect(() => {
-    if (!draftHydrated.current) return
+    if (!draftHydrated.current || !scene) return
     const clean = sides.map(s => s.trim()).filter(Boolean)
     const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim() }).catch(() => {}) }, 500)
     return () => clearTimeout(t)
@@ -739,12 +803,38 @@ export default function ExtentApp() {
   const onHoverStreet = (name) => {
     clearTimeout(previewTimer.current)
     if (!name) { setPreviewStreet(null); return }
+    if (!scene) return
     previewTimer.current = setTimeout(() => {
       fetchStreetGeom(scene, name).then(r => setPreviewStreet({ name, polylines: r.polylines || [] })).catch(() => {})
     }, 50)
   }
 
   const [searching, setSearching] = useState(false)
+
+  // The neighborhoods that EXIST — the hub list (open any of them, incl. hoods with
+  // no baked Look). Refreshed on mount + whenever we return to the hub (scene null).
+  const [scenesList, setScenesList] = useState([])
+  useEffect(() => {
+    let cancelled = false
+    fetchScenes().then(r => { if (!cancelled) setScenesList(r.scenes || []) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [scene])
+
+  // Open an existing neighborhood — make it the active scene + load its seed (the
+  // [scene] effect hydrates the frame/boundary). Clears any in-flight search state.
+  const openScene = (id) => {
+    setStoreScene(id)
+    setLocated(false); setOfficial(null); setUseOfficial(false); setAnchors(null)
+    setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
+    setSceneLocal(id)
+  }
+  // New neighborhood — the empty workspace: no scene bound, the gray grid + search.
+  const newNeighborhood = () => {
+    setSceneLocal(null)
+    setLocated(false); setOfficial(null); setUseOfficial(false); setAnchors(null)
+    setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
+    setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null)
+  }
 
   // A frame (geography) spanning a bbox — used to re-frame the aerial on a search.
   // The aerial follows the camera over the global photo, so this is only the
@@ -758,11 +848,12 @@ export default function ExtentApp() {
     }
   }
 
-  // SEARCH → geocode the '+'-joined anchors → union bbox → re-frame the aerial
-  // (NO fetch — the carve-out is the explicit "Fetch this view" over the framed
-  // viewport). A single named place also returns its OFFICIAL boundary, adopted
-  // as the best-guess extent (the operator overrides by naming streets). Replaces
-  // the ZIP field — a hood spans several ZIPs; a ZIP spans several hoods.
+  // SEARCH → geocode the place → establish THIS place's OWN scene (slug), frame
+  // the aerial on its bbox, and adopt its OFFICIAL boundary as the best-guess
+  // first pass (§0.0) when it has one. The scene switch is the crux of the empty
+  // workspace: authoring "Altadena" targets scene `altadena` — labels/buildings/
+  // fetch all follow it, and no other installation (Lafayette Square) is read or
+  // overwritten. The carve-out stays the explicit "Fetch this view".
   const onSearch = async () => {
     const q = query.trim()
     if (!q || searching) return
@@ -770,10 +861,17 @@ export default function ExtentApp() {
     try {
       const r = await geocodePlace(q)
       if (!r?.bbox) throw new Error('nothing matched')
-      useCartographStore.setState({ sceneGeography: geoFromBbox(r.bbox) })
+      // The authoring target — a slug of the place, NEVER the active render scene.
+      const slug = sluggifyPlace(r.anchors, q)
+      setSceneLocal(slug)
+      setStoreScene(slug)   // clears store geo/boundary; set the fresh frame next
+      useCartographStore.setState({ sceneGeography: geoFromBbox(r.bbox), sceneBoundary: null })
       setAnchors(r.anchors || null)
-      // Fresh place — clear any prior boundary work.
-      setSides(['', '', '', '']); setStreetCorners(null); setRadiusTouched(false); setFetchSources(null)
+      // Fresh authoring pass — clear prior work; the [scene] effect restores a
+      // committed hood's own extent from disk if this slug already exists.
+      setSides([]); setStreetCorners(null); setFetchSources(null)
+      setRadiusM(0); setRadiusTouched(false); setName(''); setBlurb('')
+      setCommitted(false); setCommittedRadius(0)
       if (r.official) { setOfficial(r.official); setUseOfficial(true) }
       else { setOfficial(null); setUseOfficial(false) }
       setLocated(true)
@@ -784,28 +882,44 @@ export default function ExtentApp() {
     }
   }
 
-  // Fetch this view — the Phalanges over the FRAMED square: read the ortho
-  // camera's world viewport → lon/lat bbox → fetch + skeleton → reload. Guarantee:
-  // a street visible in-frame is in the bbox → in the data → nameable.
+  // Fetch this view — the Phalanges over the neighborhood: fetch + skeleton →
+  // reload. When the search knows an OFFICIAL boundary (§0.0 best-guess first
+  // pass), the fetch is BOUNDED to that boundary's lon/lat extent (+ margin), so
+  // "search Altadena → Fetch" pulls exactly the hood, scoped and reliable —
+  // never the unbounded camera frame that asked Overpass for a whole region.
+  // With no official boundary, it falls back to the framed camera viewport
+  // (guarantee: a street visible in-frame is in the bbox → nameable).
   const onFetchView = async () => {
     const cam = orthoRef.current
     if (!cam || !geo || seeding) return
     setSeeding(true); setSeedError(null)
     try {
-      const halfW = (cam.right - cam.left) / (2 * cam.zoom)
-      const halfH = (cam.top - cam.bottom) / (2 * cam.zoom)
-      const cx = cam.position.x, cz = cam.position.z
-      const [lonA, latA] = localToWgs84(geo, cx - halfW, cz - halfH)
-      const [lonB, latB] = localToWgs84(geo, cx + halfW, cz + halfH)
-      const bbox = {
-        minLat: Math.min(latA, latB), maxLat: Math.max(latA, latB),
-        minLon: Math.min(lonA, lonB), maxLon: Math.max(lonA, lonB),
+      let bbox
+      if (useOfficial && official?.ring?.length >= 3) {
+        // Bound to the official boundary (lon/lat), padded ~8% for breathing room.
+        let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity
+        for (const [lon, lat] of official.ring) {
+          if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon
+          if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat
+        }
+        const padLon = (maxLon - minLon) * 0.08, padLat = (maxLat - minLat) * 0.08
+        bbox = { minLon: minLon - padLon, maxLon: maxLon + padLon, minLat: minLat - padLat, maxLat: maxLat + padLat }
+      } else {
+        const halfW = (cam.right - cam.left) / (2 * cam.zoom)
+        const halfH = (cam.top - cam.bottom) / (2 * cam.zoom)
+        const cx = cam.position.x, cz = cam.position.z
+        const [lonA, latA] = localToWgs84(geo, cx - halfW, cz - halfH)
+        const [lonB, latB] = localToWgs84(geo, cx + halfW, cz + halfH)
+        bbox = {
+          minLat: Math.min(latA, latB), maxLat: Math.max(latA, latB),
+          minLon: Math.min(lonA, lonB), maxLon: Math.max(lonA, lonB),
+        }
       }
       const r = await fetchExtent(scene, bbox)
       setFetchSources(r?.sources || null)
       const g = await fetchGeography(scene).catch(() => null)
       if (g) useCartographStore.setState({ sceneGeography: g })
-      setSides(['', '', '', '']); setStreetCorners(null); setRadiusTouched(false)
+      setSides([]); setStreetCorners(null); setRadiusTouched(false)
       setSeedToken(t => t + 1)
     } catch (e) {
       setSeedError(e.message || 'fetch failed')
@@ -915,13 +1029,15 @@ export default function ExtentApp() {
     }
   }
 
-  // Debounced corner resolve whenever the named sides change.
+  // Debounced boundary resolve — the healed process. As the operator clicks
+  // streets, re-assemble the perimeter ORDER-INDEPENDENTLY (returns the polygon +
+  // per-street connectivity + gaps). <3 streets can't close a ring.
   useEffect(() => {
     const clean = sides.map(s => s.trim()).filter(Boolean)
-    if (clean.length < 3) { setStreetCorners(null); return }
+    if (!scene || clean.length < 3) { setStreetCorners(null); return }
     const t = setTimeout(() => {
-      fetchExtentCorners(scene, clean).then(setStreetCorners).catch(() => setStreetCorners(null))
-    }, 350)
+      fetchBoundaryFromStreets(scene, clean).then(setStreetCorners).catch(() => setStreetCorners(null))
+    }, 300)
     return () => clearTimeout(t)
   }, [sides, scene, seedToken])
 
@@ -964,10 +1080,11 @@ export default function ExtentApp() {
     for (const s of (corners?.streets || [])) if (s.name && s.direction) m[s.name] = s.direction
     return m
   }, [corners])
-  const setSide = (i, v) => setSides(prev => prev.map((s, k) => (k === i ? v : s)))
-  const removeSide = (i) => setSides(prev => prev.filter((_, k) => k !== i))
-  const addSide = () => setSides(prev => [...prev, ''])
-  const gapCount = corners?.edges ? corners.edges.filter(e => !e.corner).length : 0
+  // Click a street on the map → toggle it in/out of the boundary selection.
+  const toggleStreet = (name) => setSides(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
+  const removeStreet = (i) => setSides(prev => prev.filter((_, k) => k !== i))
+  // Gaps = selected streets that don't yet close the ring (from the resolver).
+  const gaps = streetCorners?.gaps || []
   // The circle's center for drawing: the live polygon centroid, or the origin for
   // a reopened committed hood (its geo is re-centered so the circle sits at [0,0]).
   const boundaryCentroid = corners?.centroid || (committed ? { x: 0, z: 0 } : null)
@@ -986,12 +1103,13 @@ export default function ExtentApp() {
         >
           <ExtentCamera geo={geo} controlsRef={controlsRef} orthoRef={orthoRef} />
           <ambientLight intensity={1} />
+          {!located && <WorkspaceGrid />}
           {located && <ExtentAerial geo={geo} />}
           {located && (corners?.closed || committed) && <ExtentDim centroid={boundaryCentroid} radiusM={radiusM} />}
           {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
-          {located && <ExtentStreets streets={corners?.streets} preview={previewStreet} />}
+          {located && !curating && <ExtentClickableStreets streets={allStreets} selected={sides} gaps={gaps} onToggle={toggleStreet} />}
           {located && <ExtentBoundary corners={corners?.corners} centroid={boundaryCentroid} radiusM={radiusM}
             showVertices={corners?.source !== 'official'} />}
           <MapControls
@@ -1033,16 +1151,42 @@ export default function ExtentApp() {
         <div className="carto-panel">
           <h1>Neighborhood Extent</h1>
           <div className="carto-section">
-            <h2>{scene}</h2>
-            {/* Place search — '+'-join anchors (e.g. "High Point + De Mun"); a
-                named place also seeds its official boundary. Replaces the ZIP box. */}
+            <div className="carto-row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <h2 style={{ margin: 0 }}>{name || scene || 'New neighborhood'}</h2>
+              {scene && (
+                <button className="carto-btn-sm" onClick={newNeighborhood}
+                  title="Start a new neighborhood — an empty workspace + search">＋ New</button>
+              )}
+            </div>
+
+            {/* HUB (no scene loaded) — open an existing neighborhood, or search a new one. */}
+            {!scene && scenesList.length > 0 && (
+              <div style={{ margin: '8px 0 10px' }}>
+                <div className="carto-label" style={{ cursor: 'default', flex: 'none', marginBottom: 6 }}>Open a neighborhood</div>
+                <div className="carto-row carto-row--wrap" style={{ gap: 6 }}>
+                  {scenesList.map(s => (
+                    <button key={s.id} className="carto-btn-sm" onClick={() => openScene(s.id)}
+                      title={s.committed ? 'committed' : (s.hasData ? 'in progress' : 'empty')}
+                      style={{ opacity: s.hasData ? 1 : 0.6 }}>
+                      {s.name || s.id}{s.committed ? ' ✓' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!scene && (
+              <div className="carto-extent-status" style={{ fontSize: 12, opacity: 0.8, marginBottom: 8 }}>
+                …or search a place to begin a new one — it opens in its own scene; no other neighborhood is touched.
+              </div>
+            )}
+            {/* Place search — a named place seeds its own scene + official boundary best-guess. */}
             <div className="carto-row">
-              <input className="carto-input" value={query} placeholder="search a place  ·  A + B to combine"
+              <input className="carto-input" value={query} placeholder="search a place to begin…"
                 spellCheck={false}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') onSearch() }} />
               <button className="carto-btn-sm" disabled={!query.trim() || searching} onClick={onSearch}
-                title="Find the place and frame the aerial (no fetch). Join anchors with + for a composite hood.">
+                title="Find the place, open it in its own scene, and adopt its official boundary as a best-guess first pass.">
                 {searching ? '…' : 'Search'}
               </button>
             </div>
@@ -1090,22 +1234,44 @@ export default function ExtentApp() {
             )}
 
             <div className="carto-label" style={{ cursor: 'default', flex: 'none', margin: '10px 0 8px' }}>
-              Boundary streets{official ? ' (override the official boundary)' : ''}
+              Boundary streets{official ? ' (refine the official best guess)' : ''}
             </div>
-            {sides.map((s, i) => (
-              <SideInput key={i} index={i} value={s} names={names}
-                placeholder={['west side', 'north side', 'east side', 'south side'][i] || 'street'}
-                onChange={setSide} onRemove={removeSide} onHover={onHoverStreet} dir={dirByName[s.trim()]} />
-            ))}
-            <div className="carto-row">
-              <button className="carto-look-add" onClick={addSide}>+ add street</button>
-            </div>
+            {sides.length === 0 ? (
+              <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.8 }}>
+                {allStreets.length
+                  ? 'Click the streets on the map that form the boundary — any order. They assemble into the perimeter automatically.'
+                  : 'Fetch this view first, then click the boundary streets on the map.'}
+              </div>
+            ) : (
+              <div className="carto-row carto-row--wrap" style={{ gap: 6 }}>
+                {sides.map((n, i) => {
+                  const st = streetCorners?.streets?.find(s => s.name === n)
+                  const bad = streetCorners && st && st.connected === false
+                  return (
+                    <span key={`${n}-${i}`} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 8px',
+                      borderRadius: 5, fontSize: 11, color: '#e7efe0',
+                      background: bad ? '#4a2a24' : '#26402c', border: `1px solid ${bad ? '#a86a48' : '#3f6a48'}`,
+                    }} title={bad ? 'this street does not connect to the ring yet' : (st?.direction ? `${st.direction} side` : '')}>
+                      {n}{st?.direction ? ` · ${st.direction}` : ''}
+                      <button className="carto-btn-sm" style={{ padding: '0 4px', minWidth: 0 }}
+                        onClick={() => removeStreet(i)} title="Remove">×</button>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
 
-            {corners && (
-              <div className={`carto-extent-status ${corners.closed ? 'ok' : 'warn'}`}>
-                {corners.closed
-                  ? `✓ ${corners.source === 'official' ? 'official boundary' : 'closed'} · centroid (${Math.round(corners.centroid.x)}, ${Math.round(corners.centroid.z)}) · fits ⌀${corners.radius} m`
-                  : `⚠ not closed — ${gapCount} pair(s) share no corner. Pick the street that actually meets there.`}
+            {streetCorners && (
+              <div className={`carto-extent-status ${streetCorners.closed ? 'ok' : 'warn'}`} style={{ marginTop: 8 }}>
+                {streetCorners.closed
+                  ? `✓ closed · ${streetCorners.corners.length} corners · centroid (${Math.round(streetCorners.centroid.x)}, ${Math.round(streetCorners.centroid.z)}) · fits ⌀${streetCorners.radius} m`
+                  : `⚠ not closed — ${gaps.length} street(s) don't connect: ${gaps.join(', ') || '—'}. Click the streets that meet them.`}
+              </div>
+            )}
+            {!streetCorners && useOfficial && official && (
+              <div className="carto-extent-status ok" style={{ marginTop: 8 }}>
+                ✓ official boundary (best guess) · click boundary streets to refine, or pour as-is
               </div>
             )}
 
