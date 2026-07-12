@@ -1,6 +1,15 @@
 # HANDOFF — Extent tool: concerted logic redesign (the neighborhood shape-definer)
 
-> **Dispatch-ready brief. Drafted by Boz 2026-07-10 with Jacob.** **Supersedes `HANDOFF-extent-altadena-wrong.md`** (that framed it as diagnose-one-bug; it's not — the tool's *logic is wrong across the board* and must be redesigned to its own stated doctrine). **Supervised live by Jacob** — propose the UX and get approval (Phase 0) before building.
+> ✅ **EXECUTED — ARCHIVED 2026-07-11.** The redesign shipped: visual boundary-segment
+> selection, empty workspace, official best-guess, commit/reproject/atomic-Pour/rollback,
+> §11 living-boundary re-scope, metadata, panel grouping. The last headline blocker —
+> **Altadena's divided-road (Woodbury) wouldn't close** — was fixed this session via the
+> **skeleton corridor-propagation weld** (`skeleton.js`; commit `38b2b887`;
+> `[[project_extent_altadena_divided_road_weld]]`). **Live remnants moved to the successor
+> `HANDOFF-extent-finish.md`** (legible labels · end-at-corners trim · §11 canon fold ·
+> favicon). Kept here for the full diagnosis, the target model, and the invariants.
+>
+> _Original framing:_ **Dispatch-ready brief. Drafted by Boz 2026-07-10 with Jacob.** Superseded `HANDOFF-extent-altadena-wrong.md` (that framed it as diagnose-one-bug; it wasn't — the tool's logic was wrong across the board). Supervised live by Jacob.
 
 ## Who you are + the call
 
@@ -41,7 +50,8 @@ The legible fetch/labels (#1) and visual boundary selection (#2) are the headlin
 - **The living boundary (`§11`)** — re-editable anytime; re-scope must re-fetch/re-clip/re-bake and be re-runnable against a *changed* extent (data entering acquired, leaving dropped).
 - **Poured-scene framing** — content centered on `[0,0]` (the old "too high & left" — verify it's actually resolved now).
 - **Elevation** — the pour runs `--skip-elevation` (flat). A DEM-driven hood/margin terrain is a **separate follow-on thread** (the annulus) — flag, don't conflate.
-- **Metadata** — name / blurb / timezone (Phase-1 selector landed these; keep them).
+- **Metadata** — name / blurb / timezone (Phase-1 selector landed these; keep them). **Browser tab now = the authored Neighborhood Name** (verbatim; prettified-slug fallback while un-named) — `ExtentApp.jsx` `document.title` effect.
+  - **Follow-on idea (favicon, deferred polish):** give each hood a favicon **GENERATED from its boundary polygon silhouette** (fill = Look accent; monogram fallback before a shape exists) — NOT an upload field (a neighborhood has no logo; upload = authoring overhead + storage for marginal value). On-brand with "the shape IS the instance identity"; the same generated mark is reusable as the hood's icon on Place Cards / map pins / selector rows / share cards (generate once, use everywhere).
 
 ## Canon grounding (read before you design)
 
@@ -75,6 +85,7 @@ The legible fetch/labels (#1) and visual boundary selection (#2) are the headlin
 - **Installation-agnostic** — no hood named in shared code (`lafayette-square` = default fast-path, `toy` = fixture). A Provincetown/Altadena drop-in uses the same tool, zero kit edits.
 - **Lafayette Square stays byte-identical** — its extent doesn't change; verify its pour/render is unaffected.
 - **Frame: north=−z** (`config.js`).
+- **Divided roads must weld to ONE centerline before the boundary tool consumes them.** A dual-carriageway (≥~40% one-way ways under a shared name-root) must resolve to a single skeleton chain per physical road. **Weld-failure signature:** duplicate near-parallel *reversed* chains under one name (the two carriageways), and/or one boulevard surfacing under multiple directional names ("East/West X"). An unwelded divided road that won't close is a **SKELETON defect to fix upstream** (`project_truman_divided_road_knot`) — **NOT** a boundary-resolver tolerance knob (corridor-merge in the resolver papers over the source: `feedback_fix_at_source_never_hack_the_symptom`). Detectable pre-pour: flag any name whose chains include a reversed-duplicate pair. **Verified on Altadena 2026-07-11** — "Woodbury Road" is 76 raw OSM ways, 84% one-way (divided), left unwelded → surfaces as West/East/mid-stub across ~15 fragments → resolver sees degree 3–4 → won't close. Full forensic: `[[project_extent_altadena_divided_road_weld]]`.
 
 ## Commit boundaries + DoD
 
