@@ -167,14 +167,22 @@ function PlatePicker({ items, current, onPick, onAdd, thumb, fit = 'cover', empt
         return (
           <button key={it.id} type="button" onClick={() => onPick(it.id)} title={it.note || it.label}
             style={{
-              cursor: 'pointer', padding: 3, borderRadius: 5,
+              position: 'relative', cursor: 'pointer', padding: 3, borderRadius: 5,
               background: sel ? 'rgba(120,160,220,0.18)' : 'rgba(255,255,255,0.03)',
               border: '1px solid ' + (sel ? 'rgba(120,160,220,0.75)' : 'rgba(255,255,255,0.08)'),
               opacity: it.missing ? 0.6 : 1,
               display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch',
             }}>
+            {it.badge && (
+              <span style={{
+                position: 'absolute', top: 4, left: 4, zIndex: 1, fontSize: 8, letterSpacing: '0.04em',
+                textTransform: 'uppercase', padding: '1px 4px', borderRadius: 3,
+                background: 'rgba(120,160,110,0.3)', border: '1px solid rgba(120,160,110,0.55)', color: '#bce0a0',
+              }}>{it.badge}</span>
+            )}
             <div style={CELL_IMG}>
-              {it.missing ? (
+              {it.icon ? it.icon
+                : it.missing ? (
                 <span style={{
                   fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#c8a83a',
                   border: '1px solid rgba(200,168,58,0.5)', borderRadius: 3, padding: '2px 4px',
@@ -954,6 +962,14 @@ function SalonControlsPanel({
   const dossier = useArboristStore(s => s.salonDossier)
   const declaredHabit = dossier?.required?.['chassis.habit']?.target
     || MORPH_TO_HABIT_FALLBACK[speciesMorphology] || null
+  // The species' NATIVE leaf — its declared leaf shape (rubric leaf.silhouette),
+  // which doubles as a pack id (palmate/ovate/…). Tagged + first in the leaf
+  // picker as the revert anchor. Null when the species has no dossier leaf.
+  const nativePack = dossier?.required?.['leaf.silhouette']?.target || null
+  // The species' native leaf ARRANGEMENT (rubric leaf.ways) — tagged in the Ways
+  // selector like the native pack, so the operator knows which respray pattern is
+  // botanically correct (Sugar Maple = opposite). Null when undossiered.
+  const nativeWays = dossier?.required?.['leaf.ways']?.target || null
   const curationKey = (c) => `${c.name}.glb`
   const [orientOpen, setOrientOpen] = useState(false)  // "Fix orientation" advanced drawer (tilt/Y-up), collapsed by default
   // Group the catalog into silhouette shelves by curation habit; set-aside chassis
@@ -1102,65 +1118,74 @@ function SalonControlsPanel({
 
       </CollapsibleSection>
       <CollapsibleSection title="Leaves">
-      <Row label="Leaf source">
-        <select
-          value={leaves?.mode ?? 'authored'}
-          onChange={(e) => onParams({ leaves: { mode: e.target.value } })}
-          style={selectStyle}>
-          <option value="bare">Bare (no leaves)</option>
-          <option value="authored">Native (the model's own leaves)</option>
-          <option value="synthesized">Synthetic (kit spray)</option>
-        </select>
-      </Row>
+      {/* One picker for the leaf source (2026-07-11): Bare · ✦Native · the packs.
+          The 3-way authored/synthesized dropdown is gone — mode is AUTOMATIC:
+          picking a leaf keeps the model's own cards when it has them (reskin) and
+          sprays kit cards when it doesn't. The "Respray" toggle below is the
+          escape hatch to force fresh cards over bad vendor leaves. Native = the
+          species' declared leaf, the revert anchor. */}
+      <PlatePicker
+        items={[
+          { id: '__bare__', label: 'Bare', note: 'No leaves (an authored, leafless state)', icon: <span style={{ fontSize: 20, color: '#8a93a0', lineHeight: 1 }}>∅</span> },
+          ...(nativePack && leafPacks.some(p => p.packId === nativePack) ? [{ id: nativePack, label: nativePack, badge: 'native', note: `${nativePack} — this species' own leaf` }] : []),
+          ...leafPacks.filter(p => p.packId !== nativePack).map(p => ({ id: p.packId, label: p.packId, missing: p.kind === 'flat' })),
+        ]}
+        current={leaves?.mode === 'bare' ? '__bare__' : (leaves?.pack || null)}
+        onPick={(id) => id === '__bare__'
+          ? onParams({ leaves: { mode: 'bare' } })
+          : onParams({ leaves: { pack: id, mode: leaves?.mode === 'synthesized' ? 'synthesized' : 'authored' } })}
+        onAdd={() => salonAddStub('leaf')}
+        thumb={(id) => `/textures/leaves/shapes/${id}/shape.png`}
+        fit="contain" />
       {leaves?.mode !== 'bare' && (
-        <CollapsibleSection title="Leaf library" defaultOpen={false} emphasis>
-          <PlatePicker
-            items={leafPacks.map(p => ({ id: p.packId, label: p.packId, missing: p.kind === 'flat' }))}
-            current={leaves?.pack}
-            onPick={(id) => onParams({ leaves: { pack: id } })}
-            onAdd={() => salonAddStub('leaf')}
-            thumb={(id) => `/textures/leaves/shapes/${id}/shape.png`}
-            fit="contain" />
-        </CollapsibleSection>
+        <>
+          {/* Ways = arrangement AND geometry source in one control. "As modeled"
+              keeps the model's own leaf cards (authored); any real arrangement
+              resprays fresh kit cards in that pattern (synthesized). No separate
+              mode toggle — picking how the leaves sit IS the choice. */}
+          <Row label="Ways">
+            <select value={leaves?.mode === 'synthesized' ? (leaves?.ways ?? 'alternate') : '__asmodeled__'}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === '__asmodeled__') onParams({ leaves: { mode: 'authored' } })
+                else onParams({ leaves: { mode: 'synthesized', ways: v } })
+              }}
+              style={selectStyle}
+              title="How the leaves attach + orient. 'As modeled' keeps the model's own placement; the others respray fresh kit cards in that arrangement (needed for chassis whose vendor leaves are bad, or which have none). '· native' marks this species' botanically-correct arrangement.">
+              <option value="__asmodeled__">As modeled (the model's own)</option>
+              {[
+                ['alternate', 'Alternate (scatter)'],
+                ['opposite', 'Opposite (maple / ash)'],
+                ['all-one-direction', 'Drooping (willow)'],
+                ['sprays', 'Sprays (compound)'],
+                ['clusters', 'Clusters (ginkgo)'],
+              ].map(([v, label]) => (
+                <option key={v} value={v}>{label}{v === nativeWays ? ' · native' : ''}</option>
+              ))}
+            </select>
+          </Row>
+          <Row label="Occupancy">
+            <DraftSlider min={0} max={1} step={0.01}
+              value={leaves?.occupancy ?? 0.7}
+              onCommit={(v) => onParams({ leaves: { occupancy: v } })}
+              format={(v) => `${Math.round(v * 100)}%`} />
+          </Row>
+          <Row label="Leaf size">
+            <DraftSlider min={0.4} max={2.5} step={0.05}
+              value={leaves?.scale ?? 1.0}
+              onCommit={(v) => onParams({ leaves: { scale: v } })}
+              format={(v) => `${v.toFixed(2)}×`} />
+          </Row>
+          <Row label="Tint front">
+            <input type="color" value={leaves?.tintFront || '#3a7530'}
+              onChange={(e) => onParams({ leaves: { tintFront: e.target.value } })} style={colorStyle} />
+          </Row>
+          <Row label="Tint back">
+            <input type="color" value={leaves?.tintBack || '#a8b89a'}
+              onChange={(e) => onParams({ leaves: { tintBack: e.target.value } })} style={colorStyle} />
+          </Row>
+        </>
       )}
-      <Row label="Ways">
-        <select
-          value={leaves?.ways ?? 'alternate'}
-          onChange={(e) => onParams({ leaves: { ways: e.target.value } })}
-          disabled={leaves?.mode !== 'synthesized'}
-          style={{ ...selectStyle, opacity: leaves?.mode === 'synthesized' ? 1 : 0.5 }}
-          title="Leaf arrangement (§5) — how cards attach + orient on the canopy. Synthesized leaves only.">
-          <option value="alternate">Alternate (scatter)</option>
-          <option value="opposite">Opposite (maple / ash)</option>
-          <option value="all-one-direction">Drooping (willow)</option>
-          <option value="sprays">Sprays (compound)</option>
-          <option value="clusters">Clusters (ginkgo)</option>
-        </select>
-      </Row>
-      <Row label="Occupancy">
-        <DraftSlider min={0} max={1} step={0.01}
-          value={leaves?.occupancy ?? 0.7}
-          onCommit={(v) => onParams({ leaves: { occupancy: v } })}
-          format={(v) => `${Math.round(v * 100)}%`} />
-      </Row>
-      <Row label="Leaf size">
-        <DraftSlider min={0.4} max={2.5} step={0.05}
-          value={leaves?.scale ?? 1.0}
-          onCommit={(v) => onParams({ leaves: { scale: v } })}
-          format={(v) => `${v.toFixed(2)}×`} />
-      </Row>
-      <Row label="Tint front">
-        <input type="color"
-          value={leaves?.tintFront || '#3a7530'}
-          onChange={(e) => onParams({ leaves: { tintFront: e.target.value } })}
-          style={colorStyle} />
-      </Row>
-      <Row label="Tint back">
-        <input type="color"
-          value={leaves?.tintBack || '#a8b89a'}
-          onChange={(e) => onParams({ leaves: { tintBack: e.target.value } })}
-          style={colorStyle} />
-      </Row>
       </CollapsibleSection>
     </div>
   )

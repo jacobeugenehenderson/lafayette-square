@@ -1556,10 +1556,12 @@ export default function SpecimenViewport({
           is driven by the TOD/meteorologist, not this slider. */}
       {camPreset === 'browse' && (
         <div style={{
-          position: 'absolute', bottom: 12, right: 12, width: 172,
+          // Grouped with the Wind toggle at bottom-LEFT (stacked just above it),
+          // clear of the perf readout at bottom-right (2026-07-11).
+          position: 'absolute', bottom: 52, left: 12, width: 172,
           display: 'flex', flexDirection: 'column', gap: 4,
-          padding: '9px 12px', borderRadius: 8,
-          background: 'rgba(12,12,16,0.72)', border: '1px solid rgba(255,255,255,0.1)',
+          padding: '6px 10px', borderRadius: 4,
+          background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.08)',
           font: '11px system-ui, sans-serif', color: 'rgba(255,255,255,0.82)',
         }}>
           <span style={{ display: 'flex', justifyContent: 'space-between' }}>
