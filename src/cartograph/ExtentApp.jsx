@@ -45,6 +45,12 @@ import {
 // a cold restart reappear on the hood being built here, and blank when there's none.
 const EXTENT_SCENE_KEY = 'cartograph-extent-scene'
 
+// A hood's display name: the authored name wins, else the slug prettified
+// (hipointe-demun → "Hipointe Demun"). Shared by the selector label + the tab title.
+const prettyHoodName = (name, scene) =>
+  (name || '').trim()
+  || (scene ? scene.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '')
+
 // The Extent aerial reads ONLY the scene's geography (lat/lon/projection/bbox)
 // — NOT neighborhood_boundary.json, which is the very thing being authored. So
 // a brand-new hood with no boundary yet still gets a full aerial to frame on.
@@ -568,8 +574,7 @@ function NeighborhoodSelector({ scenes, current, currentName, onOpen, onNew }) {
   }, [open])
   // Prettify an unnamed hood's slug for display (hipointe-demun → "Hipointe Demun");
   // an authored name (from Name & blurb) always wins.
-  const label = currentName
-    || (current ? current.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Select a neighborhood')
+  const label = prettyHoodName(currentName, current) || 'Select a neighborhood'
   return (
     <div className="carto-looks-menu" ref={wrapRef} style={{ position: 'relative', width: '100%' }}>
       <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(o => !o)}
@@ -750,6 +755,12 @@ export default function ExtentApp() {
   // Descriptive metadata — name + short blurb (the blurb doubles as SEO/description).
   const [name, setName] = useState('')
   const [blurb, setBlurb] = useState('')
+  // Browser tab = the authored Neighborhood Name (verbatim), or the prettified slug
+  // while a hood is still un-named, or the tool name on the empty workspace.
+  useEffect(() => {
+    const hood = prettyHoodName(name, scene)
+    document.title = hood ? `${hood} — Extent` : 'Neighborhood Extent'
+  }, [name, scene])
   const [radiusM, setRadiusM] = useState(0)
   const [radiusTouched, setRadiusTouched] = useState(false)
   // §4 live re-scope: the radius the committed circle was last baked at. When the
