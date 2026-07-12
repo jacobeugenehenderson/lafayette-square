@@ -203,6 +203,7 @@ export async function listChassis() {
         scaffoldCount: meta.scaffoldCount ?? null,
         canopyStart:   meta.canopyStart ?? null,
         leafAttachmentTags: meta.leafAttachmentTags || [],
+        woodCoverage: meta.woodCoverage ?? null,   // wood Y-span / tree Y-span; <~0.65 = stub wood (leaves-first vendor proxy)
       })
     } catch { /* skip malformed */ }
   }

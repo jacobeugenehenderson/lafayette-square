@@ -45,7 +45,17 @@ const PREVIEW_PY   = join(__dirname, 'preview-laz.py')
 const SPECIES_MAP  = join(__dirname, 'species-map.json')
 const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 const CONFIG_PATH  = join(__dirname, 'config.json')
-const PORT = 3334
+const PORT = Number(process.env.ARB_PORT) || 3334
+
+// ── The closed silhouette set (chassis-tagging gauntlet) ───────────────────
+// The 9 chassis SILHOUETTES — a finite, complete, closed botanical crown-form
+// set, mirroring rubric.json's chassis.habit value-list. A chassis is pure
+// woody structure, so its ONE meaningful classification is its silhouette (a
+// fact, assigned once — "categorize, don't recommend"). Leaf-shape and
+// bark-type are SEPARATE part libraries, not properties of a chassis, so they
+// are deliberately NOT tagged here. The POST /salon/curation validator rejects
+// off-set values so the shelves stay honest.
+const CHASSIS_HABITS = new Set(['vase', 'columnar', 'oval', 'spreading', 'weeping', 'multi-stem', 'pyramidal', 'rounded', 'irregular'])
 
 // ── First-boot scaffolding ─────────────────────────────────────────────────
 function ensureDir(d) { if (!existsSync(d)) mkdirSync(d, { recursive: true }) }
@@ -1172,8 +1182,24 @@ const server = createServer(async (req, res) => {
     // ranking, so server-side filter is only useful for tooling.
     if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/chassis$/))) {
       try {
-        const filter = new URL(req.url, 'http://x').searchParams.get('morphology') || null
+        const url = new URL(req.url, 'http://x')
+        const filter = url.searchParams.get('morphology') || null
+        // ?all=1 — the BROWSE-ALL / tagging-gauntlet catalog: every chassis on
+        // disk (all 241), nothing dropped. The Shelves surface needs to SEE the
+        // whole library to tag it — you can't label what a filter hides
+        // (HANDOFF-chassis-tagging-gauntlet.md). Forests are MARKED, not hidden
+        // (`isForest`), so the operator can still tag them; they stay
+        // usable-only-once-split (Brief 23a). The species DROPDOWN keeps its
+        // procedural/LiDAR exclusion (listSalonSpecies) — that's a separate gate.
+        const all = url.searchParams.get('all') === '1'
         let chassis = await listSalonChassis()
+        const forestChassis = await listForestChassis()
+        if (all) {
+          chassis = chassis.map(c => ({ ...c, isForest: forestChassis.has(c.name) }))
+          if (filter) chassis = chassis.filter(c => c.morphology === filter)
+          return jsonRes(res, 200, { chassis })
+        }
+        // ── The Salon per-species picker path (default): the four reducers ──
         // Brief 15 extension (Boz inline 2026-05-25): the species dropdown
         // already excludes procedural + LiDAR species, but the chassis catalog
         // was never filtered — so after Brief 20's regen, procedural variants
@@ -1188,7 +1214,6 @@ const server = createServer(async (req, res) => {
         // burnt_tree) until Brief 23a splits them into per-tree singles. Keys on
         // survey-deleaf's producer-derived forest worklist, so it hits ONLY the
         // merged meshes — the 58 already-separable splits stay in the catalog.
-        const forestChassis = await listForestChassis()
         chassis = chassis.filter(c => !forestChassis.has(c.name))
         if (filter) chassis = chassis.filter(c => c.morphology === filter)
         return jsonRes(res, 200, { chassis })
@@ -1279,9 +1304,21 @@ const server = createServer(async (req, res) => {
       if ('notes' in body) {
         next.notes = body.notes == null ? '' : String(body.notes)
       }
+      // Chassis-tagging gauntlet (HANDOFF-chassis-tagging-gauntlet.md): the
+      // silhouette tag — habit (1-of-9). A tag is a FACT assigned once
+      // ("categorize, don't recommend"), persisted as curation so it survives
+      // survey-deleaf re-runs. `null` clears it; an off-set value is rejected so
+      // the shelves stay closed + honest. (Leaf/bark are separate libraries —
+      // not chassis attributes — so they are not tagged here.)
+      if ('habit' in body) next.habit = CHASSIS_HABITS.has(body.habit) ? body.habit : null
+      // setAside — the gauntlet's "exclude this chassis from the sorts" tag. Kept
+      // DISTINCT from `approved` (whose `false` = a Salon reject, painted red ✗):
+      // a set-aside must not turn the Salon red. Both, however, exclude from
+      // ingest (glb-scene-utils / ingest.js). Stored only when true.
+      if ('setAside' in body) { if (body.setAside === true) next.setAside = true; else delete next.setAside }
       // Prune entries that revert to fully-unreviewed defaults so the
       // file doesn't accumulate empty stubs from operator-cancelled edits.
-      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes)
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit && !next.setAside
       if (isEmpty) delete file.chassis[chassisName]
       else file.chassis[chassisName] = next
       writeJson(p, file)

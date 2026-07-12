@@ -186,6 +186,27 @@ const useArboristStore = create((set, get) => ({
     set({ lidarOpen: !!open })
   },
 
+  // Shelves — the chassis-tagging gauntlet (HANDOFF-chassis-tagging-gauntlet.md):
+  // ONE surface that is both the browse-all view of all 241 chassis AND the
+  // habit/leaf/bark tagging gauntlet. Reached from the Salon header; routed in
+  // ArboristApp.jsx. Its own full-catalog slice (`?all=1`) lives below.
+  shelvesOpen: false,
+  setShelvesOpen: (open) => {
+    set({ shelvesOpen: !!open })
+    if (open) get().loadSalonChassisCatalogAll()
+  },
+  salonChassisCatalogAll: [],   // [{name, morphology, heightRange, source, isForest, ...}] — ALL 241
+  loadSalonChassisCatalogAll: async () => {
+    try {
+      const r = await fetch(`/api/arborist/salon/_all/chassis?all=1&t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set({ salonChassisCatalogAll: d.chassis || [] })
+    } catch (err) {
+      set({ salonError: String(err) })
+    }
+  },
+
   // Phase L Cycle 2 (per-region bark + bake-to-roster). Publish action drives
   // the awaited bake-tree → lidar-publish → roster-add → bake-look chain via
   // POST /api/arborist/lidar/specimen/:treeId/publish. The endpoint returns
@@ -513,7 +534,14 @@ const useArboristStore = create((set, get) => ({
   salonActiveSpecies: null,
   setSalonActiveSpecies: (s) => {
     set({ salonActiveSpecies: s })
-    if (s) get().loadSalonCompositions(s)
+    if (s) {
+      get().loadSalonCompositions(s)
+      // Refresh the per-species dossier (+ options) for the new species — the
+      // declared habit the Phase-4 picker lands on lives in salonDossier, and it
+      // was only ever loaded once at mount. (Also fixes the ReferencePanel /
+      // matcher options going stale on species change.)
+      get().loadSalonLibraries()
+    }
   },
 
   // ── Roster-driven Salon navigator (Brief 26, Cadastre 2026-05-25) ─────────
@@ -640,7 +668,13 @@ const useArboristStore = create((set, get) => ({
       if ('displayName' in patch) next.displayName = patch.displayName == null ? '' : String(patch.displayName)
       if ('approved'    in patch) next.approved    = patch.approved === true ? true : patch.approved === false ? false : null
       if ('notes'       in patch) next.notes       = patch.notes == null ? '' : String(patch.notes)
-      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes)
+      // Chassis-tagging gauntlet: the silhouette tag (1-of-9). `null`/absent
+      // clears (mirrors the server's absent-preserved / null-clears merge).
+      if ('habit' in patch) next.habit = patch.habit || null
+      // setAside — the exclude-from-sorts tag, kept distinct from `approved`
+      // (whose false paints the Salon red). Stored only when true.
+      if ('setAside' in patch) { if (patch.setAside === true) next.setAside = true; else delete next.setAside }
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes) && !next.habit && !next.setAside
       const map = { ...s.salonChassisCuration }
       if (isEmpty) delete map[chassisName]
       else map[chassisName] = next

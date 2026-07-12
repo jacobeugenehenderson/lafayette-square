@@ -176,7 +176,7 @@ export default defineConfig(({ command }) => ({
         agent: false,
       },
       '/api/arborist': {
-        target: 'http://localhost:3334',
+        target: process.env.ARB_API || 'http://localhost:3334',
         rewrite: (path) => path.replace(/^\/api\/arborist/, ''),
         agent: false,
       },

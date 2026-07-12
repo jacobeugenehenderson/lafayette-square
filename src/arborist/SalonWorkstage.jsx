@@ -43,7 +43,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import SpecimenViewport from './SpecimenViewport.jsx'
-import ChassisPlate from './ChassisPlate.jsx'
+import { FORM_IDS, FORM_BY_ID, FormIcon, LazyChassisThumb } from './chassisForms.jsx'
+
+// Fallback for a species' declared habit when it has no dossier: the coarse
+// morphology maps cleanly only for these; everything else lands on Unclassified /
+// browses all shelves. (The real declared habit is the dossier's chassis.habit.)
+const MORPH_TO_HABIT_FALLBACK = { weeping: 'weeping', columnar: 'columnar', conifer: 'pyramidal' }
 
 // Same heuristic mapping ProceduralWorkstage uses to drive the yardstick
 // band. Salon species can be any binomial; map common Salon morphologies
@@ -142,10 +147,6 @@ function salonAddStub(kind) {
   console.info('[salon] Add', kind, '— behavior TBD (define the add/procure flow)')
 }
 
-// B2: how many top-ranked chassis render as live silhouette plates (each its own
-// WebGL context, so keep it small; the full library is behind "Browse all").
-const CHASSIS_PLATE_N = 8
-
 const CELL_IMG = {
   width: '100%', aspectRatio: '1 / 1', borderRadius: 3, overflow: 'hidden',
   background: 'repeating-conic-gradient(#2c2c2c 0% 25%, #232323 0% 50%) 50% / 12px 12px',
@@ -210,6 +211,7 @@ function PlatePicker({ items, current, onPick, onAdd, thumb, fit = 'cover', empt
 
 export default function SalonWorkstage() {
   const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
+  const setShelvesOpen      = useArboristStore(s => s.setShelvesOpen)
   const speciesList         = useArboristStore(s => s.salonSpeciesList)
   const activeSpecies       = useArboristStore(s => s.salonActiveSpecies)
   const compositionsBySpecies = useArboristStore(s => s.salonCompositions)
@@ -323,6 +325,19 @@ export default function SalonWorkstage() {
 
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <LookPicker />
+          <button onClick={() => setShelvesOpen(true)}
+            title="Browse all 241 chassis + tag each one's habit / leaf / bark (the tagging gauntlet)"
+            style={{
+              background: 'rgba(120,140,200,0.15)',
+              border: '1px solid rgba(120,140,200,0.4)',
+              color: '#c0ccf0',
+              padding: '5px 12px', borderRadius: 4,
+              fontFamily: 'inherit', fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}>
+            Shelves →
+          </button>
           <button onClick={() => setGroveOpen(true)}
             title="See every rated variant on one ground plane"
             style={{
@@ -827,6 +842,98 @@ function SlotCard({
 }
 
 
+// ── Phase 4: the silhouette-shelf chassis picker ────────────────────────
+// Categorize, don't recommend. Land on the species' declared-habit shelf; the
+// other shelves collapse below, browsable. Plates render via the shared lazy
+// thumbnailer, so a full shelf costs one WebGL context, not one-per-plate.
+
+function ChassisShelfPicker({ shelves, declaredHabit, selected, chassisCuration, onPick, onApprove, onAdd }) {
+  const hasDeclared = declaredHabit && FORM_IDS.includes(declaredHabit)
+  const declaredItems = hasDeclared ? (shelves.get(declaredHabit) || []) : []
+  // "Other" = every chassis NOT on the declared shelf, flat (the other 8 habits
+  // are visual buzz for this species — one browse group, not nine chips).
+  const otherItems = []
+  for (const f of [...FORM_IDS, '_none']) {
+    if (f === declaredHabit) continue
+    otherItems.push(...(shelves.get(f) || []))
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0 6px' }}>
+      {hasDeclared && (
+        <ChassisShelf label={FORM_BY_ID[declaredHabit].name} form={declaredHabit} isDeclared
+          items={declaredItems} defaultOpen selected={selected} chassisCuration={chassisCuration}
+          onPick={onPick} onApprove={onApprove} />
+      )}
+      <ChassisShelf label={hasDeclared ? 'Other' : 'All chassis'} form={null}
+        items={otherItems} defaultOpen={!hasDeclared} selected={selected} chassisCuration={chassisCuration}
+        onPick={onPick} onApprove={onApprove} />
+      <button type="button" onClick={onAdd} title="Add a new chassis (procure / author) — behavior TBD"
+        style={{ ...btnStyle({ block: true }), width: '100%', marginTop: 2, fontSize: 11, color: '#8a93a0' }}>+ Add chassis</button>
+    </div>
+  )
+}
+
+function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, chassisCuration, onPick, onApprove }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{
+      border: '1px solid ' + (isDeclared ? 'rgba(120,160,110,0.4)' : 'rgba(255,255,255,0.08)'),
+      borderRadius: 5, background: isDeclared ? 'rgba(120,160,110,0.06)' : 'transparent',
+    }}>
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '5px 8px',
+        background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11,
+      }}>
+        {form && <FormIcon form={form} size={18} />}
+        <span style={{ fontWeight: isDeclared ? 600 : 500, textTransform: 'capitalize',
+          color: isDeclared ? '#bce0a0' : '#cdd6df' }}>{label}</span>
+        {isDeclared && <span style={{ fontSize: 8, color: '#8fb87f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>this species</span>}
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#778' }}>{items.length}</span>
+        <span style={{ color: '#667', fontSize: 10 }}>{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (items.length === 0
+        ? <div style={{ fontSize: 10, color: '#889', padding: '0 8px 8px', lineHeight: 1.4 }}>
+            No chassis tagged <b style={{ color: '#9ab' }}>{(label || '').toLowerCase()}</b> yet — classify some in the Shelves gauntlet, or open <b style={{ color: '#9ab' }}>Other</b>.
+          </div>
+        : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 6px 8px' }}>
+            {items.map(c => (
+              <SalonShelfPlate key={c.name} chassis={c} cur={chassisCuration[`${c.name}.glb`] || null}
+                selected={c.name === selected} onPick={onPick} onApprove={onApprove} />
+            ))}
+          </div>
+      )}
+    </div>
+  )
+}
+
+function SalonShelfPlate({ chassis, cur, selected, onPick, onApprove }) {
+  const approved = cur?.approved === true
+  const label = cur?.displayName || chassis.name
+  return (
+    <div onClick={() => onPick(chassis.name)} title={label} style={{
+      position: 'relative', borderRadius: 5, padding: 3, cursor: 'pointer',
+      background: selected ? 'rgba(120,160,220,0.18)' : 'rgba(255,255,255,0.03)',
+      border: '1px solid ' + (selected ? 'rgba(120,160,220,0.75)' : 'rgba(255,255,255,0.08)'),
+    }}>
+      <LazyChassisThumb name={chassis.name} overlay={
+        <button type="button" onClick={(e) => { e.stopPropagation(); onApprove(chassis.name) }}
+          title={approved ? 'Approved — ships to the Grove (click to unset)' : 'Approve this chassis'}
+          style={{
+            position: 'absolute', top: 3, right: 3, width: 16, height: 16, borderRadius: 4, padding: 0,
+            cursor: 'pointer', fontSize: 10, lineHeight: 1,
+            border: '1px solid ' + (approved ? 'rgba(80,200,140,0.7)' : 'rgba(255,255,255,0.2)'),
+            background: approved ? 'rgba(80,200,140,0.28)' : 'rgba(0,0,0,0.45)',
+            color: approved ? '#9ed8b0' : '#999',
+          }}>{approved ? '★' : '·'}</button>
+      } />
+      <span style={{
+        fontSize: 9, color: selected ? '#cdd6df' : '#99a', textAlign: 'center', display: 'block', marginTop: 2,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>{label}</span>
+    </div>
+  )
+}
+
 // ── Salon controls panel (the Brief 1 replacement for SCAPanel) ─────────
 
 function SalonControlsPanel({
@@ -840,55 +947,27 @@ function SalonControlsPanel({
   candidateScope, recommendedNames,
   barkOpen, onBarkOpenChange,
 }) {
-  const matchOptions = useArboristStore(s => s.salonOptions)   // §9 matcher ranked options (null if no dossier)
-  // Chassis picker filtered by morphology suggestion: matching-morphology
-  // first, then everything else. Brief 1.5b layers curation on top:
-  //   - if `approvedOnly` is ON, drop entries whose `approved !== true`
-  //   - within the surviving set, the morphology ordering still applies
-  //   - displayName (when set) overrides the filename for sort + label
-  // Empty-state is handled by the parent (whole workstage shows the
-  // regenerate instruction when catalog is empty).
+  // Phase 4 — CATEGORIZE, DON'T RECOMMEND. The chassis picker is the silhouette
+  // SHELVES (from the gauntlet's curation tags), landing on the species' declared
+  // habit. No matcher, no ranking, no base-dedup — you land on the right shelf and
+  // browse the rest freely. (Supersedes the B2 matcher-ranked plate list.)
+  const dossier = useArboristStore(s => s.salonDossier)
+  const declaredHabit = dossier?.required?.['chassis.habit']?.target
+    || MORPH_TO_HABIT_FALLBACK[speciesMorphology] || null
   const curationKey = (c) => `${c.name}.glb`
   const [orientOpen, setOrientOpen] = useState(false)  // "Fix orientation" advanced drawer (tilt/Y-up), collapsed by default
-  // Brief 26: candidate scope. 'recommended' = chassis fitting THIS roster
-  // species (names from the coverage join), intersected with the catalog (so
-  // procedural/forest chassis the catalog already excludes never appear).
-  // 'all' = the full catalog, with the Brief 1.5b approved-only sub-filter.
-  const ranked = useMemo(() => {
-    if (chassisCatalog.length === 0) return []
-    let pool = chassisCatalog
-    if (candidateScope === 'recommended') {
-      const set = new Set(recommendedNames || [])
-      pool = pool.filter(c => set.has(c.name))
-    } else if (approvedOnly) {
-      pool = pool.filter(c => (chassisCuration[curationKey(c)] || {}).approved === true)
+  // Group the catalog into silhouette shelves by curation habit; set-aside chassis
+  // are excluded (the gauntlet's "don't use this" tag). Untagged → "Unclassified".
+  const shelves = useMemo(() => {
+    const byForm = new Map([...FORM_IDS.map(f => [f, []]), ['_none', []]])
+    for (const c of chassisCatalog) {
+      const cur = chassisCuration[curationKey(c)] || {}
+      if (cur.setAside) continue
+      const shelf = cur.habit && byForm.has(cur.habit) ? cur.habit : '_none'
+      byForm.get(shelf).push(c)
     }
-    const matches = pool.filter(c => c.morphology === speciesMorphology)
-    const others  = pool.filter(c => c.morphology !== speciesMorphology)
-    return [...matches, ...others]
-  }, [chassisCatalog, speciesMorphology, approvedOnly, chassisCuration, candidateScope, recommendedNames])
-  const activeChassis = ranked.find(c => c.name === chassis)
-  // B2 fix (2026-06-25): the silhouette plates source the MATCHER's ranked
-  // chassis (closeness order), filtered to vendor catalog GLBs so every plate has
-  // a real GLB to render (procedural ids the catalog excludes are dropped). Falls
-  // back to the catalog when there's no dossier OR the recommended-scope filter
-  // emptied `ranked` — without this, 'recommended' scope with 0 fits → an empty
-  // grid ("no silhouettes to choose from").
-  const chassisPlateList = useMemo(() => {
-    const byName = new Map(chassisCatalog.map(c => [c.name, c]))
-    let names = (matchOptions?.chassis?.options || []).map(o => o.partId).filter(n => byName.has(n))
-    if (names.length === 0) names = (ranked.length ? ranked : chassisCatalog).map(c => c.name)
-    // Dedupe by BASE chassis (strip the trailing _<variant-letter>) so the plates
-    // are distinct silhouettes, not N variants of one tree (the 8× alaskan_cedar
-    // problem). Keeps the highest-ranked variant of each base.
-    const seen = new Set(), deduped = []
-    for (const n of names) {
-      const base = n.replace(/_[a-z]$/, '')
-      if (seen.has(base)) continue
-      seen.add(base); deduped.push(n)
-    }
-    return deduped.slice(0, CHASSIS_PLATE_N).map(n => byName.get(n) || { name: n })
-  }, [matchOptions, ranked, chassisCatalog])
+    return byForm
+  }, [chassisCatalog, chassisCuration])
   // Curation entry for the currently-picked chassis (may be undefined if
   // chassis is null OR if the chassis is excluded by the approved filter
   // but still selected on the slot — we read from chassisCatalog directly
@@ -899,19 +978,6 @@ function SalonControlsPanel({
   const pickedCurationKey = pickedChassisInCatalog ? curationKey(pickedChassisInCatalog) : null
   const pickedCuration = pickedCurationKey ? (chassisCuration[pickedCurationKey] || null) : null
   const approvalState = pickedCuration?.approved ?? null   // true / false / null
-  // Helper: glyph + label for a chassis in the dropdown. Uses the
-  // operator's displayName when present (Brief 1.5b); falls back to the
-  // chassis filename otherwise.
-  const labelFor = (c) => {
-    const cur = chassisCuration[curationKey(c)]
-    const dn = cur?.displayName
-    const main = (dn && dn.length > 0) ? dn : c.name
-    const glyph = cur?.approved === true ? '★'
-                : cur?.approved === false ? '✗'
-                : '·'
-    const height = c.heightRange ? ` · ${c.heightRange[1].toFixed(1)}m` : ''
-    return `${glyph} ${main} · ${c.morphology}${height}`
-  }
 
   return (
     <div style={{
@@ -922,42 +988,19 @@ function SalonControlsPanel({
       fontSize: 11, color: '#aaa',
     }}>
       <CollapsibleSection title="Chassis">
-      {/* B2 (2026-06-25): the top-N ranked chassis render as live gray-silhouette
-          plates (live-render-top-N, operator-confirmed). Click to pick; the
-          per-plate ★ badge is the green-light Approve gate (approved → Grove).
-          (Add +) + "Browse all" (the full library via the legacy dropdown) hang
-          off the bottom. Replaces the matcher-text + dropdown + CURATE card.
-          SALON-INTERFACE.md §5. */}
-      <CollapsibleSection title="Chassis library" emphasis>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 0 6px' }}>
-        {chassisPlateList.map(c => {
-          const k = curationKey(c)
-          return (
-            <ChassisPlate key={c.name} name={c.name}
-              label={chassisCuration[k]?.displayName || c.displayName || c.name}
-              selected={c.name === chassis}
-              approved={chassisCuration[k]?.approved ?? null}
-              onPick={(name) => onParams({ chassis: name })}
-              onApprove={(name) => {
-                const cur = chassisCuration[`${name}.glb`]?.approved ?? null
-                onChassisCuration(`${name}.glb`, { approved: cur === true ? null : true })
-              }} />
-          )
-        })}
-        <button type="button" onClick={() => salonAddStub('chassis')}
-          title="Add a new chassis (procure / author) — behavior TBD"
-          style={{
-            cursor: 'pointer', padding: 3, borderRadius: 5,
-            background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.22)',
-            display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch',
-          }}>
-          <div style={{ width: '100%', aspectRatio: '1 / 1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 22, color: '#7a8aa0', lineHeight: 1 }}>+</span>
-          </div>
-          <span style={{ fontSize: 9, color: '#99a', textAlign: 'center' }}>Add</span>
-        </button>
-      </div>
-      </CollapsibleSection>
+      {/* Phase 4: the chassis picker is the silhouette SHELVES (categorize, don't
+          recommend). You land on this species' declared-habit shelf; the other
+          shelves are browsable below. Chassis are tagged in the Shelves gauntlet;
+          set-aside ones don't appear here. */}
+      <ChassisShelfPicker
+        shelves={shelves} declaredHabit={declaredHabit}
+        selected={chassis} chassisCuration={chassisCuration}
+        onPick={(name) => onParams({ chassis: name })}
+        onApprove={(name) => {
+          const cur = chassisCuration[`${name}.glb`]?.approved ?? null
+          onChassisCuration(`${name}.glb`, { approved: cur === true ? null : true })
+        }}
+        onAdd={() => salonAddStub('chassis')} />
       {/* Browse-all / Approved-only / Pick-dropdown cluster removed 2026-06-25 —
           the deduped matcher plates above ARE the workable options. A proper
           full-library browser (lazy / baked thumbnails) is a future feature. */}
