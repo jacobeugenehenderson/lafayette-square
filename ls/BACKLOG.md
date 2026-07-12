@@ -2,7 +2,7 @@
 
 > ⚠️ **PARTIALLY STALE — the marriage leap has landed.** The Phase A/B/C "merge to `main`" framing below describes the pre-merge world; the **slab-merge has since shipped to production** (buildings render off the slab via `SlabBuildings`, L1.3 2026-05-26; prod renders the slab end-to-end). The live consumer architecture home = [`ARCHITECTURE.md §2`](ARCHITECTURE.md) + the 2026-06-29 spec cluster (`PLACE-CARDS`/`GUARDIANS`/`RESIDENTS`/`TOWNIES`/`QR-CODES`/`BULLETIN`/`CARY`). The **Concurrent / non-blocking** section below is the live backlog; the phased-merge sections are kept as the historical execution record. Dead doc-pointers repointed inline 2026-06-30.
 
-The path from where we are (branch `cartograph-looks-pass-ab`) to where we're going (clean LS app deployed on the cartograph slab at `lafayette-square.com`).
+The path from where we are (trunk `curb-offset-draw`) to where we're going (clean LS app deployed on the cartograph slab at `lafayette-square.com`).
 
 > Part of the **LS trinity** (`ls/FEATURES.md` / `ls/ARCHITECTURE.md` / `ls/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. The cartograph trinity under `cartograph/` covers authoring; this is the consumer side.
 

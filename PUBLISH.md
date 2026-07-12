@@ -39,7 +39,7 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 | What changed | What to do |
 |---|---|
-| Frontend → **staging** | commit, then `git push origin <branch>:cartograph-looks-pass-ab` → `staging.yml` deploys staging |
+| Frontend → **staging** | commit, then `git push origin curb-offset-draw` → `staging.yml` deploys staging (the trunk IS the staging trigger) |
 | Promote **staging → prod** | once staging is verified: `git push origin <branch>:main` → `deploy.yml` deploys lafayette-square.com (clean fast-forward; main + trunk stay a few commits apart) |
 | Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
 | Both | Do both. Order doesn't matter. |
@@ -59,7 +59,7 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 **Axis A — one factory, many destinations.** A neighborhood is a data folder (`cartograph/data/<hood>`) → bakes to a slab (`public/baked/<hood>`) → pointed to by `INSTANCE.lookId` (`src/instance.js`), `?look=`/`?scene=` override. **One build already serves LS + toy + hipointe-demun.** The deploy destination is *not* wired into the artifact — it's a CNAME + the domain field in `instance.js`. The **same built bytes** get re-homed at a different target; this is literally how staging already works today (`staging.yml` builds `dist/` and pushes it to a *separate* repo with its own `--base`). So a per-neighborhood destination is that same move with a different target — **config, not architecture.**
 
-- **The concrete surface for Axis A:** the Publish endpoints in `cartograph/serve.js` (dev-only) hardcode `STAGING_BRANCH = cartograph-looks-pass-ab` and `PROD_BRANCH = main` and commit a scoped `slabPathspecs` for one look. **Parameterizing those two constants + the pathspecs by scene is the whole job.** Small, well-bounded — not yet built.
+- **The concrete surface for Axis A:** the Publish endpoints in `cartograph/serve.js` (dev-only) hardcode `STAGING_BRANCH` and `PROD_BRANCH = main` and commit a scoped `slabPathspecs` for one look. **Parameterizing those two constants + the pathspecs by scene is the whole job.** Small, well-bounded — not yet built. ⚠️ **Live drift (2026-07-11): `STAGING_BRANCH` still = `cartograph-looks-pass-ab`, the dead pre-2026-07-08 branch that deploys nothing** (`staging.yml` moved to `curb-offset-draw`, `26a62407`). So the Preview's Publish→staging button currently pushes to a branch no workflow watches — fix the constant to `curb-offset-draw` when the parameterization lands (or sooner).
 
 **Axis B — keep the factory local (that's the point of the tiers).** *Guided install* ships **slabs, not tools** — the authoring app (Stage/Bake) never leaves your machine, so you're never anchored to a client's project; the "shared creative" happens through the preview/publish loop (they react to the staging URL, you iterate). "Move Bake onto the live site" is **Tier B, deferred** — the only tier where live-site authoring makes sense, and the tier where the anchoring worry is solved by design (they drive, not you). Don't build it to serve a guided install.
 
@@ -81,12 +81,12 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 ## 1. Frontend (GitHub Pages)
 
-Deploys automatically on every push to `main`. **Per the working loop (strategy B, 2026-06-26), promote to `main` only after verifying on staging** (`cartograph-looks-pass-ab`) — see the Quick reference above + [`cartograph/OPERATIONS.md §Save → ship`](cartograph/OPERATIONS.md). Both branches are slab-era and stay a few commits apart, so prod promotion is a clean fast-forward.
+Deploys automatically on every push to `main`. **Per the working loop (strategy B, 2026-06-26), promote to `main` only after verifying on staging** (the trunk `curb-offset-draw`) — see the Quick reference above + [`cartograph/OPERATIONS.md §Save → ship`](cartograph/OPERATIONS.md). Both branches are slab-era and stay a few commits apart, so prod promotion is a clean fast-forward.
 
 ```bash
-# author on the working branch, then:
-git push origin <branch>:cartograph-looks-pass-ab   # → staging (verify here first)
-git push origin <branch>:main                        # → prod, once staging looks right
+# solo, work directly on the trunk:
+git push origin curb-offset-draw        # → staging (verify here first)
+git push origin curb-offset-draw:main   # → prod, once staging looks right
 ```
 
 The GitHub Actions workflow (`.github/workflows/deploy.yml`) builds with Vite and deploys `dist/` via `actions/deploy-pages@v4`.
@@ -105,7 +105,7 @@ There is a **second** Pages target for previewing slab/look work before it reach
 | Branch | Workflow | Deploys to |
 |---|---|---|
 | `main` | `deploy.yml` | **lafayette-square.com** (prod, this section) |
-| `cartograph-looks-pass-ab` (the trunk) | `staging.yml` | **`lafayette-square-staging`** (GitHub Pages preview) |
+| `curb-offset-draw` (the trunk) | `staging.yml` | **`lafayette-square-staging`** (GitHub Pages preview) |
 
 Push a feature branch to the trunk to stage it; push the trunk to `main` to ship. **CI does not bake** — both workflows are `vite build` + serve the *committed* slab, so the artifacts you committed are exactly what deploys (bake + commit before you push). The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
 

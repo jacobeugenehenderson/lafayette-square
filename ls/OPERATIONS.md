@@ -73,7 +73,7 @@
 ## 6. Deploy
 
 - **Production:** GitHub Pages from `main` (`deploy.yml`), `BASE_URL='/'`, apex domain `lafayette-square.com` (CNAME); Cloudflare owns DNS + the OG Worker.
-- **Staging:** auto-deploys on push to `cartograph-looks-pass-ab` (`staging.yml`) at `…/lafayette-square-staging/` with `--base=/lafayette-square-staging/`; all asset fetches route through `import.meta.env.BASE_URL` so the same build works at root or subpath.
+- **Staging:** auto-deploys on push to the trunk `curb-offset-draw` (`staging.yml`; repointed from the retired `cartograph-looks-pass-ab` 2026-07-08) at `…/lafayette-square-staging/` with `--base=/lafayette-square-staging/`; all asset fetches route through `import.meta.env.BASE_URL` so the same build works at root or subpath.
 - **Rollback floor:** tag `v1-pre-cartograph-merge` (`20866ef`) — `git push --force-with-lease origin v1-pre-cartograph-merge:main` restores last-known-good.
 - **Backend redeploy:** GAS is deployed from its own Apps Script project (not the Pages build). Updating `Code.js` requires re-publishing the web-app deployment.
 - See `PUBLISH.md` for the full procedures (Pages, GAS, Worker, DNS, Supabase).

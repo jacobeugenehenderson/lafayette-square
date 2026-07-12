@@ -250,14 +250,16 @@ The dev server **autosaves** source on every edit (Survey/Stage debounce → `ov
 | Branch | Workflow | Deploys to |
 |---|---|---|
 | `main` | `deploy.yml` | **lafayette-square.com (PROD)** |
-| `cartograph-looks-pass-ab` (trunk) | `staging.yml` | **`lafayette-square-staging` (GitHub Pages)** |
-| any feature branch (e.g. `curb-offset-draw`) | — | **nothing** (pushing the branch deploys no site) |
+| `curb-offset-draw` (trunk) | `staging.yml` | **`lafayette-square-staging` (GitHub Pages)** |
+| any other feature branch | — | **nothing** (pushing it deploys no site) |
 
-Promote to staging = fast-forward/merge the feature branch into the trunk and push; promote to prod = merge the trunk into `main` and push.
+> ⚠️ **The trunk is `curb-offset-draw`, not `cartograph-looks-pass-ab`.** Staging was repointed 2026-07-08 (`26a62407`) because the old branch was 395 commits behind (pre-HPDM) and served stale LS geometry for HPDM. `cartograph-looks-pass-ab` now deploys **nothing**. *(Code lag caught 2026-07-11: `serve.js` `STAGING_BRANCH` still names the dead branch — see below.)*
 
-**The working loop (strategy B, chosen 2026-06-26).** Author on the working branch (`curb-offset-draw`) → commit source+derived → push to the **trunk** (auto-deploys staging) → eye-check staging → **fast-forward `main`** when you want it public. Prod (`main`) and the trunk are **both slab-era** and kept only a few commits apart, so a prod promotion is a clean fast-forward, not a big-bang. Quick commands: `git push origin <branch>:cartograph-looks-pass-ab` (staging), then `git push origin <branch>:main` (prod) once staging is verified.
+Promote to staging = commit on the trunk and push (or fast-forward a feature branch into it); promote to prod = merge/fast-forward the trunk into `main` and push.
 
-> ⚠️ **Reason about deploy state from the REMOTE, never a stale local ref.** Always `git fetch` and compare `origin/main` / `origin/cartograph-looks-pass-ab` — not local `main`/trunk, which drift badly when you live on a feature branch. On 2026-06-26 local `main` (`b39834b4`) read **1123 commits + "pre-slab" behind** while `origin/main` was actually **4 commits behind and slab-era** — an entirely phantom gap that nearly derailed a publish decision until the remote was checked.
+**The working loop (strategy B, chosen 2026-06-26; solo → work directly on the trunk).** Commit source+derived on `curb-offset-draw` → **push it** (auto-deploys staging) → eye-check staging → **fast-forward `main`** when you want it public. Prod (`main`) and the trunk are **both slab-era** and kept only a few commits apart, so a prod promotion is a clean fast-forward, not a big-bang. Quick commands: `git push origin curb-offset-draw` (staging), then `git push origin curb-offset-draw:main` (prod) once staging is verified.
+
+> ⚠️ **Reason about deploy state from the REMOTE, never a stale local ref.** Always `git fetch` and compare `origin/main` / `origin/curb-offset-draw` — not local `main`/trunk, which drift badly when you live on a feature branch. On 2026-06-26 local `main` (`b39834b4`) read **1123 commits + "pre-slab" behind** while `origin/main` was actually **4 commits behind and slab-era** — an entirely phantom gap that nearly derailed a publish decision until the remote was checked.
 
 *(Derived artifacts are intentionally **git-tracked**, not ignored — that's what lets CI stay a plain `vite build`. The alternative — gitignore them and bake in CI — is a deliberate, un-taken fork; see the named levers below.)*
 
