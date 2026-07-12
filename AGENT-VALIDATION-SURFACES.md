@@ -43,6 +43,10 @@ Most "I changed it but nothing moved" / "it looks identical" scares are *surface
 
 **What it is.** A 4+4 grid of 9 authored blocks in `src/data/toy/toy-input.json` (re-derived to `toy-ribbons.json` via `cartograph/derive-toy.js`), plus boundary stencil + lamps + buildings — the kit's design surface and the cleanest place in cartograph to develop emitter + geometry changes. Full V2 pipeline live (block fills, ribbons, corner authoring kit, smoothing, curb, bake). Three deliberate topology irregularities: VW3's bent chain, HW3's 45° saw-tooth jog, a dead-end stub. Plus Benton-toy teardrop (Type-A closed-chain) and Waverly-toy couplet (Type-B divided pair).
 
+**⛔ REACH IT AT THE URL: `cartograph.html?scene=toy`.** Toy is DELIBERATELY absent from the neighborhood picker (the Extent hub) and the Look pulldown — those are for real, map-based neighborhoods, and **toy has no map and never will**: it's a purpose-built, simplified, *smaller-than-a-real-neighborhood* fixture so geometry is easier to work out. The URL is its home; don't look for it in a menu (2026-07-11).
+
+**⛔ BOSSY DIRECTIVE — intractable geometry goes to toy.** When a corner / block / ribbon / curb / tile-ground problem resists a fix on LS or a real hood, STOP fighting it at full scale. Reproduce it in **toy (`?scene=toy`)** — 9 authored blocks + the three deliberate topology irregularities give you a minimal, deterministic, **hard-refresh-live** surface with no bake in the loop. The hardest geometry code (`tileGround.js`, the derivers, the corner/block emitters) is written and reasoned against toy as *the* controlled case — meet the problem there, shrink it, solve it, then flip the flag on for LS. This is what toy is *for*; it is not a fallback, it is the first move.
+
 **Use it for.** Geometry, construction, data-flow, derivers, deterministic-bake behavior. The production code path runs on toy identically to LS: `node cartograph/bake-ground.js` bakes toy via the scene-parametric pipeline (`c109a9f`); results render live in Toy designer; per-fixture diagnostics inspectable through the same console/overlays as LS.
 
 **Use it like this.**
