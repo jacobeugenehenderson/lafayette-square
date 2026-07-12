@@ -421,6 +421,50 @@ function computeBoundaryFromSelection(scene, names) {
   return { corners, centroid, radius: Math.round(radius), ordered, gaps, streets, closed, source: 'selected' }
 }
 
+// SNAP-AND-ROUTE — turn a rough closed ring (the official geocoded admin boundary,
+// projected into the current frame) into a STREET-FOLLOWING membership polygon.
+// The admin ring is blind to the street grid and cuts through houses; this snaps it
+// onto real roads so membership is clean. Sample the ring → snap each sample to the
+// nearest street node (drop mountain-gap samples past SNAP_MAX) → A* route between
+// consecutive corners along the street graph → Douglas-Peucker. Returns [{x,z}] or
+// null (caller falls back to the raw ring). See scratch/altadena-boundary-snaproute.cjs.
+function snapRouteBoundary(scene, ring) {
+  const skel = getSkeleton(scene)
+  if (!skel || !Array.isArray(ring) || ring.length < 3) return null
+  const SAMPLE_STEP = 120, SNAP_MAX = 130, DP_EPS = 22
+  // street graph: nodes = 1m-quantized points, edges = chain segments
+  const K = p => `${Math.round(p.x)},${Math.round(p.z)}`
+  const adj = new Map(), coord = new Map()
+  const addEdge = (a, b) => {
+    const ka = K(a), kb = K(b); if (ka === kb) return
+    coord.set(ka, { x: a.x, z: a.z }); coord.set(kb, { x: b.x, z: b.z })
+    const w = Math.hypot(a.x - b.x, a.z - b.z)
+    ;(adj.get(ka) || adj.set(ka, []).get(ka)).push([kb, w])
+    ;(adj.get(kb) || adj.set(kb, []).get(kb)).push([ka, w])
+  }
+  for (const s of skel.streets) { const p = s.points; if (!p || p.length < 2) continue; for (let i = 0; i + 1 < p.length; i++) addEdge(p[i], p[i + 1]) }
+  if (!coord.size) return null
+  const nodes = [...coord.entries()].map(([k, c]) => ({ k, x: c.x, z: c.z }))
+  const CELL = 120, grid = new Map()
+  for (const n of nodes) { const gk = `${Math.floor(n.x / CELL)},${Math.floor(n.z / CELL)}`; (grid.get(gk) || grid.set(gk, []).get(gk)).push(n) }
+  const nearest = (x, z) => { let best = null, bd = Infinity; for (let r = 0; r < 25; r++) { for (let di = -r; di <= r; di++) for (let dj = -r; dj <= r; dj++) { if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue; const c = grid.get(`${Math.floor(x / CELL) + di},${Math.floor(z / CELL) + dj}`); if (!c) continue; for (const n of c) { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; best = n } } } if (best && r >= Math.ceil(bd / CELL) + 1) break } return best ? { node: best, d: bd } : null }
+  // sample ring + snap
+  const samples = [ring[0]]; { let acc = 0; for (let i = 1; i < ring.length; i++) { acc += Math.hypot(ring[i].x - ring[i - 1].x, ring[i].z - ring[i - 1].z); if (acc >= SAMPLE_STEP) { samples.push(ring[i]); acc = 0 } } }
+  const snaps = []
+  for (const s of samples) { const r = nearest(s.x, s.z); if (!r || r.d > SNAP_MAX) continue; if (!snaps.length || snaps[snaps.length - 1].k !== r.node.k) snaps.push(r.node) }
+  if (snaps.length < 3) return null
+  // A*
+  class Heap { constructor() { this.a = [] } push(x) { const a = this.a; a.push(x); let i = a.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break;[a[p], a[i]] = [a[i], a[p]]; i = p } } pop() { const a = this.a, t = a[0], l = a.pop(); if (a.length) { a[0] = l; let i = 0; for (;;) { let L = 2 * i + 1, R = L + 1, m = i; if (L < a.length && a[L][0] < a[m][0]) m = L; if (R < a.length && a[R][0] < a[m][0]) m = R; if (m === i) break;[a[m], a[i]] = [a[i], a[m]]; i = m } } return t } get size() { return this.a.length } }
+  const astar = (sK, dK) => { const dst = coord.get(dK); const h = k => { const c = coord.get(k); return Math.hypot(c.x - dst.x, c.z - dst.z) }; const g = new Map([[sK, 0]]), prev = new Map(), pq = new Heap(), done = new Set(); pq.push([h(sK), sK]); while (pq.size) { const [, u] = pq.pop(); if (done.has(u)) continue; done.add(u); if (u === dK) break; const gu = g.get(u); for (const [v, w] of (adj.get(u) || [])) { const ng = gu + w; if (ng < (g.get(v) ?? Infinity)) { g.set(v, ng); prev.set(v, u); pq.push([ng + h(v), v]) } } } if (!prev.has(dK) && sK !== dK) return null; const path = [dK]; let c = dK; while (c !== sK) { c = prev.get(c); if (c == null) return null; path.push(c) } return path.reverse() }
+  const poly = []
+  for (let i = 0; i < snaps.length; i++) { const path = astar(snaps[i].k, snaps[(i + 1) % snaps.length].k); if (!path) { poly.push(coord.get(snaps[i].k)); continue } for (let j = 0; j < path.length - 1; j++) poly.push(coord.get(path[j])) }
+  if (poly.length < 3) return null
+  // Douglas-Peucker
+  const dp = (pts, eps) => { if (pts.length < 3) return pts; let dmax = 0, idx = 0; const a = pts[0], b = pts[pts.length - 1]; const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1; for (let i = 1; i < pts.length - 1; i++) { const p = pts[i]; const d = Math.abs((p.x - a.x) * dz - (p.z - a.z) * dx) / L; if (d > dmax) { dmax = d; idx = i } } if (dmax > eps) return dp(pts.slice(0, idx + 1), eps).slice(0, -1).concat(dp(pts.slice(idx), eps)); return [a, b] }
+  const simp = dp(poly, DP_EPS)
+  return simp.length >= 3 ? simp.map(p => ({ x: Math.round(p.x * 100) / 100, z: Math.round(p.z * 100) / 100 })) : null
+}
+
 // All named streets' polylines for the clickable boundary-selection layer — one
 // entry per chain (corridor-collapsed name), synthetic-highway names dropped.
 function streetsGeomFor(scene) {
@@ -1343,11 +1387,16 @@ createServer(async (req, res) => {
           // geocoder), projected into the NOW re-centered frame so it aligns with
           // the reprojected buildings. §0.0 — a strong default, overridden by
           // named streets above when the operator refines by eye.
-          boundary.polygon = polygon.map(([lon, lat]) => ({
+          const ring = polygon.map(([lon, lat]) => ({
             x: Math.round((lon - geo.lon) * geo.lonToMeters * 100) / 100,
             z: Math.round((geo.lat - lat) * 111000 * 100) / 100,
           }))
-          boundary.polygonSource = 'official'
+          // The admin ring is blind to the street grid and CUTS THROUGH HOUSES.
+          // Snap-and-route it onto real streets so membership is clean; fall back to
+          // the raw ring only if routing fails (e.g. no skeleton).
+          const routed = snapRouteBoundary(scene, ring)
+          boundary.polygon = routed || ring
+          boundary.polygonSource = routed ? 'official-snapped' : 'official'
         }
         writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
         // Structural directional identity — each named side + the cardinal it lies
