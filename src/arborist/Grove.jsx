@@ -26,7 +26,6 @@ import { OrbitControls, useGLTF } from '@react-three/drei'
 import { OverheadBaker } from './OverheadBaker.jsx'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
-import CoverageView from './CoverageView.jsx'
 
 const TILE_SPACING = 8        // meters between tiles, edge-to-edge centers
 const QUALITY_COLOR = {
@@ -47,6 +46,7 @@ export default function Grove() {
   const loadGrove   = useArboristStore(s => s.loadGrove)
   const looks       = useArboristStore(s => s.looks)
   const activeLookId = useArboristStore(s => s.activeLookId)
+  const setActiveLook = useArboristStore(s => s.setActiveLook)
   const looksRosters = useArboristStore(s => s.looksRosters)
   const toggleInLook = useArboristStore(s => s.toggleInLook)
   const setGroveVariantOverride = useArboristStore(s => s.setGroveVariantOverride)
@@ -150,15 +150,14 @@ export default function Grove() {
   }, [variants, scope, activeLookTrees])
   // (activeLookTrees is recomputed each render via looksRosters[activeLookId])
 
-  const cols = Math.max(1, Math.ceil(Math.sqrt(visible.length)))
+  // Trees in a RING (2026-07-11, Jacob) — every specimen equidistant from the
+  // center, so none recede or occlude the way the back rows did in the old grid.
+  // Radius sized so the canopies clear each other around the circumference.
+  const N = Math.max(1, visible.length)
+  const ringRadius = Math.max(TILE_SPACING, (visible.length * TILE_SPACING) / (2 * Math.PI))
   const positions = visible.map((_, i) => {
-    const cx = i % cols
-    const cz = Math.floor(i / cols)
-    return [
-      (cx - (cols - 1) / 2) * TILE_SPACING,
-      0,
-      cz * TILE_SPACING,
-    ]
+    const a = (i / N) * Math.PI * 2 - Math.PI / 2   // first at the back, sweep around
+    return [ringRadius * Math.cos(a), 0, ringRadius * Math.sin(a)]
   })
 
   // The click-selected tile's data drives the fixed editor panel.
@@ -190,28 +189,17 @@ export default function Grove() {
           letterSpacing: '0.1em', textTransform: 'uppercase',
           fontSize: 12, color: '#fff',
         }}>Grove</strong>
-        <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
-          {[
-            { v: 'gallery',  label: 'Gallery' },
-            { v: 'coverage', label: 'Coverage' },
-          ].map(o => (
-            <button key={o.v} onClick={() => setView(o.v)}
-              style={{
-                border: 'none', padding: '6px 12px', fontSize: 11,
-                background: view === o.v ? 'rgba(255,255,255,0.16)' : 'transparent',
-                color: view === o.v ? '#fff' : '#aaa',
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}>{o.label}</button>
-          ))}
-        </div>
-        <span style={{ color: '#888' }}>
-          {view === 'coverage'
-            ? <>roster-anchored coverage · read-only</>
-            : scope === 'look'
-            ? <>published compositions in <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong> · click to remove</>
-            : <>all published compositions · click to add/remove from <strong style={{ color: '#bce0a0' }}>{activeLook?.name || '—'}</strong></>}
-        </span>
-        {view === 'gallery' && (
+        {/* The neighborhood IS the selector (2026-07-11, Jacob) — the standard
+            looks pulldown, same as everywhere. Gallery/Coverage toggle removed;
+            Coverage belongs in the Salon, not here. */}
+        <select value={activeLookId || ''} onChange={(e) => setActiveLook(e.target.value)}
+          style={{
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)',
+            color: '#ddd', borderRadius: 4, padding: '5px 9px', fontSize: 12, fontFamily: 'inherit',
+          }}>
+          {looks.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+        </select>
+        {(
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
           <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
             {[
@@ -227,10 +215,6 @@ export default function Grove() {
                 }}>{o.label}</button>
             ))}
           </div>
-          <button onClick={loadGrove} style={btn()} title="Reload manifests">↻</button>
-          <span style={{ color: '#888' }}>
-            {scope === 'look' ? `${visible.length} in roster` : `${visible.length} of ${variants.length}`}
-          </span>
           <button
             onClick={bakeAll}
             disabled={groveBaking || !!(overheadProg && overheadProg !== 'done') || !activeLookId}
@@ -261,7 +245,6 @@ export default function Grove() {
         style={{ flex: 1, position: 'relative', minHeight: 0 }}
         onPointerDown={(e) => { downRef.current = { x: e.clientX, y: e.clientY } }}
       >
-        {view === 'coverage' && <CoverageView />}
         {view === 'gallery' && <>
         {publishing && (
           <div style={overlayMsg}>Publishing your Salon edits…</div>
@@ -334,8 +317,8 @@ export default function Grove() {
             ))}
           </Suspense>
 
-          <FitToContent count={visible.length} cols={cols} />
-          <OrbitControls makeDefault target={[0, 4, ((Math.ceil(visible.length / cols) - 1) * TILE_SPACING) / 2]} />
+          <FitToContent count={visible.length} radius={ringRadius} />
+          <OrbitControls makeDefault target={[0, 4, 0]} />
         </Canvas>
 
         {selectedVariant && (
@@ -370,18 +353,15 @@ export default function Grove() {
   )
 }
 
-function FitToContent({ count, cols }) {
-  // Reposition camera once when count changes so the grid is framed.
+function FitToContent({ count, radius }) {
+  // Frame the whole RING from outside + above, centered on the middle.
   const { camera } = useThree()
   useEffect(() => {
     if (!count) return
-    const rows = Math.ceil(count / cols)
-    const w = cols * TILE_SPACING
-    const d = rows * TILE_SPACING
-    const span = Math.max(w, d)
-    camera.position.set(0, span * 0.7 + 12, span * 0.9 + 20)
-    camera.lookAt(0, 4, (rows - 1) * TILE_SPACING / 2)
-  }, [count, cols, camera])
+    const span = radius * 2 + TILE_SPACING
+    camera.position.set(0, span * 0.6 + 12, span * 0.9 + 18)
+    camera.lookAt(0, 4, 0)
+  }, [count, radius, camera])
   return null
 }
 

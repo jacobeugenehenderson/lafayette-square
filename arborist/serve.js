@@ -226,6 +226,18 @@ function scanBakedManifests() {
 // runtime pool (mirrors build-index.js). Same doctrine, applied to the gallery.
 const isFillerSpecies = (id) => /procedural|^generic_|_rt\d+/i.test(String(id))
 
+// ELIGIBLE = the species has an AUTHORED COMPOSITION (≥1 slot with a chassis).
+// The Grove's membership gate per the 2026-06-20 "Grove → Slab" decision
+// (README §"The Grove → Slab"): "Grove membership = eligible + approved". The old
+// `quality ≥ 2` gate was meant to collapse into this and never fully did, so
+// stale/raw vendor publishes (uncomposed conifers, `platanus_acerifolia`,
+// group-mix packs, botanical-id duplicates like `nyssa_sylvatica` alongside the
+// composed `blackgum`) leaked into the gallery. Composed-only clears the wreck.
+const hasComposition = (id) => {
+  const data = readJsonOrNull(join(STATE_DIR, id, 'compositions.json'))
+  return Array.isArray(data?.compositions) && data.compositions.some(c => c && c.chassis)
+}
+
 function listSpecies() {
   const baked = scanBakedManifests()
   const SPECIES_DECL = readSpeciesDecl()
@@ -303,6 +315,7 @@ const server = createServer(async (req, res) => {
       const variants = []
       for (const [speciesId, m] of baked) {
         if (isFillerSpecies(speciesId)) continue   // no procedural/generic fillers
+        if (!hasComposition(speciesId)) continue   // ELIGIBLE = composed only (README §Grove → Slab)
         if (m.source !== 'glb' || !Array.isArray(m.variants)) continue
         const speciesLabel = m.displayName || m.label || speciesId
         const speciesCategory = m.category || null
