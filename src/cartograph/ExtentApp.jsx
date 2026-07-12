@@ -237,7 +237,9 @@ function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
   if (hasPoly && corners.length >= 3) poly.push([corners[0].x, 4, corners[0].z])
   return (
     <group>
-      {hasPoly && <Line points={poly} color="#38e1ff" lineWidth={2} dashed={false} />}
+      {/* Dark halo behind the boundary so it stays distinct over the busy aerial. */}
+      {hasPoly && <Line points={poly} color="#08110d" lineWidth={6} dashed={false} />}
+      {hasPoly && <Line points={poly} color="#38e1ff" lineWidth={3} dashed={false} />}
       {centroid && radiusM > 0 && (
         <Line points={circlePts(centroid.x, centroid.z, radiusM)} color="#ffd23f" lineWidth={2} />
       )}
@@ -778,8 +780,19 @@ export default function ExtentApp() {
       return { x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100 }
     })
     if (pts.length < 3) return null
-    const [cx, cz] = wgs84ToLocal(geo, official.centroidLL.lon, official.centroidLL.lat)
-    const centroid = { x: Math.round(cx * 100) / 100, z: Math.round(cz * 100) / 100 }
+    // Center the circle on the POLYGON'S OWN area-weighted centroid (shoelace), not
+    // the geocoder's `centroidLL` point — the latter can sit off-center from the
+    // projected ring, which read as "circle not centered".
+    let Ar = 0, gx = 0, gz = 0
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], q = pts[(i + 1) % pts.length]
+      const cr = p.x * q.z - q.x * p.z
+      Ar += cr; gx += (p.x + q.x) * cr; gz += (p.z + q.z) * cr
+    }
+    Ar *= 0.5
+    const centroid = Math.abs(Ar) > 1
+      ? { x: Math.round((gx / (6 * Ar)) * 100) / 100, z: Math.round((gz / (6 * Ar)) * 100) / 100 }
+      : (() => { const [cx, cz] = wgs84ToLocal(geo, official.centroidLL.lon, official.centroidLL.lat); return { x: Math.round(cx * 100) / 100, z: Math.round(cz * 100) / 100 } })()
     let radius = 0
     for (const p of pts) radius = Math.max(radius, Math.hypot(p.x - centroid.x, p.z - centroid.z))
     return { corners: pts, centroid, radius: Math.round(radius), closed: true, source: 'official' }
@@ -878,6 +891,17 @@ export default function ExtentApp() {
       if (b) upd.sceneBoundary = b
       if (Object.keys(upd).length) useCartographStore.setState(upd)
       if (g || st.sceneGeography) setLocated(true)
+      // Official geocoded boundary as the DEFAULT overlay + initial boundary for a
+      // NON-committed opened hood (a fresh Search already set `official`; a committed
+      // hood keeps its own boundary). Realizes the invariant: the boundary is the
+      // official ring unless streets refine it to a closed one. Projected into the
+      // live frame by `officialCorners`; rendered by ExtentBoundary/ExtentDim.
+      if (!cancelled && nb && !nb.committed) {
+        const label = (nb.name || '').trim()
+          || scene.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+        const gr = await geocodePlace(label).catch(() => null)
+        if (!cancelled && gr?.official?.ring) { setOfficial(gr.official); setUseOfficial(true) }
+      }
       draftHydrated.current = scene
     })().catch(() => { draftHydrated.current = scene })
     return () => { cancelled = true }
