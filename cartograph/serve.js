@@ -65,7 +65,10 @@ function runCapture(cmd, opts = {}) {
 // OPERATIONS §Save→ship (strategy B). serve.js runs ONLY under `npm run dev`,
 // never in the CI/prod build, so these endpoints simply don't exist in a
 // deployed context — the live app can't reach them.
-const STAGING_BRANCH = 'cartograph-looks-pass-ab'
+// Must match `staging.yml`'s trigger branch, or the Publish→staging push lands
+// where no workflow watches. Repointed to the trunk 2026-07-08 (26a62407);
+// this constant lagged until 2026-07-11. (Per-scene parameterization: PUBLISH.md §0.5.)
+const STAGING_BRANCH = 'curb-offset-draw'
 const PROD_BRANCH = 'main'
 const STAGING_SITE_URL = 'https://jacobeugenehenderson.github.io/lafayette-square-staging/'
 const PROD_SITE_URL = 'https://lafayette-square.com/'
