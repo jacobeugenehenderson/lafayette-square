@@ -2041,6 +2041,40 @@ function main() {
     console.log(`  directional corridors: ${corridors.length} [${[...new Set(corridors.map(c => c.base))].join(', ')}]`)
   }
 
+  // Propagate the corridor label ALONG the physical road. The loop above only
+  // stamps the two chains that MEET at the directional baseline (the split node);
+  // the rest of the corridor — longitudinal continuations, the antiparallel
+  // carriageway, and any unprefixed middle ("Woodbury Road" between West/East
+  // Woodbury) — stays untagged. That breaks the Extent boundary resolver, which
+  // groups selections by `corridor`: a divided arterial surfaces as several names
+  // and no single pick gathers the whole edge, so the ring won't close (Altadena's
+  // Woodbury). Spread each seeded label to every chain that (a) shares a node with
+  // an already-tagged chain and (b) has the SAME corridor base (directional prefix
+  // stripped). The base-name guard is what prevents leaking onto a cross street —
+  // a different road has a different base — so no heading test is needed. Purely
+  // additive labelling; `corridor` feeds ONLY Extent selection + the aerial/
+  // dropdown label-collapse, never derive/bake, so LS renders byte-identical.
+  {
+    const queue = streets.filter(s => s.corridor)
+    let spread = 0
+    while (queue.length) {
+      const s = queue.shift()
+      const base = s.corridor
+      const p = s.points
+      for (const node of [vKey(p[0]), vKey(p[p.length - 1])]) {
+        for (const rec of (endpointChains.get(node) || [])) {
+          const t = byId.get(rec.id)
+          if (t.corridor) continue                             // already tagged
+          if (corridorBase(t.name) !== base) continue          // same physical road only
+          t.corridor = base
+          queue.push(t)
+          spread++
+        }
+      }
+    }
+    if (spread) console.log(`  corridor propagation: +${spread} chain(s) tagged along the road`)
+  }
+
   console.log('\nSkeleton:')
   console.log(`  streets: ${streets.length}`)
   console.log(`  paths:   ${paths.length}`)
