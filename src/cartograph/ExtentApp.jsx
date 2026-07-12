@@ -644,20 +644,6 @@ export default function ExtentApp() {
     if (scene && useCartographStore.getState().scene !== scene) setStoreScene(scene)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  // Space-to-pan (design-tool convention): the map pans ONLY while SPACE is held,
-  // so the plain cursor stays a precise picker for clicking boundary streets. Scroll
-  // wheel still zooms. Guarded so Space typed in the panel's text fields is unaffected.
-  const [panMode, setPanMode] = useState(false)
-  useEffect(() => {
-    const typing = (t) => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
-    const down = (e) => { if (e.code === 'Space' && !typing(e.target)) { e.preventDefault(); setPanMode(true) } }
-    const up = (e) => { if (e.code === 'Space') setPanMode(false) }
-    const clear = () => setPanMode(false)
-    window.addEventListener('keydown', down)
-    window.addEventListener('keyup', up)
-    window.addEventListener('blur', clear)
-    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', clear) }
-  }, [])
   const markerActive = useCartographStore(s => s.markerActive)
   const controlsRef = useRef(null)
   const orthoRef = useRef(null)
@@ -802,11 +788,16 @@ export default function ExtentApp() {
   // Effective boundary: named streets (precise, once ≥3 resolve) OVERRIDE the
   // official best-guess; else the official boundary if adopted; else the partial
   // street result (so the "not closed" hint still shows while naming).
+  // INVARIANT: the boundary is always an enclosed polygon — never an open state.
+  // Selected streets REFINE it (win only when they form a CLOSED ring, clean for a
+  // simple arterial loop like LS); otherwise the official geocoded ring is the
+  // polygon — unconditionally, not gated on the `useOfficial` toggle. So a hood with
+  // an official boundary can always Pour to a closed polygon; streets never gate it.
   const corners = useMemo(() => {
     if (streetCorners?.closed) return streetCorners
-    if (useOfficial && officialCorners) return officialCorners
+    if (officialCorners) return officialCorners
     return streetCorners
-  }, [streetCorners, useOfficial, officialCorners])
+  }, [streetCorners, officialCorners])
 
   // Roster membership (must follow `corners`): default = centroid in the
   // boundary-street polygon; overrides layer on top.
@@ -844,15 +835,20 @@ export default function ExtentApp() {
   }
 
   // On scene establish (a search sets it) or committed re-open: clear transient
-  // geometry and, for a COMMITTED hood, restore its saved extent from disk. It
-  // deliberately does NOT touch official / name / blurb / located — the SEARCH
-  // owns those and this effect fires right after onSearch sets the scene, so
-  // clearing them here would wipe the best-guess first pass (the old race).
+  // geometry and, for a COMMITTED hood, restore its saved extent from disk. Does
+  // NOT touch official / located — the SEARCH owns those (this fires right after
+  // onSearch sets the scene, and clearing them would wipe the best-guess first pass).
+  // It DOES reset name/blurb/sides/radius: hydration below only SETS them when the
+  // new hood has values, so without this reset a hood with an empty name would keep
+  // the PREVIOUS hood's name — which the autosave then wrote to the wrong scene's
+  // file (the LS-name-on-Altadena clobber). Search sets name/blurb to '' anyway, so
+  // resetting here is idempotent for a search and correct for an open.
   // `scene === null` (empty workspace) is a clean no-op: nothing loads.
   useEffect(() => {
     if (!scene) return
     setSeedError(null); setFetchSources(null)
     setSides([]); setStreetCorners(null); setPreviewStreet(null)
+    setName(''); setBlurb(''); setRadiusM(0); setRadiusTouched(false)
     setCommittedRadius(0); setRescoping(false)
     draftHydrated.current = false
     let cancelled = false
@@ -882,8 +878,8 @@ export default function ExtentApp() {
       if (b) upd.sceneBoundary = b
       if (Object.keys(upd).length) useCartographStore.setState(upd)
       if (g || st.sceneGeography) setLocated(true)
-      draftHydrated.current = true
-    })().catch(() => { draftHydrated.current = true })
+      draftHydrated.current = scene
+    })().catch(() => { draftHydrated.current = scene })
     return () => { cancelled = true }
   }, [scene])
 
@@ -891,10 +887,11 @@ export default function ExtentApp() {
   // to the committed hydration above). Gated on a scene so the empty workspace stays blank.
   useEffect(() => { if (scene && sceneBoundary) setLocated(true) }, [scene, sceneBoundary])
 
-  // Draft auto-save (implicit) — sides + radius, debounced. Skips the initial
-  // hydration + the empty workspace (no scene → nothing to save).
+  // Draft auto-save (implicit) — sides + radius, debounced. Only writes once the
+  // CURRENT scene's data has hydrated (draftHydrated holds the hydrated scene id) —
+  // so a mid-switch render can never persist one hood's fields into another's file.
   useEffect(() => {
-    if (!draftHydrated.current || !scene) return
+    if (draftHydrated.current !== scene || !scene) return
     const clean = sides.map(s => s.trim()).filter(Boolean)
     const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim() }).catch(() => {}) }, 500)
     return () => clearTimeout(t)
@@ -1199,7 +1196,7 @@ export default function ExtentApp() {
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
-      <div className="carto-canvas-wrap" style={{ cursor: panMode ? 'grab' : (curating ? 'pointer' : 'crosshair') }}>
+      <div className="carto-canvas-wrap" style={{ cursor: curating ? 'pointer' : 'grab' }}>
         <Canvas
           orthographic
           frameloop="always"
@@ -1224,7 +1221,7 @@ export default function ExtentApp() {
             ref={controlsRef}
             makeDefault
             enableRotate={false}
-            enablePan={panMode && !markerActive}
+            enablePan={!markerActive}
             enableZoom
             screenSpacePanning
             minZoom={0.01}
@@ -1261,16 +1258,21 @@ export default function ExtentApp() {
           <div className="carto-section">
             {/* Neighborhood selector — the persistent switcher (Neighborhoods live in
                 Extent; the Look pulldown is per-neighborhood presets). */}
-            <NeighborhoodSelector scenes={scenesList} current={scene} currentName={name}
-              onOpen={openScene} onNew={newNeighborhood} />
+            <div style={{ marginBottom: 16 }}>
+              <NeighborhoodSelector scenes={scenesList} current={scene} currentName={name}
+                onOpen={openScene} onNew={newNeighborhood} />
+            </div>
             {!scene && (
               <div className="carto-extent-status" style={{ fontSize: 12, opacity: 0.8, margin: '8px 0' }}>
                 Pick a neighborhood above, or search a place to begin a new one — it opens in its own scene; no other neighborhood is touched.
               </div>
             )}
-            {/* ── SETUP ── search + fetch: setup-time only, collapses to a lone
-                re-fetch once streets are hydrated (established hood = no clutter). */}
-            {!hasData ? (
+            {/* ── SETUP ── search + fetch: setup-time ONLY. Fetch is the one
+                destructive step (re-pulls raw + regenerates the skeleton), so it's
+                offered only BEFORE the hood has data — never after. A wrong boundary
+                is fixed by re-selecting (non-destructive), never a re-fetch; a wrong
+                FRAME is redone via ＋New / Search. */}
+            {!hasData && (
               <div className="carto-subsection">
                 <div className="carto-subsection-header">Setup</div>
                 {/* Place search — a named place seeds its own scene + official boundary best-guess. */}
@@ -1310,17 +1312,6 @@ export default function ExtentApp() {
                   </div>
                 )}
                 {seedError && <div className="carto-extent-status warn">{seedError}</div>}
-              </div>
-            ) : located && !committed && (
-              // Pre-commit only — re-fetch re-pulls raw + regenerates the skeleton
-              // over the current camera bbox and clears named sides. Safe while
-              // nothing's baked; on a COMMITTED hood it would clobber the finalized
-              // frame the slab depends on, so there the re-pull path is ＋New / Search.
-              <div className="carto-row" style={{ margin: '4px 0 10px' }}>
-                <button className="carto-btn-sm carto-btn-muted" disabled={seeding} onClick={onFetchView}
-                  title="Re-pull the OSM + buildings + parcels bundle over the current view (clears named streets). Pre-commit only.">
-                  {seeding ? 'Fetching…' : '↻ Re-fetch view'}
-                </button>
               </div>
             )}
 
@@ -1434,8 +1425,9 @@ export default function ExtentApp() {
             )}
 
             {/* ── DETAILS ── public display name + a short blurb (doubles as the SEO
-                description). Persisted to neighborhood.json; independent of geometry. */}
-            {corners?.closed && (
+                description). Persisted to neighborhood.json; independent of geometry.
+                Editable on a baked (committed) hood too — details are non-destructive. */}
+            {(corners?.closed || committed) && (
               <div className="carto-subsection">
                 <div className="carto-subsection-header">Details</div>
                 <div className="carto-row">
