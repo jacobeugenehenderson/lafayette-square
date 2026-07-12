@@ -18,7 +18,7 @@
 - **Vocabulary = Promote / Demote, no ratings.** Kill the 0–4 Fill/Mid/Hero scale (false precision). **Promote** = vouch eligible (Salon). **Demote** = set aside, **reversible/non-destructive** (Grove, per-Look *and* global). Default = untouched. No hero bit.
 - **Grove is add-nothing, remove-freely** (read-only for adds; keeps demotion). Adds happen in the Salon.
 
-**▶ THE BIG JOB — the composition workspace, built on the 9 habit SHELVES (NOT a matcher).** Jacob 2026-07-08: a per-species fuzzy-match / recommendation score is brittle — "Recommended (0)" everywhere is that fragility showing. **Categorize, don't recommend.** The rubric already closes the set, so there's nothing to score:
+**✅ THE BIG JOB — BUILT 2026-07-11** (merge `f1496661`, agent Sylva; eye-gated "looking great"). **The composition workspace on the 9 habit SHELVES (NOT a matcher).** Jacob 2026-07-08: a per-species fuzzy-match / recommendation score is brittle — "Recommended (0)" everywhere is that fragility showing. **Categorize, don't recommend.** The rubric already closes the set, so there's nothing to score:
 > - **The counts are finite + complete:** **9 chassis HABITS** — `vase · columnar · oval · spreading · weeping · multi-stem · pyramidal · rounded · irregular` (rubric axis 0); **10 leaf shapes** (palmate · lobed · heart · ovate · lanceolate · compound · fan · star · needle · scale, axis 10); **~8 bark types**. Every silhouette is one of the nine — a closed botanical set, not a growing list.
 > - **Parts live on shelves.** Each chassis is assigned ONE of the 9 habits (a *fact*, assigned once — not a score recomputed); leaves → 1 of 10; bark → 1 of ~8. The chassis picker is a plate grid **grouped by shelf** (like bark/leaves already are).
 > - **A species declares its habit** (also a fact — White Oak = rounded/spreading). Selecting it lands you on that shelf; browse other shelves freely. **No Recommended toggle, no match engine.**
@@ -27,6 +27,18 @@
 > **The tagging is the reliable kind of work — assign-one-of-N, no ML:** the existing **~80-chassis habit-untag backlog** (1 of 9) + leaf-shape + bark-type per part. Bounded, checkable, a curation afternoon. Species carry their habit via the dossier/rubric ([[project_dossier_annotation_is_first_class_ip]]).
 >
 > Also in the workspace: roster list gets **All / By-Look** scope over the **growing cross-intake species library**; the `SLOT`-header spot → **collapsible species header** (light now: name · botanical · category · coverage; full dossier — reference photos + descriptor — when the species is tagged). Supersedes the [[project_arborist_kit_matcher]] recommendation framing.
+>
+> **✅ LANDED 2026-07-11 (merge `f1496661`, agent Sylva) — the Shelves gauntlet + Phase 4:**
+> - **Shelves surface** (`ShelvesWorkstage.jsx`, `chassisThumbnails.js`, `chassisForms.jsx` + backend catalog/part-shelf tags): browse all 241 chassis, **silhouette-only** into the 9 forms, junk auto-flag + set-aside, **whole-chassis crown-silhouette** thumbnails.
+> - **Phase 4 Salon** composes off the shelves; the matcher (`chassisPlateList` / `salonOptions` ranking + base-dedup) is **ripped out of the picker** — collapsed to "Oval (declared) + Other", dossier-first.
+> - **Library QC fallout, fixed:** wood-coverage / **stub-wood checker** (`backfill-wood-coverage.js` — leaves-first vendor variants like `black_gum_i` render bare-wood as a stub) + **47 orphaned-mesh chassis repaired** (`repair-orphan-meshes.js`, `glb-scene-utils.js`); **producer fix in `survey-deleaf.js`** (`attachOrphansToScene` + `computeWoodCoverage` at emit → a re-run reproduces both). The `_chassis` backfill/repair already wrote to the shared gitignored library.
+> - **Curation data:** `setAside` **decoupled from `approved`** (16 migrated `approved:false` → `setAside:true`) so the Salon isn't painted red.
+>
+> **◻ OPEN (the arc *enabled* these — not done):**
+> - **The tagging pass itself** — only ~5 chassis classified; the shelves stay empty until a **curation afternoon** (the whole point of the surface).
+> - **Vestigial:** the `InsideHeader` **"recommended" scope toggle** (old matcher UI) is still wired — sweep it (left in to keep Phase 4 contained).
+> - **Roster coverage lights (🟢/🟡/🔴)** are still the OLD `park_species_map` routing coverage, **NOT** reconceived as shelf/part coverage (chassis✓/bark✓/leaf✗) — a future arc.
+> - **Species-key seam** (roster slug `maple_sugar` vs botanical `acer_saccharum`) still tangled; Phase-4 landing works only because `/salon/:id/options` resolves both — **fragile; the #1 reliability fix** (ORIENTATION seam #2).
 
 **◻ Canary picker → Meteorologist side.** Removed the Salon's `→ Set canary` (2026-07-08). The Meteorologist has `CanaryScene` (reads the `meteorologist-canary-tree` localStorage pref, renders it) but **no picker** — needs a species/variant selector there (list from the Look's atlas/roster) that writes the same payload. Until built, the canary still *renders* the last-set value but can't be *changed* from the UI.
 
