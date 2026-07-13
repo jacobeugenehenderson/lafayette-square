@@ -36,6 +36,7 @@ import {
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import BezierPen, { flattenPath } from './BezierPen.jsx'
+import CircleHandle from './CircleHandle.jsx'
 import { CompassRoseSVG } from '../components/CompassRose.jsx'
 import {
   TileMesh, TILE_URL, lonLatToTile, tileToLonLat, wgs84ToLocal, localToWgs84,
@@ -1312,6 +1313,15 @@ export default function ExtentApp() {
           <BezierPen cameraRef={orthoRef} active={penActive} path={penPath}
             onChange={onPenChange} snapTargets={snapJunctions}
             selected={selAnchor} onSelect={setSelAnchor} />
+        )}
+
+        {/* The boundary circle as an in-scene drag handle — pull it out for padding.
+            Disabled while the pen / building-curation / marker owns the click so the
+            overlays never fight for a pointerdown. */}
+        {located && (corners?.closed || committed) && (
+          <CircleHandle cameraRef={orthoRef} center={boundaryCentroid} radiusM={radiusM}
+            onChange={(r) => { setRadiusTouched(true); setRadiusM(r) }}
+            disabled={penActive || curating || building || markerActive} />
         )}
 
         {/* Compass — the aerial is north-up, non-rotating (compass frame), so
