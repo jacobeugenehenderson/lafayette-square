@@ -153,6 +153,11 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
   pathRef.current = path
   const activeRef = useRef(active)
   activeRef.current = active
+  // Latest selected/spaceDown, readable inside the stable window handlers by ref.
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
+  const spaceDownRef = useRef(spaceDown)
+  spaceDownRef.current = spaceDown
   // Every mutation updates the ref SYNCHRONOUSLY before bubbling to the parent —
   // so a drag that fires immediately after an add/insert (handle-pull, drag-after-
   // insert) reads the fresh path, not the pre-render stale one. The parent's state
@@ -371,12 +376,6 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, onChange, onSelect, snapTargets, snapDist])
-
-  // Keep the latest selected/spaceDown readable inside the stable window handlers.
-  const selectedRef = useRef(selected)
-  selectedRef.current = selected
-  const spaceDownRef = useRef(spaceDown)
-  spaceDownRef.current = spaceDown
 
   // ── path mutations (called from handlers) ─────────────────────────────────
   function deleteAnchor(i) {

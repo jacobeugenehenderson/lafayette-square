@@ -5,13 +5,18 @@
  * neighborhood's extent on a labeled aerial, then pours it — the whole
  * intake→3D arc in one screen, no hand-CLI. The flow:
  *
- *   SEARCH a place ('+'-joined anchors → union bbox; a named place also yields
- *   its OFFICIAL boundary as a best-guess) → frame the aerial → FETCH THIS VIEW
- *   (the full bundle: OSM+skeleton + MSBF buildings + assessor parcels, with
- *   per-source status) → name the boundary Sides (corners resolve from skeleton
- *   junctions) OR adopt the official boundary → radius → name/blurb →
- *   POUR → DESIGNER (commit: re-center + reproject + boundary + derived tz;
- *   then pipeline → ribbons → bake).
+ *   SEARCH a place (a DATA BOOTSTRAP only — union bbox to frame; we NEVER geocode
+ *   for geometry) → frame the aerial → FETCH THIS VIEW (the full bundle:
+ *   OSM+skeleton + MSBF buildings + assessor parcels, per-source status) → DRAW
+ *   THE BOUNDARY with the editable bezier PEN (its closed path IS the membership
+ *   boundary; snaps to skeleton junctions) → radius (in-scene circle handle) →
+ *   name/blurb → POUR → DESIGNER (commit: re-center + reproject + flatten the pen
+ *   path → boundary polygon + derived tz; then pipeline → ribbons → bake).
+ *
+ * The pen path is the FIRST-CLASS artifact — a living, endlessly-editable bezier
+ * the operator keeps fixing across sessions (`HANDOFF-extent-pen-boundary.md`,
+ * `BezierPen.jsx`). The old auto-derived official-ring / snap-route boundary is
+ * DELETED (an admin polygon is not a neighborhood). Street-selection is dormant.
  *
  * This is a DESTINATION, not a Designer tool-mode (its own nav button, like
  * Designer / Stage) — so it renders as an early return from CartographApp with
@@ -19,7 +24,8 @@
  * main scene.
  *
  * Persists: geography.json (projection + derived timezone), neighborhood_boundary.json
- * (the circle + membership polygon), neighborhood.json (name/blurb/sides/radius/tz).
+ * (the circle + derived membership polygon), neighborhood.json (name/blurb/radius/tz
+ * + boundaryPath — the editable pen path, lon/lat, reloaded editable on open).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -903,8 +909,8 @@ export default function ExtentApp() {
 
   // On scene establish (a search sets it) or committed re-open: clear transient
   // geometry and, for a COMMITTED hood, restore its saved extent from disk. Does
-  // NOT touch official / located — the SEARCH owns those (this fires right after
-  // onSearch sets the scene, and clearing them would wipe the best-guess first pass).
+  // NOT touch `located` — the SEARCH owns it (this fires right after onSearch sets
+  // the scene, and clearing it would blank the aerial the operator just framed).
   // It DOES reset name/blurb/sides/radius: hydration below only SETS them when the
   // new hood has values, so without this reset a hood with an empty name would keep
   // the PREVIOUS hood's name — which the autosave then wrote to the wrong scene's
@@ -937,7 +943,7 @@ export default function ExtentApp() {
       // Load the frame + boundary so an EXISTING hood (committed OR fetched-but-
       // in-progress, like Altadena) shows its aerial + circle on entry. For a fresh
       // SEARCH the store geo is already set (disk has none yet) → we keep it and
-      // never touch official/located, so the best-guess first pass isn't wiped.
+      // don't touch `located`, so the aerial the operator just framed isn't blanked.
       const st = useCartographStore.getState()
       const [g, b] = await Promise.all([
         st.sceneGeography ? Promise.resolve(st.sceneGeography) : fetchGeography(scene).catch(() => null),
