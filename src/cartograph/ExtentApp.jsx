@@ -21,7 +21,7 @@
  * Persists: geography.json (projection + derived timezone), neighborhood_boundary.json
  * (the circle + membership polygon), neighborhood.json (name/blurb/sides/radius/tz).
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
@@ -31,10 +31,11 @@ import {
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourScene, fetchRibbons, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeScene, rollbackExtent,
-  fetchStreets, fetchBoundaryFromStreets, fetchScenes,
+  fetchStreets, fetchBoundaryFromStreets, fetchScenes, fetchSkeleton,
 } from './api.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
+import BezierPen, { flattenPath } from './BezierPen.jsx'
 import { CompassRoseSVG } from '../components/CompassRose.jsx'
 import {
   TileMesh, TILE_URL, lonLatToTile, tileToLonLat, wgs84ToLocal, localToWgs84,
@@ -749,10 +750,14 @@ export default function ExtentApp() {
   const [previewStreet, setPreviewStreet] = useState(null)
   const [sides, setSides] = useState([])   // selected boundary streets (visual, order-independent)
   const [streetCorners, setStreetCorners] = useState(null)   // resolved from named boundary streets
-  // The official boundary (best-guess fill from the geocoder) + whether we're
-  // adopting it. Named streets OVERRIDE it when the operator resolves ≥3 (§0.0).
-  const [official, setOfficial] = useState(null)     // { ring:[[lon,lat]…], centroidLL, displayName }
-  const [useOfficial, setUseOfficial] = useState(false)
+  // The editable bezier boundary path — the FIRST-CLASS persisted artifact. Stored
+  // frame-independently as lon/lat so it survives commit's re-center/reproject
+  // (mirrors how official.ring was stored). null = nothing drawn yet. The closed
+  // membership polygon is DERIVED (flattened) from this, never stored separately.
+  //   { closed, anchors:[{ lon, lat, type:'corner'|'smooth', handleIn?:{lon,lat}, handleOut?:{lon,lat} }] }
+  const [boundaryLL, setBoundaryLL] = useState(null)
+  const [penActive, setPenActive] = useState(false)     // pen tool engaged → clicks author the path
+  const [selAnchor, setSelAnchor] = useState(null)      // selected anchor index (drives handles + Delete)
   const [anchors, setAnchors] = useState(null)       // matched place names, for the "matched:" line
   // Descriptive metadata — name + short blurb (the blurb doubles as SEO/description).
   const [name, setName] = useState('')
@@ -771,32 +776,66 @@ export default function ExtentApp() {
   const [rescoping, setRescoping] = useState(false)
   const draftHydrated = useRef(false)
 
-  // The official boundary projected into the CURRENT frame (for drawing + as the
-  // best-guess `corners`). Recomputed if the geography re-frames (e.g. a re-fetch).
-  const officialCorners = useMemo(() => {
-    if (!official?.ring || !geo) return null
-    const pts = official.ring.map(([lon, lat]) => {
-      const [x, z] = wgs84ToLocal(geo, lon, lat)
-      return { x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100 }
+  // The stored lon/lat boundary path projected into the CURRENT live frame → the
+  // x/z path BezierPen edits + renders. Recomputed if the geography re-frames (a
+  // re-fetch / commit re-center) — so an authored anchor never moves off the aerial.
+  const penPath = useMemo(() => {
+    if (!boundaryLL?.anchors || !geo) return null
+    const anchors = boundaryLL.anchors.map(a => {
+      const [x, z] = wgs84ToLocal(geo, a.lon, a.lat)
+      const out = { x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100, type: a.type || 'corner' }
+      if (a.handleIn) { const [hx, hz] = wgs84ToLocal(geo, a.handleIn.lon, a.handleIn.lat); out.hIn = { x: Math.round(hx * 100) / 100, z: Math.round(hz * 100) / 100 } }
+      if (a.handleOut) { const [hx, hz] = wgs84ToLocal(geo, a.handleOut.lon, a.handleOut.lat); out.hOut = { x: Math.round(hx * 100) / 100, z: Math.round(hz * 100) / 100 } }
+      return out
     })
-    if (pts.length < 3) return null
-    // Center the circle on the POLYGON'S OWN area-weighted centroid (shoelace), not
-    // the geocoder's `centroidLL` point — the latter can sit off-center from the
-    // projected ring, which read as "circle not centered".
-    let Ar = 0, gx = 0, gz = 0
-    for (let i = 0; i < pts.length; i++) {
-      const p = pts[i], q = pts[(i + 1) % pts.length]
-      const cr = p.x * q.z - q.x * p.z
-      Ar += cr; gx += (p.x + q.x) * cr; gz += (p.z + q.z) * cr
-    }
-    Ar *= 0.5
-    const centroid = Math.abs(Ar) > 1
-      ? { x: Math.round((gx / (6 * Ar)) * 100) / 100, z: Math.round((gz / (6 * Ar)) * 100) / 100 }
-      : (() => { const [cx, cz] = wgs84ToLocal(geo, official.centroidLL.lon, official.centroidLL.lat); return { x: Math.round(cx * 100) / 100, z: Math.round(cz * 100) / 100 } })()
+    return { closed: !!boundaryLL.closed, anchors }
+  }, [boundaryLL, geo])
+
+  // BezierPen edits in x/z → convert back to frame-independent lon/lat and store.
+  // This is the write path for every pen gesture; the lon/lat form is what persists.
+  const onPenChange = useCallback((xzPath) => {
+    if (!geo || !xzPath) return
+    const anchors = (xzPath.anchors || []).map(a => {
+      const [lon, lat] = localToWgs84(geo, a.x, a.z)
+      const out = { lon, lat, type: a.type || 'corner' }
+      if (a.hIn) { const [hl, ht] = localToWgs84(geo, a.hIn.x, a.hIn.z); out.handleIn = { lon: hl, lat: ht } }
+      if (a.hOut) { const [hl, ht] = localToWgs84(geo, a.hOut.x, a.hOut.z); out.handleOut = { lon: hl, lat: ht } }
+      return out
+    })
+    setBoundaryLL(anchors.length ? { closed: !!xzPath.closed, anchors } : null)
+  }, [geo])
+
+  // The DERIVED membership boundary from the pen path — flatten the beziers → the
+  // closed polygon downstream reads (point-in-polygon membership, auto-radius, the
+  // Pour). Only a CLOSED path with ≥3 anchors yields a polygon; an open draft has none.
+  const penCorners = useMemo(() => {
+    if (!penPath?.closed || (penPath.anchors?.length ?? 0) < 3) return null
+    const poly = flattenPath(penPath)
+    if (poly.length < 3) return null
+    let A = 0, gx = 0, gz = 0
+    for (let i = 0; i < poly.length; i++) { const p = poly[i], q = poly[(i + 1) % poly.length]; const cr = p.x * q.z - q.x * p.z; A += cr; gx += (p.x + q.x) * cr; gz += (p.z + q.z) * cr }
+    A *= 0.5
+    let centroid
+    if (Math.abs(A) > 1) centroid = { x: gx / (6 * A), z: gz / (6 * A) }
+    else { let sx = 0, sz = 0; for (const p of poly) { sx += p.x; sz += p.z } centroid = { x: sx / poly.length, z: sz / poly.length } }
     let radius = 0
-    for (const p of pts) radius = Math.max(radius, Math.hypot(p.x - centroid.x, p.z - centroid.z))
-    return { corners: pts, centroid, radius: Math.round(radius), closed: true, source: 'official' }
-  }, [official, geo])
+    for (const p of poly) radius = Math.max(radius, Math.hypot(p.x - centroid.x, p.z - centroid.z))
+    return { corners: poly, centroid, radius: Math.round(radius), closed: true, source: 'pen' }
+  }, [penPath])
+
+  // Skeleton junctions = the pen's snap targets (crisp placement at intersections).
+  // A snap is a placement ASSIST only — the RESULT is frozen as a plain coord by
+  // onPenChange; no node reference is stored (no skeleton re-coupling on re-derive).
+  const [snapJunctions, setSnapJunctions] = useState([])
+  useEffect(() => {
+    let cancelled = false
+    setSnapJunctions([])
+    if (!scene) return
+    fetchSkeleton(scene)
+      .then(r => { if (!cancelled) setSnapJunctions((r.junctions || []).map(j => ({ x: j.x, z: j.z }))) })
+      .catch(() => { if (!cancelled) setSnapJunctions([]) })
+    return () => { cancelled = true }
+  }, [scene, seedToken])
 
   // A COMMITTED hood's boundary IS the polygon written at commit —
   // neighborhood_boundary.json → sceneBoundary.polygon (the snap-routed, street-
@@ -815,19 +854,16 @@ export default function ExtentApp() {
   }, [committed, sceneBoundary])
 
   // Effective boundary: a COMMITTED hood shows the polygon it was committed with;
-  // else named streets (once ≥3 resolve) OVERRIDE the official best-guess; else the
-  // official geocoded ring.
-  // INVARIANT: the boundary is always an enclosed polygon — never an open state.
-  // Selected streets REFINE it (win only when they form a CLOSED ring, clean for a
-  // simple arterial loop like LS); otherwise the official geocoded ring is the
-  // polygon — unconditionally, not gated on the `useOfficial` toggle. So a hood with
-  // an official boundary can always Pour to a closed polygon; streets never gate it.
+  // else the operator-authored PEN path (the closed bezier) is the boundary; else
+  // the DORMANT street-selection fallback (superseded, kept working, not ripped out).
+  // INVARIANT: the boundary is always an enclosed polygon — a pen path yields one
+  // only once CLOSED, which is the whole membership contract.
   const corners = useMemo(() => {
-    if (committedCorners) return committedCorners
-    if (streetCorners?.closed) return streetCorners
-    if (officialCorners) return officialCorners
-    return streetCorners
-  }, [committedCorners, streetCorners, officialCorners])
+    if (penCorners) return penCorners                 // the authored path is the truth
+    if (committedCorners) return committedCorners      // legacy: committed the old way, no pen path
+    if (streetCorners?.closed) return streetCorners    // dormant street-selection fallback
+    return null
+  }, [committedCorners, penCorners, streetCorners])
 
   // Roster membership (must follow `corners`): default = centroid in the
   // boundary-street polygon; overrides layer on top.
@@ -880,6 +916,7 @@ export default function ExtentApp() {
     setSides([]); setStreetCorners(null); setPreviewStreet(null)
     setName(''); setBlurb(''); setRadiusM(0); setRadiusTouched(false)
     setCommittedRadius(0); setRescoping(false)
+    setBoundaryLL(null); setPenActive(false); setSelAnchor(null)
     draftHydrated.current = false
     let cancelled = false
     ;(async () => {
@@ -890,8 +927,11 @@ export default function ExtentApp() {
         if (nb.name) setName(nb.name)
         if (nb.blurb) setBlurb(nb.blurb)
         if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
-        // Committed hood → prefer its OWN boundary over any official best-guess.
-        if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0); setUseOfficial(false) }
+        // Rehydrate the editable pen path (lon/lat) — reopening a hood returns the
+        // FULL editable path (not a frozen polygon), the "keep fixing across sessions"
+        // requirement. Projected to the live frame by `penPath`.
+        if (nb.boundaryPath?.anchors?.length) setBoundaryLL(nb.boundaryPath)
+        if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0) }
       }
       // Load the frame + boundary so an EXISTING hood (committed OR fetched-but-
       // in-progress, like Altadena) shows its aerial + circle on entry. For a fresh
@@ -908,17 +948,9 @@ export default function ExtentApp() {
       if (b) upd.sceneBoundary = b
       if (Object.keys(upd).length) useCartographStore.setState(upd)
       if (g || st.sceneGeography) setLocated(true)
-      // Official geocoded boundary as the DEFAULT overlay + initial boundary for a
-      // NON-committed opened hood (a fresh Search already set `official`; a committed
-      // hood keeps its own boundary). Realizes the invariant: the boundary is the
-      // official ring unless streets refine it to a closed one. Projected into the
-      // live frame by `officialCorners`; rendered by ExtentBoundary/ExtentDim.
-      if (!cancelled && nb && !nb.committed) {
-        const label = (nb.name || '').trim()
-          || scene.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-        const gr = await geocodePlace(label).catch(() => null)
-        if (!cancelled && gr?.official?.ring) { setOfficial(gr.official); setUseOfficial(true) }
-      }
+      // NO geocode-for-geometry on open. Search is a data bootstrap only; the
+      // operator authors the boundary with the pen (never an admin ring — an
+      // administrative polygon is not a neighborhood; `HANDOFF-extent-pen-boundary.md`).
       draftHydrated.current = scene
     })().catch(() => { draftHydrated.current = scene })
     return () => { cancelled = true }
@@ -934,9 +966,9 @@ export default function ExtentApp() {
   useEffect(() => {
     if (draftHydrated.current !== scene || !scene) return
     const clean = sides.map(s => s.trim()).filter(Boolean)
-    const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim() }).catch(() => {}) }, 500)
+    const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), boundaryPath: boundaryLL || null }).catch(() => {}) }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, name, blurb, scene])
+  }, [sides, radiusM, name, blurb, boundaryLL, scene])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -964,7 +996,7 @@ export default function ExtentApp() {
   // [scene] effect hydrates the frame/boundary). Clears any in-flight search state.
   const openScene = (id) => {
     setStoreScene(id)
-    setLocated(false); setOfficial(null); setUseOfficial(false); setAnchors(null)
+    setLocated(false); setBoundaryLL(null); setPenActive(false); setSelAnchor(null); setAnchors(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setSceneLocal(id)
   }
@@ -974,7 +1006,7 @@ export default function ExtentApp() {
   const newNeighborhood = () => {
     setSceneLocal(null)
     useCartographStore.setState({ sceneGeography: null, sceneBoundary: null, sceneRibbons: null })
-    setLocated(false); setOfficial(null); setUseOfficial(false); setAnchors(null)
+    setLocated(false); setBoundaryLL(null); setPenActive(false); setSelAnchor(null); setAnchors(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null); setCurating(false)
   }
@@ -1015,8 +1047,7 @@ export default function ExtentApp() {
       setSides([]); setStreetCorners(null); setFetchSources(null)
       setRadiusM(0); setRadiusTouched(false); setName(''); setBlurb('')
       setCommitted(false); setCommittedRadius(0)
-      if (r.official) { setOfficial(r.official); setUseOfficial(true) }
-      else { setOfficial(null); setUseOfficial(false) }
+      setBoundaryLL(null); setPenActive(false); setSelAnchor(null)
       setLocated(true)
     } catch (e) {
       setSeedError(e.message || 'search failed')
@@ -1037,26 +1068,17 @@ export default function ExtentApp() {
     if (!cam || !geo || seeding) return
     setSeeding(true); setSeedError(null)
     try {
-      let bbox
-      if (useOfficial && official?.ring?.length >= 3) {
-        // Bound to the official boundary (lon/lat), padded ~8% for breathing room.
-        let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity
-        for (const [lon, lat] of official.ring) {
-          if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon
-          if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat
-        }
-        const padLon = (maxLon - minLon) * 0.08, padLat = (maxLat - minLat) * 0.08
-        bbox = { minLon: minLon - padLon, maxLon: maxLon + padLon, minLat: minLat - padLat, maxLat: maxLat + padLat }
-      } else {
-        const halfW = (cam.right - cam.left) / (2 * cam.zoom)
-        const halfH = (cam.top - cam.bottom) / (2 * cam.zoom)
-        const cx = cam.position.x, cz = cam.position.z
-        const [lonA, latA] = localToWgs84(geo, cx - halfW, cz - halfH)
-        const [lonB, latB] = localToWgs84(geo, cx + halfW, cz + halfH)
-        bbox = {
-          minLat: Math.min(latA, latB), maxLat: Math.max(latA, latB),
-          minLon: Math.min(lonA, lonB), maxLon: Math.max(lonA, lonB),
-        }
+      // The framed viewport IS the fetch envelope — a deliberately-generous,
+      // throwaway bbox (a street visible in-frame is nameable/snappable). We never
+      // geocode-for-geometry to bound it; the operator frames by eye, then draws.
+      const halfW = (cam.right - cam.left) / (2 * cam.zoom)
+      const halfH = (cam.top - cam.bottom) / (2 * cam.zoom)
+      const cx = cam.position.x, cz = cam.position.z
+      const [lonA, latA] = localToWgs84(geo, cx - halfW, cz - halfH)
+      const [lonB, latB] = localToWgs84(geo, cx + halfW, cz + halfH)
+      const bbox = {
+        minLat: Math.min(latA, latB), maxLat: Math.max(latA, latB),
+        minLon: Math.min(lonA, lonB), maxLon: Math.max(lonA, lonB),
       }
       const r = await fetchExtent(scene, bbox)
       setFetchSources(r?.sources || null)
@@ -1091,16 +1113,16 @@ export default function ExtentApp() {
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
       setBuildStage('Committing extent…')
-      const usingOfficial = corners.source === 'official'
       const [lon, lat] = localToWgs84(geo, corners.centroid.x, corners.centroid.z)
-      // Named streets → precise skeleton-snapped polygon; official boundary →
-      // the geocoder's lon/lat ring, projected server-side into the re-centered
-      // frame (§0.0 best guess). tz is derived from `center` at commit.
-      const cleanSides = usingOfficial ? [] : sides.map(s => s.trim()).filter(Boolean)
+      // The pen path (frame-independent lon/lat) IS the membership boundary — the
+      // server projects it into the NOW re-centered frame + flattens the beziers
+      // into boundary.polygon. `sides` rides along for the dormant street resolver
+      // (server prefers boundaryPath when present). tz is derived from `center`.
+      const cleanSides = sides.map(s => s.trim()).filter(Boolean)
       await commitExtent(scene, {
         center: { lat, lon }, radius: Math.round(radiusM), sides: cleanSides,
         name: name.trim(), blurb: blurb.trim(),
-        polygon: usingOfficial ? official.ring : undefined,
+        boundaryPath: boundaryLL || undefined,
       })
       committedThisRun = true
       const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
@@ -1200,6 +1222,10 @@ export default function ExtentApp() {
   useEffect(() => {
     const c = corners?.centroid
     if (!corners?.closed || !c || !(radiusM > 0)) return
+    // Don't yank the camera while the operator is actively authoring the pen path —
+    // its centroid shifts on every edit. (A reopened COMMITTED pen hood still frames
+    // to its circle once.) They frame it themselves while drawing; commit re-frames.
+    if (corners.source === 'pen' && !committed) return
     const key = `${c.x},${c.z}`
     if (fitBoundaryRef.current === key) return
     const cam = orthoRef.current
@@ -1255,14 +1281,16 @@ export default function ExtentApp() {
           {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
-          {located && !curating && <ExtentClickableStreets streets={allStreets} selected={sides} gaps={gaps} onToggle={toggleStreet} />}
-          {located && <ExtentBoundary corners={corners?.corners} centroid={boundaryCentroid} radiusM={radiusM}
-            showVertices={corners?.source !== 'official'} />}
+          {located && !curating && !penActive && <ExtentClickableStreets streets={allStreets} selected={sides} gaps={gaps} onToggle={toggleStreet} />}
+          {/* The pen owns its own path rendering; ExtentBoundary then draws only the
+              circle for a pen boundary (corners omitted → no duplicate poly/vertices). */}
+          {located && <ExtentBoundary corners={corners?.source === 'pen' ? undefined : corners?.corners}
+            centroid={boundaryCentroid} radiusM={radiusM} showVertices={corners?.source !== 'pen'} />}
           <MapControls
             ref={controlsRef}
             makeDefault
             enableRotate={false}
-            enablePan={!markerActive}
+            enablePan={!markerActive && !penActive}
             enableZoom
             screenSpacePanning
             minZoom={0.01}
@@ -1275,6 +1303,16 @@ export default function ExtentApp() {
             up the aerial (boundaries, notes) while defining the extent. */}
         <MarkerOverlay cameraRef={orthoRef} />
         <MarkerFAB />
+
+        {/* The editable bezier pen — the boundary authoring surface. SVG overlay in
+            the MarkerOverlay pattern (viewBox = camera frustum). Draws the path
+            always (so a reopened/committed hood shows its boundary); editing engages
+            when `active`. Editing a committed hood's path → re-Pour applies it. */}
+        {located && (
+          <BezierPen cameraRef={orthoRef} active={penActive} path={penPath}
+            onChange={onPenChange} snapTargets={snapJunctions}
+            selected={selAnchor} onSelect={setSelAnchor} />
+        )}
 
         {/* Compass — the aerial is north-up, non-rotating (compass frame), so
             the shared rose sits static (reused from the runtime CompassRose). */}
@@ -1323,7 +1361,7 @@ export default function ExtentApp() {
                     onChange={e => setQuery(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') onSearch() }} />
                   <button className="carto-btn-sm" disabled={!query.trim() || searching} onClick={onSearch}
-                    title="Find the place, open it in its own scene, and adopt its official boundary as a best-guess first pass.">
+                    title="Find the place and open it in its own scene (a data bootstrap only — you draw the boundary with the pen).">
                     {searching ? '…' : 'Search'}
                   </button>
                 </div>
@@ -1356,67 +1394,79 @@ export default function ExtentApp() {
               </div>
             )}
 
-            {/* ── BOUNDARY ── the core extent work: official best-guess, the named
-                boundary streets, closure status, radius, and building curation. */}
-            {(hasData || official) && (
+            {/* ── BOUNDARY ── the core extent work: DRAW the boundary with the pen
+                (its closed bezier IS the membership polygon), set the radius, curate. */}
+            {located && (
             <div className="carto-subsection">
               <div className="carto-subsection-header">Boundary</div>
 
-              {/* Official boundary — the best-guess fill (§0.0). Adopt with a click;
-                  naming ≥3 streets below overrides it with the skeleton-snapped one. */}
-              {official && (
-                <div className="carto-row carto-row--wrap" style={{ marginBottom: 8 }}>
-                  <button className="carto-btn-sm" onClick={() => setUseOfficial(v => !v)}
-                    style={useOfficial ? { background: '#ffd23f', color: '#12140f', fontWeight: 600 } : undefined}
-                    title="Use the place's official boundary as the extent — a best guess you can refine by naming streets or dragging the radius">
-                    {useOfficial ? '✓ Official boundary' : '○ Use official boundary'}
-                  </button>
-                  {streetCorners?.closed && useOfficial &&
-                    <span className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 4 }}>
-                      named streets override the official boundary
-                    </span>}
-                </div>
-              )}
-
-              <div className="carto-label" style={{ cursor: 'default', flex: 'none', margin: '0 0 8px' }}>
-                Boundary streets{official ? ' (refine the official best guess)' : ''}
+              {/* The pen — THE boundary authoring tool. An editable bezier path the
+                  operator authors + keeps fixing across sessions; membership is
+                  point-in-polygon of its flattened polygon. Never a geocoded ring. */}
+              <div className="carto-row carto-row--wrap" style={{ marginBottom: penActive ? 4 : 8 }}>
+                <button className="carto-btn carto-btn--grow"
+                  onClick={() => { setPenActive(v => !v); setCurating(false) }}
+                  style={penActive ? { background: '#ffd23f', color: '#12140f', fontWeight: 600 } : undefined}
+                  title="Draw the neighborhood boundary as an editable bezier path — click points, drag for curves, close it. It decides which buildings are in the hood.">
+                  {penActive ? '✓ Drawing boundary — click to place, drag to curve' : (boundaryLL?.anchors?.length ? '✎ Edit boundary path' : '✎ Draw boundary')}
+                </button>
+                {boundaryLL?.anchors?.length > 0 && (
+                  <button className="carto-btn-sm" onClick={() => { setBoundaryLL(null); setSelAnchor(null) }}
+                    title="Clear the path and start over">clear</button>
+                )}
               </div>
-              {sides.length === 0 ? (
-                <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.8 }}>
-                  {allStreets.length
-                    ? 'Click the streets on the map that form the boundary.'
-                    : 'Fetch this view first, then click the boundary streets on the map.'}
+              {penActive && (
+                <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.85, marginBottom: 8, lineHeight: 1.5 }}>
+                  Click to drop points · drag to pull curve handles · click the first point to close.<br />
+                  Drag a point to move (snaps to intersections) · click a segment to insert · double-click toggles corner/smooth · ⌥-click or Delete removes.
                 </div>
-              ) : (
-                <div className="carto-row carto-row--wrap" style={{ gap: 6 }}>
-                  {sides.map((n, i) => {
-                    const st = streetCorners?.streets?.find(s => s.name === n)
-                    const bad = streetCorners && st && st.connected === false
-                    return (
-                      <span key={`${n}-${i}`} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 8px',
-                        borderRadius: 5, fontSize: 11, color: '#e7efe0',
-                        background: bad ? '#4a2a24' : '#26402c', border: `1px solid ${bad ? '#a86a48' : '#3f6a48'}`,
-                      }} title={bad ? 'this street does not connect to the ring yet' : (st?.direction ? `${st.direction} side` : '')}>
-                        {n}{st?.direction ? ` · ${st.direction}` : ''}
-                        <button className="carto-btn-sm" style={{ padding: '0 4px', minWidth: 0 }}
-                          onClick={() => removeStreet(i)} title="Remove">×</button>
-                      </span>
-                    )
-                  })}
+              )}
+              {boundaryLL?.anchors?.length > 0 && (
+                <div className={`carto-extent-status ${penPath?.closed ? 'ok' : 'warn'}`} style={{ marginBottom: 8 }}>
+                  {penPath?.closed
+                    ? `✓ closed boundary · ${boundaryLL.anchors.length} points`
+                    : `○ open path · ${boundaryLL.anchors.length} point(s) — click the first point to close it`}
                 </div>
               )}
 
-              {streetCorners && (
-                <div className={`carto-extent-status ${streetCorners.closed ? 'ok' : 'warn'}`} style={{ marginTop: 8 }}>
-                  {streetCorners.closed
-                    ? `✓ closed · ${streetCorners.corners.length} corners · centroid (${Math.round(streetCorners.centroid.x)}, ${Math.round(streetCorners.centroid.z)}) · fits ⌀${streetCorners.radius} m`
-                    : `⚠ not closed — ${gaps.length} street(s) don't connect: ${gaps.join(', ') || '—'}. Click the streets that meet them.`}
-                </div>
-              )}
-              {!streetCorners && useOfficial && official && (
-                <div className="carto-extent-status ok" style={{ marginTop: 8 }}>
-                  ✓ official boundary (best guess) · click boundary streets to refine, or pour as-is
+              {/* DORMANT street-selection fallback — superseded by the pen, kept
+                  working (not ripped out; HANDOFF follow-on cleanup). Steps aside the
+                  moment the pen is engaged or a path exists, so the two never compete. */}
+              {hasData && !penActive && !boundaryLL?.anchors?.length && (
+                <div style={{ marginTop: 4 }}>
+                  <div className="carto-label" style={{ cursor: 'default', flex: 'none', margin: '0 0 8px' }}>
+                    Or pick boundary streets
+                  </div>
+                  {sides.length === 0 ? (
+                    <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.8 }}>
+                      Click the streets on the map that form the boundary.
+                    </div>
+                  ) : (
+                    <div className="carto-row carto-row--wrap" style={{ gap: 6 }}>
+                      {sides.map((n, i) => {
+                        const st = streetCorners?.streets?.find(s => s.name === n)
+                        const bad = streetCorners && st && st.connected === false
+                        return (
+                          <span key={`${n}-${i}`} style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 8px',
+                            borderRadius: 5, fontSize: 11, color: '#e7efe0',
+                            background: bad ? '#4a2a24' : '#26402c', border: `1px solid ${bad ? '#a86a48' : '#3f6a48'}`,
+                          }} title={bad ? 'this street does not connect to the ring yet' : (st?.direction ? `${st.direction} side` : '')}>
+                            {n}{st?.direction ? ` · ${st.direction}` : ''}
+                            <button className="carto-btn-sm" style={{ padding: '0 4px', minWidth: 0 }}
+                              onClick={() => removeStreet(i)} title="Remove">×</button>
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {streetCorners && (
+                    <div className={`carto-extent-status ${streetCorners.closed ? 'ok' : 'warn'}`} style={{ marginTop: 8 }}>
+                      {streetCorners.closed
+                        ? `✓ closed · ${streetCorners.corners.length} corners · fits ⌀${streetCorners.radius} m`
+                        : `⚠ not closed — ${gaps.length} street(s) don't connect: ${gaps.join(', ') || '—'}.`}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1434,7 +1484,7 @@ export default function ExtentApp() {
                     value={radiusM}
                     onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
                   {corners?.radius
-                    ? <button className="carto-btn-sm" onClick={() => { setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to streets</button>
+                    ? <button className="carto-btn-sm" onClick={() => { setRadiusM(corners.radius + 120); setRadiusTouched(false) }}>fit to path</button>
                     : (committed && Math.round(radiusM) !== committedRadius &&
                         <button className="carto-btn-sm" onClick={() => setRadiusM(committedRadius)}>reset</button>)}
                   {committed && Math.round(radiusM) !== committedRadius && (
@@ -1450,9 +1500,9 @@ export default function ExtentApp() {
 
               {footprints?.buildings?.length > 0 && (
                 <div className="carto-row carto-row--wrap" style={{ marginTop: 12 }}>
-                  <button className="carto-btn-sm" onClick={() => setCurating(c => !c)}
+                  <button className="carto-btn-sm" onClick={() => { setCurating(c => !c); setPenActive(false) }}
                     style={curating ? { background: '#ff5a5a', color: '#12140f', fontWeight: 600 } : undefined}
-                    title="Curate the neighborhood — the street polygon is included by default; click an outside ghost to re-activate it, an inside building to hide it">
+                    title="Curate the neighborhood — the boundary polygon is included by default; click an outside ghost to re-activate it, an inside building to hide it">
                     {curating ? '✓ Done editing' : '✎ Edit buildings'}
                   </button>
                   {curating

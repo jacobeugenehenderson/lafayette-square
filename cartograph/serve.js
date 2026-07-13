@@ -421,48 +421,39 @@ function computeBoundaryFromSelection(scene, names) {
   return { corners, centroid, radius: Math.round(radius), ordered, gaps, streets, closed, source: 'selected' }
 }
 
-// SNAP-AND-ROUTE — turn a rough closed ring (the official geocoded admin boundary,
-// projected into the current frame) into a STREET-FOLLOWING membership polygon.
-// The admin ring is blind to the street grid and cuts through houses; this snaps it
-// onto real roads so membership is clean. Sample the ring → snap each sample to the
-// nearest street node (drop mountain-gap samples past SNAP_MAX) → A* route between
-// consecutive corners along the street graph → Douglas-Peucker. Returns [{x,z}] or
-// null (caller falls back to the raw ring). See scratch/altadena-boundary-snaproute.cjs.
-function snapRouteBoundary(scene, ring) {
-  const skel = getSkeleton(scene)
-  if (!skel || !Array.isArray(ring) || ring.length < 3) return null
-  const SAMPLE_STEP = 120, SNAP_MAX = 130, DP_EPS = 22
-  // street graph: nodes = 1m-quantized points, edges = chain segments
-  const K = p => `${Math.round(p.x)},${Math.round(p.z)}`
-  const adj = new Map(), coord = new Map()
-  const addEdge = (a, b) => {
-    const ka = K(a), kb = K(b); if (ka === kb) return
-    coord.set(ka, { x: a.x, z: a.z }); coord.set(kb, { x: b.x, z: b.z })
-    const w = Math.hypot(a.x - b.x, a.z - b.z)
-    ;(adj.get(ka) || adj.set(ka, []).get(ka)).push([kb, w])
-    ;(adj.get(kb) || adj.set(kb, []).get(kb)).push([ka, w])
+// Flatten the operator's editable bezier boundary path (the FIRST-CLASS artifact,
+// stored frame-independently as lon/lat) into the closed membership polygon, in the
+// given (re-centered, at-commit) frame. Project each anchor + handle lon/lat → x/z,
+// then sample every cubic segment. Absent handles collapse a segment to a straight
+// line. Deterministic — NO snapping, NO routing, NO geocode-for-geometry: the drawn
+// path IS the boundary (`HANDOFF-extent-pen-boundary.md`). Returns [{x,z}] or null.
+function flattenBoundaryPath(boundaryPath, geo) {
+  const A = boundaryPath?.anchors
+  if (!Array.isArray(A) || A.length < 3) return null
+  const r2 = (v) => Math.round(v * 100) / 100
+  // lon/lat → local x/z in the committed frame (matches reproject-raw's projection:
+  // the same lonToMeters/latToMeters the reprojected buildings use, so membership lines up).
+  const latToM = geo.latToMeters || 111000
+  const proj = (p) => ({ x: (p.lon - geo.lon) * geo.lonToMeters, z: (geo.lat - p.lat) * latToM })
+  const pts = A.map(a => ({
+    p: proj(a),
+    hIn: a.handleIn ? proj(a.handleIn) : null,
+    hOut: a.handleOut ? proj(a.handleOut) : null,
+  }))
+  const cubic = (p0, c0, c1, p3, t) => {
+    const u = 1 - t, w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t
+    return { x: w0 * p0.x + w1 * c0.x + w2 * c1.x + w3 * p3.x, z: w0 * p0.z + w1 * c0.z + w2 * c1.z + w3 * p3.z }
   }
-  for (const s of skel.streets) { const p = s.points; if (!p || p.length < 2) continue; for (let i = 0; i + 1 < p.length; i++) addEdge(p[i], p[i + 1]) }
-  if (!coord.size) return null
-  const nodes = [...coord.entries()].map(([k, c]) => ({ k, x: c.x, z: c.z }))
-  const CELL = 120, grid = new Map()
-  for (const n of nodes) { const gk = `${Math.floor(n.x / CELL)},${Math.floor(n.z / CELL)}`; (grid.get(gk) || grid.set(gk, []).get(gk)).push(n) }
-  const nearest = (x, z) => { let best = null, bd = Infinity; for (let r = 0; r < 25; r++) { for (let di = -r; di <= r; di++) for (let dj = -r; dj <= r; dj++) { if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue; const c = grid.get(`${Math.floor(x / CELL) + di},${Math.floor(z / CELL) + dj}`); if (!c) continue; for (const n of c) { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; best = n } } } if (best && r >= Math.ceil(bd / CELL) + 1) break } return best ? { node: best, d: bd } : null }
-  // sample ring + snap
-  const samples = [ring[0]]; { let acc = 0; for (let i = 1; i < ring.length; i++) { acc += Math.hypot(ring[i].x - ring[i - 1].x, ring[i].z - ring[i - 1].z); if (acc >= SAMPLE_STEP) { samples.push(ring[i]); acc = 0 } } }
-  const snaps = []
-  for (const s of samples) { const r = nearest(s.x, s.z); if (!r || r.d > SNAP_MAX) continue; if (!snaps.length || snaps[snaps.length - 1].k !== r.node.k) snaps.push(r.node) }
-  if (snaps.length < 3) return null
-  // A*
-  class Heap { constructor() { this.a = [] } push(x) { const a = this.a; a.push(x); let i = a.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break;[a[p], a[i]] = [a[i], a[p]]; i = p } } pop() { const a = this.a, t = a[0], l = a.pop(); if (a.length) { a[0] = l; let i = 0; for (;;) { let L = 2 * i + 1, R = L + 1, m = i; if (L < a.length && a[L][0] < a[m][0]) m = L; if (R < a.length && a[R][0] < a[m][0]) m = R; if (m === i) break;[a[m], a[i]] = [a[i], a[m]]; i = m } } return t } get size() { return this.a.length } }
-  const astar = (sK, dK) => { const dst = coord.get(dK); const h = k => { const c = coord.get(k); return Math.hypot(c.x - dst.x, c.z - dst.z) }; const g = new Map([[sK, 0]]), prev = new Map(), pq = new Heap(), done = new Set(); pq.push([h(sK), sK]); while (pq.size) { const [, u] = pq.pop(); if (done.has(u)) continue; done.add(u); if (u === dK) break; const gu = g.get(u); for (const [v, w] of (adj.get(u) || [])) { const ng = gu + w; if (ng < (g.get(v) ?? Infinity)) { g.set(v, ng); prev.set(v, u); pq.push([ng + h(v), v]) } } } if (!prev.has(dK) && sK !== dK) return null; const path = [dK]; let c = dK; while (c !== sK) { c = prev.get(c); if (c == null) return null; path.push(c) } return path.reverse() }
-  const poly = []
-  for (let i = 0; i < snaps.length; i++) { const path = astar(snaps[i].k, snaps[(i + 1) % snaps.length].k); if (!path) { poly.push(coord.get(snaps[i].k)); continue } for (let j = 0; j < path.length - 1; j++) poly.push(coord.get(path[j])) }
-  if (poly.length < 3) return null
-  // Douglas-Peucker
-  const dp = (pts, eps) => { if (pts.length < 3) return pts; let dmax = 0, idx = 0; const a = pts[0], b = pts[pts.length - 1]; const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1; for (let i = 1; i < pts.length - 1; i++) { const p = pts[i]; const d = Math.abs((p.x - a.x) * dz - (p.z - a.z) * dx) / L; if (d > dmax) { dmax = d; idx = i } } if (dmax > eps) return dp(pts.slice(0, idx + 1), eps).slice(0, -1).concat(dp(pts.slice(idx), eps)); return [a, b] }
-  const simp = dp(poly, DP_EPS)
-  return simp.length >= 3 ? simp.map(p => ({ x: Math.round(p.x * 100) / 100, z: Math.round(p.z * 100) / 100 })) : null
+  const out = []
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length]
+    const curved = a.hOut || b.hIn
+    if (!curved) { out.push({ x: r2(a.p.x), z: r2(a.p.z) }); continue }
+    const c0 = a.hOut || a.p, c1 = b.hIn || b.p
+    const STEPS = 18
+    for (let k = 0; k < STEPS; k++) { const q = cubic(a.p, c0, c1, b.p, k / STEPS); out.push({ x: r2(q.x), z: r2(q.z) }) }
+  }
+  return out.length >= 3 ? out : null
 }
 
 // All named streets' polylines for the clickable boundary-selection layer — one
@@ -1343,7 +1334,7 @@ createServer(async (req, res) => {
       }
       _seedsInFlight.add(scene)
       try {
-        const { center, radius, sides, name, blurb, polygon } = JSON.parse(body || '{}')
+        const { center, radius, sides, name, blurb, boundaryPath } = JSON.parse(body || '{}')
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
@@ -1375,28 +1366,18 @@ createServer(async (req, res) => {
         // The bake culls building MEMBERSHIP by point-in-this-polygon; the circle
         // stays the slab disc / fade.
         const boundary = makeCircleBoundary(radius)
-        // The healed process: re-resolve the polygon ORDER-INDEPENDENTLY from the
-        // visually-selected boundary streets, in the NOW re-centered frame.
-        const cornerRes = computeBoundaryFromSelection(scene, (sides || []).map(s => (s || '').trim()).filter(Boolean))
-        if (cornerRes && Array.isArray(cornerRes.corners) && cornerRes.corners.length >= 3) {
-          // Selected streets, when the operator provides them, are the precise
-          // (skeleton-snapped) membership boundary — the explicit override.
+        // The operator's editable PEN PATH (frame-independent lon/lat) IS the
+        // membership boundary — project + flatten it into the NOW re-centered frame
+        // so it aligns with the reprojected buildings. Deterministic; the drawn path
+        // is the boundary (no snap/route/geocode). The DORMANT street-selection
+        // resolver is the fallback only when no pen path was authored.
+        const penPoly = flattenBoundaryPath(boundaryPath, geo)
+        const cornerRes = penPoly ? null : computeBoundaryFromSelection(scene, (sides || []).map(s => (s || '').trim()).filter(Boolean))
+        if (penPoly) {
+          boundary.polygon = penPoly
+          boundary.polygonSource = 'pen'
+        } else if (cornerRes && Array.isArray(cornerRes.corners) && cornerRes.corners.length >= 3) {
           boundary.polygon = cornerRes.corners
-        } else if (Array.isArray(polygon) && polygon.length >= 3) {
-          // Best-guess fill: the official boundary (lon/lat rings from the
-          // geocoder), projected into the NOW re-centered frame so it aligns with
-          // the reprojected buildings. §0.0 — a strong default, overridden by
-          // named streets above when the operator refines by eye.
-          const ring = polygon.map(([lon, lat]) => ({
-            x: Math.round((lon - geo.lon) * geo.lonToMeters * 100) / 100,
-            z: Math.round((geo.lat - lat) * 111000 * 100) / 100,
-          }))
-          // The admin ring is blind to the street grid and CUTS THROUGH HOUSES.
-          // Snap-and-route it onto real streets so membership is clean; fall back to
-          // the raw ring only if routing fails (e.g. no skeleton).
-          const routed = snapRouteBoundary(scene, ring)
-          boundary.polygon = routed || ring
-          boundary.polygonSource = routed ? 'official-snapped' : 'official'
         }
         writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
         // Structural directional identity — each named side + the cardinal it lies
@@ -1407,7 +1388,9 @@ createServer(async (req, res) => {
           ? cornerRes.streets.filter(s => s.name && s.direction).map(s => ({ name: s.name, direction: s.direction }))
           : []
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
-        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], borderStreets, radius: Math.round(radius), timezone: geo.timezone || null, committed: true }, null, 2))
+        // Persist the editable pen path (lon/lat) so reopening a committed hood
+        // returns the FULL editable path — the "keep fixing across sessions" contract.
+        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], borderStreets, radius: Math.round(radius), timezone: geo.timezone || null, boundaryPath: boundaryPath || null, committed: true }, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, radius: Math.round(radius) }))
       } catch (err) {
