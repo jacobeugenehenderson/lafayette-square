@@ -24,7 +24,10 @@ const useArboristStore = create((set, get) => ({
   // which one they're curating trees for, and (in pass 2) writes the
   // `trees` roster onto the active Look's design.json. The Looks
   // directory IS the shared bus — no inter-server polling needed.
-  looks: [],                    // [{id, name, createdAt, updatedAt}]
+  // `scene` is the NEIGHBOURHOOD the Look is a Look of — the axis the Grove's
+  // picker runs on. It equals `id` for every Look today; that is history, not a
+  // constraint (see cartograph/tree-bake-inputs.mjs#sceneForLook).
+  looks: [],                    // [{id, name, scene, createdAt, updatedAt}]
   defaultLookId: null,
   activeLookId:  (typeof localStorage !== 'undefined'
     ? localStorage.getItem(ACTIVE_LOOK_KEY) : null) || null,

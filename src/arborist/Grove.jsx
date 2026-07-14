@@ -55,6 +55,25 @@ export default function Grove() {
   const groveBakeResult = useArboristStore(s => s.groveBakeResult)
   const activeLookTrees = looksRosters[activeLookId] || []
 
+  // The neighbourhoods behind the Looks — the axis the picker above runs on.
+  // Deduped by scene, so two Looks over one neighbourhood collapse to one entry
+  // rather than showing the operator the same trees twice.
+  const neighborhoods = useMemo(() => {
+    const byScene = new Map()
+    for (const l of looks) {
+      const scene = l.scene || l.id
+      if (!byScene.has(scene)) byScene.set(scene, { scene, name: l.name, lookIds: [] })
+      byScene.get(scene).lookIds.push(l.id)
+    }
+    return [...byScene.values()]
+  }, [looks])
+  const activeScene = looks.find(l => l.id === activeLookId)?.scene || activeLookId
+  // Scene → the Look whose roster + atlas the Grove edits. One Look per scene
+  // today; if that ever stops being true this silently picks the first, which is
+  // the moment this needs a real sub-picker rather than a guess.
+  const lookIdForScene = (scene) =>
+    neighborhoods.find(n => n.scene === scene)?.lookIds[0] || scene
+
   // Two scopes (both populated by published compositions — visibility is
   // never gated on a Fill/Mid/Hero rating; see file header / Brief 27):
   //   'look'   — only the active Look's roster (curation review)
@@ -189,15 +208,26 @@ export default function Grove() {
           letterSpacing: '0.1em', textTransform: 'uppercase',
           fontSize: 12, color: '#fff',
         }}>Grove</strong>
-        {/* The neighborhood IS the selector (2026-07-11, Jacob) — the standard
-            looks pulldown, same as everywhere. Gallery/Coverage toggle removed;
-            Coverage belongs in the Salon, not here. */}
-        <select value={activeLookId || ''} onChange={(e) => setActiveLook(e.target.value)}
+        {/* The neighborhood IS the selector (2026-07-11, Jacob) — and as of
+            2026-07-15 it is sourced from the SCENES behind the Looks, not from
+            the Looks. The Grove curates a neighbourhood's trees: its census, its
+            roster, its assets are all neighbourhood facts, and a Look is only a
+            way to light them. Selecting one still resolves to a Look because the
+            roster + custom atlas are Look-keyed ON DISK
+            (looks/<id>/design.json → baked/<look>/) — that resolution is exact
+            while every Look's scene equals its id, and this is the seam that
+            grows a Look sub-picker the day a winter LS sits over the same
+            neighbourhood. Gallery/Coverage toggle removed; Coverage belongs in
+            the Salon, not here. */}
+        <label style={{ fontSize: 10, color: '#888', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Neighborhood
+        </label>
+        <select value={activeScene || ''} onChange={(e) => setActiveLook(lookIdForScene(e.target.value))}
           style={{
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)',
             color: '#ddd', borderRadius: 4, padding: '5px 9px', fontSize: 12, fontFamily: 'inherit',
           }}>
-          {looks.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+          {neighborhoods.map(n => <option key={n.scene} value={n.scene}>{n.name}</option>)}
         </select>
         {(
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -218,7 +248,7 @@ export default function Grove() {
           <button
             onClick={bakeAll}
             disabled={groveBaking || !!(overheadProg && overheadProg !== 'done') || !activeLookId}
-            title={`Bake this Look's roster to the slab (atlas + placements + overhead snapshots) — what LS renders. Takes ~10-30s.`}
+            title={`Bake this neighborhood's roster to the slab (atlas + placements + overhead snapshots) — what the map renders. Takes ~10-30s.`}
             style={{
               border: '1px solid rgba(150,220,130,0.4)', borderRadius: 4,
               padding: '6px 14px', fontSize: 11, fontWeight: 600,

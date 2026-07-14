@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync
 import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
+import { treeBakeInputsForScene } from './tree-bake-inputs.mjs'
 import { writeIfChanged } from './io.js'
 import tzLookup from 'tz-lookup'
 
@@ -1693,8 +1694,6 @@ createServer(async (req, res) => {
       const PIPELINE_SRC = ['pipeline.js', 'derive.js', 'snap.js', 'classify.js', 'standards.js', 'config.js'].map(f => join(here, f))
       const MAP_JSON   = bakePaths.map
       const RIBBONS    = join(REPO_ROOT, 'src', 'data', 'ribbons.json')
-      const PARK_TREES = join(REPO_ROOT, 'src', 'data', 'park_trees.json')
-      const PARK_WATER = join(REPO_ROOT, 'src', 'data', 'park_water.json')
       const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
       const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
@@ -1850,41 +1849,30 @@ createServer(async (req, res) => {
         [join(LOOK_DIR, 'scene.json')],
         `node bake-scene.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 30000 })
-      // Trees: LS-only today (the LS scene's PARK_TREES + PARK_WATER are
-      // hardcoded inputs, and tree placements are shared across LS Looks).
-      // Toy has its own ToyTrees component fed by a static JSON; no bake
-      // step is needed for it yet.
-      if (isDefaultScene && layerOn('tree')) {
-        await runIfDirty('trees',
-          [PARK_TREES, PARK_WATER, MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
-          [join(REPO_ROOT, 'public', 'baked', 'default.json')],
-          `node arborist/bake-trees.js --scene default`,
-          { cwd: REPO_ROOT, timeout: 60000 })
-      } else if (!isDefaultScene && layerOn('tree')) {
-        // Poured installation: union whichever census layers exist — the City
-        // Forestry census (13-fetch-city-trees.py) + the OSM County-side floor
-        // (14-fetch-osm-trees.py), spatially disjoint — into a LOOK-SCOPED
-        // baked/<id>/trees.json (never LS's global default.json). No census on
-        // disk yet → honest zero (skip). InstancedTrees mounts in the generic
-        // env reading this scoped path, so no LS ghost.
-        const censusLayers = [
-          join(bakePaths.clean, 'park_trees.json'),    // City (Hi-Pointe) census
-          join(bakePaths.clean, 'osm_trees.json'),     // County (DeMun) OSM floor
-          join(bakePaths.clean, 'derived_trees.json'), // NLCD canopy fill (parks/yards)
-        ].filter(existsSync)
-        // Per-scene species routing (15-derive-tree-mix.py) collapses the
-        // census onto the scene's library palette; falls back to LS's global
-        // map when absent.
-        const sceneMap = join(bakePaths.clean, '..', 'tree-species-map.json')
-        const mapArg = existsSync(sceneMap) ? ` --species-map ${sceneMap}` : ''
-        if (censusLayers.length) {
-          await runIfDirty('trees',
-            [...censusLayers, existsSync(sceneMap) ? sceneMap : MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
-            [join(LOOK_DIR, 'trees.json')],
-            `node arborist/bake-trees.js --scene ${id} --placements ${censusLayers.join(',')}${mapArg} --forbidden-map ${MAP_JSON} --output public/baked/${id}/trees.json`,
-            { cwd: REPO_ROOT, timeout: 90000 })
+      // Trees: TWO axes. The census is the SCENE's (this neighbourhood's real
+      // trees); the atlas + UV-rewritten GLBs are the LOOK's (baked by the
+      // Arborist's bake-look). Only the census side is resolved here, and it
+      // goes through the shared helper so this pour and the Grove's
+      // ship-to-slab bake the same neighbourhood from the same inputs to the
+      // same path — one answer, not two that drift
+      // (`cartograph/tree-bake-inputs.mjs`). No census on disk → honest zero.
+      if (layerOn('tree')) {
+        const treeInputs = treeBakeInputsForScene(bakeScene)
+        if (!treeInputs) {
+          skipped.push(`trees (no census on disk for scene '${bakeScene}' — honest zero)`)
         } else {
-          skipped.push('trees (no scene census on disk — honest zero)')
+          const flags = [
+            `--scene ${treeInputs.scene}`,
+            treeInputs.placements && `--placements ${treeInputs.placements.join(',')}`,
+            treeInputs.speciesMapPath && `--species-map ${treeInputs.speciesMapPath}`,
+            treeInputs.forbiddenMapPath && `--forbidden-map ${treeInputs.forbiddenMapPath}`,
+            `--output ${treeInputs.output}`,
+          ].filter(Boolean).join(' ')
+          await runIfDirty('trees',
+            [...treeInputs.inputs, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
+            [join(REPO_ROOT, treeInputs.output)],
+            `node arborist/bake-trees.js ${flags}`,
+            { cwd: REPO_ROOT, timeout: 90000 })
         }
       } else {
         skipped.push('trees (layer hidden)')

@@ -12,6 +12,8 @@ import { execFile } from 'child_process'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { bakeLook } from './bake-look.js'
+import { treeBakeInputsForScene, sceneForLook } from '../cartograph/tree-bake-inputs.mjs'
+import { DEFAULT_SCENE } from '../cartograph/config.js'
 import { publishLidarSpecies } from './lidar-publish.js'
 import {
   PRESETS as PROCEDURAL_PRESETS,
@@ -949,9 +951,13 @@ const server = createServer(async (req, res) => {
         // (6) bake-trees AWAITED — rebuilds placement substitution into
         // public/baked/default.json, which InstancedTrees fetches at runtime.
         // Without this the 88 Sugar Maple placements stay on the old variant.
+        // LS-only by design (the Salon publishes into LS's census); named
+        // through the helper so the scene axis is explicit and this file's
+        // output matches the Grove bake's byte-for-byte.
         const t3 = Date.now()
         const { bakeTrees } = await import('./bake-trees.js')
-        await bakeTrees()
+        const { inputs: _lsInputs, ...lsBakeArgs } = treeBakeInputsForScene(DEFAULT_SCENE)
+        await bakeTrees({ ...lsBakeArgs })
         timings.bakeTreesMs = Date.now() - t3
 
         return jsonRes(res, 200, {
@@ -1030,7 +1036,10 @@ const server = createServer(async (req, res) => {
       }
       try {
         const { bakeTrees } = await import('./bake-trees.js')
-        await bakeTrees()  // re-bake shared placements (default.json) so the cartograph reflects the new rating
+        // Re-bake LS's placements (default.json) so the cartograph reflects the
+        // new rating. LS-only by design; scene named explicitly via the helper.
+        const { inputs: _rateInputs, ...rateBakeArgs } = treeBakeInputsForScene(DEFAULT_SCENE)
+        await bakeTrees({ ...rateBakeArgs })
       } catch (e) {
         console.warn('[arborist] bake failed:', e.message)
       }
@@ -1162,16 +1171,38 @@ const server = createServer(async (req, res) => {
           })
         }
         const regenMs = Date.now() - tRegen
-        // 2. Atlas, 3. placements.
+        // 2. Atlas — the custom per-LOOK atlas. bake-look reads the LOOK's
+        //    roster (public/looks/<look>/design.json#/trees) and repacks the
+        //    master atlas + the UV-rewritten GLBs into baked/<look>/, which is
+        //    exactly where the runtime fetches them. This step is Look-keyed and
+        //    STAYS Look-keyed: under the target model the atlas is a
+        //    neighbourhood fact, but moving where it lives is a contract change
+        //    (Phase 3/4), not this fix.
         const atlas = await bakeLook(lookName, { viz: false })
         if (!atlas.ok) return jsonRes(res, 500, { error: 'bake-look failed', atlas })
-        const { bakeTrees } = await import('./bake-trees.js')
-        // ⚠️ STILL WRONG — one dropdown value driving both axes. On LS this sends
-        // the census to the phantom baked/lafayette-square.json while heroLook
-        // correctly lands the assets. Phase 2 splits it; this rename is behaviour-
-        // preserving on purpose. See HANDOFF-grove-neighborhood-axis.md.
-        const placements = await bakeTrees({ scene: lookName, lod: 'lod2', heroLook: lookName })
-        return jsonRes(res, 200, { ok: true, look: lookName, regenMs, regenLog, atlas, placements, totalMs: Date.now() - t0 })
+
+        // 3. Placements — the OTHER axis. The census is the NEIGHBOURHOOD's, so
+        //    it is resolved from the scene behind this Look, never from the Look
+        //    itself. Passing the Look name as the scene is the bug this fixes: on
+        //    LS it sent the census to the phantom baked/lafayette-square.json (a
+        //    path nothing reads) while the atlas above landed correctly — which is
+        //    why a Grove bake changed the tree MODELS but never the census.
+        //    heroLook stays the Look: the hero ROLE per placement is read off the
+        //    camera tracks, and tracks are authored per Look.
+        const scene = sceneForLook(lookName)
+        if (!scene) return jsonRes(res, 400, { error: `unknown look '${lookName}' — not in public/looks/index.json` })
+        const treeInputs = treeBakeInputsForScene(scene)
+        let placements
+        if (!treeInputs) {
+          // Honest zero: no census on disk for this neighbourhood. Skip rather
+          // than bake LS's trees under someone else's name.
+          placements = { skipped: true, reason: `no tree census on disk for scene '${scene}'` }
+        } else {
+          const { inputs: _dirtyInputs, ...bakeArgs } = treeInputs
+          const { bakeTrees } = await import('./bake-trees.js')
+          placements = await bakeTrees({ ...bakeArgs, lod: 'lod2', heroLook: lookName })
+        }
+        return jsonRes(res, 200, { ok: true, look: lookName, scene, regenMs, regenLog, atlas, placements, totalMs: Date.now() - t0 })
       } catch (err) {
         return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
       }
