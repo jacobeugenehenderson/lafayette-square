@@ -1165,6 +1165,10 @@ export default function ExtentApp() {
         const idx = await fetchLooks().catch(() => null)
         const lookId = idx?.looks?.find(l => l.scene === scene)?.id
         if (lookId) await bakeLook(lookId, { force: true })
+        // Switch the Designer to THIS hood's Look — else the pulldown/scene stay on
+        // the previous (default LS) Look. Mirrors the first-pour path.
+        const store = useCartographStore.getState()
+        if (lookId && store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
         const rb = await fetchRibbons(scene).catch(() => null)
         if (rb) useCartographStore.setState({ sceneRibbons: rb })
         setCommittedRadius(Math.round(radiusM))
