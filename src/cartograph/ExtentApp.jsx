@@ -868,6 +868,27 @@ export default function ExtentApp() {
     return false
   }, [exclusionPolys])
 
+  // PERF: precompute each building's centroid + id ONCE (a big fetch is ~33k
+  // buildings). Everything downstream reads these instead of re-deriving the ring
+  // centroid per pass — the difference between smooth and a hung tab at 33k.
+  const buildingCentroids = useMemo(() => {
+    const bs = footprints?.buildings
+    if (!bs) return null
+    return bs.map(b => { const c = ringCentroid(b.ring); return { id: b.id, x: c.x, z: c.z } })
+  }, [footprints])
+
+  // The ONE expensive pass: which buildings fall inside any exclusion loop → a Set.
+  // Runs point-in-polygon over all buildings ONCE per loop-edit; every membership
+  // memo below then does O(1) Set lookups instead of re-running PIP three times.
+  const loopExcluded = useMemo(() => {
+    const set = new Set()
+    if (!buildingCentroids || !exclusionPolys.length) return set
+    for (const c of buildingCentroids) {
+      for (const poly of exclusionPolys) { if (pointInPolygon(c.x, c.z, poly)) { set.add(c.id); break } }
+    }
+    return set
+  }, [buildingCentroids, exclusionPolys])
+
   // Skeleton junctions = the pen's (subtle) snap targets. Assist only — the RESULT is
   // frozen as a plain coord by onPenChange; no node reference stored.
   const [snapJunctions, setSnapJunctions] = useState([])
@@ -881,52 +902,73 @@ export default function ExtentApp() {
     return () => { cancelled = true }
   }, [scene, seedToken])
 
+  // Is a building excluded by loop-or-hand (NOT counting the circle)? O(1) — the
+  // shared predicate for the centroid + fit passes below. `activate` force-keeps.
+  const loopOrHandOut = (id) => hide.has(id) || (!activate.has(id) && loopExcluded.has(id))
+
   // The extent circle center: pre-commit = the centroid of KEPT buildings (auto-fit);
   // a COMMITTED hood is re-centered so its circle sits at the origin.
   const keptCenter = useMemo(() => {
     if (committed) return { x: 0, z: 0 }
-    const bs = footprints?.buildings
-    if (!bs?.length) return { x: 0, z: 0 }
+    if (!buildingCentroids?.length) return { x: 0, z: 0 }
     let sx = 0, sz = 0, n = 0
-    for (const b of bs) {
-      const c = ringCentroid(b.ring)
-      if (hide.has(b.id) || (!activate.has(b.id) && inExclusion(c))) continue   // loop/hand excluded
-      sx += c.x; sz += c.z; n++
-    }
+    for (const c of buildingCentroids) { if (loopOrHandOut(c.id)) continue; sx += c.x; sz += c.z; n++ }
     if (!n) return { x: 0, z: 0 }
     return { x: r2(sx / n), z: r2(sz / n) }
-  }, [footprints, committed, hide, activate, inExclusion])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildingCentroids, committed, hide, activate, loopExcluded])
 
   // Membership (INVERTED): a building is EXCLUDED if hand-hidden, or (not force-kept
   // AND (inside any loop OR outside the extent circle)). The circle is a coarse dial
-  // that auto-fits the kept set (so it removes nothing by default); loops are the
-  // fine carve. This mirrors the pour/bake exactly (circle fallback + exclusions).
+  // that auto-fits the kept set (removes nothing by default); loops are the fine
+  // carve. Mirrors the pour/bake exactly (circle fallback + exclusions). All O(1).
   const excludedIds = useMemo(() => {
     const set = new Set()
-    const bs = footprints?.buildings
-    if (!bs) return set
+    if (!buildingCentroids) return set
     const R2 = radiusM > 0 ? radiusM * radiusM : Infinity
-    for (const b of bs) {
-      const c = ringCentroid(b.ring)
-      const out = hide.has(b.id) || (!activate.has(b.id) && (inExclusion(c) || ((c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2) > R2))
-      if (out) set.add(b.id)
+    for (const c of buildingCentroids) {
+      const out = hide.has(c.id) || (!activate.has(c.id) && (loopExcluded.has(c.id) || ((c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2) > R2))
+      if (out) set.add(c.id)
     }
     return set
-  }, [footprints, hide, activate, inExclusion, keptCenter, radiusM])
+  }, [buildingCentroids, hide, activate, loopExcluded, keptCenter, radiusM])
 
   // The kept set's reach from the center — drives the auto-fit radius + the Pour gate.
   const keptFit = useMemo(() => {
-    const bs = footprints?.buildings
-    if (!bs?.length) return { radius: 0, count: 0 }
+    if (!buildingCentroids?.length) return { radius: 0, count: 0 }
     let radius = 0, count = 0
-    for (const b of bs) {
-      const c = ringCentroid(b.ring)
-      if (hide.has(b.id) || (!activate.has(b.id) && inExclusion(c))) continue
+    for (const c of buildingCentroids) {
+      if (loopOrHandOut(c.id)) continue
       count++
-      radius = Math.max(radius, Math.hypot(c.x - keptCenter.x, c.z - keptCenter.z))
+      const d2 = (c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2
+      if (d2 > radius) radius = d2
     }
-    return { radius: Math.round(radius), count }
-  }, [footprints, hide, activate, inExclusion, keptCenter])
+    return { radius: Math.round(Math.sqrt(radius)), count }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildingCentroids, hide, activate, loopExcluded, keptCenter])
+
+  // PERF: the RENDERED footprint set is culled to the circle + margin and capped at
+  // the nearest RENDER_CAP to centre. A legacy CDP fetch (Altadena ≈ 33k) can't be
+  // triangulated into one overlay without hanging the tab. Membership + counts are
+  // still computed over ALL buildings (cheap, id-keyed), so nothing is hidden from
+  // the bake — only the on-screen footprints are bounded, and shrinking the circle
+  // lightens the view. `capped` surfaces how many aren't drawn (no silent truncation).
+  const RENDER_CAP = 12000
+  const renderFootprints = useMemo(() => {
+    const bs = footprints?.buildings
+    if (!bs || !buildingCentroids) return { buildings: bs || [], capped: 0 }
+    const R = radiusM > 0 ? radiusM + 600 : Infinity
+    const R2 = R * R
+    const inR = []
+    for (let i = 0; i < bs.length; i++) {
+      const c = buildingCentroids[i]
+      const d2 = (c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2
+      if (d2 <= R2) inR.push({ b: bs[i], d2 })
+    }
+    if (inR.length <= RENDER_CAP) return { buildings: inR.map(s => s.b), capped: 0 }
+    inR.sort((a, b) => a.d2 - b.d2)
+    return { buildings: inR.slice(0, RENDER_CAP).map(s => s.b), capped: inR.length - RENDER_CAP }
+  }, [footprints, buildingCentroids, radiusM, keptCenter])
 
   // The single "eraser": flip one building's membership as a minimal override.
   const toggleBuilding = (id) => {
@@ -1295,7 +1337,7 @@ export default function ExtentApp() {
           {!located && <WorkspaceGrid />}
           {located && <ExtentAerial geo={geo} />}
           {located && radiusM > 0 && <ExtentDim centroid={boundaryCentroid} radiusM={radiusM} />}
-          {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
+          {located && <ExtentBuildings footprints={renderFootprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
           {/* Only the extent CIRCLE is drawn here (no inclusion polygon in the excluder
@@ -1449,6 +1491,11 @@ export default function ExtentApp() {
               {exclusionsLL.length > 0 && (
                 <div className="carto-extent-status ok" style={{ marginBottom: 8 }}>
                   {exclusionsLL.length} exclusion loop{exclusionsLL.length > 1 ? 's' : ''} · {keptFit.count.toLocaleString()} buildings kept
+                </div>
+              )}
+              {renderFootprints.capped > 0 && (
+                <div className="carto-extent-status warn" style={{ marginBottom: 8, fontSize: 11 }}>
+                  Showing the {RENDER_CAP.toLocaleString()} buildings nearest the centre · {renderFootprints.capped.toLocaleString()} more aren't drawn (all still count + bake). Pull the circle in to see the rest.
                 </div>
               )}
 
