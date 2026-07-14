@@ -51,7 +51,7 @@ public/photos/lafayette-square/
 
 # Raw data cache (regenerable via scripts/)
 scripts/raw/*
-!scripts/raw/stl_parcels.json
+# stl_parcels.json moved to cartograph/data/lafayette-square/raw/ (scene-homed)
 !scripts/raw/osm_street_lamps.json
 
 # Archived/defunct scripts

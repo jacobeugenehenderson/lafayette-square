@@ -1010,8 +1010,14 @@ export function deriveLayers(highways) {
   console.log(`  ${highways.length} highway features`)
 
   // ── Load parcels ──────────────────────────────────────────────
+  // Scene-homed like every other raw input: the ACTIVE scene's raw dir
+  // (RAW_DIR = sceneRawDir(SCENE)). LS's parcels used to be pinned to the
+  // legacy scripts/raw/ dump — the one input that never got the scene fork —
+  // which meant a poured scene silently read LS's St. Louis parcels. Now each
+  // scene reads its own, and LS's file sits inside the reproject-on-recenter
+  // safety net alongside osm/msbf. (bake-content reads the same location.)
   console.log('  [1/4] Loading parcels...')
-  const parcelPath = join(CARTOGRAPH_DIR, '..', 'scripts', 'raw', 'stl_parcels.json')
+  const parcelPath = join(RAW_DIR, 'stl_parcels.json')
   const parcelData = JSON.parse(readFileSync(parcelPath, 'utf-8'))
   const parcels = Object.values(parcelData.parcels)
   console.log(`    ${parcels.length} parcels`)
