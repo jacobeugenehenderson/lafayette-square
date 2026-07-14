@@ -147,8 +147,7 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
   const spaceDown = useCartographStore(s => s.spaceDown)
 
   // Drag state (refs so window handlers see live values without re-subscribing).
-  const drag = useRef(null)   // { kind:'anchor'|'handle'|'new', index, side?, moved, downP }
-  const lastClick = useRef({ time: 0, index: -1 })
+  const drag = useRef(null)   // { kind:'anchor'|'handle'|'new'|'convert'|'delete', index, side?, moved, downP }
   const pathRef = useRef(path)
   pathRef.current = path
   const activeRef = useRef(active)
@@ -250,18 +249,16 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
       for (let i = 0; i < A.length; i++) { const d = dist(A[i], p); if (d <= hd) { hd = d; hit = i } }
       if (hit >= 0) {
         e.preventDefault()
-        // ⌥-click → delete (⌃ is taken + is OS right-click on mac).
-        if (e.altKey) { deleteAnchor(hit); return }
-        // Double-click → toggle corner/smooth.
-        const now = e.timeStamp || Date.now()
-        if (lastClick.current.index === hit && now - lastClick.current.time < 320) {
-          toggleType(hit); lastClick.current = { time: 0, index: -1 }; onSelect?.(hit); return
-        }
-        lastClick.current = { time: now, index: hit }
-        // Click near the FIRST anchor of an open path (≥3 anchors) → close it.
-        if (!P.closed && hit === 0 && A.length >= 3) { commit({ ...P, closed: true }); onSelect?.(0); return }
+        // Gesture model (Illustrator pen):
+        //   ⌘-drag  → MOVE the point       ⌥-drag → SMOOTH it (pull symmetric handles)
+        //   ⌥-click → SHARPEN it (corner)   plain click → DELETE it
+        //   plain click on the first anchor of an OPEN path → CLOSE the path.
         onSelect?.(hit)
-        drag.current = { kind: 'anchor', index: hit, moved: false, downP: p }
+        if (e.metaKey) { drag.current = { kind: 'anchor', index: hit, moved: false, downP: p }; return }   // move
+        if (e.altKey) { drag.current = { kind: 'convert', index: hit, moved: false, downP: p }; return }    // curvedness
+        if (!P.closed && hit === 0 && A.length >= 3) { commit({ ...P, closed: true }); onSelect?.(0); return }
+        // plain → delete, resolved on pointerup (a drag-gone-wrong won't delete).
+        drag.current = { kind: 'delete', index: hit, moved: false, downP: p }
         return
       }
 
@@ -314,21 +311,28 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
       } else if (dr.kind === 'handle') {
         const a = A[dr.index]
         const na = { ...a, [dr.side]: { x: p.x, z: p.z } }
-        if (a.type === 'smooth') {
+        // ⌥-drag BREAKS the pair — the handle moves independently and the anchor
+        // becomes a corner cusp (Illustrator's convert gesture). Read live so Alt
+        // can be pressed mid-drag. Otherwise a smooth anchor mirrors its handles.
+        if (e.altKey) {
+          na.type = 'corner'
+        } else if (a.type === 'smooth') {
           const other = dr.side === 'hOut' ? 'hIn' : 'hOut'
           na[other] = mirror(a, { x: p.x, z: p.z })
         }
         A[dr.index] = na
         commit({ ...P, anchors: A })
-      } else if (dr.kind === 'new') {
-        // Pull handles out of the fresh anchor → smooth. hOut follows the cursor,
-        // hIn mirrors. Only once dragged past the click threshold.
+      } else if (dr.kind === 'new' || dr.kind === 'convert') {
+        // 'new'     — a freshly-dropped anchor being drag-smoothed on placement.
+        // 'convert' — ⌥-drag on an existing anchor smooths it (Illustrator convert).
+        // Both pull symmetric handles out: hOut follows the cursor, hIn mirrors.
         if (!dr.moved) return
         const a = A[dr.index]
         const hOut = { x: p.x, z: p.z }
         A[dr.index] = { ...a, type: 'smooth', hOut, hIn: mirror(a, hOut) }
         commit({ ...P, anchors: A })
       }
+      // 'delete' — no live action; resolved on pointerup if it stayed a click.
     }
 
     function onUp() {
@@ -351,6 +355,16 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
           commit({ ...P, anchors: A })
         }
       }
+      // ⌥-click a point (no drag) → SHARPEN it: drop handles to a hard corner.
+      if (dr.kind === 'convert' && !dr.moved) {
+        const P = pathRef.current
+        const A = [...P.anchors]
+        const a = A[dr.index]
+        A[dr.index] = { x: a.x, z: a.z, type: 'corner' }
+        commit({ ...P, anchors: A })
+      }
+      // plain click a point (no drag) → DELETE it (segment heals).
+      if (dr.kind === 'delete' && !dr.moved) deleteAnchor(dr.index)
     }
 
     function onKey(e) {
@@ -385,24 +399,6 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     const closed = A.length >= 3 ? P.closed : false
     commit({ ...P, anchors: A, closed })
     onSelect?.(A.length ? Math.max(0, i - 1) : null)
-  }
-  function toggleType(i) {
-    const P = pathRef.current
-    const A = [...P.anchors]
-    const a = A[i]
-    if (a.type === 'smooth') {
-      A[i] = { x: a.x, z: a.z, type: 'corner' }   // drop handles
-    } else {
-      // Synthesize mirrored handles from the neighbor direction (¼ of the span).
-      const n = A.length
-      const prev = A[(i - 1 + n) % n], next = A[(i + 1) % n]
-      const tx = (next.x - prev.x), tz = (next.z - prev.z)
-      const L = Math.hypot(tx, tz) || 1
-      const s = Math.min(L * 0.25, dist(prev, a), dist(next, a)) || 30
-      const hOut = { x: r2(a.x + (tx / L) * s), z: r2(a.z + (tz / L) * s) }
-      A[i] = { x: a.x, z: a.z, type: 'smooth', hOut, hIn: mirror(a, hOut) }
-    }
-    commit({ ...P, anchors: A })
   }
   function insertAnchor(segIdx, t) {
     const P = pathRef.current

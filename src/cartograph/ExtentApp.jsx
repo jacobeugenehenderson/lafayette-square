@@ -1270,7 +1270,7 @@ export default function ExtentApp() {
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
-      <div className="carto-canvas-wrap" style={{ cursor: curating ? 'pointer' : 'grab' }}>
+      <div className="carto-canvas-wrap" style={{ cursor: penActive ? 'crosshair' : curating ? 'pointer' : 'grab' }}>
         <Canvas
           orthographic
           frameloop="always"
@@ -1289,9 +1289,13 @@ export default function ExtentApp() {
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
           {located && !curating && !penActive && <ExtentClickableStreets streets={allStreets} selected={sides} gaps={gaps} onToggle={toggleStreet} />}
-          {/* The pen owns its own path rendering; ExtentBoundary then draws only the
-              circle for a pen boundary (corners omitted → no duplicate poly/vertices). */}
-          {located && <ExtentBoundary corners={corners?.source === 'pen' ? undefined : corners?.corners}
+          {/* ExtentBoundary draws only the CIRCLE for a pen boundary (the pen owns its
+              path) AND for a legacy 'committed' boundary (the deprecated snap-route/
+              street ring — it's baked in the slab, so re-drawing its hundreds of
+              vertices here is just stale cruft the operator redraws with the pen).
+              Only the dormant live street-selection still draws its poly here. */}
+          {located && <ExtentBoundary
+            corners={(corners?.source === 'pen' || corners?.source === 'committed') ? undefined : corners?.corners}
             centroid={boundaryCentroid} radiusM={radiusM} showVertices={corners?.source !== 'pen'} />}
           <MapControls
             ref={controlsRef}
@@ -1433,8 +1437,9 @@ export default function ExtentApp() {
               </div>
               {penActive && (
                 <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.85, marginBottom: 8, lineHeight: 1.5 }}>
-                  Click to drop points · drag to pull curve handles · click the first point to close.<br />
-                  Drag a point to move (snaps to intersections) · click a segment to insert · double-click toggles corner/smooth · ⌥-click or Delete removes.
+                  Click empty to drop points · click-drag for a curve · click the first point to close.<br />
+                  ⌘-drag a point to move (snaps to intersections) · click a point to delete · click a segment to insert.<br />
+                  ⌥-drag a point to smooth it · ⌥-click to sharpen · ⌥-drag a handle to break it.
                 </div>
               )}
               {boundaryLL?.anchors?.length > 0 && (
