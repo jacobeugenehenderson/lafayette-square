@@ -1147,6 +1147,15 @@ export default function ExtentApp() {
     // a later stage throws, roll back to the pre-commit frame so we never strand a
     // re-centered-but-slab-less scene. `committedThisRun` gates the rollback.
     let committedThisRun = false
+    // Capture the operator's authored Extent view (ortho x/z + zoom) so the Designer
+    // opens exactly where they framed the hood. Carried via the Designer's OWN
+    // camera-init channel (localStorage `cartograph-camera`, read on its fresh mount);
+    // zoom is directly comparable (both full-window R3F ortho, top-down) and clamped
+    // to the Designer's [0.03, 40] range. Not a forced pose — the Designer's own init.
+    const _cam = orthoRef.current
+    const clampZoom = (z) => Math.max(0.03, Math.min(40, z))
+    const authoredCam = _cam?.isOrthographicCamera
+      ? { x: _cam.position.x, z: _cam.position.z, zoom: clampZoom(_cam.zoom) } : null
     try {
       // Flush the roster overrides BEFORE the pour — the debounced autosave may
       // not have landed, and the pipeline reads building-overrides.json to decide
@@ -1172,6 +1181,8 @@ export default function ExtentApp() {
         const rb = await fetchRibbons(scene).catch(() => null)
         if (rb) useCartographStore.setState({ sceneRibbons: rb })
         setCommittedRadius(Math.round(radiusM))
+        // Committed frame is unchanged (no re-center) → carry the authored view as-is.
+        if (authoredCam) { try { localStorage.setItem('cartograph-camera', JSON.stringify(authoredCam)) } catch { /* ignore */ } }
         setShot('designer')
         return
       }
@@ -1194,12 +1205,15 @@ export default function ExtentApp() {
       if (g) update.sceneGeography = g
       if (b) update.sceneBoundary = b
       if (Object.keys(update).length) useCartographStore.setState(update)
-      setRadiusTouched(true); setCommitted(true); fitBoundaryRef.current = null; setSeedToken(t => t + 1)
-      // Frame the Designer on the neighborhood (now at origin) — read on mount.
+      setRadiusTouched(true); setCommitted(true); setSeedToken(t => t + 1)
+      // Carry the authored Extent view into the Designer (its own camera-init channel).
+      // First pour RE-CENTERS the frame to keptCenter (new origin), so translate the
+      // pose by −keptCenter; zoom is unchanged. Falls back to a centered fit.
       try {
-        const vh = (typeof window !== 'undefined' && window.innerHeight) || 900
-        const fitZoom = vh / (2 * Math.round(radiusM) * 1.3)
-        localStorage.setItem('cartograph-camera', JSON.stringify({ x: 0, z: 0, zoom: fitZoom }))
+        const c = authoredCam
+          ? { x: authoredCam.x - keptCenter.x, z: authoredCam.z - keptCenter.z, zoom: authoredCam.zoom }
+          : { x: 0, z: 0, zoom: clampZoom((((typeof window !== 'undefined' && window.innerHeight) || 900)) / (2 * Math.round(radiusM) * 1.3)) }
+        localStorage.setItem('cartograph-camera', JSON.stringify(c))
       } catch { /* ignore */ }
       // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
       //    ribbons → ensure a Look for this scene → bake → open the Designer.
