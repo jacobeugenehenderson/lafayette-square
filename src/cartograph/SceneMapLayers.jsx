@@ -72,10 +72,11 @@ export default function SceneMapLayers({ hiddenLayers }) {
     // Bake (onBuild) prefetches map.json into the store — if it's this scene's, use it
     // directly so the Designer opens with the data already in memory (no gray-screen
     // fetch of a big map.json). Otherwise fetch it here as before.
-    if (prefetched?.scene === scene && prefetched.map) { setMap(prefetched.map); return }
+    if (prefetched?.scene === scene && prefetched.map) { console.log('[SML] map: from prefetch store (no fetch)'); setMap(prefetched.map); return }
     let cancelled = false
     setMap(null)
-    fetchMap(scene).then(m => { if (!cancelled) setMap(m) }).catch(() => {})
+    console.time('[SML] map fetch+parse')
+    fetchMap(scene).then(m => { if (!cancelled) { console.timeEnd('[SML] map fetch+parse'); setMap(m) } }).catch(() => {})
     return () => { cancelled = true }
   }, [scene, prefetched])
 
@@ -89,11 +90,12 @@ export default function SceneMapLayers({ hiddenLayers }) {
     if (!map || !boundary) return []
     const out = []
     const col = (k, d) => luColors[k] || layerColors[k] || DEFAULT_LU_COLORS[k] || d
+    // ONLY in-hood infrastructure the authoring view cares about. `natural`/`leisure`
+    // (the mountains/landscape) are Stage-only terrain — DEM lift in the hero shot, an
+    // impostor plate in browse — never geometry in the Designer. Not our concern here.
     const LU = [
       ['parking_lot', map.layers?.parking_lot, 0.10, col('parking_lot', '#6A6A62')],
       ['water', map.layers?.water, 0.12, col('water', '#4A6A8E')],
-      ['leisure', map.layers?.leisure, 0.11, col('leisure', '#7EB04A')],
-      ['natural', map.layers?.natural, 0.09, col('natural', '#6E9A4A')],
     ]
     for (const [key, feats, y, color] of LU) {
       if (!feats || hide[key]) continue
