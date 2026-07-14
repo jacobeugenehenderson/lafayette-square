@@ -1786,15 +1786,28 @@ createServer(async (req, res) => {
       // manifest (geo-anchored placement defaults). Only when the scene carries
       // terrain/sangabriel.obj. Unbaked = unshipped. (The renderer is piece 3 —
       // src/components — a separate lane; this only produces the asset + knobs.)
-      const LANDSCAPE_OBJ = join(bakePaths.raw, '..', 'terrain', 'sangabriel.obj')
-      if (existsSync(LANDSCAPE_OBJ)) {
-        await runIfDirty('landscape',
-          [LANDSCAPE_OBJ, bakePaths.geography, join(here, 'bake-landscape.js')],
-          [join(LOOK_DIR, 'landscape', 'landscape.json'), join(LOOK_DIR, 'landscape', 'sangabriel.glb')],
-          `node bake-landscape.js --look=${id} ${sceneFlag}`,
-          { cwd: here, timeout: 180000 })
+      // The landscape backdrop (the mountain MODEL) is a STAGE INTAKE — a 3D asset
+      // the operator uploads deliberately per-Look — NOT Cartograph pour data. It must
+      // NEVER be auto-detected from the scene's data dir: a stray terrain/sangabriel.obj
+      // sitting in data/<scene>/ silently baked the San Gabriel mountains into Altadena's
+      // slab (2026-07-14, "oops I accidentally loaded the mountains"). Assets now live
+      // OUT of the pour path, in cartograph/_landscape-intake/<scene>/. Baking is gated on
+      // an EXPLICIT Look opt-in (design.landscape.source → an intake asset), never file
+      // presence. Until the Stage upload flow sets that, the pour emits no landscape.
+      const landscapeSource = design?.landscape?.source
+      if (landscapeSource) {
+        const LANDSCAPE_OBJ = join(REPO_ROOT, landscapeSource)
+        if (existsSync(LANDSCAPE_OBJ)) {
+          await runIfDirty('landscape',
+            [LANDSCAPE_OBJ, bakePaths.geography, join(here, 'bake-landscape.js')],
+            [join(LOOK_DIR, 'landscape', 'landscape.json'), join(LOOK_DIR, 'landscape', 'sangabriel.glb')],
+            `node bake-landscape.js --look=${id} --source=${landscapeSource} ${sceneFlag}`,
+            { cwd: here, timeout: 180000 })
+        } else {
+          skipped.push(`landscape (design.landscape.source missing on disk: ${landscapeSource})`)
+        }
       } else {
-        skipped.push('landscape (no terrain/sangabriel.obj)')
+        skipped.push('landscape (Stage-intake only — never auto-detected from pour data)')
       }
       // content — the content-join (bake-content.js): spatially joins the raw
       // sources (OSM POIs · assessor parcels · NR survey) onto the just-baked
