@@ -1166,7 +1166,11 @@ const server = createServer(async (req, res) => {
         const atlas = await bakeLook(lookName, { viz: false })
         if (!atlas.ok) return jsonRes(res, 500, { error: 'bake-look failed', atlas })
         const { bakeTrees } = await import('./bake-trees.js')
-        const placements = await bakeTrees({ look: lookName, lod: 'lod2', heroLook: lookName })
+        // ⚠️ STILL WRONG — one dropdown value driving both axes. On LS this sends
+        // the census to the phantom baked/lafayette-square.json while heroLook
+        // correctly lands the assets. Phase 2 splits it; this rename is behaviour-
+        // preserving on purpose. See HANDOFF-grove-neighborhood-axis.md.
+        const placements = await bakeTrees({ scene: lookName, lod: 'lod2', heroLook: lookName })
         return jsonRes(res, 200, { ok: true, look: lookName, regenMs, regenLog, atlas, placements, totalMs: Date.now() - t0 })
       } catch (err) {
         return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })

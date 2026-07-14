@@ -1858,7 +1858,7 @@ createServer(async (req, res) => {
         await runIfDirty('trees',
           [PARK_TREES, PARK_WATER, MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
           [join(REPO_ROOT, 'public', 'baked', 'default.json')],
-          `node arborist/bake-trees.js --look default`,
+          `node arborist/bake-trees.js --scene default`,
           { cwd: REPO_ROOT, timeout: 60000 })
       } else if (!isDefaultScene && layerOn('tree')) {
         // Poured installation: union whichever census layers exist — the City
@@ -1881,7 +1881,7 @@ createServer(async (req, res) => {
           await runIfDirty('trees',
             [...censusLayers, existsSync(sceneMap) ? sceneMap : MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
             [join(LOOK_DIR, 'trees.json')],
-            `node arborist/bake-trees.js --look ${id} --placements ${censusLayers.join(',')}${mapArg} --forbidden-map ${MAP_JSON} --output public/baked/${id}/trees.json`,
+            `node arborist/bake-trees.js --scene ${id} --placements ${censusLayers.join(',')}${mapArg} --forbidden-map ${MAP_JSON} --output public/baked/${id}/trees.json`,
             { cwd: REPO_ROOT, timeout: 90000 })
         } else {
           skipped.push('trees (no scene census on disk — honest zero)')

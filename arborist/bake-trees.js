@@ -7,13 +7,20 @@
  *   src/data/park_species_map.json — species-id → preferred library subset
  *   public/baked/<heroLook>/scene.json       — hero pan (heroTier classifier)
  *   public/baked/<heroLook>/trees-atlas.json — canopyByVariant dims (bake-look)
- *   --look <name>                — Look name (defaults 'default')
+ *   --scene <name>               — NEIGHBOURHOOD whose census is baked (defaults 'default')
  *   --styles realistic[,winter…] — active style set (defaults 'realistic')
  *   --lod lod0|lod1|lod2         — LOD to ship (defaults 'lod2')
  *   --heroLook <name>            — Look whose hero pan drives heroTier (def 'lafayette-square')
  *
+ * TWO AXES, and they are NOT the same thing: `scene` is the neighbourhood (whose
+ * census + roster + assets these are — species don't change because the sky does);
+ * `heroLook` is the Look (whose authored camera tracks decide the per-placement
+ * hero role). They read identical today only because every Look's `scene` field
+ * currently equals its `id` — history, not a constraint. `--scene` was named
+ * `--look` until 2026-07-15; it always meant the scene.
+ *
  * Writes:
- *   public/baked/<look>.json
+ *   public/baked/<scene>.json
  *
  * Schema:
  *   { generatedAt, look, lod, activeStyles, count, heroTierMeta,
@@ -360,17 +367,22 @@ function classifyHeroTiers(canopies, heroPan) {
 }
 
 export async function bakeTrees({
-  look = 'default',
+  // ⚠️ FOSSIL DEFAULT: 'default' is not a scene name — it is the legacy output
+  // BASENAME (baked/default.json = Lafayette Square's mother map under a fossil
+  // name, from back when placements were believed cross-Look). Kept as-is so
+  // this rename changes nothing; Phase 2 passes the real scene from the Grove,
+  // Phase 3 retires the path to baked/<scene>/trees.json.
+  scene = 'default',
   styles = ['realistic'],
   lod = 'lod2',
   heroLook = 'lafayette-square', // which Look's baked hero pan + canopy dims drive heroTier
   placements,    // override path (string) or paths (array, unioned)
-  output,        // override output path; defaults to public/baked/<look>.json
+  output,        // override output path; defaults to public/baked/<scene>.json
   speciesMapPath, // override COMMON->library routing; defaults to LS's global map
   forbiddenMapPath, // poured scene's clean/map.json for the hardscape/water mask
   verbose = false,
 } = {}) {
-  const lookName = look
+  const sceneName = scene
   const activeStyles = new Set(styles)
   const targetLod = lod
 
@@ -394,7 +406,7 @@ export async function bakeTrees({
   const speciesMap = JSON.parse(await fs.readFile(mapPath, 'utf8'))
 
   if (verbose) {
-    console.log(`[bake-trees] look=${lookName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
+    console.log(`[bake-trees] scene=${sceneName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
     console.log(`[bake-trees] pool: ${index.variants.length} variants, ${park.trees.length} placements`)
   }
 
@@ -577,7 +589,10 @@ export async function bakeTrees({
 
   const out = {
     generatedAt: Date.now(),
-    look: lookName,
+    // Artifact field stays `look` this phase — it is the published schema
+    // (`SLAB-CONTRACT.md §8`) and no consumer reads it. Renaming it is a
+    // contract change; it rides Phase 4's accord sweep, not this rename.
+    look: sceneName,
     lod: targetLod,
     activeStyles: [...activeStyles],
     count: instances.length,
@@ -590,11 +605,11 @@ export async function bakeTrees({
     instances,
   }
 
-  // Honor an explicit --output (poured scenes write a look-scoped
-  // baked/<look>/trees.json); default stays the LS-global baked/<look>.json.
+  // Honor an explicit --output (poured scenes write a scene-scoped
+  // baked/<scene>/trees.json); default stays the legacy baked/<scene>.json.
   const outPath = output
     ? path.resolve(REPO_ROOT, output)
-    : path.join(REPO_ROOT, 'public', 'baked', `${lookName}.json`)
+    : path.join(REPO_ROOT, 'public', 'baked', `${sceneName}.json`)
   await fs.mkdir(path.dirname(outPath), { recursive: true })
   await fs.writeFile(outPath, JSON.stringify(out, null, 2))
 
@@ -617,7 +632,7 @@ const isDirect = process.argv[1] && path.resolve(process.argv[1]) === fileURLToP
 if (isDirect) {
   const args = parseArgs()
   bakeTrees({
-    look: args.look,
+    scene: args.scene,
     styles: (args.styles || 'realistic').split(',').map(s => s.trim()).filter(Boolean),
     lod: args.lod,
     heroLook: args.heroLook,

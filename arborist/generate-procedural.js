@@ -1222,7 +1222,9 @@ async function main() {
 
   console.log('\n[generate-procedural] done. Next:')
   console.log('  node arborist/bake-look.js  --look lafayette-square')
-  console.log('  node arborist/bake-trees.js --look lafayette-square')
+  // --scene default, NOT lafayette-square: the latter writes baked/lafayette-square.json,
+  // a phantom nothing reads. LS's placements are baked/default.json (`arborist/NOTES.md`).
+  console.log('  node arborist/bake-trees.js --scene default')
 }
 
 // Only run the publish pipeline when invoked as a script. Importing the
