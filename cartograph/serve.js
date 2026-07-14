@@ -1466,17 +1466,22 @@ createServer(async (req, res) => {
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
         const prev = JSON.parse(readFileSync(bPath, 'utf8'))
         const boundary = makeCircleBoundary(radius)
-        if (prev.polygon) boundary.polygon = prev.polygon            // legacy inclusion poly, unchanged
-        if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
-        // Updated exclusion loops (edited on a committed hood) → project + flatten into
-        // the committed frame. This is the LIGHT re-apply — re-clip + re-bake, no
-        // re-center. Falls back to preserving the prior loops when none are passed.
+        // The LIGHT re-apply — re-clip + re-bake in the committed frame, no re-center.
         if (Array.isArray(exclusions)) {
+          // EXCLUDER model: membership = inside-circle − exclusions. Project + flatten
+          // the (possibly edited) loops. CRUCIAL: DROP any legacy inclusion polygon —
+          // a hood committed the old way (Altadena's 628-pt snap-route ring) still
+          // carries one, and the bake prefers an inclusion poly over the circle, so
+          // keeping it would clip to the OLD ring and drop the buildings the circle
+          // kept (the Extent preview vs slab mismatch). The circle is the boundary now.
           const geo = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
           const excl = exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
           if (excl.length) boundary.exclusions = excl
-        } else if (Array.isArray(prev.exclusions)) {
-          boundary.exclusions = prev.exclusions
+        } else {
+          // Legacy radius-only rescope — preserve the prior membership shape as-is.
+          if (prev.polygon) boundary.polygon = prev.polygon
+          if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
+          if (Array.isArray(prev.exclusions)) boundary.exclusions = prev.exclusions
         }
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
