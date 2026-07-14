@@ -34,6 +34,7 @@ import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js
 import { writeIfChanged } from './io.js'
 import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
+import { buildInhabitedMask } from '../src/lib/inhabitedMask.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
@@ -139,7 +140,7 @@ function loadSceneStencil(scene) {
     const cx = center[0], cz = center[1]
     clipPolygon = s.boundary.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
   }
-  return { center, radius, faceFade, streetFade, clipPolygon }
+  return { center, radius, faceFade, streetFade, clipPolygon, contextMargin: s.contextMargin }
 }
 
 // Paint order (deepest = drawn first). The pure-Three.js bake bundle is
@@ -362,9 +363,11 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
-function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null) {
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, tileKeep = null, cullMargin = 0) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
+    tileKeep,
+    cullMargin,
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
     reportGlean: true,
     surveyStreets,
@@ -905,7 +908,19 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
   // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
   // conditional is gone — a scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip)
+  // Inhabited cull (opt-in via nb.contextMargin): build the developed-footprint
+  // mask off the MEMBER buildings so oversized extents (a CDP disc) don't pour
+  // ground for the empty periphery. Unset margin → null → no cull (LS unchanged).
+  let tileKeep = null
+  if (stencil.contextMargin > 0) {
+    const bRings = (mapData.buildings || []).map(b => b.ring || (b.rings && b.rings[0])).filter(Boolean)
+    if (bRings.length) {
+      const mask = buildInhabitedMask(bRings, stencil.contextMargin)
+      tileKeep = mask.cellIn
+      console.log(`  Inhabited cull: margin=${stencil.contextMargin}m → ${(mask.coverage * 100).toFixed(0)}% grid coverage (${bRings.length} member bldgs)`)
+    }
+  }
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, tileKeep, stencil.contextMargin)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -998,12 +1013,6 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // few metres along the run. (Conforming red-green refinement keeps the
   // path/grass boundary crack-free.)
   const CONTOUR_REFINE_KEYS = new Set(['park_path'])
-  // Target ~3× the terrain.bin sample spacing (5 m). At LS's ~3% gradient
-  // this caps the per-fragment interpolation error at roughly 0.45 m raw
-  // (~0.7 m visible at V_EXAG=1.5) — well below the per-footprint
-  // foundation exposure we were getting from un-refined block-corner
-  // triangulation, while keeping the bin file under ~10 MB.
-  const REFINE_MAX_EDGE_M = 15
 
   // Bake only ACTIVATED layers: skip any group the operator has hidden
   // (layerVis=false). The slab then carries only what renders — smaller
@@ -1036,9 +1045,16 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
     const isContourRibbon = CONTOUR_REFINE_KEYS.has(key)   // park_path: rides the park hill
     let refinePolicy = null
     if (isSoftFill) {
+      // GATE THE FINE REFINE ON TERRAIN. Subdividing a flat land-use fill exists ONLY
+      // to give the runtime terrain-lift enough vertices to bend the face over the DEM.
+      // With NO terrain the fill is dead flat, so a fine mesh is pure waste — it blew
+      // Altadena's ground up to 23.6M tris / 432 MB of inert flat squares (2026-07-14).
+      // Terrain present → adaptive (fine, follows the DEM). No sampler → emit only the
+      // coarse structural cap (GROUND_REFINE_MAX_EDGE_M, the overlay-vertex-range floor),
+      // NEVER the fine terrain-seed mesh.
       refinePolicy = refineMode === 'adaptive' && refineSampler
         ? { mode: 'adaptive', sampler: refineSampler, tol: refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge }
-        : { mode: 'uniform', maxEdge: REFINE_MAX_EDGE_M }
+        : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
     } else if (isContourRibbon) {
       // Dense, EVEN sampling so the path follows the contour. Adaptive's
       // tol(0.5)/minEdge(6) floor barely split it — a long straight OSM run can

@@ -1750,7 +1750,23 @@ export function buildTileGround(ribbons, opts = {}) {
   // back to the live walk over the smoothed streets, so the dormant knob's
   // semantics stay bit-for-bit what they were (rings AND strokes smoothed
   // together, never mixed).
-  const tiles = (smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)) || extractFaces(streets)
+  let tiles = (smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)) || extractFaces(streets)
+  // INHABITED CULL (opt-in; for extents far larger than the real hood, e.g. a CDP-
+  // sized disc). `opts.tileKeep(cx,cz)` — supplied by the caller, built off the
+  // MEMBER buildings (src/lib/inhabitedMask.js), so the pen's exclusion loops flow
+  // through. Drop ground tiles OUTSIDE the developed footprint + one block of
+  // context, so the CDP periphery of buildingless blocks nobody sees isn't poured
+  // (Altadena: 432 MB → tens of MB). WHOLE-tile drop → the cut lands on block
+  // boundaries. Filtered HERE, before any tile-index refs (corners/junctions). No
+  // predicate → no cull (LS and every tight hood stay bit-for-bit unchanged).
+  if (typeof opts.tileKeep === 'function' && tiles.length) {
+    tiles = tiles.filter(t => {
+      const r = t.ring; if (!r || !r.length) return true
+      let sx = 0, sz = 0
+      for (const p of r) { sx += p[0]; sz += p[1] }
+      return opts.tileKeep(sx / r.length, sz / r.length)
+    })
+  }
 
   // E2 — the CONSTRUCTED medians (prebake artifact: ribbons.medians[]; the
   // divided pair's inter-chain lens partitioned into kind:'median' segments +
@@ -3132,7 +3148,15 @@ export function buildTileGround(ribbons, opts = {}) {
   let sidewalk = unionRings(Wacc)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
-    const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
+    // INHABITED CULL: with tiles culled to the developed footprint, the frame is
+    // only the ONE-BLOCK CONTEXT around the kept tiles — NOT the whole disc. Else
+    // this perimeter (the exterior-street road fill below) balloons over the empty
+    // periphery we just culled (Altadena: the void re-filled as a ~1.6M-tri frame).
+    // Dilate the kept-tile union by the context margin, clip the disc to it.
+    const frame = opts.tileKeep
+      ? intersectRings([stencil], offsetRings(tileUnion, opts.cullMargin || 80, 'round'))
+      : [stencil]
+    const perimeter = differenceRings(frame, tileUnion)   // frame: outer(s) + tile-network holes
     // G9 — road the EXTERIOR streets. A street segment whose outer side borders
     // the perimeter (no tile there) was un-roaded → "roads don't reach their
     // dead ends". Stroke every street at the four cumulative depths and clip to
