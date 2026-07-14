@@ -1018,8 +1018,14 @@ export function deriveLayers(highways) {
   // safety net alongside osm/msbf. (bake-content reads the same location.)
   console.log('  [1/4] Loading parcels...')
   const parcelPath = join(RAW_DIR, 'stl_parcels.json')
-  const parcelData = JSON.parse(readFileSync(parcelPath, 'utf-8'))
-  const parcels = Object.values(parcelData.parcels)
+  // Parcels are St. Louis City/County only. A region with no wired assessor (Altadena
+  // → LA) has no file — that's EXPECTED degradation (no addresses), NOT a fatal error.
+  // Missing/unreadable → empty parcels; the scene still pours. (Was an unguarded read
+  // that crashed the whole pour for every non-STL hood → map.json never regenerated.)
+  let parcelData = { parcels: {} }
+  try { parcelData = JSON.parse(readFileSync(parcelPath, 'utf-8')) }
+  catch { console.log('    (no parcels for this region — St. Louis City/County only)') }
+  const parcels = Object.values(parcelData.parcels || {})
   console.log(`    ${parcels.length} parcels`)
 
   // Find the park parcel(s) — exclude parcels with park/recreation land use
