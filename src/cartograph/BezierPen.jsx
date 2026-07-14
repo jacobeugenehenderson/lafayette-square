@@ -200,11 +200,16 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     return { x: r2(vb.x + fx * vb.w), z: r2(vb.z + fy * vb.h) }
   }
 
-  // Snap a point to the nearest junction within snapDist — placement assist only;
-  // caller freezes the RESULT as a plain coord (never a node reference).
+  // Snap a point to the nearest junction — placement assist only; caller freezes
+  // the RESULT as a plain coord (never a node reference). The radius is SCREEN-
+  // relative (a small fraction of the view) and capped, so with dense junctions it
+  // only grabs when the cursor is visually right on an intersection — not a yank
+  // across the block when zoomed out. The boundary doesn't need centerline precision.
   function snap(p) {
     if (!snapTargets?.length) return p
-    let best = null, bd = snapDist
+    const vb = computeVB()
+    const radius = vb ? Math.min(snapDist, vb.w / 180) : snapDist
+    let best = null, bd = radius
     for (const t of snapTargets) {
       const d = Math.hypot(t.x - p.x, t.z - p.z)
       if (d < bd) { bd = d; best = t }

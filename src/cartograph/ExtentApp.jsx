@@ -423,7 +423,9 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
         float inside = step(distance(vWorldXZ, uCenter), uRadius);
         vec3 base = mix(uOutside, uInside, inside);
         vec3 c = mix(base, uGhost, step(0.5, hidden));       // ghost tint while editing
-        float a = hidden > 0.5 ? 0.10 : mix(0.14, 0.42, inside);
+        // Included footprints read as (near-)solid; outside dimmer; a hidden/ghost
+        // building stays faint. Overlay stays transparent-flagged, just not ghostly.
+        float a = hidden > 0.5 ? 0.16 : mix(0.42, 0.9, inside);
         gl_FragColor = vec4(c, a);
       }`,
   }), [])
