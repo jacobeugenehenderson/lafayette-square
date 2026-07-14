@@ -134,7 +134,7 @@ The rest of this section is payload (1); payloads (2)–(3) are §6 + `SLAB-CONT
 |---|---|---|
 | `/baked/<look>/ground.json` + `ground.bin` + `ground.lightmap.png` | `BakedGround.jsx` | ✅ Production |
 | `/baked/<look>/scene.json` | `CelestialBodies` (sky/ambient/hemi/dirSun/dirMoon/constellations/milkyWay), `PostProcessing` (bloom/ao/exposure/warmth/fill/mist/halo/grade/grain/shadow), `GatewayArch` (arch/horizon), `CameraRig` (shots/browseHeading), `LafayettePark` (bake-aware lift/offsets), `BakedGround` (palette/materials/layerVis) | ✅ Production. Per-Look authoring snapshot — every cartograph-authored channel (SC.1 / SC.2 / SC.3 / SC.5 / SC.7) reaches the runtime through this file. |
-| `/baked/default.json` (arborist tree placements) + GLB variants in `/baked/<look>/trees/` + tree atlas textures | `InstancedTrees.jsx` | ✅ Production |
+| `/baked/<scene>/trees.json` (the neighborhood's own tree placements — no global fallback, `SLAB-CONTRACT §8`) + GLB variants in `/baked/<look>/trees/` + tree atlas textures | `InstancedTrees.jsx` | ✅ Production |
 | `/baked/<look>/trees-atlas.json` | `treeAtlasMaterial.js` | ✅ Production |
 | `/baked/<look>/lamps.json` | `BakedLamps.jsx` | ✅ Production + Stage + Preview (production switched 2026-05-12, L1.1) |
 | `/baked/<look>/buildings.{json,bin}` (v2 merged-mesh + render index) | `SlabBuildings.jsx` | ✅ **Production** (L1.3, 2026-05-26). Production mounts `SlabBuildings` off the slab; the live per-`<Building>` path in `LafayetteScene` is hidden (`hiddenLayers.building`). The slab index resolves raycast→building-id for selection/neon/place-card; `SceneNeon` reads slab `roofOutline`. Stage keeps the live `LafayetteScene` mount for authoring retint. `BakedBuildings` (old Preview consumer) is deleted. |

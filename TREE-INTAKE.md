@@ -123,7 +123,7 @@ Everything below is **re-point-and-run** — nothing is Hi-Pointe-specific:
 
 ## 7. State (2026-07-05) — built vs open
 
-**Built + verified (hipointe-demun):** census (560 City + 870 OSM) · mix (17-species palette, empirical shares) · **NLCD canopy fill (relocate-off-hardscape)** · **hardscape mask** → **6,967 trees, 0 on any forbidden surface (verified), 99% atlas-covered, 0 unmatched** (2,317 canopy candidates relocated onto treelawn/yard). LS untouched throughout (`baked/default.json` byte-identical).
+**Built + verified (hipointe-demun):** census (560 City + 870 OSM) · mix (17-species palette, empirical shares) · **NLCD canopy fill (relocate-off-hardscape)** · **hardscape mask** → **6,967 trees, 0 on any forbidden surface (verified), 99% atlas-covered, 0 unmatched** (2,317 canopy candidates relocated onto treelawn/yard). LS untouched throughout (its placements byte-identical — then `baked/default.json`, since 2026-07-15 `baked/lafayette-square/trees.json`, `SLAB-CONTRACT §8`).
 
 **Open / caveats:**
 - **Library gaps → filler.** ~40% of the canopy renders as `generic_tree_2` / `procedural_*` (no dedicated chassis for sweetgum, tuliptree, pear, redbud, ginkgo, coffeetree…). **Proportionally honest, visually repetitive** until the arborist library grows real chassis. See `arborist/ROSTER-COVERAGE.md §2 GAPS`.

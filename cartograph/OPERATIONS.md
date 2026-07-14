@@ -219,7 +219,7 @@ Everything in the tree is **one of two things.** Knowing which ends most "is thi
 
 | | **SOURCE** (you author it — intent) | **DERIVED** (the machine bakes it — a shadow of source) |
 |---|---|---|
-| **Files** | `public/looks/<id>/design.json` (the SHAPE + Look SSoT — Survey widths/corners + Stage materials/sky) · `clean/overlay.json` (Survey edits) · the raw set (`raw/osm.json`, `survey.json`, `elevation.json`, `measurements.json`) · `neighborhood_boundary.json` | `clean/map.json` · `src/data/ribbons.json` · `public/baked/<id>/shape.json` · `ground.json`+`ground.bin`+`ground.lightmap.png` · `scene.json` · `public/baked/default.json` (trees) · `public/looks/index.json` |
+| **Files** | `public/looks/<id>/design.json` (the SHAPE + Look SSoT — Survey widths/corners + Stage materials/sky) · `clean/overlay.json` (Survey edits) · the raw set (`raw/osm.json`, `survey.json`, `elevation.json`, `measurements.json`) · `neighborhood_boundary.json` | `clean/map.json` · `src/data/ribbons.json` · `public/baked/<id>/shape.json` · `ground.json`+`ground.bin`+`ground.lightmap.png` · `scene.json` · `public/baked/<scene>/trees.json` (trees) · `public/looks/index.json` |
 | **Who writes it** | the operator, via the tools (autosave) | the bake (`/looks/:id/bake`, see `BAKE.md §2`) |
 | **If you lose it** | gone — it's intent, not regenerable | regenerate it: re-bake from source |
 | **Edit it by hand?** | yes — that's authoring (or a curated datum fix, `SURVEY.md`) | **never** — edit the source, re-bake |
@@ -230,10 +230,10 @@ Everything in the tree is **one of two things.** Knowing which ends most "is thi
 
 The geometry bakes are **deterministic**: same source in → byte-identical `ground.bin` / `ribbons.json` / `map.json` / `shape.json` out (everything routes through `writeIfChanged`, `io.js`). So a derived-file diff is one of exactly two things:
 
-- **NOISE — discard it.** Three files carry a `Date.now()` stamp that changes on *every* bake even when nothing semantic moved: `scene.json` (`bakedAt`, `bake-scene.js`), `public/looks/index.json` (`updatedAt`/`bakedAt`, `serve.js`), `public/baked/default.json` (`generatedAt`). A diff that touches **only** those timestamp lines = a no-op re-bake. Throw it away.
+- **NOISE — discard it.** Three files carry a `Date.now()` stamp that changes on *every* bake even when nothing semantic moved: `scene.json` (`bakedAt`, `bake-scene.js`), `public/looks/index.json` (`updatedAt`/`bakedAt`, `serve.js`), `public/baked/<scene>/trees.json` (`generatedAt`). A diff that touches **only** those timestamp lines = a no-op re-bake. Throw it away.
 - **REAL — decide it.** A diff in the *geometry* of `ground.bin` / `ribbons.json` / `map.json` / `shape.json` means the source genuinely changed (a width edit, a corner, a new survey value). Keep it only if you meant the edit.
 
-> **Fast triage:** `git diff --stat` — if the only changes are `scene.json` / `index.json` / `default.json` at ~2 lines each, it's pure timestamp noise. If `ground.bin` / `ribbons.json` / `map.json` moved, real geometry changed — look at `design.json` to see which width/corner you (or an autosave) touched.
+> **Fast triage:** `git diff --stat` — if the only changes are `scene.json` / `index.json` / `trees.json` at ~2 lines each, it's pure timestamp noise. If `ground.bin` / `ribbons.json` / `map.json` moved, real geometry changed — look at `design.json` to see which width/corner you (or an autosave) touched.
 
 ### Save / discard ceremony
 
@@ -267,7 +267,7 @@ Promote to staging = commit on the trunk and push (or fast-forward a feature bra
 
 | Symptom | The door (go here, no forensic) |
 |---|---|
-| Tree always dirty, but no geometry changed | Timestamp **noise** (`scene.json`/`index.json`/`default.json`) — §"noise vs. real" above. Discard. |
+| Tree always dirty, but no geometry changed | Timestamp **noise** (`scene.json`/`index.json`/`trees.json`) — §"noise vs. real" above. Discard. |
 | Staging/prod shows **stale geometry** | You didn't bake+commit before push — CI serves the committed slab as-is (§"how it ships"). Re-bake, commit, push. |
 | Wrong in **Survey**, right in **Section/bake** | The **live-load path**, not the frozen geometry — measure-resolution / overlay / the vite bundle (`ARCHITECTURE.md §2.1`). |
 | Section shows **no change** after a CLI bake | The `shape.json` cache-buster (`?t=freezeTag`, `BlockGeometryV2Debug`) — a CLI bake can't bump client state. Exit Survey (autosave-freeze) or click **Bake** to bump it. |
@@ -280,7 +280,7 @@ Promote to staging = commit on the trunk and push (or fast-forward a feature bra
 ### Named levers (deliberate)
 
 Two formalizations from the 2026-06-17 path-A decision, tracked here so we turn them on purpose, not by accident — **#2 is now built (2026-06-30); #1 remains chosen-but-unbuilt:**
-1. **Kill the timestamp noise** — make `scene.json`/`index.json`/`default.json` omit (or stabilize) their `Date.now()` fields so a no-op re-bake is byte-identical and the tree stops going dirty for free.
+1. **Kill the timestamp noise** — make `scene.json`/`index.json`/`trees.json` omit (or stabilize) their `Date.now()` fields so a no-op re-bake is byte-identical and the tree stops going dirty for free.
 2. **One-command save ceremony** — ✅ **BUILT 2026-06-30** (`d1b86dd4`), as the **Preview "Publish" panel** rather than a CLI: a button commits the scoped slab pathspecs only + pushes (DEV-ONLY git endpoints in `cartograph/serve.js`; the panel hides when the backend is unreachable, so a deployed Preview can't touch prod). Replaces eyeballing the dirty tree. **Refinement (settled 2026-06-30):** Preview is the publish gate and **staging is REDUNDANT for slab-data** publishes — Preview already renders the slab in production's exact tree, so the SMS-hero flow pushes **straight to prod**; staging-first still applies to *code/structural* changes (the strategy-B loop above). Home: `PREVIEW.md §0.2`.
 
 *(With path-A also: a reproducibility gate — CI/pre-push check that the committed slab equals a fresh bake from source — to catch a stale slab before it ships.)*

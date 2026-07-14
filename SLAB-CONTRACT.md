@@ -43,11 +43,10 @@ public/baked/
 │   ├── trees-atlas-bark-normal.png  ← bark normals
 │   ├── trees-atlas-leaves-color.png ← leaf color atlas
 │   ├── trees-atlas-leaves-normal.png← leaf normals
-│   └── trees/                       ← UV-rewritten GLB tree variants for this look
-│       └── <species>/skeleton-N-lod2.glb
-├── default.json                     ← arborist tree placements (one canonical placement,
-│                                       shared across all looks; styling varies via atlas)
-└── <look>.json                      ← (some looks) tree placement override pointer
+│   ├── trees/                       ← UV-rewritten GLB tree variants for this look
+│   │   └── <species>/skeleton-N-lod2.glb
+│   └── trees.json                   ← this NEIGHBORHOOD's tree placements (its own census;
+│                                       never shared, never inherited — see §8)
 ```
 
 **Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `SlabBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) for the cache-bust rule + the historical bug.
@@ -367,14 +366,18 @@ This artifact is per-look because LOOK styling can swap the *atlas* (different b
 
 ---
 
-## 8. `default.json` — tree placements (cross-look)
+## 8. `<scene>/trees.json` — tree placements (per NEIGHBORHOOD, isolated)
 
-Produced by `arborist/bake-trees.js`. **Look-independent placements** — the same trees stand at the same XZ across every look; only the atlas varies per look.
+Produced by `arborist/bake-trees.js` → `public/baked/<scene>/trees.json`. **One neighborhood's own census.** Where the trees stand and which species they are is a fact about the *place*, not about the Look — species do not change because the sky does. A Look decides how the trees are *lit* (its atlas, its hero tiering), never which trees exist.
+
+> ⛔ **No neighborhood may ever read another's census.** Two hoods can be clone Groves — LS and HiPointe-DeMun share a species palette because they are the same city, drawn from the same St. Louis Forestry inventory — but they are **not connected, not the same census, and must never infect one another. If one disappears tomorrow, the other must not notice at all** (Jacob, 2026-07-15). There is no global placements file and no fallback: a scene with no census renders **no trees** (the Arborist ships it a blank grove), which is the honest answer. A fallback that quietly hands one hood another's trees is a bug that hides a bug.
+>
+> 🗄️ **Retired 2026-07-15 — `default.json`.** LS's placements used to ship as `public/baked/default.json`, and this section used to call them "cross-look." They never were. The file was LS's census named after `public/looks/index.json`'s opening `"default": "lafayette-square"` pointer — its mother map under a fossil name — and "cross-look" was that fossil rationalized after the fact. It was invisible only because every Look's `scene` equals its `id` today (history, not a constraint). The fossil is what let the Grove's Bake→Slab write to a phantom for months. Full trail: `HANDOFF-grove-neighborhood-axis.md`.
 
 ```jsonc
 {
   "generatedAt": 1778618272484,
-  "look": "default",
+  "scene": "lafayette-square",
   "lod": "lod2",
   "activeStyles": ["realistic"],
   "count": 745,
@@ -415,7 +418,9 @@ Produced by `arborist/bake-trees.js`. **Look-independent placements** — the sa
 | `instances[].lampGlow` | Per-tree multiplier evaluated by `bake-trees.js` against `street_lamps.json` (gaussian falloff); drives the warm-glow blend |
 | `instances[].rotY` | Y-axis rotation in radians |
 
-Consumer: `src/components/InstancedTrees.jsx` (production + Stage + Preview, same path).
+Consumers: `src/components/InstancedTrees.jsx` (production + Stage + Preview, same path) · `cartograph/bake-ground-ao.js` (tree contact shadows) · `cartograph/bake-tree-anchors.js` (the per-look ground anchor, index-parallel to `instances` — it MUST read this same file, or the two arrays desynchronize and the runtime discards every anchor).
+
+**The two axes, so nobody re-conflates them:** `scene` picks the census (this file). `heroLook` picks whose camera tracks decide each placement's `heroTier` role — tracks are authored per Look. `bake-trees.js` takes both. They look interchangeable today only because scene ≡ look id; the day a second Look sits over one neighborhood (a winter LS), one census cannot carry two Looks' tiering and the role tag has to ride the Look axis on its own.
 
 ---
 
