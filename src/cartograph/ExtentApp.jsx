@@ -138,19 +138,22 @@ function ExtentAerial({ geo }) {
   )
 }
 
-// Street labels on the aerial — the load-bearing piece: the operator reads the
-// arterials (Big Bend / Skinker / Clayton / Forest Park Pkwy) off the photo to
-// name the boundary streets. Only the `major` arterial classes are drawn (18 vs
-// 356 residentials) so the frame stays legible. World-space TroikaText sized as
-// a fraction of the fetched extent, so labels read at the fit zoom regardless of
-// neighborhood size.
-const LABEL_SIZE_FRAC = 0.015   // ~1.5% of the square's span (~48 m on HiPointe)
+// Street labels on the aerial — light orientation context (only `major` arterials,
+// ~18 not 356 residentials). Sized to a CONSTANT ON-SCREEN size (a small fraction of
+// the visible viewport height, re-derived from the ortho zoom) — never world-locked,
+// so zooming in doesn't balloon them into the map. They inform where you are; they
+// don't drive membership (the excluder does that).
+const LABEL_SCREEN_FRAC = 0.022   // ~2.2% of the viewport height, at any zoom
 function ExtentLabels({ labels, geo }) {
-  const sizeM = useMemo(() => {
-    if (!geo) return 40
-    const spanM = (geo.bbox.maxLon - geo.bbox.minLon) * geo.lonToMeters
-    return spanM * LABEL_SIZE_FRAC
-  }, [geo])
+  const { camera } = useThree()
+  const [sizeM, setSizeM] = useState(40)
+  useFrame(() => {
+    if (!camera.isOrthographicCamera) return
+    const visH = (camera.top - camera.bottom) / (camera.zoom || 1)
+    const s = Math.max(visH * LABEL_SCREEN_FRAC, 3)
+    // Only re-render when it meaningfully changes (avoid per-frame churn while zooming).
+    if (Math.abs(s - sizeM) / (sizeM || 1) > 0.03) setSizeM(s)
+  })
   if (!labels?.length || !geo) return null
   return (
     <group>
@@ -164,9 +167,10 @@ function ExtentLabels({ labels, geo }) {
           rotation={[-Math.PI / 2, 0, -l.angle]}
           fontSize={sizeM}
           color="#ffffff"
-          outlineWidth="9%"
+          outlineWidth="6%"
           outlineColor="#0a0a08"
-          outlineOpacity={0.9}
+          outlineOpacity={0.85}
+          fillOpacity={0.9}
           letterSpacing={0.02}
           anchorX="center"
           anchorY="middle"
