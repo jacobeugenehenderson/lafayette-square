@@ -1492,11 +1492,8 @@ export default function ExtentApp() {
             {keptFit.count > 0 && radiusM > 0 && (
               <div className="carto-row" style={{ marginTop: 12 }}>
                 <button className="carto-btn carto-btn--grow carto-stage-btn" disabled={building || !(radiusM > 0)}
-                  onClick={onBuild}
-                  title={committed
-                    ? 'Apply your radius + exclusion edits — re-clip + re-bake in place (no re-center) — and open the Designer'
-                    : 'Build the neighborhood — finalize the extent (re-center + circle + exclusions), then pipeline → ribbons → bake, and open the Designer'}>
-                  {building ? (buildStage || 'Working…') : (committed ? 'Apply → Designer' : 'Pour → Designer')}
+                  onClick={onBuild} title="Bake the neighborhood and open the Designer">
+                  {building ? (buildStage || 'Baking…') : 'Bake'}
                 </button>
               </div>
             )}
