@@ -444,9 +444,11 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
         float inside = step(distance(vWorldXZ, uCenter), uRadius);
         vec3 base = mix(uOutside, uInside, inside);
         vec3 c = mix(base, uGhost, step(0.5, hidden));       // ghost tint while editing
-        // Included footprints read as (near-)solid; outside dimmer; a hidden/ghost
-        // building stays faint. Overlay stays transparent-flagged, just not ghostly.
-        float a = hidden > 0.5 ? 0.16 : mix(0.42, 0.9, inside);
+        // Included footprints read as (near-)solid violet; the EXCLUDED (available but
+        // not-in) ones show as a clearly-visible red ghost while editing so you can see
+        // + click them — the "all available vs. included in the map" distinction. (In
+        // the normal view the excluded are discarded above, so this alpha is edit-only.)
+        float a = hidden > 0.5 ? 0.4 : mix(0.42, 0.9, inside);
         gl_FragColor = vec4(c, a);
       }`,
   }), [])
@@ -947,29 +949,6 @@ export default function ExtentApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildingCentroids, hide, activate, loopExcluded, keptCenter])
 
-  // PERF: the RENDERED footprint set is culled to the circle + margin and capped at
-  // the nearest RENDER_CAP to centre. A legacy CDP fetch (Altadena ≈ 33k) can't be
-  // triangulated into one overlay without hanging the tab. Membership + counts are
-  // still computed over ALL buildings (cheap, id-keyed), so nothing is hidden from
-  // the bake — only the on-screen footprints are bounded, and shrinking the circle
-  // lightens the view. `capped` surfaces how many aren't drawn (no silent truncation).
-  const RENDER_CAP = 12000
-  const renderFootprints = useMemo(() => {
-    const bs = footprints?.buildings
-    if (!bs || !buildingCentroids) return { buildings: bs || [], capped: 0 }
-    const R = radiusM > 0 ? radiusM + 600 : Infinity
-    const R2 = R * R
-    const inR = []
-    for (let i = 0; i < bs.length; i++) {
-      const c = buildingCentroids[i]
-      const d2 = (c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2
-      if (d2 <= R2) inR.push({ b: bs[i], d2 })
-    }
-    if (inR.length <= RENDER_CAP) return { buildings: inR.map(s => s.b), capped: 0 }
-    inR.sort((a, b) => a.d2 - b.d2)
-    return { buildings: inR.slice(0, RENDER_CAP).map(s => s.b), capped: inR.length - RENDER_CAP }
-  }, [footprints, buildingCentroids, radiusM, keptCenter])
-
   // The single "eraser": flip one building's membership as a minimal override.
   const toggleBuilding = (id) => {
     const bs = footprints?.buildings
@@ -1337,7 +1316,7 @@ export default function ExtentApp() {
           {!located && <WorkspaceGrid />}
           {located && <ExtentAerial geo={geo} />}
           {located && radiusM > 0 && <ExtentDim centroid={boundaryCentroid} radiusM={radiusM} />}
-          {located && <ExtentBuildings footprints={renderFootprints} centroid={boundaryCentroid} radiusM={radiusM}
+          {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
           {/* Only the extent CIRCLE is drawn here (no inclusion polygon in the excluder
@@ -1491,11 +1470,6 @@ export default function ExtentApp() {
               {exclusionsLL.length > 0 && (
                 <div className="carto-extent-status ok" style={{ marginBottom: 8 }}>
                   {exclusionsLL.length} exclusion loop{exclusionsLL.length > 1 ? 's' : ''} · {keptFit.count.toLocaleString()} buildings kept
-                </div>
-              )}
-              {renderFootprints.capped > 0 && (
-                <div className="carto-extent-status warn" style={{ marginBottom: 8, fontSize: 11 }}>
-                  Showing the {RENDER_CAP.toLocaleString()} buildings nearest the centre · {renderFootprints.capped.toLocaleString()} more aren't drawn (all still count + bake). Pull the circle in to see the rest.
                 </div>
               )}
 

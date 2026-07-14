@@ -688,10 +688,13 @@ function streetNamesFor(scene) {
 }
 
 // Building footprints for the Extent tool's live overlay + roster editor — every
-// MSBF footprint as a CURRENT-FRAME (x/z) ring, tagged `msbf-<id>` (the same id
-// space the pour bakes + buildingOverrides keys on). Reads raw/msbf.json, whose
-// x/z reproject-raw keeps aligned to the live geography/aerial (no projection
-// here). mtime-cached — the 9.5 MB parse runs once per fetch, not per request.
+// Building footprints for the Extent overlay — the RAW full MSBF fetch, tagged
+// `msbf-<id>` (the id space the pour bakes + buildingOverrides key on), in the
+// current frame (x/z, reproject-raw keeps them aligned to the aerial). Extent is the
+// AUTHORING surface: it must show EVERY fetched building so the operator can add OR
+// subtract any of them — the culled slab (map.json) can only ever subtract and is
+// frozen at the last bake, so it's wrong here (it's what the Designer reads
+// downstream). mtime-cached — the big parse runs once, not per request.
 const _footprintCache = new Map()   // scene → { mtime, payload }
 function buildingFootprintsFor(scene) {
   const p = join(sceneRawDir(scene), 'msbf.json')
@@ -703,7 +706,7 @@ function buildingFootprintsFor(scene) {
   const buildings = []
   for (const b of (msbf.buildings || [])) {
     const ring = (b.coords || []).map(c => [c.x, c.z])
-    if (ring.length >= 3) buildings.push({ id: `msbf-${b.msbfId}`, ring })
+    if (ring.length >= 3 && b.msbfId != null) buildings.push({ id: `msbf-${b.msbfId}`, ring })
   }
   const payload = { buildings }
   _footprintCache.set(scene, { mtime, payload })
