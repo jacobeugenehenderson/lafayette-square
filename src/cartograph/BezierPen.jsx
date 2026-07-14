@@ -434,10 +434,11 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
   // while the pen is active. Nothing at all to show → don't mount the SVG.
   if (!active && A.length === 0) return null
   const d = pathToD(path)
-  // Handle/anchor sizes in world units, ~constant on screen via `scale`.
-  const aR = Math.max(scale * 5, 3)
-  const hR = Math.max(scale * 3.5, 2)
-  const sw = Math.max(scale * 1.6, 0.6)
+  // Handle/anchor sizes in world units, ~constant on screen via `scale`. Kept
+  // deliberately fine — a refined, lighter controller that doesn't shout over the aerial.
+  const aR = Math.max(scale * 3.8, 2.4)
+  const hR = Math.max(scale * 2.8, 1.8)
+  const sw = Math.max(scale * 1.05, 0.4)
   const sel = active && selected != null ? A[selected] : null
 
   return (
