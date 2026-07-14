@@ -186,10 +186,25 @@ function LooksMenu() {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef(null)
   const activeEntry = (looks || []).find(l => l.id === activeLookId)
-  // Before `looks` finishes loading, activeEntry is undefined — fall back to the
-  // persisted active id (the ACTUAL look/scene being loaded), NOT a hardcoded
-  // 'Lafayette Square' that flashed the wrong name until load settled.
-  const label = activeEntry?.name || activeLookId || '…'
+  // The active Look MUST belong to the CURRENT neighborhood. `looks` is GLOBAL, so
+  // a Look from another scene would label this menu with that hood's name — the
+  // Altadena-as-LS crossing (2026-07-14): the pulldown read "Lafayette Square" while
+  // the operator stood in Altadena. Not cosmetic — the BAKE follows activeLookId, so
+  // the mislabel rode along and Altadena's slab clobbered LS's. Never show, or keep,
+  // a foreign Look here.
+  const activeIsForeign = !!scene && (looks || []).length > 0 &&
+    (!activeEntry || activeEntry.scene !== scene)
+  // Self-correct to THIS scene's own Look. A lying label is bad; silently baking to
+  // another neighborhood's Look is worse — so fix the STATE, not just the text.
+  const ownId = sceneLooks[0]?.id
+  useEffect(() => {
+    if (!activeIsForeign) return
+    if (ownId && ownId !== activeLookId) setActiveLook(ownId)
+  }, [activeIsForeign, ownId, activeLookId, setActiveLook])
+  // Prefer the active Look when it IS this scene's; else this scene's own. Before
+  // `looks` loads, fall back to the persisted id / scene — never another hood's name.
+  const ownEntry = (activeEntry && activeEntry.scene === scene) ? activeEntry : sceneLooks[0]
+  const label = ownEntry?.name || (activeIsForeign ? scene : activeLookId) || '…'
 
   // Close on outside click + Escape.
   useEffect(() => {
