@@ -400,8 +400,10 @@ export default function BezierPen({ cameraRef, active, paths, onChange, snapTarg
   }
 
   const P = paths || []
-  const anyAnchors = P.some(pp => pp.anchors?.length)
-  if (!active && !anyAnchors) return null
+  // The loops are editing scaffolding — only shown while the pen is active. Pen OFF
+  // → the loops vanish and (with the excluded buildings discarded) you see the clean
+  // kept neighborhood. Click "Edit exclusion loops" to bring them back.
+  if (!active) return null
   const aR = Math.max(scale * 3.8, 2.4)
   const hR = Math.max(scale * 2.8, 1.8)
   const sw = Math.max(scale * 1.05, 0.4)

@@ -143,14 +143,19 @@ function ExtentAerial({ geo }) {
 // the visible viewport height, re-derived from the ortho zoom) — never world-locked,
 // so zooming in doesn't balloon them into the map. They inform where you are; they
 // don't drive membership (the excluder does that).
-const LABEL_SCREEN_FRAC = 0.022   // ~2.2% of the viewport height, at any zoom
+// Blend of two behaviours so labels never dominate at either end:
+//  • zoomed IN  → screen-constant (a small fraction of the viewport, stays readable)
+//  • zoomed OUT → capped to a fixed WORLD size (~a street's scale) so they SHRINK with
+//    the map instead of ballooning over it. sizeM = min(screen-constant, world-cap).
+const LABEL_SCREEN_FRAC = 0.022   // ~2.2% of the viewport height when zoomed in
+const LABEL_MAX_WORLD = 36        // metres — the zoomed-out cap (fetch-independent, street scale)
 function ExtentLabels({ labels, geo }) {
   const { camera } = useThree()
-  const [sizeM, setSizeM] = useState(40)
+  const [sizeM, setSizeM] = useState(36)
   useFrame(() => {
     if (!camera.isOrthographicCamera) return
     const visH = (camera.top - camera.bottom) / (camera.zoom || 1)
-    const s = Math.max(visH * LABEL_SCREEN_FRAC, 3)
+    const s = Math.max(Math.min(visH * LABEL_SCREEN_FRAC, LABEL_MAX_WORLD), 3)
     // Only re-render when it meaningfully changes (avoid per-frame churn while zooming).
     if (Math.abs(s - sizeM) / (sizeM || 1) > 0.03) setSizeM(s)
   })
@@ -371,19 +376,24 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
     [buildings],
   )
   const count = buildings?.length || 1
-  // Per-building hidden flag as a data texture, indexed by aBuildingId (the
-  // building index). Toggling a hide rewrites this texture — NEVER the geometry
-  // — so a click is instant. R channel: 255 = hidden.
+  // Per-building hidden flag as a data texture, indexed by aBuildingId (the building
+  // index). Toggling a hide rewrites this texture — NEVER the geometry — so a click is
+  // instant. R channel: 255 = hidden. MUST be 2D: a 1-row texture of width=count blows
+  // past WebGL's max texture width for a big fetch (Altadena ≈ 33k > 16384), so the
+  // GPU can't read the flag and nothing hides. Lay it out row-major at a safe width.
+  const texW = Math.min(count, 2048)
+  const texH = Math.ceil(count / texW)
   const hiddenTex = useMemo(() => {
-    const tex = new THREE.DataTexture(new Uint8Array(count * 4), count, 1, THREE.RGBAFormat)
+    const tex = new THREE.DataTexture(new Uint8Array(texW * texH * 4), texW, texH, THREE.RGBAFormat)
     tex.magFilter = THREE.NearestFilter
     tex.minFilter = THREE.NearestFilter
     tex.needsUpdate = true
     return tex
-  }, [count])
+  }, [texW, texH])
   useEffect(() => {
     if (!buildings) return
     const data = hiddenTex.image.data
+    data.fill(0)
     for (let i = 0; i < buildings.length; i++) data[i * 4] = excludedIds.has(buildings[i].id) ? 255 : 0
     hiddenTex.needsUpdate = true
   }, [hiddenTex, buildings, excludedIds])
@@ -400,7 +410,8 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
       uOutside: { value: new THREE.Color('#5a4a7a') },
       uGhost: { value: new THREE.Color('#ff5a5a') },
       uHidden: { value: null },
-      uCount: { value: 1 },
+      uTexW: { value: 1 },
+      uTexH: { value: 1 },
       uCurating: { value: 0 },
     },
     vertexShader: `
@@ -419,12 +430,15 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
       uniform vec3 uOutside;
       uniform vec3 uGhost;
       uniform sampler2D uHidden;
-      uniform float uCount;
+      uniform float uTexW;
+      uniform float uTexH;
       uniform float uCurating;
       varying vec2 vWorldXZ;
       varying float vId;
       void main() {
-        float hidden = texture2D(uHidden, vec2((vId + 0.5) / uCount, 0.5)).r;
+        float u = (mod(vId, uTexW) + 0.5) / uTexW;
+        float v = (floor(vId / uTexW) + 0.5) / uTexH;
+        float hidden = texture2D(uHidden, vec2(u, v)).r;
         // Hidden + not editing → truly gone (what the bake will drop).
         if (hidden > 0.5 && uCurating < 0.5) discard;
         float inside = step(distance(vWorldXZ, uCenter), uRadius);
@@ -442,7 +456,7 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
     // operator resolves a boundary.
     mat.uniforms.uRadius.value = radiusM > 0 ? radiusM : 1e9
   }, [mat, centroid, radiusM])
-  useEffect(() => { mat.uniforms.uHidden.value = hiddenTex; mat.uniforms.uCount.value = count }, [mat, hiddenTex, count])
+  useEffect(() => { mat.uniforms.uHidden.value = hiddenTex; mat.uniforms.uTexW.value = texW; mat.uniforms.uTexH.value = texH }, [mat, hiddenTex, texW, texH])
   useEffect(() => { mat.uniforms.uCurating.value = curating ? 1 : 0 }, [mat, curating])
   useEffect(() => () => { geom?.dispose(); hiddenTex?.dispose() }, [geom, hiddenTex])
 
