@@ -421,12 +421,12 @@ function computeBoundaryFromSelection(scene, names) {
   return { corners, centroid, radius: Math.round(radius), ordered, gaps, streets, closed, source: 'selected' }
 }
 
-// Flatten the operator's editable bezier boundary path (the FIRST-CLASS artifact,
-// stored frame-independently as lon/lat) into the closed membership polygon, in the
-// given (re-centered, at-commit) frame. Project each anchor + handle lon/lat → x/z,
-// then sample every cubic segment. Absent handles collapse a segment to a straight
-// line. Deterministic — NO snapping, NO routing, NO geocode-for-geometry: the drawn
-// path IS the boundary (`HANDOFF-extent-pen-boundary.md`). Returns [{x,z}] or null.
+// Flatten ONE editable bezier loop (frame-independent lon/lat anchors + handles)
+// into a closed x/z polygon, in the given (re-centered, at-commit) frame. Project
+// each anchor + handle lon/lat → x/z, then sample every cubic segment. Absent
+// handles collapse a segment to a straight line. Deterministic — NO snap/route/
+// geocode. Used per exclusion loop at commit (`HANDOFF-extent-pen-boundary.md` +
+// the excluder pivot). Returns [{x,z}] or null.
 function flattenBoundaryPath(boundaryPath, geo) {
   const A = boundaryPath?.anchors
   if (!Array.isArray(A) || A.length < 3) return null
@@ -1334,7 +1334,7 @@ createServer(async (req, res) => {
       }
       _seedsInFlight.add(scene)
       try {
-        const { center, radius, sides, name, blurb, boundaryPath } = JSON.parse(body || '{}')
+        const { center, radius, name, blurb, exclusions } = JSON.parse(body || '{}')
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
@@ -1361,36 +1361,21 @@ createServer(async (req, res) => {
         await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
         _skelCache.delete(scene)
-        // Persist the boundary-street polygon (re-resolved in the NOW re-centered
-        // frame, so it aligns with the reprojected buildings) alongside the circle.
-        // The bake culls building MEMBERSHIP by point-in-this-polygon; the circle
-        // stays the slab disc / fade.
+        // The excluder model: every building is IN by default (inside the circle);
+        // the operator's EXCLUSION LOOPS carve the strays. Project + flatten each loop
+        // (frame-independent lon/lat) into the NOW re-centered frame so it aligns with
+        // the reprojected buildings. No inclusion polygon — membership = inside-circle
+        // − exclusions + overrides (the pour/bake apply this uniformly).
         const boundary = makeCircleBoundary(radius)
-        // The operator's editable PEN PATH (frame-independent lon/lat) IS the
-        // membership boundary — project + flatten it into the NOW re-centered frame
-        // so it aligns with the reprojected buildings. Deterministic; the drawn path
-        // is the boundary (no snap/route/geocode). The DORMANT street-selection
-        // resolver is the fallback only when no pen path was authored.
-        const penPoly = flattenBoundaryPath(boundaryPath, geo)
-        const cornerRes = penPoly ? null : computeBoundaryFromSelection(scene, (sides || []).map(s => (s || '').trim()).filter(Boolean))
-        if (penPoly) {
-          boundary.polygon = penPoly
-          boundary.polygonSource = 'pen'
-        } else if (cornerRes && Array.isArray(cornerRes.corners) && cornerRes.corners.length >= 3) {
-          boundary.polygon = cornerRes.corners
-        }
-        writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
-        // Structural directional identity — each named side + the cardinal it lies
-        // on (derived from geometry, §5). The flat ordered sides[] is kept for the
-        // corner solver's around-perimeter adjacency; borderStreets adds the W/N/E/S
-        // the flat list can't carry (SEO/description: "bounded by X on the west…").
-        const borderStreets = (cornerRes && Array.isArray(cornerRes.streets))
-          ? cornerRes.streets.filter(s => s.name && s.direction).map(s => ({ name: s.name, direction: s.direction }))
+        const excl = Array.isArray(exclusions)
+          ? exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
           : []
+        if (excl.length) boundary.exclusions = excl
+        writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
-        // Persist the editable pen path (lon/lat) so reopening a committed hood
-        // returns the FULL editable path — the "keep fixing across sessions" contract.
-        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', sides: sides || [], borderStreets, radius: Math.round(radius), timezone: geo.timezone || null, boundaryPath: boundaryPath || null, committed: true }, null, 2))
+        // Persist the editable exclusion loops (lon/lat) so reopening a committed hood
+        // returns them fully editable — the "keep fixing across sessions" contract.
+        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', radius: Math.round(radius), timezone: geo.timezone || null, exclusions: exclusions || [], committed: true }, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, radius: Math.round(radius) }))
       } catch (err) {
@@ -1481,8 +1466,9 @@ createServer(async (req, res) => {
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
         const prev = JSON.parse(readFileSync(bPath, 'utf8'))
         const boundary = makeCircleBoundary(radius)
-        if (prev.polygon) boundary.polygon = prev.polygon            // membership unchanged
+        if (prev.polygon) boundary.polygon = prev.polygon            // legacy inclusion poly, unchanged
         if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
+        if (Array.isArray(prev.exclusions)) boundary.exclusions = prev.exclusions   // carve loops preserved
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
         if (existsSync(nPath)) {

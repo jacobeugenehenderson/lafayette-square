@@ -598,21 +598,22 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
       catch (e) { console.warn(`[bake-buildings] building-overrides unreadable: ${e.message}`) }
     }
     const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
+    // Exclusion loops (excluder model): a building inside ANY loop drops out (unless
+    // force-kept). Must match pipeline.js exactly so 2D + slab agree on membership.
+    const excl = Array.isArray(nb.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
     const cx0 = nb.center?.[0] ?? 0, cz0 = nb.center?.[1] ?? 0
     const R2 = (nb.radius ?? Infinity) ** 2
-    const defaultIn = (fp) => {
-      let sx = 0, sz = 0
-      for (const [x, z] of fp) { sx += x; sz += z }
-      const cx = sx / fp.length, cz = sz / fp.length
-      return poly ? pointInPolygon(cx, cz, poly) : (cx - cx0) ** 2 + (cz - cz0) ** 2 <= R2
-    }
+    const centroidOf = (fp) => { let sx = 0, sz = 0; for (const [x, z] of fp) { sx += x; sz += z } return [sx / fp.length, sz / fp.length] }
     const before = buildings.length
     buildings = buildings.filter(b => {
       const fp = b.footprint || []
       if (fp.length < 3 || hide.has(b.id)) return false
-      return defaultIn(fp) || activate.has(b.id)
+      if (activate.has(b.id)) return true
+      const [cx, cz] = centroidOf(fp)
+      for (const e of excl) if (pointInPolygon(cx, cz, e)) return false   // carve exclusion loops
+      return poly ? pointInPolygon(cx, cz, poly) : (cx - cx0) ** 2 + (cz - cz0) ** 2 <= R2
     })
-    console.log(`[bake-buildings] membership: ${before} → ${buildings.length} (poly=${!!poly}, +${activate.size}/−${hide.size})`)
+    console.log(`[bake-buildings] membership: ${before} → ${buildings.length} (poly=${!!poly}, excl=${excl.length}, +${activate.size}/−${hide.size})`)
   }
 
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;

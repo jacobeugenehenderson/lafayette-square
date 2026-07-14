@@ -1,40 +1,33 @@
 /**
- * BezierPen — the editable Illustrator-style pen for the neighborhood boundary.
+ * BezierPen — the editable Illustrator-style pen for the neighborhood EXCLUSION loops.
  *
- * The boundary is a LIVING, first-class, endlessly-editable bezier path the
- * operator authors and keeps fixing across sessions. The persisted artifact IS
- * this path; the closed membership polygon is only what we DERIVE from it (flatten
- * → point-in-polygon). This is NOT a draw-once shape — every anchor and handle
- * stays editable forever (`HANDOFF-extent-pen-boundary.md`).
+ * Membership model (inverted, `HANDOFF-extent-pen-boundary.md` + the excluder pivot):
+ * every fetched building is IN by default; each CLOSED loop the operator draws is an
+ * EXCLUSION zone — the stray buildings inside it drop out. You lasso the junk, not the
+ * neighborhood. There can be MANY loops (junk comes in clumps: top-left, lower-right…);
+ * the persisted artifact is the LIST of editable loops, and membership is "inside any
+ * loop → out". The extent circle just auto-fits whatever's left.
  *
- * Built as an SVG overlay in the proven MarkerOverlay pattern: the SVG's viewBox
- * tracks the ortho camera frustum (world x/z), the SVG stays pointer-events:none
- * so wheel-zoom always reaches the Three canvas, and all interaction runs through
- * window-level pointer handlers doing world-space hit-testing. No pointer-events
- * conflict, no blocked map controls.
+ * Built as an SVG overlay in the proven MarkerOverlay pattern: the SVG's viewBox tracks
+ * the ortho camera frustum (world x/z), stays pointer-events:none so wheel-zoom always
+ * reaches the Three canvas, and all interaction runs through window-level pointer handlers
+ * doing world-space hit-testing. Coordinates are LIVE-FRAME local x/z; ExtentApp owns the
+ * round-trip to frame-independent lon/lat and re-projects on load.
  *
- * Coordinates here are LIVE-FRAME local x/z (same space as the aerial / skeleton
- * junctions). ExtentApp owns the round-trip to frame-independent lon/lat for
- * persistence, and re-projects on load — so a re-centered commit never moves an
- * authored anchor.
+ * Paths model (a prop, owned by ExtentApp): an ARRAY of loops
+ *   [{ closed, anchors: [{ x, z, type:'corner'|'smooth', hIn?:{x,z}, hOut?:{x,z} }] }, …]
+ * Handles are ABSOLUTE points. `selected` is { p, a } — path index + anchor index.
  *
- * Path model (a prop, owned by ExtentApp):
- *   { closed: bool, anchors: [{ x, z, type:'corner'|'smooth', hIn?:{x,z}, hOut?:{x,z} }] }
- * Handles are stored as ABSOLUTE points (not offsets) — cleanest for the
- * lon/lat projection round-trip.
- *
- * Gestures:
- *   • click empty        → drop a corner anchor (snaps to a nearby junction, then
- *                          FROZEN as a plain coord — never a node reference)
- *   • click-drag empty   → pull bezier handles (a smooth anchor)
- *   • click near start    → close the path
- *   • drag an anchor      → move it (re-applies snap on drop; smooth carries its handles)
- *   • drag a handle       → bend the run (smooth mirrors, corner is independent)
- *   • click on a segment  → insert an anchor (de Casteljau split preserves the curve)
- *   • ⌥-click an anchor    → delete it (segment heals). ⌃-click is taken (revert) +
- *                            is OS right-click on macOS, so delete is Option-click.
- *   • double-click anchor → toggle corner ↔ smooth
- *   • select + Delete/Backspace → delete the selected anchor
+ * Gestures (per point, across every loop):
+ *   • click empty        → drop a point on the loop you're drawing (or start a new loop)
+ *   • click-drag empty   → drop a smooth (curved) point
+ *   • click a loop's 1st point → close that loop; the next empty click starts a new loop
+ *   • ⌘-drag a point      → move it (re-applies junction snap on drop)
+ *   • ⌥-drag a point      → smooth it (pull symmetric handles) · ⌥-click → sharpen (corner)
+ *   • ⌥-drag a handle     → break the pair into an independent cusp
+ *   • plain click a point → delete it (segment heals; loop <3 pts reopens/removes)
+ *   • click a segment     → insert a point (de Casteljau split preserves the curve)
+ *   • select + Delete/Backspace → delete the selected point
  */
 import { useRef, useEffect, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
@@ -43,15 +36,10 @@ const r2 = (v) => Math.round(v * 100) / 100
 const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t })
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z)
 
-// A segment's four control points: p0 = anchor a, c0 = a.hOut (or a itself for a
-// straight run), c1 = b.hIn (or b), p3 = anchor b. Absent handles collapse the
-// cubic to a straight line, so every segment is treated uniformly as a cubic.
-function segControls(a, b) {
-  return [a, a.hOut || a, b.hIn || b, b]
-}
-function isCurved(a, b) {
-  return !!(a.hOut || b.hIn)
-}
+// A segment's four control points: p0 = anchor a, c0 = a.hOut (or a for a straight
+// run), c1 = b.hIn (or b), p3 = anchor b. Absent handles collapse the cubic to a line.
+function segControls(a, b) { return [a, a.hOut || a, b.hIn || b, b] }
+function isCurved(a, b) { return !!(a.hOut || b.hIn) }
 function cubicAt(p0, c0, c1, p3, t) {
   const u = 1 - t
   const w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t
@@ -60,9 +48,6 @@ function cubicAt(p0, c0, c1, p3, t) {
     z: w0 * p0.z + w1 * c0.z + w2 * c1.z + w3 * p3.z,
   }
 }
-
-// Flatten one segment to points (for hit-testing + membership). Straight → just
-// the endpoints; curved → sampled.
 function flattenSeg(a, b, steps = 18) {
   if (!isCurved(a, b)) return [a, b]
   const [p0, c0, c1, p3] = segControls(a, b)
@@ -71,8 +56,8 @@ function flattenSeg(a, b, steps = 18) {
   return out
 }
 
-// The full flattened polyline of the path (open or closed). Consecutive dups
-// dropped at the seams.
+// Flatten ONE loop {closed, anchors} → its polyline points. Used for membership +
+// hit-testing. Exported (ExtentApp flattens each loop for point-in-polygon).
 export function flattenPath(path) {
   const A = path?.anchors
   if (!A || A.length < 2) return A ? A.map(a => ({ x: a.x, z: a.z })) : []
@@ -86,7 +71,6 @@ export function flattenPath(path) {
   return pts
 }
 
-// SVG path `d` for rendering — mirrors the cubic model exactly.
 function pathToD(path) {
   const A = path?.anchors
   if (!A || A.length < 1) return ''
@@ -105,8 +89,6 @@ function pathToD(path) {
   return d
 }
 
-// Nearest point on segment i (its flattened polyline) to p → { d, t } where t is
-// the approximate parameter along the segment [0,1]. Used for click-on-segment.
 function nearestOnSeg(a, b, p) {
   const pts = flattenSeg(a, b)
   let bestD = Infinity, bestT = 0
@@ -123,48 +105,36 @@ function nearestOnSeg(a, b, p) {
   return { d: bestD, t: bestT }
 }
 
-// De Casteljau split of segment (a,b) at t → { aOut, mid, bIn } absolute points.
-// aOut replaces a.hOut, bIn replaces b.hIn, mid is the new smooth anchor's
-// position with handles hIn/hOut. Preserves the curve shape exactly.
 function splitSeg(a, b, t) {
   const [p0, c0, c1, p3] = segControls(a, b)
-  const m0 = lerp(p0, c0, t)
-  const m1 = lerp(c0, c1, t)
-  const m2 = lerp(c1, p3, t)
-  const q0 = lerp(m0, m1, t)
-  const q1 = lerp(m1, m2, t)
+  const m0 = lerp(p0, c0, t), m1 = lerp(c0, c1, t), m2 = lerp(c1, p3, t)
+  const q0 = lerp(m0, m1, t), q1 = lerp(m1, m2, t)
   const s = lerp(q0, q1, t)
   return { aOut: m0, midIn: q0, mid: s, midOut: q1, bIn: m2 }
 }
-
-// Mirror a handle across its anchor (for smooth anchors: hIn = 2*anchor - hOut).
 const mirror = (anchor, h) => ({ x: 2 * anchor.x - h.x, z: 2 * anchor.z - h.z })
 
-export default function BezierPen({ cameraRef, active, path, onChange, snapTargets, snapDist = 40, selected, onSelect, suspended }) {
+export default function BezierPen({ cameraRef, active, paths, onChange, snapTargets, snapDist = 40, selected, onSelect, suspended }) {
   const svgRef = useRef(null)
   const [viewBox, setViewBox] = useState('0 0 1 1')
-  const [scale, setScale] = useState(1)          // world units per pixel-ish → sizes handles
+  const [scale, setScale] = useState(1)
   const spaceDown = useCartographStore(s => s.spaceDown)
 
-  // Drag state (refs so window handlers see live values without re-subscribing).
-  const drag = useRef(null)   // { kind:'anchor'|'handle'|'new'|'convert'|'delete', index, side?, moved, downP }
-  const pathRef = useRef(path)
-  pathRef.current = path
+  const drag = useRef(null)   // { kind, p, a, side?, moved, downP }
+  const pathsRef = useRef(paths)
+  pathsRef.current = paths
   const activeRef = useRef(active)
   activeRef.current = active
-  // Latest selected/spaceDown, readable inside the stable window handlers by ref.
   const selectedRef = useRef(selected)
   selectedRef.current = selected
   const spaceDownRef = useRef(spaceDown)
   spaceDownRef.current = spaceDown
-  // `suspended` = space-to-pan is active → the pen yields the click to MapControls.
   const suspendedRef = useRef(suspended)
   suspendedRef.current = suspended
-  // Every mutation updates the ref SYNCHRONOUSLY before bubbling to the parent —
-  // so a drag that fires immediately after an add/insert (handle-pull, drag-after-
-  // insert) reads the fresh path, not the pre-render stale one. The parent's state
-  // flows back via props and re-syncs pathRef on the next render (idempotent).
-  const commit = (next) => { pathRef.current = next; onChange(next) }
+  // Every mutation updates the ref SYNCHRONOUSLY before bubbling to the parent — so a
+  // drag firing immediately after add/insert reads the fresh paths, not a stale render.
+  const commit = (next) => { pathsRef.current = next; onChange(next) }
+  const replacePath = (P, pi, np) => { const N = P.slice(); N[pi] = np; return N }
 
   function computeVB() {
     const cam = cameraRef.current
@@ -174,7 +144,6 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     return { x: cam.position.x - halfW, z: cam.position.z - halfH, w: halfW * 2, h: halfH * 2 }
   }
 
-  // Follow the camera — RAF poll (matches MarkerOverlay).
   useEffect(() => {
     let raf, lx = NaN, lz = NaN, lzoom = NaN
     const sync = () => {
@@ -200,11 +169,8 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     return { x: r2(vb.x + fx * vb.w), z: r2(vb.z + fy * vb.h) }
   }
 
-  // Snap a point to the nearest junction — placement assist only; caller freezes
-  // the RESULT as a plain coord (never a node reference). The radius is SCREEN-
-  // relative (a small fraction of the view) and capped, so with dense junctions it
-  // only grabs when the cursor is visually right on an intersection — not a yank
-  // across the block when zoomed out. The boundary doesn't need centerline precision.
+  // Snap to nearest junction — placement assist only; result frozen as a plain coord.
+  // Screen-relative + capped so it only grabs when the cursor is visually on a node.
   function snap(p) {
     if (!snapTargets?.length) return p
     const vb = computeVB()
@@ -217,86 +183,99 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     return best ? { x: r2(best.x), z: r2(best.z) } : p
   }
 
+  // hit-tests across ALL loops
+  function hitAnchor(P, p, T) {
+    let best = null, bd = T
+    for (let pi = 0; pi < P.length; pi++) {
+      const A = P[pi].anchors
+      for (let ai = 0; ai < A.length; ai++) { const d = dist(A[ai], p); if (d <= bd) { bd = d; best = { p: pi, a: ai } } }
+    }
+    return best
+  }
+  function hitSegment(P, p, T) {
+    let best = null, bd = T
+    for (let pi = 0; pi < P.length; pi++) {
+      const A = P[pi].anchors
+      const segCount = P[pi].closed ? A.length : A.length - 1
+      for (let si = 0; si < segCount; si++) {
+        const { d, t } = nearestOnSeg(A[si], A[(si + 1) % A.length], p)
+        if (d < bd) { bd = d; best = { p: pi, seg: si, t } }
+      }
+    }
+    return best
+  }
+
   useEffect(() => {
     if (!active) { drag.current = null; return }
-
     const inCanvas = (e) => {
       const rect = svgRef.current?.getBoundingClientRect()
       return rect && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
     }
-    // World-unit hit tolerance ~ a comfortable finger, zoom-independent.
     const tol = () => { const vb = computeVB(); return vb ? Math.max(vb.w / 90, 6) : 12 }
 
     function onDown(e) {
       if (!activeRef.current || spaceDownRef.current || suspendedRef.current || e.button !== 0) return
       if (!inCanvas(e)) return
-      // The SVG spans the whole canvas-wrap (incl. behind the side panel / toolbar),
-      // and this is a window listener — so a click on any UI chrome would otherwise
-      // drop a stray anchor. Bail when the click lands on interactive UI.
       if (e.target?.closest?.('.carto-panel, .carto-toolbar, .carto-fab, .carto-looks-popup, .carto-extent-combo, button, input, textarea, select, a')) return
       const p = screenToWorld(e.clientX, e.clientY)
       if (!p) return
-      const P = pathRef.current || { closed: false, anchors: [] }
-      const A = P.anchors
+      const P = pathsRef.current || []
       const T = tol()
 
-      // 1) A selected anchor's handle? (highest priority — handles sit on top)
-      if (selectedRef.current != null && A[selectedRef.current]) {
-        const sa = A[selectedRef.current]
+      // 1) selected anchor's handle?
+      const sel = selectedRef.current
+      if (sel && P[sel.p] && P[sel.p].anchors[sel.a]) {
+        const sa = P[sel.p].anchors[sel.a]
         for (const side of ['hOut', 'hIn']) {
           if (sa[side] && dist(sa[side], p) <= T) {
             e.preventDefault()
-            drag.current = { kind: 'handle', index: selectedRef.current, side, moved: false }
+            drag.current = { kind: 'handle', p: sel.p, a: sel.a, side, moved: false }
             return
           }
         }
       }
 
-      // 2) An anchor?
-      let hit = -1, hd = T
-      for (let i = 0; i < A.length; i++) { const d = dist(A[i], p); if (d <= hd) { hd = d; hit = i } }
-      if (hit >= 0) {
+      // 2) an anchor (any loop)? — ⌘ move · ⌥ convert · plain click delete / close
+      const ah = hitAnchor(P, p, T)
+      if (ah) {
         e.preventDefault()
-        // Gesture model (Illustrator pen):
-        //   ⌘-drag  → MOVE the point       ⌥-drag → SMOOTH it (pull symmetric handles)
-        //   ⌥-click → SHARPEN it (corner)   plain click → DELETE it
-        //   plain click on the first anchor of an OPEN path → CLOSE the path.
-        onSelect?.(hit)
-        if (e.metaKey) { drag.current = { kind: 'anchor', index: hit, moved: false, downP: p }; return }   // move
-        if (e.altKey) { drag.current = { kind: 'convert', index: hit, moved: false, downP: p }; return }    // curvedness
-        if (!P.closed && hit === 0 && A.length >= 3) { commit({ ...P, closed: true }); onSelect?.(0); return }
-        // plain → delete, resolved on pointerup (a drag-gone-wrong won't delete).
-        drag.current = { kind: 'delete', index: hit, moved: false, downP: p }
+        onSelect?.(ah)
+        if (e.metaKey) { drag.current = { kind: 'anchor', ...ah, moved: false, downP: p }; return }
+        if (e.altKey) { drag.current = { kind: 'convert', ...ah, moved: false, downP: p }; return }
+        const path = P[ah.p]
+        if (!path.closed && ah.a === 0 && path.anchors.length >= 3) { commit(replacePath(P, ah.p, { ...path, closed: true })); return }
+        drag.current = { kind: 'delete', ...ah, moved: false, downP: p }
         return
       }
 
-      // 3) On a segment? → insert an anchor (split preserves the curve).
-      if (A.length >= 2) {
-        const segCount = P.closed ? A.length : A.length - 1
-        let bestSeg = -1, bestT = 0, bestD = T
-        for (let i = 0; i < segCount; i++) {
-          const { d, t } = nearestOnSeg(A[i], A[(i + 1) % A.length], p)
-          if (d < bestD) { bestD = d; bestSeg = i; bestT = t }
-        }
-        if (bestSeg >= 0) {
-          e.preventDefault()
-          const idx = insertAnchor(bestSeg, bestT)
-          onSelect?.(idx)
-          drag.current = { kind: 'anchor', index: idx, moved: false, downP: p }
-          return
-        }
+      // 3) on a segment → insert (split preserves the curve)
+      const sh = hitSegment(P, p, T)
+      if (sh) {
+        e.preventDefault()
+        const { np, idx } = insertInPath(P[sh.p], sh.seg, sh.t)
+        commit(replacePath(P, sh.p, np))
+        onSelect?.({ p: sh.p, a: idx })
+        drag.current = { kind: 'anchor', p: sh.p, a: idx, moved: false, downP: p }
+        return
       }
 
-      // 4) Empty space → drop a new corner anchor (snap-on-placement, frozen).
-      if (P.closed) return   // a closed path is edited, not extended
+      // 4) empty → extend the open loop, or start a new loop
       e.preventDefault()
       const sp = snap(p)
-      const anchors = [...A, { x: sp.x, z: sp.z, type: 'corner' }]
-      const newIdx = anchors.length - 1
-      commit({ ...P, anchors })
-      onSelect?.(newIdx)
-      // Arm handle-pull: dragging now bends this fresh anchor into a smooth one.
-      drag.current = { kind: 'new', index: newIdx, moved: false, downP: sp }
+      const openIdx = P.findIndex(pp => !pp.closed)
+      if (openIdx >= 0) {
+        const path = P[openIdx]
+        const anchors = [...path.anchors, { x: sp.x, z: sp.z, type: 'corner' }]
+        commit(replacePath(P, openIdx, { ...path, anchors }))
+        onSelect?.({ p: openIdx, a: anchors.length - 1 })
+        drag.current = { kind: 'new', p: openIdx, a: anchors.length - 1, moved: false, downP: sp }
+      } else {
+        const np = { closed: false, anchors: [{ x: sp.x, z: sp.z, type: 'corner' }] }
+        const P2 = [...P, np]
+        commit(P2)
+        onSelect?.({ p: P2.length - 1, a: 0 })
+        drag.current = { kind: 'new', p: P2.length - 1, a: 0, moved: false, downP: sp }
+      }
     }
 
     function onMove(e) {
@@ -304,85 +283,77 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
       if (!dr) return
       const p = screenToWorld(e.clientX, e.clientY)
       if (!p) return
-      const P = pathRef.current
-      const A = [...P.anchors]
+      const P = pathsRef.current
+      const path = P[dr.p]
+      if (!path) return
+      const A = [...path.anchors]
       dr.moved = dr.moved || dist(p, dr.downP || p) > tol() * 0.4
 
       if (dr.kind === 'anchor') {
-        const a = A[dr.index]
+        const a = A[dr.a]
         const dx = p.x - a.x, dz = p.z - a.z
         const na = { ...a, x: p.x, z: p.z }
         if (a.hIn) na.hIn = { x: a.hIn.x + dx, z: a.hIn.z + dz }
         if (a.hOut) na.hOut = { x: a.hOut.x + dx, z: a.hOut.z + dz }
-        A[dr.index] = na
-        commit({ ...P, anchors: A })
+        A[dr.a] = na
+        commit(replacePath(P, dr.p, { ...path, anchors: A }))
       } else if (dr.kind === 'handle') {
-        const a = A[dr.index]
+        const a = A[dr.a]
         const na = { ...a, [dr.side]: { x: p.x, z: p.z } }
-        // ⌥-drag BREAKS the pair — the handle moves independently and the anchor
-        // becomes a corner cusp (Illustrator's convert gesture). Read live so Alt
-        // can be pressed mid-drag. Otherwise a smooth anchor mirrors its handles.
-        if (e.altKey) {
-          na.type = 'corner'
-        } else if (a.type === 'smooth') {
-          const other = dr.side === 'hOut' ? 'hIn' : 'hOut'
-          na[other] = mirror(a, { x: p.x, z: p.z })
-        }
-        A[dr.index] = na
-        commit({ ...P, anchors: A })
+        // ⌥-drag breaks the pair → independent cusp (corner); else a smooth mirrors.
+        if (e.altKey) na.type = 'corner'
+        else if (a.type === 'smooth') { const other = dr.side === 'hOut' ? 'hIn' : 'hOut'; na[other] = mirror(a, { x: p.x, z: p.z }) }
+        A[dr.a] = na
+        commit(replacePath(P, dr.p, { ...path, anchors: A }))
       } else if (dr.kind === 'new' || dr.kind === 'convert') {
-        // 'new'     — a freshly-dropped anchor being drag-smoothed on placement.
-        // 'convert' — ⌥-drag on an existing anchor smooths it (Illustrator convert).
-        // Both pull symmetric handles out: hOut follows the cursor, hIn mirrors.
         if (!dr.moved) return
-        const a = A[dr.index]
+        const a = A[dr.a]
         const hOut = { x: p.x, z: p.z }
-        A[dr.index] = { ...a, type: 'smooth', hOut, hIn: mirror(a, hOut) }
-        commit({ ...P, anchors: A })
+        A[dr.a] = { ...a, type: 'smooth', hOut, hIn: mirror(a, hOut) }
+        commit(replacePath(P, dr.p, { ...path, anchors: A }))
       }
-      // 'delete' — no live action; resolved on pointerup if it stayed a click.
+      // 'delete' — no live action
     }
 
     function onUp() {
       const dr = drag.current
       drag.current = null
       if (!dr) return
-      // Re-apply snap on an anchor MOVE drop (crisp near a junction, else free),
-      // re-freezing to a plain coord. A fresh 'new' anchor already snapped on place.
+      const P = pathsRef.current
+      const path = P[dr.p]
+      if (!path) return
+      // re-snap an anchor MOVE drop
       if (dr.kind === 'anchor' && dr.moved) {
-        const P = pathRef.current
-        const A = [...P.anchors]
-        const a = A[dr.index]
+        const A = [...path.anchors]
+        const a = A[dr.a]
         const sp = snap({ x: a.x, z: a.z })
         if (sp.x !== a.x || sp.z !== a.z) {
           const dx = sp.x - a.x, dz = sp.z - a.z
           const na = { ...a, x: sp.x, z: sp.z }
           if (a.hIn) na.hIn = { x: a.hIn.x + dx, z: a.hIn.z + dz }
           if (a.hOut) na.hOut = { x: a.hOut.x + dx, z: a.hOut.z + dz }
-          A[dr.index] = na
-          commit({ ...P, anchors: A })
+          A[dr.a] = na
+          commit(replacePath(P, dr.p, { ...path, anchors: A }))
         }
       }
-      // ⌥-click a point (no drag) → SHARPEN it: drop handles to a hard corner.
+      // ⌥-click a point (no drag) → sharpen to a hard corner
       if (dr.kind === 'convert' && !dr.moved) {
-        const P = pathRef.current
-        const A = [...P.anchors]
-        const a = A[dr.index]
-        A[dr.index] = { x: a.x, z: a.z, type: 'corner' }
-        commit({ ...P, anchors: A })
+        const A = [...path.anchors]
+        const a = A[dr.a]
+        A[dr.a] = { x: a.x, z: a.z, type: 'corner' }
+        commit(replacePath(P, dr.p, { ...path, anchors: A }))
       }
-      // plain click a point (no drag) → DELETE it (segment heals).
-      if (dr.kind === 'delete' && !dr.moved) deleteAnchor(dr.index)
+      // plain click a point (no drag) → delete
+      if (dr.kind === 'delete' && !dr.moved) deleteAt(dr.p, dr.a)
     }
 
     function onKey(e) {
       if (!activeRef.current) return
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedRef.current != null) {
-        // Don't steal the key from a focused input (name/blurb fields).
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedRef.current) {
         const tag = document.activeElement?.tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA') return
         e.preventDefault()
-        deleteAnchor(selectedRef.current)
+        deleteAt(selectedRef.current.p, selectedRef.current.a)
       }
     }
 
@@ -399,18 +370,19 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, onChange, onSelect, snapTargets, snapDist])
 
-  // ── path mutations (called from handlers) ─────────────────────────────────
-  function deleteAnchor(i) {
-    const P = pathRef.current
-    const A = P.anchors.filter((_, k) => k !== i)
-    // <3 anchors can't stay closed.
-    const closed = A.length >= 3 ? P.closed : false
-    commit({ ...P, anchors: A, closed })
-    onSelect?.(A.length ? Math.max(0, i - 1) : null)
+  // ── mutations ──────────────────────────────────────────────────────────────
+  function deleteAt(pi, ai) {
+    const P = pathsRef.current
+    const path = P[pi]
+    if (!path) return
+    const A = path.anchors.filter((_, k) => k !== ai)
+    if (A.length === 0) { commit(P.filter((_, k) => k !== pi)); onSelect?.(null); return }
+    const closed = A.length >= 3 ? path.closed : false
+    commit(replacePath(P, pi, { ...path, anchors: A, closed }))
+    onSelect?.({ p: pi, a: Math.max(0, ai - 1) })
   }
-  function insertAnchor(segIdx, t) {
-    const P = pathRef.current
-    const A = [...P.anchors]
+  function insertInPath(path, segIdx, t) {
+    const A = [...path.anchors]
     const a = A[segIdx], b = A[(segIdx + 1) % A.length]
     if (isCurved(a, b)) {
       const { aOut, midIn, mid, midOut, bIn } = splitSeg(a, b, t)
@@ -424,33 +396,31 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
       const mid = lerp(a, b, t)
       A.splice(segIdx + 1, 0, { x: r2(mid.x), z: r2(mid.z), type: 'corner' })
     }
-    commit({ ...P, anchors: A })
-    return segIdx + 1
+    return { np: { ...path, anchors: A }, idx: segIdx + 1 }
   }
 
-  const A = path?.anchors || []
-  // The path stroke is ALWAYS drawn when a path exists (so a reopened / committed
-  // hood shows its boundary); the editing affordances (anchors + handles) only show
-  // while the pen is active. Nothing at all to show → don't mount the SVG.
-  if (!active && A.length === 0) return null
-  const d = pathToD(path)
-  // Handle/anchor sizes in world units, ~constant on screen via `scale`. Kept
-  // deliberately fine — a refined, lighter controller that doesn't shout over the aerial.
+  const P = paths || []
+  const anyAnchors = P.some(pp => pp.anchors?.length)
+  if (!active && !anyAnchors) return null
   const aR = Math.max(scale * 3.8, 2.4)
   const hR = Math.max(scale * 2.8, 1.8)
   const sw = Math.max(scale * 1.05, 0.4)
-  const sel = active && selected != null ? A[selected] : null
+  const sel = active && selected && P[selected.p] ? P[selected.p].anchors[selected.a] : null
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={viewBox}
-      preserveAspectRatio="none"
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 6, cursor: active ? 'crosshair' : 'default' }}
-    >
-      {/* the path — dark halo + cyan stroke so it reads over the busy aerial */}
-      {d && <path d={d} fill="none" stroke="#08110d" strokeWidth={sw * 3.2} strokeLinejoin="round" strokeLinecap="round" />}
-      {d && <path d={d} fill="none" stroke="#38e1ff" strokeWidth={sw * 1.7} strokeLinejoin="round" strokeLinecap="round" />}
+    <svg ref={svgRef} viewBox={viewBox} preserveAspectRatio="none"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 6, cursor: active ? 'crosshair' : 'default' }}>
+      {/* every loop — dark halo + turquoise stroke so it reads over the busy aerial */}
+      {P.map((pp, pi) => {
+        const d = pathToD(pp)
+        if (!d) return null
+        return (
+          <g key={pi}>
+            <path d={d} fill="none" stroke="#08110d" strokeWidth={sw * 3.2} strokeLinejoin="round" strokeLinecap="round" />
+            <path d={d} fill="none" stroke="#38e1ff" strokeWidth={sw * 1.7} strokeLinejoin="round" strokeLinecap="round" />
+          </g>
+        )
+      })}
 
       {active && <>
         {/* selected anchor's handles */}
@@ -460,17 +430,16 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
             <circle cx={sel[side].x} cy={sel[side].z} r={hR} fill="#7ad9ff" stroke="#08110d" strokeWidth={sw * 0.5} />
           </g>
         ))}
-
-        {/* anchors — corner = square, smooth = circle; selected = filled cyan */}
-        {A.map((a, i) => {
-          const isSel = i === selected
+        {/* anchors of every loop — corner = square, smooth = circle; selected = cyan */}
+        {P.map((pp, pi) => pp.anchors.map((a, ai) => {
+          const isSel = selected && selected.p === pi && selected.a === ai
           const fill = isSel ? '#38e1ff' : '#ffffff'
           return a.type === 'smooth' ? (
-            <circle key={i} cx={a.x} cy={a.z} r={aR} fill={fill} stroke="#08110d" strokeWidth={sw} />
+            <circle key={`${pi}-${ai}`} cx={a.x} cy={a.z} r={aR} fill={fill} stroke="#08110d" strokeWidth={sw} />
           ) : (
-            <rect key={i} x={a.x - aR} y={a.z - aR} width={aR * 2} height={aR * 2} fill={fill} stroke="#08110d" strokeWidth={sw} />
+            <rect key={`${pi}-${ai}`} x={a.x - aR} y={a.z - aR} width={aR * 2} height={aR * 2} fill={fill} stroke="#08110d" strokeWidth={sw} />
           )
-        })}
+        }))}
       </>}
     </svg>
   )

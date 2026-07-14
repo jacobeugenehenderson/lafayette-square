@@ -201,6 +201,9 @@ async function main() {
       catch (e) { console.warn(`  building-overrides unreadable: ${e.message}`) }
     }
     const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
+    // Exclusion loops (excluder model): a building inside ANY loop drops out (unless
+    // force-kept). Everything else IN by default (inside the circle, poly null).
+    const excl = Array.isArray(nb.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
     const bR2 = (nb.radius ?? Infinity) ** 2
     const bBefore = buildings.length
     buildings = buildings.filter((b) => {
@@ -212,10 +215,11 @@ async function main() {
       for (const p of pts) { sx += Array.isArray(p) ? p[0] : p.x; sz += Array.isArray(p) ? p[1] : p.z }
       const bx = sx / pts.length, bz = sz / pts.length
       if (id && activate.has(id)) return true
+      for (const e of excl) if (pointInPolygon(bx, bz, e)) return false   // carve exclusion loops
       return poly ? pointInPolygon(bx, bz, poly) : (bx - cx) ** 2 + (bz - cz) ** 2 <= bR2
     })
     dropped += bBefore - buildings.length
-    console.log(`  Building membership: poly=${!!poly} +${activate.size}/−${hide.size} — kept ${buildings.length}, dropped ${bBefore - buildings.length}`)
+    console.log(`  Building membership: poly=${!!poly} excl=${excl.length} +${activate.size}/−${hide.size} — kept ${buildings.length}, dropped ${bBefore - buildings.length}`)
   }
 
   // ── World-coord bbox (derived from projected layers + buildings) ────
