@@ -82,6 +82,42 @@ async function main() {
     raw.buildingSource = 'osm'
   }
 
+  // ── Pre-clip the building INPUT to membership (KIT, perf) ────────────
+  // A big fetch (a CDP is ~33k buildings) must NOT be snapped + derived whole — that
+  // is the pour's OOM/hang. Drop every building that isn't in the neighborhood HERE,
+  // on the raw input, so snap/derive/elevation only process the ~kept set. Uses the
+  // SAME membership as the post-derive clip below (circle − exclusions + overrides),
+  // so the result is identical, just far cheaper. No boundary (uncommitted) = no clip.
+  if (Array.isArray(raw.buildings) && raw.buildings.length) {
+    const nbP = join(RAW_DIR, '..', 'neighborhood_boundary.json')
+    if (existsSync(nbP)) {
+      try {
+        const nb = JSON.parse(readFileSync(nbP, 'utf-8'))
+        const ovP = join(RAW_DIR, '..', 'building-overrides.json')
+        let activate = new Set(), hide = new Set()
+        if (existsSync(ovP)) { try { const ov = JSON.parse(readFileSync(ovP, 'utf8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) } catch { /* ignore */ } }
+        const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
+        const excl = Array.isArray(nb.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
+        const ccx = nb.center?.[0] ?? 0, ccz = nb.center?.[1] ?? 0
+        const R2 = (nb.radius ?? Infinity) ** 2
+        const before = raw.buildings.length
+        raw.buildings = raw.buildings.filter((b) => {
+          const pts = b.coords || b.ring || (b.rings && b.rings[0]) || []
+          if (pts.length < 3) return true
+          const id = b.msbfId != null ? `msbf-${b.msbfId}` : null
+          if (id && hide.has(id)) return false
+          let sx = 0, sz = 0
+          for (const p of pts) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
+          const bx = sx / pts.length, bz = sz / pts.length
+          if (id && activate.has(id)) return true
+          for (const e of excl) if (pointInPolygon(bx, bz, e)) return false
+          return poly ? pointInPolygon(bx, bz, poly) : (bx - ccx) ** 2 + (bz - ccz) ** 2 <= R2
+        })
+        console.log(`  Pre-clip buildings to membership: ${before} → ${raw.buildings.length}`)
+      } catch (e) { console.warn(`  building pre-clip skipped: ${e.message}`) }
+    }
+  }
+
   // ── Snap ────────────────────────────────────────────────────────────
   console.log('\n[2/4] Snapping coordinates to grid...')
   const snapped = snapAll(raw)
