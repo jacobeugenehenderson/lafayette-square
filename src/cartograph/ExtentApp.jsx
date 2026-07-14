@@ -389,8 +389,11 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
     uniforms: {
       uCenter: { value: new THREE.Vector2(0, 0) },
       uRadius: { value: 1e9 },
-      uInside: { value: new THREE.Color('#ffd9a0') },
-      uOutside: { value: new THREE.Color('#5a6b7a') },
+      // Artificial, high-contrast VIOLET footprints — reads clearly over the aerial
+      // and stays distinct from the cyan boundary + yellow circle. (Swap both to
+      // teal '#2fd8c8' / '#1f7f77' if preferred.) Ghost = red for "will be dropped".
+      uInside: { value: new THREE.Color('#b06cff') },
+      uOutside: { value: new THREE.Color('#5a4a7a') },
       uGhost: { value: new THREE.Color('#ff5a5a') },
       uHidden: { value: null },
       uCount: { value: 1 },
