@@ -35,7 +35,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import {
   fetchSkeletonLabels, fetchExtentCorners, fetchStreetNames, geocodePlace, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
-  pourScene, fetchRibbons, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
+  pourScene, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeScene, rollbackExtent,
   fetchStreets, fetchBoundaryFromStreets, fetchScenes, fetchSkeleton,
 } from './api.js'
@@ -1201,6 +1201,9 @@ export default function ExtentApp() {
         if (lookId && store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
         const rb = await fetchRibbons(scene).catch(() => null)
         if (rb) useCartographStore.setState({ sceneRibbons: rb })
+        // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
+        const pm = await fetchMap(scene).catch(() => null)
+        if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
         setCommittedRadius(Math.round(radiusM))
         // Committed frame is unchanged (no re-center) → carry the authored view as-is.
         if (authoredCam) { try { localStorage.setItem('cartograph-camera', JSON.stringify(authoredCam)) } catch { /* ignore */ } }
@@ -1249,6 +1252,9 @@ export default function ExtentApp() {
       await bakeLook(lookId, { force: true })
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
+      // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
+      const pm = await fetchMap(scene).catch(() => null)
+      if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
       setCommittedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
       setShot('designer')
     } catch (e) {

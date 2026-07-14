@@ -65,14 +65,19 @@ export default function SceneMapLayers({ hiddenLayers }) {
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
   const layerColors = useCartographStore(s => s.layerColors) || {}
   const luColors = useCartographStore(s => s.luColors) || {}
+  const prefetched = useCartographStore(s => s.sceneMap)
   const [map, setMap] = useState(null)
 
   useEffect(() => {
+    // Bake (onBuild) prefetches map.json into the store — if it's this scene's, use it
+    // directly so the Designer opens with the data already in memory (no gray-screen
+    // fetch of a big map.json). Otherwise fetch it here as before.
+    if (prefetched?.scene === scene && prefetched.map) { setMap(prefetched.map); return }
     let cancelled = false
     setMap(null)
     fetchMap(scene).then(m => { if (!cancelled) setMap(m) }).catch(() => {})
     return () => { cancelled = true }
-  }, [scene])
+  }, [scene, prefetched])
 
   // Clip to the ACTIVE installation's own silhouette (fetched by id).
   const boundary = useMemo(() => sceneBoundary ? makeBoundary(sceneBoundary) : null, [sceneBoundary])

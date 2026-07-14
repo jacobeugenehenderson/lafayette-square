@@ -308,8 +308,10 @@ async function main() {
   }
 
   // Content-aware so a no-op pipeline run doesn't cascade-invalidate
-  // ground / buildings / lamps / scene / ground-ao downstream.
-  const mapJson = JSON.stringify(output, null, 2)
+  // ground / buildings / lamps / scene / ground-ao downstream. MINIFIED — map.json
+  // is a derived artifact (never hand-edited) that the Designer fetches whole; the
+  // pretty-print whitespace ~doubled it (Altadena 97→~50 MB), for nothing.
+  const mapJson = JSON.stringify(output)
   const wrote = writeIfChanged(join(CLEAN_DIR, 'map.json'), mapJson)
   const sizeKb = Math.round(mapJson.length / 1024)
   console.log(`\n  Output: ${join(CLEAN_DIR, 'map.json')} (${sizeKb} KB)${wrote ? '' : ' [unchanged]'}`)
