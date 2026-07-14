@@ -1460,7 +1460,7 @@ createServer(async (req, res) => {
       if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
       _seedsInFlight.add(scene)
       try {
-        const { radius } = JSON.parse(body || '{}')
+        const { radius, exclusions } = JSON.parse(body || '{}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const bPath = sceneDataPaths(scene).boundary
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
@@ -1468,11 +1468,20 @@ createServer(async (req, res) => {
         const boundary = makeCircleBoundary(radius)
         if (prev.polygon) boundary.polygon = prev.polygon            // legacy inclusion poly, unchanged
         if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
-        if (Array.isArray(prev.exclusions)) boundary.exclusions = prev.exclusions   // carve loops preserved
+        // Updated exclusion loops (edited on a committed hood) → project + flatten into
+        // the committed frame. This is the LIGHT re-apply — re-clip + re-bake, no
+        // re-center. Falls back to preserving the prior loops when none are passed.
+        if (Array.isArray(exclusions)) {
+          const geo = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
+          const excl = exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
+          if (excl.length) boundary.exclusions = excl
+        } else if (Array.isArray(prev.exclusions)) {
+          boundary.exclusions = prev.exclusions
+        }
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
         if (existsSync(nPath)) {
-          try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.radius = Math.round(radius); writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
+          try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.radius = Math.round(radius); if (Array.isArray(exclusions)) nb.exclusions = exclusions; writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
         }
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }

@@ -821,7 +821,6 @@ export default function ExtentApp() {
   // §4 live re-scope: the radius the committed circle was last baked at. When the
   // operator drags radiusM away from this on a committed scene, offer "Re-scope".
   const [committedRadius, setCommittedRadius] = useState(0)
-  const [rescoping, setRescoping] = useState(false)
   const draftHydrated = useRef(false)
 
   const r2 = (v) => Math.round(v * 100) / 100
@@ -958,7 +957,7 @@ export default function ExtentApp() {
     setSeedError(null); setFetchSources(null)
     setSides([]); setStreetCorners(null); setPreviewStreet(null)
     setName(''); setBlurb(''); setRadiusM(0); setRadiusTouched(false)
-    setCommittedRadius(0); setRescoping(false)
+    setCommittedRadius(0)
     setExclusionsLL([]); setPenActive(false); setSelAnchor(null)
     draftHydrated.current = false
     let cancelled = false
@@ -1153,6 +1152,25 @@ export default function ExtentApp() {
       // not have landed, and the pipeline reads building-overrides.json to decide
       // membership (feedback_debounced_save_must_flush_before_dependent_post).
       await saveBuildingOverrides(scene, { activate: [...activate], hide: [...hide] }).catch(() => {})
+      // ── COMMITTED hood → the LIGHT re-apply: re-clip + re-bake in place, no
+      //    re-center / reproject / skeleton (those only matter on the first pour).
+      //    Applies edited radius + exclusions and opens the Designer — the single
+      //    "apply my changes and show me" action (no separate Re-scope button).
+      if (committed) {
+        setBuildStage('Re-applying extent…')
+        await rescopeScene(scene, Math.round(radiusM), exclusionsLL)
+        const b = await fetchBoundary(scene).catch(() => null)
+        if (b) useCartographStore.setState({ sceneBoundary: b })
+        setBuildStage('Baking slab…')
+        const idx = await fetchLooks().catch(() => null)
+        const lookId = idx?.looks?.find(l => l.scene === scene)?.id
+        if (lookId) await bakeLook(lookId, { force: true })
+        const rb = await fetchRibbons(scene).catch(() => null)
+        if (rb) useCartographStore.setState({ sceneRibbons: rb })
+        setCommittedRadius(Math.round(radiusM))
+        setShot('designer')
+        return
+      }
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
       setBuildStage('Committing extent…')
@@ -1212,29 +1230,8 @@ export default function ExtentApp() {
     }
   }
 
-  // §4 live radius re-scope — rewrite the boundary circle at the new radius +
-  // re-clip + re-bake, WITHOUT re-naming streets or re-centering. The lightweight
-  // path the §11 "living boundary" needs: grow/shrink a committed hood in place.
-  const onRescope = async () => {
-    if (!committed || rescoping || !(radiusM > 0) || Math.round(radiusM) === committedRadius) return
-    setRescoping(true); setSeedError(null); setBuildStage('Re-scoping…')
-    try {
-      await rescopeScene(scene, Math.round(radiusM))
-      const b = await fetchBoundary(scene).catch(() => null)
-      if (b) useCartographStore.setState({ sceneBoundary: b })
-      setBuildStage('Re-baking…')
-      const idx = await fetchLooks().catch(() => null)
-      const lookId = idx?.looks?.find(l => l.scene === scene)?.id
-      if (lookId) await bakeLook(lookId, { force: true })
-      const rb = await fetchRibbons(scene).catch(() => null)
-      if (rb) useCartographStore.setState({ sceneRibbons: rb })
-      setCommittedRadius(Math.round(radiusM))
-    } catch (e) {
-      setSeedError(e.message || 're-scope failed')
-    } finally {
-      setRescoping(false); setBuildStage(null)
-    }
-  }
+  // (Re-scope folded into onBuild: a committed hood's "Pour → Designer" takes the
+  // light re-clip+re-bake path in place — no separate button, no re-center.)
 
   // Debounced boundary resolve — the healed process. As the operator clicks
   // streets, re-assemble the perimeter ORDER-INDEPENDENTLY (returns the polygon +
@@ -1453,13 +1450,6 @@ export default function ExtentApp() {
                     onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
                   {keptFit.radius > 0 &&
                     <button className="carto-btn-sm" onClick={() => { setRadiusM(keptFit.radius + 120); setRadiusTouched(false) }}>fit to buildings</button>}
-                  {committed && Math.round(radiusM) !== committedRadius && (
-                    <button className="carto-btn carto-btn--grow" disabled={rescoping || building} style={{ flexBasis: '100%', marginTop: 6 }}
-                      onClick={onRescope}
-                      title="Rewrite the circle at this radius + re-bake in place — no re-center (§11 living boundary)">
-                      {rescoping ? (buildStage || 'Re-scoping…') : `Re-scope radius → ${Math.round(radiusM)} m`}
-                    </button>
-                  )}
                 </div>
                 )
               })()}
@@ -1503,8 +1493,10 @@ export default function ExtentApp() {
               <div className="carto-row" style={{ marginTop: 12 }}>
                 <button className="carto-btn carto-btn--grow carto-stage-btn" disabled={building || !(radiusM > 0)}
                   onClick={onBuild}
-                  title="Build the neighborhood — finalize the extent (re-center + circle + exclusions), then pipeline → ribbons → bake, and open the Designer">
-                  {building ? (buildStage || 'Working…') : 'Pour → Designer'}
+                  title={committed
+                    ? 'Apply your radius + exclusion edits — re-clip + re-bake in place (no re-center) — and open the Designer'
+                    : 'Build the neighborhood — finalize the extent (re-center + circle + exclusions), then pipeline → ribbons → bake, and open the Designer'}>
+                  {building ? (buildStage || 'Working…') : (committed ? 'Apply → Designer' : 'Pour → Designer')}
                 </button>
               </div>
             )}

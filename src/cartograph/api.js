@@ -169,9 +169,9 @@ export async function commitExtent(scene, payload) {
 
 // Extent editor: live radius re-scope — rewrite the boundary circle (membership
 // polygon preserved) + re-clip + ribbons, no re-name/re-center. Client re-bakes.
-export async function rescopeScene(scene, radius) {
+export async function rescopeScene(scene, radius, exclusions) {
   const res = await fetch(sceneUrl(scene, 'rescope'), {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ radius }),
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ radius, exclusions }),
   })
   const j = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(j.error || `rescope ${res.status}`)
