@@ -18,6 +18,9 @@ When Jacob summons you at day's start by the name **"Pip"**, read **`PIP.md`** a
 3. **Reuse forensics — never re-derive.** If a harness or forensic exists for the symptom, run/read it instead of building a new one (`scratch/` holds 200+; the studies are `*-FORENSIC.md`, the `cartograph/_archive/` forensics, the `HANDOFF-*` ledgers).
 4. **Name the layer before you fix.** SHAPE (the frozen polygon / curb — Survey · skeleton · prebake) vs FILL (the inward ped strokes — Section)? Ask **"is this chains again?"** (`PIPELINE §Wall`). A wrong *silhouette* is upstream; how the *ribbon bends* is Section. Patching the wrong layer is the recurring waste — confirm the layer, in the canon, before editing.
 
+## Stay inside the project — no stray folders, no stray servers
+> ⛔ **Hard rule, no exception without Jacob's explicit say-so.** Everything you create lives **inside `lafayette-square.nosync/`**. Do **not** create folders on the Desktop or anywhere outside the project — that clutter is Jacob's to clean and he shouldn't have to. Git worktrees go under **`.claude/worktrees/`**, never on the Desktop (the old sibling `lafayette-*` Desktop worktrees were removed 2026-07-13; don't reintroduce that pattern). Likewise, **do not spawn new local/dev servers** — reuse the running one; a new server is warranted only for the same reason a new folder is: Jacob authorized it or the task genuinely requires it (`feedback_do_not_spawn_new_dev_servers`). When in doubt on either, **ask first**.
+
 ## Verify your own premises
 Counts, greps, "this shipped," "it's not skeleton" — check the **code** and the **lit app**, never memory alone. Code drifts faster than docs, docs faster than memory. **Proxy renders mislead on this map; the operator's eye is the gate** (`feedback_proxy_render_is_not_the_operator_eye`).
 
