@@ -1193,12 +1193,17 @@ export default function ExtentApp() {
         if (b) useCartographStore.setState({ sceneBoundary: b })
         setBuildStage('Baking slab…')
         const idx = await fetchLooks().catch(() => null)
-        const lookId = idx?.looks?.find(l => l.scene === scene)?.id
-        if (lookId) await bakeLook(lookId, { force: true })
+        let lookId = idx?.looks?.find(l => l.scene === scene)?.id
+        // A committed hood may still have NO Look of its own — poured before Looks
+        // existed, or by a script. The FIRST bake out of Extent MUST create one, else
+        // bakeLook falls back to the default (lafayette-square) Look and the new hood's
+        // slab clobbers LS (Altadena-as-LS, 2026-07-14). Mirrors the first-pour path.
+        if (!lookId) { const r = await createLook({ name: scene, scene }); lookId = r.id }
+        await bakeLook(lookId, { force: true })
         // Switch the Designer to THIS hood's Look — else the pulldown/scene stay on
         // the previous (default LS) Look. Mirrors the first-pour path.
         const store = useCartographStore.getState()
-        if (lookId && store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
+        if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
         const rb = await fetchRibbons(scene).catch(() => null)
         if (rb) useCartographStore.setState({ sceneRibbons: rb })
         // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).

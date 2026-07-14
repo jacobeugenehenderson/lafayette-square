@@ -6,7 +6,7 @@
       "name": "Lafayette Square",
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
-      "bakedAt": 1782854373373,
+      "bakedAt": 1784014260863,
       "updatedAt": 1782854281788
     },
     {
@@ -24,6 +24,12 @@
       "createdAt": 1782000000000,
       "bakedAt": 1783577022568,
       "updatedAt": 1783576922947
+    },
+    {
+      "id": "altadena",
+      "name": "Altadena",
+      "scene": "altadena",
+      "createdAt": 1784014203676
     }
   ]
 }
