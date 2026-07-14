@@ -2,16 +2,18 @@ import InstancedTrees from '../components/InstancedTrees'
 
 /**
  * Toy scene trees — uses the real arborist pipeline. Placements come from
- * src/data/toy/toy-trees.json, baked to /baked/toy.json. Atlas + UV-rewritten
- * GLBs are shared with the lafayette-square Look (same global tree pool).
+ * src/data/toy/toy-trees.json, baked to /baked/toy/trees.json. Atlas +
+ * UV-rewritten GLBs are shared with the lafayette-square Look.
  *
  * Re-bake with:
  *   node arborist/bake-trees.js --scene toy \
  *     --placements src/data/toy/toy-trees.json --styles realistic --lod lod2
  *
- * Note the two axes below: the placements are the TOY scene's (`/baked/toy.json`)
- * while the Look is lafayette-square's — toy already reads them as separate things.
+ * This is the clearest statement of the two axes in the codebase: the
+ * placements are the TOY scene's, the Look is lafayette-square's. bakeUrl is
+ * explicit precisely because scene ≠ look here — everywhere else they coincide
+ * and the Look's own placements are right.
  */
 export default function ToyTrees() {
-  return <InstancedTrees bakeUrl="/baked/toy.json" lookId="lafayette-square" />
+  return <InstancedTrees bakeUrl="/baked/toy/trees.json" lookId="lafayette-square" />
 }

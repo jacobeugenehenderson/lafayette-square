@@ -949,10 +949,10 @@ const server = createServer(async (req, res) => {
         }
 
         // (6) bake-trees AWAITED — rebuilds placement substitution into
-        // public/baked/default.json, which InstancedTrees fetches at runtime.
-        // Without this the 88 Sugar Maple placements stay on the old variant.
-        // LS-only by design (the Salon publishes into LS's census); named
-        // through the helper so the scene axis is explicit and this file's
+        // public/baked/lafayette-square/trees.json, which InstancedTrees fetches
+        // at runtime. Without this the 88 Sugar Maple placements stay on the old
+        // variant. LS-only by design (the Salon publishes into LS's census);
+        // named through the helper so the scene axis is explicit and this file's
         // output matches the Grove bake's byte-for-byte.
         const t3 = Date.now()
         const { bakeTrees } = await import('./bake-trees.js')
@@ -1036,8 +1036,8 @@ const server = createServer(async (req, res) => {
       }
       try {
         const { bakeTrees } = await import('./bake-trees.js')
-        // Re-bake LS's placements (default.json) so the cartograph reflects the
-        // new rating. LS-only by design; scene named explicitly via the helper.
+        // Re-bake LS's placements so the cartograph reflects the new rating.
+        // LS-only by design; scene named explicitly via the helper.
         const { inputs: _rateInputs, ...rateBakeArgs } = treeBakeInputsForScene(DEFAULT_SCENE)
         await bakeTrees({ ...rateBakeArgs })
       } catch (e) {

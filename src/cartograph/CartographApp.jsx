@@ -785,8 +785,9 @@ function genericSceneConfig(sceneBoundary) {
     // SlabBuildings + BakedLamps + InstancedTrees are all look-keyed (fetch
     // /baked/<look>/…), so an installation with no baked lamps/trees just
     // renders none — never LS's. Trees read the LOOK-SCOPED baked/<look>/
-    // trees.json (bakeUrl below), NOT the LS-global baked/default.json, so a
-    // poured scene never inherits LS placements (no ghost).
+    // trees.json (bakeUrl below); since 2026-07-15 that is the ONLY placements
+    // path there is — LS has no privileged global file to inherit from, so a
+    // poured scene cannot pick up LS's trees even by accident (no ghost).
     StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => {
       // Live landscape override off the store — Stage retints/re-places the
       // range instantly as the operator drags the Hero Controls sliders

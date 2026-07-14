@@ -281,15 +281,13 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
       if (existsSync(sp)) lamps = JSON.parse(readFileSync(sp, 'utf-8')).lamps || []
     }
     let trees = []
-    // Poured installations bake their census to a LOOK-SCOPED trees.json
-    // (mirrors lamps.json above); LS's global cross-Look file is default.json,
-    // read only for the default scene. A poured scene with no census → none.
+    // Every neighbourhood bakes its census to a LOOK-SCOPED trees.json (mirrors
+    // lamps.json above) — LS included, since 2026-07-15; it used to be the one
+    // exception, read from the global-looking baked/default.json. A scene with
+    // no census → no trees, so no tree contact shadows. Honest either way.
     const treesLookPath = join(lookDir, 'trees.json')
-    const treesDefaultPath = join(ROOT, 'public', 'baked', 'default.json')
     if (existsSync(treesLookPath)) {
       trees = (JSON.parse(readFileSync(treesLookPath, 'utf-8')).instances) || []
-    } else if (isDefaultScene && existsSync(treesDefaultPath)) {
-      trees = (JSON.parse(readFileSync(treesDefaultPath, 'utf-8')).instances) || []
     }
 
     if (lamps.length || trees.length) {

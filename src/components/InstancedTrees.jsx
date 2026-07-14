@@ -42,13 +42,6 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-// Tree placements are baked per-Look (/baked/<look>/trees.json). BAKE_URL is
-// the legacy GLOBAL fallback for looks with no per-look file — LS, whose auto-
-// bake still writes default.json. ParkPopulation resolves per-look first, then
-// falls back here, so LS stays byte-identical while other installs (e.g.
-// hipointe-demun) read their OWN placements. Mirrors the atlas/GLB resolution.
-const BAKE_URL = `${import.meta.env.BASE_URL}baked/default.json`
-
 // URL → species. The rewritten GLB path is
 // `<base>/baked/<look>/trees/<species>/skeleton-<variantId>-<lod>.glb`
 // (and the cache-bust `?v=...` may trail). Parse the species segment so
@@ -594,9 +587,13 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   const scene = useSceneJson(lookName, bakeLastMs)
   const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
 
-  // Placement source: an explicit bakeUrl prop (Preview/Stage) wins as-is;
-  // otherwise resolve per-Look, falling back to the legacy global default.json
-  // for looks with no per-look file (LS → byte-identical). See BAKE_URL note.
+  // Placement source: an explicit bakeUrl prop (Preview/Stage/toy, where the
+  // scene and the Look differ) wins as-is; otherwise it is the Look's own
+  // placements. Every neighbourhood ships baked/<scene>/trees.json — LS
+  // included, since 2026-07-15. There is no global fallback any more: the old
+  // baked/default.json was LS's census under a fossil name, and a "fallback"
+  // that silently hands LS's 745 trees to a neighbourhood whose bake is missing
+  // is a bug that hides a bug.
   const placementsUrl = bakeUrl || `${import.meta.env.BASE_URL}baked/${lookName}/trees.json`
 
   const [bake, setBake] = useState(null)
@@ -608,14 +605,12 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     // inject groundRaw into each instance; if anchors are absent/stale, the
     // per-instance memos fall back to the smooth field.
     const anchorsUrl = `${import.meta.env.BASE_URL}baked/${lookName}/tree-anchors.json`
-    // A missing per-look file may 404 OR (on SPA-fallback hosts) return a 200
-    // HTML page — so validate the parsed JSON has `instances` and fall back to
-    // the legacy global default.json when the per-look file is absent/invalid.
-    // An explicit bakeUrl (Preview/Stage) is final — no fallback.
+    // A missing placements file may 404 OR (on SPA-fallback hosts) return a 200
+    // HTML page, so `instances` is validated rather than trusted. Absent → no
+    // trees, which is the honest answer for a neighbourhood that has no census
+    // yet (the Arborist ships it a blank grove).
     const tryJson = (url) => fetch(url + '?t=' + cacheBust).then(r => r.ok ? r.json().catch(() => null) : null)
-    const fetchPlacements = bakeUrl
-      ? tryJson(placementsUrl)
-      : tryJson(placementsUrl).then(j => (j && j.instances) ? j : tryJson(BAKE_URL))
+    const fetchPlacements = tryJson(placementsUrl).then(j => (j && j.instances) ? j : null)
     Promise.all([
       fetchPlacements,
       fetch(anchorsUrl + '?t=' + cacheBust).then(r => r.ok ? r.json() : null).catch(() => null),

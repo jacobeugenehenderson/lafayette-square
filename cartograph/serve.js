@@ -82,7 +82,6 @@ function slabPathspecs(id) {
     `public/baked/${id}`,
     `public/looks/${id}/design.json`,
     `public/looks/index.json`,
-    `public/baked/default.json`,
     `src/data/ribbons.json`,
     `public/photos/og-preview.jpg`,   // the link-preview image (captured from Preview)
   ]
@@ -1655,7 +1654,7 @@ createServer(async (req, res) => {
       //      from the latest measurements/overlay/centerlines edits.
       //   2. cartograph bakes — ground / buildings / lamps / scene from
       //      the freshly-derived map.json.
-      //   3. arborist tree bake — public/baked/default.json placements;
+      //   3. arborist tree bake — public/baked/<scene>/trees.json placements;
       //      reads map.json for forbidden-surface polygons.
       //   4. ground-ao bake last — slowest (~25 sec), benefits from
       //      stable upstream geometry.

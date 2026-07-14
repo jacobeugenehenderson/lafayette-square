@@ -7,7 +7,7 @@
  *   src/data/park_species_map.json — species-id → preferred library subset
  *   public/baked/<heroLook>/scene.json       — hero pan (heroTier classifier)
  *   public/baked/<heroLook>/trees-atlas.json — canopyByVariant dims (bake-look)
- *   --scene <name>               — NEIGHBOURHOOD whose census is baked (defaults 'default')
+ *   --scene <name>               — NEIGHBOURHOOD whose census is baked (def 'lafayette-square')
  *   --styles realistic[,winter…] — active style set (defaults 'realistic')
  *   --lod lod0|lod1|lod2         — LOD to ship (defaults 'lod2')
  *   --heroLook <name>            — Look whose hero pan drives heroTier (def 'lafayette-square')
@@ -20,10 +20,10 @@
  * `--look` until 2026-07-15; it always meant the scene.
  *
  * Writes:
- *   public/baked/<scene>.json
+ *   public/baked/<scene>/trees.json
  *
  * Schema:
- *   { generatedAt, look, lod, activeStyles, count, heroTierMeta,
+ *   { generatedAt, scene, lod, activeStyles, count, heroTierMeta,
  *     tiles: { cols, rows, minX, minZ, tileW, tileD,
  *              instancesByTile: [{ tileX, tileZ, instances: [...] }, ...] } | null,
  *     instances: [{ x, z, url, scale, rotY, species, variantId, heroTier? }] }
@@ -37,6 +37,7 @@
 import { promises as fs } from 'node:fs'
 import { readFileSync } from 'node:fs'
 import { makeForbiddenTester } from '../cartograph/forbidden-surface.mjs'
+import { DEFAULT_SCENE } from '../cartograph/config.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 // Shared hero-pan math — the SAME Catmull-Rom the runtime plays
@@ -367,17 +368,12 @@ function classifyHeroTiers(canopies, heroPan) {
 }
 
 export async function bakeTrees({
-  // ⚠️ FOSSIL DEFAULT: 'default' is not a scene name — it is the legacy output
-  // BASENAME (baked/default.json = Lafayette Square's mother map under a fossil
-  // name, from back when placements were believed cross-Look). Kept as-is so
-  // this rename changes nothing; Phase 2 passes the real scene from the Grove,
-  // Phase 3 retires the path to baked/<scene>/trees.json.
-  scene = 'default',
+  scene = DEFAULT_SCENE,
   styles = ['realistic'],
   lod = 'lod2',
   heroLook = 'lafayette-square', // which Look's baked hero pan + canopy dims drive heroTier
   placements,    // override path (string) or paths (array, unioned)
-  output,        // override output path; defaults to public/baked/<scene>.json
+  output,        // override output path; defaults to public/baked/<scene>/trees.json
   speciesMapPath, // override COMMON->library routing; defaults to LS's global map
   forbiddenMapPath, // poured scene's clean/map.json for the hardscape/water mask
   verbose = false,
@@ -589,10 +585,9 @@ export async function bakeTrees({
 
   const out = {
     generatedAt: Date.now(),
-    // Artifact field stays `look` this phase — it is the published schema
-    // (`SLAB-CONTRACT.md §8`) and no consumer reads it. Renaming it is a
-    // contract change; it rides Phase 4's accord sweep, not this rename.
-    look: sceneName,
+    // The NEIGHBOURHOOD these placements are of. Was `look` until 2026-07-15,
+    // which was never true — it always carried the scene.
+    scene: sceneName,
     lod: targetLod,
     activeStyles: [...activeStyles],
     count: instances.length,
@@ -605,11 +600,13 @@ export async function bakeTrees({
     instances,
   }
 
-  // Honor an explicit --output (poured scenes write a scene-scoped
-  // baked/<scene>/trees.json); default stays the legacy baked/<scene>.json.
+  // Every scene's placements are baked/<scene>/trees.json — the path the runtime
+  // fetches. The flat baked/<scene>.json this used to default to is the fossil
+  // convention that produced the phantom baked/lafayette-square.json nobody read;
+  // retired 2026-07-15. An explicit --output still wins.
   const outPath = output
     ? path.resolve(REPO_ROOT, output)
-    : path.join(REPO_ROOT, 'public', 'baked', `${sceneName}.json`)
+    : path.join(REPO_ROOT, 'public', 'baked', sceneName, 'trees.json')
   await fs.mkdir(path.dirname(outPath), { recursive: true })
   await fs.writeFile(outPath, JSON.stringify(out, null, 2))
 

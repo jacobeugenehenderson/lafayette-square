@@ -51,26 +51,22 @@ export function sceneForLook(lookId) {
 }
 
 /**
- * ⚠️ FOSSIL. Lafayette Square's placements ship as `public/baked/default.json`,
- * the path `InstancedTrees.jsx` falls back to. The name dates from when
- * placements were believed cross-Look; they never were — this is LS's mother map
- * under a fossil name. `public/looks/index.json` opens with
- * `"default": "lafayette-square"`, which is the whole of where the name came from.
+ * EVERY scene's placements land here: `public/baked/<scene>/trees.json`. One
+ * rule, no exceptions — this is what `InstancedTrees.jsx` fetches.
  *
- * Retiring it (→ `baked/lafayette-square/trees.json`, which the runtime already
- * tries FIRST) is Phase 3 of `HANDOFF-grove-neighborhood-axis.md`, and it must
- * move `bake-ground-ao.js` + `bake-tree-anchors.js` with it — both read tree
- * positions straight out of this path.
+ * Lafayette Square used to be the exception, shipping as `public/baked/default.json`.
+ * That name dated from when placements were believed cross-Look; they never were
+ * — it was LS's mother map named after `public/looks/index.json`'s opening
+ * `"default": "lafayette-square"` pointer, and nothing more. Retired 2026-07-15
+ * (Phase 3), which is what makes LS an ordinary neighbourhood here.
  */
-export const LS_PLACEMENTS_FOSSIL = 'public/baked/default.json'
+export const placementsPathForScene = (scene) => `public/baked/${scene}/trees.json`
 
 /**
  * The toy fixture's census is hand-authored and lives outside the scene data
- * dirs (`project_toy_canonical_input_path`); its placements ship as
- * `baked/toy.json`, which `src/toy/ToyTrees.jsx` fetches by that literal path.
+ * dirs (`project_toy_canonical_input_path`).
  */
 const TOY_PLACEMENTS = 'src/data/toy/toy-trees.json'
-const TOY_OUTPUT = 'public/baked/toy.json'
 
 /**
  * @param {string} scene — the NEIGHBOURHOOD id (a Look's `scene` field), never a Look id.
@@ -80,14 +76,16 @@ const TOY_OUTPUT = 'public/baked/toy.json'
  */
 export function treeBakeInputsForScene(scene) {
   if (scene === DEFAULT_SCENE) {
-    // LS's census, species map and hardscape mask are `bake-trees.js`'s own
-    // built-in defaults — it was written for LS before scenes were a concept.
-    // Only the output needs pinning, to the fossil above. `inputs` mirrors what
-    // those defaults actually read, including the water layer the default
-    // forbidden-surface tester pulls in (`forbidden-surface.mjs`).
+    // ⚠️ LS's census, species map and hardscape mask are still `bake-trees.js`'s
+    // own built-in defaults — it was written for LS before scenes were a concept,
+    // so LS's inputs live at src/data/* rather than in this scene's data dir like
+    // every other neighbourhood's. That is the INPUT half of the LS special-case;
+    // Phase 3 retired the OUTPUT half (default.json) but this half remains.
+    // `inputs` mirrors what those defaults actually read, including the water
+    // layer the default forbidden-surface tester pulls in.
     return {
       scene,
-      output: LS_PLACEMENTS_FOSSIL,
+      output: placementsPathForScene(scene),
       inputs: [
         join(REPO_ROOT, 'src', 'data', 'park_trees.json'),
         join(REPO_ROOT, 'src', 'data', 'park_species_map.json'),
@@ -103,7 +101,7 @@ export function treeBakeInputsForScene(scene) {
     return {
       scene,
       placements: [TOY_PLACEMENTS],
-      output: TOY_OUTPUT,
+      output: placementsPathForScene(scene),
       inputs: [join(REPO_ROOT, TOY_PLACEMENTS)],
     }
   }

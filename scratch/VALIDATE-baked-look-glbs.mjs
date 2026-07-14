@@ -2,7 +2,7 @@ import { NodeIO } from '@gltf-transform/core';
 import { EXTTextureWebP } from '@gltf-transform/extensions';
 import { readFileSync, existsSync } from 'fs';
 
-const j = JSON.parse(readFileSync('public/baked/default.json','utf8'));
+const j = JSON.parse(readFileSync('public/baked/lafayette-square/trees.json','utf8'));
 const look = 'lafayette-square';
 const urls = [...new Set(j.instances.map(i=>(i.url||'').replace(/\?.*$/,'')))].sort();
 const io = new NodeIO().registerExtensions([EXTTextureWebP]);
