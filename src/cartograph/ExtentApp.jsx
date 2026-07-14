@@ -765,6 +765,25 @@ export default function ExtentApp() {
   const [boundaryLL, setBoundaryLL] = useState(null)
   const [penActive, setPenActive] = useState(false)     // pen tool engaged → clicks author the path
   const [selAnchor, setSelAnchor] = useState(null)      // selected anchor index (drives handles + Delete)
+  // Hold Space while penning → SUSPEND the pen (yield the click to MapControls so
+  // you can pan; the pen becomes a hand), resume on release. Like Illustrator/Figma.
+  // preventDefault stops Space from scrolling AND from re-clicking the focused pen
+  // button (which was toggling the pen off). Only armed in pen mode.
+  const [spacePan, setSpacePan] = useState(false)
+  useEffect(() => {
+    if (!penActive) { setSpacePan(false); return }
+    const down = (e) => {
+      if (e.code !== 'Space' || e.repeat) return
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      e.preventDefault()
+      setSpacePan(true)
+    }
+    const up = (e) => { if (e.code === 'Space') { e.preventDefault(); setSpacePan(false) } }
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
+  }, [penActive])
   const [anchors, setAnchors] = useState(null)       // matched place names, for the "matched:" line
   // Descriptive metadata — name + short blurb (the blurb doubles as SEO/description).
   const [name, setName] = useState('')
@@ -1270,7 +1289,7 @@ export default function ExtentApp() {
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
-      <div className="carto-canvas-wrap" style={{ cursor: penActive ? 'crosshair' : curating ? 'pointer' : 'grab' }}>
+      <div className="carto-canvas-wrap" style={{ cursor: penActive ? (spacePan ? 'grab' : 'crosshair') : curating ? 'pointer' : 'grab' }}>
         <Canvas
           orthographic
           frameloop="always"
@@ -1301,7 +1320,7 @@ export default function ExtentApp() {
             ref={controlsRef}
             makeDefault
             enableRotate={false}
-            enablePan={!markerActive && !penActive}
+            enablePan={!markerActive && (!penActive || spacePan)}
             enableZoom
             screenSpacePanning
             minZoom={0.01}
@@ -1322,7 +1341,7 @@ export default function ExtentApp() {
         {located && (
           <BezierPen cameraRef={orthoRef} active={penActive} path={penPath}
             onChange={onPenChange} snapTargets={snapJunctions}
-            selected={selAnchor} onSelect={setSelAnchor} />
+            selected={selAnchor} onSelect={setSelAnchor} suspended={spacePan} />
         )}
 
         {/* The boundary circle as an in-scene drag handle — pull it out for padding.
@@ -1425,7 +1444,7 @@ export default function ExtentApp() {
                   point-in-polygon of its flattened polygon. Never a geocoded ring. */}
               <div className="carto-row carto-row--wrap" style={{ marginBottom: penActive ? 4 : 8 }}>
                 <button className="carto-btn carto-btn--grow"
-                  onClick={() => { setPenActive(v => !v); setCurating(false) }}
+                  onClick={(e) => { setPenActive(v => !v); setCurating(false); e.currentTarget.blur() }}
                   style={penActive ? { background: '#ffd23f', color: '#12140f', fontWeight: 600 } : undefined}
                   title="Draw the neighborhood boundary as an editable bezier path — click points, drag for curves, close it. It decides which buildings are in the hood.">
                   {penActive ? '✓ Drawing boundary — click to place, drag to curve' : (boundaryLL?.anchors?.length ? '✎ Edit boundary path' : '✎ Draw boundary')}

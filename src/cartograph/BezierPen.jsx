@@ -140,7 +140,7 @@ function splitSeg(a, b, t) {
 // Mirror a handle across its anchor (for smooth anchors: hIn = 2*anchor - hOut).
 const mirror = (anchor, h) => ({ x: 2 * anchor.x - h.x, z: 2 * anchor.z - h.z })
 
-export default function BezierPen({ cameraRef, active, path, onChange, snapTargets, snapDist = 40, selected, onSelect }) {
+export default function BezierPen({ cameraRef, active, path, onChange, snapTargets, snapDist = 40, selected, onSelect, suspended }) {
   const svgRef = useRef(null)
   const [viewBox, setViewBox] = useState('0 0 1 1')
   const [scale, setScale] = useState(1)          // world units per pixel-ish → sizes handles
@@ -157,6 +157,9 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
   selectedRef.current = selected
   const spaceDownRef = useRef(spaceDown)
   spaceDownRef.current = spaceDown
+  // `suspended` = space-to-pan is active → the pen yields the click to MapControls.
+  const suspendedRef = useRef(suspended)
+  suspendedRef.current = suspended
   // Every mutation updates the ref SYNCHRONOUSLY before bubbling to the parent —
   // so a drag that fires immediately after an add/insert (handle-pull, drag-after-
   // insert) reads the fresh path, not the pre-render stale one. The parent's state
@@ -220,7 +223,7 @@ export default function BezierPen({ cameraRef, active, path, onChange, snapTarge
     const tol = () => { const vb = computeVB(); return vb ? Math.max(vb.w / 90, 6) : 12 }
 
     function onDown(e) {
-      if (!activeRef.current || spaceDownRef.current || e.button !== 0) return
+      if (!activeRef.current || spaceDownRef.current || suspendedRef.current || e.button !== 0) return
       if (!inCanvas(e)) return
       // The SVG spans the whole canvas-wrap (incl. behind the side panel / toolbar),
       // and this is a window listener — so a click on any UI chrome would otherwise
