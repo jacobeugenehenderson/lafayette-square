@@ -443,7 +443,7 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "density": 0.05,
+        "density": 0,
         "color": null
       }
     }
@@ -715,6 +715,24 @@
       "rotation": 1.99,
       "yOffset": 155,
       "footFade": 36
+    }
+  },
+  "landscape": {
+    "source": "cartograph/_landscape-intake/altadena/terrain/sangabriel.obj",
+    "values": {
+      "bearingX": 0.18,
+      "bearingZ": -0.98,
+      "distance": 5400,
+      "scale": 1,
+      "rotation": 0,
+      "yOffset": -20,
+      "snowline": 1500,
+      "snowSoftness": 180,
+      "snowColor": "#eef3f7",
+      "rockColor": "#6d655a",
+      "scrubColor": "#586348",
+      "haze": 0.35,
+      "hazeColor": "#bcd0e0"
     }
   },
   "archLight": {
