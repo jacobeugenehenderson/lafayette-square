@@ -1750,23 +1750,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // back to the live walk over the smoothed streets, so the dormant knob's
   // semantics stay bit-for-bit what they were (rings AND strokes smoothed
   // together, never mixed).
-  let tiles = (smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)) || extractFaces(streets)
-  // INHABITED CULL (opt-in; for extents far larger than the real hood, e.g. a CDP-
-  // sized disc). `opts.tileKeep(cx,cz)` — supplied by the caller, built off the
-  // MEMBER buildings (src/lib/inhabitedMask.js), so the pen's exclusion loops flow
-  // through. Drop ground tiles OUTSIDE the developed footprint + one block of
-  // context, so the CDP periphery of buildingless blocks nobody sees isn't poured
-  // (Altadena: 432 MB → tens of MB). WHOLE-tile drop → the cut lands on block
-  // boundaries. Filtered HERE, before any tile-index refs (corners/junctions). No
-  // predicate → no cull (LS and every tight hood stay bit-for-bit unchanged).
-  if (typeof opts.tileKeep === 'function' && tiles.length) {
-    tiles = tiles.filter(t => {
-      const r = t.ring; if (!r || !r.length) return true
-      let sx = 0, sz = 0
-      for (const p of r) { sx += p[0]; sz += p[1] }
-      return opts.tileKeep(sx / r.length, sz / r.length)
-    })
-  }
+  const tiles = (smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)) || extractFaces(streets)
 
   // E2 — the CONSTRUCTED medians (prebake artifact: ribbons.medians[]; the
   // divided pair's inter-chain lens partitioned into kind:'median' segments +
@@ -3146,17 +3130,33 @@ export function buildTileGround(ribbons, opts = {}) {
   let highway = unionRings(Hacc)
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
+  // INHABITED CULL (opt-in; extents far larger than the real hood, e.g. a CDP disc).
+  // Keep the land-use FACE fills across the WHOLE disc — they ARE the flat base every
+  // neighbourhood has, and the manifest's radial fade dissolves them at the rim — and
+  // cull only the ped DETAIL (curb / sidewalk / treelawn / block) to the developed
+  // footprint + one block of context. An oversized extent then reads as a faded circle
+  // of land-use colour with no sidewalks or block geometry out in the empty periphery
+  // (Jacob, 2026-07-14: "get rid of the geometry but keep the flat layer itself").
+  // `opts.tileKeep` is the caller's mask, built off the MEMBER buildings
+  // (src/lib/inhabitedMask.js), so the pen's exclusion loops flow through. No
+  // predicate → detail spans the disc as before (LS and every tight hood unchanged).
+  let detailClip = stencil ? [stencil] : null
+  if (stencil && typeof opts.tileKeep === 'function') {
+    const keptRings = []
+    for (const t of tiles) {
+      const r = t.ring; if (!r || !r.length) continue
+      let sx = 0, sz = 0
+      for (const p of r) { sx += p[0]; sz += p[1] }
+      if (opts.tileKeep(sx / r.length, sz / r.length)) keptRings.push(r)
+    }
+    if (keptRings.length) {
+      const inhabited = offsetRings(unionRings(keptRings), opts.cullMargin || 80, 'round')
+      if (inhabited.length) detailClip = intersectRings([stencil], inhabited)
+    }
+  }
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
-    // INHABITED CULL: with tiles culled to the developed footprint, the frame is
-    // only the ONE-BLOCK CONTEXT around the kept tiles — NOT the whole disc. Else
-    // this perimeter (the exterior-street road fill below) balloons over the empty
-    // periphery we just culled (Altadena: the void re-filled as a ~1.6M-tri frame).
-    // Dilate the kept-tile union by the context margin, clip the disc to it.
-    const frame = opts.tileKeep
-      ? intersectRings([stencil], offsetRings(tileUnion, opts.cullMargin || 80, 'round'))
-      : [stencil]
-    const perimeter = differenceRings(frame, tileUnion)   // frame: outer(s) + tile-network holes
+    const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
     // G9 — road the EXTERIOR streets. A street segment whose outer side borders
     // the perimeter (no tile there) was un-roaded → "roads don't reach their
     // dead ends". Stroke every street at the four cumulative depths and clip to
@@ -3256,13 +3256,17 @@ export function buildTileGround(ribbons, opts = {}) {
     const perimClass = big ? luForRing(big) : 'unknown'
     pushLu(tlByLu, perimClass, pTree)
     pushLu(luByLu, perimClass, differenceRings(perimeter, unionRings([...pAsphalt, ...pCurb, ...pTree, ...pSide])))
+    // Roads span the whole disc (the base map — culling them would punch street-shaped
+    // GAPS through the flat periphery). Ped DETAIL clips to the inhabited shape.
     asphalt  = intersectRings(asphalt,  [stencil])
     highway  = intersectRings(highway,  [stencil])
-    curb     = intersectRings(curb,     [stencil])
-    sidewalk = intersectRings(sidewalk, [stencil])
+    curb     = intersectRings(curb,     detailClip)
+    sidewalk = intersectRings(sidewalk, detailClip)
   }
   const treelawnByLu = {}, luByClass = {}
-  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
+  // treelawn = ped detail → inhabited only. luByClass = the FACE fills → the whole
+  // disc: they are the flat faded base, and the radial fade dissolves them at the rim.
+  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), detailClip) : unionRings(tlByLu[k])
   for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
   // The BLOCK contours: each tile's asphalt-inner ring (iA) — the block polygon
@@ -3272,7 +3276,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // it stays free on the live corner-drag rebuild path. The Survey view shades
   // these to memorialize the block boundaries; the rest of the app ignores it.
   const blockRaw = shapeTiles.flatMap(st => st.iA || [])
-  const block = stencil ? intersectRings(blockRaw, [stencil]) : blockRaw
+  const block = stencil ? intersectRings(blockRaw, detailClip) : blockRaw   // block silhouettes = detail
 
   // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
