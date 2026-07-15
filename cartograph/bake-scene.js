@@ -38,7 +38,7 @@ import {
   SKY_GAIN_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, SMAA_FLAT_DEFAULTS, DOF_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
-  ARCH_FLAT_DEFAULTS, LANDSCAPE_FLAT_DEFAULTS, migrateArchLight, LANTERN_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
+  ARCH_FLAT_DEFAULTS, migrateArchLight, LANTERN_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
   NEON_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
@@ -131,7 +131,16 @@ export async function bakeScene({ look = 'default' } = {}) {
     // src/stage/StageApp.jsx — operator's arch authoring now persists
     // across reloads and reaches production via the slab.
     arch:      design.arch      || { values: { ...ARCH_FLAT_DEFAULTS } },
-    landscape: design.landscape || { values: { ...LANDSCAPE_FLAT_DEFAULTS } },
+    // ⛔ The landscape is a STAGE SET-PIECE, opted into per-Look via
+    // design.landscape.source (a20619cc) — NOT a channel every hood carries. The
+    // `|| LANDSCAPE_FLAT_DEFAULTS` fallback stamped a San Gabriel config (snowline
+    // 1500, distance 5400 — the defaults are misnamed; they hold the REAL mountain
+    // values) into EVERY scene.json, Lafayette Square included. Inert today (no GLB
+    // ⇒ nothing renders) but it is the "accidental reading/load-in" the intake↔Stage
+    // separation exists to prevent, and it would have landed on LS's slab the next
+    // time its Look was baked. No source ⇒ no landscape ⇒ the key is omitted, which
+    // is what LS's scene.json already carries today.
+    ...(design.landscape?.source ? { landscape: design.landscape } : {}),
     archLight: migrateArchLight(design),
     lantern:   design.lantern   || { values: { ...LANTERN_FLAT_DEFAULTS } },
     horizon:   design.horizon   || { values: { ...HORIZON_FLAT_DEFAULTS } },
