@@ -27,6 +27,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
+import { loadSceneStencil, pointInPolygon } from './sceneStencil.js'
 import { fileURLToPath } from 'url'
 
 const here = dirname(fileURLToPath(import.meta.url))          // cartograph/
@@ -79,27 +80,8 @@ for (let i = 0, n = obj.length; i < n;) {
     indices.push(a, b, c)
   }
 }
-const vCount = positions.length / 3, fCount = indices.length / 3
+let vCount = positions.length / 3, fCount = indices.length / 3
 console.log(`  parsed ${vCount.toLocaleString()} verts · ${fCount.toLocaleString()} tris`)
-
-// ── Compute smooth vertex normals (OBJ carries none) ────────────────────────
-const normals = new Float32Array(positions.length)
-for (let f = 0; f < indices.length; f += 3) {
-  const ia = indices[f] * 3, ib = indices[f + 1] * 3, ic = indices[f + 2] * 3
-  const ax = positions[ia], ay = positions[ia + 1], az = positions[ia + 2]
-  const bx = positions[ib], by = positions[ib + 1], bz = positions[ib + 2]
-  const cx = positions[ic], cy = positions[ic + 1], cz = positions[ic + 2]
-  const ux = bx - ax, uy = by - ay, uz = bz - az
-  const vx = cx - ax, vy = cy - ay, vz = cz - az
-  const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx   // area-weighted
-  normals[ia] += nx; normals[ia + 1] += ny; normals[ia + 2] += nz
-  normals[ib] += nx; normals[ib + 1] += ny; normals[ib + 2] += nz
-  normals[ic] += nx; normals[ic + 1] += ny; normals[ic + 2] += nz
-}
-for (let v = 0; v < normals.length; v += 3) {
-  const l = Math.hypot(normals[v], normals[v + 1], normals[v + 2]) || 1
-  normals[v] /= l; normals[v + 1] /= l; normals[v + 2] /= l
-}
 
 // ── Geo-anchor: place the DEM center at the hood→DEM ENU offset ──────────────
 const meta = JSON.parse(readFileSync(metaPath, 'utf8'))
@@ -130,6 +112,72 @@ if (existsSync(heightsPath)) {
 const yOffset = -Math.round(hoodGroundASL)
 console.log(`  geo-anchor: DEM center ${north.toFixed(0)}m N, ${east.toFixed(0)}m E of hood → world (${worldX.toFixed(0)}, ${worldZ.toFixed(0)}) · dist ${distance} · bearing (${bearingX}, ${bearingZ})`)
 console.log(`  hood ground ≈ ${hoodGroundASL.toFixed(0)}m ASL → yOffset ${yOffset}`)
+
+// ── Stencil cut — the mountain stops at the town's base plate ───────────────
+// The DEM is a ~13.8km square: placed at its true geo-anchor it doesn't sit
+// BEHIND the hood, it SWALLOWS it (Altadena: the mesh's near edge lands 1,348m
+// SOUTH of the hood centre, draping the northern two-thirds of the disc —
+// 2026-07-15, the operator's eye). The hood has exactly one authored silhouette
+// and its SSoT is the EXTENT tool's neighborhood_boundary.json, so cut with THAT
+// polygon — the same one bake-ground clips the ground to — never a second circle.
+//
+// Cut in WORLD space: the GLB stays in DEM-local coords and the runtime places it
+// at distance·bearing, so a vertex at local (x,z) lands at (worldX+x, worldZ+z).
+// A tri is dropped when its CENTROID falls inside the stencil — centroid, not
+// any-vertex, so the seam lands ON the plate edge rather than a ragged tri short.
+// Vertices are then compacted (an orphaned vert is dead weight in the GLB).
+const stencil = loadSceneStencil(join(here, '..'), scene)
+if (stencil.clipPolygon?.length) {
+  const keep = []
+  for (let f = 0; f < indices.length; f += 3) {
+    const ia = indices[f] * 3, ib = indices[f + 1] * 3, ic = indices[f + 2] * 3
+    const cxw = worldX + (positions[ia] + positions[ib] + positions[ic]) / 3
+    const czw = worldZ + (positions[ia + 2] + positions[ib + 2] + positions[ic + 2]) / 3
+    if (!pointInPolygon(cxw, czw, stencil.clipPolygon)) keep.push(indices[f], indices[f + 1], indices[f + 2])
+  }
+  const cutTris = (indices.length - keep.length) / 3
+  // Compact: keep only the verts the surviving tris reference.
+  const remap = new Map()
+  const newPos = []
+  const reindexed = new Array(keep.length)
+  for (let i = 0; i < keep.length; i++) {
+    const old = keep[i]
+    let n = remap.get(old)
+    if (n === undefined) {
+      n = remap.size
+      remap.set(old, n)
+      newPos.push(positions[old * 3], positions[old * 3 + 1], positions[old * 3 + 2])
+    }
+    reindexed[i] = n
+  }
+  const droppedVerts = vCount - remap.size
+  positions.length = 0; positions.push(...newPos)
+  indices.length = 0; indices.push(...reindexed)
+  vCount = positions.length / 3
+  fCount = indices.length / 3
+  console.log(`  stencil cut (extent SSoT, ${stencil.clipPolygon.length}-pt boundary @ r${stencil.streetFade ? stencil.streetFade.outer + 50 : stencil.radius}): -${cutTris.toLocaleString()} tris, -${droppedVerts.toLocaleString()} verts → ${fCount.toLocaleString()} tris`)
+} else {
+  console.log('  stencil cut: skipped (no boundary polygon for this scene)')
+}
+
+// ── Compute smooth vertex normals (OBJ carries none) ────────────────────────
+const normals = new Float32Array(positions.length)
+for (let f = 0; f < indices.length; f += 3) {
+  const ia = indices[f] * 3, ib = indices[f + 1] * 3, ic = indices[f + 2] * 3
+  const ax = positions[ia], ay = positions[ia + 1], az = positions[ia + 2]
+  const bx = positions[ib], by = positions[ib + 1], bz = positions[ib + 2]
+  const cx = positions[ic], cy = positions[ic + 1], cz = positions[ic + 2]
+  const ux = bx - ax, uy = by - ay, uz = bz - az
+  const vx = cx - ax, vy = cy - ay, vz = cz - az
+  const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx   // area-weighted
+  normals[ia] += nx; normals[ia + 1] += ny; normals[ia + 2] += nz
+  normals[ib] += nx; normals[ib + 1] += ny; normals[ib + 2] += nz
+  normals[ic] += nx; normals[ic + 1] += ny; normals[ic + 2] += nz
+}
+for (let v = 0; v < normals.length; v += 3) {
+  const l = Math.hypot(normals[v], normals[v + 1], normals[v + 2]) || 1
+  normals[v] /= l; normals[v + 1] /= l; normals[v + 2] /= l
+}
 
 // ── Bounds (for the manifest / renderer frustum) ────────────────────────────
 let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity

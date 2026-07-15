@@ -33,6 +33,7 @@ import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
+import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
@@ -105,42 +106,10 @@ function getTerrainSampler(scene) {
   return _terrainSampler;
 }
 
-// Scene stencil loader. Reads cartograph/data/<scene>/neighborhood_boundary.json
-// and derives the four bake-side stencil values:
-//   - center, radius                — manifest emission + AO bbox anchor
-//   - faceFade, streetFade          — runtime radial fade bands (BakedGround
-//                                     shader uniforms via manifest.stencil)
-//   - clipPolygon                   — Clipper mask for face/ribbon intersection,
-//                                     scaled outward to streetFade.outer + 50
-//
-// No-boundary fallback (file absent / no `boundary` field): returns nulls
-// across the board. clipPolygon=null disables stencil clipping; faceFade=null
-// signals manifest.stencil=null so BakedGround skips the radial fade shader.
-//
-// "fade authored?" gate: if the file has a `boundary` polygon but no `fade`
-// field, we use the polygon to clip but emit manifest.stencil=null so the
-// runtime renders flat (no soft-circle). Toy uses this — rectangular clip,
-// no radial dissolve. Mirrors the Designer-side `useBoundary` flag in
-// SCENE_REGISTRY by reading the same data signal.
-function loadSceneStencil(scene) {
-  const path = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
-  if (!existsSync(path)) return { center: [0, 0], radius: 1, faceFade: null, streetFade: null, clipPolygon: null }
-  const s = JSON.parse(readFileSync(path, 'utf-8'))
-  const center = s.center || [0, 0]
-  const radius = s.radius || 1
-  const faceFade   = s.fade || null
-  const streetFade = s.streetFade || null
-  let clipPolygon = null
-  if (s.boundary?.length) {
-    // Scale outward to streetFade.outer + 50 when fade is authored (LS).
-    // Without fade, no scaling needed — clip exactly at the authored polygon.
-    const targetR = streetFade ? streetFade.outer + 50 : radius
-    const scale = radius > 0 ? targetR / radius : 1
-    const cx = center[0], cz = center[1]
-    clipPolygon = s.boundary.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
-  }
-  return { center, radius, faceFade, streetFade, clipPolygon }
-}
+// The stencil's SSoT is the EXTENT tool (neighborhood_boundary.json); the
+// derivation moved to ./sceneStencil.js at T-landscape (2026-07-15) so bake-landscape
+// cuts the mountain with the EXACT polygon the ground clips to, not a copy.
+const loadSceneStencil = (scene) => _loadSceneStencil(ROOT, scene)
 
 // Paint order (deepest = drawn first). The pure-Three.js bake bundle is
 // the canonical runtime artifact.
