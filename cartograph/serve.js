@@ -1710,8 +1710,12 @@ createServer(async (req, res) => {
       // Render already mount-gates hidden decorations off the scene.json snapshot,
       // so a stale artifact (if one exists from when it was last shown) is never
       // fetched; re-showing flips design.json → the sub-bake is dirty → re-runs.
-      let bakeLayerVis = {}
-      try { bakeLayerVis = JSON.parse(readFileSync(DESIGN, 'utf-8')).layerVis || {} } catch {}
+      // The Look's design.json, parsed ONCE — layerVis gates the sub-bakes below,
+      // and design.landscape.source gates the landscape step (a20619cc). Missing or
+      // unparseable → {}, and every consumer degrades to its default.
+      let bakeDesign = {}
+      try { bakeDesign = JSON.parse(readFileSync(DESIGN, 'utf-8')) || {} } catch {}
+      const bakeLayerVis = bakeDesign.layerVis || {}
       const layerOn = (layerId) => bakeLayerVis[layerId] !== false
 
       // pipeline.js is LS-specific (reads OSM ingest → derives map.json).
@@ -1792,7 +1796,7 @@ createServer(async (req, res) => {
       // OUT of the pour path, in cartograph/_landscape-intake/<scene>/. Baking is gated on
       // an EXPLICIT Look opt-in (design.landscape.source → an intake asset), never file
       // presence. Until the Stage upload flow sets that, the pour emits no landscape.
-      const landscapeSource = design?.landscape?.source
+      const landscapeSource = bakeDesign?.landscape?.source
       if (landscapeSource) {
         const LANDSCAPE_OBJ = join(REPO_ROOT, landscapeSource)
         if (existsSync(LANDSCAPE_OBJ)) {
