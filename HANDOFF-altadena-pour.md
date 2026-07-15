@@ -13,7 +13,8 @@ Altadena is a **Census-Designated Place** — 15,397 buildings, 694 tiles, **4,1
 | | |
 |---|---|
 | Designer load | **~180 s → ~18 s** — browser-verified (Jacob's console + eye) |
-| `ground.bin` | **41 MB, flat-baked, coarse 64 m** — loadable, and **not what we want** |
+| `ground.bin` | **43 MB / 2.1M tris, flat-baked, coarse 64 m** — loadable, and **not what we want** |
+| `ground.json` | **whole** — `poolmap`/`colormap`/`lightmap` restored 07-15 10:51; key set == LS's |
 | `terrain.bin` | **12 MB, real** — 1750×1750 @ 5 m, elev 221→1,701 m, 0 misses |
 | `elevation.tif` | **434 MB**, USGS `n35w119`, `data/altadena/raw/` (gitignored) |
 | mountain | **baked + in the slab** — 655k tris, 15 MB GLB, geo-anchored |
@@ -167,13 +168,14 @@ Slab untouched all session. `design.json` carries **only** `mackay-place-0` — 
 
 ## Gotchas — don't relearn these
 
-- **NEVER partial-bake against PROD.** Standalone `bake-ground.js` **drops `poolmap`/`colormap`**.
+- **NEVER partial-bake against PROD — and know the real mechanism.** `bake-ground.js` writes a FRESH `ground.json`; **`bake-ground-ao.js` is what adds `poolmap` / `colormap` / `lightmap` afterward.** So running `bake-ground` standalone always strips all three — it doesn't "skip a step", it overwrites the manifest. The PNGs stay on disk, so nothing looks broken: the slab just silently renders with no pool reflections, no colormap and no baked AO. Hit on Altadena 2026-07-15 (twice). **Recovery is cheap and safe: re-run `bake-ground-ao.js --look=<id> --scene=<id>` (~48 s; terrain is not one of its inputs).** Verify with: does `ground.json`'s key set match LS's?
 - **`console.time` is wall-clock — it measures STARVATION.** `[SML] map fetch+parse: 102s` was ~1 s of network behind 100 s of blocked main thread. It cost a wrong hypothesis; read every timer that way.
 - **Vite returns HTTP 200 + `index.html` for ANY missing file under `/baked/`.** So **every `if (!r.ok)` guard on a slab artifact is dead in dev**, and behaves differently in prod. It's why a missing artifact reports `Unexpected token '<'` instead of 404.
 - **`push(...arr)` blows the call stack at ~300k args.** Reassign.
 - **Toy has NO fade** — `boundary` with no `fade` = rectangular clip, no radial dissolve. Any stencil work must keep that path.
 - **The adaptive ground refine already exists and is the default.** Don't "add" it.
-- **Measure on a copy, and cap the experiment.** An uncapped measurement bake overwrote the slab with 457 MB and cost 88 min.
+- **Measure on a copy, and cap the experiment.** An uncapped measurement bake overwrote the slab with 457 MB and cost 88 min — and stripped the ground manifest as a side effect nobody would have seen.
+- **Check the file NEXT to the one you expected to be wrong.** I restored `ground.bin`, verified its size, and reported the slab restored. `ground.json` had been silently gutted the whole time. Jacob asked "But we restored the slab, right?" — the answer was no.
 
 ---
 
