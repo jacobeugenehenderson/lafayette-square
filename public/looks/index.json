@@ -7,7 +7,7 @@
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
       "bakedAt": 1784014260863,
-      "updatedAt": 1782854281788
+      "updatedAt": 1784096248840
     },
     {
       "id": "toy",
@@ -29,7 +29,9 @@
       "id": "altadena",
       "name": "Altadena",
       "scene": "altadena",
-      "createdAt": 1784014203676
+      "createdAt": 1784014203676,
+      "bakedAt": 1784097709671,
+      "updatedAt": 1784097375258
     }
   ]
 }
