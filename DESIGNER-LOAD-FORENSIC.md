@@ -5,6 +5,20 @@
 
 ---
 
+> ## ⚠️ SUPERSEDED IN PART — read this first (2026-07-15)
+>
+> This doc's **attribution was right** (`buildBlockGeometryV2` was 94.8% of the CPU and drew nothing → gated `7f16d2a1`, deleted at T4 `4044bca1`, 285 s → 0.45 s). Its **model of the load was incomplete**, and the browser proved it. What it missed, and why:
+>
+> - **The `buildTileGround` race (~80 s) — the biggest single term, entirely absent here.** `frozenShape` had no *pending* state, so between mount and the shape fetch resolving, the live build fired — 27.5 s, ×3, all discarded. **A Node harness cannot see this**: it exists only in the window between two async arrivals, and a harness that calls functions in order has no such window. This doc's "unattributed ~45 s of gray" was mostly this. Fixed `72bbc989`.
+> - **`sectionGeos` built 4× (~70 s)** — each async input arrival invalidated the memo, and only the *last* build was correct. Fixed `59e5f109`.
+> - **The ring counts here are PRE-REVERT.** The inhabited cull was reverted (`bbbd93a7`) and its `detailClip` no longer trims: sidewalk 1,619 → 3,014, curb 926 → 1,696. So `sectionOpen` 12,877 → ~13,011 ms and the compose tail 3,079 → 5,538 ms (Node).
+> - **In-browser is ~1.5× faster than Node** — `sectionOpen` measured 7.5 s in Chrome vs 13.0 s here.
+> - **`console.time` is wall-clock and measures STARVATION, not work.** `[SML] map fetch+parse: 102s` was ~1 s of network behind 100 s of blocked main thread. Several conclusions in this doc's "candidates" section leaned on timers read the other way.
+>
+> **The load ended at ~18 s (browser).** The live state, the remaining budget, and what's still open live in **`HANDOFF-altadena-pour.md`** — go there. This doc stands as the *method* (and as the record of an attribution that held up), not as current state.
+
+---
+
 ## The answer in one line
 
 **`buildBlockGeometryV2` is ~95% of the Designer's load-time CPU — and it draws nothing.** Your suspicion #5 ("does `buildBlockGeometryV2` run even when `sectionFrozen`?", filed as *a real suspicion, unconfirmed*) is **confirmed, and it is the whole forensic.** It is not a cheap win at the margin; it is the 120 seconds.
