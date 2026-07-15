@@ -426,10 +426,20 @@ export default function BlockGeometryV2Debug({
   const { asphaltRounded, blockRounded, blockRoundedWithMeta, blockSharp, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockRoundedWithMeta: [], blockSharp: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
     if (!liveRibbons) return empty
-    // [LOAD-FORENSIC 2026-07-14] Stage timing — the Designer takes ~3 MIN to draw
-    // Altadena (60s gray → ribbons pop → 120s → buildings sizzle in 0.5s). Every
-    // stage is synchronous + silent. Instrumenting the boundaries to find where the
-    // time ACTUALLY goes before chunking anything. Throwaway; strip once resolved.
+    // ⛔ GATE — the figure-ground V2 pass is ~95% of the Designer's load and NOTHING
+    // consumes it outside Survey/Measure (DESIGNER-LOAD-FORENSIC.md, 2026-07-14):
+    // Altadena spent 304,040 ms here (frontageBands 214,759 + blockFill 61,989;
+    // ~cubic in street count — 4.2× LS's streets, 45× the cost) vs 12,877 ms for the
+    // sectionOpen that actually draws. Its output goes nowhere in Design: the V2
+    // meshes never mount (`isTileScene` is hardcoded true, so the whole V2 render
+    // path below that branch's return at :1460 is unreachable), `_v2Blocks` is read
+    // NOWHERE in src/, and `_v2FrontageEdges` is read only by SurveyorOverlay /
+    // MeasureOverlay / MeasurePanel — which mount only under tool==='surveyor' /
+    // 'measure'. The :405 gate stopped the debounced REFRESH but never this
+    // mount-time build, so the neutral Design view paid 5 minutes for nothing.
+    // surveyActive/measureActive are in the deps: entering either tool builds it.
+    if (!surveyActive && !measureActive) return empty
+    // [LOAD-FORENSIC 2026-07-14] throwaway stage timing; strip once the load is fixed.
     console.time('[LOAD] buildBlockGeometryV2')
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -441,7 +451,7 @@ export default function BlockGeometryV2Debug({
     } finally {
       console.timeEnd('[LOAD] buildBlockGeometryV2')
     }
-  }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter])
+  }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter, surveyActive, measureActive])
 
   // W1b-F1: clear the drag flag once the debounced rebuild has produced a
   // FRESH rounded silhouette. Releasing a handle keeps `measureDragging` true
