@@ -10,7 +10,7 @@ Jacob was pouring **Altadena** — a new hood, the whole **Census-Designated Pla
 
 ## The incident
 
-Symptoms, in the order they surfaced: buildings vanished after a bake → gray screen → the tab read **"Cartograph — Lafayette Square" while standing in Altadena** → the browser froze on a 432 MB ground → the Designer took **~3 minutes** to draw. Four *independent* bugs, not one. Three root causes are fixed outright; the load's root — a **~cubic** `frontageBands` — is **gated out of the Design view, not fixed**, so it still bites on Survey/Measure entry (see the tool-entry cliff).
+Symptoms, in the order they surfaced: buildings vanished after a bake → gray screen → the tab read **"Cartograph — Lafayette Square" while standing in Altadena** → the browser froze on a 432 MB ground → the Designer took **~3 minutes** to draw. Four *independent* bugs, not one. **All four root causes are fixed.** The load's root — a ~cubic `frontageBands` inside the figure-ground emitter — was first *gated* out of the Design view (`7f16d2a1`) and then **deleted outright at T4** (`T4` below): it was building geometry for a render branch that had been unreachable since the tile cutover.
 
 ---
 
@@ -23,7 +23,8 @@ Symptoms, in the order they surfaced: buildings vanished after a bake → gray s
 | `79bc1584` | **The Looks pulldown can't show or keep a foreign Look.** `looks` is global; the label resolved `activeLookId` against ALL of it with no scene check. Not cosmetic — **the bake follows `activeLookId`**, so the mislabel is the mechanism that let one hood's slab land on another's. Label now falls back to the current scene's Look and the active Look self-corrects. |
 | `304edcac` | **Terrain-gate on the flat-fill refine → 432 MB → 43 MB.** The soft land-use fills were refined to a fine 15 m mesh **even with no terrain to follow** (a terrain param, `REFINE_MAX_EDGE_M`, applied unconditionally). Gate the fine refine on a terrain sampler; no terrain → coarse 64 m cap. *(This commit also introduced the cull — since reverted, see below.)* |
 | `37c537b0` | **`DESIGNER-LOAD-FORENSIC.md`** (Tally) — the measurement that found the real problem. |
-| `7f16d2a1` | **Gate the figure-ground V2 build → ~320 s → ~16 s** *(Design view only — entering Survey/Measure still pays the full build; see the tool-entry cliff)*. This is the big one. |
+| `7f16d2a1` | **Gate the figure-ground V2 build → ~320 s → ~16 s** *(Design view only; superseded by T4, which removed the cost rather than deferring it)*. |
+| **T4** | **DELETE figure-ground — `buildBlockGeometryV2` 285 s → 0.45 s, ≈1,900 lines gone.** The gate deferred the cubic build to tool-entry; T4 removes it. See below. |
 | `bbbd93a7` | **Revert the inhabited cull entirely.** |
 
 **Three independent guards now stand against a repeat of the identity crossing:** Extent creates a Look · landscape can't auto-sweep · the pulldown can't hold a foreign Look.
@@ -55,14 +56,30 @@ Inside V2, two phases are 97%. Measured with the profiler already in the file (`
 
 Fix: gate the build on `surveyActive || measureActive` (both in the deps, `:454`). **Gate audited and correct** — those are exactly the two surfaces that consume V2's output; `measureActive` is wired from `CartographApp:1082`; `SurveyorOverlay` mounts unconditionally but puts every read behind `active = tool === 'surveyor'`, so nothing is stranded in Design. No need to re-audit it.
 
-### ⚠️ The tool-entry cliff — the load is fixed, the TOOLS are not
+### ✅ T4 — figure-ground deleted (2026-07-15). The cliff is gone.
 
-**"Designer ~16 s" is the *Design view* only.** The gate returns `empty` until a tool is picked up; it **defers** the cubic build, it does not remove it. Two consequences, both unaddressed:
+The gate (`7f16d2a1`) **deferred** the cubic build to Survey/Measure entry; it did not remove it. T4 removed it, and the reason it could is the whole point: **`frontageBands` never needed optimizing — it needed to not run.**
 
-- **Entering Survey or Measure on Altadena pays the full ~285–304 s**, synchronously, in one atomic block.
-- **Worse: `debouncedInputs` is still in the `:454` deps.** Once you're *in* Survey, every settled edit rebuilds the whole map. The `:401` comment calling this "a ~2.5 s whole-map rebuild" is **LS**; on Altadena it is **~285 s per edit**. That comment is now dangerously reassuring — read it as a scale-dependent number, not a constant.
+`isTileScene` was hardcoded `true`, so the entire figure-ground render branch was **unreachable**. Every consumer of `frontageBands` rendered inside it. Three phases were dead, not one:
 
-So Survey/Measure authoring at CDP scale is **effectively unusable**, and `frontageBands` is the whole reason. **Fixing it is the same root as the V2 gate, one layer down** — and it outranks the buildings item, because until it lands Altadena can be *looked at* but not *authored*. If it must be chunked rather than fixed, `frontageBands` walks each `blockRounded` ring end-to-end (`buildBlockGeometryV2.js:1439`) — the per-ring loop is the natural yield boundary; `blockFill` is a per-block Clipper diff, same shape.
+| dead phase | Altadena | why |
+|---|---:|---|
+| `frontageBands` | 214,759 ms | rendered only in the unreachable branch |
+| `blockFill` | 61,989 ms | destructured; only other mention was a *comment* |
+| `ribbonUnion` | 6,773 ms | fed `blockFill` alone; never returned |
+| **dead total** | **283,521 ms** | **99.4% of V2** |
+
+**Deleted:** the unreachable JSX + the `isTileScene` flag · `buildChainBandsLive` (the drag sidecar — the render-path census's *"residual third representation"*) · `emitOneBlockRingBands` / `emitBlockRingBands` / `buildFrontageBandsV2` / `silhouetteStraightEmitter` / `applyRoundCornersToRing` · the `_v2Blocks` + `measureDragging` wiring · `buildV2BakeShape` in the bake (dead-in-place since T2). **≈1,900 lines.**
+
+| | before | after |
+|---|---:|---:|
+| `buildBlockGeometryV2` (Altadena) | 285,209 ms | **448 ms** (**545×**) |
+| `buildBlockGeometryV2` (LS) | 6,276 ms | **283 ms** |
+| Designer load budget (Altadena, Node) | 320.6 s | **14.5 s** |
+
+**Verified:** `vite build` green · `bake-ground.js` loads · **fe parity EXACT** — 733 (LS) and 4,068 (Altadena) frontageEdges byte-identical before/after, keys + scalars + geometry fingerprint (`scratch/t4-fe-parity.mjs`). **Not eye-verified** — Jacob's browser still gates it.
+
+**`sectionOpen` (13.6 s) is now 94% of the load** — but unlike V2 it *draws*. It's a per-tile loop over 694 tiles: the natural chunk boundary, and the next target if the load still feels slow.
 
 ---
 
@@ -102,8 +119,8 @@ LS is **fully clean**, tracked and untracked: `center [-15,-15]`, no exclusions,
 
 ## OPEN (prioritized)
 
-1. **`frontageBands` is ~cubic — Survey/Measure are unusable on Altadena.** The V2 gate fixed the *load*; the cliff above is what's left. Entering either tool pays ~285–304 s, and **every settled edit pays it again** (`debouncedInputs` in the `:454` deps). **This outranks everything else here: until it lands, Altadena can be looked at but not authored** — and authoring is the point of the Designer. Target `frontageBands` (214,759 ms, 75% of V2) first, `blockFill` (61,989 ms) second. Fix the scaling if you can; chunk the per-ring loop (`:1439`) if you can't.
-2. **The Designer re-derives the slab every load — Jacob's point, and the best one after the cliff.** The bake already emits `buildings.bin` (34 MB, *already triangulated*), and `SlabBuildings` already consumes it on the 3D path (`CartographApp.jsx:800`). Meanwhile `SceneMapLayers` fetches `map.json` and **ear-clips 15,397 footprints / 103,129 ring verts in-browser on every load**. Its own header says it's for a *"not-yet-baked neighborhood"* — Altadena is baked, so it's on the wrong path by its own charter. **Same bug class as the V2 gate: paying for work whose answer is already on disk.** Jacob: *"If nothing has changed in the bake, there's no reason we should have to build this from the ground up every time."* ⚠️ **Not a one-line repoint:** `map.json` also carries the land-use layers (`block`, `sidewalk`, `parking_lot`) and the roster curation that `buildings.bin` does not — scope it before assuming a swap.
+1. **T3 — migrate the frontage-edge identity onto the tile runs, and `buildBlockGeometryV2` dies.** T4 left exactly one organ alive: the fe identity (`feCustomKey` = `[chainSkelId, side, min(segOrds)]`) that Survey/Measure resolve customs against. **The tile `runs` already carry the identical triple** (`tileGround.js:935`) — it's a duplicate derivation, the last of the three representations (`project_ribbon_three_representations`). ⚠️ **Gate: prove the tile-derived key is byte-identical for every fe on LS *and* Altadena before cutting** (`scratch/t4-fe-parity.mjs`). `blockCustoms` hashes off this key — a drifted segOrd doesn't error, it **silently orphans every authored custom**, exactly like the LS re-center hazard below. Not a cleanup; it's the authoring data model.
+2. **The Designer re-derives the slab every load — Jacob's point, and the best one after T3.** The bake already emits `buildings.bin` (34 MB, *already triangulated*), and `SlabBuildings` already consumes it on the 3D path (`CartographApp.jsx:800`). Meanwhile `SceneMapLayers` fetches `map.json` and **ear-clips 15,397 footprints / 103,129 ring verts in-browser on every load**. Its own header says it's for a *"not-yet-baked neighborhood"* — Altadena is baked, so it's on the wrong path by its own charter. **Same bug class as the V2 gate: paying for work whose answer is already on disk.** Jacob: *"If nothing has changed in the bake, there's no reason we should have to build this from the ground up every time."* ⚠️ **Not a one-line repoint:** `map.json` also carries the land-use layers (`block`, `sidewalk`, `parking_lot`) and the roster curation that `buildings.bin` does not — scope it before assuming a swap.
 3. **Strip the `[LOAD-FORENSIC 2026-07-14]` instrumentation** (`BlockGeometryV2Debug.jsx`) once the load is settled — it's throwaway.
 4. **`undefined/p3-ls.json`** at repo root — 792,922 bytes, written 16:49, three minutes before `1ea076dd retire default.json`. Fallout from the **trees/census arc**, a path built from an undefined variable. Not from this arc; Jacob's to judge.
 5. **Canon folds owed** (from the pen-boundary arc): fold the pour/Look + landscape-intake doctrine into `NEIGHBORHOOD-INPUTS §11` / `INTAKE.md` / `README`.

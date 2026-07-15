@@ -21,7 +21,7 @@
  */
 import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
-import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation, differenceRings } from '../lib/buildBlockGeometryV2.js'
+import { buildBlockGeometryV2, differenceRings } from '../lib/buildBlockGeometryV2.js'
 import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
 import { STREET_SMOOTH } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the MeasureOverlay navy draw (SSoT; SKELETON.md §3.5)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
@@ -83,17 +83,6 @@ function pointInRing(p, ring) {
 
 // Find which block ring contains a point; returns its lu (or null).
 // Mirrors the bake's adjacent-parcel attribution for treelawn so
-// Designer and Stage agree on which LU drives each treelawn ring's
-// color. Coordinate-based on purpose — fee.blockKey (pass-1) drifts
-// from v2.blocks blockKey (pass-2) when asphalt widens.
-function blockLuAtPoint(point, blocks) {
-  if (!point || !blocks) return null
-  for (const b of blocks) {
-    if (!b?.ring || b.ring.length < 3) continue
-    if (pointInRing(point, b.ring)) return b.lu || 'unknown'
-  }
-  return null
-}
 
 // Find an interior probe point for a hole ring (CW from Clipper). Holes
 // share their boundary with surrounding outers, so a probe at a vertex is
@@ -251,10 +240,6 @@ export default function BlockGeometryV2Debug({
   scene = null,
   useRingBandEmitter = true,  // C5: keeper for all scenes (LS cutover); legacy else-branch removed in commit 3
 }) {
-  // T2 — ALL scenes render from the tile construction; the figure-ground build
-  // below stays only to feed the Measure/Corner authoring overlays (their
-  // migration is T3). The figure-ground MESHES are skipped via the early return.
-  const isTileScene = true
   // Gate fade on the per-scene flag. LS turns on the soft-circle
   // silhouette; toy stays rectangular (its stencil is a 360×360 box).
   const faceFade = useBoundary ? FACE_FADE : null
@@ -280,7 +265,6 @@ export default function BlockGeometryV2Debug({
   const streetSmooth = STREET_SMOOTH
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
-  const measureDragging           = useCartographStore(s => s.measureDragging)
   const blockLandUse              = useCartographStore(s => s.blockLandUse)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
@@ -314,8 +298,6 @@ export default function BlockGeometryV2Debug({
   // Highway-class chains route through the `highway` toggle row; everything
   // else through `street` (Asphalt). Same split the bake adapter does
   // — keep both in sync so toggling Highway in Designer matches Stage.
-  const HIGHWAY_CLASSES = useMemo(() => new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link']), [])
-  const isHighwayChain = (chainIdx) => HIGHWAY_CLASSES.has(liveRibbons?.streets?.[chainIdx]?.highway)
   // Live operator intent — Survey caps, Measure overrides, smooth, anchor.
   // Merged onto the static `ribbons` prop so V2 reflects edits without
   // waiting for a re-bake. Structural data (chain points, IX positions,
@@ -353,31 +335,11 @@ export default function BlockGeometryV2Debug({
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
-  // Coord-match IX identity per chain. Memoized on liveRibbons so the
-  // drag-tick path doesn't re-resolve. Passed into buildChainBandsLive
-  // so naturalSegments partitions on the same boundaries the full V2
-  // pass uses (otherwise drag-preview bands would snap to different
-  // segment edges than the post-drag bake).
-  const liveIxByChain = useMemo(
-    () => resolveChainSegmentation(liveRibbons?.streets || []),
-    [liveRibbons]
-  )
+  // Coord-match IX identity per chain, memoized on liveRibbons — the same
+  // segmentation boundaries buildFrontageEdges/assignSegOrdsToFes partition on,
+  // so fe segOrds stay stable (they key blockCustoms via feCustomKey).
   // Translation: selectedStreet (skeleton-order index) → ribbons-order
   // index. -1 if no match. See comment above on the two arrays.
-  const selectedRibbonsChainIdx = useMemo(() => {
-    if (selectedStreet == null) return -1
-    const sel = liveStreets?.[selectedStreet]
-    if (!sel) return -1
-    const skelId = sel.id
-    const name = sel.name
-    const streets = liveRibbons?.streets || []
-    for (let i = 0; i < streets.length; i++) {
-      const s = streets[i]
-      if (skelId && s?.skelId === skelId) return i
-      if (!skelId && name && s?.name === name) return i
-    }
-    return -1
-  }, [selectedStreet, liveStreets, liveRibbons])
   // V2 input snapshot. While a chain is selected, the operator's drag
   // edits route through `liveSelectedRings` below, so V2 doesn't need to
   // rebuild on every drag tick. The inputs (blockCustoms, corner overrides,
@@ -423,23 +385,24 @@ export default function BlockGeometryV2Debug({
     // covered by the live overlay, so there's no mid-drag full rebuild.
   }, [surveyActive, selectedStreet, blockCustoms, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse, streetSmooth, useRingBandEmitter])
 
-  const { asphaltRounded, blockRounded, blockRoundedWithMeta, blockSharp, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], blockRoundedWithMeta: [], blockSharp: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
+  // `frontageEdges` is buildBlockGeometryV2's ONE remaining output: the
+  // chain-anchored block-edge identity (feCustomKey = [chainSkelId, side,
+  // min(segOrds)]) that SurveyorOverlay / MeasureOverlay / MeasurePanel resolve
+  // blockCustoms against. The figure-ground geometry it used to emit alongside
+  // was deleted at T4 (2026-07-15).
+  const { frontageEdges } = useMemo(() => {
+    const empty = { frontageEdges: [] }
     if (!liveRibbons) return empty
-    // ⛔ GATE — the figure-ground V2 pass is ~95% of the Designer's load and NOTHING
-    // consumes it outside Survey/Measure (DESIGNER-LOAD-FORENSIC.md, 2026-07-14):
-    // Altadena spent 304,040 ms here (frontageBands 214,759 + blockFill 61,989;
-    // ~cubic in street count — 4.2× LS's streets, 45× the cost) vs 12,877 ms for the
-    // sectionOpen that actually draws. Its output goes nowhere in Design: the V2
-    // meshes never mount (`isTileScene` is hardcoded true, so the whole V2 render
-    // path below that branch's return at :1460 is unreachable), `_v2Blocks` is read
-    // NOWHERE in src/, and `_v2FrontageEdges` is read only by SurveyorOverlay /
-    // MeasureOverlay / MeasurePanel — which mount only under tool==='surveyor' /
-    // 'measure'. The :405 gate stopped the debounced REFRESH but never this
-    // mount-time build, so the neutral Design view paid 5 minutes for nothing.
+    // ⛔ GATE — the fe consumers mount only under tool==='surveyor'|'measure';
+    // the neutral Design view reads none of this. Pre-T4 this pass also built the
+    // figure-ground meshes and cost 285 s on Altadena — 95% of a 320 s load, drawing
+    // nothing (DESIGNER-LOAD-FORENSIC.md). That geometry is gone and the build is
+    // now ~0.5 s, so the gate is no longer load-bearing — it stays because the work
+    // is still not free and still unread outside those two tools.
     // surveyActive/measureActive are in the deps: entering either tool builds it.
     if (!surveyActive && !measureActive) return empty
-    // [LOAD-FORENSIC 2026-07-14] throwaway stage timing; strip once the load is fixed.
+    // [LOAD-FORENSIC 2026-07-14] throwaway stage timing; strip once Jacob has
+    // eye-confirmed the load in the browser.
     console.time('[LOAD] buildBlockGeometryV2')
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -453,25 +416,7 @@ export default function BlockGeometryV2Debug({
     }
   }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter, surveyActive, measureActive])
 
-  // W1b-F1: clear the drag flag once the debounced rebuild has produced a
-  // FRESH rounded silhouette. Releasing a handle keeps `measureDragging` true
-  // (rect bands hold at the release position) until this fires, so the live
-  // overlay swaps from rect → keystone only when the keystone silhouette is
-  // current — no snap back to a stale shape. During a continuous drag the
-  // rebuild is debounced away; `applyDrag` re-asserts the flag if a mid-drag
-  // pause let a rebuild clear it.
-  useEffect(() => {
-    if (useCartographStore.getState().measureDragging) {
-      useCartographStore.setState({ measureDragging: false })
-    }
-  }, [blockRoundedWithMeta])
 
-  // Stash the rounded block rings into the store so MeasureOverlay's
-  // drag path can resolve block adjacency at drag time without re-running
-  // buildBlockGeometryV2 (Clipper booleans aren't free).
-  useEffect(() => {
-    useCartographStore.getState()._setV2Blocks(blockRounded)
-  }, [blockRounded])
   // D.5: Stash frontageEdges so MeasureOverlay can resolve a clicked
   // chain point → (blockKey, edgeOrd) for per-block-edge customs.
   //
@@ -531,115 +476,15 @@ export default function BlockGeometryV2Debug({
   //     the drag will actually write to.
   const measureMode = useCartographStore(s => s.measureMode)
   const selectedMeasurePoint = useCartographStore(s => s.selectedMeasurePoint)
-  const selectedAdjacentBlockKeys = useMemo(() => {
-    if (!measureActive || selectedRibbonsChainIdx < 0) return null
-    const chain = liveRibbons?.streets?.[selectedRibbonsChainIdx]
-    if (!chain?.points || chain.points.length < 2) return null
-    const m = chain.measure || {}
-    const hwL = m.left?.pavementHW || 0
-    const hwR = m.right?.pavementHW || 0
-    const tlL = m.left?.treelawn || 0,  swL = m.left?.sidewalk || 0
-    const tlR = m.right?.treelawn || 0, swR = m.right?.sidewalk || 0
-    // Slack covers per-block customs that widen beyond the chain default.
-    const PROBE_SLACK = 10
-    const probeR = Math.max(hwL + tlL + swL, hwR + tlR + swR) + curbWidth + PROBE_SLACK
-    const probeR2 = probeR * probeR
-
-    // Probe by chain SEGMENT MIDPOINTS, not chain.points. Endpoints
-    // (chain.points[0] and points[n-1]) sit at the IX where the chain
-    // terminates; the blocks across that IX are physically close but
-    // the chain doesn't run ALONGSIDE them — they're end-on, not side-
-    // adjacent. Segment midpoints sit inside the chain's run, so probing
-    // from them excludes end-on blocks while still catching every block
-    // the chain genuinely runs alongside.
-    const segMids = []
-    for (let i = 0; i < chain.points.length - 1; i++) {
-      const a = chain.points[i], b = chain.points[i + 1]
-      segMids.push([(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5])
-    }
-    const minDist2 = (ring) => {
-      let best = Infinity
-      for (let i = 0; i < ring.length; i++) {
-        const a = ring[i], b = ring[(i + 1) % ring.length]
-        const dx = b[0] - a[0], dz = b[1] - a[1]
-        const L2 = dx * dx + dz * dz
-        if (L2 < 1e-9) continue
-        for (const p of segMids) {
-          const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2))
-          const qx = a[0] + t * dx, qz = a[1] + t * dz
-          const d2 = (p[0] - qx) ** 2 + (p[1] - qz) ** 2
-          if (d2 < best) { best = d2; if (best <= 1) return best }
-        }
-      }
-      return best
-    }
-    const keys = new Set()
-    for (const b of (blocks || [])) {
-      if (!b?.ring || !b.blockKey) continue
-      if (minDist2(b.ring) <= probeR2) keys.add(b.blockKey)
-    }
-
-    // Per-block mode: narrow to the two blocks at the anchor. Probe a
-    // point at perp ±(hw+cw+1) from the anchor on each side and check
-    // which block ring contains it.
-    if (measureMode?.type === 'block' && selectedMeasurePoint && keys.size > 1) {
-      const pts = chain.points
-      const ap = selectedMeasurePoint
-      // Nearest segment of chain to the anchor for the perp basis.
-      let bestI = 0, bestD2 = Infinity
-      for (let i = 0; i < pts.length - 1; i++) {
-        const ax = pts[i][0], az = pts[i][1], bx = pts[i+1][0], bz = pts[i+1][1]
-        const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz
-        if (L2 < 1e-9) continue
-        const t = Math.max(0, Math.min(1, ((ap.x - ax) * dx + (ap.z - az) * dz) / L2))
-        const qx = ax + t * dx, qz = az + t * dz
-        const d2 = (ap.x - qx) ** 2 + (ap.z - qz) ** 2
-        if (d2 < bestD2) { bestD2 = d2; bestI = i }
-      }
-      const ax = pts[bestI][0], az = pts[bestI][1]
-      const bx = pts[bestI + 1][0], bz = pts[bestI + 1][1]
-      const tx = bx - ax, tz = bz - az
-      const tL = Math.hypot(tx, tz) || 1
-      const lnx = -tz / tL, lnz = tx / tL  // left perp
-      const probeL = hwL + curbWidth + 1
-      const probeR2dist = hwR + curbWidth + 1
-      const pL = [ap.x + lnx * probeL, ap.z + lnz * probeL]
-      const pR = [ap.x - lnx * probeR2dist, ap.z - lnz * probeR2dist]
-      const narrowed = new Set()
-      for (const b of (blocks || [])) {
-        if (!b?.ring || !b.blockKey || !keys.has(b.blockKey)) continue
-        if (pointInRing(pL, b.ring) || pointInRing(pR, b.ring)) narrowed.add(b.blockKey)
-      }
-      return narrowed.size ? narrowed : keys
-    }
-    return keys.size ? keys : null
-  }, [measureActive, selectedRibbonsChainIdx, liveRibbons, blocks, curbWidth, measureMode, selectedMeasurePoint])
 
   // Group blocks by (lu, selected). Selected blocks render through the
   // `selectedCorridor` material variant (opacity 0.55 in Measure, same
   // as the chain's bands); unselected blocks render opaque.
-  const blockGroups = useMemo(() => {
-    const byKey = new Map()
-    for (const b of (blocks || [])) {
-      const selected = !!(selectedAdjacentBlockKeys && selectedAdjacentBlockKeys.has(b.blockKey))
-      const key = `${b.lu}|${selected ? 1 : 0}`
-      let entry = byKey.get(key)
-      if (!entry) { entry = { lu: b.lu, selected, rings: [] }; byKey.set(key, entry) }
-      entry.rings.push(b.ring)
-    }
-    const out = []
-    for (const [key, entry] of byKey) {
-      const color = (luColors && luColors[entry.lu]) || DEFAULT_LU_COLORS[entry.lu] || DEFAULT_LU_COLORS.residential
-      out.push({ key, lu: entry.lu, selected: entry.selected, color, geo: ringsToFlatGeo(entry.rings, 0.01, true) })
-    }
-    return out
-  }, [blocks, luColors, selectedAdjacentBlockKeys])
 
   // The tile construction (all scenes). Same module the bake calls
-  // (src/lib/tileGround.js), same inputs → live == bake (WYSIWYG). The
-  // figure-ground memos above still run (cheap, harmless, and feed the
-  // authoring overlays); the render branches to these geos and skips the
-  // figure-ground meshes. M1/M2: LU faces + treelawn are grouped per land-use
+  // (src/lib/tileGround.js), same inputs → live == bake (WYSIWYG). This is now
+  // the ONLY construction — figure-ground was deleted at T4.
+  // M1/M2: LU faces + treelawn are grouped per land-use
   // class so each paints its block's colour. Each band is annular (CW holes)
   // → asPolygonWithHoles=true; yLift stacks them under the PRI order.
   // ── THE WALL · Phase D — Section OPENS the frozen Survey shape ──────────
@@ -760,7 +605,7 @@ export default function BlockGeometryV2Debug({
   }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selectedStreet, liveStreets])
 
   const tileGeos = useMemo(() => {
-    if (!isTileScene || !liveRibbons) return null
+    if (!liveRibbons) return null
     // Section-frozen mode renders from `sectionGeos` (the artifact) — skip the
     // live Survey build entirely so the Section path provably never runs it.
     // (Gated on the composed geos, not the flag: if sectionOpen ever failed,
@@ -795,7 +640,7 @@ export default function BlockGeometryV2Debug({
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
       _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
     }
-  }, [isTileScene, liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
+  }, [liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
 
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
   // While in Survey, keep the latest live `_shapeArtifact` (exactly what the
@@ -863,7 +708,6 @@ export default function BlockGeometryV2Debug({
     setTileCorners(tileGeos?.cornerSet || [])
   }, [tileGeos, setTileCorners])
 
-  const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles
   // have square ends at IXs; the fillet residual against asphaltRounded
   // is attributed to corner records (via centroid-match) and pushed
@@ -871,87 +715,10 @@ export default function BlockGeometryV2Debug({
   // unattributed orphans collected in cornerOrphanAsphalt. Both render
   // as asphalt material. asPolygonWithHoles=true on Clipper-output
   // rings so CW holes pair with CCW outers cleanly.
-  const cornerFilletAsphaltGeo = useMemo(() => {
-    const rings = []
-    for (const fb of frontageBands) {
-      if (fb?.asphaltRings?.length) rings.push(...fb.asphaltRings)
-    }
-    if (cornerOrphanAsphalt?.length) rings.push(...cornerOrphanAsphalt)
-    return ringsToFlatGeo(rings, 0.038, true)
-  }, [frontageBands, cornerOrphanAsphalt])
-  // Live overlay for the SELECTED chain. While the operator drags
-  // measure handles on chain X, V2's full pass takes ~2.5s — so the
-  // bands can't follow handles in real time. `buildChainBandsLive`
-  // emits chain X's bands directly from chain.measure ⊕
-  // blockCustoms[X], no Clipper, ~1ms. We replace V2's `byChain[X]`
-  // entry with this live version so the rendered bands track the
-  // handles at 60fps. Other chains keep their cached V2 output. On
-  // drag release, V2's next full pass overwrites with the rounded /
-  // unioned / corner-padded version.
-  const liveSelectedRings = useMemo(() => {
-    if (selectedRibbonsChainIdx < 0) return null
-    const chain = liveRibbons?.streets?.[selectedRibbonsChainIdx]
-    if (!chain) return null
-    // blockCustoms keyed by chain-anchored (skelId, side, segOrd) via
-    // feCustomKey. Pass the full map + frontageEdges so buildChainBandsLive
-    // can resolve each segOrd-side → fe → customs entry. Falls through to
-    // chain.measure when no fe matches (chain endpoints, parcel-internal sides).
-    return buildChainBandsLive(
-      chain,
-      selectedRibbonsChainIdx,
-      blockCustoms,
-      frontageEdges,
-      {
-        curbWidth,
-        ixByChain: liveIxByChain,
-        // V1-keystone alignment: emit the live ribbon via emitOneBlockRingBands
-        // per affected block. Requires blockRoundedWithMeta + blockSharp + the
-        // live streets array (for cross-chain measure resolution).
-        blockRoundedWithMeta,
-        blockSharp,
-        streets: liveRibbons?.streets,
-        // While a measure handle is actively dragged, the rounded silhouette
-        // (blockRoundedWithMeta) is stale — only the debounced full rebuild
-        // refreshes it. So emit silhouette-INDEPENDENT rect bands offset from
-        // the centerline by the LIVE measure, which follow the handle in real
-        // time (W1b-F1). At rest, use the keystone silhouette-relative bands
-        // (rounded, bake-matching). On release the full rebuild snaps to exact.
-        measureDragging,
-      }
-    )
-  }, [selectedRibbonsChainIdx, liveRibbons, blockCustoms, frontageEdges, curbWidth, liveIxByChain, blockRoundedWithMeta, blockSharp, measureDragging])
-
-  // Per-chain BufferGeometries split into two passes for drag perf:
-  //
-  // • `nonSelectedChainGeo` — every chain EXCEPT the selected one,
-  //   triangulated from V2's frozen byChain snapshot. Cached on byChain
-  //   alone, so a drag tick (which doesn't change byChain — V2 is
-  //   frozen during selection) doesn't re-triangulate all 241 chains
-  //   every frame. ~700 ShapeGeometry calls become a one-time cost
-  //   per chain selection instead of per drag tick.
-  //
-  // • `selectedChainGeo` — just the selected chain, triangulated from
-  //   `liveSelectedRings`. Rebuilds every drag tick (~4 quads), ~1ms.
-  //
-  // Render mounts both. Selected chain's meshes are layered separately
-  // and pull from the cached pair (translucent vs opaque material).
-  // D.3c: per-chain treelawn/sidewalk now sources from frontageBands
-  // (block-edge-owned, extended + pulled-back, clipped to blockRounded)
-  // instead of the per-chain-segment byChain.{tl,sw}Rings. Round
-  // dead-end caps still come from byChain.{tl,sw}CapRings (split out
-  // in D.3b.1 so this swap leaves them in place). Group frontage
-  // rings by chainIdx so the existing per-chain mesh structure (and
-  // the selected-chain drag perf split) keeps working.
-  const frontageByChain = useMemo(() => {
-    const m = new Map()
-    for (const fe of frontageBands || []) {
-      let entry = m.get(fe.chainIdx)
-      if (!entry) { entry = { treelawn: [], sidewalk: [] }; m.set(fe.chainIdx, entry) }
-      if (fe.treelawnRings?.length) entry.treelawn.push(...fe.treelawnRings)
-      if (fe.sidewalkRings?.length) entry.sidewalk.push(...fe.sidewalkRings)
-    }
-    return m
-  }, [frontageBands])
+  // T4 (2026-07-15): the figure-ground live-drag overlay (liveSelectedRings /
+  // buildChainBandsLive) and the per-chain band meshes (perChainGeo,
+  // frontageByChain, treelawnByLuGeo) lived here. All deleted with the emitter —
+  // the tile path renders selection natively via sectionGeos.selected.
 
   // Per-LU treelawn aggregation for non-selected chains. Each fe is
   // attributed to its adjacent parcel via a coordinate probe (same logic
@@ -960,89 +727,16 @@ export default function BlockGeometryV2Debug({
   // the per-chain path so the live drag preserves its translucent
   // material. Result: ~10 per-LU meshes instead of ~80 per-chain meshes
   // — net draw-count REDUCTION while landing the per-parcel coloring.
-  const treelawnByLuGeo = useMemo(() => {
-    const buckets = new Map()
-    // Per-LU lookup: prefer entry.blockKey direct map (C4 ring-band
-    // emitter produces treelawn rings OUTSIDE the parcel polygon, so the
-    // centroid probe lands in the ribbon zone and fails); fall back to
-    // probe for legacy emitter entries.
-    const blockLuByKey = new Map()
-    for (const b of (blocks || [])) {
-      if (b?.blockKey && b.lu) blockLuByKey.set(b.blockKey, b.lu)
-    }
-    for (const fe of frontageBands || []) {
-      if (!fe.treelawnRings?.length) continue
-      if (fe.chainIdx === selectedRibbonsChainIdx) continue
-      let lu = fe.blockKey ? blockLuByKey.get(fe.blockKey) : null
-      if (!lu) {
-        const probe = ringInteriorProbe(fe.treelawnRings[0])
-        if (probe) lu = blockLuAtPoint(probe, blocks)
-      }
-      const luKey = lu || '_unattributed'
-      if (!buckets.has(luKey)) buckets.set(luKey, [])
-      buckets.get(luKey).push(...fe.treelawnRings)
-    }
-    const out = []
-    for (const [lu, rings] of buckets) {
-      const geo = ringsToFlatGeo(rings, 0.02, true)
-      if (!geo) continue
-      const color = lu === '_unattributed'
-        ? treelawnCol
-        : (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || treelawnCol
-      out.push({ lu, geo, color })
-    }
-    return out
-  }, [frontageBands, blocks, selectedRibbonsChainIdx, luColors, treelawnCol])
 
-  const nonSelectedChainGeo = useMemo(() => {
-    const out = []
-    for (const entry of byChain || []) {
-      if (!entry) continue
-      if (entry.chainIdx === selectedRibbonsChainIdx) continue
-      const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
-      const fb = frontageByChain.get(entry.chainIdx)
-      // Treelawn for non-selected chains is rendered globally per-LU via
-      // treelawnByLuGeo above; only dead-end caps (which don't have a
-      // single adjacent parcel) flow through the per-chain path.
-      const swAll = (fb?.sidewalk || []).concat(entry.sidewalkCapRings || [])
-      const tg = (entry.treelawnCapRings?.length)
-        ? ringsToFlatGeo(entry.treelawnCapRings, 0.02, true)
-        : null
-      const sg = swAll.length ? ringsToFlatGeo(swAll, 0.03, true) : null
-      if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
-    }
-    return out
-  }, [byChain, frontageByChain, selectedRibbonsChainIdx])
 
   // D.3c keeps cornerSidewalkPads mounted as the corner concrete; no
   // frontageCaps mesh is mounted (extendCorners=false default leaves
   // frontageCaps empty anyway). The hook below stays as a no-op so the
   // mesh slot exists if extendCorners is ever enabled.
-  const frontageCapsGeo = useMemo(() => {
-    if (!frontageCaps || !frontageCaps.length) return null
-    const rings = []
-    for (const cap of frontageCaps) {
-      const src = cap.ringClipped?.length ? cap.ringClipped : (cap.ring ? [cap.ring] : [])
-      if (src.length) rings.push(...src)
-    }
-    return rings.length ? ringsToFlatGeo(rings, 0.029, true) : null
-  }, [frontageCaps])
 
-  const selectedChainGeo = useMemo(() => {
-    if (selectedStreet == null || !liveSelectedRings) return null
-    const ag = liveSelectedRings.asphaltRings.length  ? ringsToFlatGeo(liveSelectedRings.asphaltRings,  0.04, true) : null
-    const tg = liveSelectedRings.treelawnRings.length ? ringsToFlatGeo(liveSelectedRings.treelawnRings, 0.02, true) : null
-    const sg = liveSelectedRings.sidewalkRings.length ? ringsToFlatGeo(liveSelectedRings.sidewalkRings, 0.03, true) : null
-    if (!ag && !tg && !sg) return null
-    return { chainIdx: selectedRibbonsChainIdx, asphalt: ag, treelawn: tg, sidewalk: sg }
-  }, [liveSelectedRings, selectedRibbonsChainIdx])
 
   // Composite array kept for downstream code that still expects a flat
   // perChainGeo list. Selected chain's geo (if any) tacked on at end.
-  const perChainGeo = useMemo(
-    () => selectedChainGeo ? [...nonSelectedChainGeo, selectedChainGeo] : nonSelectedChainGeo,
-    [nonSelectedChainGeo, selectedChainGeo]
-  )
 
   // Stripe edges — opaque strokes drawn on the SELECTED chain only when
   // Measure is active. They mark where boundary handles attach. The
@@ -1050,43 +744,16 @@ export default function BlockGeometryV2Debug({
   // curb stripe IS the stroke between asphalt and treelawn. The two
   // strokes that DO render: treelawn outer (colored treelawn-green) and
   // sidewalk outer (colored sidewalk-white).
-  const polysToLineGeo = (polys) => {
-    if (!polys?.length) return null
-    const positions = []
-    for (const poly of polys) {
-      if (!poly || poly.length < 2) continue
-      for (let i = 0; i < poly.length - 1; i++) {
-        positions.push(poly[i][0],   0.06, poly[i][1])
-        positions.push(poly[i+1][0], 0.06, poly[i+1][1])
-      }
-    }
-    if (!positions.length) return null
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-    return g
-  }
   // Selected chain's edge strokes come exclusively from `liveSelectedRings`
   // (D.7c). The pre-D.7d byChain.{tl,sw}Edges fallback was redundant —
   // liveSelectedRings is always built whenever a chain is selected, with
   // identical edge polylines.
-  const treelawnEdgeGeo = useMemo(() => {
-    if (!measureActive || !liveSelectedRings?.treelawnEdges?.length) return null
-    return polysToLineGeo(liveSelectedRings.treelawnEdges)
-  }, [liveSelectedRings, measureActive])
-  const sidewalkEdgeGeo = useMemo(() => {
-    if (!measureActive || !liveSelectedRings?.sidewalkEdges?.length) return null
-    return polysToLineGeo(liveSelectedRings.sidewalkEdges)
-  }, [liveSelectedRings, measureActive])
   // Asphalt outer-edge stroke — curb-colored line at the asphalt|curb
   // boundary on the selected chain. The curb mesh itself is hidden during
   // selection (its silhouette is stale relative to the live overlay), but
   // the operator still needs a precise asphalt-boundary line to align
   // against the aerial during a drag. Mirrors the treelawn/sidewalk
   // outer-edge strokes.
-  const asphaltEdgeGeo = useMemo(() => {
-    if (!measureActive || !liveSelectedRings?.asphaltEdges?.length) return null
-    return polysToLineGeo(liveSelectedRings.asphaltEdges)
-  }, [liveSelectedRings, measureActive])
 
   // Materials. We mount ~700+ per-chain meshes on LS (242 chains × 3
   // bands + corner geometries), and `makeMaterial(...)` allocates a new
@@ -1144,31 +811,23 @@ export default function BlockGeometryV2Debug({
   // Y-lift 0.05 sits paths above asphalt (0.04) — Designer stacks
   // ground layers by tiny Y increments.
   const parcelInteriors = useMemo(() => {
-    // Prefer the TILE geometry (tileGeos live, or sectionGeos when frozen) so the
-    // Designer's path clip matches bake-ground's buildTileBakeShape EXACTLY. The
-    // old figure-ground V2 bands (blocks/curbBands/frontageBands) are the dead
-    // path — fragile on the tile scene — so they're a fallback only.
+    // The TILE geometry (tileGeos live, or sectionGeos when frozen) is the ONE
+    // construction — the Designer's path clip matches bake-ground's
+    // buildTileBakeShape exactly. The old figure-ground fallback (blocks /
+    // curbBands / frontageBands) was deleted at T4; it was unreachable, since
+    // one of tileGeos/sectionGeos is always present.
     const tg = tileGeos || sectionGeos
-    let blockRings
+    if (!tg?.blockRings?.length) return []
+    const blockRings = tg.blockRings.filter(r => r?.length >= 3)
     const subtract = []
-    if (tg?.blockRings?.length) {
-      blockRings = tg.blockRings.filter(r => r?.length >= 3)
-      for (const r of (tg.curbRings || [])) if (r?.length >= 3) subtract.push(r)
-      for (const r of (tg.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
-      for (const r of (tg.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
-      for (const r of (tg.parkRings || [])) if (r?.length >= 3) subtract.push(r)
-    } else {
-      blockRings = (blocks || []).map(b => b.ring).filter(r => r?.length >= 3)
-      for (const r of (curbBands || [])) if (r?.length >= 3) subtract.push(r)
-      for (const fb of (frontageBands || [])) {
-        for (const r of (fb.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
-        for (const r of (fb.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
-      }
-    }
+    for (const r of (tg.curbRings || [])) if (r?.length >= 3) subtract.push(r)
+    for (const r of (tg.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
+    for (const r of (tg.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
+    for (const r of (tg.parkRings || [])) if (r?.length >= 3) subtract.push(r)
     if (!blockRings.length) return []
     if (!subtract.length) return blockRings
     return differenceRings(blockRings, subtract)
-  }, [tileGeos, sectionGeos, blocks, curbBands, frontageBands])
+  }, [tileGeos, sectionGeos])
   const pathGeoByKind = useMemo(() => {
     const ringsByKind = buildPathRibbons(liveRibbons, { intersect: parcelInteriors, alleyCap })
     const out = {}
@@ -1224,15 +883,6 @@ export default function BlockGeometryV2Debug({
   // adjacent blocks route through the `selectedCorridor` variant so the
   // parcel translucency matches the chain's band translucency (0.55 in
   // Measure). Same N→1 caching win as before; ~10 LU × 2 selected-states.
-  const blockMats = useMemo(() => {
-    const out = {}
-    for (const g of blockGroups) {
-      out[g.key] = makeMaterial(g.color, PRI.residential, faceFade, {
-        measureActive, surveyActive, selectedCorridor: g.selected,
-      })
-    }
-    return out
-  }, [makeMaterial, blockGroups, measureActive, surveyActive, faceFade])
 
   // Per-LU face materials for the tile land-use regions (M1) — one cached
   // material per class, painted in its per-Look colour.
@@ -1292,163 +942,63 @@ export default function BlockGeometryV2Debug({
     color: SURVEY_BLUE.block, transparent: true, opacity: 0.30, depthWrite: false,
   }), [])
 
-  // All scenes render the tile construction and skip the figure-ground meshes.
+  // Every scene renders the tile construction. The figure-ground meshes were
+  // deleted at T4 (2026-07-15) along with the isTileScene flag that had been
+  // pinned true since the LS cutover — see RIBBONS.md §1.
   // M1/M2: LU faces + treelawn paint per land-use class. Bands reuse the cached
   // materials so colours/toggles match. live == bake (both call buildTileGround).
-  // Retired at T4 when figure-ground is deleted.
-  if (isTileScene) {
-    // Survey view: this step intakes the skeleton and bakes the block POLYGONS.
-    // The strips/bands (treelawn/sidewalk/LU subdivision) aren't in this scene —
-    // they're scalars in the artifact, geometry only downstream in Section. So
-    // fill the whole block polygon to the curb edge (tg.block = stencil−asphalt),
-    // one flat translucent blue, roads as gaps. The curb OUTLINE + IX markers
-    // frame the blocks; centerlines come from MapLayers; corner controls from
-    // CornerEditHandles (both already Survey-gated). Aerial shows through.
-    // ── THE WALL · Phase D — every NON-Survey view (Section/Measure AND the
-    // neutral "Design" view) renders this FROZEN artifact. Everything below comes
-    // from sectionGeos (shape.json via sectionOpen) — the live tileGeos build is
-    // skipped entirely in these modes (its memo returns null), so the render
-    // provably cannot reach the chain graph, and idle viewing costs no live
-    // buildTileGround. Same band materials as the live view (WYSIWYG, just frozen).
-    // [G1] Grade-sep highways NOW freeze as a sibling group in shape.json
-    // ({ tiles, highway }) and draw here — the regression where they vanished from
-    // Design/Measure (4924d9a routed non-Survey views to the frozen path, which
-    // dropped them) is restored. (Perimeter-fill still stays Survey/Stage-only.)
-    if (sectionFrozen && sectionGeos) {
-      return (
-        <group>
-          {!hideLandUse && lotVisible && sectionGeos.block && (
-            <mesh geometry={sectionGeos.block} renderOrder={PRI.residential} receiveShadow
-              material={tileLuFallback} />
-          )}
-          {!hideLandUse && lotVisible && sectionGeos.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
-            <mesh key={`flu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
-              material={tileLuMats.get(lu) || tileLuFallback} />
-          ))}
-          {/* Median — own toggle (layerVis.median) + own material (layerColors),
-              independent of the parcel/lot toggle. */}
-          {!hideLandUse && medianVisible && sectionGeos.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
-            <mesh key={`fmed:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={bandMats.median} />
-          ))}
-          {treelawnVisible && sectionGeos.treelawn?.map(({ lu, geo }) => (
-            <mesh key={`ftl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
-              material={bandMats.treelawnByLu.get(lu) || tlLuFallback} />
-          ))}
-          {sidewalkVisible && sectionGeos.sidewalk && (
-            <mesh geometry={sectionGeos.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalk} />
-          )}
-          {curbVisible && sectionGeos.curb && (
-            <mesh geometry={sectionGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
-          )}
-          {asphaltVisible && sectionGeos.asphalt && (
-            <mesh geometry={sectionGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
-          )}
-          {/* G1 — grade-sep highways: above LU faces, below the local ribbon network
-              (same render order as the live Survey branch), so the freeway shows in
-              its corridor and is occluded where local roads cross it. */}
-          {highwayVisible && sectionGeos.highway && (
-            <mesh geometry={sectionGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
-          )}
-          {PATH_KINDS.map(kind => (
-            PATH_VISIBLE[kind] && pathGeoByKind[kind] && (
-              <mesh key={`path-${kind}`} geometry={pathGeoByKind[kind]}
-                renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
-            )
-          ))}
-          {parkPathVisible && parkPathGeo && (
-            <mesh geometry={parkPathGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={parkPathMat} />
-          )}
-          {stepsVisible && parkStepsGeo && (
-            <mesh geometry={parkStepsGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats.steps} />
-          )}
-          {/* [Section translucency] The selected corridor (selected block +
-              neighbours) painted translucent (opacity 0.55) so the hi-res aerial
-              reads through while you author against it. Disjoint tiles from the
-              opaque set above, so they replace — not overlay — those fills. Curb
-              stays SOLID (the hardscape outline reads against the translucency). */}
-          {sectionGeos.selected && (<>
-            {!hideLandUse && lotVisible && sectionGeos.selected.block && (
-              <mesh geometry={sectionGeos.selected.block} renderOrder={PRI.residential} receiveShadow material={tileLuFallbackSelected} />
-            )}
-            {!hideLandUse && lotVisible && sectionGeos.selected.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
-              <mesh key={`fsel-lu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={tileLuMatsSelected.get(lu) || tileLuFallbackSelected} />
-            ))}
-            {!hideLandUse && medianVisible && sectionGeos.selected.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
-              <mesh key={`fsel-med:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={medianSelected} />
-            ))}
-            {treelawnVisible && sectionGeos.selected.treelawn?.map(({ lu, geo }) => (
-              <mesh key={`fsel-tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow material={bandMats.treelawnSelected} />
-            ))}
-            {sidewalkVisible && sectionGeos.selected.sidewalk && (
-              <mesh geometry={sectionGeos.selected.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalkSelected} />
-            )}
-            {curbVisible && sectionGeos.selected.curb && (
-              <mesh geometry={sectionGeos.selected.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
-            )}
-            {asphaltVisible && sectionGeos.selected.asphalt && (
-              <mesh geometry={sectionGeos.selected.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphaltSelected} />
-            )}
-          </>)}
-        </group>
-      )
-    }
-    if (surveyActive) {
-      return (
-        <group>
-          {!hideLandUse && lotVisible && tileGeos?.block && (
-            <mesh geometry={tileGeos.block} renderOrder={PRI.residential}
-              material={surveyBlockMat} />
-          )}
-          {/* G1 — grade-sep highways show in Survey too (the corridor is part of
-              the frozen SHAPE the operator eyes); same material/order as elsewhere. */}
-          {highwayVisible && tileGeos?.highway && (
-            <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
-          )}
-          {curbVisible && tileGeos?.curb && (
-            <mesh geometry={tileGeos.curb} renderOrder={PRI.sidewalk}
-              material={surveyCurbFillMat} />
-          )}
-          {curbVisible && tileGeos?.curbOutline && (
-            <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
-              material={surveyCurbMat} />
-          )}
-          {surveyIxGeo && (
-            <mesh geometry={surveyIxGeo} renderOrder={PRI.curb + 1} material={surveyIxMat} />
-          )}
-        </group>
-      )
-    }
+  // Survey view: this step intakes the skeleton and bakes the block POLYGONS.
+  // The strips/bands (treelawn/sidewalk/LU subdivision) aren't in this scene —
+  // they're scalars in the artifact, geometry only downstream in Section. So
+  // fill the whole block polygon to the curb edge (tg.block = stencil−asphalt),
+  // one flat translucent blue, roads as gaps. The curb OUTLINE + IX markers
+  // frame the blocks; centerlines come from MapLayers; corner controls from
+  // CornerEditHandles (both already Survey-gated). Aerial shows through.
+  // ── THE WALL · Phase D — every NON-Survey view (Section/Measure AND the
+  // neutral "Design" view) renders this FROZEN artifact. Everything below comes
+  // from sectionGeos (shape.json via sectionOpen) — the live tileGeos build is
+  // skipped entirely in these modes (its memo returns null), so the render
+  // provably cannot reach the chain graph, and idle viewing costs no live
+  // buildTileGround. Same band materials as the live view (WYSIWYG, just frozen).
+  // [G1] Grade-sep highways NOW freeze as a sibling group in shape.json
+  // ({ tiles, highway }) and draw here — the regression where they vanished from
+  // Design/Measure (4924d9a routed non-Survey views to the frozen path, which
+  // dropped them) is restored. (Perimeter-fill still stays Survey/Stage-only.)
+  if (sectionFrozen && sectionGeos) {
     return (
       <group>
-        {!hideLandUse && lotVisible && tileGeos?.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
-          <mesh key={`lu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
+        {!hideLandUse && lotVisible && sectionGeos.block && (
+          <mesh geometry={sectionGeos.block} renderOrder={PRI.residential} receiveShadow
+            material={tileLuFallback} />
+        )}
+        {!hideLandUse && lotVisible && sectionGeos.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
+          <mesh key={`flu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
             material={tileLuMats.get(lu) || tileLuFallback} />
         ))}
         {/* Median — own toggle (layerVis.median) + own material (layerColors),
             independent of the parcel/lot toggle. */}
-        {!hideLandUse && medianVisible && tileGeos?.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
-          <mesh key={`med:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={bandMats.median} />
+        {!hideLandUse && medianVisible && sectionGeos.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
+          <mesh key={`fmed:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={bandMats.median} />
         ))}
-        {treelawnVisible && tileGeos?.treelawn?.map(({ lu, geo }) => (
-          <mesh key={`tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
+        {treelawnVisible && sectionGeos.treelawn?.map(({ lu, geo }) => (
+          <mesh key={`ftl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
             material={bandMats.treelawnByLu.get(lu) || tlLuFallback} />
         ))}
-        {sidewalkVisible && tileGeos?.sidewalk && (
-          <mesh geometry={tileGeos.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalk} />
+        {sidewalkVisible && sectionGeos.sidewalk && (
+          <mesh geometry={sectionGeos.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalk} />
         )}
-        {curbVisible && tileGeos?.curb && (
-          <mesh geometry={tileGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
+        {curbVisible && sectionGeos.curb && (
+          <mesh geometry={sectionGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
         )}
-        {asphaltVisible && tileGeos?.asphalt && (
-          <mesh geometry={tileGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
+        {asphaltVisible && sectionGeos.asphalt && (
+          <mesh geometry={sectionGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
         )}
-        {highwayVisible && tileGeos?.highway && (
-          <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
+        {/* G1 — grade-sep highways: above LU faces, below the local ribbon network
+            (same render order as the live Survey branch), so the freeway shows in
+            its corridor and is occluded where local roads cross it. */}
+        {highwayVisible && sectionGeos.highway && (
+          <mesh geometry={sectionGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
         )}
-        {/* Non-street ribbons (alley/footway/cycleway/steps/path). These were
-            ONLY in the non-tile V2 return below, so on a tile scene (LS) the
-            render returned here and never drew them — toggled-on-but-invisible.
-            Same geometry the bake emits (buildPathRibbons, tile-clipped). */}
         {PATH_KINDS.map(kind => (
           PATH_VISIBLE[kind] && pathGeoByKind[kind] && (
             <mesh key={`path-${kind}`} geometry={pathGeoByKind[kind]}
@@ -1461,73 +1011,94 @@ export default function BlockGeometryV2Debug({
         {stepsVisible && parkStepsGeo && (
           <mesh geometry={parkStepsGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats.steps} />
         )}
+        {/* [Section translucency] The selected corridor (selected block +
+            neighbours) painted translucent (opacity 0.55) so the hi-res aerial
+            reads through while you author against it. Disjoint tiles from the
+            opaque set above, so they replace — not overlay — those fills. Curb
+            stays SOLID (the hardscape outline reads against the translucency). */}
+        {sectionGeos.selected && (<>
+          {!hideLandUse && lotVisible && sectionGeos.selected.block && (
+            <mesh geometry={sectionGeos.selected.block} renderOrder={PRI.residential} receiveShadow material={tileLuFallbackSelected} />
+          )}
+          {!hideLandUse && lotVisible && sectionGeos.selected.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
+            <mesh key={`fsel-lu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={tileLuMatsSelected.get(lu) || tileLuFallbackSelected} />
+          ))}
+          {!hideLandUse && medianVisible && sectionGeos.selected.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
+            <mesh key={`fsel-med:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={medianSelected} />
+          ))}
+          {treelawnVisible && sectionGeos.selected.treelawn?.map(({ lu, geo }) => (
+            <mesh key={`fsel-tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow material={bandMats.treelawnSelected} />
+          ))}
+          {sidewalkVisible && sectionGeos.selected.sidewalk && (
+            <mesh geometry={sectionGeos.selected.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalkSelected} />
+          )}
+          {curbVisible && sectionGeos.selected.curb && (
+            <mesh geometry={sectionGeos.selected.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
+          )}
+          {asphaltVisible && sectionGeos.selected.asphalt && (
+            <mesh geometry={sectionGeos.selected.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphaltSelected} />
+          )}
+        </>)}
       </group>
     )
   }
-
+  if (surveyActive) {
+    return (
+      <group>
+        {!hideLandUse && lotVisible && tileGeos?.block && (
+          <mesh geometry={tileGeos.block} renderOrder={PRI.residential}
+            material={surveyBlockMat} />
+        )}
+        {/* G1 — grade-sep highways show in Survey too (the corridor is part of
+            the frozen SHAPE the operator eyes); same material/order as elsewhere. */}
+        {highwayVisible && tileGeos?.highway && (
+          <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
+        )}
+        {curbVisible && tileGeos?.curb && (
+          <mesh geometry={tileGeos.curb} renderOrder={PRI.sidewalk}
+            material={surveyCurbFillMat} />
+        )}
+        {curbVisible && tileGeos?.curbOutline && (
+          <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
+            material={surveyCurbMat} />
+        )}
+        {surveyIxGeo && (
+          <mesh geometry={surveyIxGeo} renderOrder={PRI.curb + 1} material={surveyIxMat} />
+        )}
+      </group>
+    )
+  }
   return (
     <group>
-      {!hideLandUse && lotVisible && blockGroups.map(g => g.geo && (
-        <mesh key={g.key} geometry={g.geo} renderOrder={PRI.residential} receiveShadow
-          material={blockMats[g.key]} />
+      {!hideLandUse && lotVisible && tileGeos?.lu?.filter(({ lu }) => lu !== 'median' && luVisible(lu)).map(({ lu, geo }) => (
+        <mesh key={`lu:${lu}`} geometry={geo} renderOrder={PRI.residential} receiveShadow
+          material={tileLuMats.get(lu) || tileLuFallback} />
       ))}
-      {/* Per-chain band meshes. Material picked from the cached pair
-          (normal vs selectedCorridor). Selected chain gets opacity 0.55
-          in Measure. Order: treelawn (3) → sidewalk (5) → curb (6,
-          unified) → asphalt (8). */}
-      {/* Per-LU treelawn meshes (non-selected chains). Each LU paints in
-          its adjacent parcel's authored color so the treelawn reads as a
-          frontage extension of the block rather than a uniform green
-          strip. Bake side splits the same way. */}
-      {treelawnVisible && treelawnByLuGeo.map(({ lu, geo }) => (
-        <mesh key={`tlu:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
-          material={bandMats.treelawnByLu.get(lu) || bandMats.treelawn} />
+      {/* Median — own toggle (layerVis.median) + own material (layerColors),
+          independent of the parcel/lot toggle. */}
+      {!hideLandUse && medianVisible && tileGeos?.lu?.filter(({ lu }) => lu === 'median').map(({ geo }, i) => (
+        <mesh key={`med:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={bandMats.median} />
       ))}
-      {/* Per-chain treelawn — now only carries dead-end caps for non-
-          selected chains (per-LU global mesh above covers the frontage
-          portion) plus the SELECTED chain's full treelawn so its
-          translucent material still wins during Measure drag. */}
-      {treelawnVisible && perChainGeo.map(g => g.treelawn && (
-        <mesh key={`t${g.chainIdx}`} geometry={g.treelawn} renderOrder={PRI.treelawn} receiveShadow
-          material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.treelawnSelected : bandMats.treelawn} />
+      {treelawnVisible && tileGeos?.treelawn?.map(({ lu, geo }) => (
+        <mesh key={`tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
+          material={bandMats.treelawnByLu.get(lu) || tlLuFallback} />
       ))}
-      {sidewalkVisible && perChainGeo.map(g => g.sidewalk && (
-        <mesh key={`s${g.chainIdx}`} geometry={g.sidewalk} renderOrder={PRI.sidewalk} receiveShadow
-          material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.sidewalkSelected : bandMats.sidewalk} />
-      ))}
-      {/* While a chain is selected (drag in flight), the global curb
-          stroke is sized to the PREVIOUS V2 pass's asphaltRounded —
-          it's stale relative to the live-band overlay. Hide it during
-          selection so the selected chain's bands aren't masked by an
-          old curb position. V2's next pass (after 250ms idle) refreshes
-          the curb to the correct silhouette. */}
-      {curbVisible && curbGeo && selectedStreet == null && (
-        <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
+      {sidewalkVisible && tileGeos?.sidewalk && (
+        <mesh geometry={tileGeos.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalk} />
       )}
-      {perChainGeo.map(g => {
-        if (!g.asphalt) return null
-        const visible = isHighwayChain(g.chainIdx) ? highwayVisible : asphaltVisible
-        if (!visible) return null
-        return (
-          <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
-            material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.asphaltSelected : bandMats.asphalt} />
-        )
-      })}
-      {/* Phase 2.1: corner outer-face asphalt fill. asphaltRounded has
-          rounded mouths inherently (stencil − blockRounded), but the
-          per-chain asphalt rectangles have square ends at IXs and
-          leave a fillet residual. The regime emitter's per-arc loop
-          attributes that residual to corner records; render here under
-          asphalt material. Hides while a chain is selected so the
-          live-overlay bands aren't masked. */}
-      {(asphaltVisible || highwayVisible) && cornerFilletAsphaltGeo && selectedStreet == null && (
-        <mesh geometry={cornerFilletAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
-          material={bandMats.cornerAsphalt} />
+      {curbVisible && tileGeos?.curb && (
+        <mesh geometry={tileGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
       )}
-      {/* Non-street ribbons (alleys, footways, cycleways, steps, paths).
-          Same geometry the bake emits via buildPathRibbons — shared helper
-          guarantees Designer and slab don't drift. Each kind has its own
-          Stage Surfaces visibility row + color. */}
+      {asphaltVisible && tileGeos?.asphalt && (
+        <mesh geometry={tileGeos.asphalt} renderOrder={PRI.asphalt} receiveShadow material={bandMats.asphalt} />
+      )}
+      {highwayVisible && tileGeos?.highway && (
+        <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
+      )}
+      {/* Non-street ribbons (alley/footway/cycleway/steps/path). These were
+          ONLY in the non-tile V2 return below, so on a tile scene (LS) the
+          render returned here and never drew them — toggled-on-but-invisible.
+          Same geometry the bake emits (buildPathRibbons, tile-clipped). */}
       {PATH_KINDS.map(kind => (
         PATH_VISIBLE[kind] && pathGeoByKind[kind] && (
           <mesh key={`path-${kind}`} geometry={pathGeoByKind[kind]}
@@ -1540,47 +1111,6 @@ export default function BlockGeometryV2Debug({
       {stepsVisible && parkStepsGeo && (
         <mesh geometry={parkStepsGeo} renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats.steps} />
       )}
-      {/* Phase 2: corner concrete pad retired — the regime emitter
-          emits sidewalk-material wedges (ramp / asym plug) as part of
-          frontageBands' arc-span branch. Those render under the
-          sidewalk material above. */}
-      {/* D.3c: frontageCaps — concrete cap quads at (tl+sw)↔(tl+sw)
-          corners. Sits at sidewalk priority over the corner pads.
-          Hides with the sidewalk toggle. */}
-      {sidewalkVisible && frontageCapsGeo && selectedStreet == null && (
-        <mesh geometry={frontageCapsGeo} renderOrder={PRI.sidewalk} receiveShadow
-          material={bandMats.cornerSidewalk} />
-      )}
-      {treelawnEdgeGeo && (
-        <lineSegments geometry={treelawnEdgeGeo} renderOrder={PRI.asphalt + 1}>
-          <lineBasicMaterial color={treelawnCol} transparent opacity={1} depthWrite={false} />
-        </lineSegments>
-      )}
-      {sidewalkEdgeGeo && (
-        <lineSegments geometry={sidewalkEdgeGeo} renderOrder={PRI.asphalt + 1}>
-          <lineBasicMaterial color={sidewalkCol} transparent opacity={1} depthWrite={false} />
-        </lineSegments>
-      )}
-      {/* Asphalt outer-edge — curb-colored line at the asphalt|curb
-          boundary on the selected chain. Replaces the visual role of the
-          (hidden-during-selection) curb mesh during a drag, while staying
-          handle-tracked via liveSelectedRings. */}
-      {asphaltEdgeGeo && (
-        <lineSegments geometry={asphaltEdgeGeo} renderOrder={PRI.asphalt + 1}>
-          <lineBasicMaterial color={curbCol} transparent opacity={1} depthWrite={false} />
-        </lineSegments>
-      )}
-      {showCornerDots && corners.map((c, i) => (
-        <mesh
-          key={i}
-          position={[c.point[0], 0.07, c.point[1]]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          renderOrder={502}
-        >
-          <circleGeometry args={[0.45, 16]} />
-          <meshBasicMaterial color="#ffdd22" transparent opacity={1.0} depthWrite={false} />
-        </mesh>
-      ))}
     </group>
   )
 }

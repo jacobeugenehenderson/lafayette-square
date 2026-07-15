@@ -32,7 +32,7 @@ import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
-import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
+import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
@@ -356,9 +356,9 @@ function ringsToHoledPolys(rings) {
   return outers.map((o, i) => ({ outer: o, holes: holesByOuter[i] }))
 }
 
-// Adapter: pack the tile construction's ring lists into the same
-// { byMaterial, byFaceUse } shape buildV2BakeShape returns, reusing
-// ringsToHoledPolys so annular bands keep their holes. Per-LU (M1/M2): the LU
+// Pack the tile construction's ring lists into the { byMaterial, byFaceUse }
+// shape the bake consumes, reusing ringsToHoledPolys so annular bands keep
+// their holes. Per-LU (M1/M2): the LU
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
@@ -405,8 +405,8 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   }
   // Non-street ribbons (alleys + footway/cycleway/steps/path). The Designer
   // renders these live (BlockGeometryV2Debug → buildPathRibbons), but the bake
-  // dropped them: the call lived ONLY in the dead figure-ground path
-  // (buildV2BakeShape) and the tile migration never carried it here, so the slab
+  // dropped them: the call lived ONLY in the figure-ground path (deleted at T4)
+  // and the tile migration never carried it here, so the slab
   // shipped with no alley/footway/path groups (DOC-CODE-COHERENCE C13). Mirror it
   // on the tile path. Clip to PARCEL INTERIORS (block − curb − treelawn −
   // sidewalk) so paths stop at the sidewalk's inner edge; exclude park (its paths
@@ -446,147 +446,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [] }
 }
 
-function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
-  const v2 = buildBlockGeometryV2(ribbons, {
-    stencil: stencilPolygon,
-    cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
-    cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
-    cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
-    blockCustoms:    design.blockCustoms    || null,
-    blockLandUse:    design.blockLandUse    || null,
-    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
-    // Phase 2 — global street-smoothing tension. Same field the live render
-    // reads, so the bake strokes an identical smoothed polyline (WYSIWYG).
-    smooth: STREET_SMOOTH,   // the ONE knob (SKELETON.md §3.5) — was 0 (2026-06-04 retirement), revived 2026-06-14
-    useRingBandEmitter: !!opts.useRingBandEmitter,  // C4: toy default on, LS off until C5 cutover
-  })
-
-  const byMaterial = new Map()
-  const byFaceUse  = new Map()
-  const pushMat = (key, ring) => {
-    if (!ring || ring.length < 3) return
-    if (!byMaterial.has(key)) byMaterial.set(key, [])
-    byMaterial.get(key).push(ring)
-  }
-  // Push Clipper-output rings as proper holed polygons. Rings come in as
-  // a flat array mixing CCW outers + CW holes; partition and pair before
-  // pushing so the bake's triangulator honors the holes (otherwise the
-  // CW rings render as filled polygons and blank their parent outers).
-  const pushClipperRings = (key, rings) => {
-    if (!rings || !rings.length) return
-    if (!byMaterial.has(key)) byMaterial.set(key, [])
-    const polys = ringsToHoledPolys(rings)
-    for (const p of polys) byMaterial.get(key).push(p)
-  }
-
-  // Per-chain ribbons (asphalt + ped zones) flattened across all chains.
-  // Highway-class chains route their asphalt to the `highway` group
-  // (matches V1's LAYER_MAP split + the operator's Designer toggle so
-  // I-44 and ramps render with their own material/shader). Other chain
-  // asphalt → `asphalt` group. Ped zones aren't class-routed since
-  // motorways typically have no ped zones in the underlying measure.
-  // Plug rings union into their parent material — they ARE asphalt /
-  // sidewalk for shading purposes; the operator's "sidewalk" toggle
-  // hides the corner concrete with the rest.
-  const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
-  const streets = ribbons?.streets || []
-  for (const c of v2.byChain) {
-    if (!c) continue
-    const cls = streets[c.chainIdx]?.highway
-    const asphaltKey = HIGHWAY_CLASSES.has(cls) ? 'highway' : 'asphalt'
-    pushClipperRings(asphaltKey,  c.asphaltRings)
-    // D.3c: per-chain-segment treelawn/sidewalk bands no longer
-    // consumed — frontageBands (block-edge-owned, extended +
-    // pulled-back, clipped to blockRounded) take over below. Round
-    // dead-end caps still come from byChain.{tl,sw}CapRings (split
-    // out in D.3b.1 specifically so this swap leaves them in place).
-    pushClipperRings('treelawn',  c.treelawnCapRings)
-    pushClipperRings('sidewalk',  c.sidewalkCapRings)
-  }
-  // Phase 2: frontageBands now carries straight-span bands AND arc-span
-  // regime emission (ramp wedges + asymmetric plugs as sidewalk-material
-  // rings, full-arc tl/sw wraps under their existing material keys).
-  // cornerSidewalkPads / cornerAsphaltPlugs retired — the arc emitter
-  // produces the corner concrete; asphaltRounded inherits its rounded
-  // mouths from blockRounded.
-  //
-  // Treelawn routes per-LU: each fe's treelawn is emitted under
-  // 'treelawn:<lu>' keyed by the LU of the block the fe abuts, so the
-  // ring picks up that LU's authored color and material. Sidewalk stays
-  // uniform. Adjacent-block lookup is coordinate-based (point-in-
-  // polygon) since pass-1 fe blockKeys can drift from pass-2 block
-  // blockKeys under Measure customs.
-  // Per-LU lookup: prefer entry.blockKey direct map (C4 ring-band emitter
-  // produces treelawn rings outside the parcel polygon; centroid probe
-  // lands in the ribbon zone and fails). Fall back to probe for legacy.
-  const blockLuByKey = new Map()
-  for (const b of (v2.blocks || [])) {
-    if (b?.blockKey && b.lu) blockLuByKey.set(b.blockKey, b.lu)
-  }
-  for (const fe of (v2.frontageBands || [])) {
-    if (fe.treelawnRings?.length) {
-      let lu = fe.blockKey ? blockLuByKey.get(fe.blockKey) : null
-      if (!lu) {
-        const probe = ringInteriorProbe(fe.treelawnRings[0])
-        if (probe) lu = blockLuAtPoint(probe, v2.blocks)
-      }
-      const key = lu ? `treelawn:${lu}` : 'treelawn'
-      pushClipperRings(key, fe.treelawnRings)
-    }
-    if (fe.sidewalkRings?.length) pushClipperRings('sidewalk', fe.sidewalkRings)
-    // Phase 2.1: arc-span entries also carry the corner's outer-face
-    // asphalt-fillet ring (per-chain rectangles' square ends leave a
-    // residual to the rounded asphalt silhouette). Renders as asphalt.
-    if (fe.asphaltRings?.length) pushClipperRings('asphalt', fe.asphaltRings)
-  }
-  // Phase 2.1 orphans — fillet polygons whose centroid couldn't
-  // attribute to a corner record within FILLET_ATTRIB_MAX_M (chain
-  // stubs, dead-end pavement, divided-pair degeneracies). Still need
-  // to render as asphalt so the visible mouth is filled.
-  if (v2.cornerOrphanAsphalt?.length) pushClipperRings('asphalt', v2.cornerOrphanAsphalt)
-  pushClipperRings('curb',     v2.curbBands)
-
-  // Per-block faces grouped by land use. Bare rings → `{outer, holes:[]}`
-  // so the existing itemsToBuffers triangulator handles them like V1's
-  // `{outer, holes}` faces.
-  for (const b of v2.blocks) {
-    if (!b?.ring || b.ring.length < 3) continue
-    if (!byFaceUse.has(b.lu)) byFaceUse.set(b.lu, [])
-    byFaceUse.get(b.lu).push({ outer: b.ring, holes: [] })
-  }
-
-  // Non-street ribbons (alleys + footway/cycleway/steps/path). Shared
-  // helper so Designer's live render and the bake consume identical
-  // geometry. Paths clip to PARCEL interiors — stop at the sidewalk's
-  // inner edge, no trespass on ped zone OR curb. block.ring extends to
-  // the asphalt edge (curb + ped-zone bands paint on top), so
-  //   parcelInteriors = block.ring − curbBands − (treelawn ∪ sidewalk).
-  //
-  // Park blocks excluded from the path-eligible set: LafayettePark.jsx's
-  // ParkPaths renders the park's gravel-shaded paths from park_paths.json,
-  // and a baked duplicate of those same OSM polylines (via this block,
-  // unshaded via FadeMesh) would poke through whenever the water mesh's
-  // depth sort flakes out at certain camera heights. Carving the park
-  // out keeps the gravel-shaded version as the sole park-path renderer.
-  const blockRings = v2.blocks
-    .filter(b => b?.ring?.length >= 3 && b.lu !== 'park')
-    .map(b => b.ring)
-  const subtract = []
-  for (const r of (v2.curbBands || [])) if (r?.length >= 3) subtract.push(r)
-  for (const fb of (v2.frontageBands || [])) {
-    for (const r of (fb.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
-    for (const r of (fb.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
-  }
-  const parcelInteriors = subtract.length ? differenceRings(blockRings, subtract) : blockRings
-  for (const [kind, rings] of buildPathRibbons(ribbons, {
-    intersect: parcelInteriors,
-    alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
-  })) {
-    pushClipperRings(kind, rings)
-  }
-
-  return { byMaterial, byFaceUse }
-}
+// T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
+// It had been dead-in-place since T2 (buildTileBakeShape replaced it); the
+// replace-then-delete second half, per ARCHITECTURE §7.
 
 // Triangulate one polygon (outer ring + optional hole rings) and OPTIONALLY
 // refine the triangulation by iteratively splitting any triangle whose longest
@@ -901,10 +763,8 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // C5 — LS cutover: the ring-band emitter (keeper) is now on for all
   // scenes. Legacy per-leg emitter is dead (else-branch removed in C5
   // commit 3).
-  // T2 — ALL scenes (LS included) bake from the tile construction; the
-  // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
-  // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
-  // conditional is gone — a scene is a dataset, not a code path.
+  // ALL scenes (LS included) bake from the tile construction. The figure-ground
+  // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
   const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────

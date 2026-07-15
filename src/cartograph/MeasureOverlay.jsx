@@ -258,7 +258,7 @@ export default function MeasureOverlay() {
   // (blockKey + edgeOrd) for per-block-edge customs authoring.
   const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
   // Coord-match IX identity per chain — single source of truth shared
-  // with buildBlockGeometryV2 + buildChainBandsLive. naturalSegmentOrdinal
+  // with buildBlockGeometryV2's buildFrontageEdges. naturalSegmentOrdinal
   // below uses this so the operator's drag resolves segOrds against the
   // same partition the walker / emitter used.
   const ixByChain = useMemo(
@@ -471,15 +471,6 @@ export default function MeasureOverlay() {
     // (subdivideGeo OOM). 60m is well past the widest real curb.
     if (!Number.isFinite(r)) return
     if (r > 60) r = 60
-    // Mark the live drag: a real handle move is committing a measure write, so
-    // the live preview switches to silhouette-independent rect bands that
-    // follow in real time (W1b-F1). Set here (not on pointerdown) so a click
-    // with no drag never strands the flag. Cleared by BlockGeometryV2Debug when
-    // the rebuilt silhouette lands; re-set here if a mid-drag pause cleared it.
-    if (!useCartographStore.getState().measureDragging) {
-      useCartographStore.setState({ measureDragging: true })
-    }
-
     const store = useCartographStore.getState()
     const st = store.centerlineData?.streets?.[streetIdx]
     if (!st) return

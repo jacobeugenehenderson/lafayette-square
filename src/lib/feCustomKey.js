@@ -15,10 +15,11 @@
 // (street, side, segment) terms (MeasurePanel "segment N"), so this key matches
 // their mental model exactly.
 //
-// SINGLE SOURCE OF TRUTH. All three representations of a ribbon — authoring
-// handles, live preview (buildChainBandsLive), committed bake (bakeFeScalars /
-// emit) — MUST resolve customs through THIS one helper. A second copy of the
-// key formula is how the three drift apart again; don't make one.
+// SINGLE SOURCE OF TRUTH. Every representation of a ribbon — authoring handles,
+// committed bake (bakeFeScalars / emit) — MUST resolve customs through THIS one
+// helper. A second copy of the key formula is how they drift apart again; don't
+// make one. (The third rep, the figure-ground live preview buildChainBandsLive,
+// was deleted at T4 2026-07-15.)
 //
 // Storage shape: blockCustoms[skelId][side][segOrd] = single-side measure
 //   { pavementHW, treelawn, sidewalk, terminal, materials? }

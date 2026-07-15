@@ -480,12 +480,6 @@ const useCartographStore = create((set, get) => ({
   // set the universal cross-section first, then opt INTO per-block
   // (`{ type: 'block' }`) when a specific block diverges.
   measureMode: { type: 'global' },
-  // Transient (NOT persisted): true while a measure handle is actively being
-  // dragged. Signals the live preview to emit silhouette-INDEPENDENT rect
-  // bands that follow the handle in real time (W1b-F1); cleared by
-  // BlockGeometryV2Debug once the debounced rebuild produces a fresh rounded
-  // silhouette, so the swap back to keystone bands never snaps.
-  measureDragging: false,
   // Mirror-edit toggle (transient — NOT persisted). When false (default),
   // an edit mirrors to the opposite-side fe ("symmetric" authoring); when
   // true, sides are edited independently. Post-redesign "symmetric" is a
@@ -495,11 +489,6 @@ const useCartographStore = create((set, get) => ({
   // path writes the chain flag.
   editSidesSeparately: false,
   setEditSidesSeparately: (v) => set({ editSidesSeparately: !!v }),
-  // Transient cache of V2's rounded block rings — written by
-  // BlockGeometryV2Debug on every recompute, read by MeasureOverlay so
-  // the drag path can do block adjacency at drag time without
-  // re-running buildBlockGeometryV2. Not persisted.
-  _v2Blocks: [],
   _v2FrontageEdges: [],
   // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
   // Operator-authored via the Corner-edit center handles. Per-Look (lives in
@@ -692,7 +681,6 @@ const useCartographStore = create((set, get) => ({
     set(s => ({ labels: { ...(s.labels || {}), ...patch } }))
     get()._saveDesignDebounced()
   },
-  _setV2Blocks: (blocks) => set({ _v2Blocks: Array.isArray(blocks) ? blocks : [] }),
   // D.5: Designer pushes the latest frontageEdges array here so the
   // Measure UI can resolve a clicked chain point → (blockKey, edgeOrd)
   // for per-block-edge customs authoring.

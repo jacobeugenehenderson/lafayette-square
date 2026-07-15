@@ -3,9 +3,9 @@
 // live-path.md). ONE module shared by the LIVE Designer (BlockGeometryV2Debug)
 // and the bake (bake-ground) so live == bake by construction (WYSIWYG).
 //
-// This is THE live ground construction for every scene: LS runs tiles
-// unflagged (`isTileScene = true`), same as toy. Figure-ground
-// (buildBlockGeometryV2) is the dead predecessor path, deleted at T4.
+// This is THE live ground construction for every scene — and since T4
+// (2026-07-15) the ONLY one. Figure-ground, its predecessor, is deleted;
+// what remains of buildBlockGeometryV2 is the frontage-edge identity builder.
 //
 // The construction:
 //   1. TILES = bounded faces of the street centerline graph. Centerlines are
