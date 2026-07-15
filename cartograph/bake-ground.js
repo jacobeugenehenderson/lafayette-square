@@ -446,7 +446,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     const { land } = buildParkPathRings(ribbons, { polygon: parkClip.polygon, water: parkClip.water })
     pushClipperRings('park_path', mergeRings(land))
   }
-  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [] }
+  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [], detailClip: pr._detailClip || null }
 }
 
 function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
@@ -920,7 +920,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
       console.log(`  Inhabited cull: margin=${stencil.contextMargin}m → ${(mask.coverage * 100).toFixed(0)}% grid coverage (${bRings.length} member bldgs)`)
     }
   }
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, tileKeep, stencil.contextMargin)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, detailClip } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, tileKeep, stencil.contextMargin)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -1181,7 +1181,10 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // sibling group ({ tiles, highway }) so the frozen Section/Design views restore
   // highways (the bare-array form dropped them — regression 4924d9a). The slab's
   // own `highway` mat group is unaffected; this is the Section-side freeze.
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [] }))
+  // `detailClip` (the inhabited-cull polygon, null when the cull didn't fire) rides
+  // in the frozen artifact so the Designer's sectionOpen replays the BAKE's cull
+  // instead of re-deriving the mask in the browser — Designer == bake by construction.
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], detailClip: detailClip || null }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

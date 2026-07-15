@@ -1460,7 +1460,10 @@ function tileSliceKey(st, blockCustoms) {
 // buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
 // Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
 // already tolerates the serialized roundTipKeys array).
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
+// `detailClip` (last arg) = the INHABITED CULL polygon the BAKE froze into the
+// artifact. The Designer replays the bake's decision rather than re-deriving the
+// mask in the browser — Designer == bake by construction. null → no cull.
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, detailClip = null) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
   // Section drag (which writes a fresh blockCustoms object every frame but
@@ -1503,16 +1506,23 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     for (const k in b.luByLu) (acc.lu[k] || (acc.lu[k] = [])).push(...b.luByLu[k])
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
+  // INHABITED CULL — mirrors buildTileGround's split exactly: the land-use FACE
+  // fills and the roads keep the WHOLE disc (they are the flat faded base every
+  // hood has), while the ped DETAIL (curb / sidewalk / treelawn / block) clips to
+  // the developed footprint + one block of context. No detailClip → clipDetail IS
+  // clip, i.e. bit-for-bit the prior behaviour (LS and every tight hood).
+  const hasDetailClip = Array.isArray(detailClip) && detailClip.length > 0
+  const clipDetail = (rings) => hasDetailClip ? intersectRings(rings, detailClip) : clip(rings)
   const finish = (acc) => {
     const treelawnByLu = {}, luByClass = {}
-    for (const k of Object.keys(acc.tl)) treelawnByLu[k] = clip(unionRings(acc.tl[k]))
+    for (const k of Object.keys(acc.tl)) treelawnByLu[k] = clipDetail(unionRings(acc.tl[k]))
     for (const k of Object.keys(acc.lu)) luByClass[k]   = clip(unionRings(acc.lu[k]))
     return {
       asphalt:  clip(unionRings(acc.A)),
-      curb:     clip(unionRings(acc.C)),
-      sidewalk: clip(unionRings(acc.W)),
+      curb:     clipDetail(unionRings(acc.C)),
+      sidewalk: clipDetail(unionRings(acc.W)),
       treelawnByLu, luByClass,
-      block:    clip(acc.block),
+      block:    clipDetail(acc.block),
     }
   }
   const out = finish(rest)
@@ -3141,6 +3151,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // (src/lib/inhabitedMask.js), so the pen's exclusion loops flow through. No
   // predicate → detail spans the disc as before (LS and every tight hood unchanged).
   let detailClip = stencil ? [stencil] : null
+  let culled = false
   if (stencil && typeof opts.tileKeep === 'function') {
     const keptRings = []
     for (const t of tiles) {
@@ -3151,7 +3162,7 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     if (keptRings.length) {
       const inhabited = offsetRings(unionRings(keptRings), opts.cullMargin || 80, 'round')
-      if (inhabited.length) detailClip = intersectRings([stencil], inhabited)
+      if (inhabited.length) { detailClip = intersectRings([stencil], inhabited); culled = true }
     }
   }
   if (stencil) {
@@ -3285,5 +3296,8 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe }
+  // `_detailClip` rides into shape.json so the Designer's FROZEN path (sectionOpen)
+  // replays this same cull instead of re-deriving the mask — Designer == bake.
+  // null when the cull didn't fire (every tight hood, incl. LS).
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _detailClip: culled ? detailClip : null, _mouthProbe }
 }

@@ -665,7 +665,11 @@ export default function BlockGeometryV2Debug({
         // always knows the grade-sep group (empty for legacy freezes).
         const tiles = Array.isArray(d) ? d : (Array.isArray(d?.tiles) ? d.tiles : null)
         const highway = Array.isArray(d) ? [] : (Array.isArray(d?.highway) ? d.highway : [])
-        setFrozenShape(tiles && tiles.length ? { tiles, highway } : null)
+        // The bake FREEZES the inhabited-cull polygon into the artifact; replaying it
+        // keeps this view identical to the slab instead of re-deriving the mask in the
+        // browser. Absent (legacy freeze, or a hood with no cull like LS) → null → no cull.
+        const detailClip = Array.isArray(d?.detailClip) && d.detailClip.length ? d.detailClip : null
+        setFrozenShape(tiles && tiles.length ? { tiles, highway, detailClip } : null)
       })
       .catch(e => { done = true; console.warn('[BlockGeometryV2Debug] no frozen shape artifact (Section falls back to live build):', e); if (!dead) setFrozenShape(null) })
     // Abort mid-flight (tool flipped / re-mount): clear the key so the next
@@ -702,7 +706,7 @@ export default function BlockGeometryV2Debug({
     // stay absent. So the FILL re-strokes live off the frozen curb when you swap a
     // strip, while the curb sits still — SECTION.md §4.
     let sg
-    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map, selSet) }
+    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map, selSet, frozenShape.detailClip) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
