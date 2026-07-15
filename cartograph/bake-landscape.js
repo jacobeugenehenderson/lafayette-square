@@ -27,7 +27,6 @@
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
-import { loadSceneStencil, pointInPolygon } from './sceneStencil.js'
 import { fileURLToPath } from 'url'
 
 const here = dirname(fileURLToPath(import.meta.url))          // cartograph/
@@ -113,54 +112,23 @@ const yOffset = -Math.round(hoodGroundASL)
 console.log(`  geo-anchor: DEM center ${north.toFixed(0)}m N, ${east.toFixed(0)}m E of hood → world (${worldX.toFixed(0)}, ${worldZ.toFixed(0)}) · dist ${distance} · bearing (${bearingX}, ${bearingZ})`)
 console.log(`  hood ground ≈ ${hoodGroundASL.toFixed(0)}m ASL → yOffset ${yOffset}`)
 
-// ── Stencil cut — the mountain stops at the town's base plate ───────────────
-// The DEM is a ~13.8km square: placed at its true geo-anchor it doesn't sit
-// BEHIND the hood, it SWALLOWS it (Altadena: the mesh's near edge lands 1,348m
-// SOUTH of the hood centre, draping the northern two-thirds of the disc —
-// 2026-07-15, the operator's eye). The hood has exactly one authored silhouette
-// and its SSoT is the EXTENT tool's neighborhood_boundary.json, so cut with THAT
-// polygon — the same one bake-ground clips the ground to — never a second circle.
+// ── (No stencil cut) ────────────────────────────────────────────────────────
+// A disc-stencil cut was tried and REVERTED 2026-07-15. It removed the tris whose
+// centroid fell inside the hood's boundary — the hole UNDER the town — and left the
+// RING around it: ~3.5km of DEM due EAST and ~1.6km due WEST of the hood, at the
+// town's own latitude. Foothills flanking the neighbourhood; the San Gabriels are
+// NORTH. Wrong in a way no radius fixes.
 //
-// Cut in WORLD space: the GLB stays in DEM-local coords and the runtime places it
-// at distance·bearing, so a vertex at local (x,z) lands at (worldX+x, worldZ+z).
-// A tri is dropped when its CENTROID falls inside the stencil — centroid, not
-// any-vertex, so the seam lands ON the plate edge rather than a ragged tri short.
-// Vertices are then compacted (an orphaned vert is dead weight in the GLB).
-const stencil = loadSceneStencil(join(here, '..'), scene)
-if (stencil.clipPolygon?.length) {
-  const keep = []
-  for (let f = 0; f < indices.length; f += 3) {
-    const ia = indices[f] * 3, ib = indices[f + 1] * 3, ic = indices[f + 2] * 3
-    const cxw = worldX + (positions[ia] + positions[ib] + positions[ic]) / 3
-    const czw = worldZ + (positions[ia + 2] + positions[ib + 2] + positions[ic + 2]) / 3
-    if (!pointInPolygon(cxw, czw, stencil.clipPolygon)) keep.push(indices[f], indices[f + 1], indices[f + 2])
-  }
-  const cutTris = (indices.length - keep.length) / 3
-  // Compact: keep only the verts the surviving tris reference.
-  const remap = new Map()
-  const newPos = []
-  const reindexed = new Array(keep.length)
-  for (let i = 0; i < keep.length; i++) {
-    const old = keep[i]
-    let n = remap.get(old)
-    if (n === undefined) {
-      n = remap.size
-      remap.set(old, n)
-      newPos.push(positions[old * 3], positions[old * 3 + 1], positions[old * 3 + 2])
-    }
-    reindexed[i] = n
-  }
-  const droppedVerts = vCount - remap.size
-  // Reassign, never `push(...arr)` — the spread's argument count blows the call
-  // stack at this size (328k verts → RangeError).
-  positions = newPos
-  indices = reindexed
-  vCount = positions.length / 3
-  fCount = indices.length / 3
-  console.log(`  stencil cut (extent SSoT, ${stencil.clipPolygon.length}-pt boundary @ r${stencil.streetFade ? stencil.streetFade.outer + 50 : stencil.radius}): -${cutTris.toLocaleString()} tris, -${droppedVerts.toLocaleString()} verts → ${fCount.toLocaleString()} tris`)
-} else {
-  console.log('  stencil cut: skipped (no boundary polygon for this scene)')
-}
+// The error was conceptual, not arithmetic: a stencil is a CONTAINMENT test
+// (inside/outside a disc), but a backdrop is a VISIBILITY question — what can be
+// seen from the town, and in which direction. Those are different questions, so the
+// disc could never answer this one. Jacob's word for the right model is a CURTAIN:
+// not a clipped volume but a surface hung at a distance, facing the viewer — which
+// may not want the DEM at all (655k tris of true topography to draw a skyline is
+// possibly the wrong instrument). Deferred until that's specified.
+//
+// The extent SSoT (cartograph/sceneStencil.js) stays — bake-ground derives its
+// ground clip from it, and it's where the boundary lives if the curtain ever wants it.
 
 // ── Compute smooth vertex normals (OBJ carries none) ────────────────────────
 const normals = new Float32Array(positions.length)
