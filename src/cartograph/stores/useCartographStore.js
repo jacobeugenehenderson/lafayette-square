@@ -338,7 +338,18 @@ const DESIGN_FIELDS = [
     ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...d.browseHeading.values } }
     : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } } },
   _grp('arch',           ARCH_FIELD_KEYS,           ARCH_FLAT_DEFAULTS),
-  _grp('landscape',      LANDSCAPE_FIELD_KEYS,      LANDSCAPE_FLAT_DEFAULTS),
+  // Landscape is NOT a plain _grp: migrateGroupChannel returns { values } and drops
+  // every sibling key, which would silently EAT `source` — the Stage upload's opt-in
+  // that the bake gates on (serve.js:1795). Nothing sets `source` yet ("Until the
+  // Stage upload flow sets that, the pour emits no landscape"), so today this is
+  // latent — but the day that flow lands, the first design autosave after an upload
+  // would delete the operator's mountain and the next bake would quietly drop it.
+  // Carry `source` through hydrate→serialize so the Designer can never destroy a
+  // Stage intake it doesn't own.
+  { key: 'landscape', hydrate: (d) => {
+    const grp = migrateGroupChannel(d.landscape, LANDSCAPE_FIELD_KEYS, LANDSCAPE_FLAT_DEFAULTS)
+    return d.landscape?.source ? { ...grp, source: d.landscape.source } : grp
+  } },
   { key: 'archLight', hydrate: (d) => migrateArchLight(d) },
   _grp('lantern',        LANTERN_FIELD_KEYS,        LANTERN_FLAT_DEFAULTS),
   _grp('horizon',        HORIZON_FIELD_KEYS,        HORIZON_FLAT_DEFAULTS),
@@ -363,6 +374,18 @@ function hydrateDesign(design, get) {
 function serializeDesign(s) {
   const out = {}
   for (const f of DESIGN_FIELDS) out[f.key] = s[f.key]
+  // ⛔ The landscape is a STAGE SET-PIECE the operator uploads per-Look, opted into
+  // by `design.landscape.source` (a20619cc) — it is NOT a Look knob-set that every
+  // hood carries. The store seeds the knobs from LANDSCAPE_FLAT_DEFAULTS so the
+  // Stage panel has something to drive, but those defaults hold the REAL San Gabriel
+  // values (snowline 1500, distance 5400 — the misnaming is a known debt), so
+  // serializing them unconditionally wrote a mountain config into Lafayette
+  // Square's Look on the operator's first Section edit (2026-07-15). Inert — the
+  // bake gates on `source`, not on `values` — but it is exactly the "opportunity for
+  // confusion or accidental reading/load-in" the intake/Stage separation exists to
+  // prevent. No source ⇒ no landscape ⇒ the key is ABSENT and the knobs re-seed from
+  // defaults on hydrate.
+  if (!out.landscape?.source) delete out.landscape
   return out
 }
 
