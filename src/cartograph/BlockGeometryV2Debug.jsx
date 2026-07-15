@@ -265,6 +265,11 @@ export default function BlockGeometryV2Debug({
   const streetSmooth = STREET_SMOOTH
   const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
+  // TRUE once the active Look's design.json has hydrated. Until then curbWidth /
+  // blockCustoms are still store DEFAULTS, so any geometry built off them is wrong
+  // and gets discarded the moment the design lands. Set even when design.json is
+  // absent (it hydrates {}), so this can't deadlock the render.
+  const designHydrated            = useCartographStore(s => s._designHydrated)
   const blockLandUse              = useCartographStore(s => s.blockLandUse)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
@@ -568,7 +573,7 @@ export default function BlockGeometryV2Debug({
   // the memo. Name the culprit instead of guessing: log WHICH dep changed identity.
   const __depsRef = useRef(null)
   const __whyRerun = () => {
-    const cur = { sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selectedStreet, liveStreets }
+    const cur = { sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selSkel, designHydrated }
     const prev = __depsRef.current
     __depsRef.current = cur
     if (!prev) return 'FIRST RUN'
@@ -577,14 +582,33 @@ export default function BlockGeometryV2Debug({
       ? changed.map(k => `${k}(${prev[k] === undefined ? 'undef' : prev[k] === null ? 'null' : 'set'}→${cur[k] === undefined ? 'undef' : cur[k] === null ? 'null' : 'set'})`).join(' ')
       : '(no dep changed?!)'
   }
+  // The selected chain's skelId — the ONLY thing sectionGeos wants from
+  // liveStreets. Hoisted out so the heavy memo depends on this STRING, not on the
+  // streets array's identity: a store write that re-creates centerlineData with
+  // nothing selected used to force a full ~17s rebuild for a value that could not
+  // change ("trigger: liveStreets(set→set)", 2026-07-15 console).
+  const selSkel = useMemo(
+    () => (selectedStreet != null ? (liveStreets?.[selectedStreet]?.id ?? null) : null),
+    [selectedStreet, liveStreets]
+  )
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
+    // ⛔ Don't build before the inputs that DEFINE the geometry have landed. Same
+    // disease as the buildTileGround race, one layer up: frozenShape arrives off
+    // vite static in ~360ms, but `stencil` (the fetched boundary) and the design
+    // (curbWidth / blockCustoms) come off the API server much later. Building in
+    // between doesn't just waste ~17s — it builds the WRONG map (unclipped, with
+    // default curbWidth and no customs) and then throws it away. The 2026-07-15
+    // console showed four builds, ~70s total, of which only the last was correct.
+    // Both gates are load-only: once landed they stay landed, and a genuine edit
+    // to curbWidth/blockCustoms still rebuilds normally.
+    if (!stencil) return null
+    if (!designHydrated) return null
     if (sectionCacheRef.current.shape !== frozenShape) sectionCacheRef.current = { shape: frozenShape, map: new Map() }
     // [Section translucency] Selected-corridor tiles = those whose runs front the
     // selected street (its skelId) → the selected block + the across-street
     // neighbour. Rendered translucent below so the hi-res aerial reads through.
     // Identity-only (skelId), no chain geometry — the wall holds.
-    const selSkel = selectedStreet != null ? (liveStreets?.[selectedStreet]?.id) : null
     let selSet = null
     if (selSkel) {
       selSet = new Set()
@@ -658,7 +682,7 @@ export default function BlockGeometryV2Debug({
     __composeDoneRef.current = performance.now()
     __composeVertsRef.current = __verts
     return __out
-  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selectedStreet, liveStreets])
+  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selSkel, designHydrated])
 
   // [LOAD-FORENSIC 2026-07-15] throwaway — closes the 19.8s task's accounting.
   // sectionOpen + compose are timed inside the memo; this catches the two stages
