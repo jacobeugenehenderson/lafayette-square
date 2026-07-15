@@ -1337,11 +1337,42 @@ createServer(async (req, res) => {
       }
       _seedsInFlight.add(scene)
       try {
-        const { center, radius, name, blurb, exclusions } = JSON.parse(body || '{}')
+        const { center, radius, name, blurb, exclusions, allowRecenter } = JSON.parse(body || '{}')
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
         const geoPath = sceneDataPaths(scene).geography
+        // ── Re-center guard (the SSoT that keeps a committed hood safe) ──────
+        // Re-centering an already-committed hood is THE destructive move: it
+        // shifts the frame, so blockCustoms / corner / hero work (all keyed off
+        // bbox-derived block keys) is silently ORPHANED and the whole slab must
+        // re-bake. A first pour (uncommitted) and a same-center re-commit
+        // (radius / exclusions / name edits) are safe and pass freely; only a
+        // real center move on a committed hood is refused, unless the caller
+        // explicitly opts in with allowRecenter. The Extent panel already routes
+        // committed hoods down the light rescope path — this is the fix-at-source
+        // backstop so a direct/scripted/raced POST can't re-pour LS or HPDM by
+        // accident. [Extent guard, 2026-07-15]
+        {
+          const RECENTER_EPS_M = 5   // r5 rounding is ~1.1 m; a real boundary move is far larger
+          const nbGuardPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+          let wasCommitted = false, prev = null
+          try { wasCommitted = !!JSON.parse(readFileSync(nbGuardPath, 'utf8')).committed } catch { /* uncommitted / no file */ }
+          try { const g0 = JSON.parse(readFileSync(geoPath, 'utf8')); if (Number.isFinite(g0.lat) && Number.isFinite(g0.lon)) prev = { lat: g0.lat, lon: g0.lon } } catch { /* no prior frame */ }
+          if (wasCommitted && prev && !allowRecenter) {
+            const dLatM = (center.lat - prev.lat) * 111320
+            const dLonM = (center.lon - prev.lon) * 111320 * Math.cos((center.lat * Math.PI) / 180)
+            const movedM = Math.hypot(dLatM, dLonM)
+            if (movedM > RECENTER_EPS_M) {
+              res.writeHead(409, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({
+                error: `Refusing to re-center committed hood "${scene}" by ${Math.round(movedM)} m — this orphans authored work and forces a full re-bake. Pass allowRecenter:true to override.`,
+                code: 'recenter-blocked', from: prev, to: { lat: r5(center.lat), lon: r5(center.lon) }, movedMeters: Math.round(movedM),
+              }))
+              return
+            }
+          }
+        }
         // Snapshot the pre-commit frame so a failure mid-Pour can roll back
         // (commit re-centers geography + reprojects raw — destructive). Consumed
         // by /rollback-extent when onBuild throws before the bake lands. Stale
