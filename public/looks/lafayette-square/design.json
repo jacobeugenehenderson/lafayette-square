@@ -295,6 +295,28 @@
           }
         }
       }
+    },
+    "mackay-place-0": {
+      "right": {
+        "0": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.781403167714199,
+          "terminal": "sidewalk"
+        }
+      },
+      "left": {
+        "0": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.2532430967867363,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
     }
   },
   "surveyDefault": null,
