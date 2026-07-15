@@ -39,8 +39,20 @@ if (!lookId) { console.error('bake-landscape: need --look=<id>'); process.exit(1
 if (!scene) { console.error('bake-landscape: need --scene=<scene> or CARTOGRAPH_SCENE'); process.exit(1) }
 
 const sceneDir = join(here, 'data', scene)
-const terrainDir = join(sceneDir, 'terrain')
-const objPath = join(terrainDir, 'sangabriel.obj')
+// --source=<repo-relative path to the .obj> — the Look's EXPLICIT Stage-intake
+// opt-in (design.landscape.source). a20619cc moved the landscape assets OUT of the
+// pour dir (a stray sangabriel.obj in data/<scene>/ silently baked the mountains
+// into Altadena) to cartograph/_landscape-intake/<scene>/, and taught serve.js to
+// pass --source= — but never taught THIS script to read it, so it kept looking in
+// data/<scene>/terrain/, which no longer exists. Honour --source; fall back to the
+// legacy in-pour location so a scene that never moved still bakes.
+const sourceArg = arg('source')
+const terrainDir = sourceArg
+  ? dirname(join(here, '..', sourceArg))
+  : join(sceneDir, 'terrain')
+const objPath = sourceArg
+  ? join(here, '..', sourceArg)
+  : join(terrainDir, 'sangabriel.obj')
 const metaPath = join(terrainDir, 'meta.json')
 const heightsPath = join(terrainDir, 'heights.f32')
 const geoPath = join(sceneDir, 'geography.json')
@@ -189,7 +201,7 @@ const manifest = {
   version: 1,
   label: 'San Gabriel Range',
   asset: 'sangabriel.glb',
-  source: 'terrain/sangabriel.obj',
+  source: sourceArg || 'terrain/sangabriel.obj',
   verts: vCount, tris: fCount,
   elevM: { min: meta.minElevM, max: meta.maxElevM },
   bounds: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ] },
