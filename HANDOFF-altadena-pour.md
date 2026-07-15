@@ -51,6 +51,8 @@ const GROUND_REFINE_MAX_EDGE_M = 64;
 
 **Cheap next step:** ONE `MIN_EDGE=24` bake (~2–5 min by arithmetic), constants overridden **in a worktree** — never the PROD path — then Jacob's eye. If coarse-but-conformant reads right, the knob is small and safe.
 
+▶ **Dispatch-ready brief: `HANDOFF-ground-refine-cdp.md`** (`Agent: FRESH`, worktree).
+
 > **⚠️ The doubt worth carrying.** The deviation test spends detail **where the terrain bends** — on Altadena that's the *mountain*, i.e. **where nobody walks**. The town is in the flat south and gets almost none. The tuning optimises the scenery and starves the product. The right answer may not be a global floor at all, but something that knows *ground people stand on* from *backdrop*. Raised, not designed — deliberately.
 
 ### 2. The mountain: a radial cut (Jacob's design — MEASURED, not built)
