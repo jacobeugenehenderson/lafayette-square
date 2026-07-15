@@ -34,7 +34,6 @@ import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js
 import { writeIfChanged } from './io.js'
 import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
-import { buildInhabitedMask } from '../src/lib/inhabitedMask.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
@@ -140,7 +139,7 @@ function loadSceneStencil(scene) {
     const cx = center[0], cz = center[1]
     clipPolygon = s.boundary.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
   }
-  return { center, radius, faceFade, streetFade, clipPolygon, contextMargin: s.contextMargin }
+  return { center, radius, faceFade, streetFade, clipPolygon }
 }
 
 // Paint order (deepest = drawn first). The pure-Three.js bake bundle is
@@ -363,11 +362,9 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
-function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, tileKeep = null, cullMargin = 0) {
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
-    tileKeep,
-    cullMargin,
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
     reportGlean: true,
     surveyStreets,
@@ -446,7 +443,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     const { land } = buildParkPathRings(ribbons, { polygon: parkClip.polygon, water: parkClip.water })
     pushClipperRings('park_path', mergeRings(land))
   }
-  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [], detailClip: pr._detailClip || null }
+  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [] }
 }
 
 function buildV2BakeShape(ribbons, design, stencilPolygon, opts = {}) {
@@ -908,19 +905,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // figure-ground path (buildV2BakeShape/buildBlockGeometryV2) is dead-in-place
   // and deleted at T4 (replace-then-delete, ARCHITECTURE §7). The scene
   // conditional is gone — a scene is a dataset, not a code path.
-  // Inhabited cull (opt-in via nb.contextMargin): build the developed-footprint
-  // mask off the MEMBER buildings so oversized extents (a CDP disc) don't pour
-  // ground for the empty periphery. Unset margin → null → no cull (LS unchanged).
-  let tileKeep = null
-  if (stencil.contextMargin > 0) {
-    const bRings = (mapData.buildings || []).map(b => b.ring || (b.rings && b.rings[0])).filter(Boolean)
-    if (bRings.length) {
-      const mask = buildInhabitedMask(bRings, stencil.contextMargin)
-      tileKeep = mask.cellIn
-      console.log(`  Inhabited cull: margin=${stencil.contextMargin}m → ${(mask.coverage * 100).toFixed(0)}% grid coverage (${bRings.length} member bldgs)`)
-    }
-  }
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, detailClip } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, tileKeep, stencil.contextMargin)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -1181,10 +1166,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // sibling group ({ tiles, highway }) so the frozen Section/Design views restore
   // highways (the bare-array form dropped them — regression 4924d9a). The slab's
   // own `highway` mat group is unaffected; this is the Section-side freeze.
-  // `detailClip` (the inhabited-cull polygon, null when the cull didn't fire) rides
-  // in the frozen artifact so the Designer's sectionOpen replays the BAKE's cull
-  // instead of re-deriving the mask in the browser — Designer == bake by construction.
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], detailClip: detailClip || null }))
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [] }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

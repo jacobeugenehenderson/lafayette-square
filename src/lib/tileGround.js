@@ -1460,10 +1460,7 @@ function tileSliceKey(st, blockCustoms) {
 // buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
 // Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
 // already tolerates the serialized roundTipKeys array).
-// `detailClip` (last arg) = the INHABITED CULL polygon the BAKE froze into the
-// artifact. The Designer replays the bake's decision rather than re-deriving the
-// mask in the browser — Designer == bake by construction. null → no cull.
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, detailClip = null) {
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
   // Section drag (which writes a fresh blockCustoms object every frame but
@@ -1506,23 +1503,16 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     for (const k in b.luByLu) (acc.lu[k] || (acc.lu[k] = [])).push(...b.luByLu[k])
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
-  // INHABITED CULL — mirrors buildTileGround's split exactly: the land-use FACE
-  // fills and the roads keep the WHOLE disc (they are the flat faded base every
-  // hood has), while the ped DETAIL (curb / sidewalk / treelawn / block) clips to
-  // the developed footprint + one block of context. No detailClip → clipDetail IS
-  // clip, i.e. bit-for-bit the prior behaviour (LS and every tight hood).
-  const hasDetailClip = Array.isArray(detailClip) && detailClip.length > 0
-  const clipDetail = (rings) => hasDetailClip ? intersectRings(rings, detailClip) : clip(rings)
   const finish = (acc) => {
     const treelawnByLu = {}, luByClass = {}
-    for (const k of Object.keys(acc.tl)) treelawnByLu[k] = clipDetail(unionRings(acc.tl[k]))
+    for (const k of Object.keys(acc.tl)) treelawnByLu[k] = clip(unionRings(acc.tl[k]))
     for (const k of Object.keys(acc.lu)) luByClass[k]   = clip(unionRings(acc.lu[k]))
     return {
       asphalt:  clip(unionRings(acc.A)),
-      curb:     clipDetail(unionRings(acc.C)),
-      sidewalk: clipDetail(unionRings(acc.W)),
+      curb:     clip(unionRings(acc.C)),
+      sidewalk: clip(unionRings(acc.W)),
       treelawnByLu, luByClass,
-      block:    clipDetail(acc.block),
+      block:    clip(acc.block),
     }
   }
   const out = finish(rest)
@@ -3140,39 +3130,6 @@ export function buildTileGround(ribbons, opts = {}) {
   let highway = unionRings(Hacc)
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
-  // INHABITED CULL (opt-in; extents far larger than the real hood, e.g. a CDP disc).
-  // Keep the land-use FACE fills across the WHOLE disc — they ARE the flat base every
-  // neighbourhood has, and the manifest's radial fade dissolves them at the rim — and
-  // cull only the ped DETAIL (curb / sidewalk / treelawn / block) to the developed
-  // footprint + one block of context. An oversized extent then reads as a faded circle
-  // of land-use colour with no sidewalks or block geometry out in the empty periphery
-  // (Jacob, 2026-07-14: "get rid of the geometry but keep the flat layer itself").
-  // `opts.tileKeep` is the caller's mask, built off the MEMBER buildings
-  // (src/lib/inhabitedMask.js), so the pen's exclusion loops flow through. No
-  // predicate → detail spans the disc as before (LS and every tight hood unchanged).
-  let detailClip = stencil ? [stencil] : null
-  let culled = false
-  if (stencil && typeof opts.tileKeep === 'function') {
-    const keptRings = []
-    for (const t of tiles) {
-      const r = t.ring; if (!r || !r.length) continue
-      let sx = 0, sz = 0
-      for (const p of r) { sx += p[0]; sz += p[1] }
-      if (opts.tileKeep(sx / r.length, sz / r.length)) keptRings.push(r)
-    }
-    if (keptRings.length) {
-      // Clip to the union of the KEPT TILES THEMSELVES — no offset. The union's
-      // boundary IS the block boundaries, so the ped detail can only ever stop AT a
-      // block edge (a street), never mid-run. An offset polygon cut wherever its
-      // curve happened to fall, leaving sidewalks terminating in the middle of a
-      // street (Jacob, 2026-07-14: "this is where you turned off the sidewalks").
-      // The one-block CONTEXT already lives in the mask — buildInhabitedMask dilates
-      // the member buildings by contextMargin, so tiles within a block of a building
-      // already pass tileKeep. Offsetting again double-counted it AND broke the edge.
-      const inhabited = unionRings(keptRings)
-      if (inhabited.length) { detailClip = intersectRings([stencil], inhabited); culled = true }
-    }
-  }
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
     const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
@@ -3275,17 +3232,13 @@ export function buildTileGround(ribbons, opts = {}) {
     const perimClass = big ? luForRing(big) : 'unknown'
     pushLu(tlByLu, perimClass, pTree)
     pushLu(luByLu, perimClass, differenceRings(perimeter, unionRings([...pAsphalt, ...pCurb, ...pTree, ...pSide])))
-    // Roads span the whole disc (the base map — culling them would punch street-shaped
-    // GAPS through the flat periphery). Ped DETAIL clips to the inhabited shape.
     asphalt  = intersectRings(asphalt,  [stencil])
     highway  = intersectRings(highway,  [stencil])
-    curb     = intersectRings(curb,     detailClip)
-    sidewalk = intersectRings(sidewalk, detailClip)
+    curb     = intersectRings(curb,     [stencil])
+    sidewalk = intersectRings(sidewalk, [stencil])
   }
   const treelawnByLu = {}, luByClass = {}
-  // treelawn = ped detail → inhabited only. luByClass = the FACE fills → the whole
-  // disc: they are the flat faded base, and the radial fade dissolves them at the rim.
-  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), detailClip) : unionRings(tlByLu[k])
+  for (const k of Object.keys(tlByLu)) treelawnByLu[k] = stencil ? intersectRings(unionRings(tlByLu[k]), [stencil]) : unionRings(tlByLu[k])
   for (const k of Object.keys(luByLu)) luByClass[k]   = stencil ? intersectRings(unionRings(luByLu[k]), [stencil]) : unionRings(luByLu[k])
 
   // The BLOCK contours: each tile's asphalt-inner ring (iA) — the block polygon
@@ -3295,7 +3248,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // it stays free on the live corner-drag rebuild path. The Survey view shades
   // these to memorialize the block boundaries; the rest of the app ignores it.
   const blockRaw = shapeTiles.flatMap(st => st.iA || [])
-  const block = stencil ? intersectRings(blockRaw, detailClip) : blockRaw   // block silhouettes = detail
+  const block = stencil ? intersectRings(blockRaw, [stencil]) : blockRaw
 
   // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
@@ -3304,8 +3257,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  // `_detailClip` rides into shape.json so the Designer's FROZEN path (sectionOpen)
-  // replays this same cull instead of re-deriving the mask — Designer == bake.
-  // null when the cull didn't fire (every tight hood, incl. LS).
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _detailClip: culled ? detailClip : null, _mouthProbe }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe }
 }
