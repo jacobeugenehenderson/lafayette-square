@@ -378,6 +378,9 @@ const BUNDLED_SCENES = new Set([DEFAULT_INSTALLATION, 'toy'])
 // missing installation just serves empty). No hardcoded installation list.
 const isValidSceneId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
 
+// In-flight _loadCenterlines promise — see the dedupe note on _loadCenterlines.
+let _clInFlight = null
+
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors ─────────────────────────────
   // Hydrated from the active Look's design.json on _loadCenterlines.
@@ -1960,7 +1963,25 @@ const useCartographStore = create((set, get) => ({
   // truth — regeneratable from OSM. Non-geometric operator intent (caps,
   // couplers, measurements) currently back-filled from legacy
   // centerlines.json by name; a proper overlay file is TBD.
+  // ⛔ Concurrency dedupe. THREE callers fire this on a single dev page load —
+  // React StrictMode double-invokes CartographApp's mount effect, and the
+  // `if (import.meta.hot)` block at the bottom of this file runs at MODULE EVAL
+  // on every dev load (not just on a hot update). The guards below
+  // (`!fetchedRibbons`, `!get().sceneGeography`) are read-BEFORE-await, so
+  // concurrent callers all sail past them → 2-3x the 13.9 MB ribbons + 3.4 MB
+  // skeleton on the wire, and every downstream memo (sectionOpen, tileGeos)
+  // re-runs per duplicate set() — sectionOpen was observed running TWICE on an
+  // Altadena load (9.1s + 5.6s). An in-flight promise is the only thing that can
+  // dedupe callers that race the await. Sequential calls (a Looks reload, the
+  // post-bake settle) still re-run normally — this only collapses OVERLAP.
   _loadCenterlines: async () => {
+    if (_clInFlight) return _clInFlight
+    _clInFlight = (async () => {
+      try { return await get()._loadCenterlinesImpl() } finally { _clInFlight = null }
+    })()
+    return _clInFlight
+  },
+  _loadCenterlinesImpl: async () => {
     try {
       const scene = get().scene
       const [skel, legacy, overlay] = await Promise.all([

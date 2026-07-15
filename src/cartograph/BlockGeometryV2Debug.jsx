@@ -500,6 +500,17 @@ export default function BlockGeometryV2Debug({
   const shapeFrozenMs = useCartographStore(s => s.shapeFrozenMs)
   const freezeShape = useCartographStore(s => s.freezeShape)
   const [frozenShape, setFrozenShape] = useState(null)
+  // TRUE while the frozen-shape fetch for the current (scene, freeze) is in
+  // flight. ⛔ Load-bearing: without it the live build RACES the fetch. Both
+  // `frozenShape` and `sectionGeos` are null until shape.json resolves, so
+  // `tileGeos` fell straight through to a full buildTileGround — 27.5 s on
+  // Altadena, and it ran THREE times, every run discarded the instant the freeze
+  // landed. The live build is the fallback for "there IS no freeze", never for
+  // "the freeze hasn't arrived yet". Seeded true so the very first render (before
+  // this effect fires) can't slip through. (Found in the browser console
+  // 2026-07-15 — an async race is invisible to a Node harness; the ~80 s it cost
+  // was the bulk of DESIGNER-LOAD-FORENSIC.md's unattributed "gray screen".)
+  const [frozenPending, setFrozenPending] = useState(() => !surveyActive && !!scene)
   const frozenKeyRef = useRef(null)
   useEffect(() => {
     // Any NON-Survey view consumes the frozen shape — Measure/Section AND the
@@ -508,7 +519,7 @@ export default function BlockGeometryV2Debug({
     // in Design the heavy live buildTileGround no longer runs to merely display
     // the map; it reads the frozen shape.json (the idle-case slice of the
     // freeze-curb program, HANDOFF-freeze-the-curb-in-the-first-bake.md Phase 1b).
-    if (surveyActive || !scene) return
+    if (surveyActive || !scene) { setFrozenPending(false); return }
     // One fetch per (scene, freeze): a fresh slab bake (bakeLastMs) OR the
     // light Survey-exit freeze (shapeFrozenMs) re-opens the new shape; take
     // whichever is newer as the cache-bust + key.
@@ -516,6 +527,7 @@ export default function BlockGeometryV2Debug({
     const key = `${scene}|${freezeTag}`
     if (frozenKeyRef.current === key) return
     frozenKeyRef.current = key
+    setFrozenPending(true)
     let dead = false, done = false
     // [LOAD-FORENSIC 2026-07-14] shape.json is ~8 MB for a CDP-sized hood — this
     // fetch+parse is a prime suspect for the 60s of gray before anything draws.
@@ -531,12 +543,13 @@ export default function BlockGeometryV2Debug({
         // always knows the grade-sep group (empty for legacy freezes).
         const tiles = Array.isArray(d) ? d : (Array.isArray(d?.tiles) ? d.tiles : null)
         const highway = Array.isArray(d) ? [] : (Array.isArray(d?.highway) ? d.highway : [])
+        setFrozenPending(false)
         setFrozenShape(tiles && tiles.length ? { tiles, highway } : null)
       })
-      .catch(e => { done = true; console.warn('[BlockGeometryV2Debug] no frozen shape artifact (Section falls back to live build):', e); if (!dead) setFrozenShape(null) })
+      .catch(e => { done = true; console.warn('[BlockGeometryV2Debug] no frozen shape artifact (Section falls back to live build):', e); if (!dead) { setFrozenPending(false); setFrozenShape(null) } })
     // Abort mid-flight (tool flipped / re-mount): clear the key so the next
     // activation refetches instead of silently falling back to the live build.
-    return () => { dead = true; if (!done && frozenKeyRef.current === key) frozenKeyRef.current = null }
+    return () => { dead = true; if (!done && frozenKeyRef.current === key) { frozenKeyRef.current = null; setFrozenPending(false) } }
   }, [surveyActive, scene, bakeLastMs, shapeFrozenMs])
   // Frozen whenever NOT surveying (Measure + neutral Design), if a freeze exists;
   // no freeze yet (fresh scene) → falls through to the live build below.
@@ -611,6 +624,10 @@ export default function BlockGeometryV2Debug({
     // (Gated on the composed geos, not the flag: if sectionOpen ever failed,
     // the live build remains as the visible fallback.)
     if (sectionGeos) return null
+    // ⛔ Don't race the freeze: while shape.json is in flight, sectionGeos is
+    // still null and this would build the whole map only to throw it away when
+    // the freeze lands. See frozenPending.
+    if (frozenPending) return null
     let tg
     try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, emitArtifact: true }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
@@ -640,7 +657,7 @@ export default function BlockGeometryV2Debug({
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
       _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
     }
-  }, [liveRibbons, sectionGeos, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
+  }, [liveRibbons, sectionGeos, frozenPending, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
 
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
   // While in Survey, keep the latest live `_shapeArtifact` (exactly what the
