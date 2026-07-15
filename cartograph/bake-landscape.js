@@ -65,8 +65,8 @@ console.log('='.repeat(60))
 
 // ── Parse the OBJ (v = position, f = 1-based tri indices; no vn/vt) ──────────
 const obj = readFileSync(objPath, 'utf8')
-const positions = []   // flat [x,y,z, …]
-const indices = []     // flat 0-based tri indices
+let positions = []   // flat [x,y,z, …]
+let indices = []     // flat 0-based tri indices
 for (let i = 0, n = obj.length; i < n;) {
   const nl = obj.indexOf('\n', i); const end = nl === -1 ? n : nl
   const line = obj.slice(i, end); i = end + 1
@@ -151,8 +151,10 @@ if (stencil.clipPolygon?.length) {
     reindexed[i] = n
   }
   const droppedVerts = vCount - remap.size
-  positions.length = 0; positions.push(...newPos)
-  indices.length = 0; indices.push(...reindexed)
+  // Reassign, never `push(...arr)` — the spread's argument count blows the call
+  // stack at this size (328k verts → RangeError).
+  positions = newPos
+  indices = reindexed
   vCount = positions.length / 3
   fCount = indices.length / 3
   console.log(`  stencil cut (extent SSoT, ${stencil.clipPolygon.length}-pt boundary @ r${stencil.streetFade ? stencil.streetFade.outer + 50 : stencil.radius}): -${cutTris.toLocaleString()} tris, -${droppedVerts.toLocaleString()} verts → ${fCount.toLocaleString()} tris`)
