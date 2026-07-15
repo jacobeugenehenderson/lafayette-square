@@ -161,6 +161,7 @@ export function OverheadSpecies({ asset, instances, visible }) {
   // transform the mesh path bakes, so the disc-stack pours across all placements.
   const matrices = useMemo(() => {
     const arr = new Array(instances.length)
+    const M = new THREE.Matrix4()
     const T = new THREE.Matrix4(), R = new THREE.Matrix4(), S = new THREE.Matrix4()
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i]
@@ -169,7 +170,10 @@ export function OverheadSpecies({ asset, instances, visible }) {
       T.makeTranslation(inst.x, y, inst.z)
       R.makeRotationY(inst.rotY || 0)
       S.makeScale(s, s, s)
-      arr[i] = T.multiply(R).multiply(S)
+      // clone(): multiply() mutates + returns the receiver, so an un-cloned
+      // arr[i] would alias the one scratch matrix and every instance would
+      // land on the LAST placement. Same idiom as VariantInstances.
+      arr[i] = M.identity().multiply(T).multiply(R).multiply(S).clone()
     }
     return arr
   }, [instances])
