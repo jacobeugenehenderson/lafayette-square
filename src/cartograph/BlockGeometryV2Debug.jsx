@@ -426,6 +426,11 @@ export default function BlockGeometryV2Debug({
   const { asphaltRounded, blockRounded, blockRoundedWithMeta, blockSharp, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockRoundedWithMeta: [], blockSharp: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
     if (!liveRibbons) return empty
+    // [LOAD-FORENSIC 2026-07-14] Stage timing — the Designer takes ~3 MIN to draw
+    // Altadena (60s gray → ribbons pop → 120s → buildings sizzle in 0.5s). Every
+    // stage is synchronous + silent. Instrumenting the boundaries to find where the
+    // time ACTUALLY goes before chunking anything. Throwaway; strip once resolved.
+    console.time('[LOAD] buildBlockGeometryV2')
     try {
       return buildBlockGeometryV2(liveRibbons, {
         stencil, ...debouncedInputs, useRingBandEmitter,
@@ -433,6 +438,8 @@ export default function BlockGeometryV2Debug({
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
       return empty
+    } finally {
+      console.timeEnd('[LOAD] buildBlockGeometryV2')
     }
   }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter])
 
@@ -655,9 +662,13 @@ export default function BlockGeometryV2Debug({
     if (frozenKeyRef.current === key) return
     frozenKeyRef.current = key
     let dead = false, done = false
+    // [LOAD-FORENSIC 2026-07-14] shape.json is ~8 MB for a CDP-sized hood — this
+    // fetch+parse is a prime suspect for the 60s of gray before anything draws.
+    console.time(`[LOAD] shape.json fetch+parse (${scene})`)
     fetch(`${import.meta.env.BASE_URL}baked/${scene}/shape.json${freezeTag ? `?t=${freezeTag}` : ''}`)
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
+        console.timeEnd(`[LOAD] shape.json fetch+parse (${scene})`)
         done = true
         if (dead) return
         // [G1] New shape.json form is { tiles, highway }; legacy was a bare tiles
@@ -706,8 +717,11 @@ export default function BlockGeometryV2Debug({
     // stay absent. So the FILL re-strokes live off the frozen curb when you swap a
     // strip, while the curb sits still — SECTION.md §4.
     let sg
+    // [LOAD-FORENSIC 2026-07-14] see the note at buildBlockGeometryV2 above.
+    console.time(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`)
     try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map, selSet, frozenShape.detailClip) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
+    finally { console.timeEnd(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`) }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
       .filter(e => e.geo)
