@@ -19,7 +19,7 @@
  * Name is historical — this was a debug probe during the V2 prototype;
  * promote to its proper name when convenient.
  */
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, differenceRings } from '../lib/buildBlockGeometryV2.js'
 import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
@@ -560,6 +560,9 @@ export default function BlockGeometryV2Debug({
   // the edited tile, not all 101. Lives in a ref so it survives the memo re-run;
   // reset when the frozen artifact changes (tile indices change). (HANDOFF-section-perf.md #1.)
   const sectionCacheRef = useRef({ shape: null, map: new Map() })
+  // [LOAD-FORENSIC 2026-07-15] throwaway — the 19.8s task's tail.
+  const __composeDoneRef = useRef(0)
+  const __composeVertsRef = useRef(0)
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
     if (sectionCacheRef.current.shape !== frozenShape) sectionCacheRef.current = { shape: frozenShape, map: new Map() }
@@ -586,17 +589,35 @@ export default function BlockGeometryV2Debug({
     try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map, selSet) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     finally { console.timeEnd(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`) }
+    // [LOAD-FORENSIC 2026-07-15] The 19.8s frozen-shape task = sectionOpen (timed
+    // above, 7.5s) + ~12s that NOTHING timed. This is that gap: the ringsToFlatGeo
+    // triangulation tail. Per-layer so we know WHICH layer, and vert counts because
+    // the GPU upload after this scales with them, not with wall time. Throwaway.
+    const __t = {}
+    let __verts = 0
+    const __time = (label, fn) => {
+      const t0 = performance.now()
+      const geo = fn()
+      __t[label] = +(performance.now() - t0).toFixed(0)
+      const arr = Array.isArray(geo) ? geo : [geo]
+      for (const g of arr) {
+        const gg = g?.geo || g
+        __verts += gg?.attributes?.position?.count || 0
+      }
+      return geo
+    }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
       .filter(e => e.geo)
-    return {
-      lu:       perLu(sg.luByClass,    0.010),
-      treelawn: perLu(sg.treelawnByLu, 0.020),
-      sidewalk: ringsToFlatGeo(sg.sidewalk, 0.030, true),
-      curb:     ringsToFlatGeo(sg.curb,     0.035, true),
-      asphalt:  ringsToFlatGeo(sg.asphalt,  0.040, true),
-      highway:  ringsToFlatGeo(frozenShape.highway, 0.015, true),   // G1 — frozen grade-sep highways (sibling group, not tile-derived)
-      block:    ringsToFlatGeo(sg.block,    0.008, true),   // frozen block silhouette, under the LU paint
+    const __t0all = performance.now()
+    const __out = {
+      lu:       __time('lu',       () => perLu(sg.luByClass,    0.010)),
+      treelawn: __time('treelawn', () => perLu(sg.treelawnByLu, 0.020)),
+      sidewalk: __time('sidewalk', () => ringsToFlatGeo(sg.sidewalk, 0.030, true)),
+      curb:     __time('curb',     () => ringsToFlatGeo(sg.curb,     0.035, true)),
+      asphalt:  __time('asphalt',  () => ringsToFlatGeo(sg.asphalt,  0.040, true)),
+      highway:  __time('highway',  () => ringsToFlatGeo(frozenShape.highway, 0.015, true)),   // G1 — frozen grade-sep highways (sibling group, not tile-derived)
+      block:    __time('block',    () => ringsToFlatGeo(sg.block, 0.008, true)),   // frozen block silhouette, under the LU paint
       blockRings: sg.block,   // raw iA rings — handle anchoring (one geometry truth)
       curbRings: sg.curb || [],
       sidewalkRings: sg.sidewalk || [],
@@ -606,16 +627,37 @@ export default function BlockGeometryV2Debug({
       // the render branch paints it translucent (opacity 0.55 → the aerial reads
       // through). null when nothing is selected. Same yLifts as the opaque set —
       // disjoint tiles, so no z-fight.
-      selected: sg.selected && {
+      selected: sg.selected && __time('selected', () => ({
         lu:       perLu(sg.selected.luByClass,    0.010),
         treelawn: perLu(sg.selected.treelawnByLu, 0.020),
         sidewalk: ringsToFlatGeo(sg.selected.sidewalk, 0.030, true),
         curb:     ringsToFlatGeo(sg.selected.curb,     0.035, true),
         asphalt:  ringsToFlatGeo(sg.selected.asphalt,  0.040, true),
         block:    ringsToFlatGeo(sg.selected.block,    0.008, true),
-      },
+      })),
     }
+    // [LOAD-FORENSIC 2026-07-15] throwaway
+    const __all = +(performance.now() - __t0all).toFixed(0)
+    console.log(`[LOAD] sectionGeos compose (ringsToFlatGeo): ${__all} ms · ${(__verts / 1000).toFixed(0)}k verts — by layer:`,
+      Object.fromEntries(Object.entries(__t).sort((a, b) => b[1] - a[1])))
+    __composeDoneRef.current = performance.now()
+    __composeVertsRef.current = __verts
+    return __out
   }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selectedStreet, liveStreets])
+
+  // [LOAD-FORENSIC 2026-07-15] throwaway — closes the 19.8s task's accounting.
+  // sectionOpen + compose are timed inside the memo; this catches the two stages
+  // AFTER it returns: React's commit, and the first drawn frame (when three.js
+  // actually uploads the BufferGeometries to the GPU — it's lazy, at draw time,
+  // so the upload cost lands on the frame, not the memo).
+  useLayoutEffect(() => {
+    if (!sectionGeos || !__composeDoneRef.current) return
+    const t = performance.now()
+    console.log(`[LOAD] compose → React commit: ${(t - __composeDoneRef.current).toFixed(0)} ms`)
+    requestAnimationFrame(() => {
+      console.log(`[LOAD] commit → first frame drawn (GPU upload of ${(__composeVertsRef.current / 1000).toFixed(0)}k verts): ${(performance.now() - t).toFixed(0)} ms`)
+    })
+  }, [sectionGeos])
 
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
