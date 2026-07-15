@@ -378,8 +378,11 @@ const BUNDLED_SCENES = new Set([DEFAULT_INSTALLATION, 'toy'])
 // missing installation just serves empty). No hardcoded installation list.
 const isValidSceneId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
 
-// In-flight _loadCenterlines promise — see the dedupe note on _loadCenterlines.
-let _clInFlight = null
+// In-flight _loadCenterlines, KEYED BY SCENE — see the dedupe note on
+// _loadCenterlines. The key is not optional: _loadCenterlinesImpl captures
+// `get().scene` at its start, so a scene-blind promise hands the WRONG hood's
+// load to the next caller.
+let _clInFlight = null   // { scene, promise } | null
 
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors ─────────────────────────────
@@ -1975,15 +1978,37 @@ const useCartographStore = create((set, get) => ({
   // dedupe callers that race the await. Sequential calls (a Looks reload, the
   // post-bake settle) still re-run normally — this only collapses OVERLAP.
   _loadCenterlines: async () => {
-    if (_clInFlight) return _clInFlight
-    _clInFlight = (async () => {
-      try { return await get()._loadCenterlinesImpl() } finally { _clInFlight = null }
+    // ⛔ SCENE-KEYED. _loadCenterlinesImpl captures `get().scene` at its start, so
+    // an unkeyed in-flight promise is a SCENE BLEED: switch hoods while a load is
+    // still running (Altadena takes 20-70s — near-certain) and the new scene's
+    // caller gets handed the OLD scene's promise. The new hood never loads and the
+    // Designer shows the previous hood's centerlines under the new hood's name —
+    // observed 2026-07-15: LS selected, Altadena's centerlines on screen. That is
+    // the same class as the Looks-pulldown masquerade (79bc1584), and it is how one
+    // hood's authoring lands on another's slab. Dedupe only ever collapses callers
+    // that want the SAME scene.
+    const scene = get().scene
+    if (_clInFlight && _clInFlight.scene === scene) return _clInFlight.promise
+    const promise = (async () => {
+      try { return await get()._loadCenterlinesImpl() } finally {
+        // Only clear if we're still the current in-flight — a scene switch may have
+        // replaced us, and clearing then would strand the newer load's dedupe.
+        if (_clInFlight && _clInFlight.promise === promise) _clInFlight = null
+      }
     })()
-    return _clInFlight
+    _clInFlight = { scene, promise }
+    return promise
   },
   _loadCenterlinesImpl: async () => {
     try {
       const scene = get().scene
+      // ⛔ STALE-SCENE GUARD. Every set() below lands AFTER an await. Altadena takes
+      // 20-70s to load, so switching hoods mid-flight is ordinary — and without this
+      // the old hood's load completes and writes ITS ribbons / boundary / centerlines
+      // / design into the NEW hood's store. That is a scene bleed on PROD-adjacent
+      // data (LS), the same family as the Looks-pulldown masquerade (79bc1584).
+      // Bail at every resumption point where the scene has moved on.
+      const stale = () => get().scene !== scene
       const [skel, legacy, overlay] = await Promise.all([
         fetchSkeleton(scene),
         fetchCenterlines(scene).catch(() => ({ streets: [] })),
@@ -1996,6 +2021,7 @@ const useCartographStore = create((set, get) => ({
       let fetchedRibbons = get().sceneRibbons
       if (!BUNDLED_SCENES.has(scene) && !fetchedRibbons) {
         fetchedRibbons = await fetchRibbons(scene).catch(() => null)
+        if (stale()) return
         if (fetchedRibbons) set({ sceneRibbons: fetchedRibbons })
       }
       if (!get().sceneGeography || !get().sceneBoundary) {
@@ -2003,6 +2029,7 @@ const useCartographStore = create((set, get) => ({
           fetchGeography(scene).catch(() => null),
           fetchBoundary(scene).catch(() => null),
         ])
+        if (stale()) return
         set({ sceneGeography: geo, sceneBoundary: bnd })
       }
       const skelStreets = (skel && skel.streets) || []
@@ -2179,6 +2206,9 @@ const useCartographStore = create((set, get) => ({
       // Design (layer visibility/colors/strokes/land-use colors) hydrates
       // separately from the *active Look's* design.json — overlay.json no
       // longer carries a design block. See _loadLooks + setActiveLook.
+      // ⛔ This is the write that put ALTADENA's centerlines on screen with LS
+      // selected (2026-07-15). Guard it like the rest.
+      if (stale()) return
       set({
         centerlineData: { streets },
         svOriginals: originals,
@@ -2187,7 +2217,9 @@ const useCartographStore = create((set, get) => ({
       // Kick off the active Look's design hydrate. setActiveLook needs the
       // Looks index loaded so it can validate the id, so chain through that.
       await get()._loadLooks()
+      if (stale()) return
       const design = await fetchLookDesign(get().activeLookId).catch(() => ({}))
+      if (stale()) return
       // Re-hydrated from disk → _saveOverlay's guard will pass again; clear
       // the loud save-blocked flag.
       set({ ...hydrateDesign(design, get), _designHydrated: true, overlaySaveBlocked: false })
