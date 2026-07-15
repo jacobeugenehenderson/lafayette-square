@@ -559,6 +559,24 @@ export default function BlockGeometryV2Debug({
   // Frozen whenever NOT surveying (Measure + neutral Design), if a freeze exists;
   // no freeze yet (fresh scene) → falls through to the live build below.
   const sectionFrozen = !surveyActive && !!frozenShape
+  // ⛔ THE ONE RULE for the live build: outside Survey, the frozen artifact OWNS
+  // the render — from the moment we know a freeze is coming until sectionGeos
+  // exists. "Not ready yet" is NOT an invitation for buildTileGround.
+  //
+  // This has now bitten twice, from two different directions, because tileGeos
+  // gated on sectionGeos' OUTPUT rather than on intent — so every new reason
+  // sectionGeos can return null silently reopens the race:
+  //   1. shape.json in flight              → frozenPending  (fixed 72bbc989)
+  //   2. stencil / design not yet hydrated → the readiness gates (59e5f109 —
+  //      which fixed sectionGeos and promptly reopened this, ~27s of discarded
+  //      buildTileGround, observed 2026-07-15)
+  // Naming the condition once, here, is what stops a third. The live build is
+  // legitimate ONLY when: we're surveying, there is genuinely no freeze, or
+  // sectionOpen actually failed.
+  const frozenNotReady = !surveyActive && (
+    frozenPending ||                                       // freeze in flight
+    (!!frozenShape && (!stencil || !designHydrated))       // freeze here, its inputs aren't
+  )
   // [Section perf #1] Block-local FILL cache. sectionOpen memoizes each tile's
   // rings keyed by (cw, stripMat, the tile's own blockCustoms slice), so a FILL
   // drag — which writes a fresh blockCustoms object every frame — only recomputes
@@ -700,15 +718,13 @@ export default function BlockGeometryV2Debug({
 
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
-    // Section-frozen mode renders from `sectionGeos` (the artifact) — skip the
-    // live Survey build entirely so the Section path provably never runs it.
-    // (Gated on the composed geos, not the flag: if sectionOpen ever failed,
-    // the live build remains as the visible fallback.)
+    // The frozen path is going to render this — don't duplicate its work. See
+    // frozenNotReady: this covers "in flight" AND "waiting on stencil/design".
+    if (frozenNotReady) return null
+    // Frozen path already produced geometry → nothing to do. (Still gated on the
+    // OUTPUT here, deliberately: if sectionOpen actually THREW, sectionGeos is
+    // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
-    // ⛔ Don't race the freeze: while shape.json is in flight, sectionGeos is
-    // still null and this would build the whole map only to throw it away when
-    // the freeze lands. See frozenPending.
-    if (frozenPending) return null
     let tg
     try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, emitArtifact: true }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
@@ -738,7 +754,7 @@ export default function BlockGeometryV2Debug({
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
       _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
     }
-  }, [liveRibbons, sectionGeos, frozenPending, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
+  }, [liveRibbons, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
 
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
   // While in Survey, keep the latest live `_shapeArtifact` (exactly what the
