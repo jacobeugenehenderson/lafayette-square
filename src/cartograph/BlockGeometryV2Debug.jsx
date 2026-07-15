@@ -563,6 +563,20 @@ export default function BlockGeometryV2Debug({
   // [LOAD-FORENSIC 2026-07-15] throwaway — the 19.8s task's tail.
   const __composeDoneRef = useRef(0)
   const __composeVertsRef = useRef(0)
+  // [LOAD-FORENSIC 2026-07-15] throwaway. sectionGeos ran FOUR times on an Altadena
+  // load (~17s each = ~69s, which is the whole load). Each async arrival invalidates
+  // the memo. Name the culprit instead of guessing: log WHICH dep changed identity.
+  const __depsRef = useRef(null)
+  const __whyRerun = () => {
+    const cur = { sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selectedStreet, liveStreets }
+    const prev = __depsRef.current
+    __depsRef.current = cur
+    if (!prev) return 'FIRST RUN'
+    const changed = Object.keys(cur).filter(k => cur[k] !== prev[k])
+    return changed.length
+      ? changed.map(k => `${k}(${prev[k] === undefined ? 'undef' : prev[k] === null ? 'null' : 'set'}→${cur[k] === undefined ? 'undef' : cur[k] === null ? 'null' : 'set'})`).join(' ')
+      : '(no dep changed?!)'
+  }
   const sectionGeos = useMemo(() => {
     if (!sectionFrozen) return null
     if (sectionCacheRef.current.shape !== frozenShape) sectionCacheRef.current = { shape: frozenShape, map: new Map() }
@@ -585,6 +599,7 @@ export default function BlockGeometryV2Debug({
     // strip, while the curb sits still — SECTION.md §4.
     let sg
     // [LOAD-FORENSIC 2026-07-14] see the note at buildBlockGeometryV2 above.
+    console.log(`[LOAD] ▶ sectionGeos rebuilding — trigger: ${__whyRerun()}`)
     console.time(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`)
     try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map, selSet) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
@@ -885,15 +900,26 @@ export default function BlockGeometryV2Debug({
     for (const r of (tg.parkRings || [])) if (r?.length >= 3) subtract.push(r)
     if (!blockRings.length) return []
     if (!subtract.length) return blockRings
-    return differenceRings(blockRings, subtract)
+    // [LOAD-FORENSIC 2026-07-15] throwaway. One Clipper diff, N block rings minus
+    // EVERY curb/treelawn/sidewalk/park ring. Prime suspect for the 9s that sits
+    // between "compose done" and "React commit" — it runs after sectionGeos in the
+    // same render, and nothing timed it.
+    const __t0 = performance.now()
+    const __r = differenceRings(blockRings, subtract)
+    console.log(`[LOAD] parcelInteriors (${blockRings.length} blocks − ${subtract.length} rings): ${(performance.now() - __t0).toFixed(0)} ms`)
+    return __r
   }, [tileGeos, sectionGeos])
   const pathGeoByKind = useMemo(() => {
+    // [LOAD-FORENSIC 2026-07-15] throwaway — the other half of the untimed 9s.
+    const __t0 = performance.now()
     const ringsByKind = buildPathRibbons(liveRibbons, { intersect: parcelInteriors, alleyCap })
+    const __tRib = performance.now()
     const out = {}
     for (const [kind, rings] of ringsByKind) {
       const geo = ringsToFlatGeo(rings, 0.05, true)
       if (geo) out[kind] = geo
     }
+    console.log(`[LOAD] pathGeoByKind: ${(performance.now() - __t0).toFixed(0)} ms (buildPathRibbons ${(__tRib - __t0).toFixed(0)} ms + triangulate ${(performance.now() - __tRib).toFixed(0)} ms)`)
     return out
   }, [liveRibbons, parcelInteriors, alleyCap])
   // Per-kind materials. PRI.asphalt + 1 sits these above asphalt + curb
