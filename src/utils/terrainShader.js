@@ -293,6 +293,7 @@ const TERRAIN_DISPLACE_PERVERTEX = `
  */
 export const TERRAIN_DISPLACE_INSTANCED = `
 #include <begin_vertex>
+#ifdef USE_INSTANCING
 {
   vec4 _iw = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
   vec2 _tuv = _terrainUV(vec2(
@@ -305,7 +306,8 @@ export const TERRAIN_DISPLACE_INSTANCED = `
   // and tree instances at authored scale amplify by their own factor).
   float _instYScale = length(instanceMatrix[1].xyz);
   transformed.y += texture2D(uTerrainMap, _tuv).r * uExag / max(_instYScale, 0.0001);
-}`
+}
+#endif`
 
 /**
  * Patch a material for INSTANCED terrain displacement. Each instance is
@@ -337,10 +339,12 @@ export function patchTerrainInstanced(mat) {
  */
 export const TERRAIN_DISPLACE_INSTANCED_BAKED = `
 #include <begin_vertex>
+#ifdef USE_INSTANCING
 {
   float _instYScale = length(instanceMatrix[1].xyz);
   transformed.y += aGroundRaw * uExag / max(_instYScale, 0.0001);
-}`
+}
+#endif`
 
 export function patchTerrainInstancedBaked(mat) {
   const prev = mat.onBeforeCompile

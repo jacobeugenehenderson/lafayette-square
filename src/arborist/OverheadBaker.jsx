@@ -17,7 +17,7 @@ import { useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { useTreeAtlas } from '../components/treeAtlasMaterial.js'
+import { useTreeAtlas, applyBarkUniforms, applyDeformerUniforms } from '../components/treeAtlasMaterial.js'
 import { prepareOverheadBands, captureOverheadBand } from '../components/captureImpostor.js'
 
 const _loader = new GLTFLoader()
@@ -102,6 +102,23 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
           const rM = measureCanopyRadius(gltf.scene)
           const prep = prepareOverheadBands(gltf.scene, atlas.treeMaterial, { canopyRadiusM: rM })
           if (prep) {
+            // Bind THIS species' atlas config to the shared material for its capture.
+            // The mesh path does this per-draw (SubmeshInstances#onBeforeRender →
+            // applyBarkUniforms); the baker's plain `o.material = treeMaterial` never
+            // did, so uBarkTileScale stayed (0,0) → the bark sub-region collapsed and
+            // every band sampled an empty atlas → a fully transparent (blank) PNG.
+            const man = atlas.manifest
+            const barkSettings = man?.barkBySpecies?.[sp.species] || null
+            const detailSlot = man?.barkDetailBySpecies?.[sp.species] || null
+            const posterizedSlot = man?.barkPosterizedBySpecies?.[sp.species] || null
+            const deformerRange = man?.deformerBySpecies?.[sp.species]?.range || null
+            prep.scene.traverse((o) => {
+              if (!o.isMesh) return
+              o.onBeforeRender = () => {
+                applyBarkUniforms(atlas.treeMaterial, barkSettings, null, detailSlot, posterizedSlot)
+                applyDeformerUniforms(atlas.treeMaterial, deformerRange)
+              }
+            })
             const bands = []
             for (let b = 0; b < prep.cuts.length; b++) {
               bands.push(captureOverheadBand(gl, prep, b))
