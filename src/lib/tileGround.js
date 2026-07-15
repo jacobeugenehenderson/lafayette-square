@@ -3161,7 +3161,15 @@ export function buildTileGround(ribbons, opts = {}) {
       if (opts.tileKeep(sx / r.length, sz / r.length)) keptRings.push(r)
     }
     if (keptRings.length) {
-      const inhabited = offsetRings(unionRings(keptRings), opts.cullMargin || 80, 'round')
+      // Clip to the union of the KEPT TILES THEMSELVES — no offset. The union's
+      // boundary IS the block boundaries, so the ped detail can only ever stop AT a
+      // block edge (a street), never mid-run. An offset polygon cut wherever its
+      // curve happened to fall, leaving sidewalks terminating in the middle of a
+      // street (Jacob, 2026-07-14: "this is where you turned off the sidewalks").
+      // The one-block CONTEXT already lives in the mask — buildInhabitedMask dilates
+      // the member buildings by contextMargin, so tiles within a block of a building
+      // already pass tileKeep. Offsetting again double-counted it AND broke the edge.
+      const inhabited = unionRings(keptRings)
       if (inhabited.length) { detailClip = intersectRings([stencil], inhabited); culled = true }
     }
   }
