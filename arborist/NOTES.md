@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-07-16 — the "spike" marathon: chips = conifer roster tagalongs; Grove Browse view; ambient wind (Boz+Jacob)
+
+A long hunt that finally closed the recurring **"chips in straight lines / repeating glyphs / spokes"** artifact. It was **rows of columnar CONIFERS rendering as bare spikes** — `cupressus/abies/picea/pseudotsuga`, hand-added to the bake roster (`design.json#/trees`) but **never composed in the Grove**, so they shipped as raw/forest chassis (`pseudotsuga` = a `Douglas_Fir_Forest` multi-trunk asset). **The roster is the eligibility gate**; culling them (`003a1751`) lets their placements substitute to approved broadleaves. Full mechanism + the still-owed by-construction guarantee (**fix A**: bake-time "drop rostered species with no valid atlas tile + warn" — NOT a blanket `hasComposition` filter, which over-culls the un-composed-but-legit `quercus`/`platanus`) → `[[project_conifer_spike_tagalong_roster_gate]]`.
+
+**Also built (committed `059f8571`):** the **Grove Hero↔Browse view** — a toggle that renders the slab's *own* `OverheadSpecies` disc consumer (true parity, not a lookalike), with a crossfade that **reuses the player's shared `createCameraTween`** (the Grove *takes* the player's animation, never forks it), per-species hover/click matching the Hero Tile, a Spread slider, and a `GroveWind` ambient breeze. Plus overhead-capture fixes (world-space `measureCanopyRadius` + `xzAll`; `buildOverheadBandDisc` → full quad not a clipping disc; per-instance **axial repeller** vs disc z-fighting). And **ambient wind**: the overhead shader gained an always-on breeze **floor** (calm ≠ dead; weather stacks additively) and `SwayDriver` now advances `uTime` off **wall-clock** so it ticks under browse's `demand` frameloop (was frozen ~2fps). Doc: `ARCHITECTURE.md §"The Grove Hero↔Browse preview"`.
+
+**⚠️ Open for the night shift:** verify the HPDM `trees.json` count (dropped to 5527 — settle drop-vs-stale with the `[bake-trees] placed X/Y` log) · **fix A** · `SceneNeon.jsx:158` HPDM crash · ambient-wind **knobs** (floor hardcoded 0.12/0.05) · strip `?treeDebug` · uncommitted re-baked artifacts (HPDM+LS) + 5 non-mine modified files to sort.
+
+**The process lesson (paid for in hours):** the answer was in `HANDOFF-tree-spokes-and-census.md` the whole time — it had ruled out the tree PATH (9 theories killed), listed the ungated `Scene.jsx:826-849` suspects, and prescribed the exact next move (a **scene-graph probe**). Boz re-derived it instead of reading it first. **Route to the existing forensic FIRST; instrument early; ask Jacob for the discriminator before running the tail.** `[[feedback_read_canon_before_forensics]]` · `[[feedback_instrument_verdict_then_fix]]`.
+
 ## 2026-07-07→08 (overnight) — render/data fixes · the Arborist OPERATING MODEL (aspirational) · the Salon interface pass
 
 A long, load-bearing session. Three arcs: **(A)** fix what shipped wrong at HiPointe/LS, **(B)** settle the Arborist **operating model** in prose (the aspirational direction), **(C)** a piece-by-piece Salon interface cleanup. All uncommitted at session end — commit in logical groups.
