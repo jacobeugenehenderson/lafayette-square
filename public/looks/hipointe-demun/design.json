@@ -95,7 +95,17 @@
     "letterSpacing": 0.05,
     "opacity": 1,
     "case": "mixed",
-    "fontFamily": ""
+    "fontFamily": "",
+    "tierScale": {
+      "street": 1,
+      "park": 2.8
+    },
+    "targetPx": 24,
+    "minPx": 8,
+    "maxPx": 128,
+    "font": "",
+    "bg": "#3a3a38",
+    "bgAlpha": 1
   },
   "blockCustoms": {},
   "surveyDefault": null,
@@ -870,22 +880,6 @@
     },
     {
       "species": "oak_bur",
-      "variantId": 1
-    },
-    {
-      "species": "abies_concolor",
-      "variantId": 1
-    },
-    {
-      "species": "picea_abies",
-      "variantId": 1
-    },
-    {
-      "species": "pseudotsuga_menziesii",
-      "variantId": 1
-    },
-    {
-      "species": "cupressus_sempervirens",
       "variantId": 1
     },
     {
