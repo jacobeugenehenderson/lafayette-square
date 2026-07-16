@@ -8,7 +8,7 @@
 
 ## 0. What the Wall is
 
-By the time the operator leaves Survey we hold an extremely-simplified, polygon-ready **frozen** dataset, and **chains are dead.** Past the Wall, Section / bake / slab are **pure consumers** — they read the frozen shape and never derive geometry from chains. *(⚠️ TARGET, not current: this holds for Section by closure, but the **curb geometry is still re-stroked live in Survey** — the wall's producer side is unenforced. The enforcement checks live in `POLYGON-FIRST.md`; the gap in `PREBAKE.md §4.1`.)* It is **wall #1** of the project's two (`[[project_two_bakes_two_walls]]`; the slab is wall #2).
+By the time the operator leaves Survey we hold an extremely-simplified, polygon-ready **frozen** dataset, and **chains are dead.** Past the Wall, Section / bake / slab are **pure consumers** — they read the frozen shape and never derive geometry from chains. *(⚠️ Partial as of 2026-07-15: the CONSUMER side is enforced — Section opens the freeze chain-free, **and Survey/Design now consumes the frozen `shape.json` for idle display too** (`sectionOpen`, §2/§4). What still leaks is the **PRODUCER**: the frozen artifact is minted by the live `buildTileGround(liveRibbons)` — chains in scope, snapshotted at bake — so the curb is re-stroked from chains **for the element under the operator's hand + at every bake**, not built once from the frozen frame. That is **Check C, still RED** — enforcement checks in `POLYGON-FIRST.md §2`, the freeze program in `HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c.)* It is **wall #1** of the project's two (`[[project_two_bakes_two_walls]]`; the slab is wall #2).
 
 ---
 
@@ -26,9 +26,9 @@ So the Wall has **two inseparable halves**, and both must hold:
 
 ## 2. Where it is today (verified in code)
 
-- **As a discipline, it exists ✅.** `sectionPass(shapeTiles, cw, stripMat)` (`tileGround.js:487`) takes **only** the frozen per-tile polygons + scalars — zero handle on chains/streets/measures. Reaching back requires changing the signature (visible, auditable). The chain-free closure is real.
-- **As a boundary, it does not yet exist.** `sectionPass` is called in exactly one place — *inside* `buildTileGround` (`:970`). The frozen `_shapeArtifact` is produced **only at bake** (`emitArtifact:true`, `bake-ground.js:304`), and **nothing loads it back**: the "loaded from `shape.json` (Phase D)" path is a *stub comment* (`:492`), unbuilt.
-- **So "Section opens the frozen Survey data" is not a thing today.** The Measure/Section tab (`Panel.jsx:431`) re-runs the same live `buildTileGround`. Survey and Section are **one build**, not freeze-then-open.
+- **As a discipline, it exists ✅.** `sectionPass`/`sectionOpen` (`tileGround.js`) take **only** the frozen per-tile polygons + scalars — zero handle on chains/streets/measures. Reaching back requires changing the signature (visible, auditable). The chain-free closure is real.
+- **As a boundary, it now exists for the CONSUMER — ✅ updated 2026-07-15 (supersedes the 2026-06-05 "stub" reading below).** The frozen `_shapeArtifact` is written to `public/baked/<scene>/shape.json` at bake (`emitArtifact:true`), and **both consumers now load it back chain-free:** Section (the Hadrian checkpoint, §4) **and Survey/Design idle display** (`BlockGeometryV2Debug.jsx` fetches `shape.json` and renders every layer via `sectionOpen` when no element is active; the heavy live `buildTileGround` **no longer runs to merely display the map** — the 2026-07-14/15 load-forensic work, `72bbc989` + T4). So "open the frozen Survey data" **is** a thing today, for display.
+- **What does NOT yet exist is the boundary on the PRODUCER side.** The `shape.json` is still *minted* by the live `buildTileGround(liveRibbons, …)` (chains in scope: `smoothChain(s.points)`, offset of a live `tile.ring`) — run for the element under the operator's hand and at every bake, then snapshotted. So the frozen artifact is a **photograph of a live chain-stroke**, not a pure function of the frozen frame. **Check C (`POLYGON-FIRST §2`) is RED** — this is the remaining leak (`HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c). Survey and Section are no longer "one build" for *display*, but the curb is still *produced* from chains.
 
 ---
 
