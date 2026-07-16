@@ -727,12 +727,10 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     // it groups by species independent of the mesh/impostor role split below.
     const bySpecies = new Map()  // species -> instances[]  (overhead snapshot)
     let dropped = 0
+    let heroCulled = 0
     let substituted = 0
     let impostorCount = 0
     bake.instances.forEach((inst, idx) => {
-      // Baked-role cull: always-occluded "specks behind specks" are dropped.
-      if (inst.heroTier === 'cull') { dropped++; return }
-
       // Resolve the rendered species (out-of-roster placements substitute a
       // same-category roster variant — the impostor must use that species'
       // atlas rects, same as the mesh path uses its GLB).
@@ -746,10 +744,16 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       }
       const renderSpecies = inRoster ? inst.species : sub.species
 
-      // WHOLE-SCENE overhead: every non-culled placement joins its species bucket
-      // (regardless of mesh/impostor role) so plan-view can swap all trees at once.
+      // WHOLE-SCENE overhead: EVERY placement joins its species bucket
+      // (regardless of hero role) so plan-view can swap all trees at once.
       if (!bySpecies.has(renderSpecies)) bySpecies.set(renderSpecies, [])
       bySpecies.get(renderSpecies).push(inst)
+
+      // Hero-framing role cull. `heroTier` is a verdict about the hero pan's
+      // camera and nothing else, so it gates ONLY the mesh/impostor paths
+      // below — which are the hero render. Browse is a free camera on the
+      // overhead path above and must never inherit it.
+      if (inst.heroTier === 'cull') { heroCulled++; return }
 
       // Impostor ROLE → stamped-2D billboard path. One bucket per rendered
       // species; the per-species geometry samples that species' atlas rects.
@@ -792,7 +796,8 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       meshCount += byTile.size
       for (const tid of byTile.keys()) tileSet.add(tid)
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overheadSp=${bySpecies.size} (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    const overheadTotal = [...bySpecies.values()].reduce((n, a) => n + a.length, 0)
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
     return { meshGroups: m, impostors, bySpecies }
   }, [bake, maxVariants, atlas, lookName, impostorRecords])
 
