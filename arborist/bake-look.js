@@ -1223,6 +1223,21 @@ export async function bakeLook(lookName, opts = {}) {
   // freshly-measured canopyByVariant dims land in it (the loop mutates the
   // object the manifest holds).
 
+  // Overhead browse-impostor snapshots (overheadBySpecies) are authored ONLY in
+  // the browser — the Salon Browse capture POSTs them to serve.js, which writes
+  // the band PNGs under trees/overhead/<species>/ and merges the manifest entry.
+  // The CLI has no way to regenerate them, so — UNLIKE impostorBySpecies, which
+  // captureImpostor re-derives above — bake-look must ALWAYS carry the prior
+  // field forward, on rewrite AND atlas-only bakes. Otherwise every re-bake
+  // rebuilds the manifest without it and browse silently degrades to the
+  // hero-culled MESH group (the "missing trees" swath). The on-disk PNGs already
+  // survive a bake untouched; this preserves the manifest that points at them.
+  // (Fixes the serve.js:~1431 TODO at its source.)
+  try {
+    const priorAtlas = JSON.parse(await fs.readFile(path.join(outDir, 'trees-atlas.json'), 'utf8'))
+    if (priorAtlas.overheadBySpecies) manifest.overheadBySpecies = priorAtlas.overheadBySpecies
+  } catch { /* no prior manifest (first bake) — nothing to preserve */ }
+
   // Optional viz (uses raw grid w/h, not pow2)
   let tViz = 0
   if (viz) {

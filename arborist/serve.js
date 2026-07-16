@@ -1427,8 +1427,10 @@ const server = createServer(async (req, res) => {
           }
         })
         // Merge into the look's trees-atlas.json (read-modify-write). bake-look
-        // regenerates that file on a full re-bake — it must preserve
-        // overheadBySpecies the same way it preserves impostorBySpecies (TODO).
+        // regenerates that file on a full re-bake and now carries this field
+        // forward unconditionally (bake-look.js, after the manifest literal) —
+        // browser-authored overhead can't be CLI-regenerated, so preservation
+        // is the only option.
         const atlasPath = join(ROOT, 'public', 'baked', look, 'trees-atlas.json')
         let atlas = {}
         if (existsSync(atlasPath)) { try { atlas = JSON.parse(readFileSync(atlasPath, 'utf8')) } catch {} }
