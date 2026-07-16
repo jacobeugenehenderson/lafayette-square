@@ -8,6 +8,20 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-07-16 — the extent tool became the EXCLUDER pen (get-current accord sweep, Boz).
+
+Jacob opened the day wanting to be "forensically current" before any push — several threads had run in parallel and the canon had drifted. It had: a git+code forensic found the **Extent boundary tool pivoted from an inclusion model to an EXCLUDER model on 2026-07-14**, and *no* canon doc had caught it. The whole 2026-07-02→14 arc, in order: geocode-the-CDP-ring → snap-route-onto-streets → name-the-4-boundary-streets/corner-resolver → the concerted-logic segment SELECTOR → an inclusion bezier PEN (`e140cb67`) → **the excluder** (`5d92b419`: "pen draws exclusion loops, buildings IN by default"). Each earlier model chased *tracing the perimeter*; the excluder threw that whole frame out.
+
+**The insight that settled it:** a neighborhood is a **generous disc with a few bites taken out**, not a hand-traced ring. So the circle IS the boundary, every building inside is IN by default, and the operator draws editable **bezier exclusion loops** to carve the strays (`BezierPen.jsx`) + per-building `activate`/`hide` for the ragged margin. Membership = **inside-circle − exclusions + overrides**, applied in `pipeline.js:242-254` and re-applied in `bake-buildings.js:603-613`. Loops persist as the first-class artifact (`nb.exclusions`, lon/lat) and reopen fully editable — "keep fixing forever." It's *less* work than tracing and it's deterministic (point-in-polygon, no routing). This is the lesson the session kept relearning — deterministic operator primitives over fuzzy inference; never geocode for geometry (`[[feedback-question-the-premise-before-building]]`, `[[project_extent_pen_boundary]]`).
+
+**Supporting fixes that shipped alongside:** the **re-center guard** (`9cc8ee21`, 2026-07-15) — `commit-extent` refuses to re-center an *already-committed* hood by >5 m without `allowRecenter`, so a scripted/raced POST can't orphan LS/HPDM's authored corner/hero work; and the **legacy-inclusion-polygon drop** (`24323ab2`) — a hood committed the old way carries an inclusion `polygon` the bake would prefer over the circle, so the excluder re-bake drops it (else the slab clips to the stale ring and buildings vanish). **Altadena** was the first hood poured fully end-to-end through the excluder — LS and HPDM predate the intake regime and carry these bolt-on protections precisely because the tool grew up around them; a fresh hood needs none.
+
+**The sweep (this session):** reconciled the corpus to the shipped reality — `INTAKE §0.5`, `PIPELINE §intake/§pour/boundary-clip`, `NEIGHBORHOOD-INPUTS §5.2/§9/§11`, `FEATURES`, `OPERATIONS §Extent`, `README` (START-HERE + feature index + intro), `ORIENTATION` boundary line, `DOC-CODE-COHERENCE B8`, memory. Four superseded briefs archived → `_archive/handoffs/*-2026-07-16.md` (extent-pen-boundary, extent-finish, neighborhood-perimeter-builder, selector-finish-fresh-pour). The superseded-model narrative was *thinned out* of the active docs into here, not layered on top.
+
+**⚠️ Flagged, NOT done — vestigial code excision (cautious follow-up).** The street-selection machinery is now dead weight and should be excised in its own arc (not rushed mid-sweep): `SideInput` + `ExtentClickableStreets` (defined but **never rendered** — pure dead code), the `sides` draft field (still autosaved, drives nothing geometric), `fetchStreetNames`/`fetchExtentCorners` client helpers, and server `computeExtentCorners`/`computeBoundaryFromSelection` + their endpoints. Excise knobs+wiring+docs together (`[[feedback_remove_functionality_excise_knobs_wiring_docs]]`). Tracked in `BACKLOG §Onboarding/Intake`.
+
+---
+
 ## 2026-07-10 — a huge parallel day: overhead impostor + boundary selector + Altadena mountain, all merged (Boz coordinating).
 
 Three independent threads ran in parallel worktrees off `curb-offset-draw`, each unlocking a different gate. Boz coordinated (drafted briefs, Jacob dispatched), merging each back to trunk as it landed (audited/local/**not pushed** — Jacob pushes when happy).
