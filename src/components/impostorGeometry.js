@@ -267,10 +267,15 @@ export function buildOverheadBandDisc(rec, opts = {}) {
   const H = rec.heightM || 14
   const R = Math.max(0.5, rec.canopyRadiusM || 5)
   const pad = opts.pad ?? 1.5                     // must match captureTreeOverheadBands' FRAME_PAD_M
-  const discR = R + pad                           // disc extent = capture frame half-extent
+  const half = R + pad                            // half-side of the SQUARE capture frame
 
-  const P = Math.max(12, Math.round(opts.perimeter ?? 72))       // angular segments (finer → smoother flutter)
-  const RR = Math.max(1, Math.round(opts.radialRings ?? 10))     // radial tessellation
+  // A tessellated full QUAD over the whole square capture frame — NOT a disc.
+  // The captured PNG already carries the tree's real silhouette in its alpha;
+  // a circular disc geometry clipped everything outside its inscribed circle
+  // (the "stenciled by a circle on one side" artifact — worse when the canopy
+  // is off-centre or wider than canopyRadiusM). Covering the full frame lets
+  // alphaTest alone define the shape; the tessellation is only for wind flutter.
+  const N = Math.max(2, Math.round(opts.grid ?? 28))   // grid cells per side
 
   const yLoN = Math.min(1, Math.max(0, opts.yLoNorm ?? 0.7))
   const yHiN = Math.min(1, Math.max(yLoN, opts.yHiNorm ?? 1.0))
@@ -283,32 +288,18 @@ export function buildOverheadBandDisc(rec, opts = {}) {
   const aTreeHeightNorm = []
   const indices = []
 
-  const pushVert = (px, pz) => {
-    positions.push(px, y, pz)
-    uvs.push(0.5 + 0.5 * px / discR, 0.5 + 0.5 * pz / discR)   // planar [0,1] → full square capture
-    aOverhead.push(1); aTreeHeightNorm.push(centerNorm)
-  }
-
-  pushVert(0, 0)   // centre
-  for (let ri = 1; ri <= RR; ri++) {
-    const rad = discR * (ri / RR)
-    for (let j = 0; j < P; j++) {
-      const theta = (j / P) * Math.PI * 2
-      pushVert(rad * Math.cos(theta), rad * Math.sin(theta))
+  for (let iz = 0; iz <= N; iz++) {
+    for (let ix = 0; ix <= N; ix++) {
+      const u = ix / N, v = iz / N
+      positions.push((u * 2 - 1) * half, y, (v * 2 - 1) * half)
+      uvs.push(u, v)                                 // full [0,1] → full square capture, corners included
+      aOverhead.push(1); aTreeHeightNorm.push(centerNorm)
     }
   }
-
-  // Centre fan to ring 1, then quad strips between rings.
-  for (let j = 0; j < P; j++) {
-    indices.push(0, 1 + j, 1 + ((j + 1) % P))
-  }
-  for (let ri = 0; ri < RR - 1; ri++) {
-    const r0 = 1 + ri * P
-    const r1 = 1 + (ri + 1) * P
-    for (let j = 0; j < P; j++) {
-      const jn = (j + 1) % P
-      indices.push(r0 + j, r0 + jn, r1 + j)
-      indices.push(r0 + jn, r1 + jn, r1 + j)
+  for (let iz = 0; iz < N; iz++) {
+    for (let ix = 0; ix < N; ix++) {
+      const a = iz * (N + 1) + ix, b = a + 1, c = a + (N + 1), d = c + 1
+      indices.push(a, c, b, b, c, d)
     }
   }
 

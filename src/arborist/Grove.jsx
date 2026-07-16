@@ -21,9 +21,13 @@
  * crop and judge.
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
+import * as THREE from 'three'
+import { createCameraTween } from '../preview/cameraTween.js'
 import { OverheadBaker } from './OverheadBaker.jsx'
+import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
+import { useTreeAtlas, treeSwayUniforms } from '../components/treeAtlasMaterial.js'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
 
@@ -84,7 +88,18 @@ export default function Grove() {
   // Top-level view: 'gallery' (the by-model 3D crop) ↔ 'coverage'
   // (Brief 24 — roster-anchored have-vs-need table).
   const [view, setView] = useState('gallery')
+  const [ringScale, setRingScale] = useState(1)   // Spread: cluster (small) ↔ separate (large)
   const [scope, setScope] = useState('look')
+  // Hero↔Browse transition — the Grove TAKES the universal player's camera
+  // animation (createCameraTween, the same easeInOutCubic + up-vector tilt the
+  // player runs Hero↔Browse) for a realistic preview; its eased progress ALSO
+  // crossfades the tree forms (3D specimen ↔ overhead disc). Fixed, no knobs.
+  const [transitioning, setTransitioning] = useState(false)
+  const [blend, setBlend] = useState(0)           // 0 = Hero, 1 = Browse (crossfade weight)
+  const tweenRef = useRef(null)
+  if (!tweenRef.current) tweenRef.current = createCameraTween()
+  const poseRef = useRef({ pos: new THREE.Vector3(0, 30, 60), target: new THREE.Vector3(0, 4, 0), up: new THREE.Vector3(0, 1, 0), fov: 40 })
+  const groveControlsRef = useRef()
   const [hovered, setHovered] = useState(null)
   const [selected, setSelected] = useState(null)  // {speciesId, variantId} — click-selected tile; drives the fixed editor panel
   const [toast, setToast] = useState(null)
@@ -173,11 +188,34 @@ export default function Grove() {
   // center, so none recede or occlude the way the back rows did in the old grid.
   // Radius sized so the canopies clear each other around the circumference.
   const N = Math.max(1, visible.length)
-  const ringRadius = Math.max(TILE_SPACING, (visible.length * TILE_SPACING) / (2 * Math.PI))
+  const ringRadius = Math.max(TILE_SPACING, (visible.length * TILE_SPACING) / (2 * Math.PI)) * ringScale
   const positions = visible.map((_, i) => {
     const a = (i / N) * Math.PI * 2 - Math.PI / 2   // first at the back, sweep around
     return [ringRadius * Math.cos(a), 0, ringRadius * Math.sin(a)]
   })
+
+  // The two view poses (Hero = perspective, angled; Browse = straight-down, up
+  // tilted to [0,0,-1] like the player's overhead). startTransition hands them to
+  // the shared player tween; TransitionDriver applies the eased pose each frame.
+  const poseFor = (vw) => {
+    const span = ringRadius * 2 + TILE_SPACING
+    return vw === 'browse'
+      ? { pos: [0, span * 1.15 + 40, 0.0001], target: [0, 0, 0], up: [0, 0, -1], fov: 40 }
+      : { pos: [0, span * 0.6 + 12, span * 0.9 + 18], target: [0, 4, 0], up: [0, 1, 0], fov: 40 }
+  }
+  const startTransition = (target) => {
+    if (target === view || transitioning) return
+    tweenRef.current.start({
+      from: poseFor(view), to: poseFor(target), duration: 1200, ease: 'easeInOutCubic',
+      onUpdate: (op, ot, fov, e, ou) => {
+        poseRef.current.pos.copy(op); poseRef.current.target.copy(ot)
+        poseRef.current.up.copy(ou); poseRef.current.fov = fov
+        setBlend(target === 'browse' ? e : 1 - e)
+      },
+      onComplete: () => { setView(target); setTransitioning(false); setBlend(target === 'browse' ? 1 : 0) },
+    })
+    setTransitioning(true)
+  }
 
   // The click-selected tile's data drives the fixed editor panel.
   // Derived from the visible set so it stays bound to what's on screen;
@@ -231,6 +269,35 @@ export default function Grove() {
         </select>
         {(
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
+          {/* View: Specimen (the lit 3D you author) ↔ Browse (the slab's OWN
+              overhead disc render — the exact OverheadSpecies consumer the map
+              ships, so what you see here is what the map draws in plan view).
+              Browse reflects the LAST Bake→Slab (the disc is a baked artifact). */}
+          <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
+            {[
+              { v: 'gallery', label: 'Hero' },
+              { v: 'browse',  label: 'Browse' },
+            ].map(o => (
+              <button key={o.v} onClick={() => startTransition(o.v)} disabled={transitioning}
+                title={o.v === 'browse'
+                  ? 'The overhead disc as the map ships it (last bake) — top-down, same OverheadSpecies consumer'
+                  : 'The lit 3D specimen'}
+                style={{
+                  border: 'none', padding: '6px 10px', fontSize: 11,
+                  background: view === o.v ? 'rgba(150,220,130,0.22)' : 'transparent',
+                  color: view === o.v ? '#cfeeb4' : '#aaa',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}>{o.label}</button>
+            ))}
+          </div>
+          {/* Spread — resize the ring so trees read both clustered (dense grove,
+              like the map) and separate (inspect one). Applies to Hero + Browse. */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: '#888', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Spread
+            <input type="range" min={0.25} max={3} step={0.05} value={ringScale}
+              onChange={(e) => setRingScale(Number(e.target.value))}
+              title="Cluster ↔ separate the ring" style={{ width: 90 }} />
+          </label>
           <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
             {[
               { v: 'look', label: 'In Look' },
@@ -275,7 +342,7 @@ export default function Grove() {
         style={{ flex: 1, position: 'relative', minHeight: 0 }}
         onPointerDown={(e) => { downRef.current = { x: e.clientX, y: e.clientY } }}
       >
-        {view === 'gallery' && <>
+        {<>
         {publishing && (
           <div style={overlayMsg}>Publishing your Salon edits…</div>
         )}
@@ -314,6 +381,10 @@ export default function Grove() {
             onProgress={(done, total) => setOverheadProg({ done, total })}
             onDone={({ ok, fail }) => { setOverheadProg('done'); console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`) }}
           />
+          {/* Ambient breeze — advances the shared foliage-sway clock so the Grove
+              reads as alive (Hero specimens rustle, Browse discs wiggle), through
+              the SAME uniforms/shader the player uses. See GroveWind. */}
+          <GroveWind />
           <hemisphereLight args={['#ffffff', '#e8e4dc', 0.85]} />
           <directionalLight
             position={[40, 80, 30]} intensity={0.55} castShadow
@@ -331,24 +402,53 @@ export default function Grove() {
             <meshStandardMaterial color="#f7f5f1" roughness={1} />
           </mesh>
 
-          <Suspense fallback={null}>
-            {visible.map((v, i) => (
-              <Tile
-                key={`${v.speciesId}:${v.variantId}`}
-                variant={v}
-                position={positions[i]}
-                inLook={inLook(v)}
-                hovered={hovered?.speciesId === v.speciesId && Number(hovered?.variantId) === Number(v.variantId)}
-                selected={selected?.speciesId === v.speciesId && Number(selected?.variantId) === Number(v.variantId)}
-                onHoverIn={() => setHovered({ speciesId: v.speciesId, variantId: v.variantId })}
-                onHoverOut={() => setHovered(h => (h?.speciesId === v.speciesId && Number(h?.variantId) === Number(v.variantId) ? null : h))}
-                onSelect={() => setSelected({ speciesId: v.speciesId, variantId: v.variantId })}
-              />
-            ))}
-          </Suspense>
+          {/* Both tree forms mount during the transition so they CROSSFADE
+              (Tile 3D specimen fades out as the Browse disc fades in), driven by
+              the shared player tween's eased progress → `blend`. */}
+          {(view === 'gallery' || transitioning) && (
+            <Suspense fallback={null}>
+              {visible.map((v, i) => (
+                <Tile
+                  key={`${v.speciesId}:${v.variantId}`}
+                  variant={v}
+                  position={positions[i]}
+                  opacity={1 - blend}
+                  inLook={inLook(v)}
+                  hovered={hovered?.speciesId === v.speciesId && Number(hovered?.variantId) === Number(v.variantId)}
+                  selected={selected?.speciesId === v.speciesId && Number(selected?.variantId) === Number(v.variantId)}
+                  onHoverIn={() => setHovered({ speciesId: v.speciesId, variantId: v.variantId })}
+                  onHoverOut={() => setHovered(h => (h?.speciesId === v.speciesId && Number(h?.variantId) === Number(v.variantId) ? null : h))}
+                  onSelect={() => setSelected({ speciesId: v.speciesId, variantId: v.variantId })}
+                />
+              ))}
+            </Suspense>
+          )}
 
-          <FitToContent count={visible.length} radius={ringRadius} />
-          <OrbitControls makeDefault target={[0, 4, 0]} />
+          {/* Browse: the slab's OWN overhead disc render (OverheadSpecies), one
+              species per ring slot at the same positions as the specimens, so a
+              toggle compares specimen↔shipped-disc in place. Same consumer, same
+              baked bands → true parity with the map's plan view. */}
+          {(view === 'browse' || transitioning) && (
+            <Suspense fallback={null}>
+              <GroveBrowse
+                species={visible} positions={positions} lookId={activeLookId}
+                opacity={blend}
+                inLook={inLook} hovered={hovered} selected={selected}
+                onHoverIn={(v) => setHovered({ speciesId: v.speciesId, variantId: v.variantId })}
+                onHoverOut={(v) => setHovered(h => (h?.speciesId === v.speciesId && Number(h?.variantId) === Number(v.variantId) ? null : h))}
+                onSelect={(v) => setSelected({ speciesId: v.speciesId, variantId: v.variantId })}
+              />
+            </Suspense>
+          )}
+
+          <ViewCamera view={view} count={visible.length} radius={ringRadius} transitioning={transitioning} />
+          <TransitionDriver tween={tweenRef.current} poseRef={poseRef} controlsRef={groveControlsRef} />
+          <OrbitControls
+            ref={groveControlsRef} makeDefault
+            enabled={!transitioning}
+            enableRotate={view !== 'browse'}
+            target={view === 'browse' ? [0, 0, 0] : [0, 4, 0]}
+          />
         </Canvas>
 
         {selectedVariant && (
@@ -383,19 +483,138 @@ export default function Grove() {
   )
 }
 
-function FitToContent({ count, radius }) {
-  // Frame the whole RING from outside + above, centered on the middle.
-  const { camera } = useThree()
-  useEffect(() => {
-    if (!count) return
-    const span = radius * 2 + TILE_SPACING
-    camera.position.set(0, span * 0.6 + 12, span * 0.9 + 18)
-    camera.lookAt(0, 4, 0)
-  }, [count, radius, camera])
+// GroveWind — the Grove's SwayDriver. It has no live weather feed, so it drives a
+// constant gentle authoring breeze (the canary's calm fallback, HERO_BREEZE_MPS =
+// 3.0) into the SHARED treeSwayUniforms + advances uTime. Every tree shader in the
+// scene — the Hero specimens' injectFoliageSway rustle AND the Browse discs'
+// injectOverheadStamp wiggle — reads these same uniforms, so nothing renders a
+// parallel path: what breathes here breathes in the player. (Systemic follow-on:
+// a baseline rustle floor on the OVERHEAD path so calm weather isn't dead-still in
+// the live map too — task #15 "B".)
+const GROVE_BREEZE_MPS = 3.0
+function GroveWind() {
+  useFrame((_, dt) => {
+    treeSwayUniforms.uTime.value += dt
+    treeSwayUniforms.uWindForce.value.set(GROVE_BREEZE_MPS, 0, 0)
+    treeSwayUniforms.uWindIntensity.value = GROVE_BREEZE_MPS
+    treeSwayUniforms.uGustFrontVelocity.value.set(GROVE_BREEZE_MPS * 2.5, 0, 0)
+    treeSwayUniforms.uGustsScale.value   = 1.5
+    treeSwayUniforms.uGustEnvelope.value = 1.0
+  })
   return null
 }
 
-function Tile({ variant, position, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
+function ViewCamera({ view, count, radius, transitioning }) {
+  // Snap the camera to the committed view's pose on mount / count change — but NOT
+  // during a transition (TransitionDriver owns the camera then). Re-frames only on
+  // view/count, never radius (the Spread slider must not re-zoom → trees would
+  // appear to shrink). Pose math MATCHES poseFor() so the tween lands here exactly.
+  const { camera } = useThree()
+  const radiusRef = useRef(radius)
+  radiusRef.current = radius
+  useEffect(() => {
+    if (!count || transitioning) return
+    const span = radiusRef.current * 2 + TILE_SPACING
+    if (view === 'browse') {
+      camera.position.set(0, span * 1.15 + 40, 0.0001)   // ~straight above center
+      camera.up.set(0, 0, -1)
+      camera.lookAt(0, 0, 0)
+    } else {
+      camera.position.set(0, span * 0.6 + 12, span * 0.9 + 18)
+      camera.up.set(0, 1, 0)
+      camera.lookAt(0, 4, 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, count, transitioning, camera])
+  return null
+}
+
+// TransitionDriver — ticks the SHARED player camera tween each frame and applies
+// the eased pose to the Grove camera (position + up-tilt + target), exactly as the
+// universal player animates Hero↔Browse. OrbitControls is disabled during the tween
+// (feedback_orbitcontrols_disable_to_drive_camera); on finish we sync the control
+// target once so OrbitControls resumes cleanly from where the tween left the camera.
+function TransitionDriver({ tween, poseRef, controlsRef }) {
+  const { camera } = useThree()
+  const wasActive = useRef(false)
+  useFrame(() => {
+    if (tween.isActive()) {
+      tween.tick(performance.now())
+      const p = poseRef.current
+      camera.position.copy(p.pos)
+      camera.up.copy(p.up)
+      camera.lookAt(p.target)
+      wasActive.current = true
+    } else if (wasActive.current) {
+      wasActive.current = false
+      const c = controlsRef.current
+      if (c) { c.target.copy(poseRef.current.target); c.update() }
+    }
+  })
+  return null
+}
+
+// GroveBrowse — the slab's overhead render, IN the Grove. It loads the same baked
+// overhead bands through the SAME useOverheadAssets loader the map uses, and mounts
+// the SAME OverheadSpecies disc-stacks (one instance per species at its ring slot).
+// So what renders here IS the map's plan-view draw — no separate path, true parity.
+// Reads the LAST Bake→Slab (the disc is a baked artifact); re-bake to refresh.
+function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
+  const atlas = useTreeAtlas(lookId)
+  const overheadBySpecies = atlas?.manifest?.overheadBySpecies || null
+  const speciesList = useMemo(() => species.map(v => v.speciesId), [species])
+  const assets = useOverheadAssets({
+    enabled: !!overheadBySpecies,
+    lookName: lookId,
+    overheadBySpecies,
+    species: speciesList,
+  })
+  if (!assets) return null
+  return (
+    <>
+      {species.map((v, i) => {
+        const asset = assets.get(v.speciesId)
+        if (!asset) return null
+        const [x, , z] = positions[i]
+        const isHov = hovered?.speciesId === v.speciesId && Number(hovered?.variantId) === Number(v.variantId)
+        const isSel = selected?.speciesId === v.speciesId && Number(selected?.variantId) === Number(v.variantId)
+        const inL = inLook(v)
+        return (
+          <group key={v.speciesId}>
+            <OverheadSpecies asset={asset} instances={[{ x, y: 0, z, rotY: 0, scale: 1 }]} visible opacity={opacity} />
+            {/* Base plate — the SAME quality circle + selection ring as the Hero
+                Tile (same size / colour / opacity logic / GROUND position). The
+                overhead discs disable raycast (below) so top-down clicks reach this
+                plate. Matches the Grove's existing selection design. */}
+            <mesh
+              rotation={[-Math.PI / 2, 0, 0]}
+              position={[x, 0.005, z]}
+              onPointerOver={(e) => { e.stopPropagation(); onHoverIn(v) }}
+              onPointerOut={() => onHoverOut(v)}
+              onClick={(e) => { e.stopPropagation(); if (e.delta > 5) return; onSelect(v) }}
+            >
+              <circleGeometry args={[TILE_SPACING * 0.42, 48]} />
+              <meshStandardMaterial
+                color={QUALITY_COLOR[v.quality] || '#666'}
+                opacity={inL ? ((isHov || isSel) ? 0.95 : 0.78) : ((isHov || isSel) ? 0.45 : 0.22)}
+                transparent
+                roughness={0.85}
+              />
+            </mesh>
+            {isSel && (
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.012, z]}>
+                <ringGeometry args={[TILE_SPACING * 0.44, TILE_SPACING * 0.5, 48]} />
+                <meshBasicMaterial color="#bce0a0" transparent opacity={0.95} toneMapped={false} />
+              </mesh>
+            )}
+          </group>
+        )
+      })}
+    </>
+  )
+}
+
+function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
   const { glbUrl, normalizeScale, position: posOv, rotation: rotOv, quality, excluded, speciesLabel, variantId } = variant
   const { scene } = useGLTF(glbUrl)
   // Clone so each tile has its own scene graph (drei caches by URL).
@@ -411,6 +630,22 @@ function Tile({ variant, position, inLook, hovered, selected, onHoverIn, onHover
       }
     })
   }, [cloned])
+
+  // Crossfade the specimen (the Grove Hero↔Browse transition). Default 1 leaves it
+  // normal; flip `transparent` only on change (a recompile), set `opacity` cheaply.
+  useEffect(() => {
+    const t = opacity < 1
+    cloned.traverse(o => {
+      if (!o.isMesh) return
+      const mats = Array.isArray(o.material) ? o.material : [o.material]
+      for (const m of mats) {
+        if (!m) continue
+        if (m.transparent !== t) { m.transparent = t; m.needsUpdate = true }
+        m.opacity = opacity
+        m.depthWrite = !t
+      }
+    })
+  }, [cloned, opacity])
 
   // Mirror Workstage's Skeleton transform stack EXACTLY. GLB-source
   // trees are already Y-up after publish-glb.js, so Workstage passes
@@ -449,11 +684,11 @@ function Tile({ variant, position, inLook, hovered, selected, onHoverIn, onHover
         <circleGeometry args={[TILE_SPACING * 0.42, 48]} />
         <meshStandardMaterial
           color={excluded ? '#3a3a3a' : baseColor}
-          opacity={
+          opacity={(
             excluded ? 0.35 :
             inLook   ? ((hovered || selected) ? 0.95 : 0.78) :
                        ((hovered || selected) ? 0.45 : 0.22)
-          }
+          ) * opacity}
           transparent
           roughness={0.85}
         />
@@ -464,7 +699,7 @@ function Tile({ variant, position, inLook, hovered, selected, onHoverIn, onHover
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]}>
           <ringGeometry args={[TILE_SPACING * 0.44, TILE_SPACING * 0.5, 48]} />
-          <meshBasicMaterial color="#bce0a0" transparent opacity={0.95} toneMapped={false} />
+          <meshBasicMaterial color="#bce0a0" transparent opacity={0.95 * opacity} toneMapped={false} />
         </mesh>
       )}
 

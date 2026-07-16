@@ -984,18 +984,27 @@ function Skeleton({
       const mn = Array.isArray(o.material) ? o.material.map(m => m?.name).join(' ') : o.material?.name
       return LEAF_RE.test(o.name || '') || LEAF_RE.test(mn || '')
     }
+    // WORLD space (each vertex through its node matrix) — raw local positions
+    // mis-size the frame wherever foliage sits in a scaled node (oaks clip,
+    // conifers go near-blank). Matches OverheadBaker.measureCanopyRadius.
+    scene.updateMatrixWorld(true)
+    const v = new THREE.Vector3()
     let xzLeaf = 0, xzAll = 0
     scene.traverse((o) => {
       if (!o.isMesh || !o.geometry?.attributes?.position) return
       const pos = o.geometry.attributes.position
       const leaf = isLeaf(o)
       for (let i = 0; i < pos.count; i++) {
-        const r = Math.hypot(pos.getX(i), pos.getZ(i))
+        v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld)
+        const r = Math.hypot(v.x, v.z)
         if (r > xzAll) xzAll = r
         if (leaf && r > xzLeaf) xzLeaf = r
       }
     })
-    const canopyRadiusM = Math.max(1, xzLeaf || xzAll)
+    // xzAll (all geometry), not leaf-only: the frame must contain everything that
+    // renders, or mis-tagged outer foliage clips on one side. Matches OverheadBaker.
+    void xzLeaf
+    const canopyRadiusM = Math.max(1, xzAll)
     return { heightM: (typeof topY === 'number' ? topY : 12), canopyRadiusM, trunkFrac: 0.12 }
   }, [overheadMode, scene, topY])
 

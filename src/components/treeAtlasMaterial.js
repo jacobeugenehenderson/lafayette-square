@@ -1529,9 +1529,10 @@ const OVERHEAD_WIND_COMMON = `
          }`
 const OVERHEAD_WIND_BEGIN = `
          if (aOverhead > 0.5) {
-           // MOTION = the shared WEATHER, base-anchored (aTreeHeightNorm), all
-           // wind-driven so calm ≈ still. What makes it read ALIVE from above (not
-           // a flat rigid slide) is HULA + FLUTTER — NOT the ruche (cut: starfish).
+           // MOTION = an always-on ambient FLOOR + the shared WEATHER on top,
+           // base-anchored (aTreeHeightNorm). The floor keeps the plan-view canopy
+           // alive in dead-calm (mirrors the mesh's rustle floor); weather ADDS, so a
+           // breeze reads as more. ALIVE (not a flat rigid slide) = HULA + FLUTTER.
            // WORLD-XZ of this tree (instance translation at runtime, model at Salon)
            // seeds the turbulence + hula phase so 7,000 instanced trees DE-SYNC and
            // the weather ADVECTS across the neighbourhood — while the downwind LEAN
@@ -1546,13 +1547,13 @@ const OVERHEAD_WIND_BEGIN = `
            float gust  = uGustsScale * uGustEnvelope * ovFbm(vec2(uTime * 0.4) + wd * uTime * 0.2);
            float drift  = uTime * 0.25;
            vec2  hulaDir = vec2(cos(drift), sin(drift));
-           float amp    = (0.035 * wI + 0.07 * gust) * aTreeHeightNorm;
+           float amp    = (0.12 + 0.035 * wI + 0.07 * gust) * aTreeHeightNorm;  // 0.12 = ambient breeze FLOOR (calm ≠ dead); weather ADDS on top
            float hulaPh = dot(ovWorldXZ, vec2(0.017, 0.011));   // per-tree phase de-sync
            vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4 + hulaPh));
            vec2  lean   = wd * (amp * 0.7);
            // Flutter noise sampled at WORLD coords → advects downwind across the map.
            vec2  np      = (ovWorldXZ + position.xz) * 0.55 + wd * uTime * 1.2;
-           float flutAmp = 0.05 * wI * aTreeHeightNorm;
+           float flutAmp = (0.05 + 0.05 * wI) * aTreeHeightNorm;  // ambient flutter floor + weather
            vec2  flutter = (vec2(ovFbm(np), ovFbm(np + 41.7)) - 0.5) * (2.0 * flutAmp);
            transformed.xz += hula + lean + flutter;
            if (aLeafBody > 0.001) {   // legacy per-leaf flutter (procedural relic)

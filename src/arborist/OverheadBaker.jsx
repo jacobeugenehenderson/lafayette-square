@@ -24,10 +24,21 @@ const _loader = new GLTFLoader()
 function loadGltf(url) { return new Promise((res, rej) => _loader.load(url, res, undefined, rej)) }
 function nextFrame() { return new Promise((r) => requestAnimationFrame(r)) }
 
-// Canopy radius = max XZ extent over leaf meshes (fallback: all meshes) — mirrors
-// SpecimenViewport's overheadRec, so the disc is sized as the Salon eye-gated it.
+// Canopy radius = max XZ extent (from the capture origin) over leaf meshes
+// (fallback: all meshes). ⭐ Measured in WORLD space — each vertex is pushed
+// through its node's world matrix before the hypot. The capture RENDERS the scene
+// with world transforms applied, so measuring raw LOCAL positions (the old bug)
+// sized the ortho frame to the wrong number wherever a tree's foliage lives in a
+// scaled node (the docs note wildly mixed node scales, e.g. tilia 0.01, abies
+// 30.48): oaks under-measured → canopy clipped at the square frame edge; conifers
+// over-measured → tree renders tiny in a huge frame (the near-blank "chips").
+// World space fixes both, and because it's max-distance-from-origin it also
+// contains an off-centre canopy. Same class as the atlasKind decimation local/
+// world bug. (Sibling to check: SpecimenViewport's overheadRec measure.)
 const LEAF_RE = /leaf|leaves|foliage|frond|needle/i
 function measureCanopyRadius(scene) {
+  scene.updateMatrixWorld(true)
+  const v = new THREE.Vector3()
   let xzLeaf = 0, xzAll = 0
   scene.traverse((o) => {
     if (!o.isMesh || !o.geometry?.attributes?.position) return
@@ -35,12 +46,17 @@ function measureCanopyRadius(scene) {
     const kind = o.geometry?.userData?.atlasKind ?? o.userData?.atlasKind
     const isLeaf = kind === 'leaf' || (kind !== 'bark' && LEAF_RE.test(o.name || ''))
     for (let i = 0; i < pos.count; i++) {
-      const r = Math.hypot(pos.getX(i), pos.getZ(i))
+      v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld)
+      const r = Math.hypot(v.x, v.z)
       if (r > xzAll) xzAll = r
       if (isLeaf && r > xzLeaf) xzLeaf = r
     }
   })
-  return Math.max(1, xzLeaf || xzAll)
+  // Frame to xzAll (ALL geometry), not xzLeaf: the frame must contain everything
+  // that renders, and if outer foliage is mis-tagged bark, leaf-only under-frames
+  // → a hard clip on that side. A larger frame only adds transparent margin.
+  void xzLeaf
+  return Math.max(1, xzAll)
 }
 
 // Encode a capture's readback pixels → a right-sized PNG dataURL. WebGL readback is

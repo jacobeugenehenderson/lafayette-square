@@ -28,7 +28,7 @@ import {
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
-import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver } from './OverheadTrees.jsx'
+import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg } from './OverheadTrees.jsx'
 import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -562,8 +562,16 @@ function TierDriver() {
 // shader detail, a uniform — not geometry).
 
 function SwayDriver() {
-  useFrame((_, delta) => {
-    treeSwayUniforms.uTime.value += delta
+  const lastMs = useRef(0)
+  useFrame(() => {
+    // Advance the sway clock off WALL-CLOCK, not the R3F delta: under
+    // frameloop='demand' (browse/street) the R3F clock reads ~2fps (Scene.jsx
+    // CameraRig note), so `+= delta` froze the ambient canopy motion. Wall-clock
+    // keeps uTime smooth as long as FrameLimiter pumps invalidate (~30fps non-hero).
+    const now = performance.now()
+    const dt = lastMs.current ? Math.min(0.1, (now - lastMs.current) / 1000) : 0
+    lastMs.current = now
+    treeSwayUniforms.uTime.value += dt
     const directive = useAtmosphere.getState().tweenedDirective
     resolveWindState(directive, _swayWindState)
     // Drift = baseDirection × baseSpeedMps (constant across the scene).
@@ -904,7 +912,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
           up to plan height and the whole scene swaps to the overhead snapshot. */}
       <group visible={!overheadMode}>
       {/* Mesh-role trees: real 3D geometry (lod1). */}
-      {Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
+      {!treeDbg('noMesh') && !treeDbg('noTrees') && Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {
           const species = urlToSpecies(url)
           const variantId = urlToVariantId(url)
@@ -934,7 +942,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       {/* Impostor-role trees: cheap stamped-2D layer cards (Arc 2, Phase 1).
           One geometry per rendered species, instanced across placements. Rides
           the SAME shared atlas material → full optical parity (DoF/fog/bloom). */}
-      {impostors && impostorRecords && Array.from(impostors.entries()).map(([species, instances]) => {
+      {!treeDbg('noImpostor') && !treeDbg('noTrees') && impostors && impostorRecords && Array.from(impostors.entries()).map(([species, instances]) => {
         const barkSettings = barkBySpeciesEffective[species] || null
         const detailSlot = barkDetailBySpecies[species] || null
         const posterizedSlot = barkPosterizedBySpecies[species] || null
@@ -958,7 +966,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
           a group when the camera is at plan height. Lazy-loaded behind the hero
           shot; a species with no baked asset simply stays on mesh (never blank). */}
       {overheadAssets && (
-        <group visible={overheadMode}>
+        <group visible={overheadMode && !treeDbg('noOverhead') && !treeDbg('noTrees')}>
           {Array.from(bySpecies.entries()).map(([species, instances]) => {
             const asset = overheadAssets.get(species)
             return asset

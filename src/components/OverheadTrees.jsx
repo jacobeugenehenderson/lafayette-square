@@ -29,6 +29,20 @@ import { getElevationRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useCamera from '../hooks/useCamera'
 
+// ── Debug instrument (dev-only; ?treeDebug=flag,flag — NEVER affects prod) ────
+// Names the "chips": ?treeDebug=bandTint tints the 3 overhead bands branch=red /
+// mid=green / canopy=blue so you can see WHICH slice draws a fragment; ?treeDebug=
+// noBand:branch (or mid/canopy) hides that band. Path-level toggles live in
+// InstancedTrees.jsx (noMesh/noImpostor/noOverhead). Kit-generic, any scene.
+const _DBG = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+export const treeDbg = (k) => { const v = _DBG.get('treeDebug'); return v ? v.split(',').includes(k) : false }
+const BAND_DEBUG_COLOR = [[1, 0.15, 0.15], [0.15, 1, 0.15], [0.3, 0.5, 1]]  // branch / mid / canopy
+
+// Overhead discs are impostor billboards, never pick targets — disabling raycast
+// lets top-down clicks pass THROUGH to whatever they're a stand-in for (in the
+// Grove, the ground selection plate; in the slab, the ground/buildings).
+const NO_RAYCAST = () => null
+
 // ── Weather relight driver ───────────────────────────────────────────────────
 // Feeds the shared overheadLightUniforms from the atmosphere directive so the
 // plan-view canopy tracks the weather: overcast (high ambient floor) → flat,
@@ -133,7 +147,7 @@ export function useOverheadAssets({ enabled, lookName, overheadBySpecies, specie
 // rotY + scale (the pour treatment). Bands bottom→top get a brightness ramp
 // (0.3→1.0) so the crown-shadowed lower layers read as depth through the top's
 // gaps. Materials relight from the shared atmosphere (injectOverheadStamp).
-export function OverheadSpecies({ asset, instances, visible }) {
+export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
   const refs = useRef([])
   const invalidate = useThree(s => s.invalidate)
 
@@ -143,12 +157,18 @@ export function OverheadSpecies({ asset, instances, visible }) {
     return asset.bands.map((b, i) => {
       const bright = n > 1 ? 0.3 + 0.7 * (i / (n - 1)) : 1.0
       const geo = buildOverheadBandDisc(rec, { yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm })
+      // Debug: solid-tint each band to name the "chips". Keep the albedo map so the
+      // real silhouette + alphaTest still read (that's what shows WHICH pixels are
+      // the artifact); only the COLOR is overridden. Skip the AO relight so the tint
+      // is pure (leaving it on zeroed alpha → nothing drew, the first bandTint bug).
+      const dbgC = treeDbg('bandTint') ? (BAND_DEBUG_COLOR[i] || [1, 1, 0]) : null
       const mat = new THREE.MeshBasicMaterial({
-        map: b.albedoTex, color: new THREE.Color(bright, bright, bright),
+        map: b.albedoTex,
+        color: dbgC ? new THREE.Color(dbgC[0], dbgC[1], dbgC[2]) : new THREE.Color(bright, bright, bright),
         transparent: false, alphaTest: 0.4,
         side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
       })
-      injectOverheadStamp(mat, b.aoTex)
+      if (!dbgC) injectOverheadStamp(mat, b.aoTex)
       return { key: b.key, geo, mat }
     })
   }, [asset])
@@ -157,15 +177,34 @@ export function OverheadSpecies({ asset, instances, visible }) {
     for (const d of discs) { try { d.geo.dispose() } catch {} try { d.mat.dispose() } catch {} }
   }, [discs])
 
+  // Crossfade opacity (the Grove Hero↔Browse transition). Default 1 → the slab is
+  // untouched. Flip `transparent` only when it actually changes (a recompile);
+  // `opacity` alone is a cheap uniform, safe to set every frame during the fade.
+  useEffect(() => {
+    for (const d of discs) {
+      const t = opacity < 1
+      if (d.mat.transparent !== t) { d.mat.transparent = t; d.mat.needsUpdate = true }
+      d.mat.opacity = opacity
+      d.mat.depthWrite = !t
+    }
+  }, [discs, opacity])
+
   // Per-instance matrices (translate + rotY + scale) — the same per-placement
   // transform the mesh path bakes, so the disc-stack pours across all placements.
   const matrices = useMemo(() => {
     const arr = new Array(instances.length)
     const M = new THREE.Matrix4()
     const T = new THREE.Matrix4(), R = new THREE.Matrix4(), S = new THREE.Matrix4()
+    // Axial repeller — a deterministic per-instance Y offset so two overlapping
+    // trees' coplanar band-planes don't z-fight ("axial fighting"). The plan view
+    // ignores Y, so this is invisible except for killing the fight; different XZ
+    // positions hash to different offsets, so neighbours land at different heights.
+    const AXIAL_SPREAD_M = 2.0
+    const fract = (x) => x - Math.floor(x)
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i]
-      const y = typeof inst.y === 'number' ? inst.y : getElevationRaw(inst.x, inst.z)
+      const y0 = typeof inst.y === 'number' ? inst.y : getElevationRaw(inst.x, inst.z)
+      const y = y0 + fract(Math.sin(inst.x * 12.9898 + inst.z * 78.233) * 43758.5453) * AXIAL_SPREAD_M
       const s = inst.scale || 1
       T.makeTranslation(inst.x, y, inst.z)
       R.makeRotationY(inst.rotY || 0)
@@ -196,11 +235,12 @@ export function OverheadSpecies({ asset, instances, visible }) {
           key={d.key}
           ref={(el) => { refs.current[i] = el }}
           args={[d.geo, d.mat, instances.length]}
-          visible={visible}
+          visible={visible && !treeDbg((['noBranch', 'noMid', 'noCanopy'])[i])}
           renderOrder={i}
           frustumCulled={false}
           castShadow={false}
           receiveShadow={false}
+          raycast={NO_RAYCAST}
         />
       ))}
     </>

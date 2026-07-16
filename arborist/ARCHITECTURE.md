@@ -74,6 +74,14 @@ This is the load-bearing as-built of how Arborist trees actually render in produ
 
 ---
 
+## The Grove Hero↔Browse preview — TAKES the player's animation (2026-07-16)
+
+The Grove (`src/arborist/Grove.jsx`) has a **Hero / Browse** view toggle that previews trees through the **same slab consumers the universal player uses** — Hero = the lit 3D specimens; **Browse = `OverheadSpecies`** (the exact overhead disc the map ships in plan view, fed by `useOverheadAssets` off the last bake's `overheadBySpecies`). So the Grove is a *faithful* slab preview, not a lookalike: a defect visible in Browse (e.g. a near-blank conifer capture) is exactly what the slab renders.
+
+**The Hero↔Browse transition takes the player's animation — it does NOT own or fork it** (the staging doctrine: what you stage = what ships). It reuses the shared **`createCameraTween`** (`src/preview/cameraTween.js` — the same `easeInOutCubic` + up-vector tilt the player runs Hero↔Browse) to move the Grove camera, and uses that tween's eased progress `e` to **crossfade the tree forms** (3D specimen fades out as the overhead disc fades in). `TransitionDriver` ticks the tween per frame; `OrbitControls` is disabled during it (`feedback_orbitcontrols_disable_to_drive_camera`). Fixed timing, **no knobs**. Browse is a true straight-down view (up-vector tilts to `[0,0,-1]`, rotate disabled — never tilted, the player's real plan projection).
+
+Ambient life: **`GroveWind`** drives a constant gentle breeze (`HERO_BREEZE_MPS`) into the **shared `treeSwayUniforms`**, so both forms are alive in the Grove even though it has no live weather feed (the player drives the same uniforms from the weather directive). The **axial repeller** (`OverheadTrees.jsx#OverheadSpecies` per-instance Y offset) that keeps overlapping discs from z-fighting is in the shared consumer, so it fixes the slab's browse view too. *(Operator-facing: `arborist/OPERATIONS.md` "Grove views.")*
+
 ## Two-tier substitution (heroes on top of fillers)
 
 Five morphology fillers and ~5 hand-tuned heroes coexist in the same roster.
