@@ -21,9 +21,12 @@ const useTimeOfDay = create((set, get) => ({
     useCalendar.setState({ currentDate: date, isLive: false })
   },
   // Pump-driven live tick: advance currentTime without flipping isLive.
-  // Only operator-driven scrub calls (setTime / setHour / setMinuteOfDay)
-  // leave live mode. See meteorologist/NOTES.md 2026-05-20 ADR.
+  // No-ops once the operator has scrubbed out of live mode (isLive=false) so
+  // the 60s wall-time pump never overwrites a scrubbed time back to now.
+  // Only scrub calls (setTime / setHour / setMinuteOfDay) leave live mode;
+  // returnToLive resumes it. See meteorologist/NOTES.md 2026-05-20 ADR.
   setTimeFromLive: (date) => {
+    if (!get().isLive) return
     set({ currentTime: date })
     useCalendar.setState({ currentDate: date })
   },

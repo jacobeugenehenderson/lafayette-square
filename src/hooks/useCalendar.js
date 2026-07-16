@@ -68,8 +68,10 @@ const useCalendar = create((set, get) => ({
     useTimeOfDay.setState({ currentTime: date, isLive: false })
   },
 
-  // Pump-driven live tick: preserve isLive on both stores.
+  // Pump-driven live tick: preserve isLive. No-ops after an operator scrub
+  // (isLive=false) so the pump never snaps a scrubbed date back to now.
   setDateFromLive: (date) => {
+    if (!get().isLive) return
     set({ currentDate: date })
     useTimeOfDay.setState({ currentTime: date })
   },
