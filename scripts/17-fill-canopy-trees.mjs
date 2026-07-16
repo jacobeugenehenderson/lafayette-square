@@ -21,10 +21,10 @@
  * Output: cartograph/data/<scene>/clean/derived_trees.json  (census schema)
  */
 import { fromFile } from 'geotiff'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { makeForbiddenTester } from '../cartograph/forbidden-surface.mjs'
+import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO = path.resolve(__dirname, '..')
@@ -106,8 +106,19 @@ const main = async () => {
     occ.get(k).push({ x, z })
   }
 
-  // Hardscape mask (shared with bake-trees) — a poured scene's own map.json.
-  const isForbidden = makeForbiddenTester({ mapPath: path.join(dir, 'clean', 'map.json') })
+  // Where may a tree stand? The FROZEN Section surfaces (shared with bake-trees):
+  // treelawn + land-use only — never the carriageway, sidewalk or a building.
+  // ⚠️ Requires the scene's ground bake (shape.json) to have run first.
+  const shapePath = path.join(REPO, 'public', 'baked', SCENE, 'shape.json')
+  if (!existsSync(shapePath)) {
+    console.error(`No ${shapePath} — bake the ground for '${SCENE}' before filling canopy.\n` +
+      `Without the frozen surfaces there is no honest answer to "is this the street?".`)
+    process.exit(1)
+  }
+  const isForbidden = makeZoneTester({
+    shapePath,
+    mapPath: path.join(dir, 'clean', 'map.json'),
+  })
   // Spiral out from a forbidden spot to the nearest allowed ground.
   const relocate = (x, z) => {
     const jit = hash01(Math.round(x * 10), Math.round(z * 10), 9) * Math.PI * 2
@@ -179,6 +190,9 @@ const main = async () => {
 
   const out = {
     meta: {
+      // INVENTED, not surveyed. bake-trees reads this: a derived tree that lands
+      // on hardscape is dropped, where a surveyed one would be nudged.
+      kind: 'derived',
       source: 'NLCD Tree Canopy Cover (USDA FS) — mix scattered ∝ % canopy',
       scene: SCENE,
       canopyRaster: `${W}x${H} px`,

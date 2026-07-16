@@ -8,11 +8,21 @@ jurisdiction-blind and dense here (~16k in the bbox), so they're the honest
 floor for DeMun until (if ever) Clayton's Davey 2022/23 inventory endpoint is
 sourced.
 
-To stay DISJOINT from the City census (no double-counted trees on the Hi-Pointe
-side), this keeps only nodes WEST of the City/County divide
-(cartograph/data/<scene>/raw/admin_boundaries.json — East/center = City,
-West = County). City census + this OSM layer are then two non-overlapping layers
-the bake can simply union; no dedup needed.
+⭐ DEDUP BY PROXIMITY, not by jurisdiction (2026-07-15).
+
+This used to keep only nodes WEST of the City/County divide, so the OSM layer
+could not double-count the City census on the Hi-Pointe side. Clean idea, ruinous
+trade — MEASURED against the real data: of 2,491 OSM trees inside the disc, only
+**55** sit within 3 m of a City tree. The divide cull was discarding **1,621 real
+surveyed positions** to dodge a 55-tree collision, and the canopy fill then
+invented thousands of fake trees to backfill the hole it left.
+
+So: union both layers and drop only the OSM nodes that ACTUALLY coincide with a
+City tree (DEDUP_M). Same disjointness guarantee, ~1,600 more real trees. The
+divide survives only as the fallback when no City census exists at all.
+
+We keep the census literal wherever we can get it and place it — an invented tree
+is a last resort, never a substitute for one somebody actually recorded.
 
 OSM caveats (it's a floor, not a survey): species is sparse and often a Latin
 binomial rather than the Forestry `COMMON` vocabulary, so `shape` mostly falls
@@ -23,8 +33,11 @@ Scene-aware via CARTOGRAPH_SCENE. Same park_trees.json schema, written to a
 SEPARATE file so it composes with (never clobbers) the City census.
 
 Usage:  CARTOGRAPH_SCENE=hipointe-demun python3 scripts/14-fetch-osm-trees.py
+        …            --reuse-raw   re-derive from the raw well already on disk
+                                   (no Overpass hit — the fetch is rate-limited
+                                   and the raw nodes don't change hourly)
 
-Output: cartograph/data/<scene>/clean/osm_trees.json   (County-side census)
+Output: cartograph/data/<scene>/clean/osm_trees.json   (the OSM census layer)
         cartograph/data/<scene>/raw/osm_trees_raw.json  (raw Overpass elements)
 """
 
@@ -151,30 +164,83 @@ def fetch_overpass(ring_bbox):
     raise RuntimeError("Overpass failed after 3 attempts")
 
 
+# A tree recorded by BOTH the City and OSM is the same trunk twice. Measured on
+# hipointe-demun: 43 pairs within 2 m, 55 within 3 m, 67 within 5 m — a flat tail,
+# so 3 m sits comfortably past the real coincidences without eating neighbours
+# (street trees are planted ~7 m apart; MIN_DIST in the canopy fill).
+DEDUP_M = 3.0
+
+
+def load_city_census():
+    """The City Forestry census in local x/z, or None if this town has none."""
+    path = scene_path('clean/park_trees.json')
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        return json.load(f).get('trees', [])
+
+
+def make_dedup(city_trees):
+    """Spatial hash → 'is there a City tree on this exact trunk?' in O(1)."""
+    cell = DEDUP_M
+    grid = {}
+    for t in city_trees:
+        k = (int(t['x'] // cell), int(t['z'] // cell))
+        grid.setdefault(k, []).append((t['x'], t['z']))
+
+    def coincides(x, z):
+        gx, gz = int(x // cell), int(z // cell)
+        for dx in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                for (cx, cz) in grid.get((gx + dx, gz + dz), ()):
+                    if (cx - x) ** 2 + (cz - z) ** 2 < DEDUP_M ** 2:
+                        return True
+        return False
+    return coincides
+
+
 def main():
     ensure_dirs()
     ring = load_boundary_ring()
-    divide = load_divide()
-    if divide is None:
-        print("WARNING: no City/County divide found — keeping the WHOLE disc "
-              "(OSM may double-count the Hi-Pointe side).")
+    city = load_city_census()
+    divide = None
+    coincides = None
+    if city:
+        coincides = make_dedup(city)
+        print(f"Dedup: {len(city)} City census trees loaded; dropping OSM nodes "
+              f"within {DEDUP_M} m of one (the same trunk, recorded twice).")
+    else:
+        # No City census to collide with → nothing to dedup against. Fall back to
+        # the old jurisdictional cull so a town with a divide still stays honest.
+        divide = load_divide()
+        if divide is None:
+            print("No City census and no City/County divide — keeping the WHOLE disc.")
+        else:
+            print("No City census found — falling back to the City/County divide cull.")
 
     print("=" * 60)
     print(f"Fetching OSM natural=tree for scene '{SCENE}' (County/DeMun floor)")
     print(f"Bbox: {BBOX}")
     print("=" * 60)
 
-    elements = fetch_overpass(BBOX)
-    print(f"  Got {len(elements)} raw tree nodes")
+    raw_path = os.path.join(RAW_DIR, "osm_trees_raw.json")
+    reuse = "--reuse-raw" in sys.argv and os.path.exists(raw_path)
+    if reuse:
+        with open(raw_path) as f:
+            elements = json.load(f).get("elements", [])
+        print(f"  Reusing {len(elements)} raw nodes from {raw_path} (no Overpass hit)")
+    else:
+        elements = fetch_overpass(BBOX)
+        print(f"  Got {len(elements)} raw tree nodes")
     if not elements:
         print("No trees fetched. Exiting.")
         sys.exit(1)
 
-    raw_path = os.path.join(RAW_DIR, "osm_trees_raw.json")
-    with open(raw_path, "w") as f:
-        json.dump({"elements": elements, "endpoint": OVERPASS, "bbox": BBOX},
-                  f, separators=(",", ":"))
-    print(f"\nWrote {len(elements)} raw nodes -> {raw_path}")
+    if not reuse:
+        with open(raw_path, "w") as f:
+            json.dump({"elements": elements, "endpoint": OVERPASS, "bbox": BBOX},
+                      f, separators=(",", ":"))
+        print(f"\nWrote {len(elements)} raw nodes -> {raw_path}")
 
     trees = []
     skipped = Counter()
@@ -187,7 +253,11 @@ def main():
         if not point_in_ring(x, z, ring):
             skipped["outside_disc"] += 1
             continue
-        # Keep only the County (west) side so we don't double the City census.
+        # Drop only the trunks the City already recorded — never a whole side of
+        # the map. (`divide` is the no-City-census fallback.)
+        if coincides is not None and coincides(x, z):
+            skipped["duplicate_of_city_tree"] += 1
+            continue
         if divide is not None and x >= divide_x_at(z, divide):
             skipped["city_side"] += 1
             continue

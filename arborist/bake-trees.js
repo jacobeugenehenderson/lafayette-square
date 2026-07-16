@@ -11,6 +11,10 @@
  *   --styles realistic[,winter…] — active style set (defaults 'realistic')
  *   --lod lod0|lod1|lod2         — LOD to ship (defaults 'lod2')
  *   --heroLook <name>            — Look whose hero pan drives heroTier (def 'lafayette-square')
+ *   --zone-shape <path>          — baked shape.json: the FROZEN Section surfaces that
+ *                                  answer "may a tree stand here" (poured scenes)
+ *   --boundary <path>            — neighborhood_boundary.json: the hood's edge. Inside
+ *                                  the street polygon = literal; outside = dissolve + heroTier
  *
  * TWO AXES, and they are NOT the same thing: `scene` is the neighbourhood (whose
  * census + roster + assets these are — species don't change because the sky does);
@@ -36,7 +40,8 @@
  */
 import { promises as fs } from 'node:fs'
 import { readFileSync } from 'node:fs'
-import { makeForbiddenTester } from '../cartograph/forbidden-surface.mjs'
+import { makeForbiddenTester, makeZoneTester } from '../cartograph/forbidden-surface.mjs'
+import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
 import { DEFAULT_SCENE } from '../cartograph/config.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -371,11 +376,16 @@ export async function bakeTrees({
   scene = DEFAULT_SCENE,
   styles = ['realistic'],
   lod = 'lod2',
-  heroLook = 'lafayette-square', // which Look's baked hero pan + canopy dims drive heroTier
+  // Which Look's baked hero pan + canopy dims drive heroTier. Defaults to the
+  // scene's OWN Look — never a literal 'lafayette-square', which would tier a
+  // poured scene's trees against LS's camera in LS's coordinate frame (garbage).
+  heroLook = null,
   placements,    // override path (string) or paths (array, unioned)
   output,        // override output path; defaults to public/baked/<scene>/trees.json
   speciesMapPath, // override COMMON->library routing; defaults to LS's global map
-  forbiddenMapPath, // poured scene's clean/map.json for the hardscape/water mask
+  forbiddenMapPath, // poured scene's clean/map.json — obstructions (+ legacy mask)
+  zoneShapePath, // poured scene's baked shape.json — the FROZEN Section surfaces
+  boundaryPath, // poured scene's neighborhood_boundary.json — the literal/GPU line
   verbose = false,
 } = {}) {
   const sceneName = scene
@@ -397,7 +407,14 @@ export async function bakeTrees({
   const park = { trees: [] }
   for (const p of parkPaths) {
     const layer = JSON.parse(await fs.readFile(p, 'utf8'))
-    park.trees.push(...(layer.trees || []))
+    // Is this well SURVEYED reality or INVENTED fill? It decides whether a tree
+    // on hardscape gets nudged (reality — our strips are guesses) or dropped
+    // (invention — it has no standing). The well declares itself via meta.kind;
+    // the canopy fill is the only invented layer, so its filename is the
+    // fallback for wells written before `kind` existed.
+    const kind = layer.meta?.kind
+      ?? (path.basename(p) === 'derived_trees.json' ? 'derived' : 'census')
+    for (const t of (layer.trees || [])) park.trees.push({ ...t, __kind: kind })
   }
   const speciesMap = JSON.parse(await fs.readFile(mapPath, 'utf8'))
 
@@ -406,14 +423,37 @@ export async function bakeTrees({
     console.log(`[bake-trees] pool: ${index.variants.length} variants, ${park.trees.length} placements`)
   }
 
-  // Forbidden-surface tester. A poured scene passes its own clean/map.json
-  // (--forbidden-map) so census + canopy-fill trees are masked off hardscape/
-  // water/buildings. LS (no placements) uses the default LS tester. The toy
-  // fixture (placements, no forbidden-map) skips it — its centerlines are
-  // hand-authored without hardscape polygons in this world frame.
-  const isForbidden = forbiddenMapPath
-    ? makeForbiddenTester({ mapPath: path.resolve(REPO_ROOT, forbiddenMapPath) })
-    : (placements ? null : makeForbiddenTester())
+  // Surface tester, best construction first:
+  //   1. FROZEN Section surfaces (shape.json) — a poured scene. The only model
+  //      that can see the road, because the road is the grout between tiles.
+  //   2. LEGACY paint-layer mask (map.json) — LS, and any poured scene whose
+  //      ground bake has not run. Cannot see the road; scatters trees into the
+  //      carriageway. Loud on purpose.
+  //   3. None — the toy fixture (hand-authored centerlines, no hardscape here).
+  // The neighborhood proper vs the greater circle. Inside the boundary-street
+  // polygon we keep everything (literal); outside we dissolve across the ground's
+  // own fade band and lean on heroTier for the GPU. Absent → no dissolve.
+  const membership = boundaryPath
+    ? makeMembership(path.resolve(REPO_ROOT, boundaryPath))
+    : null
+  const isForbidden = zoneShapePath
+    ? makeZoneTester({
+        shapePath: path.resolve(REPO_ROOT, zoneShapePath),
+        mapPath: forbiddenMapPath ? path.resolve(REPO_ROOT, forbiddenMapPath) : undefined,
+        // Left FALSE deliberately. The tester's "outside every curb" bucket can't
+        // yet separate carriageway from un-poured, so allowing it would put trees
+        // back in the road — the whole bug. It costs nothing here: the greater
+        // circle IS poured (tiles reach 1256 m of a 1251 m disc), so it gets its
+        // trees from real tiles. Only the ~7.8% genuinely-untiled holes go bare,
+        // and those sit in the annulus where the dissolve governs anyway.
+      })
+    : forbiddenMapPath
+      ? makeForbiddenTester({ mapPath: path.resolve(REPO_ROOT, forbiddenMapPath) })
+      : (placements ? null : makeForbiddenTester())
+  if (forbiddenMapPath && !zoneShapePath) {
+    console.warn(`[bake-trees] ⚠️  no shape.json for '${sceneName}' — falling back to the LEGACY paint-layer mask. ` +
+      `It cannot see the road and WILL leave trees in the carriageway. Bake the ground first.`)
+  }
 
   const instances = []
   // Parallel to `instances` (pushed in lock-step) — per-tree canopy bounding
@@ -421,35 +461,46 @@ export async function bakeTrees({
   const canopies = []
   let unmatched = 0
   const forbiddenCounts = {}
+  const nudged = {}   // surveyed trees moved to legal ground, by the zone they came from
+  let dissolved = 0   // invented trees thinned out in the greater circle
+  let outside = 0     // placed trees standing outside the neighborhood proper
 
   // Hero pan + canopy dims for the heroTier classifier, both read from the active
   // Look's baked slab (render-truth — the SAME hero the runtime plays + the dims
   // bake-look measured from the rendered roster trees). Skipped for the toy
   // fixture (no hero shot). Absent → heroTier omitted; runtime falls back to
   // all-mesh (version-agnostic tree path).
+  // ⭐ Gated on "does this Look HAVE a hero pan", never on `placements`.
+  //
+  // This read `if (!placements)` until 2026-07-15. The intent was to skip the toy
+  // fixture (no hero shot) — but `placements` is also how EVERY poured scene feeds
+  // its census, so the toy-skip silently disabled the optimizer for every
+  // neighbourhood we pour. It ran on LS (745 trees, culling 44% as
+  // never-meaningfully-visible) and was off on Hi-Pointe/DeMun's 6,967. Backwards:
+  // switched on where it barely mattered, off where it mattered most. The toy is
+  // still skipped — correctly, and for the real reason: it has no hero keyframes.
+  const effHeroLook = heroLook || sceneName
   let heroPan = null
   let resolveCanopy = null
-  if (!placements) {
-    try {
-      const s = JSON.parse(await fs.readFile(
-        path.join(REPO_ROOT, 'public', 'baked', heroLook, 'scene.json'), 'utf8'))
-      if (Array.isArray(s.heroKeyframes) && s.heroKeyframes.length) {
-        heroPan = { keyframes: s.heroKeyframes, subject: s.heroSubject, archValues: s.arch?.values, tension: s.heroMotion?.tension }
-      }
-    } catch (e) {
-      if (verbose) console.log(`[bake-trees] hero pan unavailable for '${heroLook}' (${e.code || e.message}) — heroTier skipped`)
+  try {
+    const s = JSON.parse(await fs.readFile(
+      path.join(REPO_ROOT, 'public', 'baked', effHeroLook, 'scene.json'), 'utf8'))
+    if (Array.isArray(s.heroKeyframes) && s.heroKeyframes.length) {
+      heroPan = { keyframes: s.heroKeyframes, subject: s.heroSubject, archValues: s.arch?.values, tension: s.heroMotion?.tension }
     }
-    if (heroPan) {
-      let canopyByVariant = {}
-      try {
-        canopyByVariant = JSON.parse(await fs.readFile(
-          path.join(REPO_ROOT, 'public', 'baked', heroLook, 'trees-atlas.json'), 'utf8')).canopyByVariant || {}
-      } catch { /* dims absent → resolver falls back to global mean */ }
-      const r = buildCanopyResolver(canopyByVariant, index.variants)
-      resolveCanopy = r.resolve
-      if (!r.haveDims && verbose) {
-        console.log(`[bake-trees] canopyByVariant empty for '${heroLook}' — heroTier uses fallback dims`)
-      }
+  } catch (e) {
+    if (verbose) console.log(`[bake-trees] hero pan unavailable for '${effHeroLook}' (${e.code || e.message}) — heroTier skipped`)
+  }
+  if (heroPan) {
+    let canopyByVariant = {}
+    try {
+      canopyByVariant = JSON.parse(await fs.readFile(
+        path.join(REPO_ROOT, 'public', 'baked', effHeroLook, 'trees-atlas.json'), 'utf8')).canopyByVariant || {}
+    } catch { /* dims absent → resolver falls back to global mean */ }
+    const r = buildCanopyResolver(canopyByVariant, index.variants)
+    resolveCanopy = r.resolve
+    if (!r.haveDims && verbose) {
+      console.log(`[bake-trees] canopyByVariant empty for '${effHeroLook}' — heroTier uses fallback dims`)
     }
   }
 
@@ -461,14 +512,37 @@ export async function bakeTrees({
     if (!v) { unmatched++; continue }
     const lodUrl = v.skeletons[targetLod] || v.skeletons.lod1 || v.skeletons.lod0
     if (!lodUrl) { unmatched++; continue }
-    // Surface filter: drop trees that land in a forbidden polygon
-    // (water/building/street/etc.). Applied BEFORE positionOverride since
-    // the override is a variant-local nudge.
+    // Surface filter, applied BEFORE positionOverride (that override is a
+    // variant-local nudge, a different thing).
+    //
+    // SURVEYED trees are NUDGED, invented ones are DROPPED. A recorded tree
+    // sitting a metre inside our sidewalk is near-certainly our strip widths
+    // being soft (tl/sw are seeded 1.5 m defaults, not measured) rather than the
+    // city having planted a tree in a footpath — so reality gets moved to the
+    // nearest legal ground, never deleted for disagreeing with a guess. The
+    // canopy fill gets no such courtesy: it is invented, and inventions that
+    // land on hardscape are simply wrong.
+    let tx = tree.x, tz = tree.z
+    // The DISSOLVE. Inside the neighborhood proper every tree stands — literal.
+    // Outside, thin toward the rim over the ground's fade band so the greater
+    // circle dissolves instead of ending at a seam. Surveyed trees are exempt:
+    // a real recorded tree is never deleted for taste, only invented ones thin.
+    if (membership && tree.__kind === 'derived' && !membership.keep(tx, tz, 11)) {
+      dissolved++
+      continue
+    }
     if (isForbidden) {
-      const reason = isForbidden(tree.x, tree.z)
+      const reason = isForbidden(tx, tz)
       if (reason) {
-        forbiddenCounts[reason] = (forbiddenCounts[reason] || 0) + 1
-        continue
+        const canNudge = tree.__kind !== 'derived' && typeof isForbidden.nudge === 'function'
+        const moved = canNudge ? isForbidden.nudge(tx, tz) : null
+        if (moved) {
+          tx = moved[0]; tz = moved[1]
+          nudged[reason] = (nudged[reason] || 0) + 1
+        } else {
+          forbiddenCounts[reason] = (forbiddenCounts[reason] || 0) + 1
+          continue
+        }
       }
     }
     // Rotation: operator's rotationOverride.y picks the variant's "best
@@ -482,8 +556,8 @@ export async function bakeTrees({
     const px = v.positionOverride?.x ?? 0
     const pz = v.positionOverride?.z ?? 0
     const py = v.positionOverride?.y ?? 0
-    const finalX = tree.x + px
-    const finalZ = tree.z + pz
+    const finalX = tx + px
+    const finalZ = tz + pz
     instances.push({
       x: +finalX.toFixed(4),
       // Ground reverted to flat (#19); trees plant at y=0 + override.
@@ -510,7 +584,12 @@ export async function bakeTrees({
       // multiplies by `uLampGlow` (per-Look TOD-curve slider) for the
       // final emissive contribution.
       lampGlow: +lampGlowAt(finalX, finalZ).toFixed(4),
+      // Which side of the hood's edge this tree stands on. `false` = the greater
+      // circle, where the runtime may spend less on it. Omitted when the scene
+      // has no boundary (nothing to be outside OF).
+      ...(membership ? { inHood: membership.isInside(finalX, finalZ) } : {}),
     })
+    if (membership && !membership.isInside(finalX, finalZ)) outside++
     // Canopy bounding sphere (parallel push) for the hero-tier prominence pass.
     if (resolveCanopy) {
       const dims = resolveCanopy(v.species, v.variantId, v.category)
@@ -526,9 +605,21 @@ export async function bakeTrees({
   // lock-step with `canopies`. Skipped (field omitted) when no hero pan/dims.
   let heroTierMeta = null
   if (heroPan && canopies.length === instances.length && canopies.length) {
+    // ⭐ The HERO shot culls by CAMERA — no hood exception (Jacob, 2026-07-15).
+    //
+    // The two shots have different jobs, and neither needs the other's trees:
+    //   HERO   — a camera path. Cull by frustum; only what the shot sees is paid for.
+    //   BROWSE — the whole impostor neighborhood at once. Shows ALL trees, cheaply,
+    //            because they're flat cards seen from overhead.
+    //
+    // So a hero cull loses nothing: the tree still exists in the census, still
+    // stands in browse. "Literal inside the neighborhood proper" is a claim about
+    // the DATA — real census, honest surfaces — not a licence to render everything
+    // in every shot. (An earlier pass here promoted in-hood culls back to mesh on
+    // exactly that confusion; removed.)
     const { tiers, meta } = classifyHeroTiers(canopies, heroPan)
     for (let i = 0; i < instances.length; i++) instances[i].heroTier = tiers[i]
-    heroTierMeta = { heroLook, ...meta }
+    heroTierMeta = { heroLook: effHeroLook, ...meta }
     if (verbose) {
       console.log(`[bake-trees] heroTier: ${meta.mesh} mesh / ${meta.opaque} opaque / ${meta.impostor} impostor / ${meta.cull} cull `
         + `(mesh≥${meta.promThreshold}, opaque≥${meta.promOpaque}, guard ${meta.cullFrustumGuard}, ${meta.poses} poses, fov ${meta.fovDeg}°)`)
@@ -611,6 +702,7 @@ export async function bakeTrees({
   await fs.writeFile(outPath, JSON.stringify(out, null, 2))
 
   const totalForbidden = Object.values(forbiddenCounts).reduce((a, b) => a + b, 0)
+  const totalNudged = Object.values(nudged).reduce((a, b) => a + b, 0)
   if (verbose) {
     console.log(`[bake-trees] placed ${instances.length}/${park.trees.length} (${unmatched} unmatched, ${totalForbidden} forbidden-surface drops)`)
     if (totalForbidden) {
@@ -618,10 +710,21 @@ export async function bakeTrees({
         .map(([k, v]) => `${k}=${v}`).join(' ')
       console.log(`[bake-trees]   forbidden: ${breakdown}`)
     }
+    if (totalNudged) {
+      const breakdown = Object.entries(nudged).sort((a, b) => b[1] - a[1])
+        .map(([k, v]) => `${k}=${v}`).join(' ')
+      console.log(`[bake-trees]   nudged onto legal ground (surveyed trees kept): ${breakdown}`)
+    }
+    if (membership) {
+      const inHood = instances.length - outside
+      console.log(`[bake-trees]   hood: ${inHood} inside the neighborhood proper (literal) / ${outside} in the greater circle (GPU-managed)`)
+      if (dissolved) console.log(`[bake-trees]   dissolved ${dissolved} invented trees toward the rim`)
+      if (!membership.hasPolygon) console.log(`[bake-trees]   ⚠️  no boundary-street polygon — the disc is standing in for the neighborhood`)
+    }
     console.log(`[bake-trees] ${variantUseCount.size} unique variants in use`)
     console.log(`[bake-trees] → ${outPath}`)
   }
-  return { count: instances.length, unmatched, forbidden: totalForbidden, forbiddenCounts, uniqueVariants: variantUseCount.size, outPath }
+  return { count: instances.length, unmatched, forbidden: totalForbidden, forbiddenCounts, nudged: totalNudged, uniqueVariants: variantUseCount.size, outPath }
 }
 
 // CLI entry: only run when invoked directly (not when imported).
@@ -639,6 +742,8 @@ if (isDirect) {
     output: args.output,
     speciesMapPath: args['species-map'],
     forbiddenMapPath: args['forbidden-map'],
+    zoneShapePath: args['zone-shape'],
+    boundaryPath: args['boundary'],
     verbose: true,
   }).catch(e => { console.error('[bake-trees] fatal:', e); process.exit(1) })
 }

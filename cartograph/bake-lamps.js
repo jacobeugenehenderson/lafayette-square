@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
+import { makeMembership } from './neighborhood-membership.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -50,27 +51,27 @@ function anchorLampsToGround(lamps, outDir, scene) {
 // lon/lat, so there's no stale-frame trap like the assessor parcels had; see
 // cartograph/INTAKE.md). LS has no OSM lamp file → falls back to its hand/
 // procedural `src/data/street_lamps.json` (already in the local frame).
-// Clip lamps to the neighborhood — the OSM fetch is wider than the poured hood,
-// so keep only lamps inside the boundary-street polygon (the SAME membership test
-// buildings use — `pipeline.js`/§5.2), radius fallback if no polygon persisted.
+// The OSM lamp fetch is wider than the poured hood, so lamps are bounded by the
+// neighborhood — the SAME membership test buildings and trees use
+// (`neighborhood-membership.mjs`, `NEIGHBORHOOD-INPUTS §5.2`).
+//
+// ⭐ A DISSOLVE, not a cut (Jacob 2026-07-15: literal inside the neighborhood
+// proper; outside, inside the radius, we watch for GPU — and *"I'd rather a
+// dissolve [than an] on/off edge fade dichotomy"*). This used to hard-clip at the
+// polygon, which ended the lamps at a seam the ground doesn't have. Now they thin
+// across the ground's own authored fade band and reach zero at the rim.
+//
+// Was a private copy of the point-in-polygon membership test; folded onto the
+// shared one so the hood's edge means one thing for every object standing in it.
 function clipToBoundary(lamps, scene) {
   const bp = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
   if (!existsSync(bp)) return lamps
-  const b = JSON.parse(readFileSync(bp, 'utf-8'))
-  const poly = b.polygon
-  if (Array.isArray(poly) && poly.length >= 3) {
-    const pts = poly.map(p => [p.x, p.z])
-    const inside = (x, z) => {
-      let c = false
-      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-        const [xi, zi] = pts[i], [xj, zj] = pts[j]
-        if (((zi > z) !== (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi)) c = !c
-      }
-      return c
-    }
-    return lamps.filter(l => inside(l.x, l.z))
-  }
-  return b.radius ? lamps.filter(l => Math.hypot(l.x, l.z) <= b.radius) : lamps
+  const m = makeMembership(bp)
+  const kept = lamps.filter(l => m.keep(l.x, l.z, 23))
+  const inHood = kept.filter(l => m.isInside(l.x, l.z)).length
+  console.log(`  Lamps: ${inHood} inside the neighborhood proper (literal) / ${kept.length - inHood} dissolving through the greater circle` +
+    (m.hasPolygon ? '' : '  ⚠️ no boundary-street polygon — disc standing in'))
+  return kept
 }
 
 function loadLampsForScene(scene) {

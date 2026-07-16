@@ -123,6 +123,25 @@ export function treeBakeInputsForScene(scene) {
   const speciesMapPath = existsSync(sceneMap) ? sceneMap : undefined
   const forbiddenMapPath = join(clean, 'map.json')
 
+  // ⭐ The FROZEN Section surfaces — the ground bake's WALL artifact. This is
+  // what answers "may a tree stand here": the frozen curb separates road from
+  // land, and the ped strips locate the treelawn. map.json rides along for the
+  // literal obstructions inside land-use (buildings/water/parking/paths) only.
+  //
+  // ⚠️ ORDERING: this is a BAKE OUTPUT, so the ground bake must have run for
+  // this scene before its trees can be placed honestly. Absent → we fall back to
+  // the legacy paint-layer mask, which cannot see the road and will scatter
+  // trees into the carriageway. That fallback is a known-wrong last resort, not
+  // a supported mode; it is loud on purpose.
+  const shapePath = join(REPO_ROOT, 'public', 'baked', scene, 'shape.json')
+  const zoneShapePath = existsSync(shapePath) ? shapePath : undefined
+
+  // The hood's edge — the boundary-street polygon that separates "literal" from
+  // "GPU-managed". The SAME file buildings and lamps already test membership
+  // against (`NEIGHBORHOOD-INPUTS §5.2`); trees were the only object ignoring it.
+  const bnd = join(clean, '..', 'neighborhood_boundary.json')
+  const boundaryPath = existsSync(bnd) ? bnd : undefined
+
   // ⚠️ Scene-keyed output, but the RUNTIME fetches placements Look-keyed —
   // `InstancedTrees.jsx` builds `baked/<look>/trees.json`. The two paths
   // coincide only because every Look's scene equals its id today. Phase 3 is
@@ -133,7 +152,9 @@ export function treeBakeInputsForScene(scene) {
     placements,
     speciesMapPath,
     forbiddenMapPath,
+    zoneShapePath,
+    boundaryPath,
     output: `public/baked/${scene}/trees.json`,
-    inputs: [...placements, speciesMapPath, forbiddenMapPath].filter(Boolean),
+    inputs: [...placements, speciesMapPath, forbiddenMapPath, zoneShapePath, boundaryPath].filter(Boolean),
   }
 }
