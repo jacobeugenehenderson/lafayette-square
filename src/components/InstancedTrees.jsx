@@ -439,7 +439,10 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
       const inst = instances[i]
       T.makeTranslation(inst.x, inst.y || 0, inst.z)
       R.makeRotationY(inst.rotY || 0)
-      arr[i] = T.multiply(R)
+      // clone(): multiply() mutates + returns the receiver (T), so an un-cloned
+      // arr[i] would alias the one scratch matrix and every instance would land
+      // on the LAST placement. Same idiom as OverheadSpecies / VariantInstances.
+      arr[i] = T.multiply(R).clone()
     }
     return arr
   }, [instances])
