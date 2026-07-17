@@ -1,5 +1,17 @@
 # THRU-node gate fix — LANDING (Lintel, 2026-07-16)
 
+> ❌ **VERIFICATION FAILED (Boz + Jacob, 2026-07-16, same day) — this cure does NOT fix the eye.**
+> Eye-gated on the lit 2D Designer (hard-refresh + new tab, not cache): **Kennett + Mackay still
+> broken.** Root (verified `scratch/thrunode-frozen-verify.mjs`): the marker keys the street with an
+> *interior vertex* at the node as "through" — which marks the **side street** when the through-street
+> is **split into 2 skelIds at the node** (Mackay: Hickory splits → both endpoints → marks `mackay-place`),
+> and **misses Kennett** (node coord ≠ any frozen run endpoint). The proxy below (`thrunode-probe.mjs`)
+> measured a sliver-COUNT on the **LIVE** `buildTileGround`/`sectionPass` path; the real defect is the
+> through-street's trimmed treelawn on the **FROZEN** `sectionOpen` render — never tested (`proxy ≠
+> operator eye`). **Re-fix:** correct through-street identification incl. the split-skelId case + the
+> node-coord match; **verify on the frozen render + Jacob's eye**, not the sliver count. Everything below
+> is the (invalid) original landing, kept for the record.
+
 **Agent: Lintel (fresh, dispatched A1).** Landing on `HANDOFF-thrunode-gate-fix.md` /
 `scratch/THRUNODE-GATE-FINDINGS.md`. **Status: CURE LANDED (first cut, Boz opt-c). The 5
 named archetypes clear to 0 slivers on the proxy; no regression; A/B knob byte-identical
