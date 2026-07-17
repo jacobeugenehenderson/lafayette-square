@@ -672,9 +672,57 @@ export function tilesFromFrozen(frozen, streets) {
       const forward = e.side === 'right'
       edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
     }
-    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
+    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges, ...(Array.isArray(t.caps) && t.caps.length ? { caps: t.caps.map(c => ({ ...c })) } : {}) })
   }
   return tiles
+}
+
+// ── Dead-end CAP identity on the frozen face (HANDOFF-dead-end-cap-flip §36) ──
+// The prebake face freeze (derive.js → extractFaces) walks a dead-end spur
+// OUT-and-BACK inside its enclosing face, so the turn-around at the tip is a
+// ring vertex whose two adjacent edges carry the SAME chain (skelId) on OPPOSITE
+// sides (right→left). That vertex — when it coincides with the chain's own
+// start/end endpoint — IS the cul-de-sac / dead-end cap. This is the ONE cap
+// criterion (RIBBONS §1 tile model): the fe layer (buildBlockGeometryV2) can't
+// make it — it sees every naive degree-1 chain-end (LS: 100), half of them
+// boundary danglers that never form an out-and-back inside a bounded face (LS:
+// exactly 50 real caps survive, 1:1 with the rendered tips). So cap identity is
+// a FACE-topology fact, frozen ONCE at prebake into ribbons.tiles[].caps and
+// read identically by Survey/Designer (the flip) and section/bake (the render).
+
+// skelId → { start, end } endpoint node-keys, for cap-end resolution.
+export function chainEndpointKeys(streets) {
+  const m = new Map()
+  for (const s of streets || []) {
+    const pts = s?.points
+    if (!pts || pts.length < 2) continue
+    const k = s.skelId || s.name
+    if (k == null) continue
+    m.set(k, { start: tipKey(pts[0]), end: tipKey(pts[pts.length - 1]) })
+  }
+  return m
+}
+
+// Detect dead-end cap tips on ONE tile face → [{ vertexIdx, skelId, capEnd }].
+// `skelIdOfEdge` reads the chain id from an edge (frozen edges carry `.skelId`;
+// live extractFaces edges carry `.streetIdx`, resolved by the caller).
+export function detectTileCaps(ring, edges, endpointKeys, skelIdOfEdge = (e) => e?.skelId) {
+  const caps = []
+  const n = edges?.length || 0
+  if (!n || !Array.isArray(ring) || ring.length !== n) return caps
+  for (let i = 0; i < n; i++) {
+    const inc = edges[(i - 1 + n) % n], out = edges[i]
+    const sk = skelIdOfEdge(inc)
+    if (sk == null || sk === BOUNDARY_EDGE_SKEL) continue
+    if (sk !== skelIdOfEdge(out) || inc.side === out.side) continue   // not a same-chain turn-around
+    const ends = endpointKeys?.get(sk)
+    if (!ends) continue
+    const tk = tipKey(ring[i])
+    const capEnd = ends.start === tk ? 'start' : (ends.end === tk ? 'end' : null)
+    if (!capEnd) continue   // same-skelId/opposite-side but NOT at a chain endpoint → not a cap
+    caps.push({ vertexIdx: i, skelId: sk, capEnd })
+  }
+  return caps
 }
 
 
@@ -1756,7 +1804,18 @@ export function buildTileGround(ribbons, opts = {}) {
   // back to the live walk over the smoothed streets, so the dormant knob's
   // semantics stay bit-for-bit what they were (rings AND strokes smoothed
   // together, never mixed).
-  const tiles = (smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)) || extractFaces(streets)
+  let tiles = smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)
+  if (!tiles) {
+    // Live fallback (toy / pre-D2, no frozen artifact): derive dead-end cap
+    // identity HERE — the only place it can come from when nothing is frozen.
+    // The FROZEN path reads caps stamped ONCE at prebake (derive.js); it never
+    // re-derives (that's the "freeze, don't derive live" decision, 2026-07-17).
+    const capEndpointKeys = chainEndpointKeys(streets)
+    tiles = extractFaces(streets).map(f => {
+      const caps = detectTileCaps(f.ring, f.edges, capEndpointKeys, (e) => streets[e?.streetIdx]?.skelId || streets[e?.streetIdx]?.name)
+      return caps.length ? { ...f, caps } : f
+    })
+  }
 
   // E2 — the CONSTRUCTED medians (prebake artifact: ribbons.medians[]; the
   // divided pair's inter-chain lens partitioned into kind:'median' segments +

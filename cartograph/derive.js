@@ -26,7 +26,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
-import { extractFaces, BOUNDARY_EDGE_SKEL } from '../src/lib/tileGround.js'
+import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys } from '../src/lib/tileGround.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -4350,16 +4350,25 @@ export function deriveLayers(highways) {
       console.log(`    [F] clipped face-streets to boundary (${clipped.length} pieces, ${nCross} crossings) → perimeter faces close`)
     }
     const fzTiles = extractFaces(faceStreets)
-    let nPerim = 0
-    ribbonsLayer.tiles = fzTiles.map(f => ({
-      ring: f.ring.map(p => [p[0], p[1]]),
-      edges: f.edges.map(e => {
+    // [CAP FREEZE] Dead-end cap identity is a FACE-topology fact — frozen ONCE
+    // here (the single source both the flip and the render read; feCustomKey.js
+    // §cap). Resolve capEnd against the ORIGINAL chain endpoints (ribbonsLayer
+    // .streets), not the boundary-clipped faceStreets — interior dead-ends are
+    // never clipped, so their endpoints are intact.
+    const capEndpointKeys = chainEndpointKeys(ribbonsLayer.streets)
+    let nPerim = 0, nCaps = 0
+    ribbonsLayer.tiles = fzTiles.map(f => {
+      const ring = f.ring.map(p => [p[0], p[1]])
+      const edges = f.edges.map(e => {
         const sk = faceStreets[e.streetIdx].skelId || faceStreets[e.streetIdx].name
         if (sk === BOUNDARY_SKEL) nPerim++
         return { skelId: sk, side: e.side }
-      }),
-    }))
-    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology; ${nPerim} boundary edges)`)
+      })
+      const caps = detectTileCaps(ring, edges, capEndpointKeys)
+      nCaps += caps.length
+      return caps.length ? { ring, edges, caps } : { ring, edges }
+    })
+    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology; ${nPerim} boundary edges; ${nCaps} dead-end caps)`)
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
