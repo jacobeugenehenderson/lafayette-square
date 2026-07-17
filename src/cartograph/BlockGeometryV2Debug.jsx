@@ -27,7 +27,7 @@ import { STREET_SMOOTH } from '../lib/smoothCenterline.js'  // the ONE smoothing
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
 import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
-import parkWaterData from '../data/park_water.json'
+import parkWaterData from '../data/lafayette-square/park_water.json'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'

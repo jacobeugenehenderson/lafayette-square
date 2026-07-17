@@ -12,7 +12,7 @@ import useSkyState from '../hooks/useSkyState'
 // park + ready-gates) — the producer/render-emit arc's job, not this reader phase.
 // Left static; the component is mount-guarded to LS (below) so a non-LS look
 // renders no park rather than LS's. Owner: roster/render arc.
-import parkWaterData from '../data/park_water.json'
+import parkWaterData from '../data/lafayette-square/park_water.json'
 import ribbonsData from '../data/ribbons.json'
 import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
 import { getElevationRaw, V_EXAG } from '../utils/elevation'

@@ -1900,6 +1900,12 @@ createServer(async (req, res) => {
             treeInputs.placements && `--placements ${treeInputs.placements.join(',')}`,
             treeInputs.speciesMapPath && `--species-map ${treeInputs.speciesMapPath}`,
             treeInputs.forbiddenMapPath && `--forbidden-map ${treeInputs.forbiddenMapPath}`,
+            // The FROZEN-curb mask + hood dissolve. Without these the one-button
+            // pour silently under-bakes on the legacy paint-layer mask (which
+            // can't see the road) — the Salon path forwards them via the spread,
+            // this hand-built flag string used to drop them. (HANDOFF Move 3.)
+            treeInputs.zoneShapePath && `--zone-shape ${treeInputs.zoneShapePath}`,
+            treeInputs.boundaryPath && `--boundary ${treeInputs.boundaryPath}`,
             `--output ${treeInputs.output}`,
           ].filter(Boolean).join(' ')
           await runIfDirty('trees',

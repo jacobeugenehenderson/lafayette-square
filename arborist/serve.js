@@ -1051,9 +1051,9 @@ const server = createServer(async (req, res) => {
       return notImplemented(res, 'DELETE /species/:id')
     }
 
-    // GET /inventory — species histogram from src/data/park_trees.json
+    // GET /inventory — species histogram from LS's authored park census
     if (req.method === 'GET' && path === '/inventory') {
-      const trees = readJsonOrNull(join(ROOT, 'src', 'data', 'park_trees.json'))?.trees || []
+      const trees = readJsonOrNull(join(ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'park_census.json'))?.trees || []
       const counts = {}
       for (const t of trees) {
         const k = t.species || 'unknown'
@@ -1096,10 +1096,10 @@ const server = createServer(async (req, res) => {
     if (req.method === 'POST' && (m = path.match(/^\/coverage\/([^/]+)\/routing$/))) {
       const rosterName = decodeURIComponent(m[1])
       const body = await readBody(req)
-      const mapPath = join(ROOT, 'src', 'data', 'park_species_map.json')
+      const mapPath = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'tree-species-map.json')
       const doc = readJsonOrNull(mapPath)
       if (!doc || typeof doc.map !== 'object') {
-        return jsonRes(res, 500, { error: 'park_species_map.json unreadable' })
+        return jsonRes(res, 500, { error: 'tree-species-map.json unreadable' })
       }
       const canon = readJsonOrNull(ROSTER_CANON)?.canon || {}
       // Which raw names canonicalize to this roster name? Route them all to the

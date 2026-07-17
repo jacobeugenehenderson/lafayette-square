@@ -69,7 +69,7 @@ export function makeForbiddenTester(opts = {}) {
 
   const waterPolys = []
   if (!scened) {
-    const water = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src', 'data', 'park_water.json'), 'utf-8'))
+    const water = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src', 'data', 'lafayette-square', 'park_water.json'), 'utf-8'))
     const lakeOuter = water.lake?.outer || [], lakeIsland = water.lake?.island || [], grotto = water.grotto || []
     if (lakeOuter.length) waterPolys.push(polyWithBbox(toArr(lakeOuter), lakeIsland.length ? [toArr(lakeIsland)] : null))
     if (grotto.length) waterPolys.push(polyWithBbox(toArr(grotto)))

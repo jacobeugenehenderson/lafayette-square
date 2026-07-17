@@ -3,8 +3,8 @@
  *
  * Reads:
  *   public/trees/index.json      — rated runtime pool
- *   src/data/park_trees.json     — 644 placement positions
- *   src/data/park_species_map.json — species-id → preferred library subset
+ *   <scene>/clean/park_census.json — authored park census (LS default well)
+ *   <scene>/tree-species-map.json — species-id → preferred library subset
  *   public/baked/<heroLook>/scene.json       — hero pan (heroTier classifier)
  *   public/baked/<heroLook>/trees-atlas.json — canopyByVariant dims (bake-look)
  *   --scene <name>               — NEIGHBOURHOOD whose census is baked (def 'lafayette-square')
@@ -82,6 +82,15 @@ function lampGlowAt(wx, wz) {
 // Forbidden-surface filter (a tree can never stand on hardscape/water/building)
 // lives in cartograph/forbidden-surface.mjs — shared with the canopy-fill
 // scatter (scripts/17), which uses it to RELOCATE candidates off hardscape.
+
+// Canonical census-well filename → per-tree provenance `source` (Move 4). A well
+// may override with `meta.well`; unnamed wells fall back to their __kind.
+const SOURCE_BY_BASENAME = {
+  'park_census.json':   'park',           // authored park census (hand-curated)
+  'park_trees.json':    'city-inventory', // City Forestry fetch (whole hood)
+  'osm_trees.json':     'osm',            // OSM natural=tree (real positions)
+  'derived_trees.json': 'derived',        // NLCD canopy fill (invented)
+}
 
 const SHAPE_TO_CATEGORY = {
   broad: 'broadleaf',
@@ -398,10 +407,10 @@ export async function bakeTrees({
   // disjoint layers baked together. Each file is {meta, trees:[]}; concat trees.
   const parkPaths = placements
     ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))
-    : [path.join(REPO_ROOT, 'src', 'data', 'park_trees.json')]
+    : [path.join(REPO_ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'park_census.json')]
   const mapPath = speciesMapPath
     ? path.resolve(REPO_ROOT, speciesMapPath)
-    : path.join(REPO_ROOT, 'src', 'data', 'park_species_map.json')
+    : path.join(REPO_ROOT, 'cartograph', 'data', 'lafayette-square', 'tree-species-map.json')
 
   const index = JSON.parse(await fs.readFile(indexPath, 'utf8'))
   const park = { trees: [] }
@@ -414,7 +423,13 @@ export async function bakeTrees({
     // fallback for wells written before `kind` existed.
     const kind = layer.meta?.kind
       ?? (path.basename(p) === 'derived_trees.json' ? 'derived' : 'census')
-    for (const t of (layer.trees || [])) park.trees.push({ ...t, __kind: kind })
+    // Provenance (Move 4): a finer label than __kind — the ORIGINATING well. The
+    // authored park is addressable on its own ('park' vs the fetched
+    // 'city-inventory'), so richer real species data can later supersede synthetic
+    // in exactly those spots. Declared by the well (meta.well) or read off the
+    // canonical filename; falls back to __kind for an unnamed well.
+    const source = layer.meta?.well ?? (SOURCE_BY_BASENAME[path.basename(p)] || kind)
+    for (const t of (layer.trees || [])) park.trees.push({ ...t, __kind: kind, __source: source })
   }
   const speciesMap = JSON.parse(await fs.readFile(mapPath, 'utf8'))
 
@@ -580,6 +595,11 @@ export async function bakeTrees({
       species: v.species,
       variantId: v.variantId,
       category: v.category,
+      // Provenance (Move 4): where this placement came from — 'park' /
+      // 'city-inventory' / 'osm' (all real) vs 'derived' (synthetic canopy fill).
+      // A permanent data-layer fact per instance; no runtime toggle (deferred).
+      // Surveyed sources are nudged onto legal ground, derived is dropped.
+      source: tree.__source,
       // Pre-sampled lamp gaussian at this tree's world position. Runtime
       // multiplies by `uLampGlow` (per-Look TOD-curve slider) for the
       // final emissive contribution.

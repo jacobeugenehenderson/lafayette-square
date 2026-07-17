@@ -101,6 +101,9 @@ cartograph/data/lafayette-square/*
 !cartograph/data/lafayette-square/neighborhood_boundary.json
 !cartograph/data/lafayette-square/geography.json
 !cartograph/data/lafayette-square/buildings.json
+# LS's hand-tuned species routing (park species name → roster id). Authored, not
+# a reproducible fetch, so it stays tracked (unlike scripts/15's derived rewrite).
+!cartograph/data/lafayette-square/tree-species-map.json
 !cartograph/data/lafayette-square/raw/
 !cartograph/data/lafayette-square/clean/
 cartograph/data/lafayette-square/raw/*
@@ -110,6 +113,10 @@ cartograph/data/lafayette-square/raw/*
 cartograph/data/lafayette-square/clean/*
 !cartograph/data/lafayette-square/clean/map.json
 !cartograph/data/lafayette-square/clean/park-polygon.json
+# The authored PARK CENSUS well — City Forestry clipped to the park polygon, the
+# hand-curated gem (source:'park'). Authored source (its raw maps6 export is NOT
+# committed), so unlike the fetched clean/* wells it must stay tracked.
+!cartograph/data/lafayette-square/clean/park_census.json
 cartograph/node_modules/
 
 # Claude Code local settings

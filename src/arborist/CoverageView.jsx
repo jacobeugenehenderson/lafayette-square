@@ -3,7 +3,7 @@
  * 2026-05-25). The Coverage half of the Grove's Gallery ↔ Coverage toggle.
  *
  * Read-only. Renders the live join computed by `GET /api/arborist/coverage`:
- * one row per CANONICALIZED Lafayette Square park species (src/data/park_trees
+ * one row per CANONICALIZED Lafayette Square park species (cartograph/data/lafayette-square/clean/park_census
  * .json, merged via arborist/roster-name-canon.json), sorted by placement count
  * descending, each tagged 🟢 literal / 🟡 composite / 🔴 gap with the covering
  * library species and the current park_species_map routing. The map column

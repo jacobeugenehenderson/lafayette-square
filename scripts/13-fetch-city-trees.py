@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fetch the City of St. Louis Forestry street-tree census for a poured scene.
 
-Mirrors the LS tree provenance (`src/data/park_trees.json`) but for a whole
+Mirrors the LS tree provenance (`cartograph/data/lafayette-square/clean/park_census.json`) but for a whole
 neighborhood instead of a single park. The City's Forestry inventory moved off
 the retired `maps6/FORESTRY_TREES` service (what the LS export used) to
 `maps9`, now serving the FULL managed inventory (street + park), not the

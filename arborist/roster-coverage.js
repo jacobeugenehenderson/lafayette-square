@@ -4,7 +4,7 @@
  *
  * Computes, live + read-only, the comparison hand-maintained in
  * ROSTER-COVERAGE.md: one row per CANONICALIZED Lafayette Square park species
- * (src/data/park_trees.json, merged via roster-name-canon.json), each tagged
+ * (cartograph/data/lafayette-square/clean/park_census.json, merged via roster-name-canon.json), each tagged
  * literal / composite / gap with covering library species + park_species_map
  * routing. Brief 24's `GET /coverage` is a thin wrapper over computeCoverage().
  *
@@ -37,8 +37,8 @@ const ROOT        = join(__dirname, '..')
 const STATE_DIR   = join(__dirname, 'state')
 const PUBLIC_TREES = join(ROOT, 'public', 'trees')
 const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
-const PARK_TREES   = join(ROOT, 'src', 'data', 'park_trees.json')
-const PARK_MAP     = join(ROOT, 'src', 'data', 'park_species_map.json')
+const PARK_TREES   = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'park_census.json')
+const PARK_MAP     = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'tree-species-map.json')
 const INDEX_PATH   = join(PUBLIC_TREES, 'index.json')
 
 function readJsonOrNull(p) {

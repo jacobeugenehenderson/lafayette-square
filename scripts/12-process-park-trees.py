@@ -2,7 +2,7 @@
 """Process City of St. Louis tree inventory data for Lafayette Park.
 
 Input:  scripts/raw/lafayette_park_trees.json (ArcGIS REST API export)
-Output: src/data/park_trees.json
+Output: cartograph/data/lafayette-square/clean/park_census.json (the authored park well)
 
 Converts GPS coordinates to local meters (un-rotated, relative to park center).
 The LafayettePark.jsx group rotation handles alignment with the scene.
@@ -25,7 +25,7 @@ LAT_TO_METERS = 111000
 # orientation. Run cartograph/pipeline.js first if map.json is stale.
 def _load_park_polygon():
     here = os.path.dirname(os.path.abspath(__file__))
-    map_json = os.path.normpath(os.path.join(here, '..', 'cartograph', 'data', 'clean', 'map.json'))
+    map_json = os.path.normpath(os.path.join(here, '..', 'cartograph', 'data', 'lafayette-square', 'clean', 'map.json'))
     with open(map_json) as f:
         m = json.load(f)
     park = m.get('layers', {}).get('park', [])
@@ -180,15 +180,20 @@ def main():
             'url': 'https://maps6.stlouis-mo.gov/arcgis/rest/services/FORESTRY/FORESTRY_TREES/MapServer',
             'center': {'lat': CENTER_LAT, 'lon': CENTER_LON},
             'total': len(trees),
+            # The authored park well: surveyed → nudged (never dropped); addressable
+            # on its own vs the fetched city-inventory (bake-trees Move 4).
+            'kind': 'census',
+            'well': 'park',
             'coordinate_system': 'Local meters, compass-aligned (unrotated equirectangular about park center).',
         },
         'trees': trees,
     }
 
-    with open('src/data/park_trees.json', 'w') as f:
+    out_path = 'cartograph/data/lafayette-square/clean/park_census.json'
+    with open(out_path, 'w') as f:
         json.dump(output, f, separators=(',', ':'))
 
-    print(f"Wrote src/data/park_trees.json ({len(trees)} trees)")
+    print(f"Wrote {out_path} ({len(trees)} trees)")
 
 
 if __name__ == '__main__':

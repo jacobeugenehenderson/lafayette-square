@@ -720,9 +720,9 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // (Water-overlap bridge detection is a Phase-1 stopgap — Phase 5 carries
   // an OSM bridge tag onto paths and bakes bridges as a lifted group.)
   const parkPolyPath  = join(ROOT, 'cartograph', 'data', scene, 'clean', 'park-polygon.json')
-  const parkWaterPath = scene === 'lafayette-square'
-    ? join(ROOT, 'src', 'data', 'park_water.json')
-    : join(ROOT, 'src', 'data', scene, 'park_water.json')
+  // Per-hood water: src/data/<scene>/park_water.json for every scene (LS's used
+  // to live at the un-scoped src/data/park_water.json; normalized 2026-07-16).
+  const parkWaterPath = join(ROOT, 'src', 'data', scene, 'park_water.json')
   const parkClip = existsSync(parkPolyPath) ? {
     polygon: JSON.parse(readFileSync(parkPolyPath, 'utf-8')),
     water: existsSync(parkWaterPath) ? JSON.parse(readFileSync(parkWaterPath, 'utf-8')) : null,

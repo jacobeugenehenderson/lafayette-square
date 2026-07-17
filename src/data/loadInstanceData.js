@@ -50,7 +50,7 @@ const MANIFESTS = {
     landmarks:        () => import('./landmarks.json'),
     ribbons:          () => import('./ribbons.json'),
     streetLamps:      () => import('./street_lamps.json'),
-    parkWater:        () => import('./park_water.json'),
+    parkWater:        () => import('./lafayette-square/park_water.json'),
     parkFeatureElev:  () => import('./park-feature-elev.json'),
     facadeMapping:    () => import('./facade_mapping.json'),
     // Bucket-1 identity offender folded in here: the reader no longer

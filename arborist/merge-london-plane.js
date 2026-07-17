@@ -10,7 +10,7 @@
  *   - Renames skeleton GLBs into platanus_acerifolia/
  *   - Merges variant entries in platanus_acerifolia/manifest.json
  *   - Rewrites public/looks/<look>/design.json#/trees rosters
- *   - Updates src/data/park_species_map.json
+ *   - Updates cartograph/data/lafayette-square/tree-species-map.json
  *   - Deletes platanus_summer/ and platanus_green/ trees dirs
  *   - Rebuilds public/trees/index.json
  *
@@ -27,7 +27,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
 const TREES_DIR = path.join(REPO_ROOT, 'public/trees')
 const LOOKS_DIR = path.join(REPO_ROOT, 'public/looks')
-const PARK_SPECIES_MAP = path.join(REPO_ROOT, 'src/data/park_species_map.json')
+const PARK_SPECIES_MAP = path.join(REPO_ROOT, 'cartograph/data/lafayette-square/tree-species-map.json')
 
 const TARGET = 'platanus_acerifolia'
 const LODS = ['lod0', 'lod1', 'lod2']
@@ -119,7 +119,7 @@ async function main() {
     console.warn('looks update failed:', err.message)
   }
 
-  // Update src/data/park_species_map.json: collapse the platanus alias list.
+  // Update cartograph/data/lafayette-square/tree-species-map.json: collapse the platanus alias list.
   try {
     const map = JSON.parse(await fs.readFile(PARK_SPECIES_MAP, 'utf8'))
     let mapChanged = false
@@ -131,7 +131,7 @@ async function main() {
     }
     if (mapChanged) {
       await fs.writeFile(PARK_SPECIES_MAP, JSON.stringify(map, null, 2))
-      console.log('Updated src/data/park_species_map.json')
+      console.log('Updated cartograph/data/lafayette-square/tree-species-map.json')
     }
   } catch (err) {
     console.warn('park_species_map update skipped:', err.message)

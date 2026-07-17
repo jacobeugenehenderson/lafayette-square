@@ -24,7 +24,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { DEFAULT_SCENE, sceneCleanDir } from './config.js'
+import { sceneCleanDir } from './config.js'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const LOOKS_INDEX = join(REPO_ROOT, 'public', 'looks', 'index.json')
@@ -75,25 +75,12 @@ const TOY_PLACEMENTS = 'src/data/toy/toy-trees.json'
  *   mtime-dirty list for the caller's rebuild check. `null` = no census on disk.
  */
 export function treeBakeInputsForScene(scene) {
-  if (scene === DEFAULT_SCENE) {
-    // ⚠️ LS's census, species map and hardscape mask are still `bake-trees.js`'s
-    // own built-in defaults — it was written for LS before scenes were a concept,
-    // so LS's inputs live at src/data/* rather than in this scene's data dir like
-    // every other neighbourhood's. That is the INPUT half of the LS special-case;
-    // Phase 3 retired the OUTPUT half (default.json) but this half remains.
-    // `inputs` mirrors what those defaults actually read, including the water
-    // layer the default forbidden-surface tester pulls in.
-    return {
-      scene,
-      output: placementsPathForScene(scene),
-      inputs: [
-        join(REPO_ROOT, 'src', 'data', 'park_trees.json'),
-        join(REPO_ROOT, 'src', 'data', 'park_species_map.json'),
-        join(REPO_ROOT, 'src', 'data', 'park_water.json'),
-        join(sceneCleanDir(DEFAULT_SCENE), 'map.json'),
-      ],
-    }
-  }
+  // Lafayette Square used to short-circuit here to `bake-trees.js`'s built-in
+  // src/data/* defaults (its census, species map and hardscape mask predated
+  // scenes). Retired 2026-07-16: its park census + species map moved into this
+  // scene's data dir under the ordinary per-hood convention, so LS now falls
+  // through to the poured branch below like every other neighbourhood — one
+  // intake path, no special case. (`HANDOFF-ls-statistical-planting.md` Move 2.)
 
   if (scene === 'toy') {
     // Hand-authored centerlines with no hardscape polygons in this frame, so no
@@ -111,7 +98,8 @@ export function treeBakeInputsForScene(scene) {
   // Forestry census, the OSM county-side floor, and the NLCD canopy fill.
   const clean = sceneCleanDir(scene)
   const placements = [
-    join(clean, 'park_trees.json'),    // City forestry census
+    join(clean, 'park_census.json'),   // AUTHORED park census (hand-curated well)
+    join(clean, 'park_trees.json'),    // City forestry census (fetched)
     join(clean, 'osm_trees.json'),     // County-side OSM floor
     join(clean, 'derived_trees.json'), // NLCD canopy fill (parks/yards)
   ].filter(existsSync)

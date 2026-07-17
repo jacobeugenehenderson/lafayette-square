@@ -77,7 +77,7 @@ const main = async () => {
 
   // Existing census points → spatial hash for O(1) proximity rejection.
   const existing = []
-  for (const f of ['park_trees.json', 'osm_trees.json']) {
+  for (const f of ['park_census.json', 'park_trees.json', 'osm_trees.json']) {
     try { existing.push(...JSON.parse(readFileSync(path.join(dir, 'clean', f), 'utf8')).trees) }
     catch { /* layer absent */ }
   }
