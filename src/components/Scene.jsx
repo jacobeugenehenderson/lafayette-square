@@ -723,16 +723,6 @@ const IS_GROUND = window.location.search.includes('ground')
 
 
 
-// Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
-function DeferredStreetLights() {
-  const [ready, setReady] = useState(false)
-  useEffect(() => {
-    const id = setTimeout(() => setReady(true), 4000)
-    return () => clearTimeout(id)
-  }, [])
-  if (!ready) return null
-  return <BakedLamps />
-}
 
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
@@ -841,7 +831,13 @@ function Scene() {
           authoring retint still works). */}
       {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene hiddenLayers={{ building: true }} /></R3FErrorBoundary>}
       {!IS_GROUND && <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
-      {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
+      {/* Lamps mount unconditionally (no device fork). The old IS_MOBILE branch
+          deferred the mobile mount 4s ("let hero settle") — a hardwire that both
+          violated the manifest-authored-bracket doctrine AND silently dropped the
+          lamps on a demand frameloop (the deferred mount never got a render frame).
+          If mobile ever needs a different lamp treatment, author it via the
+          platform channel, don't hardwire a device fork here. (Boz + Jacob 2026-07-16.) */}
+      {!IS_GROUND && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       {/* Landscape backdrop (§10 third hero kind) — a mesh behind everything,
           standing at its true geo spot. Renders NOTHING unless the look ships a
@@ -850,7 +846,6 @@ function Scene() {
       <CameraRig />
       {!IS_GROUND && <LampGlowDriver />}
       {!IS_GROUND && <PostProcessing viewMode={viewMode} />}
-      {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
     </Canvas>
     </div>
   )
