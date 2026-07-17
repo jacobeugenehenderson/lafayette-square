@@ -877,6 +877,66 @@ function culdesacNotchReport(streets, tiles) {
   return { loops:loops.length, hits }
 }
 
+// ── INVARIANT: through-node ped BREAK at a straight deg-3 T (Lintel, 2026-07-16) ─
+// The tabled T-artifact (THRUNODE-GATE-FINDINGS): a genuine deg-3 T on a straight,
+// uniform-width through-street breaks the through-frontage's PED band where the
+// side street T's in. SHARP topology predicate (isolates ~5-8, not the 62 raw
+// junction-band slivers): deg-3 ∧ EXACTLY ONE through-street (one interior-vertex
+// leg) ∧ NOT E3-constructed (junctionMap continuity/deTaper/apron all empty) ∧ the
+// through-frontage same-skelId splits across ≥2 tiles ∧ a ped throat sliver sits on
+// that frontage at the node. The last clause is the EYE-DEFECT itself (a treelawn/
+// sidewalk fragment <SLIVER_AREA within the throat) — so this is RED-until-true on
+// the ACTUAL ped continuity, NOT on "is an asphalt window built" (which is a green-
+// that-lies: the :2461 window lands in aFill, but iA — the ped's source — is the
+// per-tile parallel offset, byte-identical with/without the window, so the ped band
+// still fragments; proven scratch/thrunode-probe.mjs). Clears only when the ped
+// junction is constructed across the mouth (HANDOFF-junction-construction §2 gap).
+function throughNodeBreakReport(streets, tiles, jmNodes, cw) {
+  const stripMat = { outer: 'LU', inner: 'SW' }
+  // graph model + through/terminating legs at each node
+  const reps = []
+  const node = (p) => { for (const q of reps) if (dist(p, q.p) < NODE_DEG_SNAP) return q; const q = { p, deg: 0, thru: [], term: [] }; reps.push(q); return q }
+  for (const s of streets) {
+    const pts = s.points; if (!pts?.length) continue
+    for (let i = 0; i < pts.length; i++) {
+      const interior = i > 0 && i < pts.length - 1
+      // interior vertex adds degree 2 to its node; endpoint adds 1
+      const near = reps.find(q => dist(pts[i], q.p) < NODE_DEG_SNAP)
+      const q = near || node(pts[i])
+      q.deg += interior ? 2 : 1
+      ;(interior ? q.thru : q.term).push(s.skelId)
+    }
+  }
+  const jmAt = (p) => { let best = null, bd = Infinity; for (const n of jmNodes) { const d = dist(n.at, p); if (d < bd) { bd = d; best = n } } return { n: best, d: bd } }
+  const isE3 = (n) => n && ((n.continuity?.length || 0) > 0 || (n.deTaper?.length || 0) > 0 || !!n.apron)
+  const tilesWithSkelNear = (skelId, p, reach = 16) => {
+    const out = []
+    for (let ti = 0; ti < tiles.length; ti++) {
+      const t = tiles[ti]; if (!t?.runs?.some(r => r.skelId === skelId)) continue
+      let near = false; for (const r of (t.iA || [])) { for (const v of r) if (dist(v, p) < reach) { near = true; break } if (near) break }
+      if (near) out.push(ti)
+    }
+    return out
+  }
+  const pedRingsOf = (ti) => { const sp = sectionPass([tiles[ti]], cw, stripMat, null); const flat = (b) => Object.values(b || {}).flat(); return [...flat(sp.tlByLu), ...sp.Wacc].filter(r => r && r.length >= 3) }
+  const nearRing = (r, p) => { let m = Infinity; for (const v of r) { const d = dist(v, p); if (d < m) m = d } return m }
+  const flagged = []
+  for (const q of reps) {
+    const thru = [...new Set(q.thru)]
+    if (q.deg !== 3 || thru.length !== 1) continue         // deg-3 ∧ exactly one through-street
+    if (isE3(jmAt(q.p).n)) continue                        // NOT E3-constructed
+    const tis = tilesWithSkelNear(thru[0], q.p)
+    if (tis.length < 2) continue                           // frontage splits across ≥2 tiles
+    let slivers = 0, worst = Infinity
+    for (const ti of tis) for (const r of pedRingsOf(ti)) {
+      if (nearRing(r, q.p) >= JUNC_THROAT_R) continue
+      const a = Math.abs(signedArea(r)); if (a < SLIVER_AREA) { slivers++; if (a < worst) worst = a }
+    }
+    if (slivers >= JUNC_SLIVER_FLAG) flagged.push({ p: q.p, thru: thru[0], term: [...new Set(q.term)], slivers, worst: isFinite(worst) ? +worst.toFixed(1) : null })
+  }
+  return flagged.sort((a, b) => b.slivers - a.slivers)
+}
+
 console.log('\n══════════════════════════════════════════════════════════════════════')
 console.log(' CORRECTNESS DETECTOR v1  ·  Lafayette Square  ·  candidates for the operator')
 console.log('══════════════════════════════════════════════════════════════════════\n')
@@ -961,6 +1021,20 @@ console.log(`    grid FP   = ${FP.length}/${gridNames.size} clean-grid names fla
   console.log(`\n    Worst-fragmented junctions (slivers — the operator-eye candidates):`)
   for (const j of flaggedJ.sort((a,b)=>b.slivers-a.slivers).slice(0, 14))
     console.log(`      (${j.p[0].toFixed(0)},${j.p[1].toFixed(0)}) d${j.deg}  slivers=${j.slivers}  {${j.names.join(' / ')}}`)
+}
+
+// ── through-node ped BREAK — the sharp deg-3-T subclass (the tabled artifact).
+//    Separate from the raw junction-band count (which measures the OTHER
+//    subclasses too). RED-until-true on the ACTUAL ped continuity — 0 only once
+//    the ped junction is constructed across the mouth. [THRUNODE-GATE-FINDINGS]
+{
+  const jmNodes = ribbons.junctionMap?.nodes || []
+  const tnb = throughNodeBreakReport(streets, tiles, jmNodes, design.curbWidth)
+  console.log(`\nTHROUGH-NODE PED-BREAK — deg-3 straight-T subclass (isolates the tabled artifact):`)
+  console.log(`    predicate: deg-3 ∧ one through-street ∧ NOT E3 ∧ frontage splits ≥2 tiles ∧ ped throat sliver`)
+  console.log(`    ${tnb.length} node(s) flagged  ${tnb.length === 0 ? '✅ GREEN — through band runs continuous' : '⚠️ (cure landed 44→~15: the 5 named archetypes clear; residual = DIVIDED-carriageway T\'s (E2/E3 owns those) + wide-avenue STEM-corner over-fire — separate)'}`)
+  for (const j of tnb)
+    console.log(`      (${j.p[0].toFixed(0)},${j.p[1].toFixed(0)})  ${j.thru} thru / ${j.term.join('+')} ends  slivers=${j.slivers}${j.worst != null ? ' worst=' + j.worst + 'm²' : ''}`)
 }
 
 // ── curb-bump: the HONEST unit is the LOCATION (a tile can host many run names;

@@ -78,3 +78,27 @@ frozen in prebake so it isn't re-stroked from chains every bake (Check C).
 
 *(Supersedes the "it's the G12 band-fold thorn" label for this specific artifact — that was wrong;
 this is the un-constructed through-node, a sibling of `HANDOFF-junction-construction.md`.)*
+
+---
+
+## ⭐ LANDING CORRECTION (Lintel, 2026-07-16 — read this; it supersedes the cure premise above)
+The cure premise above — *"build the through-node window → it records a split-station → the
+tile-local `isThrough` fires → ped continuous"* — was **measured insufficient** and is **wrong**.
+The `:2461` window lands only in `aFill` (asphalt); on these large blocks `iA` (the curb the ped
+follows) is the `offsetRingVariable` per-edge offset, **byte-identical off vs on** (areas verified
+unchanged) — so the window never reaches the ped layer. And the two through-frontage halves live in
+**two different tiles**, so `isThrough` (needs 2 same-skelId ends in ONE tile) can never fire; the
+node is a run **endpoint**, so `splitRunAtStations` (interior-only) never splits it. The window is
+**necessary asphalt substrate, not the fix.**
+
+**The cure that LANDED (works — all 5 archetypes → 0 slivers, nodes 64→33, no regression):** a
+**frozen per-node marker suppresses the FALSE CORNER.** In the shape pass, `thruNodeSet →
+st.thruNodeEnds` marks the through-street's frontage run-end at each genuine deg-3 T (**stem side
+only** — the far side runs straight; a window there notches a clean frontage). `sectionPass` reads
+it (`isThruNode`) and adds it to the corner suppressor alongside `isThrough`/`isNameTransition`, so
+the through-street runs straight past the mouth and the **stem owns the corner** (no ADA corner bid,
+no `tangentTrim` eating the treelawn). Gated behind `opts.thruTNode` (default ON), flag-OFF
+byte-identical. **Detail: `scratch/THRUNODE-GATE-LANDING.md`; harnesses `scratch/thrunode-probe.mjs`
++ `thrunode-svg.mjs`.** ⏳ Eye-gate + bake still owed. Residual: divided-carriageway T's (own ticket)
++ the detector's wide-avenue stem-corner over-fire (tighten the ped-sliver clause to the
+through-frontage line).

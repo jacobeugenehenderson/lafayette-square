@@ -1,5 +1,14 @@
 # HANDOFF — A1: the through-node construction gate fix (the tabled T-artifact)
 
+> ✅ **LANDED (eye-pending) 2026-07-16 — Lintel.** The cure is **false-corner suppression** (a frozen
+> `thruNodeEnds` marker → `sectionPass` drops the ADA corner bid), NOT the `:2461` window this brief
+> proposed (that window is asphalt-only and never reaches the ped curb — corrected in
+> `scratch/THRUNODE-GATE-FINDINGS.md §LANDING CORRECTION`). All 5 archetypes → 0 slivers, nodes 64→33,
+> reversible `opts.thruTNode`. **Full landing: `scratch/THRUNODE-GATE-LANDING.md`.** Retire this brief →
+> `_archive/handoffs/` once Jacob eye-gates the bake. Open follow-ons: divided-carriageway T sub-case;
+> detector ped-sliver over-fire. *(Brief body kept below for the record — the derivation-first probe it
+> asked for is exactly what caught the premise correction.)*
+
 **Agent: FRESH.** This is a self-contained SHAPE-construction fix with a written root cause — no
 warm context needed beyond the findings doc. Name yourself (one word, joins the trail).
 

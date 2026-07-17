@@ -1014,6 +1014,12 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
       }
     }
     const isThrough = (p, run) => (endSkelCount.get(tipKey(p))?.get(`${run.skelId}|${run.side}`) || 0) >= 2
+    // [THRU-T ped] a genuine deg-3 T splits the through-street's frontage across
+    // two tiles, so isThrough (2 same-skelId ends in ONE tile) can't fire — this
+    // frozen set (shape pass) marks that ONE run-end as a through-continuation, so
+    // the through-street runs straight past the mouth and the stem owns the corner.
+    const thruNodeEndSet = st.thruNodeEnds instanceof Set ? st.thruNodeEnds : new Set(st.thruNodeEnds || [])
+    const isThruNode = (p, run) => thruNodeEndSet.has(`${tipKey(p)}|${run.skelId}|${run.side}`)
     // [name-aware ADA gate] A run-end meeting a DIFFERENT-skelId run of the SAME
     // canonical road (continuesAs, frozen `roadId`) is a name-transition CONTINUATION
     // — the road flows straight through under a new name (SKELETON §5a, "the road is
@@ -1111,9 +1117,9 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           const proj = (t) => (t[0] - p[0]) * dir[0] + (t[1] - p[1]) * dir[1]
           return Math.max(0, Math.max(proj(best.tA), proj(best.tB)))
         }
-        const legTrim = ends.map(([p], i) => (tipped[i] || through[i] || isNameTransition(p, run)) ? 0 : tangentTrim(p, legDirAt(i)))
+        const legTrim = ends.map(([p], i) => (tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) ? 0 : tangentTrim(p, legDirAt(i)))
         ends.forEach(([p, k], i) => {
-          if (tipped[i] || through[i] || isNameTransition(p, run)) return   // tip / T-continuation / name-transition → no corner bid
+          if (tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) return   // tip / T-continuation / thru-node / name-transition → no corner bid
           // conD = how deep the ramp CONCRETE runs before LU on this leg: a
           // set-back sidewalk (mat.inner === 'SW', a treelawn-Y leg) → the full
           // total; a curb-side sidewalk (SW leg) → its one strip width.
@@ -2402,8 +2408,43 @@ export function buildTileGround(ribbons, opts = {}) {
   // W keeps the blend under the fillet turn-tol (atan(Δw/2W) < 18°), so no
   // spurious corner can be minted at a blend kink — corners only where real
   // legs meet. Toy data (no customs, straight chains) → zero stations → no-op.
+  //
+  // [THRU-T] A genuine deg-3 T (one through-street + one side street that ENDS
+  // at the node) is NOT "nothing to construct" even when straight + uniform
+  // width: the side-street mouth always splits the through-frontage across two
+  // block faces (THRUNODE-GATE-FINDINGS), so the through band fragments there
+  // unless a window is built. To SIZE that window to span the mouth, we need the
+  // stem's half-width — the mouth interrupts the frontage over ~2×stemHW. Map
+  // each deg-3 node → the max half-width among the legs that TERMINATE there.
+  // node key → { hw, dir } for the leg that TERMINATES there (the T's stem): hw
+  // sizes the window to span the mouth; dir (unit, node→stem) picks which SIDE of
+  // the through-street the mouth is on, so the window/marker builds only there
+  // (the far side has no cross street — building it would notch a clean frontage).
+  const nodeStem = new Map()
+  for (let si = 0; si < streets.length; si++) {
+    const pts = streets[si]?.points
+    if (!pts || pts.length < 2) continue
+    for (const [end, ei] of [['start', 0], ['end', pts.length - 1]]) {
+      const k = tipKey(pts[ei])
+      if ((nodeDeg.get(k) || 0) < 3) continue
+      const nb = ei === 0 ? pts[1] : pts[pts.length - 2]
+      if (!nb) continue
+      const so = segOrdAtEnd(si, end)
+      const hw = Math.max(feWidthAt(si, 'left', so), feWidthAt(si, 'right', so))
+      const dx = nb[0] - pts[ei][0], dy = nb[1] - pts[ei][1], L = Math.hypot(dx, dy) || 1
+      const prev = nodeStem.get(k)
+      if (!prev || hw > prev.hw) nodeStem.set(k, { hw, dir: [dx / L, dy / L] })
+    }
+  }
   const thruWins = []                    // window polys (positive asphalt)
   const thruSplits = new Map()           // `${streetIdx}|${side}` → [{ vi, W }]
+  // [THRU-T ped] `${tipKey(node)}|${skelId}|${side}` for each genuine deg-3 T's
+  // through-street frontage end. The mouth splits that frontage across two tiles,
+  // so the tile-local isThrough (2 same-skelId run-ends) can never fire there —
+  // this FROZEN set lets sectionPass recognise the through-continuation from ONE
+  // run-end and suppress the false corner bid (the stem, not the through-street,
+  // owns the corner). Sized/paired with the asphalt window above.
+  const thruNodeSet = new Set()
   {
     const sidePerpT = (t, side) => side === 'right' ? [-t[1], t[0]] : [t[1], -t[0]]
     // Already-CONSTRUCTED nodes are the E3 machinery's domain (continuity
@@ -2454,13 +2495,27 @@ export function buildTileGround(ribbons, opts = {}) {
         const sNext = si < stations.length - 1 ? cum[stations[si + 1]] : cum[cum.length - 1]
         const roomA = 0.45 * (cum[vi] - sPrev)
         const roomB = 0.45 * (sNext - cum[vi])
+        // [THRU-T] Is this a genuine deg-3 T? deg-3 ∧ we're at an interior vertex
+        // (in `stations` ⇒ this chain passes through) ⇒ EXACTLY one through-street
+        // (a second through-leg would need deg-4). The node is already known
+        // NOT-E3-constructed (jmNodeKeys excluded it at station selection). Such a
+        // node's mouth ALWAYS breaks the frontage → build unconditionally, sized
+        // to span the mouth (stem half-width as the window floor).
+        const nk = tipKey(v)
+        // opts.thruTNode === false reverts to the pre-fix gate byte-identical (the
+        // eye A/B knob, like culDeSacKeyhole / iaOffset). Default ON.
+        const stem = (opts.thruTNode !== false && (nodeDeg.get(nk) || 0) === 3) ? nodeStem.get(nk) : null
+        // which side of the through-street the stem attaches to (sidePerpT 'right'
+        // = [-t[1], t[0]]) — the mouth is there; the far side runs straight.
+        const stemSide = stem ? ((stem.dir[0] * (-cdz / cL) + stem.dir[1] * (cdx / cL) > 0) ? 'right' : 'left') : null
         for (const side of ['left', 'right']) {
           const wA = feWidthAt(idx, side, segOrdAtVertex(idx, vi - 1))
           const wB = feWidthAt(idx, side, segOrdAtVertex(idx, vi))
           const dw = Math.abs(wA - wB)
-          if (dw < 0.02 && kink < 0.3) continue            // nothing to construct
+          const buildForT = !!stem && side === stemSide   // genuine T, mouth on THIS side
+          if (dw < 0.02 && kink < 0.3 && !buildForT) continue   // straight+uniform AND no T mouth here → nothing to construct
           if (!(Math.min(wA, wB) > 0.01)) continue         // a zero side (inner-edge carriageway) carries no curb
-          const Wn = Math.min(8, Math.max(2, 1.7 * dw, 2.5 * kink))
+          const Wn = Math.min(8, Math.max(2, 1.7 * dw, 2.5 * kink, buildForT ? stem.hw : 0))
           const WA = Math.min(Wn, roomA), WB = Math.min(Wn, roomB)
           if (WA < 0.5 || WB < 0.5) continue               // no room — leave emergent
           const A = at(cum[vi] - WA), B = at(cum[vi] + WB)
@@ -2485,6 +2540,11 @@ export function buildTileGround(ribbons, opts = {}) {
           // — when smooth>0, `vi` is a smoothed-space index that doesn't address
           // streetsOrig. See splitRunAtStations.
           thruSplits.get(key).push({ vi, at: [v[0], v[1]], W: { A: WA, B: WB } })
+          // [THRU-T ped] mark this frontage end as a through-continuation so the
+          // FILL pass suppresses the false corner (only the genuine deg-3 T's stem
+          // side — the dw/kink windows already split within a tile so isThrough
+          // fires there, and the far side runs straight with no corner to suppress).
+          if (buildForT) { const sk = (streetsOrig[idx] && (streetsOrig[idx].skelId || streetsOrig[idx].name)) || idx; thruNodeSet.add(`${nk}|${sk}|${side}`) }
         }
       }
     }
@@ -3084,11 +3144,23 @@ export function buildTileGround(ribbons, opts = {}) {
         ;(_mouths || (_mouths = [])).push({ mid: M, ctr: mid, R, spurSkel, apexA, apexB, dir })
       }
     }
+    // [THRU-T ped] This tile's run-ends that are genuine-deg-3-T through-street
+    // continuations (from the frozen thruNodeSet). sectionPass reads them to
+    // suppress the false corner where the mouth split the frontage across tiles.
+    let _thruNodeEnds = null
+    if (thruNodeSet.size) {
+      for (const rm of runMeta) {
+        for (const p of [rm.poly[0], rm.poly[rm.poly.length - 1]]) {
+          const k = `${tipKey(p)}|${rm.skelId}|${rm.side}`
+          if (thruNodeSet.has(k)) (_thruNodeEnds || (_thruNodeEnds = [])).push(k)
+        }
+      }
+    }
     // Freeze everything the section pass needs off this tile's shape.
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
     // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(_mouths ? { mouths: _mouths } : {}), ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(_mouths ? { mouths: _mouths } : {}), ...(_thruNodeEnds ? { thruNodeEnds: _thruNodeEnds } : {}), ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────
@@ -3257,5 +3329,5 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined }
 }
