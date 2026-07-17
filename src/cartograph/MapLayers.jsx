@@ -4,7 +4,6 @@ import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import mapData from '../../cartograph/data/lafayette-square/clean/map.json'
 import ribbonsData from '../data/ribbons.json'
-import parkTreeData from '../../cartograph/data/lafayette-square/clean/park_census.json'
 import parkWaterData from '../data/lafayette-square/park_water.json'
 import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius } from './boundary.js'
@@ -24,11 +23,9 @@ const STROKE_COLORS = {
   surveyCenterline:   '#4ea3ff',   // Survey wireframe — skeleton spine in blue
 }
 
-// Park-local → world rotation. Tree GPS coords are in park-local meters;
-// see park_trees.json `meta.coordinate_system`.
-
-// Crown radius from trunk DBH (open-grown urban hardwoods rule of thumb).
-const treeCrownRadius = (dbh) => Math.max(0.5, Math.min(8, (typeof dbh === 'number' ? dbh : 12) * 0.305 / 2))
+// Trees moved to DesignerTrees.jsx — the shared, scene-generic tree layer that
+// reads the baked slab (baked/<scene>/trees.json), sized by DBH + tinted by
+// source. MapLayers no longer imports the LS-only park census.
 
 // ── Render priorities (higher = on top via polygonOffset) ────
 const PRI = {
@@ -526,11 +523,6 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return merged
   }, [])
 
-  // ── Trees (DBH-sized discs; park-local coords, rotated below) ────
-  const treePositions = useMemo(() => {
-    return (parkTreeData.trees || []).map(t => ({ x: t.x, z: t.z, r: treeCrownRadius(t.dbh) }))
-  }, [])
-
   // ── Alleys (filled rings, boundary-clipped) ─────────────────
   const alleyGeo = useMemo(() => {
     const geos = []
@@ -788,12 +780,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         </mesh>
       ))}
 
-      {/* Trees: park_trees.json is in compass frame, like all spatial data. */}
-      {!hide.tree && treePositions.map((t, i) => (
-        <mesh key={`tree-${i}`} position={[t.x, 0.2, t.z]} rotation={[-Math.PI / 2, 0, 0]} material={mats.tree}>
-          <circleGeometry args={[t.r, 12]} />
-        </mesh>
-      ))}
+      {/* Trees now render via the shared DesignerTrees layer (baked slab). */}
       {!hide.water && waterGeo && (
         <mesh geometry={waterGeo} material={mats.water} />
       )}

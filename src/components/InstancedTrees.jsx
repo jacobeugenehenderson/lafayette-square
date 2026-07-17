@@ -28,7 +28,7 @@ import {
   treeBarkTierPinned,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
-import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg } from './OverheadTrees.jsx'
+import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg } from './OverheadTrees.jsx'
 import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -892,11 +892,15 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   const overheadBySpecies = useMemo(() => atlas?.manifest?.overheadBySpecies || null, [atlas?.manifest?.overheadBySpecies])
   const overheadEnabled = !!overheadBySpecies && scene?.overheadImpostor !== false
   const overheadMode = useOverheadMode(overheadEnabled)
+  // Load-gate: defer the overhead disc PNGs past the hero-frame startup path
+  // (idle-warm or on Browse-entry), so they don't compete with the mesh GLBs +
+  // atlas the first frame needs. The SWAP still keys on overheadMode above.
+  const overheadWarm = useOverheadWarm(overheadEnabled)
   const overheadSpeciesList = useMemo(
     () => (groups?.bySpecies ? Array.from(groups.bySpecies.keys()) : []),
     [groups],
   )
-  const overheadAssets = useOverheadAssets({ enabled: overheadEnabled, lookName, overheadBySpecies, species: overheadSpeciesList })
+  const overheadAssets = useOverheadAssets({ enabled: overheadWarm, lookName, overheadBySpecies, species: overheadSpeciesList })
 
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null

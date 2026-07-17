@@ -100,6 +100,13 @@ const SOURCE_BY_BASENAME = {
 // Forest Park's Scientific_Name record for the same tree) overlap; this ranks the
 // survivor. Unknown source → mid (real-position) rank.
 const SOURCE_RANK = { 'city-inventory': 3, 'forest-park': 3, 'park': 3, 'osm': 2, 'derived': 1 }
+// Which sources carry a REAL trunk-diameter (DBH) measurement — the standard
+// forestry size/age proxy. The municipal inventories do; OSM ships a constant
+// placeholder (all `1`) and synthetic fill has none. DBH is emitted to the slab
+// ONLY for these, so anything computing a size/age distribution off the slab
+// (and a 2D/authoring view sizing trees by trunk width) sees real values, never a
+// placeholder masquerading as data. The rest omit it and a consumer defaults them.
+const REAL_DBH_SOURCES = new Set(['city-inventory', 'forest-park', 'park'])
 const DEDUP_M = 3   // same trunk if within this (matches scripts/14's OSM↔city dedup)
 
 const SHAPE_TO_CATEGORY = {
@@ -472,10 +479,36 @@ export async function bakeTrees({
     park.trees = kept
   }
 
+  // ── Empirical DBH distribution — dress synthetic trees with a believable size ──
+  // The same "derive from real, distribute over the rest" move we use for SPECIES
+  // (scripts/14 mix-samples COMMON from the City census), applied to trunk width.
+  // Real inventory keeps its MEASURED dbh; OSM/derived get one sampled (determin-
+  // istic by position seed) from their OWN species' real distribution, falling back
+  // to the neighborhood's global pool for species the inventory never measured.
+  // Built from THIS scene's real trees only — the census is per-hood, so HPDM
+  // samples HPDM's own trees, never LS's. `source` still marks measured vs
+  // estimated, so a size/age BENCHMARK reads only the real ones.
+  const dbhBySpecies = new Map()
+  const dbhGlobal = []
+  for (const t of park.trees) {
+    if (REAL_DBH_SOURCES.has(t.__source) && Number.isFinite(t.dbh)) {
+      dbhGlobal.push(t.dbh)
+      if (!dbhBySpecies.has(t.species)) dbhBySpecies.set(t.species, [])
+      dbhBySpecies.get(t.species).push(t.dbh)
+    }
+  }
+  const DBH_MIN_SAMPLES = 8   // per-species pool must reach this, else use global
+  const sampleDbh = (species, seed) => {
+    const per = dbhBySpecies.get(species)
+    const pool = (per && per.length >= DBH_MIN_SAMPLES) ? per : dbhGlobal
+    return pool.length ? pool[Math.floor(hash01(seed, 7) * pool.length)] : null
+  }
+
   if (verbose) {
     console.log(`[bake-trees] scene=${sceneName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
     console.log(`[bake-trees] pool: ${index.variants.length} variants, ${park.trees.length} placements`)
     if (deduped) console.log(`[bake-trees] cross-well dedup: dropped ${deduped} coincident records (kept the richest source per trunk)`)
+    if (dbhGlobal.length) console.log(`[bake-trees] dbh: ${dbhGlobal.length} measured (${dbhBySpecies.size} species) → ${park.trees.length - dbhGlobal.length} estimated by empirical sampling`)
   }
 
   // Surface tester, best construction first:
@@ -613,6 +646,10 @@ export async function bakeTrees({
     const py = v.positionOverride?.y ?? 0
     const finalX = tx + px
     const finalZ = tz + pz
+    // DBH: measured for real inventory, else sampled from the empirical per-species
+    // distribution (deterministic by seed) so OSM/derived trees get a believable size.
+    const measuredDbh = (REAL_DBH_SOURCES.has(tree.__source) && Number.isFinite(tree.dbh)) ? tree.dbh : null
+    const dbh = measuredDbh ?? sampleDbh(tree.species, seed)
     instances.push({
       x: +finalX.toFixed(4),
       // Ground reverted to flat (#19); trees plant at y=0 + override.
@@ -640,6 +677,11 @@ export async function bakeTrees({
       // A permanent data-layer fact per instance; no runtime toggle (deferred).
       // Surveyed sources are nudged onto legal ground, derived is dropped.
       source: tree.__source,
+      // Trunk diameter (DBH) — the standard forestry size/age proxy. MEASURED for
+      // real inventory; SAMPLED from the empirical per-species distribution for
+      // OSM/derived (the same derive-from-real move as species). `source` marks
+      // which is measured vs estimated, keeping the benchmark honest.
+      ...(dbh != null ? { dbh } : {}),
       // Pre-sampled lamp gaussian at this tree's world position. Runtime
       // multiplies by `uLampGlow` (per-Look TOD-curve slider) for the
       // final emissive contribution.

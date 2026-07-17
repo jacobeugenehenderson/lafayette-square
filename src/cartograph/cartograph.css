@@ -39,6 +39,13 @@
   --carto-flat-surface:    #1b1b19;
   --carto-flat-border:     #3a3a36;
 
+  /* Tree provenance (2D Designer tree dots, colored by data `source`) */
+  --carto-tree-real:       #5fbf74;   /* measured municipal inventory (city / forest-park) */
+  --carto-tree-park:       #7fd98f;   /* authored park census */
+  --carto-tree-osm:        #e0a44a;   /* OSM position; species + size sampled */
+  --carto-tree-derived:    #8a8a86;   /* synthetic NLCD canopy fill */
+  --carto-tree-unknown:    #7aa0c0;   /* fallback / unrecognized source */
+
   /* Shared values */
   --carto-accent-color:    #666;
   --carto-radius:          4px;

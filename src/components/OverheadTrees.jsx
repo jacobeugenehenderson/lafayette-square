@@ -78,6 +78,37 @@ export function useOverheadMode(enabled) {
   return enabled && viewMode === 'browse'
 }
 
+// ── Load gate: keep overhead OFF the startup critical path ─────────────────────
+// The overhead disc PNGs (60 for LS) only ever render in Browse, but the asset
+// load used to be gated on CAPABILITY (does the slab have overhead) — so all of
+// them fetched + decoded during the HERO shot, competing with the mesh GLBs +
+// atlas the first frame actually needs (the density-stress load-in). This gate
+// defers the overhead pull past startup WITHOUT inventing a parallel height
+// heuristic (the swap doctrine forbids that — see useOverheadMode): it latches
+// true on whichever comes first —
+//   (a) the browser goes idle after the hero has settled (requestIdleCallback,
+//       so the hero frame is never blocked but discs are warm before you pull up), or
+//   (b) Browse is actually entered (belt-and-suspenders; if you dive to plan view
+//       before idle fires, load immediately).
+// Once warm it stays warm (no thrash). enabled=false → never warms (LS looks with
+// no overhead pay nothing).
+export function useOverheadWarm(enabled) {
+  const inBrowse = useOverheadMode(enabled)
+  const [warm, setWarm] = useState(false)
+  useEffect(() => {
+    if (!enabled || warm) return
+    const w = () => setWarm(true)
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(w, { timeout: 4000 })
+      return () => window.cancelIdleCallback?.(id)
+    }
+    const id = setTimeout(w, 3000)
+    return () => clearTimeout(id)
+  }, [enabled, warm])
+  useEffect(() => { if (inBrowse) setWarm(true) }, [inBrowse])
+  return enabled && warm
+}
+
 // ── Lazy asset load (behind the hero shot) ───────────────────────────────────
 // Loads every species' baked band layers (albedo + AO) via TextureLoader in the
 // background — no Suspense, so it never blocks the hero render; the discs simply
