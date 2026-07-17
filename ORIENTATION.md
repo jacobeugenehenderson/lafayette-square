@@ -75,4 +75,6 @@ The project is **four parts** plus the public runtime. Each is documented next t
 - `README.md` Documentation map — **where does X live**: the artifact homes + the cross-cutting feature index.
 - `cartograph/PIPELINE.md` — the **execution spine**: how raw data becomes the slab, step by step.
 
+**And when you need to know *what's left*** (not where it lives): **[`ROADMAP.md`](ROADMAP.md)** — the one cross-domain master of all remaining work, ranked and pruned to zero. We're in the home stretch; ROADMAP is the surface we prune the whole board against. Two columns to done (the SHAPE finish + the tree impostor/placement scheme = "works on a phone") + the security close-out, then the cleanup tail toward human-developer engagement, then the approaching horizon.
+
 > *New doc, 2026-06-14 — the executive-orientation surface the doc-system arc called for. Reference-kind; keep it plain and lean. The doctrine here is the colloquial face of the dev canon — when the canon changes, change the one-liner, keep the pointer.*
