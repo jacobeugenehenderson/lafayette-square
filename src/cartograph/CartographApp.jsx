@@ -6,6 +6,7 @@ import * as THREE from 'three'
 // Map geometry (rendered in every shot)
 import MapLayers from './MapLayers.jsx'
 import SceneMapLayers from './SceneMapLayers.jsx'
+import DesignerTrees from './DesignerTrees.jsx'
 import OneWayArrows from './OneWayArrows.jsx'
 import BakedGround from '../components/BakedGround.jsx'
 
@@ -110,6 +111,8 @@ function NeonPump() {
     _neonUniforms.bleedUniform.value      = triple.bleed      ?? 0
     _neonUniforms.emissiveUniform.value   = triple.emissive   ?? 4
     _neonUniforms.tubeRadiusUniform.value = triple.tubeRadius ?? 1.0
+    _neonUniforms.screenFloorUniform.value = triple.screenFloor ?? 2.5
+    _neonUniforms.screenCeilUniform.value  = triple.screenCeil  ?? 0
   })
   return null
 }
@@ -1125,6 +1128,13 @@ export default function CartographApp() {
               above; toy has no map.json). Scene-aware, clipped to its boundary. */}
           {scene !== 'lafayette-square' && scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <SceneMapLayers hiddenLayers={decorationsHidden} />
+          )}
+          {/* Trees (2D flat dots) for EVERY poured scene — reads the baked slab,
+              sized by DBH, tinted by source. One shared path (LS + non-LS),
+              replacing MapLayers' old LS-only park-census discs. Designer-only;
+              Stage's 3D InstancedTrees owns the trees in shots. */}
+          {scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
+            <DesignerTrees scene={scene} hiddenLayers={decorationsHidden} bakeLastMs={bakeLastMs} />
           )}
 
           {/* ── Designer-only UI overlays. Survey + Measure overlays mount

@@ -18,4 +18,11 @@ export const neon = {
   // changes. Mutated by NeonPump in Stage (live store resolution) and
   // by NeonBands' useEffect in production (scene.json baseline).
   tubeRadiusUniform: { value: 1.0 },
+  // Screen-relative size band (radius, device px). Real shader uniforms — the
+  // NeonBands vertex shader clamps each tube's on-screen radius to
+  // [screenFloor, screenCeil] so it never goes sub-pixel far away nor reads as a
+  // fat pipe up close. screenCeil = 0 → no ceiling. Written by NeonPump (Stage)
+  // and NeonBands' production useEffect, same as the four intensity uniforms.
+  screenFloorUniform: { value: 2.5 },
+  screenCeilUniform:  { value: 0 },
 }

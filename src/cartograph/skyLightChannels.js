@@ -218,14 +218,24 @@ export const DIRMOON_FIELD_KEYS  = ['value']
 // rebuild rather than a shader uniform write (see neonState.js + the
 // NeonBands geometry useFrame). Wall offset and roof drop are still
 // physically motivated and live as constants in NeonBands.jsx.
+// `screenFloor`/`screenCeil` (added 2026-07-16) are the SCREEN-RELATIVE size band
+// (radius, device px). The tube is built in world meters, so past street level a
+// 1 m tube goes sub-pixel — the neon vanishes exactly where the browse/overhead
+// shot wants it. The NeonBands vertex shader clamps each tube's on-screen radius
+// to [screenFloor, screenCeil]: never thinner than the floor (kills the sub-pixel
+// strip far away), never fatter than the ceiling (thins the ~physical hero pipe up
+// close), physical in between. Unlike `tubeRadius` these are pure shader uniforms
+// (no merged-mesh rebuild). `screenCeil = 0` disables the ceiling.
 export const NEON_FIELDS = [
-  { key: 'core',       label: 'Hot core',          min: 0,   max: 1,   step: 0.02 },
-  { key: 'tube',       label: 'Tube glow',         min: 0,   max: 1,   step: 0.02 },
-  { key: 'bleed',      label: 'Atmospheric bleed', min: 0,   max: 1,   step: 0.02 },
-  { key: 'emissive',   label: 'Emissive',          min: 0.5, max: 8,   step: 0.1  },
-  { key: 'tubeRadius', label: 'Tube radius',       min: 0.1, max: 3.0, step: 0.05 },
+  { key: 'core',        label: 'Hot core',          min: 0,   max: 1,   step: 0.02 },
+  { key: 'tube',        label: 'Tube glow',         min: 0,   max: 1,   step: 0.02 },
+  { key: 'bleed',       label: 'Atmospheric bleed', min: 0,   max: 1,   step: 0.02 },
+  { key: 'emissive',    label: 'Emissive',          min: 0.5, max: 8,   step: 0.1  },
+  { key: 'tubeRadius',  label: 'Tube radius',       min: 0.1, max: 3.0, step: 0.05 },
+  { key: 'screenFloor', label: 'Screen floor (px)', min: 0,   max: 12,  step: 0.5  },
+  { key: 'screenCeil',  label: 'Screen ceiling (px)', min: 0, max: 64,  step: 1    },
 ]
-export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeRadius: 1.0 }
+export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeRadius: 1.0, screenFloor: 2.5, screenCeil: 0 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
 // Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform.

@@ -71,6 +71,13 @@ import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS } from '../cartograph/skyLightChann
 // `-tubeRadius` so the tube BOTTOM always lands flush with the rooftop.
 const DEFAULT_TUBE_RADIUS = 1.0
 const TUBE_RADIUS_STEP    = 0.05               // quantize per-frame radius read to this step before triggering rebuild
+// Screen-relative floor (universal neon facelift, 2026-07-16). The tube is built
+// in world meters, so past street level a 1m tube shrinks to a sub-pixel strip —
+// the neon vanishes exactly where the browse/overhead shot most wants it. The
+// vertex shader floors the on-screen tube radius to MIN_SCREEN_PX device pixels:
+// close up (hero) it stays physical; far away it grows just enough to keep a
+// readable, glowing line. Physically-motivated + by-eye tuned, not an operator knob.
+const MIN_SCREEN_PX = 2.5
 const OFFSET_OUT   = 0.5                       // meters past wall face — clears any eave/cornice
 const CROSS_SEGS   = 8                         // facets around the circular cross-section
 const CORNER_SEGS  = 3                         // arc segs per convex corner
@@ -253,13 +260,35 @@ const VERT = /* glsl */`
 attribute vec3 aColor;
 attribute float aCentroidY;
 uniform float uExag;
+uniform float uBuiltRadius;   // world radius the merged geometry was swept at (== the live tubeRadius)
+uniform float uMinPx;         // screen-relative floor: tube never renders thinner than this (device px)
+uniform float uMaxPx;         // screen-relative ceiling: tube never renders fatter than this (0 = disabled)
+uniform float uViewportH;     // drawing-buffer height in device px
 varying vec3 vColor;
 varying vec3 vWorldNormal;
 varying vec3 vWorldPos;
 void main() {
   vColor = aColor;
-  vec3 lifted = position;
-  lifted.y += aCentroidY * uExag;
+  // Screen-relative floor. Each vertex is axis + uBuiltRadius * normal, where
+  // normal is the unit radial dir of the circular cross-section — so the axis
+  // (tube centerline) recovers exactly as position - uBuiltRadius * normal. We
+  // re-emit the vertex at an EFFECTIVE radius that never falls below uMinPx on
+  // screen: physical when close, floored when far. It still shrinks with distance
+  // down to the floor, then holds — the tube reads as a glowing line at any zoom.
+  float liftY = aCentroidY * uExag;
+  vec3 axis = position - uBuiltRadius * normal;
+  vec4 axisWorld = modelMatrix * vec4(axis + vec3(0.0, liftY, 0.0), 1.0);
+  vec4 clipAxis = projectionMatrix * viewMatrix * axisWorld;
+  // Isotropic pixels-per-meter at this depth. Perspective: clip.w == -viewZ;
+  // ortho: clip.w == 1 (distance-independent). projectionMatrix[1][1] is the
+  // y-scale (1/tan(fov/2) perspective, 2/(t-b) ortho) — both > 0.
+  float pxPerM = projectionMatrix[1][1] * 0.5 * uViewportH / max(clipAxis.w, 1e-4);
+  float invPxPerM = 1.0 / max(pxPerM, 1e-6);
+  // Floor: never thinner than uMinPx on screen.
+  float rEff = max(uBuiltRadius, uMinPx * invPxPerM);
+  // Ceiling: never fatter than uMaxPx on screen (uMaxPx <= 0 disables it).
+  if (uMaxPx > 0.0) rEff = min(rEff, uMaxPx * invPxPerM);
+  vec3 lifted = axis + normal * rEff + vec3(0.0, liftY, 0.0);
   vec4 wp = modelMatrix * vec4(lifted, 1.0);
   vWorldPos = wp.xyz;
   vWorldNormal = normalize(mat3(modelMatrix) * normal);
@@ -322,6 +351,7 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   // [[feedback_raw_shadermaterial_needs_logdepth_chunks]].
   const logDepth = useThree((s) => s.gl.capabilities.logarithmicDepthBuffer)
   const invalidate = useThree((s) => s.invalidate)
+  const gl = useThree((s) => s.gl)
   useEffect(() => {
     if (!lookId || !scene?.neon?.values) return
     // Resolve the (TOD-animated) neon channel at the current minute — same as
@@ -341,6 +371,8 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     _neonUniforms.bleedUniform.value      = v.bleed      ?? 0
     _neonUniforms.emissiveUniform.value   = v.emissive   ?? 4
     _neonUniforms.tubeRadiusUniform.value = v.tubeRadius ?? DEFAULT_TUBE_RADIUS
+    _neonUniforms.screenFloorUniform.value = v.screenFloor ?? MIN_SCREEN_PX
+    _neonUniforms.screenCeilUniform.value  = v.screenCeil  ?? 0
     // Production runs frameloop="demand". These are imperative writes to shared
     // uniform objects (not React props), so they don't trigger R3F's auto-
     // invalidate — and the uniforms init to 0 (alpha<0.01 → discard → invisible).
@@ -364,6 +396,10 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     const live = _neonUniforms.tubeRadiusUniform.value || DEFAULT_TUBE_RADIUS
     const q = Math.round(live / TUBE_RADIUS_STEP) * TUBE_RADIUS_STEP
     if (Math.abs(q - r) > 1e-6) setR(q)
+    // Keep the screen-relative floor honest: the tube's on-screen radius is
+    // computed against the live drawing-buffer height (device px, DPR-correct).
+    const mat = materialRef.current
+    if (mat) mat.uniforms.uViewportH.value = gl.domElement.height
   })
 
   const geometry = useMemo(() => {
@@ -422,6 +458,10 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
         uEmissive:   _neonUniforms.emissiveUniform,
         uForceOn:    { value: forceOn ? 1.0 : 0.0 },
         uExag:       TERRAIN_UNIFORMS.uExag,
+        uBuiltRadius:{ value: DEFAULT_TUBE_RADIUS },
+        uMinPx:      _neonUniforms.screenFloorUniform,  // shared ref: NeonPump/production write it live
+        uMaxPx:      _neonUniforms.screenCeilUniform,   // 0 → no ceiling
+        uViewportH:  { value: 1080 },
       },
       transparent: true,
       depthWrite: false,
@@ -440,6 +480,10 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     materialRef.current.customProgramCacheKey = () => `neon-bands-full-cylinder-${logDepth ? 'logdepth' : 'lineardepth'}`
   }
   materialRef.current.uniforms.uForceOn.value = forceOn ? 1.0 : 0.0
+  // The screen-floor shader recovers each tube's axis as position - uBuiltRadius *
+  // normal, so this MUST equal the radius the merged geometry was actually swept at
+  // (the quantized `r`, which drives the geometry rebuild above). Set every render.
+  materialRef.current.uniforms.uBuiltRadius.value = r
 
   useEffect(() => () => { geometry.dispose() }, [geometry])
   useEffect(() => () => { materialRef.current?.dispose() }, [])

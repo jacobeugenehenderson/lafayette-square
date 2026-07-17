@@ -46,6 +46,26 @@ function _isWithinHours(hours, time) {
   return mins >= oh * 60 + om && mins < ch * 60 + cm
 }
 
+// Default neon window for a real POI with NO authored hours: dusk → late. Lets a
+// fresh install (e.g. HPDM, where only ~6/192 listings carry hours) glow out of
+// the box instead of sitting dark. An authored `hours` object always takes the
+// `_isWithinHours` path instead; only listing-less bare buildings stay dark.
+const _DEFAULT_NEON_OPEN_HOUR = 17  // 5pm
+const _DEFAULT_NEON_CLOSE_HOUR = 2  // 2am (wraps midnight)
+function _isWithinDefaultNeonWindow(time) {
+  const h = time.getHours()
+  return h >= _DEFAULT_NEON_OPEN_HOUR || h < _DEFAULT_NEON_CLOSE_HOUR
+}
+
+// The WHICH-tubes gate, unified across the slab and live paths. `hasListing` =
+// a real POI (in neonLookup); Stage's `forceNeonOn` master overrides everything.
+function _neonOn({ forceNeonOn, hours, hasListing, now }) {
+  if (forceNeonOn !== undefined) return !!forceNeonOn
+  if (hours) return _isWithinHours(hours, now)
+  if (hasListing) return _isWithinDefaultNeonWindow(now) // POI, no hours → default window
+  return false // bare building, no real POI → dark
+}
+
 // ── Default neon classification ─────────────────────────────────────
 // Buildings without a listings.json entry still get neon tube geometry.
 // The tube color is derived from St. Louis zoning code — the only
@@ -71,20 +91,23 @@ function defaultNeonHexForBuilding(building) {
 
 // ── neonLookup — buildingId → { hex, hours, category } for listings ──
 // Shared by LafayetteScene's per-id <Building> mounts AND openPlaces.
-// Only currently-authored listings with `hours` are included; the
-// openPlaces filter below decides on/off at the current TOD.
+// Every REAL listing (a business/POI) is included, whether or not it has
+// authored `hours`; the openPlaces gate below decides on/off. A present but
+// null `hours` marks a POI that glows on the default window (dusk→late) so a
+// fresh install looks alive out of the box — an authored `hours` still wins.
+// Synthetic zoning-default listings (`_bare`) are EXCLUDED: a residential house
+// with no real POI stays dark, rather than the whole hood lighting up at night.
 export function useNeonLookup() {
   const listings = useListings((s) => s.listings)
   return useMemo(() => {
     const map = {}
     listings.forEach(l => {
       if (l.status === 'closed') return
+      if (l._bare) return // synthetic zoning listing — not a real POI, no neon
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
       if (!bid || !hex) return
-      if (l.hours) {
-        map[bid] = { hex, hours: l.hours, category: l.category }
-      }
+      map[bid] = { hex, hours: l.hours || null, category: l.category }
     })
     return map
   }, [listings])
@@ -126,7 +149,7 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
         const listingInfo = neonLookup[e.id]
         const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
         const hours = listingInfo ? listingInfo.hours : null
-        const on = forceNeonOn !== undefined ? !!forceNeonOn : _isWithinHours(hours, now)
+        const on = _neonOn({ forceNeonOn, hours, hasListing: !!listingInfo, now })
         if (!on) continue
         // baseY + groundYRaw (== centroidY) are baked into the index by the
         // SAME anchor math the live path uses below, so tubes lift in lockstep
@@ -140,15 +163,19 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
     }
 
     for (const b of _allBuildings) {
+      // The live path builds tube geometry from INLINE building geometry (size +
+      // footprint). Roster-only installs (e.g. HPDM's content roster) carry no
+      // inline geometry — their tubes come from the slab path above. Skip such
+      // buildings here so a null-slabIndex cold-load moment can't crash on
+      // `b.size[1]` and take down the scene. (HPDM SceneNeon crash, 2026-07-16.)
+      if (!Array.isArray(b.size) || !b.footprint || b.footprint.length < 3) continue
       const listingInfo = neonLookup[b.id]
       const info = listingInfo || {
         hex: defaultNeonHexForBuilding(b),
         hours: null,
         category: defaultNeonCategoryForBuilding(b),
       }
-      const on = forceNeonOn !== undefined
-        ? !!forceNeonOn
-        : _isWithinHours(info.hours, now)
+      const on = _neonOn({ forceNeonOn, hours: info.hours, hasListing: !!listingInfo, now })
       if (!on) continue
       // baseY = world Y of the building TOP (the wall/roof joint, the eave) —
       // dropped the roof-peak lift so neon HUGS the building instead of hovering
