@@ -98,10 +98,9 @@ export function treeBakeInputsForScene(scene) {
   // Forestry census, the OSM county-side floor, and the NLCD canopy fill.
   const clean = sceneCleanDir(scene)
   const placements = [
-    join(clean, 'park_census.json'),   // AUTHORED park census (hand-curated well)
-    join(clean, 'park_trees.json'),    // City forestry census (fetched)
-    join(clean, 'osm_trees.json'),     // County-side OSM floor
-    join(clean, 'derived_trees.json'), // NLCD canopy fill (parks/yards)
+    join(clean, 'park_trees.json'),    // City forestry census (whole hood, real)
+    join(clean, 'osm_trees.json'),     // OSM floor (real positions, deduped vs city)
+    join(clean, 'derived_trees.json'), // NLCD canopy fill (synthetic; absent when a scene opts real-only)
   ].filter(existsSync)
   if (!placements.length) return null
 
@@ -130,12 +129,6 @@ export function treeBakeInputsForScene(scene) {
   const bnd = join(clean, '..', 'neighborhood_boundary.json')
   const boundaryPath = existsSync(bnd) ? bnd : undefined
 
-  // The authored park footprint — enables park-wins-in-park dedup in bake-trees
-  // (the authored park census owns its footprint; fetched/synthetic overlaps
-  // yield). No-op for hoods without an authored park well or polygon.
-  const parkPoly = join(clean, 'park-polygon.json')
-  const parkPolygonPath = existsSync(parkPoly) ? parkPoly : undefined
-
   // ⚠️ Scene-keyed output, but the RUNTIME fetches placements Look-keyed —
   // `InstancedTrees.jsx` builds `baked/<look>/trees.json`. The two paths
   // coincide only because every Look's scene equals its id today. Phase 3 is
@@ -148,8 +141,7 @@ export function treeBakeInputsForScene(scene) {
     forbiddenMapPath,
     zoneShapePath,
     boundaryPath,
-    parkPolygonPath,
     output: `public/baked/${scene}/trees.json`,
-    inputs: [...placements, speciesMapPath, forbiddenMapPath, zoneShapePath, boundaryPath, parkPolygonPath].filter(Boolean),
+    inputs: [...placements, speciesMapPath, forbiddenMapPath, zoneShapePath, boundaryPath].filter(Boolean),
   }
 }

@@ -115,8 +115,17 @@ cartograph/data/lafayette-square/clean/*
 !cartograph/data/lafayette-square/clean/park-polygon.json
 # The authored PARK CENSUS well — City Forestry clipped to the park polygon, the
 # hand-curated gem (source:'park'). Authored source (its raw maps6 export is NOT
-# committed), so unlike the fetched clean/* wells it must stay tracked.
+# committed), so unlike the fetched clean/* wells it must stay tracked. Kept as an
+# authored reference; the whole-hood City inventory (park_trees.json) subsumes it
+# (750/756 overlap), so LS bakes City + OSM, not this.
 !cartograph/data/lafayette-square/clean/park_census.json
+# The REAL LS census wells that the slab is baked from. TRACKED (not the usual
+# gitignored-clean/ treatment) so the recovered census can't be lost on a clean
+# checkout or drift on re-fetch — the fix for the 756-vs-6,866 regression
+# (scratch/CENSUS-RECOVERY-FINDINGS.md). Re-fetchable via scripts/13 (City maps9)
+# + scripts/14 (OSM Overpass), but frozen here so the committed bake is reproducible.
+!cartograph/data/lafayette-square/clean/park_trees.json
+!cartograph/data/lafayette-square/clean/osm_trees.json
 cartograph/node_modules/
 
 # Claude Code local settings
