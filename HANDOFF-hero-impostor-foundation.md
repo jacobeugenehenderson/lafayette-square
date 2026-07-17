@@ -160,3 +160,19 @@ Named myself **Slat** (nested flat strips stacked to fake canopy volume — the 
 
 ### Phase 0 — Matrix4 aliasing fix (DONE, `5a06ed5d`)
 Fixed `InstancedTrees.jsx:442` (`ImpostorSpecies`): `arr[i] = T.multiply(R)` aliased the one reused scratch `T` (`multiply()` mutates + returns the receiver), so every impostor placement collapsed onto the last. Fix = `.clone()` per instance, mirroring the `OverheadSpecies` idiom (`OverheadTrees.jsx:246`) + a comment naming why. **Not live-observable yet** — dormant because `PROM_THRESHOLD:0` leaves zero impostor-role instances; it can only be eye-gated once the foundation turns trees impostor (Phase 2). Committed as a standalone prereq so it's off the board before any tree flips.
+
+### The pattern-map (how overhead → hero; Jacob blessed the pitch 2026-07-17)
+The pipeline mirrors the overhead path exactly; the capture-aim + carrier geometry re-derive. Overhead looks DOWN and clips HEIGHT bands → flat disc; hero looks HORIZONTAL and clips DEPTH shells → vertical card. Azimuth = orbit the camera about Y (new axis; overhead had none). `injectOverheadStamp` gives relight + base-anchored wind for free. **Capture pitch = pure horizontal side-on** (Jacob's call — cleanest side elevation, no foreshortening). No STOP-flag: the mechanism transfers.
+
+### Phase 1a — capture re-aim + carrier + Salon eye-gate (DONE, `62310eb2`)
+Three seams, all parse-clean (esbuild), all mirroring the overhead path:
+- **`captureImpostor.js`** — `sideOn` branch in `renderTreeToTexture` (horizontal cam orbited by azimuth, canopy-only vertical frame `[canopyBaseY, maxY]`, depth-shell near/far clip along the view axis). `prepareHeroBands`/`captureHeroBand` = the `prepareOverheadBands`/`captureOverheadBand` twins: azimuths×shells shot list, two relight channels (albedo 512² + AO 256²), one-shot-per-frame. Back shells bake darker for free (full-crown shadow → lower AO).
+- **`impostorGeometry.js`** — `buildHeroImpostorCard`: vertical tessellated card, canopy-only, per-shell local-Z depth offset, carries `aOverhead`+`aTreeHeightNorm` (ground-anchored → base-anchored sway).
+- **`SpecimenViewport.jsx`** — a **`Hero Imp`** preset (side-on, level with the canopy). Captures az=0 × `heroShells` one-per-frame, skins the cards, renders the shell stack. Front shell bright → back shell darker. Wind slider drives the breathe.
+
+**Dials as shipped (start values, to tune live):** Salon preview azimuths=1 (front only — full N rides the baker), shells=2 (nesting).
+
+**⏳ EYE-GATE PENDING (Jacob's eye, the gate):** open `/arborist` → pick a species → **Hero Imp** preset → does the leaf mass read as the tree from the side, and does it breathe with the Wind slider? Can't self-verify (proxy ≠ eye). Logistics: the running dev server serves the MAIN dir (trunk), not this worktree — eye-gate mechanism is Jacob's call (worktree Salon server, or pull the branch).
+
+### Phase 1b — durability (NEXT, not yet built)
+`serve.js` POST `/hero-impostor/:look/:species` · `bake-look.js` carry `heroImpostorBySpecies` forward (the trapdoor) · `HeroImpostorBaker` on Bake→Slab (all N azimuths) · Grove wire. Then Phase 2 (runtime split + azimuth selection), Phase 3 (streaming), Phase 4 (Stage budget knob).
