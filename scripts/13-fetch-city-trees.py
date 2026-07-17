@@ -41,7 +41,7 @@ except ImportError:
 from config import (
     CENTER_LAT, CENTER_LON, BBOX,
     wgs84_to_local, ensure_dirs,
-    RAW_DIR, DATA_DIR, SCENE, PROJECT_DIR, DEFAULT_SCENE,
+    SCENE_RAW_DIR, SCENE_CLEAN_DIR, SCENE, PROJECT_DIR,
 )
 from tree_shape import get_shape
 
@@ -67,10 +67,6 @@ def load_boundary_ring():
     = scene centroid). Point-in-ring is orientation-exact, so it also holds if
     the boundary later becomes a non-circular street polygon.
     """
-    if SCENE == DEFAULT_SCENE:
-        print("This script targets poured neighborhood scenes. For LS use "
-              "scripts/12-process-park-trees.py (park-clipped).")
-        sys.exit(1)
     path = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE,
                         'neighborhood_boundary.json')
     if not os.path.exists(path):
@@ -159,7 +155,7 @@ def main():
         sys.exit(1)
 
     # Persist raw for provenance / re-processing without a re-fetch.
-    raw_path = os.path.join(RAW_DIR, "city_trees_raw.json")
+    raw_path = os.path.join(SCENE_RAW_DIR, "city_trees_raw.json")
     with open(raw_path, "w") as f:
         json.dump({"features": raw_features, "endpoint": ENDPOINT, "bbox": BBOX},
                   f, separators=(",", ":"))
@@ -213,7 +209,7 @@ def main():
         },
         "trees": trees,
     }
-    out_path = os.path.join(DATA_DIR, "park_trees.json")
+    out_path = os.path.join(SCENE_CLEAN_DIR, "park_trees.json")
     with open(out_path, "w") as f:
         json.dump(output, f, separators=(",", ":"))
     print(f"\nWrote {len(trees)} trees -> {out_path}")

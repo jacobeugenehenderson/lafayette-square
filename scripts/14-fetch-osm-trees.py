@@ -56,7 +56,7 @@ except ImportError:
 from config import (
     CENTER_LAT, CENTER_LON, BBOX,
     wgs84_to_local, ensure_dirs,
-    RAW_DIR, DATA_DIR, SCENE, PROJECT_DIR, DEFAULT_SCENE,
+    SCENE_RAW_DIR, SCENE_CLEAN_DIR, SCENE, PROJECT_DIR,
 )
 from tree_shape import get_shape
 
@@ -71,10 +71,6 @@ def scene_path(name):
 
 def load_boundary_ring():
     """Scene disc/boundary ring in local x/z (see 13-fetch-city-trees.py)."""
-    if SCENE == DEFAULT_SCENE:
-        print("This script targets poured neighborhood scenes (needs a "
-              "neighborhood_boundary + City/County divide).")
-        sys.exit(1)
     path = scene_path('neighborhood_boundary.json')
     if not os.path.exists(path):
         print(f"No boundary polygon at {path}; run the scene prebake first.")
@@ -223,7 +219,7 @@ def main():
     print(f"Bbox: {BBOX}")
     print("=" * 60)
 
-    raw_path = os.path.join(RAW_DIR, "osm_trees_raw.json")
+    raw_path = os.path.join(SCENE_RAW_DIR, "osm_trees_raw.json")
     reuse = "--reuse-raw" in sys.argv and os.path.exists(raw_path)
     if reuse:
         with open(raw_path) as f:
@@ -290,7 +286,7 @@ def main():
         },
         "trees": trees,
     }
-    out_path = os.path.join(DATA_DIR, "osm_trees.json")
+    out_path = os.path.join(SCENE_CLEAN_DIR, "osm_trees.json")
     with open(out_path, "w") as f:
         json.dump(output, f, separators=(",", ":"))
     print(f"\nWrote {len(trees)} trees -> {out_path}")

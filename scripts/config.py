@@ -69,6 +69,14 @@ else:
     DATA_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'clean')
     RAW_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'raw')
 
+# Tree-intake outputs are ALWAYS scene-homed (cartograph/data/<scene>/{clean,raw}),
+# even for the default scene. LS's tree pipeline was normalized off the legacy
+# src/data layout 2026-07-16 (HANDOFF-ls-statistical-planting.md, Move 1). For a
+# non-default scene these equal DATA_DIR/RAW_DIR above; only LS differs (its OTHER
+# intake — parcels/osm/lamps/merge — deliberately stays on src/data).
+SCENE_CLEAN_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'clean')
+SCENE_RAW_DIR   = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'raw')
+
 # Load .env file if present (for API keys)
 _env_path = os.path.join(SCRIPTS_DIR, '.env')
 if os.path.exists(_env_path):
@@ -102,3 +110,5 @@ def ensure_dirs():
     """Create output directories if needed."""
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RAW_DIR, exist_ok=True)
+    os.makedirs(SCENE_CLEAN_DIR, exist_ok=True)
+    os.makedirs(SCENE_RAW_DIR, exist_ok=True)

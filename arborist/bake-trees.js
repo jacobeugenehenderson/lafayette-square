@@ -121,6 +121,15 @@ function parseArgs() {
   return args
 }
 
+function pointInRing(px, pz, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], zi = ring[i][1], xj = ring[j][0], zj = ring[j][1]
+    if ((zi > pz) !== (zj > pz) && px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi) inside = !inside
+  }
+  return inside
+}
+
 function hash01(seed, salt = 0) {
   let h = (seed | 0) ^ (salt * 0x9e3779b1)
   h = Math.imul(h ^ (h >>> 16), 2246822507)
@@ -395,6 +404,8 @@ export async function bakeTrees({
   forbiddenMapPath, // poured scene's clean/map.json — obstructions (+ legacy mask)
   zoneShapePath, // poured scene's baked shape.json — the FROZEN Section surfaces
   boundaryPath, // poured scene's neighborhood_boundary.json — the literal/GPU line
+  parkPolygonPath, // poured scene's clean/park-polygon.json — the authored park footprint;
+                   // enables park-wins-in-park dedup when a source:'park' well is present
   verbose = false,
 } = {}) {
   const sceneName = scene
@@ -433,9 +444,42 @@ export async function bakeTrees({
   }
   const speciesMap = JSON.parse(await fs.readFile(mapPath, 'utf8'))
 
+  // ── PARK-WINS-IN-PARK dedup ───────────────────────────────────────────────
+  // The authored park census (source:'park') OWNS the park footprint. The whole-
+  // hood City fetch + OSM + canopy fill all overlap it (same park, other sources/
+  // vintages), so without this the park double-plants (measured LS: 652 authored
+  // vs +1,080 from the other wells). Real-first: inside the park polygon, only
+  // the authored census stands; every fetched/synthetic point there yields. A
+  // small proximity guard also drops non-park points sitting on an authored trunk
+  // just outside the simplified 4-corner polygon. Generic: no park well or no
+  // polygon → no-op. (HANDOFF-ls-statistical-planting.md Move 1 / doctrine 1.)
+  let parkWon = 0
+  if (parkPolygonPath) {
+    const parkPts = park.trees.filter(t => t.__source === 'park')
+    if (parkPts.length) {
+      const pp = JSON.parse(await fs.readFile(path.resolve(REPO_ROOT, parkPolygonPath), 'utf8'))
+      const ring = (pp.corners || pp.ring || pp).map(p => Array.isArray(p) ? p : [p.x, p.z])
+      const NEAR = 5, cell = NEAR, grid = new Map()
+      const gk = (x, z) => `${Math.floor(x / cell)},${Math.floor(z / cell)}`
+      for (const t of parkPts) { const k = gk(t.x, t.z); (grid.get(k) || grid.set(k, []).get(k)).push(t) }
+      const nearPark = (x, z) => {
+        const gx = Math.floor(x / cell), gz = Math.floor(z / cell)
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++)
+          for (const t of (grid.get(`${gx + dx},${gz + dz}`) || []))
+            if ((t.x - x) ** 2 + (t.z - z) ** 2 < NEAR * NEAR) return true
+        return false
+      }
+      const before = park.trees.length
+      park.trees = park.trees.filter(t =>
+        t.__source === 'park' || !(pointInRing(t.x, t.z, ring) || nearPark(t.x, t.z)))
+      parkWon = before - park.trees.length
+    }
+  }
+
   if (verbose) {
     console.log(`[bake-trees] scene=${sceneName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
     console.log(`[bake-trees] pool: ${index.variants.length} variants, ${park.trees.length} placements`)
+    if (parkWon) console.log(`[bake-trees] park-wins-in-park: dropped ${parkWon} fetched/synthetic points inside the authored park footprint`)
   }
 
   // Surface tester, best construction first:
@@ -764,6 +808,7 @@ if (isDirect) {
     forbiddenMapPath: args['forbidden-map'],
     zoneShapePath: args['zone-shape'],
     boundaryPath: args['boundary'],
+    parkPolygonPath: args['park-polygon'],
     verbose: true,
   }).catch(e => { console.error('[bake-trees] fatal:', e); process.exit(1) })
 }

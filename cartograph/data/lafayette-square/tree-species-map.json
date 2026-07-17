@@ -1,83 +1,125 @@
 {
-  "_doc": "Maps park_trees.json species names → the CURRENT roster/library species_ids (the ids the LS design.json roster + trees-atlas.json + published pool are keyed on). This is the Cartograph↔Arborist SPECIES-KEY HANDOFF (arborist/ORIENTATION.md seam #2): keys are the RAW park_trees names; values MUST be current roster ids or the placement needlessly substitutes at bake/runtime. Empty array = no roster match → the category picker (park_trees.shape) fills it (a genuine coverage gap, not a bug). Operator-edit by hand.",
-  "_libraryAt": "2026-07-07",
-  "_fix": "2026-07-07 (Ruche/Jacob): repointed off the stale 2026-04-29 namespace (quercus_alba, acer_rubrum, acer_saccharum, tilia_americana, pinus_*, etc. — none in the current roster) onto the live roster ids below. ~111 placements were substituting only because of the dead ids. Verify end-to-end with a bake+LS render (binaries are gitignored; see arborist/README ship-to-slab).",
-  "_rosterIds": [
-    "maple_sugar",
-    "maple_silver",
-    "maple_red",
-    "birch",
-    "blackgum",
-    "linden_american",
-    "oak_bur",
-    "oak_white",
-    "platanus_acerifolia",
-    "ash_green"
-  ],
-  "_coverageGaps": "No roster asset yet for: conifers (pine/spruce/juniper/redcedar/cypress), and ornamentals/others (crabapple, redbud, dogwood, sweetgum, tuliptree, ginkgo, hackberry, elm, cottonwood, locust, willow, magnolia, serviceberry, pear, catalpa, walnut, zelkova, …). These fall to the category picker until an asset exists.",
   "map": {
-    "Maple, Sugar": [
-      "maple_sugar"
-    ],
-    "Maple, Silver": [
-      "maple_silver"
-    ],
-    "Maple, Red": [
-      "maple_red"
-    ],
-    "Maple, Red 'October Glory'": [
-      "maple_red"
-    ],
-    "Maple, Norway": [
-      "maple_sugar"
-    ],
-    "Maple, Amur": [
-      "maple_red"
-    ],
-    "Maple, Hedge": [
-      "maple_red"
-    ],
-    "maple, Japanese": [
-      "maple_red"
-    ],
-    "Oak, White": [
-      "oak_white"
-    ],
-    "Oak, Swamp White": [
-      "oak_white"
-    ],
-    "oak, bur": [
-      "oak_bur"
-    ],
-    "Oak, Pin": [
-      "oak_white",
-      "oak_bur"
-    ],
-    "Oak, Pin (restricted use)": [
-      "oak_white",
-      "oak_bur"
-    ],
-    "Oak, Willow": [
-      "oak_white",
-      "oak_bur"
-    ],
-    "Oak, English": [
-      "oak_white",
-      "oak_bur"
+    "Blackgum": [
+      "blackgum"
     ],
     "Oak, Sawtooth": [
       "oak_white",
       "oak_bur"
     ],
-    "Oak, Shingle": [
+    "Elm, Frontier": [
+      "generic_tree_2"
+    ],
+    "Maple, Red 'October Glory'": [
+      "maple_red"
+    ],
+    "Ginkgo 'Princeton Sentry'": [
+      "procedural_columnar"
+    ],
+    "Birch": [
+      "birch"
+    ],
+    "Maple, Sugar": [
+      "maple_sugar"
+    ],
+    "Pear, Callery": [
+      "procedural_ornamental"
+    ],
+    "Cherry, 'Kwanzan'": [
+      "procedural_ornamental"
+    ],
+    "Pagodatree, Japanese": [
+      "generic_tree_2"
+    ],
+    "Oak, Pin": [
       "oak_white",
       "oak_bur"
     ],
-    "oak, shingle": [
-      "oak_white",
+    "Crabapple, Flowering": [
+      "procedural_ornamental"
+    ],
+    "juniper, spp.": [
+      "procedural_conifer"
+    ],
+    "Redbud": [
+      "procedural_ornamental"
+    ],
+    "Ash, Green": [
+      "ash_green"
+    ],
+    "Maple, Red": [
+      "maple_red"
+    ],
+    "goldenraintree": [
+      "generic_tree_2"
+    ],
+    "Witch-hazel": [
+      "generic_tree_2"
+    ],
+    "Serviceberry, Apple 'Autumn Brilliance'": [
+      "procedural_ornamental"
+    ],
+    "Ginkgo": [
+      "procedural_columnar"
+    ],
+    "Pagoda Dogwood": [
+      "procedural_ornamental"
+    ],
+    "mountainash, American": [
+      "ash_green"
+    ],
+    "Elm, Hybrid": [
+      "generic_tree_2"
+    ],
+    "Cherry/Plum, spp.": [
+      "procedural_ornamental"
+    ],
+    "Oak, Bur": [
       "oak_bur"
     ],
-    "Oak, Northern Red": [
+    "Cherry, (Amur) Choke": [
+      "procedural_ornamental"
+    ],
+    "Catalpa": [
+      "generic_tree_2"
+    ],
+    "Oak, Swamp White": [
+      "oak_white"
+    ],
+    "pecan": [
+      "generic_tree_2"
+    ],
+    "Maple, Silver": [
+      "maple_silver"
+    ],
+    "possumhaw": [
+      "generic_tree_2"
+    ],
+    "Maple, Freeman": [
+      "maple_red"
+    ],
+    "magnolia, southern": [
+      "procedural_ornamental"
+    ],
+    "Lilac, Japanese Tree 'Ivory Silk'": [
+      "procedural_ornamental"
+    ],
+    "Tuliptree": [
+      "generic_tree_2"
+    ],
+    "Hawthorn": [
+      "procedural_ornamental"
+    ],
+    "Cypress, Bald": [
+      "procedural_conifer"
+    ],
+    "Buckeye, Ohio": [
+      "generic_tree_2"
+    ],
+    "serviceberry, downy": [
+      "procedural_ornamental"
+    ],
+    "Oak, Pin (restricted use)": [
       "oak_white",
       "oak_bur"
     ],
@@ -85,50 +127,402 @@
       "oak_white",
       "oak_bur"
     ],
-    "oak, water": [
+    "serviceberry, Allegheny": [
+      "procedural_ornamental"
+    ],
+    "Oak, English": [
       "oak_white",
       "oak_bur"
-    ],
-    "Birch": [
-      "birch"
-    ],
-    "Blackgum": [
-      "blackgum"
-    ],
-    "Linden, American": [
-      "linden_american"
-    ],
-    "Linden, Littleleaf": [
-      "linden_american"
     ],
     "sycamore, American": [
       "platanus_acerifolia"
     ],
-    "Sycamore American (restricted use)": [
-      "platanus_acerifolia"
+    "Yellowwood": [
+      "generic_tree_2"
     ],
-    "Ash, Green": [
-      "ash_green"
+    "Honeylocust": [],
+    "Maple, Red 'Red Sunset'": [
+      "maple_red"
+    ],
+    "Dogwood, Flowering": [
+      "procedural_ornamental"
+    ],
+    "Lilac, Japanese 'Ivory Silk'": [
+      "procedural_ornamental"
+    ],
+    "stump": [
+      "generic_tree_2"
+    ],
+    "Linden, Littleleaf": [
+      "linden_american"
+    ],
+    "Chestnut, Chinese": [
+      "generic_tree_2"
+    ],
+    "Red maple": [
+      "maple_red"
+    ],
+    "Linden, American": [
+      "linden_american"
+    ],
+    "downy serviceberry": [
+      "procedural_ornamental"
+    ],
+    "Arborvitae, Eastern": [
+      "procedural_conifer"
+    ],
+    "magnolia, star": [],
+    "Pear, Common": [
+      "procedural_ornamental"
+    ],
+    "hawthorn, Washington": [
+      "procedural_ornamental"
+    ],
+    "Elm, Lacebark": [
+      "generic_tree_2"
+    ],
+    "Cherry, Kwanzan": [
+      "procedural_ornamental"
+    ],
+    "Serviceberry": [
+      "procedural_ornamental"
+    ],
+    "Zelkova, Japanese": [
+      "generic_tree_2"
     ],
     "Ash, Blue": [
       "ash_green"
     ],
-    "Pine, White": [],
-    "Pine, Austrian": [],
-    "Pine, Scotch": [],
-    "pine, loblolly": [],
-    "juniper, Chinese": [],
-    "redcedar, eastern": [],
-    "Spruce, Norway": [],
-    "Cottonwood, Eastern": [],
-    "Elm, American": [],
-    "Elm, Siberian": [],
-    "locust, black": [],
+    "hawthorn, spp.": [
+      "procedural_ornamental"
+    ],
+    "Serviceberry, Downy": [
+      "procedural_ornamental"
+    ],
+    "Hornbeam, American": [
+      "generic_tree_2"
+    ],
+    "serviceberry, spp.": [
+      "procedural_ornamental"
+    ],
+    "Oak, English 'Fastigiata'": [
+      "procedural_columnar"
+    ],
     "honeylocust, thornless": [],
-    "Honeylocust": [],
-    "Willow, Weeping": [],
+    "Sycamore American (restricted use)": [
+      "platanus_acerifolia"
+    ],
+    "Maple, Sugar 'Fall Fiesta'": [
+      "maple_sugar"
+    ],
+    "Sweetgum (undesirable)": [
+      "generic_tree_2"
+    ],
+    "Pine, White": [],
+    "Tupelo, Black": [
+      "blackgum"
+    ],
+    "Linden, American 'Redmond'": [
+      "linden_american"
+    ],
+    "Maple, Freeman (Autumn Blaze)": [
+      "maple_red"
+    ],
+    "Magnolia, Southern 'Bracken's Brown Beauty'": [
+      "procedural_ornamental"
+    ],
+    "Maple, State Street": [
+      "maple_red"
+    ],
+    "Elm": [
+      "generic_tree_2"
+    ],
+    "Zelkova 'Village Green'": [
+      "generic_tree_2"
+    ],
+    "Elm, Homestead": [
+      "generic_tree_2"
+    ],
+    "Amur corktree": [
+      "generic_tree_2"
+    ],
+    "Elm, American": [],
+    "Dogwood, Kousa": [
+      "procedural_ornamental"
+    ],
+    "mulberry, red": [
+      "generic_tree_2"
+    ],
+    "Oak, Red": [
+      "quercus_alba"
+    ],
+    "redbud, Oklahoma": [
+      "procedural_ornamental"
+    ],
+    "Catalpa, Southern": [
+      "generic_tree_2"
+    ],
+    "Catalpa species": [
+      "generic_tree_2"
+    ],
+    "Crape Myrtle, common": [
+      "generic_tree_2"
+    ],
+    "Redbud, Eastern": [
+      "procedural_ornamental"
+    ],
+    "Cherry, Japanese Flowering": [
+      "procedural_ornamental"
+    ],
+    "Crabapple (Prairiefire, Snowdrift, Springsnow)": [
+      "procedural_ornamental"
+    ],
+    "Maple, Freeman 'Autumn Blaze'": [
+      "maple_red"
+    ],
+    "Maple, Silver (restricted use)": [
+      "maple_silver"
+    ],
+    "Oak, Northern Red": [
+      "oak_white",
+      "oak_bur"
+    ],
+    "Oak, Willow": [
+      "oak_white",
+      "oak_bur"
+    ],
+    "Pine, Austrian": [],
+    "Zelkova 'Green Vase'": [
+      "generic_tree_2"
+    ],
+    "Osage Orange": [
+      "generic_tree_2"
+    ],
+    "Oak, White": [
+      "oak_white"
+    ],
+    "Maple, Paperbark": [
+      "maple_red"
+    ],
+    "Redwood, Dawn": [
+      "generic_tree_2"
+    ],
+    "Tree of Heaven": [
+      "generic_tree_2"
+    ],
+    "lilac, Japanese tree": [
+      "procedural_ornamental"
+    ],
+    "Maple, Norway": [
+      "maple_sugar"
+    ],
     "willow, corkscrew": [],
-    "magnolia, star": [],
-    "magnolia, saucer": []
-  }
+    "Crabapple": [
+      "procedural_ornamental"
+    ],
+    "Lilac, Japanese Tree": [
+      "procedural_ornamental"
+    ],
+    "Walnut, Black": [
+      "generic_tree_2"
+    ],
+    "juniper, Chinese": [],
+    "locust, black": [],
+    "Pine, Scotch": [],
+    "Cherry, Yoshino": [
+      "procedural_ornamental"
+    ],
+    "Holly, American": [
+      "generic_tree_2"
+    ],
+    "Hackberry": [
+      "generic_tree_2"
+    ],
+    "Coffeetree, Kentucky": [
+      "generic_tree_2"
+    ],
+    "mulberry, white": [
+      "generic_tree_2"
+    ],
+    "Planetree, London": [
+      "platanus_acerifolia"
+    ],
+    "Spruce, Colorado": [
+      "procedural_conifer"
+    ],
+    "Willow, Weeping": [],
+    "Hornbeam, European": [
+      "generic_tree_2"
+    ],
+    "Hornbeam": [
+      "generic_tree_2"
+    ],
+    "Cottonwood, Eastern": [],
+    "Maple, Amur": [
+      "maple_red"
+    ],
+    "maple, Japanese": [
+      "maple_red"
+    ],
+    "Oak, Shingle": [
+      "oak_white",
+      "oak_bur"
+    ],
+    "magnolia, saucer": [],
+    "oak, water": [
+      "oak_white",
+      "oak_bur"
+    ],
+    "Honey Locust, Thornless": [
+      "garden_mix"
+    ],
+    "": [
+      "generic_tree_2"
+    ],
+    "oak, bur": [
+      "oak_bur"
+    ],
+    "Elm, Siberian": [],
+    "Zelkova, 'Village Green'": [
+      "generic_tree_2"
+    ],
+    "Gingko (Princeton Sentry)": [
+      "procedural_columnar"
+    ],
+    "Poplar, White": [
+      "generic_tree_2"
+    ],
+    "Ash, White": [
+      "ash_green"
+    ],
+    "Sycamore": [
+      "platanus_acerifolia"
+    ],
+    "London, Planetree": [
+      "platanus_acerifolia"
+    ],
+    "Locust, Honey 'Shademaster'": [
+      "generic_tree_2"
+    ],
+    "Kentucky Coffeetree": [
+      "generic_tree_2"
+    ],
+    "Maple, Freeman 'Armstrong'": [
+      "maple_red"
+    ],
+    "Maple, Hedge": [
+      "maple_red"
+    ],
+    "persimmon, common": [
+      "generic_tree_2"
+    ],
+    "Elm, Pioneer": [
+      "generic_tree_2"
+    ],
+    "filbert, American": [
+      "generic_tree_2"
+    ],
+    "Cherry, Black": [
+      "procedural_ornamental"
+    ],
+    "Linden": [
+      "linden_american"
+    ],
+    "Zelkova": [
+      "generic_tree_2"
+    ],
+    "Goldenraintree": [
+      "generic_tree_2"
+    ],
+    "Oak, Water": [
+      "quercus_alba"
+    ],
+    "smoketree, American": [
+      "procedural_ornamental"
+    ],
+    "Zelkova, 'Green Vase'": [
+      "generic_tree_2"
+    ],
+    "Spruce, Norway": [],
+    "Aspen, Quaking": [
+      "generic_tree_2"
+    ],
+    "plum, cherry": [
+      "procedural_ornamental"
+    ],
+    "Other": [
+      "generic_tree_2"
+    ],
+    "pine, loblolly": [],
+    "maple, striped": [
+      "maple_red"
+    ],
+    "redcedar, eastern": [],
+    "holly, Fosters": [
+      "generic_tree_2"
+    ],
+    "Dogwood, Cornelian-cherry": [
+      "procedural_ornamental"
+    ],
+    "Linden, Littleleaf 'Glenleven'": [
+      "linden_american"
+    ],
+    "Apple species": [
+      "generic_tree_2"
+    ],
+    "Maple,Norway": [
+      "maple_sugar"
+    ],
+    "Maple Freeman (Armstrong)": [
+      "maple_red"
+    ],
+    "Dogwood, spp.": [
+      "procedural_ornamental"
+    ],
+    "pine, Japanese black": [
+      "procedural_conifer"
+    ],
+    "Maple, Japanese 'Bloodgood'": [
+      "maple_red"
+    ],
+    "Gingko (undesirable, female trees only)": [
+      "generic_tree_2"
+    ],
+    "pawpaw, common": [
+      "generic_tree_2"
+    ],
+    "euonymus, spp.": [
+      "generic_tree_2"
+    ],
+    "Aspen, Bigtooth": [
+      "generic_tree_2"
+    ],
+    "magnolia, sweetbay": [
+      "procedural_ornamental"
+    ],
+    "oak, shingle": [
+      "oak_white",
+      "oak_bur"
+    ],
+    "Shingle oak": [
+      "quercus_alba"
+    ],
+    "Mulberry": [
+      "generic_tree_2"
+    ],
+    "Plum, Cherry": [
+      "procedural_ornamental"
+    ],
+    "royal paulownia": [
+      "generic_tree_2"
+    ],
+    "Maple": [
+      "maple_red"
+    ],
+    "Zelkova, Musashino": [
+      "ash_green"
+    ]
+  },
+  "_doc": "Maps park_trees.json species names \u2192 the CURRENT roster/library species_ids (the ids the LS design.json roster + trees-atlas.json + published pool are keyed on). This is the Cartograph\u2194Arborist SPECIES-KEY HANDOFF (arborist/ORIENTATION.md seam #2): keys are the RAW park_trees names; values MUST be current roster ids or the placement needlessly substitutes at bake/runtime. Empty array = no roster match \u2192 the category picker (park_trees.shape) fills it (a genuine coverage gap, not a bug). Operator-edit by hand.",
+  "_merge": "city-derived (scripts/15) as base + hand-tuned park routing override (park curation wins); LS statistical planting Phase B 2026-07-16"
 }

@@ -29,7 +29,7 @@ import os
 import sys
 from collections import Counter
 
-from config import RAW_DIR, DATA_DIR, PROJECT_DIR, SCENE, DEFAULT_SCENE
+from config import SCENE_RAW_DIR, SCENE_CLEAN_DIR, PROJECT_DIR, SCENE
 
 PALETTE_TARGET = 18  # soft cap on distinct library species in the roster
 
@@ -118,12 +118,8 @@ def weighted_pick(u01, items):
 
 
 def main():
-    if SCENE == DEFAULT_SCENE:
-        print("Targets poured scenes (LS has its own hand-seeded roster).")
-        sys.exit(1)
-
     scene_dir = os.path.join(PROJECT_DIR, "cartograph", "data", SCENE)
-    raw_path = os.path.join(RAW_DIR, "city_trees_raw.json")
+    raw_path = os.path.join(SCENE_RAW_DIR, "city_trees_raw.json")
     if not os.path.exists(raw_path):
         print(f"No City census at {raw_path}; run scripts/13-fetch-city-trees.py first.")
         sys.exit(1)
@@ -212,7 +208,7 @@ def main():
     # ── 6. Drape the mix over speciesless points (OSM County side) ──────────
     # Sample the empirical COMMON distribution, deterministic by position, so
     # the DeMun side reads with the same proportions as the real Hi-Pointe data.
-    osm_path = os.path.join(DATA_DIR, "osm_trees.json")
+    osm_path = os.path.join(SCENE_CLEAN_DIR, "osm_trees.json")
     if os.path.exists(osm_path):
         osm = json.load(open(osm_path))
         mix_common = common_counts.most_common()  # (COMMON, count), weighted

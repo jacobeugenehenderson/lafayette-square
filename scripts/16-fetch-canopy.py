@@ -32,7 +32,7 @@ except ImportError:
     print("Missing requests. Install with: pip install requests")
     sys.exit(1)
 
-from config import BBOX, RAW_DIR, SCENE, DEFAULT_SCENE, ensure_dirs
+from config import BBOX, SCENE_RAW_DIR, SCENE, ensure_dirs
 
 WMS = "https://www.mrlc.gov/geoserver/mrlc_download/wms"
 # ~30 m native; request a grid a bit finer than native for clean sampling.
@@ -55,9 +55,6 @@ def discover_tcc_layer():
 
 
 def main():
-    if SCENE == DEFAULT_SCENE:
-        print("Targets poured scenes (LS predates the canopy-fill arc).")
-        sys.exit(1)
     ensure_dirs()
 
     layer = discover_tcc_layer()
@@ -77,7 +74,7 @@ def main():
     if r.content[:5] == b"<?xml":
         raise RuntimeError(f"WMS returned an exception, not a raster:\n{r.text[:400]}")
 
-    out = os.path.join(RAW_DIR, "canopy.tif")
+    out = os.path.join(SCENE_RAW_DIR, "canopy.tif")
     with open(out, "wb") as f:
         f.write(r.content)
     print(f"Wrote {len(r.content)} bytes -> {out}")

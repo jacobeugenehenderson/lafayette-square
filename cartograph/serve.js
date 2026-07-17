@@ -1906,6 +1906,7 @@ createServer(async (req, res) => {
             // this hand-built flag string used to drop them. (HANDOFF Move 3.)
             treeInputs.zoneShapePath && `--zone-shape ${treeInputs.zoneShapePath}`,
             treeInputs.boundaryPath && `--boundary ${treeInputs.boundaryPath}`,
+            treeInputs.parkPolygonPath && `--park-polygon ${treeInputs.parkPolygonPath}`,
             `--output ${treeInputs.output}`,
           ].filter(Boolean).join(' ')
           await runIfDirty('trees',

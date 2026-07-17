@@ -28,8 +28,8 @@ import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO = path.resolve(__dirname, '..')
-const SCENE = process.env.CARTOGRAPH_SCENE
-if (!SCENE || SCENE === 'lafayette-square') {
+const SCENE = process.env.CARTOGRAPH_SCENE || 'lafayette-square'
+if (!SCENE) {
   console.error('Set CARTOGRAPH_SCENE to a poured scene.'); process.exit(1)
 }
 const dir = path.join(REPO, 'cartograph', 'data', SCENE)
