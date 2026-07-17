@@ -2502,9 +2502,13 @@ export function buildTileGround(ribbons, opts = {}) {
         // node's mouth ALWAYS breaks the frontage → build unconditionally, sized
         // to span the mouth (stem half-width as the window floor).
         const nk = tipKey(v)
-        // opts.thruTNode === false reverts to the pre-fix gate byte-identical (the
-        // eye A/B knob, like culDeSacKeyhole / iaOffset). Default ON.
-        const stem = (opts.thruTNode !== false && (nodeDeg.get(nk) || 0) === 3) ? nodeStem.get(nk) : null
+        // ⚠️ SHELVED 2026-07-16 (default OFF): the thruTNode through-node marker
+        // FAILED eye-gate (keyed the wrong run; proxy-only verified) AND its
+        // isThruNode suppressor eats real corners' ADA pads (green wraps the corner
+        // instead of a concrete pad). The real T-artifact was the flip/arrangement
+        // orphan (fixed: expandCustomsAcrossFeSegOrds). Opt-in with thruTNode===true
+        // only. This whole through-node organ is re-filed under junction-construction.
+        const stem = (opts.thruTNode === true && (nodeDeg.get(nk) || 0) === 3) ? nodeStem.get(nk) : null
         // which side of the through-street the stem attaches to (sidePerpT 'right'
         // = [-t[1], t[0]]) — the mouth is there; the far side runs straight.
         const stemSide = stem ? ((stem.dir[0] * (-cdz / cL) + stem.dir[1] * (cdx / cL) > 0) ? 'right' : 'left') : null
