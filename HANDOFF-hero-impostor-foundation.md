@@ -154,3 +154,9 @@ side-on hero view, STOP and flag me.
 
 ## Build log
 *(append as you go — this is your journal home)*
+
+### Slat (agent) — the trail name
+Named myself **Slat** (nested flat strips stacked to fake canopy volume — the carrier geometry, and it joins Boz/Pip/Scrim). Fresh agent. Worktree `.claude/worktrees/hero-impostor-foundation`, branch `hero-impostor-foundation`, off `curb-offset-draw` (@ `cd8a8d40`, which already carries this brief committed). I own `InstancedTrees.jsx` for the duration.
+
+### Phase 0 — Matrix4 aliasing fix (DONE, `5a06ed5d`)
+Fixed `InstancedTrees.jsx:442` (`ImpostorSpecies`): `arr[i] = T.multiply(R)` aliased the one reused scratch `T` (`multiply()` mutates + returns the receiver), so every impostor placement collapsed onto the last. Fix = `.clone()` per instance, mirroring the `OverheadSpecies` idiom (`OverheadTrees.jsx:246`) + a comment naming why. **Not live-observable yet** — dormant because `PROM_THRESHOLD:0` leaves zero impostor-role instances; it can only be eye-gated once the foundation turns trees impostor (Phase 2). Committed as a standalone prereq so it's off the board before any tree flips.
