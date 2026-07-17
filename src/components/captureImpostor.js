@@ -145,6 +145,37 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     cam.position.set(0, camY, 0)
     cam.up.set(0, 0, -1)
     cam.lookAt(0, 0, 0)
+  } else if (opts.sideOn) {
+    // HERO (low side-on) capture — the CANOPY-ONLY leaf mass seen level from the
+    // side, the skin for the hero canopy-band billboard (HANDOFF-hero-impostor-
+    // foundation.md). The 90°-rotated twin of the overhead band cut: overhead looks
+    // DOWN and clips HEIGHT bands; hero looks HORIZONTAL and clips DEPTH shells.
+    //
+    //  • Canopy-only: the frustom is framed on [canopyBaseY, maxY] (trunk excluded),
+    //    centred on the canopy mid-height, looked at DEAD-HORIZONTAL (Jacob's pitch
+    //    call 2026-07-17 — cleanest side elevation, no foreshortening).
+    //  • Azimuth: the camera orbits the tree about Y by opts.sideOn.azimuthRad, so N
+    //    azimuths capture N sides; the runtime billboard shows the one nearest the
+    //    view direction (classic azimuthal impostor).
+    //  • Depth shell: the view axis is horizontal, so a world point at view-distance
+    //    d renders only when d ∈ [near,far]. The canopy spans depth [D−R, D+R] about
+    //    the orbit centre; slicing that into M shells gives front/back parallax
+    //    layers — the exact overhead height-band trick, turned on its side.
+    const { azimuthRad = 0, canopyBaseY = 0, maxY = heightM, depthLoFrac = 0, depthHiFrac = 1 } = opts.sideOn
+    const R = Math.max(0.5, canopyRadiusM)
+    const halfW = R + FRAME_PAD_M
+    const halfH = Math.max(0.5, (maxY - canopyBaseY) / 2 + FRAME_PAD_M)
+    const half = Math.max(halfW, halfH)                 // square frame + square RT (like overhead)
+    const midY = (canopyBaseY + maxY) / 2
+    const D = half * 4 + 50                              // orbit radius (arbitrary for ortho)
+    // Depth shell → near/far clip along the (horizontal) view axis. The canopy's
+    // depth extent about the centre is ±R; fractions [0,1] map front(D−R)→back(D+R).
+    const near = Math.max(0.01, D - R + depthLoFrac * 2 * R)
+    const far = Math.max(near + 0.05, D - R + depthHiFrac * 2 * R)
+    cam = new THREE.OrthographicCamera(-half, half, half, -half, near, far)
+    cam.position.set(Math.sin(azimuthRad) * D, midY, Math.cos(azimuthRad) * D)
+    cam.up.set(0, 1, 0)
+    cam.lookAt(0, midY, 0)
   } else {
     // Fit an ortho frustum to the tree's real box: width = 2·canopyRadius,
     // height = heightM, both padded. The capture frame is wider of the two so the
@@ -476,6 +507,87 @@ export function captureOverheadBand(gl, prep, i) {
   albedoTex.name = `overhead-albedo:${key}`
   aoTex.name = `overhead-ao:${key}`
   return { key, albedoTex, aoTex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
+}
+
+// ── HERO canopy impostor (side-on) — the 90°-rotated twin of the overhead bands ──
+// Where overhead slices HEIGHT bands from directly above, the hero slices DEPTH
+// shells from the side, across N azimuths, canopy-only. The runtime carrier is a
+// vertical billboard (impostorGeometry.js#buildHeroImpostorCard), not a flat disc.
+// Same two-channel relight (albedo + AO) → the hero canopy tracks the weather like
+// the overhead does, and the same one-render-per-frame stepping keeps it crash-safe.
+
+// Hero capture is small on screen (a far/dense canopy) AND multiplied by
+// azimuths×shells, so keep each render light: 512² albedo, 256² AO (half the
+// overhead sizes — there are ~4× more shots per species).
+const HERO_ALBEDO_SIZE = 512
+const HERO_AO_SIZE = 256
+
+/**
+ * prepareHeroBands — clone + materialize a tree for the hero side-on capture and
+ * lay out the flat shot list (azimuths × depth-shells). Mirrors prepareOverheadBands:
+ * the clone SHARES geometry (no 2nd GPU copy) and `alreadyStamped` skips re-stamping
+ * the live preview's buffers. Canopy-only: the vertical frame is [canopyBaseY, maxY].
+ *
+ * @param {THREE.Object3D} gltfScene    the tree scene (live preview or a fresh load)
+ * @param {THREE.Material}  treeMaterial the shared atlas material
+ * @param {object} opts    { canopyRadiusM, azimuths=6, shells=2, alreadyStamped }
+ * @returns {{ scene, heightM, rM, minY, maxY, canopyBaseY, azimuths, shells, shots }|null}
+ *   shots (flat, one capture each): { azIdx, azimuthDeg, azimuthRad, shellIdx, shellCount, depthLoFrac, depthHiFrac }
+ */
+export function prepareHeroBands(gltfScene, treeMaterial, { canopyRadiusM, azimuths = 6, shells = 2, alreadyStamped = false } = {}) {
+  if (!gltfScene || !treeMaterial) return null
+  const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial, { skipStamp: alreadyStamped })
+  const rM = Math.max(1, canopyRadiusM || 5)
+  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseLocal(scene)
+  const N = Math.max(1, Math.round(azimuths))
+  const M = Math.max(1, Math.round(shells))
+  const shots = []
+  for (let a = 0; a < N; a++) {
+    const azimuthRad = (a / N) * Math.PI * 2
+    for (let s = 0; s < M; s++) {
+      shots.push({
+        azIdx: a,
+        azimuthDeg: Math.round((azimuthRad * 180) / Math.PI),
+        azimuthRad,
+        shellIdx: s,
+        shellCount: M,
+        depthLoFrac: s / M,
+        depthHiFrac: (s + 1) / M,
+      })
+    }
+  }
+  return { scene, heightM, rM, minY, maxY, canopyBaseY: Cb, azimuths: N, shells: M, shots }
+}
+
+/**
+ * captureHeroBand — bake ONE hero shot (index i) to its two relight channels: a
+ * flat ALBEDO stamp + an AO occlusion map (derived shaded/albedo, like overhead).
+ * Stepped one shot per frame upstream so the many azimuth×shell renders never burst
+ * the GPU. The back shells naturally bake DARKER (the full crown shadows them in the
+ * shaded pass → lower AO), which is exactly the front-bright / back-dark depth cue.
+ *
+ * @returns {{ azIdx, azimuthDeg, shellIdx, shellCount, albedoTex, aoTex, depthLoFrac, depthHiFrac }}
+ */
+export function captureHeroBand(gl, prep, i) {
+  const { scene, heightM, rM, canopyBaseY, maxY, shots } = prep
+  const shot = shots[i]
+  const sideOn = {
+    azimuthRad: shot.azimuthRad,
+    canopyBaseY, maxY,
+    depthLoFrac: shot.depthLoFrac, depthHiFrac: shot.depthHiFrac,
+  }
+  const albedoTex = renderTreeToTexture(gl, scene, heightM, rM, { sideOn, size: HERO_ALBEDO_SIZE, readback: true })
+  const shadedTex = renderTreeToTexture(gl, scene, heightM, rM, { sideOn, size: HERO_AO_SIZE, shaded: true })
+  const aoTex = compositeAO(gl, albedoTex, shadedTex, HERO_AO_SIZE, true)
+  try { shadedTex.dispose() } catch {}
+  albedoTex.name = `hero-albedo:az${shot.azimuthDeg}:sh${shot.shellIdx}`
+  aoTex.name = `hero-ao:az${shot.azimuthDeg}:sh${shot.shellIdx}`
+  return {
+    azIdx: shot.azIdx, azimuthDeg: shot.azimuthDeg,
+    shellIdx: shot.shellIdx, shellCount: shot.shellCount,
+    depthLoFrac: shot.depthLoFrac, depthHiFrac: shot.depthHiFrac,
+    albedoTex, aoTex,
+  }
 }
 
 /**

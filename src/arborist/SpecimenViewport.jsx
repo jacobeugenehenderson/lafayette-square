@@ -34,8 +34,8 @@ import {
   treeBarkTierUniform,
   treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
-import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc } from '../components/impostorGeometry.js'
-import { prepareOverheadBands, captureOverheadBand } from '../components/captureImpostor.js'
+import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc, buildHeroImpostorCard } from '../components/impostorGeometry.js'
+import { prepareOverheadBands, captureOverheadBand, prepareHeroBands, captureHeroBand } from '../components/captureImpostor.js'
 
 // Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
 // our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
@@ -142,6 +142,15 @@ function presetFraming(preset, treeH = 12) {
       // Worm — low to the ground, looking at the trunk base, to check the tree
       // sits flat (the grounding-inspection POV; restored 2026-06-25).
       return { distance: 5, height: 0.35, lookAtY: 0.55, topDown: false }
+    }
+    case 'heroimp': {
+      // Hero Impostor — side-on, level with the CANOPY (not mid-trunk), the eye-gate
+      // for the hero canopy-band billboard (the side-on twin of Browse=overhead).
+      // Camera on +Z looking horizontally at the canopy centre, so the az=0 card
+      // (built facing +Z) faces the camera. Canopy mid ≈ 0.68·H (base ≈ 0.35·H).
+      const f = studioFraming(treeH)
+      const canopyMidY = treeH * 0.68
+      return { distance: f.distance, height: canopyMidY, lookAtY: canopyMidY, topDown: false }
     }
     case 'hero':
     default: {
@@ -832,6 +841,8 @@ function Skeleton({
   variantCount = 1,
   variantHeightSpread = false,
   overheadMode = false,           // Browse preset → show the overhead snapshot stamps
+  heroMode = false,               // Hero-Impostor preset → show the side-on canopy card
+  heroShells = 2,                 // depth-shell count (nesting dial; front + darker back)
   overhead = null,                // leaf controls (procedural-relic canopy) + tints
 }) {
   const { scene } = useGLTF(url)
@@ -974,7 +985,7 @@ function Skeleton({
   // umbrella lobes + leaf clusters hang off its tips in later stages. Flat-shaded
   // + opaque (cheap). Wiggles in x/y via the shared hula (injectOverheadWiggle).
   const overheadRec = useMemo(() => {
-    if (!overheadMode) return null
+    if (!overheadMode && !heroMode) return null   // shared canopy-radius measure (Browse + Hero-Imp)
     // Canopy radius = max XZ extent over leaf meshes (fallback: all meshes).
     const LEAF_RE = /leaf|leaves|foliage|frond|needle/i
     const isLeaf = (o) => {
@@ -1006,7 +1017,7 @@ function Skeleton({
     void xzLeaf
     const canopyRadiusM = Math.max(1, xzAll)
     return { heightM: (typeof topY === 'number' ? topY : 12), canopyRadiusM, trunkFrac: 0.12 }
-  }, [overheadMode, scene, topY])
+  }, [overheadMode, heroMode, scene, topY])
 
   // ── Overhead 3-slice SNAPSHOT impostor (Browse preset) — the CANONICAL path ──
   // Three top-down RTT captures of the REAL tree (branch / mid / canopy height
@@ -1116,6 +1127,94 @@ function Skeleton({
   useEffect(() => () => {
     if (snapshotMats) for (const m of snapshotMats) { try { m.dispose() } catch {} }
   }, [snapshotMats])
+
+  // ── HERO canopy impostor (Hero-Imp preset) — the side-on twin of the overhead ──
+  // snapshot. One azimuth (az=0, facing +Z at the camera) × heroShells depth shells,
+  // captured canopy-only + level, ONE shot per frame (crash-safe), skinned onto
+  // vertical cards. The eye-gate: does the leaf mass read as this species from the
+  // side, and does it BREATHE with the wind (windStrength slider → treeSwayUniforms)?
+  // Persistence (all N azimuths) rides the Grove Bake→Slab (HeroImpostorBaker); this
+  // Salon preview is eye-gate only, front azimuth only.
+  const [heroSnapshot, setHeroSnapshot] = useState(null)   // { shots:[{shellIdx,shellCount,albedoTex,aoTex,depthLoFrac,depthHiFrac}], heightM, canopyBaseNorm }
+  const heroSnapKeyRef = useRef(null)
+  useEffect(() => {
+    if (!heroMode || !gl || !scene || !atlas.treeMaterial || !overheadRec || !url) return
+    const key = `${url}#${heroShells}`
+    if (heroSnapKeyRef.current === key) return   // already captured this chassis at this shell count
+    let cancelled = false
+    let raf = 0
+    let prep = null
+    try {
+      prep = prepareHeroBands(scene, atlas.treeMaterial, {
+        canopyRadiusM: overheadRec.canopyRadiusM, azimuths: 1, shells: heroShells, alreadyStamped: true,
+      })
+    } catch (err) {
+      console.error('[hero-impostor] prepare failed', err)
+      return
+    }
+    if (!prep) return
+    const acc = []
+    const step = () => {
+      if (cancelled) return
+      try {
+        acc.push(captureHeroBand(gl, prep, acc.length))
+      } catch (err) {
+        console.error('[hero-impostor] shot capture failed', err)
+        return
+      }
+      if (acc.length < prep.shots.length) {
+        raf = requestAnimationFrame(step)         // next shot, next frame (crash-safe)
+      } else if (!cancelled) {
+        heroSnapKeyRef.current = key
+        const denom = Math.max(1e-3, prep.maxY || prep.heightM)
+        setHeroSnapshot({ shots: acc, heightM: prep.heightM, canopyBaseNorm: prep.canopyBaseY / denom })
+      }
+    }
+    raf = requestAnimationFrame(step)
+    return () => { cancelled = true; cancelAnimationFrame(raf) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroMode, gl, scene, atlas.treeMaterial, overheadRec, url, heroShells])
+
+  useEffect(() => () => {
+    if (heroSnapshot) for (const s of heroSnapshot.shots) {
+      try { s.albedoTex?.dispose() } catch {}
+      try { s.aoTex?.dispose() } catch {}
+    }
+  }, [heroSnapshot])
+
+  // Vertical card per depth shell, at its baked depth offset (front → back parallax).
+  const heroCards = useMemo(() => {
+    if (!heroSnapshot || !overheadRec) return null
+    const rec = { heightM: heroSnapshot.heightM || overheadRec.heightM, canopyRadiusM: overheadRec.canopyRadiusM, canopyBaseNorm: heroSnapshot.canopyBaseNorm }
+    return heroSnapshot.shots.map((s) => ({
+      key: `sh${s.shellIdx}`,
+      albedoTex: s.albedoTex,
+      aoTex: s.aoTex,
+      geo: buildHeroImpostorCard(rec, { depthLoFrac: s.depthLoFrac, depthHiFrac: s.depthHiFrac }),
+    }))
+  }, [heroSnapshot, overheadRec])
+
+  // One relight material per shell — MeshBasic(map=ALBEDO) + injectOverheadStamp
+  // (albedo × ambient+sun·AO + base-anchored wind). Front shell bright → back shell
+  // darker (structural depth: the back shell sits deeper in the crown shadow).
+  const heroMats = useMemo(() => {
+    if (!heroCards) return null
+    const n = heroCards.length
+    return heroCards.map(({ albedoTex, aoTex }, i) => {
+      const bright = n > 1 ? 1.0 - 0.5 * (i / (n - 1)) : 1.0
+      const m = new THREE.MeshBasicMaterial({
+        map: albedoTex, color: new THREE.Color(bright, bright, bright),
+        transparent: false, alphaTest: 0.4,
+        side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
+      })
+      injectOverheadStamp(m, aoTex)
+      return m
+    })
+  }, [heroCards])
+
+  useEffect(() => () => {
+    if (heroMats) for (const m of heroMats) { try { m.dispose() } catch {} }
+  }, [heroMats])
 
   // Connect the overhead to the SELECTED chassis: seed the procedural layout off
   // the chassis identity (the GLB url), so each chassis gets its own consistent
@@ -1251,6 +1350,22 @@ function Skeleton({
   // Stack (outer → inner): rotation → scale → position → auto-center.
   const variantSpacing = Math.max(7, (typeof topY === 'number' ? topY : 12) * 0.95)
   const autoCenter = [centerX, groundOffset, centerZ]
+
+  // Hero-Imp preset → the side-on canopy card replaces the GLB. The az=0 cards face
+  // +Z (the camera); the shells sit at their baked depth offsets so glimpsing the
+  // back shell through the front's alpha gaps reads as depth. No rotation (single-
+  // azimuth eye-gate — a spin would show the card edge-on; that's Phase 2 azimuth
+  // selection). Back shell first so it draws behind.
+  if (heroMode) {
+    if (!heroCards || !heroMats) return null
+    return (
+      <group>
+        {heroCards.map((d, bi) => d.geo && (
+          <mesh key={d.key} geometry={d.geo} material={heroMats[bi]} renderOrder={heroCards.length - bi} />
+        ))}
+      </group>
+    )
+  }
 
   // Browse preset → the overhead hula impostor replaces the GLB. One disc-stack
   // (or N, when the "3 variants" review is on), each at a different rotY so the
@@ -1491,6 +1606,7 @@ export default function SpecimenViewport({
               deformerRange={deformerRange}
               deformerSeed={deformerSeed}
               overheadMode={camPreset === 'browse'}
+              heroMode={camPreset === 'heroimp'}
               overhead={overhead}
               variantCount={variantCount}
               variantHeightSpread={variantHeightSpread}
@@ -1530,6 +1646,7 @@ export default function SpecimenViewport({
           ['worm',   'Worm',   'Worm POV — low to the ground, looking at the trunk base, to check the tree sits flat.'],
           ['street', 'Street', 'Eye-level, close — Street context (tier 2, full detail). What street-view sees: full-sized trees.'],
           ['hero',   'Hero',   'Studio mid framing — Hero context (tier 1, size-managed). The authoring default.'],
+          ['heroimp','Hero Imp','Side-on, level with the canopy — eye-gate the HERO canopy-band impostor (the side-on twin of Browse). Set the Wind slider to see it breathe.'],
           ['browse', 'Browse', 'Top-down plan — Browse context (tier 0, aerial / overhead). Shows the OVERHEAD hula impostor (ruffle/hula knobs, bottom-right). Wheel zooms altitude.'],
         ].map(([key, label, title]) => (
           <button key={key}
