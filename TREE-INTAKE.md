@@ -1,6 +1,6 @@
 # TREE-INTAKE.md — how a poured scene gets its trees, end to end
 
-**The canonical doc for the neighborhood tree pipeline: from raw data → a baked, rendered canopy.** Generalizable per-town (Tier ①); Hi-Pointe/DeMun (`hipointe-demun`) is the reference build. Written 2026-07-05.
+**The canonical doc for the neighborhood tree pipeline: from raw data → a baked, rendered canopy.** Generalizable per-town (Tier ①); Hi-Pointe/DeMun (`hipointe-demun`) is the reference build. Written 2026-07-05; revised 2026-07-16 (frozen-curb `makeZoneTester` mask + real-first doctrine; **Lafayette Square landed through this same pipeline** — normalized off its `DEFAULT_SCENE` special-case, no longer the park-only exception).
 
 > **Read-order:** `CLAUDE.md` route gate → `ORIENTATION.md` → `README §⭐ START HERE`. Tree *library/atlas* internals live in the **arborist quartet** (`arborist/{README,FEATURES,ARCHITECTURE,BACKLOG,NOTES}.md`); the per-town *inputs* doctrine is `NEIGHBORHOOD-INPUTS.md §2`. **This doc is the join** — how the census + canopy data become placements the arborist atlas renders. The working ledger is `HANDOFF-hipointe-trees-lamps-fetch.md`.
 
@@ -19,13 +19,18 @@ A neighborhood's trees are **two questions**, answered by **two kinds of data**:
 
 This rides the existing arborist system unchanged (`feedback_no_parallel_pipeline_for_scenes`): the mix **is** the per-Look roster (`design.json#/trees`); `bake-look` packs its atlas; `bake-trees` places the census; the runtime substitutes any stragglers onto the roster. All the new work is **data prep** upstream of the bake.
 
+**Real-first — the hard precedence (Jacob, 2026-07-16).** Real placements (municipal inventory, park census, address) are laid **first** and are **never displaced** by a synthetic one; synthetic fill occupies **only** ground real data doesn't cover; on conflict the synthetic yields (relocate/drop), the real never does. A corollary the LS landing proved: **where a hood sits fully inside a municipal inventory, real coverage can be dense enough that synthetic fill is unnecessary and is dropped entirely** (LS baked City + OSM real-only, no NLCD — §7). Derived scatter is the gap-filler for hoods (like HPDM's County half) the inventory doesn't reach, not a default.
+
+> **⚠️ Naming fossil.** `clean/park_trees.json` is a misnomer inherited from the reference build — it is the **City Forestry** layer (whole-hood, `scripts/13`), not a "park." A hood's genuine *park* census, where one exists, is separate authored data; **verify before assuming a "park census" is hand-authored** — LS's turned out to be City Forestry clipped to the park polygon (99.2% redundant with the whole-hood inventory), so it was folded in, not kept as a distinct well.
+
 ---
 
 ## 2. The data sources (all free, all re-pointable per town)
 
 | Source | Gives | Access | Script | Coverage note |
 |---|---|---|---|---|
-| **City of St. Louis Forestry** | Real per-tree species/DBH/condition | ArcGIS `maps9…/FORESTRY_TREES/MapServer/1` (layer `CITY_TREES`) | `13-fetch-city-trees.py` | **City limits only** (Hi-Pointe side); stops at the City/County line |
+| **City of St. Louis Forestry** (street) | Real per-tree species/DBH/condition | ArcGIS `maps9…/FORESTRY_TREES/MapServer/1` (layer `CITY_TREES`) | `13-fetch-city-trees.py` | **City limits only** (Hi-Pointe side); stops at the City/County line |
+| **City of St. Louis Forestry** (Forest Park) | Rich: Scientific_Name/Genus/DBH/Condition/Height | ArcGIS same service, **layer `4`** (`FOREST_PARK_TREES`) | `18-fetch-forest-park-trees.py` | Forest Park + edge; clipped to the boundary disc. Deduped vs OSM/City at bake (richest survives). Free win on an endpoint we already trust. |
 | **OpenStreetMap** `natural=tree` | Tree positions (species sparse) | Overpass API | `14-fetch-osm-trees.py` | Jurisdiction-blind — the **only** source covering the DeMun/County side |
 | **NLCD Tree Canopy Cover** (USDA FS) | **% tree canopy per 30 m pixel** | MRLC WMS GetMap → GeoTIFF | `16-fetch-canopy.py` | CONUS, 2021. The areal "where + how dense" signal |
 
@@ -71,24 +76,42 @@ DATA PREP (per scene, re-pointable)                         BAKE (existing arbor
    - **Skips candidates within `MIN_DIST` of an existing census point** — fills only the gaps (parks/yards/campuses), never doubles the streets.
    - Dresses each with the **same mix** (samples `tree-mix.json#/commonWeights`).
 6. **`bake-look --look <scene>`** — packs the per-Look atlas from `design.json#/trees` (the roster the mix wrote). Its master-atlas sha1-dedup makes an ~18-species roster nearly free (`arborist/ARCHITECTURE.md §master atlas`).
-7. **`bake-trees --look <scene> --placements <3 layers> --species-map <scene map> --forbidden-map <scene>/clean/map.json --output baked/<scene>/trees.json`** — unions the three census layers, routes each `COMMON` → library via the scene map, resolves to atlas variants, and **masks off hardscape** (next).
+7. **`bake-trees --look <scene> --placements <layers> --species-map <scene map> --forbidden-map <scene>/clean/map.json --zone-shape baked/<scene>/shape.json --boundary <scene>/neighborhood_boundary.json --output baked/<scene>/trees.json`** — unions the census layers, routes each `COMMON` → library via the scene map, resolves to atlas variants, **masks off hardscape** with the frozen-curb zone tester, applies the hood dissolve, and emits per-tree `source` provenance (next).
 
-### Hardscape mask (a tree is never on pavement/water/building)
-The mask lives in **`cartograph/forbidden-surface.mjs`** (`makeForbiddenTester`), shared by `bake-trees.js` and the canopy fill so they never drift. Scene-aware (`--forbidden-map <scene>/clean/map.json`); a poured scene forbids **building** (`map.buildings`), **water** (`layers.water`), **sidewalk / footway / path / steps**, and the **road surface + parking** (`block`, `pavement`, `alley`, `parking_lot`) — the last group added over LS's park-only set. Yards, parcels, parkland, and the **treelawn** (curb-to-sidewalk strip) are *allowed* — that's where street trees belong. A **bbox prefilter** (`polyWithBbox`) makes it ~O(1) per poly, so 8 k trees × ~4 k polys runs in <0.5 s (`feedback_polygon_walking_needs_spatial_index`). LS's tester is unchanged (same 7 checks, byte-identical results).
+### Hardscape mask — where a tree may stand (the frozen-curb zone model)
+**Updated 2026-07-16.** The mask lives in **`cartograph/forbidden-surface.mjs`**, shared by `bake-trees.js` and the canopy fill so they never drift. Two constructions, one concept:
+
+- **`makeZoneTester({ shapePath, mapPath })` — the poured-scene mask.** Reads the **frozen Section surfaces** from `public/baked/<scene>/shape.json` (the same construction that draws the ground, so the mask can't drift from what the operator sees — WYSIWYG). Stated **positively — where a tree IS allowed** (the useful axis): a tree may stand on exactly two surfaces — the **swappable treelawn strip** (curb-to-sidewalk) and **exposed interior Land Use** (yard / parcel / parkland), where *exposed* means nothing hard covers it. Everything else is disallowed by *not being* one of those two: the carriageway (outside the curb — no LU there), the sidewalk band, and any building / water / parking / path footprint on top of LU (those come from the scene's `clean/map.json`, passed as `--forbidden-map`, tested *inside* the zone tester). Key invariant (Jacob): **there is no LU outside tiles**, so the poured extent is the entire plantable universe — no un-poured annulus to chase.
+- **`makeForbiddenTester({ mapPath })` — LEGACY, retired.** It asked the block-face *paint-stack* layers a physical question — a category error that forbade ~60% of yards while permitting the road (the street is the grout between tiles, so no layer covers it). It survived only for LS's old park-only census; **LS was migrated onto `makeZoneTester` 2026-07-16** and the legacy tester has no remaining tree caller.
+
+**Mask selection (`bake-trees.js`):** `--zone-shape <baked/<scene>/shape.json>` present → `makeZoneTester`; absent → the legacy fallback. **⚠️ The one-button pour (`cartograph/serve.js`) must forward `--zone-shape` AND `--boundary`** — a flag-forwarding gap that silently kept scenes on the legacy mask was fixed 2026-07-16; it had affected every poured scene, not just LS.
 
 **Two behaviors:**
-- **`bake-trees`** — *drops* any placement on a forbidden surface. Real census/OSM points that fall on hardscape are dropped (honest — they're real positions slightly off, or the poly is wide).
-- **`17-fill-canopy-trees.mjs`** — *relocates* a synthetic canopy candidate: it spirals out (`RELOCATE_RINGS × RELOCATE_STEP` = 18 m) to the nearest allowed ground (treelawn/yard) rather than dropping, recovering density while keeping every trunk off hardscape. `register()` also spaces placed fill trees `MIN_DIST` apart so they don't pile onto the same strip.
+- **`bake-trees`** — *drops* any placement on a forbidden surface — **except surveyed/real points are `nudge()`-ed** onto the nearest legal ground first (the strip widths are seeded ~1.5 m guesses; a recorded tree outranks a guess). Invented (derived) trees get no such courtesy — they're dropped.
+- **`17-fill-canopy-trees.mjs`** — *relocates* a synthetic canopy candidate off hardscape (`RELOCATE_RINGS × RELOCATE_STEP` = 18 m spiral) rather than dropping. `register()` also spaces fill trees `MIN_DIST` apart.
 
-**Wired into the one-button bake** (`cartograph/serve.js`, `POST /looks/<id>/bake`): the poured-scene tree branch unions whichever of `park_trees / osm_trees / derived_trees` exist and passes `--species-map <scene>/tree-species-map.json` when present. Ground-AO reads the scene's own `trees.json` for contact shadows. **`bake-look` is NOT in that handler** — the atlas is baked by the arborist ship-to-slab (`node arborist/bake-look.js --look <id>`); run it whenever the roster changes.
+A **bbox prefilter** (`polyWithBbox`) keeps it ~O(1) per poly (`feedback_polygon_walking_needs_spatial_index`).
+
+### Hood-membership dissolve (`--boundary`)
+When the scene's `neighborhood_boundary.json` is passed, invented (**derived**) trees outside the boundary are thinned and every emitted tree gains an `inHood` flag. **Real (census/inventory) trees are never dropped by the dissolve** — consistent with the real-first doctrine (§1).
+
+### Provenance (`source`) + trunk size (`dbh`)
+`bake-trees` emits two per-tree data-layer facts:
+- **`source`** (`park` / `city-inventory` / `forest-park` / `osm` / `derived`) — where the placement came from, so literal-vs-statistical is permanent in the slab. Deliberately **no** runtime literal/statistical toggle (built the field, not the UI ahead of a need).
+- **`dbh`** — trunk diameter, the standard forestry **size/age proxy**. **Measured** for real inventory (`REAL_DBH_SOURCES` = city-inventory / forest-park / park); **empirically sampled** for OSM/derived from the neighborhood's own real per-species DBH distribution (global fallback for thin species, deterministic by position seed). The same "derive from real, distribute over the rest" move as species draping — so every tree has a believable size, and `source` still marks measured vs estimated for an honest benchmark. Built in the bake (a pre-pass over the deduped real trees), NOT by re-running `scripts/15` (which would clobber the merged species map).
+
+**Wired into the one-button bake** (`cartograph/serve.js`, `POST /looks/<id>/bake`): the poured-scene tree branch unions whichever of the census layers exist and forwards `--species-map`, `--forbidden-map`, `--zone-shape`, `--boundary`. Ground-AO reads the scene's own `trees.json` for contact shadows. **`bake-look` is NOT in that handler** — the atlas is baked by the arborist ship-to-slab (`node arborist/bake-look.js --look <id>`); run it whenever the roster changes.
 
 ---
 
-## 4. Render (existing, unchanged)
+## 4. Render (3D slab + the 2D Designer layer)
 
 - `InstancedTrees.jsx` (mounted in `CartographApp.jsx#genericSceneConfig` with `bakeUrl=/baked/<look>/trees.json`) fetches the placement file.
 - `treeAtlasMaterial.js` loads `/baked/<look>/trees-atlas.json` (**hard-requires it** — a missing atlas throws and renders nothing; always `bake-look` before expecting trees).
 - **Runtime substitution** (`InstancedTrees.jsx:639`): any placement whose `species:variantId` isn't in the atlas roster is deterministically remapped to a **same-category roster member** — so partial rosters still render every placement. (This is why a scene renders even before the mix work; it just wears the wrong palette.)
+
+### The 2D Designer tree layer (`DesignerTrees.jsx`, 2026-07-16)
+The flat Designer reads the **same baked slab** (`baked/<scene>/trees.json`) as the 3D `InstancedTrees` — one source of truth, so 2D == 3D == bake by construction. Each tree is a flat instanced dot: **radius from `dbh`** (trunk-width proxy — not canopy-sized, to avoid a sea of circles) and **color from `source`** (provenance). **Scene-generic** (LS + every poured hood via one component), mounted in `CartographApp` for `inDesigner`; retired MapLayers' old LS-only `park_census` disc import (the data-flow split — Designer read a stale census while the bake read the union). **Data-gated** through the existing panel `tree` toggle (off → not fetched, not built). Provenance colors are CSS tokens (`cartograph.css` `--carto-tree-*`), not hardcoded.
 
 ---
 
@@ -121,13 +144,19 @@ Everything below is **re-point-and-run** — nothing is Hi-Pointe-specific:
 
 ---
 
-## 7. State (2026-07-05) — built vs open
+## 7. State — built vs open
 
-**Built + verified (hipointe-demun):** census (560 City + 870 OSM) · mix (17-species palette, empirical shares) · **NLCD canopy fill (relocate-off-hardscape)** · **hardscape mask** → **6,967 trees, 0 on any forbidden surface (verified), 99% atlas-covered, 0 unmatched** (2,317 canopy candidates relocated onto treelawn/yard). LS untouched throughout (its placements byte-identical — then `baked/default.json`, since 2026-07-15 `baked/lafayette-square/trees.json`, `SLAB-CONTRACT §8`).
+**⭐ lafayette-square LANDED (2026-07-16, eye-gated — "so much more stunning than anything we've done").** LS went **756 (park-only) → 5,768 trees, 100% REAL** — City Forestry whole-hood (2,486) + OSM (3,282), **real-only** (NLCD derived fill dropped — inside-city coverage made it unnecessary), on the frozen-curb `makeZoneTester` mask (0 illegal, median NN 6.9 m, park intact). LS was **normalized off the `DEFAULT_SCENE` special-case** — park/tree/water data relocated to the per-hood convention, the `tree-bake-inputs.mjs` short-circuit + `bake-ground.js` water ternary deleted, ~20 readers repointed; the one-button `--zone-shape`/`--boundary` flag gap fixed; per-tree `source` provenance baked. **Anti-regression:** the real census wells (`park_trees.json` + `osm_trees.json`) were moved OUT of gitignore — they'd been ignored, which let 6,866 real placements sit unbaked while LS rendered 756. Commits `b11d9f4f` + `7bcecfe1`. Full detail: memory `project_ls_tree_census_city_osm_real_only`. Open: a `scripts/15` re-run clobbers the merged `tree-species-map.json` (needs a tracked overrides file).
+
+**⭐ DBH + 2D Designer trees (2026-07-16, eye-gated — "looking great").** Added per-tree `dbh` (measured + empirically sampled — see §Provenance) and the shared 2D **`DesignerTrees.jsx`** layer (see §4). Both scenes re-baked, all trees now carry `dbh` + `source`: **LS 5,641** (the honest bake — the committed 5,768 was stale vs its own wells) and **HPDM 10,352** (541 city + 1,092 forest-park + 1,505 osm + 7,214 derived). Uncommitted at time of writing.
+
+**hipointe-demun RE-BAKED (2026-07-17, commit `93e59da9`):** added **Forest Park layer 4** (`scripts/18`, 1,319 real species-bearing trees inside the boundary — the conifers/columnars the DeMun side lacked), a **cross-well proximity dedup** (`bake-trees.js`: keep the richest source per 3 m trunk — real-species > OSM position > synthetic), and per-tree `source` provenance. Result: **10,352 trees — 30% REAL / 70% synthetic-position.** The 70% is the **County-side census gap** (no municipal inventory west of the city limit), NOT over-scatter: density **21.1 trees/ha vs LS's 23.1** — the higher count is just area (492 ha, ~2× LS). *(HPDM straddles the City/County line, so unlike LS it genuinely needs the OSM + NLCD-derived layers for its uninventoried County half — [[project_hpdm_tree_census_jurisdiction_gap]]; close it with Clayton's Davey inventory via a records request.)* Real wells (park/forest-park/osm) tracked out of gitignore, same anti-regression as LS.
+
+> **Doctrine (Jacob, 2026-07-17): the census is real POSITIONS to match IRL density; per-tree species is the bonus, not the point.** So a scene fully inside a census jurisdiction (LS) goes real-only; a scene straddling one (HPDM) fills the uninventoried side with NLCD-derived *positions* to hit the same canopy density. Both match density — one with surveyed points, one with scattered ones. Perf is the impostor lane's job (`HANDOFF-hero-impostor-and-startup-weight.md`), not thinning trees.
 
 **Open / caveats:**
 - **Library gaps → filler.** ~40% of the canopy renders as `generic_tree_2` / `procedural_*` (no dedicated chassis for sweetgum, tuliptree, pear, redbud, ginkgo, coffeetree…). **Proportionally honest, visually repetitive** until the arborist library grows real chassis. See `arborist/ROSTER-COVERAGE.md §2 GAPS`.
 - **Roster authoring is LS-hardwired.** `syncLookRoster('lafayette-square')` is a literal constant (`generate-salon.js:1743`); `/coverage` reads LS's `park_trees.json` (`roster-coverage.js:40`). `15-derive-tree-mix.py` **bypasses** this by writing `design.json#/trees` directly — the Grove UI can't yet seed a non-LS roster. De-hardwiring is the productization arc (the instance-decoupling "producer/roster arc", `HANDOFF-blank-app-instance-decoupling.md`).
 - **`bake-look` is a separate gesture** from the cartograph pour bake — run it on roster change or the atlas goes stale.
-- **Perf:** 7,167 instanced trees (vs LS's ~756). Fine on desktop Stage via instancing + LOD + cull; watch mobile. `GRID_SPACING` is the throttle.
+- **⭐ Perf / WEIGHT (the live frontier):** LS 5,768 + HPDM 10,352 instanced trees at real density. The cold-load audit (`?loadAudit`, `src/lib/loadAudit.js`) measured LS at **~73 MB of trees** hero-critical (`lod1` GLBs 39 MB + atlas 28 MB). The answer is NOT thinning trees (density is real) — it's the **hero-view canopy-only impostor editorial surface** (mirrors overhead; trade ~39 MB `lod1` for ~5–8 MB baked canopy billboards) + **KTX2 the atlas** (28→~5 MB). Design settled, not built: `HANDOFF-hero-impostor-and-startup-weight.md`.
 - **Private-yard nuance:** the canopy fill *does* now populate yards (NLCD sees them). Density is uniform-by-canopy, not lot-aware — a future refinement could bias street trees vs yard trees.
