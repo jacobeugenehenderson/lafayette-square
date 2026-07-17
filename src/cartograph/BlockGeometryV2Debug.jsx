@@ -23,6 +23,7 @@ import { useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, differenceRings } from '../lib/buildBlockGeometryV2.js'
 import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
+import { expandCustomsAcrossFeSegOrds } from '../lib/feCustomKey.js'  // spread a per-fe custom across all its segOrds so split (T) block-edges render the flip (renderer reads per-run-segOrd; store keys min-segOrd)
 import { STREET_SMOOTH } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the MeasureOverlay navy draw (SSoT; SKELETON.md §3.5)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
@@ -448,6 +449,16 @@ export default function BlockGeometryV2Debug({
     useCartographStore.getState()._setV2FrontageEdges(enrichedFrontageEdges)
   }, [enrichedFrontageEdges])
 
+  // A block-edge custom is stored under ONE slot (feCustomKey = min segOrd), but
+  // the FILL renderer reads per-run-segOrd — so on a T-split edge the flip/drag
+  // orphans on every segment but the min. Spread each custom across its fe's
+  // segOrds here (one arrangement to the next corner) so the whole edge renders
+  // the edit. Storage stays min-keyed; this only feeds the renderer.
+  const blockCustomsX = useMemo(
+    () => expandCustomsAcrossFeSegOrds(blockCustoms, enrichedFrontageEdges),
+    [blockCustoms, enrichedFrontageEdges]
+  )
+
   // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
   // by pri in makeMaterial) is the authoritative depth resolver.
   // blockRounded is rendered as a polygon-with-holes (the stencil outer is
@@ -643,7 +654,7 @@ export default function BlockGeometryV2Debug({
     // [LOAD-FORENSIC 2026-07-14] see the note at buildBlockGeometryV2 above.
     console.log(`[LOAD] ▶ sectionGeos rebuilding — trigger: ${__whyRerun()}`)
     console.time(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`)
-    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustoms, sectionCacheRef.current.map, selSet) }
+    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustomsX, sectionCacheRef.current.map, selSet) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     finally { console.timeEnd(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`) }
     // [LOAD-FORENSIC 2026-07-15] The 19.8s frozen-shape task = sectionOpen (timed
@@ -700,7 +711,7 @@ export default function BlockGeometryV2Debug({
     __composeDoneRef.current = performance.now()
     __composeVertsRef.current = __verts
     return __out
-  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, selSkel, designHydrated])
+  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, blockCustomsX, selSkel, designHydrated])
 
   // [LOAD-FORENSIC 2026-07-15] throwaway — closes the 19.8s task's accounting.
   // sectionOpen + compose are timed inside the memo; this catches the two stages
@@ -726,7 +737,7 @@ export default function BlockGeometryV2Debug({
     // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, emitArtifact: true }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -754,7 +765,7 @@ export default function BlockGeometryV2Debug({
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
       _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
     }
-  }, [liveRibbons, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms])
+  }, [liveRibbons, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, blockCustomsX])
 
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
   // While in Survey, keep the latest live `_shapeArtifact` (exactly what the

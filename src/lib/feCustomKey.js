@@ -52,3 +52,37 @@ export function readFeCustom(blockCustoms, fe) {
   if (!k) return null
   return blockCustoms?.[k[0]]?.[k[1]]?.[k[2]] || null
 }
+
+// Expand each fe's custom (stored under its REPRESENTATIVE min-segOrd, per
+// feCustomKey) across ALL of the fe's owned segOrds. The renderer reads
+// blockCustoms[run.skelId][run.side][run.segOrd] PER RUN (tileGround
+// sectionPassTile), but the store keys ONE slot per block-edge at min(segOrds).
+// When a T splits a frontage so a block-edge owns several segments (segOrds
+// [3,4,5]), the flip/drag lands on slot 3 and the runs at 4/5 read an empty slot
+// → the edit "silently orphans" (the T3 key-parity hazard, README construction
+// row). Expanding here — one arrangement across the whole corner-to-corner edge
+// — restores parity without touching the store's min-keyed storage, and fixes
+// customs authored before this shipped. Returns a new object only if it changed;
+// input is never mutated. (Boz + Jacob, 2026-07-16 — the "flip inert on split
+// runs" fix; low-stakes, one arrangement to the next corner.)
+export function expandCustomsAcrossFeSegOrds(blockCustoms, fes) {
+  if (!blockCustoms || !Array.isArray(fes) || !fes.length) return blockCustoms
+  let out = null
+  for (const fe of fes) {
+    if (!fe?.segOrds || fe.segOrds.length < 2) continue   // single-segment fes already have parity
+    const k = feCustomKey(fe)
+    if (!k) continue
+    const [skel, side, seg] = k
+    const custom = blockCustoms?.[skel]?.[side]?.[seg]
+    if (!custom) continue
+    for (const so of fe.segOrds) {
+      if (so === seg) continue
+      if (blockCustoms?.[skel]?.[side]?.[so]) continue     // an authored slot already there — never clobber
+      if (!out) out = { ...blockCustoms }
+      out[skel] = { ...(out[skel] || {}) }
+      out[skel][side] = { ...(out[skel][side] || {}) }
+      out[skel][side][so] = custom
+    }
+  }
+  return out || blockCustoms
+}
