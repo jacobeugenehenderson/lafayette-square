@@ -98,9 +98,10 @@ export function treeBakeInputsForScene(scene) {
   // Forestry census, the OSM county-side floor, and the NLCD canopy fill.
   const clean = sceneCleanDir(scene)
   const placements = [
-    join(clean, 'park_trees.json'),    // City forestry census (whole hood, real)
-    join(clean, 'osm_trees.json'),     // OSM floor (real positions, deduped vs city)
-    join(clean, 'derived_trees.json'), // NLCD canopy fill (synthetic; absent when a scene opts real-only)
+    join(clean, 'park_trees.json'),         // City Forestry layer 1 (whole hood, real)
+    join(clean, 'forest_park_trees.json'),  // City Forestry layer 4 (Forest Park, rich species)
+    join(clean, 'osm_trees.json'),          // OSM floor (real positions)
+    join(clean, 'derived_trees.json'),      // NLCD canopy fill (synthetic; absent when a scene opts real-only)
   ].filter(existsSync)
   if (!placements.length) return null
 

@@ -97,6 +97,12 @@ cartograph/data/hipointe-demun/raw/*
 !cartograph/data/hipointe-demun/raw/osm.json
 !cartograph/data/hipointe-demun/raw/admin_boundaries.json
 cartograph/data/hipointe-demun/clean/*
+# HPDM's REAL census wells — tracked (out of gitignore) so the recovered census
+# can't be lost on a clean checkout / re-fetch drift, same anti-regression as LS.
+# The synthetic derived_trees.json + raw dumps stay ignored (reproducible).
+!cartograph/data/hipointe-demun/clean/park_trees.json
+!cartograph/data/hipointe-demun/clean/forest_park_trees.json
+!cartograph/data/hipointe-demun/clean/osm_trees.json
 cartograph/data/lafayette-square/*
 !cartograph/data/lafayette-square/neighborhood_boundary.json
 !cartograph/data/lafayette-square/geography.json

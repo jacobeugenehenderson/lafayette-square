@@ -86,11 +86,21 @@ function lampGlowAt(wx, wz) {
 // Canonical census-well filename → per-tree provenance `source` (Move 4). A well
 // may override with `meta.well`; unnamed wells fall back to their __kind.
 const SOURCE_BY_BASENAME = {
-  'park_census.json':   'park',           // authored park census (hand-curated)
-  'park_trees.json':    'city-inventory', // City Forestry fetch (whole hood)
-  'osm_trees.json':     'osm',            // OSM natural=tree (real positions)
-  'derived_trees.json': 'derived',        // NLCD canopy fill (invented)
+  'park_census.json':        'park',           // authored park census (hand-curated)
+  'park_trees.json':         'city-inventory', // City Forestry layer 1 (whole hood)
+  'forest_park_trees.json':  'forest-park',    // City Forestry layer 4 (Forest Park, rich species)
+  'osm_trees.json':          'osm',            // OSM natural=tree (real positions)
+  'derived_trees.json':      'derived',        // NLCD canopy fill (invented)
 }
+
+// Cross-well dedup priority: the same physical trunk recorded by two sources is
+// ONE tree, and we keep the RICHEST record. Real-species inventories (city /
+// Forest Park / authored park) beat OSM's real-but-sampled positions, which beat
+// synthetic canopy fill. Wells fetched independently (e.g. OSM's generic point +
+// Forest Park's Scientific_Name record for the same tree) overlap; this ranks the
+// survivor. Unknown source → mid (real-position) rank.
+const SOURCE_RANK = { 'city-inventory': 3, 'forest-park': 3, 'park': 3, 'osm': 2, 'derived': 1 }
+const DEDUP_M = 3   // same trunk if within this (matches scripts/14's OSM↔city dedup)
 
 const SHAPE_TO_CATEGORY = {
   broad: 'broadleaf',
@@ -433,9 +443,39 @@ export async function bakeTrees({
   }
   const speciesMap = JSON.parse(await fs.readFile(mapPath, 'utf8'))
 
+  // ── Cross-well proximity dedup ────────────────────────────────────────────
+  // One physical trunk can appear in two wells (OSM's generic point AND Forest
+  // Park's species record; measured HPDM: 594/1319 Forest Park trees within 3m of
+  // an OSM point). Keep the richest record per DEDUP_M cell — greedy in source-
+  // rank order (real species > OSM position > synthetic). Near no-op when wells
+  // are already disjoint (LS: OSM was deduped vs city in scripts/14).
+  let deduped = 0
+  if (park.trees.length) {
+    const ranked = park.trees
+      .map((t, i) => ({ t, i, r: SOURCE_RANK[t.__source] ?? 2 }))
+      .sort((a, b) => b.r - a.r || a.i - b.i)   // richest first, stable
+    const cell = DEDUP_M, occ = new Map()
+    const gk = (x, z) => `${Math.floor(x / cell)},${Math.floor(z / cell)}`
+    const near = (x, z) => {
+      const gx = Math.floor(x / cell), gz = Math.floor(z / cell)
+      for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++)
+        for (const [ox, oz] of (occ.get(`${gx + dx},${gz + dz}`) || []))
+          if ((ox - x) ** 2 + (oz - z) ** 2 < DEDUP_M * DEDUP_M) return true
+      return false
+    }
+    const kept = []
+    for (const { t } of ranked) {
+      if (near(t.x, t.z)) { deduped++; continue }
+      const k = gk(t.x, t.z); (occ.get(k) || occ.set(k, []).get(k)).push([t.x, t.z])
+      kept.push(t)
+    }
+    park.trees = kept
+  }
+
   if (verbose) {
     console.log(`[bake-trees] scene=${sceneName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
     console.log(`[bake-trees] pool: ${index.variants.length} variants, ${park.trees.length} placements`)
+    if (deduped) console.log(`[bake-trees] cross-well dedup: dropped ${deduped} coincident records (kept the richest source per trunk)`)
   }
 
   // Surface tester, best construction first:
