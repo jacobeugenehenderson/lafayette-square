@@ -691,18 +691,23 @@ function SlotCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [species, slot, chassis])
 
-  // Persist the authored transform to composition.transform (→ setSlotParams
-  // → compositions.json on Adopt; marks the slot dirty). Fires on every gizmo
-  // change to match the existing param-edit pattern (immediate store write,
-  // adopt persists). transform is absent from the preview `paramsKey`, so
-  // this does NOT trigger a preview-atlas regen — the gizmo applies it live.
+  // Persist the authored transform to composition.transform (→ setSlotParams →
+  // autosaved to compositions.json; marks the slot dirty). Fires on every Tilt /
+  // Ground change to match the existing param-edit pattern (immediate store
+  // write). transform is absent from the preview `paramsKey`, so this does NOT
+  // trigger a preview-atlas regen — the gizmo applies it live.
   const persistTransform = (over) => {
     onParams({ transform: {
       posOffset: over.posOffset ?? posOffset,
       rotation: [
-        over.tiltX     ?? tiltX,
-        over.rotationY ?? rotationY,
-        over.tiltZ     ?? tiltZ,
+        over.tiltX ?? tiltX,
+        // rotateY is INSPECTION-ONLY: the amber ring is a preview turntable, not
+        // an authored parameter (SALON-INTERFACE §7 "inspection rotation is
+        // view-only") — and per-instance rotY randomizes every placement anyway,
+        // so a constant authored Y-rotation washes out in mesh AND impostor. Always
+        // persist 0 so an inspection spin can never contaminate shipped geometry.
+        0,
+        over.tiltZ ?? tiltZ,
       ],
       scale: over.scaleOverride ?? scaleOverride,
     } })

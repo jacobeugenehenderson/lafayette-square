@@ -1135,7 +1135,7 @@ function bakeAuthoredTransform(doc, transform) {
   }
 }
 
-async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false, transform = null }) {
+async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false }) {
   const chassisPath = path.join(CHASSIS_DIR, `${chassis}.glb`)
   const io = makeIO()
   const chassisDoc = await io.read(chassisPath)
@@ -1391,15 +1391,16 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     }
   }
 
-  // Brief 19 (Quartz): bake the authored gizmo transform into POSITION +
-  // NORMAL, AFTER bark + leaf prims are in place (so leaves rotate/scale with
-  // the chassis) and AFTER node transforms are identity (POSITION == chassis-
-  // root-local == the frame the viewport renders). Only the PUBLISH path
-  // passes `transform`; the live preview leaves it null and the viewport
-  // gizmo applies it for display (so the preview GLB is NOT pre-baked — no
-  // double-transform). Identity authoring is a geometry no-op.
-  if (transform) bakeAuthoredTransform(chassisDoc, transform)
-
+  // Brief 19 (Quartz): the authored gizmo transform (de-lean / center / scale)
+  // is baked into POSITION + NORMAL by the CALLER (writeMultiCompositionGLB),
+  // AFTER this returns — NOT here. This function has THREE return paths
+  // (hideLeaves L1221, vendor-card L1273, spray below); baking inside only the
+  // spray path silently skipped the vendor path, which is exactly the bug that
+  // shipped vendor-leaf chassis (e.g. maple_sugar) WITHOUT their authored
+  // de-lean. Baking at the caller is path-independent: by the time we return,
+  // node transforms are already identity (bakeAllNodeTransforms above) and every
+  // bark/leaf prim is in place, so the caller sees root-local geometry on every
+  // path. The live preview never bakes (the viewport gizmo applies it live).
   return chassisDoc
 }
 
@@ -1431,8 +1432,12 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
       // Leaf Source 'bare' (2026-07-07) ships leafless — an authored state, not
       // a preview-only peek. Drops vendor + skips spray in buildCompositionDocument.
       hideLeaves: c.effective.leaves?.mode === 'bare',
-      transform: c.effective.transform,
     })
+    // Bake the authored gizmo transform (de-lean / center / scale) into the
+    // fully-built doc HERE — path-independent, so buildCompositionDocument's
+    // vendor/hideLeaves early returns can't skip it (the bug that shipped
+    // vendor-leaf chassis, e.g. maple_sugar, with their de-lean silently dropped).
+    if (c.effective.transform) bakeAuthoredTransform(sub, c.effective.transform)
     // Serialize the sub-doc and reload into the master as an embedded
     // subtree. We deep-copy primitives by re-creating accessors so they
     // share the master buffer.
