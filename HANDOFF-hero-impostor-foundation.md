@@ -204,6 +204,8 @@ The side-on twin of the overhead persistence path:
 - **`Grove.jsx`** wired + progress UI (`Hero n/total…` · `hero ✓`).
 - Manifest schema: `heroImpostorBySpecies[sp] = { heightM, canopyRadiusM, canopyBaseNorm, azimuths, shells, layers:[{ azIdx, azimuthDeg, kind, shellIdx, cardDepthFrac, albedo, ao }] }`.
 - All parse-clean (esbuild + `node --check`).
+- ✅ **Endpoint persist SMOKE-VERIFIED** (2026-07-17): synthetic POST → wrote all PNGs (clean names `az{deg}_{kind}{shellIdx}.{albedo,ao}.png`) + a correct `heroImpostorBySpecies` manifest entry. Throwaway look, cleaned up. Bake-look carry = verified-by-mirror (proven overhead carry), truly exercised at the real Bake→Slab.
+- **Bake dials settled (Jacob):** N=**6** azimuths, shells=**2**, persist **1024²** (supersampled from 2048² capture), AO 256². (= baker defaults.)
 
 **⏳ NEXT — run the first bake (needs Jacob):** (1) the DIALS — azimuth count (variety pool), shells (nesting), persist resolution (quality↔weight); (2) test infra — the worktree needs its OWN arborist backend on a spare port + vite repointed (`ARB_API`) so the POST lands on the endpoint I added (the running :3334 backend is the MAIN dir's, no endpoint). Then Phase 2 (runtime: hash instance→azimuth, mount hero cards on LS, height-threshold split), Phase 3 (streaming), Phase 4 (Stage budget knob).
 
