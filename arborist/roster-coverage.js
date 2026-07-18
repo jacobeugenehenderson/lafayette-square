@@ -38,9 +38,13 @@ const STATE_DIR   = join(__dirname, 'state')
 const PUBLIC_TREES = join(ROOT, 'public', 'trees')
 const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 // Roster + routing are per-NEIGHBOURHOOD (scene): each scene keeps its own census
-// + species-map under cartograph/data/<scene>/. Only scenes with a clean
-// park_census.json yield a roster; others read empty (honest zero) until their
-// census source is wired. DEFAULT_SCENE keeps pre-scene callers working.
+// + species-map under cartograph/data/<scene>/. ⛔ NEVER falls back to another
+// scene's census — neighbourhoods are INDEPENDENT assets ([[project_census_is_
+// per_hood_and_isolated]]). Two hoods may share the same upstream service and end
+// up with identical content (adjacent geography, same city forestry), but each
+// owns a SEPARATE file and is never listed as related to another. A scene with no
+// clean park_census.json reads EMPTY (honest zero) until its OWN census is
+// authored — do NOT resolve it to LS's. DEFAULT_SCENE keeps pre-scene callers working.
 export const DEFAULT_SCENE = 'lafayette-square'
 export const parkMapForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'tree-species-map.json')
 const parkTreesForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'clean', 'park_census.json')
