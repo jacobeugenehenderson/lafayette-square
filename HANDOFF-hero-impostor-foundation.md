@@ -210,3 +210,22 @@ The side-on twin of the overhead persistence path:
 **⏳ NEXT — run the first bake (needs Jacob):** (1) the DIALS — azimuth count (variety pool), shells (nesting), persist resolution (quality↔weight); (2) test infra — the worktree needs its OWN arborist backend on a spare port + vite repointed (`ARB_API`) so the POST lands on the endpoint I added (the running :3334 backend is the MAIN dir's, no endpoint). Then Phase 2 (runtime: hash instance→azimuth, mount hero cards on LS, height-threshold split), Phase 3 (streaming), Phase 4 (Stage budget knob).
 
 ⚠️ **Weight honesty:** the variety pool is per-SPECIES (shared across instances) but N azimuths × 3 layers × 2 channels adds up. Levers = azimuth count, persist resolution, and KTX2 (the real compressor). Pick on the real pan + a device.
+
+### Phase 1b — REAL BAKE VERIFIED (2026-07-17, ⟳ Hero impostors on the fresh LS slab)
+Ran the real `HeroImpostorBaker` (standalone button, worktree backend on :3434 + vite repointed). **De-risk PASSED** — the fresh-GLB + fresh-bind baker path (the one the Salon eye-gate didn't exercise, and the exact spot the overhead marathon shipped blank) produces **non-blank, real 1024² cutouts with alpha**, all **10 species × 18 layers** (6 az × 3 layers). Persisted to the slab + manifest.
+- ⚠️ **WEIGHT = 70 MB** (leaf albedo 54 · bark 9 · AO 6). Heavier than the 39 MB lod1 it relieves → **KTX2 is REQUIRED, not optional** (~54 MB leaf → ~8–10 MB). Secondary levers: fewer azimuths, lower persist res.
+- ⚠️ **`canopyBaseNorm` glitch:** `platanus_acerifolia` = −1.01 (raw vendor GLB, non-flat base; not Salon-normalized). Clamped defensively in `buildHeroImpostorCard`, but `measureCanopyBaseLocal` should be hardened for raw-vendor GLBs. Others 0.10–0.41 (sane).
+- **Note:** the 70 MB of baked PNGs are worktree-local (uncommitted) — they'll change with KTX2 + dial-tuning, so not committed yet.
+- **"Empty Grove" (Jacob):** the gallery tiles read empty, but the roster clearly loaded (the bake ran off it). Likely a Grove-gallery display glitch in the worktree session, separate from the hero arc — investigate if it recurs.
+
+### Phase 2 — runtime foundation MOUNTED (2026-07-17, awaiting LS-pan eye-gate)
+The impostors now render on the real LS pan. Pieces:
+- **`HeroImpostorTrees.jsx`** — `useHeroImpostorAssets` (loads the variety pool grouped by azimuth) + `HeroImpostorSpecies` (partitions instances by hashed azimuth → billboarded InstancedMesh per azimuth×layer). `azimuthForInstance` = stable world-XZ hash.
+- **`treeAtlasMaterial.js#injectHeroImpostorStamp`** — the overhead-stamp twin + a Y-axis **billboard** (card faces camera; azimuth = texture not orientation → no per-frame swap) + shared wind + weather relight. Instance matrices are translation+scale only; shader owns orientation.
+- **`InstancedTrees.jsx`** — the FOUNDATION split: every tree → impostor UNLESS dbh ≥ the geometry-budget cut (tallest `heroGeomFraction`=0.15 keep mesh = anchors). Stable at load (dbh proxy; ∩-foreground pan-distance axis folds in with the bake). `heroImpostorRecords` gate, `?heroGeom=` knob, `OverheadLightDriver` extended to hero relight. Species w/o a record → mesh (never blank).
+- **Latched onto the pyramid** (geometry budget = a bracket) + **DoF is the LoD cover** (far cards blurred for free) per Jacob's pointers. Azimuth split confirmed: "just the tallest and in front."
+
+**⏳ EYE-GATE (Jacob) — open `http://localhost:5273/` (LS app), FRESH TAB** (the atlas caches per-look): does the impostor foundation sea read on the hero pan, with variety (not stamped), breathing + lit, and the tall geometry anchors sprinkled through? Knobs: `?heroGeom=0.3` (more geometry) · `?treeDebug=noHeroImpostor` (off). ⚠️ **Console-check for a shader-compile error first** if blank (the overhead-marathon reflex). ⚠️ Weight is currently **additive + heavy** (70 MB hero PNGs eager + GLBs still load for anchor species) — the KTX2/resolution/full-impostor-species weight pass is deferred; this eye-gate is the LOOK, not the weight.
+
+### Test infra running (worktree, spare ports)
+- arborist backend **:3434** (has `/hero-impostor`), vite **:5273** (`ARB_API→:3434`). Symlinks: `node_modules`, `public/trees` → main.
