@@ -39,17 +39,26 @@
 > The governing rule is locked (one uninterrupted frontage chain real-corner→real-corner; the ADA
 > transition slope fires ONLY on arrangement-*difference*) — `SECTION.md` canon (`0f0a6473`).
 
-- **A1 · Dead-end cap flip** — the flippable dead-end cap ("dip-in") that closes the corner/cap class ("the whole ballgame"). Design ratified 2026-07-17; build in 4 pieces, **start at piece-1 (synthetic cap-segOrd plumbing, lowest risk).** M/L · → `HANDOFF-dead-end-cap-flip.md`, `SECTION §6`.
+- **A1 · Flippable cul-de-sac LEGS** — the dead-end **cap** flip + dip-in slope **LANDED & eye-confirmed 2026-07-18** (`5a0eecc8`→`330004ec`): toggle-swap cap, semicircle swap, legs bend so the sidewalk stays contiguous. The live remainder is the **legs**: a leg material flip currently renders **Δ=0.0** — the terminal-leg custom isn't reaching the strip, and/or the new crossing-band transition zone overrides it. M · → `HANDOFF-dead-end-cap-flip.md` (status block + next-task). *(To ship the caps: a real prod bake regenerates `shape.json` + `design.json` — the current re-bake/test-flips are uncommitted working-copy only.)*
 - **A2 · Through-node T-artifact re-fix** — the prior cure (`222e403c`) **FAILED the eye**: the marker keys the wrong run (side-street pick on split-skelId at Mackay; coord-miss at Kennett). Re-identify the through-street incl. the split case; verify on the **frozen** render, not the live sliver-count. Consider defaulting `thruTNode` OFF until re-done. M · → `HANDOFF-thrunode-gate-fix.md`, `scratch/THRUNODE-GATE-FINDINGS.md`.
 - **A3 · Freeze the curb in prebake** *(structural — closes the centerline leak)* — build curb+junction ONCE from the frozen frame; Survey consumes it; only the active element re-strokes → Check C green, chains can't leak. **Rebuild-gated.** L · → `HANDOFF-freeze-the-curb-in-the-first-bake.md` (D6b/c).
 - **A4 · Robust bezier offset → curves ON → re-bake HPDM** *(this IS "HPDM chunky")* — `CURVE_FIT` is built + eye-approved but **OFF**; `STREET_SMOOTH` is pinned 0 because the offset isn't robust on tight bends (turning it on sprays needles). **Strictly downstream of A3.** L · → `HANDOFF-curve-primitive-skeleton.md`, `smoothCenterline.js:150`.
 - **A5 · band-fold G12 thorn clamp** — the local capacity clamp; built but stranded on `8e1e414`, unlanded. Eye-gate + canon fold. S–M · → `HANDOFF-band-fold-fix.md`.
 - **A6 · junction-construction geometry** — build the osm2streets trim-back/assemble polygon at *every* node (metadata spans all nodes; geometry is divided-only today). L · → `HANDOFF-junction-construction.md`.
+- **A7 · Fortify corner identity + the ADA-regime trigger** — **some real corners aren't getting ADA treatment.** A dedicated pass on *what is a corner* (identity, not angle — `feedback_walker_corner_detection_is_identity_not_angle`) and *when/how to force the ADA regime* on one. Jacob held it to see if the through-node + cap fixes would shake it out; they didn't fully → its own pass. The **inverse of A2** (through-node = a FALSE corner wrongly firing ADA; this = REAL corners NOT firing) — same root question, corner identity. M–L · → `SECTION` canon (the governing rule) · `RIBBONS §1/§4`.
 - *(Gated sibling: **D3 corner-identity freeze at prebake** — the false-corner cure is live; doctrine wants it decided once upstream. M · → `PREBAKE §5`. Do with A3, don't cleanup-refactor.)*
 
 ## Column B — tree impostor editing + placement  ·  *this IS "works on a phone" (trees are the OOM/perf culprit)*
 > Column B makes the phone light. The instrument that *proves* it's light (the measurement regime) is
 > the confidence-half, parked in the Horizon (**H1**) — pull it forward when you want publish-and-know.
+>
+> **▶ STATUS 2026-07-18 — impostors are NOT landed.** The hero-impostor foundation + capture are BUILT
+> (branch `hero-impostor-foundation`, 21 commits) and **look good in the authoring surface** — but they
+> **do not load in the PLAYER** (`impostors=0` in the consumer app). The crux is the **player-side load /
+> slab-carry, not the capture**: likely `bake-look` must carry the impostor manifest
+> (`overheadBySpecies`/`heroImpostorBySpecies` — the `serve.js:1431` durability TODO), the overhead
+> artifacts are untracked so they never ship, and/or a demand-frame is needed on async load. **This
+> player-load gap is the real B1 remainder.** Merge to trunk + reconcile `InstancedTrees.jsx` still pending.
 
 - **B1 · Salon hero-impostor editorial surface** — canopy-only hero impostor mirroring the proven overhead pattern: a `HeroImpostorBaker` on Bake→Slab + a Hero-view eye-gate + a baked `heroImpostorBySpecies` + `bake-look` carry. Trades ~39 MB lod1 geometry for baked billboards. **Prereqs:** fix the `ImpostorSpecies` `Matrix4` aliasing bug (`InstancedTrees.jsx:~435`); turn on `HERO_TIER.PROM_THRESHOLD` (currently 0 = all-mesh). L · → `HANDOFF-hero-impostor-and-startup-weight.md`.
   - *Startup lane (rides this HANDOFF):* `loadAudit` profiler BUILT/uncommitted (verify+commit, S); **KTX2/Basis-compress the tree atlas** 27.6 MB→~5 MB (M).
