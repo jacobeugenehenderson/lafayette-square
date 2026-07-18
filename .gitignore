@@ -124,6 +124,7 @@ cartograph/data/lafayette-square/raw/*
 !cartograph/data/lafayette-square/raw/osm.json
 !cartograph/data/lafayette-square/raw/survey.json
 !cartograph/data/lafayette-square/raw/elevation.json
+!cartograph/data/lafayette-square/raw/osm_street_lamps.json
 cartograph/data/lafayette-square/clean/*
 !cartograph/data/lafayette-square/clean/map.json
 !cartograph/data/lafayette-square/clean/park-polygon.json
