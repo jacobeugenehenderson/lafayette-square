@@ -174,5 +174,15 @@ Three seams, all parse-clean (esbuild), all mirroring the overhead path:
 
 **⏳ EYE-GATE PENDING (Jacob's eye, the gate):** open `/arborist` → pick a species → **Hero Imp** preset → does the leaf mass read as the tree from the side, and does it breathe with the Wind slider? Can't self-verify (proxy ≠ eye). Logistics: the running dev server serves the MAIN dir (trunk), not this worktree — eye-gate mechanism is Jacob's call (worktree Salon server, or pull the branch).
 
+### Eye-gate #1 (Jacob, 2026-07-17) → restructure (DONE, `82279211`)
+Jacob's read on the first Salon capture: (1) the trunk/woody structure **can't be depth-sliced like the canopy**; (2) mirror overhead's layering — **parallax in the leaves, ONE trunk/branch layer** (not sliced); (3) **resolution too low** (512²) — don't summarily trade quality. Also blessed: the one branch layer = **captured bark-only** (matches the real species), not procedural.
+Restructure landed:
+- **`uCaptureMask`** — a guarded uniform in `injectFoliageSway` (0 off → LS bit-identical; 1 leaf-only discard, 2 bark-only discard), set/reset per-pass in `renderTreeToTexture` like `toneMapping`. Both runtime + Salon-preview materials carry it.
+- **`prepareHeroBands`** — per azimuth: N **leaf-only** depth shells (parallax) + **one bark-only, full-depth, un-sliced** woody layer (center depth, behind the leaves).
+- **Resolution 512→1024** albedo, 256→512 AO. Weight answer = KTX2, not a starved capture.
+- Cards carry `kind`; leaf shells ramp front-bright→back-dark, bark mid-bright.
+- ⚠️ **Framing note for the next eye-gate:** the bark layer is **canopy-only** (in-crown branches), no full trunk-to-ground — consistent with a canopy billboard. If Jacob wants the trunk extending down, that's a frame extension (drop the vertical `canopyBaseY` floor).
+- **Needs a HARD reload** (shader recompile) to eye-gate. Salon server still on **:5273**.
+
 ### Phase 1b — durability (NEXT, not yet built)
 `serve.js` POST `/hero-impostor/:look/:species` · `bake-look.js` carry `heroImpostorBySpecies` forward (the trapdoor) · `HeroImpostorBaker` on Bake→Slab (all N azimuths) · Grove wire. Then Phase 2 (runtime split + azimuth selection), Phase 3 (streaming), Phase 4 (Stage budget knob).
