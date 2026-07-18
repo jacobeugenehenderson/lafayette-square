@@ -297,6 +297,13 @@ export function injectFoliageSway(material) {
     // regression-safe. Default 0 here too (belt-and-suspenders identity).
     shader.uniforms.uRuffleDepth = { value: 0 }
     shader.uniforms.uHulaAmount  = { value: 0 }
+    // Hero-impostor CAPTURE MASK (RTT only). 0 = off — every normal render (LS
+    // runtime + Salon) leaves it 0, so this is a bit-exact no-op there. 1 = leaf-
+    // only (discard bark verts), 2 = bark-only (discard leaf verts): the hero
+    // capture bakes the leaf-parallax shells and the single woody layer as separate
+    // passes off the SAME tree (HANDOFF-hero-impostor-foundation.md). Set + reset
+    // around the RTT render in captureImpostor#renderTreeToTexture (like toneMapping).
+    shader.uniforms.uCaptureMask = { value: 0 }
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -609,6 +616,7 @@ export function injectFoliageSway(material) {
          uniform float uBarkShaderTier;
          uniform float uHeroTierQC;
          uniform float uTreeSanitizeOn;
+         uniform float uCaptureMask;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vLocalY;
@@ -627,6 +635,14 @@ export function injectFoliageSway(material) {
         // leaf fragments pass through identity.
         '#include <map_fragment>',
         `#include <map_fragment>
+         // Hero-impostor CAPTURE MASK (RTT only; uCaptureMask is 0 = off in every
+         // normal LS/Salon render → no-op there). 1 = leaf-only (discard the woody
+         // vBark verts), 2 = bark-only (discard the leaf verts) — so the hero capture
+         // bakes leaf-parallax shells + one woody layer as separate passes.
+         if (uCaptureMask > 0.5) {
+           if (uCaptureMask < 1.5) { if (vBark > 0.5) discard; }
+           else                    { if (vBark < 0.5) discard; }
+         }
          {
            // Brief 10B (Vellum) — posterized substrate swap (tier ≤ 1).
            // localUV computation lifted to the top of the bark chunk so both

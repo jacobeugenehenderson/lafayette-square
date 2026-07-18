@@ -1187,21 +1187,24 @@ function Skeleton({
     if (!heroSnapshot || !overheadRec) return null
     const rec = { heightM: heroSnapshot.heightM || overheadRec.heightM, canopyRadiusM: overheadRec.canopyRadiusM, canopyBaseNorm: heroSnapshot.canopyBaseNorm }
     return heroSnapshot.shots.map((s) => ({
-      key: `sh${s.shellIdx}`,
+      key: `${s.kind}${s.shellIdx}`,
+      kind: s.kind, shellIdx: s.shellIdx, shellCount: s.shellCount,
       albedoTex: s.albedoTex,
       aoTex: s.aoTex,
       geo: buildHeroImpostorCard(rec, { depthLoFrac: s.depthLoFrac, depthHiFrac: s.depthHiFrac }),
     }))
   }, [heroSnapshot, overheadRec])
 
-  // One relight material per shell — MeshBasic(map=ALBEDO) + injectOverheadStamp
-  // (albedo × ambient+sun·AO + base-anchored wind). Front shell bright → back shell
-  // darker (structural depth: the back shell sits deeper in the crown shadow).
+  // One relight material per layer — MeshBasic(map=ALBEDO) + injectOverheadStamp
+  // (albedo × ambient+sun·AO + base-anchored wind). LEAF shells ramp front-bright →
+  // back-dark (deeper in the crown shadow); the BARK layer is structural (mid-bright),
+  // sitting behind the leaves.
   const heroMats = useMemo(() => {
     if (!heroCards) return null
-    const n = heroCards.length
-    return heroCards.map(({ albedoTex, aoTex }, i) => {
-      const bright = n > 1 ? 1.0 - 0.5 * (i / (n - 1)) : 1.0
+    return heroCards.map(({ albedoTex, aoTex, kind, shellIdx, shellCount }) => {
+      const bright = kind === 'bark'
+        ? 0.8
+        : (shellCount > 1 ? 1.0 - 0.4 * (shellIdx / (shellCount - 1)) : 1.0)
       const m = new THREE.MeshBasicMaterial({
         map: albedoTex, color: new THREE.Color(bright, bright, bright),
         transparent: false, alphaTest: 0.4,
