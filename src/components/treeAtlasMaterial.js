@@ -1632,6 +1632,51 @@ export function injectOverheadStamp(material, aoTex) {
   }
 }
 
+// ── HERO canopy-impostor material — billboard + shared wind + relight ──────────
+// The runtime twin of injectOverheadStamp for the SIDE-ON hero card. Adds a Y-axis
+// (cylindrical) BILLBOARD so the flat card always faces the camera — per-instance
+// variety is which azimuth TEXTURE the card wears, NOT its orientation, so the card
+// can freely turn to the viewer without a per-frame swap. The instance matrices are
+// built TRANSLATION-ONLY (no rotY) so the shader owns orientation. Local card coords:
+// x = canopy width, y = canopy height (world-up, kept vertical), z = shell depth
+// (front shells pushed toward the camera → parallax). Then the shared overhead wind
+// leans/gusts it (base-anchored) and the relight tracks the weather — same as the disc.
+const HERO_BILLBOARD_BEGIN = `
+         {
+           #ifdef USE_INSTANCING
+             vec3 heroPivot = instanceMatrix[3].xyz;
+           #else
+             vec3 heroPivot = modelMatrix[3].xyz;
+           #endif
+           vec3 heroToCam = cameraPosition - heroPivot;
+           vec3 heroFwd = normalize(vec3(heroToCam.x, 0.0, heroToCam.z) + vec3(1e-4, 0.0, 0.0));
+           vec3 heroRight = vec3(-heroFwd.z, 0.0, heroFwd.x);
+           // Re-seat the card facing the camera: width→right, height→world-up, depth→toward-cam.
+           transformed = heroRight * position.x + vec3(0.0, position.y, 0.0) + heroFwd * position.z;
+         }`
+
+export function injectHeroImpostorStamp(material, aoTex) {
+  material.onBeforeCompile = (shader) => {
+    bindOverheadWindUniforms(shader)
+    shader.uniforms.uAO      = { value: aoTex }
+    shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
+    shader.uniforms.uSun     = overheadLightUniforms.uSun
+    material.userData.shader = shader
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
+      // Billboard FIRST (re-seat transformed facing the camera), THEN the shared wind
+      // leans/gusts transformed.xz base-anchored on top.
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + OVERHEAD_WIND_BEGIN)
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+         uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+         // RELIGHT — albedo × (ambient + sun·AO), same as the overhead disc.
+         float ovAO = texture2D(uAO, vMapUv).r;
+         diffuseColor.rgb *= (uAmbient + uSun * ovAO);`)
+  }
+}
+
 // Applies per-draw bark uniforms. Moved here from InstancedTrees.jsx by
 // Brief 7 so the Salon preview path (SpecimenViewport) reuses the SAME
 // per-draw uniform setup. Single implementation across LS runtime and
