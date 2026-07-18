@@ -33,6 +33,7 @@ import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
 import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
+import { readCapCustom } from './feCustomKey.js'
 
 const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -995,6 +996,23 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
     const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
     const roundTipByKey = new Map(roundTips.map(t => [tipKey(t.p), t]))
+    // [CAP FLIP] Per dead-end tip, the flippable cap-wrap material override
+    // (HANDOFF-dead-end-cap-flip §3). Default — NO cap custom — leaves the tip
+    // OUT of this map, so the cap rides the abutting leg's group unchanged
+    // (byte-identical to today's wrap). An authored cap custom overrides the
+    // wrap's OUTER material (grass LU ↔ walk SW): the cap disk then renders as a
+    // dedicated group (below), independent of the leg. Read via the cap's frozen
+    // identity (skelId, capEnd) → readCapCustom → the reserved cap-segOrd slot.
+    const capOverrideByKey = new Map()
+    for (const t of roundTips) {
+      if (!t.skelId || !t.capEnd) continue
+      const outer = readCapCustom(blockCustoms, t.skelId, t.capEnd)?.materials?.outer
+      if (outer !== 'SW' && outer !== 'LU') continue          // no authored flip → default path
+      capOverrideByKey.set(tipKey(t.p), {
+        p: t.p, hw: t.hw, o: t.tl, inn: t.sw, total: t.tl + t.sw,
+        mat: { outer, inner: outer === 'LU' ? 'SW' : 'LU' },
+      })
+    }
     // Blunt dead-end tips: like round tips, they are NOT junction corners — the
     // curb caps flat at the tip node, so the leg must run TO the tip (no e.a+R
     // junction pullback) and bid NO corner pad. Without this the band squares off
@@ -1226,8 +1244,24 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         const wRing = ringAt(g.total)    // this group's band inner
         const outerStrip = g.o > 1e-6 ? differenceRings(claim, oRing) : []
         const innerStrip = g.inn > 1e-6 ? differenceRings(intersectRings(claim, oRing), wRing) : []
-        if (outerStrip.length) pieces.push({ mat: g.mat.outer, rings: outerStrip })
-        if (innerStrip.length) pieces.push({ mat: g.mat.inner, rings: innerStrip })
+        // [CAP FLIP] Emit each strip's material, but within a FLIPPED cap's disk
+        // relabel it to the CAP's material (HANDOFF-dead-end-cap-flip §3). This is
+        // GEOMETRY-PRESERVING — the SAME rings, only the material label swaps in
+        // the disk — so an unflipped cap (empty capOverrideByKey → the fast path)
+        // is byte-identical to today's wrap, and a flip conserves area exactly.
+        const emitStrip = (strip, legMat, capSlot) => {
+          if (!strip.length) return
+          if (!capOverrideByKey.size) { pieces.push({ mat: legMat, rings: strip }); return }
+          let rest = strip
+          for (const ov of capOverrideByKey.values()) {
+            const inDisk = intersectRings(rest, [circlePoly(ov.p[0], ov.p[1], ov.hw + cw + SECTOR_D)])
+            if (inDisk.length) { pieces.push({ mat: ov.mat[capSlot], rings: inDisk }); rest = differenceRings(rest, inDisk) }
+            if (!rest.length) break
+          }
+          if (rest.length) pieces.push({ mat: legMat, rings: rest })
+        }
+        emitStrip(outerStrip, g.mat.outer, 'outer')
+        emitStrip(innerStrip, g.mat.inner, 'inner')
         // deeper-than-this-group's-total band within the claim → LU (the §3.1
         // remainder flows to the block center; no hard property line)
         if (g.total < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(claim, wRing))
@@ -1381,6 +1415,15 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         const stray = intersectRings(intersectRings(luRemainder, [cap0]), fullBand)
         if (!stray.length) continue
         luRemainder = differenceRings(luRemainder, stray)
+        // [CAP FLIP] An authored cap custom overrides the wrap material wholesale
+        // (the flip is one arrangement for the whole cap, not per owning-side), so
+        // route the reclaimed sliver by the cap's OWN outer material.
+        const capOv = capOverrideByKey.get(tipKey(t.p))
+        if (capOv) {
+          if (capOv.mat.outer === 'LU') pushLu(tlByLu, lu, stray)
+          else cornerPad = unionRings([...cornerPad, ...stray])
+          continue
+        }
         // cap-owning runs (a side-run whose poly end sits at the tip) + their outer
         // strip material + into-tile axis (body→tip). hasTL ⇒ outer is LU (grass).
         // The two side-runs run PARALLEL up the stub to the tip, so their body→tip
@@ -2744,13 +2787,21 @@ export function buildTileGround(ribbons, opts = {}) {
     // suppress the ped wrap so LU abuts the street's flat end.
     const roundTips = [], bluntTips = []
     const seenTip = new Set()
+    // Cap IDENTITY per tip (frozen tile.caps → skelId/capEnd), attached to the
+    // matching tip so the flippable cap wrap can read its custom (readCapCustom)
+    // in sectionPass. Keyed by the tip node.
+    const capIdByTip = new Map()
+    for (const c of (tile.caps || [])) {
+      const v = tile.ring?.[c.vertexIdx]
+      if (v) capIdByTip.set(tipKey(v), { skelId: c.skelId, capEnd: c.capEnd })
+    }
     if (runs.length > 1) {
       for (const run of runs) {
         for (const p of [run.poly[0], run.poly[run.poly.length - 1]]) {   // tip may sit at EITHER run end
           const tk = tipKey(p)
           if (seenTip.has(tk)) continue
           const t = deadEndTips.get(tk)
-          if (t) { seenTip.add(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, hw: t.hw, tl: t.tl, sw: t.sw }) }
+          if (t) { seenTip.add(tk); const cid = capIdByTip.get(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
         }
       }
     }

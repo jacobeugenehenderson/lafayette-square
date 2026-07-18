@@ -449,6 +449,30 @@ export default function BlockGeometryV2Debug({
     useCartographStore.getState()._setV2FrontageEdges(enrichedFrontageEdges)
   }, [enrichedFrontageEdges])
 
+  // Surface dead-end CAP handles from the FROZEN tile topology (ribbons.tiles[]
+  // .caps, stamped once at prebake) so the Measure tool can flip a cul-de-sac
+  // cap like a leg. The tip coord is the tile ring vertex; identity (skelId,
+  // capEnd) resolves the cap slot via makeCapFe. One source, never re-derived.
+  const v2Caps = useMemo(() => {
+    const nameOf = new Map()
+    for (const s of (liveRibbons?.streets || [])) {
+      const k = s?.skelId || s?.name
+      if (k != null && !nameOf.has(k)) nameOf.set(k, s?.name || null)
+    }
+    const out = []
+    for (const t of (liveRibbons?.tiles || [])) {
+      for (const c of (t.caps || [])) {
+        const tip = t.ring?.[c.vertexIdx]
+        if (!tip) continue
+        out.push({ skelId: c.skelId, chainName: nameOf.get(c.skelId) || null, capEnd: c.capEnd, tip: [tip[0], tip[1]] })
+      }
+    }
+    return out
+  }, [liveRibbons])
+  useEffect(() => {
+    useCartographStore.getState()._setV2Caps(v2Caps)
+  }, [v2Caps])
+
   // A block-edge custom is stored under ONE slot (feCustomKey = min segOrd), but
   // the FILL renderer reads per-run-segOrd — so on a T-split edge the flip/drag
   // orphans on every segment but the min. Spread each custom across its fe's

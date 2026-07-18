@@ -519,6 +519,11 @@ const useCartographStore = create((set, get) => ({
   editSidesSeparately: false,
   setEditSidesSeparately: (v) => set({ editSidesSeparately: !!v }),
   _v2FrontageEdges: [],
+  // Dead-end CAP handles, surfaced from the frozen tile topology (ribbons
+  // .tiles[].caps) so the Measure tool can flip a cul-de-sac cap like a leg.
+  // Each: { skelId, chainName, capEnd, tip:[x,z] } — the flip resolves the cap
+  // slot via makeCapFe(skelId, capEnd). One source (the freeze), never re-derived.
+  _v2Caps: [],
   // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
   // Operator-authored via the Corner-edit center handles. Per-Look (lives in
   // design.json) so duplicating a Look carries the operator's IX-by-IX work
@@ -714,6 +719,7 @@ const useCartographStore = create((set, get) => ({
   // Measure UI can resolve a clicked chain point → (blockKey, edgeOrd)
   // for per-block-edge customs authoring.
   _setV2FrontageEdges: (fes) => set({ _v2FrontageEdges: Array.isArray(fes) ? fes : [] }),
+  _setV2Caps: (caps) => set({ _v2Caps: Array.isArray(caps) ? caps : [] }),
   // Measure-mode setter. 'block' is the default; 'global' is the
   // whole-chain authoring mode (= edit chain.measure).
   setMeasureMode: (mode) => {
