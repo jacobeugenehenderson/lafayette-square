@@ -789,33 +789,36 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       if (!bySpecies.has(renderSpecies)) bySpecies.set(renderSpecies, [])
       bySpecies.get(renderSpecies).push(inst)
 
-      // Hero-framing role cull. `heroTier` is a verdict about the hero pan's
-      // camera and nothing else, so it gates ONLY the mesh/impostor paths
-      // below — which are the hero render. Browse is a free camera on the
-      // overhead path above and must never inherit it.
-      if (inst.heroTier === 'cull') { heroCulled++; return }
-
-      // HERO canopy-impostor FOUNDATION → every tree paints as a side-on canopy card
-      // UNLESS it's tall enough (dbh ≥ cut) to earn geometry (the sprinkled anchors).
-      // Stable at load; the "∩ foreground" axis lands with the bake. When the species
-      // has no baked hero record it falls through to mesh (never blank).
-      if (heroFoundationEnabled && heroImpostorRecords?.[renderSpecies] && (Number(inst.dbh) || 0) < heroDbhCut) {
-        if (!heroImpostors.has(renderSpecies)) heroImpostors.set(renderSpecies, [])
-        heroImpostors.get(renderSpecies).push(inst)
-        heroFoundationCount++
-        return
+      // HERO canopy-impostor FOUNDATION (Phase 2) — this REPLACES the old hero-pan
+      // prominence tiers (mesh/opaque/impostor/cull) for the whole neighborhood. Every
+      // tree paints as a side-on canopy card UNLESS it's tall enough (dbh ≥ cut) to earn
+      // geometry (the sprinkled anchors → fall through to mesh). Crucially it runs
+      // BEFORE — and RETIRES — the legacy `heroTier==='cull'` verdict, which was scored
+      // for the hero-pan shot and over-culled ~69% of placements (the "drastic reduction"
+      // + bare shadow-spots). The foundation paints the whole neighborhood; impostors are
+      // cheap billboards, so nothing gets dropped. (∩-foreground pan-distance axis: later.)
+      if (heroFoundationEnabled && heroImpostorRecords) {
+        if (heroImpostorRecords[renderSpecies] && (Number(inst.dbh) || 0) < heroDbhCut) {
+          if (!heroImpostors.has(renderSpecies)) heroImpostors.set(renderSpecies, [])
+          heroImpostors.get(renderSpecies).push(inst)
+          heroFoundationCount++
+          return
+        }
+        // else → mesh (tall anchor, or a species with no baked hero record). No cull.
+      } else {
+        // Legacy prominence behavior (no foundation) — the hero-pan cull + impostor role.
+        if (inst.heroTier === 'cull') { heroCulled++; return }
+        if (inst.heroTier === 'impostor' && impostorRecords?.[renderSpecies]) {
+          if (!impostors.has(renderSpecies)) impostors.set(renderSpecies, [])
+          impostors.get(renderSpecies).push(inst)
+          impostorCount++
+          return
+        }
       }
 
-      // Impostor ROLE → stamped-2D billboard path. One bucket per rendered
-      // species; the per-species geometry samples that species' atlas rects.
-      if (inst.heroTier === 'impostor' && impostorRecords?.[renderSpecies]) {
-        if (!impostors.has(renderSpecies)) impostors.set(renderSpecies, [])
-        impostors.get(renderSpecies).push(inst)
-        impostorCount++
-        return
-      }
-
-      // Mesh ROLE (or impostor with no baked record → fall back to real geo).
+      // Mesh ROLE — the tall anchors (foundation on), or the full mesh path (foundation
+      // off; the legacy cull/impostor role handled above). Impostor with no baked record
+      // also falls through here → real geometry, never blank.
       const url = inRoster ? lodUrlOf(inst, inst) : lodUrlOf(sub, inst)
       // Cache-bust GLB URLs against the atlas manifest's generatedAt so an
       // open Preview/Stage tab picks up rewritten UVs after a rebake instead
