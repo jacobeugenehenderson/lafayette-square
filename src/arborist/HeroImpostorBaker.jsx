@@ -87,7 +87,12 @@ async function postHeroImpostor(look, species, meta, layers) {
  * @param {number}   props.runTick    bump to trigger a bake pass (0 = idle)
  * @param {string}   props.lookId
  * @param {object[]} props.species    [{ species, glbUrl }] — one per unique roster species
- * @param {number}   props.azimuths   variety-pool size (default 6)
+ * @param {number}   props.azimuths   variety-pool size (default 4). Per-instance
+ *   variety scales with a species' INSTANCE count (many instances → visible stamping
+ *   → more azimuths worth the weight; few instances → 1–2 suffice). LS's current pool
+ *   is all common render species (154–807 instances each — census species substitute
+ *   ONTO them), so uniform N=4 fits; a per-species map keys here when a rare species
+ *   gets its own pool. Morphology also matters (columnar/symmetric crown → fewer sides).
  * @param {number}   props.shells     leaf depth-shells (default 2)
  * @param {number}   props.albedoSize persisted albedo PNG size (default 1024, supersampled from the 2048² capture)
  * @param {number}   props.aoSize     persisted AO PNG size (default 256)
