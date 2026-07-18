@@ -193,5 +193,18 @@ Restructure landed:
 ### ⭐ AZIMUTH REFRAME (Jacob, 2026-07-17) — LOCKED, affects Phase 2
 The N radial captures are **per-instance VARIETY**, not a view-dependent (octahedral) swap. **88 sugar maples must not be 88 identical cards** → assign each instance ONE of the N azimuths **by hash**, fixed at load (stable — no per-frame swap, inside doctrine). The **view-dependent swap is deferred** — "wasted bulk for current requirements" (Jacob). Phase 2 runtime: hash instance→azimuth, billboard about Y to face camera, show that azimuth's leaf-shells + rear bark layer. (The overhead disc's per-instance-rotY anti-stamping is the precedent.)
 
-### Phase 1b — durability (NEXT, not yet built)
-`serve.js` POST `/hero-impostor/:look/:species` · `bake-look.js` carry `heroImpostorBySpecies` forward (the trapdoor) · `HeroImpostorBaker` on Bake→Slab (all N azimuths) · Grove wire. Then Phase 2 (runtime split + azimuth selection), Phase 3 (streaming), Phase 4 (Stage budget knob).
+### Eye-gate PASSED (Jacob, 2026-07-17): "Looks great (really kind of unbelievable how convincing it is!)"
+Phase 1 editorial surface eye-gated + approved (trunk-in-rear, 2048, lighting, breathe).
+
+### Phase 1b — durability plumbing (DONE, `0b88e1bf`)
+The side-on twin of the overhead persistence path:
+- **`serve.js`** POST `/hero-impostor/:look/:species` — writes azimuth×layer PNGs under `trees/hero-impostor/<species>/` + merges `heroImpostorBySpecies` into `trees-atlas.json`.
+- **`bake-look.js`** carries `heroImpostorBySpecies` forward on EVERY bake (same trapdoor as overhead).
+- **`HeroImpostorBaker.jsx`** rides Bake→Slab, captures each species' **all-N-azimuth variety pool** (leaf shells + rear woody layer), one shot/frame, POSTs. Chained AFTER the overhead bake (one GPU loop at a time).
+- **`Grove.jsx`** wired + progress UI (`Hero n/total…` · `hero ✓`).
+- Manifest schema: `heroImpostorBySpecies[sp] = { heightM, canopyRadiusM, canopyBaseNorm, azimuths, shells, layers:[{ azIdx, azimuthDeg, kind, shellIdx, cardDepthFrac, albedo, ao }] }`.
+- All parse-clean (esbuild + `node --check`).
+
+**⏳ NEXT — run the first bake (needs Jacob):** (1) the DIALS — azimuth count (variety pool), shells (nesting), persist resolution (quality↔weight); (2) test infra — the worktree needs its OWN arborist backend on a spare port + vite repointed (`ARB_API`) so the POST lands on the endpoint I added (the running :3334 backend is the MAIN dir's, no endpoint). Then Phase 2 (runtime: hash instance→azimuth, mount hero cards on LS, height-threshold split), Phase 3 (streaming), Phase 4 (Stage budget knob).
+
+⚠️ **Weight honesty:** the variety pool is per-SPECIES (shared across instances) but N azimuths × 3 layers × 2 channels adds up. Levers = azimuth count, persist resolution, and KTX2 (the real compressor). Pick on the real pan + a device.
