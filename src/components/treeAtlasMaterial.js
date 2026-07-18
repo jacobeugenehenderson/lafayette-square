@@ -1612,6 +1612,7 @@ export const overheadLightUniforms = {
 // sun·AO), sampling the baked AO channel — so overcast light (high ambient / low
 // sun) flattens the tree and strong sun deepens the occlusion (optical parity).
 export function injectOverheadStamp(material, aoTex) {
+  material.customProgramCacheKey = () => 'overheadStamp'   // distinct from heroImpostorStamp
   material.onBeforeCompile = (shader) => {
     bindOverheadWindUniforms(shader)
     shader.uniforms.uAO      = { value: aoTex }
@@ -1656,6 +1657,10 @@ const HERO_BILLBOARD_BEGIN = `
          }`
 
 export function injectHeroImpostorStamp(material, aoTex) {
+  // Distinct program cache key — MeshBasic+map+onBeforeCompile collides with the
+  // overhead-disc material otherwise, and three can serve one's compiled program to
+  // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
+  material.customProgramCacheKey = () => 'heroImpostorStamp'
   material.onBeforeCompile = (shader) => {
     bindOverheadWindUniforms(shader)
     shader.uniforms.uAO      = { value: aoTex }
