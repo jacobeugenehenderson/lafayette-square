@@ -33,6 +33,7 @@ import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
 import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
+import { readCapCustom } from './feCustomKey.js'
 
 const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -672,9 +673,57 @@ export function tilesFromFrozen(frozen, streets) {
       const forward = e.side === 'right'
       edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
     }
-    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
+    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges, ...(Array.isArray(t.caps) && t.caps.length ? { caps: t.caps.map(c => ({ ...c })) } : {}) })
   }
   return tiles
+}
+
+// ── Dead-end CAP identity on the frozen face (HANDOFF-dead-end-cap-flip §36) ──
+// The prebake face freeze (derive.js → extractFaces) walks a dead-end spur
+// OUT-and-BACK inside its enclosing face, so the turn-around at the tip is a
+// ring vertex whose two adjacent edges carry the SAME chain (skelId) on OPPOSITE
+// sides (right→left). That vertex — when it coincides with the chain's own
+// start/end endpoint — IS the cul-de-sac / dead-end cap. This is the ONE cap
+// criterion (RIBBONS §1 tile model): the fe layer (buildBlockGeometryV2) can't
+// make it — it sees every naive degree-1 chain-end (LS: 100), half of them
+// boundary danglers that never form an out-and-back inside a bounded face (LS:
+// exactly 50 real caps survive, 1:1 with the rendered tips). So cap identity is
+// a FACE-topology fact, frozen ONCE at prebake into ribbons.tiles[].caps and
+// read identically by Survey/Designer (the flip) and section/bake (the render).
+
+// skelId → { start, end } endpoint node-keys, for cap-end resolution.
+export function chainEndpointKeys(streets) {
+  const m = new Map()
+  for (const s of streets || []) {
+    const pts = s?.points
+    if (!pts || pts.length < 2) continue
+    const k = s.skelId || s.name
+    if (k == null) continue
+    m.set(k, { start: tipKey(pts[0]), end: tipKey(pts[pts.length - 1]) })
+  }
+  return m
+}
+
+// Detect dead-end cap tips on ONE tile face → [{ vertexIdx, skelId, capEnd }].
+// `skelIdOfEdge` reads the chain id from an edge (frozen edges carry `.skelId`;
+// live extractFaces edges carry `.streetIdx`, resolved by the caller).
+export function detectTileCaps(ring, edges, endpointKeys, skelIdOfEdge = (e) => e?.skelId) {
+  const caps = []
+  const n = edges?.length || 0
+  if (!n || !Array.isArray(ring) || ring.length !== n) return caps
+  for (let i = 0; i < n; i++) {
+    const inc = edges[(i - 1 + n) % n], out = edges[i]
+    const sk = skelIdOfEdge(inc)
+    if (sk == null || sk === BOUNDARY_EDGE_SKEL) continue
+    if (sk !== skelIdOfEdge(out) || inc.side === out.side) continue   // not a same-chain turn-around
+    const ends = endpointKeys?.get(sk)
+    if (!ends) continue
+    const tk = tipKey(ring[i])
+    const capEnd = ends.start === tk ? 'start' : (ends.end === tk ? 'end' : null)
+    if (!capEnd) continue   // same-skelId/opposite-side but NOT at a chain endpoint → not a cap
+    caps.push({ vertexIdx: i, skelId: sk, capEnd })
+  }
+  return caps
 }
 
 
@@ -947,6 +996,23 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
     const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
     const roundTipByKey = new Map(roundTips.map(t => [tipKey(t.p), t]))
+    // [CAP FLIP] Per dead-end tip, the flippable cap-wrap material override
+    // (HANDOFF-dead-end-cap-flip §3). Default — NO cap custom — leaves the tip
+    // OUT of this map, so the cap rides the abutting leg's group unchanged
+    // (byte-identical to today's wrap). An authored cap custom overrides the
+    // wrap's OUTER material (grass LU ↔ walk SW): the cap disk then renders as a
+    // dedicated group (below), independent of the leg. Read via the cap's frozen
+    // identity (skelId, capEnd) → readCapCustom → the reserved cap-segOrd slot.
+    const capOverrideByKey = new Map()
+    for (const t of roundTips) {
+      if (!t.skelId || !t.capEnd) continue
+      const outer = readCapCustom(blockCustoms, t.skelId, t.capEnd)?.materials?.outer
+      if (outer !== 'SW' && outer !== 'LU') continue          // no authored flip → default path
+      capOverrideByKey.set(tipKey(t.p), {
+        p: t.p, hw: t.hw, o: t.tl, inn: t.sw, total: t.tl + t.sw,
+        mat: { outer, inner: outer === 'LU' ? 'SW' : 'LU' },
+      })
+    }
     // Blunt dead-end tips: like round tips, they are NOT junction corners — the
     // curb caps flat at the tip node, so the leg must run TO the tip (no e.a+R
     // junction pullback) and bid NO corner pad. Without this the band squares off
@@ -1178,8 +1244,24 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         const wRing = ringAt(g.total)    // this group's band inner
         const outerStrip = g.o > 1e-6 ? differenceRings(claim, oRing) : []
         const innerStrip = g.inn > 1e-6 ? differenceRings(intersectRings(claim, oRing), wRing) : []
-        if (outerStrip.length) pieces.push({ mat: g.mat.outer, rings: outerStrip })
-        if (innerStrip.length) pieces.push({ mat: g.mat.inner, rings: innerStrip })
+        // [CAP FLIP] Emit each strip's material, but within a FLIPPED cap's disk
+        // relabel it to the CAP's material (HANDOFF-dead-end-cap-flip §3). This is
+        // GEOMETRY-PRESERVING — the SAME rings, only the material label swaps in
+        // the disk — so an unflipped cap (empty capOverrideByKey → the fast path)
+        // is byte-identical to today's wrap, and a flip conserves area exactly.
+        const emitStrip = (strip, legMat, capSlot) => {
+          if (!strip.length) return
+          if (!capOverrideByKey.size) { pieces.push({ mat: legMat, rings: strip }); return }
+          let rest = strip
+          for (const ov of capOverrideByKey.values()) {
+            const inDisk = intersectRings(rest, [circlePoly(ov.p[0], ov.p[1], ov.hw + cw + SECTOR_D)])
+            if (inDisk.length) { pieces.push({ mat: ov.mat[capSlot], rings: inDisk }); rest = differenceRings(rest, inDisk) }
+            if (!rest.length) break
+          }
+          if (rest.length) pieces.push({ mat: legMat, rings: rest })
+        }
+        emitStrip(outerStrip, g.mat.outer, 'outer')
+        emitStrip(innerStrip, g.mat.inner, 'inner')
         // deeper-than-this-group's-total band within the claim → LU (the §3.1
         // remainder flows to the block center; no hard property line)
         if (g.total < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(claim, wRing))
@@ -1333,6 +1415,15 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         const stray = intersectRings(intersectRings(luRemainder, [cap0]), fullBand)
         if (!stray.length) continue
         luRemainder = differenceRings(luRemainder, stray)
+        // [CAP FLIP] An authored cap custom overrides the wrap material wholesale
+        // (the flip is one arrangement for the whole cap, not per owning-side), so
+        // route the reclaimed sliver by the cap's OWN outer material.
+        const capOv = capOverrideByKey.get(tipKey(t.p))
+        if (capOv) {
+          if (capOv.mat.outer === 'LU') pushLu(tlByLu, lu, stray)
+          else cornerPad = unionRings([...cornerPad, ...stray])
+          continue
+        }
         // cap-owning runs (a side-run whose poly end sits at the tip) + their outer
         // strip material + into-tile axis (body→tip). hasTL ⇒ outer is LU (grass).
         // The two side-runs run PARALLEL up the stub to the tip, so their body→tip
@@ -1756,7 +1847,18 @@ export function buildTileGround(ribbons, opts = {}) {
   // back to the live walk over the smoothed streets, so the dormant knob's
   // semantics stay bit-for-bit what they were (rings AND strokes smoothed
   // together, never mixed).
-  const tiles = (smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)) || extractFaces(streets)
+  let tiles = smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)
+  if (!tiles) {
+    // Live fallback (toy / pre-D2, no frozen artifact): derive dead-end cap
+    // identity HERE — the only place it can come from when nothing is frozen.
+    // The FROZEN path reads caps stamped ONCE at prebake (derive.js); it never
+    // re-derives (that's the "freeze, don't derive live" decision, 2026-07-17).
+    const capEndpointKeys = chainEndpointKeys(streets)
+    tiles = extractFaces(streets).map(f => {
+      const caps = detectTileCaps(f.ring, f.edges, capEndpointKeys, (e) => streets[e?.streetIdx]?.skelId || streets[e?.streetIdx]?.name)
+      return caps.length ? { ...f, caps } : f
+    })
+  }
 
   // E2 — the CONSTRUCTED medians (prebake artifact: ribbons.medians[]; the
   // divided pair's inter-chain lens partitioned into kind:'median' segments +
@@ -2685,13 +2787,21 @@ export function buildTileGround(ribbons, opts = {}) {
     // suppress the ped wrap so LU abuts the street's flat end.
     const roundTips = [], bluntTips = []
     const seenTip = new Set()
+    // Cap IDENTITY per tip (frozen tile.caps → skelId/capEnd), attached to the
+    // matching tip so the flippable cap wrap can read its custom (readCapCustom)
+    // in sectionPass. Keyed by the tip node.
+    const capIdByTip = new Map()
+    for (const c of (tile.caps || [])) {
+      const v = tile.ring?.[c.vertexIdx]
+      if (v) capIdByTip.set(tipKey(v), { skelId: c.skelId, capEnd: c.capEnd })
+    }
     if (runs.length > 1) {
       for (const run of runs) {
         for (const p of [run.poly[0], run.poly[run.poly.length - 1]]) {   // tip may sit at EITHER run end
           const tk = tipKey(p)
           if (seenTip.has(tk)) continue
           const t = deadEndTips.get(tk)
-          if (t) { seenTip.add(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, hw: t.hw, tl: t.tl, sw: t.sw }) }
+          if (t) { seenTip.add(tk); const cid = capIdByTip.get(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
         }
       }
     }

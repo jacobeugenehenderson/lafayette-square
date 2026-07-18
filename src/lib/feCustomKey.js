@@ -46,6 +46,57 @@ export function feCustomKey(fe) {
   return [skel, fe.side, seg]
 }
 
+// ── Dead-end CAP as a flippable frontage element (HANDOFF-dead-end-cap-flip §36) ──
+// A cul-de-sac / dead-end cap is "the leg's frontage, wrapped past the tip". To
+// let it carry its OWN arrangement (SW↔TL flip) INDEPENDENT of the two legs it
+// abuts, it needs its own blockCustoms slot — but it must flow through the SAME
+// feCustomKey = [skelId, side, segOrd] machinery, NOT a forked blockCustoms.cap
+// slot. So the cap is a SYNTHETIC fe: a RESERVED cap-segOrd on the dead-end
+// chain, keyed exactly like a leg via feCustomKey.
+//
+// The reserved segOrd is NEGATIVE (real natural segments are 0..N-1) → provably
+// disjoint from every leg slot, so a cap custom can never collide with a leg
+// custom nor be read by a leg run (runCustom reads run.segOrd ∈ 0..N-1). It is
+// PER-END so an isolated pendant free at BOTH ends (start-cap segOrd 0 == end-cap
+// segOrd 0 would collide) still gets two distinct slots. The canonical SIDE is
+// 'left' — the cap is ONE element wrapping BOTH sides, so the side token is a
+// storage convention (every consumer resolves through makeCapFe, so they agree),
+// not a geometric side. Cap fes are kept OUT of the main frontageEdges array, so
+// feesForChainSide / findFeForSide never sweep them; the flip (piece 2) and the
+// render (piece 3) reach a cap explicitly via its FROZEN prebake identity
+// (ribbons.tiles[].caps = [{ vertexIdx, skelId, capEnd }], stamped once at the
+// face freeze — the single source both consumers read; RIBBONS §1 tile model).
+export const CAP_SEGORD = { start: -1, end: -2 }
+export const isCapSegOrd = (s) => s === CAP_SEGORD.start || s === CAP_SEGORD.end
+
+// Build the SYNTHETIC cap fe for a dead-end chain end. feCustomKey(makeCapFe(...))
+// is the ONE cap-slot key formula — no second copy (the SSOT rule above). Both
+// the flip-write and the cap-render resolve a cap through THIS, so the slot the
+// flip writes == the slot the render reads by construction. Returns null if the
+// end isn't a valid cap identity.
+export function makeCapFe(skelId, capEnd, { chainName = null } = {}) {
+  if (!skelId || (capEnd !== 'start' && capEnd !== 'end')) return null
+  return {
+    chainSkelId: skelId,
+    chainName,
+    side: 'left',                 // canonical storage side (see block comment)
+    segOrds: [CAP_SEGORD[capEnd]], // reserved negative segOrd → feCustomKey slot
+    isCap: true,
+    capEnd,
+  }
+}
+
+// The cap-slot key, or null. Convenience over makeCapFe + feCustomKey (still ONE
+// formula — this just composes them). readCapCustom mirrors readFeCustom.
+export function capCustomKey(skelId, capEnd, opts) {
+  return feCustomKey(makeCapFe(skelId, capEnd, opts))
+}
+export function readCapCustom(blockCustoms, skelId, capEnd) {
+  const k = capCustomKey(skelId, capEnd)
+  if (!k) return null
+  return blockCustoms?.[k[0]]?.[k[1]]?.[k[2]] || null
+}
+
 // Read the custom measure for an fe, or null. The one read used by every path.
 export function readFeCustom(blockCustoms, fe) {
   const k = feCustomKey(fe)

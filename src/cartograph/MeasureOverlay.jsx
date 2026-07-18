@@ -8,7 +8,7 @@ import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 import { chainMeasure, findFeForSide as findFeForSidePure, feesForChainSide, applyKindToMeasure } from './measureModel.js'
-import { readFeCustom } from '../lib/feCustomKey.js'
+import { readFeCustom, makeCapFe } from '../lib/feCustomKey.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
 // (block-customs model) the chain default is the single source for handle
@@ -744,9 +744,62 @@ export default function MeasureOverlay() {
       useCartographStore.setState({ status: `Flipped ${slot} strip material (${mode?.type === 'global' ? 'chain' : 'block'})` })
       return true
     }
+    // Ctrl-click on a dead-end CAP → flip the cap's wrap material SW↔treelawn,
+    // exactly like a leg strip (HANDOFF-dead-end-cap-flip §1-2). The cap is a
+    // SYNTHETIC fe (makeCapFe → the reserved cap-segOrd slot), so the write flows
+    // through the SAME store path (writeBlockEdgeCustoms → feCustomKey). Default
+    // (no custom) inherits the abutting leg, so nothing regresses until flipped.
+    // Cap handles come from the FROZEN tile topology (_v2Caps). Returns true if a
+    // cap flip was committed.
+    const tryFlipCap = (p) => {
+      if (!selection) return false
+      const st = centerlineData.streets[selection.streetIdx]
+      if (!st) return false
+      const store = useCartographStore.getState()
+      const idKey = st.skelId || st.id || null
+      const nameKey = st.name || null
+      const myCaps = (store._v2Caps || []).filter(c =>
+        (idKey && c.skelId === idKey) || (nameKey && (c.skelId === nameKey || c.chainName === nameKey)))
+      if (!myCaps.length) return false
+      const chainM = chainMeasure(st)
+      const pedL = resolvePedDepths(chainM, 'left', null)
+      const pedR = resolvePedDepths(chainM, 'right', null)
+      // Cap-disc hit radius = curb + both ped strips (+1 m margin), max over sides.
+      const rFor = (side, ped) => {
+        const m = chainM?.[side] || {}
+        const cw = Number.isFinite(m.curb) ? m.curb : CURB_WIDTH
+        return (m.pavementHW || 0) + cw + ped.tl + ped.sw + 1
+      }
+      const hitR = Math.max(rFor('left', pedL), rFor('right', pedR))
+      let hit = null, bestD = Infinity
+      for (const c of myCaps) {
+        const d = Math.hypot(p.x - c.tip[0], p.z - c.tip[1])
+        if (d <= hitR && d < bestD) { bestD = d; hit = c }
+      }
+      if (!hit) return false
+      // Current effective outer material: the cap custom if authored, else the
+      // inherited leg default (grass if EITHER side is treelawn-Y — matches the
+      // render's Y-first cap wrap). Flip it.
+      const blockCustoms = store.blockCustoms || {}
+      const capFe = makeCapFe(hit.skelId, hit.capEnd, { chainName: hit.chainName })
+      const existing = readFeCustom(blockCustoms, capFe)
+      const legDefaultOuter = (pedL.hasTL || pedR.hasTL) ? 'LU' : 'SW'
+      const em = existing?.materials
+      const curOuter = (em?.outer === 'SW' || em?.outer === 'LU') ? em.outer : legDefaultOuter
+      const nextOuter = curOuter === 'LU' ? 'SW' : 'LU'
+      const nextMats = { outer: nextOuter, inner: nextOuter === 'LU' ? 'SW' : 'LU' }
+      // Seed the cap measure like a leg (canonical 'left' side, depths from the
+      // one resolution). A flip changes materials only, never bakes surveyed depths.
+      const ped = resolvePedDepths(chainM, 'left', existing)
+      const seed = { ...(chainM.left || {}), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw, materials: nextMats }
+      store.writeBlockEdgeCustoms([{ fe: capFe, measure: seed }])
+      useCartographStore.setState({ status: `Flipped ${hit.chainName || hit.skelId} cap → ${nextOuter === 'LU' ? 'treelawn' : 'sidewalk'}` })
+      return true
+    }
     // Unified ctrl/right gesture: handle hit = revert THAT edge's ped to Default
-    // (clears its overrides → the calculation re-seeds); strip body = flip that
-    // strip's material. Both return true so the context menu is suppressed.
+    // (clears its overrides → the calculation re-seeds); a CAP disc = flip the cap;
+    // strip body = flip that strip's material. All return true so the context menu
+    // is suppressed.
     const handleCtrlOrRight = (e) => {
       if (!selection) return false
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
@@ -756,6 +809,7 @@ export default function MeasureOverlay() {
         if (fe) useCartographStore.getState().revertFeSectionToDefault(fe)
         return true
       }
+      if (tryFlipCap(p)) return true
       return tryFlipStripMaterial(p)
     }
     const onContextMenu = (e) => {
