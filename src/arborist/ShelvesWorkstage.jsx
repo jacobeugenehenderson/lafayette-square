@@ -125,7 +125,7 @@ export default function ShelvesWorkstage() {
       }}>
         <button onClick={() => setShelvesOpen(false)} style={backBtn}>← Salon</button>
         <strong style={{ letterSpacing: '0.15em', textTransform: 'uppercase', fontSize: 12, color: '#fff' }}>
-          Arborist <span style={{ color: '#666', margin: '0 4px' }}>/</span> Shelves
+          Arborist <span style={{ color: '#666', margin: '0 4px' }}>/</span> Specimens
         </strong>
         <span style={{ fontSize: 11, color: '#8a93a0' }}>
           classify every real chassis into its crown-form silhouette

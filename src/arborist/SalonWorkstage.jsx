@@ -350,7 +350,7 @@ export default function SalonWorkstage() {
               letterSpacing: '0.08em', textTransform: 'uppercase',
               cursor: 'pointer',
             }}>
-            Shelves →
+            Specimens →
           </button>
           <button onClick={() => setGroveOpen(true)}
             title="See every rated variant on one ground plane"
@@ -912,7 +912,7 @@ function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, c
       </button>
       {open && (items.length === 0
         ? <div style={{ fontSize: 10, color: '#889', padding: '0 8px 8px', lineHeight: 1.4 }}>
-            No chassis tagged <b style={{ color: '#9ab' }}>{(label || '').toLowerCase()}</b> yet — classify some in the Shelves gauntlet, or open <b style={{ color: '#9ab' }}>Other</b>.
+            No chassis tagged <b style={{ color: '#9ab' }}>{(label || '').toLowerCase()}</b> yet — classify some in <b style={{ color: '#9ab' }}>Specimens</b>, or open <b style={{ color: '#9ab' }}>Other</b>.
           </div>
         : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 6px 8px' }}>
             {items.map(c => (
