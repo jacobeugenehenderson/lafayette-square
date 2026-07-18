@@ -1449,6 +1449,57 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    // POST /hero-impostor/:look/:species — persist a PREBAKED HERO canopy-impostor
+    // asset (side-on) into the look's slab. The Grove Bake→Slab (HeroImpostorBaker)
+    // POSTs here. Body:
+    //   { heightM, canopyRadiusM, canopyBaseNorm, azimuths, shells,
+    //     layers:[{ azIdx, azimuthDeg, kind:'leaf'|'bark', shellIdx, cardDepthFrac,
+    //               albedo:<png dataURL>, ao:<png dataURL> }] }
+    // The N azimuths are the per-instance VARIETY pool (not a view swap). Writes the
+    // PNGs under public/baked/<look>/trees/hero-impostor/<species>/ and merges a
+    // heroImpostorBySpecies[species] entry into that look's trees-atlas.json.
+    if (req.method === 'POST' && (m = path.match(/^\/hero-impostor\/([^/]+)\/([^/]+)$/))) {
+      const look = m[1], species = m[2]
+      const body = await readBody(req)
+      try {
+        const dir = join(ROOT, 'public', 'baked', look, 'trees', 'hero-impostor', species)
+        mkdirSync(dir, { recursive: true })
+        const decode = (dataUrl) => Buffer.from(String(dataUrl).replace(/^data:image\/png;base64,/, ''), 'base64')
+        const layers = (body.layers || []).map((l) => {
+          const stem = `az${l.azimuthDeg}_${l.kind}${l.shellIdx}`
+          const write = (chan, dataUrl) => {
+            const file = `${stem}.${chan}.png`
+            writeFileSync(join(dir, file), decode(dataUrl))
+            return `/trees/hero-impostor/${species}/${file}`
+          }
+          return {
+            azIdx: l.azIdx, azimuthDeg: l.azimuthDeg,
+            kind: l.kind, shellIdx: l.shellIdx, cardDepthFrac: l.cardDepthFrac,
+            albedo: write('albedo', l.albedo),
+            ao: write('ao', l.ao),
+          }
+        })
+        const atlasPath = join(ROOT, 'public', 'baked', look, 'trees-atlas.json')
+        let atlas = {}
+        if (existsSync(atlasPath)) { try { atlas = JSON.parse(readFileSync(atlasPath, 'utf8')) } catch {} }
+        atlas.heroImpostorBySpecies = atlas.heroImpostorBySpecies || {}
+        atlas.heroImpostorBySpecies[species] = {
+          heightM: body.heightM ?? null,
+          canopyRadiusM: body.canopyRadiusM ?? null,
+          canopyBaseNorm: body.canopyBaseNorm ?? null,
+          azimuths: body.azimuths ?? null,
+          shells: body.shells ?? null,
+          layers,
+        }
+        writeFileSync(atlasPath, JSON.stringify(atlas))
+        console.log('[hero-impostor] persisted', look, species, '→', layers.length, 'layers')
+        return jsonRes(res, 200, { ok: true, look, species, layers: layers.length })
+      } catch (err) {
+        console.warn('[hero-impostor] persist failed', look, species, err.message)
+        return jsonRes(res, 500, { error: 'hero-impostor persist failed', look, species, message: err.message })
+      }
+    }
+
     // Brief 7 (Cambium): POST /salon/:species/:slot/preview-atlas
     //
     // Rebuilds the Salon-side per-composition atlas + UV-rewritten chassis

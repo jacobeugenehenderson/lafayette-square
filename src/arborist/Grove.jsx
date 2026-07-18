@@ -26,6 +26,7 @@ import { OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { OverheadBaker } from './OverheadBaker.jsx'
+import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import { useTreeAtlas, treeSwayUniforms } from '../components/treeAtlasMaterial.js'
 import useArboristStore from './stores/useArboristStore.js'
@@ -108,6 +109,11 @@ export default function Grove() {
   // AFTER the HTTP bake (so it merges into the fresh manifest). One per species.
   const [overheadTick, setOverheadTick] = useState(0)
   const [overheadProg, setOverheadProg] = useState(null)   // {done,total} | 'done' | null
+  // Hero canopy-impostor bake — the SAME Bake→Slab captures each roster species' side-on
+  // hero impostor (all N azimuths = the variety pool). Chained AFTER the overhead bake
+  // so only one GPU capture loop runs at a time (crash-safe). Same species list.
+  const [heroTick, setHeroTick] = useState(0)
+  const [heroProg, setHeroProg] = useState(null)           // {done,total} | 'done' | null
   const overheadSpecies = useMemo(() => {
     if (!activeLookId) return []
     const base = import.meta.env.BASE_URL
@@ -314,8 +320,8 @@ export default function Grove() {
           </div>
           <button
             onClick={bakeAll}
-            disabled={groveBaking || !!(overheadProg && overheadProg !== 'done') || !activeLookId}
-            title={`Bake this neighborhood's roster to the slab (atlas + placements + overhead snapshots) — what the map renders. Takes ~10-30s.`}
+            disabled={groveBaking || !!(overheadProg && overheadProg !== 'done') || !!(heroProg && heroProg !== 'done') || !activeLookId}
+            title={`Bake this neighborhood's roster to the slab (atlas + placements + overhead snapshots + hero canopy impostors) — what the map renders. Takes ~10-30s.`}
             style={{
               border: '1px solid rgba(150,220,130,0.4)', borderRadius: 4,
               padding: '6px 14px', fontSize: 11, fontWeight: 600,
@@ -324,7 +330,10 @@ export default function Grove() {
               cursor: (groveBaking || !activeLookId) ? 'not-allowed' : 'pointer',
               opacity: (groveBaking || !activeLookId) ? 0.5 : 1,
             }}>
-            {groveBaking ? 'Baking…' : (overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…` : 'Bake → Slab'}
+            {groveBaking ? 'Baking…'
+              : (overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…`
+              : (heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…`
+              : 'Bake → Slab'}
           </button>
           {groveBakeResult && !groveBaking && (
             <span style={{ color: groveBakeResult.error ? '#f88' : '#bce0a0', fontSize: 11 }}>
@@ -332,6 +341,7 @@ export default function Grove() {
                 ? `bake failed: ${groveBakeResult.error}`
                 : `✓ ${groveBakeResult.count} trees placed (${groveBakeResult.uniqueVariants} variants, ${(groveBakeResult.totalMs/1000).toFixed(0)}s)`}
               {overheadProg === 'done' && ' · overhead ✓'}
+              {heroProg === 'done' && ' · hero ✓'}
             </span>
           )}
         </span>
@@ -379,7 +389,20 @@ export default function Grove() {
             lookId={activeLookId}
             species={overheadSpecies}
             onProgress={(done, total) => setOverheadProg({ done, total })}
-            onDone={({ ok, fail }) => { setOverheadProg('done'); console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`) }}
+            onDone={({ ok, fail }) => {
+              setOverheadProg('done'); console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`)
+              // Chain the hero capture (one GPU loop at a time). Same species list.
+              if (overheadSpecies.length) { setHeroProg({ done: 0, total: overheadSpecies.length }); setHeroTick((t) => t + 1) }
+            }}
+          />
+          {/* Same Bake→Slab: captures each roster species' side-on HERO impostor
+              (all N azimuths = the per-instance variety pool) → POSTs into the slab. */}
+          <HeroImpostorBaker
+            runTick={heroTick}
+            lookId={activeLookId}
+            species={overheadSpecies}
+            onProgress={(done, total) => setHeroProg({ done, total })}
+            onDone={({ ok, fail }) => { setHeroProg('done'); console.log(`[hero-impostor-bake] done — ${ok} ok, ${fail} failed`) }}
           />
           {/* Ambient breeze — advances the shared foliage-sway clock so the Grove
               reads as alive (Hero specimens rustle, Browse discs wiggle), through
