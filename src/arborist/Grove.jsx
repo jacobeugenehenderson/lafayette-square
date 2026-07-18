@@ -133,6 +133,13 @@ export default function Grove() {
     await bakeGroveToSlab()
     if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1) }
   }
+  // Hero impostors ONLY — capture + persist the hero canopy-impostor variety pool onto
+  // the ALREADY-baked slab (no full roster re-bake). Captures off the current baked
+  // lod1 GLBs → POSTs into the slab. For refreshing impostors without a 30s re-bake.
+  const bakeHeroOnly = () => {
+    if (!overheadSpecies.length) return
+    setHeroProg({ done: 0, total: overheadSpecies.length }); setHeroTick((t) => t + 1)
+  }
 
   // Per-operator UI preference: tell the Meteorologist helper which tree
   // to use as its CanaryScene hero. Cross-tab via the `storage` event
@@ -334,6 +341,21 @@ export default function Grove() {
               : (overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…`
               : (heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…`
               : 'Bake → Slab'}
+          </button>
+          {/* Hero-impostors-only — capture the variety pool onto the fresh slab, no
+              full re-bake. New (Slat 2026-07-17). */}
+          <button
+            onClick={bakeHeroOnly}
+            disabled={groveBaking || !!(overheadProg && overheadProg !== 'done') || !!(heroProg && heroProg !== 'done') || !activeLookId}
+            title="Capture + persist ONLY the hero canopy impostors (all N azimuths) onto the already-baked slab — no full roster re-bake."
+            style={{
+              border: '1px solid rgba(150,200,220,0.4)', borderRadius: 4,
+              padding: '6px 12px', fontSize: 11, fontWeight: 600, marginLeft: 6,
+              background: 'rgba(150,200,220,0.18)', color: '#bfe2f0', fontFamily: 'inherit',
+              cursor: (groveBaking || !activeLookId) ? 'not-allowed' : 'pointer',
+              opacity: (groveBaking || !activeLookId) ? 0.5 : 1,
+            }}>
+            {(heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…` : '⟳ Hero impostors'}
           </button>
           {groveBakeResult && !groveBaking && (
             <span style={{ color: groveBakeResult.error ? '#f88' : '#bce0a0', fontSize: 11 }}>
