@@ -976,7 +976,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
   // PROTOTYPE C (env-gated, off in the browser): slope the SW↔(TL|SW) corner
   // treelawn band. Keys on the RESOLVED outer material (e.mat.outer) so a flipped
   // strip moves the taper too; the FILL re-strokes on blockCustoms change.
-  const Wacc = [], tlByLu = {}, luByLu = {}
+  let Wacc = []; const tlByLu = {}, luByLu = {}   // Wacc: `let` — the cap-slope post-pass carves it
   // Per-edge OVERRIDE read (SECTION.md §3.2/§3.3): blockCustoms[skelId][side][segOrd]
   // keyed by the FROZEN run identity — design intent, NOT chain geometry, so the
   // wall holds. Carries the depth override (.treelawn/.sidewalk → resolvePedDepths)
@@ -1002,10 +1002,45 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // of the default arrangement and toggles cleanly (the "always flippable" rule).
     // ROUND-ONLY — a blunt dead-end (set in Survey) is ineligible: it has no round
     // wrap disk. Default (no flip) leaves the tip OUT of this map → byte-identical.
-    const capFlip = new Map()   // tipKey → { p, hw }
+    const capFlip = new Map()   // tipKey → { p, hw, axis }  (axis = tip→body, down the finger)
     for (const t of roundTips) {
       if (!t.skelId || !t.capEnd) continue
-      if (readCapCustom(blockCustoms, t.skelId, t.capEnd)?.capFlip) capFlip.set(tipKey(t.p), { p: t.p, hw: t.hw })
+      if (!readCapCustom(blockCustoms, t.skelId, t.capEnd)?.capFlip) continue
+      // The finger axis (tip→body) from an owning run — the cap is a SEMICIRCLE on
+      // the FAR side of the tip (away from the body), NOT a full disk. The swap is
+      // clipped to that half so it stops cleanly at the diameter (the shoulders),
+      // never bleeding white-outer down the legs (Jacob: "it's only a semicircle").
+      let axis = null
+      for (const run of runs) {
+        const nP = run.poly.length
+        for (const ix of [0, nP - 1]) {
+          if (Math.hypot(run.poly[ix][0] - t.p[0], run.poly[ix][1] - t.p[1]) < 1.5) {
+            const b = run.poly[ix === 0 ? 1 : nP - 2]
+            if (b) { const l = Math.hypot(b[0] - t.p[0], b[1] - t.p[1]) || 1; axis = [(b[0] - t.p[0]) / l, (b[1] - t.p[1]) / l] }
+            break
+          }
+        }
+        if (axis) break
+      }
+      capFlip.set(tipKey(t.p), { p: t.p, hw: t.hw, total: (t.tl || 0) + (t.sw || 0), axis })
+    }
+    // Semicircle mask per flipped cap (the SSoT the swap consults): the tip disk ∩
+    // the FAR half-plane (away from the body) — so the swap stops cleanly at the
+    // diameter, never bleeding down the legs. Plus, at each shoulder, a tapering
+    // RAMP triangle that extends the swap a short way down the leg — that diagonal
+    // IS the ADA dip-in (§6.1), so no separate slide is needed. (Jacob: "it's only
+    // a semicircle.")
+    const capSemi = (cap) => {
+      const R = cap.hw + cw + SECTOR_D
+      if (!cap.axis) return [circlePoly(cap.p[0], cap.p[1], R)]
+      const a = cap.axis, n = [-a[1], a[0]], B = R + 2
+      const half = [
+        [cap.p[0] + n[0] * B, cap.p[1] + n[1] * B],
+        [cap.p[0] - n[0] * B, cap.p[1] - n[1] * B],
+        [cap.p[0] - n[0] * B - a[0] * B, cap.p[1] - n[1] * B - a[1] * B],
+        [cap.p[0] + n[0] * B - a[0] * B, cap.p[1] + n[1] * B - a[1] * B],
+      ]
+      return intersectRings([circlePoly(cap.p[0], cap.p[1], R)], [half])
     }
     // Blunt dead-end tips: like round tips, they are NOT junction corners — the
     // curb caps flat at the tip node, so the leg must run TO the tip (no e.a+R
@@ -1248,7 +1283,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           if (!capFlip.size) { pieces.push({ mat: legMat, rings: strip }); return }
           let rest = strip
           for (const cap of capFlip.values()) {
-            const inDisk = intersectRings(rest, [circlePoly(cap.p[0], cap.p[1], cap.hw + cw + SECTOR_D)])
+            const inDisk = intersectRings(rest, capSemi(cap))   // SEMICIRCLE, not full disk
             if (inDisk.length) { pieces.push({ mat: flipMat, rings: inDisk }); rest = differenceRings(rest, inDisk) }
             if (!rest.length) break
           }
@@ -1480,6 +1515,45 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     }
     Wacc.push(...cornerPad)
     if (cornerTreelawn.length) pushLu(tlByLu, lu, cornerTreelawn)   // PROTOTYPE C — tapered corner treelawn
+    // [CAP FLIP — the legs BEND to meet the end cap] A flipped cap swaps the wrap
+    // ORDER (semicircle: walk-outer / treelawn-inner; leg: treelawn-outer / walk-
+    // inner). So at each shoulder the bands BEND across a short transition down the
+    // leg — and the SIDEWALK must stay CONTIGUOUS (it's the ADA walk path, it can't
+    // break): the walk is the unbroken band that slides outer(cap)→inner(leg); the
+    // treelawn fills its complement. No mitre, no hard step. Un-flipped caps skip
+    // this → byte-identical.
+    if (capFlip.size && fullBand.length) {
+      for (const cap of capFlip.values()) {
+        if (!cap.axis) continue
+        const tip = cap.p, hw = cap.hw, a = cap.axis
+        let owner = null
+        for (const run of runs) {
+          const nP = run.poly.length
+          for (const ix of [0, nP - 1]) if (Math.hypot(run.poly[ix][0] - tip[0], run.poly[ix][1] - tip[1]) < 1.5) { owner = run; break }
+          if (owner) break
+        }
+        if (!owner) continue
+        const ped = resolvePedDepths(owner.baseMeasure, owner.side, runCustom(owner))
+        const total = ped.tl + ped.sw, o = ped.hasTL ? ped.tl : ped.sw
+        if (total <= 1e-6 || o <= 1e-6 || o >= total) continue
+        const T = total   // transition length down the leg (≈ band width — a gentle bend)
+        for (const sign of [1, -1]) {
+          const p = [sign * -a[1], sign * a[0]]   // toward this shoulder's leg + its band
+          const P = (s, d) => [tip[0] + a[0] * s + p[0] * (hw + cw + d), tip[1] + a[1] * s + p[1] * (hw + cw + d)]
+          const zone = intersectRings(fullBand, [[P(0, 0), P(0, total), P(T, total), P(T, 0)]])
+          if (!zone.length) continue
+          // WALK band (contiguous): outer [0,o] at the cap (s=0) → inner [o,total] at
+          // the leg (s=T). One unbroken quad, so the sidewalk never splits. Treelawn
+          // = its complement.
+          const white = intersectRings(zone, [[P(0, 0), P(0, o), P(T, total), P(T, o)]])
+          const green = differenceRings(zone, white)
+          Wacc = differenceRings(Wacc, zone)
+          for (const k of Object.keys(tlByLu)) tlByLu[k] = differenceRings(tlByLu[k], zone)
+          if (white.length) Wacc.push(...white)
+          if (green.length) pushLu(tlByLu, lu, green)
+        }
+      }
+    }
     // E2 — the constructed median paints positively: route this tile's frozen
     // median region (med, clipped at the shape pass) to the 'median' class and
     // keep it out of the parcel-LU remainder. Covers both the true median tile
