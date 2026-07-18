@@ -777,23 +777,17 @@ export default function MeasureOverlay() {
         if (d <= hitR && d < bestD) { bestD = d; hit = c }
       }
       if (!hit) return false
-      // Current effective outer material: the cap custom if authored, else the
-      // inherited leg default (grass if EITHER side is treelawn-Y — matches the
-      // render's Y-first cap wrap). Flip it.
+      // The cap flip is a pure TOGGLE that SWAPS the wrap's two strips (grass↔walk)
+      // in the render — so it always reads as a change regardless of the default
+      // arrangement (the "always flippable" rule), and a second click restores it.
+      // Store just the toggle on the cap slot (makeCapFe → the reserved cap-segOrd),
+      // through the SAME store path as a leg edit.
       const blockCustoms = store.blockCustoms || {}
       const capFe = makeCapFe(hit.skelId, hit.capEnd, { chainName: hit.chainName })
       const existing = readFeCustom(blockCustoms, capFe)
-      const legDefaultOuter = (pedL.hasTL || pedR.hasTL) ? 'LU' : 'SW'
-      const em = existing?.materials
-      const curOuter = (em?.outer === 'SW' || em?.outer === 'LU') ? em.outer : legDefaultOuter
-      const nextOuter = curOuter === 'LU' ? 'SW' : 'LU'
-      const nextMats = { outer: nextOuter, inner: nextOuter === 'LU' ? 'SW' : 'LU' }
-      // Seed the cap measure like a leg (canonical 'left' side, depths from the
-      // one resolution). A flip changes materials only, never bakes surveyed depths.
-      const ped = resolvePedDepths(chainM, 'left', existing)
-      const seed = { ...(chainM.left || {}), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw, materials: nextMats }
-      store.writeBlockEdgeCustoms([{ fe: capFe, measure: seed }])
-      useCartographStore.setState({ status: `Flipped ${hit.chainName || hit.skelId} cap → ${nextOuter === 'LU' ? 'treelawn' : 'sidewalk'}` })
+      const nextFlip = !existing?.capFlip
+      store.writeBlockEdgeCustoms([{ fe: capFe, measure: { ...(existing || {}), capFlip: nextFlip } }])
+      useCartographStore.setState({ status: `${nextFlip ? 'Flipped' : 'Reset'} ${hit.chainName || hit.skelId} cap${nextFlip ? '' : ' → default'}` })
       return true
     }
     // Unified ctrl/right gesture: handle hit = revert THAT edge's ped to Default

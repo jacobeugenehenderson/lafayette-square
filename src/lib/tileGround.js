@@ -996,22 +996,16 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // when loaded from shape.json (Phase D). Either way → a Set for `.has`.
     const roundTipKeys = st.roundTipKeys instanceof Set ? st.roundTipKeys : new Set(st.roundTipKeys)
     const roundTipByKey = new Map(roundTips.map(t => [tipKey(t.p), t]))
-    // [CAP FLIP] Per dead-end tip, the flippable cap-wrap material override
-    // (HANDOFF-dead-end-cap-flip §3). Default — NO cap custom — leaves the tip
-    // OUT of this map, so the cap rides the abutting leg's group unchanged
-    // (byte-identical to today's wrap). An authored cap custom overrides the
-    // wrap's OUTER material (grass LU ↔ walk SW): the cap disk then renders as a
-    // dedicated group (below), independent of the leg. Read via the cap's frozen
-    // identity (skelId, capEnd) → readCapCustom → the reserved cap-segOrd slot.
-    const capOverrideByKey = new Map()
+    // [CAP FLIP] Round dead-end tips flipped in Measure (readCapCustom → capFlip,
+    // HANDOFF-dead-end-cap-flip §1-3). A flip SWAPS the cap wrap's two strips
+    // (grass↔walk) within the tip disk, so it ALWAYS reads as a change regardless
+    // of the default arrangement and toggles cleanly (the "always flippable" rule).
+    // ROUND-ONLY — a blunt dead-end (set in Survey) is ineligible: it has no round
+    // wrap disk. Default (no flip) leaves the tip OUT of this map → byte-identical.
+    const capFlip = new Map()   // tipKey → { p, hw }
     for (const t of roundTips) {
       if (!t.skelId || !t.capEnd) continue
-      const outer = readCapCustom(blockCustoms, t.skelId, t.capEnd)?.materials?.outer
-      if (outer !== 'SW' && outer !== 'LU') continue          // no authored flip → default path
-      capOverrideByKey.set(tipKey(t.p), {
-        p: t.p, hw: t.hw, o: t.tl, inn: t.sw, total: t.tl + t.sw,
-        mat: { outer, inner: outer === 'LU' ? 'SW' : 'LU' },
-      })
+      if (readCapCustom(blockCustoms, t.skelId, t.capEnd)?.capFlip) capFlip.set(tipKey(t.p), { p: t.p, hw: t.hw })
     }
     // Blunt dead-end tips: like round tips, they are NOT junction corners — the
     // curb caps flat at the tip node, so the leg must run TO the tip (no e.a+R
@@ -1244,24 +1238,24 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         const wRing = ringAt(g.total)    // this group's band inner
         const outerStrip = g.o > 1e-6 ? differenceRings(claim, oRing) : []
         const innerStrip = g.inn > 1e-6 ? differenceRings(intersectRings(claim, oRing), wRing) : []
-        // [CAP FLIP] Emit each strip's material, but within a FLIPPED cap's disk
-        // relabel it to the CAP's material (HANDOFF-dead-end-cap-flip §3). This is
-        // GEOMETRY-PRESERVING — the SAME rings, only the material label swaps in
-        // the disk — so an unflipped cap (empty capOverrideByKey → the fast path)
-        // is byte-identical to today's wrap, and a flip conserves area exactly.
-        const emitStrip = (strip, legMat, capSlot) => {
+        // [CAP FLIP] Within a flipped cap's disk, SWAP this strip's material to the
+        // OTHER strip's (grass↔walk) — same rings, only the label swaps, so the flip
+        // ALWAYS reads as a change (no dependence on the default arrangement) and
+        // conserves area. An unflipped tile (empty capFlip → fast path) is
+        // byte-identical. flipMat = the other strip's material for the swap.
+        const emitStrip = (strip, legMat, flipMat) => {
           if (!strip.length) return
-          if (!capOverrideByKey.size) { pieces.push({ mat: legMat, rings: strip }); return }
+          if (!capFlip.size) { pieces.push({ mat: legMat, rings: strip }); return }
           let rest = strip
-          for (const ov of capOverrideByKey.values()) {
-            const inDisk = intersectRings(rest, [circlePoly(ov.p[0], ov.p[1], ov.hw + cw + SECTOR_D)])
-            if (inDisk.length) { pieces.push({ mat: ov.mat[capSlot], rings: inDisk }); rest = differenceRings(rest, inDisk) }
+          for (const cap of capFlip.values()) {
+            const inDisk = intersectRings(rest, [circlePoly(cap.p[0], cap.p[1], cap.hw + cw + SECTOR_D)])
+            if (inDisk.length) { pieces.push({ mat: flipMat, rings: inDisk }); rest = differenceRings(rest, inDisk) }
             if (!rest.length) break
           }
           if (rest.length) pieces.push({ mat: legMat, rings: rest })
         }
-        emitStrip(outerStrip, g.mat.outer, 'outer')
-        emitStrip(innerStrip, g.mat.inner, 'inner')
+        emitStrip(outerStrip, g.mat.outer, g.mat.inner)
+        emitStrip(innerStrip, g.mat.inner, g.mat.outer)
         // deeper-than-this-group's-total band within the claim → LU (the §3.1
         // remainder flows to the block center; no hard property line)
         if (g.total < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(claim, wRing))
@@ -1415,15 +1409,11 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         const stray = intersectRings(intersectRings(luRemainder, [cap0]), fullBand)
         if (!stray.length) continue
         luRemainder = differenceRings(luRemainder, stray)
-        // [CAP FLIP] An authored cap custom overrides the wrap material wholesale
-        // (the flip is one arrangement for the whole cap, not per owning-side), so
-        // route the reclaimed sliver by the cap's OWN outer material.
-        const capOv = capOverrideByKey.get(tipKey(t.p))
-        if (capOv) {
-          if (capOv.mat.outer === 'LU') pushLu(tlByLu, lu, stray)
-          else cornerPad = unionRings([...cornerPad, ...stray])
-          continue
-        }
+        // [CAP FLIP] A flipped round cap SWAPS grass↔walk; the reclaimed sliver
+        // inverts with the strips so the wrap stays one consistent material.
+        const capFlipped = capFlip.has(tipKey(t.p))
+        const inv = (m) => capFlipped ? (m === 'LU' ? 'SW' : 'LU') : m
+        const routeMat = (rings, mat) => { if (!rings.length) return; if (inv(mat) === 'LU') pushLu(tlByLu, lu, rings); else cornerPad = unionRings([...cornerPad, ...rings]) }
         // cap-owning runs (a side-run whose poly end sits at the tip) + their outer
         // strip material + into-tile axis (body→tip). hasTL ⇒ outer is LU (grass).
         // The two side-runs run PARALLEL up the stub to the tip, so their body→tip
@@ -1446,11 +1436,11 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         const anyLU = owners.some(o => o.outer === 'LU')
         const anySW = owners.some(o => o.outer === 'SW')
         if (!anyLU) {
-          // all concrete (or no resolvable owner) → unchanged: the sliver is SW.
-          cornerPad = unionRings([...cornerPad, ...stray])
+          // all concrete (or no resolvable owner) → the sliver is SW (inverted → grass if flipped).
+          routeMat(stray, 'SW')
         } else if (!anySW) {
-          // all treelawn-Y → the whole cap wrap is grass.
-          pushLu(tlByLu, lu, stray)
+          // all treelawn-Y → the whole cap wrap is grass (inverted → SW if flipped).
+          routeMat(stray, 'LU')
         } else if (axis) {
           // ASYMMETRIC cap → split the sliver by the cap axis (a half-plane through
           // the tip). The LEFT half is the side where cross(axis, p−tip) >= 0; route
@@ -1470,12 +1460,11 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           const rightStray = differenceRings(stray, [halfLeft])
           const leftMat = leftOwner ? leftOwner.outer : (rightOwner ? (rightOwner.outer === 'LU' ? 'SW' : 'LU') : 'SW')
           const rightMat = rightOwner ? rightOwner.outer : (leftMat === 'LU' ? 'SW' : 'LU')
-          const route = (rings, mat) => { if (!rings.length) return; if (mat === 'LU') pushLu(tlByLu, lu, rings); else cornerPad = unionRings([...cornerPad, ...rings]) }
-          route(leftStray, leftMat)
-          route(rightStray, rightMat)
+          routeMat(leftStray, leftMat)
+          routeMat(rightStray, rightMat)
         } else {
           // mixed but no axis (degenerate) → fall back to grass (treelawn present).
-          pushLu(tlByLu, lu, stray)
+          routeMat(stray, 'LU')
         }
       }
     }
@@ -1541,6 +1530,14 @@ function tileSliceKey(st, blockCustoms) {
   for (const run of st.runs || []) {
     const c = blockCustoms[run.skelId]?.[run.side]?.[run.segOrd]
     if (c) s += run.skelId + '|' + run.side + '|' + run.segOrd + '=' + JSON.stringify(c) + ';'
+  }
+  // [CAP FLIP] Cap customs key on the reserved cap-segOrd (not a run segOrd), so
+  // they'd be invisible to the run loop above — the per-tile cache would then miss
+  // a cap flip. Fold each round-tip's cap custom in so a flip invalidates the tile.
+  for (const t of st.roundTips || []) {
+    if (!t.skelId || !t.capEnd) continue
+    const cc = readCapCustom(blockCustoms, t.skelId, t.capEnd)
+    if (cc) s += 'cap|' + t.skelId + '|' + t.capEnd + '=' + JSON.stringify(cc) + ';'
   }
   return s
 }
