@@ -37,8 +37,13 @@ const ROOT        = join(__dirname, '..')
 const STATE_DIR   = join(__dirname, 'state')
 const PUBLIC_TREES = join(ROOT, 'public', 'trees')
 const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
-const PARK_TREES   = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'park_census.json')
-const PARK_MAP     = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'tree-species-map.json')
+// Roster + routing are per-NEIGHBOURHOOD (scene): each scene keeps its own census
+// + species-map under cartograph/data/<scene>/. Only scenes with a clean
+// park_census.json yield a roster; others read empty (honest zero) until their
+// census source is wired. DEFAULT_SCENE keeps pre-scene callers working.
+export const DEFAULT_SCENE = 'lafayette-square'
+export const parkMapForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'tree-species-map.json')
+const parkTreesForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'clean', 'park_census.json')
 const INDEX_PATH   = join(PUBLIC_TREES, 'index.json')
 
 function readJsonOrNull(p) {
@@ -69,7 +74,9 @@ const GENUS_STOP = new Set([
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 const toks = (s) => norm(s).split(' ').filter(Boolean)
 
-export async function computeCoverage() {
+export async function computeCoverage(scene = DEFAULT_SCENE) {
+  const PARK_TREES = parkTreesForScene(scene)
+  const PARK_MAP   = parkMapForScene(scene)
   // ── Roster (what we're supposed to have) ────────────────────────────────
   const trees = readJsonOrNull(PARK_TREES)?.trees || []
   const canon = readJsonOrNull(ROSTER_CANON)?.canon || {}

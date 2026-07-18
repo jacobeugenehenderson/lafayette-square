@@ -560,7 +560,11 @@ const useArboristStore = create((set, get) => ({
   loadRosterCoverage: async () => {
     set({ rosterLoading: true, rosterError: null })
     try {
-      const r = await fetch(`/api/arborist/coverage?t=${Date.now()}`)
+      // Scope the roster to the active Look's neighbourhood (server resolves the
+      // scene via sceneForLook). Absent look → server's default scene.
+      const look = get().activeLookId
+      const lookQ = look ? `&look=${encodeURIComponent(look)}` : ''
+      const r = await fetch(`/api/arborist/coverage?t=${Date.now()}${lookQ}`)
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json()
       set({ rosterCoverage: d, rosterLoading: false })
@@ -580,7 +584,9 @@ const useArboristStore = create((set, get) => ({
   setRosterRouting: async (rosterName, canonicalId) => {
     try {
       const body = canonicalId ? { canonicalId } : { notAvailable: true }
-      const r = await fetch(`/api/arborist/coverage/${encodeURIComponent(rosterName)}/routing`, {
+      const look = get().activeLookId
+      const lookQ = look ? `?look=${encodeURIComponent(look)}` : ''
+      const r = await fetch(`/api/arborist/coverage/${encodeURIComponent(rosterName)}/routing${lookQ}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

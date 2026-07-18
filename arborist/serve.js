@@ -33,7 +33,7 @@ import {
 } from './generate-salon.js'
 import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 import { buildPreviewAtlas, previewDir } from './salon-preview-atlas.js'
-import { computeCoverage } from './roster-coverage.js'
+import { computeCoverage, parkMapForScene } from './roster-coverage.js'
 import { salonOptionsForSpecies } from './salon-options.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
@@ -1077,7 +1077,11 @@ const server = createServer(async (req, res) => {
     // computeCoverage via the matcher. READ-ONLY.
     if (req.method === 'GET' && path === '/coverage') {
       try {
-        return jsonRes(res, 200, await computeCoverage())
+        // Roster is per-neighbourhood: scope to the active Look's scene (?look=).
+        // Absent → computeCoverage's default scene (back-compat).
+        const look = new URL(req.url, 'http://x').searchParams.get('look')
+        const scene = look ? (sceneForLook(look) || look) : undefined
+        return jsonRes(res, 200, await computeCoverage(scene))
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }
@@ -1096,7 +1100,11 @@ const server = createServer(async (req, res) => {
     if (req.method === 'POST' && (m = path.match(/^\/coverage\/([^/]+)\/routing$/))) {
       const rosterName = decodeURIComponent(m[1])
       const body = await readBody(req)
-      const mapPath = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'tree-species-map.json')
+      // Route into the ACTIVE neighbourhood's species-map (?look=), so a
+      // not-available / routing write lands in the right scene, not always LS.
+      const routeLook = new URL(req.url, 'http://x').searchParams.get('look')
+      const routeScene = routeLook ? (sceneForLook(routeLook) || routeLook) : 'lafayette-square'
+      const mapPath = parkMapForScene(routeScene)
       const doc = readJsonOrNull(mapPath)
       if (!doc || typeof doc.map !== 'object') {
         return jsonRes(res, 500, { error: 'tree-species-map.json unreadable' })

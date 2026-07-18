@@ -261,8 +261,14 @@ export default function SalonWorkstage() {
     loadSalonSpecies()
     loadSalonLibraries()
     loadChassisCuration()
+  }, [loadSalonSpecies, loadSalonLibraries, loadChassisCuration])
+
+  // Roster is scoped to the active neighbourhood (Look) — reload it on mount AND
+  // whenever the operator switches Looks, so the roster always lists the selected
+  // neighbourhood's species, not a stale one. (activeLookId is set by mount.)
+  useEffect(() => {
     loadRosterCoverage()
-  }, [loadSalonSpecies, loadSalonLibraries, loadChassisCuration, loadRosterCoverage])
+  }, [activeLookId, loadRosterCoverage])
 
   // "Approved only" filter — default ON. Persists for the session only;
   // the filter is a viewing preference, not authored chassis state.
@@ -1008,7 +1014,7 @@ function SalonControlsPanel({
       display: 'flex', flexDirection: 'column', gap: 8,
       fontSize: 11, color: '#aaa',
     }}>
-      <CollapsibleSection title="Chassis">
+      <CollapsibleSection title="Chassis" defaultOpen={false} subtitle={chassis || 'none'}>
       {/* Phase 4: the chassis picker is the silhouette SHELVES (categorize, don't
           recommend). You land on this species' declared-habit shelf; the other
           shelves are browsable below. Chassis are tagged in the Shelves gauntlet;
@@ -1080,7 +1086,7 @@ function SalonControlsPanel({
       )}
 
       </CollapsibleSection>
-      <CollapsibleSection title="Bark" open={barkOpen} onToggle={onBarkOpenChange}>
+      <CollapsibleSection title="Bark" subtitle={bark?.ref} open={barkOpen} onToggle={onBarkOpenChange}>
       <CollapsibleSection title="Bark library" defaultOpen={false} emphasis>
         <PlatePicker
           items={barkRefs.map(ref => ({ id: ref, label: ref }))}
@@ -1122,7 +1128,7 @@ function SalonControlsPanel({
       </Row>
 
       </CollapsibleSection>
-      <CollapsibleSection title="Leaves">
+      <CollapsibleSection title="Leaves" defaultOpen={false} subtitle={leaves?.pack || (leaves?.mode === 'bare' ? 'bare' : 'native')}>
       {/* One picker for the leaf source (2026-07-11): Bare · ✦Native · the packs.
           The 3-way authored/synthesized dropdown is gone — mode is AUTOMATIC:
           picking a leaf keeps the model's own cards when it has them (reskin) and
@@ -1280,7 +1286,7 @@ function SectionLabel({ children }) {
 
 // Collapsible section (2026-06-25) — the controls rail had too much at once;
 // each part section (Chassis / Bark / Leaves) collapses under a clickable header.
-function CollapsibleSection({ title, open: openProp, defaultOpen = true, onToggle, emphasis = false, children }) {
+function CollapsibleSection({ title, subtitle, open: openProp, defaultOpen = true, onToggle, emphasis = false, children }) {
   const [openLocal, setOpenLocal] = useState(defaultOpen)
   const open = openProp !== undefined ? openProp : openLocal
   const toggle = () => { if (onToggle) onToggle(!open); else setOpenLocal(o => !o) }
@@ -1302,6 +1308,16 @@ function CollapsibleSection({ title, open: openProp, defaultOpen = true, onToggl
           fontWeight: emphasis ? 600 : 400,
         }}>
         <span style={{ fontSize: 9, color: emphasis ? '#9aa3ad' : '#778' }}>{open ? '▾' : '▸'}</span>{title}
+        {/* Collapsed-header summary: the sections default closed (the rail was too
+            dense), so show the current pick inline when closed — the folded rail
+            reads as a summary of the tree at a glance. */}
+        {subtitle && !open && (
+          <span style={{
+            marginLeft: 4, textTransform: 'none', letterSpacing: 0,
+            fontWeight: 400, fontSize: 9.5, color: '#6f7883',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+          }}>· {subtitle}</span>
+        )}
       </button>
       {open && children}
     </>
@@ -1570,15 +1586,34 @@ function LookPicker() {
 
 // ── Roster navigator (Brief 26, Cadastre 2026-05-25) ──────────────────────
 // The Salon's top nav: the canonicalized park roster (GET /coverage). Each row
-// shows placement count + coverage badge (🟢 literal / 🟡 composite / 🔴 gap)
-// + authoring state (composed / not-available / unauthored). Clicking drives
-// salonActiveSpecies onto the row's canonical id (a slug — the settled keying
-// spine), where the existing composition machinery authors under it.
-const COVERAGE_DOT = { literal: '🟢', composite: '🟡', gap: '🔴' }
+// shows placement count + a readiness LIGHT. Clicking drives salonActiveSpecies
+// onto the row's canonical id (a slug — the settled keying spine), where the
+// existing composition machinery authors under it.
 const STATE_META = {
   composed:        { label: 'composed',      color: '#9ed8b0' },
   'not-available': { label: 'not-available', color: '#c89a3a' },
   unauthored:      { label: 'unauthored',    color: '#777' },
+}
+
+// Roster light = AUTHORING readiness first, botanical coverage second. Green
+// means "an authored tree actually ships," NOT merely "the library could cover
+// this species" — the old dot keyed on botanical `coverage`, so a coverable-
+// but-unbuilt species lit green then opened BLANK (Tuliptree: 18 placements,
+// green, nothing inside — the bug). Now:
+//   🟢 composed      — an authored composition exists → ships
+//   🟡 buildable     — unauthored, but the library can cover it → one click to start
+//   🔴 gap           — unauthored AND no library coverage → a real hole
+//   ➖ not-available — deliberately marked no-tree
+const ROSTER_DOT = {
+  composed:        { dot: '🟢', title: 'composed — an authored tree ships' },
+  buildable:       { dot: '🟡', title: 'unauthored, but the library can cover it — ready to build' },
+  gap:             { dot: '🔴', title: 'gap — no library coverage yet' },
+  'not-available': { dot: '➖', title: 'marked not-available — routes to no tree' },
+}
+function rosterDot(s) {
+  if (s.authoringState === 'composed') return ROSTER_DOT.composed
+  if (s.authoringState === 'not-available') return ROSTER_DOT['not-available']
+  return s.coverage === 'gap' ? ROSTER_DOT.gap : ROSTER_DOT.buildable
 }
 
 function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
@@ -1606,7 +1641,7 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
         {!loading && rows.length === 0 && <div style={{ padding: 12, color: '#888', fontSize: 11 }}>No matching species.</div>}
         {rows.map(s => {
           const active = s.species === activeRosterName
-          const sm = STATE_META[s.authoringState] || STATE_META.unauthored
+          const d = rosterDot(s)
           return (
             <button key={s.species} onClick={() => onSelect(s)}
               title={`canonical: ${s.canonicalId} · coverage: ${s.coverage}`}
@@ -1617,13 +1652,15 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
                 cursor: 'pointer', padding: '7px 10px', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
-              <span style={{ width: 18, textAlign: 'center' }}>{COVERAGE_DOT[s.coverage] || ''}</span>
+              <span style={{ width: 18, textAlign: 'center' }} title={d.title}>{d.dot}</span>
               <span style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 12, color: active ? '#e8c878' : '#ddd',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{s.species}</div>
-                <div style={{ fontSize: 10, color: '#7d848d' }}>{s.count} placements</div>
+                <div style={{ fontSize: 10, color: '#7d848d' }}>
+                  {s.count} placements{s.authoringState !== 'composed' ? ` · ${STATE_META[s.authoringState]?.label || ''}` : ''}
+                </div>
               </span>
             </button>
           )
@@ -1643,7 +1680,7 @@ function InsideHeader({ row, candidateScope, onCandidateScope, recommendedCount,
       padding: '8px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
     }}>
-      <span style={{ fontSize: 13, color: '#fff' }}>{COVERAGE_DOT[row.coverage]} {row.species}</span>
+      <span style={{ fontSize: 13, color: '#fff' }} title={rosterDot(row).title}>{rosterDot(row).dot} {row.species}</span>
       <span style={{ fontSize: 11, color: '#888' }}>
         {row.count} placements
       </span>
