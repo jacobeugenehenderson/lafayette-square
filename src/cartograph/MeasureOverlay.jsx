@@ -8,7 +8,7 @@ import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 import { chainMeasure, findFeForSide as findFeForSidePure, feesForChainSide, applyKindToMeasure } from './measureModel.js'
-import { readFeCustom, makeCapFe } from '../lib/feCustomKey.js'
+import { readFeCustom, makeCapFe, feCustomKey } from '../lib/feCustomKey.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
 // (block-customs model) the chain default is the single source for handle
@@ -807,6 +807,13 @@ export default function MeasureOverlay() {
       return tryFlipStripMaterial(p)
     }
     const onContextMenu = (e) => {
+      // macOS Ctrl+click fires BOTH pointerdown (onCtrlClickDown, which already
+      // ran handleCtrlOrRight) AND this contextmenu event. Running the handler
+      // again double-fires the gesture — harmless for idempotent revert, but it
+      // TOGGLES the cap/strip flip twice → net no change ("nothing happens"). So
+      // for a ctrl/meta gesture, just suppress the browser menu and bail; a real
+      // right-click (no modifier) still authors here.
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); return }
       if (handleCtrlOrRight(e)) e.preventDefault()
     }
     // Ctrl/Cmd + left-click trigger the same as right-click. Capture phase
