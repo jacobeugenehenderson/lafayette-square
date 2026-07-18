@@ -523,6 +523,6 @@
       "ash_green"
     ]
   },
-  "_doc": "Maps park_trees.json species names \u2192 the CURRENT roster/library species_ids (the ids the LS design.json roster + trees-atlas.json + published pool are keyed on). This is the Cartograph\u2194Arborist SPECIES-KEY HANDOFF (arborist/ORIENTATION.md seam #2): keys are the RAW park_trees names; values MUST be current roster ids or the placement needlessly substitutes at bake/runtime. Empty array = no roster match \u2192 the category picker (park_trees.shape) fills it (a genuine coverage gap, not a bug). Operator-edit by hand.",
+  "_doc": "Maps park_trees.json species names → the CURRENT roster/library species_ids (the ids the LS design.json roster + trees-atlas.json + published pool are keyed on). This is the Cartograph↔Arborist SPECIES-KEY HANDOFF (arborist/ORIENTATION.md seam #2): keys are the RAW park_trees names; values MUST be current roster ids or the placement needlessly substitutes at bake/runtime. Empty array = no roster match → the category picker (park_trees.shape) fills it (a genuine coverage gap, not a bug). Operator-edit by hand.",
   "_merge": "city-derived (scripts/15) as base + hand-tuned park routing override (park curation wins); LS statistical planting Phase B 2026-07-16"
 }
