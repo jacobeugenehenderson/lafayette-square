@@ -26,7 +26,7 @@ Three product tiers + one access surface (`plans/front-front-end-and-productizat
 The kit is a set of **standalone, à-la-carte apps**. Each has its own product sheet (its `FEATURES.md`) that **stands alone** — what it is, why it's special, what you can do today. This section is the marquee; the sheet is the detail.
 
 ### Cartograph — the neighborhood factory
-*Pour a real 3D neighborhood from real city data — beautiful, and fast enough for a phone.* You feed it OpenStreetMap + official parcels + operator-measured street widths + ML building footprints, fortified against high-res aerials; it traces a clean street frame, dresses it with curbs/sidewalks/tree-lawns, lets you author the look, and bakes a slab the public app stands on. **The next neighborhood pours from the same kit, by a different operator, with almost no hand-work.** → **`cartograph/FEATURES.md`** · the plain-language intro is `ORIENTATION.md`.
+*Pour a real 3D neighborhood from real city data — beautiful, and built to run on a phone.* You feed it OpenStreetMap + official parcels + operator-measured street widths + ML building footprints, fortified against high-res aerials; it traces a clean street frame, dresses it with curbs/sidewalks/tree-lawns, lets you author the look, and bakes a slab the public app stands on. **The next neighborhood pours from the same kit, by a different operator, with almost no hand-work.** → **`cartograph/FEATURES.md`** · the plain-language intro is `ORIENTATION.md`.
 
 - **Survey** — author the hardscape shape (widths, caps, corner radius) against the photo.
 - **Section** — author the pedestrian cross-section (sidewalk, tree-lawn, ADA corners) inward off the frozen curb.
@@ -34,7 +34,7 @@ The kit is a set of **standalone, à-la-carte apps**. Each has its own product s
 - **Preview** — stress-test the slab (GPU profiler, phone-aspect frame, per-layer cost) before it ships.
 
 ### Arborist — the species library + tree bake
-*Real trees, mobile-viable.* A per-species library that bakes LOD'd tree meshes + leaf-anchor data + photo-PBR bark, so a neighborhood's canopy is the *actual* species, rendered at a budget a phone can hold. → **`arborist/FEATURES.md`** · `arborist/SPEC.md`.
+*Real trees — the actual species.* A per-species library that bakes tree meshes + leaf-anchor data + photo-PBR bark, so a neighborhood's canopy is the actual species at true botanical scale. Trees render as full meshes today; the impostor arc that makes dense canopies phone-light is built and parked — the next work, not a shipped claim. → **`arborist/FEATURES.md`** · `arborist/SPEC.md`.
 
 ### Meteorologist — the living sky
 *The neighborhood breathes with the real weather.* The sky is the **actual sky over the actual place** — a live feed drives clouds, sun, and effects at the true cadence; authored as a continuous look across **(Condition × Degrees)**, not a slideshow; **authored on the same stage that ships.** → **`meteorologist/FEATURES.md`** · `meteorologist/WEATHER-MODEL.md`.
@@ -52,7 +52,7 @@ The kit is a set of **standalone, à-la-carte apps**. Each has its own product s
 ## 2. FUNDRAISING — "here are all the moving pieces" (the master map)
 
 ### What we're building, in one breath
-A **kit for pouring 3D neighborhoods.** Real city data in → a **slab** (flat, fast, fortified) the public app stands on like a foundation. Lafayette Square is the first off the line; the *next* pours from the same kit, by a different operator, with almost no hand-work. **Aesthetics and performance are co-equal and non-negotiable** — beautiful *and* runs on a phone. (`ORIENTATION.md`.)
+A **kit for pouring 3D neighborhoods.** Real city data in → a **slab** (flat, fast, fortified) the public app stands on like a foundation. Lafayette Square is the first off the line; the *next* pours from the same kit, by a different operator, with almost no hand-work. **Aesthetics and performance are co-equal and non-negotiable** — beautiful *and* built to run on a phone. (`ORIENTATION.md`.)
 
 ### The architecture — helpers publish artifacts; the runtime composes them
 Each helper publishes **one canonical artifact**; the slab is the boundary; the runtime consumes the slab, never the raw sources (`README.md §"Architecture at a glance"`).

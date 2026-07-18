@@ -1,5 +1,15 @@
 # Arborist Features
 
+**What this is.** The Arborist is the kit's tree factory. It turns a real tree species into one reusable, baked model — real geometry, photographed bark, a leaf model that tracks the season — and stamps that model across a neighborhood's canopy. You feed it the species a neighborhood actually has; it gives back the actual trees, at correct botanical heights, standing on the real ground.
+
+**How you make one.** In the Salon you compose a species from parts you can see: a chassis (the woody geometry), a bark, a leaf pack. Publish, and the pipeline bakes three LOD tiers plus a per-Look master atlas that de-duplicates shared bark and leaf tiles — so the *second* hero species costs almost nothing to add. (Procedural and LiDAR authoring are kept as peer tracks; Scan is legacy.)
+
+**What ships today, exactly.** Every tree in Lafayette Square renders as a full mesh — one lod1 mesh per placement, culled per tile by frustum and occlusion, its geometry role decided at bake. The overhead *browse* impostor — a 3-slice snapshot the runtime swaps in as you zoom out — is live. The hero/street impostor and the opaque-shell render are **built and parked**: dormant on disk, switched off (`PROM_THRESHOLD=0`) until the impostor arc lands. That arc is what will make a dense canopy phone-light — it is the next work, not a current claim. → `BATON-tree-render-next.md`.
+
+**What it produces** (the contract the runtime consumes): per-species `skeleton-N.glb` at three LOD tiers + leaf-anchor `tips-N.json` + `manifest.json`, and per-Look atlas artifacts under `public/baked/<look>/`. The same inputs bake byte-identical output, every time.
+
+---
+
 > Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Operator-facing surface of the helper. Read at session start to know what's already shippable vs. what's still in flight. `BACKLOG.md` carries the in-flight items; `ARCHITECTURE.md` carries the load-bearing patterns; `NOTES.md` carries the dated decision record.
 
 > 🌳 **The Arborist IS the Forest Builder kit-matcher now — not "being rebuilt."** Current contract + front door: **`README.md §⭐ START HERE`**; ratified architecture + staged plan: `scratch/FOREST-BUILDER-KIT-MATCHER.md`. **Built (2026-06-18/20):** the keystone (`rubric.json` 19 axes + `dossiers/` the 10 priority species), the spine (ingest+tagger → `part-index.json` + canonical `public/library/`, the matcher, readiness folded into the **Coverage** "Kit · C·B·L" column, the **Salon** wired to ranked **options** + a **reference panel**), and a **functional leaf model** (derived leaf-size · **Leaf Ways** arrangement · whole-crown fill · varied tile-atlases · an **Authored vs Synthesized** leaf-source toggle). *Open:* the leaf **season/color ramp** (§6); the **LS bake-proof** (Stage-2 gate). The operator surface below is the as-built the kit **rides** — the publish spine is **KEPT, not forked**; the leaf-colorer + bark fixes are now **rubric axes**. Doctrine: **no-cull** (hero-LOD/DoF **parked**, not deleted) · **Authored-only** active, **LiDAR + Procedural kept as equal peer tracks**.
