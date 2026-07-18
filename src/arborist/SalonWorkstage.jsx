@@ -1557,11 +1557,11 @@ function LookPicker() {
 
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888' }}>
-      <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Look</span>
+      <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Neighborhood</span>
       <select
         value={activeLookId || ''}
         onChange={onChange}
-        title={active ? `Curating: ${active.name}` : 'Pick a Look to curate'}
+        title={active ? `Authoring: ${active.name}` : 'Pick a neighborhood to author'}
         style={{
           background: 'rgba(255,255,255,0.05)',
           border: '1px solid rgba(255,255,255,0.1)',
