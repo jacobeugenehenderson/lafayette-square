@@ -319,9 +319,12 @@ export function buildOverheadBandDisc(rec, opts = {}) {
  * buildHeroImpostorCard — the HERO impostor's carrier: a VERTICAL tessellated quad
  * standing in the local XY plane (facing +Z), the side-on twin of buildOverheadBand-
  * Disc's flat horizontal quad. Skinned with a side-on canopy capture
- * (captureImpostor.js#captureHeroBand); the runtime billboards it about Y to face
- * the camera and swaps the texture to the nearest baked azimuth (Phase 2). For a
- * DEPTH shell it sits at a local-Z offset so front/back shells read as parallax.
+ * (captureImpostor.js#captureHeroBand). The runtime billboards it about Y to face the
+ * camera; each INSTANCE is assigned ONE of the N baked azimuths by hash — for
+ * per-species VARIETY (88 sugar maples must not be 88 identical cards), NOT a
+ * view-dependent swap (Jacob 2026-07-17: the octahedral swap is wasted bulk here).
+ * The azimuth is fixed per instance → stable, no per-frame swap. For a DEPTH layer
+ * the card sits at a local-Z offset so leaf shells + the rear bark layer read as parallax.
  *
  * Canopy-only: the card spans the SAME square capture frame the side-on ortho used —
  * half = max(canopyRadius+pad, canopyHeight/2+pad), centred on the canopy mid-height
@@ -351,10 +354,12 @@ export function buildHeroImpostorCard(rec, opts = {}) {
   const half = Math.max(halfW, halfH)               // square frame (mirrors the capture)
   const midY = (canopyBaseY + maxY) / 2
 
-  // Depth-shell centre → local-Z offset. depthFrac 0=front (toward viewer), 1=back;
-  // the canopy depth spans ±R about centre, so z = (1 − 2c)·R separates the shells.
-  const c = (Math.min(1, opts.depthHiFrac ?? 1) + Math.max(0, opts.depthLoFrac ?? 0)) / 2
-  const z = (1 - 2 * c) * R
+  // Card depth → local-Z offset. cardDepthFrac 0=front (toward viewer) → 1=back; the
+  // canopy depth spans ±R about centre, so z = (1 − 2·d)·R separates the layers. This
+  // is DECOUPLED from the capture's depth clip: the bark layer captures full-depth but
+  // its card sits at the REAR (d=1), so the trunk reads only from behind the leaves.
+  const d = Math.min(1, Math.max(0, opts.cardDepthFrac ?? ((opts.depthLoFrac ?? 0) + (opts.depthHiFrac ?? 1)) / 2))
+  const z = (1 - 2 * d) * R
 
   const N = Math.max(2, Math.round(opts.grid ?? 20))   // grid cells per side (wind flutter tessellation)
 

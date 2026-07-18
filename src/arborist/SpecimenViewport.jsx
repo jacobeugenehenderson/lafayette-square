@@ -1680,10 +1680,12 @@ export default function SpecimenViewport({
           </button>
         ))}
       </div>
-      {/* Overhead RELIGHT preview (Browse only) — drag overcast ↔ sunny to eye-gate
-          parity: the baked AO stays, the atmosphere sets the contrast. In LS this
-          is driven by the TOD/meteorologist, not this slider. */}
-      {camPreset === 'browse' && (
+      {/* RELIGHT preview (Browse + Hero-Imp) — drag overcast ↔ sunny to eye-gate
+          parity: the baked AO stays, the atmosphere sets the contrast. The hero card
+          relights through the SAME overheadLightUniforms + injectOverheadStamp path
+          the overhead disc uses (Jacob 2026-07-17: "wire lighting like the overhead
+          trees"). In LS this is driven by the TOD/meteorologist, not this slider. */}
+      {(camPreset === 'browse' || camPreset === 'heroimp') && (
         <div style={{
           // Grouped with the Wind toggle at bottom-LEFT (stacked just above it),
           // clear of the perf readout at bottom-right (2026-07-11).
