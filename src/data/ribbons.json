@@ -112058,6 +112058,18 @@
           "skelId": "chouteau-avenue-3",
           "side": "right"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 4,
+          "skelId": "mackay-place-1",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 9,
+          "skelId": "lasalle-street-0",
+          "capEnd": "end"
+        }
       ]
     },
     {
@@ -112680,6 +112692,23 @@
           "skelId": "lasalle-street-1",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 5,
+          "skelId": "dolman-street-0",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 19,
+          "skelId": "hickory-street-0",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 76,
+          "skelId": "lasalle-street-1",
+          "capEnd": "end"
+        }
       ]
     },
     {
@@ -112981,6 +113010,18 @@
         {
           "skelId": "hickory-street-0",
           "side": "right"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 2,
+          "skelId": "rutger-street-1",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 5,
+          "skelId": "mississippi-alley",
+          "capEnd": "start"
         }
       ]
     },
@@ -113356,6 +113397,13 @@
           "skelId": "mississippi-avenue",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 5,
+          "skelId": "vail-place",
+          "capEnd": "start"
+        }
       ]
     },
     {
@@ -113529,6 +113577,23 @@
         {
           "skelId": "mississippi-avenue",
           "side": "left"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 3,
+          "skelId": "south-18th-street-3",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 7,
+          "skelId": "dolman-street-1",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 9,
+          "skelId": "carroll-street-1",
+          "capEnd": "end"
         }
       ]
     },
@@ -113983,6 +114048,38 @@
         {
           "skelId": "lafayette-avenue-3",
           "side": "right"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 12,
+          "skelId": "waverly-place-1",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 14,
+          "skelId": "waverly-place-1",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 21,
+          "skelId": "missouri-avenue-0",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 39,
+          "skelId": "missouri-avenue-1",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 43,
+          "skelId": "simpson-place",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 54,
+          "skelId": "nicholson-place",
+          "capEnd": "end"
         }
       ]
     },
@@ -115213,6 +115310,18 @@
         {
           "skelId": "mississippi-avenue",
           "side": "left"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 4,
+          "skelId": "preston-place",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 21,
+          "skelId": "south-13th-street",
+          "capEnd": "end"
         }
       ]
     },
@@ -118920,6 +119029,13 @@
           "skelId": "chouteau-avenue-1",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 25,
+          "skelId": "south-17th-street",
+          "capEnd": "end"
+        }
       ]
     },
     {
@@ -119852,6 +119968,18 @@
           "skelId": "henrietta-place",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 0,
+          "skelId": "henrietta-place",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 10,
+          "skelId": "st-vincent-court-1",
+          "capEnd": "start"
+        }
       ]
     },
     {
@@ -120610,6 +120738,33 @@
           "skelId": "south-22nd-street",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 0,
+          "skelId": "south-22nd-street",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 2,
+          "skelId": "papin-street-0",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 10,
+          "skelId": "south-jefferson-avenue-0",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 18,
+          "skelId": "south-jefferson-avenue-8",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 24,
+          "skelId": "ohio-avenue-0",
+          "capEnd": "start"
+        }
       ]
     },
     {
@@ -121147,6 +121302,18 @@
         {
           "skelId": "park-avenue-3",
           "side": "left"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 2,
+          "skelId": "park-avenue-0",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 55,
+          "skelId": "park-avenue-3",
+          "capEnd": "end"
         }
       ]
     },
@@ -121768,6 +121935,13 @@
           "skelId": "carroll-street-0",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 70,
+          "skelId": "carroll-street-0",
+          "capEnd": "end"
+        }
       ]
     },
     {
@@ -121978,6 +122152,13 @@
           "skelId": "hickory-street-1",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 0,
+          "skelId": "hickory-street-1",
+          "capEnd": "start"
+        }
       ]
     },
     {
@@ -122055,6 +122236,13 @@
         {
           "skelId": "missouri-avenue-3",
           "side": "right"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 7,
+          "skelId": "rutger-street-2",
+          "capEnd": "end"
         }
       ]
     },
@@ -122406,6 +122594,18 @@
           "skelId": "ohio-avenue-3",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 9,
+          "skelId": "caroline-street-0",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 27,
+          "skelId": "rutger-street-0",
+          "capEnd": "end"
+        }
       ]
     },
     {
@@ -122673,6 +122873,28 @@
         {
           "skelId": "__boundary__",
           "side": "right"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 1,
+          "skelId": "hickory-street-3",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 13,
+          "skelId": "caroline-street-0",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 20,
+          "skelId": "caroline-street-1",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 23,
+          "skelId": "rutger-street-4",
+          "capEnd": "end"
         }
       ]
     },
@@ -123087,6 +123309,43 @@
         {
           "skelId": "lafayette-avenue-0",
           "side": "right"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 1,
+          "skelId": "iowa-avenue",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 4,
+          "skelId": "ohio-avenue-4",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 20,
+          "skelId": "allen-avenue-0",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 28,
+          "skelId": "allen-avenue-2",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 31,
+          "skelId": "geyer-avenue-0",
+          "capEnd": "end"
+        },
+        {
+          "vertexIdx": 34,
+          "skelId": "california-avenue-1",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 49,
+          "skelId": "california-avenue-0",
+          "capEnd": "end"
         }
       ]
     },
@@ -123779,6 +124038,18 @@
         {
           "skelId": "park-avenue-1",
           "side": "right"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 2,
+          "skelId": "albion-place",
+          "capEnd": "start"
+        },
+        {
+          "vertexIdx": 5,
+          "skelId": "whittemore-place",
+          "capEnd": "start"
         }
       ]
     },
@@ -125698,6 +125969,13 @@
           "skelId": "truman-parkway-0",
           "side": "right"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 57,
+          "skelId": "rutger-lane",
+          "capEnd": "start"
+        }
       ]
     },
     {
@@ -127164,6 +127442,13 @@
           "skelId": "lasalle-lane",
           "side": "left"
         }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 30,
+          "skelId": "peabody-court",
+          "capEnd": "end"
+        }
       ]
     },
     {
@@ -127869,6 +128154,13 @@
         {
           "skelId": "__boundary__",
           "side": "right"
+        }
+      ],
+      "caps": [
+        {
+          "vertexIdx": 10,
+          "skelId": "rutger-street-3",
+          "capEnd": "end"
         }
       ]
     },
