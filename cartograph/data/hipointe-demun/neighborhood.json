@@ -1,0 +1,15 @@
+{
+  "committed": true,
+  "name": "Hi-Pointe–DeMun",
+  "blurb": "A 1920s streetcar-era garden-city district straddling the St. Louis city limit and Clayton at the southwest corner of Forest Park, bounded by Big Bend, Forest Park Parkway, Skinker, and Clayton Road.",
+  "radius": 1251,
+  "timezone": "America/Chicago",
+  "sides": [
+    "Big Bend Boulevard",
+    "Forest Park Parkway",
+    "Skinker Boulevard",
+    "Clayton Road"
+  ],
+  "_note": "BACKFILL (not poured): HPDM predates the Extent tool's committed schema but is fully wired/baked at center 38.64231/-90.30968. Marks it committed so Extent shows its real extent with radius/exclusions/name editable. Geography, frame, and bake were NOT re-run — this is metadata only, no re-center. (Mirrors the lafayette-square backfill.)",
+  "exclusions": []
+}

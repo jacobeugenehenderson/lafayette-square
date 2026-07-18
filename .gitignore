@@ -80,6 +80,9 @@ cartograph/data/hipointe-demun/*
 !cartograph/data/hipointe-demun/neighborhood_boundary.json
 !cartograph/data/hipointe-demun/geography.json
 !cartograph/data/hipointe-demun/building-overrides.json
+!cartograph/data/hipointe-demun/tree-species-map.json
+!cartograph/data/hipointe-demun/tree-mix.json
+!cartograph/data/hipointe-demun/neighborhood.json
 # content/ — track only the hand-authored content files, keep bulk out
 !cartograph/data/hipointe-demun/content/
 cartograph/data/hipointe-demun/content/*
@@ -96,13 +99,18 @@ cartograph/data/hipointe-demun/content/*
 cartograph/data/hipointe-demun/raw/*
 !cartograph/data/hipointe-demun/raw/osm.json
 !cartograph/data/hipointe-demun/raw/admin_boundaries.json
-cartograph/data/hipointe-demun/clean/*
-# HPDM's REAL census wells — tracked (out of gitignore) so the recovered census
-# can't be lost on a clean checkout / re-fetch drift, same anti-regression as LS.
-# The synthetic derived_trees.json + raw dumps stay ignored (reproducible).
-!cartograph/data/hipointe-demun/clean/park_trees.json
-!cartograph/data/hipointe-demun/clean/forest_park_trees.json
-!cartograph/data/hipointe-demun/clean/osm_trees.json
+# KIT POLICY (2026-07-18): clean/ carries the SOURCE census + maps a kit must let
+# flow freely (park_census, the real wells, species-map, tree-mix, marker strokes).
+# Track them ALL by default — do NOT re-add a per-file allow-list (that's the trap
+# that silently dropped park_census + tree-species-map). Ignore ONLY the heavy
+# GENERATED geometry, which the pipeline reproduces from source and must never
+# bloat the repo.
+cartograph/data/hipointe-demun/clean/map.json
+cartograph/data/hipointe-demun/clean/skeleton.json
+cartograph/data/hipointe-demun/clean/ribbons.json
+cartograph/data/hipointe-demun/clean/terrain.bin
+cartograph/data/hipointe-demun/clean/terrain.json
+cartograph/data/hipointe-demun/clean/derived_trees.json
 cartograph/data/lafayette-square/*
 !cartograph/data/lafayette-square/neighborhood_boundary.json
 !cartograph/data/lafayette-square/geography.json
