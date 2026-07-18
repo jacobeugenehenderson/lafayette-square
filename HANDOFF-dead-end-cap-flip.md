@@ -6,6 +6,48 @@ ballgame." Design ratified with Jacob 2026-07-17.
 
 ---
 
+## ✅ STATUS — CAP FLIP + DIP-IN SLOPE LANDED & EYE-CONFIRMED (2026-07-18, Cade). NEXT: flippable LEGS.
+
+**All eye-gated with Jacob on the lit app + a render harness. The cap CLASS works; one open thread.**
+
+**Landed (commits on trunk `curb-offset-draw`):**
+- **Piece 1 — synthetic cap-segOrd identity** (`5a0eecc8`). Re-homed off `buildBlockGeometryV2` to
+  **PREBAKE** (Jacob's call): a dead-end cap is a FACE-topology fact (same-skelId-both-sides adjacency
+  = the pendant out-and-back). `feCustomKey.js`: `CAP_SEGORD {start:-1,end:-2}` + `makeCapFe` (one key
+  formula). `derive.js` stamps `ribbons.tiles[].caps=[{vertexIdx,skelId,capEnd}]`; `tileGround
+  .detectTileCaps`/`chainEndpointKeys`. **Parity gate: `scratch/cap-segord-parity-verify.mjs`** — 50
+  caps 1:1 with rendered tips, disjoint from leg slots. `ribbons.json` stamped (`8d8e3323`).
+- **Pieces 2+3 — flip gesture + render** (`f78cf011`). Cap is a **toggle-SWAP** (`{capFlip:true}` on the
+  cap slot) so it ALWAYS flips regardless of default; round-only (blunt = ineligible, set in Survey);
+  cache-safe (`tileSliceKey` folds cap customs). Bug caught: macOS Ctrl+click **double-fired** the
+  handler (pointerdown + contextmenu) → net no-op; fixed in `onContextMenu` (`8a8093ae`).
+- **Piece 4 — the dip-in slope** (`330004ec`). Two-part, per Jacob's eye: **(a) semicircle swap** — the
+  flip is masked to the tip disk ∩ far half-plane so it stops at the diameter, no bleed down the legs
+  ("it's only a semicircle"). **(b) legs BEND to meet the cap** — across a short transition the bands
+  cross so the **SIDEWALK stays CONTIGUOUS** (ADA walk path can't break): walk = one unbroken quad
+  outer(cap)→inner(leg), treelawn = complement. NO mitre (corners don't mitre).
+
+**⚠️ OPEN — the cul-de-sac LEGS aren't flippable (Jacob, 2026-07-18):** a material flip on a dead-end
+leg renders **Δ=0.0** (`blockCustoms[skelId][side][segOrd].materials` doesn't reach the strip for the
+terminal legs). tile#10 (south-18th-street-3) legs carry `left|segOrd 5`, `right|segOrd 6`. Diagnose:
+does the leg custom reach `emitStrip` for the dead-end legs, and does the crossing-band transition
+zone override a flipped leg? The legs must flip independently of the cap.
+
+**Verify tooling (both in `scratch/`):** `cap-viz.mjs [skelId:capEnd] [flip|noflip]` renders the cap
+region to an SVG→PNG (use `sharp` to rasterize) so geometry can be SEEN before Jacob's eye — this broke
+a blind-iteration cycle on the slope. `cap-segord-parity-verify.mjs` is the piece-1 gate.
+
+**Artifact state (UNCOMMITTED, Jacob's working copy):** `public/baked/lafayette-square/shape.json`
+re-baked with cap identity (Measure reads the FROZEN shape, so the identity must be in it — the in-app
+Survey-exit freeze did NOT persist it; regenerated via `scratch/rebake-shape.mjs`). `design.json` has 3
+force-flipped caps (mackay/south-18th/preston) from testing — Jacob's to keep or reset. A real prod
+bake (`bake-ground.js`) regenerates shape.json + the slab. **Minor polish deferred:** a small kink at
+the bend crossing (straight diagonals vs a curve).
+
+---
+
+---
+
 ## ⭐ THE GOVERNING RULE (lock this — it's the doctrine, capture in SECTION.md canon)
 **The frontage is ONE uninterrupted chain from real-corner to real-corner. Bends within it don't
 break it — the sidewalk/treelawn flow through. A "transition treatment" (the ADA slope/ramp) fires
