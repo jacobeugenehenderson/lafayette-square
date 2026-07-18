@@ -1658,6 +1658,56 @@ createServer(async (req, res) => {
     return
   }
 
+  // GET /looks/<id>/grove-threshold — the Grove build-eligibility perf lever:
+  // { topN, pinned:[species] }. topN = the bar (top-N species by census count
+  // build; the rest substitute to a same-category built neighbour at runtime);
+  // pinned = species kept IN even below the bar. Absent → { topN:null, pinned:[] }
+  // (null = no cut, every species eligible — today's behaviour).
+  if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/grove-threshold$/))) {
+    const id = m[1]
+    const design = readJsonOrNull(lookDesignPath(id)) || {}
+    const gt = design.groveThreshold || { topN: null, pinned: [] }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(gt))
+    return
+  }
+
+  // POST /looks/<id>/grove-threshold — read-merge-write the bar state into
+  // design.json (targeted, so it can't clobber `trees` or the Cartograph design).
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/grove-threshold$/))) {
+    const id = m[1]
+    const idx = readLooksIndex()
+    if (!idx.looks.some(l => l.id === id)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'unknown look' }))
+      return
+    }
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}')
+        const topN = Number.isFinite(parsed.topN) ? Math.max(0, Math.floor(parsed.topN)) : null
+        const pinned = Array.isArray(parsed.pinned)
+          ? [...new Set(parsed.pinned.filter(Boolean).map(String))]
+          : []
+        const existing = readJsonOrNull(lookDesignPath(id)) || {}
+        const merged = { ...existing, groveThreshold: { topN, pinned } }
+        mkdirSync(lookDir(id), { recursive: true })
+        writeJson(lookDesignPath(id), merged)
+        const idx2 = readLooksIndex()
+        const entry = idx2.looks.find(l => l.id === id)
+        if (entry) { entry.updatedAt = Date.now(); saveLooksIndex(idx2) }
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, groveThreshold: merged.groveThreshold }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
   // POST /looks/<id>/bake — re-bake this Look's bundle (ground / buildings
   // / lamps / scene / trees / ground-ao) from its design.json. Steps run
   // via `runShell` (async spawn) so other API requests keep flowing during

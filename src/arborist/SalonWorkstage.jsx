@@ -245,6 +245,9 @@ export default function SalonWorkstage() {
   const loadRosterCoverage  = useArboristStore(s => s.loadRosterCoverage)
   const activeRosterName    = useArboristStore(s => s.activeRosterName)
   const selectRosterSpecies = useArboristStore(s => s.selectRosterSpecies)
+  const groveThreshold      = useArboristStore(s => s.groveThreshold)
+  const setGroveTopN        = useArboristStore(s => s.setGroveTopN)
+  const toggleGrovePin      = useArboristStore(s => s.toggleGrovePin)
   const setRosterRouting    = useArboristStore(s => s.setRosterRouting)
   // Brief 1.5b (Quill): chassis curation surface.
   const chassisCuration     = useArboristStore(s => s.salonChassisCuration)
@@ -404,6 +407,9 @@ export default function SalonWorkstage() {
           loading={rosterLoading}
           activeRosterName={activeRosterName}
           onSelect={selectRosterSpecies}
+          groveThreshold={groveThreshold}
+          onSetTopN={setGroveTopN}
+          onTogglePin={toggleGrovePin}
         />
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -1616,55 +1622,133 @@ function rosterDot(s) {
   return s.coverage === 'gap' ? ROSTER_DOT.gap : ROSTER_DOT.buildable
 }
 
-function RosterNavigator({ species, loading, activeRosterName, onSelect }) {
+// The roster nav doubles as the Grove build-eligibility lever. Species are
+// count-sorted; a draggable BAR sets how many (top-N by appearances) build as
+// their own asset — everything below substitutes to a same-category built
+// neighbour at runtime (the perf lever). A PIN keeps a species IN below the bar
+// (the once-appearing special tree). A tally shows in / substitute counts.
+function RosterNavigator({ species, loading, activeRosterName, onSelect, groveThreshold, onSetTopN, onTogglePin }) {
   const [q, setQ] = useState('')
-  const rows = species.filter(s => !q || s.species.toLowerCase().includes(q.toLowerCase()))
+  const filtering = q.trim().length > 0
+  const rows = species.filter(s => !filtering || s.species.toLowerCase().includes(q.toLowerCase()))
+
+  const pinned = new Set(groveThreshold?.pinned || [])
+  const persistedTopN = groveThreshold?.topN
+  const rankOf = useMemo(() => {
+    const m = new Map(); species.forEach((s, i) => m.set(s.species, i)); return m
+  }, [species])
+  const isIn = (s) => pinned.has(s.species) || persistedTopN == null || (rankOf.get(s.species) ?? 0) < persistedTopN
+  const inCount = species.reduce((n, s) => n + (isIn(s) ? 1 : 0), 0)
+  const outCount = species.length - inCount
+
+  // Drag the bar: live position in dragTopN, persisted on release only (so a
+  // drag doesn't spam the store/endpoint). rowH measured off a real row.
+  const listRef = useRef(null)
+  const rowHRef = useRef(44)
+  const [dragTopN, setDragTopN] = useState(null)
+  const barDragging = dragTopN != null
+  const effTopN = barDragging ? dragTopN : (persistedTopN ?? species.length)
+
+  useEffect(() => {
+    if (!barDragging) return
+    const idxFrom = (clientY) => {
+      const el = listRef.current; if (!el) return effTopN
+      const rect = el.getBoundingClientRect()
+      const y = clientY - rect.top + el.scrollTop
+      return Math.max(0, Math.min(species.length, Math.round(y / (rowHRef.current || 44))))
+    }
+    const move = (e) => setDragTopN(idxFrom(e.clientY))
+    const up = () => setDragTopN(v => { if (v != null) onSetTopN(v); return null })
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barDragging, species.length])
+
+  const Bar = (
+    <div onPointerDown={(e) => { e.preventDefault(); setDragTopN(effTopN) }}
+      title="Drag to set how many species build in the Grove — the rest substitute to a same-category neighbour"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6, cursor: 'ns-resize',
+        padding: '3px 8px', background: 'rgba(232,184,96,0.16)',
+        borderTop: '2px solid #e8b860', borderBottom: '2px solid #e8b860', userSelect: 'none',
+      }}>
+      <span style={{ fontSize: 9, color: '#e8c878', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        ▲ build {effTopN} · substitute ▼
+      </span>
+      <span style={{ marginLeft: 'auto', fontSize: 12, color: '#e8b860' }}>⇳</span>
+    </div>
+  )
+
+  const renderRow = (s) => {
+    const active = s.species === activeRosterName
+    const d = rosterDot(s)
+    const inGrove = isIn(s)
+    const isPinned = pinned.has(s.species)
+    return (
+      <div key={s.species} ref={(el) => { if (el) rowHRef.current = el.offsetHeight }}
+        style={{
+          display: 'flex', alignItems: 'stretch', opacity: inGrove ? 1 : 0.45,
+          background: active ? 'rgba(232,184,96,0.14)' : 'transparent',
+          borderBottom: '1px solid rgba(255,255,255,0.04)',
+        }}>
+        <button onClick={() => onSelect(s)} title={`canonical: ${s.canonicalId} · coverage: ${s.coverage}`}
+          style={{
+            flex: 1, minWidth: 0, textAlign: 'left', border: 'none', background: 'transparent',
+            cursor: 'pointer', padding: '7px 2px 7px 10px', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+          <span style={{ width: 18, textAlign: 'center' }} title={d.title}>{d.dot}</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: active ? '#e8c878' : '#ddd', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.species}</div>
+            <div style={{ fontSize: 10, color: '#7d848d' }}>
+              {s.count} placements{!inGrove ? ' · substitutes' : (isPinned ? ' · pinned' : '')}
+            </div>
+          </span>
+        </button>
+        <button onClick={() => onTogglePin(s.species)}
+          title={isPinned ? 'Pinned into the Grove (kept even below the bar) — click to unpin' : 'Pin into the Grove (keep even if below the bar)'}
+          style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: '0 8px', fontSize: 12, opacity: isPinned ? 1 : 0.28 }}>
+          📌
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div style={{
-      width: 300, flexShrink: 0,
-      borderRight: '1px solid rgba(255,255,255,0.08)',
-      display: 'flex', flexDirection: 'column', minHeight: 0,
-      background: 'rgba(255,255,255,0.015)',
+      width: 300, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.08)',
+      display: 'flex', flexDirection: 'column', minHeight: 0, background: 'rgba(255,255,255,0.015)',
     }}>
-      <div style={{
-        padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', flexDirection: 'column', gap: 6,
-      }}>
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ fontSize: 10, color: '#888', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
           Roster · {species.length} species
         </div>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="filter species…"
-          style={{ ...selectStyle, padding: '4px 6px' }} />
+        {/* Tally: how many species build in the Grove vs substitute. */}
+        <div style={{ fontSize: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span style={{ color: '#9ed8b0' }} title="Build as their own asset">🌳 {inCount} in Grove</span>
+          <span style={{ color: '#7d848d' }} title="Substitute to a same-category built neighbour">↔ {outCount} substitute</span>
+          {persistedTopN != null && (
+            <button onClick={() => onSetTopN(null)} title="Clear the bar — every species builds"
+              style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#8a93a0', cursor: 'pointer', fontSize: 10, textDecoration: 'underline', padding: 0 }}>
+              clear
+            </button>
+          )}
+        </div>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="filter species…" style={{ ...selectStyle, padding: '4px 6px' }} />
       </div>
-      <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+      <div ref={listRef} style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
         {loading && <div style={{ padding: 12, color: '#888', fontSize: 11 }}>Loading roster…</div>}
         {!loading && rows.length === 0 && <div style={{ padding: 12, color: '#888', fontSize: 11 }}>No matching species.</div>}
-        {rows.map(s => {
-          const active = s.species === activeRosterName
-          const d = rosterDot(s)
-          return (
-            <button key={s.species} onClick={() => onSelect(s)}
-              title={`canonical: ${s.canonicalId} · coverage: ${s.coverage}`}
-              style={{
-                width: '100%', textAlign: 'left', border: 'none',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-                background: active ? 'rgba(232,184,96,0.14)' : 'transparent',
-                cursor: 'pointer', padding: '7px 10px', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-              <span style={{ width: 18, textAlign: 'center' }} title={d.title}>{d.dot}</span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 12, color: active ? '#e8c878' : '#ddd',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{s.species}</div>
-                <div style={{ fontSize: 10, color: '#7d848d' }}>
-                  {s.count} placements{s.authoringState !== 'composed' ? ` · ${STATE_META[s.authoringState]?.label || ''}` : ''}
-                </div>
-              </span>
-            </button>
-          )
-        })}
+        {filtering ? (
+          rows.map(renderRow)
+        ) : (
+          <>
+            {rows.slice(0, effTopN).map(renderRow)}
+            {rows.length > 0 && Bar}
+            {rows.slice(effTopN).map(renderRow)}
+          </>
+        )}
       </div>
     </div>
   )

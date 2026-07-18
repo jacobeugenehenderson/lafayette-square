@@ -557,6 +557,7 @@ const useArboristStore = create((set, get) => ({
   rosterLoading: false,
   rosterError: null,
   activeRosterName: null,          // canonical roster name of the selected row
+  groveThreshold: { topN: null, pinned: [] },  // the Grove build-eligibility bar (per active Look)
   loadRosterCoverage: async () => {
     set({ rosterLoading: true, rosterError: null })
     try {
@@ -568,9 +569,43 @@ const useArboristStore = create((set, get) => ({
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json()
       set({ rosterCoverage: d, rosterLoading: false })
+      // The Grove build-eligibility bar is a per-Look setting; load it alongside.
+      if (look) {
+        try {
+          const gr = await fetch(`/api/cartograph/looks/${encodeURIComponent(look)}/grove-threshold?t=${Date.now()}`)
+          if (gr.ok) set({ groveThreshold: await gr.json() })
+        } catch { /* non-fatal — bar defaults to no cut */ }
+      }
     } catch (err) {
       set({ rosterError: String(err), rosterLoading: false })
     }
+  },
+  // Grove build-eligibility bar (perf lever): the top-N species by census count
+  // build as their own asset; everything below substitutes to a same-category
+  // built neighbour at runtime. `pinned` species stay IN even below the bar (the
+  // once-appearing SPECIAL tree). Persisted per-Look in design.groveThreshold.
+  setGroveTopN: (n) => {
+    const gt = { ...get().groveThreshold, topN: n }
+    set({ groveThreshold: gt })
+    get()._saveGroveThreshold(gt)
+  },
+  toggleGrovePin: (species) => {
+    const cur = get().groveThreshold
+    const has = (cur.pinned || []).includes(species)
+    const pinned = has ? cur.pinned.filter(s => s !== species) : [...(cur.pinned || []), species]
+    const gt = { ...cur, pinned }
+    set({ groveThreshold: gt })
+    get()._saveGroveThreshold(gt)
+  },
+  _saveGroveThreshold: async (gt) => {
+    const look = get().activeLookId
+    if (!look) return
+    try {
+      await fetch(`/api/cartograph/looks/${encodeURIComponent(look)}/grove-threshold`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topN: gt.topN, pinned: gt.pinned }),
+      })
+    } catch (err) { set({ rosterError: String(err) }) }
   },
   // Select a roster row → drive the Salon onto its canonical id. The existing
   // composition slice (salonCompositions[canonicalId]) loads automatically.
