@@ -35,10 +35,13 @@ const _IDENTITY_QUAT = new THREE.Quaternion()
 const _texCache = new Map()   // url → THREE.Texture
 function loadTex(url, { srgb }) {
   if (_texCache.has(url)) return _texCache.get(url)
+  // TextureLoader.load() returns the texture BEFORE the image loads and sets
+  // needsUpdate itself in its onLoad. Do NOT force needsUpdate here — it makes
+  // three try to upload an imageless texture every frame ("no image data found"
+  // flood) and the card's map never gets the real pixels → nothing paints.
   const t = new THREE.TextureLoader().load(url)
   t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace
   t.anisotropy = 4
-  t.needsUpdate = true
   _texCache.set(url, t)
   return t
 }
