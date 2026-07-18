@@ -115,9 +115,11 @@ const main = async () => {
       `Without the frozen surfaces there is no honest answer to "is this the street?".`)
     process.exit(1)
   }
+  const designPath = path.join(REPO, 'public', 'looks', SCENE, 'design.json')
   const isForbidden = makeZoneTester({
     shapePath,
     mapPath: path.join(dir, 'clean', 'map.json'),
+    designPath: existsSync(designPath) ? designPath : undefined,
   })
   // Spiral out from a forbidden spot to the nearest allowed ground.
   const relocate = (x, z) => {

@@ -39,8 +39,8 @@
  * no index.json, no overrides — just placements.
  */
 import { promises as fs } from 'node:fs'
-import { readFileSync } from 'node:fs'
-import { makeForbiddenTester, makeZoneTester } from '../cartograph/forbidden-surface.mjs'
+import { readFileSync, existsSync } from 'node:fs'
+import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
 import { DEFAULT_SCENE } from '../cartograph/config.js'
 import path from 'node:path'
@@ -511,23 +511,29 @@ export async function bakeTrees({
     if (dbhGlobal.length) console.log(`[bake-trees] dbh: ${dbhGlobal.length} measured (${dbhBySpecies.size} species) → ${park.trees.length - dbhGlobal.length} estimated by empirical sampling`)
   }
 
-  // Surface tester, best construction first:
-  //   1. FROZEN Section surfaces (shape.json) — a poured scene. The only model
-  //      that can see the road, because the road is the grout between tiles.
-  //   2. LEGACY paint-layer mask (map.json) — LS, and any poured scene whose
-  //      ground bake has not run. Cannot see the road; scatters trees into the
-  //      carriageway. Loud on purpose.
-  //   3. None — the toy fixture (hand-authored centerlines, no hardscape here).
-  // The neighborhood proper vs the greater circle. Inside the boundary-street
-  // polygon we keep everything (literal); outside we dissolve across the ground's
-  // own fade band and lean on heroTier for the GPU. Absent → no dissolve.
+  // Surface tester:
+  //   • FROZEN Section surfaces (shape.json) — the one honest model. It sees the
+  //     road (the grout between tiles) and paints curb/treelawn/sidewalk/LU.
+  //   • None — ONLY the toy fixture (hand-authored centerlines, no hardscape).
+  // A poured scene missing its shape.json is an ERROR, not a fallback: there is no
+  // honest forbidden-surface without the frozen shape, and the old paint-layer mask
+  // it used to fall through to scattered trees into the carriageway. Bake the
+  // ground first. (`forbidden-surface.mjs` header — the legacy tester is deleted.)
   const membership = boundaryPath
     ? makeMembership(path.resolve(REPO_ROOT, boundaryPath))
     : null
+  if (forbiddenMapPath && !zoneShapePath) {
+    throw new Error(`[bake-trees] no shape.json for '${sceneName}' — bake the ground first. ` +
+      `There is no honest forbidden-surface without the frozen shape; refusing to place trees against a wrong mask.`)
+  }
+  // The Look's design.json — its blockCustoms + curbWidth so the rebuilt Section
+  // surfaces match what the operator authored (WYSIWYG with the Design view).
+  const _designPath = path.join(REPO_ROOT, 'public', 'looks', heroLook || sceneName, 'design.json')
   const isForbidden = zoneShapePath
     ? makeZoneTester({
         shapePath: path.resolve(REPO_ROOT, zoneShapePath),
         mapPath: forbiddenMapPath ? path.resolve(REPO_ROOT, forbiddenMapPath) : undefined,
+        designPath: existsSync(_designPath) ? _designPath : undefined,
         // Left FALSE deliberately. The tester's "outside every curb" bucket can't
         // yet separate carriageway from un-poured, so allowing it would put trees
         // back in the road — the whole bug. It costs nothing here: the greater
@@ -535,13 +541,7 @@ export async function bakeTrees({
         // trees from real tiles. Only the ~7.8% genuinely-untiled holes go bare,
         // and those sit in the annulus where the dissolve governs anyway.
       })
-    : forbiddenMapPath
-      ? makeForbiddenTester({ mapPath: path.resolve(REPO_ROOT, forbiddenMapPath) })
-      : (placements ? null : makeForbiddenTester())
-  if (forbiddenMapPath && !zoneShapePath) {
-    console.warn(`[bake-trees] ⚠️  no shape.json for '${sceneName}' — falling back to the LEGACY paint-layer mask. ` +
-      `It cannot see the road and WILL leave trees in the carriageway. Bake the ground first.`)
-  }
+    : null   // toy fixture only
 
   const instances = []
   // Parallel to `instances` (pushed in lock-step) — per-tree canopy bounding
@@ -700,6 +700,29 @@ export async function bakeTrees({
         centerY: (dims.heightM ?? 12) * HERO_TIER.CENTER_Y_FRAC,
         R: Math.max(0.5, dims.canopyRadiusM ?? 4),
       })
+    }
+  }
+
+  // ── Eligibility guard ──────────────────────────────────────────────────────
+  // The last time trees ended up on the sidewalk/curb, nothing caught it but the
+  // operator's eye. Re-classify every KEPT instance at its FINAL position against
+  // the same frozen surfaces and FAIL the bake if any tree sits on forbidden
+  // ground (a nudge that landed badly, an override that pushed a tree off legal
+  // ground, a future policy drift). Loud, with a per-zone breakdown — so a wrong
+  // mask can never quietly ship a slab that plants on hardscape again.
+  if (isForbidden) {
+    const illegal = {}
+    for (const inst of instances) {
+      const reason = isForbidden(inst.x, inst.z)
+      if (reason) illegal[reason] = (illegal[reason] || 0) + 1
+    }
+    const illegalTotal = Object.values(illegal).reduce((a, b) => a + b, 0)
+    if (illegalTotal) {
+      const breakdown = Object.entries(illegal).sort((a, b) => b[1] - a[1])
+        .map(([z, n]) => `${z}:${n}`).join(', ')
+      throw new Error(`[bake-trees] eligibility guard FAILED for '${sceneName}': ` +
+        `${illegalTotal} placed tree(s) on forbidden ground (${breakdown}). ` +
+        `A kept tree must stand on exposed, plantable Land Use — refusing to write a slab that plants on hardscape.`)
     }
   }
 

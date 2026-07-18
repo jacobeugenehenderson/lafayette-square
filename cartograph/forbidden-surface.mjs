@@ -1,33 +1,51 @@
 /**
  * forbidden-surface.mjs — "a tree can never stand here" mask.
  *
- * Shared by arborist/bake-trees.js (drops any placement on hardscape) and
- * scripts/17-fill-canopy-trees.mjs (RELOCATES canopy candidates off hardscape
- * onto the nearest allowed ground). One source of truth so the two never drift.
+ * Shared by arborist/bake-trees.js (drops/nudges any placement off hardscape) and
+ * scripts/17-fill-canopy-trees.mjs (RELOCATES canopy candidates onto the nearest
+ * allowed ground). ONE source of truth so the two never drift.
  *
- * TWO constructions live here — one concept, one home:
+ * ⭐ THE POLICY (ratified with Jacob 2026-07-18), stated the way he states it:
  *
- *   makeZoneTester({ shapePath })  ← poured scenes. The FROZEN Section surfaces.
- *   makeForbiddenTester({ mapPath }) ← LEGACY. Lafayette Square only.
+ *     A point is eligible for a tree iff it is EXPOSED Land Use of a PLANTABLE type
+ *       — "exposed"   = nothing hard is painted on top of it (no building, water,
+ *                       path, and — reading inward off the frozen curb — no CURB
+ *                       and no SIDEWALK), and
+ *       — "plantable" = the land use itself is a green class, not a hardscape lot
+ *                       (parking / commercial / industrial / unknown are OUT).
+ *     The curbside TREELAWN is always plantable (street trees line even a parking
+ *     lot's frontage); the type gate applies to the LU INTERIOR only.
  *
- * ⭐ Use `makeZoneTester` for anything poured. `makeForbiddenTester` reads
- * map.json's `layers.*`, and those are PAINT-STACK layers — filled shapes the
- * renderer stacks to draw the ground, not semantic surfaces. "Inside
- * layers.sidewalk" means "sidewalk colour starts here", then land-use paints
- * over it; the polygon is a whole block face, not a footpath. Asking a drawing
- * a physical question is a CATEGORY error, and it produced a mask that forbade
- * 60% of Hi-Pointe/DeMun (the yards) while permitting the road — the street is
- * the GROUT between tiles (`RIBBONS.md §28`), so no layer covers it and the
- * legacy tester could never see it. It survives only because LS's park-only
- * census never stood on a block face. Migrate LS and delete it.
- * (Forensic 2026-07-15: 862 of 1,430 real census trees dropped; 755 baked trees
- * left standing in the live carriageway.)
+ * `makeZoneTester({ shapePath })` answers it from the FROZEN Section surfaces —
+ * the SAME construction that draws the ground (`RIBBONS.md §3.4/§3.5`), so the mask
+ * cannot drift from what the operator sees. The road falls out for free: it is the
+ * GROUT between tiles (`RIBBONS.md §28`), so no tile contains it → "not on any tile"
+ * = carriageway = forbidden.
+ *
+ * There used to be a second, legacy `makeForbiddenTester` reading map.json's
+ * PAINT-STACK `layers.*` (whole block faces, not footpaths — a category error that
+ * forbade 60% of the yards while permitting the road). DELETED 2026-07-18: every
+ * poured scene has a `shape.json`, and there is no honest forbidden-surface without
+ * the frozen shape — a scene missing it must bake the ground first, not fall through
+ * to a wrong mask.
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { sectionOpen } from '../src/lib/tileGround.js'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+/**
+ * Land-use types whose INTERIOR is plantable ground (exposed lawn/yard/park), as
+ * opposed to a hardscape lot. A tile's `lu` not in this set has its interior
+ * forbidden — its curbside treelawn is still plantable (street trees). The knob,
+ * not a magic literal: reclassify a scene's land uses here, in one place.
+ * Ratified with Jacob 2026-07-18 — IN: residential/park/recreation/island;
+ * OUT (hardscape): parking/commercial/industrial/unknown.
+ */
+export const PLANTABLE_LU = new Set(['residential', 'park', 'recreation', 'island'])
 
 function pointInRing(px, pz, ring) {
   let inside = false
@@ -60,102 +78,39 @@ export function polyWithBbox(ring, holes) {
   return { ring, holes: holes || null, minX, minZ, maxX, maxZ }
 }
 
-export function makeForbiddenTester(opts = {}) {
-  const scened = !!opts.mapPath
-  const mapPath = opts.mapPath || path.join(REPO_ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'map.json')
-  const map = JSON.parse(readFileSync(mapPath, 'utf-8'))
-  // park_water.json uses [x,z] arrays; map.json uses {x,z} objects. Normalize.
-  const toArr = (ring) => ring.map(p => Array.isArray(p) ? p : [p.x, p.z])
-
-  const waterPolys = []
-  if (!scened) {
-    const water = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src', 'data', 'lafayette-square', 'park_water.json'), 'utf-8'))
-    const lakeOuter = water.lake?.outer || [], lakeIsland = water.lake?.island || [], grotto = water.grotto || []
-    if (lakeOuter.length) waterPolys.push(polyWithBbox(toArr(lakeOuter), lakeIsland.length ? [toArr(lakeIsland)] : null))
-    if (grotto.length) waterPolys.push(polyWithBbox(toArr(grotto)))
-  } else {
-    for (const p of (map.layers?.water || [])) if ((p.ring || []).length >= 3)
-      waterPolys.push(polyWithBbox(toArr(p.ring), p.holes ? p.holes.map(toArr) : null))
-  }
-
-  const buildings = (map.buildings || [])
-    .map(b => toArr(b.footprint || b.ring || []))
-    .filter(r => r.length >= 3).map(r => polyWithBbox(r))
-  const layer = (k) => (map.layers?.[k] || [])
-    .filter(p => (p.ring || []).length >= 3)
-    .map(p => polyWithBbox(toArr(p.ring), p.holes ? p.holes.map(toArr) : null))
-
-  // `parkSidewalk` (a single polygon covering the park interior) is excluded —
-  // it would forbid every park tree; interior walks are caught via path/footway.
-  const checks = [
-    ['water',    waterPolys],
-    ['building', buildings],
-    ['pavement', layer('pavement')],
-    ['alley',    layer('alley')],
-    ['sidewalk', layer('sidewalk')],
-    ['footway',  layer('footway')],
-    ['path',     layer('path')],
-  ]
-  if (scened) checks.push(
-    ['asphalt', layer('block')],        // the carriageway / road surface
-    ['parking', layer('parking_lot')],
-    ['steps',   layer('steps')],
-  )
-  return function classify(wx, wz) {
-    for (const [reason, polys] of checks) {
-      for (const p of polys) {
-        if (wx < p.minX || wx > p.maxX || wz < p.minZ || wz > p.maxZ) continue
-        if (pointInPolygon(wx, wz, p)) return reason
-      }
-    }
-    return null
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// The FROZEN-SHAPE zone model (poured scenes)
+// The FROZEN-SHAPE zone model — the one and only forbidden-surface
 // ─────────────────────────────────────────────────────────────────────────────
-
-/** Shortest distance from (px,pz) to a ring's edges. */
-function distToRing(px, pz, ring) {
-  let best = Infinity
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const x1 = ring[j][0], z1 = ring[j][1], x2 = ring[i][0], z2 = ring[i][1]
-    const dx = x2 - x1, dz = z2 - z1
-    const L = dx * dx + dz * dz
-    let t = L ? ((px - x1) * dx + (pz - z1) * dz) / L : 0
-    t = t < 0 ? 0 : t > 1 ? 1 : t
-    const ex = x1 + t * dx - px, ez = z1 + t * dz - pz
-    const d = ex * ex + ez * ez
-    if (d < best) best = d
-  }
-  return Math.sqrt(best)
-}
 
 /**
- * "Where may a tree stand?", answered from the FROZEN Section surfaces — the
- * same construction that draws the ground, so the mask cannot drift from what
- * the operator sees (`RIBBONS.md §150` — WYSIWYG by construction).
+ * "Where may a tree stand?", answered by REBUILDING THE ACTUAL PAINTED GROUND —
+ * `sectionOpen` off the frozen shape, the SAME call BlockGeometryV2Debug renders
+ * in the Design view (`RIBBONS.md §3.4/§3.5`). We classify a point by which drawn
+ * polygon it lands in, so the mask is WYSIWYG with the operator's eye by
+ * construction — it cannot drift:
  *
- * The ground is painted INWARD off the frozen curb `iA` (`RIBBONS.md §170`):
- * treelawn (outer strip) → sidewalk (inner strip) → land-use (the remainder).
- * So, by distance `d` inside a tile's curb ring:
+ *   asphalt / curb / sidewalk polygon   → hardscape on top of the ground   → NO
+ *   treelawn polygon (any LU)           → the planting strip, street trees → yes
+ *   land-use polygon, PLANTABLE type    → exposed lawn/yard/park           → yes
+ *   land-use polygon, hardscape type    → the lot itself (parking/…)       → NO
+ *   building/water/parking footprint    → something painted on the LU      → NO
+ *   no tile surface at all              → the carriageway / un-poured      → NO
  *
- *   outside every iA  → asphalt (the carriageway) or un-poured  → NO
- *   d < tl            → TREELAWN — where street trees belong    → yes
- *   d < tl + sw       → sidewalk                                → NO
- *   d >= tl + sw      → LU (yard/park)                          → yes
+ * ⚠️ Do NOT re-derive these bands from a distance off the curb ring. The sidewalk
+ * BENDS at corners (all-SW ADA), the treelawn↔sidewalk divider is PER-EDGE, caps
+ * wrap — a uniform distance band matches none of that and plants trees on the
+ * drawn sidewalk/curb (the 2026-07-18 regression this replaced). The painted
+ * polygons are the only honest answer.
  *
- * Within LU the frozen shape says nothing about real obstructions, so the
- * scene's own map.json still supplies those (building/water/parking/paths).
- * Those layers are small, literal footprints — unlike `block`/`sidewalk`, which
- * are the block-face paint stack this construction replaces.
+ * The TREELAWN is plantable whatever the abutting block's use (street trees line
+ * even a parking lot's frontage); the type gate hits the LU INTERIOR only.
  *
- * Rule ratified by Jacob 2026-07-15: "Trees only in LU and Treelawn, no
- * sidewalk, asphalt or buildings."
- *
- * @param {string}  shapePath  public/baked/<scene>/shape.json (the WALL artifact)
- * @param {string}  mapPath    the scene's clean/map.json (obstructions only)
+ * @param {string}  shapePath   public/baked/<scene>/shape.json (the WALL artifact)
+ * @param {string}  mapPath     the scene's clean/map.json (obstruction footprints)
+ * @param {string}  designPath  the Look's design.json — its blockCustoms + curbWidth
+ *   so the rebuilt surfaces match what the operator authored (absent → defaults).
+ * @param {number}  curbWidth   overrides the curb-stroke depth; else design.curbWidth
+ *   ?? the fixed CURB_WIDTH the ground bake uses (`streetProfiles.js`).
  * @param {boolean} allowUnpoured  treat ground outside every tile but off the
  *   carriageway as plantable. Default FALSE: outside the poured extent we have
  *   no honest surface model, and guessing there is what made the canopy read
@@ -163,25 +118,49 @@ function distToRing(px, pz, ring) {
  * @returns {function} classify(x,z) → forbidden reason, or null when plantable.
  *   Carries `.zoneOf(x,z)` (reporting) and `.nudge(x,z)` (nearest legal ground).
  */
-export function makeZoneTester({ shapePath, mapPath, allowUnpoured = false } = {}) {
+export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allowUnpoured = false } = {}) {
   const shape = JSON.parse(readFileSync(shapePath, 'utf-8'))
+  const design = designPath ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
+  const cw = Number.isFinite(curbWidth) ? curbWidth
+           : Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH
+  const blockCustoms = (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : null
   const toArr = (ring) => ring.map(p => Array.isArray(p) ? p : [p.x, p.z])
 
-  // Each tile's frozen curb ring + its mono-width ped strips.
-  const tiles = []
-  for (const t of (shape.tiles || [])) {
-    const ring = t.iA?.[0]
-    if (!Array.isArray(ring) || ring.length < 3) continue   // tile with no frozen curb
-    const p = polyWithBbox(toArr(ring))
-    p.tl = t.tl ?? 0
-    p.sw = t.sw ?? 0
-    p.lu = t.lu
-    tiles.push(p)
-  }
-  if (!tiles.length) throw new Error(`[zone-tester] no usable curb rings in ${shapePath}`)
+  // ── The WYSIWYG surfaces ────────────────────────────────────────────────────
+  // Rebuild the SAME painted polygons the Design view draws (sectionOpen off the
+  // frozen shape, exactly as BlockGeometryV2Debug). We classify by which drawn
+  // polygon a point lands in — never a re-derived distance band, which can't
+  // follow the corner bends / per-edge divider / caps and so plants on the walk.
+  const pr = sectionOpen(shape.tiles || [], cw, { outer: 'LU', inner: 'SW' }, null, blockCustoms)
+  if (!pr || !(pr.sidewalk || pr.curb || pr.asphalt))
+    throw new Error(`[zone-tester] sectionOpen produced no surfaces from ${shapePath}`)
 
-  // Real obstructions WITHIN land-use. Literal footprints only — never the
-  // block-face paint layers (`block`/`sidewalk`), which this model supersedes.
+  // Each painted layer is a set of Clipper rings — a region WITH HOLES encoded by
+  // winding — so membership is the EVEN-ODD rule (inside an odd number of rings).
+  const prep = (rings) => (rings || []).filter(r => Array.isArray(r) && r.length >= 3).map(r => polyWithBbox(r))
+  const insideEO = (x, z, polys) => {
+    let c = 0
+    for (const p of polys) {
+      if (x < p.minX || x > p.maxX || z < p.minZ || z > p.maxZ) continue
+      if (pointInRing(x, z, p.ring)) c++
+    }
+    return (c & 1) === 1
+  }
+
+  const asphalt  = prep(pr.asphalt)
+  const curb     = prep(pr.curb)
+  const sidewalk = prep(pr.sidewalk)
+  const treelawn = prep(Object.values(pr.treelawnByLu || {}).flat())   // plantable, any LU
+  const luAllow = []                 // plantable-type land-use interiors (flattened)
+  const luForbid = []                // [{ lu, polys }] — hardscape-type interiors
+  for (const [lu, rings] of Object.entries(pr.luByClass || {})) {
+    const polys = prep(rings)
+    if (PLANTABLE_LU.has(lu)) luAllow.push(...polys)
+    else luForbid.push({ lu, polys })
+  }
+
+  // Real obstructions painted ON TOP of the land use — small literal footprints
+  // from the scene's map.json (never the block-face paint layers).
   const map = mapPath ? JSON.parse(readFileSync(mapPath, 'utf-8')) : { layers: {} }
   const layer = (k) => (map.layers?.[k] || [])
     .filter(p => (p.ring || []).length >= 3)
@@ -200,27 +179,25 @@ export function makeZoneTester({ shapePath, mapPath, allowUnpoured = false } = {
     ['steps',       layer('steps')],
   ]
 
-  const tileAt = (x, z) => {
-    for (const t of tiles) {
-      if (x < t.minX || x > t.maxX || z < t.minZ || z > t.maxZ) continue
-      if (pointInPolygon(x, z, t)) return t
-    }
-    return null
-  }
-
   function zoneOf(x, z) {
-    const t = tileAt(x, z)
-    if (!t) return 'asphalt-or-unpoured'
+    // 1. footprints painted on top of the ground
     for (const [reason, polys] of obstructions) {
       for (const p of polys) {
         if (x < p.minX || x > p.maxX || z < p.minZ || z > p.maxZ) continue
         if (pointInPolygon(x, z, p)) return reason
       }
     }
-    const d = distToRing(x, z, t.ring)
-    if (d < t.tl) return 'treelawn'
-    if (d < t.tl + t.sw) return 'sidewalk'
-    return 'lu'
+    // 2. the hardscape painted surfaces — the road, the curb stroke, the walk
+    if (insideEO(x, z, asphalt))  return 'asphalt'
+    if (insideEO(x, z, curb))     return 'curb'
+    if (insideEO(x, z, sidewalk)) return 'sidewalk'
+    // 3. a land-use interior of a hardscape TYPE (the lot itself)
+    for (const g of luForbid) if (insideEO(x, z, g.polys)) return `lu:${g.lu}`
+    // 4. the two plantable surfaces
+    if (insideEO(x, z, treelawn)) return 'treelawn'
+    if (insideEO(x, z, luAllow))  return 'lu'
+    // 5. on no tile surface → carriageway / un-poured
+    return 'asphalt-or-unpoured'
   }
 
   const ALLOWED = new Set(['treelawn', 'lu'])
