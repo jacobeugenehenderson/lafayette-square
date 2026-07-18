@@ -184,5 +184,14 @@ Restructure landed:
 - ⚠️ **Framing note for the next eye-gate:** the bark layer is **canopy-only** (in-crown branches), no full trunk-to-ground — consistent with a canopy billboard. If Jacob wants the trunk extending down, that's a frame extension (drop the vertical `canopyBaseY` floor).
 - **Needs a HARD reload** (shader recompile) to eye-gate. Salon server still on **:5273**.
 
+### Eye-gate #2 (Jacob, 2026-07-17) → trunk-in-rear + variety reframe (DONE, `9f530d9e`)
+- **Resolution** 1024→**2048** albedo (still short of native at 1024). KTX2 carries weight.
+- **"2 split trunks"** = woody leaking into BOTH leaf shells. Isolation now belt-and-suspenders: **per-mesh visibility by `atlasKind`** (recompile-independent — works without a hard reload) **+** the per-vertex `uCaptureMask` discard.
+- **"Ditch the trunk on the near slice, leave it in the rear"** → the bark card's POSITION is decoupled from its full-depth capture: `cardDepthFrac=1` puts the one woody layer at the REAR, behind every leaf shell. Near slices are leaf-only.
+- **Lighting** — the RELIGHT slider now shows in Hero-Imp; the card already relights through the SAME `overheadLightUniforms` + `injectOverheadStamp` path as the overhead disc (Jacob: "wire like the overhead trees"). ⚠️ Phase 2 LS-runtime TODO: mount an `OverheadLightDriver`-equivalent so the hero impostors relight from the atmosphere even OUTSIDE browse.
+
+### ⭐ AZIMUTH REFRAME (Jacob, 2026-07-17) — LOCKED, affects Phase 2
+The N radial captures are **per-instance VARIETY**, not a view-dependent (octahedral) swap. **88 sugar maples must not be 88 identical cards** → assign each instance ONE of the N azimuths **by hash**, fixed at load (stable — no per-frame swap, inside doctrine). The **view-dependent swap is deferred** — "wasted bulk for current requirements" (Jacob). Phase 2 runtime: hash instance→azimuth, billboard about Y to face camera, show that azimuth's leaf-shells + rear bark layer. (The overhead disc's per-instance-rotY anti-stamping is the precedent.)
+
 ### Phase 1b — durability (NEXT, not yet built)
 `serve.js` POST `/hero-impostor/:look/:species` · `bake-look.js` carry `heroImpostorBySpecies` forward (the trapdoor) · `HeroImpostorBaker` on Bake→Slab (all N azimuths) · Grove wire. Then Phase 2 (runtime split + azimuth selection), Phase 3 (streaming), Phase 4 (Stage budget knob).
