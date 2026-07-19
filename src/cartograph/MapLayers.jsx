@@ -9,7 +9,7 @@ import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
 import SceneLabel from '../components/SceneLabel.jsx'
-import getStreetLabels from '../lib/streetLabels.js'
+import { useStreetLabels } from '../lib/streetLabels.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import {
   assignTerrainUniforms,
@@ -470,10 +470,12 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return lines
   }, [])
 
-  // Street label placements — shared with LafayetteScene via
-  // src/lib/streetLabels.js so Designer / Preview / LS never drift.
-  // Module-scope computed once from ribbonsData (static import).
-  const labelData = getStreetLabels()
+  // Street label placements — read per-scene from the slab (baked/<look>/
+  // labels.json), shared with LafayetteScene via src/lib/streetLabels.js so
+  // Designer / Preview / LS never drift. The Designer shows the ACTIVE look's
+  // own names (Łódź shows Łódź), not a static LS import.
+  const activeLookId = useCartographStore(s => s.activeLookId)
+  const labelData = useStreetLabels(activeLookId)
 
   // ── Streetlamps (dots, no boundary clip — the 641 street lamps from
   // street_lamps.json all sit in the neighborhood anyway; lamp pools gate

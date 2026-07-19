@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scene": "ksi-y-m-yn",
+  "schema": "NEIGHBORHOOD-INPUTS §5.1.1",
+  "layer": "Layer 1 — building ledger (one record per slab building)",
+  "generated": "2026-07-07",
+  "generator": "bake-content.js",
+  "visible_buildings": 1,
+  "parcel_matched": 0,
+  "nr_attributed": 0,
+  "in_historic_district": 0,
+  "buildings_with_listings": 0,
+  "join_key": "id == slab building id (msbf-*)"
+ },
+ "buildings": [
+  {
+   "id": "msbf-undefined",
+   "name": null,
+   "address": null,
+   "municipality": null,
+   "jurisdiction": null,
+   "all_names": [],
+   "listing_ids": [],
+   "historic_district": null,
+   "contributing": null,
+   "style": null,
+   "architect": null,
+   "period": null,
+   "year_built": null,
+   "building_type": null,
+   "building_sqft": null,
+   "units": null,
+   "zoning": null,
+   "appraised_value": null,
+   "vacant": false,
+   "stories": 1,
+   "wall_material": "brick_red",
+   "roof_material": "flat",
+   "category": "residential",
+   "subcategory": "unnamed",
+   "mixed_use": false,
+   "use": "unknown",
+   "use_subtype": null,
+   "use_confidence": "low",
+   "use_source": "none",
+   "in_historic_district": null,
+   "architecture": null,
+   "historic_status": null
+  }
+ ]
+}

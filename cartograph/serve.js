@@ -697,19 +697,31 @@ function streetNamesFor(scene) {
 // downstream). mtime-cached — the big parse runs once, not per request.
 const _footprintCache = new Map()   // scene → { mtime, payload }
 function buildingFootprintsFor(scene) {
-  const p = join(sceneRawDir(scene), 'msbf.json')
-  if (!existsSync(p)) return { buildings: [] }
-  const mtime = statSync(p).mtimeMs
+  // Prefer MSBF (the id-space the US pour bakes on); fall back to OSM buildings
+  // so the authoring overlay is DETERMINISTIC everywhere. The MSBF mirror is
+  // US-only (fetch-msbf aborts off-continent → no msbf.json), but fetch.js
+  // ALWAYS writes OSM buildings into osm.json. What the operator sees while
+  // framing == what pours (Jacob, 2026-07-18: no indeterminance). The pour's
+  // buildingSource fallthrough (pipeline.js curated→msbf→'osm') mirrors this.
+  const msbfPath = join(sceneRawDir(scene), 'msbf.json')
+  const osmPath  = join(sceneRawDir(scene), 'osm.json')
+  const src = existsSync(msbfPath) ? msbfPath : (existsSync(osmPath) ? osmPath : null)
+  if (!src) return { buildings: [] }
+  const mtime = statSync(src).mtimeMs
   const cached = _footprintCache.get(scene)
-  if (cached && cached.mtime === mtime) return cached.payload
-  const msbf = JSON.parse(readFileSync(p, 'utf-8'))
+  if (cached && cached.mtime === mtime && cached.src === src) return cached.payload
+  const raw = JSON.parse(readFileSync(src, 'utf-8'))
   const buildings = []
-  for (const b of (msbf.buildings || [])) {
+  for (const b of (raw.buildings || [])) {
     const ring = (b.coords || []).map(c => [c.x, c.z])
-    if (ring.length >= 3 && b.msbfId != null) buildings.push({ id: `msbf-${b.msbfId}`, ring })
+    if (ring.length < 3) continue
+    // Source-agnostic id: msbf-<id> where MSBF is present, osm-<id> otherwise.
+    // (The pour/override id-namespace unification is the connected tail.)
+    if (b.msbfId != null) buildings.push({ id: `msbf-${b.msbfId}`, ring })
+    else if (b.osmId != null) buildings.push({ id: `osm-${b.osmId}`, ring })
   }
   const payload = { buildings }
-  _footprintCache.set(scene, { mtime, payload })
+  _footprintCache.set(scene, { mtime, src, payload })
   return payload
 }
 
@@ -1932,6 +1944,14 @@ createServer(async (req, res) => {
         [DESIGN, join(here, 'bake-scene.js')],
         [join(LOOK_DIR, 'scene.json')],
         `node bake-scene.js --look=${id} ${sceneFlag}`,
+        { cwd: here, timeout: 30000 })
+      // Street labels — bake the SCENE's own names (from its ribbons + boundary)
+      // into the slab so the player reads baked/<look>/labels.json per-scene,
+      // not a static LS ribbons import (src/lib/streetLabels.js reader).
+      await runIfDirty('labels',
+        [bakePaths.ribbons, bakePaths.boundary, join(here, 'bake-labels.js')],
+        [join(LOOK_DIR, 'labels.json')],
+        `node bake-labels.js ${sceneFlag} --look=${id}`,
         { cwd: here, timeout: 30000 })
       // Trees: TWO axes. The census is the SCENE's (this neighbourhood's real
       // trees); the atlas + UV-rewritten GLBs are the LOOK's (baked by the

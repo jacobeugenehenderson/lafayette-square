@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { buildings as _allBuildings, buildingMap as _buildingMap } from '../data/buildings'
-import getStreetLabels from '../lib/streetLabels.js'
+import { useStreetLabels } from '../lib/streetLabels.js'
 import SceneLabel from './SceneLabel.jsx'
 import { ParkTitle } from './LafayettePark'
 import useListings from '../hooks/useListings'
@@ -1335,7 +1335,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
   // LS-local getStreetLabelPlacements, SAME_NAME_MIN_DIST /
   // ANY_LABEL_MIN_DIST collision skip, and the EAST_OF_TRUMAN_ALLOWED
   // whitelist (labelBoundary in the shared module supersedes it).
-  const streetLabels = getStreetLabels()
+  const streetLabels = useStreetLabels()
 
   return (
     <group>

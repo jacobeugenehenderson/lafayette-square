@@ -111,6 +111,34 @@ cartograph/data/hipointe-demun/clean/ribbons.json
 cartograph/data/hipointe-demun/clean/terrain.bin
 cartograph/data/hipointe-demun/clean/terrain.json
 cartograph/data/hipointe-demun/clean/derived_trees.json
+
+# ── Księży Młyn / Łódź (installation #3, first non-US pour) — mirrors HPDM ──
+!cartograph/data/ksi-y-m-yn/
+cartograph/data/ksi-y-m-yn/*
+!cartograph/data/ksi-y-m-yn/neighborhood_boundary.json
+!cartograph/data/ksi-y-m-yn/geography.json
+!cartograph/data/ksi-y-m-yn/building-overrides.json
+!cartograph/data/ksi-y-m-yn/tree-species-map.json
+!cartograph/data/ksi-y-m-yn/neighborhood.json
+!cartograph/data/ksi-y-m-yn/content/
+cartograph/data/ksi-y-m-yn/content/*
+!cartograph/data/ksi-y-m-yn/content/listings.json
+!cartograph/data/ksi-y-m-yn/content/listings.overrides.json
+!cartograph/data/ksi-y-m-yn/content/profile.json
+!cartograph/data/ksi-y-m-yn/content/roster.json
+!cartograph/data/ksi-y-m-yn/raw/
+!cartograph/data/ksi-y-m-yn/clean/
+cartograph/data/ksi-y-m-yn/raw/*
+!cartograph/data/ksi-y-m-yn/raw/osm.json
+!cartograph/data/ksi-y-m-yn/raw/osm_street_lamps.json
+# heavy GENERATED geometry — pipeline reproduces from source (park_trees census stays tracked)
+cartograph/data/ksi-y-m-yn/clean/map.json
+cartograph/data/ksi-y-m-yn/clean/skeleton.json
+cartograph/data/ksi-y-m-yn/clean/ribbons.json
+cartograph/data/ksi-y-m-yn/clean/terrain.bin
+cartograph/data/ksi-y-m-yn/clean/terrain.json
+cartograph/data/ksi-y-m-yn/clean/derived_trees.json
+
 cartograph/data/lafayette-square/*
 !cartograph/data/lafayette-square/neighborhood_boundary.json
 !cartograph/data/lafayette-square/geography.json

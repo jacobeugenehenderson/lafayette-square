@@ -1,0 +1,44 @@
+{
+  "map": {
+    "Linden, Littleleaf": ["linden_american"],
+    "Maple, Norway": ["maple_sugar"],
+    "Oak, English": ["oak_white", "oak_bur"],
+    "Plane, London": ["platanus_acerifolia"],
+    "Birch": ["birch"],
+    "Hornbeam": ["generic_tree_2"],
+    "Ash": ["ash_green"],
+    "Hawthorn": ["procedural_ornamental"],
+    "Horse Chestnut": ["generic_tree_2"],
+    "Black Locust": ["generic_tree_2"],
+    "Spruce, Norway": ["procedural_conifer"],
+    "Thuja": ["procedural_conifer"],
+    "Larch": ["procedural_conifer"],
+    "Other": ["generic_tree_2"],
+    "": ["generic_tree_2"]
+  },
+  "_doc": "Księży Młyn (Łódź) tree roster — maps the census species (assigned from the Łódź palette in scratch/lodz-tree-census.mjs, split by the Drzewa_LIDAR conifer/deciduous flag) → CURRENT roster/library species_ids. Most Łódź species reuse LS's authored compositions 1:1 (linden→linden_american, klon/Norway maple→maple_sugar, dąb/English oak→oak_white+oak_bur, platan→platanus_acerifolia, brzoza→birch). Conifers (świerk/spruce, żywotnik/thuja, modrzew/larch) → procedural_conifer. Empty match → the category picker fills via park_trees.shape (broad/conifer). Operator-edit by hand in the Salon.",
+  "_new_species_suggestions": {
+    "_doc": "Species genuinely present in Łódź that LS never authored a composition for. Fallback routes them to generic_tree_2 today so the grove NEVER blanks; these are the chassis/part suggestions to author a proper composition in the Salon and replace the fallback.",
+    "Horse Chestnut": {
+      "botanical": "Aesculus hippocastanum (kasztanowiec)",
+      "silhouette": "large dense DOME / broad rounded crown, low branching",
+      "chassis": "a broad low-domed deciduous chassis (widest habit in _chassis/); avoid columnar/vase",
+      "leaf": "palmate_compound (5-7 leaflets radiating) — a coverage gap in the leaf packs; nearest existing: broad simple as placeholder",
+      "bark": "grey-brown flaking",
+      "season": "candle-white spring bloom (skip for v1); yellow-brown early fall"
+    },
+    "Black Locust": {
+      "botanical": "Robinia pseudoacacia (robinia akacjowa)",
+      "silhouette": "OPEN, airy, irregular upright crown — see-through, not dense",
+      "chassis": "an open/sparse-canopy deciduous chassis; low leaf-density variant",
+      "leaf": "fine_compound (pinnate, many small oval leaflets) — coverage gap; nearest: fine simple",
+      "bark": "deeply furrowed dark grey-brown",
+      "season": "white pea-flower racemes late spring (skip v1); pale-yellow fall"
+    },
+    "Spruce / Thuja / Larch": {
+      "botanical": "Picea abies / Thuja occidentalis / Larix decidua (świerk / żywotnik / modrzew)",
+      "route_today": "procedural_conifer",
+      "note": "LS's grove is all-deciduous, so there is no authored conifer composition. procedural_conifer renders them today; a real conifer chassis + short_needle leaf (both coverage gaps) would upgrade the 862 conifers."
+    }
+  }
+}

@@ -104,7 +104,7 @@ async function main() {
         raw.buildings = raw.buildings.filter((b) => {
           const pts = b.coords || b.ring || (b.rings && b.rings[0]) || []
           if (pts.length < 3) return true
-          const id = b.msbfId != null ? `msbf-${b.msbfId}` : null
+          const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
           if (id && hide.has(id)) return false
           let sx = 0, sz = 0
           for (const p of pts) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
@@ -245,7 +245,7 @@ async function main() {
     buildings = buildings.filter((b) => {
       const pts = b.ring || []
       if (!pts.length) return true
-      const id = b.msbfId != null ? `msbf-${b.msbfId}` : null
+      const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
       if (id && hide.has(id)) return false
       let sx = 0, sz = 0
       for (const p of pts) { sx += Array.isArray(p) ? p[0] : p.x; sz += Array.isArray(p) ? p[1] : p.z }

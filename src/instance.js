@@ -22,10 +22,12 @@
  */
 import lafayetteSquare from './instances/lafayette-square.js'
 import hipointeDemun from './instances/hipointe-demun.js'
+import ksiezyMlyn from './instances/ksi-y-m-yn.js'
 
 const INSTANCES = {
   'lafayette-square': lafayetteSquare,
   'hipointe-demun': hipointeDemun,
+  'ksi-y-m-yn': ksiezyMlyn,
 }
 
 const DEFAULT_LOOK = 'lafayette-square'

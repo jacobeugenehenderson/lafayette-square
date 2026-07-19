@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "look": "ksi-y-m-yn",
+  "count": 13,
+  "lamps": [
+    {
+      "x": 307.9,
+      "z": -772.4,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 326.8,
+      "z": -764.3,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 323.9,
+      "z": -786.6,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 347.5,
+      "z": -757.1,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 276.9,
+      "z": -729.6,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": -711,
+      "z": 283.4,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": -145.6,
+      "z": 44.1,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 356.5,
+      "z": -161,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 359.6,
+      "z": -167.8,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 362.7,
+      "z": -168.9,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 369.6,
+      "z": -171.6,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 387.6,
+      "z": -174,
+      "park": false,
+      "groundRaw": 0
+    },
+    {
+      "x": 438.2,
+      "z": -194.9,
+      "park": false,
+      "groundRaw": 0
+    }
+  ]
+}

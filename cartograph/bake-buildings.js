@@ -53,7 +53,13 @@ function adaptMapBuildings(mapBuildings) {
     // (min ~0.02 m) don't bake as slabs; else the baker's own 8 m default.
     const tagH = b.tags && typeof b.tags.height === 'number' ? b.tags.height : null
     const size = tagH != null ? [0, Math.max(tagH, 3), 0] : undefined
-    out.push({ id: `msbf-${b.msbfId}`, footprint: fp, size })
+    // Source-agnostic building id: MSBF where present (US pours), else OSM
+    // (foreign/OSM pours). Without this an OSM installation stamps every
+    // building `msbf-undefined` — one non-unique id — breaking content joins,
+    // per-building overrides, selection, and neon. (task: id-namespace unify.)
+    const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
+    if (!id) continue
+    out.push({ id, footprint: fp, size })
   }
   return out
 }
