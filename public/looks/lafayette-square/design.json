@@ -11,7 +11,7 @@
     "treelawn": true,
     "building": true,
     "parking_lot": true,
-    "garden": true,
+    "garden": false,
     "playground": true,
     "swimming_pool": true,
     "pitch": false,
@@ -315,6 +315,179 @@
             "outer": "LU",
             "inner": "SW"
           }
+        }
+      }
+    },
+    "mackay-place-1": {
+      "left": {
+        "-1": {
+          "capFlip": true
+        }
+      }
+    },
+    "south-18th-street-3": {
+      "left": {
+        "0": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "1": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "2": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "3": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "4": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "5": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "6": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "SW"
+          }
+        },
+        "7": {
+          "pavementHW": 5.49,
+          "treelawn": 1.524,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "SW"
+          }
+        },
+        "-2": {
+          "capFlip": false
+        }
+      },
+      "right": {
+        "0": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "SW"
+          }
+        },
+        "1": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "SW"
+          }
+        },
+        "2": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "SW"
+          }
+        },
+        "3": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "SW"
+          }
+        },
+        "4": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "5": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "6": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "preston-place": {
+      "left": {
+        "-2": {
+          "capFlip": true
         }
       }
     }

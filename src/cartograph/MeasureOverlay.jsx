@@ -7,7 +7,7 @@ import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
-import { chainMeasure, findFeForSide as findFeForSidePure, feesForChainSide, applyKindToMeasure } from './measureModel.js'
+import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom, makeCapFe, feCustomKey } from '../lib/feCustomKey.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
@@ -251,7 +251,6 @@ export default function MeasureOverlay() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectStreet = useCartographStore(s => s.selectStreet)
   const deselectStreet = useCartographStore(s => s.deselectStreet)
-  const measureMode = useCartographStore(s => s.measureMode)
   const blockCustoms = useCartographStore(s => s.blockCustoms)
   // D.5/D.6: frontageEdges from the V2 build — used to resolve a
   // (chainIdx, segOrd, sideKey) tuple to its containing block-edge
@@ -275,6 +274,35 @@ export default function MeasureOverlay() {
     if (streetIdx == null) return null
     const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
     return findFeForSidePure(v2FrontageEdges, st, segOrd, sideKey)
+  }, [v2FrontageEdges])
+
+  // A1 (2026-07-18, eye-confirmed at Kennett x 18th): resolve the block-edge fe a
+  // strip-body click lands in by the NEAREST FRONTAGE POLYLINE (fe.points, at curb
+  // position), constrained to this chain + side. naturalSegmentOrdinal(frame.segI)
+  // misresolves near a corner: the offset click projects across the centerline
+  // bend's vertex to the NEIGHBOR segment, so the flip landed on the SUBSEQUENT
+  // segOrd (+ its max-adjacent corner), not the clicked leg. The strip hugs its own
+  // fe's curb, so nearest-polyline picks the correct edge regardless of the bend.
+  // sideKey null → match either side (used to resolve the SELECTION ordinal, which
+  // is side-agnostic; the panel then resolves feL/feR from it per side).
+  const nearestFeForSide = useCallback((streetIdx, sideKey, px, pz) => {
+    if (streetIdx == null) return null
+    const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
+    if (!st) return null
+    const idKey = st.skelId || st.id || null
+    const nameKey = st.name || null
+    let best = null, bestD = Infinity
+    for (const fe of (v2FrontageEdges || [])) {
+      if (sideKey && fe.side !== sideKey) continue
+      const idMatches = idKey && fe.chainSkelId === idKey
+      const nameMatches = !idKey && nameKey && fe.chainName === nameKey
+      if (!idMatches && !nameMatches) continue
+      if (!fe.points || fe.points.length < 2) continue
+      const pr = projectOntoPolyline(fe.points, px, pz)
+      const d = Math.hypot(pr.x - px, pr.z - pz)
+      if (d < bestD) { bestD = d; best = fe }
+    }
+    return best
   }, [v2FrontageEdges])
 
   const { camera, gl } = useThree()
@@ -351,14 +379,22 @@ export default function MeasureOverlay() {
       ? frameAtPoint(st.points, selectedMeasurePoint.x, selectedMeasurePoint.z)
       : midAndPerp(st.points)
     const { cx, cz, nx, nz, segI } = anchor
-    const ordinal = naturalSegmentOrdinal(st, segI ?? 0, ixByChain?.get(st))
-    // Per-side override from the block-edge containing this segOrd. Each
-    // side has its own fe (one block-edge per side per segOrd). The fe's
-    // chain-anchored custom (feCustomKey: skelId/side/segOrd) wins over
-    // chain.measure[side]. This is what makes handles stick to the band
-    // boundaries when the operator drags in per-block mode.
-    const feLeft = findFeForSide(selectedStreet, ordinal, 'left')
-    const feRight = findFeForSide(selectedStreet, ordinal, 'right')
+    // Per-side override from the block-edge at this anchor. Each side has its own
+    // fe (one block-edge per side per segOrd); the fe's chain-anchored custom
+    // (feCustomKey: skelId/side/segOrd) wins over chain.measure[side] — what makes
+    // handles stick to the band boundaries. Resolve each side by NEAREST FRONTAGE
+    // POLYLINE (corner-safe): the offset anchor near a bend misprojects to the
+    // neighbor segment under naturalSegmentOrdinal (the A1 flip bug). Fall back to
+    // the segment-ordinal path if no fe matches. feL/feR drive the handles;
+    // `ordinal` (→ setSegmentOrdinal) drives the panel's entry-field fes, so both
+    // resolve to the same edge.
+    const selPt = { x: selectedMeasurePoint?.x ?? cx, z: selectedMeasurePoint?.z ?? cz }
+    const segOrdFallback = naturalSegmentOrdinal(st, segI ?? 0, ixByChain?.get(st))
+    const feLeft  = nearestFeForSide(selectedStreet, 'left',  selPt.x, selPt.z) || findFeForSide(selectedStreet, segOrdFallback, 'left')
+    const feRight = nearestFeForSide(selectedStreet, 'right', selPt.x, selPt.z) || findFeForSide(selectedStreet, segOrdFallback, 'right')
+    const ordinal = feLeft?.segOrds?.length ? Math.min(...feLeft.segOrds)
+                  : feRight?.segOrds?.length ? Math.min(...feRight.segOrds)
+                  : segOrdFallback
     const customLeft = readFeCustom(blockCustoms, feLeft)
     const customRight = readFeCustom(blockCustoms, feRight)
     // chainMeasure (not bare st.measure) is the purpose-built seeding fallback:
@@ -444,7 +480,7 @@ export default function MeasureOverlay() {
       }
     }
     return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, ixByChain, sectionCurbRings])
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, nearestFeForSide, ixByChain, sectionCurbRings])
 
   // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
   useEffect(() => {
@@ -454,16 +490,14 @@ export default function MeasureOverlay() {
 
   // Apply a boundary drag. `r` = new radius (absolute, from centerline).
   //
-  // Polygon-only authoring (RIBBONS §1 data wall): every write lands in
+  // Polygon-only authoring (RIBBONS §1 data wall): the write lands in
   // blockCustoms keyed by the fe's chain-anchored identity (skelId, side,
-  // segOrd) — NEVER chain.measure. The chain is a SELECTION criterion, not a
-  // write scope:
-  //   • Whole-chain mode  → SELECT every fe of the chain on the touched
-  //     side(s) and fan a per-fe write across them (writeBlockEdgeCustoms,
-  //     one store mutation / one V2 rebuild).
-  //   • Per-block mode    → write only the one fe at the click anchor.
-  // "Symmetric" is the transient `editSidesSeparately` toggle, not stored
-  // chain data: when it's false the edit mirrors to the opposite-side fe(s).
+  // segOrd) — NEVER chain.measure. SECTION edits are ALWAYS per-fe, ONE side
+  // (the whole-chain + symmetric-mirror modes were excised 2026-07-18 — the
+  // ribbon is inherently per-side, and the "whole street" head-start comes from
+  // the automatic survey best-guess, not a manual batch mode). The fe is resolved
+  // by NEAREST FRONTAGE POLYLINE at the drag anchor — robust near corners, where
+  // the old naturalSegmentOrdinal(frame.segI) misresolved to the neighbor segment.
   const applyDrag = useCallback((streetIdx, ordinal, side, kind, r) => {
     // Guard against non-finite r — a brief pointer-leave makes screenToWorld
     // return NaN, which poisons the ribbon buffer's bbox and drops every
@@ -474,13 +508,11 @@ export default function MeasureOverlay() {
     const store = useCartographStore.getState()
     const st = store.centerlineData?.streets?.[streetIdx]
     if (!st) return
-    const mode = store.measureMode
-    const editSep = store.editSidesSeparately
+    const anchor = store.selectedMeasurePoint
+    if (!anchor) return
+    const fe = nearestFeForSide(streetIdx, side, anchor.x, anchor.z)
+    if (!fe) return
     const blockCustoms = store.blockCustoms || {}
-    const fes = store._v2FrontageEdges || []
-    const otherSide = side === 'left' ? 'right' : 'left'
-    const sides = editSep ? [side] : [side, otherSide]
-
     // Chain-default seed, innerEdge-resolved so divided carriageways match
     // the bake: innerEdgeMeasure is applied to chain.measure at build time
     // but NOT to blockCustoms, so the seed must pre-apply it or the median
@@ -489,32 +521,15 @@ export default function MeasureOverlay() {
       chainMeasure(st), st.anchor === 'inner-edge' ? st.innerSign : 0
     )
     const FALLBACK = { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
-
-    const entries = []
-    const pushFe = (fe, s) => {
-      if (!fe) return
-      // ⭐ One depth truth (SECTION.md §5): seed the drag from the SAME
-      // resolution the FILL renders, so the drag redistributes within the
-      // depths on screen — and the write carries the resolved depths as
-      // intent, never surveyed-depth baggage (the FILL reads
-      // .treelawn/.sidewalk off blockCustoms now).
-      const existing = readFeCustom(blockCustoms, fe)
-      const ped = resolvePedDepths(chainSeed, s, existing)
-      const seed = { ...(chainSeed[s] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-      entries.push({ fe, measure: applyKindToMeasure(seed, kind, r) })
-    }
-
-    if (mode?.type === 'global') {
-      for (const s of sides) for (const fe of feesForChainSide(fes, st, s)) pushFe(fe, s)
-    } else {
-      const anchor = store.selectedMeasurePoint
-      if (!anchor) return
-      const frame = frameAtPoint(st.points, anchor.x, anchor.z)
-      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-      for (const s of sides) pushFe(findFeForSide(streetIdx, segOrd, s), s)
-    }
-    if (entries.length) store.writeBlockEdgeCustoms(entries)
-  }, [findFeForSide, ixByChain])
+    // ⭐ One depth truth (SECTION.md §5): seed the drag from the SAME resolution
+    // the FILL renders, so the drag redistributes within the depths on screen —
+    // the write carries the resolved depths as intent, never surveyed-depth
+    // baggage. writeBlockEdgeCustoms fans this across the fe's owned segOrds.
+    const existing = readFeCustom(blockCustoms, fe)
+    const ped = resolvePedDepths(chainSeed, side, existing)
+    const seed = { ...(chainSeed[side] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
+    store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r) }])
+  }, [nearestFeForSide])
 
   const onPointerDown = useCallback((e) => {
     if (!active || spaceDown || e.button !== 0) return
@@ -668,8 +683,12 @@ export default function MeasureOverlay() {
       const signedPerp = dx * frame.nx + dz * frame.nz
       const side = signedPerp >= 0 ? 'right' : 'left'
       const r = Math.abs(signedPerp)
-      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-      const customFe = findFeForSide(selection.streetIdx, segOrd, side)
+      // Resolve the fe by nearest frontage polyline (robust near corners — see
+      // nearestFeForSide). Fall back to the segment-ordinal path if no fe matched.
+      const nf = nearestFeForSide(selection.streetIdx, side, p.x, p.z)
+      const nfSeg = (nf?.segOrds?.length) ? Math.min(...nf.segOrds) : null
+      const segOrd = nfSeg != null ? nfSeg : naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
+      const customFe = nfSeg != null ? nf : findFeForSide(selection.streetIdx, segOrd, side)
       const existing = readFeCustom(blockCustoms, customFe)
       const chainM = chainMeasure(st)
       const chainSide = chainM?.[side] || null
@@ -698,13 +717,11 @@ export default function MeasureOverlay() {
     const tryFlipStripMaterial = (p) => {
       const hit = resolveStripHit(p)
       if (!hit) return false
-      const { slot, side, segOrd, sourceMeasure, hasTL, fe } = hit
+      const { slot, side, sourceMeasure, hasTL, fe } = hit
+      if (!fe) return false
       const store = useCartographStore.getState()
-      const mode = store.measureMode
-      const editSep = store.editSidesSeparately
       const st = centerlineData.streets[selection.streetIdx]
       const blockCustoms = store.blockCustoms || {}
-      const fes = store._v2FrontageEdges || []
       // Slot defaults follow the §3.1 ordering (treelawn-Y → {LU, SW};
       // treelawn-N → {SW, LU}, the walk hugging the curb). Flip captures the
       // previous slot values and inverts the clicked slot only.
@@ -717,31 +734,22 @@ export default function MeasureOverlay() {
           }
         : { ...defMats }
       const nextMats = { ...seedMats, [slot]: seedMats[slot] === 'LU' ? 'SW' : 'LU' }
-
-      const otherSide = side === 'left' ? 'right' : 'left'
-      const sides = editSep ? [side] : [side, otherSide]
+      // SECTION edits are ALWAYS per-fe, ONE side. The ribbon is inherently
+      // per-side (every fe its own node), so the whole-chain + symmetric-mirror
+      // modes were excised (2026-07-18): they fought the model and dragged in the
+      // wrong segments. The "whole street" head-start comes from the automatic
+      // survey best-guess (real sidewalk data), not a manual batch mode; per-fe
+      // override handles the exceptions. writeBlockEdgeCustoms fans the one
+      // arrangement across THIS fe's owned segOrds (feSegOrds) — that is the only
+      // fan that remains, and it is within the single block-edge.
       const chainSeed = innerEdgeMeasure(
         chainMeasure(st), st.anchor === 'inner-edge' ? st.innerSign : 0
       )
-      const entries = []
-      const pushFe = (feX, s) => {
-        if (!feX) return
-        // Seed each fe from its own custom (preserve authored fields) over the
-        // chain reference, with depths from the ONE resolution (§5) — a swap
-        // changes materials only, never bakes surveyed depths.
-        const existing = readFeCustom(blockCustoms, feX)
-        const ped = resolvePedDepths(chainSeed, s, existing)
-        const seed = { ...(chainSeed[s] || sourceMeasure), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-        entries.push({ fe: feX, measure: { ...seed, materials: { ...nextMats } } })
-      }
-      if (mode?.type === 'global') {
-        for (const s of sides) for (const feX of feesForChainSide(fes, st, s)) pushFe(feX, s)
-      } else {
-        for (const s of sides) pushFe(s === side ? fe : findFeForSide(selection.streetIdx, segOrd, s), s)
-      }
-      if (!entries.length) return false
-      store.writeBlockEdgeCustoms(entries)
-      useCartographStore.setState({ status: `Flipped ${slot} strip material (${mode?.type === 'global' ? 'chain' : 'block'})` })
+      const existing = readFeCustom(blockCustoms, fe)
+      const ped = resolvePedDepths(chainSeed, side, existing)
+      const seed = { ...(chainSeed[side] || sourceMeasure), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
+      store.writeBlockEdgeCustoms([{ fe, measure: { ...seed, materials: { ...nextMats } } }])
+      useCartographStore.setState({ status: `Flipped ${slot} strip material` })
       return true
     }
     // Ctrl-click on a dead-end CAP → flip the cap's wrap material SW↔treelawn,

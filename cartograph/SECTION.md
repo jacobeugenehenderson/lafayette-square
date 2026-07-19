@@ -136,13 +136,14 @@ Section authors a thin per-block-edge overlay keyed to Skeleton identities. Surf
 
 | Control | What it does | Writes |
 |---|---|---|
+| **Curb / Treelawn / Sidewalk** entry fields | hand-type a depth in ft; commits on blur / Enter | per-fe `blockCustoms[…].{curb,treelawn,sidewalk}` |
 | **Treelawn-outer** handle | drags the **divider** (treelawn depth) | per-fe `blockCustoms[…].treelawn` |
 | **Property-line** handle | drags the sidewalk depth | per-fe `…sidewalk` |
-| **Strip-swap** (ctrl / right-click in a strip) | flips that strip's material **LU ↔ SW** | `…materials.{outer|inner}` |
-| **Whole-chain ↔ per-block** mode | edit *scope*: fan across the chain vs the one block-edge | the selection an edit fans across (never `chain.measure`) |
-| **Symmetric ↔ Asymmetric** | mirror to the opposite side, or one side | transient UI state |
+| **Strip-swap** (⌃ / right-click in a strip) | flips that strip's material **LU ↔ SW** | `…materials.{outer|inner}` |
 | **↺ Revert to Default** (footer button) | clears **every** Section ped override → the calculation re-seeds | strips `treelawn`/`sidewalk`/`materials` from `blockCustoms` |
 | **⌃-click / right-click a ped handle** | reverts **that one edge** to the calculated default | strips the Section fields off that fe's slot |
+
+> **⭐ Section edits are ALWAYS per-fe, one side (excised the modes 2026-07-18).** The **whole-chain** and **symmetric-mirror** modes were removed from Section: the ribbon is inherently per-side (every fe its own node), so those modes fought the model and dragged the *wrong* segments into an edit (the venn-overlap that produced the "flip hits the neighbor, not the leg" bug). The **"whole street" head-start comes from the automatic survey best-guess** — real OSM sidewalk presence feeding `gleanTreelawn` — **not a manual batch mode**; per-fe override handles the exceptions. If a manual batch is ever wanted it returns as an *explicit action* button, never a persistent mode. **fe resolution is by NEAREST FRONTAGE POLYLINE** (`nearestFeForSide`, both the flip/drag and the selection ordinal) — corner-safe, replacing `naturalSegmentOrdinal(frame.segI)`, which misprojected an offset click across a bend's vertex to the neighbor segment. Storage fans one arrangement across the fe's owned segOrds at write time (`feSegOrds`, `useCartographStore`) so the fes-less **bake** reads it raw. *(Survey keeps its own whole-chain + symmetric knobs for street **widths** — untouched.)*
 
 ### 5.1 Revert — the way back from autosaved edits
 
@@ -155,7 +156,7 @@ This mirrors Survey's revert layers (Skeleton / Default), minus the blessed laye
 
 Three rules the canon is firm on:
 - **⭐ One depth truth (achieved).** The handle is **positioned from the same per-edge depth the FILL strokes** — both read `resolvePedDepths` (§3.3 step 1), and the handle rides the achieved curb (`sectionCurbRings`, the frozen `iA` the FILL strokes off) rather than centerline-ruler space. So the handle sits *on* the strip. The remaining symptom — a drag feeling "sticky" — is **perf, not the wire**: every edit re-strokes the whole map (D6d, `[[project_d6a_curb_offset]]`), not a divergence between handle and FILL.
-- **All writes are polygon-scope (per-fe), in `blockCustoms`** — `chain.measure` is read-only pipeline input (V2-Measure, `RIBBONS §5`). Mode is a *selection criterion*, never a write scope.
+- **All writes are polygon-scope (per-fe), one side, in `blockCustoms`** — `chain.measure` is read-only pipeline input (V2-Measure, `RIBBONS §5`). There is no Section edit *mode* — a click/drag/type edits exactly the block-edge it lands on (the whole-chain + mirror modes were excised 2026-07-18; see the panel note above).
 - **The asphalt-edge handle (`pavementHW`) is NOT Section's** — it moved to Survey. Section shows **only its own** ped handles.
 
 ---

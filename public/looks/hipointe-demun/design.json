@@ -886,5 +886,9 @@
       "species": "salix_babylonica",
       "variantId": 1
     }
-  ]
+  ],
+  "groveThreshold": {
+    "topN": 9,
+    "pinned": []
+  }
 }

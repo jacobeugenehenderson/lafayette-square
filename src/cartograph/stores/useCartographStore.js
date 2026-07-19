@@ -10,6 +10,23 @@ import ribbonsData from '../../data/ribbons.json'
 import toyRibbonsData from '../../data/toy/toy-ribbons.json'
 import { feCustomKey } from '../../lib/feCustomKey.js'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
+
+// A1 (2026-07-18) — FANNED per-fe STORAGE. blockCustoms stores one authored
+// arrangement across ALL of a block-edge's owned segOrds, not only min(segOrd)
+// (feCustomKey's representative). The renderer reads blockCustoms[skel][side]
+// [run.segOrd] PER RUN; the fes-less BAKE can't expand at read-time the way the
+// Designer does (expandCustomsAcrossFeSegOrds) — so an over-segmented block-edge
+// (a cul-de-sac's clustered IXs shatter its terminal chain into many tiny natural
+// segments) orphaned every non-min run and the leg flip rendered Δ=0.0 in the
+// slab. Fanning at WRITE time makes the store self-sufficient (bake reads raw).
+// segOrds are disjoint across fes (assignSegOrdsToFes), so a fan never collides.
+// EVERY per-fe writer AND deleter fans through this. Supersedes the min-key +
+// render-time-only expand (the Designer's expand is now idempotent under it).
+const feSegOrds = (fe, k) => {
+  const key = k || feCustomKey(fe)
+  if (!key) return []
+  return (fe?.segOrds && fe.segOrds.length) ? [...new Set(fe.segOrds)] : [key[2]]
+}
 import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
@@ -735,11 +752,11 @@ const useCartographStore = create((set, get) => ({
   setBlockEdgeCustom: (fe, measure) => {
     const k = feCustomKey(fe)
     if (!k || !measure) return
-    const [skel, side, seg] = k
+    const [skel, side] = k
     const next = { ...(get().blockCustoms || {}) }
     next[skel] = { ...(next[skel] || {}) }
     next[skel][side] = { ...(next[skel][side] || {}) }
-    next[skel][side][seg] = { ...measure }
+    for (const so of feSegOrds(fe, k)) next[skel][side][so] = { ...measure }
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
@@ -756,10 +773,10 @@ const useCartographStore = create((set, get) => ({
     for (const { fe, measure } of entries) {
       const k = feCustomKey(fe)
       if (!k || !measure) continue
-      const [skel, side, seg] = k
+      const [skel, side] = k
       next[skel] = { ...(next[skel] || {}) }
       next[skel][side] = { ...(next[skel][side] || {}) }
-      next[skel][side][seg] = { ...measure }
+      for (const so of feSegOrds(fe, k)) next[skel][side][so] = { ...measure }   // fan (see feSegOrds)
       changed = true
     }
     if (!changed) return
@@ -800,11 +817,13 @@ const useCartographStore = create((set, get) => ({
       if (!idMatches && !nameMatches) continue
       const k = feCustomKey(fe)
       if (!k) continue
-      const [skel, side, seg] = k
-      if (!next[skel]?.[side] || !(seg in next[skel][side])) continue
+      const [skel, side] = k
+      if (!next[skel]?.[side]) continue
+      const segs = feSegOrds(fe, k)                              // fan-aware (see feSegOrds)
+      if (!segs.some(seg => seg in next[skel][side])) continue
       next[skel] = { ...next[skel] }
       next[skel][side] = { ...next[skel][side] }
-      delete next[skel][side][seg]
+      for (const seg of segs) delete next[skel][side][seg]
       if (Object.keys(next[skel][side]).length === 0) delete next[skel][side]
       if (Object.keys(next[skel]).length === 0) delete next[skel]
       changed = true
@@ -894,15 +913,19 @@ const useCartographStore = create((set, get) => ({
   // default has none for this fe). Section variant just clears → recalc.
   _revertFeFields: (fe, fields, fromDefault) => {
     const k = feCustomKey(fe); if (!k) return
-    const [skel, side, seg] = k
-    const def = fromDefault ? (get().surveyDefault?.blockCustoms?.[skel]?.[side]?.[seg] || null) : null
+    const [skel, side] = k
     const cur = get().blockCustoms || {}
-    const slot = { ...(cur[skel]?.[side]?.[seg] || {}) }
-    for (const f of fields) { delete slot[f]; if (def && def[f] !== undefined) slot[f] = def[f] }
     const next = { ...cur }
     next[skel] = { ...(next[skel] || {}) }; next[skel][side] = { ...(next[skel][side] || {}) }
-    if (Object.keys(slot).length) next[skel][side][seg] = slot
-    else { delete next[skel][side][seg]; if (!Object.keys(next[skel][side]).length) delete next[skel][side]; if (!Object.keys(next[skel]).length) delete next[skel] }
+    for (const seg of feSegOrds(fe, k)) {                        // fan-aware (see feSegOrds)
+      const def = fromDefault ? (get().surveyDefault?.blockCustoms?.[skel]?.[side]?.[seg] || null) : null
+      const slot = { ...(next[skel][side][seg] || {}) }
+      for (const f of fields) { delete slot[f]; if (def && def[f] !== undefined) slot[f] = def[f] }
+      if (Object.keys(slot).length) next[skel][side][seg] = slot
+      else delete next[skel][side][seg]
+    }
+    if (next[skel][side] && !Object.keys(next[skel][side]).length) delete next[skel][side]
+    if (next[skel] && !Object.keys(next[skel]).length) delete next[skel]
     set({ blockCustoms: next }); get()._saveDesignDebounced()
   },
   revertFeSurveyToDefault: (fe) => get()._revertFeFields(fe, get()._SURVEY_FE_FIELDS, true),

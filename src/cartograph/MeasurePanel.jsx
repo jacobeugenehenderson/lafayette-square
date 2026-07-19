@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
-import { chainMeasure, findFeForSide, feesForChainSide } from './measureModel.js'
+import { chainMeasure, findFeForSide } from './measureModel.js'
 import { readFeCustom, feCustomKey } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 
@@ -38,20 +38,6 @@ function effectiveMeasure(st, segOrd, v2FrontageEdges, blockCustoms) {
 //   treelawn > 0 → 'sidewalk' (asphalt + curb + treelawn + sidewalk band)
 //   only sidewalk → 'lawn'    (asphalt + curb + sidewalk band, no treelawn)
 //   nothing → 'none'          (asphalt + curb, no ped zone)
-// Does ANY fe belonging to this chain have a custom written? Used by the
-// "Wipe per-block customs" button gate in whole-chain mode.
-function hasAnyChainCustom(v2FrontageEdges, st, blockCustoms) {
-  if (!st || !v2FrontageEdges?.length || !blockCustoms) return false
-  const idKey = st.skelId || st.id || null
-  const nameKey = st.name || null
-  for (const fe of v2FrontageEdges) {
-    const idMatches = idKey && fe.chainSkelId === idKey
-    const nameMatches = !idKey && nameKey && fe.chainName === nameKey
-    if (!idMatches && !nameMatches) continue
-    if (readFeCustom(blockCustoms, fe)) return true
-  }
-  return false
-}
 
 function inferTerminal(side) {
   const tl = side.treelawn || 0
@@ -139,11 +125,7 @@ export default function MeasurePanel() {
   const centerlineData     = useCartographStore(s => s.centerlineData)
   const blockCustoms       = useCartographStore(s => s.blockCustoms)
   const v2FrontageEdges    = useCartographStore(s => s._v2FrontageEdges)
-  const measureMode        = useCartographStore(s => s.measureMode)
-  const editSidesSeparately = useCartographStore(s => s.editSidesSeparately)
-  const setEditSidesSeparately = useCartographStore(s => s.setEditSidesSeparately)
   const writeBlockEdgeCustoms = useCartographStore(s => s.writeBlockEdgeCustoms)
-  const clearCustomsForChain = useCartographStore(s => s.clearBlockEdgeCustomsForChain)
   const setStreetDisabled  = useCartographStore(s => s.setStreetDisabled)
   const revertSectionToDefault = useCartographStore(s => s.revertSectionToDefault)
   const sectionOverrideCount = useCartographStore(s => s.sectionOverrideCount)
@@ -160,66 +142,37 @@ export default function MeasurePanel() {
   if (!st) return null
 
   const ordinal = Number.isFinite(selectedOrdinal) && selectedOrdinal >= 0 ? selectedOrdinal : 0
-  const isWholeChain = measureMode?.type === 'global'
 
   const measure = effectiveMeasure(st, ordinal, v2FrontageEdges, blockCustoms)
-  // "Symmetric" is the transient mirror toggle, not stored chain data.
-  const symmetric = !editSidesSeparately
   const { feL, feR } = measure
   const hasCustom = !!(
     readFeCustom(blockCustoms, feL) || readFeCustom(blockCustoms, feR)
   )
 
-  // Persist a side's new measure — always per-fe (data-wall doctrine), never
-  // chain.measure. Whole-chain mode SELECTS every fe of the chain on the
-  // touched side(s) and fans the write; per-block mode writes the one fe at
-  // this segment. When not editing sides separately, the write mirrors to
-  // the opposite side. One batched store write → one V2 rebuild.
+  // Persist a side's new measure — per-fe (data-wall doctrine), ONE side, never
+  // chain.measure. SECTION is inherently per-side (mode + mirror excised
+  // 2026-07-18), so a side edits exactly its own block-edge at this segment.
+  // writeBlockEdgeCustoms fans it across that fe's owned segOrds.
   function updateSide(sideKey, newSide) {
-    const otherSide = sideKey === 'left' ? 'right' : 'left'
-    const sides = editSidesSeparately ? [sideKey] : [sideKey, otherSide]
-    const entries = []
-    if (isWholeChain) {
-      for (const s of sides) {
-        for (const fe of feesForChainSide(v2FrontageEdges, st, s)) {
-          entries.push({ fe, measure: { ...newSide } })
-        }
-      }
-    } else {
-      const feBySide = { left: feL, right: feR }
-      for (const s of sides) {
-        const fe = feBySide[s]
-        if (fe) entries.push({ fe, measure: { ...newSide } })
-      }
-    }
-    writeBlockEdgeCustoms(entries)
-  }
-
-  function toggleAsymmetric() {
-    // Mirror-edit is a property of the current selection, not the chain.
-    setEditSidesSeparately(!editSidesSeparately)
+    const fe = sideKey === 'left' ? feL : feR
+    if (!fe) return
+    writeBlockEdgeCustoms([{ fe, measure: { ...newSide } }])
   }
 
   function resetToDefault() {
-    // Per-block reset: drop the customs at THIS segment's resolved fes
-    // (one per side), leaving the chain READ default as the visible value.
-    // Whole-chain reset wipes every per-block custom on the chain (the
-    // explicit "Wipe per-block customs" button — the only wipe now that
-    // mode-switching no longer destroys customs).
-    if (isWholeChain) {
-      clearCustomsForChain(selectedStreet)
-      return
-    }
+    // Per-block reset: drop the custom at THIS segment's two fes (one per side),
+    // across all their fanned segOrds, leaving the chain READ default visible.
     const all = { ...(blockCustoms || {}) }
     let changed = false
     for (const fe of [feL, feR]) {
       const k = feCustomKey(fe)
       if (!k) continue
-      const [skel, side, seg] = k
-      if (!all[skel]?.[side] || !(seg in all[skel][side])) continue
+      const [skel, side] = k
+      if (!all[skel]?.[side]) continue
+      const segs = (fe.segOrds && fe.segOrds.length) ? fe.segOrds : [k[2]]
       all[skel] = { ...all[skel] }
       all[skel][side] = { ...all[skel][side] }
-      delete all[skel][side][seg]
+      for (const seg of segs) delete all[skel][side][seg]
       if (Object.keys(all[skel][side]).length === 0) delete all[skel][side]
       if (Object.keys(all[skel]).length === 0) delete all[skel]
       changed = true
@@ -241,35 +194,25 @@ export default function MeasurePanel() {
         </button>
       </h2>
 
-      <div className="carto-row">
-        <input type="checkbox" className="carto-checkbox"
-          checked={!symmetric}
-          onChange={toggleAsymmetric} />
-        <label className="carto-label">Asymmetric (edit sides separately)</label>
-      </div>
-
-      <ModeToggle />
-
-      {symmetric ? (
-        <SideBlock sideKey="left" side={measure.left} single
-          onChange={s => updateSide('left', s)} />
-      ) : (
-        <>
-          <SideBlock sideKey="left" side={measure.left}
-            onChange={s => updateSide('left', s)} />
-          <SideBlock sideKey="right" side={measure.right}
-            onChange={s => updateSide('right', s)} />
-        </>
-      )}
+      {/* SECTION is per-fe, per-side. The whole-chain + symmetric-mirror modes
+          were excised (2026-07-18): the ribbon is inherently per-side, so those
+          modes fought the model and dragged in the wrong segments. The "whole
+          street" head-start comes from the automatic survey best-guess (real
+          sidewalk data), not a manual batch mode; per-fe override handles the
+          rest. Both sides edit independently. */}
+      <SideBlock sideKey="left" side={measure.left}
+        onChange={s => updateSide('left', s)} />
+      <SideBlock sideKey="right" side={measure.right}
+        onChange={s => updateSide('right', s)} />
 
       <div className="carto-meta">
-        {st.type || 'residential'} · {st.points.length} nodes · {isWholeChain ? 'whole-chain' : (hasCustom ? 'custom block' : 'inherits chain')}
+        {st.type || 'residential'} · {st.points.length} nodes · {hasCustom ? 'custom block' : 'inherits chain'}
       </div>
 
-      {((!isWholeChain && hasCustom) || (isWholeChain && hasAnyChainCustom(v2FrontageEdges, st, blockCustoms))) && (
+      {hasCustom && (
         <div className="carto-actions">
           <button className="carto-btn-sm" onClick={resetToDefault}>
-            {isWholeChain ? 'Wipe per-block customs' : 'Reset block to chain default'}
+            Reset block to chain default
           </button>
         </div>
       )}
@@ -290,27 +233,3 @@ export default function MeasurePanel() {
   )
 }
 
-// Measure-mode toggle — whole-chain (default) vs per-block. Both modes
-// author PER-FE; the mode only sets the SELECTION the edit fans across:
-// whole-chain → every fe of the chain; per-block → the one fe at the click
-// anchor. Switching modes is non-destructive (a pure selection-scope change)
-// — it no longer wipes customs. To clear per-block customs, use the explicit
-// "Wipe per-block customs" button.
-function ModeToggle() {
-  const mode = useCartographStore(s => s.measureMode)
-  const setMode = useCartographStore(s => s.setMeasureMode)
-  const isWholeChain = mode?.type === 'global'
-  const click = () => setMode({ type: isWholeChain ? 'block' : 'global' })
-  return (
-    <div className="carto-row">
-      <button
-        className={`carto-btn-sm carto-btn--grow${isWholeChain ? ' is-active' : ''}`}
-        onClick={click}
-        title={isWholeChain
-          ? 'Whole-chain mode (default): an edit fans to every block-edge of the chain. Click to switch to per-block authoring.'
-          : 'Per-block mode: an edit writes only the block-edge at the click anchor. Click to switch back to whole-chain.'}>
-        {isWholeChain ? '● Edit whole chain' : '○ Edit whole chain'}
-      </button>
-    </div>
-  )
-}

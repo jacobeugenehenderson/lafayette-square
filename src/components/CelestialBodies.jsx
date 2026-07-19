@@ -424,7 +424,7 @@ function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
   )
 }
 
-function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constellationsChannel, skyGainChannel, starsChannel }) {
+function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constellationsChannel, skyGainChannel, starsChannel, milkyWayChannel }) {
   const materialRef = useRef()
   // 4-band sky color authoring lives in `skyChannel` (operator's grid).
   // The legacy procedural keyframe ladder + JS-side weather color
@@ -481,6 +481,18 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       u.uTurbidity.value = sky.turbidity
       u.uSunsetPotential.value = sky.sunsetPotential
       u.uBeautyBias.value = sky.beautyBias
+
+      // Milky Way channel (on/off, resolver-lerped across TOD slots)
+      if (milkyWayChannel) {
+        const mw = resolveGroupAtMinute(
+          milkyWayChannel, tod.getMinuteOfDay(),
+          milkyWayChannel?.animated ? slotMinutes : null,
+          MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
+        ).value
+        u.uMilkyWay.value = (mw == null ? 0 : mw)
+      } else {
+        u.uMilkyWay.value = 0
+      }
     }
   })
 
@@ -502,6 +514,15 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uSunsetPotential: { value: 0.0 },
       uBeautyBias: { value: 0.6 },
       uSkyGain: { value: 1.0 },
+      uMilkyWay: { value: 0.0 },
+      // Aimed ⟂ the arch azimuth AS FRAMED AT THE 50% MARK of the hero pan
+      // (cam≈[-614,114,183] → arch), so the band passes behind the Gateway Arch
+      // in the money composition. The tilt = a 30° SLOPE (diagonal band, stays
+      // lower/tidier, doesn't sweep the zenith). Re-solve if the pan is reauthored.
+      uGalPole: { value: new THREE.Vector3(0.275, -0.5, 0.821).normalize() },
+      // The bright galactic-core "heart" sits here — aimed behind the arch (the
+      // 50%-pan arch azimuth), so the luminous center is the hero.
+      uCoreDir: { value: new THREE.Vector3(0.951, 0.018, -0.308).normalize() },
     },
     vertexShader: `
       varying vec3 vWorldPosition;
@@ -528,7 +549,30 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uniform float uSunsetPotential;
       uniform float uBeautyBias;
       uniform float uSkyGain;
+      uniform float uMilkyWay;   // milkyWay channel on/off (0..1), TOD-lerped
+      uniform vec3  uGalPole;    // galactic-pole direction → orients the band
       varying vec3 vWorldPosition;
+
+      // ── Dense fractal noise (procedural Milky Way — no texture) ──
+      float mwHash(vec3 p){
+        p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+        p *= 17.0;
+        return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+      }
+      float mwNoise(vec3 x){
+        vec3 i = floor(x);
+        vec3 f = fract(x);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(mix(mwHash(i+vec3(0,0,0)), mwHash(i+vec3(1,0,0)), f.x),
+                       mix(mwHash(i+vec3(0,1,0)), mwHash(i+vec3(1,1,0)), f.x), f.y),
+                   mix(mix(mwHash(i+vec3(0,0,1)), mwHash(i+vec3(1,0,1)), f.x),
+                       mix(mwHash(i+vec3(0,1,1)), mwHash(i+vec3(1,1,1)), f.x), f.y), f.z);
+      }
+      float mwFbm(vec3 p){
+        float a = 0.5, s = 0.0;
+        for(int i = 0; i < 4; i++){ s += a * mwNoise(p); p *= 2.02; a *= 0.5; }
+        return s;
+      }
 
       void main() {
         vec3 dir = normalize(vWorldPosition);
@@ -650,6 +694,33 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         // scatter + haze) uniformly. Stars are a separate object (their own
         // opacity) and are deliberately untouched. 1.0 = no change.
         finalColor *= uSkyGain;
+
+        // ── Milky Way band — dense fractal noise, composited AFTER skyGain so
+        // the night-dimmed dome lets it rise (like the separate star layer).
+        // Aimed to dive behind the arch. Gated by milkyWay channel × nightFactor.
+        float mwNight = clamp((0.05 - sunAlt) / 0.20, 0.0, 1.0);
+        float mwGate = uMilkyWay * mwNight;
+        if (mwGate > 0.001) {
+          float gLat = asin(clamp(dot(dir, normalize(uGalPole)), -1.0, 1.0));
+          // A smooth GLOWING BAND with very soft feathered sides — not filaments,
+          // not stars, not clouds. Just a soft ribbon of light. Lower falloff =
+          // softer/wider sides.
+          float band = exp(-gLat * gLat * 30.0);
+          // NEARLY-IMPERCEPTIBLE fractal breakup — subtly varies the glow so it
+          // isn't a dead-flat smear, but stays one cohesive band (low contrast).
+          float n = mwFbm(dir * 13.0);
+          float breakup = 0.82 + 0.32 * n;      // ~0.9..1.06 — barely there
+          float milk = band * breakup;
+          // Purple → blue → teal, LOW contrast so it reads as a single glow.
+          vec3 cA = vec3(0.13, 0.11, 0.27);   // deep purple
+          vec3 cB = vec3(0.14, 0.25, 0.45);   // blue
+          vec3 cC = vec3(0.26, 0.50, 0.52);   // teal
+          vec3 milkColor = mix(cA, cB, smoothstep(0.30, 0.60, n));
+          milkColor = mix(milkColor, cC, smoothstep(0.60, 0.88, n));
+          // Low master (~13%) — a subtle glow over the dark dome. Default for the
+          // future Brightness knob.
+          finalColor += milkColor * milk * mwGate * 0.13;
+        }
 
         // Opaque sky — no transparent fade, no stencil portal
         gl_FragColor = vec4(finalColor, 1.0);
@@ -1259,7 +1330,7 @@ function CelestialBodies({
 
   return (
     <>
-      {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} skyChannel={skyChannel} constellationsChannel={constellationsChannel} skyGainChannel={skyGainChannel} starsChannel={starsChannel} />}
+      {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} skyChannel={skyChannel} constellationsChannel={constellationsChannel} skyGainChannel={skyGainChannel} starsChannel={starsChannel} milkyWayChannel={milkyWayChannel} />}
       {debugLevel < 1 && <Suspense fallback={null}><Moon {...lighting.moon} /></Suspense>}
       {/* Milky Way mount hidden from runtime 2026-05-02 — see comment in
           CartographSkyLight.jsx. MilkyWaySphere component preserved; takes
