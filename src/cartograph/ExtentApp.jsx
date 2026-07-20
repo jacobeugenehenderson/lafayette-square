@@ -317,6 +317,110 @@ function ExtentDim({ centroid, radiusM }) {
   )
 }
 
+// Area of a lon/lat bbox in km². Mirrors the server's guard (`serve.js` area check)
+// so the UI can warn BEFORE a doomed round-trip instead of surfacing a 400.
+function bboxAreaKm2(b) {
+  if (!b) return 0
+  const midLat = (b.minLat + b.maxLat) / 2
+  const latKm = (b.maxLat - b.minLat) * 111.0
+  const lonKm = (b.maxLon - b.minLon) * 111.32 * Math.cos((midLat * Math.PI) / 180)
+  return latKm * lonKm
+}
+// Keep in sync with `MAX_FETCH_KM2` in cartograph/serve.js.
+const MAX_FETCH_KM2 = 200
+// How far past the neighborhood we pull, in METRES — a uniform ring of slack around
+// the boundary's outermost extent, whatever shape that boundary is.
+//
+// Deliberately a distance, not a fraction. A percentage of a bbox pads the long axis
+// more than the short one (Księży Młyn at 100%: +910 m east-west but +795 m
+// north-south) and pads a RECTANGLE that has nothing to do with the boundary's
+// actual shape — which may be any number of corners, and is rarely square.
+//
+// Why it must be substantial: a gazetteer bbox ends exactly where the boundary
+// streets are, because those streets ARE the place's edge — Księży Młyn's NE corner
+// sits at lat 51.7614 against a place maxLat of 51.7615, on the line. The corner
+// resolver needs the junctions BEYOND them to close a ring at all, and the hood as
+// people describe it routinely exceeds the administrative area (the operator's own
+// ring was ~1.8x the official district). A kilometre of slack costs ~14 km² here:
+// 7% of the 200 km² cap, a fifth of what Altadena already fetches.
+//
+// The real ceiling is not the cap — it's that `derive` processes the whole fetch
+// BEFORE clipping (`PIPELINE §pour`, still OPEN). Close that and this can grow.
+const FETCH_MARGIN_M = 1000
+
+// Expand a bbox by a uniform distance in metres — equal slack on every side.
+// The gazetteer's bbox is already the box around the boundary polygon (verified:
+// Nominatim's reported box equals the ring's own min/max), so this is simply
+// "square around the ring, then offset the box".
+function padBbox(b, metres = FETCH_MARGIN_M) {
+  const midLat = (b.minLat + b.maxLat) / 2
+  const dLat = metres / 111000
+  const dLon = metres / (111320 * Math.cos((midLat * Math.PI) / 180))
+  return {
+    minLat: b.minLat - dLat, maxLat: b.maxLat + dLat,
+    minLon: b.minLon - dLon, maxLon: b.maxLon + dLon,
+  }
+}
+
+// The fetched bbox in local metres — the envelope OSM was actually pulled over.
+// `geo.bbox` is the fetch rectangle (`writeGeographyFromBbox`), so this is the
+// authoritative edge of the data, not an estimate.
+function fetchRectOf(geo) {
+  if (!geo?.bbox) return null
+  const [x0, z0] = wgs84ToLocal(geo, geo.bbox.minLon, geo.bbox.maxLat)   // NW
+  const [x1, z1] = wgs84ToLocal(geo, geo.bbox.maxLon, geo.bbox.minLat)   // SE
+  return { x0: Math.min(x0, x1), x1: Math.max(x0, x1), z0: Math.min(z0, z1), z1: Math.max(z0, z1) }
+}
+
+// ⭐ THE FETCH ENVELOPE — the edge of the DATA, drawn on the aerial.
+//
+// The aerial is a global tile layer: it renders everywhere, forever, at any zoom.
+// The OSM fetch is a ONE-TIME bounded rectangle. Nothing on screen distinguished
+// "street we have" from "street that merely exists", so an operator would frame,
+// draw and commit a boundary over territory that was never fetched — and the tool
+// reported success. (Księży Młyn, 2026-07-20: radius 1530 against a 2.07×1.55 km
+// fetch — 56% of the committed disc had NO data behind it, and two of the four
+// boundary streets the operator traced had never been pulled.)
+//
+// `INTAKE §0.5`'s frame-then-fetch promise — "if you can see it on screen, it's in
+// the list" — holds at the moment of fetch and then silently expires: the radius
+// drags and the camera zooms afterward. This draws the promise's actual extent so
+// it can't expire invisibly. Everything outside is shrouded; the edge is dashed.
+const ENVELOPE_PAD = 40000
+function ExtentFetchEnvelope({ geo }) {
+  const rect = useMemo(() => fetchRectOf(geo), [geo])
+  if (!rect) return null
+  const { x0, x1, z0, z1 } = rect
+  const w = x1 - x0, h = z1 - z0
+  if (!(w > 0 && h > 0)) return null
+  const P = ENVELOPE_PAD
+  // Four strips rather than a holed shape — no shape-plane orientation math to get
+  // wrong, and each quad is trivially verifiable.
+  const quads = [
+    { size: [w + 2 * P, P], at: [(x0 + x1) / 2, z0 - P / 2] },   // north
+    { size: [w + 2 * P, P], at: [(x0 + x1) / 2, z1 + P / 2] },   // south
+    { size: [P, h], at: [x0 - P / 2, (z0 + z1) / 2] },           // west
+    { size: [P, h], at: [x1 + P / 2, (z0 + z1) / 2] },           // east
+  ]
+  const outline = [
+    [x0, 4.2, z0], [x1, 4.2, z0], [x1, 4.2, z1], [x0, 4.2, z1], [x0, 4.2, z0],
+  ]
+  return (
+    <group>
+      {quads.map((q, i) => (
+        <mesh key={i} position={[q.at[0], 0.9, q.at[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={4}>
+          <planeGeometry args={[q.size[0], q.size[1]]} />
+          <meshBasicMaterial color="#0b0d08" transparent opacity={0.62} depthWrite={false} />
+        </mesh>
+      ))}
+      {/* Dark halo then the dashed edge, same treatment as the boundary line so it
+          stays legible over the busy aerial. */}
+      <Line points={outline} color="#0a0a06" lineWidth={5} />
+      <Line points={outline} color="#ff5a3c" lineWidth={2} dashed dashSize={26} gapSize={18} />
+    </group>
+  )
+}
+
 // The live building-footprint overlay — every MSBF footprint (current-frame x/z)
 // merged into ONE geometry, colored inside-vs-outside the boundary circle so the
 // neighborhood's buildings read as the subject. Built once per fetch; the SAME
@@ -949,6 +1053,43 @@ export default function ExtentApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildingCentroids, hide, activate, loopExcluded, keptCenter])
 
+  // ⭐ CONTAINMENT — does the disc claim ground the fetch never covered?
+  //
+  // The invariant is bbox ⊇ disc: you cannot include what was never fetched. It
+  // held nowhere until now — Księży Młyn committed a radius of 1530 m against a
+  // 2.07×1.55 km envelope, so 56% of the disc was bare aerial and the operator had
+  // no way to know. Reported per-side in metres because "which way do I re-fetch"
+  // is the operator's actual next question.
+  // NB: reads `keptCenter`, not `boundaryCentroid` — the latter is the same value
+  // but is aliased further down (`boundaryCentroid = keptCenter`), so naming it
+  // here is a temporal-dead-zone throw that blanks the whole screen.
+  const envelopeOvershoot = useMemo(() => {
+    const rect = fetchRectOf(geo)
+    if (!rect || !(radiusM > 0) || !keptCenter) return null
+    const { x, z } = keptCenter
+    const over = {
+      north: Math.round((z - radiusM) < rect.z0 ? rect.z0 - (z - radiusM) : 0),
+      south: Math.round((z + radiusM) > rect.z1 ? (z + radiusM) - rect.z1 : 0),
+      west: Math.round((x - radiusM) < rect.x0 ? rect.x0 - (x - radiusM) : 0),
+      east: Math.round((x + radiusM) > rect.x1 ? (x + radiusM) - rect.x1 : 0),
+    }
+    const sides = Object.entries(over).filter(([, m]) => m > 0)
+    if (!sides.length) return null
+    // Fraction of the disc with data behind it — a coarse sample is plenty for a
+    // readout, and it's the number that makes the problem legible at a glance.
+    let inside = 0, total = 0
+    const step = Math.max(20, radiusM / 40)
+    for (let dx = -radiusM; dx <= radiusM; dx += step) {
+      for (let dz = -radiusM; dz <= radiusM; dz += step) {
+        if (dx * dx + dz * dz > radiusM * radiusM) continue
+        total++
+        const px = x + dx, pz = z + dz
+        if (px >= rect.x0 && px <= rect.x1 && pz >= rect.z0 && pz <= rect.z1) inside++
+      }
+    }
+    return { sides, covered: total ? Math.round((100 * inside) / total) : 100 }
+  }, [geo, radiusM, keptCenter])
+
   // The single "eraser": flip one building's membership as a minimal override.
   const toggleBuilding = (id) => {
     const bs = footprints?.buildings
@@ -1045,6 +1186,12 @@ export default function ExtentApp() {
   }
 
   const [searching, setSearching] = useState(false)
+  // ⭐ THE SEARCHED PLACE owns the fetch envelope (procedure step 1→2: "the operator
+  // types a name… the system pulls a generous bounding box"). The frustum is only
+  // the fallback for a place the gazetteer doesn't know. Holds Nominatim's bbox and,
+  // when the match is an admin area, its `official` ring — the mode-(a) first-pass
+  // boundary. Both were being fetched by the server and discarded by the client.
+  const [placeEnvelope, setPlaceEnvelope] = useState(null)   // { bbox, official, label, areaKm2 }
 
   // The neighborhoods that EXIST — the hub list (open any of them, incl. hoods with
   // no baked Look). Refreshed on mount + whenever we return to the hub (scene null).
@@ -1105,6 +1252,17 @@ export default function ExtentApp() {
       setStoreScene(slug)   // clears store geo/boundary; set the fresh frame next
       useCartographStore.setState({ sceneGeography: geoFromBbox(r.bbox), sceneBoundary: null })
       setAnchors(r.anchors || null)
+      // Keyed to the slug this search just authored. The scene-change effect fires
+      // right after us and resets sibling draft state; keying (rather than clearing
+      // there) means the envelope survives its own search but can never leak onto a
+      // different hood opened later.
+      setPlaceEnvelope({
+        scene: slug,
+        bbox: r.bbox,
+        official: r.official || null,
+        label: r.official?.displayName || q,
+        areaKm2: bboxAreaKm2(r.bbox),
+      })
       // Fresh authoring pass — clear prior work; the [scene] effect restores a
       // committed hood's own extent from disk if this slug already exists.
       setSides([]); setStreetCorners(null); setFetchSources(null)
@@ -1131,17 +1289,51 @@ export default function ExtentApp() {
     if (!cam || !geo || seeding) return
     setSeeding(true); setSeedError(null)
     try {
-      // The framed viewport IS the fetch envelope — a deliberately-generous,
-      // throwaway bbox (a street visible in-frame is nameable/snappable). We never
-      // geocode-for-geometry to bound it; the operator frames by eye, then draws.
-      const halfW = (cam.right - cam.left) / (2 * cam.zoom)
-      const halfH = (cam.top - cam.bottom) / (2 * cam.zoom)
-      const cx = cam.position.x, cz = cam.position.z
-      const [lonA, latA] = localToWgs84(geo, cx - halfW, cz - halfH)
-      const [lonB, latB] = localToWgs84(geo, cx + halfW, cz + halfH)
-      const bbox = {
-        minLat: Math.min(latA, latB), maxLat: Math.max(latA, latB),
-        minLon: Math.min(lonA, lonB), maxLon: Math.max(lonA, lonB),
+      // ⭐ THE SEARCHED PLACE DETERMINES THE ENVELOPE — padded generously.
+      //
+      // This restores the behaviour the comment above has always described and the
+      // body never did: the bbox came from the camera frustum, to the pixel, with no
+      // margin, while the docs told the operator to "frame tighter than feels
+      // natural". That advice is a PRE-EXCLUSION vestige — it dates from when the
+      // whole fetch rode all the way through the pipeline, before membership could
+      // carve anything away. The cost landed on boundary authoring: Księży Młyn's
+      // frame stopped at lat 51.760 and its NE boundary corner sits at 51.7614, so
+      // two of four boundary streets were never pulled and the ring could not close.
+      // Searching "Księży Młyn, Łódź" returns a bbox reaching 51.7615 — the corner
+      // was always available; we just never asked for it.
+      //
+      // Falls back to the framed viewport when the gazetteer doesn't know the place
+      // (the guarantee there stays: a street visible in-frame is in the bbox).
+      let bbox, envelopeSource
+      if (placeEnvelope?.bbox && placeEnvelope.scene === scene) {
+        bbox = padBbox(placeEnvelope.bbox)
+        envelopeSource = 'place'
+      } else {
+        const halfW = (cam.right - cam.left) / (2 * cam.zoom)
+        const halfH = (cam.top - cam.bottom) / (2 * cam.zoom)
+        const cx = cam.position.x, cz = cam.position.z
+        const [lonA, latA] = localToWgs84(geo, cx - halfW, cz - halfH)
+        const [lonB, latB] = localToWgs84(geo, cx + halfW, cz + halfH)
+        // Padded like the place path. The frame guarantee ("a street visible
+        // in-frame is in the bbox") only gets stronger from a superset, and an
+        // unpadded frustum is precisely how Księży Młyn lost its northern edge.
+        bbox = padBbox({
+          minLat: Math.min(latA, latB), maxLat: Math.max(latA, latB),
+          minLon: Math.min(lonA, lonB), maxLon: Math.max(lonA, lonB),
+        })
+        envelopeSource = 'frame'
+      }
+      // Refuse before the round-trip rather than surfacing the server's 400 — and
+      // say the one useful thing, which is "narrow the search".
+      const areaKm2 = bboxAreaKm2(bbox)
+      if (areaKm2 > MAX_FETCH_KM2) {
+        setSeedError(
+          `That area is ${Math.round(areaKm2).toLocaleString()} km² — too large to fetch (limit ${MAX_FETCH_KM2} km²). ` +
+          (envelopeSource === 'place'
+            ? 'Try narrowing your search to a district or neighbourhood rather than the whole city.'
+            : 'Zoom in to frame a smaller area.')
+        )
+        return   // `finally` clears `seeding`
       }
       const r = await fetchExtent(scene, bbox)
       setFetchSources(r?.sources || null)
@@ -1326,6 +1518,9 @@ export default function ExtentApp() {
           <ambientLight intensity={1} />
           {!located && <WorkspaceGrid />}
           {located && <ExtentAerial geo={geo} />}
+          {/* The edge of the FETCHED DATA — drawn before the boundary overlays so the
+              operator sees what exists before authoring what's included. */}
+          {located && <ExtentFetchEnvelope geo={geo} />}
           {located && radiusM > 0 && <ExtentDim centroid={boundaryCentroid} radiusM={radiusM} />}
           {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
@@ -1429,10 +1624,36 @@ export default function ExtentApp() {
                     ))}
                   </div>
                 )}
+                {/* What the search resolved to, and therefore what will be fetched.
+                    The envelope is the one thing that can't be fixed later without a
+                    re-fetch, so it's stated BEFORE the operator commits to it. */}
+                {placeEnvelope?.bbox && placeEnvelope.scene === scene && (() => {
+                  const padded = padBbox(placeEnvelope.bbox)
+                  const area = bboxAreaKm2(padded)
+                  const tooBig = area > MAX_FETCH_KM2
+                  return (
+                    <div className="carto-extent-status" style={{
+                      fontSize: 11, lineHeight: 1.6, marginTop: 6,
+                      color: tooBig ? '#ff5a3c' : undefined,
+                      border: tooBig ? '1px solid rgba(255,90,60,0.45)' : undefined,
+                      borderRadius: tooBig ? 6 : undefined,
+                      padding: tooBig ? '6px 8px' : undefined,
+                      background: tooBig ? 'rgba(255,90,60,0.08)' : undefined,
+                    }}>
+                      <div style={{ opacity: 0.85 }}>{placeEnvelope.label}</div>
+                      <div>
+                        will fetch <strong>{area < 10 ? area.toFixed(1) : Math.round(area).toLocaleString()} km²</strong>
+                        {' '}({FETCH_MARGIN_M} m of slack on every side)
+                        {placeEnvelope.official ? ` · official boundary found (${placeEnvelope.official.ring.length} pts)` : ' · no official boundary'}
+                      </div>
+                      {tooBig && <div style={{ marginTop: 4 }}>Too large to fetch (limit {MAX_FETCH_KM2} km²) — try narrowing your search to a district or neighbourhood.</div>}
+                    </div>
+                  )
+                })()}
                 <div className="carto-row" style={{ marginTop: 6 }}>
                   <button className="carto-btn carto-btn--grow" disabled={!located || !geo || seeding} onClick={onFetchView}
-                    title="Fetch the full data bundle (OSM + buildings + parcels) over the framed view — anything visible here becomes nameable">
-                    {seeding ? 'Fetching bundle…' : 'Fetch this view'}
+                    title="Fetch the full data bundle (OSM + buildings + parcels). Sized to the searched place (+ margin) when there is one, otherwise the framed view.">
+                    {seeding ? 'Fetching bundle…' : (placeEnvelope?.scene === scene ? 'Fetch this place' : 'Fetch this view')}
                   </button>
                 </div>
                 {fetchSources && (
@@ -1503,6 +1724,22 @@ export default function ExtentApp() {
                 </div>
                 )
               })()}
+
+              {/* The containment breach, in the operator's terms. Not a blocker —
+                  a wide disc over thin data is sometimes deliberate — but it must
+                  never again be invisible. */}
+              {envelopeOvershoot && (
+                <div className="carto-extent-status" style={{
+                  marginTop: 8, fontSize: 11, lineHeight: 1.5,
+                  color: '#ff5a3c', border: '1px solid rgba(255,90,60,0.45)',
+                  borderRadius: 6, padding: '6px 8px', background: 'rgba(255,90,60,0.08)',
+                }}>
+                  ⚠ The disc reaches past the fetched data on{' '}
+                  {envelopeOvershoot.sides.map(([s, m]) => `${s} ${m} m`).join(' · ')}.<br />
+                  Only <strong>{envelopeOvershoot.covered}%</strong> of it has data behind it — the rest is bare aerial.
+                  Re-fetch wider to author out there.
+                </div>
+              )}
 
               {footprints?.buildings?.length > 0 && (
                 <div className="carto-row carto-row--wrap" style={{ marginTop: 12 }}>
