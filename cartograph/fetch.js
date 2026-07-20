@@ -14,7 +14,7 @@
  * Usage:    node fetch.js
  */
 
-import { writeFileSync, mkdirSync } from 'fs'
+import { writeFileSync, mkdirSync, readFileSync, rmSync, statSync } from 'fs'
 import { join } from 'path'
 import { execSync } from 'child_process'
 import { BBOX, RAW_DIR, wgs84ToLocal, overpassBbox } from './config.js'
@@ -30,10 +30,29 @@ function overpassQuery(queryBody, attempt = 1) {
   // Overpass now rejects requests without a User-Agent (HTTP 406); a
   // descriptive UA is also Overpass etiquette. Without this the public
   // instance returns an HTML 406 page that fails JSON.parse.
-  const result = execSync(
-    `curl -s -A "cartograph/1.0 (neighborhood pour; jacob@jacobhenderson.studio)" --max-time ${TIMEOUT + 30} --data-urlencode "data=${full}" "${OVERPASS_URL}"`,
-    { maxBuffer: 50 * 1024 * 1024 }
-  ).toString()
+  //
+  // ⭐ curl writes to a FILE, not through a pipe. This used to capture stdout with
+  // `maxBuffer: 50 MB`, which is a ceiling on how big a neighborhood can be: a
+  // 33 km² fetch of Centrum, Łódź returned 52.49 MB and execSync threw. The failure
+  // is also invisible — the thrown error carries the whole 52 MB body, so serve.js's
+  // lastLine() reports the Node version banner and the operator is told
+  // "OSM fetch failed — Node.js v22.20.0". Writing to a file removes the ceiling
+  // rather than moving it, and keeps the error surface small.
+  const tmp = join(RAW_DIR, `.overpass-${process.pid}-${attempt}.json`)
+  mkdirSync(RAW_DIR, { recursive: true })
+  try {
+    execSync(
+      `curl -s -A "cartograph/1.0 (neighborhood pour; jacob@jacobhenderson.studio)" --max-time ${TIMEOUT + 30} --data-urlencode "data=${full}" -o ${JSON.stringify(tmp)} "${OVERPASS_URL}"`,
+      { stdio: ['ignore', 'ignore', 'pipe'] }
+    )
+  } catch (e) {
+    try { rmSync(tmp, { force: true }) } catch { /* best effort */ }
+    throw new Error(`curl failed: ${String(e.stderr || e.message).slice(0, 200)}`)
+  }
+  const bytes = statSync(tmp).size
+  console.log(`  → ${(bytes / 1048576).toFixed(1)} MB`)
+  const result = readFileSync(tmp, 'utf8')
+  rmSync(tmp, { force: true })
 
   // Back-to-back queries can be refused while a prior slot frees (Overpass
   // returns an HTML/XML error page, not JSON). Retry with backoff.
