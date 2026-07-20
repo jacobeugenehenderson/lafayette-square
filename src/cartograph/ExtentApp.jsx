@@ -387,8 +387,15 @@ function fetchRectOf(geo) {
 // drags and the camera zooms afterward. This draws the promise's actual extent so
 // it can't expire invisibly. Everything outside is shrouded; the edge is dashed.
 const ENVELOPE_PAD = 40000
-function ExtentFetchEnvelope({ geo }) {
-  const rect = useMemo(() => fetchRectOf(geo), [geo])
+// `bboxOverride` draws what WILL be fetched rather than what HAS been. Before the
+// fetch, geo.bbox is the gazetteer's raw place box (geoFromBbox on search), so
+// drawing it showed a rectangle hugging the boundary while the panel promised
+// 1000 m of slack — the drawing and the number disagreed.
+function ExtentFetchEnvelope({ geo, bboxOverride }) {
+  const rect = useMemo(
+    () => (bboxOverride ? fetchRectOf({ ...geo, bbox: bboxOverride }) : fetchRectOf(geo)),
+    [geo, bboxOverride],
+  )
   if (!rect) return null
   const { x0, x1, z0, z1 } = rect
   const w = x1 - x0, h = z1 - z0
@@ -891,6 +898,13 @@ export default function ExtentApp() {
   // frame-independently as lon/lat so a re-fetch / commit re-center never drifts them.
   //   [{ closed, anchors:[{ lon, lat, type, handleIn?, handleOut? }] }, …]
   const [exclusionsLL, setExclusionsLL] = useState([])
+  // ⭐ THE INCLUSION POLYGON — membership, stored lon/lat like the exclusion loops so
+  // it survives a re-fetch or a commit re-center. Distinct from the render disc: the
+  // disc says how much world we DRAW, this says what is IN the neighborhood.
+  // `polygonSource` records provenance ('official' = the gazetteer's admin boundary,
+  // 'streets' = resolved from boundary-street selection, 'authored' = hand-drawn).
+  const [polygonLL, setPolygonLL] = useState(null)
+  const [polygonSource, setPolygonSource] = useState(null)
   const [penActive, setPenActive] = useState(false)     // pen tool engaged → clicks author loops
   const [selAnchor, setSelAnchor] = useState(null)      // selected point {p,a} (drives handles + Delete)
   // Hold Space while penning → SUSPEND the pen (yield the click to MapControls so
@@ -1028,16 +1042,34 @@ export default function ExtentApp() {
   // AND (inside any loop OR outside the extent circle)). The circle is a coarse dial
   // that auto-fits the kept set (removes nothing by default); loops are the fine
   // carve. Mirrors the pour/bake exactly (circle fallback + exclusions). All O(1).
+  // The inclusion polygon projected into the live frame, for the preview + overlay.
+  const polygonXZ = useMemo(() => {
+    if (!Array.isArray(polygonLL) || polygonLL.length < 3 || !geo) return null
+    return polygonLL.map(a => {
+      const [x, z] = wgs84ToLocal(geo, a.lon, a.lat)
+      return { x: r2(x), z: r2(z) }
+    })
+  }, [polygonLL, geo])
+
   const excludedIds = useMemo(() => {
     const set = new Set()
     if (!buildingCentroids) return set
     const R2 = radiusM > 0 ? radiusM * radiusM : Infinity
+    // Mirrors pipeline.js:246-255 EXACTLY, including the polygon branch:
+    //   hide → out · activate → in · inside any loop → out · then polygon, else circle.
+    // The polygon branch was missing here, so on the one scene that had a polygon
+    // (hipointe-demun) the operator's preview disagreed with what the pour produced.
     for (const c of buildingCentroids) {
-      const out = hide.has(c.id) || (!activate.has(c.id) && (loopExcluded.has(c.id) || ((c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2) > R2))
+      let out
+      if (hide.has(c.id)) out = true
+      else if (activate.has(c.id)) out = false
+      else if (loopExcluded.has(c.id)) out = true
+      else if (polygonXZ) out = !pointInPolygon(c.x, c.z, polygonXZ)
+      else out = ((c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2) > R2
       if (out) set.add(c.id)
     }
     return set
-  }, [buildingCentroids, hide, activate, loopExcluded, keptCenter, radiusM])
+  }, [buildingCentroids, hide, activate, loopExcluded, keptCenter, radiusM, polygonXZ])
 
   // The kept set's reach from the center — drives the auto-fit radius + the Pour gate.
   const keptFit = useMemo(() => {
@@ -1135,6 +1167,7 @@ export default function ExtentApp() {
         // FULL editable path (not a frozen polygon), the "keep fixing across sessions"
         // requirement. Projected to the live frame by `penPaths`.
         if (Array.isArray(nb.exclusions) && nb.exclusions.length) setExclusionsLL(nb.exclusions)
+        if (Array.isArray(nb.polygon) && nb.polygon.length >= 3) { setPolygonLL(nb.polygon); setPolygonSource(nb.polygonSource || 'authored') }
         if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0) }
       }
       // Load the frame + boundary so an EXISTING hood (committed OR fetched-but-
@@ -1207,6 +1240,7 @@ export default function ExtentApp() {
   const openScene = (id) => {
     setStoreScene(id)
     setLocated(false); setExclusionsLL([]); setPenActive(false); setSelAnchor(null); setAnchors(null)
+    setPolygonLL(null); setPolygonSource(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setSceneLocal(id)
   }
@@ -1217,6 +1251,7 @@ export default function ExtentApp() {
     setSceneLocal(null)
     useCartographStore.setState({ sceneGeography: null, sceneBoundary: null, sceneRibbons: null })
     setLocated(false); setExclusionsLL([]); setPenActive(false); setSelAnchor(null); setAnchors(null)
+    setPolygonLL(null); setPolygonSource(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null); setCurating(false)
   }
@@ -1256,13 +1291,32 @@ export default function ExtentApp() {
       // right after us and resets sibling draft state; keying (rather than clearing
       // there) means the envelope survives its own search but can never leak onto a
       // different hood opened later.
+      const a0 = (r.anchors || [])[0] || {}
       setPlaceEnvelope({
         scene: slug,
         bbox: r.bbox,
         official: r.official || null,
-        label: r.official?.displayName || q,
+        label: r.official?.displayName || a0.displayName || q,
         areaKm2: bboxAreaKm2(r.bbox),
+        cls: a0.cls || null,
+        kind: a0.kind || null,
+        // A point/address match has no real extent — the server pads it to a default
+        // ~1.2 km box. Searching "Piotrkowska" (a 4.9 km street) returned ONE address
+        // near its southern end, and the padded box framed the wrong end of the
+        // street entirely. Flag it: the envelope is a guess, not a framing.
+        pointish: Math.abs(bboxAreaKm2(r.bbox) - 1.44) < 0.15 && !r.official,
       })
+      // ⭐ Mode (a): a named place whose gazetteer entry carries an admin boundary
+      // seeds its inclusion polygon for free — the best-guess first pass the operator
+      // then corrects. For Księży Młyn this beats naming boundary streets outright:
+      // the district's north and east edges are unnamed service roads with nothing
+      // to type, and the ring is digitized ON the road centerlines (median 0.4 m).
+      if (Array.isArray(r.official?.ring) && r.official.ring.length >= 3) {
+        setPolygonLL(r.official.ring.map(([lon, lat]) => ({ lon, lat })))
+        setPolygonSource('official')
+      } else {
+        setPolygonLL(null); setPolygonSource(null)
+      }
       // Fresh authoring pass — clear prior work; the [scene] effect restores a
       // committed hood's own extent from disk if this slug already exists.
       setSides([]); setStreetCorners(null); setFetchSources(null)
@@ -1380,7 +1434,10 @@ export default function ExtentApp() {
       //    "apply my changes and show me" action (no separate Re-scope button).
       if (committed) {
         setBuildStage('Re-applying extent…')
-        await rescopeScene(scene, Math.round(radiusM), exclusionsLL)
+        await rescopeScene(scene, Math.round(radiusM), exclusionsLL,
+          Array.isArray(polygonLL) && polygonLL.length >= 3
+            ? { polygon: polygonLL, polygonSource: polygonSource || 'authored' }
+            : {})
         const b = await fetchBoundary(scene).catch(() => null)
         if (b) useCartographStore.setState({ sceneBoundary: b })
         setBuildStage('Baking slab…')
@@ -1419,6 +1476,9 @@ export default function ExtentApp() {
         center: { lat, lon }, radius: Math.round(radiusM),
         name: name.trim(), blurb: blurb.trim(),
         exclusions: exclusionsLL,
+        ...(Array.isArray(polygonLL) && polygonLL.length >= 3
+          ? { polygon: polygonLL, polygonSource: polygonSource || 'authored' }
+          : {}),
       })
       committedThisRun = true
       const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
@@ -1519,15 +1579,21 @@ export default function ExtentApp() {
           {!located && <WorkspaceGrid />}
           {located && <ExtentAerial geo={geo} />}
           {/* The edge of the FETCHED DATA — drawn before the boundary overlays so the
-              operator sees what exists before authoring what's included. */}
-          {located && <ExtentFetchEnvelope geo={geo} />}
+              operator sees what exists before authoring what's included. Pre-fetch it
+              shows the PADDED envelope the Fetch button will actually pull, so what's
+              drawn always matches what the panel promises. */}
+          {located && <ExtentFetchEnvelope geo={geo}
+            bboxOverride={!hasData && placeEnvelope?.bbox && placeEnvelope.scene === scene
+              ? padBbox(placeEnvelope.bbox) : null} />}
           {located && radiusM > 0 && <ExtentDim centroid={boundaryCentroid} radiusM={radiusM} />}
           {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
-          {/* Only the extent CIRCLE is drawn here (no inclusion polygon in the excluder
-              model); the pen draws the exclusion loops themselves. */}
-          {located && radiusM > 0 && <ExtentBoundary corners={undefined}
+          {/* The render disc AND, when there is one, the inclusion polygon — two
+              different things that look alike: the yellow circle is what we DRAW,
+              the cyan ring is what is IN. Vertices stay hidden; a gazetteer boundary
+              runs to hundreds of points and dotting every one is noise. */}
+          {located && (radiusM > 0 || polygonXZ) && <ExtentBoundary corners={polygonXZ || undefined}
             centroid={boundaryCentroid} radiusM={radiusM} showVertices={false} />}
           <MapControls
             ref={controlsRef}
@@ -1644,8 +1710,29 @@ export default function ExtentApp() {
                       <div>
                         will fetch <strong>{area < 10 ? area.toFixed(1) : Math.round(area).toLocaleString()} km²</strong>
                         {' '}({FETCH_MARGIN_M} m of slack on every side)
-                        {placeEnvelope.official ? ` · official boundary found (${placeEnvelope.official.ring.length} pts)` : ' · no official boundary'}
                       </div>
+                      {/* WHAT matched, not just whether. A park or an address can match
+                          a neighborhood name and frame the wrong place confidently. */}
+                      <div style={{ opacity: 0.85 }}>
+                        matched <strong>{placeEnvelope.cls || '?'}{placeEnvelope.kind ? `=${placeEnvelope.kind}` : ''}</strong>
+                        {placeEnvelope.official
+                          ? ` · boundary ${placeEnvelope.official.ring.length} pts`
+                          : ' · no boundary polygon'}
+                      </div>
+                      {placeEnvelope.pointish && (
+                        <div style={{ marginTop: 4, color: '#ffb454' }}>
+                          ⚠ That matched a single point, not an area — this box is a default
+                          1.2 km guess around it, so it may frame the wrong part of the place.
+                          Search a named neighbourhood or district instead.
+                        </div>
+                      )}
+                      {placeEnvelope.cls && !['boundary', 'place'].includes(placeEnvelope.cls) && (
+                        <div style={{ marginTop: 4, color: '#ffb454' }}>
+                          ⚠ That isn't a place — it's a {placeEnvelope.cls}
+                          {placeEnvelope.kind ? ` (${placeEnvelope.kind})` : ''}. Check it's the
+                          area you mean before fetching.
+                        </div>
+                      )}
                       {tooBig && <div style={{ marginTop: 4 }}>Too large to fetch (limit {MAX_FETCH_KM2} km²) — try narrowing your search to a district or neighbourhood.</div>}
                     </div>
                   )

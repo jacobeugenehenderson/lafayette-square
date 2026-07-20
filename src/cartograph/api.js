@@ -169,9 +169,17 @@ export async function commitExtent(scene, payload) {
 
 // Extent editor: live radius re-scope — rewrite the boundary circle (membership
 // polygon preserved) + re-clip + ribbons, no re-name/re-center. Client re-bakes.
-export async function rescopeScene(scene, radius, exclusions) {
+export async function rescopeScene(scene, radius, exclusions, opts = {}) {
+  const body = { radius, exclusions }
+  // The inclusion polygon (lon/lat anchors) rides the rescope too — a committed
+  // hood's Bake comes through here, so this is the only way an existing hood can
+  // adopt or change its boundary. Omitted → the server preserves what's on disk.
+  if (Array.isArray(opts.polygon) && opts.polygon.length >= 3) {
+    body.polygon = opts.polygon
+    body.polygonSource = opts.polygonSource || 'authored'
+  }
   const res = await fetch(sceneUrl(scene, 'rescope'), {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ radius, exclusions }),
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   })
   const j = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(j.error || `rescope ${res.status}`)

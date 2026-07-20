@@ -606,10 +606,30 @@ async function geocodePlace(q) {
     }
     minLat = Math.min(minLat, s); maxLat = Math.max(maxLat, n)
     minLon = Math.min(minLon, w); maxLon = Math.max(maxLon, e)
-    out.push({ q: a, ok: true, displayName: r.display_name })
+    out.push({ q: a, ok: true, displayName: r.display_name, cls: r.class, kind: r.type })
     // Official boundary — only for a SINGLE anchor (a composite has no one clean
     // polygon). Take the largest outer ring of a Polygon/MultiPolygon boundary.
-    if (anchors.length === 1 && r.class === 'boundary' && r.geojson) {
+    //
+    // ⚠️ The gate accepts TWO shapes of answer, and must accept no more:
+    //   boundary=*        — an administrative unit (European city districts, US
+    //                       municipalities). Księży Młyn, Centrum, Altadena.
+    //   place=neighbourhood|suburb|quarter|borough|city_district|town|village|city
+    //                     — how neighborhoods are ACTUALLY tagged in the US, as a
+    //                       way/relation rather than an admin boundary.
+    //
+    // It used to accept only `boundary`, which silently discarded the second case:
+    // Park Slope returns class=place/type=neighbourhood with a clean 13-point
+    // Polygon and we threw it away — i.e. we were blindest exactly where US towns
+    // live. (2026-07-20)
+    //
+    // ⛔ Do NOT widen further to "any geojson". DeMun has no gazetteer entry, so the
+    // search falls through to `leisure=park` "DeMun Park" — accepting that would
+    // hand the operator a PARK as their neighborhood boundary, confidently and
+    // wrongly. A bad polygon is worse than none; `cls`/`kind` ride along so the UI
+    // can say what actually matched.
+    const PLACE_KINDS = new Set(['neighbourhood', 'neighborhood', 'suburb', 'quarter', 'borough', 'city_district', 'town', 'village', 'city', 'hamlet'])
+    const ringable = r.class === 'boundary' || (r.class === 'place' && PLACE_KINDS.has(r.type))
+    if (anchors.length === 1 && ringable && r.geojson) {
       const g = r.geojson
       let ring = null
       if (g.type === 'Polygon') ring = g.coordinates[0]
@@ -1349,7 +1369,7 @@ createServer(async (req, res) => {
       }
       _seedsInFlight.add(scene)
       try {
-        const { center, radius, name, blurb, exclusions, allowRecenter } = JSON.parse(body || '{}')
+        const { center, radius, name, blurb, exclusions, allowRecenter, polygon, polygonSource } = JSON.parse(body || '{}')
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
@@ -1407,21 +1427,68 @@ createServer(async (req, res) => {
         await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
         _skelCache.delete(scene)
-        // The excluder model: every building is IN by default (inside the circle);
-        // the operator's EXCLUSION LOOPS carve the strays. Project + flatten each loop
-        // (frame-independent lon/lat) into the NOW re-centered frame so it aligns with
-        // the reprojected buildings. No inclusion polygon — membership = inside-circle
-        // − exclusions + overrides (the pour/bake apply this uniformly).
+        // ── The boundary write ────────────────────────────────────────────────
+        // TWO SEPARATE THINGS, and their field names are backwards, so read carefully:
+        //   `boundary` = the 256-gon RENDER DISC derived from `radius`. It answers
+        //                "how much world do we draw" — ground mesh, fade bands, tiles.
+        //   `polygon`  = MEMBERSHIP. It answers "what is IN the neighborhood".
+        //
+        // This used to write the disc unconditionally and NO polygon, on the settled
+        // excluder model (membership = inside-circle − exclusions). That model made
+        // subtraction the only gesture available, so the sole positive statement of
+        // intent was "everything the disc happened to catch" — which is how one
+        // exclusion loop silently removed 147 Księży Młyn buildings including the
+        // Church of St. Anne, with no per-building record of why. It also meant a
+        // first pour DESTROYED any authored polygon (hipointe-demun's 4-point ring
+        // was one Bake from gone; `rescope` got a guard, this path never had one).
+        //
+        // Now an inclusion polygon is first-class and PRESERVED: membership becomes
+        // (polygon ∪ activate) − (exclusions ∪ hide), with the disc dropping out of
+        // the predicate entirely and going back to its one job, rendering. A scene
+        // with no polygon still falls back to the circle, so every hood poured under
+        // the excluder model (altadena, ksi-y-m-yn, toy) is byte-identical.
+        //
+        // Accepts lon/lat anchors (frame-independent, like exclusions) and flattens
+        // into the NOW re-centered frame, so a re-commit never drifts the boundary.
         const boundary = makeCircleBoundary(radius)
         const excl = Array.isArray(exclusions)
           ? exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
           : []
         if (excl.length) boundary.exclusions = excl
+        let polyXZ = null
+        if (Array.isArray(polygon) && polygon.length >= 3) {
+          polyXZ = flattenBoundaryPath({ closed: true, anchors: polygon }, geo)
+          if (!Array.isArray(polyXZ) || polyXZ.length < 3) throw new Error('inclusion polygon flattened to fewer than 3 points')
+        } else if (polygon != null && !Array.isArray(polygon)) {
+          throw new Error('polygon must be an array of {lon,lat} anchors')
+        }
+        if (polyXZ) {
+          boundary.polygon = polyXZ
+          boundary.polygonSource = polygonSource || 'authored'
+          console.log(`[commit-extent] ${scene}: inclusion polygon ${polyXZ.length} pts (source=${boundary.polygonSource})`)
+        } else {
+          // No polygon supplied. PRESERVE an existing one rather than dropping it —
+          // the destructive default this endpoint used to have.
+          try {
+            const prev = JSON.parse(readFileSync(sceneDataPaths(scene).boundary, 'utf8'))
+            if (Array.isArray(prev.polygon) && prev.polygon.length >= 3) {
+              boundary.polygon = prev.polygon
+              if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
+              console.log(`[commit-extent] ${scene}: preserved existing inclusion polygon (${prev.polygon.length} pts) — none supplied`)
+            }
+          } catch { /* no prior boundary — first pour */ }
+        }
         writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
-        // Persist the editable exclusion loops (lon/lat) so reopening a committed hood
-        // returns them fully editable — the "keep fixing across sessions" contract.
-        writeFileSync(nPath, JSON.stringify({ name: name || '', blurb: blurb || '', radius: Math.round(radius), timezone: geo.timezone || null, exclusions: exclusions || [], committed: true }, null, 2))
+        // Persist the editable exclusion loops AND the inclusion polygon (both lon/lat)
+        // so reopening a committed hood returns them fully editable — the "keep fixing
+        // across sessions" contract.
+        const nDraft = { name: name || '', blurb: blurb || '', radius: Math.round(radius), timezone: geo.timezone || null, exclusions: exclusions || [], committed: true }
+        if (Array.isArray(polygon) && polygon.length >= 3) { nDraft.polygon = polygon; nDraft.polygonSource = polygonSource || 'authored' }
+        else {
+          try { const pv = JSON.parse(readFileSync(nPath, 'utf8')); if (Array.isArray(pv.polygon) && pv.polygon.length >= 3) { nDraft.polygon = pv.polygon; if (pv.polygonSource) nDraft.polygonSource = pv.polygonSource } } catch { /* none */ }
+        }
+        writeFileSync(nPath, JSON.stringify(nDraft, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, radius: Math.round(radius) }))
       } catch (err) {
@@ -1506,7 +1573,7 @@ createServer(async (req, res) => {
       if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
       _seedsInFlight.add(scene)
       try {
-        const { radius, exclusions, dropPolygon = false } = JSON.parse(body || '{}')
+        const { radius, exclusions, dropPolygon = false, polygon, polygonSource } = JSON.parse(body || '{}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const bPath = sceneDataPaths(scene).boundary
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
@@ -1535,6 +1602,18 @@ createServer(async (req, res) => {
           if (excl.length) boundary.exclusions = excl
           if (dropPolygon) {
             if (prev.polygon) console.log(`[rescope] ${scene}: DROPPING inclusion polygon (${prev.polygon.length} pts) — explicitly requested`)
+          } else if (Array.isArray(polygon) && polygon.length >= 3) {
+            // A NEW inclusion polygon supplied by the operator. Rescope is the path a
+            // COMMITTED hood's Bake takes, so without this the boundary could only ever
+            // be authored on a hood's very first pour — and an existing hood (Księży
+            // Młyn) could never adopt one at all. lon/lat in, flattened to the committed
+            // frame, same as commit-extent.
+            const geoR = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
+            const flat = flattenBoundaryPath({ closed: true, anchors: polygon }, geoR)
+            if (!Array.isArray(flat) || flat.length < 3) throw new Error('inclusion polygon flattened to fewer than 3 points')
+            boundary.polygon = flat
+            boundary.polygonSource = polygonSource || 'authored'
+            console.log(`[rescope] ${scene}: NEW inclusion polygon ${flat.length} pts (source=${boundary.polygonSource})`)
           } else {
             if (prev.polygon) { boundary.polygon = prev.polygon; console.log(`[rescope] ${scene}: preserved inclusion polygon (${prev.polygon.length} pts)`) }
             if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
