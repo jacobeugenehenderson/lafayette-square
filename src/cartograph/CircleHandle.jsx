@@ -13,7 +13,7 @@
  */
 import { useRef, useEffect, useState } from 'react'
 
-export default function CircleHandle({ cameraRef, center, radiusM, onChange, disabled }) {
+export default function CircleHandle({ cameraRef, center, radiusM, onChange, disabled, onRimHover }) {
   const svgRef = useRef(null)
   const [viewBox, setViewBox] = useState('0 0 1 1')
   const [scale, setScale] = useState(1)
@@ -22,6 +22,11 @@ export default function CircleHandle({ cameraRef, center, radiusM, onChange, dis
   centerRef.current = center
   const disabledRef = useRef(disabled)
   disabledRef.current = disabled
+  // Refs, not deps: the pointermove listener is bound once and must not re-bind on
+  // every render just because the parent passed a fresh callback identity.
+  const onRimHoverRef = useRef(onRimHover)
+  onRimHoverRef.current = onRimHover
+  const hoveringRim = useRef(false)
 
   function computeVB() {
     const cam = cameraRef.current
@@ -72,17 +77,34 @@ export default function CircleHandle({ cameraRef, center, radiusM, onChange, dis
       if (Math.abs(d - radiusM) <= tol) {
         e.preventDefault()
         dragging.current = true
+        onRimHoverRef.current?.('grabbing')
       }
     }
     function onMove(e) {
-      if (!dragging.current) return
       const c = centerRef.current
       const p = screenToWorld(e.clientX, e.clientY)
-      if (!c || !p) return
-      const r = Math.round(Math.hypot(p.x - c.x, p.z - c.z))
-      if (r > 20) onChange(r)
+      if (dragging.current) {
+        if (!c || !p) return
+        const r = Math.round(Math.hypot(p.x - c.x, p.z - c.z))
+        if (r > 20) onChange(r)
+        return
+      }
+      // Not dragging — report whether the pointer is over the rim so the container
+      // can show a grab cursor. This SVG is pointerEvents:none, so its own `cursor`
+      // style can never fire; the grabbable region was completely invisible.
+      if (!onRimHoverRef.current) return
+      let near = false
+      if (c && p && !disabledRef.current) {
+        const d = Math.hypot(p.x - c.x, p.z - c.z)
+        const vb = computeVB()
+        const tol = vb ? Math.max(vb.w / 60, 8) : 20
+        near = Math.abs(d - radiusM) <= tol
+      }
+      if (near !== hoveringRim.current) { hoveringRim.current = near; onRimHoverRef.current(near ? 'grab' : null) }
     }
-    function onUp() { dragging.current = false }
+    function onUp() {
+      if (dragging.current) { dragging.current = false; onRimHoverRef.current?.(hoveringRim.current ? 'grab' : null) }
+    }
     window.addEventListener('pointerdown', onDown)
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)

@@ -360,17 +360,39 @@ function ringAreaHa(corners) {
   return Math.abs(A / 2) / 1e4
 }
 
-// Expand a bbox by a uniform distance in metres — equal slack on every side.
-// The gazetteer's bbox is already the box around the boundary polygon (verified:
-// Nominatim's reported box equals the ring's own min/max), so this is simply
-// "square around the ring, then offset the box".
+// Expand a bbox by a uniform distance in metres, then SQUARE it about its centre.
+//
+// The square is not tidiness — it's forced by the disc. The render disc is
+// concentric with the neighborhood and its radius auto-fits the kept buildings, so
+// on a long narrow hood the radius is ~half the LONG axis and the circle overflows
+// the SHORT one. Centrum, Łódź is 1.76 x 3.74 km: padded to 3.76 x 5.74 it still
+// clipped the disc left and right, because a circle of that radius simply does not
+// fit in a rectangle narrower than its diameter.
+//
+// Since the disc shares the centroid, the only shape guaranteed to contain it is a
+// square of the longer padded side. Pad the long dimension, then square to it.
+// Costs area on the short axis and nothing else — Centrum goes 21.7 -> 33 km²,
+// still 16% of the 200 km² cap.
 function padBbox(b, metres = FETCH_MARGIN_M) {
   const midLat = (b.minLat + b.maxLat) / 2
+  const cosLat = Math.cos((midLat * Math.PI) / 180)
   const dLat = metres / 111000
-  const dLon = metres / (111320 * Math.cos((midLat * Math.PI) / 180))
-  return {
+  const dLon = metres / (111320 * cosLat)
+  const padded = {
     minLat: b.minLat - dLat, maxLat: b.maxLat + dLat,
     minLon: b.minLon - dLon, maxLon: b.maxLon + dLon,
+  }
+  // Square about the centre, in METRES — squaring in degrees would leave a lat/lon
+  // box that's square on paper and oblong on the ground everywhere but the equator.
+  const hLatM = ((padded.maxLat - padded.minLat) / 2) * 111000
+  const hLonM = ((padded.maxLon - padded.minLon) / 2) * 111320 * cosLat
+  const halfM = Math.max(hLatM, hLonM)
+  const midLon = (padded.minLon + padded.maxLon) / 2
+  const halfLat = halfM / 111000
+  const halfLon = halfM / (111320 * cosLat)
+  return {
+    minLat: midLat - halfLat, maxLat: midLat + halfLat,
+    minLon: midLon - halfLon, maxLon: midLon + halfLon,
   }
 }
 
@@ -905,6 +927,10 @@ export default function ExtentApp() {
   const [previewStreet, setPreviewStreet] = useState(null)
   const [sides, setSides] = useState([])   // selected boundary streets (visual, order-independent)
   const [pickingSides, setPickingSides] = useState(false)   // street-selection mode owns the click
+  // The radius rim reports 'grab' | 'grabbing' | null. The handle's own SVG is
+  // pointerEvents:none, so it can never show a cursor itself — the grabbable rim was
+  // invisible until you happened to press on it.
+  const [rimCursor, setRimCursor] = useState(null)
   const [streetCorners, setStreetCorners] = useState(null)   // resolved from named boundary streets
   // The editable EXCLUSION LOOPS — the FIRST-CLASS persisted artifact (a LIST). Every
   // building is in by default; each closed loop hides the strays inside it. Stored
@@ -918,6 +944,17 @@ export default function ExtentApp() {
   // 'streets' = resolved from boundary-street selection, 'authored' = hand-drawn).
   const [polygonLL, setPolygonLL] = useState(null)
   const [polygonSource, setPolygonSource] = useState(null)
+  // ⭐ THE SEARCHED PLACE owns the fetch envelope (procedure step 1→2: "the operator
+  // types a name… the system pulls a generous bounding box"). The frustum is only
+  // the fallback for a place the gazetteer doesn't know. Holds Nominatim's bbox and,
+  // when the match is an admin area, its `official` ring — the mode-(a) first-pass
+  // boundary. Both were being fetched by the server and discarded by the client.
+  //
+  // Declared HERE, with the other boundary state, not down by the search handler:
+  // the draft-save effect names it in its deps array, and a deps array is evaluated
+  // during the component body — so a later declaration is a temporal-dead-zone throw
+  // that blanks the whole screen.
+  const [placeEnvelope, setPlaceEnvelope] = useState(null)   // { bbox, official, label, areaKm2 }
   const [penActive, setPenActive] = useState(false)     // pen tool engaged → clicks author loops
   const [selAnchor, setSelAnchor] = useState(null)      // selected point {p,a} (drives handles + Delete)
   // Hold Space while penning → SUSPEND the pen (yield the click to MapControls so
@@ -1291,12 +1328,6 @@ export default function ExtentApp() {
   }
 
   const [searching, setSearching] = useState(false)
-  // ⭐ THE SEARCHED PLACE owns the fetch envelope (procedure step 1→2: "the operator
-  // types a name… the system pulls a generous bounding box"). The frustum is only
-  // the fallback for a place the gazetteer doesn't know. Holds Nominatim's bbox and,
-  // when the match is an admin area, its `official` ring — the mode-(a) first-pass
-  // boundary. Both were being fetched by the server and discarded by the client.
-  const [placeEnvelope, setPlaceEnvelope] = useState(null)   // { bbox, official, label, areaKm2 }
 
   // The neighborhoods that EXIST — the hub list (open any of them, incl. hoods with
   // no baked Look). Refreshed on mount + whenever we return to the hub (scene null).
@@ -1636,7 +1667,7 @@ export default function ExtentApp() {
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
-      <div className="carto-canvas-wrap" style={{ cursor: penActive ? (spacePan ? 'grab' : 'crosshair') : curating ? 'pointer' : 'grab' }}>
+      <div className="carto-canvas-wrap" style={{ cursor: rimCursor || (penActive ? (spacePan ? 'grab' : 'crosshair') : curating ? 'pointer' : pickingSides ? 'pointer' : 'grab') }}>
         <Canvas
           orthographic
           frameloop="always"
@@ -1718,6 +1749,7 @@ export default function ExtentApp() {
         {located && radiusM > 0 && (
           <CircleHandle cameraRef={orthoRef} center={boundaryCentroid} radiusM={radiusM}
             onChange={(r) => { setRadiusTouched(true); setRadiusM(r) }}
+            onRimHover={setRimCursor}
             disabled={penActive || curating || building || markerActive} />
         )}
 
