@@ -924,6 +924,19 @@ export default function ExtentApp() {
   const [committed, setCommitted] = useState(false)
   const [building, setBuilding] = useState(false)
   const [buildStage, setBuildStage] = useState(null)
+  // A bake is minutes, not seconds, and every phase is ONE opaque await against the
+  // server — the client cannot see inside `/pour`. So the honest feedback is the
+  // phase we're in plus a running clock: a button that says "Baking…" for four
+  // minutes is indistinguishable from a button that has hung.
+  const [buildStartedAt, setBuildStartedAt] = useState(0)
+  const [buildElapsed, setBuildElapsed] = useState(0)
+  useEffect(() => {
+    if (!buildStartedAt) { setBuildElapsed(0); return }
+    setBuildElapsed(Math.floor((Date.now() - buildStartedAt) / 1000))
+    const t = setInterval(() => setBuildElapsed(Math.floor((Date.now() - buildStartedAt) / 1000)), 1000)
+    return () => clearInterval(t)
+  }, [buildStartedAt])
+  const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
   const [previewStreet, setPreviewStreet] = useState(null)
   const [sides, setSides] = useState([])   // selected boundary streets (visual, order-independent)
   const [pickingSides, setPickingSides] = useState(false)   // street-selection mode owns the click
@@ -1508,7 +1521,7 @@ export default function ExtentApp() {
   // finalizes the extent, then builds the slab, narrating each phase via buildStage.
   const onBuild = async () => {
     if (!(keptFit.count > 0) || !(radiusM > 0) || building || !geo) return
-    setBuilding(true); setSeedError(null)
+    setBuilding(true); setSeedError(null); setBuildStartedAt(Date.now())
     // §6 atomicity: commit re-centers geography + reprojects raw (destructive). If
     // a later stage throws, roll back to the pre-commit frame so we never strand a
     // re-centered-but-slab-less scene. `committedThisRun` gates the rollback.
@@ -1539,7 +1552,7 @@ export default function ExtentApp() {
             : {})
         const b = await fetchBoundary(scene).catch(() => null)
         if (b) useCartographStore.setState({ sceneBoundary: b })
-        setBuildStage('Baking slab…')
+        setBuildStage('Baking slab — ground, AO, buildings, lamps…')
         const idx = await fetchLooks().catch(() => null)
         let lookId = idx?.looks?.find(l => l.scene === scene)?.id
         // A committed hood may still have NO Look of its own — poured before Looks
@@ -1565,7 +1578,7 @@ export default function ExtentApp() {
       }
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
-      setBuildStage('Committing extent…')
+      setBuildStage('Committing extent — reprojecting + rebuilding skeleton…')
       // Re-center to the KEPT-buildings centroid so the hood lands at the origin.
       const [lon, lat] = localToWgs84(geo, keptCenter.x, keptCenter.z)
       // The EXCLUSION loops (frame-independent lon/lat) ride along — the server
@@ -1597,14 +1610,14 @@ export default function ExtentApp() {
       } catch { /* ignore */ }
       // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
       //    ribbons → ensure a Look for this scene → bake → open the Designer.
-      setBuildStage('Pouring map…')
+      setBuildStage('Pouring map — deriving land-use, clipping to the boundary…')
       await pourScene(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
       if (!lookId) { const r = await createLook({ name: scene, scene }); lookId = r.id }
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
-      setBuildStage('Baking slab…')
+      setBuildStage('Baking slab — ground, AO, buildings, lamps…')
       await bakeLook(lookId, { force: true })
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
@@ -1627,7 +1640,7 @@ export default function ExtentApp() {
         setSeedError(e.message || 'build failed')
       }
     } finally {
-      setBuilding(false); setBuildStage(null)
+      setBuilding(false); setBuildStage(null); setBuildStartedAt(0)
     }
   }
 
@@ -2078,12 +2091,31 @@ export default function ExtentApp() {
             )}
 
             {keptFit.count > 0 && radiusM > 0 && (
-              <div className="carto-row" style={{ marginTop: 12 }}>
-                <button className="carto-btn carto-btn--grow carto-stage-btn" disabled={building || !(radiusM > 0)}
-                  onClick={onBuild} title="Bake the neighborhood and open the Designer">
-                  {building ? (buildStage || 'Baking…') : 'Bake'}
-                </button>
-              </div>
+              <>
+                <div className="carto-row" style={{ marginTop: 12 }}>
+                  <button className="carto-btn carto-btn--grow carto-stage-btn" disabled={building || !(radiusM > 0)}
+                    onClick={onBuild} title="Bake the neighborhood and open the Designer">
+                    {building ? `Baking…  ${mmss(buildElapsed)}` : 'Bake'}
+                  </button>
+                </div>
+                {/* The phase, and after a while an explicit "this is normal". A bake of
+                    a large extent runs for minutes inside a single server call, and a
+                    button that has said the same thing for four minutes reads as hung —
+                    the operator's next move is to click something, which is the one
+                    thing that must not happen mid-pour. */}
+                {building && (
+                  <div className="carto-extent-status" style={{ fontSize: 11, lineHeight: 1.6, marginTop: 6, opacity: 0.9 }}>
+                    {buildStage || 'Working…'}
+                    {buildElapsed >= 45 && (
+                      <div style={{ marginTop: 4, opacity: 0.75 }}>
+                        Still going — this is normal on a large extent. Derive processes the
+                        whole fetch before clipping, so the pour scales with what was fetched,
+                        not with the neighborhood. Don't navigate away.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
