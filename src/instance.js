@@ -45,14 +45,19 @@ function resolveLookId() {
 export const INSTANCE = INSTANCES[resolveLookId()] || INSTANCES[DEFAULT_LOOK]
 
 /**
- * Module presence for mount-gating (Phase 3). The manifest (`INSTANCE.modules`)
- * declares which features an installation runs; the app gates its mounts on
- * these (LS = all-on → byte-identical render). `delivery` carries a nested
- * `{ enabled, ... }` object (participant data rides alongside the flag); the
- * rest are plain booleans. `moduleOn` normalizes both shapes to one predicate
- * so call sites read a single flat flag.
+ * Module presence for mount-gating. ⭐ DEFAULT-ON — OPT-OUT, not opt-in
+ * (kit procedure, Jacob 2026-07-19). The kit activates the ENTIRE player by
+ * default; an installation declares a module `false` (or delivery
+ * `{ enabled:false }`) ONLY to DELIBERATELY opt out. Rationale: toggling a
+ * feature OFF silently cancels it — you forget it exists (the vanished
+ * ticker/tabs). An absent module renders its EMPTY state (a visible to-do),
+ * never a missing tab (invisible debt). CONTRACT: an activated feature with
+ * empty assets must degrade to an empty state, NEVER crash (empty-asset
+ * robustness). `delivery` carries a nested `{ enabled, ... }`; the rest are
+ * plain booleans. LS (all-on) + HPDM (explicit) are unchanged.
  */
 export function moduleOn(name) {
   const m = INSTANCE.modules?.[name]
-  return (m && typeof m === 'object') ? !!m.enabled : !!m
+  if (m == null) return true                                    // absent → ON (default full activation)
+  return (typeof m === 'object') ? m.enabled !== false : m !== false
 }

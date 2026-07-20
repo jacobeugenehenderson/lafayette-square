@@ -79,4 +79,6 @@ The project is **four parts** plus the public runtime. Each is documented next t
 
 **And when you want the *outside-in* read** — does the shipped code deliver what the docs promise? — **[`ACCORDANCE-REVIEW.md`](ACCORDANCE-REVIEW.md)**: an investor-lens diligence report + a two-way punchlist (**build the thing we claim** ↔ **correct the claim to match the thing**). The lens; `ROADMAP`/`AUDIT-MATRIX` are the boards.
 
+**And when you're onboarding a NEW town** — how do we actually pour *and* hydrate an installation? — **[`ONBOARDING.md`](ONBOARDING.md)**: the followable intake→hydration playbook (slab → instance → content/cards/menus → activation → isolation) + the card-depth standard, so nobody re-derives it from the code.
+
 > *New doc, 2026-06-14 — the executive-orientation surface the doc-system arc called for. Reference-kind; keep it plain and lean. The doctrine here is the colloquial face of the dev canon — when the canon changes, change the one-liner, keep the pointer.*

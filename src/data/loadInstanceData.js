@@ -78,6 +78,7 @@ const MANIFESTS = {
     // useListings → neon + place cards. Categories mapped to CATEGORY_HEX keys.
     // menus/roster/render geometry absent → loadInstanceData returns null, guarded.
     landmarks: () => import('../../cartograph/data/ksi-y-m-yn/content/listings.json'),
+    menus:     () => import('../../cartograph/data/ksi-y-m-yn/content/menus.json'),
   },
 }
 

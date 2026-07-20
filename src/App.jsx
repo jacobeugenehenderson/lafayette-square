@@ -13,6 +13,7 @@ import SmsInbox, { useSmsInbox } from './components/SmsInbox'
 import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
 import BrowseHeader from './components/BrowseHeader'
+import FeatureBoundary from './components/FeatureBoundary'
 import AdminPrompt from './components/AdminPrompt'
 import useGuardianStatus from './hooks/useGuardianStatus'
 import useCamera from './hooks/useCamera'
@@ -590,16 +591,16 @@ function App() {
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
       {/* Search moved to ticker pulldown drawer */}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.6s' }}><BrowseHeader /></div>}
-      {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
-      {!isGround && moduleOn('events') && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}
-      {!isGround && moduleOn('bulletin') && <BulletinModal />}
-      {!isGround && moduleOn('contact') && <ContactModal />}
-      {!isGround && moduleOn('codedesk') && <CodeDeskModal />}
-      {!isGround && moduleOn('sms') && <SmsInbox />}
-      {!isGround && moduleOn('chat') && <ChatModal />}
+      {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><FeatureBoundary name="SidePanel"><SidePanel /></FeatureBoundary></div>}
+      {!isGround && moduleOn('events') && <div className="fade-in" style={{ animationDelay: '0.8s' }}><FeatureBoundary name="EventTicker"><EventTicker /></FeatureBoundary></div>}
+      {!isGround && moduleOn('bulletin') && <FeatureBoundary name="Bulletin"><BulletinModal /></FeatureBoundary>}
+      {!isGround && moduleOn('contact') && <FeatureBoundary name="Contact"><ContactModal /></FeatureBoundary>}
+      {!isGround && moduleOn('codedesk') && <FeatureBoundary name="CodeDesk"><CodeDeskModal /></FeatureBoundary>}
+      {!isGround && moduleOn('sms') && <FeatureBoundary name="SMS"><SmsInbox /></FeatureBoundary>}
+      {!isGround && moduleOn('chat') && <FeatureBoundary name="Chat"><ChatModal /></FeatureBoundary>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
-      {!isGround && moduleOn('info') && <InfoModal />}
-      {moduleOn('delivery') && <CourierDashboard />}
+      {!isGround && moduleOn('info') && <FeatureBoundary name="Info"><InfoModal /></FeatureBoundary>}
+      {moduleOn('delivery') && <FeatureBoundary name="Delivery"><CourierDashboard /></FeatureBoundary>}
       <AdminPrompt />
       <Splash />
     </div>

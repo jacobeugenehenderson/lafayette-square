@@ -75,21 +75,13 @@ export default {
   // Conservative manifest for a fresh non-US install: map essentials on; the
   // content/commerce modules stay OFF until Łódź content (landmarks, listings,
   // place cards) is authored — "features switched by the manifest, not guessed
-  // from presence" (ls/ARCHITECTURE §6). They flip on as content lands.
+  // ⭐ Modules default ON kit-wide (moduleOn is opt-OUT — src/instance.js). Łódź
+  // runs the WHOLE player for the demo — delivery/Cary INCLUDED (couriers exist in
+  // Poland). Everything defaults on; delivery just needs its nested shape here.
+  // NOTE: delivery surfaces the LS-hardcoded LegalPage — that's a KIT bug to
+  // instance-derive (src/pages/LegalPage.jsx), NOT a reason to opt out.
   modules: {
-    bulletin: false,
-    delivery: {
-      enabled: false,
-      zoneDescription: null,
-    },
-    contact: false,
-    codedesk: false,
-    sms: false,
-    chat: false,
-    info: true,
-    events: false,
-    society: false,
-    residences: true,
+    delivery: { enabled: true, zoneDescription: null },
   },
 
   cary: {

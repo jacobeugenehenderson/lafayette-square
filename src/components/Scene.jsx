@@ -838,7 +838,12 @@ function Scene() {
           If mobile ever needs a different lamp treatment, author it via the
           platform channel, don't hardwire a device fork here. (Boz + Jacob 2026-07-16.) */}
       {!IS_GROUND && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
-      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
+      {/* The Gateway Arch is an LS-only set-piece (bake-scene stamps arch defaults
+          into EVERY scene.json, so it can't gate on scene.arch presence). Gate per
+          look like StreetLights/LafayettePark do — else the St. Louis Arch renders
+          over Łódź et al. (compliance audit C1). Generalizes with the deferred
+          set-piece opt-in; bake-scene should also stop stamping arch for non-owners. */}
+      {!IS_GROUND && INSTANCE.lookId === 'lafayette-square' && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       {/* Landscape backdrop (§10 third hero kind) — a mesh behind everything,
           standing at its true geo spot. Renders NOTHING unless the look ships a
           baked landscape manifest (LS has none), so this is a no-op for LS. */}

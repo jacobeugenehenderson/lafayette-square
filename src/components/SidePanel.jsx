@@ -783,10 +783,13 @@ function BulletinMasthead() {
   const listings = useListings((s) => s.listings)
   const places = listings.filter(l => l.category !== 'residential').length
 
+  // Empty-asset safe: a null/absent stat renders '—' (a visible to-do), never
+  // crashes. profile.population is null for a fresh install (kit contract —
+  // features degrade, they don't detonate). [[feedback_full_activation...]]
+  const fmtStat = (n) => (n != null ? n.toLocaleString() : '—')
   const stats = [
-    { value: INSTANCE.profile.population.toLocaleString(), label: 'Residents', color: 'rgba(180,160,140,0.12)' },      // warm taupe — profile Layer 0
-
-    { value: (_buildingCount || _buildings.length).toLocaleString(), label: 'Buildings', color: 'rgba(160,130,100,0.12)' }, // sandstone
+    { value: fmtStat(INSTANCE.profile?.population), label: 'Residents', color: 'rgba(180,160,140,0.12)' },      // warm taupe — profile Layer 0
+    { value: fmtStat(_buildingCount ?? _buildings?.length ?? 0), label: 'Buildings', color: 'rgba(160,130,100,0.12)' }, // sandstone
     { value: places, label: 'Places', color: 'rgba(61,175,138,0.12)' },          // verdigris
     { value: _namedStreetCount, label: 'Streets', color: 'rgba(140,150,170,0.12)' }, // slate blue
   ]
