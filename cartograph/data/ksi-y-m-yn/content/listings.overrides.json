@@ -3,7 +3,9 @@
 "scene": "ksi-y-m-yn",
 "schema": "NEIGHBORHOOD-INPUTS §5.1.1",
 "layer": "Layer 2 overrides — hand-authored adds + patches (win over generated listings.json)",
-"note": "ELABORATED to LS card depth: history is a {year,event} TIMELINE (PlaceCard HistoryTimeline), full amenities/tags, 7-day hours where verified. English draft; Polish-native authoring = localisation track. photos + logos are SELF-HOSTED under content/{photos,logos}/ (instance-relative, no leading slash — see ASSETS.md). logo:null = no real mark exists (VERIFIED, not unsearched) → PlaceCard renders the initials avatar. `drops` = records the merge must delete from the Overture base (closed / duplicate). `_data_note` on a card = what a future author must know: unverified fields, name changes, near-miss lookalike businesses."
+"note": "ELABORATED to LS card depth: history is a {year,event} TIMELINE (PlaceCard HistoryTimeline), full amenities/tags, 7-day hours where verified. English draft; Polish-native authoring = localisation track. photos + logos are SELF-HOSTED under content/{photos,logos}/ (instance-relative, no leading slash — see ASSETS.md). logo:null = no real mark exists (VERIFIED, not unsearched) → PlaceCard renders the initials avatar. `drops` = records the merge must delete from the Overture base (closed / duplicate). `_data_note` on a card = what a future author must know: unverified fields, name changes, near-miss lookalike businesses.",
+"baseSource": "overture",
+"_baseSource_note": "The generated BASE (eateries) came from Overture Places, not OSM POIs. bake-content.js can only derive an OSM base, so it is guarded from regenerating listings.json for this scene — it would write ~5 records and destroy the rest (happened 2026-07-20 after an Extent edit). Merge with scratch/merge-lodz-listings.mjs."
 },
 "patches": {
 "km-eat-43": {

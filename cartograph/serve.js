@@ -1506,7 +1506,7 @@ createServer(async (req, res) => {
       if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
       _seedsInFlight.add(scene)
       try {
-        const { radius, exclusions } = JSON.parse(body || '{}')
+        const { radius, exclusions, dropPolygon = false } = JSON.parse(body || '{}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const bPath = sceneDataPaths(scene).boundary
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
@@ -1514,21 +1514,41 @@ createServer(async (req, res) => {
         const boundary = makeCircleBoundary(radius)
         // The LIGHT re-apply — re-clip + re-bake in the committed frame, no re-center.
         if (Array.isArray(exclusions)) {
-          // EXCLUDER model: membership = inside-circle − exclusions. Project + flatten
-          // the (possibly edited) loops. CRUCIAL: DROP any legacy inclusion polygon —
-          // a hood committed the old way (Altadena's 628-pt snap-route ring) still
-          // carries one, and the bake prefers an inclusion poly over the circle, so
-          // keeping it would clip to the OLD ring and drop the buildings the circle
-          // kept (the Extent preview vs slab mismatch). The circle is the boundary now.
+          // EXCLUDER model: membership = inside-circle − exclusions.
+          //
+          // ⚠️ THIS BRANCH USED TO DROP THE INCLUSION POLYGON UNCONDITIONALLY, and
+          // ExtentApp always sends an exclusions array — so ANY extent edit silently
+          // deleted an authored boundary, even with zero loops. That is destructive:
+          // hipointe-demun is the EXEMPLAR hood (4 authored boundary streets + hand-
+          // activated edge buildings) and was one Bake away from becoming a bare circle.
+          //
+          // The original reason for the drop was Altadena's stale 628-pt snap-route
+          // ring clipping to the OLD boundary. That reason has expired: Altadena now
+          // carries NO polygon (verified 2026-07-20 — hipointe-demun is the only scene
+          // with one). So preserving is strictly protective today.
+          //
+          // The polygon is the INTENDED membership mechanism, not a legacy artifact —
+          // it is what the boundary-street process produces. Dropping it is now an
+          // EXPLICIT act (`dropPolygon: true`), never a side effect of editing extent.
           const geo = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
           const excl = exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
           if (excl.length) boundary.exclusions = excl
+          if (dropPolygon) {
+            if (prev.polygon) console.log(`[rescope] ${scene}: DROPPING inclusion polygon (${prev.polygon.length} pts) — explicitly requested`)
+          } else {
+            if (prev.polygon) { boundary.polygon = prev.polygon; console.log(`[rescope] ${scene}: preserved inclusion polygon (${prev.polygon.length} pts)`) }
+            if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
+          }
         } else {
           // Legacy radius-only rescope — preserve the prior membership shape as-is.
           if (prev.polygon) boundary.polygon = prev.polygon
           if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
           if (Array.isArray(prev.exclusions)) boundary.exclusions = prev.exclusions
         }
+        // Snapshot before overwriting. commit-extent has .prebak rollback; this path
+        // — the one that runs on every SUBSEQUENT extent edit — had none, so a bad
+        // rescope was unrecoverable without git.
+        try { writeFileSync(`${bPath}.prebak-rescope`, JSON.stringify(prev, null, 2)) } catch { /* best effort */ }
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
         if (existsSync(nPath)) {

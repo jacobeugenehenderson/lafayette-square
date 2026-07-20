@@ -25,8 +25,17 @@
  * A POI/parcel joins to a building iff that building is IN the baked set, so
  * every emitted building_id is guaranteed present in the slab (0 orphans).
  *
- * Scene-generic. LS is guarded (its content is hand-curated + conflated into
- * src/data/buildings.json) — the step refuses LS unless --force.
+ * Scene-generic. TWO guards, because a re-bake here can DESTROY hand-authored
+ * content rather than merely regenerate it:
+ *   · LS — content is hand-curated + conflated into src/data/buildings.json;
+ *     the step refuses LS unless --force.
+ *   · EXTERNAL BASE — a scene whose listings base did NOT come from OSM POIs
+ *     declares `meta.baseSource` in listings.overrides.json (Łódź: "overture").
+ *     This step can only derive an OSM base, so for those scenes it writes
+ *     roster/profile but PRESERVES listings.json. Without this, baking Łódź
+ *     after an Extent edit took listings.json from 84 records to 5 (2026-07-20)
+ *     — the OSM join yields ~0 there, so only the surviving adds got written.
+ *     Declared in DATA, not by scene name, so the next non-OSM town is covered.
  *
  *   node cartograph/bake-content.js --scene hipointe-demun
  *   node cartograph/bake-content.js --scene hipointe-demun --dry-run   (stats, no write)
@@ -711,11 +720,31 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   for (const par of parcels) { const na = normAddress(par.address); if (na && !parcelByAddr.has(na)) parcelByAddr.set(na, par) }
 
   // Layer 2 — base listings
+  let skipListings = false
   const { listings: baseListings, skipped } = buildBaseListings(pois, buildingGrid)
   console.log(`  base listings (OSM): ${baseListings.length} (${skipped} POIs outside the baked set → correctly absent)`)
 
   // overrides
   const listingOverrides = loadJsonOr(join(contentDir(scene), 'listings.overrides.json'), { adds: [], patches: {} })
+
+  // ⛔ EXTERNAL-BASE GUARD. This step derives the listings BASE from OSM POIs.
+  // A scene whose base came from somewhere else — Łódź's came from OVERTURE
+  // PLACES — cannot be regenerated here: the OSM join yields ~0, so we would
+  // write out only the surviving hand-authored adds and silently destroy the
+  // generated base. That is not hypothetical: baking Łódź after an Extent edit
+  // took listings.json from 84 → 5 (2026-07-20).
+  //
+  // Same shape as the LS guard below it (LS content is hand-curated), but
+  // DECLARED IN THE DATA rather than hardcoded by scene name, so the next town
+  // with a non-OSM base is protected without touching this file.
+  // Declare it as `meta.baseSource` in listings.overrides.json.
+  const externalBase = listingOverrides?.meta?.baseSource
+  if (externalBase && externalBase !== 'osm' && !force) {
+    console.log(`[bake-content] listings base is EXTERNAL ('${externalBase}') — this step can only derive an OSM base,`)
+    console.log(`               so regenerating would DESTROY it. Skipping listings.json; roster/profile still bake.`)
+    console.log(`               Merge tool for this scene: scratch/merge-lodz-listings.mjs. Use --force to override.`)
+    skipListings = true
+  }
   const rosterOverrides = loadJsonOr(join(contentDir(scene), 'roster.overrides.json'), { patches: {} })
   const { listings: merged, report } = applyListingOverrides(baseListings, listingOverrides,
     { buildingGrid, bakedIds, parcels, parcelByAddr })
@@ -757,10 +786,10 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     listings,
   }
   writeIfChanged(join(cdir, 'roster.json'), JSON.stringify(rosterOut, null, 1) + '\n')
-  writeIfChanged(join(cdir, 'listings.json'), JSON.stringify(listingsOut, null, 1) + '\n')
+  if (!skipListings) writeIfChanged(join(cdir, 'listings.json'), JSON.stringify(listingsOut, null, 1) + '\n')
   // profile.json is fully authored (Layer 0) — leave it in place; the join
   // does not regenerate it. (It rides the instance/content payload as-is.)
-  console.log(`[bake-content] wrote roster.json (${roster.length}) + listings.json (${listings.length}) in ${Date.now() - t0}ms`)
+  console.log(`[bake-content] wrote roster.json (${roster.length})${skipListings ? ' — listings.json PRESERVED (external base)' : ` + listings.json (${listings.length})`} in ${Date.now() - t0}ms`)
   return { roster, listings, orphans: orphans.length, report, stat }
 }
 
