@@ -601,15 +601,20 @@
     }
   },
   "fill": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "value": 0.65
+      "noon": {
+        "value": 1
+      }
     }
   },
   "exposure": {
     "animated": "tod",
     "values": {
       "noon": {
-        "value": 1
+        "value": 1.58
       },
       "dawn": {
         "value": 0.72
@@ -638,7 +643,7 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "density": 0.05,
+        "density": 0.02,
         "color": null
       }
     }
@@ -692,6 +697,12 @@
         "toe": 0.6,
         "saturation": 1.25,
         "vignette": 0.7
+      },
+      "noon": {
+        "contrast": 0.52,
+        "saturation": 1,
+        "brightness": 0.02,
+        "vignette": 0.7
       }
     }
   },
@@ -719,7 +730,7 @@
       },
       "noon": {
         "enabled": 0,
-        "blur": 0.1,
+        "blur": 0.06,
         "focus": 320,
         "heroBlur": 0.02,
         "softness": 0.16

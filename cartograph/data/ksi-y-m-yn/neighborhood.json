@@ -1,8 +1,55 @@
 {
-  "name": "",
-  "blurb": "",
+  "name": "Ksi Y M Yn",
+  "blurb": "Łódź is Poland’s third-largest city, famed as the country's former textile powerhouse. Often called the \"Manchester of Poland,\" it is now celebrated for its massive, red-brick factory complexes that have been transformed into vibrant cultural hubs, as well as being the heart of Polish cinema and a massive open-air gallery for street art.",
   "radius": 1530,
   "timezone": "Europe/Warsaw",
-  "exclusions": [],
-  "committed": true
+  "exclusions": [
+    {
+      "closed": true,
+      "anchors": [
+        {
+          "lon": 19.49370427431291,
+          "lat": 51.752322162162166,
+          "type": "corner"
+        },
+        {
+          "lon": 19.489436055953796,
+          "lat": 51.75154765765766,
+          "type": "corner"
+        },
+        {
+          "lon": 19.48950686885103,
+          "lat": 51.74855081081081,
+          "type": "corner"
+        },
+        {
+          "lon": 19.48999748033781,
+          "lat": 51.74757612612613,
+          "type": "corner"
+        },
+        {
+          "lon": 19.48441182285167,
+          "lat": 51.747100810810814,
+          "type": "corner"
+        },
+        {
+          "lon": 19.47673239632005,
+          "lat": 51.74541738738739,
+          "type": "corner"
+        },
+        {
+          "lon": 19.48611307368604,
+          "lat": 51.74114630630631,
+          "type": "corner"
+        },
+        {
+          "lon": 19.494570426328465,
+          "lat": 51.74611252252252,
+          "type": "corner"
+        }
+      ]
+    }
+  ],
+  "committed": true,
+  "sides": []
 }
