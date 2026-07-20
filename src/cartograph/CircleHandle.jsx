@@ -13,20 +13,13 @@
  */
 import { useRef, useEffect, useState } from 'react'
 
-export default function CircleHandle({ cameraRef, center, radiusM, onChange, disabled, onRimHover }) {
+export default function CircleHandle({ cameraRef, center, radiusM, onChange, disabled }) {
   const svgRef = useRef(null)
   const [viewBox, setViewBox] = useState('0 0 1 1')
   const [scale, setScale] = useState(1)
-  const dragging = useRef(false)
+  const [dragging, setDragging] = useState(false)
   const centerRef = useRef(center)
   centerRef.current = center
-  const disabledRef = useRef(disabled)
-  disabledRef.current = disabled
-  // Refs, not deps: the pointermove listener is bound once and must not re-bind on
-  // every render just because the parent passed a fresh callback identity.
-  const onRimHoverRef = useRef(onRimHover)
-  onRimHoverRef.current = onRimHover
-  const hoveringRim = useRef(false)
 
   function computeVB() {
     const cam = cameraRef.current
@@ -62,58 +55,41 @@ export default function CircleHandle({ cameraRef, center, radiusM, onChange, dis
     }
   }
 
-  useEffect(() => {
-    function onDown(e) {
-      if (disabledRef.current || e.button !== 0) return
-      const c = centerRef.current
-      if (!c) return
-      if (e.target?.closest?.('.carto-panel, .carto-toolbar, .carto-fab, button, input, textarea, select, a')) return
-      const p = screenToWorld(e.clientX, e.clientY)
-      if (!p) return
-      // Grab if the click lands near the current rim (a ring-shaped tolerance).
-      const d = Math.hypot(p.x - c.x, p.z - c.z)
-      const vb = computeVB()
-      const tol = vb ? Math.max(vb.w / 60, 8) : 20
-      if (Math.abs(d - radiusM) <= tol) {
-        e.preventDefault()
-        dragging.current = true
-        onRimHoverRef.current?.('grabbing')
-      }
-    }
-    function onMove(e) {
-      const c = centerRef.current
-      const p = screenToWorld(e.clientX, e.clientY)
-      if (dragging.current) {
-        if (!c || !p) return
-        const r = Math.round(Math.hypot(p.x - c.x, p.z - c.z))
-        if (r > 20) onChange(r)
-        return
-      }
-      // Not dragging — report whether the pointer is over the rim so the container
-      // can show a grab cursor. This SVG is pointerEvents:none, so its own `cursor`
-      // style can never fire; the grabbable region was completely invisible.
-      if (!onRimHoverRef.current) return
-      let near = false
-      if (c && p && !disabledRef.current) {
-        const d = Math.hypot(p.x - c.x, p.z - c.z)
-        const vb = computeVB()
-        const tol = vb ? Math.max(vb.w / 60, 8) : 20
-        near = Math.abs(d - radiusM) <= tol
-      }
-      if (near !== hoveringRim.current) { hoveringRim.current = near; onRimHoverRef.current(near ? 'grab' : null) }
-    }
-    function onUp() {
-      if (dragging.current) { dragging.current = false; onRimHoverRef.current?.(hoveringRim.current ? 'grab' : null) }
-    }
-    window.addEventListener('pointerdown', onDown)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    return () => {
-      window.removeEventListener('pointerdown', onDown)
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-  }, [onChange, radiusM])
+  // ── The drag lives on the KNOB, not on the window ───────────────────────────
+  //
+  // It used to be a window-level pointerdown that grabbed whenever the press landed
+  // within a ring-shaped tolerance of the rim. That could never work: MapControls is
+  // bound to the CANVAS, which is inside window, so its handler runs during the
+  // target/bubble phase and starts panning before a window listener is even called.
+  // Pressing the handle dragged the whole map.
+  //
+  // Now the knob is a real hit target — the only part of this overlay that takes
+  // pointer events — and it stops propagation and captures the pointer. The event
+  // never reaches MapControls, so panning keeps working everywhere else, including
+  // immediately beside the circle. No modes, no dead zone around the rim, and the
+  // cursor can live on the element itself where CSS can actually apply it.
+  function onKnobDown(e) {
+    if (disabled || e.button !== 0) return
+    e.stopPropagation()
+    e.preventDefault()
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* older engines */ }
+    setDragging(true)
+  }
+  function onKnobMove(e) {
+    if (!dragging) return
+    e.stopPropagation()
+    const c = centerRef.current
+    const p = screenToWorld(e.clientX, e.clientY)
+    if (!c || !p) return
+    const r = Math.round(Math.hypot(p.x - c.x, p.z - c.z))
+    if (r > 20) onChange(r)
+  }
+  function onKnobUp(e) {
+    if (!dragging) return
+    e.stopPropagation()
+    try { e.currentTarget.releasePointerCapture(e.pointerId) } catch { /* already released */ }
+    setDragging(false)
+  }
 
   if (!center || !(radiusM > 0)) return null
   const knobR = Math.max(scale * 6, 4)
@@ -122,11 +98,19 @@ export default function CircleHandle({ cameraRef, center, radiusM, onChange, dis
   const kx = center.x + radiusM, kz = center.z
   return (
     <svg ref={svgRef} viewBox={viewBox} preserveAspectRatio="none"
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5, cursor: disabled ? 'default' : 'ew-resize' }}>
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }}>
       {!disabled && (
-        <circle cx={kx} cy={kz} r={knobR} fill="#ffd23f" stroke="#08110d" strokeWidth={sw}>
-          <title>Drag to set the boundary circle radius (padding around the hood)</title>
-        </circle>
+        <g pointerEvents="auto" style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+          onPointerDown={onKnobDown} onPointerMove={onKnobMove}
+          onPointerUp={onKnobUp} onLostPointerCapture={onKnobUp}>
+          {/* Invisible, generously-sized hit target — the visible dot stays small so
+              it doesn't obscure the map, but a 4 px dot is not a grabbable thing. */}
+          <circle cx={kx} cy={kz} r={knobR * 2.6} fill="transparent" />
+          <circle cx={kx} cy={kz} r={knobR} fill="#ffd23f" stroke="#08110d" strokeWidth={sw}
+            style={{ pointerEvents: 'none' }}>
+            <title>Drag to set the boundary circle radius (padding around the hood)</title>
+          </circle>
+        </g>
       )}
     </svg>
   )

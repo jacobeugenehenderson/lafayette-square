@@ -927,10 +927,6 @@ export default function ExtentApp() {
   const [previewStreet, setPreviewStreet] = useState(null)
   const [sides, setSides] = useState([])   // selected boundary streets (visual, order-independent)
   const [pickingSides, setPickingSides] = useState(false)   // street-selection mode owns the click
-  // The radius rim reports 'grab' | 'grabbing' | null. The handle's own SVG is
-  // pointerEvents:none, so it can never show a cursor itself — the grabbable rim was
-  // invisible until you happened to press on it.
-  const [rimCursor, setRimCursor] = useState(null)
   const [streetCorners, setStreetCorners] = useState(null)   // resolved from named boundary streets
   // The editable EXCLUSION LOOPS — the FIRST-CLASS persisted artifact (a LIST). Every
   // building is in by default; each closed loop hides the strays inside it. Stored
@@ -1667,7 +1663,7 @@ export default function ExtentApp() {
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
-      <div className="carto-canvas-wrap" style={{ cursor: rimCursor || (penActive ? (spacePan ? 'grab' : 'crosshair') : curating ? 'pointer' : pickingSides ? 'pointer' : 'grab') }}>
+      <div className="carto-canvas-wrap" style={{ cursor: penActive ? (spacePan ? 'grab' : 'crosshair') : curating ? 'pointer' : pickingSides ? 'pointer' : 'grab' }}>
         <Canvas
           orthographic
           frameloop="always"
@@ -1749,7 +1745,6 @@ export default function ExtentApp() {
         {located && radiusM > 0 && (
           <CircleHandle cameraRef={orthoRef} center={boundaryCentroid} radiusM={radiusM}
             onChange={(r) => { setRadiusTouched(true); setRadiusM(r) }}
-            onRimHover={setRimCursor}
             disabled={penActive || curating || building || markerActive} />
         )}
 
