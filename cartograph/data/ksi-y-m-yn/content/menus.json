@@ -1,0 +1,197 @@
+{
+  "_doc": "Layer 2 menus (NEIGHBORHOOD-INPUTS §5.1.1), keyed by listing id → {sections:[{name,menu,items:[{name,price?}]}]}. Attached to the listing at runtime by useListings (loadInstanceData 'menus'). Section.menu = which tab (dinner/drinks/dessert/lunch). First-pass menus built from researched signature dishes + published prices; exact full menus can be fetched later.",
+  "km-eat-43": {
+    "sections": [
+      { "name": "Zupy · Soups", "menu": "dinner", "items": [
+        { "name": "Beetroot cream soup — poured tableside from a glass bottle", "price": "19 zł" },
+        { "name": "Oriental shrimp soup", "price": "19 zł" } ] },
+      { "name": "Dania główne · Mains", "menu": "dinner", "items": [
+        { "name": "Honey-glazed duck" , "price": "50 zł" },
+        { "name": "Wood-fired pizza (Italian oven)" } ] },
+      { "name": "Piwo · House beer", "menu": "drinks", "items": [
+        { "name": "House pils" }, { "name": "Wheat beer" }, { "name": "Citrus IPA" }, { "name": "Rotating seasonal" } ] }
+    ]
+  },
+  "km-eat-3": {
+    "sections": [
+      { "name": "Kuchnia staropolska · Old-Polish", "menu": "dinner", "items": [
+        { "name": "Roast duck" }, { "name": "Roast goose" }, { "name": "Beef sirloin / tenderloin" },
+        { "name": "Veal sweetbreads" }, { "name": "Beef cheeks & tongue" }, { "name": "House pierogi" } ] }
+    ]
+  },
+  "km-eat-48": {
+    "sections": [
+      { "name": "Zestaw dnia · Daily set", "menu": "lunch", "items": [
+        { "name": "Soup + main + kompot", "price": "~28 zł" } ] },
+      { "name": "Dania · Mains", "menu": "lunch", "items": [
+        { "name": "Schabowy (breaded pork cutlet)", "price": "~24 zł" },
+        { "name": "Bitki with kluski śląskie" },
+        { "name": "Rosół" }, { "name": "Lithuanian chłodnik (cold beet soup)" },
+        { "name": "Naleśniki with cheese" } ] }
+    ]
+  },
+  "km-eat-5": {
+    "sections": [
+      { "name": "Podpłomyki · Wood-fired flatbreads", "menu": "dinner", "items": [
+        { "name": "Podpłomyk 'Sycylia' (a dozen variations)", "price": "~20–30 zł" } ] },
+      { "name": "Do wina · Small plates", "menu": "dinner", "items": [
+        { "name": "Filet américain" }, { "name": "Baked camembert" }, { "name": "Daily soup" } ] },
+      { "name": "Wino · Wine", "menu": "drinks", "items": [
+        { "name": "Wine of the week (+ free tapa)" },
+        { "name": "Natural & Eastern-European wines by the glass — Georgia · Slovakia · Hungary · Portugal" } ] }
+    ]
+  },
+  "km-eat-34": {
+    "sections": [
+      { "name": "Pizza", "menu": "dinner", "items": [
+        { "name": "Margherita (Neapolitan)" }, { "name": "Seasonal pizzas" } ] },
+      { "name": "Kuchnia · Kitchen", "menu": "dinner", "items": [
+        { "name": "Seafood soup" }, { "name": "House pastas" } ] },
+      { "name": "Desery · Dessert", "menu": "dessert", "items": [
+        { "name": "Gorgonzola gelato" } ] }
+    ]
+  },
+  "km-eat-57": {
+    "_source": "Transcribed from the restaurant's own published menu page-images (ceskyfilm.pl, uploaded 2026-03). Dish names kept in CZECH as printed — the menu's own primary language — with an English gloss. Full prices verified.",
+    "sections": [
+      { "name": "Předkrmy · Starters", "menu": "dinner", "items": [
+        { "name": "Nakládaný hermelín (marinated Hermelín cheese, sauerkraut, pumpernickel)", "price": "29 zł" },
+        { "name": "Olomoucké tvarůžky (Olomouc 'beer cheese', spices, garlic croutons)", "price": "29 zł" },
+        { "name": "Tatarák z hovězí svíčkové (beef tartare, onion, pickle, quail egg)", "price": "48 zł" },
+        { "name": "Talíř mas a uzenin z diviny (game charcuterie, cheeses, pickles, jam)", "price": "66 zł / 2 os." } ] },
+      { "name": "Polévky · Soups", "menu": "dinner", "items": [
+        { "name": "Česnečka (Czech garlic soup with cheese toast)", "price": "24 zł" },
+        { "name": "Bramborový krém (potato cream, bacon chip, brynza sheep cheese)", "price": "24 zł" },
+        { "name": "Cibulačka (onion soup, white wine, tomato, cheese croutons)", "price": "25 zł" },
+        { "name": "Husí vývar (clear goose broth, goose dumplings, parsley)", "price": "26 zł" } ] },
+      { "name": "Pokrmy z masa · Meat dishes", "menu": "dinner", "items": [
+        { "name": "Vepřo-knedlo-zelo (pork neck, dumplings, fried cabbage — the Czech national plate)", "price": "49 zł" },
+        { "name": "Hovězí guláš (beef goulash, mushrooms, dumplings, Moravian fried cabbage)", "price": "52 zł" },
+        { "name": "Bramborák (potato pancake, Prague ham, fried cabbage, sour cream)", "price": "52 zł" },
+        { "name": "Svíčková na smetaně (beef in cream-vegetable sauce, dumplings, cranberry)", "price": "56 zł" },
+        { "name": "Telecí vídeňský řízek (veal Wiener schnitzel, mashed potato)", "price": "72 zł" },
+        { "name": "Pečené vepřové koleno (roast pork knuckle, 800 g — 50 min wait)", "price": "98 zł" },
+        { "name": "České speciality pro 4 osoby (Czech platter for four)", "price": "218 zł" } ] },
+      { "name": "Drůbeží jídla · Poultry", "menu": "dinner", "items": [
+        { "name": "Ručně vyráběné knedlíky s husím masem (handmade dumplings with goose)", "price": "45 zł" },
+        { "name": "Půlka pečené kachny (half roast duck, fruit dumpling, cranberry red cabbage)", "price": "74 zł" } ] },
+      { "name": "Bezmasá jídla · Vegetarian", "menu": "dinner", "items": [
+        { "name": "Bramboráky (potato pancakes, sour cream, sugar)", "price": "29 zł" },
+        { "name": "Smažený Hermelín (fried Hermelín, blackberry-thyme sauce)", "price": "36 zł" },
+        { "name": "Knedlíky se špenátem a feta sýrem (dumplings, spinach, feta, fried onion)", "price": "45 zł" } ] },
+      { "name": "Něco k pivu · Beer snacks", "menu": "drinks", "items": [
+        { "name": "Křupavé topinky (bread sticks, garlic-cheese dip)", "price": "26 zł" },
+        { "name": "Cibulové kroužky (onion rings, tartare sauce)", "price": "26 zł" },
+        { "name": "Teplé občerstvení pro milovníky piva (hot beer-lovers' platter, for two)", "price": "59 zł" } ] }
+    ]
+  },
+  "km-eat-59": {
+    "_source": "Transcribed from Fatamorgana's own image-only PDF menu (winter 2026 edition), rendered page-by-page. Bilingual PL/EN in the original. The card ROTATES SEASONALLY — dishes turn over; the drinks and the two Łódź signatures (zalewajka, prażoki) are the stable core. 10% service charge on parties of 5+.",
+    "sections": [
+      { "name": "Przystawki · Starters", "menu": "dinner", "items": [
+        { "name": "Ostryga świeża, szalotka, piana cytrynowa (fresh oyster)", "price": "22 zł / szt." },
+        { "name": "Pieczony camembert, por, smażony jarmuż, żel z gruszki", "price": "35 zł" },
+        { "name": "Śledź marynowany, tatar z kalarepy, crème fraîche z chrzanem (marinated herring)", "price": "36 zł" },
+        { "name": "Tatar wołowy, anchois, majonez z palonej cebuli (beef tartare, burnt-onion mayo)", "price": "48 zł" } ] },
+      { "name": "Zupy · Soups", "menu": "dinner", "items": [
+        { "name": "Wegetariański krem zalewajkowy, jajko molette, boczniaki (vegetarian zalewajka)", "price": "30 zł" },
+        { "name": "Łódzka zalewajka klasyczna, ziemniaki, jajo molette — the city's own rye-sour soup", "price": "32 zł" },
+        { "name": "Zupa gulaszowa na dziczyźnie (game goulash soup, root vegetables)", "price": "34 zł" } ] },
+      { "name": "Dania główne · Mains", "menu": "dinner", "items": [
+        { "name": "Smażone prażoki wege, duszony por, suszone pomidory", "price": "40 zł" },
+        { "name": "Smażone prażoki, okrasa z boczku, twaróg z koziego sera — the regional potato dumpling", "price": "42 zł" },
+        { "name": "Kotlet de volaille, puree ziemniaczane, marchewka z groszkiem", "price": "48 zł" },
+        { "name": "Burger pampuch, policzki wołowe (braised beef cheeks in a steamed bun)", "price": "54 zł" },
+        { "name": "Ryba pieczona w porach, jarmuż na maśle, sos béarnaise, pieczona gruszka", "price": "59 zł" },
+        { "name": "Stek z polędwicy wołowej, ziemniak Hasselback, sos pieprzowy", "price": "96 zł" } ] },
+      { "name": "Frytki · Fries", "menu": "dinner", "items": [
+        { "name": "Gołe (naked)", "price": "22 zł" },
+        { "name": "Pikantne — cheddar, boczek, majonez chipotle", "price": "34 zł" },
+        { "name": "Łódzkie — śledź, wędzony twaróg, kwaśna śmietana, piklowana cebula", "price": "37 zł" } ] },
+      { "name": "Pizza na zakwasie · Sourdough pizza", "menu": "dinner", "items": [
+        { "name": "Margherita — sos pomidorowy, fior di latte", "price": "38 zł" },
+        { "name": "Duxelle z pieczarek, rukola, fior di latte", "price": "42 zł" },
+        { "name": "Ziemniak Królowej Anny — crème fraîche, boczek, rozmaryn", "price": "46 zł" } ] },
+      { "name": "Desery · Desserts", "menu": "dessert", "items": [
+        { "name": "Ptyś, krem diplomat, konfitura z czarnej porzeczki (choux pastry)", "price": "30 zł" },
+        { "name": "Beza, pieczony kasztan, krem krówkowy, żel z gruszki (meringue, roast chestnut)", "price": "32 zł" } ] },
+      { "name": "Ciepłe napoje · Hot drinks", "menu": "drinks", "items": [
+        { "name": "Espresso", "price": "11 zł" }, { "name": "Herbata", "price": "12 zł" },
+        { "name": "Americano", "price": "14 zł" }, { "name": "Cappuccino", "price": "17 zł" },
+        { "name": "Flat White", "price": "18 zł" }, { "name": "Napar imbirowy (ginger infusion)", "price": "19 zł" } ] },
+      { "name": "Strefa zero · Zero-proof", "menu": "drinks", "items": [
+        { "name": "Kraina Pigwowca — lemoniada z pigwowca (quince lemonade)", "price": "15 zł" },
+        { "name": "Kombucha by Laurent", "price": "22 zł" },
+        { "name": "Whisky Sour 0%", "price": "25 zł" },
+        { "name": "Hugo Spritz 0% / Aperol 0%", "price": "26 zł" } ] }
+    ]
+  },
+  "km-eat-4": {
+    "_source": "Item names from a detailed Polish review that itemised the menu; prices given ONLY where the source stated them — the rest carry no price key rather than a guess. Their Wolt/Pyszne.pl pages hold the full priced list but are bot-walled.",
+    "sections": [
+      { "name": "Śniadania · Breakfasts", "menu": "lunch", "items": [
+        { "name": "Klasyczny Poranek (fried eggs, ham, vegetables)", "price": "27 zł" },
+        { "name": "Na Grubo (sausage, cheese, cucumber, vegetables)", "price": "29 zł" },
+        { "name": "Na Bogato (sausage, kaszanka, two fried eggs, bacon chips, beans in tomato sauce)", "price": "36 zł" } ] },
+      { "name": "Gofry na słodko · Sweet waffles", "menu": "dessert", "items": [
+        { "name": "Gofr Cynamonowe Love (baked apple, chocolate granola, whipped cream)", "price": "24 zł" },
+        { "name": "Gofr twarogowy waniliowy z owocami (vanilla curd cream, fruit)", "price": "23 zł" },
+        { "name": "Gofr goły (plain waffle)", "price": "15 zł" },
+        { "name": "Gofr z Nutellą i karmelizowanym bananem, pistacja" },
+        { "name": "Gofr pistacjowy (two creams, raspberries, crushed nuts)" } ] },
+      { "name": "Gofry wytrawne · Savoury waffles", "menu": "lunch", "items": [
+        { "name": "Gofr z kaszanką i konfiturą cebulowo-śliwkową (blood sausage, onion-plum jam)" },
+        { "name": "Gofr z guacamole, jajkami sadzonymi i chipsami z boczku" },
+        { "name": "Gofr z wędzonym łososiem i awokado" },
+        { "name": "Gofr z krewetkami w sosie mango-chili" },
+        { "name": "Gofr-burger (mielone, sos serowy)" } ] },
+      { "name": "Napoje · Drinks", "menu": "drinks", "items": [
+        { "name": "Herbata w dzbanku 500 ml (pot of leaf tea)", "price": "13 zł" },
+        { "name": "Koktajle (cocktails)", "price": "25–30 zł" },
+        { "name": "Kawa z palarni Instytut Kawy (coffee from the local Łódź roastery)" },
+        { "name": "Prosecco / wino (by the glass)" } ] }
+    ]
+  },
+  "km-eat-55": {
+    "_source": "T.25 BISTRO — the Italian sister venue, NOT km-eat-61 (T.25 Cafe), though they share a building. Pasta and main prices stated exactly in a Jan 2025 review; other dishes are real published items with the price omitted rather than guessed. Source ranges: breakfasts 19–41 zł, antipasti 27–55 zł.",
+    "sections": [
+      { "name": "Śniadania · Breakfasts", "menu": "lunch", "items": [
+        { "name": "Cornetto z łososiem (savoury cornetto with salmon)" },
+        { "name": "Domowy ser labneh z awokado" },
+        { "name": "Frittata" },
+        { "name": "Focaccia z dodatkami (house focaccia with toppings)" },
+        { "name": "Selekcja włoskich wędlin i serów (Italian cured meats and cheeses)" } ] },
+      { "name": "Przystawki · Antipasti", "menu": "dinner", "items": [
+        { "name": "Ośmiorniczki w białym winie (octopus in white wine)" },
+        { "name": "Carpaccio z bresaoli" }, { "name": "Krewetki (prawns)" },
+        { "name": "Bruschetta" }, { "name": "Krem pomidorowy (tomato cream soup)" } ] },
+      { "name": "Makarony · Pasta", "menu": "dinner", "items": [
+        { "name": "Fusillioni con n'duja e mascarpone — the house hit", "price": "42 zł" },
+        { "name": "Carbonara (guanciale, Pecorino Romano)", "price": "44 zł" },
+        { "name": "Parmigiana di melanzane (baked aubergine in tomato sauce)", "price": "46 zł" },
+        { "name": "Gnocchi z polędwiczką wieprzową i grzybami" } ] },
+      { "name": "Dania główne · Secondi", "menu": "dinner", "items": [
+        { "name": "Kurczak w sosie pomidorowym (chicken in tomato sauce)", "price": "52 zł" },
+        { "name": "Polędwica wołowa z zielonym pieprzem (beef tenderloin, green pepper)", "price": "82 zł" } ] },
+      { "name": "Dolci i kawa · Desserts & coffee", "menu": "dessert", "items": [
+        { "name": "Tiramisù z limoncello (house limoncello tiramisù)" },
+        { "name": "Tiramisù klasyczne" }, { "name": "Cannoli z ricottą owczą" },
+        { "name": "Kawa z palarni Blue Drop (Blue Drop roastery)" } ] }
+    ]
+  },
+  "km-eat-2": {
+    "_source": "⚠️ NO PRICES, deliberately. Every dish is one Polish sources name for the ŁÓDŹ venue, but no Łódź price could be verified — and two decoy sites would have supplied fake ones: notosushi.pl is an unrelated Kraków vending-machine chain, notosushi.com is the Zielona Góra branch. Another city's prices must never be attributed to this pin. Sources agree only on a range: rolls from ~12 zł to just under 40 zł.",
+    "sections": [
+      { "name": "Sushi · Rolki", "menu": "dinner", "items": [
+        { "name": "Philadelphia Roll" }, { "name": "Ebi Sake Roll (łosoś i krewetka)" },
+        { "name": "Rolka z węgorzem i mango (eel and mango)" },
+        { "name": "Rolki z ośmiornicą (octopus)" }, { "name": "Rolki z seriolą (amberjack)" },
+        { "name": "Rolki wegetariańskie i wegańskie" } ] },
+      { "name": "Kuchnia japońska i azjatycka · Beyond sushi", "menu": "dinner", "items": [
+        { "name": "Ramen — dwa rodzaje (two ramen)" },
+        { "name": "Katsu Miso (miso reworked with gochujang, noodles, chicken, tofu, vegetables)" },
+        { "name": "Zupa miso" }, { "name": "Bao buns" },
+        { "name": "Pad Thai" }, { "name": "Mi Goreng" } ] }
+    ]
+  }
+}

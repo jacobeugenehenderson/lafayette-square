@@ -124,6 +124,10 @@ cartograph/data/ksi-y-m-yn/*
 cartograph/data/ksi-y-m-yn/content/*
 !cartograph/data/ksi-y-m-yn/content/listings.json
 !cartograph/data/ksi-y-m-yn/content/listings.overrides.json
+!cartograph/data/ksi-y-m-yn/content/menus.json
+!cartograph/data/ksi-y-m-yn/content/photos/
+!cartograph/data/ksi-y-m-yn/content/logos/
+!cartograph/data/ksi-y-m-yn/content/ASSETS.md
 !cartograph/data/ksi-y-m-yn/content/profile.json
 !cartograph/data/ksi-y-m-yn/content/roster.json
 !cartograph/data/ksi-y-m-yn/raw/

@@ -3,7 +3,8 @@
 "scene": "ksi-y-m-yn",
 "schema": "NEIGHBORHOOD-INPUTS §5.1.1",
 "layer": "Layer 2 listings — MERGED (Overture eateries→dining + landmark adds + 5 elaborated restaurant patches); categories = CATEGORY_HEX neon keys",
-"count": 87
+"count": 84,
+"note": "Merged (Overture base + overrides: 19 patches, 8 adds). Merge tool = scratch/merge-lodz-listings.mjs (NOT bake-content — see header)."
 },
 "listings": [
 {
@@ -54,7 +55,7 @@
 "reservation_url": null,
 "lon": 19.462535,
 "lat": 51.756209,
-"x": -910.0,
+"x": -910,
 "z": -447.3,
 "status": "active",
 "source": "overture",
@@ -66,16 +67,26 @@
 "name": "Noto Sushi",
 "category": "dining",
 "subcategory": "sushi_restaurant",
-"address": "ulica Henryka Sienkiewicza 115",
-"phone": "+48885886002",
-"website": "http://notosushi.eu/",
-"logo": null,
+"address": "ul. Henryka Sienkiewicza 115, Łódź",
+"phone": "+48 885 886 002",
+"website": "https://www.facebook.com/NOTOSUSHIPOLSKA/",
+"logo": "logos/noto-sushi.jpg",
 "hours": null,
-"opening_hours_raw": null,
+"opening_hours_raw": "listed 'temporarily closed' — hours unreliable; treat as null until confirmed",
 "photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
+"amenities": [
+"Takeaway",
+"Delivery (UberEats / Wolt)",
+"Outdoor seating"
+],
+"tags": [
+"sushi",
+"japanese",
+"ramen",
+"delivery",
+"casual"
+],
+"description": "A local sushi-and-ramen spot with inventive rolls (beef, octopus), bao buns and dumplings — a neighborhood Japanese option, not a chain. Note: near Piotrkowska rather than in-district, and may be temporarily closed — confirm before relying on it.",
 "history": null,
 "menu_url": null,
 "reservation_url": null,
@@ -83,9 +94,19 @@
 "lat": 51.757656,
 "x": -858.3,
 "z": -607.8,
-"status": "active",
-"source": "overture",
-"confidence": 0.819774329662323
+"status": "unconfirmed",
+"source": "overture+research",
+"confidence": 0.819774329662323,
+"cuisine": "Japanese — sushi, ramen, bao",
+"signature_dishes": [
+"Signature sushi sets",
+"Beef / octopus rolls",
+"Ramen",
+"Bao buns",
+"Dumplings"
+],
+"price_range": "mid (~38–95 PLN)",
+"_data_note": "No self-hostable photo sourced. ⚠️ Two decoy domains: notosushi.pl is an unrelated Kraków vending-machine chain and notosushi.com is the Zielona Góra branch — neither's content belongs on this pin. The logo is the NATIONWIDE brand mark, correct but not location-specific. Pin sits ~1.5 km west of Księży Młyn proper."
 },
 {
 "id": "km-eat-3",
@@ -96,59 +117,78 @@
 "address": "ul. Wigury 12A, 90-319 Łódź",
 "phone": "+48 42 637 30 81",
 "website": "http://www.soplicowo.com.pl",
-"logo": null,
+"logo": "logos/soplicowo.jpg",
 "hours": {
-"mon": {
+"monday": {
 "open": "12:00",
 "close": "23:00"
 },
-"tue": {
+"tuesday": {
 "open": "12:00",
 "close": "23:00"
 },
-"wed": {
+"wednesday": {
 "open": "12:00",
 "close": "23:00"
 },
-"thu": {
+"thursday": {
 "open": "12:00",
 "close": "23:00"
 },
-"fri": {
+"friday": {
 "open": "12:00",
 "close": "23:00"
 },
-"sat": {
+"saturday": {
 "open": "12:00",
 "close": "23:00"
 },
-"sun": {
+"sunday": {
 "open": "12:00",
 "close": "23:00"
 }
 },
-"opening_hours_raw": "codziennie 12:00–23:00 (approx — official site cert failed)",
+"opening_hours_raw": "codziennie 12:00–23:00 (approx)",
 "photos": [
-"https://www.facebook.com/Soplicowo"
+{
+"url": "photos/soplicowo/01.jpg",
+"credit": "soplicowo.com.pl",
+"credit_url": "http://www.soplicowo.com.pl"
+}
 ],
 "amenities": [
-"garden",
-"reservations",
-"event catering",
-"card + cash"
+"Garden / outdoor seating",
+"Reservations",
+"Event & wedding catering",
+"Private dining",
+"Manor-house interior",
+"Card & cash",
+"Group dining",
+"Traditional Polish menu"
 ],
 "tags": [
 "staropolska",
 "Pan-Tadeusz",
-"palace",
+"manor",
 "garden",
 "roast-duck",
+"celebrations",
+"reservations",
 "traditional"
 ],
-"description": "An old-Polish manor restaurant named for the Soplica estate in Mickiewicz's Pan Tadeusz, in the former palace of textile industrialist Wilhelm Teschemacher. The kitchen leans into old-nobility fare — roast duck and goose, game and offal done properly — with a cozy garden in warm weather. A go-to for weddings and family celebrations, so expect an occasion-ready feel.",
-"history": null,
+"description": "An old-Polish manor restaurant named for the Soplica estate in Mickiewicz's Pan Tadeusz, in the former palace of textile industrialist Wilhelm Teschemacher. The kitchen leans into old-nobility fare — roast duck and goose, game and offal done properly — with a cozy garden in warm weather. A go-to for weddings and family celebrations.",
+"history": [
+{
+"year": 1880,
+"event": "The mansion rises as the residence of textile industrialist Wilhelm Teschemacher."
+},
+{
+"year": 2005,
+"event": "Reborn as Soplicowo — an old-Polish manor restaurant named for the Soplica estate in Mickiewicz's Pan Tadeusz."
+}
+],
 "menu_url": null,
-"reservation_url": null,
+"reservation_url": "http://www.soplicowo.com.pl",
 "lon": 19.463281,
 "lat": 51.75639,
 "x": -858.6,
@@ -186,19 +226,23 @@
 "website": "https://www.instagram.com/cynamonowe_love_/",
 "logo": null,
 "hours": null,
-"opening_hours_raw": "unverified — sources conflict (check Instagram/Facebook)",
+"opening_hours_raw": "unverified — check Instagram/Facebook",
 "photos": [
-"https://www.instagram.com/cynamonowe_love_/",
-"https://www.facebook.com/p/Cynamonowe-Love-61553992685823/"
+{
+"url": "photos/cynamonowe-love/01.jpg",
+"credit": "Instagram @cynamonowe_love_",
+"credit_url": "https://www.instagram.com/cynamonowe_love_/"
+}
 ],
 "amenities": [
-"outdoor seating",
-"takeaway",
-"delivery (Wolt/Pyszne)",
-"reservations",
+"Outdoor seating",
+"Takeaway",
+"Delivery (Wolt/Pyszne)",
+"Reservations",
 "Wi-Fi",
-"wheelchair accessible",
-"gluten-free options"
+"Wheelchair accessible",
+"Gluten-free options",
+"All-day breakfast"
 ],
 "tags": [
 "cafe",
@@ -206,11 +250,17 @@
 "waffles",
 "brunch",
 "cozy",
-"Piotrkowska",
-"matcha"
+"matcha",
+"gluten-free",
+"Piotrkowska"
 ],
-"description": "A cheerful, cinnamon-scented bistro and cafe on Piotrkowska near Geyer's White Factory — a red-brick textile-heritage neighbor to the Księży Młyn story (though just outside the district). Beloved for all-day breakfasts and both sweet and savory waffles, in a cosy room with genuinely warm service (Google ~4.8–4.9). A relaxed spot for brunch, matcha and a slow coffee.",
-"history": null,
+"description": "A cheerful, cinnamon-scented bistro and cafe near Geyer's White Factory — red-brick textile heritage a short walk from Księży Młyn. Beloved for all-day breakfasts and both sweet and savory waffles, in a cosy room with genuinely warm service (Google ~4.8–4.9). A relaxed spot for brunch, matcha and a slow coffee.",
+"history": [
+{
+"year": 2019,
+"event": "Opens as a cosy bistro & cafe on Piotrkowska, quickly a local brunch favourite (Google ~4.8–4.9)."
+}
+],
 "menu_url": null,
 "reservation_url": null,
 "lon": 19.46222,
@@ -226,7 +276,6 @@
 "Sweet waffles (yogurt, chia, mango & passion fruit)",
 "Breakfast plates / omelets",
 "Guacamole",
-"Kaszanka (black pudding)",
 "Matcha drinks"
 ],
 "price_range": "budget–mid (~20–60 PLN)",
@@ -246,26 +295,83 @@
 "name": "NieWinni",
 "category": "dining",
 "subcategory": "wine_bar",
-"address": "ulica bp. Wincentego Tymienieckiego 3",
-"phone": "+48733909744",
-"website": null,
-"logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
+"address": "ul. bp. Wincentego Tymienieckiego 3, Łódź",
+"phone": "+48 733 909 744",
+"website": "https://lodz.travel/turystyka/gdzie-zjesc/winiarnie/niewinni/",
+"logo": "logos/niewinni.jpg",
+"hours": {
+"monday": null,
+"tuesday": {
+"open": "09:00",
+"close": "21:00"
+},
+"wednesday": {
+"open": "09:00",
+"close": "21:00"
+},
+"thursday": {
+"open": "09:00",
+"close": "21:00"
+},
+"friday": {
+"open": "09:00",
+"close": "24:00"
+},
+"saturday": {
+"open": "16:00",
+"close": "24:00"
+},
+"sunday": null
+},
+"opening_hours_raw": "Pon: nieczynne · Wt–Czw 9–21 · Pt 9–24 · Sob 16–24 · Ndz: nieczynne",
+"photos": [
+{
+"url": "photos/niewinni/01.jpg",
+"credit": "lodz.travel",
+"credit_url": "https://lodz.travel"
+}
+],
+"amenities": [
+"Outdoor seating",
+"Reservations",
+"Delivery",
+"Takeaway",
+"Wi-Fi",
+"Wheelchair accessible",
+"Vegetarian options",
+"Wine retail",
+"Live-music stage"
+],
+"tags": [
+"wine-bar",
+"natural-wine",
+"tapas",
+"loft",
+"live-music",
+"Księży-Młyn",
+"reservations"
+],
+"description": "A tall, window-flooded loft with a mezzanine stage where the district comes to drink. The two-tank system pours reds and whites from Georgia, Slovakia, Hungary and Portugal, and the 'wine of the week' comes with a free tapa (a bottle earns four). Order a podpłomyk — the wood-fired flatbread comes a dozen ways — and settle in for the evening.",
 "history": null,
 "menu_url": null,
 "reservation_url": null,
 "lon": 19.464059,
 "lat": 51.748354,
-"x": -805.0,
+"x": -805,
 "z": 424.7,
 "status": "active",
-"source": "overture",
-"confidence": 0.9918112754821777
+"source": "overture+research",
+"confidence": 0.9918112754821777,
+"hero": true,
+"cuisine": "Wine bar — natural / Eastern-European wines + small plates",
+"signature_dishes": [
+"Podpłomyk 'Sycylia' (wood-fired flatbread)",
+"Filet américain",
+"Baked camembert",
+"Daily soup",
+"Wine of the week + free tapa"
+],
+"price_range": "mid (~20–40 PLN small plates; ~80–100 a full evening)"
 },
 {
 "id": "km-eat-6",
@@ -801,7 +907,7 @@
 "reservation_url": null,
 "lon": 19.46522,
 "lat": 51.7591,
-"x": -725.0,
+"x": -725,
 "z": -768.1,
 "status": "active",
 "source": "overture",
@@ -882,11 +988,11 @@
 "reservation_url": null,
 "lon": 19.465206,
 "lat": 51.758996,
-"x": -726.0,
+"x": -726,
 "z": -756.6,
 "status": "active",
 "source": "overture",
-"confidence": 1.0
+"confidence": 1
 },
 {
 "id": "km-eat-29",
@@ -909,7 +1015,7 @@
 "reservation_url": null,
 "lon": 19.465206,
 "lat": 51.758996,
-"x": -726.0,
+"x": -726,
 "z": -756.6,
 "status": "active",
 "source": "overture",
@@ -937,7 +1043,7 @@
 "lon": 19.465733,
 "lat": 51.759711,
 "x": -689.6,
-"z": -836.0,
+"z": -836,
 "status": "active",
 "source": "overture",
 "confidence": 0.9827901124954224
@@ -964,7 +1070,7 @@
 "lon": 19.467347,
 "lat": 51.748955,
 "x": -578.4,
-"z": 358.0,
+"z": 358,
 "status": "active",
 "source": "overture",
 "confidence": 0.9278942942619324
@@ -1029,17 +1135,72 @@
 "name": "Sartoria Ristorante e Pizzeria",
 "category": "dining",
 "subcategory": "restaurant",
-"address": "ulica bp. Wincentego Tymienieckiego 13C",
-"phone": "+48576644248",
-"website": null,
-"logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
+"address": "ul. bp. W. Tymienieckiego 13C (Fuzja), Łódź",
+"phone": "+48 576 644 248",
+"website": "https://sartoria.pl/",
+"logo": "logos/sartoria.png",
+"hours": {
+"monday": {
+"open": "12:00",
+"close": "22:00"
+},
+"tuesday": {
+"open": "12:00",
+"close": "21:00"
+},
+"wednesday": {
+"open": "12:00",
+"close": "22:00"
+},
+"thursday": {
+"open": "12:00",
+"close": "22:00"
+},
+"friday": {
+"open": "12:00",
+"close": "23:00"
+},
+"saturday": {
+"open": "12:00",
+"close": "23:00"
+},
+"sunday": {
+"open": "12:00",
+"close": "21:00"
+}
+},
+"opening_hours_raw": "Ndz i Wt 12–21 · Pon/Śr/Czw 12–22 · Pt–Sob 12–23 (aggregator)",
+"photos": [
+{
+"url": "photos/sartoria/01.png",
+"credit": "sartoria.pl",
+"credit_url": "https://sartoria.pl/"
+}
+],
+"amenities": [
+"Reservations",
+"Outdoor seating",
+"Vegetarian options",
+"Groups / events",
+"In the Fuzja complex",
+"Wine list"
+],
+"tags": [
+"italian",
+"Neapolitan-pizza",
+"pasta",
+"Fuzja",
+"Scheibler",
+"wine",
+"reservations"
+],
+"description": "Set in the restored Scheibler power-plant complex 'Fuzja', Sartoria plays on sartoria (tailoring) with a stitched, elegant interior. The draw is honest Neapolitan pizza — a margherita that tastes the way it should — plus handmade pasta. A polished, locally-run alternative to the chains.",
+"history": [
+{
+"year": 2023,
+"event": "Opens in the restored Scheibler power-plant complex 'Fuzja', beside the mill."
+}
+],
 "menu_url": null,
 "reservation_url": null,
 "lon": 19.468527,
@@ -1047,8 +1208,16 @@
 "x": -497.1,
 "z": 338.7,
 "status": "active",
-"source": "overture",
-"confidence": 0.898605465888977
+"source": "overture+research",
+"confidence": 0.898605465888977,
+"cuisine": "Italian — Neapolitan pizza + handmade pasta",
+"signature_dishes": [
+"Pizza margherita (Neapolitan)",
+"Seafood soup",
+"House pastas",
+"Gorgonzola gelato"
+],
+"price_range": "mid"
 },
 {
 "id": "km-eat-35",
@@ -1179,7 +1348,7 @@
 "reservation_url": null,
 "lon": 19.47278,
 "lat": 51.75771,
-"x": -204.0,
+"x": -204,
 "z": -613.8,
 "status": "active",
 "source": "overture",
@@ -1215,29 +1384,80 @@
 {
 "id": "km-eat-41",
 "building_id": "osm-112783824",
-"name": "U fabrykanta",
+"name": "U Fabrykanta",
 "category": "dining",
 "subcategory": "diner",
-"address": "Łódź",
-"phone": "42 674 18 75",
-"website": "http://www.ufabrykanta.pl",
+"address": "Plac Zwycięstwa 2, 90-312 Łódź",
+"phone": "+48 42 674 18 75",
+"website": null,
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
+"hours": {
+"monday": null,
+"tuesday": {
+"open": "12:00",
+"close": "18:00"
+},
+"wednesday": {
+"open": "12:00",
+"close": "18:00"
+},
+"thursday": {
+"open": "12:00",
+"close": "18:00"
+},
+"friday": {
+"open": "12:00",
+"close": "18:00"
+},
+"saturday": null,
+"sunday": null
+},
+"opening_hours_raw": "Wt–Pt 12:00–18:00 · weekendy wg kalendarza zamówień · pon. nieczynne",
+"photos": [
+{
+"url": "photos/u-fabrykanta/01.jpg",
+"credit": "miaster.pl",
+"credit_url": "http://miaster.pl"
+}
+],
+"amenities": [
+"Summer garden",
+"Events / weddings (200 seats)",
+"Business lunch",
+"Reservations",
+"Industrial-heritage interior"
+],
+"tags": [
+"Polish-traditional",
+"Scheibler",
+"industrial-heritage",
+"events",
+"home-cooking",
+"Księży-Młyn"
+],
+"description": "'At the factory-owner's' occupies the oldest building of the 19th-century Scheibler complex, beside the Film School and Cinematography Museum — the interior keeps its raw industrial character. Home-style Polish dinners in the most heritage-saturated room on this list. Note: event-leaning, so walk-in dining is limited.",
+"history": [
+{
+"year": 1855,
+"event": "Housed in the oldest surviving building of Scheibler's Water-Market complex."
+}
+],
 "menu_url": null,
 "reservation_url": null,
 "lon": 19.475422,
 "lat": 51.759703,
 "x": -21.9,
-"z": -835.0,
+"z": -835,
 "status": "active",
-"source": "overture",
-"confidence": 0.77
+"source": "overture+research",
+"confidence": 0.77,
+"cuisine": "Traditional Polish — heritage / event dining",
+"signature_dishes": [
+"Obiady domowe (home-style Polish dinners)",
+"Business lunch"
+],
+"price_range": "mid",
+"_data_note": "⚠️ NEEDS LOCAL VERIFICATION. Operates primarily as a banquet/event hall (weddings, communions) with a weekday lunch board posted in-house only — no menu is published anywhere online, in PL or EN, so this card ships without one. A Yelp entry updated Dec 2025 marks a 'U Fabrykanta' as CLOSED at pl. Zwycięstwa 2 (adjacent); may be a stale second address record or may be this venue. Confirm it is trading before promoting this card."
 },
 {
 "id": "km-eat-42",
@@ -1275,59 +1495,75 @@
 "address": "ulica bp. Wincentego Tymienieckiego 22/24",
 "phone": "+48 42 673 02 90",
 "website": "https://browarksiezymlyn.pl",
-"logo": null,
+"logo": "logos/browar-ksiezy-mlyn.png",
 "hours": {
-"mon": null,
-"tue": {
+"monday": null,
+"tuesday": {
 "open": "12:00",
 "close": "22:00"
 },
-"wed": {
+"wednesday": {
 "open": "12:00",
 "close": "22:00"
 },
-"thu": {
+"thursday": {
 "open": "12:00",
 "close": "22:00"
 },
-"fri": {
+"friday": {
 "open": "12:00",
 "close": "23:00"
 },
-"sat": {
+"saturday": {
 "open": "12:00",
 "close": "23:00"
 },
-"sun": {
+"sunday": {
 "open": "12:00",
 "close": "20:00"
 }
 },
 "opening_hours_raw": "Pon: nieczynne · Wt–Czw 12–22 · Pt–Sob 12–23 · Nd 12–20",
 "photos": [
-"https://www.instagram.com/browar.ksiezy.mlyn/",
-"https://www.facebook.com/browarksiezymlyn/"
+{
+"url": "photos/browar-ksiezy-mlyn/01.jpg",
+"credit": "browarksiezymlyn.pl",
+"credit_url": "https://browarksiezymlyn.pl"
+}
 ],
 "amenities": [
-"reservations",
-"on-site brewery",
-"event hall",
-"wood-fired pizza",
-"group dining"
+"On-site craft brewery",
+"Reservations",
+"Wood-fired pizza oven",
+"Event & wedding hall",
+"Group dining",
+"Red-brick loft interior",
+"Outdoor courtyard",
+"Vegetarian options"
 ],
 "tags": [
 "brewpub",
-"Księży Młyn",
-"red-brick",
 "craft-beer",
-"Grohman-mill",
+"Księży-Młyn",
+"red-brick",
 "pizza",
+"reservations",
+"events",
 "industrial"
 ],
-"description": "The district's namesake brewpub, brewing on-site since 2014 inside the raw red brick of Grohman's former cotton-scutching mill — exposed brickwork, a long bar and gleaming brew tanks on show. A relaxed post-industrial pub where a short seasonal menu is paired with the house lagers; a signature touch is the beetroot cream soup poured tableside from a glass bottle.",
-"history": null,
-"menu_url": null,
-"reservation_url": null,
+"description": "The district's namesake brewpub, brewing on-site since 2014 inside the raw red brick of Grohman's former cotton-scutching mill — exposed brickwork, a long bar and gleaming brew tanks on show. A signature touch: the beetroot cream soup arrives in a glass bottle the waiter pours at your table.",
+"history": [
+{
+"year": 1870,
+"event": "The building rises as Grohman's cotton-scutching mill (szarpalnia) — one of the original Księży Młyn factory halls."
+},
+{
+"year": 2014,
+"event": "Opens as Browar Księży Młyn, brewing craft beer on-site amid the exposed brick (replacing the former Gronowalski Restaurant)."
+}
+],
+"menu_url": "https://browarksiezymlyn.pl/restauracja",
+"reservation_url": "https://browarksiezymlyn.pl/kontakt",
 "lon": 19.476398,
 "lat": 51.752523,
 "x": 45.4,
@@ -1342,7 +1578,7 @@
 "Beetroot cream soup, poured tableside",
 "Oriental shrimp soup",
 "Wood-fired pizza",
-"House craft beers — pils, wheat, citrus IPA + rotating seasonal"
+"House pils, wheat, citrus IPA + rotating seasonal"
 ],
 "price_range": "mid (mains ~35–55 PLN)",
 "atmosphere": [
@@ -1402,7 +1638,7 @@
 "reservation_url": null,
 "lon": 19.477829,
 "lat": 51.753088,
-"x": 144.0,
+"x": 144,
 "z": -100.8,
 "status": "active",
 "source": "overture",
@@ -1414,17 +1650,92 @@
 "name": "Tubajka",
 "category": "dining",
 "subcategory": "coffee_shop",
-"address": "plac Zwycięstwa 1",
-"phone": "+48423073187",
-"website": null,
+"address": "plac Zwycięstwa 3, 90-312 Łódź",
+"phone": "+48 42 307 31 87",
+"website": "https://www.tubajka.com/",
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
+"hours": {
+"monday": {
+"open": "11:00",
+"close": "20:00"
+},
+"tuesday": {
+"open": "11:00",
+"close": "20:00"
+},
+"wednesday": {
+"open": "11:00",
+"close": "20:00"
+},
+"thursday": {
+"open": "11:00",
+"close": "20:00"
+},
+"friday": {
+"open": "11:00",
+"close": "20:00"
+},
+"saturday": {
+"open": "11:00",
+"close": "20:00"
+},
+"sunday": {
+"open": "11:00",
+"close": "20:00"
+}
+},
+"opening_hours_raw": "Monday–Sunday 11:00–20:00",
+"photos": [
+{
+"url": "photos/tubajka/01.jpg",
+"credit": "lodz.travel",
+"credit_url": "https://lodz.travel/en/tourism/where-to-eat/cafes-and-pastry-shops/tubajka-a-cafe-in-the-park/"
+},
+{
+"url": "photos/tubajka/02.jpg",
+"credit": "lodz.travel",
+"credit_url": "https://lodz.travel/en/tourism/where-to-eat/cafes-and-pastry-shops/tubajka-a-cafe-in-the-park/"
+}
+],
+"amenities": [
+"Set inside Park Źródliska, tables under the trees",
+"Play room for children",
+"High chairs, changing table, spare nappies",
+"Lift for prams",
+"Wheelchair accessible",
+"Gluten-free and vegan cakes",
+"Summer sunbeds and blankets on the lawn",
+"Live music, picnics and children's shows"
+],
+"tags": [
+"cafe",
+"family-friendly",
+"park",
+"cakes",
+"vegan",
+"gluten-free",
+"ice-cream",
+"ksiezy-mlyn"
+],
+"description": "Tubajka fills a small dworek among the trees of Park Źródliska, a few steps from Scheibler's palace. Inside it is deep armchairs, couches and a play room; in summer sunbeds and blankets go out on the grass for concerts and picnics. It is known first for cake — traditional recipes alongside a full gluten-free and vegan range — with toasted sandwiches, salads and artisan ice cream when it is warm.",
+"history": [
+{
+"year": 1840,
+"event": "Park Źródliska laid out around the springs of the Jasień; later absorbed into Karol Scheibler's estate as the family's private garden."
+},
+{
+"year": 1888,
+"event": "The Herbst and Scheibler palace gardens reach their fullest extent; service buildings including the gardener's cottage serve the grounds."
+},
+{
+"year": 2016,
+"event": "Tubajka established as a family cafe in the park, and quickly a fixture for workshops, concerts and children's shows (c. 2016)."
+},
+{
+"year": 2021,
+"event": "Expands next door into the gardener's cottage with a full restaurant, Dom Ogrodnika."
+}
+],
 "menu_url": null,
 "reservation_url": null,
 "lon": 19.478645,
@@ -1433,25 +1744,95 @@
 "z": -821.2,
 "status": "active",
 "source": "overture",
-"confidence": 0.9920071363449097
+"confidence": 0.9920071363449097,
+"cuisine": "Family cafe & bakery in a park cottage",
+"signature_dishes": [
+"Domowe ciasta (homemade cakes, traditional recipes)",
+"Ciasta bezglutenowe i wegańskie (gluten-free and vegan cakes)",
+"Gorąca czekolada (hot chocolate)",
+"Zapiekane kanapki (toasted sandwiches)",
+"Lody rzemieślnicze (artisan ice cream, summer)"
+],
+"price_range": null,
+"_data_note": "ADDRESS CORRECTED from 'plac Zwycięstwa 1' — every source puts Tubajka at no. 3; no. 1 is the Scheibler Palace / Museum of Cinematography, so the raw value was a geocode snapping to the nearest addressed building. Founding year 2016 inferred from earliest press coverage, not directly confirmed. Sister venue: km-eat-47 (Dom Ogrodnika)."
 },
 {
 "id": "km-eat-47",
 "building_id": null,
-"name": "Tubajka w Domku Ogrodnika",
+"name": "Dom Ogrodnika (Tubajka w Domku Ogrodnika)",
 "category": "dining",
 "subcategory": "cafe",
-"address": "Plac Zwycięstwa 3",
-"phone": "664 954 996",
-"website": "http://www.tubajka.com",
+"address": "plac Zwycięstwa 3, 90-312 Łódź",
+"phone": "+48 664 954 996",
+"website": "https://www.tubajka.com/",
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
+"hours": {
+"monday": {
+"open": "11:00",
+"close": "20:00"
+},
+"tuesday": {
+"open": "11:00",
+"close": "20:00"
+},
+"wednesday": {
+"open": "11:00",
+"close": "20:00"
+},
+"thursday": {
+"open": "11:00",
+"close": "20:00"
+},
+"friday": {
+"open": "11:00",
+"close": "20:00"
+},
+"saturday": {
+"open": "10:00",
+"close": "20:00"
+},
+"sunday": {
+"open": "10:00",
+"close": "20:00"
+}
+},
+"opening_hours_raw": "Mon–Fri 11:00–20:00, Sat–Sun 10:00–20:00",
 "photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
+"amenities": [
+"Two dining rooms — 'manor house' and 'country garden'",
+"Outdoor seating in Park Źródliska",
+"Reservations accepted",
+"Wheelchair accessible",
+"Lift for prams",
+"Wi-Fi",
+"Cards accepted",
+"Live music"
+],
+"tags": [
+"restaurant",
+"polish",
+"park",
+"seasonal",
+"family-friendly",
+"garden",
+"ksiezy-mlyn",
+"zrodliska"
+],
+"description": "The younger sibling of the Tubajka cafe next door turns Park Źródliska's old gardener's cottage into two rooms: one dressed as a manor drawing room, the other as a country garden, thick with plants and cut flowers. Wooden tables, white chairs and salvaged vintage furniture — including a credenza carried over from Tubajka's first premises on plac Wolności. Chef Patrycja Michalska cooks an inventive Polish menu: gravlax with wasabi, cucumber chłodnik with beetroot ice cream, pike-perch under a semolina crust.",
+"history": [
+{
+"year": 1875,
+"event": "Scheibler's Księży Młyn estate takes shape around the park; the grounds' service buildings, the gardener's cottage among them, serve the palace gardens (c. 1875)."
+},
+{
+"year": 2016,
+"event": "Tubajka opens as a family cafe in the park (c. 2016)."
+},
+{
+"year": 2021,
+"event": "Dom Ogrodnika opens on 2 August as Tubajka's full restaurant, with Patrycja Michalska in the kitchen."
+}
+],
 "menu_url": null,
 "reservation_url": null,
 "lon": 19.478963,
@@ -1460,7 +1841,17 @@
 "z": -843.5,
 "status": "active",
 "source": "overture",
-"confidence": 0.77
+"confidence": 0.77,
+"cuisine": "Modern Polish restaurant in the gardener's cottage",
+"signature_dishes": [
+"Gravlax z wasabi (cured salmon with wasabi)",
+"Chłodnik ogórkowy z lodami buraczanymi (chilled cucumber soup, beetroot ice cream)",
+"Sandacz w skorupce z kaszy manny (pike-perch in a semolina crust)",
+"Falafele z nasionami konopi (falafel with hemp seeds)",
+"Autorskie desery cytrynowe i wiśniowe (house lemon and cherry desserts)"
+],
+"price_range": null,
+"_data_note": "Opening date, chef, interior and dishes confirmed by jemywlodzi.pl; that source published no prices and no hours. Hours here are from a Foursquare listing and CONFLICT with the cafe's — treat as provisional. No prices verified. Sister venue: km-eat-46 (Tubajka). NOTE: no building_id in the base join — anchors to the cafe's building for rendering."
 },
 {
 "id": "km-eat-48",
@@ -1468,16 +1859,65 @@
 "name": "Jadłodajnia Babci Helci",
 "category": "dining",
 "subcategory": "restaurant",
-"address": "ulica Fabryczna 17",
-"phone": "+48690588602",
-"website": null,
-"logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
+"address": "ul. Fabryczna 17, 90-344 Łódź",
+"phone": "+48 690 588 602",
+"website": "https://jadlodajniababcihelci.pl/",
+"logo": "logos/babci-helci.png",
+"hours": {
+"monday": {
+"open": "08:00",
+"close": "17:30"
+},
+"tuesday": {
+"open": "08:00",
+"close": "17:30"
+},
+"wednesday": {
+"open": "08:00",
+"close": "17:30"
+},
+"thursday": {
+"open": "08:00",
+"close": "17:30"
+},
+"friday": {
+"open": "08:00",
+"close": "17:30"
+},
+"saturday": {
+"open": "12:00",
+"close": "17:30"
+},
+"sunday": {
+"open": "12:00",
+"close": "17:30"
+}
+},
+"opening_hours_raw": "Pon–Pt 8:00–17:30 · Sob–Ndz 12:00–17:30",
+"photos": [
+{
+"url": "photos/babci-helci/01.jpg",
+"credit": "jadlodajniababcihelci.pl",
+"credit_url": "https://jadlodajniababcihelci.pl/"
+}
+],
+"amenities": [
+"Dine-in",
+"Takeaway (biodegradable packaging)",
+"Delivery (Pyszne/Glovo)",
+"Daily set menu",
+"Budget-friendly",
+"Home cooking"
+],
+"tags": [
+"milk-bar",
+"home-cooking",
+"Polish-traditional",
+"budget",
+"lunch-set",
+"borderland-cuisine"
+],
+"description": "'Grandma Helena's' is a piece of home warmth near the district — named for the owners' grandmother, whose recipes (and years in Lithuania) shape the pots. Come for the weekday set: soup, a main and a kompot for pocket change. This is the rosół-and-schabowy comfort Poles get nostalgic about.",
 "history": null,
 "menu_url": null,
 "reservation_url": null,
@@ -1486,8 +1926,17 @@
 "x": 229.8,
 "z": -493.7,
 "status": "active",
-"source": "overture",
-"confidence": 0.8358978033065796
+"source": "overture+research",
+"confidence": 0.8358978033065796,
+"cuisine": "Milk-bar / canteen — Polish home cooking",
+"signature_dishes": [
+"Schabowy (breaded pork cutlet)",
+"Bitki with kluski śląskie",
+"Rosół",
+"Lithuanian chłodnik (cold beet soup)",
+"Naleśniki with cheese"
+],
+"price_range": "budget (mains ~18–30 PLN; set ~28 PLN)"
 },
 {
 "id": "km-eat-49",
@@ -1522,18 +1971,89 @@
 "name": "Fit Cake Łódź Księży Młyn",
 "category": "dining",
 "subcategory": "coffee_shop",
-"address": "ulica Księży Młyn 16",
-"phone": "+48695678778",
-"website": "https://fitcake.pl/",
+"address": "ul. Księży Młyn 16, 90-345 Łódź",
+"phone": "+48 730 250 714",
+"website": "https://fitcake.pl/en/cities/lodz-ksiezy-mlyn/",
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
+"hours": {
+"monday": {
+"open": "09:00",
+"close": "20:00"
+},
+"tuesday": {
+"open": "09:00",
+"close": "20:00"
+},
+"wednesday": {
+"open": "09:00",
+"close": "20:00"
+},
+"thursday": {
+"open": "09:00",
+"close": "20:00"
+},
+"friday": {
+"open": "09:00",
+"close": "20:00"
+},
+"saturday": {
+"open": "09:00",
+"close": "20:00"
+},
+"sunday": {
+"open": "09:00",
+"close": "20:00"
+}
+},
+"opening_hours_raw": "Mon–Sun 09:00–20:00",
+"photos": [
+{
+"url": "photos/fit-cake/01.jpg",
+"credit": "FitCake",
+"credit_url": "https://fitcake.pl/historia-sukcesu-jak-ksiezy-mlyn-stal-sie-slodkim-zakatkiem-lodzi/"
+},
+{
+"url": "photos/fit-cake/02.jpg",
+"credit": "FitCake",
+"credit_url": "https://fitcake.pl/en/cities/lodz-ksiezy-mlyn/"
+}
+],
+"amenities": [
+"No wheat flour, no refined sugar",
+"Certified gluten-free (MENU BEZ GLUTENU)",
+"Vegan, keto and low-carb options",
+"Lactose-free options",
+"Custom cakes to order",
+"Sweet and savoury breakfasts",
+"Freshly brewed coffee",
+"Open seven days"
+],
+"tags": [
+"patisserie",
+"gluten-free",
+"vegan",
+"sugar-free",
+"keto",
+"desserts",
+"cafe",
+"ksiezy-mlyn"
+],
+"description": "A patisserie in a former butcher's shop in the Scheibler konsumy, run by franchisee Michał Szewczyk, who describes the room as 'a piece of authentic Łódź' with 'brick walls filled with history'. Fit Cake works with no wheat flour and no ordinary sugar — almond, coconut, millet and buckwheat instead. The counter runs to vegan éclairs, doughnuts, fit cheesecakes, protein bars and desserts in jars, with keto and low-carb cakes to order.",
+"history": [
+{
+"year": 1873,
+"event": "Karol Scheibler begins the Księży Młyn workers' estate — mills, famuły housing, schools and company shops (konsumy) for his workers (c. 1873–1880)."
+},
+{
+"year": 2020,
+"event": "An earlier Fit Cake location in Łódź closes during the pandemic (c. 2020)."
+},
+{
+"year": 2025,
+"event": "The Księży Młyn shop is certified under the MENU BEZ GLUTENU (Gluten-Free Menu) programme."
+}
+],
+"menu_url": "https://www.fitcakelodzksiezymlyn.pl/",
 "reservation_url": null,
 "lon": 19.480434,
 "lat": 51.756048,
@@ -1541,7 +2061,17 @@
 "z": -429.3,
 "status": "active",
 "source": "overture",
-"confidence": 0.73243647813797
+"confidence": 0.73243647813797,
+"cuisine": "Sugar-free, gluten-free & vegan patisserie",
+"signature_dishes": [
+"Fit sernik (sugar-free cheesecake)",
+"Wegańskie eklery (vegan éclairs)",
+"Sycylijski Belmondo — keto cannoli siciliani",
+"Fit Kater wegański (vegan cake)",
+"Desery w słoiczkach (desserts in jars)"
+],
+"price_range": null,
+"_data_note": "Address, phone, hours confirmed on the brand's own site; the 'former butcher's shop' detail and franchisee name from FitCake's own case study. NO OPENING YEAR is published anywhere — deliberately OMITTED from the timeline rather than guessed. No prices verified."
 },
 {
 "id": "km-eat-51",
@@ -1549,26 +2079,95 @@
 "name": "Spiżarnia Rydzyńska",
 "category": "dining",
 "subcategory": "health_food_restaurant",
-"address": "ulica Księży Młyn 16",
-"phone": "+48570121999",
-"website": null,
+"address": "ul. Księży Młyn 16, 90-345 Łódź",
+"phone": "+48 570 121 999",
+"website": "https://www.spizarniarydzynska.pl/",
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
+"hours": {
+"monday": {
+"open": "09:00",
+"close": "17:00"
+},
+"tuesday": {
+"open": "09:00",
+"close": "17:00"
+},
+"wednesday": {
+"open": "09:00",
+"close": "19:00"
+},
+"thursday": {
+"open": "09:00",
+"close": "19:00"
+},
+"friday": {
+"open": "09:00",
+"close": "19:00"
+},
+"saturday": {
+"open": "10:00",
+"close": "16:00"
+},
+"sunday": null
+},
+"opening_hours_raw": "Mon–Tue 09:00–17:00, Wed–Fri 09:00–19:00, Sat 10:00–16:00",
+"photos": [
+{
+"url": "photos/spizarnia-rydzynska/01.jpg",
+"credit": "Spiżarnia Rydzyńska, via uml.lodz.pl",
+"credit_url": "https://uml.lodz.pl/aktualnosci-lodzpl/artykul-lodzpl/nowe-ekologiczne-delikatesy-na-ksiezym-mlynie-wpadnij-do-spizarni-rydzynskiej-id48477/2022/3/20/"
+}
+],
+"amenities": [
+"Certified organic produce",
+"Butcher counter with game and made-to-order sausage",
+"Sourced from small family manufacturers",
+"Fresh oysters",
+"Online shop with delivery",
+"Phone orders",
+"Housed in the historic Scheibler konsumy",
+"Closed Sundays"
+],
+"tags": [
+"delicatessen",
+"organic",
+"butcher",
+"game",
+"local-produce",
+"shop",
+"ksiezy-mlyn",
+"scheibler"
+],
+"description": "An ecological delicatessen in the Scheibler konsumy — fittingly, the same building type that once held the mill's company shop. Michał Błaszczyk and his wife Marta opened this second branch on Księży Młyn after the original in Konstantynów Łódzki. The counter runs to game: venison and wild boar kiełbasa made to order, free-range country chicken, fresh oysters, and vegetables from small family growers, most of it certified organic.",
+"history": [
+{
+"year": 1873,
+"event": "Karol Scheibler begins the Księży Młyn workers' estate — mills, famuły housing, schools and company shops (konsumy) for his workers (c. 1873–1880)."
+},
+{
+"year": 2022,
+"event": "Spiżarnia Rydzyńska opens its second shop at Księży Młyn 16 in March, after the original in Konstantynów Łódzki."
+}
+],
+"menu_url": "https://www.spizarniarydzynska.pl/",
 "reservation_url": null,
 "lon": 19.480456,
 "lat": 51.755962,
-"x": 325.0,
+"x": 325,
 "z": -419.8,
 "status": "active",
 "source": "overture",
-"confidence": 0.32583972811698914
+"confidence": 0.32583972811698914,
+"cuisine": "Organic delicatessen & butcher",
+"signature_dishes": [
+"Kiełbasa z dziczyzny / z dzika (venison and wild boar sausage, made to order)",
+"Kurczak zagrodowy (free-range country chicken)",
+"Świeże ostrygi (fresh oysters)",
+"Warzywa od małych gospodarstw (vegetables from small family farms)",
+"Pieczywo rzemieślnicze (artisan bread)"
+],
+"price_range": null,
+"_data_note": "This is a SHOP, not a restaurant — 'signature_dishes' are counter products and there is no menu or price list to verify. Sunday closure inferred from published Mon–Sat hours. Opening month from the City of Łódź article date ('recently opened')."
 },
 {
 "id": "km-eat-52",
@@ -1598,50 +2197,84 @@
 "confidence": 0.6361128091812134
 },
 {
-"id": "km-eat-53",
-"building_id": "osm-149485959",
-"name": "Ciasno Jak W Ulu",
-"category": "dining",
-"subcategory": "restaurant",
-"address": "ulica Księży Młyn 16",
-"phone": "+48735164350",
-"website": null,
-"logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
-"reservation_url": null,
-"lon": 19.480689,
-"lat": 51.755748,
-"x": 341.0,
-"z": -396.0,
-"status": "active",
-"source": "overture",
-"confidence": 0.9363656640052795
-},
-{
 "id": "km-eat-54",
 "building_id": null,
 "name": "Coffeehood",
 "category": "dining",
 "subcategory": "coffee_shop",
-"address": "ulica Księży Młyn 16",
+"address": "ul. Księży Młyn 16, 90-345 Łódź",
 "phone": null,
 "website": "https://coffeehood.pl/",
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
+"hours": {
+"monday": null,
+"tuesday": {
+"open": "10:00",
+"close": "19:00"
+},
+"wednesday": {
+"open": "10:00",
+"close": "19:00"
+},
+"thursday": {
+"open": "10:00",
+"close": "19:00"
+},
+"friday": {
+"open": "10:00",
+"close": "19:00"
+},
+"saturday": {
+"open": "10:00",
+"close": "19:00"
+},
+"sunday": {
+"open": "10:00",
+"close": "19:00"
+}
+},
+"opening_hours_raw": "wtorek – niedziela: 10:00 – 19:00",
 "photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
+"amenities": [
+"In-house drum roastery (Coffed), visible from the cafe",
+"Housed in the 19th-c. Scheibler konsumy",
+"Whole beans sold retail and online",
+"Rotating single-origin and single-farm menu",
+"Online shop with nationwide delivery",
+"Direct-trade sourcing (Falcon Specialty, Cafe Imports, List + Beisler, Attesa)",
+"Closed Mondays",
+"Cash and card"
+],
+"tags": [
+"coffee",
+"roastery",
+"specialty-coffee",
+"cafe",
+"post-industrial",
+"retail",
+"ksiezy-mlyn",
+"scheibler"
+],
+"description": "Coffeehood roasts in the old Scheibler konsumy — the company shops built for the mill workers — on a drum roaster from the Polish maker Coffed, sensor-laden and computer-controlled but worked by hand. Michał Grabski spent fifteen years as a film cinematographer before turning to coffee; he and his partner Joanna opened here with a roastery and a few tables, then let the cafe grow because customers kept stopping to watch the drum turn. They buy only specialty grade — above 82 SCA points for espresso, 84 and up for filter.",
+"history": [
+{
+"year": 1873,
+"event": "Karol Scheibler begins the Księży Młyn workers' estate — mills, famuły housing, schools and company shops (konsumy) for his workers (c. 1873–1880)."
+},
+{
+"year": 2016,
+"event": "Michał Grabski leaves film cinematography and begins roasting, teaching himself over three years on a small drum roaster."
+},
+{
+"year": 2019,
+"event": "Coffeehood opens at Księży Młyn 16 in the former Scheibler konsumy — a roastery with a handful of cafe tables."
+},
+{
+"year": 2022,
+"event": "Profiled by the City of Łódź as one of the city's notable craft roasteries."
+}
+],
+"menu_url": "https://coffeehood.pl/",
 "reservation_url": null,
 "lon": 19.480733,
 "lat": 51.755691,
@@ -1649,26 +2282,111 @@
 "z": -389.7,
 "status": "active",
 "source": "overture",
-"confidence": 0.9528844952583313
+"confidence": 0.9528844952583313,
+"cuisine": "Specialty coffee roastery & coffee bar",
+"signature_dishes": [
+"Espresso from single-origin and single-farm lots (82+ SCA)",
+"Filter brews, 84+ SCA",
+"Zestaw testowy espresso — 4 × 100 g (75 zł)",
+"Zestaw testowy przelew — filter test set, 4 × 100 g (89 zł)",
+"Retail bags of own-roasted beans"
+],
+"price_range": "moderate (retail test sets 75–89 zł)",
+"_data_note": "Address, hours, founding, owners, roaster and sourcing all confirmed on the business's own site plus a City of Łódź feature. No phone is published on their contact page — left null rather than guessed. Their site serves images as SVG data-URI placeholders, so no business photo could be self-hosted; the only available shot was a district-context image that would misrepresent the venue, so photos is empty."
 },
 {
 "id": "km-eat-55",
 "building_id": "osm-182928394",
-"name": "T.25 BISTRO Italian Food & Wine",
+"name": "T.25 Bistro — Italian Food & Wine",
 "category": "dining",
 "subcategory": "restaurant",
-"address": "ulica bp. Wincentego Tymienieckiego 25A",
-"phone": "+48500445151",
+"address": "ul. bp. Wincentego Tymienieckiego 25A/2, 90-350 Łódź",
+"phone": null,
 "website": null,
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
+"hours": {
+"monday": {
+"open": "08:00",
+"close": "18:00"
+},
+"tuesday": {
+"open": "08:00",
+"close": "18:00"
+},
+"wednesday": {
+"open": "08:00",
+"close": "18:00"
+},
+"thursday": {
+"open": "08:00",
+"close": "18:00"
+},
+"friday": {
+"open": "08:00",
+"close": "18:00"
+},
+"saturday": {
+"open": "08:30",
+"close": "18:00"
+},
+"sunday": {
+"open": "09:30",
+"close": "18:00"
+}
+},
+"opening_hours_raw": "Weekdays 08:00–18:00, Sat from 08:30, Sun from 09:30 (as published Jan 2025; an extension to 20:00 was announced as planned)",
+"photos": [
+{
+"url": "photos/t25-bistro/01.jpg",
+"credit": "Jemy w Łodzi",
+"credit_url": "https://jemywlodzi.pl/t-25-bistro-wloska-uczta-w-sercu-loftow/"
+},
+{
+"url": "photos/t25-bistro/02.jpg",
+"credit": "Jemy w Łodzi",
+"credit_url": "https://jemywlodzi.pl/t-25-bistro-wloska-uczta-w-sercu-loftow/"
+}
+],
+"amenities": [
+"Breakfast served until 13:00",
+"House-made focaccia",
+"Italian wine list",
+"Italian soft drinks — Santal and Crodino",
+"Classic Italian aperitivo cocktails",
+"Sister venue T.25 Cafe in the same building",
+"Entrance from the Lofty u Scheiblera side",
+"Delivery via Pyszne.pl and Uber Eats"
+],
+"tags": [
+"italian",
+"bistro",
+"wine-bar",
+"breakfast",
+"pasta",
+"lofts",
+"ksiezy-mlyn",
+"tymienieckiego"
+],
+"description": "The younger sister of T.25 Cafe, in the same building on the lofts side towards Kilińskiego — the name is simply the address. Jacek, an architect, designed the room himself down to the custom wallpaper: a more elegant version of the cafe next door, still small and unfussy. Chef Marcin Kaźmierczak cooks after fourteen years in Italy, and it shows in the restraint — octopus in white wine, bresaola carpaccio, house focaccia, and a fusilli with n'duja and mascarpone that regulars order by default.",
+"history": [
+{
+"year": 1873,
+"event": "Scheibler's Księży Młyn mills and workers' estate built along Tymienieckiego (c. 1873–1880)."
+},
+{
+"year": 2005,
+"event": "The Scheibler spinning mill is converted into the Lofty u Scheiblera residential complex, drawing new business to Tymienieckiego (c. 2005–2010)."
+},
+{
+"year": 2021,
+"event": "T.25 Cafe opens at Tymienieckiego 25 (c. 2021)."
+},
+{
+"year": 2025,
+"event": "T.25 Bistro opens in the same building in January, with Marcin Kaźmierczak in the kitchen."
+}
+],
+"menu_url": "https://www.pyszne.pl/menu/t25-bistro",
 "reservation_url": null,
 "lon": 19.480474,
 "lat": 51.753325,
@@ -1676,7 +2394,17 @@
 "z": -127.1,
 "status": "active",
 "source": "overture",
-"confidence": 0.5829871296882629
+"confidence": 0.5829871296882629,
+"cuisine": "Italian bistro & wine bar",
+"signature_dishes": [
+"Fusillioni con n'duja e mascarpone (42 zł)",
+"Carbonara with guanciale and Pecorino Romano (44 zł)",
+"Parmigiana di melanzane (46 zł)",
+"Ośmiornica w białym winie (octopus in white wine)",
+"Tiramisù z limoncello"
+],
+"price_range": "moderate (pasta mains 42–46 zł; breakfasts 19–41 zł)",
+"_data_note": "Prices and hours verified from a January 2025 review and are ~18 months old; that review noted a planned extension to 20:00, so both may have moved. No own website and no published phone — both null. DISTINCT from km-eat-61 (T.25 Cafe) despite sharing building osm-182928394: same operator, two venues."
 },
 {
 "id": "km-eat-56",
@@ -1716,60 +2444,76 @@
 "website": "http://ceskyfilm.pl",
 "logo": null,
 "hours": {
-"mon": {
+"monday": {
 "open": "12:00",
 "close": "23:00"
 },
-"tue": {
+"tuesday": {
 "open": "12:00",
 "close": "23:00"
 },
-"wed": {
+"wednesday": {
 "open": "12:00",
 "close": "23:00"
 },
-"thu": {
+"thursday": {
 "open": "12:00",
 "close": "23:00"
 },
-"fri": {
+"friday": {
 "open": "12:00",
 "close": "24:00"
 },
-"sat": {
+"saturday": {
 "open": "12:00",
 "close": "24:00"
 },
-"sun": {
+"sunday": {
 "open": "12:00",
 "close": "21:00"
 }
 },
 "opening_hours_raw": "Pon–Czw 12–23 · Pt–Sob 12–24 · Nd 12–21",
 "photos": [
-"http://ceskyfilm.pl",
-"https://zjedz.my/cesky-film"
+{
+"url": "photos/cesky-film/01.jpg",
+"credit": "ceskyfilm.pl",
+"credit_url": "http://ceskyfilm.pl"
+}
 ],
 "amenities": [
-"reservations",
-"event hall (~40)",
-"catering",
-"garden",
-"vegetarian options"
+"Reservations",
+"Event hall (~40)",
+"Catering",
+"Garden seating",
+"Vegetarian options",
+"Czech draft beer",
+"Family-friendly",
+"Themed interior"
 ],
 "tags": [
 "Czech",
-"Księży-Młyn",
+"pub",
 "Scheibler",
 "film-theme",
 "Černá-Hora",
 "koleno",
-"pub"
+"garden",
+"reservations"
 ],
-"description": "Łódź's only dedicated Czech restaurant, tucked into the former Scheibler factory complex on Księży Młyn. Playful and cinematic — walls of Czech-history photos and the animated mole Krtek screening while you eat, a nod to film that pairs neatly with the district's Museum of Cinematography. Five taps of Černá Hora and a monthly-rotating menu keep regulars coming; weekend reservations are wise.",
-"history": null,
+"description": "Łódź's only dedicated Czech restaurant, tucked into the former Scheibler factory complex. Playful and cinematic — walls of Czech-history photos and the animated mole Krtek screening while you eat, a nod to film that rhymes with the Museum of Cinematography next door. Five taps of Černá Hora and a monthly-rotating menu keep regulars coming.",
+"history": [
+{
+"year": 1870,
+"event": "Set within Scheibler's Księży Młyn factory complex — 19th-century red brick reborn as hospitality."
+},
+{
+"year": 2018,
+"event": "Cesky Film opens as Łódź's only Czech restaurant & pub, themed around Czech film and culture."
+}
+],
 "menu_url": null,
-"reservation_url": null,
+"reservation_url": "http://ceskyfilm.pl",
 "lon": 19.481219,
 "lat": 51.753476,
 "x": 377.6,
@@ -1782,8 +2526,7 @@
 "Roast duck with dumplings",
 "Pork knuckle (koleno) with sauerkraut",
 "Prague ham with horseradish",
-"Breaded Hermelin cheese with berry-thyme sauce",
-"Smoked-sheep-cheese pierogi",
+"Breaded Hermelin cheese",
 "5 Černá Hora draft beers"
 ],
 "price_range": "mid",
@@ -1800,21 +2543,81 @@
 {
 "id": "km-eat-58",
 "building_id": "osm-993440039",
-"name": "restauracja WINOTEKA Księży Młyn",
+"name": "Winoteka Księży Młyn",
 "category": "dining",
 "subcategory": "restaurant",
-"address": "ulica bp. Wincentego Tymienieckiego 32",
-"phone": "+48604605650",
-"website": "http://www.winotekabistro.com/",
+"address": "ul. bp. Wincentego Tymienieckiego 32, 90-350 Łódź",
+"phone": "+48 604 605 650",
+"website": "https://winotekabistro.com/",
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
+"hours": {
+"monday": null,
+"tuesday": null,
+"wednesday": {
+"open": "14:00",
+"close": "22:00"
+},
+"thursday": {
+"open": "14:00",
+"close": "22:00"
+},
+"friday": {
+"open": "12:00",
+"close": "22:00"
+},
+"saturday": {
+"open": "12:00",
+"close": "22:00"
+},
+"sunday": {
+"open": "12:00",
+"close": "22:00"
+}
+},
+"opening_hours_raw": "Mon–Tue closed, Wed–Thu 14:00–22:00, Fri–Sun 12:00–22:00",
+"photos": [
+{
+"url": "photos/winoteka/01.jpg",
+"credit": "winotekabistro.com",
+"credit_url": "https://winotekabistro.com/kontakt/"
+}
+],
+"amenities": [
+"Pergola-covered garden in the mill yard",
+"36-bottle wine list, South American and European",
+"Weekend live music",
+"Sommelier evenings and winemaker tastings",
+"Art exhibitions on the walls",
+"Book exchange shelf",
+"Group bookings",
+"Closed Mondays and Tuesdays"
+],
+"tags": [
+"restaurant",
+"wine-bar",
+"polish",
+"italian",
+"garden",
+"live-music",
+"ksiezy-mlyn",
+"revitalisation"
+],
+"description": "Winoteka was built out of ruined lokatorskie komórki — the tenants' storage sheds at the corner of Tymienieckiego and Przędzalniana — gutted and rebuilt under the city's long revitalisation of Księży Młyn. Dorota Dąbrowska's kitchen cooks Polish with Italian and Spanish leanings: tuna teriyaki on rocket, pappardelle with salmon, octopus Galician-style. The list opened with 36 bottles weighted towards South America, and the pergola-covered garden fills at weekends for live music and winemaker tastings.",
+"history": [
+{
+"year": 1873,
+"event": "Karol Scheibler begins Księży Młyn; famuły housing along Przędzalniana and Tymienieckiego gets outbuildings and tenants' storage sheds (c. 1873–1880)."
+},
+{
+"year": 2011,
+"event": "The City of Łódź launches its multi-year Księży Młyn revitalisation programme, restoring the estate's derelict outbuildings (c. 2011)."
+},
+{
+"year": 2021,
+"event": "Winoteka opens in the renovated storage sheds; profiled by the City of Łódź in September."
+}
+],
+"menu_url": "https://winotekabistro.com/menu/",
 "reservation_url": null,
 "lon": 19.481567,
 "lat": 51.754021,
@@ -1822,7 +2625,16 @@
 "z": -204.3,
 "status": "active",
 "source": "overture",
-"confidence": 0.9285680055618286
+"confidence": 0.9285680055618286,
+"cuisine": "Polish cuisine with Italian and Spanish accents; wine bar",
+"signature_dishes": [
+"Tuńczyk teriyaki na rukoli (teriyaki tuna on rocket)",
+"Pappardelle z łososiem (pappardelle with salmon)",
+"Ośmiornica po galicyjsku (Galician-style octopus)",
+"Wine flight from the 36-bottle list, weighted to South America"
+],
+"price_range": null,
+"_data_note": "Address, phone, owner, site history, dishes and wine count confirmed via a City of Łódź feature and the business's own site. HOURS are from an aggregator, not the business (their contact page publishes none) — verify. NO PRICES: their menu page serves the menu as an image (menu2022.jpg) that could not be read and whose filename suggests it is stale."
 },
 {
 "id": "km-eat-59",
@@ -1830,53 +2642,80 @@
 "name": "Fatamorgana",
 "category": "dining",
 "subcategory": "restaurant",
-"address": "ulica Księży Młyn 11B",
-"phone": "+48880832509",
-"website": "http://www.fatamorganalodz.com.pl/",
-"logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
+"address": "ul. Księży Młyn 11B, 90-345 Łódź",
+"phone": "+48 880 832 509",
+"website": "https://fatamorganalodz.com.pl/",
+"logo": "logos/fatamorgana.jpg",
+"hours": {
+"monday": null,
+"tuesday": null,
+"wednesday": {
+"open": "13:00",
+"close": "21:00"
+},
+"thursday": {
+"open": "13:00",
+"close": "21:00"
+},
+"friday": {
+"open": "13:00",
+"close": "22:00"
+},
+"saturday": {
+"open": "13:00",
+"close": "22:00"
+},
+"sunday": {
+"open": "13:00",
+"close": "19:00"
+}
+},
+"opening_hours_raw": "Pon–Wt: zamknięte · Śr–Czw 13–21 · Pt–Sob 13–22 · Ndz 13–19",
+"photos": [
+{
+"url": "photos/fatamorgana/01.jpg",
+"credit": "fatamorganalodz.com.pl",
+"credit_url": "https://fatamorganalodz.com.pl/"
+}
+],
+"amenities": [
+"Reservations (online)",
+"Delivery",
+"Takeaway",
+"Catering",
+"Private / event dining",
+"Seasonal menu"
+],
+"tags": [
+"author-cuisine",
+"kuchnia-łódzka",
+"seasonal",
+"Księży-Młyn",
+"fine-casual",
+"reservations"
+],
+"description": "In 2025 this beloved author-cuisine kitchen moved right into Księży Młyn, one of Łódź's most atmospheric corners. The rotating seasonal cards riff on regional 'Łódź cuisine' — tradition reworked with a modern hand. The room is small and the following devoted, so reserve.",
+"history": [
+{
+"year": 2025,
+"event": "The acclaimed author-cuisine kitchen relocates into the heart of Księży Młyn (ul. Księży Młyn 11B)."
+}
+],
 "menu_url": null,
-"reservation_url": null,
+"reservation_url": "https://fatamorganalodz.com.pl/",
 "lon": 19.481326,
 "lat": 51.755684,
-"x": 385.0,
-"z": -389.0,
+"x": 385,
+"z": -389,
 "status": "active",
-"source": "overture",
-"confidence": 0.9984839349985123
-},
-{
-"id": "km-eat-60",
-"building_id": "osm-138948733",
-"name": "Restauracja Fatamorgana Bartłomiej Pagacz",
-"category": "dining",
-"subcategory": "restaurant",
-"address": "ul. Księży Młyn 16",
-"phone": "880 832 509",
-"website": "http://fatamorganalodz.pl",
-"logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
-"reservation_url": null,
-"lon": 19.481645,
-"lat": 51.755517,
-"x": 406.9,
-"z": -370.4,
-"status": "active",
-"source": "overture",
-"confidence": 0.77
+"source": "overture+research",
+"confidence": 0.9984839349985123,
+"cuisine": "Author cuisine — modern 'Łódź cuisine' (kuchnia łódzka)",
+"signature_dishes": [
+"Seasonal 'kuchnia łódzka' mains",
+"Chef's tasting plates (rotating)"
+],
+"price_range": "mid–upscale"
 },
 {
 "id": "km-eat-61",
@@ -1884,16 +2723,65 @@
 "name": "T.25 Cafe",
 "category": "dining",
 "subcategory": "cafe",
-"address": "ulica bp. Wincentego Tymienieckiego 25A",
-"phone": "+48500454566",
-"website": null,
+"address": "ul. Tymienieckiego 25A, 90-350 Łódź",
+"phone": "+48 500 238 233",
+"website": "https://lodz.travel/turystyka/gdzie-zjesc/kawiarnie-i-cukiernie-w-lodzi/t25-cafe/",
 "logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
+"hours": {
+"monday": {
+"open": "09:00",
+"close": "22:00"
+},
+"tuesday": {
+"open": "09:00",
+"close": "22:00"
+},
+"wednesday": {
+"open": "09:00",
+"close": "22:00"
+},
+"thursday": {
+"open": "09:00",
+"close": "22:00"
+},
+"friday": {
+"open": "09:00",
+"close": "24:00"
+},
+"saturday": {
+"open": "09:00",
+"close": "24:00"
+},
+"sunday": {
+"open": "10:00",
+"close": "20:00"
+}
+},
+"opening_hours_raw": "Pon–Czw 9–22 · Pt–Sob 9–24 · Ndz 10–20 (aggregator — verify)",
+"photos": [
+{
+"url": "photos/t25-cafe/01.jpg",
+"credit": "jemywlodzi.pl",
+"credit_url": "https://jemywlodzi.pl/"
+}
+],
+"amenities": [
+"Outdoor seating",
+"Coffee",
+"Cocktails",
+"Wi-Fi",
+"Cakes & desserts",
+"Loft setting"
+],
+"tags": [
+"cafe",
+"coffee",
+"loft",
+"cocktail-bar",
+"Księży-Młyn",
+"dessert"
+],
+"description": "The cafe of the Księży Młyn lofts, tucked into the old Scheibler weaving quarter on Tymienieckiego. Aromatic coffee, excellent cakes and bagels by day; after dark it slips into an intimate cocktail bar. The go-to daytime perch for loft-dwellers and museum wanderers.",
 "history": null,
 "menu_url": null,
 "reservation_url": null,
@@ -1902,8 +2790,18 @@
 "x": 453.4,
 "z": -184.6,
 "status": "active",
-"source": "overture",
-"confidence": 0.9872904419898987
+"source": "overture+research",
+"confidence": 0.9872904419898987,
+"cuisine": "Cafe by day, cocktail bar by night",
+"signature_dishes": [
+"Specialty coffee",
+"House cakes",
+"Bagels & croissants",
+"Fruit-veg smoothies",
+"Evening cocktails"
+],
+"price_range": "budget–mid",
+"_data_note": "DISTINCT from km-eat-55 (T.25 Bistro) despite sharing building osm-182928394 — same operator (t25group.pl), two venues. This is the bakery-cafe: sourdough breads, croissants, łódzki żulik, meringues, cheesecakes, tarts, Blue Drop coffee, evening rum drinks. NO prices are published anywhere for the cafe, so it ships without a menu; the priced Italian menu belongs to the BISTRO and must not be attached here."
 },
 {
 "id": "km-eat-62",
@@ -2070,7 +2968,7 @@
 {
 "id": "km-eat-68",
 "building_id": "osm-206133483",
-"name": "Pierogarnia Palce Lizać",
+"name": "Doprawione Jabłkiem według Zwierzchowskiej",
 "category": "dining",
 "subcategory": "polish_restaurant",
 "address": "ulica Milionowa 55",
@@ -2078,13 +2976,22 @@
 "website": null,
 "logo": null,
 "hours": null,
-"opening_hours_raw": "unverified — sources conflict (verify before publishing)",
-"photos": [],
+"opening_hours_raw": "unverified — sources conflict",
+"photos": [
+{
+"url": "photos/pierogarnia-palce-lizac/01.jpg",
+"credit": "Facebook",
+"credit_url": "https://www.facebook.com/"
+}
+],
 "amenities": [
-"takeaway",
-"delivery (Pyszne.pl)",
-"catering",
-"dine-in"
+"Takeaway",
+"Delivery (Pyszne.pl)",
+"Catering for celebrations",
+"Dine-in",
+"Budget-friendly",
+"Family-run",
+"Home cooking"
 ],
 "tags": [
 "pierogi",
@@ -2092,10 +2999,24 @@
 "family-run",
 "home-style",
 "Kuchenne-Rewolucje",
-"Milionowa"
+"Silesian-dumplings",
+"takeaway"
 ],
-"description": "A homey, family-run pierogi spot on Milionowa, just south of Księży Młyn, that became locally famous after Magda Gessler's Kuchenne Rewolucje made it over. The owner later walked back the TV menu and returned to her own traditional cooking — pierogi made on-site and Silesian-dumpling comfort plates. Unpretentious and budget, a neighborhood pierogarnia rather than a design destination.",
-"history": null,
+"description": "A homey, family-run pierogi spot just south of Księży Młyn, locally famous after Magda Gessler's Kuchenne Rewolucje made it over. The owner later walked back the TV menu and returned to her own traditional cooking — pierogi made on-site and Silesian-dumpling comfort plates. Unpretentious and budget, a neighborhood pierogarnia.",
+"history": [
+{
+"year": 2017,
+"event": "Made over on TV by Magda Gessler's Kuchenne Rewolucje (briefly rebranded 'Doprawione Jabłkiem')."
+},
+{
+"year": 2020,
+"event": "The owner returns to her own traditional home-style menu — the pierogi regulars actually asked for."
+},
+{
+"year": 2023,
+"event": "Made over on Magda Gessler's 'Kuchenne Rewolucje' and relaunched as Doprawione Jabłkiem według Zwierzchowskiej, trading on at Milionowa 55 with a new, non-pierogi menu (c. 2023)."
+}
+],
 "menu_url": null,
 "reservation_url": null,
 "lon": 19.487976,
@@ -2107,9 +3028,10 @@
 "confidence": 0.8525952696800232,
 "cuisine": "Polish pierogi / home-style comfort food",
 "signature_dishes": [
-"House-made pierogi (various fillings)",
-"Beef patties with Silesian dumplings (kluski śląskie)",
-"Traditional Polish soups"
+"House-made pierogi (many fillings)",
+"Beef patties with Silesian dumplings",
+"Traditional Polish soups",
+"Home-style comfort plates"
 ],
 "price_range": "budget (~20–30 PLN)",
 "atmosphere": [
@@ -2119,34 +3041,9 @@
 "no-frills",
 "TV-famous"
 ],
-"hours_verified": false
-},
-{
-"id": "km-eat-69",
-"building_id": "osm-206133483",
-"name": "Doprawione Jabłkiem",
-"category": "dining",
-"subcategory": "european_restaurant",
-"address": "ulica Milionowa 55",
-"phone": "+48512119073",
-"website": "https://doprawionejablkiem.pl/",
-"logo": null,
-"hours": null,
-"opening_hours_raw": null,
-"photos": [],
-"amenities": [],
-"tags": [],
-"description": null,
-"history": null,
-"menu_url": null,
-"reservation_url": null,
-"lon": 19.488424,
-"lat": 51.751386,
-"x": 874.1,
-"z": 88.2,
-"status": "active",
-"source": "overture",
-"confidence": 0.9785493016242981
+"hours_verified": false,
+"former_name": "Pierogarnia Palce Lizać",
+"_data_note": "RENAMED after a Magda Gessler 'Kuchenne Rewolucje' makeover; still trading at Milionowa 55. Formerly Pierogarnia Palce Lizać (km-eat-69 was the duplicate post-rename record, now dropped). ⚠️ Beware a second, UNRELATED Łódź business 'Pierrogarnia Palce Lizać' (double-r) at Stojałowskiego / Konopnickiej — its published menu must NOT be attributed to this pin."
 },
 {
 "id": "km-eat-70",
@@ -2169,7 +3066,7 @@
 "reservation_url": null,
 "lon": 19.488205,
 "lat": 51.749699,
-"x": 859.0,
+"x": 859,
 "z": 275.4,
 "status": "active",
 "source": "overture",
@@ -2277,7 +3174,7 @@
 "reservation_url": null,
 "lon": 19.48893,
 "lat": 51.74853,
-"x": 909.0,
+"x": 909,
 "z": 405.2,
 "status": "active",
 "source": "overture",
@@ -2401,25 +3298,51 @@
 "address": "plac Zwycięstwa 1, Łódź",
 "website": "https://muzeumkinematografii.pl/",
 "phone": null,
-"logo": null,
+"logo": "logos/museum-kinematografii.jpg",
 "hours": null,
 "opening_hours_raw": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/Category:Karl_Wilhelm_Scheibler's_palace"
+{
+"url": "photos/museum-kinematografii/01.jpg",
+"credit": "Wikimedia Commons · CC BY-SA",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Pałac,_ob._Muzeum_Kinematografii.jpg"
+}
 ],
 "amenities": [
-"ticketed",
-"museum"
+"Ticketed admission",
+"Guided tours",
+"Historic palace interiors",
+"Museum shop",
+"Film & projector collection",
+"Group visits",
+"Near Źródliska Park",
+"Wheelchair access (partial)"
 ],
 "tags": [
 "film",
 "museum",
 "palace",
 "neo-renaissance",
-"Scheibler"
+"Scheibler",
+"cinematography",
+"ticketed",
+"heritage"
 ],
-"description": "Poland's only museum devoted entirely to film history, in the opulent former palace of the Scheibler cotton dynasty at the old Water Market. Neo-Renaissance salons filled with antique projectors, magic lanterns and cinema posters — 19th-century factory-baron grandeur meets the story of the moving image in 'HollyŁódź'.",
-"history": "Built 1855–1856 (attributed to Jan Karol Mertsching) for Karol Wilhelm Scheibler, Łódź's wealthiest industrialist. His widow Anna commissioned the lavish neo-Renaissance rebuild of 1884–1888 by Warsaw architect Edward Lilpop, with a Moorish palm house. Family seat until the 20th century; the Museum of Cinematography since 1 April 1986.",
+"description": "Poland's only museum devoted entirely to film history, in the opulent former palace of the Scheibler cotton dynasty at the old Water Market. Neo-Renaissance salons filled with antique projectors, magic lanterns and cinema posters — factory-baron grandeur meets the story of the moving image in 'HollyŁódź'.",
+"history": [
+{
+"year": 1856,
+"event": "Palace built beside Scheibler's first factory at the Water Market (attributed to architect Jan Karol Mertsching)."
+},
+{
+"year": 1888,
+"event": "After Scheibler's death his widow Anna commissions a lavish neo-Renaissance rebuild by Warsaw architect Edward Lilpop (1884–1888), with a Moorish palm house."
+},
+{
+"year": 1986,
+"event": "Opens (1 April) as the Museum of Cinematography — the only museum of its kind in Poland."
+}
+],
 "architect": "Jan Karol Mertsching (1856); Edward Lilpop (rebuild 1884–1888)",
 "architectural_style": "Neo-Renaissance",
 "period": "1855–1856; remodelled 1884–1888",
@@ -2442,26 +3365,51 @@
 "address": "ul. Przędzalniana 72, Łódź",
 "website": "https://palac-herbsta.org.pl/en",
 "phone": null,
-"logo": null,
+"logo": "logos/palac-herbsta.svg",
 "hours": null,
 "opening_hours_raw": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/Category:Przędzalniana_Street_in_Łódź"
+{
+"url": "photos/palac-herbsta/01.jpg",
+"credit": "Wikimedia Commons · CC BY-SA",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Palac_Herbsta2.jpg"
+}
 ],
 "amenities": [
-"ticketed",
-"museum",
-"garden"
+"Ticketed admission",
+"Restored period interiors",
+"Mirror ballroom",
+"Landscaped garden & orangery",
+"Old-master gallery",
+"Guided tours",
+"Museum shop",
+"Group visits"
 ],
 "tags": [
 "palace",
 "museum",
 "neo-renaissance",
 "Herbst",
-"Europa-Nostra"
+"Scheibler",
+"Europa-Nostra",
+"garden",
+"ticketed"
 ],
-"description": "A jewel-box neo-Renaissance villa restored to the world of textile magnate Edward Herbst and his wife Matylda (née Scheibler). A branch of the Muzeum Sztuki — gilded salons, a mirror-lined ballroom, a landscaped garden and orangery, with a gallery of old-master and Polish painting in the former coach house.",
-"history": "Built 1875–1877 as a wedding residence for Matylda, daughter of Karol Scheibler, and Edward Herbst, later a partner in the Scheibler empire; sited beside the mill so the master could watch the works. Attributed to city architect Hilary Majewski (probable). Revitalised 2011–2013 as a Muzeum Sztuki branch.",
+"description": "A jewel-box neo-Renaissance villa restored to the world of textile magnate Edward Herbst and his wife Matylda (née Scheibler) — gilded salons, a mirror-lined ballroom, a landscaped garden and orangery, with a gallery of old-master and Polish painting in the former coach house.",
+"history": [
+{
+"year": 1877,
+"event": "Built 1875–1877 as a wedding residence for Matylda (née Scheibler) and Edward Herbst, beside the mill; attributed to city architect Hilary Majewski."
+},
+{
+"year": 1990,
+"event": "Awarded a Europa Nostra prize for outstanding conservation."
+},
+{
+"year": 2013,
+"event": "A 2011–2013 restoration reconstructs the mirror ballroom and neo-baroque garden; runs as a branch of the Muzeum Sztuki."
+}
+],
 "architect": "Hilary Majewski (attributed — probable)",
 "architectural_style": "Neo-Renaissance (Italianate villa)",
 "period": "1875–1877",
@@ -2478,7 +3426,7 @@
 "id": "km-lst-przedzalnia-scheiblera",
 "building_id": "osm-155224392",
 "name": "Scheibler's Spinning Mill",
-"name_pl": "Przędzalnia Karola Scheiblera (Lofty u Scheiblera)",
+"name_pl": "Przędzalnia Scheiblera (Lofty u Scheiblera)",
 "category": "historic",
 "subcategory": "factory",
 "address": "ul. Tymienieckiego / Przędzalniana, Łódź",
@@ -2488,11 +3436,20 @@
 "hours": null,
 "opening_hours_raw": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/Category:U_Scheiblera_lofts_in_Łódź"
+{
+"url": "photos/przedzalnia-scheiblera/01.jpg",
+"credit": "Wikimedia Commons · CC BY-SA",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Przędzalnia_Scheiblera,_elewacja_południowa,_widok_z_ul._Przędzalnianej.jpg"
+}
 ],
 "amenities": [
-"residential",
-"landmark"
+"Landmark exterior",
+"Loft residences",
+"Red-brick industrial architecture",
+"Photogenic courtyard",
+"Near the Art Factory",
+"Self-guided walk",
+"Photography spot"
 ],
 "tags": [
 "factory",
@@ -2500,10 +3457,29 @@
 "lofts",
 "adaptive-reuse",
 "Scheibler",
-"industrial-heritage"
+"industrial-heritage",
+"207m",
+"landmark"
 ],
 "description": "The monumental, fortress-like red-brick spinning mill — roughly 207 m long — is the towering centrepiece of Księży Młyn and the most impressive industrial building in the 'Polish Manchester'. After cotton-spinning and postwar life as Uniontex, it reopened in 2010 as 'Lofty u Scheiblera', one of Poland's largest factory-to-apartment conversions.",
-"history": "After buying the Księży Młyn lands in 1870, Karol Scheibler built a four-storey bare-brick spinning mill; the ~207 m building was completed in 1873 with ~70,000 spindles, the largest spinning works in Łódź. After the 1921 Scheibler–Grohman merger, part of interwar Poland's largest textile enterprise; under communism the Uniontex works. Converted to 400+ lofts 2005–2010 (opened 18 May 2010).",
+"history": [
+{
+"year": 1870,
+"event": "Karol Scheibler buys the Księży Młyn lands from Teodor Krusche and begins the complex."
+},
+{
+"year": 1873,
+"event": "The ~207 m red-brick spinning mill is completed — ~70,000 spindles, the largest spinning works in Łódź."
+},
+{
+"year": 1921,
+"event": "The Scheibler–Grohman merger makes it part of interwar Poland's largest textile firm; postwar it runs as the Uniontex works."
+},
+{
+"year": 2010,
+"event": "Reopens (18 May) as 'Lofty u Scheiblera' — 400+ apartments, Poland's largest factory-to-loft conversion."
+}
+],
 "architect": "Mill designer not firmly attributed (1870s); loft conversion by Opal Property Developments",
 "architectural_style": "Industrial red-brick (Rundbogenstil 'brick fortress')",
 "period": "completed 1873; loft conversion 2005–2010",
@@ -2526,25 +3502,50 @@
 "address": "ul. Tymienieckiego 24, Łódź",
 "website": "https://mkalodz.pl/",
 "phone": null,
-"logo": null,
+"logo": "logos/willa-henryka-grohmana.png",
 "hours": null,
 "opening_hours_raw": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/File:Zespół_willi_Henryka_Grohmana.jpg"
+{
+"url": "photos/willa-henryka-grohmana/01.jpg",
+"credit": "Wikimedia Commons · CC BY-SA",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Willa_Grohmana,_Łódź.jpg"
+}
 ],
 "amenities": [
-"museum",
-"workshop"
+"Working printing house",
+"Artist-book workshops",
+"Guided tours",
+"Historic villa interiors",
+"Museum shop",
+"Group visits",
+"Typography demos"
 ],
 "tags": [
 "villa",
 "book-art",
 "museum",
 "Grohman",
-"art-patron"
+"art-patron",
+"typography",
+"neo-renaissance",
+"workshop"
 ],
-"description": "A refined neo-Renaissance villa, home since 1993 to the Museum of Artistic Books — Poland's leading centre for hand-printed artist's books and bookbinding, in a working historic printing house. Built for Henryk Grohman, an art-patron whose music salon once heard Paderewski and Rubinstein at the organ.",
-"history": "Designed by city architect Hilary Majewski in 1892–1893, initially as factory offices, it became the residence of Henryk Grohman, son of Ludwik and a noted collector. Remodelled 1903 (Chełmiński) and 1912 (Stebelski) with Viennese-Secession touches. Museum of Artistic Books since 1993.",
+"description": "A refined neo-Renaissance villa, home since 1993 to the Museum of Artistic Books — Poland's leading centre for hand-printed artist's books and bookbinding, in a working historic printing house. Built for Henryk Grohman, an art-patron whose music salon reputedly heard Paderewski and Rubinstein at the organ.",
+"history": [
+{
+"year": 1893,
+"event": "Villa designed by city architect Hilary Majewski (1892–1893); becomes the residence of art-patron Henryk Grohman."
+},
+{
+"year": 1912,
+"event": "Remodelled (1903 Chełmiński; 1912 Stebelski) with Viennese-Secession touches; its salon organ reputedly played by Paderewski and Rubinstein."
+},
+{
+"year": 1993,
+"event": "Opens as the Museum of Artistic Books — Poland's leading centre for hand-printed artist's books."
+}
+],
 "architect": "Hilary Majewski (1892–1893); later Chełmiński (1903), Stebelski (1912)",
 "architectural_style": "Neo-Renaissance with Viennese-Secession interiors",
 "period": "1892–1893",
@@ -2571,21 +3572,44 @@
 "hours": null,
 "opening_hours_raw": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/Category:Ludwik_Grohman's_villa"
+{
+"url": "photos/willa-ludwika-grohmana/01.jpg",
+"credit": "Darekm135 / Wikimedia Commons (CC BY-SA 3.0)",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Willa_Ludwika_Grohmana_w_%C5%81odzi_(1).JPG"
+}
 ],
 "amenities": [
-"venue",
-"historic"
+"Historic villa",
+"Event venue",
+"Adjacent Kiliński Park",
+"Film-location heritage",
+"By appointment",
+"Restored interiors"
 ],
 "tags": [
 "villa",
 "heritage",
 "Grohman",
 "neo-renaissance",
-"film-location"
+"film-location",
+"Kiliński-Park",
+"monument"
 ],
-"description": "A grand Italian-Renaissance residence built for Ludwik Grohman, whose family firm was Scheibler's great cotton partner (the empires merged in 1921). Restored by a private investor; its former garden survives as Kiliński Park.",
-"history": "Built from 1881 to a design by city architect Hilary Majewski in an Italian-Renaissance idiom, enlarged 1894 after his son Leon's wedding with a grand staircase and winter garden. The Grohmans, from Saxony in the 1840s, were among Łódź's leading manufacturers and Scheibler's partners.",
+"description": "A grand Italian-Renaissance residence built for Ludwik Grohman, whose family firm was Scheibler's great cotton partner (the empires merged in 1921). Privately restored; its former garden survives as the public Kiliński Park.",
+"history": [
+{
+"year": 1881,
+"event": "Italian-Renaissance villa built for Ludwik Grohman, Scheibler's cotton partner (design by Hilary Majewski)."
+},
+{
+"year": 1894,
+"event": "Enlarged after his son Leon's wedding with a grand staircase and winter garden; interiors gain Berlin-made elevators."
+},
+{
+"year": 1990,
+"event": "Featured in Marczewski's film 'Escape from the Liberty Cinema'; later privately restored, its garden now Kiliński Park."
+}
+],
 "architect": "Hilary Majewski",
 "architectural_style": "Italian Renaissance (neo-Renaissance)",
 "period": "1881; expanded 1894",
@@ -2609,24 +3633,44 @@
 "address": "Łódź, Księży Młyn",
 "website": "https://www.archidiecezja.lodz.pl/parafia/swietej-anny-2",
 "phone": null,
-"logo": null,
+"logo": "logos/kosciol-sw-anny.jpg",
 "hours": null,
 "opening_hours_raw": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/Category:Księży_Młyn"
+{
+"url": "photos/kosciol-sw-anny/01.jpg",
+"credit": "HuBar · Wikimedia Commons · CC BY-SA 2.5",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Kosciol_sw._Anny_Lodz.jpg"
+}
 ],
 "amenities": [
-"worship"
+"Open for services",
+"Neo-Romanesque architecture",
+"Copper-clad tower",
+"Historic bells",
+"Quiet visit",
+"Parish community"
 ],
 "tags": [
 "church",
 "worship",
 "neo-romanesque",
 "Herbst",
-"1905"
+"1905",
+"brick",
+"tower"
 ],
 "description": "A compact neo-Romanesque brick church serving Księży Młyn, its 26-metre copper-clad tower a landmark on the edge of the factory quarter. The Herbst family funded the tower and bells in memory of their young daughter Anna, the parish's namesake.",
-"history": "Cornerstone blessed 24 May 1904; land, brick and lime donated by mill owner Józef Meisner, plans by engineer Paweł Rübensham. Consecrated 10 December 1905. The Herbsts funded the tower, three bells, clock, choir stairs and mosaic floor in memory of their late daughter Anna.",
+"history": [
+{
+"year": 1904,
+"event": "Cornerstone blessed (24 May); land and materials donated by mill owner Józef Meisner, plans by engineer Paweł Rübensham."
+},
+{
+"year": 1905,
+"event": "Consecrated (10 December). The Herbst family fund the 26 m tower, three bells, clock and mosaic floor in memory of their late daughter Anna."
+}
+],
 "architect": "Paweł Rübensham (engineer)",
 "architectural_style": "Neo-Romanesque",
 "period": "1904–1905",
@@ -2649,20 +3693,43 @@
 "address": "ul. Księży Młyn / Fabryczna / Przędzalniana, Łódź",
 "website": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/Category:Księży_Młyn"
+{
+"url": "photos/famuly/01.jpg",
+"credit": "Kapitel / Wikimedia Commons (CC BY-SA 4.0)",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Lodz_Ksiezy_Mlyn_(1).jpg"
+}
 ],
 "amenities": [
-"heritage-walk"
+"Heritage walk",
+"Cobbled streets",
+"Red-brick tenements",
+"Film-backdrop history",
+"Self-guided",
+"Photography spot"
 ],
 "tags": [
 "workers-housing",
 "company-town",
 "red-brick",
 "Scheibler",
-"garden-city"
+"garden-city",
+"heritage-walk"
 ],
 "description": "The long, rhythmic rows of two- and three-storey red-brick tenements — the famuły — that Scheibler built for his workforce, one of Europe's best-preserved 19th-century company towns. Along cobbled ul. Księży Młyn lies a self-contained world: identical brick barracks, a former school, shop, hospital and cultural hall.",
-"history": "From the early 1870s Scheibler laid out a planned settlement of some forty brick famuły beside his mill. Conceived as self-sufficient — a factory school, company shops, a hospital and a cultural hall — an early paternalistic 'garden-city' model. About 25 estate houses hold ~300 apartments.",
+"history": [
+{
+"year": 1870,
+"event": "Scheibler lays out a planned settlement of some forty brick 'famuły' beside his new mill."
+},
+{
+"year": 1880,
+"event": "The estate grows self-sufficient — factory school, company shops, a hospital and a cultural hall."
+},
+{
+"year": 1971,
+"event": "Recognised among Łódź's protected industrial monuments; the workers' quarter is gradually revitalised."
+}
+],
 "architect": "Not individually attributed (Scheibler works management; Majewski era — unconfirmed)",
 "architectural_style": "Utilitarian red-brick industrial vernacular; planned settlement",
 "period": "primarily 1870s",
@@ -2673,33 +3740,59 @@
 "One of the best-preserved worker settlements in Europe; a frequent period film backdrop."
 ],
 "status": "active",
-"source": "research"
+"source": "research",
+"hours": null,
+"opening_hours_raw": null,
+"logo": null
 },
 {
 "id": "km-lst-park-zrodliska",
 "building_id": null,
 "name": "Źródliska Park & Palm House",
-"name_pl": "Park Źródliska (I i II) / Park nad Jasieniem",
+"name_pl": "Park Źródliska / Park nad Jasieniem",
 "category": "parks",
 "subcategory": "historic_park",
 "address": "al. Marszałka Edwarda Śmigłego-Rydza, Łódź",
 "website": null,
 "photos": [
-"https://commons.wikimedia.org/wiki/Category:Księży_Młyn"
+{
+"url": "photos/park-zrodliska/01.jpg",
+"credit": "HuBar · Wikimedia Commons · CC BY-SA 2.5",
+"credit_url": "https://commons.wikimedia.org/wiki/File:Park_Zrodliska_Lodz_2.JPG"
+}
 ],
 "amenities": [
-"park",
-"palm-house"
+"Palm House (Palmiarnia)",
+"Landscape garden",
+"Playground",
+"Ponds & springs",
+"Benches",
+"Dog-friendly paths",
+"Near the palace"
 ],
 "tags": [
 "park",
 "palm-house",
 "Jasień",
 "oldest-park",
-"landscape-garden"
+"landscape-garden",
+"Scheibler"
 ],
-"description": "The oldest public park in Łódź, a shaded English-landscape garden on the springs of the Jasień beside the Scheibler palace. Its northern part shelters a glass Palm House full of exotics — a green counterpoint to the red-brick industry, and the very ground from which Scheibler carved his estate.",
-"history": "Laid out in 1840 as the English Garden, arranged to an 1843 design by an engineer named Brochocki; the city's only municipal park until 1875. Around the late 1850s its western half (today Park Źródliska II) was sold to Scheibler, adjoining his palace and Moorish palm house. Fed by the springs of the Jasień, on which five mills once stood.",
+"description": "The oldest public park in Łódź, a shaded English-landscape garden on the springs of the Jasień beside the Scheibler palace. Its northern part shelters a glass Palm House full of exotics — a green counterpoint to the red-brick industry, and the ground from which Scheibler carved his estate.",
+"history": [
+{
+"year": 1840,
+"event": "Founded as the 'English Garden' — the city's first public park."
+},
+{
+"year": 1843,
+"event": "Laid out to a design by the engineer Brochocki; Łódź's only municipal park until 1875."
+},
+{
+"year": 1858,
+"event": "Its western half is sold to Karol Scheibler (today Park Źródliska II), adjoining his palace and Moorish palm house."
+}
+],
 "architect": "Brochocki (1843 layout)",
 "architectural_style": "English landscape garden",
 "period": "founded 1840; laid out 1843",
@@ -2710,7 +3803,10 @@
 "A registered heritage component of the Księży Młyn ensemble."
 ],
 "status": "active",
-"source": "research"
+"source": "research",
+"hours": null,
+"opening_hours_raw": null,
+"logo": null
 }
 ]
 }

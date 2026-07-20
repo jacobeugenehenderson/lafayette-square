@@ -52,6 +52,24 @@ Still open (real kit-improvement items, not Łódź-only):
 
 ---
 
+## Content / place cards — state at 2026-07-19 evening
+
+**23 elaborated cards** (was 5 at the time this doc was first written; the "5 top cards" line above is superseded). 84 listings after drops. Assets are **self-hosted** under `content/{photos,logos}/` — see the new **`content/ASSETS.md`**.
+
+- **Courtyard cluster added** (the ul. Księży Młyn 16 / Tymienieckiego heart): Tubajka, Dom Ogrodnika, Coffeehood, Spiżarnia Rydzyńska, Fit Cake, Winoteka, T.25 Bistro.
+- **Menus: 10 restaurants, 134 items.** Cesky Film (23 items) and Fatamorgana (31) are **fully priced**, transcribed from the venues' own published menus (Fatamorgana's is an image-only PDF, rendered page-by-page).
+- **Logos: 11 self-hosted, 8 verified-null.** Rejected candidates parked in `logos/_alt/`, never referenced.
+
+**Data-integrity fixes (Jacob's calls, all four):** dropped `km-eat-53` **Ciasno Jak W Ulu** (permanently closed Nov 2022 — still live on FB/IG/TripAdvisor, which is why Overture carried it) · dropped `km-eat-60` and `km-eat-69` as **duplicates** (`59`/`60` Fatamorgana and `68`/`69` share a `building_id`) · renamed `km-eat-68` to **Doprawione Jabłkiem** (its card was live under the pre-makeover name) with its old-brand logo nulled · corrected Tubajka's address (`plac Zwycięstwa 1` → `3`; no. 1 is the Scheibler Palace — a geocode snap) · `km-eat-41` **U Fabrykanta kept but flagged**: no published menu anywhere, and a Dec-2025 closure signal at an adjacent address needs a local eye.
+
+**Three live defects fixed that predated this pass:** `photos[]` entries holding external *page* URLs — two Wikimedia **category** pages (Famuły, Willa Ludwika Grohmana, which had no image file at all) and a restaurantguru listing — all now real self-hosted files.
+
+**Traps worth carrying to the next town** (full detail in `ASSETS.md` + `ONBOARDING.md`): a Facebook avatar can return **HTTP 200 + valid JPEG and still be FB's default silhouette** (md5-check it); a site logo can be a **white knockout**, invisible on light surfaces; and a city can hold **two near-miss lookalike businesses** whose menus get cross-attributed. **Render candidate assets to a contact sheet and look at them** — metadata passed all three.
+
+▸ **Open:** `bake-content` still can't merge an Overture base (`scratch/merge-lodz-listings.mjs` is the stopgap — see ONBOARDING) · T.25 Cafe, Coffeehood and Dom Ogrodnika have no published menu/photo to source · ~57 base listings unelaborated (mostly Galeria Łódzka food court + chains, correctly plain dots).
+
+---
+
 ## ▶ TOMORROW (Jacob set 2026-07-19), in order
 
 1. **Hero the Scheibler mill — IN-SCENE staging, "NOT the arch!"** Hero camera shot (`bake-scene.js` heroSubject) on the mill building `osm-155224392` + uplights + red-brick Look. NOT `design.arch`/`design.landscape` (those are horizon backdrops). GUGiK LOD2 unavailable → staging is primary; bespoke GLB only if staging doesn't carry. **(task #6)**
