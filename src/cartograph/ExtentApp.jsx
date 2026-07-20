@@ -348,6 +348,18 @@ const MAX_FETCH_KM2 = 200
 // BEFORE clipping (`PIPELINE §pour`, still OPEN). Close that and this can grow.
 const FETCH_MARGIN_M = 1000
 
+// Shoelace area of a closed x/z ring, in hectares — the one number that tells an
+// operator whether the ring they just closed is the neighborhood they meant.
+function ringAreaHa(corners) {
+  if (!Array.isArray(corners) || corners.length < 3) return 0
+  let A = 0
+  for (let i = 0; i < corners.length; i++) {
+    const p = corners[i], q = corners[(i + 1) % corners.length]
+    A += p.x * q.z - q.x * p.z
+  }
+  return Math.abs(A / 2) / 1e4
+}
+
 // Expand a bbox by a uniform distance in metres — equal slack on every side.
 // The gazetteer's bbox is already the box around the boundary polygon (verified:
 // Nominatim's reported box equals the ring's own min/max), so this is simply
@@ -892,6 +904,7 @@ export default function ExtentApp() {
   const [buildStage, setBuildStage] = useState(null)
   const [previewStreet, setPreviewStreet] = useState(null)
   const [sides, setSides] = useState([])   // selected boundary streets (visual, order-independent)
+  const [pickingSides, setPickingSides] = useState(false)   // street-selection mode owns the click
   const [streetCorners, setStreetCorners] = useState(null)   // resolved from named boundary streets
   // The editable EXCLUSION LOOPS — the FIRST-CLASS persisted artifact (a LIST). Every
   // building is in by default; each closed loop hides the strays inside it. Stored
@@ -1121,6 +1134,37 @@ export default function ExtentApp() {
     }
     return { sides, covered: total ? Math.round((100 * inside) / total) : 100 }
   }, [geo, radiusM, keptCenter])
+
+  // Toggle one boundary street. Order-independent by construction — the resolver
+  // rebuilds the ring from the junctions the selected streets SHARE, so the operator
+  // may click them in any order and there is no "north/south/east/west" slot to fill.
+  const toggleSide = useCallback((nm) => {
+    if (!nm) return
+    setSides(prev => (prev.includes(nm) ? prev.filter(s => s !== nm) : [...prev, nm]))
+  }, [])
+
+  // Adopt the street-resolved ring as THE inclusion polygon.
+  //
+  // Stored as lon/lat, like the exclusion loops and for the same reason: a later
+  // re-fetch or commit re-center reprojects every local coordinate, and a boundary
+  // pinned to x/z would silently drift off the map it was drawn on.
+  //
+  // This is the mode-(b) answer, and it beats the gazetteer's ring on both ends of
+  // the quality range: a coarse 26-point US outline is an approximation, and an
+  // 815-point European cadastral trace jogs around individual buildings. A ring
+  // built from street centerlines is neither — every edge is a street, every corner
+  // a real junction, so "a neighborhood doesn't cut a block in half" holds by
+  // construction rather than by luck.
+  const adoptStreetRing = useCallback(() => {
+    const corners = streetCorners?.corners
+    if (!geo || !Array.isArray(corners) || corners.length < 3) return
+    setPolygonLL(corners.map(c => {
+      const [lon, lat] = localToWgs84(geo, c.x, c.z)
+      return { lon, lat }
+    }))
+    setPolygonSource('streets')
+    setPickingSides(false)
+  }, [streetCorners, geo])
 
   // The single "eraser": flip one building's membership as a minimal override.
   const toggleBuilding = (id) => {
@@ -1589,12 +1633,29 @@ export default function ExtentApp() {
           {located && <ExtentBuildings footprints={footprints} centroid={boundaryCentroid} radiusM={radiusM}
             curating={curating} excludedIds={excludedIds} onToggle={toggleBuilding} />}
           {located && <ExtentLabels labels={labels} geo={geo} />}
+          {/* ⭐ Boundary-street selection — click the real streets on the aerial. Picking
+              on hydrated GEOMETRY, never typed names driving geometry: the name is a
+              label on a thing you can see, so a misspelling or an honorific ("Księdza
+              Biskupa Wincentego Tymienieckiego") can't cost you a boundary. Selected
+              streets light cyan; a selected street that doesn't close the ring goes
+              amber so the gap is visible where it happens, not just in the panel. */}
+          {located && pickingSides && (
+            <ExtentClickableStreets streets={allStreets} selected={sides}
+              gaps={streetCorners?.gaps} onToggle={toggleSide} />
+          )}
           {/* The render disc AND, when there is one, the inclusion polygon — two
               different things that look alike: the yellow circle is what we DRAW,
               the cyan ring is what is IN. Vertices stay hidden; a gazetteer boundary
               runs to hundreds of points and dotting every one is noise. */}
-          {located && (radiusM > 0 || polygonXZ) && <ExtentBoundary corners={polygonXZ || undefined}
-            centroid={boundaryCentroid} radiusM={radiusM} showVertices={false} />}
+          {/* While picking, the LIVE resolved ring wins — the operator watches the
+              boundary close as each street lands. Its corners are real junctions, so
+              they're worth dotting; a gazetteer polygon's hundreds aren't. */}
+          {located && (radiusM > 0 || polygonXZ || streetCorners?.corners?.length) && (
+            <ExtentBoundary
+              corners={(pickingSides && streetCorners?.corners?.length ? streetCorners.corners : polygonXZ) || undefined}
+              centroid={boundaryCentroid} radiusM={radiusM}
+              showVertices={pickingSides && !!streetCorners?.closed} />
+          )}
           <MapControls
             ref={controlsRef}
             makeDefault
@@ -1764,6 +1825,101 @@ export default function ExtentApp() {
             {located && (
             <div className="carto-subsection">
               <div className="carto-subsection-header">Boundary</div>
+
+              {/* ⭐ BOUNDARY STREETS — the primary, positive gesture: say what the
+                  neighborhood IS. Sits above the pen deliberately; exclusion is a
+                  correction to this, not the mechanism (the inversion is what let one
+                  loop quietly delete 147 buildings and a church).
+
+                  Order-independent: the ring is rebuilt from the junctions the chosen
+                  streets share, so there are no cardinal slots to fill and no "which
+                  one is north". Clicking the map and clicking the list are the same
+                  gesture — the list exists for keyboard reach and for streets too
+                  short to hit, not as a separate mode. */}
+              {hasData && (
+                <>
+                  <div className="carto-row carto-row--wrap" style={{ marginBottom: 6 }}>
+                    <button className="carto-btn carto-btn--grow"
+                      onClick={(e) => { setPickingSides(v => !v); setPenActive(false); setCurating(false); e.currentTarget.blur() }}
+                      style={pickingSides ? { background: '#38e1ff', color: '#12140f', fontWeight: 600 } : undefined}
+                      title="Click the streets that bound the neighborhood, in any order. The ring is assembled from the junctions they share.">
+                      {pickingSides ? '✓ Picking boundary streets — click them on the map' : (sides.length ? `⬡ Boundary streets (${sides.length})` : '⬡ Name the boundary streets')}
+                    </button>
+                    {sides.length > 0 && (
+                      <button className="carto-btn-sm" onClick={() => setSides([])} title="Clear the selection">clear</button>
+                    )}
+                  </div>
+
+                  {pickingSides && (() => {
+                    const gapSet = new Set(streetCorners?.gaps || [])
+                    const all = [...(names.major || []), ...(names.minor || [])]
+                    const unpicked = all.filter(n => !sides.includes(n))
+                    return (
+                      <div style={{ marginBottom: 8 }}>
+                        {/* Chosen streets, each with its connectivity verdict. A street
+                            with 2 boundary neighbours is load-bearing; anything else is
+                            named as dangling or interior so the fix is obvious. */}
+                        {sides.length > 0 && (
+                          <div className="carto-extent-status" style={{ fontSize: 11, lineHeight: 1.7, marginBottom: 6 }}>
+                            {sides.map(nm => (
+                              <div key={nm} style={{ color: gapSet.has(nm) ? '#ffb038' : undefined }}>
+                                <span style={{ cursor: 'pointer' }} onClick={() => toggleSide(nm)} title="Remove">✕</span>
+                                {' '}{gapSet.has(nm) ? '⚠' : '✓'} {nm}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Status: does the ring close, and if not, exactly why. */}
+                        {sides.length > 0 && sides.length < 3 && (
+                          <div className="carto-extent-status" style={{ fontSize: 11, opacity: 0.85 }}>
+                            Pick at least 3 streets — a ring needs three sides.
+                          </div>
+                        )}
+                        {sides.length >= 3 && streetCorners && (
+                          streetCorners.closed ? (
+                            <div className="carto-extent-status ok" style={{ fontSize: 11, lineHeight: 1.6 }}>
+                              ✓ Ring closes — {streetCorners.corners.length} corners, {Math.round(ringAreaHa(streetCorners.corners))} ha
+                              <div style={{ marginTop: 6 }}>
+                                <button className="carto-btn-sm" onClick={adoptStreetRing}
+                                  title="Make this the inclusion polygon — every building inside it is in the neighborhood.">
+                                  Use as boundary
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="carto-extent-status" style={{ fontSize: 11, lineHeight: 1.6, color: '#ffb038' }}>
+                              Ring doesn't close yet.
+                              {(streetCorners.gaps || []).length > 0 && <> Amber streets don't meet two others — either a neighbour is missing, or that street is interior rather than a boundary.</>}
+                            </div>
+                          )
+                        )}
+
+                        {/* The pulldown. Corridor-collapsed server-side, so a divided
+                            arterial ("Śmigłego-Rydza") reads as ONE entry, not two
+                            one-way ways. Arterials first — boundaries usually are. */}
+                        <select className="carto-input" style={{ width: '100%', marginTop: 8 }}
+                          value="" onChange={e => { if (e.target.value) toggleSide(e.target.value) }}>
+                          <option value="">add a street by name…</option>
+                          {(names.major || []).filter(n => !sides.includes(n)).length > 0 && (
+                            <optgroup label="Arterials">
+                              {(names.major || []).filter(n => !sides.includes(n)).map(n => <option key={n} value={n}>{n}</option>)}
+                            </optgroup>
+                          )}
+                          {(names.minor || []).filter(n => !sides.includes(n)).length > 0 && (
+                            <optgroup label="Other streets">
+                              {(names.minor || []).filter(n => !sides.includes(n)).map(n => <option key={n} value={n}>{n}</option>)}
+                            </optgroup>
+                          )}
+                        </select>
+                        <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4 }}>
+                          {unpicked.length} named streets in this extent · click one on the map or pick it here
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </>
+              )}
 
               {/* The pen draws EXCLUSION loops — the strays inside each closed loop drop
                   out. Draw as many as you need (junk comes in clumps). */}
