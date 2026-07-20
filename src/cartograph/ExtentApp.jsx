@@ -1212,6 +1212,16 @@ export default function ExtentApp() {
         // requirement. Projected to the live frame by `penPaths`.
         if (Array.isArray(nb.exclusions) && nb.exclusions.length) setExclusionsLL(nb.exclusions)
         if (Array.isArray(nb.polygon) && nb.polygon.length >= 3) { setPolygonLL(nb.polygon); setPolygonSource(nb.polygonSource || 'authored') }
+        // Restore the searched place so the pre-fetch envelope keeps its padding and
+        // the panel keeps naming what matched — across a reopen AND across an HMR
+        // remount, which wipes component state just as thoroughly.
+        if (nb.place?.bbox) {
+          setPlaceEnvelope({
+            scene, bbox: nb.place.bbox, official: null,
+            label: nb.place.label || scene, areaKm2: bboxAreaKm2(nb.place.bbox),
+            cls: nb.place.cls || null, kind: nb.place.kind || null, pointish: !!nb.place.pointish,
+          })
+        }
         if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0) }
       }
       // Load the frame + boundary so an EXISTING hood (committed OR fetched-but-
@@ -1247,9 +1257,27 @@ export default function ExtentApp() {
   useEffect(() => {
     if (draftHydrated.current !== scene || !scene) return
     const clean = sides.map(s => s.trim()).filter(Boolean)
-    const t = setTimeout(() => { saveNeighborhood(scene, { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), exclusions: exclusionsLL || [] }).catch(() => {}) }, 500)
+    const t = setTimeout(() => {
+      const draft = { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), exclusions: exclusionsLL || [] }
+      // ⭐ The BOUNDARY and the searched place belong in the draft, not just in the
+      // commit. They were client-only state, so reopening a scene from the picker
+      // (rather than re-searching) silently lost both: the inclusion polygon vanished
+      // and the pre-fetch envelope fell back to the raw un-padded bbox. Anything the
+      // operator can see must survive a reload — that's the "keep fixing forever"
+      // contract the exclusion loops already honour.
+      if (Array.isArray(polygonLL) && polygonLL.length >= 3) {
+        draft.polygon = polygonLL
+        draft.polygonSource = polygonSource || 'authored'
+      }
+      // The place record stays SMALL — the ring is already persisted as `polygon`,
+      // so storing it twice would put 815 points in the file for nothing.
+      if (placeEnvelope?.bbox && placeEnvelope.scene === scene) {
+        draft.place = { bbox: placeEnvelope.bbox, label: placeEnvelope.label, cls: placeEnvelope.cls, kind: placeEnvelope.kind, pointish: !!placeEnvelope.pointish }
+      }
+      saveNeighborhood(scene, draft).catch(() => {})
+    }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, name, blurb, exclusionsLL, scene])
+  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -1776,8 +1804,11 @@ export default function ExtentApp() {
                           a neighborhood name and frame the wrong place confidently. */}
                       <div style={{ opacity: 0.85 }}>
                         matched <strong>{placeEnvelope.cls || '?'}{placeEnvelope.kind ? `=${placeEnvelope.kind}` : ''}</strong>
-                        {placeEnvelope.official
-                          ? ` · boundary ${placeEnvelope.official.ring.length} pts`
+                        {/* After a reload `official` is gone (we don't store the ring
+                            twice) but the polygon itself survives — read the count
+                            from whichever we actually have. */}
+                        {(placeEnvelope.official?.ring?.length || polygonLL?.length)
+                          ? ` · boundary ${placeEnvelope.official?.ring?.length || polygonLL.length} pts`
                           : ' · no boundary polygon'}
                       </div>
                       {placeEnvelope.pointish && (
