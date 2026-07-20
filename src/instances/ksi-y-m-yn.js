@@ -84,6 +84,21 @@ export default {
     delivery: { enabled: true, zoneDescription: null },
   },
 
+  // ⭐ ACQUIRED CITY MODEL — DOCUMENTATION ONLY, not the switch.
+  // Łódź publishes a municipal LOD2 makieta (solids WITH roof geometry) covering
+  // the revitalization area, Księży Młyn included, which beats our OSM-derived
+  // flat-topped extrusions outright: `public/baked/ksi-y-m-yn/citymodel/`.
+  // The actual gate is PRESENCE of that baked manifest (MountainBackdrop's rule),
+  // read by CityModel.jsx and published via useCityModelActive — NOT this flag.
+  // It has to work that way because Stage and Preview can mount ANY look, while
+  // INSTANCE is only ever the default one. `?slab=1` swaps the extrusions back.
+  // ⚠️ Source data is Urząd Miasta Łodzi / Łódzki Ośrodek Geodezji (capture: MGGP
+  // Aero 2012/13). ATTRIBUTION IS REQUIRED, and the reuse licence limits purpose
+  // to urban-planning/architectural/spatial-analysis work — fine for building and
+  // for a private demo, but a public COMMERCIAL deploy needs written permission.
+  // Terms + provenance live in citymodel/citymodel.json.
+  cityModel: true,
+
   cary: {
     smsNumber: null,
     smsNumberDisplay: null,

@@ -34,6 +34,7 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
+import useCityModelActive from '../hooks/useCityModelActive'
 import useCamera from '../hooks/useCamera'
 import { INSTANCE } from '../instance.js'
 
@@ -103,10 +104,29 @@ function getLookId(propLook) {
   return INSTANCE.lookId
 }
 
-export default function SlabBuildings({ lookId, interactive = true } = {}) {
+/**
+ * Stands down to INDEX-ONLY (loads, parses and publishes the identity index, but
+ * draws no building meshes) whenever an acquired city LOD2 model is drawing the
+ * buildings for this look — see CityModel.jsx + useCityModelActive. Identity must
+ * stay on ONE hydration path (this one) or the index and the meshes drift apart
+ * (`feedback_dual_hydration_paths_drift`). The selection ring still draws: it
+ * traces the baked footprint, which sits directly under the LOD2 solid.
+ *
+ * Reading the store HERE rather than taking a prop keeps all three hosts
+ * (Scene / CartographApp / PreviewApp) identical and scene-generic — none of them
+ * can know whether an arbitrary lookId ships a city model.
+ * `renderGeometry: false` additionally forces index-only for callers that want it.
+ */
+export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true } = {}) {
   const LOOK_ID = useMemo(() => getLookId(lookId), [lookId])
   const [data, setData] = useState(null)   // { manifest, bin }
   const [scene, setScene] = useState(null)
+  // The city model covers only the buildings OSM also mapped, so we keep DRAWING
+  // and keep the geometry mounted — suppression is PER BUILDING (aCovered below),
+  // not wholesale. Hiding everything left ~46% of Łódź as bare ground.
+  const cityCoveredIds = useCityModelActive((s) => s.coveredIds)
+  const drawGeometry = renderGeometry
+  const canInteract = interactive
   const setIndex = useSlabBuildingIndex((s) => s.setIndex)
   const clearIndex = useSlabBuildingIndex((s) => s.clear)
 
@@ -208,7 +228,9 @@ export default function SlabBuildings({ lookId, interactive = true } = {}) {
           }
         }
       }
-      return { group: g, positions, colors, nightColors, uvs, centroidYs, indices, aBuildingId: new Float32Array(g.vertexCount).fill(-1) }
+      return { group: g, positions, colors, nightColors, uvs, centroidYs, indices,
+               aBuildingId: new Float32Array(g.vertexCount).fill(-1),
+               aCovered: new Float32Array(g.vertexCount) }
     })
 
     // Stamp per-vertex aBuildingId from the index ranges (numeric id = index
@@ -221,7 +243,8 @@ export default function SlabBuildings({ lookId, interactive = true } = {}) {
         const d = byKey.get(`${kind}:${mat}`)
         if (!d) return
         const [start, count] = range
-        for (let i = 0; i < count; i++) d.aBuildingId[start + i] = num
+        const covered = cityCoveredIds?.has(b.id) ? 1 : 0
+        for (let i = 0; i < count; i++) { d.aBuildingId[start + i] = num; d.aCovered[start + i] = covered }
       }
       fill('wall', b.wallMaterial, b.ranges.wall)
       fill('roof', b.roofMaterial, b.ranges.roof)
@@ -234,13 +257,14 @@ export default function SlabBuildings({ lookId, interactive = true } = {}) {
       geom.setAttribute('color', new THREE.Float32BufferAttribute(d.colors, 3))
       geom.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(d.centroidYs, 1))
       geom.setAttribute('aBuildingId', new THREE.Float32BufferAttribute(d.aBuildingId, 1))
+      geom.setAttribute('aCovered', new THREE.Float32BufferAttribute(d.aCovered, 1))
       if (d.nightColors) geom.setAttribute('aNightColor', new THREE.Float32BufferAttribute(d.nightColors, 3))
       if (d.uvs) geom.setAttribute('uv', new THREE.Float32BufferAttribute(d.uvs, 2))
       geom.setIndex(new THREE.Uint32BufferAttribute(d.indices, 1))
       geom.computeVertexNormals()
       return { group: d.group, geometry: geom, texId: textureIdFor(d.group, scene) }
     })
-  }, [data, scene])
+  }, [data, scene, cityCoveredIds])
 
   // ── Selection / night uniform plumbing across all group shaders ────
   // Collected ONCE per material at compile (onBeforeCompile fires once, not
@@ -286,14 +310,14 @@ export default function SlabBuildings({ lookId, interactive = true } = {}) {
     <group
       onPointerDown={(e) => { _pdx = e.clientX; _pdy = e.clientY }}
     >
-      {meshes.map(({ group, geometry, texId }) => (
+      {drawGeometry && meshes.map(({ group, geometry, texId }) => (
         <GroupMesh
           key={`${group.kind}:${group.id}`}
           group={group}
           geometry={geometry}
           texId={texId}
           scene={scene}
-          interactive={interactive}
+          interactive={canInteract}
           registerShader={(sh) => shadersRef.current.push(sh)}
         />
       ))}
@@ -409,6 +433,8 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
         `#include <common>
          attribute float aCentroidY;
          attribute float aBuildingId;
+         attribute float aCovered;
+         varying float vCovered;
          ${isWall ? 'attribute vec3 aNightColor;\n varying vec3 vNightCol;' : ''}
          uniform float uExag;
          varying vec3 vBPos;
@@ -423,6 +449,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          vBPos = (modelMatrix * vec4(position, 1.0)).xyz;
          vBNorm = normalize(mat3(modelMatrix) * normal);
          vBId = aBuildingId;
+         vCovered = aCovered;
          ${isWall ? 'vNightCol = aNightColor;' : ''}
          transformed.y += aCentroidY * uExag;`
       )
@@ -434,6 +461,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          uniform float uDarkFactor;
          uniform float uSelectedId;
          uniform float uHoveredId;
+         varying float vCovered;
          ${isFoundation ? 'uniform vec3 uFoundNight;' : ''}
          ${isWall ? 'varying vec3 vNightCol;' : ''}
          ${tex ? 'uniform sampler2D uTex;\n uniform float uTexStrength;\n uniform float uTexScale;' : ''}
@@ -455,6 +483,10 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <clipping_planes_fragment>',
         `#include <clipping_planes_fragment>
+         // An acquired city LOD2 solid is drawing THIS building — drop the
+         // extrusion so the two don't z-fight. Only these; the buildings the
+         // city model has no solid for keep rendering from the slab.
+         if (vCovered > 0.5) discard;
          if (uDissolveDist > 0.0) {
            float camDist = distance(vBPos, uCamPos);
            float keep = smoothstep(uDissolveDist, uDissolveDist + uDissolveBand, camDist);
@@ -514,8 +546,14 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   }, [tex, isRoof, isWall, isFoundation, texStrength, texScale, group.kind, group.id])
 
   // Resolve a raycast hit to a building id via the aBuildingId attribute.
+  // A DISCARDED fragment still raycasts, so an extrusion hidden behind a city
+  // LOD2 solid would otherwise intercept clicks aimed at that solid. Both would
+  // resolve to the same building, but let the geometry that is actually VISIBLE
+  // own the interaction — otherwise hover/cursor fires off an invisible surface.
   const idAtFace = (e) => {
     if (!e.face) return null
+    const covered = geometry.attributes.aCovered?.getX(e.face.a)
+    if (covered > 0.5) return null
     const num = geometry.attributes.aBuildingId.getX(e.face.a)
     if (num < 0) return null
     return useSlabBuildingIndex.getState().index?.byNum[num]?.id ?? null

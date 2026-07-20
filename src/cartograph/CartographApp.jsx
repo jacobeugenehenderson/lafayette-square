@@ -26,6 +26,7 @@ import LafayettePark from '../components/LafayettePark'
 import InstancedTrees from '../components/InstancedTrees'
 import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
+import CityModel from '../components/CityModel'
 import SlabBuildings from '../components/SlabBuildings.jsx'
 import GatewayArch from '../components/GatewayArch'
 import MountainBackdrop from '../components/MountainBackdrop'
@@ -801,6 +802,15 @@ function genericSceneConfig(sceneBoundary) {
         {!hiddenLayers.building && (
           <R3FErrorBoundary name="SlabBuildings">
             <SlabBuildings key={`slab-${bakeLastMs || 0}`} lookId={lookId} />
+          </R3FErrorBoundary>
+        )}
+        {/* Acquired city LOD2 model — the SAME consumer production mounts
+            (project_stage_consumer_parity: "Stage and production mount the SAME
+            consumer file. Always."). Renders nothing for a look with no
+            citymodel manifest, so every other scene is untouched. */}
+        {!hiddenLayers.building && (
+          <R3FErrorBoundary name="CityModel">
+            <CityModel key={`city-${bakeLastMs || 0}`} lookId={lookId} />
           </R3FErrorBoundary>
         )}
         {!hiddenLayers.lamp && (

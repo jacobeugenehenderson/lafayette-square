@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "look": "ksi-y-m-yn",
+  "_doc": "City LOD2 building model — the operator-acquired hero geometry (roofs, not extrusions). Renders via CityModel.jsx; absent manifest = renders nothing (generic, no-LS rule).",
+  "tiles": [
+    {
+      "id": "O47",
+      "asset": "O47_buildings.glb",
+      "origin": {
+        "x": -872.2,
+        "y": 0,
+        "z": -209.7
+      }
+    },
+    {
+      "id": "O48",
+      "asset": "O48_buildings.glb",
+      "origin": {
+        "x": -217.8,
+        "y": 0,
+        "z": -442.5
+      }
+    },
+    {
+      "id": "O50",
+      "asset": "O50_buildings.glb",
+      "origin": {
+        "x": -1399.6,
+        "y": 0,
+        "z": 684.2
+      }
+    },
+    {
+      "id": "O51",
+      "asset": "O51_buildings.glb",
+      "origin": {
+        "x": -845.5,
+        "y": 0,
+        "z": 324.6
+      }
+    },
+    {
+      "id": "O52",
+      "asset": "O52_buildings.glb",
+      "origin": {
+        "x": -1007.5,
+        "y": 0,
+        "z": 664.6
+      }
+    },
+    {
+      "id": "O53",
+      "asset": "O53_buildings.glb",
+      "origin": {
+        "x": -350.4,
+        "y": 0,
+        "z": 346.0
+      }
+    },
+    {
+      "id": "O54",
+      "asset": "O54_buildings.glb",
+      "origin": {
+        "x": 618.8,
+        "y": 0,
+        "z": 66.3
+      }
+    },
+    {
+      "id": "O57",
+      "asset": "O57_buildings.glb",
+      "origin": {
+        "x": -715.4,
+        "y": 0,
+        "z": 976.8
+      }
+    },
+    {
+      "id": "O58",
+      "asset": "O58_buildings.glb",
+      "origin": {
+        "x": -97.4,
+        "y": 0,
+        "z": 738.3
+      }
+    },
+    {
+      "id": "O59",
+      "asset": "O59_buildings.glb",
+      "origin": {
+        "x": 514.4,
+        "y": 0,
+        "z": 565.6
+      }
+    },
+    {
+      "id": "O62",
+      "asset": "O62_buildings.glb",
+      "origin": {
+        "x": 27.4,
+        "y": 0,
+        "z": 1255.2
+      }
+    }
+  ],
+  "source": {
+    "name": "Cyfrowa makieta 3D — Strefa Wielkomiejska",
+    "publisher": "Urząd Miasta Łodzi / Łódzki Ośrodek Geodezji",
+    "capture": "MGGP Aero, 2012/13 (aerial laser scanning + stereodigitisation)",
+    "url": "https://rewitalizacja.uml.lodz.pl/monitoring-zmian/mapy-interaktywne-i-dane/dane-3d/",
+    "lod": "LOD2 — simplified solids with roof geometry",
+    "attribution_required": true,
+    "_licence": "Reuse of public-sector information under art. 13/14 of the Polish ustawa o ponownym wykorzystywaniu informacji sektora publicznego. Dissemination rights include making the work publicly available on demand. PURPOSE is limited to urban-planning / architectural / spatial-analysis studies and their publication — obligation to state that the information was reprocessed and to credit the source. ⚠️ Building/private demo is comfortably inside this; a public COMMERCIAL deploy needs written permission from Łódzki Ośrodek Geodezji. See ONBOARDING.md."
+  },
+  "_note_origins": "Each tile origin derives from its own .pos sidecar (EPSG:2177) → WGS84 → this scene's local frame via geography.json. O53's was verified by overlaying on our OSM footprints (exact registration); the rest use the identical derivation."
+}

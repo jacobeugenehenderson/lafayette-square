@@ -8,6 +8,7 @@ import { browseAltitude } from '../lib/browseAltitude.js'
 import { SHOT_TRANSITION_MS } from '../camera/transitions.js'
 import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
+import CityModel from './CityModel'
 import CelestialBodies from './CelestialBodies'
 import BakedGround from './BakedGround.jsx'
 import { getElevation } from '../utils/elevation'
@@ -724,6 +725,7 @@ const IS_GROUND = window.location.search.includes('ground')
 
 
 
+
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
 
@@ -830,7 +832,19 @@ function Scene() {
           the index store stays null → SceneNeon falls back to live source, so
           authoring retint still works). */}
       {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene hiddenLayers={{ building: true }} /></R3FErrorBoundary>}
+      {/* SlabBuildings ALWAYS mounts — it is the single hydration path for building
+          identity (it publishes the index SceneNeon + selection resolve against).
+          It self-gates to index-only when a city LOD2 model is drawing (see
+          useCityModelActive), rather than unmounting and taking identity down. */}
       {!IS_GROUND && <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
+      {/* City LOD2 model (real roofs) where an installation could acquire one —
+          Łódź publishes a municipal makieta covering Księży Młyn. Renders NOTHING
+          without a citymodel manifest, so LS is untouched. While it renders it
+          REPLACES the extruded slab buildings rather than z-fighting them; `?slab=1`
+          swaps back for an A/B. ⚠️ Geometry only so far — the vendor meshes carry the
+          city's own ids, not osm-<id>, so identity (click / neon / place cards) still
+          needs the centroid-in-footprint join. See CityModel.jsx. */}
+      {!IS_GROUND && <R3FErrorBoundary name="CityModel"><CityModel lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
       {/* Lamps mount unconditionally (no device fork). The old IS_MOBILE branch
           deferred the mobile mount 4s ("let hero settle") — a hardwire that both
           violated the manifest-authored-bracket doctrine AND silently dropped the

@@ -1,0 +1,13 @@
+{
+ "_doc": "LOD2 mesh name → our osm-<id>. Built by scratch/join-citymodel-to-osm.mjs (centroid-in-footprint). null = no OSM footprint under it: renders, but not clickable.",
+ "tile": "O62",
+ "total": 2,
+ "matched": 2,
+ "unmatched": 0,
+ "matchedViaVertexFallback": 2,
+ "matchedViaOverlapFallback": 0,
+ "ids": {
+  "Mesh_1": "osm-108800114",
+  "Mesh_2": "osm-108800114"
+ }
+}

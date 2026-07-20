@@ -37,6 +37,7 @@ import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { V_EXAG } from '../utils/terrainShader'
 import LafayetteScene from '../components/LafayetteScene'
+import CityModel from '../components/CityModel'
 import SlabBuildings from '../components/SlabBuildings'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
 import { setActiveProfileId } from './deviceProfiles'
@@ -1155,6 +1156,9 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
             toggle: a clean per-frame draws/tris on-off (Vernier Phase 2). */}
         <group visible={layers.buildings}>
           <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={lookId} interactive={false} /></R3FErrorBoundary>
+          {/* Same consumer as Stage + production — Preview is the publish-confidence
+              gate, so it must render production's exact tree. */}
+          <R3FErrorBoundary name="CityModel"><CityModel lookId={lookId} interactive={false} /></R3FErrorBoundary>
         </group>
         {/* Trees / Park / Streetlamps / Arch — visibility-gated (always
             mounted, baked assets resident). Each toggle is a clean per-frame
