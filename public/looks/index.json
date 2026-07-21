@@ -46,7 +46,8 @@
       "name": "centrum",
       "scene": "centrum",
       "createdAt": 1784592746607,
-      "bakedAt": 1784592851289
+      "bakedAt": 1784605960060,
+      "updatedAt": 1784606031437
     }
   ]
 }

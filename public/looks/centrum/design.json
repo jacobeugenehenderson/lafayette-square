@@ -638,8 +638,20 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "density": 0.05,
+        "density": 0,
         "color": null
+      },
+      "sunset": {
+        "density": 0,
+        "color": "#9dc5e0"
+      },
+      "night": {
+        "density": 0,
+        "color": "#9dc5e0"
+      },
+      "dawn": {
+        "density": 0,
+        "color": "#9dc5e0"
       }
     }
   },
