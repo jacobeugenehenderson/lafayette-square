@@ -100,6 +100,7 @@ function loadBakedBuildings(scene) {
       roof_material: b.roofMaterial ?? null,
       baseY: b.baseY ?? null,
       centroidY: b.centroidY ?? null,
+      stories: b.stories ?? null,
       zoning: b.zoning ?? null,
     })
   }
@@ -633,9 +634,20 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
       ? { category: primary.category, subcategory: primary.subcategory }
       : rosterCategoryFromZoning(par && par.zoning, use.use, use.use_subtype)
 
-    // stories from baked height (roof apex − base) / 3.5
-    const stories = (meta.centroidY != null && meta.baseY != null)
-      ? Math.max(1, Math.round((meta.centroidY - meta.baseY) / 3.5)) : null
+    // ⭐ Stories: read what the baker built, never re-derive it.
+    //
+    // This used to compute `max(1, round((centroidY − baseY)/3.5))` under a
+    // comment claiming "roof apex − base". It is neither: `centroidY` is the
+    // mean TERRAIN elevation under the footprint and `baseY` is the WALL TOP.
+    // The subtraction is inverted and the operands are unrelated, so on a
+    // scene with no terrain it evaluates to max(1, −2) — pinning all 1,640
+    // Księży Młyn buildings to a single storey while their own OSM carried
+    // 4,361 `building:levels` (`INTAKE-CATALOGUE §5.2`). On a scene WITH
+    // terrain it would have produced noise, which is worse than the floor.
+    //
+    // The baker now records the storey count it actually extruded, so the
+    // roster echoes the geometry instead of trying to invert it.
+    const stories = meta.stories ?? null
 
     const contributing = nr ? (nr.contrib === 'contributing') : (inDistrict ? null : null)
     const style = nr ? (nr.style || null) : null

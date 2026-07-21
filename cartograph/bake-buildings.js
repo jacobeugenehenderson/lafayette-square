@@ -49,19 +49,85 @@ function adaptMapBuildings(mapBuildings) {
       if (a[0] === z[0] && a[1] === z[1]) fp = fp.slice(0, -1)
     }
     if (fp.length < 3) continue
+    const tags = b.tags || {}
     // Height: MSBF/OSM tag if present, floored so paper-thin MSBF slivers
     // (min ~0.02 m) don't bake as slabs; else the baker's own 8 m default.
-    const tagH = b.tags && typeof b.tags.height === 'number' ? b.tags.height : null
-    const size = tagH != null ? [0, Math.max(tagH, 3), 0] : undefined
+    //
+    // ⚠️ This used to guard `typeof tags.height === 'number'`, which can NEVER
+    // be true — OSM tag values are always strings. A dead branch that silently
+    // discarded every surveyed height: 40 in Księży Młyn, 351 in Centrum
+    // (`INTAKE-CATALOGUE §5.2`). parseFloat also handles OSM's "12 m" form.
+    const tagH = parseFloat(tags.height)
+    const size = Number.isFinite(tagH) && tagH > 0 ? [0, Math.max(tagH, 3), 0] : undefined
     // Source-agnostic building id: MSBF where present (US pours), else OSM
     // (foreign/OSM pours). Without this an OSM installation stamps every
     // building `msbf-undefined` — one non-unique id — breaking content joins,
     // per-building overrides, selection, and neon. (task: id-namespace unify.)
     const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
     if (!id) continue
-    out.push({ id, footprint: fp, size })
+    // ⭐ SURVEYED FABRIC — the tags a hand-mapped (European) OSM carries and
+    // this adapter used to drop on the floor, leaving every poured building a
+    // uniform 8 m flat box. Księży Młyn alone has 4,361 `building:levels`; the
+    // consumers below already honour `stories` (extrusion at :691, roof shape
+    // and steepness at :169-193) — they were simply never fed
+    // (`INTAKE-CATALOGUE §5.2`).
+    //
+    // ⚠️ `building:levels` is an OSM *storey count*, which is exactly what the
+    // baker means by `stories`. Fractional values ("1.5") exist; floor them
+    // rather than reject, and ignore 0/negative/garbage.
+    const lv = parseFloat(tags['building:levels'])
+    const stories = Number.isFinite(lv) && lv >= 1 ? Math.floor(lv) : undefined
+    const wallMat = mapOsmWallMaterial(tags['building:material'])
+    const roofShape = mapOsmRoofShape(tags['roof:shape'])
+    out.push({
+      id, footprint: fp, size,
+      ...(stories !== undefined && { stories }),
+      ...(wallMat && { wall_material: wallMat }),
+      ...(roofShape && { roof_shape: roofShape }),
+    })
   }
   return out
+}
+
+/**
+ * OSM `building:material` → the baker's WALL_MATERIALS palette.
+ *
+ * Conservative BY DESIGN: map only what the palette genuinely carries and
+ * return null otherwise, so an unrecognised material falls through to the
+ * `brick_red` default rather than being coerced into the nearest-looking swatch.
+ * Księży Młyn's spread is brick 151 · wood 2 · stone 1 · plaster 1.
+ */
+function mapOsmWallMaterial(v) {
+  if (!v || typeof v !== 'string') return null
+  switch (v.trim().toLowerCase()) {
+    case 'brick': return 'brick_red'
+    case 'stone': case 'sandstone': case 'limestone': case 'granite': return 'stone'
+    case 'wood': case 'timber': return 'wood_siding'
+    case 'plaster': case 'stucco': case 'render': return 'stucco'
+    default: return null
+  }
+}
+
+/**
+ * OSM `roof:shape` → the three shapes this renderer actually builds.
+ *
+ * ⚠️ `roof:shape` is an OPEN OSM vocabulary (gabled · hipped · flat · mansard ·
+ * gambrel · pyramidal · skillion · round · dome · …) and `buildingGeometry`
+ * knows exactly three: flat, hip, mansard. `INTAKE-CATALOGUE §5.2` is explicit
+ * — map the vocabulary and **fall through to the heuristic on anything
+ * unrecognised; do not silently coerce.** So `gabled` (20 in KŁ) and `skillion`
+ * (13) return null and take the year/storey prior rather than being flattened
+ * into a hip they are not. Widening this means teaching the geometry a new
+ * roof, not widening this table.
+ */
+function mapOsmRoofShape(v) {
+  if (!v || typeof v !== 'string') return null
+  switch (v.trim().toLowerCase()) {
+    case 'flat': return 'flat'
+    case 'hipped': case 'half-hipped': return 'hip'
+    case 'mansard': return 'mansard'
+    default: return null
+  }
 }
 
 export function loadBuildings(scene) {
@@ -165,6 +231,13 @@ const foundationHeightFor = periodPedestalFor
 function classifyRoofFor(building, overrides) {
   const ov = overrides && overrides[building.id]
   if (ov && ov.roof_shape !== undefined) return ov.roof_shape
+  // ⭐ SURVEYED before GUESSED. Precedence is override → OSM tag → heuristic,
+  // the same chain as the base widths (custom → OSM → AASHTO), so this is the
+  // house pattern rather than a new one (`INTAKE-CATALOGUE §5.2`). Everything
+  // below this line is a PRIOR inferred from year + storeys — a fair one for a
+  // Second Empire district, and still a guess. Where a surveyor actually
+  // recorded the roof, the record wins.
+  if (building.roof_shape) return building.roof_shape
   const year = building.year_built
   const stories = building.stories || 1
   if (!year) return 'flat'
@@ -800,6 +873,20 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
       baseY,
       wallMaterial: wallMat,
       roofMaterial: roofMat,
+      // ⭐ The storey count the geometry was ACTUALLY built from. The roster
+      // used to back-solve this from `(centroidY − baseY)/3.5`, which is not a
+      // height at all — centroidY is mean terrain under the footprint and baseY
+      // is the wall top, so the expression was inverted AND its operands
+      // unrelated, pinning every poured building to 1 (`INTAKE-CATALOGUE §5.2`).
+      // Recording it here means content reads what the baker used instead of
+      // reconstructing it from two quantities that never encoded it.
+      //
+      // ⚠️ RAW, not the `|| 1` the roof classifier works in. An untagged
+      // building extrudes at the 8 m default (~2 storeys) — writing `1` for it
+      // would state a storey count nobody measured, which is the fabricated
+      // value this field exists to stop. Unknown stays null; the roster then
+      // renders "—" rather than asserting a one-storey building.
+      stories: b.stories ?? null,
       zoning: b.zoning ?? null,
       ranges,
     })
