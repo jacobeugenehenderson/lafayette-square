@@ -74,7 +74,28 @@ When Nominatim has no usable hood (the normal case — R7), the operator names t
 
 ⚠️ **Deferred ≠ forked.** This is a scope decision, not a second code path — `feedback_no_parallel_pipeline_for_scenes` ("a scene is a dataset, not a branch") still binds, and a Polish-hoods branch would be exactly the palimpsest this repo keeps paying to remove. The only real variance is **which building source the pour uses**, and that is already data-driven (`pipeline.js:76-83` prefers MSBF, falls through to OSM). v1 exercises and hardens the MSBF path; the OSM-source path stays working but unpolished.
 
-## 0.6 Between this spec and today
+## 0.6 ⭐ CONFORM, DON'T PROTECT — R22 is overturned
+
+**Ruled by Jacob, 2026-07-21:** *"We purposefully put the protection regime on there but I think we need to just be brave and deliberate."*
+
+**"Lafayette Square must stay byte-identical" (R22) is retired.** LS and HPDM are to be **conformed to the tool**, not exempted from it. Fix the Extent tool first, then pour both through it.
+
+**Why the protection regime became the disease.** LS's own `neighborhood.json` says it: *"BACKFILL (not poured): LS predates the Extent tool… The bake was NOT re-run."* So **every LS hardwire protects LS from a pipeline LS has never run.** The exemptions do not defend a known incompatibility — they defend an untested assumption, and each new one exists because the previous one made LS look special. That is circular, and conforming LS is what breaks it. Most of the nine sites in D11 dissolve on their own once LS carries a polygon.
+
+**The worked example, and the general warning.** The authored 4-corner `park-polygon.json` was defended in-code on the grounds that OSM's 41-vertex park trace produces dirty corner plugs. Jacob disputed it: *"LS is made of 4 barrier streets but the system was not working as well back then."* He is right, and the evidence is threefold — the file is dated **2026-05-14**, predating the tile model, junction-protected RDP and the corner machinery; `ARCHITECTURE.md:326` already asserts that resolving onto centerlines takes **Księży Młyn's 357 vertices down to 4 corners**; and LS's four boundary streets are *already recorded* (`sides: [Chouteau Avenue, South Jefferson Avenue, Lafayette Avenue, Truman Parkway]`), so conforming it is not a research project.
+
+⚠️ **This is the sixth expired rationale in this subsystem (A3), and this pass walked into it** — read the comment, accepted its stated reason, never asked whether the reason still held. **A code comment explaining WHY is evidence of a past decision, not proof of a present constraint. Check the file date.**
+
+**⛔ The deliberate half — what "brave" must not mean.** The protection regime was standing in for a **verification we do not have**. It said: *we cannot tell whether a change breaks LS, so freeze LS.* Removing the freeze without supplying the missing check is not brave, it is blind. Per Jacob's own prior instruction (`BRIEF-extent-boundary-procedure.md:149`): *"any plan that re-pours an existing scene must say so loudly, and must be verifiable… without it, migration is hopeful rather than provable."*
+
+So conforming LS is gated on **two checks that do not exist yet**, both cheap:
+
+1. **A membership diff** — same scene, old scheme vs new: which buildings enter, which leave, and why. This is what makes a re-pour provable instead of hopeful.
+2. **A scene-parity check on layer counts** — raw OSM feature count vs `map.json` count, per layer, per scene. A layer LS keeps and a poured scene drops to ~zero is a hardwire by definition. This would have caught the park drop (63 → 0) the day it landed, without anyone knowing parks were the thing to look for. It is the detector the repo's own doctrine calls for (`POLYGON-FIRST §5`, *"let the machine catch the bugs… that checker is the real prize"*), and it is why the next removal campaign will succeed where the previous ones did not.
+
+**Sequence, ruled:** fix the tool → build the two checks → conform HPDM → conform LS. **LS is production (`lafayette-square.com`) and has never been poured; it is conformed last, and never the night before a demo.**
+
+## 0.7 Between this spec and today
 
 1. **We compute the ring and throw it away.** `computeBoundaryFromSelection` walks the runs, derives corners, persists only corners + bare name strings. *The segments never reach disk.* **This is the foundation — the rest are small beside it.**
 2. **The resolver takes whole streets only** — no partial runs, which is the common case in a city centre (R27, `BRIEF-boundary-partial-edges.md`).
@@ -115,7 +136,7 @@ The root definition, which everything else inherits:
 | **R19** | **`map.json` is the single filtered source** the 2D Designer and the bake both inherit. | `PIPELINE.md:64`; `20cd2c1d` | LIVE | Holds — **but violated for LS (D7)** | — | (b) |
 | **R20** | **The Extent preview and the baked slab must agree.** | latent in `24323ab2`; enforced `ExtentApp.jsx:1164` | LIVE | Holds — **violated today for LS and every no-polygon committed scene (D4)** | — | (b) |
 | **R21** | **Installation-agnostic** — no St. Louis defaults, no hood named in shared code. A drop-in town uses the same tool, zero kit edits. | `INTAKE.md:40`; `_archive/…concerted:85` | LIVE | Holds | — | (b) |
-| **R22** | **Lafayette Square must stay byte-identical.** | `_archive/…perimeter-builder:78`; `_archive/…concerted:86` | LIVE | ⚠️ **Rationale worth re-testing** — it justifies the `scene !== 'lafayette-square'` hardwire that exempts LS from the very mechanism (D7) | — | (b) |
+| **R22** | ~~**Lafayette Square must stay byte-identical.**~~ | `_archive/…perimeter-builder:78`; `_archive/…concerted:86` | ⛔ **OVERTURNED 2026-07-21 — see §0.6.** Jacob: *"we purposefully put the protection regime on there but I think we need to just be brave and deliberate."* **Conform LS, don't exempt it.** | **EXPIRED.** It protected LS from a pipeline LS has never run, and justified all nine hardwires in D11 | — | **(a)** |
 | **R23** | **Never geocode for geometry.** An admin polygon is not a neighborhood (Altadena CDP ≈ 2× the real hood). Search is the fetch bootstrap only. | `1afb8253`; `PIPELINE.md:52` | LIVE | Holds | — | (b) |
 | **R24** | **Every input is a local file; a pour must be reproducible with the network unplugged.** *"lighthearted enmity"* with corporate dependencies. | `4929a92b`; `BRIEF-intake-manifest.md:141` | LIVE | Holds — **constrains any prior-art adoption (PART D)** | — | **(a)** |
 | **R25** | **Failure must be legible.** A street that doesn't close goes amber *on the map*, and the panel says why in the resolver's own terms (dangling / interior). | `1f6a70bd`; `FEATURES.md:15` | LIVE | Holds | ✅ | (b) |
