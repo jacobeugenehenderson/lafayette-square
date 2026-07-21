@@ -1552,7 +1552,7 @@ export default function ExtentApp() {
             : {})
         const b = await fetchBoundary(scene).catch(() => null)
         if (b) useCartographStore.setState({ sceneBoundary: b })
-        setBuildStage('Baking slab — ground, AO, buildings, lamps…')
+        setBuildStage('Baking slab…')
         const idx = await fetchLooks().catch(() => null)
         let lookId = idx?.looks?.find(l => l.scene === scene)?.id
         // A committed hood may still have NO Look of its own — poured before Looks
@@ -1578,7 +1578,7 @@ export default function ExtentApp() {
       }
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
-      setBuildStage('Committing extent — reprojecting + rebuilding skeleton…')
+      setBuildStage('Committing extent…')
       // Re-center to the KEPT-buildings centroid so the hood lands at the origin.
       const [lon, lat] = localToWgs84(geo, keptCenter.x, keptCenter.z)
       // The EXCLUSION loops (frame-independent lon/lat) ride along — the server
@@ -1610,14 +1610,14 @@ export default function ExtentApp() {
       } catch { /* ignore */ }
       // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
       //    ribbons → ensure a Look for this scene → bake → open the Designer.
-      setBuildStage('Pouring map — deriving land-use, clipping to the boundary…')
+      setBuildStage('Pouring map…')
       await pourScene(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
       if (!lookId) { const r = await createLook({ name: scene, scene }); lookId = r.id }
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
-      setBuildStage('Baking slab — ground, AO, buildings, lamps…')
+      setBuildStage('Baking slab…')
       await bakeLook(lookId, { force: true })
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
@@ -2091,31 +2091,12 @@ export default function ExtentApp() {
             )}
 
             {keptFit.count > 0 && radiusM > 0 && (
-              <>
-                <div className="carto-row" style={{ marginTop: 12 }}>
-                  <button className="carto-btn carto-btn--grow carto-stage-btn" disabled={building || !(radiusM > 0)}
-                    onClick={onBuild} title="Bake the neighborhood and open the Designer">
-                    {building ? `Baking…  ${mmss(buildElapsed)}` : 'Bake'}
-                  </button>
-                </div>
-                {/* The phase, and after a while an explicit "this is normal". A bake of
-                    a large extent runs for minutes inside a single server call, and a
-                    button that has said the same thing for four minutes reads as hung —
-                    the operator's next move is to click something, which is the one
-                    thing that must not happen mid-pour. */}
-                {building && (
-                  <div className="carto-extent-status" style={{ fontSize: 11, lineHeight: 1.6, marginTop: 6, opacity: 0.9 }}>
-                    {buildStage || 'Working…'}
-                    {buildElapsed >= 45 && (
-                      <div style={{ marginTop: 4, opacity: 0.75 }}>
-                        Still going — this is normal on a large extent. Derive processes the
-                        whole fetch before clipping, so the pour scales with what was fetched,
-                        not with the neighborhood. Don't navigate away.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
+              <div className="carto-row" style={{ marginTop: 12 }}>
+                <button className="carto-btn carto-btn--grow carto-stage-btn" disabled={building || !(radiusM > 0)}
+                  onClick={onBuild} title="Bake the neighborhood and open the Designer">
+                  {building ? `Baking…  ${mmss(buildElapsed)}` : 'Bake'}
+                </button>
+              </div>
             )}
           </div>
         </div>

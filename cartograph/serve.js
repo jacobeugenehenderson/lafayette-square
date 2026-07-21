@@ -1414,6 +1414,26 @@ createServer(async (req, res) => {
           try { rmSync(src + '.prebak', { force: true }); if (existsSync(src)) writeFileSync(src + '.prebak', readFileSync(src)) } catch { /* best-effort */ }
         }
         const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
+        // ── Don't reproject the world for a rounding error ────────────────────
+        // Commit's contract is "the frame origin is the hood's centroid", but the
+        // origin is arbitrary as long as it is STABLE — and moving it runs
+        // reproject-raw over every raw file and rebuilds the skeleton. A first pour
+        // whose frame is already sensible (fetch centred on the place) lands within
+        // tens of metres of the centroid, so the move buys nothing and costs a full
+        // reprojection. Below the threshold, keep the existing origin.
+        const RECENTER_MIN_M = 100
+        let skipReproject = false
+        if (Number.isFinite(geo.lat) && Number.isFinite(geo.lon)) {
+          const dM = Math.hypot(
+            (center.lat - geo.lat) * 111320,
+            (center.lon - geo.lon) * 111320 * Math.cos((center.lat * Math.PI) / 180),
+          )
+          if (dM < RECENTER_MIN_M) {
+            skipReproject = true
+            console.log(`[commit-extent] ${scene}: origin move is ${Math.round(dM)} m (< ${RECENTER_MIN_M}) — keeping frame, skipping reproject`)
+            center.lat = geo.lat; center.lon = geo.lon
+          }
+        }
         geo.lat = r5(center.lat); geo.lon = r5(center.lon)
         geo.lonToMeters = Math.round(111320 * Math.cos((center.lat * Math.PI) / 180))
         // Derive the timezone from the committed center — replaces the Central-US
@@ -1424,7 +1444,7 @@ createServer(async (req, res) => {
         writeFileSync(geoPath, JSON.stringify(geo, null, 2))
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
+        if (!skipReproject) await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
         _skelCache.delete(scene)
         // ── The boundary write ────────────────────────────────────────────────
