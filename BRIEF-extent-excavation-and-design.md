@@ -57,7 +57,15 @@ The most recent example, so you can recognise the shape: the coordinator observe
 - The requirement, stated as **what must be TRUE and WHY** — never as a mechanism
 - **Provenance** — file:line and/or commit, and the date
 - **Status** — live · superseded (by what) · contradicted (by what) · never implemented
+- **⭐ Rationale status** — does the REASON still hold? *(see below — this is a distinct field and the most valuable one you will fill in)*
+- **Operator surface** — is there a panel/knob for it, or is it a hardcode? *(`feedback_authoring_panel_is_the_formalization_surface`: a behaviour with no panel is not a formalized feature)*
 - **Confidence** — stated explicitly by Jacob · inferred by a prior pass · your own inference
+
+> ⭐ **RATIONALE-EXPIRY IS THE FAILURE MODE THIS SUBSYSTEM KEEPS PAYING FOR.** A requirement can be **live** — never retracted, still quoted, still enforced in code — while its **reason is dead.** It then reads as permanent doctrine because it is attributed to Jacob, and nobody re-opens it.
+>
+> Worked example, surfaced 2026-07-21: `cartograph/neighborhood-membership.mjs` states the two-region rule (literal inside the polygon, density-dissolve in the greater circle) and quotes Jacob to authorise it. But the quoted rationale is *"outside, inside the radius, **we watch for GPU**"* — a **performance concession from 2026-07-15, not a design principle.** Jacob, 2026-07-21: *"we've optimized trees and we haven't yet resolved lamps but I don't think we're in the GPU emergency we were before — and irrespective of whether or not we keep this notion, we don't have any access to it through the interface."* So the rule is live, its premise is largely expired, and it has no operator control. The excluder settlement failed in exactly this shape.
+>
+> **So for every requirement: ask what condition made it true, and whether that condition still obtains.** Report expired rationales as findings in their own right — they are the openings where a better design is available and nobody noticed.
 
 That last field matters more than it looks. A prior pass's inference that got written down reads exactly like an established requirement one document later. **Separate what was decided from what was assumed.**
 
