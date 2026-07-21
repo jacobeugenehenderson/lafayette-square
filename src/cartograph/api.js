@@ -117,6 +117,15 @@ export async function fetchScenes() {
   return res.json()
 }
 
+// Extent hub: discard a DRAFT scene (searched, never fetched). The server refuses
+// any scene that has data — this can never delete a real neighborhood.
+export async function discardScene(scene) {
+  const res = await fetch(`${BASE}/${encodeURIComponent(scene)}`, { method: 'DELETE' })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `discard ${res.status}`)
+  return j
+}
+
 // Extent editor: all named street polylines for the clickable boundary layer.
 export async function fetchStreets(scene) {
   const res = await fetch(sceneUrl(scene, 'streets'))

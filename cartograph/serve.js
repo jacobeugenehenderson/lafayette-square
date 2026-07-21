@@ -1249,6 +1249,34 @@ createServer(async (req, res) => {
   // GET/POST /<scene>/neighborhood — the extent DRAFT + descriptive metadata
   // (name/blurb/border streets/radius). Auto-saved from the Extent panel; loaded
   // on open to restore the operator's selections across reloads.
+  // DELETE /<scene> — discard a DRAFT scene (searched, never fetched).
+  //
+  // A search materialises a scene directory before anything is fetched, so an
+  // exploratory query leaves a permanent hood behind. This is the way back out.
+  // ⛔ REFUSES any scene that has data — a fetched or poured hood is never
+  // discardable through the picker; that would be a one-click way to delete a
+  // neighborhood. Dataless means: no clean/ artifacts and no raw/osm.json.
+  const dropMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)$/)
+  if (req.method === 'DELETE' && dropMatch && !RESERVED_PREFIXES.has(dropMatch[1])) {
+    const scene = dropMatch[1]
+    try {
+      const dir = join(sceneCleanDir(scene), '..')
+      const hasRaw = existsSync(join(dir, 'raw', 'osm.json'))
+      const hasClean = existsSync(join(dir, 'clean', 'skeleton.json')) || existsSync(join(dir, 'clean', 'street-index.json'))
+      if (hasRaw || hasClean) {
+        res.writeHead(409, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: `'${scene}' has fetched data — only an un-fetched draft can be discarded.` }))
+        return
+      }
+      rmSync(dir, { recursive: true, force: true })
+      console.log(`[scenes] discarded draft '${scene}'`)
+      res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}')
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
   const nbdMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/neighborhood$/)
   if (nbdMatch && !RESERVED_PREFIXES.has(nbdMatch[1])) {
     const scene = nbdMatch[1]

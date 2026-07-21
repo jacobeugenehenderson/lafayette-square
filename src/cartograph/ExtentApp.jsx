@@ -33,7 +33,7 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
 import {
-  fetchSkeletonLabels, fetchStreetNames, geocodePlace, fetchExtent, fetchGeography,
+  fetchSkeletonLabels, fetchStreetNames, discardScene, geocodePlace, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourScene, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeScene, rollbackExtent,
@@ -743,7 +743,7 @@ function sluggifyPlace(anchors, query) {
 // Neighborhoods (not Looks) live HERE (the Look pulldown is per-neighborhood presets).
 // Same chrome as the Look pulldown (carto-looks-*) for visual consistency: the current
 // hood + a popup listing every existing hood (✓ = committed) + "＋ New neighborhood".
-function NeighborhoodSelector({ scenes, current, currentName, onOpen, onNew }) {
+function NeighborhoodSelector({ scenes, current, currentName, onOpen, onNew, onDiscard }) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef(null)
   useEffect(() => {
@@ -770,13 +770,38 @@ function NeighborhoodSelector({ scenes, current, currentName, onOpen, onNew }) {
       </button>
       {open && (
         <div className="carto-looks-popup carto-glass" role="listbox">
-          {scenes.map(s => (
+          {/* Neighborhoods and DRAFTS are different things and must not read alike.
+              A search materialises a scene directory before anything is fetched, so
+              every exploratory query used to appear here as a peer of Lafayette
+              Square — that's how `d` and `centre-val-de-loire` got in. The draft still
+              persists (it has to; it's what survives a reload), it just isn't
+              presented as a neighborhood until it has data. */}
+          {scenes.filter(s => s.hasData).map(s => (
             <button key={s.id} type="button" role="option" aria-selected={s.id === current}
               className={`carto-looks-option${s.id === current ? ' is-active' : ''}`}
               onClick={() => { onOpen(s.id); setOpen(false) }}>
               {s.name || s.id}{s.committed ? ' ✓' : ''}
             </button>
           ))}
+          {scenes.some(s => !s.hasData) && (
+            <>
+              <div className="carto-looks-sep" />
+              <div style={{ padding: '4px 12px', fontSize: 10, opacity: 0.5, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                Drafts — searched, not yet fetched
+              </div>
+              {scenes.filter(s => !s.hasData).map(s => (
+                <button key={s.id} type="button" role="option" aria-selected={s.id === current}
+                  className={`carto-looks-option${s.id === current ? ' is-active' : ''}`}
+                  style={{ opacity: 0.6 }}
+                  onClick={() => { onOpen(s.id); setOpen(false) }}>
+                  {s.name || s.id}
+                  <span style={{ float: 'right', opacity: 0.6, fontSize: 11 }}
+                    title="Discard this draft"
+                    onClick={(e) => { e.stopPropagation(); onDiscard?.(s.id); setOpen(false) }}>✕</span>
+                </button>
+              ))}
+            </>
+          )}
           {scenes.length > 0 && <div className="carto-looks-sep" />}
           <button type="button" className="carto-looks-option" onClick={() => { onNew(); setOpen(false) }}>
             ＋ New neighborhood…
@@ -1380,6 +1405,15 @@ export default function ExtentApp() {
   // New neighborhood — the empty workspace: no scene bound, the gray grid + search.
   // setScene(null) is a no-op (invalid id), so clear the store frame directly —
   // otherwise the previous hood's geography/boundary lingers and the grid never shows.
+  // Discard a draft (searched, never fetched). The server refuses anything with
+  // data, so this cannot reach a real neighborhood.
+  const discardDraft = async (id) => {
+    if (!id) return
+    try { await discardScene(id) } catch (e) { setSeedError(e.message); return }
+    setScenesList(l => l.filter(x => x.id !== id))
+    if (id === scene) newNeighborhood()
+  }
+
   const newNeighborhood = () => {
     setSceneLocal(null)
     useCartographStore.setState({ sceneGeography: null, sceneBoundary: null, sceneRibbons: null })
@@ -1811,7 +1845,7 @@ export default function ExtentApp() {
                 Extent; the Look pulldown is per-neighborhood presets). */}
             <div style={{ marginBottom: 16 }}>
               <NeighborhoodSelector scenes={scenesList} current={scene} currentName={name}
-                onOpen={openScene} onNew={newNeighborhood} />
+                onOpen={openScene} onNew={newNeighborhood} onDiscard={discardDraft} />
             </div>
             {!scene && (
               <div className="carto-extent-status" style={{ fontSize: 12, opacity: 0.8, margin: '8px 0' }}>
