@@ -68,9 +68,19 @@ Rows are not uniform, because what lands on disk isn't:
 | **DATA** | `osm.json` · `elevation.tif` · parcels · GLB chassis | the pipeline | validation — projection, no-data sentinel, units, count |
 | **ASSET** | place photos · logos · bark · leaf scans · reference plates | **a human eye** | a **thumbnail** — see below |
 
-#### 2.2b Two verbs, not one
-- **Get** — the operator supplies the file (file picker / drag-and-drop). The path is **computed**, never typed.
-- **Fetch** — the source is already recorded in the manifest and just hasn't been pulled local. The 10 `arborist/references/<id>/sources.json` plate manifests are exactly this: real Wikimedia URLs with per-species `identityNotes`, sitting at `downloaded:false`. **They are a standing violation of §4** (pointers, not local files) and the cheapest fix in the whole manifest.
+#### 2.2b ⭐ Two verbs — and the ONE-BUTTON RULE
+> Jacob, 2026-07-20: *"we should write these access triggers into single buttons in the manifest."*
+
+- **Fetch** — **the row's access trigger IS a single button.** Wherever a source has a programmatic endpoint, the operator does not read an instruction and go do it; they press one button and the file lands at its computed path with its provenance stamped. **The manifest is an action surface, not only a catalogue.**
+- **Get** — the operator supplies the file (picker / drag-and-drop), for what no endpoint can deliver. The path is **computed**, never typed.
+
+**This is what actually delivers the admin-person bar (§7)** — the difference between *"go to MRLC, discover the versioned layer name from GetCapabilities, request WMS GetMap as geotiff"* and **`[Fetch canopy]`**.
+
+**The full button/doc split is `INTAKE-CATALOGUE.md §4.2`** — ~10 button-acquirable sources (Overpass, MSBF, MRLC/WorldCover, Open-Meteo ERA5, WorldClim, ambientCG/Poly Haven CC0 textures, Wikimedia plates, star/planet catalogues, Wikidata, per-jurisdiction assessors) against a short list that genuinely can't be automated (chassis purchase, leaf scanning, dossier authoring, the street survey, photo/logo research, NR OCR).
+
+⭐ **Consequence for §2.1a: the doc backlog shrinks.** Several rows previously filed as "procedure to write" become buttons instead. **Write the doc only for what a button cannot do.**
+
+⚠️ **Cheapest fix in the whole manifest:** the 10 `arborist/references/<id>/sources.json` plate manifests already hold real Wikimedia URLs with per-species `identityNotes`, sitting at `downloaded:false`. They are a standing violation of §4 (pointers, not local files) and want nothing but a Fetch button.
 
 #### 2.2c ⭐ Image rows need a THUMBNAIL, not a checkmark
 For an ASSET row, **a green status pill is a lie.** Łódź's `ASSETS.md` records the proof: a Facebook image URL returning **HTTP 200 with `content-type: image/jpeg`** was repeatedly the **default grey silhouette placeholder** — identical md5 every time. Right status, right MIME, right byte-size, worthless file. Every programmatic check passes.

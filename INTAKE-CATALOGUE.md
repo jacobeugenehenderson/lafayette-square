@@ -212,6 +212,7 @@ i18n service reads it**) · `profile{}` (population/founded/landmark/tagline/abo
 ### 3.2 Layer 1 — roster (JOINED)
 `content/roster.json` — one record per slab building; machine-joined by `bake-content.js`.
 - **Assessor parcels** (`raw/stl_parcels.json`, `stlco_parcels.json`) — ⭐ **the single richest content well**: address (the join spine for NR + the bare-listing gate), zoning (drives **both** neon colour and search category), sqft/units/value/year_built/vacant/historic. **US: reliably exists** — every county has an assessor, most publish ArcGIS FeatureServer or Socrata. ⚠️ **Outside the US this well often does not exist in this shape** — EU **INSPIRE Cadastral Parcels** gives geometry + parcel id but typically **not** valuation/zoning/year-built. **No Polish equivalent verified**; Łódź has 0 parcel matches.
+  > ⭐ **CORRECTION (2026-07-20, later the same session).** The line above was read as "no assessor ⇒ no addresses," and that is **wrong**. Addresses do not require a parcel authority — outside the US they live in **OSM `addr:*`**. Measured in Łódź's own already-fetched `raw/osm.json`: **3,982 `addr:street`** + 3,973 `addr:housenumber` + 1,905 `addr:postcode` across 10,602 buildings. Address is the join spine for the bare-building atlas and the NR match, so this is load-bearing: **the well exists globally, it is just sourced differently.** What an assessor uniquely provides outside the US is *valuation · zoning · year_built · units* — not address. Split the row accordingly.
 - **Land-use code table** (`content/county-land-use-codes.csv`) — decodes assessor codes. Absent → a numeric-range heuristic **hardcoded to STL city/county ranges**. Published alongside the parcel layer; **per-jurisdiction, re-acquired every town.**
 - **National Register inventory** (`content/nr-inventory.json`; LS's source is the OCR'd nomination in `inventory/`, 7 files) — style/contributing/architect/period/`nps_ref`. **Tier ③, US-only**: NPS **National Register** nomination PDFs are free at NPGallery, but the per-building "Exhibit 5" table must be **OCR'd and parsed**. State SHPO surveys are the wider net. ⚠️ *"does not exist for a normal town"* (`NEIGHBORHOOD-INPUTS §4.1`). **Non-US analogues differ in kind:** Poland **NID rejestr zabytków**, UK **Historic England Listed Buildings** (open, per-building, well-structured), France **Mérimée** **[unverified]**.
 - **Render fields** (`wall_material`, `roof_material`, `stories`, `zoning`) — ✅ read back **out of the baked slab**; derived, never hand-collected. Correct architecture.
@@ -251,7 +252,94 @@ Measured against `HANDOFF-blank-app-instance-decoupling.md`'s *"grep the reader 
 
 ---
 
-## 4. What this catalogue says about the kit
+## 4. ⭐ PROMINENCE — the cheap signals, the one-button rule, and the effort model
+
+*(Jacob, 2026-07-20, late session. Three connected ideas: take every cheap signal · make each access
+trigger a single button · rank buildings so the operator can choose how much town to build.)*
+
+### 4.1 The cheap-signal inventory — measured, already on disk, currently discarded
+
+Every count below is from **Księży Młyn's own already-fetched `raw/osm.json`** (10,602 buildings in the
+wide fetch). None of it costs anything to acquire — it was paid for when `fetch.js` ran. The only cost
+is reading tags the pipeline currently throws away.
+
+| Signal | Count | Use |
+|---|---|---|
+| `wikidata` | **65** | ⭐ the strongest cheap prominence signal in existence — someone catalogued this building |
+| `wikipedia` | **58** | an article exists about it |
+| `name` | **503** | named ≫ unnamed, universally and language-independently |
+| `tourism` | 35 | |
+| `historic` | 32 | |
+| `heritage` | 8 | |
+| `building:levels` | **4,361** | height/prominence, free |
+| `amenity` · `shop` | 238 · 111 | business presence |
+| `addr:street` · `housenumber` · `postcode` | **3,982 · 3,973 · 1,905** | ⭐ **the address well** — see §3.2's correction |
+
+**Sixty-five confirmed landmarks in Łódź that nobody had to research.** They are sitting in a file on
+disk right now, unread.
+
+**Four more that cost nothing beyond compute:**
+- **Footprint area** — from `clean/map.json`.
+- **POI count per building** — falls out of the listings join.
+- ⭐ **Hero-path visibility** — which buildings the camera actually flies past. **No other product could compute this**, and for a first-time viewer it is arguably *the* prominence metric: it is what they will actually see.
+- **Parcel morphology** — lot area · footprint:lot coverage · frontage:depth · corner-vs-interior · abutment. This is **Jacob's own parked idea** (`cartograph/BACKLOG §LATER`, 2026-07-07) — same machinery, second use.
+
+### 4.2 ⭐ The one-button rule
+
+> Jacob: *"we should write these access triggers into single buttons in the manifest."*
+
+**Where a source has a programmatic endpoint, the row's acquisition is ONE BUTTON — not an
+instruction.** The manifest is an *action surface*, not only a catalogue. This is what actually
+delivers the admin-person bar (`BRIEF §7`): the difference between *"go to MRLC, discover the
+versioned layer name from GetCapabilities, request WMS GetMap as geotiff"* and **`[Fetch canopy]`**.
+
+**Button-acquirable** (endpoint exists — build the button, skip the doc):
+
+| Button | Source | Licence |
+|---|---|---|
+| OSM landmarks / addresses / trees / lamps | Overpass (⚠️ real User-Agent) | ODbL |
+| Building footprints | MSBF (`fetch-msbf.js` already exists) | ODbL |
+| Canopy raster | MRLC WMS GetMap · ESA WorldCover | public domain · CC BY |
+| Weather year (offline fixture + cloud regime) | Open-Meteo ERA5 archive | **CC BY 4.0, redistributable** |
+| Climate fingerprint | WorldClim v2.1 | ⚠️ licence unconfirmed |
+| Bark + leaf textures | ambientCG · Poly Haven | **CC0** |
+| Reference plates | Wikimedia (URLs **already recorded** in the 10 `sources.json`) | per-image CC |
+| Star catalogue · constellations · planets | HYG/BSC5 · Stellarium · JPL SSD | open · public domain |
+| Wikidata/Wikipedia enrichment | Wikidata API | CC0 |
+| Assessor parcels | per-jurisdiction ArcGIS/Socrata | varies — **needs a per-town endpoint field** |
+
+**NOT button-acquirable** — these keep a doc (`BRIEF §2.1a`) or an uploader (`§2.2d`): chassis
+purchase + the tagging gauntlet · leaf scanning for a new region · dossier authoring · the street
+survey · photos + logos (research, then upload) · NR nomination OCR (*the PDF fetch is buttonable; the
+Exhibit-5 parse is work*).
+
+⭐ **Consequence:** the doc backlog shrinks. Several rows previously filed as "procedure to write"
+become buttons instead. **Write the doc only for what a button cannot do.**
+
+### 4.3 Prominence ranking — the effort model
+
+**The problem it solves.** Content hand-work is the one genuinely *unbounded* cost in this catalogue —
+~100–150 operator hours per town, with no principled stopping point. You cannot do 1,640 buildings and
+there is no honest way to pick 60.
+
+**The model.** Score every building from the §4.1 signals → rank → the operator works down the list and
+stops wherever they choose. Effects:
+
+- **Partial completion becomes graceful.** "The top 40 are done, and they are the 40 that matter" — rather than an arbitrary scatter.
+- **The panel's progress semantic stops being demoralising.** Not *"3% of 1,640"* (reads as failure) but *"your top 50 are complete"* (reads as done).
+- **The operator gets a dial they lack today: how much town do you want?** A demo pour takes the top 20; a real install works down until it stops paying.
+
+**Vocabulary — use the existing word.** `useListings` already loads `'landmarks'`, and bare buildings
+are the synthetic residue. So this is not a new concept: it is **deciding which buildings get promoted
+from bare building to landmark, and in what order.** Do not introduce "importance" alongside
+"landmark."
+
+⚠️ **Two constraints that must hold:**
+
+1. **The rank is a GUESS and every guess is overridable** (`NEIGHBORHOOD-INPUTS §0.0/§1.1`). A beloved corner bar scores near zero on every cheap signal — no Wikidata, no tags, small footprint. **The rank orders the work queue; it must never gate what can be filled.**
+2. ⭐ **This is where "connect your neighborhood" earns its keep.** Residents know the ranking the data cannot see. Let them promote a building and you have captured a prominence signal **no dataset carries** — the single strongest argument for routing rows to the CLAIMED kind (§3.4) deliberately rather than by default.
+
+## 5. What this catalogue says about the kit
 
 **The thesis holds, with three honest cost centres.**
 
