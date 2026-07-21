@@ -232,19 +232,6 @@ export async function saveBuildingOverrides(scene, body) {
   return res.json()
 }
 
-// Extent editor: resolve the boundary corners from ordered side names via the
-// scene's skeleton junctions (the real path — no marks). Returns
-// { corners, centroid, radius, edges, closed }.
-export async function fetchExtentCorners(scene, sides) {
-  const res = await fetch(sceneUrl(scene, 'extent-corners'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sides }),
-  })
-  if (!res.ok) return { error: `extent-corners ${res.status}`, corners: [], edges: [] }
-  return res.json()
-}
-
 export async function fetchCenterlines(scene) {
   const res = await fetch(sceneUrl(scene, 'centerlines'))
   return res.json()

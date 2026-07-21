@@ -265,78 +265,6 @@ function cardinalOf(dx, dz) {
   const deg = (Math.atan2(-dz, dx) * 180 / Math.PI + 360) % 360   // 0°=E, 90°=N
   return ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'][Math.round(deg / 45) % 8]
 }
-function computeExtentCorners(scene, sides) {
-  const skel = getStreetLookup(scene)
-  if (!skel) return { error: `no skeleton.json for scene '${scene}'` }
-  // Match by exact name OR by corridor (the directional-corridor kit link), so a
-  // side named "Big Bend Boulevard" gathers both North + South Big Bend chains.
-  const chainsOf = (nm) => skel.streets.filter(s => (s.name === nm || s.corridor === nm) && s.points && s.points.length >= 2)
-  const junctions = skel.junctions.filter(j => j.degree >= 3)
-  const edges = [], corners = []
-  for (let i = 0; i < sides.length; i++) {
-    const A = sides[i], B = sides[(i + 1) % sides.length]
-    const cA = chainsOf(A), cB = chainsOf(B)
-    const hits = (cA.length && cB.length)
-      ? junctions.filter(j => distPointToChains(j, cA) < CORNER_EPS && distPointToChains(j, cB) < CORNER_EPS)
-      : []
-    // Cluster near-duplicate junctions (a complex/divided node splits into a few).
-    const clusters = []
-    for (const j of hits) {
-      let put = false
-      for (const cl of clusters) {
-        if (Math.hypot(cl.x - j.x, cl.z - j.z) < CORNER_CLUSTER) {
-          cl.x = (cl.x * cl.n + j.x) / (cl.n + 1); cl.z = (cl.z * cl.n + j.z) / (cl.n + 1); cl.n++; put = true; break
-        }
-      }
-      if (!put) clusters.push({ x: j.x, z: j.z, n: 1 })
-    }
-    // Two long arterials can cross more than once (e.g. Big Bend × Clayton near
-    // the neighborhood AND again far south). The boundary corner is the crossing
-    // that bounds the neighborhood — nearest the framed center (origin = the
-    // geography center = what the operator framed), not the biggest cluster.
-    clusters.sort((a, b) => (a.x * a.x + a.z * a.z) - (b.x * b.x + b.z * b.z))
-    const corner = clusters.length ? { x: Math.round(clusters[0].x * 100) / 100, z: Math.round(clusters[0].z * 100) / 100 } : null
-    edges.push({ from: A, to: B, corner, candidates: clusters.length })
-    if (corner) corners.push(corner)
-  }
-  // Area-weighted polygon centroid — the geographic center of the shape.
-  let centroid = null
-  if (corners.length >= 3) {
-    let Ar = 0, cx = 0, cz = 0
-    for (let i = 0; i < corners.length; i++) {
-      const p = corners[i], q = corners[(i + 1) % corners.length]
-      const cr = p.x * q.z - q.x * p.z
-      Ar += cr; cx += (p.x + q.x) * cr; cz += (p.z + q.z) * cr
-    }
-    Ar *= 0.5
-    if (Math.abs(Ar) > 1) centroid = { x: cx / (6 * Ar), z: cz / (6 * Ar) }
-  }
-  if (!centroid && corners.length) {
-    let cx = 0, cz = 0
-    for (const c of corners) { cx += c.x; cz += c.z }
-    centroid = { x: cx / corners.length, z: cz / corners.length }
-  }
-  let radius = 0
-  if (centroid) for (const c of corners) radius = Math.max(radius, Math.hypot(c.x - centroid.x, c.z - centroid.z))
-  if (centroid) { centroid.x = Math.round(centroid.x * 100) / 100; centroid.z = Math.round(centroid.z * 100) / 100 }
-  // Each named side's resolved geometry, so the client can HIGHLIGHT it on the
-  // aerial — the operator sees exactly which street they picked (and catches a
-  // wrong one, e.g. Clayton Avenue vs Clayton Road, that won't close).
-  const r2 = (v) => Math.round(v * 100) / 100
-  const streets = sides.map((nm) => {
-    const polylines = (chainsOf(nm) || []).map(c => c.points.map(p => [r2(p.x), r2(p.z)]))
-    // Directional identity — the side's mean position relative to the polygon
-    // centroid → a cardinal (the structural W/N/E/S the flat sides[] can't carry).
-    let direction = null
-    if (centroid && polylines.length) {
-      let sx = 0, sz = 0, n = 0
-      for (const pl of polylines) for (const [x, z] of pl) { sx += x; sz += z; n++ }
-      if (n) direction = cardinalOf(sx / n - centroid.x, sz / n - centroid.z)
-    }
-    return { name: nm, polylines, direction }
-  })
-  return { corners, centroid, radius: Math.round(radius), edges, streets, closed: corners.length === sides.length && sides.length >= 3 }
-}
 
 // The HEALED boundary-street process — ORDER-INDEPENDENT visual selection.
 // The operator clicks the real boundary streets on the aerial (any order, N of
@@ -1055,27 +983,6 @@ createServer(async (req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message, labels: [] }))
     }
-    return
-  }
-
-  // POST /<scene>/extent-corners — body { sides: [orderedStreetNames] } →
-  // { corners, centroid, radius, edges, closed }. The Neighborhood Perimeter
-  // Builder's corner resolver (skeleton junctions; see computeExtentCorners).
-  const cornersMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/extent-corners$/)
-  if (req.method === 'POST' && cornersMatch && !RESERVED_PREFIXES.has(cornersMatch[1])) {
-    const scene = cornersMatch[1]
-    let body = ''
-    req.on('data', c => body += c)
-    req.on('end', () => {
-      try {
-        const { sides } = JSON.parse(body || '{}')
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(computeExtentCorners(scene, Array.isArray(sides) ? sides : [])))
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: err.message }))
-      }
-    })
     return
   }
 

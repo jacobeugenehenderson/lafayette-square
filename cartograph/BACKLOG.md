@@ -89,6 +89,9 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 - **D3 — corner identity at divided transitions → freeze at prebake.** The false-corner cure is LIVE (`9c275ce`); doctrine wants the decision made once upstream as frozen topology (`PREBAKE §5`). Sibling of the curb-freeze. ⚠️ Relocating re-derives corners → gate it; don't cleanup-refactor.
 
 ## ⏭ NEXT
+
+- **🧹 Prune the stale worktrees (`.claude/worktrees/`) — medium-context agent.** 25 worktrees, most on branches months old (`t4-figure-ground`, `roster-editor`, `milkyway-investigation`, `spline-18th-loop`…). They are not inert: dispatching an agent with `isolation: worktree` on 2026-07-20 handed it `milkyway-investigation` at `7b2ae01e` — a tree predating the day's work — so it reported the target function had zero occurrences and did nothing. Any future worktree dispatch is unreliable until this is cleaned. **Task:** for each, determine whether its branch is merged into `curb-offset-draw` (`git branch --merged`), archive or delete accordingly, and `git worktree prune`. ⚠️ Some may hold uncommitted work — check `git -C <wt> status` before removing anything, and do not delete a branch that isn't merged. Report what was dropped.
+
 - **⭐ "Revert to Data" buttons — Survey + Section.** Strip the authoring overlay back to base (Survey → skeleton surveyed widths; Section → the gleaned treelawn-Y/N × ADA calc). Mechanism partly exists; generalize + surface per-tool. `SECTION §8`.
 - **`HANDOFF-boundary-trio.md`** — circle-SSOT, crop-to-circle-last, bake-time stencil-cull (the edge-of-map face-walk half landed; the cull/SSOT + the S1 elbow→fade residual remain here).
 - **Slab-content remaining** — overlays + highway-class asphalt (alleys/footways landed `735f02c`/`543bdeb`).
