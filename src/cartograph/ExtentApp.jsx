@@ -37,10 +37,11 @@ import {
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourScene, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeScene, rollbackExtent,
-  fetchStreets, fetchBoundaryFromStreets, fetchScenes, fetchSkeleton, fetchIntake,
+  fetchStreets, fetchBoundaryFromStreets, fetchScenes, fetchSkeleton,
 } from './api.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
+import SourcesPanel from './SourcesPanel.jsx'
 import BezierPen, { flattenPath } from './BezierPen.jsx'
 import CircleHandle from './CircleHandle.jsx'
 import { CompassRoseSVG } from '../components/CompassRose.jsx'
@@ -716,118 +717,6 @@ function SideInput({ index, value, placeholder, names, onChange, onRemove, onHov
 // The tool opens to THIS, not to Lafayette Square: nothing is loaded, nothing can
 // be touched. A search replaces it with the place's aerial. A large plane + grid,
 // centered on the origin (the default camera looks straight down at it).
-/**
- * ⭐ THE INTAKE PANEL — the collection checklist.
- *
- * EVERY declared row is listed for EVERY town, filled or not. That is the
- * panel's whole contract and it is the opposite of the render's: the RENDER
- * hides what wasn't acquired ("the system just doesn't show them"), the PANEL
- * never does. Conflating the two is the mistake `BRIEF §5.5` calls out by name
- * — an unacquired row must read as OBTAINABLE, never as absent.
- *
- * Status is computed server-side from disk on every read and is never stored.
- * A wrong-but-real status is useful; a hardcoded green one is a lie.
- *
- * ⚠️ The count is deliberately bare ("5 / 19", no percentage). `INTAKE-CATALOGUE
- * §4.3`: a progress semantic that reads as failure is demoralising and wrong
- * here — a town's filled rows are a progress bar TOWARD Lafayette Square (the
- * complete aspirational target), not a deficiency measured against it.
- */
-function IntakeSection({ scene }) {
-  const [intake, setIntake] = useState(null)
-  useEffect(() => {
-    if (!scene) { setIntake(null); return }
-    let alive = true
-    fetchIntake(scene).then(r => { if (alive) setIntake(r) }).catch(() => { if (alive) setIntake(null) })
-    return () => { alive = false }
-  }, [scene])
-
-  const rows = intake?.rows || []
-  if (!rows.length) return null
-  const filled = rows.filter(r => r.status === 'filled').length
-
-  // Floor before electives — the four that gate a pour read differently from
-  // the ~15 that each unlock one feature (`BRIEF §5.1` vs `§5.2`).
-  const groups = [
-    ['Floor', rows.filter(r => r.tier === 'floor')],
-    ['Elective', rows.filter(r => r.tier === 'elective')],
-  ]
-
-  return (
-    <div className="carto-subsection">
-      <div className="carto-subsection-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>Intake</span>
-        <span style={{ opacity: 0.6, letterSpacing: 0 }}>{filled} / {rows.length}</span>
-      </div>
-      {groups.map(([title, list]) => list.length > 0 && (
-        <div key={title} style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 9, opacity: 0.4, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-            {title}
-          </div>
-          {list.map(r => {
-            const isFilled = r.status === 'filled'
-            const isVerifiedAbsent = r.status === 'verified-absent'
-            // ⛔ An absent row whose fallback reads Lafayette Square's data is
-            // NOT an honest zero — it renders another town's inputs under this
-            // town's name (`INTAKE-CATALOGUE §0`). Flag it while the excision
-            // is still owed; the glyph carries it, no prose.
-            const bleeds = !isFilled && r.absent?.kind === 'ls-bleed'
-            const glyph = isFilled ? '●' : isVerifiedAbsent ? '⊘' : '○'
-            const color = isFilled ? '#6a9' : bleeds ? '#c94' : 'var(--carto-text-dim)'
-            // The (?) is a POINTER, never a parallel explanation — two texts
-            // about one input drift (`BRIEF §2.2d`, one home per fact).
-            const hint = [
-              r.question,
-              r.unlocks,
-              isFilled ? null : `absent → ${r.absent?.note || 'not rendered'}`,
-              r.acquisition?.note ? `get: ${r.acquisition.note}` : null,
-              r.provenance,
-              r.doc,
-            ].filter(Boolean).join('\n')
-            return (
-              // ⭐ HUMAN READABLE (Jacob, 2026-07-20). The row's own text has to
-              // say what it is. A terse LABEL plus everything real hidden behind
-              // a hover is not terse, it is cryptic — you cannot read the panel,
-              // you can only interrogate it one row at a time. `question` is the
-              // row in the operator's voice and it REPLACES the jargon label
-              // rather than adding to it, so "less UI text" still holds: same
-              // one line, saying something a person can act on.
-              <div key={r.id} style={{ marginBottom: 5 }}>
-                <div className="carto-row" style={{ minHeight: 18, marginBottom: 0, alignItems: 'baseline' }}>
-                  <span style={{ color, width: 12, flexShrink: 0, fontSize: 11 }}>{glyph}</span>
-                  <span style={{
-                    flex: 1, fontSize: 11, minWidth: 0,
-                    opacity: isFilled ? 1 : 0.6,
-                    whiteSpace: 'normal', lineHeight: 1.35,
-                  }}>
-                    {r.question || r.label}
-                  </span>
-                  {/* A MEASURE row's coverage IS its status — "689 / 1640" says
-                      more than a pill ever could, and partial coverage is the
-                      normal honest state, not a failure. */}
-                  {r.detail && (
-                    <span style={{
-                      fontSize: 10, opacity: 0.6, flexShrink: 0,
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>{r.detail}</span>
-                  )}
-                  <span className="carto-btn-sm" style={{ flexShrink: 0, cursor: 'help', padding: '0 4px', border: 'none' }}
-                    title={hint}>?</span>
-                </div>
-                {/* What you get for having it — visible, not hovered. Dimmed so
-                    the questions stay the thing you scan. */}
-                <div style={{ fontSize: 10, opacity: 0.35, marginLeft: 20, lineHeight: 1.3 }}>
-                  {isFilled ? r.unlocks : (r.absent?.note || r.unlocks)}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function WorkspaceGrid() {
   return (
     <group>
@@ -1077,6 +966,7 @@ export default function ExtentApp() {
   const [previewStreet, setPreviewStreet] = useState(null)
   const [sides, setSides] = useState([])   // selected boundary streets (visual, order-independent)
   const [pickingSides, setPickingSides] = useState(false)   // street-selection mode owns the click
+  const [sourcesOpen, setSourcesOpen] = useState(false)     // the manifest, reached from the toolbar
   const [streetCorners, setStreetCorners] = useState(null)   // resolved from named boundary streets
   // The editable EXCLUSION LOOPS — the FIRST-CLASS persisted artifact (a LIST). Every
   // building is in by default; each closed loop hides the strays inside it. Stored
@@ -1946,7 +1836,23 @@ export default function ExtentApp() {
           <div className="carto-toolgroup">
             <span style={{ padding: '0 6px', fontWeight: 600 }}>◎ Extent</span>
           </div>
+          {/* ONE manifest, reached from the toolbar — the SAME `SourcesPanel` the
+              Stage toolbar opens, not a copy (`project_the_palimpsest_code_path_multiplicity`).
+              It replaces the dead inline Intake list that used to sit in the panel
+              body: same `fetchIntake` data, but every row resolves to an ACTION
+              (fetch / doc / owed) rather than a status you could do nothing about
+              from here. A manifest belongs behind a button; the panel is for the
+              boundary. */}
+          {scene && (
+            <div className="carto-toolgroup">
+              <button onClick={() => setSourcesOpen(true)}
+                title="What goes into a town — every input, where it comes from, and what to do about it.">
+                Sources
+              </button>
+            </div>
+          )}
         </div>
+        {sourcesOpen && <SourcesPanel scene={scene} onClose={() => setSourcesOpen(false)} />}
 
         {/* Side panel — search → fetch bundle → name streets / official boundary
             → radius → name/blurb → pour. */}
@@ -2260,11 +2166,6 @@ export default function ExtentApp() {
                 </div>
               </div>
             )}
-
-            {/* ── INTAKE ── the collection checklist for this town. Shown for any
-                located scene, INCLUDING an unbaked one: knowing what you still
-                need is most useful BEFORE the pour, not after. */}
-            {scene && <IntakeSection scene={scene} />}
 
             {keptFit.count > 0 && radiusM > 0 && (
               <div className="carto-row" style={{ marginTop: 12 }}>
