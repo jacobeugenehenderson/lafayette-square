@@ -1,8 +1,8 @@
 {
-  "_comment": "Provisional — the operator FRAMED this extent on the aerial; fetched over exactly this bbox (frame-then-fetch: a street visible in-frame is in the data). Re-center to the boundary-polygon centroid on commit. ⚠️ timezone is a Central-US default — set per location when tz lookup lands.",
+  "_comment": "Provisional \u2014 the operator FRAMED this extent on the aerial; fetched over exactly this bbox (frame-then-fetch: a street visible in-frame is in the data). Re-center to the boundary-polygon centroid on commit. \u26a0\ufe0f timezone is a Central-US default \u2014 set per location when tz lookup lands.",
   "lat": 51.75218,
   "lon": 19.47574,
-  "timezone": "America/Chicago",
+  "timezone": "Europe/Warsaw",
   "lonToMeters": 68914,
   "latToMeters": 111000,
   "bbox": {
