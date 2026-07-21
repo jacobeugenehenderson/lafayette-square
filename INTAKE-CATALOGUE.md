@@ -38,7 +38,16 @@ else's*.
 | 2 | `arborist/bake-trees.js:427` | LS's `park_census.json` — another town bakes LS's trees under its own name | HIGH |
 | 3 | `arborist/bake-trees.js:430` | LS's species map — foreign species routed through a St-Louis collapse table | HIGH |
 | 4 | `arborist/bake-trees.js:69,688` | **module-level, unconditional** — LS's lamp positions stamp `lampGlow` on **every tree of every scene**, evaluated in that scene's own frame. No override flag exists. Same file as #1, entering by a second independent door | MED (night-only, cosmetic) |
-| 5 | `src/instance.js:47` | `INSTANCES[lookId] \|\| INSTANCES[DEFAULT_LOOK]` — an unregistered look silently wears LS's identity, geography, park label and tax rate, with **no warning** | HIGH |
+| 5 | `src/instance.js:47` | `INSTANCES[lookId] \|\| INSTANCES[DEFAULT_LOOK]` — an unregistered look silently wears LS's identity, geography, park label and tax rate. ⛔ **Worse than catalogued: it CASCADES INTO SIX RENDER SITES** (2026-07-21) | HIGH |
+
+> ⛔ **Bleed #5 is not only an identity bleed — expanded 2026-07-21.** Six render gates test
+> `INSTANCE.lookId === 'lafayette-square'`, so an unregistered look flips **all six at once**:
+> `Scene.jsx:860` (the Gateway Arch) · `LafayettePark.jsx:848` (park lake, grotto, bridge, fence) ·
+> `LafayettePark.jsx:803` (park title) · `StreetLights.jsx:74` (LS's 80 lamps) · `lampLightmap.js:23`
+> (their baked pools) · `LafayetteScene.jsx:106` (LS's per-building overrides). Jacob previewed Łódź
+> and found **the St. Louis Gateway Arch standing in it, over Lafayette Park's water**. Every gate was
+> correct; the identity beneath them was wrong. Fixed by registering `src/instances/centrum.js`
+> (`103d7224`). ⚠️ **`altadena` and `toy` are still unregistered and still carry this.**
 | 6 | `cartograph/pipeline/hydrate-anchor-cards.js:28` | **LS's latitude (38.616°N) → every town's sky.** See §3.0 | HIGH — **live and wrong on Łódź today** |
 | 7 | `cartograph/bake-content.js:118` | *(FIXED `adc03f32`)* MSBF-only join → no OSM pour joined any geometry | — |
 | 8 | `InfoModal.jsx` / `LegalPage.jsx` | LS prose + **State of Missouri governing law** rendered on a Polish deployment | HIGH — legal, not cosmetic |
@@ -245,7 +254,7 @@ Measured against `HANDOFF-blank-app-instance-decoupling.md`'s *"grep the reader 
 - **🔴 G2 · `LegalPage.jsx` is LS/Missouri** — "within Lafayette Square, St. Louis" · the LS delivery zone by street name · **"State of Missouri" governing law** · `← lafayette-square.com`. Same in `CourierOnboarding.jsx` + a **US-state-only** dropdown. `INSTANCE.legal` exists and Łódź populates it (`governingState:'Łódzkie'`, `salesTaxRate:0.23`) — **nothing reads it for the prose.** Łódź opted *into* delivery, so this is **legal exposure, not cosmetics.** The instance file names it itself: *"a KIT bug to instance-derive, NOT a reason to opt out."*
 - **🔴 G3 · St. Louis zoning is the classification engine for two unrelated systems** — the STL A–J single-letter table exists in **four copies**: `useListings.js:47` (search category), `SceneNeon.jsx:77` (**neon colour**), `PlaceCard.jsx:45`, `bake-content.js:342`. ⚠️ **Two of them disagree** (`D`→residential vs `D`→commercial). Any town without STL zoning falls to `|| 'residential'`: every building residential, every tube sage.
 - **🟡 G5** unregistered look → LS (bleed #5) · **🟡 G6** `index.html` hardcodes LS favicon/title/OG/Twitter — needs the build-time inject (Phase 4, unwritten) · **🟡 G7** `lsq-*` localStorage namespace collides across installations on one origin · **🟡 G8** `PlaceCard.jsx:148` `FLEUR_BG = '#0055A4' // St. Louis flag blue` renders on Łódź.
-- **🟢 G9 · Correctly guarded, but the reason a town #3 pour looks thinner** — `LafayettePark` (park geometry + label), `StreetLights` + `lampLightmap`, `GatewayArch`, `buildingOverrides` are all LS-gated and no-op elsewhere. **Belongs on the manifest as "not-yet-portable features."**
+- **🔴 G9 · ⛔ NOT correctly guarded — this row was wrong (corrected 2026-07-21).** It claimed `LafayettePark`, `StreetLights` + `lampLightmap`, `GatewayArch` and `buildingOverrides` "are all LS-gated and no-op elsewhere." Two faults. **(a)** Every one of those gates reads `INSTANCE.lookId`, so all six fail together the moment a look is unregistered — see the bleed #5 expansion in §0. **(b)** `GatewayArch` was **not gated in the component at all**: the only check lived at the `Scene.jsx:860` call site, while `PreviewApp.jsx:1176`, `StageApp.jsx` and `CartographApp.jsx` mounted it bare. A gate at one of four mount sites is a gate three callers can forget. Fixed by gating inside the component on the RESOLVED look (`3146e6aa`) — Stage, Preview and Cartograph can each mount a look that is not the booted installation, so `INSTANCE.lookId` is the wrong thing to test there. **These do still belong on the manifest as "not-yet-portable features."**
 
 ✅ **What holds:** Phase 1 (identity/branding/geography), Phase 2 (data seam), Phase 3 (module gating, default-ON opt-out), backend tenancy, `assetUrl` instance-rooting, and `bake-labels` — which **closed a real hardwire**: `streetLabels.js`'s four hardcoded LS boundary-corridor names are gone; every town now gets its street names free from OSM `name` tags.
 **The gate fails on Phase 4 (prose) + the two deep residuals (zoning taxonomy, `lsq-*`)** — plus G4, the join bug, which postdates the HANDOFF entirely and is now fixed (`adc03f32`).
@@ -389,11 +398,30 @@ Its only override path is the manual `building-overrides.json`.
 | `building:material` | 155 | 162 |
 | `height` (metres) | 40 | 351 |
 
-⭐ **This is close to free value:** it replaces a guessed roof with a surveyed one for ~130–190 buildings
-per hood, costs no acquisition (the file is on disk), and the consumer already exists —
-`classifyRoofFor` simply needs OSM `roof:shape` ahead of the year/storey heuristic, and behind the
-manual override. **Precedence: override → OSM tag → heuristic.** Same shape as the base-width chain
+⚠️ **The table above omits the biggest one: `building:levels` — 4,361 in ksi-y-m-yn, 1,736 of 2,954
+in centrum.** Storey count is what makes a district read as a district, and it was being discarded
+with the rest.
+
+⭐ **This is close to free value** — no acquisition, the file is on disk, and the consumers already
+exist. **Precedence: override → OSM tag → heuristic**, the same shape as the base-width chain
 (custom → OSM → AASHTO), so it is the house pattern, not a new one.
+
+⛔ **CORRECTION (2026-07-21, landed `35d6d9da`) — this section said the fix was that "`classifyRoofFor`
+simply needs OSM `roof:shape` ahead of the heuristic." That is NECESSARY BUT NOT SUFFICIENT, and
+anyone implementing it alone would patch the function and see nothing change.** The tags never reach
+`classifyRoofFor`: `adaptMapBuildings` (`bake-buildings.js:39-65`), the sole path for every non-LS
+scene, emitted `{id, footprint, size}` and dropped `tags` on the floor. Two further defects sat behind
+it — the height guard tested `typeof tags.height === 'number'`, which can never be true of an OSM
+string value (40 surveyed heights discarded in ksi, **351 in centrum**), and `bake-content.js:637`
+back-solved roster storeys from `(centroidY − baseY)/3.5`, an inverted subtraction of two unrelated
+quantities that pinned every poured building to 1.
+
+⛔ **AND THE VISIBLE RESULT IS STILL NEARLY NIL, for a reason this section did not anticipate.** Of the
+tagged roofs, most are literally `flat` (76 of 130 in ksi, 99 of 190 in centrum) — already the default,
+so no change — and **`gabled`, the commonest pitched form in European housing (20 + 41), is not in the
+renderer's vocabulary at all.** It falls through to a heuristic that returns flat, because poured
+scenes have no `year_built` (no assessor outside the US). **Net visible change: 2 buildings in Księży
+Młyn, 7 in centrum.** Teaching `buildingGeometry` a gable is the actual unlock — `HANDOFF-gabled-roofs.md`.
 ⚠️ `roof:shape` values are an open OSM vocabulary (`gabled`, `hipped`, `flat`, `mansard`, `gambrel`,
 `pyramidal`, `skillion`, `round`…) and the renderer knows three. Map the vocabulary explicitly and
 fall through to the heuristic on anything unrecognised — do not silently coerce.

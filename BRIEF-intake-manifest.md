@@ -212,6 +212,16 @@ LS = 25/25 · HPDM ≈ 20 · Księży Młyn = 11 · Centrum = 6.
 
 ## 6. What to deliver
 
+> ### ✅ STATUS 2026-07-21 (Tally) — items 1–3 landed, 4–7 open
+> **Landed** (`f7c92582`, `35d6d9da`, `103d7224`, `3146e6aa`):
+> · **#2 the schema** — `cartograph/intake-rows.mjs`. Row DEFINITIONS kit-global, PROVENANCE per-town (`data/<scene>/intake.json`); status computed from disk on every read, never stored. Departs from §2.1's letter deliberately — declaring rows per-scene is ~20 facts copied into six files, drifting.
+> · **#3 the panel — ×2.** Extent→**Intake** (per-scene, every row, filled or not) and Stage→**Materials** (13 inputs, three tiers by WHO SUPPLIES IT: automatic / public records / local knowledge). Each tier copies as a delegatable brief; operator-added sources are shared by **jurisdiction** (`intake-jurisdiction.mjs`, keyed off lat/lon).
+> · A **second row kind** the brief did not anticipate: `measure`. "How tall are the buildings" has no file of its own and its answer is COVERAGE (689/1640), not presence.
+>
+> **Open:** **#4 honest absence** — the three LS-bleed fallbacks are NOT yet killed (bleed #5 was, by registering `centrum`). **#5** the stable-building-id test. **#6** the FEATURES pass. **#7** the complete-intake writeup. **#1** verification of the catalogue's `[unverified]` externals.
+>
+> ⚠️ **Scope correction from the build:** §5.2 lists `raw/survey.json` as "operator hand-measurement" and `raw/centerlines.json` as hand-corrected. Neither is an operator errand — `survey.js` DERIVES widths (OSM sidewalk distance → assessor ROW/2 → default) and authoring happens in Survey/Section; centrelines are written only by `derive.js`/`skeleton.js`/`seed-centerlines.js` (the one editing UI is a stale `preview.html` prototype). Both are off the Materials list. Likewise the tree MATERIALS (models, bark, leaves, plates) are the platform's library, shipped — only regional KNOWLEDGE (dossiers, species routing) is the operator's.
+
 > **The lens is THE UNIVERSAL PLAYER** (Jacob, 2026-07-20) — the blank-app / Universal Reader arc (`ROADMAP C1`). This is not a cartograph-authoring convenience; it is the intake half of *an app that can play any town*. Judge every decision by whether it moves town #3 closer to pouring without Jacob.
 
 1. ✅ **The complete catalogue — DONE 2026-07-20: `INTAKE-CATALOGUE.md`.** All four domains, each row with what it is · what it unlocks · where it lands · **where on the open net to obtain it** · licence + local-copy rights. ⚠️ External URLs/licences are marked `[unverified]` there — **confirm before they ship on a panel.** Remaining work on this item is verification + writing the four missing procedure docs (§2.1a).
