@@ -1623,8 +1623,10 @@ createServer(async (req, res) => {
           //
           // The original reason for the drop was Altadena's stale 628-pt snap-route
           // ring clipping to the OLD boundary. That reason has expired: Altadena now
-          // carries NO polygon (verified 2026-07-20 — hipointe-demun is the only scene
-          // with one). So preserving is strictly protective today.
+          // carries NO polygon. So preserving is strictly protective today.
+          // (⚠️ this comment read "hipointe-demun is the only scene with one" as of
+          // 2026-07-20; centrum has carried an 815-pt polygon since — the guard now
+          // protects more than one hood. Corrected 2026-07-21.)
           //
           // The polygon is the INTENDED membership mechanism, not a legacy artifact —
           // it is what the boundary-street process produces. Dropping it is now an
