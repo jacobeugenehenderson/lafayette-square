@@ -66,8 +66,38 @@ const LAMP_SIGMA = 12
 const LAMP_SIGMA2 = 2 * LAMP_SIGMA * LAMP_SIGMA
 const LAMP_CUTOFF2 = (4 * LAMP_SIGMA) * (4 * LAMP_SIGMA)
 const LAMP_MAX = 1.5
-const _lamps = JSON.parse(readFileSync(
-  path.join(REPO_ROOT, 'src', 'data', 'street_lamps.json'), 'utf-8')).lamps
+// ⭐ The lamp set is PER SCENE and loaded at bake time — never module-level.
+//
+// This was `const _lamps = readFileSync('src/data/street_lamps.json')`: LS's own
+// 80 park lamps, read unconditionally at import, then stamped as `lampGlow` onto
+// every instance of EVERY scene — evaluated in that scene's own coordinate frame,
+// so a Łódź tree took its night glow from Lafayette Square's park geometry at
+// geographically meaningless spots. There was no flag to override it. It is the
+// same file as the bake-lamps bleed, entering by a second, independent door
+// (`BRIEF-ls-bleed-excision.md` site 4).
+//
+// The scene's OWN baked lamps are the honest source. Absent → no glow, which is
+// correct: a town with no lamp census has no lamp light.
+// ⚠️ ORDERING: this reads a bake OUTPUT, so bake-lamps must run before trees for
+// glow to land. Absent is honest (zero), not an error — same contract as the
+// frozen-shape mask above.
+let _lamps = []
+function loadLampsForScene(scene) {
+  const p = path.join(REPO_ROOT, 'public', 'baked', scene, 'lamps.json')
+  if (!existsSync(p)) {
+    console.warn(`[bake-trees] scene=${scene}: no baked lamps.json — tree lampGlow is ZERO. ` +
+      `(Run bake-lamps first if this scene has a lamp census.)`)
+    return []
+  }
+  try {
+    const j = JSON.parse(readFileSync(p, 'utf-8'))
+    const lamps = j.lamps || j
+    return Array.isArray(lamps) ? lamps : []
+  } catch (e) {
+    console.warn(`[bake-trees] scene=${scene}: lamps.json unreadable (${e.message}) — lampGlow ZERO.`)
+    return []
+  }
+}
 function lampGlowAt(wx, wz) {
   let acc = 0
   for (let l = 0; l < _lamps.length; l++) {
@@ -422,12 +452,40 @@ export async function bakeTrees({
   // placements may be a single path OR an array of paths to UNION — a poured
   // scene's City Forestry census + OSM County-side floor are two spatially-
   // disjoint layers baked together. Each file is {meta, trees:[]}; concat trees.
+  // This scene's own lamps drive `lampGlow` below (see loadLampsForScene).
+  _lamps = loadLampsForScene(scene)
+
+  // ⭐ Defaults resolve against THIS SCENE, never a literal 'lafayette-square'.
+  // Both of these used to fall back to LS's files, so a town with no census of
+  // its own silently planted LS's 756 park trees under its name, routed through
+  // a St-Louis species-collapse table. For LS the resolved paths are unchanged
+  // (they are LS's own files); for every other scene absence now means absence.
+  // (`BRIEF-ls-bleed-excision.md` sites 2 + 3.)
+  const sceneDefaultCensus = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'clean', 'park_census.json')
   const parkPaths = placements
     ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))
-    : [path.join(REPO_ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'park_census.json')]
+    : (existsSync(sceneDefaultCensus) ? [sceneDefaultCensus] : [])
+  if (!parkPaths.length) {
+    console.warn(
+      `[bake-trees] scene=${scene}: no placements given and no clean/park_census.json — ` +
+      `baking ZERO trees. Acquire a census via the Intake panel (municipal inventory, ` +
+      `OSM natural=tree, or canopy fill). Refusing to plant another scene's trees.`)
+  }
+
+  // The COMMON→library routing map. Absent → an EMPTY map, not LS's: `pickVariant`
+  // reads it as `speciesMap.map?.[species]`, so an empty map simply expresses no
+  // preference and the variant picker falls through — graceful, and honest about
+  // the fact that this scene has no species routing yet.
+  const sceneSpeciesMap = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'tree-species-map.json')
   const mapPath = speciesMapPath
     ? path.resolve(REPO_ROOT, speciesMapPath)
-    : path.join(REPO_ROOT, 'cartograph', 'data', 'lafayette-square', 'tree-species-map.json')
+    : (existsSync(sceneSpeciesMap) ? sceneSpeciesMap : null)
+  if (!mapPath) {
+    console.warn(
+      `[bake-trees] scene=${scene}: no tree-species-map.json — species routing is EMPTY ` +
+      `(variants fall through to the picker's own choice). Derive one from this scene's ` +
+      `census (scripts/15-derive-tree-mix.py). Refusing to route through LS's map.`)
+  }
 
   const index = JSON.parse(await fs.readFile(indexPath, 'utf8'))
   const park = { trees: [] }
@@ -448,7 +506,10 @@ export async function bakeTrees({
     const source = layer.meta?.well ?? (SOURCE_BY_BASENAME[path.basename(p)] || kind)
     for (const t of (layer.trees || [])) park.trees.push({ ...t, __kind: kind, __source: source })
   }
-  const speciesMap = JSON.parse(await fs.readFile(mapPath, 'utf8'))
+  // `mapPath` is null when this scene has no species routing of its own (warned
+  // above). An empty map is the honest zero — `pickVariant` reads it through
+  // optional chaining, so no routing simply means no preference.
+  const speciesMap = mapPath ? JSON.parse(await fs.readFile(mapPath, 'utf8')) : { map: {} }
 
   // ── Cross-well proximity dedup ────────────────────────────────────────────
   // One physical trunk can appear in two wells (OSM's generic point AND Forest

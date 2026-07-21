@@ -42,7 +42,30 @@ function resolveLookId() {
   }
 }
 
-export const INSTANCE = INSTANCES[resolveLookId()] || INSTANCES[DEFAULT_LOOK]
+// ⭐ An UNKNOWN look must announce itself, not quietly become Lafayette Square.
+//
+// This was a bare `INSTANCES[resolveLookId()] || INSTANCES[DEFAULT_LOOK]`, so
+// `?look=provincetown` — a real poured slab with no instance file — rendered
+// that town's geometry wearing LS's name, geography, park label, tax rate and
+// legal jurisdiction, with NO warning anywhere. That is exactly what happened
+// before `instances/ksi-y-m-yn.js` was written; its header records it.
+//
+// We still fall back (a blank screen would be worse), but loudly, and the
+// fallback is now legible in the console instead of invisible. No behaviour
+// change for a registered look. (`BRIEF-ls-bleed-excision.md` site 5.)
+function resolveInstance() {
+  const id = resolveLookId()
+  const hit = INSTANCES[id]
+  if (hit) return hit
+  console.error(
+    `[instance] Unknown installation "${id}" — no src/instances/${id}.js is registered. ` +
+    `Falling back to "${DEFAULT_LOOK}", so THIS PAGE IS NOW WEARING ANOTHER TOWN'S ` +
+    `identity, geography and legal jurisdiction. Register the installation before ` +
+    `shipping it.`)
+  return INSTANCES[DEFAULT_LOOK]
+}
+
+export const INSTANCE = resolveInstance()
 
 /**
  * Module presence for mount-gating. ⭐ DEFAULT-ON — OPT-OUT, not opt-in

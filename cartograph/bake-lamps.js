@@ -96,8 +96,23 @@ function loadLampsForScene(scene) {
     console.log(`[bake-lamps] scene=${scene}: derived ${lamps.length} OSM street lamps → ${clipped.length} inside the boundary (projected to current frame)`)
     return clipped
   }
-  const raw = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'street_lamps.json'), 'utf-8'))
-  return raw.lamps || raw
+  // No per-scene lamp source. `src/data/street_lamps.json` is LAFAYETTE SQUARE'S
+  // OWN census — it predates the per-scene convention and is still LS's canonical
+  // file, so LS legitimately reads it here. EVERY OTHER SCENE GETS NOTHING.
+  //
+  // This used to be unconditional, which meant any town without lamp data baked
+  // LS's 80 lamps under its own name, in its own coordinate frame — plausible
+  // enough that nobody investigated. Absence must render nothing, never another
+  // installation's data (`BRIEF-ls-bleed-excision.md` site 1).
+  if (scene === 'lafayette-square') {
+    const raw = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'street_lamps.json'), 'utf-8'))
+    return raw.lamps || raw
+  }
+  console.warn(
+    `[bake-lamps] scene=${scene}: no raw/osm_street_lamps.json (or geography.json) — ` +
+    `baking ZERO lamps. This scene has no lamp census; acquire one via the Intake ` +
+    `panel (OSM highway=street_lamp). Refusing to substitute another scene's lamps.`)
+  return []
 }
 
 export async function bakeLamps({ look = 'default', scene = 'lafayette-square' } = {}) {
