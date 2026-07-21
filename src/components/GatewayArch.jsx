@@ -430,6 +430,25 @@ export default function GatewayArch({
     }
   })
 
+  // ⛔ ST. LOUIS ONLY — gated in the COMPONENT, not at the call site.
+  //
+  // Production gates this in `Scene.jsx:860`; Preview does not — it mounts
+  // `<GatewayArch />` bare (`PreviewApp.jsx:1176`), so the Gateway Arch stood
+  // in the middle of Łódź (Jacob, 2026-07-21). A gate at one of four mount
+  // sites is a gate the other three can forget: Scene, PreviewApp, StageApp
+  // and CartographApp all mount this component.
+  //
+  // On the RESOLVED look, not `INSTANCE.lookId` — Stage, Preview and
+  // Cartograph can each mount a look that is not the booted installation.
+  // (`LafayettePark` gates internally already, which is why registering
+  // Centrum fixed the park lake but left the arch standing.)
+  //
+  // ⚠️ Placed AFTER every hook on purpose. Above `useMemo`/`useRef`/
+  // `useSceneJson` this is an early return that changes the hook count when
+  // the look changes — "rendered fewer hooks than expected", exactly the
+  // crash Preview's look switcher would trigger.
+  if (resolveLookId(lookId) !== 'lafayette-square') return null
+
   return (
     <>
       <GroundDisc horizon={horizon} lookId={lookId} bakeLastMs={bakeLastMs} />
