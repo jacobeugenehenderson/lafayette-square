@@ -114,7 +114,19 @@ For each: what problem it solves, what it assumes, and **what it would give us t
 
 These are **product decisions belonging to Jacob.** A prior pass invented answers to questions in this class and wrote them into the canon. **Surface them; do not resolve them.**
 
-1. **What IS a neighborhood, for our purposes?** Recognisable-to-a-resident, administratively real, or visually coherent as a rendered world? These give different boundaries for the same place, and every requirement downstream inherits the answer. **Nobody has written this down.** A coordinator proposed *"a small world correct at its edges, where a resident would recognise where it stops"* — that is an unconfirmed guess, not doctrine. Treat it as such.
+1. ~~**What IS a neighborhood, for our purposes?**~~ — **ANSWERED by Jacob, 2026-07-21. This is the definition every requirement inherits; read it before you form any view of the subsystem.**
+
+   > *"A neighborhood is a collection of buildings/structures which are connected by people-run accounts. The idea is that a neighborhood can be described by its hard surfaces but it is enlivened by their soft contents."*
+
+   ⚠️ **A coordinator had earlier proposed "a small world correct at its edges, where a resident would recognise where it stops." That guess was wrong and is superseded** — it treated the boundary as the thing being defined. It is not.
+
+   **What follows is the coordinator's INFERENCE from that definition, 2026-07-21 — not Jacob's words. Test it, don't inherit it:**
+   - **The unit of a neighborhood is the STRUCTURE, not the area.** A neighborhood is a *set of buildings*; a boundary is one means of selecting that set, not the definition of it. Every geometric mechanism in this subsystem — disc, polygon, boundary streets, exclusion loops — is **instrumental**: a way to arrive at the right set of structures. If that is right, then membership is the primary artifact and the boundary is downstream of it, which is the reverse of how the tool is currently built.
+   - **The connective tissue is the accounts, not the adjacency.** What makes these buildings *one* neighborhood is that people run accounts in them. Geometry is a proxy for that relation, and proxies fail at the margin — which may be why the correction step (§2.5 of the prior brief) keeps refusing to collapse into a rule. It may not be a gap. It may be the mechanism by which a *social* fact overrules a *geometric* guess.
+   - **"Honorary Hood Residents" may be first-class members, not margin corrections.** One `activate` on Galeria Łódzka carries 22 listings. Under this definition, a structure full of people-run accounts is *more* a member than an empty one inside the polygon.
+   - **Content loss is not a content bug — it is the neighborhood dying.** If soft contents are what enliven, then a bake that took Łódź's listings 84 → 5, or that silently drops place cards whose anchor left the baked set (`bake-content.js:554`), is destroying the thing itself. Weigh the destruction surface (§3c) accordingly — **soft-content loss may outrank geometry loss.**
+
+   **Report whether the excavated requirements are consistent with this definition, and name every place the tool contradicts it.**
 2. **Must the boundary close?** Every mechanism we have assumes a closed ring. Is a fuzzy or open edge ever legitimate?
 3. **When gazetteer and resident disagree, who wins** — and is overruling the official answer a correction, or the primary act?
 4. Anything else where the call is a product decision rather than an engineering one.
