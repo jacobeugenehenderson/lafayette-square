@@ -8,6 +8,82 @@
 
 ---
 
+# PART 0 — ⭐ THE SPEC
+
+**Ruled by Jacob, 2026-07-21, in conversation. This is not a finding, a proposal, or an inference — it is the spec, and it governs everything below it.** Prior passes re-derived this instead of building from it; do not repeat that.
+
+> ## **The boundary is a ring of streets or named features. Those line segments must eventually create a polygon.**
+
+The polygon is the **output**. The ring of named segments is the **artifact**. Corners fall out of the walk; they are never placed.
+
+## 0.1 The two-pass fetch
+
+The single change that makes the rest affordable: **stop fetching everything up front.**
+
+| | **LIGHT pass — at Search** | **HEAVY pass — at Bake** |
+|---|---|---|
+| scoped to | the generous envelope | the square containing the **disc**, + padding |
+| purpose | author the boundary | pour the neighborhood |
+| reversible | yes — cheap, re-runnable | this is now the irreversible step |
+
+**Why this order.** All you need to author a boundary is chains, names, and enough painted fabric to see the place. Everything else — parcels, land use, tags, heights, materials, POIs — is pour material, and fetching it before you know what you want is why a generous envelope is expensive today. Defer it and generosity becomes free.
+
+**Consequence — "frame tighter than feels natural" is dead.** It was always a vestige of the era when the whole fetch rode through the pipeline (see X2), and it fights the requirement that the envelope be safely too big. Under the two-pass split it has no premise left.
+
+**Consequence — `bbox ⊇ disc` becomes true by construction.** Today the box is framed *before* the disc is known, which is why Altadena's disc runs 981 m past its own data and LS's runs 226 m (D1). If the heavy fetch is derived from the disc, the invariant is not a check to add — it stops being expressible.
+
+## 0.2 The line — what the LIGHT pass keeps
+
+**KEEPS**
+- **Chains, names, junctions** → `clean/street-index.json` (2.1 MB, unsimplified, already built by `skeleton.js --index`). This is the vocabulary; nothing can be named before it exists.
+- **OSM query 1, NARROWED to** `highway` + `waterway` + `railway` + `boundary` — the named linear features a boundary can run along.
+- **The building source this pour will use, painted** — MSBF where it exists, OSM buildings where it doesn't.
+
+**DROPS to the heavy pass**
+- OSM query 1's bulk: `landuse`, `leisure`, `amenity`, `surface`, `man_made`, `barrier`, `natural`
+- parcels · land use · POIs · trees · lamps
+- building tags: heights, `building:levels`, materials, roof shapes, addresses
+- every derive step
+
+**Sizing, measured.** `osm.json` is the monster — 43.1 MB (HPDM), 63.4 MB (ksi), **121 MB (centrum)** — and it is large because of the tagged ground features, not the buildings. `msbf.json` is 9.1 / 32.2 MB and is *already* pure geometry. Narrowing query 1 is where the saving is. *(Free extra: `fetch.js:209` writes `JSON.stringify(output, null, 2)` — pretty-printed.)*
+
+⛔ **Buildings must be PAINTED, at today's fidelity or better.** `ExtentApp.jsx:466` renders every MSBF footprint; `:552` paints them high-contrast violet because **the aerial alone is not legible enough to judge an edge against**. Substituting OSM for MSBF would cost HPDM 28% of its painted fabric (7,142 vs 9,880) — a fidelity regression at exactly the place the operator is looking. **Sequence the MSBF fetch into the light pass.** It is cheap; it is not the thing to defer.
+
+*Same family as the archived "you can't visually select a boundary you can't read" finding (R2 / re-homing loss) — one layer down.*
+
+**Bonus: this kills the preview/slab divergence.** Paint the source you pour, and they agree by construction rather than by a rule about not persisting derived numbers.
+
+## 0.3 The seed — place name OR comma-separated postal codes
+
+When Nominatim has no usable hood (the normal case — R7), the operator names the **postal codes that enclose the hood**, plural. Union them, pad, square, fetch light.
+
+⚠️ **This does NOT revive what `c8ef2949` retired.** That objection — *"a hood spans several ZIPs; a ZIP spans several hoods"* — was against ZIP as a **boundary** seed. This is ZIP as an **envelope** seed: spanning several is fine if you name them all, and containing several hoods is fine because the envelope is *supposed* to be too big. Different job; the objection does not reach it.
+
+*Between this and today:* `geocodeZip` (`api.js:67`) returns a **centroid**, not an extent, and hits `api.zippopotam.us/us/` — a hardcoded-US network dependency, against the local-files rule (R24). Census ZCTA polygons are a free bulk download and would satisfy R24 better than the current place search. Postal-code geometry outside the US is patchy — this is **one seed among several, not the seed.**
+
+## 0.4 Padding and squaring
+
+- **The heavy fetch must cover the DISC, not the polygon.** The shown tier (R26) lives in the band *between* polygon and rim — stop at the polygon and that band was never acquired.
+- **Padding % on top of the disc** is headroom to grow the boundary later without re-fetching. That is what makes the living boundary (R15) actually free.
+- **A closing check — "how much of this did we end up using?"** — pares the bulk and turns the padding from a guessed constant into a measured one.
+- **Square in METRES, both passes.** The light pass squares because the hood's shape is unknown; the heavy pass squares because the disc is a circle and a circle cannot fit a rectangle narrower than its diameter. A lat/lon square is oblong on the ground everywhere but the equator.
+
+## 0.5 Scope — v1 is the MSBF path
+
+**Księży Młyn and Centrum are explicitly out of scope for v1.** They were gestures to Pawel and served their purpose as the portability proof. LS and HPDM are the hoods that must be right.
+
+⚠️ **Deferred ≠ forked.** This is a scope decision, not a second code path — `feedback_no_parallel_pipeline_for_scenes` ("a scene is a dataset, not a branch") still binds, and a Polish-hoods branch would be exactly the palimpsest this repo keeps paying to remove. The only real variance is **which building source the pour uses**, and that is already data-driven (`pipeline.js:76-83` prefers MSBF, falls through to OSM). v1 exercises and hardens the MSBF path; the OSM-source path stays working but unpolished.
+
+## 0.6 Between this spec and today
+
+1. **We compute the ring and throw it away.** `computeBoundaryFromSelection` walks the runs, derives corners, persists only corners + bare name strings. *The segments never reach disk.* **This is the foundation — the rest are small beside it.**
+2. **The resolver takes whole streets only** — no partial runs, which is the common case in a city centre (R27, `BRIEF-boundary-partial-edges.md`).
+3. **The feature lookup filters to `highway=*`** — named rivers and railways are excluded by a filter, not by a missing concept.
+4. **`railway` is not in the Overpass query at all** (`fetch.js:85-100`). Kolej Scheiblerowska was never fetched, so removing the filter alone would not surface it. Two fixes, not one; both cheap.
+5. **Genuinely unnamed segments** — Łódź's own district boundary uses unnamed service roads for two entire edges. The only part needing a new gesture: contributing one drawn segment to an otherwise-real ring.
+
+---
+
 ## PART A — THE EXCAVATION
 
 Requirements and methods are in separate lists, as required. Confidence: **(a)** Jacob verbatim · **(b)** prior agent/coordinator assertion · **(c)** unattributed.
