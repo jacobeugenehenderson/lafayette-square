@@ -1,14 +1,14 @@
 {
-  "_comment": "Committed extent — center = the boundary centroid; bbox = the fetch extent; timezone derived from center.",
+  "_comment": "Provisional — the operator FRAMED this extent on the aerial; fetched over exactly this bbox (frame-then-fetch: a street visible in-frame is in the data). Re-center to the boundary-polygon centroid on commit. ⚠️ timezone is a Central-US default — set per location when tz lookup lands.",
   "lat": 51.75218,
   "lon": 19.47574,
-  "timezone": "Europe/Warsaw",
+  "timezone": "America/Chicago",
   "lonToMeters": 68914,
   "latToMeters": 111000,
   "bbox": {
-    "minLat": 51.746,
-    "maxLat": 51.76,
-    "minLon": 19.462,
-    "maxLon": 19.492
+    "minLat": 51.73385,
+    "maxLat": 51.77051,
+    "minLon": 19.44757,
+    "maxLon": 19.50391
   }
 }
