@@ -40,6 +40,13 @@
       "createdAt": 1784435448888,
       "bakedAt": 1784571843969,
       "updatedAt": 1784572162839
+    },
+    {
+      "id": "centrum",
+      "name": "centrum",
+      "scene": "centrum",
+      "createdAt": 1784592746607,
+      "bakedAt": 1784592851289
     }
   ]
 }
