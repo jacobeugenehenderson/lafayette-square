@@ -339,7 +339,89 @@ from bare building to landmark, and in what order.** Do not introduce "importanc
 1. **The rank is a GUESS and every guess is overridable** (`NEIGHBORHOOD-INPUTS §0.0/§1.1`). A beloved corner bar scores near zero on every cheap signal — no Wikidata, no tags, small footprint. **The rank orders the work queue; it must never gate what can be filled.**
 2. ⭐ **This is where "connect your neighborhood" earns its keep.** Residents know the ranking the data cannot see. Let them promote a building and you have captured a prominence signal **no dataset carries** — the single strongest argument for routing rows to the CLAIMED kind (§3.4) deliberately rather than by default.
 
-## 5. What this catalogue says about the kit
+## 5. ⭐ BUILDING FABRIC — the best source is REGIONAL, and we discard real data
+
+*(Jacob, 2026-07-20 late: "the Księży Młyn neighborhood has more fulsome building scans." Verified —
+he is right, and it inverts an assumption written into the pipeline.)*
+
+### 5.1 ⛔ CORRECTION — "MSBF is better than OSM" is a US-shaped claim
+
+`cartograph/fetch-msbf.js`'s header states MSBF is *"generally substantially more accurate than OSM's
+older US imports — correct shape, correct scale, correct position."* **True for US OSM**, which is
+largely a legacy TIGER-era mass import. **False for European OSM**, which is hand-mapped and often
+cadastre-derived.
+
+Measured footprint complexity (vertices per building ring, on disk 2026-07-20):
+
+| Scene | Source | median | mean | p90 | max |
+|---|---|---|---|---|---|
+| `lafayette-square` | **MSBF** (ML-derived) | 5 | 6.1 | 10 | 59 |
+| `ksi-y-m-yn` | **OSM** | **7** | **10.1** | 17 | 160 |
+| `centrum` | **OSM** | **9** | **13.4** | 28 | 229 |
+
+**Łódź's buildings carry roughly twice the geometric detail of Lafayette Square's**, and Centrum more
+still. The pipeline prefers MSBF wherever it exists (`bake-buildings.js:60`, `msbf-*` else `osm-*`),
+which is correct in St. Louis and would be **actively worse** in Łódź if MSBF's coverage reached it.
+
+⭐ **Manifest consequence: the footprint row has NO single best source.** It is a **regional choice**,
+and the current preference order encodes a US assumption. The row must expose the choice per town —
+`buildingSource` already exists in the pour as a concept; make it an intake decision with the
+provenance to justify it, not a silent coverage fallback.
+
+*(This also corrects `BRIEF-intake-manifest.md §5.2`, which listed MSBF as the upgrade and OSM as the
+degraded fallback — accurate for LS, wrong as a general rule.)*
+
+### 5.2 ⭐ ROOFS — LS *guesses*; Łódź has real tags nobody reads
+
+**Lafayette Square's roof shape is a heuristic.** `classifyRoofFor` (`cartograph/bake-buildings.js:165`)
+infers `flat｜mansard｜hip` from `year_built` + `stories` alone — pre-1900 and 2–3 storeys → mansard;
+pre-1920 and 1–3 → hip; else flat. A reasonable prior for a Second Empire district, and still a guess.
+Its only override path is the manual `building-overrides.json`.
+
+**The Polish hoods carry surveyed roof data in the OSM we ALREADY fetched, and nothing consumes it:**
+
+| Tag | ksi-y-m-yn | centrum |
+|---|---|---|
+| `roof:shape` | **130** | **190** |
+| `roof:levels` | **184** | **305** |
+| `roof:material` | 11 | 20 |
+| `roof:colour` | 14 | 54 |
+| `building:material` | 155 | 162 |
+| `height` (metres) | 40 | 351 |
+
+⭐ **This is close to free value:** it replaces a guessed roof with a surveyed one for ~130–190 buildings
+per hood, costs no acquisition (the file is on disk), and the consumer already exists —
+`classifyRoofFor` simply needs OSM `roof:shape` ahead of the year/storey heuristic, and behind the
+manual override. **Precedence: override → OSM tag → heuristic.** Same shape as the base-width chain
+(custom → OSM → AASHTO), so it is the house pattern, not a new one.
+⚠️ `roof:shape` values are an open OSM vocabulary (`gabled`, `hipped`, `flat`, `mansard`, `gambrel`,
+`pyramidal`, `skillion`, `round`…) and the renderer knows three. Map the vocabulary explicitly and
+fall through to the heuristic on anything unrecognised — do not silently coerce.
+
+### 5.3 ⭐ HERITAGE — `ref:nid` IS the Polish National Register, already in the fetch
+
+§3.2 listed Poland's **NID rejestr zabytków** as an *unverified* analogue to the US National Register.
+It is neither unverified nor remote — **it is tagged on buildings in data we have already pulled:**
+
+| Tag | ksi-y-m-yn | centrum |
+|---|---|---|
+| `ref:nid` | 8 | **29** |
+| `heritage` | 8 | 25 |
+| `heritage:operator` | 8 | 29 |
+| `historic` | 32 | **66** |
+| `wikidata` | 65 | **120** |
+| `start_date` | 8 | 22 |
+
+So the historic layer that cost Lafayette Square a **136-page OCR'd nomination PDF** (`inventory/`,
+7 derived files) arrives for Łódź as **ordinary OSM tags**. Not equivalent in depth — the NR nomination
+carries per-building architect, style group and contributing status that `ref:nid` does not — but it
+establishes *listed status* and gives a **`wikidata` join key** to fetch the rest programmatically.
+
+⭐ **Manifest consequence:** the "historic inventory" row is **not US-only**, as §3.2 implied. It is
+*differently sourced*: OCR'd nomination in the US, tag + Wikidata join in the EU. Both are rows; the
+EU one is button-acquirable (§4.2) and the US one is not.
+
+## 6. What this catalogue says about the kit
 
 **The thesis holds, with three honest cost centres.**
 

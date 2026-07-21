@@ -165,7 +165,7 @@ This is already how the good parts work — `bake-terrain.js` reads `raw/elevati
 ### 5.2 Elective render-side — each unlocks a feature; absent = feature absent
 | Input | Acquired by | Unlocks | Today, if absent |
 |---|---|---|---|
-| `raw/msbf.json` | `fetch-msbf.js` | accurate ML building footprints | falls back to OSM buildings ✅ (aborts off-continent — expected) |
+| `raw/msbf.json` | `fetch-msbf.js` | ML building footprints — **best in the US, NOT universally** | falls back to OSM buildings ✅ (aborts off-continent — expected) ⛔ **but "fallback" is a US-shaped word: European OSM is hand/cadastre-mapped and measurably RICHER than MSBF** (Łódź median 7 verts vs LS's 5; Centrum 9). The footprint source is a **regional choice**, not a quality ladder — `INTAKE-CATALOGUE.md §5.1` |
 | `raw/elevation.tif` | manual (USGS 3DEP for US; **any** GeoTIFF) | terrain relief | `bake-terrain.js:105` exits → flat ground ✅ |
 | `raw/osm_street_lamps.json` | fetch | street lamps | ⚠️ **LS's lamps** (`bake-lamps.js:99`) |
 | `raw/stl_parcels.json` | STL City/County assessor | land-use codes for the content classifier | no parcel signal ✅ (STL-only by nature) |
