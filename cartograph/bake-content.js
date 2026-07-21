@@ -86,7 +86,8 @@ function sceneDir(scene) { return join(ROOT, 'cartograph', 'data', scene) }
 function contentDir(scene) { return join(sceneDir(scene), 'content') }
 
 // The authoritative membership set + render fields: the baked slab index.
-// `.buildings[].id` (msbf-*) IS what shipped — every emitted id must be here.
+// `.buildings[].id` IS what shipped — every emitted id must be here. The id is
+// source-agnostic: `msbf-*` on a US pour, `osm-*` on an OSM/foreign pour.
 function loadBakedBuildings(scene) {
   const p = join(ROOT, 'public', 'baked', scene, 'buildings.json')
   if (!existsSync(p)) throw new Error(`no baked slab for scene "${scene}" (${p}) — bake-buildings must run first`)
@@ -114,8 +115,15 @@ function loadBuildingGeom(scene, bakedIds) {
   const map = JSON.parse(readFileSync(p, 'utf8'))
   const out = new Map()
   for (const b of (map.buildings || [])) {
-    if (b.msbfId == null) continue
-    const id = `msbf-${b.msbfId}`
+    // Source-agnostic building id — MUST mirror `bake-buildings.js` exactly:
+    // MSBF where present (US pours), else OSM (foreign/OSM pours). This side
+    // was left MSBF-only when the producer was made source-agnostic, so every
+    // OSM pour joined ZERO geometry: Księży Młyn shipped 1,640 roster records
+    // with 0 addresses, 0 zoning and 0 parcel matches, which emptied the
+    // property atlas (`useListings` filters bare buildings on `address`) and
+    // left roster/listings mutually incoherent (roster said 5, listings 84).
+    const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
+    if (!id) continue
     if (!bakedIds.has(id)) continue
     const ring = (b.ring || []).map(p => [Array.isArray(p) ? p[0] : p.x, Array.isArray(p) ? p[1] : p.z])
     if (ring.length < 3) continue
@@ -775,7 +783,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     meta: { scene, schema: 'NEIGHBORHOOD-INPUTS §5.1.1', layer: 'Layer 1 — building ledger (one record per slab building)',
       generated: now, generator: 'bake-content.js', visible_buildings: roster.length,
       parcel_matched: stat.parcel_matched, nr_attributed: stat.nr_attributed, in_historic_district: stat.in_district,
-      buildings_with_listings: stat.with_listings, join_key: 'id == slab building id (msbf-*)' },
+      buildings_with_listings: stat.with_listings, join_key: 'id == slab building id (msbf-* on a US pour, osm-* on an OSM pour)' },
     buildings: roster,
   }
   const listingsOut = {
