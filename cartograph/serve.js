@@ -216,7 +216,7 @@ function getOsmLabels(scene) {
 // — legit boundaries — are kept. (Filtering by highway CLASS wrongly dropped
 // those; filter by the synthetic-name shape instead.)
 const SYNTHETIC_NAME = /^(motorway|trunk|primary|secondary|tertiary)(_link)? \d+$/i
-const _skelCache = new Map()   // scene → { mtime, skel }
+const _streetLookupCache = new Map()   // scene → { mtime, skel }
 // The street lookup the boundary picker reads: names, geometry, junctions.
 //
 // Prefers the real skeleton when it exists (post-Bake) and falls back to the
@@ -225,11 +225,9 @@ const _skelCache = new Map()   // scene → { mtime, skel }
 // caller here uses — street-names, streets-geom, and the corner resolver.
 //
 // ⛔ This is the ONLY thing allowed to read the index. It is a lookup table, not a
-// frame; nothing downstream of the Wall may consume it, and nothing should derive
-// geometry from it. Naming it `getSkeleton` is now slightly wrong — it returns
-// whichever street lookup is current — but renaming it touches every caller, so:
-// treat "skeleton" here as "the street lookup", and the index as its early form.
-function getSkeleton(scene) {
+// frame; nothing downstream of the Wall may consume it, and nothing may derive
+// geometry from it.
+function getStreetLookup(scene) {
   const dir = sceneCleanDir(scene)
   let p = join(dir, 'skeleton.json')
   if (!existsSync(p)) {
@@ -237,10 +235,10 @@ function getSkeleton(scene) {
     if (!existsSync(p)) return null
   }
   const mtime = statSync(p).mtimeMs
-  const cached = _skelCache.get(scene)
+  const cached = _streetLookupCache.get(scene)
   if (cached && cached.mtime === mtime && cached.path === p) return cached.skel
   const skel = JSON.parse(readFileSync(p, 'utf8'))
-  _skelCache.set(scene, { mtime, path: p, skel })
+  _streetLookupCache.set(scene, { mtime, path: p, skel })
   return skel
 }
 function distPointToChains(j, chains) {
@@ -268,7 +266,7 @@ function cardinalOf(dx, dz) {
   return ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'][Math.round(deg / 45) % 8]
 }
 function computeExtentCorners(scene, sides) {
-  const skel = getSkeleton(scene)
+  const skel = getStreetLookup(scene)
   if (!skel) return { error: `no skeleton.json for scene '${scene}'` }
   // Match by exact name OR by corridor (the directional-corridor kit link), so a
   // side named "Big Bend Boulevard" gathers both North + South Big Bend chains.
@@ -351,7 +349,7 @@ function computeExtentCorners(scene, sides) {
 // the name-unreliability the perimeter doctrine warns about — selection is on the
 // hydrated geometry, not typed names driving geometry.
 function computeBoundaryFromSelection(scene, names) {
-  const skel = getSkeleton(scene)
+  const skel = getStreetLookup(scene)
   if (!skel) return { error: `no skeleton.json for scene '${scene}'` }
   const r2 = (v) => Math.round(v * 100) / 100
   const uniq = [...new Set((names || []).map(n => (n || '').trim()).filter(Boolean))]
@@ -475,7 +473,7 @@ function flattenBoundaryPath(boundaryPath, geo) {
 // All named streets' polylines for the clickable boundary-selection layer — one
 // entry per chain (corridor-collapsed name), synthetic-highway names dropped.
 function streetsGeomFor(scene) {
-  const skel = getSkeleton(scene)
+  const skel = getStreetLookup(scene)
   if (!skel) return { streets: [] }
   const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
   const r2 = (v) => Math.round(v * 100) / 100
@@ -494,7 +492,7 @@ function streetsGeomFor(scene) {
 // L→R). Coords are the skeleton's current-frame x/z (reproject-raw keeps them
 // aligned to the live geography / aerial). `major` = arterial class.
 function skeletonLabelsFor(scene) {
-  const skel = getSkeleton(scene)
+  const skel = getStreetLookup(scene)
   if (!skel) return []
   const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
   const groups = new Map()   // label → { chains, major }
@@ -672,7 +670,7 @@ async function geocodePlace(q) {
 // HOVER preview — the operator sees exactly where a candidate lies before
 // selecting it (Clayton Road vs Clayton Avenue), so they never have to guess.
 function streetGeom(scene, name) {
-  const skel = getSkeleton(scene)
+  const skel = getStreetLookup(scene)
   if (!skel || !name) return { polylines: [] }
   const r2 = (v) => Math.round(v * 100) / 100
   const chains = skel.streets.filter(s => (s.name === name || s.corridor === name) && s.points && s.points.length >= 2)
@@ -706,7 +704,7 @@ function makeCircleBoundary(radius) {
 // Boulevard", not North/South separately). Grouped major (arterials) / minor,
 // each A→Z; synthetic motorway/link names excluded (not boundary streets).
 function streetNamesFor(scene) {
-  const skel = getSkeleton(scene)
+  const skel = getStreetLookup(scene)
   if (!skel) return { major: [], minor: [] }
   const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
   const byLabel = new Map()   // label → isMajor (a corridor is major if any member is)
@@ -1281,7 +1279,7 @@ createServer(async (req, res) => {
         // table. The real skeleton is built by Bake (commit-extent), once.
         const skelR = await runCapture('node skeleton.js --index', { cwd: here, env, timeout: 120000 })
         if (skelR.code !== 0) throw new Error(`street index build failed — ${lastLine(skelR)}`)
-        _skelCache.delete(scene)
+        _streetLookupCache.delete(scene)
         sources.osm = { ok: true, count: countJson(join(raw, 'osm.json')) }
         // ── Buildings (MSBF — generic ML footprints, works ANY region) ──
         const bR = await runCapture('node fetch-msbf.js', { cwd: here, env, timeout: 240000 })
@@ -1466,7 +1464,7 @@ createServer(async (req, res) => {
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
         if (!skipReproject) await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
-        _skelCache.delete(scene)
+        _streetLookupCache.delete(scene)
         // ── The boundary write ────────────────────────────────────────────────
         // TWO SEPARATE THINGS, and their field names are backwards, so read carefully:
         //   `boundary` = the 256-gon RENDER DISC derived from `radius`. It answers
@@ -1589,7 +1587,7 @@ createServer(async (req, res) => {
           const env = { ...process.env, CARTOGRAPH_SCENE: scene }
           await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
           await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
-          _skelCache.delete(scene)
+          _streetLookupCache.delete(scene)
         }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, restored }))
       } catch (err) {
