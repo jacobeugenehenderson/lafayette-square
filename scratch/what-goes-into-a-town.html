@@ -1,0 +1,403 @@
+<title>What goes into a town</title>
+<style>
+  :root {
+    --ground: #efefea;
+    --raised: #e7e8e1;
+    --ink: #1a1d1a;
+    --graphite: #5c625c;
+    --faint: #878d86;
+    --rule: #d2d5ce;
+    --brass: #8a6d24;
+    --brass-soft: #9a7b2e33;
+
+    --display: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --data: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+    --measure: 66ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #121410;
+      --raised: #191c17;
+      --ink: #e4e7e0;
+      --graphite: #9aa298;
+      --faint: #6d746b;
+      --rule: #2b2f28;
+      --brass: #c9a84c;
+      --brass-soft: #c9a84c2e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #121410;
+    --raised: #191c17;
+    --ink: #e4e7e0;
+    --graphite: #9aa298;
+    --faint: #6d746b;
+    --rule: #2b2f28;
+    --brass: #c9a84c;
+    --brass-soft: #c9a84c2e;
+  }
+  :root[data-theme="light"] {
+    --ground: #efefea;
+    --raised: #e7e8e1;
+    --ink: #1a1d1a;
+    --graphite: #5c625c;
+    --faint: #878d86;
+    --rule: #d2d5ce;
+    --brass: #8a6d24;
+    --brass-soft: #9a7b2e33;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 72px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  /* ── Masthead ───────────────────────────────────────────── */
+  .masthead { display: flex; flex-direction: column; gap: 20px; }
+  .eyebrow {
+    font-family: var(--data);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(34px, 6vw, 52px);
+    line-height: 1.08;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .standfirst {
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--graphite);
+    max-width: var(--measure);
+  }
+  .standfirst em { color: var(--ink); font-style: italic; }
+
+  /* The survey rod — a graduated rule. The one flourish, and it is the
+     subject's own instrument rather than an ornament. */
+  .rod { height: 9px; width: 100%; display: block; }
+
+  /* ── Legend ─────────────────────────────────────────────── */
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 20px 28px;
+    padding: 22px 0 0;
+    border-top: 1px solid var(--rule);
+  }
+  .legend-item { display: flex; flex-direction: column; gap: 5px; }
+  .legend-term {
+    font-family: var(--data);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .legend-def { font-size: 13.5px; line-height: 1.45; color: var(--graphite); }
+
+  /* ── Sections ───────────────────────────────────────────── */
+  section { display: flex; flex-direction: column; gap: 22px; }
+  h2 {
+    font-family: var(--display);
+    font-size: 27px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lede { font-size: 15.5px; color: var(--graphite); max-width: var(--measure); margin: -8px 0 0; }
+
+  /* ── The index of inputs ────────────────────────────────── */
+  .index { display: flex; flex-direction: column; }
+  .entry {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 20px;
+    align-items: baseline;
+    padding: 15px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .entry:last-child { border-bottom: 1px solid var(--rule); }
+  .entry-name { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; }
+  .entry-note {
+    grid-column: 1 / 2;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--graphite);
+    max-width: 54ch;
+  }
+  .entry-meta {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .chip {
+    font-family: var(--data);
+    font-size: 10px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 2px;
+    border: 1px solid var(--rule);
+    color: var(--graphite);
+  }
+  .chip--record { border-color: var(--brass-soft); background: var(--brass-soft); color: var(--brass); }
+  .chip--computed { border-style: dashed; }
+  .chip--hand { border-color: var(--ink); color: var(--ink); }
+  .count {
+    font-family: var(--data);
+    font-size: 12px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Closing note ───────────────────────────────────────── */
+  .note {
+    background: var(--raised);
+    border-left: 2px solid var(--brass);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .note p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--graphite); max-width: var(--measure); }
+  .note strong { color: var(--ink); font-weight: 600; }
+
+  .colophon {
+    border-top: 1px solid var(--rule);
+    padding-top: 20px;
+    font-family: var(--data);
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--faint);
+  }
+  a { color: var(--brass); text-underline-offset: 2px; }
+  a:focus-visible, .entry:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Sources &amp; provenance</div>
+    <h1>What goes into a town</h1>
+    <svg class="rod" viewBox="0 0 760 9" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" y1="8.5" x2="760" y2="8.5" stroke="var(--rule)" stroke-width="1"/>
+      <g stroke="var(--brass)" stroke-width="1">
+        <line x1="0.5" y1="0" x2="0.5" y2="9"/><line x1="76" y1="4" x2="76" y2="9"/>
+        <line x1="152" y1="4" x2="152" y2="9"/><line x1="228" y1="4" x2="228" y2="9"/>
+        <line x1="304" y1="4" x2="304" y2="9"/><line x1="380" y1="1" x2="380" y2="9"/>
+        <line x1="456" y1="4" x2="456" y2="9"/><line x1="532" y1="4" x2="532" y2="9"/>
+        <line x1="608" y1="4" x2="608" y2="9"/><line x1="684" y1="4" x2="684" y2="9"/>
+      </g>
+    </svg>
+    <p class="standfirst">
+      This place was not generated. It was <em>assembled</em> — from public record, from
+      measurements taken on the street, and from a quantity of hand-work there is no
+      way around. Here is the whole list, and where each piece comes from.
+    </p>
+  </header>
+
+  <div class="legend">
+    <div class="legend-item">
+      <span class="legend-term">Public record</span>
+      <span class="legend-def">Open data anyone can download. Most of the map is this.</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-term">Computed</span>
+      <span class="legend-def">Needs no data at all — it follows from a latitude and a date.</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-term">Made by hand</span>
+      <span class="legend-def">No source exists. Someone sat down and decided.</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>The ground you stand on</h2>
+    <p class="lede">
+      Streets first. Every curb, every corner and every block face is a consequence of
+      where the street centreline runs, so that line is the one thing worth getting right.
+    </p>
+    <div class="index">
+      <div class="entry">
+        <div class="entry-name">Street centrelines, buildings, land use</div>
+        <div class="entry-note">OpenStreetMap, queried once and kept on disk. Nothing here phones home while you look at it.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span><span class="count">ODbL</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Corrected centrelines</div>
+        <div class="entry-note">Where the public map had a street in the wrong place, it was redrawn by hand against aerial imagery.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span><span class="count">35 streets</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Street widths</div>
+        <div class="entry-note">Roadway and right-of-way measured on site, because the published defaults are a national average and this is not a national average.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Building footprints</div>
+        <div class="entry-note">Machine-learning outlines derived from aerial imagery in the US; in Europe, the hand-mapped public record is the better source and is used instead.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Building detail — storeys, roofs, materials</div>
+        <div class="entry-note">What turns a field of boxes into a street. Where the public record carries it, it is read straight off. Where it does not, it is entered building by building.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span><span class="count">1,082 buildings</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Parcels, zoning, year built</div>
+        <div class="entry-note">The county assessor's own file. It is also what decides whether a building reads as a shop or a house.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Ground elevation</div>
+        <div class="entry-note">A public terrain survey, so the street actually falls away where it falls away. Everything that stands on the ground is pinned to this surface rather than guessing its own height.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Street lamps</div>
+        <div class="entry-note">Real positions, from the public map. A town with no lamp data gets no lamps — never someone else's.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The trees</h2>
+    <p class="lede">
+      Every tree stands where a real tree stands. The species come from the city's own
+      inventory; what each species looks like is a separate and much longer problem.
+    </p>
+    <div class="index">
+      <div class="entry">
+        <div class="entry-name">The tree census</div>
+        <div class="entry-note">Municipal forestry inventories — species, trunk diameter, condition, per tree. Four separate surveys, covering different ground, stitched into one.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span><span class="count">4 surveys</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Canopy cover</div>
+        <div class="entry-note">Satellite-derived tree cover, used to fill yards and parkland no per-tree survey reaches. Some towns decline it and ship only counted trees.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Bark and leaf reference</div>
+        <div class="entry-note">Photographic reference, all of it public-domain. The leaves that had no public equivalent were collected in a bag and put through a flatbed scanner.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span><span class="count">CC0 · 27 sets</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Species dossiers</div>
+        <div class="entry-note">A written profile per species — habit, branching, seasonal colour, how it actually ages — scored on a fixed rubric so two species can be compared rather than merely described.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span><span class="count">19 axes</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Tree structure</div>
+        <div class="entry-note">A tree's identity is mostly its branching, and branching is the one thing you cannot compose from parts. Each is chosen from a library and tagged by eye, one at a time.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span><span class="count">~241 forms</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The sky</h2>
+    <p class="lede">
+      Most of this needed no acquisition at all. Given a latitude, a longitude and a date,
+      the sky is arithmetic — which is the whole reason it works anywhere.
+    </p>
+    <div class="index">
+      <div class="entry">
+        <div class="entry-name">Sun, moon, twilight, seasons</div>
+        <div class="entry-note">Sunrise, solar noon, moon phase and the tilt of the celestial pole, all derived. Below the equator the stars wheel the other way, correctly, with nothing fetched.</div>
+        <div class="entry-meta"><span class="chip chip--computed">Computed</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Stars, constellations, planets</div>
+        <div class="entry-note">A published bright-star catalogue, the constellation figures, and the orbital elements for the planets. Acquired once; true for every town thereafter.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span><span class="count">523 stars</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Weather</div>
+        <div class="entry-note">Live conditions drive cloud, rain, wetness and how hard the trees are moving. A published reanalysis archive reaching back to 1940 supplies the local climate underneath it.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span><span class="count">CC BY 4.0</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Cloud forms and weather rules</div>
+        <div class="entry-note">Cloud shapes authored once, then matched to conditions by rules written on physics rather than on any one place — cumulus is cumulus everywhere.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span><span class="count">52 forms</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The town's own record</h2>
+    <p class="lede">
+      The part no dataset holds. It is joined on afterwards and keyed to a stable public
+      identifier, so the map underneath can be rebuilt from scratch without disturbing it.
+    </p>
+    <div class="index">
+      <div class="entry">
+        <div class="entry-name">Historic designation</div>
+        <div class="entry-note">In the United States, a National Register nomination — read out of the scanned document page by page. In Europe the national heritage register is already on the public map, which is a considerably shorter afternoon.</div>
+        <div class="entry-meta"><span class="chip chip--record">Public record</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Businesses, hours, menus</div>
+        <div class="entry-note">A public listings base, then corrected and filled in by hand — the hours a place actually keeps, what it serves, what it is for.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">Photographs and marks</div>
+        <div class="entry-note">Sourced with permission and self-hosted, never hotlinked. Where a business genuinely has no logo, that is recorded as a finding so nobody spends the afternoon again.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-name">What the neighbours know</div>
+        <div class="entry-note">Which building matters, and why. There is no file for this anywhere, and it is the part the people who live here supply.</div>
+        <div class="entry-meta"><span class="chip chip--hand">Made by hand</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="note">
+    <p>
+      <strong>Every one of these is a file kept on disk.</strong> Fetching is how a thing is
+      acquired, once — never how the place is drawn. Unplug the network and the town still
+      pours, which is the point.
+    </p>
+    <p>
+      <strong>Absent means absent.</strong> A town with no lamp survey has no lamps; a town with
+      no tree census has no trees. Nothing quietly stands in for something a place does not
+      have, and nothing is borrowed from a neighbourhood on the other side of the world.
+    </p>
+  </div>
+
+  <div class="colophon">
+    Counts shown are Lafayette Square, St. Louis — the most complete of these to date.<br>
+    Open data used under its own terms: OpenStreetMap (ODbL) · land cover and terrain (public
+    domain) · weather reanalysis (CC BY 4.0) · texture and photographic reference (CC0).
+  </div>
+
+</div>
