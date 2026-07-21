@@ -1636,6 +1636,36 @@ function main() {
     osmId: f.osmId,
   }))
 
+  // ── INDEX MODE — stop here ───────────────────────────────────────────
+  //
+  // "The Skeleton is The First Bake" — so building it at FETCH time was the bake
+  // running early. But the boundary-street picker has to work BEFORE Bake: it needs
+  // street names, their geometry, and the junctions where they meet, so the operator
+  // can say what the neighborhood is and see the ring close.
+  //
+  // Those two facts are only in tension if the picker needs a skeleton. It doesn't —
+  // it needs an INDEX. Everything above this line is welding and naming (what streets
+  // exist, where they run, where they meet). Everything below is the first bake:
+  // simplification, spine-linking, width seeding, cap typing, name-transitions.
+  //
+  // So `--index` writes the welded chains + their junctions and stops. UNSIMPLIFIED
+  // is not a compromise here, it's better: the picker wants the road as digitized,
+  // not the polygon-ready abstraction of it. Nothing downstream may consume this —
+  // it is a lookup table, not a frame.
+  if (process.argv.includes('--index')) {
+    const { junctions: idxJunctions } = buildNodeGraph(streets)
+    const idxPath = join(CLEAN_DIR, 'street-index.json')
+    const slim = streets.map(s2 => ({
+      id: s2.id, name: s2.name, corridor: s2.corridor,
+      highway: s2.highway, points: s2.points,
+    }))
+    const wroteIdx = writeIfChanged(idxPath, JSON.stringify({ streets: slim, junctions: idxJunctions }, null, 2), { touch: false })
+    console.log(`\nStreet INDEX (pre-bake lookup, not a frame):`)
+    console.log(`  ${slim.length} streets, ${idxJunctions.length} junctions`)
+    console.log(`\n→ ${idxPath}${wroteIdx ? '' : ' [unchanged]'}`)
+    return
+  }
+
   // ── Junction-protected simplification ────────────────────────────────
   // Build the set of shared-node / junction coords from the welded chains
   // BEFORE simplifying. A coord touched by >=2 distinct streets is a junction

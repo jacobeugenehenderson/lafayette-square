@@ -217,14 +217,30 @@ function getOsmLabels(scene) {
 // those; filter by the synthetic-name shape instead.)
 const SYNTHETIC_NAME = /^(motorway|trunk|primary|secondary|tertiary)(_link)? \d+$/i
 const _skelCache = new Map()   // scene → { mtime, skel }
+// The street lookup the boundary picker reads: names, geometry, junctions.
+//
+// Prefers the real skeleton when it exists (post-Bake) and falls back to the
+// pre-Bake street index (`skeleton.js --index`). Both carry {streets[{name,
+// corridor, highway, points}], junctions[{x,z,degree,kind}]}, which is all any
+// caller here uses — street-names, streets-geom, and the corner resolver.
+//
+// ⛔ This is the ONLY thing allowed to read the index. It is a lookup table, not a
+// frame; nothing downstream of the Wall may consume it, and nothing should derive
+// geometry from it. Naming it `getSkeleton` is now slightly wrong — it returns
+// whichever street lookup is current — but renaming it touches every caller, so:
+// treat "skeleton" here as "the street lookup", and the index as its early form.
 function getSkeleton(scene) {
-  const p = join(sceneCleanDir(scene), 'skeleton.json')
-  if (!existsSync(p)) return null
+  const dir = sceneCleanDir(scene)
+  let p = join(dir, 'skeleton.json')
+  if (!existsSync(p)) {
+    p = join(dir, 'street-index.json')
+    if (!existsSync(p)) return null
+  }
   const mtime = statSync(p).mtimeMs
   const cached = _skelCache.get(scene)
-  if (cached && cached.mtime === mtime) return cached.skel
+  if (cached && cached.mtime === mtime && cached.path === p) return cached.skel
   const skel = JSON.parse(readFileSync(p, 'utf8'))
-  _skelCache.set(scene, { mtime, skel })
+  _skelCache.set(scene, { mtime, path: p, skel })
   return skel
 }
 function distPointToChains(j, chains) {
@@ -1259,8 +1275,12 @@ createServer(async (req, res) => {
         // the client, instead of runShell's generic "Command failed (code=1)".
         const osmR = await runCapture('node fetch.js', { cwd: here, env, timeout: 240000 })
         if (osmR.code !== 0) throw new Error(`OSM fetch failed — ${lastLine(osmR)}`)
-        const skelR = await runCapture('node skeleton.js', { cwd: here, env, timeout: 120000 })
-        if (skelR.code !== 0) throw new Error(`skeleton build failed — ${lastLine(skelR)}`)
+        // INDEX, not the skeleton — "the Skeleton is The First Bake", and this is a
+        // fetch. The picker needs names/geometry/junctions before Bake; it does not
+        // need a frame. `--index` stops before simplification and writes a lookup
+        // table. The real skeleton is built by Bake (commit-extent), once.
+        const skelR = await runCapture('node skeleton.js --index', { cwd: here, env, timeout: 120000 })
+        if (skelR.code !== 0) throw new Error(`street index build failed — ${lastLine(skelR)}`)
         _skelCache.delete(scene)
         sources.osm = { ok: true, count: countJson(join(raw, 'osm.json')) }
         // ── Buildings (MSBF — generic ML footprints, works ANY region) ──
