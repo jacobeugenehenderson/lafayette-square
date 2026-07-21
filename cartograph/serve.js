@@ -5,6 +5,7 @@ import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
 import { treeBakeInputsForScene } from './tree-bake-inputs.mjs'
+import { intakeStatusForScene, sampleForRow, addAltSource } from './intake-rows.mjs'
 import { writeIfChanged } from './io.js'
 import tzLookup from 'tz-lookup'
 
@@ -933,6 +934,64 @@ createServer(async (req, res) => {
       })
       return
     }
+  }
+
+  // ── The INTAKE manifest (read-only) ──────────────────────────────────────
+  // GET /<scene>/intake — every declared render-side input for this scene,
+  // filled or not, with its status computed FROM DISK on every request.
+  //
+  // ⛔ Status is never persisted. A stored status goes stale and then lies; the
+  // whole point of the manifest is that a pour can no longer complete
+  // "successfully" while silently missing its inputs.
+  //
+  // The panel is a COLLECTION CHECKLIST — it lists what this town could have,
+  // including what it doesn't have yet. The RENDER is what hides missing
+  // things. Opposite behaviours, never conflated (`BRIEF §5.5`).
+  const intakeMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/intake$/)
+  if (req.method === 'GET' && intakeMatch && !RESERVED_PREFIXES.has(intakeMatch[1])) {
+    const scene = intakeMatch[1]
+    try {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      res.end(JSON.stringify(intakeStatusForScene(scene)))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
+  // GET /<scene>/intake/sample?row=<id> — a head of the real artifact, so an
+  // operator can tell a good file from a bad one (`BRIEF §2.2`). Falls back to
+  // Lafayette Square's copy as a labelled EXAMPLE when this town has none.
+  const sampleMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/intake\/sample$/)
+  if (req.method === 'GET' && sampleMatch && !RESERVED_PREFIXES.has(sampleMatch[1])) {
+    const rowId = (req.url.match(/[?&]row=([^&]+)/) || [])[1]
+    const out = rowId ? sampleForRow(sampleMatch[1], decodeURIComponent(rowId)) : null
+    res.writeHead(out ? 200 : 404, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(out || { error: 'no sample' }))
+    return
+  }
+
+  // POST /<scene>/intake/source — record a source the operator found.
+  // ⭐ Stored against the scene's JURISDICTION, not the scene: a well found for
+  // one Łódź hood is a fact about Łódź and belongs to the next one too.
+  const addSrcMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/intake\/source$/)
+  if (req.method === 'POST' && addSrcMatch && !RESERVED_PREFIXES.has(addSrcMatch[1])) {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { row, name } = JSON.parse(body)
+        if (!row || !name) throw new Error('row and name are required')
+        const list = addAltSource(addSrcMatch[1], row, String(name).slice(0, 200))
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, sources: list }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
   }
 
   // ── The SHAPE freeze (the Data Wall, autosaved) ──────────────────────────

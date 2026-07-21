@@ -117,6 +117,37 @@ export async function fetchScenes() {
   return res.json()
 }
 
+// The INTAKE manifest — every render-side input this town could have, filled
+// or not, with status computed server-side FROM DISK. Never cached: a stale
+// copy would report a file the operator just acquired as still missing, and the
+// manifest's whole job is to stop a pour looking complete when it isn't.
+export async function fetchIntake(scene) {
+  const res = await fetch(`${BASE}/${encodeURIComponent(scene)}/intake`, { cache: 'no-store' })
+  if (!res.ok) return { scene, rows: [] }
+  return res.json()
+}
+
+// A head of the real artifact — how an operator tells a good file from a bad
+// one. Falls back to Lafayette Square's copy, labelled, when this town has none.
+export async function fetchIntakeSample(scene, row) {
+  const res = await fetch(`${BASE}/${encodeURIComponent(scene)}/intake/sample?row=${encodeURIComponent(row)}`)
+  if (!res.ok) return null
+  return res.json()
+}
+
+// Record a source the operator found. Stored against this scene's JURISDICTION,
+// so the next hood in the same city inherits it rather than rediscovering it.
+export async function saveIntakeSource(scene, row, name) {
+  const res = await fetch(`${BASE}/${encodeURIComponent(scene)}/intake/source`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ row, name }),
+  })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `add source ${res.status}`)
+  return j.sources || []
+}
+
 // Extent hub: discard a DRAFT scene (searched, never fetched). The server refuses
 // any scene that has data — this can never delete a real neighborhood.
 export async function discardScene(scene) {

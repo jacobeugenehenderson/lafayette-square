@@ -1270,3 +1270,221 @@ input[type="range"]:active { cursor: grabbing; }
 .sky-swatch::-webkit-color-swatch-wrapper { padding: 0; }
 .sky-swatch::-webkit-color-swatch { border: none; border-radius: 0; }
 .sky-swatch::-moz-color-swatch { border: none; }
+
+/* ============================================================
+   ASSET LIBRARY — every input a town could have, and what to do
+   about it. Opened from the Stage toolbar; rendered through a
+   PORTAL to <body> (the toolbar's backdrop-filter would otherwise
+   become the containing block for position:fixed).
+
+   ⚠️ Built on the PROJECT tokens (src/tokens/design.css), not the
+   --carto-* set. The carto tokens are scoped to `.cartograph`, so
+   a portal to <body> escapes them and every var() collapses to
+   nothing — which is exactly how this first rendered with no
+   background and unreadable text. The project tokens are :root
+   scoped and therefore portal-safe. Prefer them for anything that
+   escapes the app subtree.
+   ============================================================ */
+.carto-sources-scrim {
+  position: fixed; inset: 0; z-index: 400;
+  background: var(--surface-scrim);
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 20px;
+}
+.carto-sources {
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-lg, 8px);
+  color: var(--on-surface);
+  width: min(880px, 100%);
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.carto-sources-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+.carto-sources-title { font-size: var(--type-title); font-weight: 600; }
+.carto-sources-sub {
+  font-size: var(--type-caption);
+  color: var(--on-surface-subtle);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.carto-sources-body {
+  overflow-y: auto; padding: 4px 18px 6px;
+  display: flex; flex-direction: column;
+}
+/* Separation between tiers — they answer different questions (who supplies
+   this?), so they should read as three lists, not one long one. */
+.carto-sources-body > .carto-subsection {
+  padding: 16px 0 4px;
+  margin: 0;
+  border-bottom: none;
+}
+.carto-sources-body > .carto-subsection + .carto-subsection {
+  border-top: 1px solid var(--outline);
+  margin-top: 8px;
+}
+/* ⭐ TIER TABS. Three grey labels made the sections read as one long list; a
+   coloured tab per tier makes "who supplies this" legible at a glance. Shaped
+   like a folder tab — square-cut bottom, rounded top, hanging outdented into
+   the panel padding so it sits proud of the rows.
+   ⚠️ Deliberately muted: the action column already speaks in green (Fetch) and
+   blue (a doc), and a saturated tab would compete with it. */
+.carto-sources-tab {
+  display: inline-block;
+  /* ⚠️ FLUSH with the row names, not outdented. An earlier cut hung these 10px
+     into the padding to make them stand out; at that distance it read as
+     misalignment rather than as a hanging label. The colour is what makes a tab
+     stand out — it does not also need to break the left edge. */
+  margin: 0 0 12px 0;
+  padding: 3px 12px 4px;
+  border-radius: 5px 5px 0 0;
+  font-size: var(--type-label-sm);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-bottom: 2px solid;
+}
+/* Given: settled, nothing to do — neutral on purpose. */
+.carto-sources-tab--given {
+  color: var(--on-surface-variant);
+  background: var(--surface-container);
+  border-bottom-color: var(--on-surface-disabled);
+}
+/* Published by an institution. */
+.carto-sources-tab--records {
+  color: #8fb8d8;
+  background: rgba(59, 130, 246, 0.10);
+  border-bottom-color: rgba(59, 130, 246, 0.55);
+}
+/* Only the neighbourhood has it. */
+.carto-sources-tab--local {
+  color: #d9b26a;
+  background: rgba(245, 158, 11, 0.10);
+  border-bottom-color: rgba(245, 158, 11, 0.55);
+}
+
+/* ⚠️ The action column is FIXED, not `auto`. Each row is its own grid, so an
+   auto-sized third column resized itself per row ("Fetch · USGS" vs
+   "→ NEIGHBORHOOD-INPUTS.md") and dragged the source column with it — the
+   sources came out on a ragged left edge that made the list hard to scan
+   down. A fixed track locks all three columns across every row. */
+.carto-sources-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 210px;
+  align-items: baseline; gap: 14px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--outline-variant);
+}
+.carto-sources-row > .carto-sources-action { justify-self: end; }
+.carto-sources-name { font-size: var(--type-body-sm); color: var(--on-surface-medium); }
+
+/* The source is a CONTROL — the best well is regional, so it opens. */
+.carto-sources-src {
+  font-size: var(--type-label-sm); text-align: left;
+  color: var(--on-surface-variant);
+  background: none; border: none;
+  border-bottom: 1px dotted var(--outline);
+  padding: 0 0 1px; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.carto-sources-src:hover { color: var(--on-surface); border-bottom-color: var(--on-surface-variant); }
+.carto-sources-src:focus-visible { outline: 1px solid var(--info); outline-offset: 2px; }
+.carto-sources-more { color: var(--info); }
+
+/* Action = what you DO about the row. Semantic status tokens, not
+   hex literals inline in the component. */
+.carto-sources-action {
+  font-size: var(--type-caption); white-space: nowrap;
+  border: 1px solid; border-radius: var(--radius-sm, 3px);
+  padding: 1px 6px;
+}
+.carto-sources-action--fetch { color: var(--success); border-color: var(--success-dim); background: var(--success-dim); }
+.carto-sources-action--doc   { color: var(--info);    border-color: var(--info-dim);    background: var(--info-dim); }
+.carto-sources-action--owed  { color: var(--warning); border-color: var(--warning-dim); background: var(--warning-dim); }
+.carto-sources-action--none  { color: var(--on-surface-disabled); border-color: var(--outline-variant); }
+
+/* Expanded alternatives — the accumulating directory of public wells. */
+.carto-sources-alts {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 8px 0 10px 14px; margin-bottom: 4px;
+  border-left: 1px solid var(--outline-variant);
+}
+.carto-sources-alt { display: flex; flex-direction: column; gap: 1px; }
+.carto-sources-alt-name {
+  font-size: var(--type-label-sm); color: var(--on-surface-medium);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.carto-sources-alt-note { font-size: var(--type-caption); color: var(--on-surface-subtle); }
+
+.carto-sources-tag {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 0 4px; border-radius: var(--radius-sm, 3px); border: 1px solid;
+}
+.carto-sources-tag--unverified { color: var(--on-surface-subtle);  border-color: var(--outline-variant); }
+.carto-sources-tag--native     { color: var(--success);            border-color: var(--success-dim); }
+.carto-sources-tag--elsewhere  { color: var(--warning);            border-color: var(--warning-dim); }
+.carto-sources-tag--archived   { color: var(--success);            border-color: var(--success-dim); }
+.carto-sources-tag--pointer    { color: var(--on-surface-disabled); border-color: var(--outline-variant); }
+
+.carto-sources-add {
+  align-self: flex-start; margin-top: 4px;
+  font-size: var(--type-caption); color: var(--on-surface-variant);
+  background: none; border: 1px dashed var(--outline);
+  border-radius: var(--radius-sm, 3px); padding: 2px 8px; cursor: pointer;
+}
+.carto-sources-add:hover { color: var(--on-surface); border-color: var(--on-surface-variant); }
+
+.carto-sources-foot {
+  border-top: 1px solid var(--outline-variant);
+  padding: 12px 18px 14px;
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: var(--type-label-sm); color: var(--on-surface-variant); line-height: 1.5;
+}
+.carto-sources-foot strong { color: var(--on-surface-medium); font-weight: 600; }
+
+/* Steps — written to be followed cold, by a person or by an agent. */
+.carto-sources-steps {
+  margin: 6px 0 2px; padding-left: 18px;
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: var(--type-caption); color: var(--on-surface-variant);
+  line-height: 1.45; list-style: decimal;
+}
+.carto-sources-steps li::marker { color: var(--on-surface-disabled); }
+.carto-sources-actions { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+.carto-sources-agent {
+  font-size: var(--type-caption); color: var(--info);
+  background: var(--info-dim); border: 1px solid var(--info-dim);
+  border-radius: var(--radius-sm, 3px); padding: 2px 8px; cursor: pointer;
+}
+.carto-sources-agent:hover { border-color: var(--info); }
+
+/* Locked rows — the Automatic tier. Nothing to press, nothing to supply. */
+.carto-sources-action--locked {
+  color: var(--on-surface-subtle);
+  border-color: var(--outline-variant);
+  background: var(--surface-container);
+}
+.carto-sources-locked-note {
+  font-size: var(--type-caption); color: var(--on-surface-subtle); font-style: italic;
+}
+
+/* A tier is a delegatable work package — the tab row carries its handoff. */
+.carto-sources-tabrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.carto-sources-handoff {
+  font-size: var(--type-caption); color: var(--on-surface-variant);
+  background: none; border: 1px solid var(--outline);
+  border-radius: var(--radius-sm, 3px); padding: 2px 9px; cursor: pointer;
+  margin-bottom: 12px;
+}
+.carto-sources-handoff:hover { color: var(--on-surface); border-color: var(--on-surface-variant); }

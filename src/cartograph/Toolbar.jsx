@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
+import SourcesPanel from './SourcesPanel.jsx'
 
 const SHOTS = ['browse', 'hero', 'street']
 
@@ -33,6 +34,11 @@ export default function Toolbar() {
   const runBake = useCartographStore(s => s.runBake)
   const lastStageShot = useCartographStore(s => s.lastStageShot)
   const activeLookId = useCartographStore(s => s.activeLookId)
+  const scene = useCartographStore(s => s.scene)
+  // "What goes into a town" — the outward face of the intake catalogue.
+  // Lives in Stage beside Preview: both answer "what does this install
+  // actually consist of", one for the render and one for the inputs.
+  const [sourcesOpen, setSourcesOpen] = useState(false)
 
   const inDesigner = shot === 'designer'
 
@@ -87,6 +93,11 @@ export default function Toolbar() {
               onClick={() => openPreview()}
               title="Open the last-baked slab in the Preview window (no re-bake; reuses the same window).">
               Preview
+            </button>
+            <button
+              onClick={() => setSourcesOpen(true)}
+              title="What goes into a town — every input, where it comes from, and what to do about it.">
+              Sources
             </button>
           </div>
         </>
@@ -155,6 +166,8 @@ export default function Toolbar() {
           </div>
         </>
       )}
+
+      {sourcesOpen && <SourcesPanel scene={scene} onClose={() => setSourcesOpen(false)} />}
     </div>
   )
 }
