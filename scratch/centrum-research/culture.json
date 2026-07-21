@@ -1,0 +1,27 @@
+{
+  "batch": "culture-hospitality",
+  "researched": "2026-07-21",
+  "note": "Web research. Every entry carries a confidence rating; corrections below were raised by the researcher against the briefing premise and MUST be read before use.",
+  "corrections": [
+    "⛔ BRIEFING ERROR (mine): I told the researcher andel's occupies a converted SCHEIBLER mill in Manufaktura. Wrong. Manufaktura is the POZNAŃSKI complex; Scheibler's empire is Księży Młyn, a separate site across the city. Do not let this conflation reach the roster — the two dynasties are distinct and it is exactly the kind of error a confident guide propagates.",
+    "andel's Hotel is officially renamed 'Vienna House by Wyndham Andel's Lodz'; locals still say andel's.",
+    "Muzeum Archeologiczne i Etnograficzne is EFFECTIVELY CLOSED — under modernization since 2025, one temporary exhibition only. Do not describe permanent displays as visitable.",
+    "The Loom is at Ogrodowa 21 by Manufaktura, NOT on Piotrkowska.",
+    "Teatr Szwalnia moved to Struga 90 and reports financial/premises instability — verify before publishing (confidence: medium).",
+    "Kino Polonia currently brands as 'Kino Polonia Reaktywacja'; Kino Wytwórnia is usually listed as 'Kino 3D Wytwórnia'."
+  ],
+  "entries": [
+    {"name":"Muzeum Sztuki MS1","kind":"museum","blurb":"Original site of Muzeum Sztuki at Więckowskiego 36 (entrance Gdańska 43), founded 1931 from the a.r. group's International Collection of Modern Art. Focuses on 20th-century work.","why_notable":"Europe's first and the world's second museum dedicated to modern art, after MoMA.","confidence":"high"},
+    {"name":"Muzeum Sztuki MS2","kind":"museum","blurb":"Second branch at Ogrodowa 19 in the Manufaktura complex, opened 2008. Four halls holding the permanent collection display 'Ways of Seeing' plus temporary exhibitions.","why_notable":"Houses the main permanent presentation of the Muzeum Sztuki collection.","confidence":"high"},
+    {"name":"Muzeum Archeologiczne i Etnograficzne w Łodzi","kind":"museum","blurb":"At plac Wolności 14 since 1956, descended from the 1918 City Museum. Roughly 290,000 objects across archaeology, ethnography, numismatics and puppet theatre.","why_notable":"Largest museum in Łódź by holdings; currently closed for modernization.","confidence":"high"},
+    {"name":"Muzeum Tradycji Niepodległościowych w Łodzi","kind":"museum","blurb":"Main site at Gdańska 13 in an 1883–85 prison used through both wars and until 1953. Branches at Radogoszcz and Stacja Radegast.","why_notable":"Łódź's longest-running history museum; the Radegast branch marks the Litzmannstadt Ghetto deportation station.","confidence":"high"},
+    {"name":"Teatr Wielki (Łódź)","kind":"theatre","blurb":"Opera and ballet house on plac Dąbrowskiego, built 1949–1964 and opened 19 January 1967 with Moniuszko's 'Halka'. Auditorium seats 1,074 since the 2003 renovation.","why_notable":"One of Europe's largest opera stages; among the most modern in the world at opening.","confidence":"high"},
+    {"name":"Filharmonia Łódzka","kind":"theatre","blurb":"Artur Rubinstein Philharmonic at Narutowicza 20/22. Current building by Romuald Loegler opened 10 December 2004, replacing the demolished hall; 658-seat concert hall plus a chamber hall.","why_notable":"Won SARP's award for best publicly funded building of 2004.","confidence":"high"},
+    {"name":"Teatr Szwalnia","kind":"theatre","blurb":"Independent theatre, now at Struga 90, working without a permanent ensemble or stable funding. Small-scale, close-contact staging with an emphasis on acting craft.","why_notable":"Long-running anchor of Łódź's off-theatre scene, roughly 15 years old.","confidence":"medium"},
+    {"name":"Kino Polonia","kind":"cinema","blurb":"Art-house cinema at Piotrkowska 67, on a site with film exhibition dating to 1911. Run by the Polish Filmmakers Association; mainly Polish and European programming.","why_notable":"Hosts Camerimage and Sputnik festival screenings; a pillar of the SFP art-house network.","confidence":"high"},
+    {"name":"Kino Wytwórnia","kind":"cinema","blurb":"169-seat cinema at Łąkowa 29, entrance B, built inside studio hall 10A of the former Wytwórnia Filmów Fabularnych. Part of the Klub Wytwórnia venue.","why_notable":"Occupies the feature-film studio that produced hundreds of Polish films, 1945–1998.","confidence":"high"},
+    {"name":"andel's Hotel Łódź","kind":"hotel","blurb":"Four-star hotel opened 2009 in the former Izrael Poznański spinning mill at Manufaktura. Now trades as Vienna House by Wyndham Andel's Lodz.","why_notable":"Widely cited industrial-conversion hotel; red-brick mill structure kept and exposed throughout.","confidence":"high"},
+    {"name":"The Loom","kind":"hotel","blurb":"Four-star hotel at Ogrodowa 21 beside Manufaktura, opened to guests 1 April 2022. 76 rooms, with interiors themed on the Łódź textile industry.","why_notable":"One of the newest hotels in the Manufaktura area.","confidence":"high"},
+    {"name":"Hala Górniak","kind":"market","blurb":"Market hall on plac Niepodległości, built 1932–34 to Paweł Sperr's design with an all-timber roof. Now around 148 indoor stalls plus 50 outdoor.","why_notable":"One of Łódź's two oldest markets; location for Machulski's film 'Kingsajz'.","confidence":"high"}
+  ]
+}

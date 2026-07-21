@@ -1,0 +1,4834 @@
+{
+  "meta": {
+    "scene": "centrum",
+    "generated": "2026-07-21",
+    "generator": "OSM cheap-signal mine (INTAKE-CATALOGUE §4.1)",
+    "note": "PRELIMINARY. Derived entirely from tags already in cartograph/data/centrum/raw/osm.json — no web research, no acquisition. Scores rank the WORK QUEUE; they never gate what can be filled. A beloved corner bar scores zero here.",
+    "landmarks": 171,
+    "businesses": 249
+  },
+  "landmarks": [
+    {
+      "building_id": "osm-104253587",
+      "name": "Kościół pw. Świętego Józefa Oblubieńca Najświętszej Maryi Panny",
+      "score": 18,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q11746966",
+      "wikipedia": "pl:Kościół św. Józefa w Łodzi",
+      "ref_nid": "KL.III-4/10-64",
+      "start_date": "1765..1768",
+      "levels": null,
+      "addr": "Ogrodowa 22"
+    },
+    {
+      "building_id": "osm-169561251",
+      "name": "Kaplica Rodziny Heinzlów",
+      "score": 17,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:chapel",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4573351",
+      "wikipedia": "pl:Kaplica grobowa Heinzlów w Łodzi",
+      "ref_nid": "A/121",
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-103281496",
+      "name": "Kościół Wniebowzięcia Najświętszej Maryi Panny",
+      "score": 17,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q11745918",
+      "wikipedia": "pl:Kościół Wniebowzięcia Najświętszej Maryi Panny w Łodzi",
+      "ref_nid": "A/119",
+      "start_date": null,
+      "levels": "1",
+      "addr": "Kościelna 8/10"
+    },
+    {
+      "building_id": "osm-104252448",
+      "name": "Kościół Zesłania Ducha Świętego",
+      "score": 17,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4573681",
+      "wikipedia": "pl:Kościół Zesłania Ducha Świętego w Łodzi",
+      "ref_nid": "A/113",
+      "start_date": null,
+      "levels": "4",
+      "addr": "Piotrkowska 2"
+    },
+    {
+      "building_id": "osm-103645942",
+      "name": "Collegium Anatomicum",
+      "score": 16,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:building"
+      ],
+      "wikidata": "Q9195412",
+      "wikipedia": "pl:Collegium Anatomicum w Łodzi",
+      "ref_nid": "A/331",
+      "start_date": "1897",
+      "levels": "4",
+      "addr": "Prezydenta Gabriela Narutowicza 60"
+    },
+    {
+      "building_id": "osm-283202330",
+      "name": "Archikatedra pw. Świętego Stanisława Kostki",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q1140861",
+      "wikipedia": "pl:Bazylika archikatedralna św. Stanisława Kostki w Łodzi",
+      "ref_nid": "A/112",
+      "start_date": null,
+      "levels": null,
+      "addr": "Piotrkowska 265"
+    },
+    {
+      "building_id": "osm-266903009",
+      "name": "Cerkiew Zaśnięcia Najświętszej Maryi Panny",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q9187282",
+      "wikipedia": "pl:Cerkiew Zaśnięcia Najświętszej Maryi Panny w Łodzi",
+      "ref_nid": "A/293 z 1983-12-20",
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-107422365",
+      "name": "Cerkiew św. Olgi",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q1444878",
+      "wikipedia": "pl:Cerkiew św. Olgi w Łodzi",
+      "ref_nid": "A/277",
+      "start_date": null,
+      "levels": null,
+      "addr": "Grzegorza Piramowicza 12"
+    },
+    {
+      "building_id": "osm-105828051",
+      "name": "Dworek Ludwika Geyera",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:manor"
+      ],
+      "wikidata": "Q11695358",
+      "wikipedia": "pl:Dworek Ludwika Geyera",
+      "ref_nid": "A/18, 514.VII.18, ZY/1/18",
+      "start_date": null,
+      "levels": "1",
+      "addr": "Piotrkowska 286"
+    },
+    {
+      "building_id": "osm-190343346",
+      "name": "Kaplica Rodziny Scheibler",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "historic:chapel",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q1790823",
+      "wikipedia": "pl:Kaplica grobowa Scheiblerów w Łodzi",
+      "ref_nid": "A/12",
+      "start_date": null,
+      "levels": null,
+      "addr": "Ogrodowa 43"
+    },
+    {
+      "building_id": "osm-530348394",
+      "name": "Kościół Matki Boskiej Zwycięskiej - Sanktuarium Matki Bożej Zwycięskiej",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q11746178",
+      "wikipedia": "pl:Kościół Matki Boskiej Zwycięskiej w Łodzi - Sanktuarium Matki Bożej Zwycięskiej",
+      "ref_nid": "A/120",
+      "start_date": null,
+      "levels": null,
+      "addr": "Łąkowa 42"
+    },
+    {
+      "building_id": "osm-103273339",
+      "name": "Kościół Najświętszego Imienia Jezus - Sanktuarium Najświętszego Imienia Jezus",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q11746147",
+      "wikipedia": "pl:Parafia Najświętszego Imienia Jezus w Łodzi - Sanktuarium Najświętszego Imienia Jezus",
+      "ref_nid": "A/116",
+      "start_date": null,
+      "levels": null,
+      "addr": "Henryka Sienkiewicza 60"
+    },
+    {
+      "building_id": "osm-108945966",
+      "name": "Kościół Świętej Anny",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q11746514",
+      "wikipedia": "pl:Kościół św. Anny w Łodzi",
+      "ref_nid": "A-259",
+      "start_date": null,
+      "levels": null,
+      "addr": "Aleja Marszałka Edwarda Śmigłego-Rydza 24/26"
+    },
+    {
+      "building_id": "osm-102162512",
+      "name": "Kościół św. Mateusza",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q4575430",
+      "wikipedia": "pl:Kościół św. Mateusza w Łodzi",
+      "ref_nid": "A/115",
+      "start_date": null,
+      "levels": null,
+      "addr": "Piotrkowska 279/283"
+    },
+    {
+      "building_id": "osm-174955733",
+      "name": "Sobór św. Aleksandra Newskiego",
+      "score": 15,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q770458",
+      "wikipedia": "pl:Sobór św. Aleksandra Newskiego w Łodzi",
+      "ref_nid": "A/117",
+      "start_date": null,
+      "levels": null,
+      "addr": "Jana Kilińskiego 56"
+    },
+    {
+      "building_id": "osm-175716830",
+      "name": "Muzeum Tradycji Niepodległościowych w Łodzi",
+      "score": 14,
+      "signals": [
+        "wikidata",
+        "NID-listed",
+        "heritage",
+        "historic:prison",
+        "tourism:museum"
+      ],
+      "wikidata": "Q11787231",
+      "wikipedia": null,
+      "ref_nid": "A/20",
+      "start_date": null,
+      "levels": "3",
+      "addr": "Gdańska 13"
+    },
+    {
+      "building_id": "osm-174530946",
+      "name": "Archiwum Państwowe (dawny Ratusz Miejski)",
+      "score": 13,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "historic:building"
+      ],
+      "wikidata": "Q4573407",
+      "wikipedia": "pl:Ratusz w Łodzi",
+      "ref_nid": "A/352",
+      "start_date": null,
+      "levels": "3",
+      "addr": "Plac Wolności 1"
+    },
+    {
+      "building_id": "osm-174531209",
+      "name": "Archiwum Państwowe (dawny Ratusz Miejski)",
+      "score": 13,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "historic:building"
+      ],
+      "wikidata": "Q4573407",
+      "wikipedia": "pl:Ratusz w Łodzi",
+      "ref_nid": "A/352",
+      "start_date": null,
+      "levels": "2",
+      "addr": "Piotrkowska 1"
+    },
+    {
+      "building_id": "osm-175856966",
+      "name": "Kościół Rzymskokatolicki pw. Podwyższenia Świętego Krzyża",
+      "score": 13,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "NID-listed",
+        "heritage"
+      ],
+      "wikidata": "Q11745726",
+      "wikipedia": "pl:Kościół Podwyższenia Świętego Krzyża w Łodzi",
+      "ref_nid": "A/114",
+      "start_date": null,
+      "levels": null,
+      "addr": "Henryka Sienkiewicza 38"
+    },
+    {
+      "building_id": "osm-130386316",
+      "name": "Kamienica Wielkomiejska",
+      "score": 12,
+      "signals": [
+        "wikidata",
+        "NID-listed",
+        "heritage",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q30968822",
+      "wikipedia": null,
+      "ref_nid": "A/23",
+      "start_date": null,
+      "levels": "4",
+      "addr": "Andrzeja Struga 42"
+    },
+    {
+      "building_id": "osm-185548672",
+      "name": "Kościół Niepokalanego Poczęcia Najświętszej Marii Panny",
+      "score": 12,
+      "signals": [
+        "wikidata",
+        "NID-listed",
+        "heritage",
+        "historic:church"
+      ],
+      "wikidata": "Q15618038",
+      "wikipedia": null,
+      "ref_nid": "A/23",
+      "start_date": null,
+      "levels": null,
+      "addr": "Marii Skłodowskiej-Curie 22"
+    },
+    {
+      "building_id": "osm-137794057",
+      "name": "Dom Hilarego Majewskiego",
+      "score": 11,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q31068541",
+      "wikipedia": "pl:Dom Hilarego Majewskiego w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Włókiennicza 11"
+    },
+    {
+      "building_id": "osm-185053089",
+      "name": "Mauzoleum małżonków Moenke",
+      "score": 11,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:tomb",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q11771821",
+      "wikipedia": "pl:Mauzoleum małżonków Moenke",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-104252454",
+      "name": "Muzeum Archeologiczne i Etnograficzne w Łodzi",
+      "score": 11,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building",
+        "tourism:museum"
+      ],
+      "wikidata": "Q11786903",
+      "wikipedia": "pl:Muzeum Archeologiczne i Etnograficzne w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Plac Wolności 14"
+    },
+    {
+      "building_id": "osm-175721068",
+      "name": "Pałac Karola Poznańskiego",
+      "score": 11,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4572916",
+      "wikipedia": "pl:Pałac Karola Poznańskiego",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Gdańska 32"
+    },
+    {
+      "building_id": "osm-186401319",
+      "name": "Willa Henryka Grohmana",
+      "score": 10,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building"
+      ],
+      "wikidata": "Q30091878",
+      "wikipedia": "pl:Willa Henryka Grohmana",
+      "ref_nid": null,
+      "start_date": "1893-01-01",
+      "levels": null,
+      "addr": "Księdza Biskupa Wincentego Tymienieckiego 24"
+    },
+    {
+      "building_id": "osm-146975092",
+      "name": "Willa Hermana Juliusza Milsza",
+      "score": 10,
+      "signals": [
+        "NID-listed",
+        "heritage",
+        "historic:building",
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": "A/282",
+      "start_date": null,
+      "levels": "3",
+      "addr": "Łąkowa 21"
+    },
+    {
+      "building_id": "osm-122658742",
+      "name": "Dom Otto Gehliga",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building"
+      ],
+      "wikidata": "Q11694654",
+      "wikipedia": "pl:Dom Otto Gehliga",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Juliana Tuwima 17A"
+    },
+    {
+      "building_id": "osm-181334756",
+      "name": "DoubleTree by Hilton Lodz",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:hotel"
+      ],
+      "wikidata": "Q21061309",
+      "wikipedia": "pl:DoubleTree by Hilton Hotel Łódź",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "11",
+      "addr": "Łąkowa 29"
+    },
+    {
+      "building_id": "osm-104651431",
+      "name": "Filharmonia Łódzka",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q672957",
+      "wikipedia": "pl:Filharmonia Łódzka im. Artura Rubinsteina",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Prezydenta Gabriela Narutowicza 20/22"
+    },
+    {
+      "building_id": "osm-1249270544",
+      "name": "Muzeum Kanału „Dętka”",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:museum"
+      ],
+      "wikidata": "Q11787027",
+      "wikipedia": "pl:Muzeum Kanału „Dętka”",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "1",
+      "addr": "Plac Wolności "
+    },
+    {
+      "building_id": "osm-174195288",
+      "name": "Muzeum Kinematografii",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:museum"
+      ],
+      "wikidata": "Q4572696",
+      "wikipedia": "pl:Pałac Karola Scheiblera",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Plac Zwycięstwa 1"
+    },
+    {
+      "building_id": "osm-455514019",
+      "name": "Muzeum Komunikacji Miejskiej MPK-Łódź",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:museum"
+      ],
+      "wikidata": "Q11787040",
+      "wikipedia": "pl:Muzeum Komunikacji Miejskiej w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Wierzbowa 51"
+    },
+    {
+      "building_id": "osm-104292250",
+      "name": "Muzeum Sztuki MS1",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:museum"
+      ],
+      "wikidata": "Q1141934",
+      "wikipedia": "pl:Muzeum Sztuki w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Pułkownika Doktora Stanisława Więckowskiego 36"
+    },
+    {
+      "building_id": "osm-104236319",
+      "name": "Ośrodek Propagandy Sztuki",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:gallery"
+      ],
+      "wikidata": "Q11801638",
+      "wikipedia": "pl:Ośrodek Propagandy Sztuki w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Henryka Sienkiewicza 44"
+    },
+    {
+      "building_id": "osm-174531565",
+      "name": "Pałac Alfreda Biedermanna",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q11814716",
+      "wikipedia": "pl:Pałac Alfreda Biedermanna w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Franciszkańska 1/5"
+    },
+    {
+      "building_id": "osm-174955736",
+      "name": "Pałac Arnolda Stillera",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building"
+      ],
+      "wikidata": "Q11814721",
+      "wikipedia": "pl:Pałac Arnolda Stillera",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Stefana Jaracza 45"
+    },
+    {
+      "building_id": "osm-37550695",
+      "name": "Pałac Izraela Poznańskiego w Łodzi",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:castle"
+      ],
+      "wikidata": "Q4578195",
+      "wikipedia": "pl:Pałac Izraela Poznańskiego",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Ogrodowa 15"
+    },
+    {
+      "building_id": "osm-104189409",
+      "name": "Pałac Juliusza Heinzla",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4574151",
+      "wikipedia": "pl:Pałac Juliusza Heinzla w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Piotrkowska 104"
+    },
+    {
+      "building_id": "osm-101293559",
+      "name": "Pałac Maksymiliana Goldfedera",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4572648",
+      "wikipedia": "pl:Pałac Maksymiliana Goldfedera w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Piotrkowska 77"
+    },
+    {
+      "building_id": "osm-107677347",
+      "name": "Polonia Residence",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building"
+      ],
+      "wikidata": "Q4573260",
+      "wikipedia": "pl:Hotel Polonia Palast w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "6",
+      "addr": "Prezydenta Gabriela Narutowicza 38"
+    },
+    {
+      "building_id": "osm-178179618",
+      "name": "Secesyjna willa Leopolda Kindermana",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4573321",
+      "wikipedia": "pl:Willa Leopolda Kindermanna",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Wólczańska 31/33"
+    },
+    {
+      "building_id": "osm-103645945",
+      "name": "Teatr Wielki",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:theatre"
+      ],
+      "wikidata": "Q1485932",
+      "wikipedia": "pl:Teatr Wielki w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "Plac Generała Jana Henryka Dąbrowskiego "
+    },
+    {
+      "building_id": "osm-194189143",
+      "name": "Tobaco Hotel",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:hotel"
+      ],
+      "wikidata": "Q30967825",
+      "wikipedia": "pl:Fabryka Państwowego Monopolu Tytoniowego w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Mikołaja Kopernika 64"
+    },
+    {
+      "building_id": "osm-847999456",
+      "name": "Willa Alfreda Jarischa",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building"
+      ],
+      "wikidata": "Q28870118",
+      "wikipedia": "pl:Willa Alfreda Jarischa",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Aleja Tadeusza Kościuszki 88"
+    },
+    {
+      "building_id": "osm-175326536",
+      "name": "Willa Hüffera",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q9374688",
+      "wikipedia": "pl:Willa Hüffera w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Wólczańska 243A"
+    },
+    {
+      "building_id": "osm-103645939",
+      "name": "Willa Jakuba Kestenberga",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q9374689",
+      "wikipedia": "pl:Willa Jakuba Kestenberga",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Stefana Jaracza 62"
+    },
+    {
+      "building_id": "osm-164013019",
+      "name": "Willa Leona Rappaporta",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "historic:building"
+      ],
+      "wikidata": "Q4574132",
+      "wikipedia": "pl:Willa Leona Rappaporta",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Rewolucji 1905 r. 44"
+    },
+    {
+      "building_id": "osm-76277579",
+      "name": "Willa Ludwika Grohmana",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4573737",
+      "wikipedia": "pl:Willa Ludwika Grohmana",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Tylna 9/11"
+    },
+    {
+      "building_id": "osm-283988938",
+      "name": "Willa Reinholda Richtera",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q4572713",
+      "wikipedia": "pl:Willa Reinholda Richtera",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Księdza Harcmistrza Ignacego Skorupki 6/8"
+    },
+    {
+      "building_id": "osm-36894066",
+      "name": "andel's Hotel Łódź",
+      "score": 9,
+      "signals": [
+        "wikidata",
+        "wikipedia",
+        "tourism:hotel"
+      ],
+      "wikidata": "Q9150850",
+      "wikipedia": "pl:Andel’s Hotel Łódź",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "Ogrodowa 17"
+    },
+    {
+      "building_id": "osm-105082959",
+      "name": "Dom Szmidtów - kamienica wielkomiejska",
+      "score": 8,
+      "signals": [
+        "NID-listed",
+        "heritage",
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": "A/321",
+      "start_date": null,
+      "levels": "4",
+      "addr": "Piotrkowska 225"
+    },
+    {
+      "building_id": "osm-107422505",
+      "name": "Kamienica Rachmila Lipszyca",
+      "score": 8,
+      "signals": [
+        "wikidata",
+        "historic:building",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q11996806",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "6",
+      "addr": "Prezydenta Gabriela Narutowicza 44"
+    },
+    {
+      "building_id": "osm-446841347",
+      "name": "Piotrkowska Centrum",
+      "score": 8,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q21335020",
+      "wikipedia": "pl:Dworzec Tramwajowy Centrum",
+      "ref_nid": null,
+      "start_date": "2015-10-31",
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-210392762",
+      "name": "Agencja Restrukturyzacji i Modernizacji Rolnictwa",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9142031",
+      "wikipedia": "pl:Agencja Restrukturyzacji i Modernizacji Rolnictwa",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 84"
+    },
+    {
+      "building_id": "osm-173343604",
+      "name": "Atlas Arena",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q757145",
+      "wikipedia": "pl:Atlas Arena",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Aleja Księdza Biskupa Władysława Bandurskiego 7"
+    },
+    {
+      "building_id": "osm-174858696",
+      "name": "B22 Biblioteka Główna Politechniki Łódzkiej",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9170846",
+      "wikipedia": "pl:Biblioteka Politechniki Łódzkiej",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "Wólczańska 223"
+    },
+    {
+      "building_id": "osm-370966221",
+      "name": "B9 Budynek Trzech Wydziałów „Lodex”",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9257585",
+      "wikipedia": "pl:Fabryka Schweikerta",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Aleje Politechniki 8"
+    },
+    {
+      "building_id": "osm-310226920",
+      "name": "Centrum Dialogu im. Marka Edelmana",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9186218",
+      "wikipedia": "pl:Centrum Dialogu im. Marka Edelmana",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Wojska Polskiego 83"
+    },
+    {
+      "building_id": "osm-102162539",
+      "name": "D1",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q4573416",
+      "wikipedia": "pl:Pałac Scheiblerów w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Piotrkowska 266/268"
+    },
+    {
+      "building_id": "osm-280983863",
+      "name": "Fabryka Adama Ossera",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9257549",
+      "wikipedia": "pl:Fabryka Adama Ossera",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "Stanisława Przybyszewskiego 85/89"
+    },
+    {
+      "building_id": "osm-39524935",
+      "name": "Galeria Łódzka",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q4572739",
+      "wikipedia": "pl:Galeria Łódzka",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 15/23"
+    },
+    {
+      "building_id": "osm-25994137",
+      "name": "Hala Sportowa",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q427377",
+      "wikipedia": "pl:Hala Sportowa Miejskiego Ośrodka Sportu i Rekreacji w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Księdza Harcmistrza Ignacego Skorupki 21"
+    },
+    {
+      "building_id": "osm-175899226",
+      "name": "Kamienica Pod Góralem",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q11734081",
+      "wikipedia": "pl:Kamienica Jana Starowicza w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Piotrkowska 292"
+    },
+    {
+      "building_id": "osm-101295574",
+      "name": "Komenda Regionalna Straży Ochrony Kolei",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q16920928",
+      "wikipedia": "pl:Straż Ochrony Kolei",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Aleja Unii Lubelskiej 3/5"
+    },
+    {
+      "building_id": "osm-199268501",
+      "name": "Kościół pw. Najświętszego Zbawiciela",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q22078505",
+      "wikipedia": "pl:Kościół Najświętszego Zbawiciela w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Ciepła 10"
+    },
+    {
+      "building_id": "osm-211012100",
+      "name": "Kościół pw. Św. Elżbiety Węgierskiej i Bł. O. Anastazego Pankiewicza",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q11746133",
+      "wikipedia": "pl:Kościół i klasztor św. Elżbiety Węgierskiej w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Błogosławionego Anastazego Pankiewicza 15"
+    },
+    {
+      "building_id": "osm-201851011",
+      "name": "Kościół pw. Świętego Jerzego",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q4573381",
+      "wikipedia": "pl:Kościół garnizonowy św. Jerzego w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Świętego Jerzego 7a"
+    },
+    {
+      "building_id": "osm-175904820",
+      "name": "Kościół pw. św. Andrzeja Boboli",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q11746223",
+      "wikipedia": "pl:Kościół w skansenie łódzkiej architektury drewnianej",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-103651313",
+      "name": "Kościół Świętej Teresy od Dzieciątka Jezus i Świętego Jana Bosko",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q11747497",
+      "wikipedia": "pl:Kościół św. Teresy w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Doktora Stefana Kopcińskiego 1/3"
+    },
+    {
+      "building_id": "osm-100815166",
+      "name": "Międzynarodowe targi Łódzkie",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9374741",
+      "wikipedia": "pl:Willa Zygmunta Richtera",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Wólczańska 199"
+    },
+    {
+      "building_id": "osm-439650453",
+      "name": "Nowa Sukcesja",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q107234297",
+      "wikipedia": "pl:Nowa Sukcesja (centrum handlowe)",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Aleje Politechniki 1"
+    },
+    {
+      "building_id": "osm-174195289",
+      "name": "Palmiarnia Łódzka",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q4573274",
+      "wikipedia": "pl:Palmiarnia Łódzka",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 61"
+    },
+    {
+      "building_id": "osm-102851813",
+      "name": "Pałac arcybiskupi w Łodzi",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q11814900",
+      "wikipedia": "pl:Pałac biskupi w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Księdza Harcmistrza Ignacego Skorupki 1"
+    },
+    {
+      "building_id": "osm-180836449",
+      "name": "Poczta Główna",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q4574112",
+      "wikipedia": "pl:Poczta Główna w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Juliana Tuwima 38"
+    },
+    {
+      "building_id": "osm-104137804",
+      "name": "Red Tower",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9305087",
+      "wikipedia": "pl:Red Tower",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "21",
+      "addr": "Piotrkowska 148/150"
+    },
+    {
+      "building_id": "osm-174858708",
+      "name": "Rektorat Politechniki Łódzkiej",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9374693",
+      "wikipedia": "pl:Willa Józefa Richtera",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Księdza Harcmistrza Ignacego Skorupki 10/12"
+    },
+    {
+      "building_id": "osm-174195291",
+      "name": "Senat, Rektorat, Dziekanaty Operatorski i Reżyserii",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q11814827",
+      "wikipedia": "pl:Pałac Oskara Kona",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Targowa 61/63"
+    },
+    {
+      "building_id": "osm-164633487",
+      "name": "Synagoga Reicherów",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q1791038",
+      "wikipedia": "pl:Synagoga Reicherów w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-175852462",
+      "name": "Teatr Muzyczny",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9356104",
+      "wikipedia": "pl:Teatr Muzyczny w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Północna 47/51"
+    },
+    {
+      "building_id": "osm-174955734",
+      "name": "Teatr im. Stefana Jaracza",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q7606145",
+      "wikipedia": "pl:Teatr im. Stefana Jaracza w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Stefana Jaracza 27"
+    },
+    {
+      "building_id": "osm-186401321",
+      "name": "Textorial Park",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9357688",
+      "wikipedia": "pl:Textorial Park",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Fabryczna 17"
+    },
+    {
+      "building_id": "osm-29456341",
+      "name": "Urząd Stanu Cywilnego",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9374669",
+      "wikipedia": "pl:Willa Ernsta Leonhardta",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Pabianicka 2"
+    },
+    {
+      "building_id": "osm-176031410",
+      "name": "VIII Dom Studenta Politechniki Łódzkiej",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9367835",
+      "wikipedia": "pl:VIII Dom Studenta Politechniki Łódzkiej",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "11",
+      "addr": "Radwańska 40/42"
+    },
+    {
+      "building_id": "osm-1504466887",
+      "name": "Wojewódzka Biblioteka Publiczna im. Marszałka Józefa Piłsudskiego w Łodzi",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9377098",
+      "wikipedia": "pl:Wojewódzka Biblioteka Publiczna im. Marszałka Józefa Piłsudskiego w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Gdańska 100/102"
+    },
+    {
+      "building_id": "osm-103526309",
+      "name": "Wydawnictwo Uniwersytetu Łódzkiego",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q48860764",
+      "wikipedia": "pl:Wydawnictwo Uniwersytetu Łódzkiego",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Jana Matejki 34A"
+    },
+    {
+      "building_id": "osm-29454379",
+      "name": "Łaźnie Miejskie (PKO BP)",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9394203",
+      "wikipedia": "pl:Łaźnie Miejskie przy ul. Rzgowskiej w Łodzi",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Rzgowska 34/36"
+    },
+    {
+      "building_id": "osm-103272394",
+      "name": "Łódzki Dom Kultury",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q9395013",
+      "wikipedia": "pl:Łódzki Dom Kultury",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Generała Romualda Traugutta 18"
+    },
+    {
+      "building_id": "osm-108803107",
+      "name": "Łódź Kaliska Towarowa",
+      "score": 7,
+      "signals": [
+        "wikidata",
+        "wikipedia"
+      ],
+      "wikidata": "Q2206594",
+      "wikipedia": "pl:Łódź Kaliska Towarowa",
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Generała Walerego Wróblewskiego 33"
+    },
+    {
+      "building_id": "osm-106539017",
+      "name": "Kamienica Bogusława Zimmermana",
+      "score": 6,
+      "signals": [
+        "NID-listed",
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": "A/58",
+      "start_date": null,
+      "levels": "3",
+      "addr": "Plac Wolności 2"
+    },
+    {
+      "building_id": "osm-169566258",
+      "name": "Kościół Świętej Rodziny",
+      "score": 6,
+      "signals": [
+        "wikidata",
+        "tourism:attraction"
+      ],
+      "wikidata": "Q62562555",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Bolesława Limanowskiego 60"
+    },
+    {
+      "building_id": "osm-36894063",
+      "name": "Muzeum Sztuki MS2",
+      "score": 6,
+      "signals": [
+        "wikidata",
+        "tourism:museum"
+      ],
+      "wikidata": "Q30091626",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Ogrodowa 19"
+    },
+    {
+      "building_id": "osm-36894056",
+      "name": "Cinema City",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q38244657",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Drewnowska 58"
+    },
+    {
+      "building_id": "osm-655159605",
+      "name": "HI Piotrkowska",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q126724486",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Piotrkowska 157a"
+    },
+    {
+      "building_id": "osm-655159606",
+      "name": "Hi Piotrkowska",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q126724486",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "Piotrkowska 155"
+    },
+    {
+      "building_id": "osm-1539015112",
+      "name": "Kino Tatry",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q16566671",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Henryka Sienkiewicza 40"
+    },
+    {
+      "building_id": "osm-136171654",
+      "name": "Kościół Zielonoświątkowy",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q126368570",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Stefana Jaracza 95/97"
+    },
+    {
+      "building_id": "osm-1536899132",
+      "name": "Mediateka MeMo",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q135006445",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Stanisława Moniuszki 5"
+    },
+    {
+      "building_id": "osm-1526375058",
+      "name": "Orion Tower",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q11799179",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "17",
+      "addr": "Henryka Sienkiewicza 85/87"
+    },
+    {
+      "building_id": "osm-104239245",
+      "name": "Polonia",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q11739384",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Piotrkowska 67"
+    },
+    {
+      "building_id": "osm-1513476967",
+      "name": "Teatr Nowy im. Kazimierza Dejmka w Łodzi",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q2588980",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Zachodnia 93"
+    },
+    {
+      "building_id": "osm-178668852",
+      "name": "Willa Ryszarda Schimmela",
+      "score": 4,
+      "signals": [
+        "wikidata"
+      ],
+      "wikidata": "Q30966910",
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Karolewska 1"
+    },
+    {
+      "building_id": "osm-103393898",
+      "name": "Willa Ludwika Meyera",
+      "score": 3,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": "1887",
+      "levels": "3",
+      "addr": "Stanisława Moniuszki 7/9"
+    },
+    {
+      "building_id": "osm-177041369",
+      "name": "Aiden by Best Western Łódź",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Legionów 81"
+    },
+    {
+      "building_id": "osm-119455955",
+      "name": "Ambasador Centrum",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "7",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 29"
+    },
+    {
+      "building_id": "osm-313181755",
+      "name": "Ambasador Premium",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "11",
+      "addr": "Jana Kilińskiego 145"
+    },
+    {
+      "building_id": "osm-107461281",
+      "name": "Apartamenty Fresco Plus",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Prezydenta Gabriela Narutowicza 24"
+    },
+    {
+      "building_id": "osm-108370358",
+      "name": "Aparthotel Krzywa Kamienica",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "Doktora Adama Próchnika 53"
+    },
+    {
+      "building_id": "osm-151216551",
+      "name": "Arche Residence Łódź",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "11",
+      "addr": "Jana Matejki 11"
+    },
+    {
+      "building_id": "osm-187483926",
+      "name": "BIBLIO Apartamenty",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Marii Skłodowskiej-Curie 28"
+    },
+    {
+      "building_id": "osm-1035187825",
+      "name": "Boat City Aparts",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Poznańska 20"
+    },
+    {
+      "building_id": "osm-102162546",
+      "name": "Boutique",
+      "score": 2,
+      "signals": [
+        "tourism:hostel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Profesora Bohdana Stefanowskiego 17"
+    },
+    {
+      "building_id": "osm-175904817",
+      "name": "Budynek przeniesiony z ul. Mazowieckiej 47 w Łodzi.",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": " "
+    },
+    {
+      "building_id": "osm-175904788",
+      "name": "Budynek przeniesiony z ul. Wólczańskiej 68 w Łodzi.",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": " "
+    },
+    {
+      "building_id": "osm-111549074",
+      "name": "Campanile",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "7",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 27"
+    },
+    {
+      "building_id": "osm-140368063",
+      "name": "Centrum Szkoleniowo-Konferencyjne UŁ",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "11",
+      "addr": "Doktora Stefana Kopcińskiego 16/18"
+    },
+    {
+      "building_id": "osm-543085766",
+      "name": "Cosy Apt Wierzbowa",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "6",
+      "addr": "Wierzbowa 12"
+    },
+    {
+      "building_id": "osm-103394461",
+      "name": "Dom Buta",
+      "score": 2,
+      "signals": [
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "6",
+      "addr": "Piotrkowska 98"
+    },
+    {
+      "building_id": "osm-543112036",
+      "name": "Dom Gościnny „Linat Orchim”",
+      "score": 2,
+      "signals": [
+        "tourism:guest_house"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Pomorska 18"
+    },
+    {
+      "building_id": "osm-1434411763",
+      "name": "Dom KD Kruk",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "6 Sierpnia 68"
+    },
+    {
+      "building_id": "osm-119364413",
+      "name": "Dom Ogrodnika",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-175904805",
+      "name": "Dom Papiernika\" przeniesiony z ul. Żeromskiego 68",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": " "
+    },
+    {
+      "building_id": "osm-107945372",
+      "name": "Dom Wycieczkowy nr 3",
+      "score": 2,
+      "signals": [
+        "tourism:hostel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Łęczycka 70"
+    },
+    {
+      "building_id": "osm-175904786",
+      "name": "Dom przeniesiony z ul. Kopernika 42 w Łodzi.",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": " "
+    },
+    {
+      "building_id": "osm-175904813",
+      "name": "Dom przeniesiony z ul. Mazowieckiej 61 w Łodzi.",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": " "
+    },
+    {
+      "building_id": "osm-1503369173",
+      "name": "Dream Apartments",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Gdańska 72"
+    },
+    {
+      "building_id": "osm-194187447",
+      "name": "Focus",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Łąkowa 23/25"
+    },
+    {
+      "building_id": "osm-180970817",
+      "name": "Fresco",
+      "score": 2,
+      "signals": [
+        "tourism:hostel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "6 Sierpnia 80"
+    },
+    {
+      "building_id": "osm-1517608480",
+      "name": "Green Hostel 24",
+      "score": 2,
+      "signals": [
+        "tourism:hostel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "Zachodnia 50"
+    },
+    {
+      "building_id": "osm-1525830557",
+      "name": "Hampton by Hilton Lodz City Center",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Piotrkowska 157"
+    },
+    {
+      "building_id": "osm-175927646",
+      "name": "Holiday Inn",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "8",
+      "addr": "Piotrkowska 229/231"
+    },
+    {
+      "building_id": "osm-175716033",
+      "name": "Hostel Łódź",
+      "score": 2,
+      "signals": [
+        "tourism:guest_house"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Gdańska 10"
+    },
+    {
+      "building_id": "osm-466659896",
+      "name": "Hotel B&B",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "6",
+      "addr": "Aleja Tadeusza Kościuszki 16"
+    },
+    {
+      "building_id": "osm-199267920",
+      "name": "Hotel Borowiecki",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Marcina Kasprzaka 7/9"
+    },
+    {
+      "building_id": "osm-39524863",
+      "name": "Hotel Boss",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Tatrzańska 11"
+    },
+    {
+      "building_id": "osm-186395646",
+      "name": "Hotel Boutique",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Milionowa 25"
+    },
+    {
+      "building_id": "osm-153886455",
+      "name": "Hotel Iness",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Generała Walerego Wróblewskiego 23"
+    },
+    {
+      "building_id": "osm-154071402",
+      "name": "Hotel Iness II",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Proletariacka 36"
+    },
+    {
+      "building_id": "osm-104244848",
+      "name": "Hotel Mazowiecki",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "5",
+      "addr": "28 Pułku Strzelców Kaniowskich 53/57"
+    },
+    {
+      "building_id": "osm-657207344",
+      "name": "Hotel Puro Łódź",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Ogrodowa 16"
+    },
+    {
+      "building_id": "osm-232069365",
+      "name": "Marina Łódź-Kaliska",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Aleja Włókniarzy 227"
+    },
+    {
+      "building_id": "osm-188326138",
+      "name": "Modernistyczna krańcówka „Północna”",
+      "score": 2,
+      "signals": [
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Północna 12"
+    },
+    {
+      "building_id": "osm-143564231",
+      "name": "Muzeum Geologiczne WNG UŁ",
+      "score": 2,
+      "signals": [
+        "tourism:museum"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Doktora Stefana Kopcińskiego 31"
+    },
+    {
+      "building_id": "osm-206291360",
+      "name": "Noclegi Sami Swoi",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Milionowa 53"
+    },
+    {
+      "building_id": "osm-147534720",
+      "name": "Novotel",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "11",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 11A"
+    },
+    {
+      "building_id": "osm-369248940",
+      "name": "Opuszczona willa rodziny Maurerów",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Aleja Włókniarzy 151"
+    },
+    {
+      "building_id": "osm-159872455",
+      "name": "Pierwszy Urząd Skarbowy Łódź - Bałuty",
+      "score": 2,
+      "signals": [
+        "heritage"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Zachodnia 47"
+    },
+    {
+      "building_id": "osm-104665091",
+      "name": "Pietryna",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Piotrkowska 40"
+    },
+    {
+      "building_id": "osm-175904793",
+      "name": "Przystanek tramwajowy",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Parkowa 2"
+    },
+    {
+      "building_id": "osm-134756068",
+      "name": "Q Apart Jaracza",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "6",
+      "addr": "Stefana Jaracza 63a"
+    },
+    {
+      "building_id": "osm-39525057",
+      "name": "Qubus Hotel",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "6",
+      "addr": "Aleja Adama Mickiewicza 7"
+    },
+    {
+      "building_id": "osm-103647580",
+      "name": "Rektorat Uniwersytetu Łódzkiego",
+      "score": 2,
+      "signals": [
+        "historic:school"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Prezydenta Gabriela Narutowicza 68"
+    },
+    {
+      "building_id": "osm-133390104",
+      "name": "Szkolne Schronisko Młodzieżowe w Łodzi",
+      "score": 2,
+      "signals": [
+        "tourism:hostel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Ludwika Zamenhofa 13"
+    },
+    {
+      "building_id": "osm-109506878",
+      "name": "Szkolne schronisko młodzieżowe",
+      "score": 2,
+      "signals": [
+        "tourism:hostel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Legionów 27"
+    },
+    {
+      "building_id": "osm-37550645",
+      "name": "The Loom",
+      "score": 2,
+      "signals": [
+        "tourism:hotel"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "3",
+      "addr": "Ogrodowa 21"
+    },
+    {
+      "building_id": "osm-1110357667",
+      "name": "Tężnia solankowa",
+      "score": 2,
+      "signals": [
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-1110531541",
+      "name": "Tężnia solankowa",
+      "score": 2,
+      "signals": [
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-1110540294",
+      "name": "Tężnia solankowa",
+      "score": 2,
+      "signals": [
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-104290998",
+      "name": "Uniwersytet Medyczny w Łodzi Rektorat",
+      "score": 2,
+      "signals": [
+        "historic:palace"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Aleja Tadeusza Kościuszki 4"
+    },
+    {
+      "building_id": "osm-282512554",
+      "name": "Willa Eugeniusza Geyera",
+      "score": 2,
+      "signals": [
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Stanisława Przybyszewskiego 10"
+    },
+    {
+      "building_id": "osm-175904780",
+      "name": "Willa Letniskowa - Budynek przeniesiony z ul. Scaleniowej 18",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": " "
+    },
+    {
+      "building_id": "osm-134871789",
+      "name": "Willa Masoneria",
+      "score": 2,
+      "signals": [
+        "tourism:guest_house"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Tramwajowa 11"
+    },
+    {
+      "building_id": "osm-378196084",
+      "name": "Willa Rassalskich",
+      "score": 2,
+      "signals": [
+        "tourism:attraction"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": " "
+    },
+    {
+      "building_id": "osm-178668851",
+      "name": "Willa Rodziny Nestlerów",
+      "score": 2,
+      "signals": [
+        "historic:castle"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Łąkowa 13"
+    },
+    {
+      "building_id": "osm-113470092",
+      "name": "Willa Teodora Tietzena",
+      "score": 2,
+      "signals": [
+        "historic:manor"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "2",
+      "addr": "Łąkowa 1"
+    },
+    {
+      "building_id": "osm-103393889",
+      "name": "YMCA",
+      "score": 2,
+      "signals": [
+        "historic:building"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Stanisława Moniuszki 4a"
+    },
+    {
+      "building_id": "osm-188091613",
+      "name": "theApartments Radwańska",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": "4",
+      "addr": "Radwańska 51"
+    },
+    {
+      "building_id": "osm-372533559",
+      "name": "Łódzki Pałacyk",
+      "score": 2,
+      "signals": [
+        "tourism:apartment"
+      ],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": null,
+      "levels": null,
+      "addr": "Stefana Żeromskiego 52"
+    },
+    {
+      "building_id": "osm-875551700",
+      "name": "Alchemium",
+      "score": 1,
+      "signals": [],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": "2021..2022",
+      "levels": "5",
+      "addr": "Stefana Żeromskiego 114"
+    },
+    {
+      "building_id": "osm-113824478",
+      "name": "Kamienica Olszera",
+      "score": 1,
+      "signals": [],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": "1895",
+      "levels": "4",
+      "addr": "Polskiej Organizacji Wojskowej 17"
+    },
+    {
+      "building_id": "osm-1164157796",
+      "name": "Max",
+      "score": 1,
+      "signals": [],
+      "wikidata": null,
+      "wikipedia": null,
+      "ref_nid": null,
+      "start_date": "2023-04-18",
+      "levels": null,
+      "addr": "Aleja Marszałka Edwarda Śmigłego-Rydza 21"
+    }
+  ],
+  "businesses": [
+    {
+      "building_id": "osm-108812285",
+      "name": "Ośrodek Kultury „Górna”",
+      "kind": "arts_centre",
+      "addr": "Siedlecka 1",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104236319",
+      "name": "Ośrodek Propagandy Sztuki",
+      "kind": "arts_centre",
+      "addr": "Henryka Sienkiewicza 44",
+      "website": "https://www.mgslodz.pl/",
+      "phone": "+48 42 674 10 59",
+      "hours_raw": "Tu-We 11:00-18:00; Th-Sa 12:00-19:00; Su 11:00-18:00"
+    },
+    {
+      "building_id": "osm-231284651",
+      "name": "Poleski Ośrodek Sztuki",
+      "kind": "arts_centre",
+      "addr": "Krzemieniecka 2a",
+      "website": "www.pos.lodz.pl",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103272394",
+      "name": "Łódzki Dom Kultury",
+      "kind": "arts_centre",
+      "addr": "Generała Romualda Traugutta 18",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103394461",
+      "name": "Dom Buta",
+      "kind": "attraction",
+      "addr": "Piotrkowska 98",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-137794057",
+      "name": "Dom Hilarego Majewskiego",
+      "kind": "attraction",
+      "addr": "Włókiennicza 11",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-105082959",
+      "name": "Dom Szmidtów - kamienica wielkomiejska",
+      "kind": "attraction",
+      "addr": "Piotrkowska 225",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-107422505",
+      "name": "Kamienica Rachmila Lipszyca",
+      "kind": "attraction",
+      "addr": "Prezydenta Gabriela Narutowicza 44",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-130386316",
+      "name": "Kamienica Wielkomiejska",
+      "kind": "attraction",
+      "addr": "Andrzeja Struga 42",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-169561251",
+      "name": "Kaplica Rodziny Heinzlów",
+      "kind": "attraction",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-190343346",
+      "name": "Kaplica Rodziny Scheibler",
+      "kind": "attraction",
+      "addr": "Ogrodowa 43",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103281496",
+      "name": "Kościół Wniebowzięcia Najświętszej Maryi Panny",
+      "kind": "attraction",
+      "addr": "Kościelna 8/10",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104252448",
+      "name": "Kościół Zesłania Ducha Świętego",
+      "kind": "attraction",
+      "addr": "Piotrkowska 2",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104253587",
+      "name": "Kościół pw. Świętego Józefa Oblubieńca Najświętszej Maryi Panny",
+      "kind": "attraction",
+      "addr": "Ogrodowa 22",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-169566258",
+      "name": "Kościół Świętej Rodziny",
+      "kind": "attraction",
+      "addr": "Bolesława Limanowskiego 60",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-185053089",
+      "name": "Mauzoleum małżonków Moenke",
+      "kind": "attraction",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-188326138",
+      "name": "Modernistyczna krańcówka „Północna”",
+      "kind": "attraction",
+      "addr": "Północna 12",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-174531565",
+      "name": "Pałac Alfreda Biedermanna",
+      "kind": "attraction",
+      "addr": "Franciszkańska 1/5",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104189409",
+      "name": "Pałac Juliusza Heinzla",
+      "kind": "attraction",
+      "addr": "Piotrkowska 104",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175721068",
+      "name": "Pałac Karola Poznańskiego",
+      "kind": "attraction",
+      "addr": "Gdańska 32",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-101293559",
+      "name": "Pałac Maksymiliana Goldfedera",
+      "kind": "attraction",
+      "addr": "Piotrkowska 77",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-178179618",
+      "name": "Secesyjna willa Leopolda Kindermana",
+      "kind": "attraction",
+      "addr": "Wólczańska 31/33",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1110357667",
+      "name": "Tężnia solankowa",
+      "kind": "attraction",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1110531541",
+      "name": "Tężnia solankowa",
+      "kind": "attraction",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1110540294",
+      "name": "Tężnia solankowa",
+      "kind": "attraction",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-282512554",
+      "name": "Willa Eugeniusza Geyera",
+      "kind": "attraction",
+      "addr": "Stanisława Przybyszewskiego 10",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-146975092",
+      "name": "Willa Hermana Juliusza Milsza",
+      "kind": "attraction",
+      "addr": "Łąkowa 21",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175326536",
+      "name": "Willa Hüffera",
+      "kind": "attraction",
+      "addr": "Wólczańska 243A",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103645939",
+      "name": "Willa Jakuba Kestenberga",
+      "kind": "attraction",
+      "addr": "Stefana Jaracza 62",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-76277579",
+      "name": "Willa Ludwika Grohmana",
+      "kind": "attraction",
+      "addr": "Tylna 9/11",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-378196084",
+      "name": "Willa Rassalskich",
+      "kind": "attraction",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-283988938",
+      "name": "Willa Reinholda Richtera",
+      "kind": "attraction",
+      "addr": "Księdza Harcmistrza Ignacego Skorupki 6/8",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1483349502",
+      "name": "Bar Sznycelek",
+      "kind": "cafe",
+      "addr": "Pomorska 84a",
+      "website": "https://www.barsznycelek.pl/",
+      "phone": "+48 42 678 57 50",
+      "hours_raw": "Mo-Fr 11:00-20:00; Sa 11:00-18:00"
+    },
+    {
+      "building_id": "osm-36894056",
+      "name": "Cinema City",
+      "kind": "cinema",
+      "addr": "Drewnowska 58",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1539015112",
+      "name": "Kino Tatry",
+      "kind": "cinema",
+      "addr": "Henryka Sienkiewicza 40",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-181334758",
+      "name": "Kino Wytwórnia 3D",
+      "kind": "cinema",
+      "addr": "Łąkowa 29",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-363116327",
+      "name": "Orange IMAX",
+      "kind": "cinema",
+      "addr": "Drewnowska 58",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104239245",
+      "name": "Polonia",
+      "kind": "cinema",
+      "addr": "Piotrkowska 67",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-164692052",
+      "name": "Sala Kinowa PWSFiTV",
+      "kind": "cinema",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175899221",
+      "name": "Bambus",
+      "kind": "fast_food",
+      "addr": "Rzgowska 16",
+      "website": null,
+      "phone": "+48 42 6862029",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-761049744",
+      "name": "Hello Kebab",
+      "kind": "fast_food",
+      "addr": "Generała Jarosława Dąbrowskiego 67",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-355672122",
+      "name": "KFC",
+      "kind": "fast_food",
+      "addr": "Aleja Jana Pawła II 28",
+      "website": "https://kfc.pl/",
+      "phone": "+48 71 386 1749",
+      "hours_raw": "Mo-Th 08:00-24:00; Fr-Sa 08:00-01:00; Su 09:00-24:00"
+    },
+    {
+      "building_id": "osm-1164157796",
+      "name": "Max",
+      "kind": "fast_food",
+      "addr": "Aleja Marszałka Edwarda Śmigłego-Rydza 21",
+      "website": "https://www.maxpremiumburgers.pl/znajdz-max/restauracje/lodz-1/",
+      "phone": null,
+      "hours_raw": "Mo-Su 07:00-24:00"
+    },
+    {
+      "building_id": "osm-105310030",
+      "name": "McDonald's",
+      "kind": "fast_food",
+      "addr": "Aleja Adama Mickiewicza 5",
+      "website": "https://mcdonalds.pl/restauracje/lodzkie/lodz/lodz-ul-mickiewicza-5",
+      "phone": "+48 533 229 012",
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-132573934",
+      "name": "Zahir Kebab",
+      "kind": "fast_food",
+      "addr": "Prezydenta Gabriela Narutowicza 83",
+      "website": "https://zahirkebab.pl/lokale/lodz/lodz-narutowicza-83/",
+      "phone": "+48 533 690 610",
+      "hours_raw": "Mo-Sa 10:00-22:00; Su 11:00-22:00"
+    },
+    {
+      "building_id": "osm-177041369",
+      "name": "Aiden by Best Western Łódź",
+      "kind": "hotel",
+      "addr": "Legionów 81",
+      "website": "https://www.bestwestern.pl/booking-path/hotel-details/aiden-by-best-western-lodz-lodz-81049",
+      "phone": "+48 517 204 473",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-119455955",
+      "name": "Ambasador Centrum",
+      "kind": "hotel",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 29",
+      "website": "https://www.hotelambasador.eu/centrum/hotel",
+      "phone": "+48 42 677 15 20",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-313181755",
+      "name": "Ambasador Premium",
+      "kind": "hotel",
+      "addr": "Jana Kilińskiego 145",
+      "website": "https://www.hotelambasador.eu/",
+      "phone": "+48 42 677 15 40",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-107461281",
+      "name": "Apartamenty Fresco Plus",
+      "kind": "hotel",
+      "addr": "Prezydenta Gabriela Narutowicza 24",
+      "website": null,
+      "phone": "+48 508 108 245",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-108370358",
+      "name": "Aparthotel Krzywa Kamienica",
+      "kind": "hotel",
+      "addr": "Doktora Adama Próchnika 53",
+      "website": null,
+      "phone": "+48 577 357 157",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-111549074",
+      "name": "Campanile",
+      "kind": "hotel",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 27",
+      "website": "https://www2.campanile.com/pl/hotels/campanile-lodz",
+      "phone": "+48 22 307 23 37",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-181334756",
+      "name": "DoubleTree by Hilton Lodz",
+      "kind": "hotel",
+      "addr": "Łąkowa 29",
+      "website": "https://www.hilton.com/en/hotels/lcjdldi-doubletree-lodz/",
+      "phone": "+48 422088000",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-194187447",
+      "name": "Focus",
+      "kind": "hotel",
+      "addr": "Łąkowa 23/25",
+      "website": "http://www.hotelfocus.com.pl/hotele/lodz/",
+      "phone": "+48 42 630 60 61",
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-1525830557",
+      "name": "Hampton by Hilton Lodz City Center",
+      "kind": "hotel",
+      "addr": "Piotrkowska 157",
+      "website": "https://www.hilton.com/en/hotels/lcjcchx-hampton-lodz-city-center/",
+      "phone": "+48 42 202 20 22",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175927646",
+      "name": "Holiday Inn",
+      "kind": "hotel",
+      "addr": "Piotrkowska 229/231",
+      "website": "https://hilodz.com/",
+      "phone": "+48 42 2082000",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-466659896",
+      "name": "Hotel B&B",
+      "kind": "hotel",
+      "addr": "Aleja Tadeusza Kościuszki 16",
+      "website": "https://hotel-bb.com/pl/miasto/hotele-lodz",
+      "phone": "+48 42 20 70 040",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-199267920",
+      "name": "Hotel Borowiecki",
+      "kind": "hotel",
+      "addr": "Marcina Kasprzaka 7/9",
+      "website": "https://hotelborowiecki.pl/",
+      "phone": "+48 42 208 17 00",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-39524863",
+      "name": "Hotel Boss",
+      "kind": "hotel",
+      "addr": "Tatrzańska 11",
+      "website": "https://www.hotel-boss.pl/",
+      "phone": "+48426763113",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-186395646",
+      "name": "Hotel Boutique",
+      "kind": "hotel",
+      "addr": "Milionowa 25",
+      "website": "https://www.hotels24.com.pl/hotele-lodz/boutique-hotels-milionowa.html",
+      "phone": "+48 42 684 75 10",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-153886455",
+      "name": "Hotel Iness",
+      "kind": "hotel",
+      "addr": "Generała Walerego Wróblewskiego 23",
+      "website": "https://inesshotel.pl/",
+      "phone": "+48 42 684 45 54",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-154071402",
+      "name": "Hotel Iness II",
+      "kind": "hotel",
+      "addr": "Proletariacka 36",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104244848",
+      "name": "Hotel Mazowiecki",
+      "kind": "hotel",
+      "addr": "28 Pułku Strzelców Kaniowskich 53/57",
+      "website": "https://hotelmazowiecki.com/",
+      "phone": "+48 426 374 333",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-657207344",
+      "name": "Hotel Puro Łódź",
+      "kind": "hotel",
+      "addr": "Ogrodowa 16",
+      "website": "https://purohotel.pl/pl/lodz",
+      "phone": "+48427159000",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-147534720",
+      "name": "Novotel",
+      "kind": "hotel",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 11A",
+      "website": null,
+      "phone": "+48 422543900",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104665091",
+      "name": "Pietryna",
+      "kind": "hotel",
+      "addr": "Piotrkowska 40",
+      "website": "https://www.hotelpietryna.pl/",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-39525057",
+      "name": "Qubus Hotel",
+      "kind": "hotel",
+      "addr": "Aleja Adama Mickiewicza 7",
+      "website": "https://www.qubushotel.com/pl/hotel-lodz",
+      "phone": "+48 422 755 100",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-37550645",
+      "name": "The Loom",
+      "kind": "hotel",
+      "addr": "Ogrodowa 21",
+      "website": "https://www.loom.com.pl/",
+      "phone": "+48 42 292 88 00",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-194189143",
+      "name": "Tobaco Hotel",
+      "kind": "hotel",
+      "addr": "Mikołaja Kopernika 64",
+      "website": "https://hoteltobaco.pl/",
+      "phone": "+48 42 207 07 07",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-36894066",
+      "name": "andel's Hotel Łódź",
+      "kind": "hotel",
+      "addr": "Ogrodowa 17",
+      "website": "https://www.viennahouse.com/pl.html",
+      "phone": "+48 422 791 000",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1532280760",
+      "name": "Gałka",
+      "kind": "ice_cream",
+      "addr": " ",
+      "website": "https://www.lodygalka.com/",
+      "phone": "+48 696 030 293",
+      "hours_raw": "Mo-Su 09:00-18:30"
+    },
+    {
+      "building_id": "osm-1293298279",
+      "name": "Lodziarnia Cynamonowe Love",
+      "kind": "ice_cream",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175506679",
+      "name": "Bałucki Rynek",
+      "kind": "marketplace",
+      "addr": "Bałucki Rynek 1",
+      "website": "https://www.baluckirynek.pl/",
+      "phone": "+48 502327712",
+      "hours_raw": "Mo-Fr 06:00-19:00; Sa 06:00-16:00"
+    },
+    {
+      "building_id": "osm-102853706",
+      "name": "Hala Górniak",
+      "kind": "marketplace",
+      "addr": "Piotrkowska 317",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-106305367",
+      "name": "Karolinka - hala druga",
+      "kind": "marketplace",
+      "addr": "Generała Walerego Wróblewskiego 130AB",
+      "website": null,
+      "phone": null,
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-106305325",
+      "name": "Karolinka - hala pierwsza",
+      "kind": "marketplace",
+      "addr": "Generała Walerego Wróblewskiego 130A",
+      "website": null,
+      "phone": null,
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-106305484",
+      "name": "Karolinka - hala trzecia",
+      "kind": "marketplace",
+      "addr": "Generała Walerego Wróblewskiego 130AA",
+      "website": null,
+      "phone": null,
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-170968552",
+      "name": "Nowa Hala Górniak",
+      "kind": "marketplace",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175345235",
+      "name": "Ryneczek Przybyszewskiego",
+      "kind": "marketplace",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-980590745",
+      "name": "Targ Jaracza",
+      "kind": "marketplace",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": "\"zależnie od ilości sprzedających\""
+    },
+    {
+      "building_id": "osm-104252454",
+      "name": "Muzeum Archeologiczne i Etnograficzne w Łodzi",
+      "kind": "museum",
+      "addr": "Plac Wolności 14",
+      "website": "https://maie.lodz.pl/",
+      "phone": "+48 42 632 84 40",
+      "hours_raw": "Tu-Sa 10:00-17:00; Mo off"
+    },
+    {
+      "building_id": "osm-143564231",
+      "name": "Muzeum Geologiczne WNG UŁ",
+      "kind": "museum",
+      "addr": "Doktora Stefana Kopcińskiego 31",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1249270544",
+      "name": "Muzeum Kanału „Dętka”",
+      "kind": "museum",
+      "addr": "Plac Wolności ",
+      "website": "https://muzeum-lodz.pl/siedziby/muzem-kanalu-detka/",
+      "phone": "+48 42 250 51 31",
+      "hours_raw": "We,Th 10:00-17:00; Fr-Su 11:00-18:00; Mo,Tu off"
+    },
+    {
+      "building_id": "osm-174195288",
+      "name": "Muzeum Kinematografii",
+      "kind": "museum",
+      "addr": "Plac Zwycięstwa 1",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-455514019",
+      "name": "Muzeum Komunikacji Miejskiej MPK-Łódź",
+      "kind": "museum",
+      "addr": "Wierzbowa 51",
+      "website": "http://www.muzeum.mpk.lodz.pl",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104292250",
+      "name": "Muzeum Sztuki MS1",
+      "kind": "museum",
+      "addr": "Pułkownika Doktora Stanisława Więckowskiego 36",
+      "website": "https://msl.org.pl/",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-36894063",
+      "name": "Muzeum Sztuki MS2",
+      "kind": "museum",
+      "addr": "Ogrodowa 19",
+      "website": "https://msl.org.pl/",
+      "phone": null,
+      "hours_raw": "Tu 10:00-18:00; We-Su 11:00-19:00"
+    },
+    {
+      "building_id": "osm-175716830",
+      "name": "Muzeum Tradycji Niepodległościowych w Łodzi",
+      "kind": "museum",
+      "addr": "Gdańska 13",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-375608091",
+      "name": "Bistro Targowa",
+      "kind": "restaurant",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1148331820",
+      "name": "Doki",
+      "kind": "restaurant",
+      "addr": "Franklina Delano Roosevelta 12C",
+      "website": "https://dokigastrobar.eatbu.com/",
+      "phone": "+48423073101",
+      "hours_raw": "Su-Th 12:00-23:00 Fr-Sa 12:00-01:00"
+    },
+    {
+      "building_id": "osm-206133473",
+      "name": "Doprawione Jabłkiem według Zwierzchowskiej",
+      "kind": "restaurant",
+      "addr": " ",
+      "website": "https://doprawionejablkiem.pl/",
+      "phone": "+48512119073",
+      "hours_raw": "Mo-Su 11:00-19:00"
+    },
+    {
+      "building_id": "osm-177278325",
+      "name": "Good Morning Vietnam",
+      "kind": "restaurant",
+      "addr": "Piotrkowska 138/140",
+      "website": null,
+      "phone": "+48784649679",
+      "hours_raw": "Mo-Fr 11.00 - 00.00; Sa-Su 12.00-00.00"
+    },
+    {
+      "building_id": "osm-543115266",
+      "name": "Igraszka",
+      "kind": "restaurant",
+      "addr": "Jana Kilińskiego 1/3",
+      "website": "http://rusalka-lodz.pl/",
+      "phone": "+48 604 555 650",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1081329807",
+      "name": "Kucak",
+      "kind": "restaurant",
+      "addr": "Przędzalniana 124A",
+      "website": "https://www.kucak.pl/",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1527892110",
+      "name": "Las Palmas Restaurant & Bar",
+      "kind": "restaurant",
+      "addr": "Franklina Delano Roosevelta 2/4",
+      "website": "https://laspalmaslodz.pl/",
+      "phone": "+48 796 995 095",
+      "hours_raw": "Tu-Th 08:00-17:00; Fr 14:00-02:00; Sa 13:00-02:00; Su 12:00-00:00"
+    },
+    {
+      "building_id": "osm-261947666",
+      "name": "Naleśnikarnia Natuś",
+      "kind": "restaurant",
+      "addr": "Stanisława Przybyszewskiego 104",
+      "website": null,
+      "phone": "+48 42 649 86 86",
+      "hours_raw": "Mo-Su 11:00-19:00"
+    },
+    {
+      "building_id": "osm-106328355",
+      "name": "Pizzeria Gang Leona",
+      "kind": "restaurant",
+      "addr": "Joanny Żubrowej 6",
+      "website": "http://www.pizzeria-k2.pl/",
+      "phone": null,
+      "hours_raw": "Mo off; Tu-Th 14.00-20.00; Fr-Sa 12.00-22.00; Su 12.00-20.00"
+    },
+    {
+      "building_id": "osm-104142196",
+      "name": "Restauracja Europa",
+      "kind": "restaurant",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1081329803",
+      "name": "Schabowy czy Mielony",
+      "kind": "restaurant",
+      "addr": "Przędzalniana 124A",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-429756034",
+      "name": "Veranda",
+      "kind": "restaurant",
+      "addr": "Piotrkowska 77A",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Th 09:00-22:00, Fr 09:00-03:00, Sa 10:00-04:00, Su 10:00-22:00"
+    },
+    {
+      "building_id": "osm-1039273473",
+      "name": "Bar Wietaj",
+      "kind": "shop:alcohol",
+      "addr": "Tatrzańska 61C",
+      "website": null,
+      "phone": "+48 886 826 888",
+      "hours_raw": "Mo-Sa 10:00-22:00; Su 11:00-21:00"
+    },
+    {
+      "building_id": "osm-164638956",
+      "name": "Jaś i Małgosia",
+      "kind": "shop:bakery",
+      "addr": "Prezydenta Gabriela Narutowicza 85",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-203400540",
+      "name": "Jaś i Małgosia",
+      "kind": "shop:bakery",
+      "addr": "Radwańska 21",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 06:00-18:00; Sa 07:00-14:00"
+    },
+    {
+      "building_id": "osm-287544015",
+      "name": "Jaś i Małgosia",
+      "kind": "shop:bakery",
+      "addr": "Generała Stefana Grota-Roweckiego 5",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-395897188",
+      "name": "Jaś i Małgosia",
+      "kind": "shop:bakery",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1200321599",
+      "name": "Piekarenka",
+      "kind": "shop:bakery",
+      "addr": "Przędzalniana 124A",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 06:00-18:00; Sa 06:00-15:00"
+    },
+    {
+      "building_id": "osm-395897186",
+      "name": "Piekarnia Complex Rogów",
+      "kind": "shop:bakery",
+      "addr": "Pomorska 98",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1200321598",
+      "name": "Piekarnia Rodziny Hofft",
+      "kind": "shop:bakery",
+      "addr": "Przędzalniana 124A",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 06:00-18:00; Sa 06:00-14:00"
+    },
+    {
+      "building_id": "osm-1081329804",
+      "name": "Putka",
+      "kind": "shop:bakery",
+      "addr": "Przędzalniana 124A",
+      "website": "https://www.putka.pl/sklepy-firmowe/6/0/282",
+      "phone": "+48 607 448 369",
+      "hours_raw": "Mo-Fr 06:00-19:00; Sa 07:00-14:00"
+    },
+    {
+      "building_id": "osm-1009944469",
+      "name": "Nasza Łazienka",
+      "kind": "shop:bathroom_furnishing",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-499254594",
+      "name": "Hej, piękna",
+      "kind": "shop:beauty",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-142881393",
+      "name": "Natural Clinic by Agnieszka Kot",
+      "kind": "shop:beauty",
+      "addr": "Lipowa 75",
+      "website": "https://clinicnatural.pl/",
+      "phone": "+48 600 800 818",
+      "hours_raw": "Mo-Fr 09:00-18:00; Sa 10:00-20:00"
+    },
+    {
+      "building_id": "osm-788293929",
+      "name": "Stylizacja Paznokci",
+      "kind": "shop:beauty",
+      "addr": "Aleja Marszałka Edwarda Śmigłego-Rydza 52A",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-307961230",
+      "name": "Rowery Pacholec",
+      "kind": "shop:bicycle",
+      "addr": "Jana Kilińskiego 5",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175909137",
+      "name": "Biuro ds. Osób Niepełnosprawnych",
+      "kind": "shop:books",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo,Th 09:00-16:00; Tu,Fr 08:00-15:00"
+    },
+    {
+      "building_id": "osm-102851812",
+      "name": "Księgarnia Archidiecezji Łódzkiej",
+      "kind": "shop:books",
+      "addr": "Piotrkowska 263",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-201385570",
+      "name": "Mocni w Duchu",
+      "kind": "shop:books",
+      "addr": "Henryka Sienkiewicza 60",
+      "website": "https://odnowa.jezuici.pl/sklep/",
+      "phone": "+48 42 288 11 57",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103526309",
+      "name": "Wydawnictwo Uniwersytetu Łódzkiego",
+      "kind": "shop:books",
+      "addr": "Jana Matejki 34A",
+      "website": "https://ksiegarnia.uni.lodz.pl/",
+      "phone": "+48 42 635 55 77",
+      "hours_raw": "Mo-Fr 08:00-15:30; Sa-Su off"
+    },
+    {
+      "building_id": "osm-225996724",
+      "name": "Delikatesy mięsne Grot",
+      "kind": "shop:butcher",
+      "addr": "Przędzalniana 124A",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo 9:00-17:00; Tu-Fr 08:00-18:00; Sa 08:00-14:00"
+    },
+    {
+      "building_id": "osm-262238231",
+      "name": "Hyundai",
+      "kind": "shop:car",
+      "addr": "Aleja Marszałka Edwarda Śmigłego-Rydza 22",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-138948044",
+      "name": "Isuzu",
+      "kind": "shop:car",
+      "addr": "Żelazna 7",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-778525417",
+      "name": "Akumar",
+      "kind": "shop:car_parts",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-234976506",
+      "name": "Artbex Auto Service",
+      "kind": "shop:car_repair",
+      "addr": "Wysoka 20/22",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-358509060",
+      "name": "Auto Serwis",
+      "kind": "shop:car_repair",
+      "addr": "Juliusza Słowackiego 10",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-199265393",
+      "name": "Elektromechanik",
+      "kind": "shop:car_repair",
+      "addr": "Legionów ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-304852203",
+      "name": "F.H.U. Serwis Opon Kilińskiego 112",
+      "kind": "shop:car_repair",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-198136178",
+      "name": "Filcar",
+      "kind": "shop:car_repair",
+      "addr": "Generała Lucjana Żeligowskiego 35/37",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-406105136",
+      "name": "Inter Motors",
+      "kind": "shop:car_repair",
+      "addr": "Drewnowska 50",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1009944455",
+      "name": "Max",
+      "kind": "shop:car_repair",
+      "addr": "Jana Kilińskiego 207",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-132573947",
+      "name": "Mechanika pojazdowa Paweł Suszyński",
+      "kind": "shop:car_repair",
+      "addr": "Prezydenta Gabriela Narutowicza 83",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-397296061",
+      "name": "MiM AUTO SERWIS",
+      "kind": "shop:car_repair",
+      "addr": "Doktora Stefana Kopcińskiego 31d",
+      "website": null,
+      "phone": "+48 508 188 555",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-178776119",
+      "name": "Motozbyt",
+      "kind": "shop:car_repair",
+      "addr": "Targowa 22",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-308978057",
+      "name": "Olmax",
+      "kind": "shop:car_repair",
+      "addr": "Jana Kilińskiego 209",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-189390955",
+      "name": "Stacja Obsługi Pojazdów Mercedes Płoski",
+      "kind": "shop:car_repair",
+      "addr": "28 Pułku Strzelców Kaniowskich 36",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-199267606",
+      "name": "Zamiennik",
+      "kind": "shop:car_repair",
+      "addr": "Srebrzyńska 6",
+      "website": "https://www.zamiennik-lodz.pl/",
+      "phone": "+48 574 751 724",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-304860715",
+      "name": "Rossmann",
+      "kind": "shop:chemist",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-409295157",
+      "name": "Rossmann",
+      "kind": "shop:chemist",
+      "addr": "Zgierska 19",
+      "website": "https://www.rossmann.pl/drogerie/Drogeria-Rossmann-zgierska-19,lodz,10,1185",
+      "phone": null,
+      "hours_raw": "Mo-Fr 08:30-20:00; Sa 08:30-17:00; Su off"
+    },
+    {
+      "building_id": "osm-1359089780",
+      "name": "Rossmann",
+      "kind": "shop:chemist",
+      "addr": "Doktora Stefana Kopcińskiego 31",
+      "website": "https://www.rossmann.pl/drogerie/Drogeria-Rossmann-kopcinskiego-31,lodz,10,1271",
+      "phone": "+48 42 613 97 00",
+      "hours_raw": "Mo-Fr 08:00-20:00; Sa 8:30-17:00"
+    },
+    {
+      "building_id": "osm-516545535",
+      "name": "Pepco",
+      "kind": "shop:clothes",
+      "addr": "Klonowa 19",
+      "website": "https://pepco.pl/",
+      "phone": "+48 61 62 88 999",
+      "hours_raw": "Mo-Fr 09:00-20:00; Sa 09:00-18:00; Su 10:00-17:00"
+    },
+    {
+      "building_id": "osm-199266205",
+      "name": "Circle K",
+      "kind": "shop:convenience",
+      "addr": "Aleja Włókniarzy 202",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-395897189",
+      "name": "Kalafiorek",
+      "kind": "shop:convenience",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104142216",
+      "name": "MOL",
+      "kind": "shop:convenience",
+      "addr": "Gdańska 131",
+      "website": null,
+      "phone": null,
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-383545702",
+      "name": "Pamso SA",
+      "kind": "shop:convenience",
+      "addr": "Bratysławska 3E",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 08:00-16:00"
+    },
+    {
+      "building_id": "osm-159202253",
+      "name": "Rosa",
+      "kind": "shop:convenience",
+      "addr": "Księdza Biskupa Wincentego Tymienieckiego 60",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 06:00-20:00"
+    },
+    {
+      "building_id": "osm-103425236",
+      "name": "Żabka",
+      "kind": "shop:convenience",
+      "addr": "Generała Tadeusza Kutrzeby 1b",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175345207",
+      "name": "Żabka",
+      "kind": "shop:convenience",
+      "addr": "Generała Stefana Grota-Roweckiego 4",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-178537961",
+      "name": "Żabka",
+      "kind": "shop:convenience",
+      "addr": "Juliusza Kossaka 13",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-261865021",
+      "name": "Żabka",
+      "kind": "shop:convenience",
+      "addr": "Stanisława Przybyszewskiego 177",
+      "website": "https://www.zabka.pl/znajdz-sklep/sklep/ID06215,lodz-ul-przybyszewskiego-177-lok-3",
+      "phone": "+48 618 563 700",
+      "hours_raw": "Mo-Sa 06:00-23:00"
+    },
+    {
+      "building_id": "osm-1081329805",
+      "name": "Żabka",
+      "kind": "shop:convenience",
+      "addr": "Przędzalniana 124A",
+      "website": "https://www.zabka.pl/znajdz-sklep/sklep/ID06625,lodz-ul-przedzalniana-124a-2-3",
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-23:00"
+    },
+    {
+      "building_id": "osm-1099884338",
+      "name": "Żabka",
+      "kind": "shop:convenience",
+      "addr": "Północna 48",
+      "website": "https://www.zabka.pl/znajdz-sklep/ID08944-lodz-ul-polnocna-48/",
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-23:00"
+    },
+    {
+      "building_id": "osm-104142220",
+      "name": "Central",
+      "kind": "shop:department_store",
+      "addr": "Piotrkowska 165",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104487419",
+      "name": "DH Magda",
+      "kind": "shop:department_store",
+      "addr": "Piotrkowska 30/32",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-42835103",
+      "name": "Castorama",
+      "kind": "shop:doityourself",
+      "addr": "Generała Walerego Wróblewskiego 31",
+      "website": "https://www.castorama.pl/sklepy/lodz-piekarnia.html",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-86463037",
+      "name": "Castorama",
+      "kind": "shop:doityourself",
+      "addr": "Wydawnicza 13",
+      "website": "https://www.castorama.pl/sklepy/lodz-widzew.html",
+      "phone": null,
+      "hours_raw": "Mo-Fr 06:30-21:00; Sa 08:00-20:00; Su 09:00-19:00"
+    },
+    {
+      "building_id": "osm-126783638",
+      "name": "Guma. Pasy napędowe, węże, płyty gumowe",
+      "kind": "shop:doityourself",
+      "addr": "Legionów 112",
+      "website": null,
+      "phone": "+48 42 634 38 20",
+      "hours_raw": "Mo-Fr 09:00-16:00; Sa 09:00-13:00"
+    },
+    {
+      "building_id": "osm-151953667",
+      "name": "Metalpol",
+      "kind": "shop:doityourself",
+      "addr": "Łęczycka 32",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1443926739",
+      "name": "Metalpol",
+      "kind": "shop:doityourself",
+      "addr": "Stanisława Przybyszewskiego 80",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-42835102",
+      "name": "OBI",
+      "kind": "shop:doityourself",
+      "addr": "Henryka Wieniawskiego 3",
+      "website": null,
+      "phone": "+48 800 624 624",
+      "hours_raw": "Mo-Sa 06:30-21:00; Su 09:00-19:00"
+    },
+    {
+      "building_id": "osm-184623825",
+      "name": "Pumps Service Ltd Sp. z o.o.",
+      "kind": "shop:doityourself",
+      "addr": "Siedlecka 42",
+      "website": "https://pumps-service.pl/",
+      "phone": "+48 426 845 934",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-95020883",
+      "name": "Media Expert",
+      "kind": "shop:electronics",
+      "addr": "Parkowa 10",
+      "website": "https://sklepy.mediaexpert.pl/lodz6_parkowa",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-671846708",
+      "name": "SZWALMASZ",
+      "kind": "shop:fabric",
+      "addr": "Telefoniczna 28",
+      "website": null,
+      "phone": "+48 609 095 288",
+      "hours_raw": "Mo-Fr 07:30-16:00"
+    },
+    {
+      "building_id": "osm-261935873",
+      "name": "H. Skrzydlewska",
+      "kind": "shop:florist",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Sa, Su 09:00-19:00; Mo-Fr 09:00-22:00"
+    },
+    {
+      "building_id": "osm-429979324",
+      "name": "Kwiaciarnia",
+      "kind": "shop:florist",
+      "addr": "Ogrodowa 70",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-266903018",
+      "name": "Skrzydlewska",
+      "kind": "shop:florist",
+      "addr": "Smutna 7",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo,We-Fr 08:00-15:00"
+    },
+    {
+      "building_id": "osm-997808507",
+      "name": "Skrzydlewska",
+      "kind": "shop:florist",
+      "addr": "Ogrodowa 37",
+      "website": null,
+      "phone": "+48669632729",
+      "hours_raw": "Mo-Sa 07:00-19:00; Su 09:00-18:00"
+    },
+    {
+      "building_id": "osm-997808508",
+      "name": "H. Skrzydlewska. Biuro usług pogrzebowych",
+      "kind": "shop:funeral_directors",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 08:00-16:00"
+    },
+    {
+      "building_id": "osm-170969807",
+      "name": "ARKADIA",
+      "kind": "shop:furniture",
+      "addr": "Wólczańska 247A",
+      "website": "http://www.arkadia.go3.pl",
+      "phone": "+48 42 683 03 12",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104032558",
+      "name": "Black Red White",
+      "kind": "shop:furniture",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 133C",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-305327044",
+      "name": "Bodzio",
+      "kind": "shop:furniture",
+      "addr": "Orla 17/19",
+      "website": "https://bodzio.pl/",
+      "phone": null,
+      "hours_raw": "Mo-Sa 09:00-20:00;Su 10:00-18:00"
+    },
+    {
+      "building_id": "osm-466488494",
+      "name": "Bodzio",
+      "kind": "shop:furniture",
+      "addr": "Aleja Jana Pawła II 28a",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104142213",
+      "name": "Domus",
+      "kind": "shop:furniture",
+      "addr": "Piotrkowska 190",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-199267508",
+      "name": "Salon KLER",
+      "kind": "shop:furniture",
+      "addr": "Marcina Kasprzaka 6",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1512528501",
+      "name": "Kramik Franusia",
+      "kind": "shop:greengrocer",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103258596",
+      "name": "LANDHEN-Andrzej Lesiak",
+      "kind": "shop:hardware",
+      "addr": "Rzgowska 5",
+      "website": "http://www.landhen.com.pl",
+      "phone": "+48 42 684 91 16",
+      "hours_raw": "Mo-Sa 08:00-16:00"
+    },
+    {
+      "building_id": "osm-543115265",
+      "name": "PISTON",
+      "kind": "shop:hardware",
+      "addr": "Jana Kilińskiego 1/3",
+      "website": "https://piston.com.pl/",
+      "phone": "+48 42 630 28 65",
+      "hours_raw": "Mo-Fr 09:00-17:00"
+    },
+    {
+      "building_id": "osm-151593101",
+      "name": "Deptana",
+      "kind": "shop:houseware",
+      "addr": "Ozorkowska 12",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 09:00-18:00; Sa 09:00-14:00"
+    },
+    {
+      "building_id": "osm-111683288",
+      "name": "Market „KOMFORT”",
+      "kind": "shop:interior_decoration",
+      "addr": "Aleja Włókniarzy 236",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-279470501",
+      "name": "Kiosk Ruch",
+      "kind": "shop:kiosk",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-356661817",
+      "name": "Prasa",
+      "kind": "shop:kiosk",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-766091407",
+      "name": "Ruch",
+      "kind": "shop:kiosk",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-102162506",
+      "name": "Czysta Sztuka",
+      "kind": "shop:laundry",
+      "addr": "Radwańska 28",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1528170996",
+      "name": "Aura Park",
+      "kind": "shop:mall",
+      "addr": "Jana Kilińskiego 122/128",
+      "website": "https://aurapark.pl/projekty/lodz",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-173485216",
+      "name": "Centrum Handlowe Tulipan",
+      "kind": "shop:mall",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 94",
+      "website": "https://www.chtulipan.pl/",
+      "phone": "+48 42 6767922",
+      "hours_raw": "Mo-Sa 09:00-21:00; Su 10:00-19:00"
+    },
+    {
+      "building_id": "osm-174638513",
+      "name": "Centrum Handlowo-Rozrywkowe Manufaktura",
+      "kind": "shop:mall",
+      "addr": "Drewnowska 58",
+      "website": "https://manufaktura.com/",
+      "phone": null,
+      "hours_raw": "Mo-Sa 08:00-22:00; Su 10:00-21:00"
+    },
+    {
+      "building_id": "osm-103285740",
+      "name": "Centrum Rozrywki Silver Screen",
+      "kind": "shop:mall",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 5",
+      "website": "https://crsilverscreen.pl/pl/",
+      "phone": "+48 510 204 007",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103663504",
+      "name": "Galeria Matejki",
+      "kind": "shop:mall",
+      "addr": "Jana Matejki 3/5",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-39524935",
+      "name": "Galeria Łódzka",
+      "kind": "shop:mall",
+      "addr": "Aleja Marszałka Józefa Piłsudskiego 15/23",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-439650453",
+      "name": "Nowa Sukcesja",
+      "kind": "shop:mall",
+      "addr": "Aleje Politechniki 1",
+      "website": "https://www.nowasukcesja.pl/",
+      "phone": "+48 42 63 43 783",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-173348997",
+      "name": "Pasaż Łódzki",
+      "kind": "shop:mall",
+      "addr": "Aleja Jana Pawła II 30",
+      "website": "https://www.chpasazlodzki.pl/",
+      "phone": null,
+      "hours_raw": "Mo-Sa 09:00-21:00; Su 10:00-20:00"
+    },
+    {
+      "building_id": "osm-104767209",
+      "name": "Saspol",
+      "kind": "shop:mall",
+      "addr": "Piotrkowska 95",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103258620",
+      "name": "Unicity",
+      "kind": "shop:mall",
+      "addr": "Plac Niepodległości 4",
+      "website": "https://amso.pl/",
+      "phone": null,
+      "hours_raw": "Mo-Fr 10:00-18:00; Sa 10:00 -14:00"
+    },
+    {
+      "building_id": "osm-173430786",
+      "name": "Shell Express",
+      "kind": "shop:no",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-160035147",
+      "name": "Bau-Pol",
+      "kind": "shop:paint",
+      "addr": "Legionów 112",
+      "website": "http://www.bau-pol.com.pl",
+      "phone": "+48426307565",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-396927239",
+      "name": "Jaś i Małgosia",
+      "kind": "shop:pastry",
+      "addr": "Pomorska 136",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1039273474",
+      "name": "Ara",
+      "kind": "shop:pet",
+      "addr": "Tatrzańska 61D",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1039273472",
+      "name": "Magiczny Zoologiczny",
+      "kind": "shop:pet",
+      "addr": "Tatrzańska 61B",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-36894052",
+      "name": "Maxi Zoo",
+      "kind": "shop:pet",
+      "addr": "Jana Karskiego 5C",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 10:00-21:00; Su 10:00-20:00"
+    },
+    {
+      "building_id": "osm-103258608",
+      "name": "Zieleniewicz",
+      "kind": "shop:radiotechnics",
+      "addr": "Rzgowska 3",
+      "website": "http://zieleniewicz.com.pl",
+      "phone": null,
+      "hours_raw": "Mo-Fr 10:00-18:00; Sa 10:00-14:00"
+    },
+    {
+      "building_id": "osm-103258599",
+      "name": "Second Hand from London",
+      "kind": "shop:second_hand",
+      "addr": "Plac Niepodległości 6",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-126796072",
+      "name": "Decathlon",
+      "kind": "shop:sports",
+      "addr": "Aleja Jana Pawła II 30",
+      "website": "http://www.decathlon.com.pl",
+      "phone": "+48 42 291 32 00",
+      "hours_raw": "Mo-Sa 09:00-21:00"
+    },
+    {
+      "building_id": "osm-813216752",
+      "name": "Hotel - przechowalnia rzeczy",
+      "kind": "shop:storage_rental",
+      "addr": "Piotrkowska 5",
+      "website": "https://przechowalnia-rzeczy-lodz.pl/",
+      "phone": "+48 502 812 199",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-357231327",
+      "name": "Aldi",
+      "kind": "shop:supermarket",
+      "addr": "Rzgowska 44",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 06:00-22:00; Sa 06:00-22:00"
+    },
+    {
+      "building_id": "osm-365764619",
+      "name": "Aldi",
+      "kind": "shop:supermarket",
+      "addr": "Obywatelska 85",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-22:00; Su 09:00-18:00"
+    },
+    {
+      "building_id": "osm-37550743",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Ogrodowa 18",
+      "website": "https://www.biedronka.pl/pl/shop,id,1261",
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-23:00; Su 07:00-22:00"
+    },
+    {
+      "building_id": "osm-104514902",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Piotrkowska 212/214",
+      "website": "https://www.biedronka.pl/pl/shop,id,7463",
+      "phone": null,
+      "hours_raw": "Mo-We 06:00-23:00, Fr-Sa 06:00-23:30"
+    },
+    {
+      "building_id": "osm-105636090",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Pomorska 58",
+      "website": "https://www.biedronka.pl/pl/shop,id,1300",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-106923174",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Zgierska /15",
+      "website": "https://www.biedronka.pl/pl/shop,id,77",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-114648648",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Tamka 3",
+      "website": "https://www.biedronka.pl/pl/shop,id,119",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-138347413",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Obywatelska 137",
+      "website": "https://www.biedronka.pl/pl/shop,id,905",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-151596184",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Stanisława Przybyszewskiego 28",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-152316255",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Aleja Tadeusza Kościuszki 105A",
+      "website": "https://www.biedronka.pl/pl/shop,id,1299",
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-23:00; Niedziela Handlowa 7:00-21:00"
+    },
+    {
+      "building_id": "osm-256761431",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": " ",
+      "website": "https://www.biedronka.pl/pl/shop,id,7464",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-295025700",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": " ",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-343962666",
+      "name": "Biedronka",
+      "kind": "shop:supermarket",
+      "addr": "Łęczycka 9",
+      "website": "https://www.biedronka.pl/pl/shop,id,2711",
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:30-21:00; Su off"
+    },
+    {
+      "building_id": "osm-174546977",
+      "name": "Carrefour",
+      "kind": "shop:supermarket",
+      "addr": "Stanisława Przybyszewskiego 176/178",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-105757366",
+      "name": "Carrefour Market",
+      "kind": "shop:supermarket",
+      "addr": "Zarzewska 51",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-174501921",
+      "name": "Carrefour Market",
+      "kind": "shop:supermarket",
+      "addr": "Aleja Marszałka Edwarda Śmigłego-Rydza 32A",
+      "website": null,
+      "phone": "+48 426 433 037",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-311474709",
+      "name": "Dino",
+      "kind": "shop:supermarket",
+      "addr": "Wysoka 38A",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-343973281",
+      "name": "Dino",
+      "kind": "shop:supermarket",
+      "addr": "Radwańska 36",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-22:00; Su 08:30-20:00"
+    },
+    {
+      "building_id": "osm-140373521",
+      "name": "Kaufland",
+      "kind": "shop:supermarket",
+      "addr": "Generała Walerego Wróblewskiego 68",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-22:00"
+    },
+    {
+      "building_id": "osm-88193570",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Generała Jarosława Dąbrowskiego 17/21",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-22:00; Su 07:00-20:00"
+    },
+    {
+      "building_id": "osm-136107334",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Pomorska 75",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 08:00-21:00"
+    },
+    {
+      "building_id": "osm-199266679",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Tomasza Zana 3/11",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 08:00-21:00, Su 09:00-18:00"
+    },
+    {
+      "building_id": "osm-351252922",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Aleje Politechniki 30A",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 08:00-21:00, Su 09:00-18:00"
+    },
+    {
+      "building_id": "osm-373731031",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Nowe Sady 1",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 08:00-21:00, Su 10:00-18:00"
+    },
+    {
+      "building_id": "osm-400055739",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Księdza Biskupa Wincentego Tymienieckiego 16b",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-22:00"
+    },
+    {
+      "building_id": "osm-690588545",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Karolewska 53",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1010287282",
+      "name": "Lidl",
+      "kind": "shop:supermarket",
+      "addr": "Konstytucyjna 1b",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-23:00; Su 09:00-19:00"
+    },
+    {
+      "building_id": "osm-27523496",
+      "name": "Netto",
+      "kind": "shop:supermarket",
+      "addr": "Aleja Włókniarzy 156",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-138122469",
+      "name": "Netto",
+      "kind": "shop:supermarket",
+      "addr": "Srebrzyńska 8",
+      "website": "https://netto.pl/sklepy/lodz/srebrzynska-8/e7f3c41b972c4936a14e8c7f4e4cf523/",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-140228395",
+      "name": "Netto",
+      "kind": "shop:supermarket",
+      "addr": "Wojska Polskiego 2",
+      "website": "https://netto.pl/sklepy/lodz/ul-wojska-polskiego-2/c2b5cbaa30e74786a1df590a2e4a1487/",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-190005835",
+      "name": "Netto",
+      "kind": "shop:supermarket",
+      "addr": "Doktora Stefana Kopcińskiego 31d",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-22:00; Su 08:00-20:00"
+    },
+    {
+      "building_id": "osm-543067554",
+      "name": "Netto",
+      "kind": "shop:supermarket",
+      "addr": "Pomorska 65A",
+      "website": "https://netto.pl/",
+      "phone": null,
+      "hours_raw": "Mo-Sa 06:00-22:00"
+    },
+    {
+      "building_id": "osm-199266756",
+      "name": "Stokrotka",
+      "kind": "shop:supermarket",
+      "addr": "Jana Długosza 34/36",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-304860740",
+      "name": "Stokrotka",
+      "kind": "shop:supermarket",
+      "addr": "Milionowa 3",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-132573954",
+      "name": "Usługi Krawieckie, legowiska dla zwierząt",
+      "kind": "shop:tailor",
+      "addr": "Prezydenta Gabriela Narutowicza 83",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 10:00-18:00; Sa 10:00-13:00; Su,PH off"
+    },
+    {
+      "building_id": "osm-106328353",
+      "name": "Planeta Klocków Sklep z klockami LEGO",
+      "kind": "shop:toys",
+      "addr": "Wygodna 23",
+      "website": "https://planetaklockow.pl/",
+      "phone": "+48426898333",
+      "hours_raw": "Mo-Fr 08:00-15:00"
+    },
+    {
+      "building_id": "osm-199268132",
+      "name": "Makro",
+      "kind": "shop:wholesale",
+      "addr": "Marcina Kasprzaka 8",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-605861275",
+      "name": "Ekolas",
+      "kind": "shop:yes",
+      "addr": "Piotrkowska 267",
+      "website": null,
+      "phone": null,
+      "hours_raw": "Mo-Fr 09:00-17:00"
+    },
+    {
+      "building_id": "osm-275829574",
+      "name": "Orlen",
+      "kind": "shop:yes",
+      "addr": "Aleja Grzegorza Palki 7",
+      "website": null,
+      "phone": null,
+      "hours_raw": "24/7"
+    },
+    {
+      "building_id": "osm-104651431",
+      "name": "Filharmonia Łódzka",
+      "kind": "theatre",
+      "addr": "Prezydenta Gabriela Narutowicza 20/22",
+      "website": "https://filharmonia.lodz.pl/",
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175927655",
+      "name": "Teatr D.O.M.",
+      "kind": "theatre",
+      "addr": "Piotrkowska 243",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-187475650",
+      "name": "Teatr Logos",
+      "kind": "theatre",
+      "addr": "Marii Skłodowskiej-Curie 22",
+      "website": "https://www.logos.art.pl/",
+      "phone": "+48 42 637 65 45",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-175852462",
+      "name": "Teatr Muzyczny",
+      "kind": "theatre",
+      "addr": "Północna 47/51",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-1513476967",
+      "name": "Teatr Nowy im. Kazimierza Dejmka w Łodzi",
+      "kind": "theatre",
+      "addr": "Zachodnia 93",
+      "website": "https://nowy.pl/",
+      "phone": "+48 42 636 05 92",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-177652420",
+      "name": "Teatr Studyjny PWSFTviT",
+      "kind": "theatre",
+      "addr": "Mikołaja Kopernika 8",
+      "website": "https://teatrstudyjny.lodz.pl/",
+      "phone": "+48 42 63 64 166",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-111682774",
+      "name": "Teatr Szwalnia",
+      "kind": "theatre",
+      "addr": "Andrzeja Struga 90",
+      "website": "https://www.teatrszwalnia.pl/",
+      "phone": "+48 665 338 171",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-104142160",
+      "name": "Teatr V6",
+      "kind": "theatre",
+      "addr": "Stefana Żeromskiego 76",
+      "website": "https://teatrv6.pl/",
+      "phone": "+48 600 220 666",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-103645945",
+      "name": "Teatr Wielki",
+      "kind": "theatre",
+      "addr": "Plac Generała Jana Henryka Dąbrowskiego ",
+      "website": "https://www.operalodz.com/",
+      "phone": "+48 42 633 99 60",
+      "hours_raw": null
+    },
+    {
+      "building_id": "osm-174955734",
+      "name": "Teatr im. Stefana Jaracza",
+      "kind": "theatre",
+      "addr": "Stefana Jaracza 27",
+      "website": null,
+      "phone": null,
+      "hours_raw": null
+    }
+  ]
+}
