@@ -997,6 +997,26 @@ export default function ExtentApp() {
   }, [name, scene])
   const [radiusM, setRadiusM] = useState(0)
   const [radiusTouched, setRadiusTouched] = useState(false)
+
+  // ── Is the authored extent DIRTY relative to what was last baked? ──────────
+  //
+  // Returning to Extent after a successful bake showed a live "Bake" button, which
+  // reads as "this still needs doing". It should read as done until something the
+  // bake depends on actually changes. The signature covers exactly those inputs —
+  // boundary, disc, carve-outs, per-building overrides, and the metadata the pour
+  // writes — so editing the blurb marks it dirty (the slab carries it) while panning
+  // the camera does not.
+  const bakeSignature = useMemo(() => JSON.stringify({
+    r: Math.round(radiusM) || 0,
+    p: Array.isArray(polygonLL) ? polygonLL.length : 0,
+    p0: polygonLL?.[0] ? [Math.round(polygonLL[0].lon * 1e5), Math.round(polygonLL[0].lat * 1e5)] : null,
+    x: (exclusionsLL || []).map(l => (l.anchors || []).length),
+    a: [...activate].sort(),
+    h: [...hide].sort(),
+    n: name.trim(), b: blurb.trim(),
+  }), [radiusM, polygonLL, exclusionsLL, activate, hide, name, blurb])
+  const [bakedSig, setBakedSig] = useState(null)
+  const bakeDirty = !bakedSig || bakedSig !== bakeSignature
   // §4 live re-scope: the radius the committed circle was last baked at. When the
   // operator drags radiusM away from this on a committed scene, offer "Re-scope".
   const [committedRadius, setCommittedRadius] = useState(0)
@@ -1258,6 +1278,7 @@ export default function ExtentApp() {
         // requirement. Projected to the live frame by `penPaths`.
         if (Array.isArray(nb.exclusions) && nb.exclusions.length) setExclusionsLL(nb.exclusions)
         if (Array.isArray(nb.polygon) && nb.polygon.length >= 3) { setPolygonLL(nb.polygon); setPolygonSource(nb.polygonSource || 'authored') }
+        setBakedSig(nb.bakedSig || null)
         // Restore the searched place so the pre-fetch envelope keeps its padding and
         // the panel keeps naming what matched — across a reopen AND across an HMR
         // remount, which wipes component state just as thoroughly.
@@ -1573,6 +1594,8 @@ export default function ExtentApp() {
         setCommittedRadius(Math.round(radiusM))
         // Committed frame is unchanged (no re-center) → carry the authored view as-is.
         if (authoredCam) { try { localStorage.setItem('cartograph-camera', JSON.stringify(authoredCam)) } catch { /* ignore */ } }
+        setBakedSig(bakeSignature)
+        saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
         setShot('designer')
         return
       }
@@ -1625,6 +1648,8 @@ export default function ExtentApp() {
       const pm = await fetchMap(scene).catch(() => null)
       if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
       setCommittedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
+      setBakedSig(bakeSignature)
+      saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
       setShot('designer')
     } catch (e) {
       if (committedThisRun) {
@@ -2092,9 +2117,12 @@ export default function ExtentApp() {
 
             {keptFit.count > 0 && radiusM > 0 && (
               <div className="carto-row" style={{ marginTop: 12 }}>
-                <button className="carto-btn carto-btn--grow carto-stage-btn" disabled={building || !(radiusM > 0)}
-                  onClick={onBuild} title="Bake the neighborhood and open the Designer">
-                  {building ? `Baking…  ${mmss(buildElapsed)}` : 'Bake'}
+                <button className="carto-btn carto-btn--grow carto-stage-btn"
+                  disabled={building || !(radiusM > 0) || !bakeDirty}
+                  onClick={onBuild}
+                  style={!building && !bakeDirty ? { opacity: 0.45, cursor: 'default' } : undefined}
+                  title={bakeDirty ? 'Bake the neighborhood and open the Designer' : 'Already baked — change the boundary, radius, overrides or details to re-bake'}>
+                  {building ? `Baking…  ${mmss(buildElapsed)}` : (bakeDirty ? 'Bake' : 'Baked')}
                 </button>
               </div>
             )}
