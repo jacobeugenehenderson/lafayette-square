@@ -10,6 +10,28 @@
 
 ---
 
+## ▶ 2026-07-21 — SLAB WEIGHT: trees are ~85–88% of a poured neighborhood
+
+Surfaced auditing the GitHub-Pages payload (tracked `public/` ≈ 1.03 GB against Pages' 1 GB soft limit). The finding is arborist-shaped: **the town is small, the trees are not.**
+
+| scene | tracked | trees |
+|---|---|---|
+| centrum (2,954 buildings — the most in the repo) | **35 MB** | none baked yet |
+| altadena | 117 MB | none (terrain-heavy) |
+| lafayette-square | 147 MB | **126 MB — 85%** |
+| hipointe-demun | 307 MB | **269 MB — 88%** |
+
+Buildings + ground + lamps + shape + scene come to **20–35 MB**. Everything above that is the tree library baked per scene. **207 MB (25%) of `public/baked/` is byte-identical duplication.** Four items, cheapest first:
+
+- [ ] **⛔ BUG — `linden_american` skeleton variants are byte-identical.** `skeleton-1/2/3` ship as three names for one file, across all three scenes and all three LODs (9 species/LOD groups affected; 15 other groups vary correctly, so this is linden-specific, not systemic). **This is a visual-variety defect first and a size defect second** — every American linden in three towns is the same tree while the roster believes there are three. ~100 MB recovered as a side-effect. *(Verify with `git ls-files -s public/baked` grouped by blob sha.)*
+- [ ] **KTX2/Basis the tree atlases.** 97 MB of uncompressed PNG across scenes (HPDM alone: 73 MB — `trees-atlas-color` 20 MB + `normal` 17 MB + leaves/bark). Already scoped in `HANDOFF-hero-impostor-and-startup-weight.md:58` — *"27.6 MB → ~5 MB, smaller on wire AND in VRAM, independent of impostors."* No KTX2Loader exists in the repo yet.
+- [ ] **Share the tree library instead of copying it per scene.** LS and Księży Młyn each carry 101.8 MB of tree GLBs — the *same* linden, maple, oak, plane. `InstancedTrees.jsx:780` rewrites every tree URL to `baked/<look>/trees/…` with **no fallback** to the shared `public/trees/` library, so each slab must carry its own copy. Deduping is an architecture change (it trades slab self-containment for a shared asset path) — **discuss before building**; it also interacts with the per-look 404s below.
+- [x] **Atlas QA `-viz.png` untracked** (2026-07-21) — 20 MB, `bake-look.js:658` writes them, nothing loads them; gitignored so they stay local and stop shipping.
+
+Related, same audit: **1,850 HPDM placements (17.9%) request GLBs absent under the look** — six species (`betula_pendula` 725, `magnolia_sp` 438, `acer_saccharum_multistem` 261, `nyssa_sylvatica` 152, `tilia_americana` 141, `acer_saccharum` 133) have no directory in `public/baked/hipointe-demun/trees/`, though all resolve fine against the shared library. Same class as the LS prod 404s, ~3× the exposure. Cause looks like ordering: `trees.json` is Jul 17 00:25, the atlas + GLB dirs Jul 16 13:22 — the re-plant landed after the GLB stage. **A re-bake is the fix.**
+
+---
+
 ## ▶ 2026-07-08 — the operating model + the Salon/Grove interface pass (Jacob walkthrough)
 
 **The settled operating model (design, agreed in prose 2026-07-07):**
