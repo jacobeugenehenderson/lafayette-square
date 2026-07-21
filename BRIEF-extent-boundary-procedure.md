@@ -16,7 +16,9 @@ Assume the problem is genuinely hard and that the obvious fixes have been tried.
 
 1. **`ORIENTATION.md`** (root) — universal first read.
 2. **`README.md` §⭐ START HERE** + its cross-cutting feature index — find the Extent/intake topic; it names the home doc + existing forensics.
-3. **Then the topic canon.** At minimum: `cartograph/PIPELINE.md` (the boundary clip / data-wall neuter + the excluder model), `cartograph/ARCHITECTURE.md` (§ the neighborhood silhouette, § the Extent tool & the Pour), `cartograph/INTAKE.md §0.5`, `NEIGHBORHOOD-INPUTS.md §5.1–5.2`, `cartograph/PREBAKE.md`, `SLAB-CONTRACT.md`, `HANDOFF-boundary-trio.md`, `HANDOFF-lodz-ksiezy-mlyn.md`.
+3. **Then the topic canon.** ⭐ **Start with `cartograph/ARCHITECTURE.md` § "The Extent tool & the Pour" — "⭐ THE PROCEDURE, as-built"** is the live home for this subsystem's doctrine. Then: `cartograph/PIPELINE.md` (the boundary clip / data-wall neuter), `cartograph/INTAKE.md §0.5`, `NEIGHBORHOOD-INPUTS.md §5.1–5.2`, `cartograph/PREBAKE.md`, `SLAB-CONTRACT.md`, `HANDOFF-boundary-trio.md`, `HANDOFF-lodz-ksiezy-mlyn.md`.
+
+> ⛔ **THIS BRIEF IS OLDER THAN THE CANON IT POINTS AT — read this before §4.** It was written 2026-07-20 14:27. At **19:26 that same day**, `004a33e3` **retracted the excluder model across nine docs**. Two sections below were written under the retracted model and are corrected inline, but assume anything here about *membership mechanism* is five hours stale and **the canon wins**. This is not incidental: the retraction commit exists precisely because *"an agent obeying the routing gate could not avoid being told the inclusion polygon was dead — two passes were, and both reached the wrong conclusion."* You would have been the third. *(Corrected 2026-07-21.)*
 
 **Rebuilding the model from grep + first principles when the canon already spells it out is this repo's named recurring failure.** The previous agent on this topic — and the coordinator briefing it — both got burned by exactly that. Cite what you actually read.
 
@@ -98,7 +100,7 @@ Jacob explicitly flags (c) as unaccounted for: *"THIS doesn't account for neighb
 
 All of these were traced against code/data on 2026-07-20. Re-verify anything you build on.
 
-**The excluder model is what's live** (`PIPELINE.md`, 2026-07-14): membership = `inside-circle − exclusions + activate/hide overrides`. Applied in `pipeline.js:104–115` and `:242–254`, re-applied belt-and-suspenders in `bake-buildings.js:603–613`.
+⛔ ~~**The excluder model is what's live**~~ — **RETRACTED the same day this brief was written** (`004a33e3`, 2026-07-20 19:26). **Membership = `(polygon ∪ activate) − (exclusions ∪ hide)`** — the polygon DECIDES, the disc RENDERS, and the disc is only the fallback when a scene has no polygon. `pipeline.js:246-255` had implemented this all along; what was missing was persistence plus two server paths that destroyed a polygon on sight. Applied in `pipeline.js:104–115` and `:242–254`, re-applied belt-and-suspenders in `bake-buildings.js:603–613`. **Do not build to the excluder model.**
 
 **What a single extent edit did to Łódź** (1819 → 1640 buildings):
 - **147 dropped by one exclusion loop** (including Church of St. Anne, `osm-108945966`)
@@ -132,9 +134,18 @@ Księży Młyn's boundary, verified against live OSM — all four corners meet a
 
 ---
 
+## 4b. Established since this brief was written (2026-07-21)
+
+Four additions. The first two are requirements the brief never stated; the third is a correction to a claim a coordinator pass invented; the fourth is a live defect.
+
+- **⭐ STREET NAMES COME FROM THE FETCH.** The boundary can only be authored *after* step 2's fetch, because the vocabulary it is spoken in does not exist before then. The search sizes a generous envelope; **it does not know the neighborhood.** Any design that reasons about the boundary before the fetch is reasoning about data that hasn't been pulled. (This is why §2's ordering is not arbitrary.)
+- **⭐ TWO CENTERPOINTS, which must not be collapsed.** The generous envelope of §2.2 and the hood discovered in §2.3–4 do not share a center and never will. **Fetch center** = envelope midpoint, becomes the frame origin, **frozen at commit** (moving it runs `reproject-raw`, rebuilds the skeleton, renumbers `segOrd`, and strands the x/z-only tree census — nothing reprojects it). **Hood center** = the kept-buildings centroid; a *value, not a frame*, so it is free to recompute every bake. **Once membership correctly isolates the hood, the kept buildings are an off-center cluster inside the envelope — that is expected, not a defect.** The disc must be drawn on the hood center. Today it cannot be: `ExtentApp.jsx:1247` computes `keptCenter` correctly and draws the disc on it, then **short-circuits to `{x:0,z:0}` when `committed`** (`:1248`); and `makeCircleBoundary` (`serve.js:612`) **hardcodes `center: [0,0]`**, so the artifact cannot carry a hood center even when one is known. ⚠️ Suspected same root as the open **3D Browse framing** bug ("too high and slightly to the left").
+- **⛔ DO NOT invent a per-street "SIDE" property.** A 2026-07-21 coordinator pass proposed one, reasoning that HPDM's far-side-of-the-southern-street frontage is carried by 16 `activate` overrides that "must be re-picked whenever the polygon is re-derived." **That premise is false.** `building-overrides.json` is written only by `POST /<scene>/building-overrides` (`serve.js:1099`); `pipeline.js:96,:233` and `bake-buildings.js:674` only *read* it, and nothing in the pour or bake regenerates it. **Overrides survive a polygon re-derive** — re-authoring HPDM's borders costs zero of the 16 picks. §2.5 correction is the mechanism and it is durable by design. *(The one real gap, sized correctly: the pen carves **exclusion** loops only — `ExtentApp.jsx:1085` has `exclusionsLL` with no inclusion counterpart — so pulling in a run of far-side frontage is 16 clicks rather than one band. A gesture to add to an existing mechanism, not a new concept.)*
+- **A destructive path that the listings guard only half-covers.** `bake-content.js:750-767` protects `content/listings.json` from being regenerated out from under hand-authored records — but **only when `listings.overrides.json` declares `meta.baseSource`**. Verified: `hipointe-demun` does **not** declare it, so HPDM's 192 listings regenerate from the OSM join on every bake, and place cards whose anchor building leaves the baked set are dropped with only a console line (`bake-content.js:554`). The guard was added after an Extent edit took Łódź from 84 → 5 listings.
+
 ## 5. Constraints
 
-- **Do not clobber existing scenes.** Jacob: *"we have to be careful to not clobber them, AND we need to eventually migrate everything to the same scheme so we can stop this."* Current state: only `hipointe-demun` has a polygon (4 pts). `altadena`, `lafayette-square`, `ksi-y-m-yn`, `toy` have none.
+- **Do not clobber existing scenes.** Jacob: *"we have to be careful to not clobber them, AND we need to eventually migrate everything to the same scheme so we can stop this."* Current state (re-verified 2026-07-21): **`hipointe-demun` 4-pt polygon · `centrum` 815-pt polygon** (a freehand pen trace, not street-derived — the two are different in kind and the brief's original "only HPDM has one" is stale). `lafayette-square`, `ksi-y-m-yn`, `altadena`, `toy` have none.
 - **Migration is required eventually** — but any plan that re-pours an existing scene must say so loudly, and must be verifiable. Consider proposing a **membership-diff** capability (same scene, old scheme vs new, which buildings enter and leave, and why) — without it, migration is hopeful rather than provable.
 - **No big-bang rewrite.** This is load-bearing for every scene. Stages must be independently shippable and independently verifiable.
 - **Keep the disc.** It is what renders.
