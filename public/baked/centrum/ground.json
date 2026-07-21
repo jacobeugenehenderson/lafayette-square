@@ -408,19 +408,7 @@
       "indexByteOffset": 16724796
     }
   ],
-  "poolmap": {
-    "image": "ground.poolmap.png",
-    "size": 1024,
-    "min": [
-      -199.8,
-      -199.8
-    ],
-    "span": [
-      399.6,
-      399.6
-    ],
-    "scale": 3
-  },
+  "poolmap": null,
   "colormap": {
     "image": "ground.colormap.png",
     "size": 1024,
