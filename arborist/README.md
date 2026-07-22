@@ -6,7 +6,7 @@ The **tree kit** for the neighborhood — the helper that turns curated parts in
 
 > 🎯 **The goal** (everything below serves it): **the LS trees render reliably and look as good as possible.** "Reliably" = the same authored tree bakes to the same slab every time, no vanishing leaves, no stale-cache surprises. "As good as possible" = correct silhouette, bark, and leaves (size · arrangement · color · season), across the species that fill the real park.
 
-> 🌳 **Doctrine (locked, 2026-06-18/20):** the kit-matcher is the Arborist's **front** — it rides the **kept** publish spine, it does **not** fork it (`feedback_no_parallel_pipeline_for_scenes`). **no-cull** — every tree draws at every distance (the hero-LOD / DoF arc is **parked**, dormant, not deleted). **Authored-only** is the active track; **LiDAR + Procedural are kept as equal peer tracks** (reachable, not retired). Leaf **size** and **color** are **rubric axes**, not patches.
+> 🌳 **Doctrine (locked, 2026-06-18/20; render line updated 2026-07-22):** the kit-matcher is the Arborist's **front** — it rides the **kept** publish spine, it does **not** fork it (`feedback_no_parallel_pipeline_for_scenes`). **no-cull** — every tree draws, at every distance: the **impostor is the foundation** (all trees paint as captured canopy billboards) and geometry is an **enhancement on the tallest ~15%**. The hero-pan prominence cull is **retired** — it was dropping 69% of placements onto bare ground. **Authored-only** is the active track; **LiDAR + Procedural are kept as equal peer tracks** (reachable, not retired). Leaf **size** and **color** are **rubric axes**, not patches. → `ARCHITECTURE.md "Tree-render reality at LS"`.
 
 ---
 
