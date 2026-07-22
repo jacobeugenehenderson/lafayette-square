@@ -1444,8 +1444,18 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
     const subBytes = await io.writeBinary(sub)
     const subReloaded = await io.readBinary(subBytes)
     const subBuffer = masterDoc.createBuffer()
+    // ONE node per COMPOSITION — every sub-mesh's primitives land on a single
+    // mesh. A node per sub-mesh emitted N same-named top-level nodes for any
+    // shading-group chassis (american_linden_a = BranchesSG/CapsSG/LeavesSG, the
+    // "parts of one tree" case publish-glb's own variant-detection comment
+    // describes), which `namesSuggestVariants` then read as N variants → the
+    // linden published + shipped 3 byte-identical trees per scene, and the
+    // roster believed it had 3 variants when it had one. Primitives, not nodes,
+    // are what publish-glb decimates, so collapsing them is lossless.
+    const mesh = masterDoc.createMesh(slotName)
+    const node = masterDoc.createNode(slotName).setMesh(mesh)
+    masterScene.addChild(node)
     for (const subMesh of subReloaded.getRoot().listMeshes()) {
-      const mesh = masterDoc.createMesh(slotName)
       for (const subPrim of subMesh.listPrimitives()) {
         const prim = masterDoc.createPrimitive()
           .setExtras(subPrim.getExtras())
@@ -1492,8 +1502,6 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
         }
         mesh.addPrimitive(prim)
       }
-      const node = masterDoc.createNode(slotName).setMesh(mesh)
-      masterScene.addChild(node)
     }
   }
   await io.write(outPath, masterDoc)

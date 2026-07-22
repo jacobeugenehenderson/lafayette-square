@@ -73,15 +73,45 @@ function readbackToPng(rb, target) {
   return dst.toDataURL('image/png')
 }
 
+// Fraction of a readback's pixels that are meaningfully opaque. A band that
+// renders to ~nothing is a FAILED capture, not a thin canopy — the species'
+// disc comes out empty and that layer silently disappears in Browse. The two
+// known ways to get here both produce a fully transparent PNG rather than an
+// error: the bark sub-region collapsing to (0,0) when a species has no
+// `barkDetailBySpecies` record (see the uniform-binding note below), and band
+// cuts landing in empty space on a mis-scaled asset. Both shipped blanks into
+// the slab undetected (platanus branch+canopy, linden canopy — 2026-07-22),
+// which is exactly the class of defect that must never be silent again.
+const BLANK_COVERAGE = 0.002
+function alphaCoverage(rb) {
+  if (!rb?.data) return 0
+  const d = rb.data
+  let opaque = 0
+  for (let i = 3; i < d.length; i += 4) if (d[i] > 12) opaque++
+  return opaque / (d.length / 4)
+}
+
 async function postOverhead(look, species, heightM, canopyRadiusM, bands) {
-  const body = {
-    heightM, canopyRadiusM,
-    bands: bands.map((b) => ({
+  const blanks = []
+  const encoded = bands.map((b) => {
+    const coverage = alphaCoverage(b.albedoTex?.userData?.readback)
+    if (coverage < BLANK_COVERAGE) {
+      blanks.push(`${b.key} (${(coverage * 100).toFixed(2)}% opaque)`)
+      return null
+    }
+    return {
       key: b.key, yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
       albedo: readbackToPng(b.albedoTex?.userData?.readback, 512),
       ao: readbackToPng(b.aoTex?.userData?.readback, 256),
-    })).filter((b) => b.albedo && b.ao),
+    }
+  }).filter((b) => b && b.albedo && b.ao)
+  // Refuse the whole species rather than ship a partial stack — a missing band
+  // is a hole in the parallax, and a silently-2-band tree reads as "fine" in the
+  // manifest. Loud failure sends it back to the Salon where it can be fixed.
+  if (blanks.length) {
+    throw new Error(`blank band(s): ${blanks.join(', ')} — capture rendered nothing`)
   }
+  const body = { heightM, canopyRadiusM, bands: encoded }
   if (!body.bands.length) return
   const res = await fetch(`/api/arborist/overhead/${encodeURIComponent(look)}/${encodeURIComponent(species)}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -126,6 +156,16 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
             const man = atlas.manifest
             const barkSettings = man?.barkBySpecies?.[sp.species] || null
             const detailSlot = man?.barkDetailBySpecies?.[sp.species] || null
+            // No detail slot → applyBarkUniforms sets uBarkTileScale (0,0) and
+            // ALL this species' bark samples an empty atlas region → the woody
+            // bands render blank. Only Salon-composed species get a record
+            // (patchManifestForSalon writes manifest#bark; bake-look surfaces
+            // it), so a roster species adopted some other way — the merged
+            // London plane, `platanus_acerifolia` — has none and cannot bake a
+            // usable overhead. Say so; the blank guard below stops the ship.
+            if (!detailSlot) {
+              console.warn(`[overhead-bake] ${sp.species}: no barkDetailBySpecies record — bark will render blank (species has no Salon composition)`)
+            }
             const posterizedSlot = man?.barkPosterizedBySpecies?.[sp.species] || null
             const deformerRange = man?.deformerBySpecies?.[sp.species]?.range || null
             prep.scene.traverse((o) => {

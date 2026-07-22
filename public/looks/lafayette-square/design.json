@@ -18,7 +18,7 @@
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": false,
+    "tree_row": true,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -26,7 +26,7 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": false,
+    "tree": true,
     "lamp": false,
     "fence": false,
     "wall": false,
@@ -34,7 +34,8 @@
     "hedge": false,
     "labels": true,
     "centerline": false,
-    "park_path": false
+    "park_path": false,
+    "parkTitle": true
   },
   "layerColors": {
     "street": "#4A4A48",
@@ -88,15 +89,15 @@
   "curbWidth": 0.381,
   "alleyCap": "round",
   "labels": {
-    "size": 3.75,
     "weight": 500,
     "fill": "#ffffff",
     "halo": "#000000",
     "haloWidth": 0.07,
     "letterSpacing": 0.04,
-    "opacity": 0.85,
+    "opacity": 0.9,
     "case": "upper",
     "fontFamily": "",
+    "size": 3.75,
     "tierScale": {
       "street": 1,
       "park": 2.8
@@ -106,7 +107,8 @@
     "maxPx": 128,
     "font": "",
     "bg": "#3a3a38",
-    "bgAlpha": 1
+    "bgAlpha": 1,
+    "sizeK": 1
   },
   "blockCustoms": {
     "lafayette-avenue-5": {
@@ -1189,14 +1191,14 @@
   },
   "openSections": {
     "Streets": false,
-    "Blocks": true,
-    "Paths": true,
+    "Blocks": false,
+    "Paths": false,
     "Features": false,
-    "Labels": false,
+    "Labels": true,
     "HeroSubject": false,
     "Look": false,
-    "Land Cover": true,
-    "Furniture": true
+    "Land Cover": false,
+    "Furniture": false
   },
   "trees": [
     {
@@ -1226,14 +1228,6 @@
     {
       "species": "linden_american",
       "variantId": 1
-    },
-    {
-      "species": "linden_american",
-      "variantId": 2
-    },
-    {
-      "species": "linden_american",
-      "variantId": 3
     },
     {
       "species": "oak_bur",

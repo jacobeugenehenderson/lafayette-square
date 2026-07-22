@@ -379,6 +379,12 @@ function nodeContainsMesh(node) {
 }
 
 function namesSuggestVariants(names) {
+  // Siblings sharing ONE exact name are parts of one tree, never variants —
+  // "Maple-Tree_01/_02" is the variant signal, three nodes all called
+  // `linden_american_1` is a single tree whose composition emitted a node per
+  // shading group. Counting the shared prefix without checking that the names
+  // actually DIFFER published the linden 3× (2026-07-22).
+  if (new Set(names).size < 2) return false
   const prefixes = new Map()
   for (const name of names) {
     const prefix = (name || '').replace(/[_-]?\d+$/, '')
@@ -419,48 +425,59 @@ async function listVariants(io, sourceGlbPath) {
   const scene = doc.getRoot().listScenes()[0]
   const result = findSplitLevel(scene)
   if (result.mode === 'single') {
-    return { mode: 'single', variants: [{ keepNames: ['__all__'], sourceName: 'whole-scene' }] }
+    return { mode: 'single', variants: [{ index: -1, keepNames: ['__all__'], sourceName: 'whole-scene' }] }
   }
   return {
     mode: 'nodes',
-    variants: result.children.map(n => ({
-      keepNames: [n.getName() || `cluster-${result.children.indexOf(n)+1}`],
-      sourceName: n.getName() || `cluster-${result.children.indexOf(n)+1}`,
+    variants: result.children.map((n, i) => ({
+      // Variants are identified by POSITION at the split level, not by name —
+      // a forest scene whose trees share a name would otherwise have every
+      // variant keep every sibling (see loadVariantDocument).
+      index: i,
+      keepNames: [n.getName() || `cluster-${i + 1}`],
+      sourceName: n.getName() || `cluster-${i + 1}`,
     })),
   }
 }
 
 // Build a Document containing one variant.
-//   variant.keepNames === ['__all__'] → keep entire scene (single mode).
-//   otherwise                         → keep only nodes whose names match.
+//   variant.index < 0 → keep entire scene (single mode).
+//   otherwise         → keep ONLY the split-level child at that index (plus its
+//                       ancestor chain + whole subtree).
 //   Removes everything else, then prunes orphaned materials / textures.
+//
+// Identity is positional, not by name. Keeping by NAME meant same-named
+// siblings each kept all of each other, so every "variant" came out identical —
+// the linden shipped three copies of one tree (2026-07-22). `findSplitLevel` is
+// deterministic, so re-running it on this fresh read yields the same ordering
+// `listVariants` indexed.
 async function loadVariantDocument(io, sourceGlbPath, variant) {
   const doc = await io.read(sourceGlbPath)
-  if (variant.keepNames[0] === '__all__') {
+  if (variant.index < 0 || variant.keepNames[0] === '__all__') {
     await doc.transform(prune())
     return doc
   }
   const scene = doc.getRoot().listScenes()[0]
-  // Walk recursively; for each node, if its name matches a keep-name, mark it
-  // (and all ancestors) keep. Then detach all unmarked top-level chains.
-  const keepSet = new Set()
-  function markIfKept(node) {
-    let kept = variant.keepNames.includes(node.getName())
-    for (const c of node.listChildren()) {
-      if (markIfKept(c)) kept = true
-    }
-    if (kept) keepSet.add(node)
-    return kept
+  const result = findSplitLevel(scene)
+  const target = result.mode === 'multi' ? result.children[variant.index] : null
+  if (!target) {
+    throw new Error(`variant ${variant.index} (${variant.sourceName}) not found on re-read of ${sourceGlbPath}`)
   }
-  for (const c of scene.listChildren()) markIfKept(c)
-  // Recursively remove non-kept children.
-  function pruneNonKept(parent) {
+  const containsTarget = (node) => {
+    if (node === target) return true
+    for (const c of node.listChildren()) if (containsTarget(c)) return true
+    return false
+  }
+  // Detach every sibling chain that doesn't lead to the target; descend only
+  // through the ancestors that do, and leave the target's own subtree intact.
+  const pruneToTarget = (parent) => {
     for (const c of [...parent.listChildren()]) {
-      if (!keepSet.has(c)) parent.removeChild(c)
-      else pruneNonKept(c)
+      if (c === target) continue
+      if (containsTarget(c)) pruneToTarget(c)
+      else parent.removeChild(c)
     }
   }
-  pruneNonKept(scene)
+  pruneToTarget(scene)
   await doc.transform(prune())
   return doc
 }
