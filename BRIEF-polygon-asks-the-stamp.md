@@ -2,8 +2,12 @@
 
 **Status:** DRAFT, dispatch-ready. Active brief (tracked at root). Written 2026-07-22 (Kestrel) from a
 live eye-session with Jacob on the Lafayette strip + a full day in the dead-end class. Successor to
-`BRIEF-dead-end-leg-flip-and-slope.md` (LANDED) and `BRIEF-dead-end-mouth-junction.md` (open; this
-brief **supersedes its §4 fix direction**). **Jacob dispatches.**
+`BRIEF-dead-end-leg-flip-and-slope.md` (LANDED) and `BRIEF-dead-end-mouth-junction.md` (**RETIRED into
+this brief** 2026-07-22 — it is now the mouth's evidence appendix, not a separate campaign; its §3
+measurements stand, its §4 fix direction is superseded here). **Jacob dispatches.**
+
+> ⚠️ **A good-looking LS render is NOT evidence the class is fixed** — the co-claim can be authored
+> over by hand (Jacob, 2026-07-22). Gate on `corner-coclaim.mjs`, then the eye. Never the eye alone.
 
 > ⛔ **ROUTE FIRST (`CLAUDE.md` gate):** `ORIENTATION.md` → `README §⭐ START HERE` → then
 > **`RIBBONS.md §1`** (the derivation chain — *"the polygon is BOTH the geometry source AND the
@@ -124,6 +128,33 @@ guesses at. **The more identity a node has, the more there is to lose in polygon
 The already-landed side fix (`149f46b0`) is **this brief's thesis in miniature**: stop deriving side
 from the face's winding, read it from the edge's direction. It cost nothing on the detector and
 deleted a heuristic. This brief is that move generalized to the whole node.
+
+---
+
+## 3.4 What this brief carries, and what it does NOT (settled at the 2026-07-22 standup)
+
+**IN — one class, four faces.** All gate on `corner-coclaim.mjs`:
+
+| Face | Evidence | Where the detail lives |
+|---|---|---|
+| Corner co-claim, map-wide | 1400.6 m², 243 of 568 corners | §1 |
+| The dead-end MOUTH | 0 m² unclaimed, ~15 m²/mouth co-claimed | `BRIEF-dead-end-mouth-junction.md` §3 (retired-in; read as appendix) |
+| Triple-derived dead-ends | 70 / 29 / 50 | §3.1 |
+| Inert `thruNodeEnds` | 0 markers across 101 tiles | §3.3 — ⛔ replace, don't leave beside |
+
+**OUT — do not promise these.**
+
+| Not covered | Why |
+|---|---|
+| **3 unresponsive legs** — `whittemore-place\|right`, `rutger-street-0\|right`, `st-vincent-court-1\|left` | Undiagnosed. Root unattributed. (The *other* 4 — where `assignSegOrdsToFes` hands the terminal segment to a longer neighbouring fe — are plausibly this class, but unproven; claim nothing.) |
+| **7 caps flip to no visible change** | Pre-existing and undiagnosed — identical before the coupler landed. Not a regression, not this root. |
+| **Waverly + St. Vincent Court** — the map's worst-fragmented junctions | loop×loop / court×avenue. Divided-loop / median-nose class (E2/E3). Different campaign. See §7. |
+
+**✅ CLOSED — do not re-open.** The 10 asymmetric caps that changed appearance when the coupler landed
+(each leg now rendering its own surveyed arrangement) were carried as "visible, Jacob's call." Ruled
+2026-07-22 on Jacob's eye: **"they are correctly stroked and capped."** Accepted output. ⛔ Do not read
+the visible left/right difference as a co-claim sliver or as a sub-threshold treelawn glean artifact —
+both readings were tried at the standup and both are wrong. It is the fix working.
 
 ---
 

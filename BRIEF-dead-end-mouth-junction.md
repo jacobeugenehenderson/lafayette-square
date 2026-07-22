@@ -1,6 +1,20 @@
 # BRIEF — the dead-end MOUTH (where the spur meets the through road)
 
-**Status:** DRAFT, dispatch-ready. Active brief (tracked at root). Written 2026-07-22 from a live
+## ⛔ RETIRED 2026-07-22 into `BRIEF-polygon-asks-the-stamp.md` — do NOT dispatch this separately
+
+The mouth is not its own campaign; it is the corner co-claim class seen at a dead end (same signature,
+same magnitude — 0 m² unclaimed, ~15 m² co-claimed per mouth, vs 1400 m² across 243 corners).
+**§4 "the fix DIRECTION" is SUPERSEDED** — the answer to its own §4.1 question (*"why does the face walk
+produce a zero-width slit for the spur at all"*) is that polygonization never asks the stamp.
+
+**Read this doc as the mouth's EVIDENCE APPENDIX.** Still load-bearing and still true: §3.1's retraction
+(co-claim, not a gap) · §3.2 (the skeleton at these T's is clean — not a frame defect) · §3.4 (five
+refuted hypotheses) · §3.5 (both trim attempts, reverted — do not re-walk) · §5 (tooling). Plan from the
+stamp brief; consult this for the measurements.
+
+---
+
+**Status:** ⛔ RETIRED (above). Was: DRAFT, dispatch-ready. Active brief (tracked at root). Written 2026-07-22 from a live
 eye-session with Jacob on the Lafayette Avenue strip (Missouri · Simpson · Waverly · Nicholson
 Places). Continues the dead-end class: `BRIEF-dead-end-leg-flip-and-slope.md` (the TIP end —
 **LANDED**, see §1) closed the cap; this is the **other end of the same finger**.
