@@ -103,6 +103,33 @@ So conforming LS is gated on **two checks that do not exist yet**, both cheap:
 4. **`railway` is not in the Overpass query at all** (`fetch.js:85-100`). Kolej Scheiblerowska was never fetched, so removing the filter alone would not surface it. Two fixes, not one; both cheap.
 5. **Genuinely unnamed segments** — Łódź's own district boundary uses unnamed service roads for two entire edges. The only part needing a new gesture: contributing one drawn segment to an otherwise-real ring.
 
+## 0.8 ⭐ THE SEQUENCE, THE LOCK, AND WHERE IDENTITY IS MINTED (Jacob, 2026-07-22)
+
+Ratifies §0.1 and adds the three pieces it does not carry. **The nomenclature is Jacob's, verbatim:**
+
+> *"We soft fetch, edit, hard fetch permanently fixes the soft fetch and bakes the skeleton with either inputs **or** channels for inputs."*
+
+| Step | What it does |
+|---|---|
+| **SOFT fetch** | §0.1's light pass — generous envelope; chains, names, junctions, **painted footprints** |
+| **EDIT** | author the boundary runs, corners, exclusions, `activate`/`hide` |
+| **HARD fetch** | ① **permanently fixes the soft fetch** ② **bakes the skeleton** ③ with inputs **or channels for** inputs |
+
+**① The lock — the hard fetch freezes the soft fetch, permanently.** §0.1 says the heavy pass "is now the irreversible step"; this is stronger and more useful — it is irreversible *because it locks its input*. Nothing about the envelope, the frame origin, or the street vocabulary may move afterward.
+
+⚠️ **NAME COLLISION — do not merge these.** `SourcesPanel.jsx:86` already uses `locked` for *"chosen for you by region — nothing to supply"* (MSBF in the US, OSM in Europe): immutable **by governance**. This lock is immutable **by sequence**. Two axes, one word. Name the new one distinctly (`sealed`/`committed`) before both ship, or the next reader merges them.
+
+**⭐ ② The lock is what makes building identity stable — and it removes the need for a registry.** `fetch-msbf.js:169` mints `msbfId: i` — *the array index of the fetch*. Not Microsoft's id; the external id is never captured. So today a re-fetch **renumbers every building**, and every listing, logo, place card and `activate`/`hide` entry silently re-points to a different building — with no error. This is the **identity instance of PART D's structural finding** (*"membership is computed, never recorded… a re-fetch silently changes answers"*): membership is not recorded, and neither is identity. Both are re-derived from fetch order.
+
+**The lock fixes it by construction.** Once the soft fetch is frozen, a fetch ordinal is a legitimate permanent key — there is no second fetch that can renumber it. **The lock IS the registry.** Consequences:
+- **Identity is minted in the SOFT pass, not the prebake** — because §0.2 puts MSBF footprints in the light pass (you must see them to judge an edge). The prebake and every baker already just carry it (`derive.js:4703`, `bake-buildings.js:66`, `bake-content.js:126`); that part is correct and needs no change.
+- **After the lock, augmentation is strictly APPEND.** Activate a perimeter building later → it takes a fresh number. Nothing is ever renumbered. An allocator with a persisted high-water mark, never an array index.
+- ⚠️ **LS is on a third namespace.** LS carries `bldg-NNNN` (0019–1726 for 1,082 survivors — ordinals from an original ~1,727-feature ingest, with gaps). **Nothing in `cartograph/*.js` mints `bldg-` at all** — it is from an ingest path that no longer exists. HPDM uses `msbf-NNNN`. Verified end-to-end: the id *does* reach the slab intact (1,082 → 1,082, `id` preserved in `public/baked/lafayette-square/buildings.json`), so the thread exists; it is the *stability* that does not. Conforming LS (§0.6) must therefore **geometry-match `bldg-NNNN` into the new locked scheme, once** — anchored on lon/lat centroid, not `x`/`z`, so it survives a frame-origin shift too. That migration is the identity half of §0.6's check #1 (the membership diff), and it is throwaway: after the lock, nothing needs it again.
+
+**③ Channels — the hard fetch does NOT block on missing inputs.** An input that has not arrived becomes a **declared channel**, and the skeleton bakes anyway. The mechanism already exists and needs no new surface: `SourcesPanel`'s three actions are `FETCH` (an endpoint exists) · `DOC` (a written procedure) · `OWED` (⚠ *"the procedure exists only in someone's head"*) — and the panel is mounted from **both** the Extent and the Stage/Cartograph toolbars (`ExtentApp.jsx:44,1839`), which is the "inputs pane in the extent and in the cartographer." What is new is only the rule: **`owed` rows outstanding do not gate the hard fetch.**
+
+**⚠️ The cost of the lock, and its one mitigation.** Locking makes the soft fetch's *mistakes* permanent — a too-small envelope or a wrong frame origin becomes unfixable without starting over. So §0.4's padding is no longer merely nice: **under the lock it is the only future headroom that exists.** It must be generous, and §0.4's closing check ("how much of this did we end up using?") is what keeps it from being a guessed constant forever. Two invariants the lock gate must enforce, both already named here: **`bbox ⊇ disc + padding`** (§0.1, today violated — Altadena 981 m, LS 226 m) and **the frame origin frozen** (R10's two centerpoints — note D4 finds the code currently forces them equal).
+
 ---
 
 ## PART A — THE EXCAVATION
