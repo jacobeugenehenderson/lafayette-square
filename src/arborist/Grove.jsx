@@ -96,6 +96,7 @@ export default function Grove() {
   // player runs Hero↔Browse) for a realistic preview; its eased progress ALSO
   // crossfades the tree forms (3D specimen ↔ overhead disc). Fixed, no knobs.
   const [transitioning, setTransitioning] = useState(false)
+  const transitionGuard = useRef(null)   // failsafe timer — see startTransition
   const [blend, setBlend] = useState(0)           // 0 = Hero, 1 = Browse (crossfade weight)
   const tweenRef = useRef(null)
   if (!tweenRef.current) tweenRef.current = createCameraTween()
@@ -142,12 +143,22 @@ export default function Grove() {
     await bakeGroveToSlab()
     if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1) }
   }
-  // Hero impostors ONLY — capture + persist the hero canopy-impostor variety pool onto
-  // the ALREADY-baked slab (no full roster re-bake). Captures off the current baked
-  // lod1 GLBs → POSTs into the slab. For refreshing impostors without a 30s re-bake.
-  const bakeHeroOnly = () => {
+  // Re-capture BOTH impostor pools onto the ALREADY-baked slab (no 30s roster
+  // re-bake) — off the current baked lod1 GLBs → POSTed into the slab.
+  //
+  // This used to be a hero-ONLY button, which is why the Grove had two bake
+  // gestures and nobody could tell whether hero was part of Bake→Slab or a step
+  // you had to remember (it is part of it — Bake→Slab chains both captures).
+  // Hero got a standalone refresh because the agent building that arc needed one
+  // for his own eye-gate loop; overhead never had one, and the asymmetry read as
+  // meaning. The operator concept is "re-capture the impostors," singular — the
+  // two pools are one product split by viewing hemisphere, and refreshing one
+  // against an atlas the other hasn't seen is a drift waiting to happen.
+  // Overhead's onDone chains hero, so kicking overhead runs both. (2026-07-22)
+  const recaptureImpostors = () => {
     if (!overheadSpecies.length) return
-    setHeroProg({ done: 0, total: overheadSpecies.length }); setHeroTick((t) => t + 1)
+    setOverheadResult(null); setHeroResult(null)
+    setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1)
   }
 
   // Per-operator UI preference: tell the Meteorologist helper which tree
@@ -237,6 +248,17 @@ export default function Grove() {
       onComplete: () => { setView(target); setTransitioning(false); setBlend(target === 'browse' ? 1 : 0) },
     })
     setTransitioning(true)
+    // FAILSAFE. `transitioning` disables BOTH view buttons, and the only thing
+    // that clears it is the tween's onComplete — which is ticked from a useFrame
+    // INSIDE the Canvas. If that frame loop isn't running (Suspense boundary
+    // still resolving, tab backgrounded, a WebGL context loss, or a re-render
+    // that hands us a fresh tween), the flag latches true and the Hero/Browse
+    // toggle is dead for the rest of the session with no error anywhere. Commit
+    // the view on a timer past the 1200ms tween so the UI can never wedge.
+    clearTimeout(transitionGuard.current)
+    transitionGuard.current = setTimeout(() => {
+      setView(target); setTransitioning(false); setBlend(target === 'browse' ? 1 : 0)
+    }, 2000)
   }
 
   // The click-selected tile's data drives the fixed editor panel.
@@ -351,12 +373,12 @@ export default function Grove() {
               : (heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…`
               : 'Bake → Slab'}
           </button>
-          {/* Hero-impostors-only — capture the variety pool onto the fresh slab, no
-              full re-bake. New (Slat 2026-07-17). */}
+          {/* RE-CAPTURE both impostor pools onto the already-baked slab (no roster
+              re-bake). A repair/iteration gesture — Bake→Slab already runs both. */}
           <button
-            onClick={bakeHeroOnly}
+            onClick={recaptureImpostors}
             disabled={groveBaking || !!(overheadProg && overheadProg !== 'done') || !!(heroProg && heroProg !== 'done') || !activeLookId}
-            title="Capture + persist ONLY the hero canopy impostors (all N azimuths) onto the already-baked slab — no full roster re-bake."
+            title="Re-capture BOTH impostor pools (overhead + hero) onto the already-baked slab — no full roster re-bake. Bake → Slab already does this; use it to retry after a failed capture or to re-shoot after changing capture dials."
             style={{
               border: '1px solid rgba(150,200,220,0.4)', borderRadius: 4,
               padding: '6px 12px', fontSize: 11, fontWeight: 600, marginLeft: 6,
@@ -364,7 +386,9 @@ export default function Grove() {
               cursor: (groveBaking || !activeLookId) ? 'not-allowed' : 'pointer',
               opacity: (groveBaking || !activeLookId) ? 0.5 : 1,
             }}>
-            {(heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…` : '⟳ Hero impostors'}
+            {(overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…`
+              : (heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…`
+              : '⟳ Re-capture impostors'}
           </button>
           {groveBakeResult && !groveBaking && (
             <span style={{ color: groveBakeResult.error ? '#f88' : '#bce0a0', fontSize: 11 }}>
