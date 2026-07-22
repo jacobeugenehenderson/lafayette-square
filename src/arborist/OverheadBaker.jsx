@@ -175,13 +175,37 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
                 applyDeformerUniforms(atlas.treeMaterial, deformerRange)
               }
             })
-            const bands = []
-            for (let b = 0; b < prep.cuts.length; b++) {
-              bands.push(captureOverheadBand(gl, prep, b))
-              await nextFrame()                 // one band per frame → crash-safe
+            // RETRY on blank. The capture is FLAKY, not merely fragile: species
+            // that measured 14%/10%/3.3% coverage on one bake came back fully
+            // transparent on the next with no code change between them (maple_silver,
+            // 2026-07-22) — the render is racing something (atlas upload / texture
+            // decode / first-frame binding). Without a retry the guard turns a
+            // transient flake into a permanently dropped species, which is why a
+            // re-bake kept moving WHICH trees went missing. Give each species a few
+            // fresh attempts, a frame apart, before refusing it.
+            let lastErr = null
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const bands = []
+              for (let b = 0; b < prep.cuts.length; b++) {
+                bands.push(captureOverheadBand(gl, prep, b))
+                await nextFrame()               // one band per frame → crash-safe
+              }
+              try {
+                await postOverhead(lookId, sp.species, prep.heightM, rM, bands)
+                lastErr = null
+              } catch (e) {
+                lastErr = e
+                if (/blank band/.test(e.message) && attempt < 3) {
+                  console.warn(`[overhead-bake] ${sp.species}: ${e.message} — retry ${attempt}/2`)
+                }
+              } finally {
+                for (const bd of bands) { try { bd.albedoTex?.dispose() } catch {} try { bd.aoTex?.dispose() } catch {} }
+              }
+              if (!lastErr) break
+              if (!/blank band/.test(lastErr.message)) break   // a real error — don't spin on it
+              await nextFrame()
             }
-            await postOverhead(lookId, sp.species, prep.heightM, rM, bands)
-            for (const bd of bands) { try { bd.albedoTex?.dispose() } catch {} try { bd.aoTex?.dispose() } catch {} }
+            if (lastErr) throw lastErr
             ok++
           }
         } catch (e) {

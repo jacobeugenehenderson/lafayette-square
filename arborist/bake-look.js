@@ -16,7 +16,7 @@
  * CLI:    node arborist/bake-look.js --look <name> [--no-viz] [--no-rewrite]
  * Module: import { bakeLook } from './bake-look.js'
  */
-import { promises as fs } from 'node:fs'
+import { promises as fs, existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
@@ -1233,13 +1233,42 @@ export async function bakeLook(lookName, opts = {}) {
   // hero-culled MESH group (the "missing trees" swath). The on-disk PNGs already
   // survive a bake untouched; this preserves the manifest that points at them.
   // (Fixes the serve.js:~1431 TODO at its source.)
+  // ⚠️ Carry only what still EXISTS. A carried record whose PNGs are gone is worse
+  // than no record: the runtime is designed to fall back to mesh for a species with
+  // no record ("never blank"), but a record pointing at missing files sends it to
+  // load 404s instead. That gap opened the moment the bakers learned to REFUSE a
+  // blank capture (2026-07-22) — the species stops writing files while the prior
+  // manifest entry carries on claiming it ships. Prune here so the manifest can
+  // never reference an asset that isn't on disk, whoever wrote it.
+  const carryIfAssetsPresent = async (bySpecies, layersOf, label) => {
+    if (!bySpecies) return undefined
+    const kept = {}
+    const dropped = []
+    for (const [sp, rec] of Object.entries(bySpecies)) {
+      const layers = layersOf(rec) || []
+      let missing = 0
+      for (const l of layers) {
+        const abs = path.join(outDir, String(l.albedo || '').replace(/^\//, ''))
+        if (!l.albedo || !existsSync(abs)) missing++
+      }
+      if (!layers.length || missing) { dropped.push(`${sp} (${missing}/${layers.length} absent)`); continue }
+      kept[sp] = rec
+    }
+    if (dropped.length) {
+      console.warn(`[bake-look] ${label}: dropped ${dropped.length} stale record(s) whose assets are gone — ` +
+        `${dropped.join(', ')}. Those species fall back to MESH; re-run their capture to restore them.`)
+    }
+    return Object.keys(kept).length ? kept : undefined
+  }
   try {
     const priorAtlas = JSON.parse(await fs.readFile(path.join(outDir, 'trees-atlas.json'), 'utf8'))
-    if (priorAtlas.overheadBySpecies) manifest.overheadBySpecies = priorAtlas.overheadBySpecies
+    const over = await carryIfAssetsPresent(priorAtlas.overheadBySpecies, r => r.bands, 'overheadBySpecies')
+    if (over) manifest.overheadBySpecies = over
     // HERO canopy-impostor (heroImpostorBySpecies) — same trapdoor as overhead:
     // browser-authored (HeroImpostorBaker POSTs to serve.js), CLI can't regenerate
     // it, so carry it forward on EVERY bake or a re-bake silently drops the field.
-    if (priorAtlas.heroImpostorBySpecies) manifest.heroImpostorBySpecies = priorAtlas.heroImpostorBySpecies
+    const heroCarry = await carryIfAssetsPresent(priorAtlas.heroImpostorBySpecies, r => r.layers, 'heroImpostorBySpecies')
+    if (heroCarry) manifest.heroImpostorBySpecies = heroCarry
   } catch { /* no prior manifest (first bake) — nothing to preserve */ }
 
   // Optional viz (uses raw grid w/h, not pow2)

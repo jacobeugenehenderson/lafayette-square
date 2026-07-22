@@ -158,19 +158,38 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
                 applyDeformerUniforms(atlas.treeMaterial, deformerRange)
               }
             })
-            const layers = []
-            for (let s = 0; s < prep.shots.length; s++) {
-              layers.push(captureHeroBand(gl, prep, s))
-              await nextFrame()                 // one shot per frame → crash-safe
-            }
             const meta = {
               heightM: prep.heightM, canopyRadiusM: rM,
               canopyBaseNorm: prep.canopyBaseY / Math.max(1e-3, prep.maxY || prep.heightM),
               azimuths: prep.azimuths, shells: prep.shells,
               albedoSize, aoSize,
             }
-            await postHeroImpostor(lookId, sp.species, meta, layers)
-            for (const l of layers) { try { l.albedoTex?.dispose() } catch {} try { l.aoTex?.dispose() } catch {} }
+            // RETRY on blank — see the twin note in OverheadBaker. The capture is
+            // flaky, so refusing on the first blank turns a transient race into a
+            // permanently dropped species.
+            let lastErr = null
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const layers = []
+              for (let s = 0; s < prep.shots.length; s++) {
+                layers.push(captureHeroBand(gl, prep, s))
+                await nextFrame()               // one shot per frame → crash-safe
+              }
+              try {
+                await postHeroImpostor(lookId, sp.species, meta, layers)
+                lastErr = null
+              } catch (e) {
+                lastErr = e
+                if (/rendered blank/.test(e.message) && attempt < 3) {
+                  console.warn(`[hero-bake] ${sp.species}: ${e.message} — retry ${attempt}/2`)
+                }
+              } finally {
+                for (const l of layers) { try { l.albedoTex?.dispose() } catch {} try { l.aoTex?.dispose() } catch {} }
+              }
+              if (!lastErr) break
+              if (!/rendered blank/.test(lastErr.message)) break
+              await nextFrame()
+            }
+            if (lastErr) throw lastErr
             ok++
           }
         } catch (e) {
