@@ -844,7 +844,7 @@ const CURVE_SEG_MAX    = 40                    // a segment LONGER than this is 
 const CURVE_DEV_TOL    = 2.0                   // a fitted cubic must ride within this (m) of the cluster's real points, else fall back to lines (Law 2: never pull off the road). Tune on the eye.
 const CURVE_MIN_RADIUS = 3                    // a fitted cubic may never bend TIGHTER than this radius (m) — catches the mid-curve HOOK that `dev` (one-sided) is blind to. 3 m is the knee measured on HPDM: kinks 26→14 (baseline 13) at a cost of 2 facet vertices; larger radii buy no further kink reduction and cost real smoothing. Turning circles ride the separate closed-loop path, untouched.
 const CURVE_SPLIT_DEPTH = 4                // max recursive SPLITS when one cubic can't ride a long sweep (≤16 pieces). The frame stays sparse: a split adds ONE control vertex, vs. the dozens a densify would.
-const CURVE_LOOP_CIRCLE_TOL = 0.06            // v2 step (a): a CLOSED loop whose circle-fit residual/R is within this is a turning circle → fit as bezier arcs. SV/Park ≈0.2%; Benton teardrop 73% + Waverly couplet 52% fall through (faceted legacy path — already clean per HANDOFF §v2).
+const CURVE_LOOP_CIRCLE_TOL = 0.06            // v2 step (a): a CLOSED loop whose circle-fit residual/R is within this is a turning circle → fit as bezier arcs. SV/Park ≈0.2%. A loop OVER this (Benton teardrop 73%) is NOT a circle → v2 step (b) fitClosedLoopBezier fits it as general beziers instead. (Waverly is a couplet, not a single closed loop — a different topology, unaffected.)
 // Cubic-bezier point.
 function bez(P0, P1, P2, P3, t) {
   const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t
@@ -1023,7 +1023,7 @@ function fitClosedLoopCircle(points, pinnedKeys) {
   if (!(R2 > 1)) return null
   const R = Math.sqrt(R2)
   let maxRes = 0; for (const p of ring) { const d = Math.abs(Math.hypot(p.x - cx, p.z - cz) - R); if (d > maxRes) maxRes = d }
-  if (maxRes / R > CURVE_LOOP_CIRCLE_TOL) return null        // not a circle → leave faceted (Benton/Waverly)
+  if (maxRes / R > CURVE_LOOP_CIRCLE_TOL) return fitClosedLoopBezier(ring, pinnedKeys)  // v2 step (b): not a circle (teardrop/couplet) → general bezier fit
   let area = 0; for (let i = 0; i < m; i++) { const p = ring[i], q = ring[(i + 1) % m]; area += p.x * q.z - q.x * p.z }
   const wnd = area >= 0 ? 1 : -1                             // ring winding: +1 CCW, -1 CW (preserve traversal direction)
   const TWO_PI = Math.PI * 2
@@ -1050,6 +1050,48 @@ function fitClosedLoopCircle(points, pinnedKeys) {
     }
   }
   return { points: outPts, segments: segs }                 // closed: outPts[last] === ring[pinned[0]] === outPts[0]
+}
+// ── Closed-loop GENERAL bezier fit (v2 step (b): non-circular loops — Benton
+// teardrop, Waverly couplet) ──────────────────────────────────────────────
+// The circle fit rejects these (a teardrop is not a circle). Instead of leaving
+// them faceted, fit each sub-arc BETWEEN the ring's PINNED vertices (weld index 0
+// + every stem-junction ∈ pinnedKeys) as general cubic beziers, reusing the SAME
+// open-chain Schneider fitter (fitClusterSplit) the straight streets use. The
+// pinned vertices are kept EXACT (the emergent island face + stem weld are
+// preserved unchanged — the v2 SCOPE constraint); only the body between them
+// smooths, and a real corner survives at any pin where the two sides diverge (a
+// teardrop keeps its point at the stem joint). A sub-arc a single/split cubic
+// can't RIDE stays faceted (lines) for that arc only — never pull the curve off
+// the road (Law 2). Returns { points, segments } (closed) or null if nothing
+// smoothed (caller keeps the faceted path).
+function fitClosedLoopBezier(ring, pinnedKeys) {
+  const m = ring.length
+  if (m < 6) return null
+  const dir = (p, q) => { const dx = q.x - p.x, dz = q.z - p.z; const L = Math.hypot(dx, dz) || 1; return { x: dx / L, z: dz / L } }
+  const pinned = [0]                                        // weld anchor + junctions, in ring order
+  for (let i = 1; i < m; i++) if (pinnedKeys && pinnedKeys.has(vKey(ring[i]))) pinned.push(i)
+  const outPts = [ring[pinned[0]]]
+  const segs = []
+  let anyBezier = false
+  for (let k = 0; k < pinned.length; k++) {
+    const aIdx = pinned[k], bIdx = pinned[(k + 1) % pinned.length]
+    const sub = [ring[aIdx]]                                // the wrapping sub-arc aIdx..bIdx (full ring when single-pinned)
+    let idx = aIdx
+    do { idx = (idx + 1) % m; sub.push(ring[idx]) } while (idx !== bIdx)
+    if (sub.length < 2) continue
+    let tot = 0                                             // does the sub-arc actually turn?
+    for (let i = 1; i < sub.length - 1; i++) { const A = sub[i - 1], V = sub[i], B = sub[i + 1]; const ix = V.x - A.x, iz = V.z - A.z, ox = B.x - V.x, oz = B.z - V.z; tot += Math.acos(Math.max(-1, Math.min(1, (ix * ox + iz * oz) / ((Math.hypot(ix, iz) || 1) * (Math.hypot(ox, oz) || 1))))) }
+    const t0 = dir(sub[0], sub[1]), t3 = dir(sub[sub.length - 2], sub[sub.length - 1])
+    const pieces = (sub.length > 2 && tot >= CURVE_MIN_TURN) ? fitClusterSplit(sub, 0, sub.length - 1, t0, t3, 0) : null
+    if (pieces) {
+      for (const g of pieces) { outPts.push(sub[g.end]); segs.push({ type: 'bezier', c1: g.c1, c2: g.c2 }) }
+      anyBezier = true
+    } else {
+      for (let i = 1; i < sub.length; i++) { outPts.push(sub[i]); segs.push({ type: 'line' }) }   // un-fittable arc → keep faceted
+    }
+  }
+  if (!anyBezier) return null
+  return { points: outPts, segments: segs }
 }
 // Split the bezier segment nearest `coord` via de Casteljau so `coord`'s on-curve point
 // becomes a shared, C1-continuous control vertex — used to cut a through-road's ONE fitted
@@ -1919,8 +1961,10 @@ function main() {
     // (b) STANDALONE chains (not in any through-road) — per-chain fit.
     //     ⛔ Skip DIVIDED carriageways (moving one desyncs its emergent median — the
     //     two-carriageway model is LOCKED; v2 step (c)). CLOSED LOOPS: v2 step (a) fits
-    //     TRUE CIRCLES (turning circles — SV, Park Place) as bezier arcs; non-circular
-    //     loops (Benton teardrop, Waverly couplet — v2 step (b)) still fall through.
+    //     TRUE CIRCLES (turning circles — SV, Park Place) as bezier arcs; NON-circular
+    //     loops (Benton teardrop — v2 step (b)) now fit as general beziers via
+    //     fitClosedLoopBezier (the fitClosedLoopCircle fall-through). Waverly couplet is
+    //     multi-chain, not a single closed loop — unaffected here.
     let loopFits = 0
     for (const s of streets) {
       if (roadHandled.has(s.id)) continue
@@ -1933,7 +1977,7 @@ function main() {
       const fit = curveFitSegments(s.points, junctionKeys)
       if (fit.segments) { s.points = fit.points; s.segments = fit.segments; fitChains++ }
     }
-    console.log(`  curve-fit: bezier-fit ${fitChains} curving chain(s) (${loopFits} turning-circle loop(s); divided + non-circular loops excluded)`)
+    console.log(`  curve-fit: bezier-fit ${fitChains} curving chain(s) (${loopFits} closed loop(s) incl. non-circular teardrops; divided excluded)`)
   }
 
   // Canonical direction pass. Non-oneway chains are oriented so the
