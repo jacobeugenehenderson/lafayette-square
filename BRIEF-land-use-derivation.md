@@ -1,5 +1,7 @@
 # BRIEF — Land use is invented for most of the map. Derive it instead.
 
+**Status: DRAFT, DISPATCH-READY.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob; **Jacob dispatches.** Fresh-agent brief (identity + bounds below). Detail-home for the ROADMAP blocking-defect line; strike both together when it lands.
+
 **Agent: FRESH.** The forensic below replaces the discovery; there is no prior session-context worth inheriting. ⚠️ **Serialize against anything touching `cartograph/derive.js` or `src/lib/tileGround.js`** — this brief rewrites the land-use join in both (`feedback_load_bearing_files_serial_dispatch`). ⚠️ **`derive.js` is the 4,607-line god-file whose `deriveLayers()` is a single ~3,465-line function (ROADMAP C9a).** You are making a *surgical* change inside it, **not** the decomposition refactor — that is a separate, deliberate, eye-gated arc. Do not start it.
 
 **You are replacing a random number generator with real data.** For the majority of blocks in both shipped neighborhoods, the land use that drives grass colour, treelawn colour and tree placement is not derived from anything — it is invented by a weighted hash. The data needed to do it properly is, for the most part, already fetched and sitting on disk unread.
