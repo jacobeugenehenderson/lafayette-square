@@ -27,6 +27,7 @@ import * as THREE from 'three'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { OverheadBaker } from './OverheadBaker.jsx'
 import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
+import { partitionByDirt } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import { useTreeAtlas, treeSwayUniforms } from '../components/treeAtlasMaterial.js'
 import useArboristStore from './stores/useArboristStore.js'
@@ -40,6 +41,10 @@ const QUALITY_COLOR = {
 }
 const QUALITY_LABEL = { 1: 'Trash', 2: 'Fill', 3: 'Mid', 4: 'Hero' }
 const CATEGORIES = ['broadleaf', 'conifer', 'ornamental', 'weeping', 'columnar', 'unusual']
+// Hero capture dials — MUST mirror HeroImpostorBaker's prop defaults. They are part
+// of the capture fingerprint, so changing one correctly re-dirties every species.
+const HERO_AZIMUTHS = 6
+const HERO_SHELLS = 2
 
 export default function Grove() {
   const variants    = useArboristStore(s => s.groveVariants)
@@ -137,11 +142,43 @@ export default function Grove() {
     }
     return out
   }, [activeLookId, activeLookTrees])
+
+  // ⭐ DRAIN-ON-BAKE (Jacob, 2026-07-22). Bake→Slab re-captures only what's DIRTY;
+  // a species whose fingerprint still matches its stored capture is skipped. The
+  // first bake after a big change may shoot everything and the next one shoots
+  // nothing — the cost tapers to zero instead of being re-paid every bake, which
+  // is what made a 10-species capture pass expensive enough to avoid running.
+  //
+  // Dirtiness is DERIVED (src/arborist/captureKey.js), not flagged: no ledger to
+  // drift, and a species that fails or loses its assets is dirty again by
+  // construction, so a retry is just "bake again".
+  //
+  // The ⟳ button deliberately FORCES all — it is the repair gesture, for when you
+  // don't trust the fingerprint (changed capture code, a suspect asset on disk).
+  const forceAll = useRef(false)
+  const groveAtlas = useTreeAtlas(activeLookId)
+  const heroDials = useMemo(() => ({ azimuths: HERO_AZIMUTHS, shells: HERO_SHELLS }), [])
+  const overheadDirty = useMemo(() => {
+    if (!groveAtlas?.manifest) return overheadSpecies
+    return partitionByDirt(overheadSpecies, groveAtlas.manifest.overheadBySpecies, groveAtlas.manifest).dirty
+  }, [overheadSpecies, groveAtlas?.manifest])
+  const heroDirty = useMemo(() => {
+    if (!groveAtlas?.manifest) return overheadSpecies
+    return partitionByDirt(overheadSpecies, groveAtlas.manifest.heroImpostorBySpecies, groveAtlas.manifest, () => heroDials).dirty
+  }, [overheadSpecies, groveAtlas?.manifest, heroDials])
+  // What each baker actually receives this run — the dirty subset, or everything
+  // when the operator forced a re-capture.
+  const overheadBatch = forceAll.current ? overheadSpecies : overheadDirty
+  const heroBatch = forceAll.current ? overheadSpecies : heroDirty
+
   // Bake→Slab: run the HTTP roster bake, THEN kick the in-Canvas overhead capture.
   const bakeAll = async () => {
+    forceAll.current = false
     setOverheadProg(null)
     await bakeGroveToSlab()
-    if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1) }
+    // Re-read dirt AFTER the roster bake — bake-look just rewrote the atlas, and a
+    // species whose inputs moved becomes dirty exactly here.
+    if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadBatch.length }); setOverheadTick((t) => t + 1) }
   }
   // Re-capture BOTH impostor pools onto the ALREADY-baked slab (no 30s roster
   // re-bake) — off the current baked lod1 GLBs → POSTed into the slab.
@@ -157,6 +194,7 @@ export default function Grove() {
   // Overhead's onDone chains hero, so kicking overhead runs both. (2026-07-22)
   const recaptureImpostors = () => {
     if (!overheadSpecies.length) return
+    forceAll.current = true          // repair gesture — ignore the fingerprints
     setOverheadResult(null); setHeroResult(null)
     setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1)
   }
@@ -451,13 +489,14 @@ export default function Grove() {
           <OverheadBaker
             runTick={overheadTick}
             lookId={activeLookId}
-            species={overheadSpecies}
+            species={overheadBatch}
             onProgress={(done, total) => setOverheadProg({ done, total })}
             onDone={({ ok, fail }) => {
               setOverheadProg('done'); setOverheadResult({ ok, fail })
               console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`)
               // Chain the hero capture (one GPU loop at a time). Same species list.
-              if (overheadSpecies.length) { setHeroProg({ done: 0, total: overheadSpecies.length }); setHeroTick((t) => t + 1) }
+              if (heroBatch.length) { setHeroProg({ done: 0, total: heroBatch.length }); setHeroTick((t) => t + 1) }
+              else setHeroProg('done')
             }}
           />
           {/* Same Bake→Slab: captures each roster species' side-on HERO impostor
@@ -465,7 +504,7 @@ export default function Grove() {
           <HeroImpostorBaker
             runTick={heroTick}
             lookId={activeLookId}
-            species={overheadSpecies}
+            species={heroBatch}
             onProgress={(done, total) => setHeroProg({ done, total })}
             onDone={({ ok, fail }) => {
               setHeroProg('done'); setHeroResult({ ok, fail })

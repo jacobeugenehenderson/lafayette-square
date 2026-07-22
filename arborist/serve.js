@@ -1446,6 +1446,11 @@ const server = createServer(async (req, res) => {
         atlas.overheadBySpecies[species] = {
           heightM: body.heightM ?? null,
           canopyRadiusM: body.canopyRadiusM ?? null,
+          // The capture's fingerprint (src/arborist/captureKey.js). The NEXT bake
+          // compares it against a freshly-computed one and skips this species when
+          // they match — "drain-on-bake": only dirty trees are re-shot. Absent =>
+          // always dirty, so pre-fingerprint captures re-shoot exactly once.
+          captureKey: body.captureKey ?? null,
           bands,
         }
         writeFileSync(atlasPath, JSON.stringify(atlas))
@@ -1497,6 +1502,10 @@ const server = createServer(async (req, res) => {
           canopyBaseNorm: body.canopyBaseNorm ?? null,
           azimuths: body.azimuths ?? null,
           shells: body.shells ?? null,
+          // Fingerprint — see the twin note in the overhead handler. The hero key
+          // folds in the capture DIALS, so changing azimuth count or resolution
+          // correctly marks every species dirty.
+          captureKey: body.captureKey ?? null,
           layers,
         }
         writeFileSync(atlasPath, JSON.stringify(atlas))

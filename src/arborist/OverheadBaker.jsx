@@ -91,7 +91,7 @@ function alphaCoverage(rb) {
   return opaque / (d.length / 4)
 }
 
-async function postOverhead(look, species, heightM, canopyRadiusM, bands) {
+async function postOverhead(look, species, heightM, canopyRadiusM, bands, captureKey) {
   const blanks = []
   const encoded = bands.map((b) => {
     const coverage = alphaCoverage(b.albedoTex?.userData?.readback)
@@ -111,7 +111,9 @@ async function postOverhead(look, species, heightM, canopyRadiusM, bands) {
   if (blanks.length) {
     throw new Error(`blank band(s): ${blanks.join(', ')} — capture rendered nothing`)
   }
-  const body = { heightM, canopyRadiusM, bands: encoded }
+  // captureKey rides along so the NEXT bake can tell this species is already
+  // current and skip it (drain-on-bake). See src/arborist/captureKey.js.
+  const body = { heightM, canopyRadiusM, captureKey: captureKey ?? null, bands: encoded }
   if (!body.bands.length) return
   const res = await fetch(`/api/arborist/overhead/${encodeURIComponent(look)}/${encodeURIComponent(species)}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -191,7 +193,7 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
                 await nextFrame()               // one band per frame → crash-safe
               }
               try {
-                await postOverhead(lookId, sp.species, prep.heightM, rM, bands)
+                await postOverhead(lookId, sp.species, prep.heightM, rM, bands, sp.captureKey)
                 lastErr = null
               } catch (e) {
                 lastErr = e
