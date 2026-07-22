@@ -21,6 +21,15 @@ everything at that mouth is a patch reconciling two things that were never deriv
 corner construction itself is sound; the *inputs* to it don't line up. This is the
 junction-construction class (`RIBBONS §1` doctrine), **not** a FILL defect.
 
+> ⭐ **REFINED 2026-07-22 (Kestrel), after measurement.** The collapse is real, but the visible
+> symptom is **not a gap — it is a CO-CLAIM.** At both wrapped mouths there is **0 m² of unclaimed
+> ground** and **~15 m² owned by two layers at once** (treelawn⊕LU, treelawn⊕sidewalk). Two layers
+> both derive a claim over the same ground because the slit gives them no honest boundary to divide
+> it on; at render one wins and the loser butt-ends — the squared stub + stranded wedge. **Read §3.1
+> (retracted) and §3.5 before planning anything.** The open question is therefore not "who owns the
+> leftover band" but **"why do two layers both claim, and which one should own it"** — still a
+> derivation question, still upstream of the strokes.
+
 > ⛔ **Do NOT fix this in the FILL.** `README §START HERE` on the through-node break: *"the
 > through-node break is NOT a FILL patch (that class was tried + reverted —
 > `THROAT-JUNCTION-FINDINGS.md`)."* Four separate FILL patches already sit on top of this collapse
@@ -69,7 +78,32 @@ Eye-proof: `scratch/cap-viz-P-simpson-mouth.png`, `scratch/cap-viz-Q-nicholson-m
 
 ## 3. What the measurements SAY (don't re-derive these)
 
-### 3.1 ⭐ The reconciliation gap — the mouth's two numbers don't meet
+### 3.1 ⛔ ~~The reconciliation gap~~ — **RETRACTED 2026-07-22 (Kestrel). The arithmetic below does not hold.**
+
+> **Do not build on this section.** It compares `m.R` — a **radial** disc radius — against the fillet
+> tangents' **radial** distances from the mouth node. But the quantity that decides whether a band is
+> claimed is the **along-run projection** onto the through road (`tangentTrim`, `tileGround.js:1302`,
+> `dot(tangent − node, legDir)`). Those are different axes, so "the band between 10.85 and 11.6–13.0
+> is claimed by neither" **does not follow** from these numbers.
+>
+> **Measured refutation** (`scratch/cap-mouth-classify.mjs`, grid sample at both wrapped mouths):
+> there is **0 m² of unclaimed ground** at Simpson or Nicholson. Nothing floods to `luRemainder`.
+> What is actually there is **DOUBLE-claimed** ground — ~15 m² per mouth owned by two layers at once:
+>
+> ```
+>                                    Simpson   Nicholson
+>   (NOTHING — bare remainder)         0 m2      0 m2     ← the gap theory predicted this; it is empty
+>   treelawn[residential] + LU[resid] 10.6 m2   11.2 m2   ← co-claim
+>   treelawn[residential] + sidewalk   4.5 m2    3.4 m2   ← co-claim
+> ```
+>
+> **So the defect is a CO-CLAIM, not a gap.** Where two layers own the same ground one paints over
+> the other and the loser butt-ends — the squared stub + stranded wedge the operator sees. The fix
+> direction is *resolve the double-claim*, NOT *close a band*. ⚠️ Limitation: the classifier uses
+> even-odd per layer, so same-layer self-overlap could be under-reported; cross-layer co-claim (above)
+> is sound.
+
+### 3.1a The original (retracted) numbers, kept for the trail
 
 At Simpson (`scratch/cap-mouth-probe.mjs`):
 
@@ -115,9 +149,23 @@ Worst: (-37,261)   d3  slivers=28  {Waverly Place}
        (668,-205)  d3  slivers=10  {Hickory Lane / Grattan}
 ```
 
-The worst offenders are the **same family** — dead-end Places and Courts T'ing into a through
-street. This strip is not two broken corners; it is a 61-junction class. **Reuse this detector as
-the gate — do not build another harness.**
+~~The worst offenders are the **same family** — dead-end Places and Courts T'ing into a through
+street.~~ ⛔ **CORRECTED 2026-07-22 (Kestrel): the worst offenders are NOT mouths at all.** Resolved
+against `ribbons.json`:
+
+```
+(-37,261) (-54,259)     → waverly-place-0 × waverly-place-3        (loop × loop)
+(-686,-211) (-671,-209) → saint-vincent-avenue-0 × st-vincent-court-0
+```
+
+These are **loop×loop and court×avenue** nodes. The mouth signature (one skelId ending on BOTH sides
+at a coincident vertex) never forms there, so the mouth lever is not "suppressing" them — there is
+nothing to suppress. They belong to the **divided-loop / median-nose** class (E2/E3), a different
+campaign. ⚠️ **Consequence for scope: fixing the mouth will NOT fix Waverly** — the worst thing on
+the Lafayette strip by sliver count. Do not promise it will.
+
+Current baseline (2026-07-22, HEAD): **152 junctions, 82 CLEAN, 63 FLAGGED.** 82 clean is the floor.
+**Reuse this detector as the gate — do not build another harness.**
 
 ### 3.4 Hypotheses already REFUTED (don't re-walk them)
 
@@ -130,6 +178,36 @@ the gate — do not build another harness.**
 | The gleaner throws away the Places' treelawn (valley 0.15–0.57 vs threshold 0.6) | **Misframed.** Jacob: *"If there is no treelawn, we still make the ribbon with 2 parallel strips that can swap. SW only is already a configuration; SW into SW <> TL is **also** a configuration."* Widths resolve to 1.5/1.5 either way — treelawn Y/N picks which slot is OUTER, nothing more (`SECTION §3.1`, the mono-width strip swap). So a mixed corner here is a legitimate **arrangement DIFFERENCE**, which the governing rule says gets the slope. |
 
 ---
+
+### 3.5 ⭐ The disc does TWO jobs — why it can't be swapped for the tangent (attempted + reverted)
+
+The `[DEAD-END MOUTH WRAP]` trim (`tileGround.js:1329`, `t0 = Math.max(t0, m.R)`) is not merely a
+sloppy stand-in for `tangentTrim`. At a mouth the through run-end is a **through-node**, so its
+`legTrim` is **0** by construction (`:1309`) — the disc supplies the whole trim, and it must satisfy
+two requirements at once:
+
+- **(a) CONTINUITY** — end the leg strip exactly where the corner pad begins (the fillet tangent).
+- **(b) CLEARANCE** — reach far enough past the corner that the through road's wide leg-sector stops
+  clear of the wedge, so `bandRem` is non-empty and the bent sector can build at all. This is the
+  piece the 2026-06 "run-identity-only" splice missed ("no wedge"); `R = max(bothApexes) + 2` buys it.
+
+**Two attempts, both reverted** (`curb-offset-draw`, nothing left in tree):
+
+| Attempt | Trim rule | Detector |
+|---|---|---|
+| baseline (the disc) | `max(bothApexes) + 2` | 82 clean / 63 flagged |
+| 1 — per-corner tangent only | along-run `max(proj(tA), proj(tB))` | **80 / 65 — REGRESSED** (clearance lost → wedge re-covered) |
+| 2 — tangent ∨ per-corner clearance | `max(tangent, ownApex + 2)` | 82 / 63 — **exactly baseline, no gain** |
+
+Attempt 2 moved real geometry (29 of 75 mouth trims up to +1.55 m, 26 down to −6.14 m) yet produced
+**zero measured improvement**, and at Simpson the trim barely moved at all (10.85 → 10.83). That is
+the empirical half of the §3.1 retraction: **the trim is not where this defect lives.** Do not
+re-walk either attempt.
+
+⚠️ **The detector cannot gate this defect.** Simpson and Nicholson are not flagged by junction-band
+at all (they are nowhere near the worst list), so #8 is a **regression guard** here — it proves you
+broke nothing — but it cannot tell you the stub improved. The instrument for the stub is
+`cap-mouth-classify.mjs` (co-claim area → should go to 0) plus the eye.
 
 ## 4. The fix DIRECTION (not yet attempted)
 
@@ -157,7 +235,8 @@ the gate — do not build another harness.**
 | Tool | What it answers |
 |---|---|
 | `correctness-detector.mjs` | invariant #8 junction-band — **the gate** for this class, per-junction sliver counts |
-| `cap-mouth-probe.mjs <skelId>` | the mouth's trim R vs the fillet tangents (the §3.1 gap) |
+| `cap-mouth-probe.mjs <skelId>` | the mouth's trim R vs the fillet tangents ⚠️ **radial — see the §3.1 retraction; do not read these as a gap** |
+| `cap-mouth-classify.mjs <skelId>` | ⭐ **the instrument for THIS defect** — grid-samples the mouth and reports which layer owns each point. Unclaimed area = 0; **co-claimed area (~15 m²/mouth) is the target → drive it to 0** |
 | `cap-mouthleg-probe.mjs` | do mouth corners get their synthesised second leg? |
 | `cap-viz.mjs <skelId:capEnd> [flip\|noflip] [R] [leg=side:segOrd] [at=x,z]` | renders the FILL to SVG→PNG; `at=` re-centres on the mouth |
 | `cap-authoring-roundtrip.mjs` | end-to-end: does a click on a dead-end leg reach the slot the render reads? |
