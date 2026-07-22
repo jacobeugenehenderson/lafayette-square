@@ -64,6 +64,7 @@ This is the whole point of the brief; it should save you days. Do not re-derive 
 - The per-fe `blockCustoms` width-override reconciliation gap (the residual curated hand-fix).
 - The name-transition smoothing seam (`SKELETON §3.5` open item 1).
 - The **tabled** divided-nose median degeneracy at the perimeter (audit: `scratch/ls-median-audit.mjs`; 10 divided noses + 2 both-straight through-Ts, boundary-edge, outside active block bodies).
+- ⚠️ **Benton Place (LS) still renders ROUGH (Jacob, 2026-07-22).** The teardrop/couplet loops fall through `fitClosedLoopCircle` — their circle-fit residual is far above `CURVE_LOOP_CIRCLE_TOL` (Benton ≈73%, Waverly couplet ≈52%) → they take the **faceted legacy path**, which the code comment claims is "already clean per HANDOFF §v2" but on the eye is **not**. Real A4 gap: a teardrop/couplet loop needs a smoothing path that isn't the circle-fit (a general closed-loop bezier fit, not a circle assumption).
 
 ## Acceptance
 

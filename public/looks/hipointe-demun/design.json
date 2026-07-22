@@ -9,8 +9,8 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": false,
-    "parking_lot": false,
+    "building": true,
+    "parking_lot": true,
     "garden": true,
     "playground": true,
     "swimming_pool": true,
@@ -18,7 +18,7 @@
     "sports_centre": true,
     "wood": false,
     "scrub": false,
-    "tree_row": false,
+    "tree_row": true,
     "alley": true,
     "footway": true,
     "cycleway": true,
@@ -26,10 +26,10 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": false,
-    "lamp": false,
-    "fence": false,
-    "wall": false,
+    "tree": true,
+    "lamp": true,
+    "fence": true,
+    "wall": true,
     "retaining_wall": false,
     "hedge": false,
     "labels": true,
@@ -118,8 +118,6 @@
       "right": {
         "0": {
           "pavementHW": 2.428412968301319,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "none"
         }
       }
@@ -128,46 +126,32 @@
       "left": {
         "4": {
           "pavementHW": 9.440069431091421,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "5": {
           "pavementHW": 9.440069431091421,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "6": {
           "pavementHW": 10.135879992561103,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "7": {
           "pavementHW": 10.135879992561103,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       },
       "right": {
         "4": {
           "pavementHW": 10.931934144976122,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "5": {
           "pavementHW": 10.931934144976122,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "6": {
           "pavementHW": 10.931934144976122,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       }
@@ -176,16 +160,12 @@
       "left": {
         "0": {
           "pavementHW": 3.2927007432211064,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       },
       "right": {
         "0": {
           "pavementHW": 3.2927007432211064,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       }
@@ -194,22 +174,16 @@
       "left": {
         "0": {
           "pavementHW": 4.19208469528192,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       },
       "right": {
         "0": {
           "pavementHW": 5.24734606055201,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "1": {
           "pavementHW": 5.24734606055201,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       }
@@ -218,22 +192,24 @@
       "right": {
         "1": {
           "pavementHW": 3.6029920830266917,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
       },
       "left": {
         "0": {
           "pavementHW": 3.6029920830266917,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "1": {
           "pavementHW": 3.6029920830266917,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "south-seminary-terrace-3": {
+      "left": {
+        "0": {
+          "pavementHW": 4.387461519350754,
           "terminal": "sidewalk"
         }
       }
@@ -919,7 +895,7 @@
   },
   "openSections": {
     "Streets": false,
-    "Blocks": true,
+    "Blocks": false,
     "Paths": false,
     "Features": false,
     "Labels": false,
