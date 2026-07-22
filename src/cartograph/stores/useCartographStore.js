@@ -300,6 +300,10 @@ const DESIGN_FIELDS = [
   // (streetSmooth retired 2026-06-04 — smoothing is always-on at fixed quality,
   // no design-persisted dial; see BlockGeometryV2Debug / smoothCenterline.)
   { key: 'curbWidth',    hydrate: (d) => Number.isFinite(d.curbWidth) ? d.curbWidth : 0.1524 },
+  // Operator override for the park title's world position ([x,z]); null = the
+  // computed default. Persisted + baked like every other design field so the
+  // move survives and ships.
+  { key: 'parkTitlePos', hydrate: (d) => Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2 ? d.parkTitlePos : null },
   { key: 'alleyCap',     hydrate: (d) => ['square', 'rounded', 'round'].includes(d.alleyCap) ? d.alleyCap : 'square' },
   { key: 'labels',       hydrate: (d, get) => migrateLabels({ ...get().labels, ...(_isObj(d.labels) ? d.labels : {}) }) },
   { key: 'blockCustoms', hydrate: (d) => _isObj(d.blockCustoms) ? d.blockCustoms : {} },
@@ -446,19 +450,19 @@ const useCartographStore = create((set, get) => ({
   // dial. Persists in design.json; consumed by `buildBlockGeometryV2`
   // (Designer live render + the bake) via the corner-radius authoring kit.
   cornerRadiusScale: 1,
-  // Look-level street-label style. Drives SceneLabel (drei <Text> / SDF)
-  // for both Cartograph's Designer + Preview/LS via the shared
-  // streetLabels module. World-space sizing — `size` is meters; the
-  // SceneLabel width-aware multiplier (clamped 0.5×..2× based on each
-  // chain's measured pavement width) provides per-street variation
-  // without an authoring knob. `haloWidth` is in fontSize units (Troika
+  // Look-level street-label style. Drives the shared label pipeline
+  // (streetLabels.js polylines → labelLayout.js → StreetLabels/SceneLabel)
+  // for both Cartograph's Designer + Preview/LS. SIZE LAW: fontSize = k ×
+  // widthM, floored for legibility, no ceiling — proportions fall out of the
+  // real street widths. `sizeK` is the proportional Size knob: ABSENT = Auto
+  // (the codebase's inherit-on-absent pattern), a number = override scale
+  // (1 = Auto baseline). `haloWidth` is in fontSize units (Troika
   // `outlineWidth`) so the outline scales with the type. `case` applies
   // UPPER/lower at render. `fontFamily` is a fontsource id (empty =
-  // Troika default, Roboto); SceneLabel derives the TTF URL from
-  // family + weight. Landmark labels (park title, etc.) are authored
+  // Troika default, Roboto). Landmark labels (park title, etc.) are authored
   // directly in their components — singular, not part of this kit.
   labels: {
-    size:          4,            // meters; world-space height of a street label
+    // sizeK absent → Auto (size ∝ real width). Set to a number to override scale.
     weight:        600,          // 300 | 400 | 500 | 600 | 700
     fill:          '#e8e8f0',
     halo:          '#14141c',
@@ -473,6 +477,8 @@ const useCartographStore = create((set, get) => ({
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
   // operator can dial up/down via the Streets > Curb slider.
   curbWidth: 0.1524,
+  // [x,z] override for the park title center; null = computed default (LafayettePark).
+  parkTitlePos: null,
   // Universal alley end-cap mode. One global dial — every alley in the
   // Look terminates the same way:
   //   - 'square'  flush butt cut at the endpoint
@@ -717,6 +723,11 @@ const useCartographStore = create((set, get) => ({
   setCurbWidth: (v) => {
     const n = Math.max(0, Math.min(1.0, Number(v) || 0))
     set({ curbWidth: n })
+    get()._saveDesignDebounced()
+  },
+  // Move the park title. pos = [x,z] world, or null to reset to the default.
+  setParkTitlePos: (pos) => {
+    set({ parkTitlePos: Array.isArray(pos) ? [Math.round(pos[0] * 100) / 100, Math.round(pos[1] * 100) / 100] : null, bakeStale: true })
     get()._saveDesignDebounced()
   },
   setAlleyCap: (v) => {
@@ -2472,10 +2483,19 @@ const useCartographStore = create((set, get) => ({
     // symmetric hint (a READ, not a write): asymmetric chains (divided
     // carriageways carry symmetric:false) open with sides editable
     // separately, preserving the prior panel display.
+    // ⛔ Seed it ONLY when the selection actually MOVES to a different chain.
+    // Survey re-calls selectStreet on every click on the already-selected
+    // street's centerline (SurveyorOverlay ~:375) — and that same click is what
+    // seeds the drag anchor. Re-seeding there silently reset an operator who had
+    // just ticked "Asymmetric", so the width drag mirrored and pulled the
+    // block-facing curb along with the median-facing one (Waverly Place, whose
+    // chains carry symmetric:true). The click you need in order to use the
+    // setting must not be the click that destroys it.
+    const prev = get().selectedStreet
     const st = get().centerlineData?.streets?.[idx]
     set({
       selectedStreet: idx, selectedNode: null, selectedSegmentOrdinal: null,
-      editSidesSeparately: st?.measure?.symmetric === false,
+      ...(prev === idx ? {} : { editSidesSeparately: st?.measure?.symmetric === false }),
     })
   },
   selectNode: (idx) => set({ selectedNode: idx }),
