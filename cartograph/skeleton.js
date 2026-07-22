@@ -2105,6 +2105,67 @@ function main() {
     if (spread) console.log(`  corridor propagation: +${spread} chain(s) tagged along the road`)
   }
 
+  // ── Identity terminal/through — the through-node fact (BRIEF-terminal-node-sweep) ──
+  // An IDENTITY is one physical road: same identity-name (corridor-base if the
+  // directional pass linked it, else name) + shared vertices. At each of a chain's
+  // two endpoints we stamp whether that node is a TERMINAL for the identity (a
+  // degree-1 TIP of the identity's own graph → a real corner belongs here) or
+  // THROUGH (interior, degree >= 2 → the road runs straight past, no false corner
+  // on its own frontage). This is the same KIND of frozen per-endpoint fact as
+  // `caps` — and, like caps, it is a LABEL: NO chain is moved, no vertex projected,
+  // no carriageway welded. Consumers (tileGround.cornerAt on the SHAPE side; the
+  // sectionPass corner/ADA bid on the FILL side) READ this instead of re-guessing
+  // "real corner vs pass-through" from local geometry (the DOT_CONTINUES angle
+  // gate, isThruNode, the tile-local isThrough — all of which mis-key at a split
+  // carriageway or a dogleg).
+  //
+  // Why this is general over any tip count (no "find the two ends" disambiguation):
+  //   2 tips = ordinary road · 1 tip = lollipop (cul-de-sac bulb) · 3+ tips = a Y
+  //   or same-name tee (every tip TERMINAL, the branch-point THROUGH) · 0 tips = a
+  //   ring (roundabout) → every node degree >= 2 → THROUGH → mints no corner.
+  //
+  // ⛔ DELIBERATELY NOT UNIFIED — far-apart same-name pieces (opposite sides of a
+  // park). They are a DIFFERENT connected component, so they never share a node;
+  // a node's degree is a LOCAL property, so lumping every component of one name
+  // into a single degree map cannot make them interfere (they contribute to
+  // disjoint node-keys). Explicit component-splitting is therefore unnecessary
+  // for correctness — and NOT unifying them is deliberate: unifying far-apart
+  // same-name stretches changes no terminal classification (they share no node)
+  // and only risks over-welding coincidentally-collinear unrelated streets. The
+  // corner label keys on ADJACENCY, so name-level identity is safe.
+  {
+    const idKeyOf = (s) => ((s.corridor || s.name || '').trim()) || ('__id_' + s.id)
+    const idDeg = new Map()   // idKey -> Map(vKey -> degree within that identity's graph)
+    for (const s of streets) {
+      const p = s.points
+      if (!p || p.length < 2) continue
+      const k = idKeyOf(s)
+      let deg = idDeg.get(k); if (!deg) { deg = new Map(); idDeg.set(k, deg) }
+      for (let i = 0; i < p.length - 1; i++) {
+        const a = vKey(p[i]), b = vKey(p[i + 1])
+        if (a === b) continue
+        deg.set(a, (deg.get(a) || 0) + 1)
+        deg.set(b, (deg.get(b) || 0) + 1)
+      }
+    }
+    let nThru = 0, nTerm = 0
+    for (const s of streets) {
+      const p = s.points
+      if (!p || p.length < 2) continue
+      const deg = idDeg.get(idKeyOf(s))
+      // THROUGH ⇔ the endpoint node is interior to the identity's graph (degree
+      // >= 2). A lone chain's two ends are degree 1 → both TERMINAL (ordinary
+      // road). A ring node is degree >= 2 → THROUGH (no terminal, no corner).
+      const thruStart = (deg.get(vKey(p[0])) || 0) >= 2
+      const thruEnd   = (deg.get(vKey(p[p.length - 1])) || 0) >= 2
+      s.throughId = idKeyOf(s)
+      s.through = { start: thruStart, end: thruEnd }
+      thruStart ? nThru++ : nTerm++
+      thruEnd   ? nThru++ : nTerm++
+    }
+    console.log(`  identity through-nodes: ${nThru} through, ${nTerm} terminal (chain-endpoints, over ${idDeg.size} identities)`)
+  }
+
   console.log('\nSkeleton:')
   console.log(`  streets: ${streets.length}`)
   console.log(`  paths:   ${paths.length}`)

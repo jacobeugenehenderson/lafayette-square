@@ -2845,6 +2845,10 @@ export function buildTileGround(ribbons, opts = {}) {
         side: run.side,
         skelId: (so && (so.skelId || so.name)) || null,
         roadId: (so && (so.roadId || so.skelId || so.name)) || null,   // canonical through-road id — Section reads it post-Wall (name-transition ADA gate)
+        // [BRIEF-terminal-node-sweep] the frozen IDENTITY (same-name+shared-vertex,
+        // spans a spine↔carriageway divided transition that roadId does not). The
+        // SHAPE cornerAt keys on it; the FILL corner/ADA bid reads it post-Wall.
+        throughId: (so && (so.throughId || so.roadId || so.skelId || so.name)) || null,
         segOrd: runSegOrd(run),
         anchor: (so && so.anchor) || null,
         measure: runMeasure(run),               // per-fe-resolved side measure (override pavementHW) — for the asphalt edge `a`
@@ -2987,7 +2991,17 @@ export function buildTileGround(ribbons, opts = {}) {
       // The curve then flows straight through (averaged-normal offset), killing the
       // junction-curb bump born from a raw-skelId mismatch. Falls back to skelId for
       // pre-roadId artifacts. [HANDOFF-curve-primitive-skeleton.md, name-aware fix]
-      const sk = (so && (so.roadId || so.skelId || so.name)) || run.streetIdx
+      //
+      // [BRIEF-terminal-node-sweep] Prefer `throughId` (the frozen identity: same-
+      // name + shared vertex) OVER roadId. roadId deliberately does NOT span a
+      // spine↔carriageway divided transition (to keep widths unsmeared), so at a
+      // split-carriageway T/dogleg — e.g. Northwood terminating into De Mun where
+      // De Mun changes spine→carriageway right at the node — the two De Mun pieces
+      // carry different roadIds and cornerAt (a≠b) minted a FALSE corner on De Mun's
+      // OWN through-frontage. throughId reads both pieces as ONE road → a≠b is false
+      // there → the curb runs straight through. Only same-identity/different-roadId
+      // seams change; a real crossing (different identities) still corners.
+      const sk = (so && (so.throughId || so.roadId || so.skelId || so.name)) || run.streetIdx
       // [Brief C — divided "d" curb] OUTER-curb continuity ramp at a divided→
       // undivided nose. derive.js froze a per-vertex OUTER half-width (outerHWProfile,
       // vKey→hw) that makes the outer curb run STRAIGHT THROUGH the transition. Apply

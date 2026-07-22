@@ -2508,6 +2508,17 @@ export function deriveLayers(highways) {
       oneway: !!s.oneway,
       skelId: s.id,
       roadId: roadIdOf(s.id),                 // canonical through-road id (continuesAs union)
+      // [BRIEF-terminal-node-sweep] The frozen IDENTITY + terminal/through fact,
+      // stamped in skeleton.js from the identity graph (same-name + shared vertex).
+      // `throughId` is the identity the SHAPE cornerAt keys on (same identity both
+      // sides of a tile vertex = a pass-through, no corner — dissolves the split-
+      // carriageway/dogleg false corner). `through` marks each endpoint TERMINAL
+      // (tip → real corner belongs here) vs THROUGH (interior → runs straight).
+      // Distinct from roadId (the continuesAs/width union): throughId spans a
+      // spine↔carriageway divided transition that roadId deliberately does NOT
+      // (so widths are never smeared across it). A LABEL — no geometry moved.
+      ...(s.throughId ? { throughId: s.throughId } : {}),
+      ...(s.through ? { through: s.through } : {}),
       phase: s.phase || null,
       // OSM highway class carried through from skeleton.js so V2 corner
       // radii (and any other class-conditional logic) can resolve to

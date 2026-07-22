@@ -12576,7 +12576,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.48,
+          "pavementHW": 4.92,
           "treelawn": 0,
           "sidewalk": 1.52,
           "terminal": "sidewalk"
@@ -12843,7 +12843,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 5.48,
+          "pavementHW": 4.92,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
@@ -12854,8 +12854,7 @@
           "sidewalk": 0,
           "terminal": "none"
         },
-        "symmetric": true,
-        "source": "seed-survey"
+        "symmetric": true
       },
       "capEnds": {
         "start": null,
