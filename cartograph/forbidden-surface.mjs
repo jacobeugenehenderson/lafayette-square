@@ -12,7 +12,14 @@
  *                       path, and — reading inward off the frozen curb — no CURB
  *                       and no SIDEWALK), and
  *       — "plantable" = the land use itself is a green class, not a hardscape lot
- *                       (parking / commercial / industrial / unknown are OUT).
+ *                       (commercial / parking / industrial / unknown are OUT).
+ *
+ *     ⭐ AMENDED 2026-07-21 — the class list is no longer a literal here; it is
+ *     `lu-policy.mjs`, per-scene overridable, and an UNRECOGNIZED class defaults
+ *     PLANTABLE-and-loud rather than silently hardscape. The old bare Set held
+ *     only the four classes LS contains, so HPDM's institutional/vacant/
+ *     vacant-commercial — and the emergent `median` face — went bald with no
+ *     warning: 4,335 → 8,383 trees once policy covered them.
  *     The curbside TREELAWN is always plantable (street trees line even a parking
  *     lot's frontage); the type gate applies to the LU INTERIOR only.
  *
@@ -34,18 +41,25 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { sectionOpen } from '../src/lib/tileGround.js'
+import { LU_POLICY, resolveLuPolicy } from './lu-policy.mjs'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 /**
- * Land-use types whose INTERIOR is plantable ground (exposed lawn/yard/park), as
- * opposed to a hardscape lot. A tile's `lu` not in this set has its interior
- * forbidden — its curbside treelawn is still plantable (street trees). The knob,
- * not a magic literal: reclassify a scene's land uses here, in one place.
- * Ratified with Jacob 2026-07-18 — IN: residential/park/recreation/island;
- * OUT (hardscape): parking/commercial/industrial/unknown.
+ * Which LU interiors are plantable now lives in `lu-policy.mjs` — ONE source of
+ * truth, per-scene overridable, and (load-bearing) an UNRECOGNIZED class defaults
+ * to plantable-and-loud rather than silently to hardscape.
+ *
+ * This used to be a bare `Set` of the four classes LS happens to contain, so a
+ * town with vocabulary LS lacks lost whole blocks with no warning — HPDM's
+ * institutional/vacant/vacant-commercial, 7.7% of the neighborhood, bald.
+ *
+ * Kept as a live-derived export so existing importers keep working; it is now a
+ * VIEW of the policy, not the policy itself.
  */
-export const PLANTABLE_LU = new Set(['residential', 'park', 'recreation', 'island'])
+export const PLANTABLE_LU = new Set(
+  Object.entries(LU_POLICY).filter(([, kind]) => kind === 'soft').map(([lu]) => lu)
+)
 
 function pointInRing(px, pz, ring) {
   let inside = false
@@ -118,7 +132,7 @@ export function polyWithBbox(ring, holes) {
  * @returns {function} classify(x,z) → forbidden reason, or null when plantable.
  *   Carries `.zoneOf(x,z)` (reporting) and `.nudge(x,z)` (nearest legal ground).
  */
-export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allowUnpoured = false } = {}) {
+export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allowUnpoured = false, scene = null, quiet = false } = {}) {
   const shape = JSON.parse(readFileSync(shapePath, 'utf-8'))
   const design = designPath ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const cw = Number.isFinite(curbWidth) ? curbWidth
@@ -151,11 +165,20 @@ export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allo
   const curb     = prep(pr.curb)
   const sidewalk = prep(pr.sidewalk)
   const treelawn = prep(Object.values(pr.treelawnByLu || {}).flat())   // plantable, any LU
+  // Resolve the LU policy for THIS scene against the classes it actually carries,
+  // so an unrecognized class defaults plantable and ANNOUNCES itself rather than
+  // silently blanking its blocks. `scene` falls back to the shape path's own
+  // directory (public/baked/<scene>/shape.json) so existing callers need no change.
+  const sceneId = scene || path.basename(path.dirname(shapePath || '')) || null
+  const classesPresent = Object.keys(pr.luByClass || {})
+  const policy = resolveLuPolicy(sceneId, classesPresent)
+  if (!quiet) console.log(policy.report())
+
   const luAllow = []                 // plantable-type land-use interiors (flattened)
   const luForbid = []                // [{ lu, polys }] — hardscape-type interiors
   for (const [lu, rings] of Object.entries(pr.luByClass || {})) {
     const polys = prep(rings)
-    if (PLANTABLE_LU.has(lu)) luAllow.push(...polys)
+    if (policy.isPlantable(lu)) luAllow.push(...polys)
     else luForbid.push({ lu, polys })
   }
 
