@@ -63,7 +63,30 @@ function readbackToPng(rb, target) {
   return dst.toDataURL('image/png')
 }
 
+// Fraction of a readback that is meaningfully opaque. A capture that renders to
+// ~nothing is a FAILED bake, and it fails SILENTLY: the layer is a valid
+// transparent PNG, the manifest looks complete, and the species simply stops
+// existing in the hero shot. `platanus_acerifolia` shipped all 18 layers blank
+// this way — 442 placements, LS's second most common tree, invisible on the pan
+// with its ground shadow still printing. (Root cause: a species with no
+// `barkDetailBySpecies` record renders with uBarkTileScale (0,0), so every layer
+// samples an empty atlas region. Only Salon-composed species get that record.)
+const BLANK_COVERAGE = 0.002
+function alphaCoverage(rb) {
+  if (!rb?.data) return 0
+  const d = rb.data
+  let opaque = 0
+  for (let i = 3; i < d.length; i += 4) if (d[i] > 12) opaque++
+  return opaque / (d.length / 4)
+}
+
 async function postHeroImpostor(look, species, meta, layers) {
+  const blanks = layers.filter((l) => alphaCoverage(l.albedoTex?.userData?.readback) < BLANK_COVERAGE)
+  if (blanks.length) {
+    throw new Error(
+      `${blanks.length}/${layers.length} layers rendered blank — refusing to ship an invisible species. ` +
+      `Check that '${species}' has a barkDetailBySpecies record (Salon-composed) and a sane canopy base.`)
+  }
   const body = {
     heightM: meta.heightM, canopyRadiusM: meta.canopyRadiusM, canopyBaseNorm: meta.canopyBaseNorm,
     azimuths: meta.azimuths, shells: meta.shells,

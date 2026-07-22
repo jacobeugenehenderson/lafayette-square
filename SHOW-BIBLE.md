@@ -34,7 +34,7 @@ The kit is a set of **standalone, à-la-carte apps**. Each has its own product s
 - **Preview** — stress-test the slab (GPU profiler, phone-aspect frame, per-layer cost) before it ships.
 
 ### Arborist — the species library + tree bake
-*Real trees — the actual species.* A per-species library that bakes tree meshes + leaf-anchor data + photo-PBR bark, so a neighborhood's canopy is the actual species at true botanical scale. Trees render as full meshes today; the impostor arc that makes dense canopies phone-light is built and parked — the next work, not a shipped claim. → **`arborist/FEATURES.md`** · `arborist/SPEC.md`.
+*Real trees — the actual species.* A per-species library that bakes tree meshes + leaf-anchor data + photo-PBR bark, so a neighborhood's canopy is the actual species at true botanical scale. Dense canopies stay drawable because the **impostor is the foundation** — every tree paints as a captured billboard of the real tree, and the ones that carry the shot keep real geometry. The weight work that would make that a *phone* claim (atlas + impostor compression) is open, so this is a look claim today. → **`arborist/FEATURES.md`** · render state: `arborist/ARCHITECTURE.md §"Tree-render reality at LS"`.
 
 ### Meteorologist — the living sky
 *The neighborhood breathes with the real weather.* The sky is the **actual sky over the actual place** — a live feed drives clouds, sun, and effects at the true cadence; authored as a continuous look across **(Condition × Degrees)**, not a slideshow; **authored on the same stage that ships.** → **`meteorologist/FEATURES.md`** · `meteorologist/WEATHER-MODEL.md`.
