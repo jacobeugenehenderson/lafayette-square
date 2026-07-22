@@ -490,6 +490,22 @@
           "capFlip": true
         }
       }
+    },
+    "geyer-avenue-4": {
+      "right": {
+        "0": {
+          "pavementHW": 1.981831081963378,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        },
+        "1": {
+          "pavementHW": 1.981831081963378,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        }
+      }
     }
   },
   "surveyDefault": null,

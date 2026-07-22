@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "hipointe-demun",
-  "bakedAt": 1784228221613,
+  "bakedAt": 1784664720669,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -78,8 +78,8 @@
     "garden": true,
     "playground": true,
     "swimming_pool": true,
-    "pitch": false,
-    "sports_centre": false,
+    "pitch": true,
+    "sports_centre": true,
     "wood": false,
     "scrub": false,
     "tree_row": true,

@@ -9,16 +9,16 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": true,
-    "parking_lot": true,
+    "building": false,
+    "parking_lot": false,
     "garden": true,
     "playground": true,
     "swimming_pool": true,
-    "pitch": false,
-    "sports_centre": false,
+    "pitch": true,
+    "sports_centre": true,
     "wood": false,
     "scrub": false,
-    "tree_row": true,
+    "tree_row": false,
     "alley": true,
     "footway": true,
     "cycleway": true,
@@ -26,8 +26,8 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": true,
-    "lamp": true,
+    "tree": false,
+    "lamp": false,
     "fence": false,
     "wall": false,
     "retaining_wall": false,
@@ -83,7 +83,13 @@
   },
   "cornerRadiusScale": 1,
   "cornerRadiusOverrides": {},
-  "cornerCornerRadiusOverrides": {},
+  "cornerCornerRadiusOverrides": {
+    "-378.200,774.000|alamo-avenue-1:b|saint-rita-avenue:b": 8.022201047428164,
+    "-378.200,774.000|alamo-avenue-1:b|saint-rita-avenue:f": 7.21548413371001,
+    "-397.000,915.300|highland-terrace-0:f|primary-link-197:f": 29.243444938852935,
+    "-370.970,896.600|primary-link-197:b|primary-link-197:f": 30.129741015848943,
+    "-397.000,915.300|highland-terrace-0:f|primary-link-192:b": 25.658483029955605
+  },
   "curbWidth": 0.381,
   "alleyCap": "round",
   "labels": {
@@ -107,7 +113,132 @@
     "bg": "#3a3a38",
     "bgAlpha": 1
   },
-  "blockCustoms": {},
+  "blockCustoms": {
+    "de-mun-avenue-3": {
+      "right": {
+        "0": {
+          "pavementHW": 2.428412968301319,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        }
+      }
+    },
+    "clayton-road-0": {
+      "left": {
+        "4": {
+          "pavementHW": 9.440069431091421,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 9.440069431091421,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 10.135879992561103,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "7": {
+          "pavementHW": 10.135879992561103,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "right": {
+        "4": {
+          "pavementHW": 10.931934144976122,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 10.931934144976122,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 10.931934144976122,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "san-bonita-avenue-8": {
+      "left": {
+        "0": {
+          "pavementHW": 3.2927007432211064,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "right": {
+        "0": {
+          "pavementHW": 3.2927007432211064,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "san-bonita-avenue-0": {
+      "left": {
+        "0": {
+          "pavementHW": 4.19208469528192,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "right": {
+        "0": {
+          "pavementHW": 5.24734606055201,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "1": {
+          "pavementHW": 5.24734606055201,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "buena-vista-avenue-0": {
+      "right": {
+        "1": {
+          "pavementHW": 3.6029920830266917,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "left": {
+        "0": {
+          "pavementHW": 3.6029920830266917,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "1": {
+          "pavementHW": 3.6029920830266917,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    }
+  },
   "surveyDefault": null,
   "blockLandUse": {},
   "materialColors": {},
@@ -788,7 +919,7 @@
   },
   "openSections": {
     "Streets": false,
-    "Blocks": false,
+    "Blocks": true,
     "Paths": false,
     "Features": false,
     "Labels": false,
@@ -886,9 +1017,5 @@
       "species": "salix_babylonica",
       "variantId": 1
     }
-  ],
-  "groveThreshold": {
-    "topN": 9,
-    "pinned": []
-  }
+  ]
 }

@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "streets": {
+    "clayton-road-0": {
+      "name": "Clayton Road",
+      "measure": {
+        "left": {
+          "pavementHW": 13.704725833849837,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 10.95875842693481,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "alamo-avenue-1": {
+      "name": "Alamo Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.49,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.4534936657247357,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "primary-link-192": {
+      "name": "primary_link 192",
+      "measure": {
+        "left": {
+          "pavementHW": 6.8954183020576245,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.661320041798648,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "primary-link-197": {
+      "name": "primary_link 197",
+      "measure": {
+        "left": {
+          "pavementHW": 5.25517101249132,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.25517101249132,
+          "treelawn": 1.22,
+          "sidewalk": 2.44,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    }
+  }
+}
