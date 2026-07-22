@@ -114,6 +114,15 @@ export default function Grove() {
   // so only one GPU capture loop runs at a time (crash-safe). Same species list.
   const [heroTick, setHeroTick] = useState(0)
   const [heroProg, setHeroProg] = useState(null)           // {done,total} | 'done' | null
+  // ⚠️ The per-species TALLY, kept apart from the progress sentinel. The status line
+  // used to print "overhead ✓ · hero ✓" off `prog === 'done'` alone — i.e. "the pass
+  // FINISHED", not "every species shipped" — while the `fail` count went to
+  // console.log and nowhere else. A bake that refused 3 of 10 species still read as
+  // two green checks, so the slab looked healthy and the missing trees showed up
+  // much later as holes in the render. A capture that fails must be visible where
+  // the operator is looking. (2026-07-22)
+  const [overheadResult, setOverheadResult] = useState(null)  // {ok,fail} | null
+  const [heroResult, setHeroResult] = useState(null)          // {ok,fail} | null
   const overheadSpecies = useMemo(() => {
     if (!activeLookId) return []
     const base = import.meta.env.BASE_URL
@@ -362,8 +371,17 @@ export default function Grove() {
               {groveBakeResult.error
                 ? `bake failed: ${groveBakeResult.error}`
                 : `✓ ${groveBakeResult.count} trees placed (${groveBakeResult.uniqueVariants} variants, ${(groveBakeResult.totalMs/1000).toFixed(0)}s)`}
-              {overheadProg === 'done' && ' · overhead ✓'}
-              {heroProg === 'done' && ' · hero ✓'}
+              {overheadProg === 'done' && (
+                overheadResult?.fail
+                  ? <span style={{ color: '#f88' }}>{` · overhead ✗ ${overheadResult.fail} of ${overheadResult.ok + overheadResult.fail} species FAILED`}</span>
+                  : ` · overhead ✓ ${overheadResult?.ok ?? ''}`)}
+              {heroProg === 'done' && (
+                heroResult?.fail
+                  ? <span style={{ color: '#f88' }}>{` · hero ✗ ${heroResult.fail} of ${heroResult.ok + heroResult.fail} species FAILED`}</span>
+                  : ` · hero ✓ ${heroResult?.ok ?? ''}`)}
+              {(overheadResult?.fail || heroResult?.fail) ? (
+                <span style={{ color: '#f88' }}> — those species fall back to mesh; see console for which.</span>
+              ) : null}
             </span>
           )}
         </span>
@@ -412,7 +430,8 @@ export default function Grove() {
             species={overheadSpecies}
             onProgress={(done, total) => setOverheadProg({ done, total })}
             onDone={({ ok, fail }) => {
-              setOverheadProg('done'); console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`)
+              setOverheadProg('done'); setOverheadResult({ ok, fail })
+              console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`)
               // Chain the hero capture (one GPU loop at a time). Same species list.
               if (overheadSpecies.length) { setHeroProg({ done: 0, total: overheadSpecies.length }); setHeroTick((t) => t + 1) }
             }}
@@ -424,7 +443,10 @@ export default function Grove() {
             lookId={activeLookId}
             species={overheadSpecies}
             onProgress={(done, total) => setHeroProg({ done, total })}
-            onDone={({ ok, fail }) => { setHeroProg('done'); console.log(`[hero-impostor-bake] done — ${ok} ok, ${fail} failed`) }}
+            onDone={({ ok, fail }) => {
+              setHeroProg('done'); setHeroResult({ ok, fail })
+              console.log(`[hero-impostor-bake] done — ${ok} ok, ${fail} failed`)
+            }}
           />
           {/* Ambient breeze — advances the shared foliage-sway clock so the Grove
               reads as alive (Hero specimens rustle, Browse discs wiggle), through
