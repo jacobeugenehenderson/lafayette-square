@@ -598,6 +598,20 @@ export async function bakeTrees({
     throw new Error(`[bake-trees] no shape.json for '${sceneName}' — bake the ground first. ` +
       `There is no honest forbidden-surface without the frozen shape; refusing to place trees against a wrong mask.`)
   }
+  // ⚠️ No zone shape at all → NO allow-test runs and every tree lands wherever its
+  // census row says, roads and rooftops included. That is never a legitimate bake
+  // for a scene whose ground HAS been baked; it means the caller didn't resolve
+  // its scene inputs (the bare CLI did exactly this on 2026-07-22 and wiped the
+  // allow-zone — the tell was `0 forbidden-surface drops`). Refuse, loudly.
+  if (!zoneShapePath) {
+    const bakedShape = path.join(REPO_ROOT, 'public', 'baked', sceneName, 'shape.json')
+    if (existsSync(bakedShape)) {
+      throw new Error(
+        `[bake-trees] scene='${sceneName}' has a baked shape.json but no zoneShapePath was passed — ` +
+        `that would place trees with NO allowed-zone test (bare plantable LU is the only legal ground). ` +
+        `Resolve inputs via cartograph/tree-bake-inputs.mjs#treeBakeInputsForScene, or pass --zone-shape explicitly.`)
+    }
+  }
   // The Look's design.json — its blockCustoms + curbWidth so the rebuilt Section
   // surfaces match what the operator authored (WYSIWYG with the Design view).
   const _designPath = path.join(REPO_ROOT, 'public', 'looks', heroLook || sceneName, 'design.json')
@@ -928,19 +942,32 @@ export async function bakeTrees({
 const isDirect = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 if (isDirect) {
   const args = parseArgs()
+  // ⭐ The CLI resolves its scene inputs through the SAME resolver the Cartograph
+  // pour and the Grove's Bake→Slab use — census wells, species routing, the
+  // forbidden map, the frozen shape (the allow-zone) and the boundary. It used to
+  // pass only what you typed, so `--scene X` alone silently baked with no
+  // allow-zone and no boundary: trees in the carriageway and on rooftops. A third
+  // entry point that answers "what does scene X's tree bake read" differently is
+  // exactly the palimpsest the resolver exists to prevent
+  // (`project_the_palimpsest_code_path_multiplicity`). Explicit flags still win,
+  // so any single input can be overridden for a one-off.
+  const { treeBakeInputsForScene } = await import('../cartograph/tree-bake-inputs.mjs')
+  const resolved = args.scene ? (treeBakeInputsForScene(args.scene) || {}) : {}
+  const { inputs: _dirty, ...sceneInputs } = resolved
   bakeTrees({
+    ...sceneInputs,
     scene: args.scene,
     styles: (args.styles || 'realistic').split(',').map(s => s.trim()).filter(Boolean),
     lod: args.lod,
     heroLook: args.heroLook,
     placements: typeof args.placements === 'string'
       ? args.placements.split(',').map(s => s.trim()).filter(Boolean)
-      : undefined,
-    output: args.output,
-    speciesMapPath: args['species-map'],
-    forbiddenMapPath: args['forbidden-map'],
-    zoneShapePath: args['zone-shape'],
-    boundaryPath: args['boundary'],
+      : sceneInputs.placements,
+    output: args.output ?? sceneInputs.output,
+    speciesMapPath: args['species-map'] ?? sceneInputs.speciesMapPath,
+    forbiddenMapPath: args['forbidden-map'] ?? sceneInputs.forbiddenMapPath,
+    zoneShapePath: args['zone-shape'] ?? sceneInputs.zoneShapePath,
+    boundaryPath: args['boundary'] ?? sceneInputs.boundaryPath,
     verbose: true,
   }).catch(e => { console.error('[bake-trees] fatal:', e); process.exit(1) })
 }
