@@ -461,13 +461,24 @@ export async function bakeTrees({
   // a St-Louis species-collapse table. For LS the resolved paths are unchanged
   // (they are LS's own files); for every other scene absence now means absence.
   // (`BRIEF-ls-bleed-excision.md` sites 2 + 3.)
-  const sceneDefaultCensus = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'clean', 'park_census.json')
+  // ⚠️ The default is EVERY canonical well this scene has, unioned — not just
+  // `park_census.json`. Reading one well was the 2026-07-22 regression: LS baked
+  // 729 placements, all `source:'park'`, while its own `park_trees.json` (2,635)
+  // and `osm_trees.json` (3,376) sat unread on disk — trees in the park and a
+  // bare neighbourhood. The wells are spatially DISJOINT layers of one census,
+  // so a bake that reads one of them silently deletes the others' trees.
+  // `SOURCE_BY_BASENAME` above is the enumeration; `cartograph/tree-bake-inputs.mjs`
+  // must list the same set (it is the other entry point — keep them in lockstep).
+  const sceneCleanDir = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'clean')
+  const sceneDefaultWells = Object.keys(SOURCE_BY_BASENAME)
+    .map(basename => path.join(sceneCleanDir, basename))
+    .filter(existsSync)
   const parkPaths = placements
     ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))
-    : (existsSync(sceneDefaultCensus) ? [sceneDefaultCensus] : [])
+    : sceneDefaultWells
   if (!parkPaths.length) {
     console.warn(
-      `[bake-trees] scene=${scene}: no placements given and no clean/park_census.json — ` +
+      `[bake-trees] scene=${scene}: no placements given and no census well in clean/ — ` +
       `baking ZERO trees. Acquire a census via the Intake panel (municipal inventory, ` +
       `OSM natural=tree, or canopy fill). Refusing to plant another scene's trees.`)
   }

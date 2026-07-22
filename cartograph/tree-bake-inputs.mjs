@@ -96,8 +96,19 @@ export function treeBakeInputsForScene(scene) {
   // A poured installation: union whichever census layers exist. They are
   // spatially DISJOINT layers of one census, not alternatives — the City
   // Forestry census, the OSM county-side floor, and the NLCD canopy fill.
+  // ⭐ EVERY canonical well, unioned. The list must stay in lockstep with
+  // `arborist/bake-trees.js#SOURCE_BY_BASENAME` (the filename → provenance table)
+  // — that is the one enumeration of what a census is made of.
+  //
+  // ⚠️ `park_census.json` was missing here until 2026-07-22, while bake-trees'
+  // own no-placements DEFAULT read ONLY `park_census.json`. Two entry points,
+  // two disjoint answers, each silently dropping what the other kept: a bake
+  // through this resolver lost the hand-curated park census, and a bake through
+  // the default lost the ENTIRE NEIGHBOURHOOD — which is what shipped, so LS
+  // showed 729 park trees and no street trees at all. Add new wells to BOTH.
   const clean = sceneCleanDir(scene)
   const placements = [
+    join(clean, 'park_census.json'),        // authored park census (hand-curated, real species)
     join(clean, 'park_trees.json'),         // City Forestry layer 1 (whole hood, real)
     join(clean, 'forest_park_trees.json'),  // City Forestry layer 4 (Forest Park, rich species)
     join(clean, 'osm_trees.json'),          // OSM floor (real positions)
