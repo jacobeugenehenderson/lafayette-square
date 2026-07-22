@@ -1,6 +1,6 @@
 # DESIGNER-LOAD-FORENSIC — where the 3 minutes go (Altadena)
 
-**From:** Tally (dispatched, 2026-07-14). **Brief:** `HANDOFF-designer-load-forensic.md`. **Branch:** `designer-load-forensic` (worktree).
+**From:** Tally (dispatched, 2026-07-14). **Brief:** `cartograph/_archive/HANDOFF-designer-load-forensic-DONE-2026-07-14.md` (archived — forensic delivered). **Branch:** `designer-load-forensic` (worktree).
 **Status:** measurement only — nothing fixed, per the brief. Harness: `scratch/tally-designer-load.mjs`.
 
 ---
