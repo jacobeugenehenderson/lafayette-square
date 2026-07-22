@@ -204,6 +204,19 @@ The corner is a small, legible pipeline — each knob is one spot in `sectionPas
 
 > ⚠️ Verify corner changes **on a render / the lit app**, never on shape-byte proofs — the EYE is the gate (`[[feedback_shape_proofs_dont_gate_fill_geometry]]`). The flat scratch proxy (`scratch/section-open.mjs`, `sectionOpen` on the frozen artifact) is the fast loop; the lit 5173 app is the final say.
 
+### 6.3 ⭐ The dead-end cap is an end COUPLER — LANDED (2026-07-22)
+
+Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
+
+- **The ribbon folds, not the chain.** The chain runs once to the tip; the *ribbon* follows it up one side and back down the other. A cul-de-sac frontage is **one fe folded on itself** — so it is chopped at the two **shoulders**, and each leg becomes its own fe with its own side (`buildBlockGeometryV2.capFoldSlices`). Before this, v2 emitted one fe under one `side` token and the returning leg had **no customs slot at all** (46 of LS's 50 caps) — the root of "a dead-end leg flip renders Δ=0.0".
+- **The bulb has NO halves.** It is one **continuous semicircle** carrying ONE cross-section — the cap's own. Splitting it between the two legs invents a seam that isn't there. When the legs disagree the bulb goes whole to the cap owner (the canonical `left` leg, the side `makeCapFe` already stores on); the operator overrides by flipping the cap.
+- **The cap is a COUPLER, not a corner.** Its two shoulders are corners in the **lane-switch** sense, not the bending sense — *"a point on both sides of the ribbon to create the slope if necessary."*
+- **Width is germane, not just parity.** The coupler meets a sidewalk and a treelawn at each end and *"starts and ends with possibly different widths"* — so the shoulder transition tapers **depth** as well as crossing the strips. It fires **only on a real difference** (arrangement or width), so an inherited cap has none and uniform caps stay byte-identical.
+- ⚠️ **A road may be authored with different `pavementHW` per side** (Nicholson Place = left 2.50 m, right 6.70 m). Any dead-end detector keyed on "both shoulders at the same radius" is wrong by construction — grow by the radius **jump** and confirm with a **signed** ~180° sweep.
+- ⛔ **The MOUTH is a different layer.** The spur collapses to a zero-width slit in the face walk and `mouths` is a FILL-layer patch over it — the junction-construction class (61 of 152 LS junctions fragment; `README` forbids FILL-patching it). **`BRIEF-dead-end-mouth-junction.md`.**
+
+*Also fixed in that pass, upstream of the FILL: `tileGround.js` wrote each ring edge's asphalt depth under BOTH directed keys, so on a zero-width slit the second leg clobbered the first and **22 of 48** dead-end chains drew at one side's width. Directed keys now keep the two legs distinct.*
+
 ---
 
 ## 7. Where Section is today

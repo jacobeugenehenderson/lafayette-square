@@ -1,6 +1,28 @@
 # BRIEF — Dead-end LEG flip + the cap SLOPE (they're spousal — fix together)
 
-**Status:** DRAFT, dispatch-ready. Active brief (tracked at root). Boz drafted 2026-07-22 from a live eye-session with Jacob on **Preston Place (LS)**. Fresh-agent brief (identity + bounds below); **Jacob dispatches.** Continues the A1 dead-end-cap arc (`_handoffs/HANDOFF-dead-end-cap-flip.md`, the two open threads). Jacob: *"they're spousal issues"* — do **both** in one pass.
+## ✅ STATUS — BOTH THREADS LANDED (2026-07-22). Successor brief: **`BRIEF-dead-end-mouth-junction.md`**
+
+- **(a) the cap SLOPE** — root was NOT the straight diagonals: the transition quad was **hard-coded**
+  to one arrangement (walk-outer-at-cap → walk-inner-at-leg), correct only for a treelawn-Y leg and
+  painted **backwards** for a walk-at-curb one, so it disagreed with the bulb at s=0 AND the leg at
+  s=T. Now derived per shoulder from each end's RESOLVED materials, eased with a smoothstep. That is
+  also why smoothstepping alone read pixel-identical last cycle — the shape was wrong, not the edge.
+- **(b) the LEG flip** — two roots, both closed: the ribbon **folds on itself** at a dead end, so v2
+  emitted ONE fe under ONE side token (46/50 caps) → chopped the fold at the two shoulders; and both
+  legs are the same centreline under a **symmetric** claim stroke → gave each leg its own side,
+  ending at the shoulder. Legs responding **56 → 93 of 100**.
+- **Found while verifying:** asymmetric roads drew symmetric at every dead end (a directed-key
+  clobber on the zero-width slit — **22 of 48** dead-end chains), and the Survey "Asymmetric" toggle
+  was reset by the very click that places the drag anchor. Both fixed.
+- ⭐ **Doctrine Jacob set during the pass** (now canon, `SECTION §6.3`): the **bulb is ONE continuous
+  semicircle**, not two halves; the cap is an **end COUPLER** reconciling its two legs in **parity
+  AND width** at the shoulders. See `[[project_dead_end_cap_is_an_end_coupler]]`.
+- ⚠️ **Open tail:** 7 legs still don't respond; 7 caps flip to no visible change (pre-existing); 10
+  asymmetric caps changed appearance (each leg now renders its own arrangement) — Jacob's call.
+
+---
+
+**Status:** LANDED 2026-07-22 (was: DRAFT, dispatch-ready). Active brief (tracked at root). Boz drafted 2026-07-22 from a live eye-session with Jacob on **Preston Place (LS)**. Fresh-agent brief (identity + bounds below); **Jacob dispatches.** Continues the A1 dead-end-cap arc (`_handoffs/HANDOFF-dead-end-cap-flip.md`, the two open threads). Jacob: *"they're spousal issues"* — do **both** in one pass.
 
 > ⛔ **ROUTE FIRST (`CLAUDE.md` gate):** `ORIENTATION.md` → `README §⭐ START HERE` → **`SECTION.md §6` (the cap/corner construction) + `RIBBONS.md §1`.** Memory: **`[[feedback_render_geometry_to_png_before_the_eye]]` (READ FIRST — the verify loop is load-bearing here)**, `[[feedback_proxy_render_is_not_the_operator_eye]]`, `[[project_d6a_curb_offset]]`, `[[project_revert_buttons]]`.
 
