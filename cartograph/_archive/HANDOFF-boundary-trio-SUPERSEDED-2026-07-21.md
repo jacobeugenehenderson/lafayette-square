@@ -1,5 +1,7 @@
 # HANDOFF — The Boundary Trio (circle-only · build-beyond-crop · systematic cull)
 
+> ⛔ **RETRACTION BANNER — ARCHIVED 2026-07-21 (Boz).** This brief's governing idea — *"the circle is the real boundary; derive the bbox from it"* — is the **most quotable statement of a model that was retracted** (`a05fc129`). It is **superseded** by the Extent redesign; the live doctrinal home is `cartograph/ARCHITECTURE.md §"The Extent tool & the Pour"` and the audit `EXTENT-EXCAVATION.md` (which recommended this archival, §312/§390). The edge-of-map face-walk half **did land**; any remaining cull/SSOT residual is subsumed into the Extent redesign, not this brief. Kept for the record only — do **not** dispatch from it or cite it as required reading.
+
 > **Status: REFRESHED 2026-06-01 for the tile re-pour + the LS-first decision** (Boz). **BUILD mode.** **Sequence: dispatch AFTER the tile arc closes (T3 authoring → T4 delete-figure-ground)** — builds on the tile-model LS + shares the bake. **Warm → Tessera** (holds the tile/LS pipeline). **LS-first, by decision (2026-06-01):** LS already *has* a circle, so this is a **retrofit** that makes it the SSOT + derives the bbox — and it **builds the shared circle-boundary kit that Provincetown's intake later inherits** (not ports; PTown is the first full-intake run, *after* this). **The FloorGizmo (center/radius editing UI) is NOT this brief** — that's the intake authoring layer, additive, rides with PTown; here the circle stays authored in `neighborhood_boundary.json`, just made the SSOT.
 
 ## You are the builder

@@ -1,5 +1,7 @@
 # HANDOFF — Unify the TOD animator: drop "animate", always show the chips
 
+> ✅ **ARCHIVED 2026-07-21 (Boz) — LANDED.** Shipped `0c39e8ce` (+ stamped-slot write `76997309`); the new model (chips always on, no animate toggle, playhead's slot is the edit target) is now **canon in `cartograph/OPERATIONS.md §64`**. Kept as the as-built dispatch record only.
+
 **Quick dispatch brief.** Rework the TOD-channel authoring UX so there's **no "animate/animated" toggle** — every animatable channel just shows the 7 ToD slot chips, and the chip the **playhead** is parked on is the live edit target. Conform it across the **whole Stage Tool Panel** (every animatable tool).
 
 ## Agent: FRESH

@@ -1,5 +1,7 @@
 # HANDOFF — HiPointe-DeMun pour, step 0 (extent + folder palace)
 
+> ✅ **ARCHIVED 2026-07-21 (Boz) — LANDED + retraction banner.** Step 0 (extent + folder + config seam) shipped; HiPointe poured and renders. The *extent-model* it describes was later **retracted** (`a05fc129`); the live Extent doctrine is `cartograph/ARCHITECTURE.md §"The Extent tool & the Pour"` + `EXTENT-EXCAVATION.md` (which recommended this archival, §312). Kept as the as-built record of step 0 only.
+
 **Agent: FRESH.** The first concrete step of pouring neighborhood #2. Self-contained; the whole design landed in `NEIGHBORHOOD-INPUTS.md` (commit `2bcbe3f1`). This step is *only* the extent + the folder + the config seam — deliberately small.
 
 ## Name yourself, then read (in order)
