@@ -842,7 +842,9 @@ const CURVE_HARD_TURN  = 35 * Math.PI / 180   // a vertex turning ≥ this is a 
 const CURVE_MIN_TURN   = 5  * Math.PI / 180   // a cluster must accumulate at least this total turn to be a real curve
 const CURVE_SEG_MAX    = 40                    // a segment LONGER than this is a straight LEG — kept verbatim, never bezier'd
 const CURVE_DEV_TOL    = 2.0                   // a fitted cubic must ride within this (m) of the cluster's real points, else fall back to lines (Law 2: never pull off the road). Tune on the eye.
-const CURVE_LOOP_CIRCLE_TOL = 0.06             // v2 step (a): a CLOSED loop whose circle-fit residual/R is within this is a turning circle → fit as bezier arcs. SV/Park ≈0.2%; Benton teardrop 73% + Waverly couplet 52% fall through (faceted legacy path — already clean per HANDOFF §v2).
+const CURVE_MIN_RADIUS = 3                    // a fitted cubic may never bend TIGHTER than this radius (m) — catches the mid-curve HOOK that `dev` (one-sided) is blind to. 3 m is the knee measured on HPDM: kinks 26→14 (baseline 13) at a cost of 2 facet vertices; larger radii buy no further kink reduction and cost real smoothing. Turning circles ride the separate closed-loop path, untouched.
+const CURVE_SPLIT_DEPTH = 4                // max recursive SPLITS when one cubic can't ride a long sweep (≤16 pieces). The frame stays sparse: a split adds ONE control vertex, vs. the dozens a densify would.
+const CURVE_LOOP_CIRCLE_TOL = 0.06            // v2 step (a): a CLOSED loop whose circle-fit residual/R is within this is a turning circle → fit as bezier arcs. SV/Park ≈0.2%; Benton teardrop 73% + Waverly couplet 52% fall through (faceted legacy path — already clean per HANDOFF §v2).
 // Cubic-bezier point.
 function bez(P0, P1, P2, P3, t) {
   const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t
@@ -881,9 +883,61 @@ function fitClusterHandles(P, a, b, t0, t3) {
   alpha = Math.max(lo, Math.min(hi, alpha)); beta = Math.max(lo, Math.min(hi, beta))
   const c1 = { x: P0.x + t0.x * alpha, z: P0.z + t0.z * alpha }
   const c2 = { x: P3.x - t3.x * beta,  z: P3.z - t3.z * beta }
-  let dev = 0
-  for (let i = a + 1; i < b; i++) { let m = Infinity; for (let s = 0; s <= 24; s++) { const q = bez(P0, c1, c2, P3, s / 24); const d = Math.hypot(P[i].x - q.x, P[i].z - q.z); if (d < m) m = d } if (m > dev) dev = m }
-  return { c1, c2, dev }
+  let dev = 0, worst = a + 1                       // `worst` = the vertex that rides furthest off → the SPLIT point
+  for (let i = a + 1; i < b; i++) { let m = Infinity; for (let s = 0; s <= 24; s++) { const q = bez(P0, c1, c2, P3, s / 24); const d = Math.hypot(P[i].x - q.x, P[i].z - q.z); if (d < m) m = d } if (m > dev) { dev = m; worst = i } }
+  return { c1, c2, dev, worst }
+}
+// ⚠️ `dev` is ONE-SIDED — it measures each sample's distance TO the curve, so a cubic may HOOK
+// between samples and still score dev≈0: a tight mid-curve kink the eye reads as a defect
+// (found on a ramp + Oak Knoll Park, 2026-07-22 — 28° across ~1 m, R≈2 m, 25 m from any control
+// vertex). So ALSO cap local curvature: the minimum radius the fitted cubic ever reaches.
+// Analytic (κ = |B'×B''| / |B'|³) so the test can't be fooled by sample spacing.
+// A cusp (|B'|→0) reads as infinite curvature → rejected. Law 2 in curvature form: never
+// invent a bend tighter than a street actually turns. Turning circles are NOT affected —
+// closed loops go through fitClosedLoopCircle, a separate path.
+function minFitRadius(P0, c1, c2, P3) {
+  // Sample ~1 m apart (control-polygon length as the proxy) — a fixed sample count spaces out
+  // on a long chain and steps clean OVER a narrow curvature spike, which is exactly the
+  // artifact this guards (Broadview: R≈1.4 m missed at 33 samples).
+  const approxLen = Math.hypot(c1.x - P0.x, c1.z - P0.z) + Math.hypot(c2.x - c1.x, c2.z - c1.z) + Math.hypot(P3.x - c2.x, P3.z - c2.z)
+  const N = Math.max(32, Math.min(256, Math.ceil(approxLen)))
+  let minR = Infinity
+  for (let s = 0; s <= N; s++) {
+    const t = s / N, u = 1 - t
+    const dx = 3 * u * u * (c1.x - P0.x) + 6 * u * t * (c2.x - c1.x) + 3 * t * t * (P3.x - c2.x)
+    const dz = 3 * u * u * (c1.z - P0.z) + 6 * u * t * (c2.z - c1.z) + 3 * t * t * (P3.z - c2.z)
+    const ddx = 6 * u * (c2.x - 2 * c1.x + P0.x) + 6 * t * (P3.x - 2 * c2.x + c1.x)
+    const ddz = 6 * u * (c2.z - 2 * c1.z + P0.z) + 6 * t * (P3.z - 2 * c2.z + c1.z)
+    const speed = Math.hypot(dx, dz)
+    if (speed < 1e-6) return 0                     // cusp — infinitely tight
+    const cross = Math.abs(dx * ddz - dz * ddx)
+    if (cross < 1e-12) continue                    // locally straight — infinite radius
+    const R = (speed * speed * speed) / cross
+    if (R < minR) minR = R
+  }
+  return minR
+}
+// Fit cluster P[a..b] as ONE cubic; if a single cubic can't RIDE it (dev > CURVE_DEV_TOL —
+// a long sweep like Brookings' 261° or Tuscany's 98° tail), SPLIT at the worst-riding vertex
+// and recurse (Schneider-style), joining the halves C1 through the local chain tangent so the
+// pieces meet smoothly — one curve to the eye, no seam. This is the handoff's spec'd "if a
+// single cubic can't, split into 2 (biarc-style)". Returns the pieces in order
+// ({ end, c1, c2 }, each a bezier ENDING at vertex `end`), or null if even splitting can't
+// ride it → the caller keeps lines (Law 2: never pull the curve off the road).
+function fitClusterSplit(P, a, b, t0, t3, depth) {
+  const fit = fitClusterHandles(P, a, b, t0, t3)
+  if (fit && fit.dev <= CURVE_DEV_TOL && minFitRadius(P[a], fit.c1, fit.c2, P[b]) >= CURVE_MIN_RADIUS) {
+    return [{ end: b, c1: fit.c1, c2: fit.c2 }]
+  }
+  if (depth >= CURVE_SPLIT_DEPTH || b - a < 2) return null
+  const m = fit ? fit.worst : (a + b) >> 1
+  if (m <= a || m >= b) return null
+  const dx = P[m + 1].x - P[m - 1].x, dz = P[m + 1].z - P[m - 1].z   // local tangent AT the split → C1 join
+  const L = Math.hypot(dx, dz) || 1
+  const tm = { x: dx / L, z: dz / L }
+  const head = fitClusterSplit(P, a, m, t0, tm, depth + 1); if (!head) return null
+  const tail = fitClusterSplit(P, m, b, tm, t3, depth + 1); if (!tail) return null
+  return head.concat(tail)
 }
 // Replace each tightly-packed CURVE CLUSTER (a run of SHORT segments that turns) with ONE
 // cubic-bezier SEGMENT and DROP its interior points; keep STRAIGHT LEGS and sharp corners
@@ -915,9 +969,9 @@ function curveFitSegments(points, pinned) {
       if (j > i + 1 && tot >= CURVE_MIN_TURN) {
         const t0 = i > 0 ? dir(i - 1, i) : dir(i, i + 1)                // tangents = bounding leg directions → tangential join
         const t3 = j < n - 1 ? dir(j, j + 1) : dir(j - 1, j)
-        const fit = fitClusterHandles(points, i, j, t0, t3)
-        if (fit && fit.dev <= CURVE_DEV_TOL) {
-          outPts.push(points[j]); segs.push({ type: 'bezier', c1: fit.c1, c2: fit.c2 })
+        const pieces = fitClusterSplit(points, i, j, t0, t3, 0)   // ONE cubic when it rides; SPLIT when it can't
+        if (pieces) {
+          for (const g of pieces) { outPts.push(points[g.end]); segs.push({ type: 'bezier', c1: g.c1, c2: g.c2 }) }
           any = true; i = j; continue
         }
       }

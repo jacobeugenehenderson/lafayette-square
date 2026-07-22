@@ -2849,6 +2849,22 @@ export function buildTileGround(ribbons, opts = {}) {
         // spans a spine↔carriageway divided transition that roadId does not). The
         // SHAPE cornerAt keys on it; the FILL corner/ADA bid reads it post-Wall.
         throughId: (so && (so.throughId || so.roadId || so.skelId || so.name)) || null,
+        // [BRIEF-terminal-node-sweep · FILL] per run-END: is it THROUGH (true) or
+        // TERMINAL (false)? A run follows the centerline, so its poly-ends are chain
+        // vertices. A poly-end AT the chain's own endpoint reads the frozen `through`
+        // stamp (degree-1 tip = terminal); a MID-CHAIN poly-end (a tile-split of a
+        // continuous frontage — Kennett×S18) is always THROUGH. The FILL corner bid
+        // reads this so a through-frontage split across tiles stops bidding a FALSE
+        // ADA corner, while the terminal stem keeps its real one.
+        thruEnds: (() => {
+          if (!so || !so.points || so.points.length < 2) return [true, true]
+          const cs = so.points[0], ce = so.points[so.points.length - 1]
+          const nearC = (p, c) => Math.hypot(p[0] - c[0], p[1] - c[1]) < 0.6
+          const at = (p) => nearC(p, cs) ? (so.through ? so.through.start : true)
+                          : nearC(p, ce) ? (so.through ? so.through.end : true)
+                          : true   // mid-chain tile-split → through
+          return [at(run.poly[0]), at(run.poly[run.poly.length - 1])]
+        })(),
         segOrd: runSegOrd(run),
         anchor: (so && so.anchor) || null,
         measure: runMeasure(run),               // per-fe-resolved side measure (override pavementHW) — for the asphalt edge `a`

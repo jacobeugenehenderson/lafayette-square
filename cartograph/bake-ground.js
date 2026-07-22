@@ -689,6 +689,27 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
       `Pass --look=lafayette-square (the real LS surface) or --look=toy.`
     )
   }
+  // SCENE≠LOOK cross-write guard (2026-07-21). A look declares its canonical
+  // scene in public/looks/index.json (`{id, scene}`). Baking scene-X geometry
+  // into a look whose declared scene is Y silently poured HPDM's ground/shape
+  // into public/baked/lafayette-square/ (the contamination committed in 25f50930,
+  // caught only by eye). serve.js DERIVES scene from the look so its endpoint is
+  // safe — this catches a CLI/agent bake with mismatched --look/--scene, the
+  // failure mode that actually happened. Refuse it loudly, BEFORE any write.
+  try {
+    const idxRaw = JSON.parse(readFileSync(join(ROOT, 'public', 'looks', 'index.json'), 'utf-8'))
+    const declared = (Array.isArray(idxRaw) ? idxRaw : (idxRaw.looks || [])).find(l => l.id === look)?.scene
+    if (declared && declared !== scene) {
+      throw new Error(
+        `[bake-ground] SCENE≠LOOK: refusing to bake scene '${scene}' geometry into look ` +
+        `'${look}' (its declared scene is '${declared}'). This is the cross-write that ` +
+        `poured HPDM into public/baked/lafayette-square/. Pass --scene=${declared} to bake ` +
+        `this look's own geometry, or target the look whose scene is '${scene}'.`
+      )
+    }
+  } catch (e) {
+    if (/SCENE≠LOOK/.test(e.message)) throw e   // re-throw the guard; swallow only a bad-index parse error
+  }
   // Ribbons input is scene-keyed. LS still publishes to the canonical
   // src/data/ribbons.json (promote-ribbons.js writes there); other scenes
   // author/derive their own ribbon fixture under src/data/<scene>/.

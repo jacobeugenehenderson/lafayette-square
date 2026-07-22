@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "hipointe-demun",
-  "bakedAt": 1784664720669,
+  "bakedAt": 1784701660604,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -92,8 +92,8 @@
     "water": true,
     "tree": true,
     "lamp": true,
-    "fence": false,
-    "wall": false,
+    "fence": true,
+    "wall": true,
     "retaining_wall": false,
     "hedge": false,
     "labels": true,
