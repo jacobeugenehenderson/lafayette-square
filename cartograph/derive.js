@@ -3300,14 +3300,145 @@ export function deriveLayers(highways) {
       set.add(i)
     }
   })
+
+  // ── [BRIEF-through-road-edge-straight] THE PREVAILING-DIRECTION OVERLAY ────
+  // A divided corridor whose two carriageway tips CONVERGE onto ONE shared node
+  // that is an INTERIOR vertex of a through-road (De Mun × Clayton: both De Mun
+  // carriageways + Clayton meet at a single OSM node) makes the median lens
+  // pinch to gap→0 there. The E2 nose-taper `stamp('merge', …)` below then
+  // collapses to a degenerate duplicated-vertex needle sitting ON the
+  // through-road's curb line — the eye reads it as the through-edge bulging
+  // (SKELETON §5d/§5e). The root is the survey's shared-node convergence: the
+  // carriageway BODIES run straight and parallel; only their TIPS kink together
+  // to reach the one node.
+  //
+  // FIX (Jacob, 2026-07-21): virtually continue each carriageway straight along
+  // its prevailing (body) direction to the through-road, so the two tips stay ~a
+  // median-gap apart → the gap never pinches → the degenerate stamp is never
+  // emitted and the median terminates clean at the through-edge. This is a
+  // CONSTRUCTION OVERLAY (`st.strokePoints`), NEVER a survey edit: `st.points`
+  // (the navy centerline) stays the true surveyed line; only the derived
+  // median/asphalt/faces read the correction. (feedback_survey_chains_immutable
+  // _corner_is_stroke — the reverted frame-straighten RELOCATED the endpoint +
+  // dead-ended the carriageway; this never mutates the chain, and the tip delta
+  // is < a road-width so the centerline shows no visible seam.)
+  // The straighten touches ONLY the vertices INSIDE the intersection zone — the
+  // through-road's own asphalt footprint (its half-width + a small margin), the
+  // literal junction box — never the natural approach outside it (Jacob, app eye
+  // 2026-07-22: "it really is just the points in the intersection zone"). Reach
+  // scales with the actual crossing, not a fixed radius.
+  const OVL_MARGIN = 2   // m — a hair beyond the through curb, so the tip clears the asphalt edge
+  const OVL_DIR = 12     // m — the prevailing body tangent is read over this much chain outside the zone
+  const OVL_KINK_DEG = 30 // ° — a leg whose tip approach bends less than this off its body has no
+                          //     terminal kink → it already runs where it points → leave it natural
+  let overlayCount = 0
+  // Landings the FACE walk must splice into the through-road so the corrected
+  // carriageway tips share a vertex with it (else they dangle → the median face
+  // won't close). { thruSkel, pt } — pt is the exact foot on the through centerline.
+  const faceThruSplits = []
+  const rayHitPolyline = (o, d, poly) => {
+    let best = null, bestT = Infinity
+    for (let i = 0; i < poly.length - 1; i++) {
+      const p = poly[i], q = poly[i + 1]
+      const ex = q[0] - p[0], ez = q[1] - p[1]
+      const den = d[0] * ez - d[1] * ex
+      if (Math.abs(den) < 1e-9) continue
+      const t = ((p[0] - o[0]) * ez - (p[1] - o[1]) * ex) / den   // ray param (≥0 forward)
+      const u = ((p[0] - o[0]) * d[1] - (p[1] - o[1]) * d[0]) / den // segment param [0,1]
+      if (t > 0 && u >= -0.01 && u <= 1.01 && t < bestT) { bestT = t; best = [o[0] + d[0] * t, o[1] + d[1] * t] }
+    }
+    return best
+  }
+  const isInteriorVertexOf = (node, sIdx) => {
+    const P = ribbonStreets[sIdx].points
+    for (let i = 1; i < P.length - 1; i++) if (Math.hypot(P[i][0] - node[0], P[i][1] - node[1]) < 0.05) return true
+    return false
+  }
+  // Straighten one carriageway's converging tip: keep the body up to the first
+  // vertex clear of the node's kink zone, then a single straight extension of the
+  // prevailing tangent to the through-road (+2 m overshoot so the asphalt/median
+  // reaches into it; tileGround clips it to the through curb).
+  const correctedTipChain = (idx, tipAtStart, thru, node) => {
+    const P = ribbonStreets[idx].points.map(p => [p[0], p[1]])
+    if (P.length < 3) return null
+    const tip = tipAtStart ? 0 : P.length - 1
+    const step = tipAtStart ? 1 : -1
+    // The intersection zone = the through-road's asphalt footprint (perp distance
+    // to its centerline < its half-width + margin) — the literal junction box.
+    const thruHW = Math.max(thru.measure?.left?.pavementHW || 0, thru.measure?.right?.pavementHW || 0)
+    const zoneR = thruHW + OVL_MARGIN
+    const cumT = arcLengths(thru.points)
+    const perp = (p) => closestOnPolyline(p, thru.points, cumT).d
+    // outV = the first vertex walking inward that is OUTSIDE the intersection
+    // footprint. The natural approach beyond it is KEPT; the straight extension
+    // replaces only the in-zone (kinked) vertices — span ≈ the zone width.
+    let ai = tip
+    while (ai + step >= 0 && ai + step < P.length && perp(P[ai]) < zoneR) ai += step
+    if (ai === tip || perp(P[ai]) < zoneR) return null   // chain never leaves the zone → give up
+    const outV = P[ai]
+    // prevailing body tangent, read over ~OVL_DIR of chain from outV further into the body
+    let ri = ai, back = 0
+    while (ri + step >= 0 && ri + step < P.length && back < OVL_DIR) { back += Math.hypot(P[ri + step][0] - P[ri][0], P[ri + step][1] - P[ri][1]); ri += step }
+    let bx = outV[0] - P[ri][0], bz = outV[1] - P[ri][1]
+    const bl = Math.hypot(bx, bz) || 1; bx /= bl; bz /= bl
+    // the leg's ACTUAL trajectory into its tip (first distinct inward vertex → tip)
+    let tn = tip + step
+    while (tn >= 0 && tn < P.length && Math.hypot(P[tn][0] - P[tip][0], P[tn][1] - P[tip][1]) < 1e-6) tn += step
+    if (tn < 0 || tn >= P.length) return null
+    let tx = P[tip][0] - P[tn][0], tz = P[tip][1] - P[tn][1]
+    const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl
+    // KINK TEST: if the tip approach already agrees with the body direction (no
+    // terminal kink toward the shared node), the leg runs where it points — it did
+    // NOT need fixing, leave it natural (Jacob: "that leg didn't need fixing").
+    if (Math.acos(Math.max(-1, Math.min(1, bx * tx + bz * tz))) * 180 / Math.PI < OVL_KINK_DEG) return null
+    // extend the clean body STRAIGHT from outV to the through-road — no interpolated
+    // crossing (that put a vertex on the kinked segment → a subtle bend in the edge).
+    const hit = rayHitPolyline(outV, [bx, bz], thru.points)
+    if (!hit) return null
+    const body = tipAtStart ? P.slice(ai) : P.slice(0, ai + 1)   // natural chain, outside the zone
+    return { sp: tipAtStart ? [hit, ...body] : [...body, hit], tip: hit }
+  }
+  for (const { aIdx, bIdx } of dividedPairs) {
+    const corr = ribbonStreets[aIdx].phase?.corridorName || ribbonStreets[aIdx].name
+    for (const endA of ['start', 'end']) {
+      const pa = ribbonStreets[aIdx].points, pb = ribbonStreets[bIdx].points
+      const tipA = endA === 'start' ? pa[0] : pa[pa.length - 1]
+      // B's same-side tip = whichever of B's endpoints is nearer A's tip
+      const bStartD = Math.hypot(pb[0][0] - tipA[0], pb[0][1] - tipA[1])
+      const bEndD = Math.hypot(pb[pb.length - 1][0] - tipA[0], pb[pb.length - 1][1] - tipA[1])
+      const endB = bStartD <= bEndD ? 'start' : 'end'
+      const tipB = endB === 'start' ? pb[0] : pb[pb.length - 1]
+      if (Math.hypot(tipA[0] - tipB[0], tipA[1] - tipB[1]) > NODE_TOL) continue   // tips not converged this end
+      const node = [(tipA[0] + tipB[0]) / 2, (tipA[1] + tipB[1]) / 2]
+      // the node must be an INTERIOR vertex of a through-road outside this corridor
+      let thru = null
+      for (const si of vertexStreets.get(vKey(tipA)) || vertexStreets.get(vKey(node)) || []) {
+        if (si === aIdx || si === bIdx) continue
+        const S = ribbonStreets[si]
+        if ((S.phase?.corridorName || S.name) === corr) continue
+        if (S.gradeSeparated) continue
+        if (isInteriorVertexOf(node, si)) { thru = S; break }
+      }
+      if (!thru) continue   // not the divided-into-through-road class — leave emergent
+      for (const [idx, tas] of [[aIdx, endA === 'start'], [bIdx, endB === 'start']]) {
+        const r = correctedTipChain(idx, tas, thru, node)
+        if (r) { ribbonStreets[idx].strokePoints = r.sp; faceThruSplits.push({ thruSkel: thru.skelId || thru.name, pt: r.tip }); overlayCount++ }
+      }
+    }
+  }
+  if (overlayCount) console.log(`    [through-edge overlay] straightened ${overlayCount} carriageway tip(s) at divided→through-road nodes (strokePoints; centerline untouched)`)
+
   const medians = []
   const noseRecs = []   // [E3.1] { idx, end: 'start'|'end', nose: m-from-that-end } per pinching transition end
   let medianSkips = 0, mergeCount = 0, crossingCount = 0
   for (const { aIdx, bIdx } of dividedPairs) {
     const A = ribbonStreets[aIdx]
     const B = ribbonStreets[bIdx]
-    const a = A.points.map(p => [p[0], p[1]])
-    const b = B.points.map(p => [p[0], p[1]])
+    // [through-edge overlay] build the median lens off the prevailing-direction
+    // CORRECTED chains (strokePoints) where present, so a divided→through-road
+    // pinch never stamps a degenerate merge needle. Centerline (.points) stays true.
+    const a = (A.strokePoints || A.points).map(p => [p[0], p[1]])
+    const b = (B.strokePoints || B.points).map(p => [p[0], p[1]])
     // Orient B co-directional with A so stations correspond end-to-end.
     const dot = (a[a.length - 1][0] - a[0][0]) * (b[b.length - 1][0] - b[0][0]) +
                 (a[a.length - 1][1] - a[0][1]) * (b[b.length - 1][1] - b[0][1])
@@ -4182,8 +4313,18 @@ export function deriveLayers(highways) {
       // canonical through-road id (continuesAs union) — the curb cornerAt + Section
       // ADA bid read this so a name-transition seam is a through-node, not a corner.
       ...(st.roadId != null ? { roadId: st.roadId } : {}),
+      // [BRIEF-terminal-node-sweep] the frozen IDENTITY (throughId) + per-endpoint
+      // terminal/through fact, surviving the whitelist so the SHAPE cornerAt +
+      // FILL corner/ADA bid read it post-Wall. throughId spans a spine↔carriageway
+      // divided transition that roadId deliberately does not (widths stay unsmeared).
+      ...(st.throughId != null ? { throughId: st.throughId } : {}),
+      ...(st.through ? { through: st.through } : {}),
       name: st.name,
       points: st.points,
+      // [through-edge overlay] the prevailing-direction CORRECTED chain for the
+      // construction (asphalt/curb/faces read this); absent on all but the
+      // divided→through-road carriageway tips. `points` above stays the survey.
+      ...(st.strokePoints ? { strokePoints: st.strokePoints } : {}),
       // [curve-primitive] sparse, self-contained curve segments (HANDOFF-curve-primitive-
       // skeleton.md) — the editor's "few nodes" + the concentric curb read these; `points`
       // above is their dense tessellation (so ix/legacy consumers stay byte-identical).
@@ -4290,7 +4431,42 @@ export function deriveLayers(highways) {
   // (L2 = D3, deferred to §HARDENING); the raw-OSM LU faces
   // (ribbons.faces) are untouched (C5 = D4).
   {
-    let faceStreets = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
+    // [through-edge overlay] The face walk builds off the prevailing-direction
+    // CORRECTED chains (strokePoints) so a divided→through-road median face does
+    // NOT pinch to a needle at the shared node; the through-roads are SPLICED at
+    // the corrected landing points so the carriageway tips SHARE a vertex with
+    // them (else the tips dangle and the median face won't close). Serialized
+    // `points` (the survey centerline) is untouched — this is the frozen-tile
+    // geometry only. (BRIEF-through-road-edge-straight.)
+    const splitsByThru = new Map()
+    for (const { thruSkel, pt } of faceThruSplits) {
+      if (!splitsByThru.has(thruSkel)) splitsByThru.set(thruSkel, [])
+      splitsByThru.get(thruSkel).push(pt)
+    }
+    const spliceHits = (pts, hits) => {
+      const out = pts.map(p => [p[0], p[1]])
+      for (const h of hits) {
+        if (out.some(p => Math.hypot(p[0] - h[0], p[1] - h[1]) < 1e-6)) continue
+        let bi = -1, bd = Infinity
+        for (let i = 0; i < out.length - 1; i++) {
+          const a = out[i], b = out[i + 1]
+          const ex = b[0] - a[0], ez = b[1] - a[1], L2 = ex * ex + ez * ez || 1
+          const t = Math.max(0, Math.min(1, ((h[0] - a[0]) * ex + (h[1] - a[1]) * ez) / L2))
+          const d = Math.hypot(h[0] - (a[0] + ex * t), h[1] - (a[1] + ez * t))
+          if (d < bd) { bd = d; bi = i }
+        }
+        if (bi >= 0) out.splice(bi + 1, 0, [h[0], h[1]])
+      }
+      return out
+    }
+    let faceStreets = ribbonsLayer.streets
+      .filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
+      .map(s => {
+        if (s.strokePoints) return { ...s, points: s.strokePoints }
+        const skel = s.skelId || s.name
+        if (splitsByThru.has(skel)) return { ...s, points: spliceHits(s.points, splitsByThru.get(skel)) }
+        return s
+      })
     // [F — EDGE OF MAP] Close the perimeter block faces. The street network
     // extends PAST the circular boundary (frame extent ≫ silhouette radius), so
     // an undecorated extractFaces walk leaves the region between the outermost

@@ -5,13 +5,13 @@
       "name": "Clayton Road",
       "measure": {
         "left": {
-          "pavementHW": 13.704725833849837,
+          "pavementHW": 9.996683614267441,
           "treelawn": 1.22,
           "sidewalk": 2.44,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 10.95875842693481,
+          "pavementHW": 9.996683614267441,
           "treelawn": 1.22,
           "sidewalk": 2.44,
           "terminal": "sidewalk"
@@ -30,6 +30,24 @@
         },
         "right": {
           "pavementHW": 2.4534936657247357,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "south-seminary-terrace-3": {
+      "name": "South Seminary Terrace",
+      "measure": {
+        "left": {
+          "pavementHW": 8.322498800260513,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.49,
           "treelawn": 1.52,
           "sidewalk": 1.52,
           "terminal": "sidewalk"

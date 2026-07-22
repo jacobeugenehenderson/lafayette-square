@@ -148,7 +148,7 @@ Builds the planar graph from shared vertices of `streets[].points` (excludes `gr
 ### P5 · Curb SHAPE (`offsetRingVariable` + `filletRing`)
 Per tile, per edge: `iA = chain ⊕ pavementHW` (per-side, per-run via `runMeasure`); corners rounded once by `filletRing` (radius from the 3-tier corner-R kit). jtMiter throughout. Freezes at the Wall.
 - **🔧 Optimize:** the robust-offset program (D6a); the curve-fit cleanliness (`STREET_SMOOTH`, ix-safe on a copy).
-- **🩺 Troubleshoot:** the divided false corner (pair the corridor outer-edge legs, not carriageway stubs — `SKELETON §5e`); width-step doglegs at through-nodes (datum data — `SKELETON §5a/§5g`); thorns when the inward offset folds (G12).
+- **🩺 Troubleshoot:** the divided false corner (pair the corridor outer-edge legs, not carriageway stubs — `SKELETON §5e`); width-step doglegs at through-nodes (datum data — `SKELETON §5a/§5g`); the through-edge needle where a divided road T's into a through-road on a shared OSM node (straighten ONLY the kinked carriageway leg through the junction box via the `derive.js` prevailing-direction overlay / `strokePoints` — `SKELETON §5h`, LANDED); thorns when the inward offset folds (G12).
 - **🗣 Explain:** "The curb is the street's centerline stepped outward a fixed distance, parallel everywhere — fix the line and the curb follows."
 
 ### ⟦WALL⟧ · Freeze → `shape.json`

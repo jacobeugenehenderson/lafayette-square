@@ -275,6 +275,23 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 
 **Why this is principled, not a colinear hack.** The run boundary is the `fe`'s own `segOrds`, produced by the block-ring walker's **different-street / same-street corner test** — the very test the offset's `cornerAt` uses (`a !== b` ⇒ real corner; same street both sides ⇒ through-node). REAL corners own **separate `fe`s** with disjoint `segOrds`, so two avenue blocks split by a true intersection still take **independent** widths — no over-unification. (Headless proof: 152 corner-separated frontages keep distinct customs keys; every `segOrd` belongs to exactly one `fe`.)
 
+### 5h. ⭐⭐ THE THROUGH-EDGE STAYS STRAIGHT — a divided road T-ing into a through-road (2026-07-22, LANDED)
+
+*(De Mun × Clayton, HPDM. Jacob's app-eye gated every step; the fix is a CONSTRUCTION overlay, the frame is untouched — §5d's "the outer curb runs straight through" made universal + enforced. Eye-confirmed.)*
+
+**The class.** A divided corridor whose two carriageway tips CONVERGE onto ONE shared OSM node that is an *interior* vertex of a through-road (both carriageways **and** the cross-street meet at a single dot). The survey's shared-node convergence pinches the median lens to `gap→0`, so the E2 nose-taper `stamp('merge', …)` collapses to a **degenerate duplicated-vertex needle** sitting on the through-road's curb line — the eye reads it as the through-edge *bulging* (a hump-then-diagonal + a needle-thin median sliver). Niche trigger (needs divided-corridor **and** shared-node convergence at a through-road), but recurs in any town with OSM's shared-node habit.
+
+**The invariant (kit-wide).** A through-road's curb edge is a **straight parallel offset of its own chain across the whole through-node — no cluster, no hump, no diagonal — whatever terminates at the mouth.** The terminating road corners INTO the straight through-edge; the median is the clean leftover that dies at it. (§5d/§5e, made universal and made a checkable invariant.)
+
+**The fix — the PREVAILING-DIRECTION OVERLAY (`derive.js`, `strokePoints`).** Virtually continue each *kinked* carriageway straight along its prevailing (body) direction to the through-road, so the two tips land at SEPARATE points and the median never pinches. The four rules that made it correct — all from the app-eye, not headless math (`[[feedback_proxy_render_is_not_the_operator_eye]]`):
+- **Construction overlay, NEVER a survey edit.** `st.strokePoints` (the corrected chain) feeds the E2 median lens + `faceStreets` (the frozen tile) + tileGround's asphalt/curb; `st.points` (the navy centerline) stays the true survey. The reverted 2026-07-21 frame-straighten RELOCATED the endpoint + dead-ended the carriageway (deg-3 T → deg-1); this never touches the chain. `[[feedback_survey_chains_immutable_corner_is_stroke]]`.
+- **Only the intersection-zone points move.** The straightened span = the through-road's asphalt footprint (perp-distance to its centerline < its half-width + margin) — the junction box — never the natural approach outside it (Jacob: *"just the points in the intersection zone"*). A node-*distance* test is wrong: it skips *past* the dense near-node vertices → a 48 m over-reach on a sparse leg.
+- **Only a genuinely-KINKED leg is corrected.** If a leg's tip approach already agrees with its body direction (<30°), it runs where it points — it did NOT need fixing, leave it natural (Jacob: *"that leg didn't need fixing"*). A straight leg into the node stays; only its kinked mate moves. The median opens because the two legs land apart.
+- **One straight extension from the zone-exit vertex, no interpolated crossing** (an interpolated boundary point lands on the kinked segment → a subtle bend in the stroked edge).
+- **Connectivity:** the corrected tip is spliced onto the through-road's `faceStreets` chain (a shared vertex) so the median face CLOSES against the through-road's segment instead of pinching to a point.
+
+**Surgical + regression-clean.** HPDM: 5 tips map-wide. LS: **1 tip** (`geyer-avenue-2`) — the four park corners are **UNTOUCHED** (they run straight in, no kink); `correctness-detector` CLEAN junctions unchanged (75→75), +2 sub-8m² cosmetic slivers at the one deliberately-fixed node. **Live home: `derive.js` `correctedTipChain` + the through-edge overlay pass** (consumed by E2's `a`/`b`, `faceStreets`, and the `strokePoints` output field). Trail: `_archive/BRIEF-through-road-edge-straight-LANDED-2026-07-22.md`.
+
 ---
 
 ## 6. The doctrine, in one place
