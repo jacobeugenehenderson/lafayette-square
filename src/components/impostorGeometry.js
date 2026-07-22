@@ -315,6 +315,93 @@ export function buildOverheadBandDisc(rec, opts = {}) {
   return g
 }
 
+/**
+ * buildHeroImpostorCard — the HERO impostor's carrier: a VERTICAL tessellated quad
+ * standing in the local XY plane (facing +Z), the side-on twin of buildOverheadBand-
+ * Disc's flat horizontal quad. Skinned with a side-on canopy capture
+ * (captureImpostor.js#captureHeroBand). The runtime billboards it about Y to face the
+ * camera; each INSTANCE is assigned ONE of the N baked azimuths by hash — for
+ * per-species VARIETY (88 sugar maples must not be 88 identical cards), NOT a
+ * view-dependent swap (Jacob 2026-07-17: the octahedral swap is wasted bulk here).
+ * The azimuth is fixed per instance → stable, no per-frame swap. For a DEPTH layer
+ * the card sits at a local-Z offset so leaf shells + the rear bark layer read as parallax.
+ *
+ * Canopy-only: the card spans the SAME square capture frame the side-on ortho used —
+ * half = max(canopyRadius+pad, canopyHeight/2+pad), centred on the canopy mid-height
+ * — so the baked PNG maps 1:1. Full [0,1] UVs cover the square; alphaTest alone
+ * defines the leaf silhouette (a rectangular card, exactly like the overhead disc's
+ * full-frame quad — a shape-cut plane clipped the off-centre canopy).
+ *
+ * Carries aOverhead + aTreeHeightNorm so the SAME injectOverheadStamp material
+ * relights it (albedo × ambient+sun·AO) AND sways it base-anchored off the shared
+ * treeSwayUniforms — the whole canopy leans + gusts sideways, top-most most. No
+ * dome, no ruche: it's a flat billboard, the mass breathes, the tall geometry
+ * anchors (foundation doctrine) carry the articulated truth.
+ *
+ * @param {object} rec   { heightM, canopyRadiusM, canopyBaseNorm }
+ * @param {object} opts  { depthLoFrac=0, depthHiFrac=1, grid, pad }
+ */
+export function buildHeroImpostorCard(rec, opts = {}) {
+  if (!rec) return null
+
+  const H = rec.heightM || 14
+  const R = Math.max(0.5, rec.canopyRadiusM || 5)
+  const pad = opts.pad ?? 1.5                       // must match captureImpostor's FRAME_PAD_M
+  const canopyBaseY = Math.min(H - 0.1, Math.max(0, (rec.canopyBaseNorm ?? 0.35) * H))
+  const maxY = H
+  const halfW = R + pad
+  const halfH = Math.max(0.5, (maxY - canopyBaseY) / 2 + pad)
+  const half = Math.max(halfW, halfH)               // square frame (mirrors the capture)
+  const midY = (canopyBaseY + maxY) / 2
+
+  // Card depth → local-Z offset. cardDepthFrac 0=front (toward viewer) → 1=back; the
+  // canopy depth spans ±R about centre, so z = (1 − 2·d)·R separates the layers. This
+  // is DECOUPLED from the capture's depth clip: the bark layer captures full-depth but
+  // its card sits at the REAR (d=1), so the trunk reads only from behind the leaves.
+  const d = Math.min(1, Math.max(0, opts.cardDepthFrac ?? ((opts.depthLoFrac ?? 0) + (opts.depthHiFrac ?? 1)) / 2))
+  const z = (1 - 2 * d) * R
+
+  const N = Math.max(2, Math.round(opts.grid ?? 20))   // grid cells per side (wind flutter tessellation)
+
+  const positions = []
+  const uvs = []
+  const aOverhead = []
+  const aTreeHeightNorm = []
+  const indices = []
+
+  for (let iy = 0; iy <= N; iy++) {
+    for (let ix = 0; ix <= N; ix++) {
+      const u = ix / N, vy = iy / N
+      const wx = (u * 2 - 1) * half
+      const wy = midY + (vy * 2 - 1) * half
+      positions.push(wx, wy, z)
+      uvs.push(u, vy)                                 // full [0,1] → the full square capture
+      aOverhead.push(1)
+      // Ground-anchored height norm → the card sways base-anchored (top-most vertices
+      // move most, canopy leans as a mass). Sitting high off the ground, its norms are
+      // large → a lively canopy sway, not a rigid slide.
+      aTreeHeightNorm.push(Math.min(1, Math.max(0, wy / Math.max(1e-3, maxY))))
+    }
+  }
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const a = iy * (N + 1) + ix, b = a + 1, cc = a + (N + 1), d = cc + 1
+      indices.push(a, cc, b, b, cc, d)
+    }
+  }
+
+  if (positions.length === 0) return null
+
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
+  g.setIndex(indices)
+  g.computeBoundingSphere()
+  return g
+}
+
 // Deterministic hash in [0,1) for the procedural branch layout (no Math.random,
 // so the skeleton is stable across rebuilds; per-instance variety comes from the
 // instance rotY, not a reseed).

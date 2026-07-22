@@ -29,6 +29,7 @@ import {
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg } from './OverheadTrees.jsx'
+import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
 import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -439,7 +440,10 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
       const inst = instances[i]
       T.makeTranslation(inst.x, inst.y || 0, inst.z)
       R.makeRotationY(inst.rotY || 0)
-      arr[i] = T.multiply(R)
+      // clone(): multiply() mutates + returns the receiver (T), so an un-cloned
+      // arr[i] would alias the one scratch matrix and every instance would land
+      // on the LAST placement. Same idiom as OverheadSpecies / VariantInstances.
+      arr[i] = T.multiply(R).clone()
     }
     return arr
   }, [instances])
@@ -646,6 +650,22 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     return atlas?.manifest?.impostorBySpecies || null
   }, [atlas?.manifest?.impostorBySpecies])
 
+  // HERO canopy-impostor foundation (Phase 2). The manifest's heroImpostorBySpecies
+  // (baked side-on, all-azimuth variety pool) is the FOUNDATION: every tree paints as
+  // a canopy impostor by default; geometry is layered onto the TALL ∩ FOREGROUND trees
+  // (Jacob 2026-07-17). The split is stable at load (dbh proxy for height now; the
+  // pan-distance band folds in with the bake), NOT a per-frame camera swap.
+  const heroImpostorRecords = useMemo(() => atlas?.manifest?.heroImpostorBySpecies || null, [atlas?.manifest?.heroImpostorBySpecies])
+  const heroFoundationEnabled = !!heroImpostorRecords && scene?.heroImpostor !== false && !treeDbg('noHeroImpostor')
+  // Geometry budget = fraction of trees (tallest-first by dbh) that KEEP mesh geometry;
+  // the rest drop to the impostor foundation. A pyramid bracket / the Phase-4 Stage
+  // knob. Tunable live via ?heroGeom=0.15. (The "∩ foreground" axis lands with the bake.)
+  const heroGeomFraction = useMemo(() => {
+    const q = new URLSearchParams(window.location.search).get('heroGeom')
+    const v = q != null ? parseFloat(q) : 0.15
+    return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.15
+  }, [])
+
   // Geometry representation is a per-placement ROLE decided at BAKE, NOT a live
   // camera-distance/altitude swap (role-at-bake doctrine, 2026-06-25 — see
   // [[project_tree_lod_role_at_bake_not_distance]] + TREE-GROUND-ELEVATION-FORENSIC.md).
@@ -728,8 +748,20 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     const lodForRole = (_inst) => 'lod1'   // mesh role → full-trunk lod1
     const lodUrlOf = (o, inst) => (o && o.lods && o.lods[lodForRole(inst)]) || (o && o.url)
 
+    // HERO foundation split threshold — the dbh cut so the TALLEST `heroGeomFraction`
+    // keep mesh geometry (the anchors) and the rest drop to the impostor foundation.
+    // Computed from the placements' own dbh distribution → scene-generic (no magic px).
+    let heroDbhCut = Infinity
+    if (heroFoundationEnabled && heroGeomFraction < 1) {
+      const dbhs = bake.instances.map(i => Number(i.dbh) || 0).sort((a, b) => a - b)
+      const idx = Math.floor((1 - heroGeomFraction) * (dbhs.length - 1))
+      heroDbhCut = dbhs[Math.max(0, Math.min(dbhs.length - 1, idx))]
+    }
+
     const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
     const impostors = new Map()  // species -> instances[]  (impostor role)
+    const heroImpostors = new Map()  // species -> instances[]  (hero canopy foundation)
+    let heroFoundationCount = 0
     // ALL non-culled instances by rendered species — the WHOLE-SCENE overhead
     // (Browse) path swaps every tree to its species' 3-slice snapshot at once, so
     // it groups by species independent of the mesh/impostor role split below.
@@ -757,22 +789,36 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       if (!bySpecies.has(renderSpecies)) bySpecies.set(renderSpecies, [])
       bySpecies.get(renderSpecies).push(inst)
 
-      // Hero-framing role cull. `heroTier` is a verdict about the hero pan's
-      // camera and nothing else, so it gates ONLY the mesh/impostor paths
-      // below — which are the hero render. Browse is a free camera on the
-      // overhead path above and must never inherit it.
-      if (inst.heroTier === 'cull') { heroCulled++; return }
-
-      // Impostor ROLE → stamped-2D billboard path. One bucket per rendered
-      // species; the per-species geometry samples that species' atlas rects.
-      if (inst.heroTier === 'impostor' && impostorRecords?.[renderSpecies]) {
-        if (!impostors.has(renderSpecies)) impostors.set(renderSpecies, [])
-        impostors.get(renderSpecies).push(inst)
-        impostorCount++
-        return
+      // HERO canopy-impostor FOUNDATION (Phase 2) — this REPLACES the old hero-pan
+      // prominence tiers (mesh/opaque/impostor/cull) for the whole neighborhood. Every
+      // tree paints as a side-on canopy card UNLESS it's tall enough (dbh ≥ cut) to earn
+      // geometry (the sprinkled anchors → fall through to mesh). Crucially it runs
+      // BEFORE — and RETIRES — the legacy `heroTier==='cull'` verdict, which was scored
+      // for the hero-pan shot and over-culled ~69% of placements (the "drastic reduction"
+      // + bare shadow-spots). The foundation paints the whole neighborhood; impostors are
+      // cheap billboards, so nothing gets dropped. (∩-foreground pan-distance axis: later.)
+      if (heroFoundationEnabled && heroImpostorRecords) {
+        if (heroImpostorRecords[renderSpecies] && (Number(inst.dbh) || 0) < heroDbhCut) {
+          if (!heroImpostors.has(renderSpecies)) heroImpostors.set(renderSpecies, [])
+          heroImpostors.get(renderSpecies).push(inst)
+          heroFoundationCount++
+          return
+        }
+        // else → mesh (tall anchor, or a species with no baked hero record). No cull.
+      } else {
+        // Legacy prominence behavior (no foundation) — the hero-pan cull + impostor role.
+        if (inst.heroTier === 'cull') { heroCulled++; return }
+        if (inst.heroTier === 'impostor' && impostorRecords?.[renderSpecies]) {
+          if (!impostors.has(renderSpecies)) impostors.set(renderSpecies, [])
+          impostors.get(renderSpecies).push(inst)
+          impostorCount++
+          return
+        }
       }
 
-      // Mesh ROLE (or impostor with no baked record → fall back to real geo).
+      // Mesh ROLE — the tall anchors (foundation on), or the full mesh path (foundation
+      // off; the legacy cull/impostor role handled above). Impostor with no baked record
+      // also falls through here → real geometry, never blank.
       const url = inRoster ? lodUrlOf(inst, inst) : lodUrlOf(sub, inst)
       // Cache-bust GLB URLs against the atlas manifest's generatedAt so an
       // open Preview/Stage tab picks up rewritten UVs after a rebake instead
@@ -805,9 +851,10 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       for (const tid of byTile.keys()) tileSet.add(tid)
     }
     const overheadTotal = [...bySpecies.values()].reduce((n, a) => n + a.length, 0)
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
-    return { meshGroups: m, impostors, bySpecies }
-  }, [bake, maxVariants, atlas, lookName, impostorRecords])
+    const heroFoundationTotal = [...heroImpostors.values()].reduce((n, a) => n + a.length, 0)
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp, dbhCut=${heroDbhCut === Infinity ? 'off' : heroDbhCut.toFixed(2)}) impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    return { meshGroups: m, impostors, bySpecies, heroImpostors }
+  }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled, heroGeomFraction])
 
   // ── Cold-load reconcile flush (the REAL fix) ───────────────────────────
   // The Canvas runs frameloop="demand". On a COLD load each per-variant
@@ -902,19 +949,36 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   )
   const overheadAssets = useOverheadAssets({ enabled: overheadWarm, lookName, overheadBySpecies, species: overheadSpeciesList })
 
+  // HERO canopy-impostor foundation assets — the side-on variety pool, loaded for
+  // every species that has foundation instances. Eager (it's hero-critical, not a
+  // Browse-only deferral like overhead): the impostor sea IS the first frame.
+  const heroSpeciesList = useMemo(
+    () => (groups?.heroImpostors ? Array.from(groups.heroImpostors.keys()) : []),
+    [groups],
+  )
+  const heroAssets = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroSpeciesList })
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
-  const { meshGroups, impostors, bySpecies } = groups
+  const { meshGroups, impostors, bySpecies, heroImpostors } = groups
 
   return (
     <>
       <SwayDriver />
       <TierDriver />
-      <OverheadLightDriver enabled={overheadEnabled} />
+      <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} />
       {/* All-mesh (+ hero impostor) render — hidden as a GROUP when the camera pulls
           up to plan height and the whole scene swaps to the overhead snapshot. */}
       <group visible={!overheadMode}>
+      {/* HERO canopy-impostor FOUNDATION: every non-anchor tree as a billboarded
+          side-on card (leaf shells + rear woody), per-instance azimuth variety. */}
+      {heroAssets && !treeDbg('noTrees') && Array.from(heroImpostors.entries()).map(([species, instances]) => {
+        const asset = heroAssets.get(species)
+        return asset
+          ? <HeroImpostorSpecies key={`hero#${species}`} asset={asset} instances={instances} visible={!overheadMode} />
+          : null
+      })}
       {/* Mesh-role trees: real 3D geometry (lod1). */}
       {!treeDbg('noMesh') && !treeDbg('noTrees') && Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {

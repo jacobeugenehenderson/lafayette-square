@@ -145,6 +145,37 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     cam.position.set(0, camY, 0)
     cam.up.set(0, 0, -1)
     cam.lookAt(0, 0, 0)
+  } else if (opts.sideOn) {
+    // HERO (low side-on) capture — the CANOPY-ONLY leaf mass seen level from the
+    // side, the skin for the hero canopy-band billboard (HANDOFF-hero-impostor-
+    // foundation.md). The 90°-rotated twin of the overhead band cut: overhead looks
+    // DOWN and clips HEIGHT bands; hero looks HORIZONTAL and clips DEPTH shells.
+    //
+    //  • Canopy-only: the frustom is framed on [canopyBaseY, maxY] (trunk excluded),
+    //    centred on the canopy mid-height, looked at DEAD-HORIZONTAL (Jacob's pitch
+    //    call 2026-07-17 — cleanest side elevation, no foreshortening).
+    //  • Azimuth: the camera orbits the tree about Y by opts.sideOn.azimuthRad, so N
+    //    azimuths capture N sides; the runtime billboard shows the one nearest the
+    //    view direction (classic azimuthal impostor).
+    //  • Depth shell: the view axis is horizontal, so a world point at view-distance
+    //    d renders only when d ∈ [near,far]. The canopy spans depth [D−R, D+R] about
+    //    the orbit centre; slicing that into M shells gives front/back parallax
+    //    layers — the exact overhead height-band trick, turned on its side.
+    const { azimuthRad = 0, canopyBaseY = 0, maxY = heightM, depthLoFrac = 0, depthHiFrac = 1 } = opts.sideOn
+    const R = Math.max(0.5, canopyRadiusM)
+    const halfW = R + FRAME_PAD_M
+    const halfH = Math.max(0.5, (maxY - canopyBaseY) / 2 + FRAME_PAD_M)
+    const half = Math.max(halfW, halfH)                 // square frame + square RT (like overhead)
+    const midY = (canopyBaseY + maxY) / 2
+    const D = half * 4 + 50                              // orbit radius (arbitrary for ortho)
+    // Depth shell → near/far clip along the (horizontal) view axis. The canopy's
+    // depth extent about the centre is ±R; fractions [0,1] map front(D−R)→back(D+R).
+    const near = Math.max(0.01, D - R + depthLoFrac * 2 * R)
+    const far = Math.max(near + 0.05, D - R + depthHiFrac * 2 * R)
+    cam = new THREE.OrthographicCamera(-half, half, half, -half, near, far)
+    cam.position.set(Math.sin(azimuthRad) * D, midY, Math.cos(azimuthRad) * D)
+    cam.up.set(0, 1, 0)
+    cam.lookAt(0, midY, 0)
   } else {
     // Fit an ortho frustum to the tree's real box: width = 2·canopyRadius,
     // height = heightM, both padded. The capture frame is wider of the two so the
@@ -192,6 +223,21 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   const prevOutputColorSpace = gl.outputColorSpace
   const prevShadowEnabled = gl.shadowMap.enabled
   const prevShadowType = gl.shadowMap.type
+  // Capture mask (hero leaf/bark isolation) — flip the shared material's
+  // uCaptureMask for THIS pass only (1 = leaf-only, 2 = bark-only, 0/absent =
+  // whole tree). Reset in finally so no other render sees it. The overhead +
+  // front-on paths never pass it → unaffected.
+  let maskUniform = null, prevMask = 0
+  const wantMask = opts.captureMask || 0
+  if (wantMask) {
+    glbScene.traverse((o) => {
+      if (maskUniform || !o.isMesh) return
+      const u = o.material?.userData?.shader?.uniforms?.uCaptureMask
+      if (u) maskUniform = u
+    })
+    if (maskUniform) { prevMask = maskUniform.value; maskUniform.value = wantMask }
+    else console.warn('[captureImpostor] uCaptureMask not found (shader not compiled yet?) — capturing whole tree')
+  }
 
   try {
     // Capture in a KNOWN, neutral state: no tone-mapping (the texture is the
@@ -224,6 +270,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     gl.outputColorSpace = prevOutputColorSpace
     gl.shadowMap.enabled = prevShadowEnabled
     gl.shadowMap.type = prevShadowType
+    if (maskUniform) maskUniform.value = prevMask
   }
 
   // Detach the GLB so disposing the throwaway scene's lights doesn't take the
@@ -476,6 +523,144 @@ export function captureOverheadBand(gl, prep, i) {
   albedoTex.name = `overhead-albedo:${key}`
   aoTex.name = `overhead-ao:${key}`
   return { key, albedoTex, aoTex, yLo, yHi, yLoNorm: (yLo - minY) / H, yHiNorm: (yHi - minY) / H }
+}
+
+// ── HERO canopy impostor (side-on) — the 90°-rotated twin of the overhead bands ──
+// Where overhead slices HEIGHT bands from directly above, the hero slices DEPTH
+// (leaf shells + one rear woody layer) from the side, across N azimuths, canopy-only.
+// The N azimuths are NOT a view-dependent swap (wasted bulk, deferred — Jacob
+// 2026-07-17); they are the per-instance VARIETY pool — each of a species' instances
+// is assigned one fixed azimuth so 88 sugar maples aren't 88 identical cards. The
+// runtime carrier is a vertical billboard (impostorGeometry.js#buildHeroImpostorCard),
+// not a flat disc. Same two-channel relight (albedo + AO) → the hero canopy tracks the
+// weather like the overhead, and the same one-render-per-frame stepping keeps it crash-safe.
+
+// Hero capture resolution. The impostor is the FILL between the tall geometry
+// anchors and, in the foundation model, is seen CLOSER + across more angle than a
+// distant sea — so quality carries. We do NOT trade it away to hedge the
+// azimuth×shell count (Jacob 2026-07-17: "don't summarily sacrifice quality"); the
+// weight answer is KTX2/Basis compression of the baked pages, not a starved capture.
+// 2048² albedo (push toward native — Jacob 2026-07-17: still short at 1024) + 512²
+// AO (smooth occlusion → half-res invisible). KTX2 carries the wire/VRAM weight.
+const HERO_ALBEDO_SIZE = 2048
+const HERO_AO_SIZE = 512
+
+// Leaf vs woody classification for the capture-pass isolation — the SAME signal
+// OverheadBaker + SpecimenViewport use (per-mesh atlasKind, name-regex fallback).
+// Drives per-mesh VISIBILITY isolation (recompile-independent), belt-and-suspenders
+// with the per-vertex uCaptureMask shader discard.
+const HERO_LEAF_RE = /leaf|leaves|foliage|frond|needle/i
+function isLeafMesh(o) {
+  const k = o.geometry?.userData?.atlasKind ?? o.userData?.atlasKind
+  if (k === 'leaf') return true
+  if (k === 'bark') return false
+  const mn = Array.isArray(o.material) ? o.material.map((m) => m?.name).join(' ') : o.material?.name
+  return HERO_LEAF_RE.test(o.name || '') || HERO_LEAF_RE.test(mn || '')
+}
+
+/**
+ * prepareHeroBands — clone + materialize a tree for the hero side-on capture and
+ * lay out the flat shot list (azimuths × depth-shells). Mirrors prepareOverheadBands:
+ * the clone SHARES geometry (no 2nd GPU copy) and `alreadyStamped` skips re-stamping
+ * the live preview's buffers. Canopy-only: the vertical frame is [canopyBaseY, maxY].
+ *
+ * @param {THREE.Object3D} gltfScene    the tree scene (live preview or a fresh load)
+ * @param {THREE.Material}  treeMaterial the shared atlas material
+ * Layer structure (Jacob 2026-07-17): the PARALLAX lives in the LEAVES, the woody
+ * structure does NOT get depth-sliced. So per azimuth we lay out `shells` LEAF-ONLY
+ * depth slices (captureMask 1) PLUS exactly ONE BARK-ONLY layer (captureMask 2, full
+ * depth, un-sliced) that sits behind the leaves and matches the real species.
+ *
+ * @param {object} opts    { canopyRadiusM, azimuths=6, shells=2, alreadyStamped }
+ * @returns {{ scene, heightM, rM, minY, maxY, canopyBaseY, azimuths, shells, shots }|null}
+ *   shots (flat, one capture each): { azIdx, azimuthDeg, azimuthRad, kind:'leaf'|'bark',
+ *   captureMask, shellIdx, shellCount, depthLoFrac, depthHiFrac }
+ */
+export function prepareHeroBands(gltfScene, treeMaterial, { canopyRadiusM, azimuths = 6, shells = 2, alreadyStamped = false } = {}) {
+  if (!gltfScene || !treeMaterial) return null
+  const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial, { skipStamp: alreadyStamped })
+  const rM = Math.max(1, canopyRadiusM || 5)
+  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseLocal(scene)
+  const N = Math.max(1, Math.round(azimuths))
+  const M = Math.max(1, Math.round(shells))
+  const shots = []
+  for (let a = 0; a < N; a++) {
+    const azimuthRad = (a / N) * Math.PI * 2
+    const azimuthDeg = Math.round((azimuthRad * 180) / Math.PI)
+    // LEAF shells — leaf-only, depth-sliced front→back = the parallax. cardDepthFrac
+    // (0=front → 1=back) places the runtime card; here it's the slice centre.
+    for (let s = 0; s < M; s++) {
+      shots.push({
+        azIdx: a, azimuthDeg, azimuthRad,
+        kind: 'leaf', captureMask: 1,
+        shellIdx: s, shellCount: M,
+        depthLoFrac: s / M, depthHiFrac: (s + 1) / M,
+        cardDepthFrac: (s + 0.5) / M,
+      })
+    }
+    // ONE woody layer — bark-only, FULL depth capture (the whole trunk/branches),
+    // but the CARD sits at the REAR (cardDepthFrac 1, behind every leaf shell) so
+    // the trunk reads only THROUGH the leaves from behind — never on the near slice
+    // (Jacob 2026-07-17: "ditch the trunk on the near slice, leave it in the rear").
+    shots.push({
+      azIdx: a, azimuthDeg, azimuthRad,
+      kind: 'bark', captureMask: 2,
+      shellIdx: -1, shellCount: M,
+      depthLoFrac: 0, depthHiFrac: 1,
+      cardDepthFrac: 1,
+    })
+  }
+  return { scene, heightM, rM, minY, maxY, canopyBaseY: Cb, azimuths: N, shells: M, shots }
+}
+
+/**
+ * captureHeroBand — bake ONE hero shot (index i) to its two relight channels: a
+ * flat ALBEDO stamp + an AO occlusion map (derived shaded/albedo, like overhead).
+ * Stepped one shot per frame upstream so the many azimuth×shell renders never burst
+ * the GPU. The back shells naturally bake DARKER (the full crown shadows them in the
+ * shaded pass → lower AO), which is exactly the front-bright / back-dark depth cue.
+ *
+ * @returns {{ azIdx, azimuthDeg, kind, shellIdx, shellCount, albedoTex, aoTex, depthLoFrac, depthHiFrac, cardDepthFrac }}
+ */
+export function captureHeroBand(gl, prep, i) {
+  const { scene, heightM, rM, canopyBaseY, maxY, shots } = prep
+  const shot = shots[i]
+  const sideOn = {
+    azimuthRad: shot.azimuthRad,
+    canopyBaseY, maxY,
+    depthLoFrac: shot.depthLoFrac, depthHiFrac: shot.depthHiFrac,
+  }
+  // ISOLATE this pass's kind two ways (belt-and-suspenders — the "2 split trunks"
+  // was woody leaking into BOTH leaf shells): (1) per-mesh VISIBILITY by atlasKind
+  // (recompile-independent — works even without a hard reload), (2) the per-vertex
+  // uCaptureMask shader discard (catches a mesh that MIXES leaf+bark verts). Restore
+  // visibility after both renders.
+  const hidden = []
+  scene.traverse((o) => {
+    if (!o.isMesh) return
+    const leaf = isLeafMesh(o)
+    const keep = shot.kind === 'leaf' ? leaf : (shot.kind === 'bark' ? !leaf : true)
+    if (!keep && o.visible) { o.visible = false; hidden.push(o) }
+  })
+  const opts = { sideOn, captureMask: shot.captureMask }
+  let albedoTex, shadedTex, aoTex
+  try {
+    albedoTex = renderTreeToTexture(gl, scene, heightM, rM, { ...opts, size: HERO_ALBEDO_SIZE, readback: true })
+    shadedTex = renderTreeToTexture(gl, scene, heightM, rM, { ...opts, size: HERO_AO_SIZE, shaded: true })
+    aoTex = compositeAO(gl, albedoTex, shadedTex, HERO_AO_SIZE, true)
+  } finally {
+    for (const o of hidden) o.visible = true
+  }
+  try { shadedTex.dispose() } catch {}
+  albedoTex.name = `hero-albedo:az${shot.azimuthDeg}:${shot.kind}${shot.shellIdx}`
+  aoTex.name = `hero-ao:az${shot.azimuthDeg}:${shot.kind}${shot.shellIdx}`
+  return {
+    azIdx: shot.azIdx, azimuthDeg: shot.azimuthDeg,
+    kind: shot.kind, shellIdx: shot.shellIdx, shellCount: shot.shellCount,
+    depthLoFrac: shot.depthLoFrac, depthHiFrac: shot.depthHiFrac,
+    cardDepthFrac: shot.cardDepthFrac,
+    albedoTex, aoTex,
+  }
 }
 
 /**

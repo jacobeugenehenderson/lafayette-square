@@ -1236,6 +1236,10 @@ export async function bakeLook(lookName, opts = {}) {
   try {
     const priorAtlas = JSON.parse(await fs.readFile(path.join(outDir, 'trees-atlas.json'), 'utf8'))
     if (priorAtlas.overheadBySpecies) manifest.overheadBySpecies = priorAtlas.overheadBySpecies
+    // HERO canopy-impostor (heroImpostorBySpecies) — same trapdoor as overhead:
+    // browser-authored (HeroImpostorBaker POSTs to serve.js), CLI can't regenerate
+    // it, so carry it forward on EVERY bake or a re-bake silently drops the field.
+    if (priorAtlas.heroImpostorBySpecies) manifest.heroImpostorBySpecies = priorAtlas.heroImpostorBySpecies
   } catch { /* no prior manifest (first bake) — nothing to preserve */ }
 
   // Optional viz (uses raw grid w/h, not pow2)
