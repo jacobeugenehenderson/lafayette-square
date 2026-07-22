@@ -29,16 +29,28 @@ const g = buildTileGround(ribbons, {
 })
 console.log = o
 
-const inR = (rings, x, y) => {
+// bbox-indexed rings — without this the sweep is O(corners x samples x all rings)
+// and never finishes (measured: >25 min, no output).
+const prep = (rings) => (rings || []).map(r => {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1] }
+  return { r, x0, y0, x1, y1 }
+})
+const inR = (idx, x, y) => {
   let ins = false
-  for (const r of rings || []) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
-    const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1]
-    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) ins = !ins
+  for (const b of idx) {
+    if (x < b.x0 || x > b.x1 || y < b.y0 || y > b.y1) continue
+    const r = b.r
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1]
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) ins = !ins
+    }
   }
   return ins
 }
-const TL = Object.values(g.treelawnByLu || {}).flat()
-const LU = Object.values(g.luByClass || {}).flat()
+const TL = prep(Object.values(g.treelawnByLu || {}).flat())
+const LU = prep(Object.values(g.luByClass || {}).flat())
+const SW = prep(g.sidewalk), ASPH = prep(g.asphalt), CURB = prep(g.curb)
 
 // every frozen corner on the map
 const corners = []
@@ -52,8 +64,8 @@ for (const apex of corners) {
   for (let dx = -R; dx <= R; dx += STEP) for (let dy = -R; dy <= R; dy += STEP) {
     if (dx * dx + dy * dy > R * R) continue
     const x = apex[0] + dx, y = apex[1] + dy
-    const sw = inR(g.sidewalk, x, y), tl = inR(TL, x, y), lu = inR(LU, x, y)
-    const asph = inR(g.asphalt, x, y), curb = inR(g.curb, x, y)
+    const sw = inR(SW, x, y), tl = inR(TL, x, y), lu = inR(LU, x, y)
+    const asph = inR(ASPH, x, y), curb = inR(CURB, x, y)
     const n = (sw ? 1 : 0) + (tl ? 1 : 0) + (lu ? 1 : 0)
     if (n >= 2) co++
     else if (n === 0 && !asph && !curb) un++
