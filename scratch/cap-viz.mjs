@@ -17,14 +17,26 @@ let tip = null
 for (const t of ribbons.tiles) for (const c of (t.caps || [])) if (c.skelId === skelId && c.capEnd === capEnd) tip = t.ring[c.vertexIdx]
 if (!tip) { console.error('no cap', arg); process.exit(1) }
 
-const bc = doFlip ? { [skelId]: { left: { [CAP_SEGORD[capEnd]]: { capFlip: true } } } } : null
+// Optional 5th arg: flip ONE LEG instead of / as well as the cap —
+//   leg=<side>:<segOrd>   e.g. leg=right:1
+const legArg = (process.argv[5] || '').startsWith('leg=') ? process.argv[5].slice(4).split(':') : null
+const bc = (doFlip || legArg) ? { [skelId]: {} } : null
+if (doFlip) bc[skelId].left = { [CAP_SEGORD[capEnd]]: { capFlip: true } }
+if (legArg) {
+  const [ls, lo] = legArg
+  bc[skelId][ls] = { ...(bc[skelId][ls] || {}), [Number(lo)]: { materials: { outer: 'LU', inner: 'SW' } } }
+}
 const orig = console.log; console.log = () => {}
 const g = buildTileGround(ribbons, { smooth: 0, emitArtifact: true, blockCustoms: bc })
 console.log = orig
 
-// viewport: 22m box around the tip
-const R = 45, S = 900 / (2 * R)   // px per meter
-const toPx = (p) => [(p[0] - tip[0] + R) * S, (p[1] - tip[1] + R) * S]   // note: +z downward in image
+// viewport: box around the tip (half-extent in metres; override with argv[4]).
+// argv[6] = `at=<x>,<z>` re-centres elsewhere on the finger (e.g. the MOUTH).
+const R = Number(process.argv[4]) || 45
+const S = 900 / (2 * R)   // px per meter
+const atArg = (process.argv[6] || '').startsWith('at=') ? process.argv[6].slice(3).split(',').map(Number) : null
+const ctr = atArg && atArg.length === 2 ? atArg : tip
+const toPx = (p) => [(p[0] - ctr[0] + R) * S, (p[1] - ctr[1] + R) * S]   // note: +z downward in image
 const path = (rings, fill) => (rings || [])
   .map(r => 'M' + r.map(p => { const q = toPx(p); return q[0].toFixed(1) + ',' + q[1].toFixed(1) }).join('L') + 'Z')
   .join(' ')

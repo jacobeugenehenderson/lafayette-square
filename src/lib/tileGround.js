@@ -414,6 +414,34 @@ function intersectRings(subjectRings, clipRings) {
   return out.map(p => p.map(fromClipper))
 }
 
+// Segments the cap↔leg crossing is eased over (the shoulder dip-in). Enough to
+// read as a curve at walking scale; the band is only ~2 m long there.
+const XSTEPS = 10
+
+// [DEAD-END PENDANT] The claim region on ONE side of a polyline: the polyline
+// offset to the interior side by W, closed back on itself. `leftInside` says
+// which side the tile face is on (positive ring signed area ⇒ left of travel).
+// The region ENDS where the polyline does — so at a dead end a leg's claim stops
+// at the shoulder (the diameter) and does NOT reach into the bulb. The bulb is
+// NOT two halves: it is one continuous semicircle carrying ONE arrangement, the
+// cap's own (Jacob, 2026-07-22). Splitting it between the legs invents a seam
+// that isn't there.
+function oneSideClaim(poly, W, leftInside) {
+  const p = poly
+  const n = p.length
+  if (n < 2) return []
+  const s = leftInside ? 1 : -1
+  const off = []
+  for (let i = 0; i < n; i++) {
+    const a = p[Math.max(0, i - 1)], b = p[Math.min(n - 1, i + 1)]
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1
+    off.push([p[i][0] - dy / L * W * s, p[i][1] + dx / L * W * s])
+  }
+  const out = p.map(q => [q[0], q[1]])
+  for (let i = n - 1; i >= 0; i--) out.push(off[i])
+  return out.length >= 3 ? [out] : []
+}
+
 function signedArea(r) {
   let a = 0
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
@@ -1002,27 +1030,41 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // of the default arrangement and toggles cleanly (the "always flippable" rule).
     // ROUND-ONLY — a blunt dead-end (set in Survey) is ineligible: it has no round
     // wrap disk. Default (no flip) leaves the tip OUT of this map → byte-identical.
-    const capFlip = new Map()   // tipKey → { p, hw, axis }  (axis = tip→body, down the finger)
+    // capCouplers holds EVERY identified round cap (axis = tip→body, down the
+    // finger) with whether it is flipped; capFlip is the flipped-only view the
+    // strip SWAP consults. The coupler needs the unflipped ones too — a cap whose
+    // two legs differ still has a joint to reconcile at one shoulder.
+    const capCouplers = new Map()
+    const capFlip = new Map()   // tipKey → { p, hw, axis }
     for (const t of roundTips) {
       if (!t.skelId || !t.capEnd) continue
-      if (!readCapCustom(blockCustoms, t.skelId, t.capEnd)?.capFlip) continue
+      const flipped = !!readCapCustom(blockCustoms, t.skelId, t.capEnd)?.capFlip
       // The finger axis (tip→body) from an owning run — the cap is a SEMICIRCLE on
       // the FAR side of the tip (away from the body), NOT a full disk. The swap is
       // clipped to that half so it stops cleanly at the diameter (the shoulders),
       // never bleeding white-outer down the legs (Jacob: "it's only a semicircle").
+      // AVERAGED over both owning legs, not taken from the first one: the legs
+      // leave the tip almost parallel but diverge toward the mouth, so one leg's
+      // direction puts that leg exactly ON the axis (zero perpendicular offset)
+      // and the shoulder classification below has no sign to read. The mean
+      // direction sits between them, giving each leg a clean ± offset.
       let axis = null
+      let ax = 0, az = 0, nAx = 0
       for (const run of runs) {
         const nP = run.poly.length
         for (const ix of [0, nP - 1]) {
-          if (Math.hypot(run.poly[ix][0] - t.p[0], run.poly[ix][1] - t.p[1]) < 1.5) {
-            const b = run.poly[ix === 0 ? 1 : nP - 2]
-            if (b) { const l = Math.hypot(b[0] - t.p[0], b[1] - t.p[1]) || 1; axis = [(b[0] - t.p[0]) / l, (b[1] - t.p[1]) / l] }
-            break
-          }
+          if (Math.hypot(run.poly[ix][0] - t.p[0], run.poly[ix][1] - t.p[1]) >= 1.5) continue
+          const b = run.poly[ix === 0 ? 1 : nP - 2]
+          if (!b) continue
+          const l = Math.hypot(b[0] - t.p[0], b[1] - t.p[1]) || 1
+          ax += (b[0] - t.p[0]) / l; az += (b[1] - t.p[1]) / l; nAx++
+          break
         }
-        if (axis) break
       }
-      capFlip.set(tipKey(t.p), { p: t.p, hw: t.hw, total: (t.tl || 0) + (t.sw || 0), axis })
+      if (nAx) { const l = Math.hypot(ax, az) || 1; axis = [ax / l, az / l] }
+      const info = { p: t.p, hw: t.hw, total: (t.tl || 0) + (t.sw || 0), axis, flipped }
+      capCouplers.set(tipKey(t.p), info)
+      if (flipped) capFlip.set(tipKey(t.p), info)
     }
     // Semicircle mask per flipped cap (the SSoT the swap consults): the tip disk ∩
     // the FAR half-plane (away from the body) — so the swap stops cleanly at the
@@ -1168,6 +1210,10 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // resolved R) so its slabs end at the tangent; the uncovered corner wedge
     // becomes the bent pad below.
     const pieces = []        // leg strips: { mat, rings }
+    // tipKey → the rr entry whose arrangement + width the BULB takes (the end
+    // coupler's own cross-section). Populated only where a finger's two legs
+    // disagree; the cap↔leg reconciliation below reads it.
+    const capOwner = new Map()
     const luExtra = []       // authored-shallower band residual along legs → LU
     const cornerT = new Map()   // corner vertex → { p, T: max-adjacent ped total, trim }
     let bandRem = fullBand
@@ -1178,6 +1224,54 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
       pieces.push({ mat: single.mat.inner, rings: differenceRings(iMid, iWrun) })
       bandRem = differenceRings(iWrun, iW)   // authored-shallower residual → LU
     } else {
+      // ── [DEAD-END PENDANT · per-side claim] ────────────────────────────────
+      // The ribbon follows the chain up one side of a dead-end finger and back
+      // down the other, so BOTH legs of a cul-de-sac are the SAME centerline,
+      // differing only in `side`. Their claim sectors (strokeOpen, symmetric)
+      // therefore cover the WHOLE finger each, and whichever group peels first
+      // takes both sides — a flip authored on ONE leg repainted the entire
+      // finger, cap included. Give each pendant leg a claim clipped to its OWN
+      // side, ENDING AT THE SHOULDER: the bulb is not two halves, it is one
+      // continuous semicircle carrying ONE arrangement — the cap's, as the end
+      // COUPLER between the two legs (Jacob, 2026-07-22). So the bulb goes whole
+      // to the cap owner below, and the coupler reconciles each leg at its
+      // shoulder. Applied ONLY when the pair actually resolves differently: an
+      // identical pair peels exactly as before → uniform caps byte-identical.
+      const gkOf = (e) => `${e.o.toFixed(4)}|${e.total.toFixed(4)}|${e.mat.outer}|${e.mat.inner}`
+      // The two legs of a finger meet AT THE TIP; away from it they diverge (each
+      // runs to its own side of the mouth), so "shares the dead-end tip, same
+      // chain, opposite side" is the pendant pair — not "shares both ends".
+      const tipEndOf = (run) => {
+        const last = run.poly[run.poly.length - 1]
+        for (const p of [run.poly[0], last]) {
+          const k = tipKey(p)
+          if (roundTipKeys.has(k) || bluntTipKeys.has(k)) return k
+        }
+        return null
+      }
+      const sideClip = new Map()    // rr entry → its own-side claim, ending at the shoulder
+      for (let i = 0; i < rr.length; i++) {
+        for (let j = i + 1; j < rr.length; j++) {
+          const a = rr[i], b = rr[j]
+          if (a.run.side === b.run.side) continue
+          if (!a.run.skelId || a.run.skelId !== b.run.skelId) continue
+          const ta = tipEndOf(a.run)
+          if (!ta || ta !== tipEndOf(b.run)) continue          // not the two legs of one finger
+          if (gkOf(a) === gkOf(b)) continue                    // identical → old peel, byte-identical
+          // Interior side: for a ring with positive signed area the face lies to
+          // the LEFT of travel. The two legs traverse the ring in opposite
+          // directions, so "left" resolves to opposite physical sides — which is
+          // exactly the split we want.
+          const leftInside = signedArea(ring) > 0
+          for (const e of [a, b]) sideClip.set(e, oneSideClaim(e.run.poly, e.aBase + cw + SECTOR_D, leftInside))
+          // The bulb takes ONE arrangement. With the two legs disagreeing, the
+          // cap must inherit ONE of them: take the 'left' leg, the canonical
+          // storage side the cap's own slot already uses (makeCapFe) — a stable,
+          // stated choice rather than peel order. The operator overrides it by
+          // flipping the cap, and the coupler slopes at whichever shoulder differs.
+          capOwner.set(ta, a.run.side === 'left' ? a : b.run.side === 'left' ? b : a)
+        }
+      }
       // Group legs by identical (depths, materials) and peel ONCE per group —
       // a default tile has 1-2 groups (Y, N), so the live re-stroke costs what
       // the old uniform construction did; an authored depth adds one group.
@@ -1246,17 +1340,31 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         // the band. The depth split inside the claim uses the CONCENTRIC rings
         // (ringAt) — the divider is a slice of the band at cw + this edge's
         // outer depth, the §3.3 per-edge divider inside the mono-width.
-        const sector = strokeOpen(poly, e.aBase + cw + SECTOR_D)
+        let sector = strokeOpen(poly, e.aBase + cw + SECTOR_D)
+        // [DEAD-END PENDANT] Clip this leg's claim to its own side of the finger,
+        // ending at the shoulder (see the pairing above). Absent for every
+        // non-pendant leg → unchanged. Done BEFORE the cap disk is added, because
+        // the disk is the BULB and the bulb is not clipped by side.
+        const clip = sideClip.get(e)
+        if (clip) {
+          sector = intersectRings(sector, clip)
+          if (!sector.length) continue
+        }
         // A ROUND dead-end cap is NOT an ADA corner: the ped wraps the cap (iA
         // is the cap disk there, so the concentric rings follow it). The disk
         // just extends this leg's claim around the cap; the depths stay rings.
+        // When the two legs disagree the bulb is NOT split between them — it goes
+        // WHOLE to the cap owner, one continuous semicircle with one arrangement.
         ends.forEach(([p, k], i) => {
           if (!tipped[i]) return
           const t = roundTipByKey.get(k)
-          if (t) sector.push(circlePoly(p[0], p[1], t.hw + cw + SECTOR_D))
+          if (!t) return
+          const owner = capOwner.get(k)
+          if (owner && owner !== e) return          // the bulb belongs to the other leg's arrangement
+          sector.push(circlePoly(p[0], p[1], t.hw + cw + SECTOR_D))
         })
         if (!sector.length) continue
-        const gk = `${e.o.toFixed(4)}|${e.total.toFixed(4)}|${e.mat.outer}|${e.mat.inner}`
+        const gk = gkOf(e)
         let g = groups.get(gk)
         if (!g) { g = { o: e.o, inn: e.inn, total: e.total, mat: e.mat, hasTL: e.hasTL, sectors: [] }; groups.set(gk, g) }
         g.sectors.push(...sector)
@@ -1515,37 +1623,89 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     }
     Wacc.push(...cornerPad)
     if (cornerTreelawn.length) pushLu(tlByLu, lu, cornerTreelawn)   // PROTOTYPE C — tapered corner treelawn
-    // [CAP FLIP — the legs BEND to meet the end cap] A flipped cap swaps the wrap
-    // ORDER (semicircle: walk-outer / treelawn-inner; leg: treelawn-outer / walk-
-    // inner). So at each shoulder the bands BEND across a short transition down the
-    // leg — and the SIDEWALK must stay CONTIGUOUS (it's the ADA walk path, it can't
-    // break): the walk is the unbroken band that slides outer(cap)→inner(leg); the
-    // treelawn fills its complement. No mitre, no hard step. Un-flipped caps skip
-    // this → byte-identical.
-    if (capFlip.size && fullBand.length) {
-      for (const cap of capFlip.values()) {
+    // ── [THE END COUPLER — the cap reconciles its two legs] ───────────────────
+    // The cap is one continuous semicircle carrying ONE cross-section, and it
+    // COUPLES two legs that may differ in BOTH ways: which strip the walk sits in
+    // (SW↔TL parity) and how WIDE the band is. Its job is to make that meet — so
+    // at each shoulder, if the cap's cross-section differs from that leg's, the
+    // bands BEND across a short transition down the leg. The SIDEWALK must stay
+    // CONTIGUOUS through it (it is the ADA walk path, it cannot break): the walk
+    // is one unbroken band easing from its slot on the cap into its slot on the
+    // leg, the treelawn fills the complement, and the band's total depth tapers
+    // alongside. No mitre, no hard step. Fires ONLY on a real difference — a cap
+    // that inherits its leg has none, so uniform caps stay byte-identical.
+    if (fullBand.length) {
+      for (const cap of capCouplers.values()) {
         if (!cap.axis) continue
         const tip = cap.p, hw = cap.hw, a = cap.axis
-        let owner = null
-        for (const run of runs) {
+        // EACH SHOULDER IS SERVED BY ITS OWN LEG. An asymmetric cap builds
+        // differently on its two sides, so one owner run cannot describe both —
+        // reading a single owner was what made the asymmetric case unbuildable.
+        // The legs leave the tip almost parallel but diverge toward the mouth, so
+        // classify each by the sign of its body's offset across the cap axis.
+        const perp0 = [-a[1], a[0]]
+        const bodyOf = (run) => {
           const nP = run.poly.length
-          for (const ix of [0, nP - 1]) if (Math.hypot(run.poly[ix][0] - tip[0], run.poly[ix][1] - tip[1]) < 1.5) { owner = run; break }
-          if (owner) break
+          if (Math.hypot(run.poly[0][0] - tip[0], run.poly[0][1] - tip[1]) < 1.5) return run.poly[1]
+          if (Math.hypot(run.poly[nP - 1][0] - tip[0], run.poly[nP - 1][1] - tip[1]) < 1.5) return run.poly[nP - 2]
+          return null
         }
-        if (!owner) continue
-        const ped = resolvePedDepths(owner.baseMeasure, owner.side, runCustom(owner))
-        const total = ped.tl + ped.sw, o = ped.hasTL ? ped.tl : ped.sw
-        if (total <= 1e-6 || o <= 1e-6 || o >= total) continue
-        const T = total   // transition length down the leg (≈ band width — a gentle bend)
+        const owners = []
+        for (const e of rr) {
+          const b = bodyOf(e.run)
+          if (b) owners.push({ e, off: (b[0] - tip[0]) * perp0[0] + (b[1] - tip[1]) * perp0[1] })
+        }
+        if (!owners.length) continue
         for (const sign of [1, -1]) {
           const p = [sign * -a[1], sign * a[0]]   // toward this shoulder's leg + its band
+          let pick = null
+          for (const o of owners) { const s = o.off * sign; if (!pick || s > pick.s) pick = { e: o.e, s } }
+          const e = pick.e
+          // The CAP's own cross-section: the leg it inherits (itself, when the two
+          // legs agree), swapped if the cap is flipped. This is the coupler's end
+          // of the joint; `e` is the leg's end.
+          const capE = capOwner.get(tipKey(tip)) || e
+          const capWalkOuter = (capE.mat.outer === 'SW') !== cap.flipped
+          const legWalkOuter = e.mat.outer === 'SW'
+          const legTotal = e.total, capTotal = capE.total
+          if (legTotal <= 1e-6 || capTotal <= 1e-6) continue
+          // Nothing to reconcile — same parity AND same width → no transition, and
+          // the un-coupled cap renders exactly as it always did.
+          if (legWalkOuter === capWalkOuter && Math.abs(legTotal - capTotal) < 1e-6) continue
+          // Where the WALK sits at each end. The walk must stay CONTIGUOUS across
+          // the joint (the ADA path can't break), so it is one unbroken band from
+          // its slot on the cap to its slot on the leg. Which slot that is depends
+          // on each end's RESOLVED arrangement — hard-coding one of the two cases
+          // (outer-at-cap → inner-at-leg) is what notched every walk-at-curb
+          // cul-de-sac: the quad was painted backwards, disagreeing with the bulb
+          // at s=0 AND with the leg at s=T. Treelawn fills the complement.
+          const legLo = legWalkOuter ? 0 : e.o, legHi = legWalkOuter ? e.o : legTotal
+          const capLo = capWalkOuter ? 0 : capE.o, capHi = capWalkOuter ? capE.o : capTotal
+          // A single-strip end (walk nowhere, or walk everywhere) leaves no band to
+          // cross WITH. There is no bend to build — the material simply changes at
+          // the shoulder. Skip THIS shoulder only; the other still gets its dip-in.
+          // (This used to bail the whole cap, so one sidewalk-only leg suppressed
+          // both shoulders and no transition was built anywhere on that cap.)
+          if (capHi - capLo < 1e-6 || legHi - legLo < 1e-6) continue
+          const T = Math.max(legTotal, capTotal)   // transition length ≈ band width — a gentle bend
           const P = (s, d) => [tip[0] + a[0] * s + p[0] * (hw + cw + d), tip[1] + a[1] * s + p[1] * (hw + cw + d)]
-          const zone = intersectRings(fullBand, [[P(0, 0), P(0, total), P(T, total), P(T, 0)]])
+          // The crossing rides a SMOOTHSTEP, not a straight diagonal — the walk
+          // eases out of the cap and into the leg instead of turning a hard corner
+          // mid-band (SECTION §6.2, "a smooth S vs straight transition"). The
+          // band's TOTAL depth eases along with it, so a coupler whose two ends
+          // are different WIDTHS tapers between them instead of stepping.
+          const ease = (u) => u * u * (3 - 2 * u)
+          const lo = [], hi = [], outer = [], inner = []
+          for (let i = 0; i <= XSTEPS; i++) {
+            const u = i / XSTEPS, s = T * u, w = ease(u)
+            lo.push(P(s, capLo + (legLo - capLo) * w))
+            hi.push(P(s, capHi + (legHi - capHi) * w))
+            outer.push(P(s, 0))
+            inner.push(P(s, capTotal + (legTotal - capTotal) * w))
+          }
+          const zone = intersectRings(fullBand, [[...outer, ...inner.reverse()]])
           if (!zone.length) continue
-          // WALK band (contiguous): outer [0,o] at the cap (s=0) → inner [o,total] at
-          // the leg (s=T). One unbroken quad, so the sidewalk never splits. Treelawn
-          // = its complement.
-          const white = intersectRings(zone, [[P(0, 0), P(0, o), P(T, total), P(T, o)]])
+          const white = intersectRings(zone, [[...lo, ...hi.reverse()]])
           const green = differenceRings(zone, white)
           Wacc = differenceRings(Wacc, zone)
           for (const k of Object.keys(tlByLu)) tlByLu[k] = differenceRings(tlByLu[k], zone)
@@ -3040,8 +3200,21 @@ export function buildTileGround(ribbons, opts = {}) {
       for (let i = 0; i < run.poly.length - 1; i++) {
         const dd = profPts ? ((hwAt(run.poly[i]) ?? baseDepth) + (hwAt(run.poly[i + 1]) ?? baseDepth)) / 2 : baseDepth
         const k1 = edgeKey(run.poly[i], run.poly[i + 1]), k2 = edgeKey(run.poly[i + 1], run.poly[i])
-        depthByEdge.set(k1, dd); depthByEdge.set(k2, dd)
-        streetByEdge.set(k1, sk); streetByEdge.set(k2, sk)
+        // FORWARD key = this run's own traversal direction, and the ring walks
+        // each run in exactly that direction — so it is authoritative. The REVERSE
+        // key is only a fallback for a ring walking the other way, and must NEVER
+        // clobber another run's forward key. On a dead-end finger the ring is a
+        // zero-width SLIT traversed twice, once per leg, so both legs write the
+        // same pair of keys — and an unconditional reverse write let whichever run
+        // came second overwrite the first. Both sides then drew at ONE width, so a
+        // road authored asymmetrically (Nicholson Place: left 2.50 m, right 6.70 m)
+        // rendered symmetric at 2.50 and neither leg answered its authoring
+        // handles. The asphalt is frozen SHAPE, so the curb and both ped bands
+        // inherited the collapse. Directed keys keep the two legs distinct.
+        depthByEdge.set(k1, dd)
+        streetByEdge.set(k1, sk)
+        if (!depthByEdge.has(k2)) depthByEdge.set(k2, dd)
+        if (!streetByEdge.has(k2)) streetByEdge.set(k2, sk)
       }
     }
     const nRing = tile.ring.length

@@ -799,9 +799,104 @@ function buildChainSegmentIndex(streets) {
   return { cells, cellSize: cs }
 }
 
+// ── [DEAD-END FOLD] The tips a block ring can fold around ────────────────────
+// A degree-1 chain endpoint: a coordinate carried by exactly ONE street vertex
+// in the whole frame (a shared node carries ≥2). Mirrors the notion tileGround's
+// chainEndpointKeys/detectTileCaps use for the same tips; kept local because
+// tileGround imports FROM this module (importing back would cycle).
+function deadEndTips(streets) {
+  const key = (p) => Math.round(p[0] * 100) + ',' + Math.round(p[1] * 100)
+  const count = new Map()
+  for (const s of streets || []) for (const p of (s?.points || [])) {
+    const k = key(p); count.set(k, (count.get(k) || 0) + 1)
+  }
+  const tips = []
+  for (const s of streets || []) {
+    const pts = s?.points
+    if (!pts || pts.length < 2) continue
+    for (const p of [pts[0], pts[pts.length - 1]]) if ((count.get(key(p)) || 0) === 1) tips.push(p)
+  }
+  return tips
+}
+
+// The ring span that WRAPS a dead-end tip — the fold. The block ring runs up one
+// side of the finger, around the cap at the asphalt half-width, and back down,
+// so the wrapping vertices all sit at that one radius while the leg vertices are
+// far away. Grow outward from the nearest vertex, always taking the nearer of
+// the two neighbours, and stop when both lie beyond any plausible cap radius;
+// then accept only if the span actually TURNS around the tip (~180° of swept
+// angle). The TURN is the signal — proximity alone is not enough, and there is
+// no usable radius BAND to grow by, because a cap's two shoulders need not sit
+// at the same radius at all: a road may be authored with different pavement
+// half-widths per side (Nicholson Place is left 2.50 m, right 6.70 m), which is
+// the same "the coupler's two ends can differ in width" fact the FILL has to
+// honour. An earlier band-ratio rule missed exactly those.
+// Returns [{ lo, hi }] — the two SHOULDER vertex indices, in traversal order.
+const CAP_FOLD_MAX_R = 40        // m — beyond this the ring isn't capping anything
+const CAP_FOLD_JUMP = 3          // × the span's own radius — a leg vertex is a big jump out
+const CAP_FOLD_JUMP_MIN = 5      // m — but always allow at least this much growth
+const CAP_FOLD_MIN_TURN = 140 * Math.PI / 180
+const CAP_FOLD_MAX_TURN = 220 * Math.PI / 180
+function capFoldSlices(ring, tips) {
+  const N = ring.length
+  const out = []
+  if (N < 4) return out
+  for (const T of tips) {
+    const dAt = (i) => Math.hypot(ring[i][0] - T[0], ring[i][1] - T[1])
+    let bi = -1, bd = Infinity
+    for (let i = 0; i < N; i++) { const d = dAt(i); if (d < bd) { bd = d; bi = i } }
+    if (bi < 0 || bd > CAP_FOLD_MAX_R || bd < 1e-6) continue
+    // Grow while the next vertex is still ROUND THE CAP. The stop is a radius
+    // JUMP, not a fixed band: the cap's vertices sit at whatever half-widths the
+    // road was authored with (they need not match side to side), while the next
+    // vertex down a leg is the mouth corner — a whole leg-length away.
+    let lo = bi, hi = bi, spanMax = bd
+    for (let guard = 0; guard < N; guard++) {
+      const pi = (lo - 1 + N) % N, ni = (hi + 1) % N
+      if (pi === hi || ni === lo) break
+      const okAt = (i) => { const d = dAt(i); return d <= CAP_FOLD_MAX_R && d <= Math.max(spanMax * CAP_FOLD_JUMP, spanMax + CAP_FOLD_JUMP_MIN) }
+      const cp = okAt(pi), cn = okAt(ni)
+      if (!cp && !cn) break
+      const takePrev = cp && (!cn || dAt(pi) <= dAt(ni))
+      const cand = takePrev ? pi : ni
+      spanMax = Math.max(spanMax, dAt(cand))
+      if (takePrev) lo = cand; else hi = cand
+    }
+    if (lo === hi) continue
+    // SIGNED swept angle about the tip — a fold sweeps ~180° consistently in one
+    // direction. Using the ABSOLUTE sum would let a block edge that merely
+    // meanders past a dead end accumulate its way to 180° and be mistaken for a
+    // wrap; the signed sum stays near zero for those.
+    const u = (i) => { const dx = ring[i][0] - T[0], dz = ring[i][1] - T[1], L = Math.hypot(dx, dz) || 1; return [dx / L, dz / L] }
+    let turn = 0
+    for (let i = lo; i !== hi; i = (i + 1) % N) {
+      const a = u(i), b = u((i + 1) % N)
+      turn += Math.atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1])
+    }
+    turn = Math.abs(turn)
+    if (turn < CAP_FOLD_MIN_TURN || turn > CAP_FOLD_MAX_TURN) continue
+    out.push({ lo, hi })
+  }
+  return out
+}
+
 function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
   if (!streets?.length || !blockSharp?.length) return []
   const out = []
+  // [DEAD-END FOLD → END COUPLER] A cul-de-sac's frontage is NOT one edge — it is
+  // one fe FOLDED on itself (up one side of the finger, around the bulb, back
+  // down the other). The identity-driven corner test below cannot see the fold,
+  // because the owning chain never changes at the tip; so both sides came out as
+  // a SINGLE fe under a SINGLE `side` token, and the returning leg had no customs
+  // slot at all — 46 of LS's 50 caps, the root of "a dead-end leg flip renders
+  // Δ=0.0". So: chop the fold at its two SHOULDERS. Each leg becomes its own fe
+  // with its own side, and the arc between them is NOT emitted as a leg frontage
+  // — it is the CAP, an end COUPLER that carries its own synthetic slot
+  // (makeCapFe / CAP_SEGORD, kept out of frontageEdges by the same doctrine).
+  // The two shoulders are corners in the LANE-SWITCH sense, not the bending one:
+  // the arrangement may change across them, which is exactly where the cap↔leg
+  // dip-in fires (HANDOFF-dead-end-cap-flip, the governing rule).
+  const tips = deadEndTips(streets)
   // ixByChain is threaded through here purely for downstream consumers
   // (segOrd assignment runs as a post-pass via assignSegOrdsToFes which
   // also takes ixByChain); corner detection here uses chain-ownership
@@ -857,6 +952,15 @@ function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
         if (dot < FALLBACK_TURN_COS) cornerIdxs.push(i)
       }
     }
+    // [DEAD-END FOLD] Cut the ribbon's fold: a shoulder is a corner in the
+    // lane-switch sense, so each leg of the finger becomes its own fe (its own
+    // side), and the slice BETWEEN the shoulders — the cap — is skipped below.
+    const folds = capFoldSlices(ring, tips)
+    const capSliceFrom = new Set()
+    if (folds.length) {
+      for (const f of folds) { cornerIdxs.push(f.lo, f.hi); capSliceFrom.add(f.lo) }
+      cornerIdxs.splice(0, cornerIdxs.length, ...[...new Set(cornerIdxs)].sort((a, b) => a - b))
+    }
     if (cornerIdxs.length < 3) continue  // degenerate block
 
     // For each block-edge between two consecutive corners, slice out the
@@ -865,6 +969,7 @@ function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
     for (let k = 0; k < cornerIdxs.length; k++) {
       const c1 = cornerIdxs[k]
       const c2 = cornerIdxs[(k + 1) % cornerIdxs.length]
+      if (capSliceFrom.has(c1)) continue   // the cap arc — an end COUPLER, not a leg frontage
       const points = []
       let idx = c1
       while (true) {
@@ -1728,6 +1833,9 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   return {
     frontageEdges,   // the only live output — Survey/Measure customs identity
     blockScalars,    // per-block { W }; bakeFeScalars' sibling output, read via fe
+    // Diagnosis-only, opt-in: the block rings the fes were sliced from. Off by
+    // default so no consumer can start depending on it (scratch/cap-*.mjs).
+    __blockRings: opts.__debugRings ? blockSharp : undefined,
   }
 }
 
