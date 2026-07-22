@@ -1262,8 +1262,14 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           // the LEFT of travel. The two legs traverse the ring in opposite
           // directions, so "left" resolves to opposite physical sides — which is
           // exactly the split we want.
-          const leftInside = signedArea(ring) > 0
-          for (const e of [a, b]) sideClip.set(e, oneSideClaim(e.run.poly, e.aBase + cw + SECTOR_D, leftInside))
+          // Node-pair direction, not ring winding. `side` and traversal are ONE
+          // fact (groupRuns takes poly in ring order; the frozen builder sets
+          // forward = side==='right'), so a leg's frontage is always RIGHT of its
+          // own poly travel — for 'right' because poly runs chain-forward, for
+          // 'left' because poly runs reversed. The directed pair makes it a
+          // constant; the winding flag was a coin-flip (measured 8 correct / 8
+          // mirrored across LS's dead-ends).
+          for (const e of [a, b]) sideClip.set(e, oneSideClaim(e.run.poly, e.aBase + cw + SECTOR_D, false))
           // The bulb takes ONE arrangement. With the two legs disagreeing, the
           // cap must inherit ONE of them: take the 'left' leg, the canonical
           // storage side the cap's own slot already uses (makeCapFe) — a stable,
