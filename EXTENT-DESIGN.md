@@ -27,7 +27,13 @@ The Extent subsystem and the polygon/stamp subsystem have the **same disease**, 
   listing/logo/card silently re-points. Membership is re-derived in **nine** places, two disagreeing.
 
 **One cure both times: mint identity once, upstream; freeze it; carry it forward; never re-derive it.**
-This document applies that to buildings and neighborhoods.
+
+And the two are not merely analogous — **they are the same artifact.** The skeleton the Extent tool
+makes mints **two identities in one freeze**: every **building** gets a permanent id, and every
+**junction gets a stamp** (its node kind — dead-end / corner / T / cross / Y — `SKELETON.md §2
+junctions[]`, richer on `ribbons.junctionMap.nodes`). Both are decided once at the seal; both must be
+**carried** onto everything downstream, never re-guessed. This document applies the one cure to **both
+identities the skeleton mints — building ids and junction stamps.**
 
 ---
 
@@ -40,6 +46,16 @@ The Extent tool's product is **not** the boundary disc. It is the **skeleton** �
 the First Bake (`SKELETON.md §0`), the frame all downstream geometry trusts. The boundary disc is a
 small artifact *beside* it. A scene is only "poured" when the skeleton → ribbons chain is **served**
 from `cartograph/data/<scene>/clean/`, the way every consumer reaches a scene's geometry.
+
+**⭐ What the skeleton ACTUALLY is (Jacob, 2026-07-22): a labeled point cloud.** "Skeleton" is a human
+convenience — the real substance is a set of **points, each carrying a label** (its node kind / stamp).
+We unite the points with **line segments** for two reasons only: so a person can *see* it as a
+skeleton, and so we have something to **stroke** into streets, curbs and sidewalks. So the primary
+artifact is the labeled points; the segment-skeleton and the polygons derived from it are both
+*downstream views*. **The identity lives on the points, not the lines** — which is the whole reason a
+polygon must *ask the stamp* (`BRIEF-polygon-asks-the-stamp`): when segments become faces, the point's
+label must ride along, or the FILL re-guesses it from bare shape and gets it wrong. Same for building
+ids: the label is on the thing, and every view of it must carry the label, never re-derive it.
 
 **The two-pass fetch that produces it (`EXTENT-EXCAVATION §0.1, §0.8`):**
 
@@ -143,6 +159,23 @@ legitimate permanent key — there is no second fetch to renumber it. Consequenc
 must enforce **`bbox ⊇ disc + padding`** (today violated: LS 226 m, Altadena 981 m — `EXTENT-EXCAVATION
 D1`) and **the frame origin frozen** (R10; D4 finds the code currently forces the two centerpoints
 equal — fix in the schema split below).
+
+### 4.1 The seal mints a SECOND identity — the node stamp
+
+The same freeze that gives every building its permanent id gives **every point in the labeled cloud
+its stamp** (§1: the skeleton *is* a labeled point cloud). At the seal, `skeleton.js` types each node
+by degree — dead-end / corner / T / cross / Y — and the prebake freezes the richer
+`ribbons.junctionMap.nodes` (kinds[], legs, corners). This is a **frozen frame fact**, exactly like a
+building id, and it obeys the same rule: **carry it, never re-derive it.**
+
+Today it is minted and then *not believed*: `extractFaces` emits `{ring, edges}` and drops the label,
+so the FILL re-guesses (dead-ends counted three ways — 70/29/50 — and 1400 m² of corner co-claim).
+The fix is `BRIEF-polygon-asks-the-stamp` — **polygonization consumes the stamp and carries identity
+onto the emitted face; the FILL reads ownership instead of negotiating it.** That brief is its own
+campaign (SHAPE/FILL, not Extent), but it is listed here because it is *the same identity discipline
+the seal exists to enforce*, one artifact down — and because "what the Extent tool makes" is a
+**stamped** skeleton, not a bare one. A seal that froze building ids but let node stamps be re-guessed
+downstream would only half-apply the one cure.
 
 ---
 
