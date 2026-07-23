@@ -1580,7 +1580,21 @@ createServer(async (req, res) => {
         const bPath = sceneDataPaths(scene).boundary
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
         const prev = JSON.parse(readFileSync(bPath, 'utf8'))
-        const boundary = makeCircleBoundary(radius)
+        // ⭐ PRESERVE THE DISC CENTER (D4 residual, fixed 2026-07-23). This called
+        // `makeCircleBoundary(radius)` with no center, which defaults to [0,0] — so
+        // every radius edit on a committed hood silently SNAPPED THE DISC BACK TO
+        // THE ORIGIN, discarding an authored off-origin center. That is the whole
+        // reason a hand-placed disc kept "reverting" to [0,0]: not the commit path
+        // (fixed in d82c5e60), but this one — the path a committed hood's Bake takes,
+        // i.e. every subsequent edit.
+        //
+        // Rescope is the LIGHT re-apply and by definition never re-centers, so the
+        // center is a preserved field like polygon/exclusions below, not an input.
+        // A v1 boundary has no `center`; makeCircleBoundary defaults it to [0,0],
+        // which is what those hoods already are. (R10 two centers, EXTENT-DESIGN
+        // §3.3: the FRAME origin is frozen forever; the DISC center is free to roam
+        // the forever zone — moving the disc must never move the frame.)
+        const boundary = makeCircleBoundary(radius, prev.center)
         // The LIGHT re-apply — re-clip + re-bake in the committed frame, no re-center.
         if (Array.isArray(exclusions)) {
           // EXCLUDER model: membership = inside-circle − exclusions.
