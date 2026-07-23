@@ -283,6 +283,18 @@ never the night before a demo).
 - **ksi/centrum normalization** (official rings → centerlines) — deferred (§0.5); `EXTENT-EXCAVATION`
   PART E Q2/Q5.
 
+### 7.1 Backlog — Extent tool capabilities (Jacob, 2026-07-23)
+
+- **Change the bb — additively OR destructively (never move).** An operator gesture in the Extent
+  tool to **grow** the fetched square (add area → re-fetch the delta) or **shrink** it (destructive,
+  drop the trimmed data), always **from the frozen center** (§3.3 — grow/shrink OK, moving forbidden).
+  This is the "forever safety zone can be extended if you outgrow it" made a real control, and it's
+  append-safe (identity preserved: new area appends, retained ids unchanged; a shrink tombstones).
+- **Duplicate a map for a new version.** Fork a scene in the Extent tool into a new version — e.g. to
+  **add a neighborhood to an existing map**, or spin a v2 to author against without disturbing the
+  live one. First-class version of the manual `lafayette-square → lafayette-square-staging` pattern we
+  did by hand this session; the swap/promote flow (§6 step 6) is its natural sibling.
+
 ---
 
 ## 8. Open questions still Jacob's (from `EXTENT-EXCAVATION` PART E — the ones this scope touches)
