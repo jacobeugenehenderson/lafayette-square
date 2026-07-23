@@ -358,7 +358,15 @@ const DESIGN_FIELDS = [
   { key: 'browseHeading', hydrate: (d) => d.browseHeading?.values
     ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...d.browseHeading.values } }
     : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } } },
-  _grp('arch',           ARCH_FIELD_KEYS,           ARCH_FLAT_DEFAULTS),
+  // The arch is a STAGE SET-PIECE a Look INSTALLS by carrying an `arch` block —
+  // the same presence rule every other look-keyed consumer already runs on (no
+  // baked citymodel ⇒ no CityModel; no baked landscape ⇒ no MountainBackdrop).
+  // Not a plain _grp: _grp seeds ARCH_FLAT_DEFAULTS for a Look that has no block,
+  // which is what installed an identical arch in all six design.json files and
+  // forced the renderer to gate on a look NAME instead. Absent ⇒ null ⇒ absent.
+  { key: 'arch', hydrate: (d) => d.arch
+    ? migrateGroupChannel(d.arch, ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS)
+    : null },
   // Landscape is NOT a plain _grp: migrateGroupChannel returns { values } and drops
   // every sibling key, which would silently EAT `source` — the Stage upload's opt-in
   // that the bake gates on (serve.js:1795). Nothing sets `source` yet ("Until the
@@ -407,6 +415,9 @@ function serializeDesign(s) {
   // prevent. No source ⇒ no landscape ⇒ the key is ABSENT and the knobs re-seed from
   // defaults on hydrate.
   if (!out.landscape?.source) delete out.landscape
+  // Same rule for the arch set-piece (see the `arch` hydrate above): a Look that
+  // doesn't carry the block must not acquire one on its next autosave.
+  if (!out.arch) delete out.arch
   return out
 }
 
@@ -647,7 +658,10 @@ const useCartographStore = create((set, get) => ({
   browseHeading: { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
   // SC.7 — arch + horizon channels (Hero & Horizon card). Replaces the
   // module-scope archState bridge in src/stage/StageApp.jsx.
-  arch:    { values: { ...ARCH_FLAT_DEFAULTS } },
+  // arch starts ABSENT: it's a set-piece the Look installs by carrying the block
+  // (hydrate fills it in for a Look that has one). A seeded default here would
+  // stand an arch over any Look whose design.json failed to load.
+  arch:    null,
   landscape: { values: { ...LANDSCAPE_FLAT_DEFAULTS } },
   archLight: { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },
   lantern: { values: { ...LANTERN_FLAT_DEFAULTS } },

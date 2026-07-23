@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "altadena",
-  "bakedAt": 1784097649839,
+  "bakedAt": 1784762020346,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -495,19 +495,23 @@
     "period": 1360,
     "easing": "sine"
   },
-  "arch": {
-    "values": {
-      "distance": 1690,
-      "bearingX": 0.9487,
-      "bearingZ": -0.3163,
-      "scale": 2.1,
-      "rotation": 1.99,
-      "yOffset": 155,
-      "footFade": 36
-    }
-  },
   "landscape": {
-    "source": "cartograph/_landscape-intake/altadena/terrain/sangabriel.obj"
+    "source": "cartograph/_landscape-intake/altadena/terrain/sangabriel.obj",
+    "values": {
+      "bearingX": 0.18,
+      "bearingZ": -0.98,
+      "distance": 5400,
+      "scale": 1,
+      "rotation": 0,
+      "yOffset": -20,
+      "snowline": 1500,
+      "snowSoftness": 180,
+      "snowColor": "#eef3f7",
+      "rockColor": "#6d655a",
+      "scrubColor": "#586348",
+      "haze": 0.35,
+      "hazeColor": "#bcd0e0"
+    }
   },
   "archLight": {
     "animated": "tod",

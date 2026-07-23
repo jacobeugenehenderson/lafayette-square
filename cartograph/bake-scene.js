@@ -130,7 +130,14 @@ export async function bakeScene({ look = 'default' } = {}) {
     // feathering. Promoted from the module-scope `archState` bridge in
     // src/stage/StageApp.jsx — operator's arch authoring now persists
     // across reloads and reaches production via the slab.
-    arch:      design.arch      || { values: { ...ARCH_FLAT_DEFAULTS } },
+    // ⛔ The arch is a STAGE SET-PIECE a Look INSTALLS by carrying the block —
+    // same rule as the landscape below. Stamping ARCH_FLAT_DEFAULTS into EVERY
+    // scene.json is what made the channel's presence meaningless and forced the
+    // renderer to gate on a look NAME instead (which then dropped the arch from
+    // Hi-Pointe–DeMun, a St. Louis hood that had it). No block ⇒ no arch ⇒ the
+    // key is omitted, and the renderer gates on the data like every other
+    // look-keyed consumer.
+    ...(design.arch ? { arch: design.arch } : {}),
     // ⛔ The landscape is a STAGE SET-PIECE, opted into per-Look via
     // design.landscape.source (a20619cc) — NOT a channel every hood carries. The
     // `|| LANDSCAPE_FLAT_DEFAULTS` fallback stamped a San Gabriel config (snowline

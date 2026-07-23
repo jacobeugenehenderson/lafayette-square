@@ -13,6 +13,8 @@ import BakedGround from '../components/BakedGround.jsx'
 // Designer-only (aerial + authoring overlays)
 import AerialBase, { AerialFocus } from './AerialTiles.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
+import ParkTitleHandle from './ParkTitleHandle.jsx'
+import { PARK_TITLE_DEFAULT_CENTER } from '../components/LafayettePark'
 import MeasureOverlay from './MeasureOverlay.jsx'
 import CornerEditHandles from './CornerEditHandles.jsx'
 import BlockGeometryV2Debug from './BlockGeometryV2Debug.jsx'
@@ -856,6 +858,8 @@ export default function CartographApp() {
   const hoverTarget = useCartographStore(s => s.hoverTarget)
   const bgColor = useCartographStore(s => s.bgColor)
   const layerVis = useCartographStore(s => s.layerVis)
+  const parkTitlePos = useCartographStore(s => s.parkTitlePos)
+  const setParkTitlePos = useCartographStore(s => s.setParkTitlePos)
   const luColors = useCartographStore(s => activeChannel(s, 'luColors'))
   const aerialVisible = useCartographStore(s => s.aerialVisible)
   const centerlineData = useCartographStore(s => s.centerlineData)
@@ -1149,9 +1153,9 @@ export default function CartographApp() {
 
           {/* ── Designer-only UI overlays. Survey + Measure overlays mount
               in every scene that supports authoring (toy and LS both).
-              AerialTiles + DesignerArch are LS-specific visual surfaces:
-              gated by scene capabilities so toy doesn't try to load the
-              64 aerial tiles or the gateway-arch decoration. Mounting
+              AerialTiles is gated by scene capabilities so toy doesn't try
+              to load the 64 aerial tiles; DesignerArch follows the Look's
+              set-piece opt-in (below). Mounting
               only in Designer keeps these out of Stage shots. */}
           {inDesigner && <>
             {/* Two-layer aerial. AerialBase = whole-disc low-res, a dozen
@@ -1165,7 +1169,10 @@ export default function CartographApp() {
               <AerialBase />
               {corridorSelected && <AerialFocus />}
             </>}
-            {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
+            {/* The arch silhouette follows the Look's installed `arch` block, not
+                a scene name — same gate the 3D component uses, so Designer and
+                Stage can never disagree. */}
+            {archOverride && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
             {/* One-way direction chevrons — every scene, toggle via layerVis.oneway. */}
             <OneWayArrows />
             <SurveyorOverlay />
@@ -1260,6 +1267,13 @@ export default function CartographApp() {
         </Canvas>
 
         {inDesigner && <MarkerOverlay cameraRef={orthoRef} />}
+        {/* Drag-to-move handle for the park title — Designer only, LS only, only
+            when the title is shown and no tool owns the click. */}
+        {inDesigner && scene === 'lafayette-square' && !tool && layerVis.parkTitle !== false && (
+          <ParkTitleHandle cameraRef={orthoRef}
+            pos={parkTitlePos || PARK_TITLE_DEFAULT_CENTER}
+            onChange={setParkTitlePos} />
+        )}
         {inDesigner && <MarkerFAB />}
         <Toolbar />
         <StatusBar />

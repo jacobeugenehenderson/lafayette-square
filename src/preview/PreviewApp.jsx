@@ -1070,6 +1070,9 @@ function resolvePreviewLookId() {
 
 function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
   const lookId = resolvePreviewLookId()
+  // Baked layer visibility — the park title honors scene.json.layerVis, same as
+  // every other layer (re-bake propagates the panel toggle to the slab).
+  const scene = useSceneJson(lookId)
   // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the
   // shared dofDriver reads window.__dofDebug. (Formerly set by PreviewPostFx's
   // DofDriver; that fork is retired, so Preview sets it here.)
@@ -1146,7 +1149,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
         <R3FErrorBoundary name="LafayetteScene">
           <LafayetteScene
             lookId={lookId}
-            hiddenLayers={{ building: true, neon: !layers.neon }}
+            hiddenLayers={{ building: true, neon: !layers.neon, parkTitle: scene?.layerVis?.parkTitle === false }}
             forceNeonOn={layers.neon || undefined}
             labelViewMode={shot}
           />

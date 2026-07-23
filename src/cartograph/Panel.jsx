@@ -69,7 +69,8 @@ const LAYER_LINKS = {
   tree: ['tree', 'tree_row'],
 }
 const LABELS_DEFS = [
-  { id: 'labels', label: 'Labels' },
+  { id: 'labels',    label: 'Street Labels' },
+  { id: 'parkTitle', label: 'Park Title' },
 ]
 
 function Section({ name, open, onToggle, children, visState, onToggleVis }) {
@@ -275,11 +276,11 @@ function LabelsSubsection() {
   return (
     <>
       <div className="carto-row carto-row--wrap">
-        <label className="carto-label-fixed" title="World-space height of a street label, in meters. Labels scale with the map — zoom in to read them, zoom out and they shrink with everything else.">Size</label>
-        <DraftRangeInput min="1" max="12" step="0.25"
-          value={get('size', 4)}
-          onCommit={v => setLabelStyle({ size: v })}
-          formatLabel={v => `${Number(v).toFixed(2)} m`} />
+        <label className="carto-label-fixed" title="Labels are always sized to each street's real width (k × width, floored for legibility, no ceiling). This scales that automatic baseline up or down — 1.0× is the baseline.">Size</label>
+        <DraftRangeInput min="0.5" max="2.5" step="0.1"
+          value={style.sizeK ?? 1}
+          onCommit={v => setLabelStyle({ sizeK: v })}
+          formatLabel={v => `${Number(v).toFixed(1)}×`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed">Weight</label>

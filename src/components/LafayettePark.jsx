@@ -21,6 +21,7 @@ import { INSTANCE } from '../instance.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
 import { terrainExag, patchTerrain } from '../utils/terrainShader'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { ringsToFlatGeo } from '../lib/ringsToFlatGeo.js'
 import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
 import { buildStairGeometry } from '../lib/buildStairGeometry.js'
@@ -59,9 +60,17 @@ const PARK_FENCE_CORNERS = (() => {
 // Inside the park, north of center (was -PARK_HALF-15/-23 — out over Park
 // Avenue, colliding with the curved street labels; 2026-06-23). ~0.35 of the
 // way from center toward the north edge: clear of the street. Operator-nudgeable.
-const LABEL_TITLE_POS    = parkAxisToCompass(0, -PARK_HALF * 0.35)
+// Exported so the 2D Designer map (MapLayers) can draw a flat park title at the
+// SAME position/orientation as the 3D landmark — one source, so they can't drift.
+export const LABEL_TITLE_POS    = parkAxisToCompass(0, -PARK_HALF * 0.35)
 const LABEL_SUBTITLE_POS = parkAxisToCompass(0, -PARK_HALF * 0.35 + 9)
-const LABEL_TEXT_ROT_Y = _PARK_AXIS_RAD
+export const LABEL_TEXT_ROT_Y = _PARK_AXIS_RAD
+// The default park-title center (between title + subtitle anchors). The move
+// handle overrides it via store.parkTitlePos; null there = this.
+export const PARK_TITLE_DEFAULT_CENTER = [
+  (LABEL_TITLE_POS[0] + LABEL_SUBTITLE_POS[0]) / 2,
+  (LABEL_TITLE_POS[1] + LABEL_SUBTITLE_POS[1]) / 2,
+]
 
 const FENCE_HEIGHT = 1.5
 const FENCE_POST_SPACING = 8
@@ -733,41 +742,16 @@ function PerimeterFence() {
 // rides the heightfield directly so the joint between park feature and
 // ground is local rather than averaged.
 //
-// Labels are drei <Text> instances (TroikaText) — hard to shader-patch
-// cleanly (and they're rotated flat, so a per-vertex terrain lift would push
-// them sideways, not up) — so each is wrapped in a useFrame'd group that lifts
-// rigidly by a terrain sample × terrainExag.value.
-//
-// `footprintRadius` (for WIDE labels like the park title): lift by the MAX
-// terrain height across the label's footprint, not just its center point. A
-// flat quad placed at the center height sinks below any rise in the rolling
-// park terrain and gets depth-clipped — that's the "TE PARK" half-truncation.
-// Clearing the highest ground under it keeps the whole label visible; from
-// overhead (this label's home view) the clearance is along the camera axis,
-// so it still reads flush with the ground.
-function ElevatedGroup({ at, children, footprintRadius = 0 }) {
+// Park title/subtitle are printed ON THE GRASS: the group sits at the LOCAL
+// ground height under the label's anchor (the park is ~flat here, so one sample
+// is the grass under the whole word) and the text lies just above it, drawn
+// depth-off so the grass can't clip it. NO lift into the air — the old
+// max-over-footprint lift + a 4 m local offset floated the word up off the
+// grass, where the camera angle sheared its far side ("AFAYETTE PARK"). Sitting
+// it on the grass, flat, reads as painted on and can't be clipped.
+function ElevatedGroup({ at, children }) {
   const ref = useRef()
-  const baseY = useMemo(() => {
-    // Lift to the MAX terrain over the whole label FOOTPRINT (a disc, not one
-    // ring). The label is far wider than a single ring, so a terrain bump under
-    // the word but beyond an 8-spoke ring used to poke up through the letters
-    // ("LAFAYETTE PARK" read half-drowned, 2026-06-26). Two rings × 12 spokes
-    // capture the true max, so the baseline clears the ground beneath the whole
-    // word regardless of vertical exaggeration (both ride terrainExag).
-    let m = getElevationRaw(at[0], at[1])
-    if (footprintRadius > 0) {
-      for (const r of [footprintRadius * 0.5, footprintRadius]) {
-        for (let i = 0; i < 12; i++) {
-          const a = (i / 12) * Math.PI * 2
-          m = Math.max(m, getElevationRaw(
-            at[0] + Math.cos(a) * r,
-            at[1] + Math.sin(a) * r,
-          ))
-        }
-      }
-    }
-    return m
-  }, [at, footprintRadius])
+  const baseY = useMemo(() => getElevationRaw(at[0], at[1]), [at])
   useFrame(() => {
     if (ref.current) ref.current.position.y = baseY * terrainExag.value
   })
@@ -791,53 +775,102 @@ function ElevatedGroup({ at, children, footprintRadius = 0 }) {
 // it correctly ordered in the transparent queue) — the documented root fix
 // (ls/BACKLOG.md: render landmark labels in the label/ribbon stack like street
 // labels, which never depth-fight the terrain). Reapplied on every troika sync.
-function flattenLabelDepth(troikaText) {
-  const m = troikaText && troikaText.material
-  if (m) {
-    m.depthTest = false
-    m.depthWrite = false
-  }
+// The title + subtitle drawn onto one texture (canvas 2D), so it can ride a
+// plain quad printed on the grass. Title white, subtitle grey, dark outline —
+// matching the old troika look. Built once.
+export function useParkTitleTexture() {
+  // Same panel `labels` style the street labels use (SceneLabel reads the same),
+  // so the park title stays consistent with them AND the Labels-panel controls
+  // (halo, fill, weight, spacing, font) govern it too — not just the street labels.
+  const style = useCartographStore(s => s.labels) || {}
+  const fill = style.fill ?? '#e8e8f0'
+  const halo = style.halo ?? '#14141c'
+  const haloWidth = style.haloWidth ?? 0.07
+  const weight = style.weight ?? 600
+  const tracking = style.letterSpacing ?? 0.05
+  const fam = (style.fontFamily || '').trim()
+  const caseMode = style.case ?? 'mixed'
+  return useMemo(() => {
+    if (typeof document === 'undefined') return null
+    const applyCase = t => caseMode === 'upper' ? t.toUpperCase()
+                         : caseMode === 'lower' ? t.toLowerCase() : t
+    const title = applyCase(INSTANCE.profile.landmarkName)
+    const sub = applyCase(`EST. ${INSTANCE.profile.founded} · ${INSTANCE.geography.cityState}`)
+    const W = 2048, H = 512
+    const canvas = document.createElement('canvas')
+    canvas.width = W; canvas.height = H
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, W, H)
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.lineJoin = 'round'; ctx.miterLimit = 2
+    const family = `${fam ? `"${fam}", ` : ''}system-ui, "Segoe UI", Arial, sans-serif`
+    const draw = (text, px, cy, alpha) => {
+      ctx.font = `${weight} ${px}px ${family}`
+      if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.round(tracking * px)}px`
+      ctx.globalAlpha = 1
+      ctx.lineWidth = 2 * px * haloWidth           // haloWidth = fraction of glyph height, per side
+      ctx.strokeStyle = halo; ctx.strokeText(text, W / 2, cy)
+      ctx.globalAlpha = alpha
+      ctx.fillStyle = fill; ctx.fillText(text, W / 2, cy)
+    }
+    draw(title, 200, 205, 1)      // title at full fill
+    draw(sub, 86, 380, 0.65)      // subtitle dimmed for hierarchy
+    ctx.globalAlpha = 1
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.anisotropy = 8
+    tex.minFilter = THREE.LinearMipmapLinearFilter
+    tex.magFilter = THREE.LinearFilter
+    tex.needsUpdate = true
+    return tex
+  }, [fill, halo, haloWidth, weight, tracking, fam, caseMode])
 }
 
-export function ParkTitle() {
-  if (INSTANCE.lookId !== 'lafayette-square') return null   // HPDM-safety (see LafayettePark)
+// THE park-title mesh — the ONE source, reused by both the 2D Designer map
+// (MapLayers) and the 3D scene (ParkTitle below) so it's in both by
+// construction, never two drifting copies. A flat textured quad with a PLAIN
+// material whose depthTest is reliably OFF — so nothing (2D map ground or 3D
+// foreground terrain) can clip it. This replaces the troika <Text>, whose
+// depthTest flag didn't hold (its internal render material ignored it), which is
+// why the word kept shearing ("AFAYETTE PARK"). `y` = height above whatever
+// ground the caller sits it on. LS-only geometry (LABEL_TITLE_POS).
+export function ParkTitleMesh({ y = 0.25 }) {
+  const tex = useParkTitleTexture()
+  // Size knob (proportional scale, Auto/absent = 1×) scales the whole quad — the
+  // same sizeK the street labels use, so the one control drives both.
+  const sizeK = useCartographStore(s => s.labels?.sizeK) ?? 1
+  const posOverride = useCartographStore(s => s.parkTitlePos)
+  const mat = useMemo(() => tex && new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, depthTest: false, depthWrite: false, toneMapped: false,
+  }), [tex])
+  if (!mat) return null
+  // Quad centered at the operator's moved position, or the default. 4:1 texture.
+  const cx = posOverride ? posOverride[0] : PARK_TITLE_DEFAULT_CENTER[0]
+  const cz = posOverride ? posOverride[1] : PARK_TITLE_DEFAULT_CENTER[1]
   return (
-    <>
-      <ElevatedGroup at={LABEL_TITLE_POS} footprintRadius={34}>
-        <Text
-          position={[LABEL_TITLE_POS[0], 4.0, LABEL_TITLE_POS[1]]}
-          rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
-          fontSize={6}
-          color="#e8e8f0"
-          anchorX="center"
-          anchorY="middle"
-          letterSpacing={0.15}
-          outlineWidth={0.7}
-          outlineColor="#14141c"
-          renderOrder={16}
-          onSync={flattenLabelDepth}
-        >
-          {INSTANCE.profile.landmarkName.toUpperCase()}
-        </Text>
-      </ElevatedGroup>
-      <ElevatedGroup at={LABEL_SUBTITLE_POS} footprintRadius={24}>
-        <Text
-          position={[LABEL_SUBTITLE_POS[0], 4.0, LABEL_SUBTITLE_POS[1]]}
-          rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
-          fontSize={3}
-          color="#888890"
-          anchorX="center"
-          anchorY="middle"
-          letterSpacing={0.08}
-          outlineWidth={0.35}
-          outlineColor="#14141c"
-          renderOrder={16}
-          onSync={flattenLabelDepth}
-        >
-          {`EST. ${INSTANCE.profile.founded} · ${INSTANCE.geography.cityState.toUpperCase()}`}
-        </Text>
-      </ElevatedGroup>
-    </>
+    <mesh
+      position={[cx, y, cz]}
+      rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
+      scale={[sizeK, sizeK, 1]}
+      material={mat}
+      renderOrder={16}
+    >
+      <planeGeometry args={[76, 19]} />
+    </mesh>
+  )
+}
+
+// 3D scene: the same mesh printed on the grass at its LOCAL ground height. The
+// ElevatedGroup samples terrain at the (possibly moved) center so the lift
+// tracks the title.
+export function ParkTitle() {
+  const posOverride = useCartographStore(s => s.parkTitlePos)
+  if (INSTANCE.lookId !== 'lafayette-square') return null   // HPDM-safety
+  const cx = posOverride ? posOverride[0] : PARK_TITLE_DEFAULT_CENTER[0]
+  const cz = posOverride ? posOverride[1] : PARK_TITLE_DEFAULT_CENTER[1]
+  return (
+    <ElevatedGroup at={[cx, cz]}>
+      <ParkTitleMesh y={0.25} />
+    </ElevatedGroup>
   )
 }
 

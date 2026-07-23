@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "centrum",
-  "bakedAt": 1784613256063,
+  "bakedAt": 1784762020398,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -565,17 +565,6 @@
   "heroMotion": {
     "period": 1360,
     "easing": "sine"
-  },
-  "arch": {
-    "values": {
-      "distance": 1690,
-      "bearingX": 0.9487,
-      "bearingZ": -0.3163,
-      "scale": 2.1,
-      "rotation": 1.99,
-      "yOffset": 155,
-      "footFade": 36
-    }
   },
   "archLight": {
     "animated": "tod",

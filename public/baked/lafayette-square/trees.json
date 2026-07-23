@@ -1,11 +1,11 @@
 {
-  "generatedAt": 1784744383553,
+  "generatedAt": 1784747435082,
   "scene": "lafayette-square",
   "lod": "lod2",
   "activeStyles": [
     "realistic"
   ],
-  "count": 4992,
+  "count": 4995,
   "unmatched": 0,
   "uniqueVariants": 33,
   "heroTierMeta": {
@@ -21,19 +21,19 @@
       73.5,
       -534.547
     ],
-    "mesh": 1596,
+    "mesh": 1589,
     "opaque": 0,
     "impostor": 0,
-    "cull": 3396,
+    "cull": 3406,
     "promHistogram": [
-      3484,
-      132,
-      178,
-      173,
-      192,
-      160,
-      162,
-      103,
+      3497,
+      131,
+      185,
+      175,
+      186,
+      158,
+      155,
+      100,
       88,
       85,
       56,
@@ -48,12 +48,12 @@
       0
     ],
     "thresholdSweep": {
-      "0.005": 1508,
-      "0.01": 1376,
-      "0.015": 1198,
-      "0.02": 1025,
-      "0.025": 833,
-      "0.03": 673,
+      "0.005": 1498,
+      "0.01": 1367,
+      "0.015": 1182,
+      "0.02": 1007,
+      "0.025": 821,
+      "0.03": 663,
       "0.04": 408,
       "0.05": 235,
       "0.06": 145,
@@ -3905,9 +3905,9 @@
             "heroTier": "cull"
           },
           {
-            "x": 301.2,
+            "x": 300.47,
             "y": 0,
-            "z": -832,
+            "z": -831,
             "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/maple_sugar/skeleton-1-lod0.glb",
@@ -3920,7 +3920,7 @@
             "category": "broadleaf",
             "source": "osm",
             "dbh": 13,
-            "lampGlow": 0.1048,
+            "lampGlow": 0.0964,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -4791,9 +4791,9 @@
             "heroTier": "mesh"
           },
           {
-            "x": 624.53,
+            "x": 625.4,
             "y": 0,
-            "z": -527.2,
+            "z": -528.7,
             "url": "/trees/maple_red/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/maple_red/skeleton-1-lod0.glb",
@@ -5211,7 +5211,7 @@
             "heroTier": "mesh"
           },
           {
-            "x": 635.4,
+            "x": 637.4,
             "y": 0,
             "z": -599.3,
             "url": "/trees/betula_pendula/skeleton-2-lod2.glb",
@@ -5226,7 +5226,47 @@
             "category": "broadleaf",
             "source": "osm",
             "dbh": 5,
-            "lampGlow": 1.5,
+            "lampGlow": 1.4953,
+            "inHood": true,
+            "heroTier": "mesh"
+          },
+          {
+            "x": 640.2,
+            "y": 0,
+            "z": -589.8,
+            "url": "/trees/linden_american/skeleton-1-lod2.glb",
+            "lods": {
+              "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
+              "lod1": "/trees/linden_american/skeleton-1-lod1.glb",
+              "lod2": "/trees/linden_american/skeleton-1-lod2.glb"
+            },
+            "rotY": 5.044,
+            "species": "linden_american",
+            "variantId": 1,
+            "category": "broadleaf",
+            "source": "osm",
+            "dbh": 17,
+            "lampGlow": 1.1134,
+            "inHood": true,
+            "heroTier": "mesh"
+          },
+          {
+            "x": 643.2,
+            "y": 0,
+            "z": -580.1,
+            "url": "/trees/maple_silver/skeleton-1-lod2.glb",
+            "lods": {
+              "lod0": "/trees/maple_silver/skeleton-1-lod0.glb",
+              "lod1": "/trees/maple_silver/skeleton-1-lod1.glb",
+              "lod2": "/trees/maple_silver/skeleton-1-lod2.glb"
+            },
+            "rotY": 4.8573,
+            "species": "maple_silver",
+            "variantId": 1,
+            "category": "broadleaf",
+            "source": "osm",
+            "dbh": 10,
+            "lampGlow": 1.4101,
             "inHood": true,
             "heroTier": "mesh"
           }
@@ -5537,9 +5577,9 @@
             "heroTier": "cull"
           },
           {
-            "x": -477.7,
+            "x": -478.07,
             "y": 0,
-            "z": -183.47,
+            "z": -183.1,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -5552,7 +5592,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 24,
-            "lampGlow": 0.5797,
+            "lampGlow": 0.6005,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -6357,9 +6397,9 @@
             "heroTier": "cull"
           },
           {
-            "x": -487.6,
+            "x": -487.97,
             "y": 0,
-            "z": -185.17,
+            "z": -184.8,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -6372,7 +6412,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 20,
-            "lampGlow": 0.4236,
+            "lampGlow": 0.4331,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -6397,9 +6437,9 @@
             "heroTier": "cull"
           },
           {
-            "x": -520.3,
+            "x": -519.3,
             "y": 0,
-            "z": -190.93,
+            "z": -190.2,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -6412,7 +6452,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 19,
-            "lampGlow": 0.4635,
+            "lampGlow": 0.5071,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -6837,9 +6877,9 @@
             "heroTier": "cull"
           },
           {
-            "x": -509.6,
+            "x": -508.6,
             "y": 0,
-            "z": -189.13,
+            "z": -188.4,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -6852,7 +6892,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 17,
-            "lampGlow": 0.4982,
+            "lampGlow": 0.5089,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -7017,7 +7057,7 @@
             "heroTier": "cull"
           },
           {
-            "x": -420.4,
+            "x": -421.4,
             "y": 0,
             "z": -173.7,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
@@ -7032,7 +7072,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 8,
-            "lampGlow": 0.3797,
+            "lampGlow": 0.3458,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -7397,9 +7437,9 @@
             "heroTier": "cull"
           },
           {
-            "x": -434.7,
+            "x": -435.2,
             "y": 0,
-            "z": -176.4,
+            "z": -176.27,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -7412,7 +7452,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 34,
-            "lampGlow": 0.0424,
+            "lampGlow": 0.0393,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -8697,9 +8737,9 @@
             "heroTier": "cull"
           },
           {
-            "x": -417.37,
+            "x": -418.5,
             "y": 0,
-            "z": -172.2,
+            "z": -171.7,
             "url": "/trees/tilia_americana/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/tilia_americana/skeleton-1-lod0.glb",
@@ -8712,7 +8752,7 @@
             "category": "broadleaf",
             "source": "osm",
             "dbh": 2,
-            "lampGlow": 0.5395,
+            "lampGlow": 0.5126,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -15360,7 +15400,7 @@
             "dbh": 8,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": -404.7,
@@ -15600,7 +15640,7 @@
             "dbh": 2,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": -172.1,
@@ -15620,7 +15660,7 @@
             "dbh": 2,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": -310.4,
@@ -17120,7 +17160,7 @@
             "dbh": 13,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": -171.6,
@@ -18220,7 +18260,7 @@
             "dbh": 3,
             "lampGlow": 0.8165,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": -46.2,
@@ -22580,7 +22620,7 @@
             "dbh": 8,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": -231.3,
@@ -26826,7 +26866,7 @@
             "dbh": 11,
             "lampGlow": 0.3211,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 70.6,
@@ -28369,7 +28409,7 @@
             "heroTier": "cull"
           },
           {
-            "x": 84.5,
+            "x": 83.5,
             "y": 0,
             "z": -255.5,
             "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
@@ -28849,9 +28889,9 @@
             "heroTier": "cull"
           },
           {
-            "x": 69.7,
+            "x": 68.6,
             "y": 0,
-            "z": -234.1,
+            "z": -233,
             "url": "/trees/maple_red/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/maple_red/skeleton-1-lod0.glb",
@@ -29609,9 +29649,9 @@
             "heroTier": "cull"
           },
           {
-            "x": 74.63,
+            "x": 75.9,
             "y": 0,
-            "z": -238.9,
+            "z": -239.9,
             "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/maple_sugar/skeleton-1-lod0.glb",
@@ -31726,7 +31766,7 @@
             "dbh": 3,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 140.9,
@@ -32089,7 +32129,7 @@
             "heroTier": "cull"
           },
           {
-            "x": 89.7,
+            "x": 88.7,
             "y": 0,
             "z": -269.9,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
@@ -32229,7 +32269,7 @@
             "heroTier": "mesh"
           },
           {
-            "x": 90.4,
+            "x": 91.4,
             "y": 0,
             "z": -348.2,
             "url": "/trees/acer_saccharum/skeleton-1-lod2.glb",
@@ -32749,7 +32789,7 @@
             "heroTier": "mesh"
           },
           {
-            "x": 55.2,
+            "x": 56.2,
             "y": 0,
             "z": -279.8,
             "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
@@ -32769,7 +32809,7 @@
             "heroTier": "mesh"
           },
           {
-            "x": 56.9,
+            "x": 57.9,
             "y": 0,
             "z": -285,
             "url": "/trees/platanus_acerifolia/skeleton-3-lod2.glb",
@@ -37809,9 +37849,9 @@
             "heroTier": "cull"
           },
           {
-            "x": 76.03,
+            "x": 75.9,
             "y": 0,
-            "z": -268.9,
+            "z": -269.4,
             "url": "/trees/oak_white/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/oak_white/skeleton-1-lod0.glb",
@@ -37829,7 +37869,7 @@
             "heroTier": "mesh"
           },
           {
-            "x": 64.3,
+            "x": 65.3,
             "y": 0,
             "z": -262.3,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
@@ -37849,9 +37889,9 @@
             "heroTier": "mesh"
           },
           {
-            "x": 73.33,
+            "x": 73.2,
             "y": 0,
-            "z": -261.2,
+            "z": -261.7,
             "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/maple_sugar/skeleton-1-lod0.glb",
@@ -43592,7 +43632,7 @@
             "dbh": 3,
             "lampGlow": 0.0087,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 642.7,
@@ -46112,7 +46152,7 @@
             "dbh": 38,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 470.2,
@@ -46931,6 +46971,26 @@
             "source": "osm",
             "dbh": 1,
             "lampGlow": 0.0045,
+            "inHood": true,
+            "heroTier": "mesh"
+          },
+          {
+            "x": 765.73,
+            "y": 0,
+            "z": -442.8,
+            "url": "/trees/platanus_acerifolia/skeleton-2-lod2.glb",
+            "lods": {
+              "lod0": "/trees/platanus_acerifolia/skeleton-2-lod0.glb",
+              "lod1": "/trees/platanus_acerifolia/skeleton-2-lod1.glb",
+              "lod2": "/trees/platanus_acerifolia/skeleton-2-lod2.glb"
+            },
+            "rotY": 6.1977,
+            "species": "platanus_acerifolia",
+            "variantId": 2,
+            "category": "broadleaf",
+            "source": "osm",
+            "dbh": 5,
+            "lampGlow": 0.1876,
             "inHood": true,
             "heroTier": "mesh"
           },
@@ -51224,7 +51284,7 @@
             "dbh": 2,
             "lampGlow": 0.7581,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": -95.8,
@@ -53004,7 +53064,7 @@
             "dbh": 28,
             "lampGlow": 0.004,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": -62.5,
@@ -54544,7 +54604,7 @@
             "dbh": 14,
             "lampGlow": 0.8733,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": -123.4,
@@ -54864,7 +54924,7 @@
             "dbh": 8,
             "lampGlow": 0.1139,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": -67.3,
@@ -58304,7 +58364,7 @@
             "dbh": 2,
             "lampGlow": 0.5793,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": -21.8,
@@ -62890,7 +62950,7 @@
             "dbh": 18,
             "lampGlow": 0.0578,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 11.4,
@@ -64350,7 +64410,7 @@
             "dbh": 4,
             "lampGlow": 0.0008,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 114.4,
@@ -65470,7 +65530,7 @@
             "dbh": 12,
             "lampGlow": 0.0015,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 113.4,
@@ -69130,7 +69190,7 @@
             "dbh": 7,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": 370.77,
@@ -73270,7 +73330,7 @@
             "dbh": 12,
             "lampGlow": 0.0213,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": 117.1,
@@ -73290,7 +73350,7 @@
             "dbh": 2,
             "lampGlow": 0.0377,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": 128.97,
@@ -74490,7 +74550,7 @@
             "dbh": 21,
             "lampGlow": 0.0478,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 221.7,
@@ -75450,7 +75510,7 @@
             "dbh": 5,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 299.2,
@@ -75750,7 +75810,7 @@
             "dbh": 2,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 345.5,
@@ -76010,7 +76070,7 @@
             "dbh": 6,
             "lampGlow": 0.947,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": 371.1,
@@ -76033,9 +76093,9 @@
             "heroTier": "cull"
           },
           {
-            "x": 356.3,
+            "x": 356.8,
             "y": 0,
-            "z": 262.6,
+            "z": 263.47,
             "url": "/trees/ash_green/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/ash_green/skeleton-1-lod0.glb",
@@ -76048,14 +76108,14 @@
             "category": "broadleaf",
             "source": "osm",
             "dbh": 18,
-            "lampGlow": 0.6518,
+            "lampGlow": 0.6405,
             "inHood": true,
             "heroTier": "cull"
           },
           {
-            "x": 347.1,
+            "x": 347.6,
             "y": 0,
-            "z": 261,
+            "z": 261.87,
             "url": "/trees/oak_white/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/oak_white/skeleton-1-lod0.glb",
@@ -76068,7 +76128,7 @@
             "category": "broadleaf",
             "source": "osm",
             "dbh": 5,
-            "lampGlow": 0.7021,
+            "lampGlow": 0.6693,
             "inHood": true,
             "heroTier": "mesh"
           },
@@ -78176,7 +78236,7 @@
             "dbh": 15,
             "lampGlow": 0,
             "inHood": true,
-            "heroTier": "cull"
+            "heroTier": "mesh"
           },
           {
             "x": 779.13,
@@ -78616,7 +78676,7 @@
             "dbh": 2,
             "lampGlow": 1.0448,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 399.8,
@@ -78819,9 +78879,9 @@
             "heroTier": "mesh"
           },
           {
-            "x": 777.7,
+            "x": 778.2,
             "y": 0,
-            "z": 117.16,
+            "z": 116.3,
             "url": "/trees/oak_white/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/oak_white/skeleton-1-lod0.glb",
@@ -78834,7 +78894,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 2,
-            "lampGlow": 0.0852,
+            "lampGlow": 0.101,
             "inHood": true,
             "heroTier": "mesh"
           },
@@ -79239,9 +79299,9 @@
             "heroTier": "cull"
           },
           {
-            "x": 535.2,
+            "x": 536.43,
             "y": 0,
-            "z": 129.27,
+            "z": 129.4,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -79254,7 +79314,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 13,
-            "lampGlow": 0.2011,
+            "lampGlow": 0.2399,
             "inHood": true,
             "heroTier": "mesh"
           },
@@ -80199,9 +80259,9 @@
             "heroTier": "mesh"
           },
           {
-            "x": 785.7,
+            "x": 786.2,
             "y": 0,
-            "z": 123.2,
+            "z": 122.33,
             "url": "/trees/nyssa_sylvatica/skeleton-3-lod2.glb",
             "lods": {
               "lod0": "/trees/nyssa_sylvatica/skeleton-3-lod0.glb",
@@ -80214,7 +80274,7 @@
             "category": "broadleaf",
             "source": "city-inventory",
             "dbh": 3,
-            "lampGlow": 0.0265,
+            "lampGlow": 0.0317,
             "inHood": true,
             "heroTier": "cull"
           },
@@ -82176,7 +82236,7 @@
             "dbh": 3,
             "lampGlow": 0.7364,
             "inHood": true,
-            "heroTier": "mesh"
+            "heroTier": "cull"
           },
           {
             "x": 561.8,
@@ -83219,9 +83279,9 @@
             "heroTier": "mesh"
           },
           {
-            "x": 472.3,
+            "x": 473.3,
             "y": 0,
-            "z": 258.4,
+            "z": 259.4,
             "url": "/trees/linden_american/skeleton-1-lod2.glb",
             "lods": {
               "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -83234,7 +83294,7 @@
             "category": "broadleaf",
             "source": "osm",
             "dbh": 6,
-            "lampGlow": 1.3115,
+            "lampGlow": 1.3472,
             "inHood": true,
             "heroTier": "mesh"
           },
@@ -95157,7 +95217,7 @@
             "heroTier": "cull"
           },
           {
-            "x": 275.5,
+            "x": 274.5,
             "y": 0,
             "z": 594.4,
             "url": "/trees/oak_bur/skeleton-1-lod2.glb",
@@ -95217,7 +95277,7 @@
             "heroTier": "cull"
           },
           {
-            "x": 255,
+            "x": 254,
             "y": 0,
             "z": 567.6,
             "url": "/trees/platanus_acerifolia/skeleton-3-lod2.glb",
@@ -100325,7 +100385,7 @@
       "dbh": 18,
       "lampGlow": 0.0578,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": -116.5,
@@ -101705,7 +101765,7 @@
       "dbh": 2,
       "lampGlow": 0.7581,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": -95.8,
@@ -103985,7 +104045,7 @@
       "dbh": 4,
       "lampGlow": 0.0008,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 114.4,
@@ -106845,7 +106905,7 @@
       "dbh": 12,
       "lampGlow": 0.0015,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 113.4,
@@ -107445,7 +107505,7 @@
       "dbh": 28,
       "lampGlow": 0.004,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": -158.9,
@@ -112545,7 +112605,7 @@
       "dbh": 11,
       "lampGlow": 0.3211,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": -47.7,
@@ -112785,7 +112845,7 @@
       "dbh": 14,
       "lampGlow": 0.8733,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 111.1,
@@ -113945,7 +114005,7 @@
       "dbh": 8,
       "lampGlow": 0.1139,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": -8.1,
@@ -116065,7 +116125,7 @@
       "dbh": 8,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": 486.4,
@@ -118425,7 +118485,7 @@
       "dbh": 2,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": 602.6,
@@ -118648,9 +118708,9 @@
       "heroTier": "cull"
     },
     {
-      "x": -477.7,
+      "x": -478.07,
       "y": 0,
-      "z": -183.47,
+      "z": -183.1,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -118663,7 +118723,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 24,
-      "lampGlow": 0.5797,
+      "lampGlow": 0.6005,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -119285,7 +119345,7 @@
       "dbh": 2,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": -628.8,
@@ -122285,7 +122345,7 @@
       "dbh": 15,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": 470.9,
@@ -122405,7 +122465,7 @@
       "dbh": 7,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": -517.8,
@@ -124448,9 +124508,9 @@
       "heroTier": "cull"
     },
     {
-      "x": -487.6,
+      "x": -487.97,
       "y": 0,
-      "z": -185.17,
+      "z": -184.8,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -124463,7 +124523,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 20,
-      "lampGlow": 0.4236,
+      "lampGlow": 0.4331,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -125148,9 +125208,9 @@
       "heroTier": "mesh"
     },
     {
-      "x": -520.3,
+      "x": -519.3,
       "y": 0,
-      "z": -190.93,
+      "z": -190.2,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -125163,7 +125223,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 19,
-      "lampGlow": 0.4635,
+      "lampGlow": 0.5071,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -125925,7 +125985,7 @@
       "dbh": 2,
       "lampGlow": 1.0448,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 546.5,
@@ -126788,7 +126848,7 @@
       "heroTier": "mesh"
     },
     {
-      "x": 84.5,
+      "x": 83.5,
       "y": 0,
       "z": -255.5,
       "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
@@ -127168,9 +127228,9 @@
       "heroTier": "cull"
     },
     {
-      "x": 777.7,
+      "x": 778.2,
       "y": 0,
-      "z": 117.16,
+      "z": 116.3,
       "url": "/trees/oak_white/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/oak_white/skeleton-1-lod0.glb",
@@ -127183,7 +127243,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 2,
-      "lampGlow": 0.0852,
+      "lampGlow": 0.101,
       "inHood": true,
       "heroTier": "mesh"
     },
@@ -129148,9 +129208,9 @@
       "heroTier": "mesh"
     },
     {
-      "x": -509.6,
+      "x": -508.6,
       "y": 0,
-      "z": -189.13,
+      "z": -188.4,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -129163,7 +129223,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 17,
-      "lampGlow": 0.4982,
+      "lampGlow": 0.5089,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -131068,7 +131128,7 @@
       "heroTier": "mesh"
     },
     {
-      "x": -420.4,
+      "x": -421.4,
       "y": 0,
       "z": -173.7,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
@@ -131083,7 +131143,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 8,
-      "lampGlow": 0.3797,
+      "lampGlow": 0.3458,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -131248,9 +131308,9 @@
       "heroTier": "cull"
     },
     {
-      "x": 535.2,
+      "x": 536.43,
       "y": 0,
-      "z": 129.27,
+      "z": 129.4,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -131263,7 +131323,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 13,
-      "lampGlow": 0.2011,
+      "lampGlow": 0.2399,
       "inHood": true,
       "heroTier": "mesh"
     },
@@ -131968,9 +132028,9 @@
       "heroTier": "cull"
     },
     {
-      "x": 69.7,
+      "x": 68.6,
       "y": 0,
-      "z": -234.1,
+      "z": -233,
       "url": "/trees/maple_red/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/maple_red/skeleton-1-lod0.glb",
@@ -134025,7 +134085,7 @@
       "dbh": 13,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 116.1,
@@ -134168,9 +134228,9 @@
       "heroTier": "cull"
     },
     {
-      "x": -434.7,
+      "x": -435.2,
       "y": 0,
-      "z": -176.4,
+      "z": -176.27,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -134183,7 +134243,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 34,
-      "lampGlow": 0.0424,
+      "lampGlow": 0.0393,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -139028,9 +139088,9 @@
       "heroTier": "cull"
     },
     {
-      "x": 74.63,
+      "x": 75.9,
       "y": 0,
-      "z": -238.9,
+      "z": -239.9,
       "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/maple_sugar/skeleton-1-lod0.glb",
@@ -139388,9 +139448,9 @@
       "heroTier": "cull"
     },
     {
-      "x": 785.7,
+      "x": 786.2,
       "y": 0,
-      "z": 123.2,
+      "z": 122.33,
       "url": "/trees/nyssa_sylvatica/skeleton-3-lod2.glb",
       "lods": {
         "lod0": "/trees/nyssa_sylvatica/skeleton-3-lod0.glb",
@@ -139403,7 +139463,7 @@
       "category": "broadleaf",
       "source": "city-inventory",
       "dbh": 3,
-      "lampGlow": 0.0265,
+      "lampGlow": 0.0317,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -145085,7 +145145,7 @@
       "dbh": 3,
       "lampGlow": 0.8165,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": -5.5,
@@ -146685,7 +146745,7 @@
       "dbh": 2,
       "lampGlow": 0.5793,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 10.3,
@@ -155145,7 +155205,7 @@
       "dbh": 12,
       "lampGlow": 0.0213,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": 117.1,
@@ -155165,7 +155225,7 @@
       "dbh": 2,
       "lampGlow": 0.0377,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": 128.97,
@@ -156365,7 +156425,7 @@
       "dbh": 21,
       "lampGlow": 0.0478,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 221.7,
@@ -157425,7 +157485,7 @@
       "dbh": 5,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 299.2,
@@ -157725,7 +157785,7 @@
       "dbh": 2,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 345.5,
@@ -159485,7 +159545,7 @@
       "dbh": 3,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 140.9,
@@ -159848,7 +159908,7 @@
       "heroTier": "cull"
     },
     {
-      "x": 89.7,
+      "x": 88.7,
       "y": 0,
       "z": -269.9,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
@@ -159988,7 +160048,7 @@
       "heroTier": "mesh"
     },
     {
-      "x": 90.4,
+      "x": 91.4,
       "y": 0,
       "z": -348.2,
       "url": "/trees/acer_saccharum/skeleton-1-lod2.glb",
@@ -160508,7 +160568,7 @@
       "heroTier": "mesh"
     },
     {
-      "x": 55.2,
+      "x": 56.2,
       "y": 0,
       "z": -279.8,
       "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
@@ -160528,7 +160588,7 @@
       "heroTier": "mesh"
     },
     {
-      "x": 56.9,
+      "x": 57.9,
       "y": 0,
       "z": -285,
       "url": "/trees/platanus_acerifolia/skeleton-3-lod2.glb",
@@ -163105,7 +163165,7 @@
       "dbh": 3,
       "lampGlow": 0.7364,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 561.8,
@@ -165225,7 +165285,7 @@
       "dbh": 3,
       "lampGlow": 0.0087,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 642.7,
@@ -165588,9 +165648,9 @@
       "heroTier": "mesh"
     },
     {
-      "x": 624.53,
+      "x": 625.4,
       "y": 0,
-      "z": -527.2,
+      "z": -528.7,
       "url": "/trees/maple_red/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/maple_red/skeleton-1-lod0.glb",
@@ -169985,7 +170045,7 @@
       "dbh": 38,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": 470.2,
@@ -171204,6 +171264,26 @@
       "source": "osm",
       "dbh": 1,
       "lampGlow": 0.0045,
+      "inHood": true,
+      "heroTier": "mesh"
+    },
+    {
+      "x": 765.73,
+      "y": 0,
+      "z": -442.8,
+      "url": "/trees/platanus_acerifolia/skeleton-2-lod2.glb",
+      "lods": {
+        "lod0": "/trees/platanus_acerifolia/skeleton-2-lod0.glb",
+        "lod1": "/trees/platanus_acerifolia/skeleton-2-lod1.glb",
+        "lod2": "/trees/platanus_acerifolia/skeleton-2-lod2.glb"
+      },
+      "rotY": 6.1977,
+      "species": "platanus_acerifolia",
+      "variantId": 2,
+      "category": "broadleaf",
+      "source": "osm",
+      "dbh": 5,
+      "lampGlow": 0.1876,
       "inHood": true,
       "heroTier": "mesh"
     },
@@ -172868,7 +172948,7 @@
       "heroTier": "cull"
     },
     {
-      "x": 275.5,
+      "x": 274.5,
       "y": 0,
       "z": 594.4,
       "url": "/trees/oak_bur/skeleton-1-lod2.glb",
@@ -172928,7 +173008,7 @@
       "heroTier": "cull"
     },
     {
-      "x": 255,
+      "x": 254,
       "y": 0,
       "z": 567.6,
       "url": "/trees/platanus_acerifolia/skeleton-3-lod2.glb",
@@ -177305,7 +177385,7 @@
       "dbh": 8,
       "lampGlow": 0,
       "inHood": true,
-      "heroTier": "mesh"
+      "heroTier": "cull"
     },
     {
       "x": -231.3,
@@ -178408,9 +178488,9 @@
       "heroTier": "cull"
     },
     {
-      "x": -417.37,
+      "x": -418.5,
       "y": 0,
-      "z": -172.2,
+      "z": -171.7,
       "url": "/trees/tilia_americana/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/tilia_americana/skeleton-1-lod0.glb",
@@ -178423,7 +178503,7 @@
       "category": "broadleaf",
       "source": "osm",
       "dbh": 2,
-      "lampGlow": 0.5395,
+      "lampGlow": 0.5126,
       "inHood": true,
       "heroTier": "cull"
     },
@@ -180188,9 +180268,9 @@
       "heroTier": "mesh"
     },
     {
-      "x": 472.3,
+      "x": 473.3,
       "y": 0,
-      "z": 258.4,
+      "z": 259.4,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
@@ -180203,7 +180283,7 @@
       "category": "broadleaf",
       "source": "osm",
       "dbh": 6,
-      "lampGlow": 1.3115,
+      "lampGlow": 1.3472,
       "inHood": true,
       "heroTier": "mesh"
     },
@@ -180265,7 +180345,7 @@
       "dbh": 6,
       "lampGlow": 0.947,
       "inHood": true,
-      "heroTier": "cull"
+      "heroTier": "mesh"
     },
     {
       "x": 371.1,
@@ -180328,9 +180408,9 @@
       "heroTier": "mesh"
     },
     {
-      "x": 356.3,
+      "x": 356.8,
       "y": 0,
-      "z": 262.6,
+      "z": 263.47,
       "url": "/trees/ash_green/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/ash_green/skeleton-1-lod0.glb",
@@ -180343,14 +180423,14 @@
       "category": "broadleaf",
       "source": "osm",
       "dbh": 18,
-      "lampGlow": 0.6518,
+      "lampGlow": 0.6405,
       "inHood": true,
       "heroTier": "cull"
     },
     {
-      "x": 347.1,
+      "x": 347.6,
       "y": 0,
-      "z": 261,
+      "z": 261.87,
       "url": "/trees/oak_white/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/oak_white/skeleton-1-lod0.glb",
@@ -180363,7 +180443,7 @@
       "category": "broadleaf",
       "source": "osm",
       "dbh": 5,
-      "lampGlow": 0.7021,
+      "lampGlow": 0.6693,
       "inHood": true,
       "heroTier": "mesh"
     },
@@ -186988,9 +187068,9 @@
       "heroTier": "cull"
     },
     {
-      "x": 76.03,
+      "x": 75.9,
       "y": 0,
-      "z": -268.9,
+      "z": -269.4,
       "url": "/trees/oak_white/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/oak_white/skeleton-1-lod0.glb",
@@ -187008,7 +187088,7 @@
       "heroTier": "mesh"
     },
     {
-      "x": 64.3,
+      "x": 65.3,
       "y": 0,
       "z": -262.3,
       "url": "/trees/linden_american/skeleton-1-lod2.glb",
@@ -187028,9 +187108,9 @@
       "heroTier": "mesh"
     },
     {
-      "x": 73.33,
+      "x": 73.2,
       "y": 0,
-      "z": -261.2,
+      "z": -261.7,
       "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/maple_sugar/skeleton-1-lod0.glb",
@@ -193228,7 +193308,7 @@
       "heroTier": "mesh"
     },
     {
-      "x": 635.4,
+      "x": 637.4,
       "y": 0,
       "z": -599.3,
       "url": "/trees/betula_pendula/skeleton-2-lod2.glb",
@@ -193243,14 +193323,54 @@
       "category": "broadleaf",
       "source": "osm",
       "dbh": 5,
-      "lampGlow": 1.5,
+      "lampGlow": 1.4953,
       "inHood": true,
       "heroTier": "mesh"
     },
     {
-      "x": 301.2,
+      "x": 640.2,
       "y": 0,
-      "z": -832,
+      "z": -589.8,
+      "url": "/trees/linden_american/skeleton-1-lod2.glb",
+      "lods": {
+        "lod0": "/trees/linden_american/skeleton-1-lod0.glb",
+        "lod1": "/trees/linden_american/skeleton-1-lod1.glb",
+        "lod2": "/trees/linden_american/skeleton-1-lod2.glb"
+      },
+      "rotY": 5.044,
+      "species": "linden_american",
+      "variantId": 1,
+      "category": "broadleaf",
+      "source": "osm",
+      "dbh": 17,
+      "lampGlow": 1.1134,
+      "inHood": true,
+      "heroTier": "mesh"
+    },
+    {
+      "x": 643.2,
+      "y": 0,
+      "z": -580.1,
+      "url": "/trees/maple_silver/skeleton-1-lod2.glb",
+      "lods": {
+        "lod0": "/trees/maple_silver/skeleton-1-lod0.glb",
+        "lod1": "/trees/maple_silver/skeleton-1-lod1.glb",
+        "lod2": "/trees/maple_silver/skeleton-1-lod2.glb"
+      },
+      "rotY": 4.8573,
+      "species": "maple_silver",
+      "variantId": 1,
+      "category": "broadleaf",
+      "source": "osm",
+      "dbh": 10,
+      "lampGlow": 1.4101,
+      "inHood": true,
+      "heroTier": "mesh"
+    },
+    {
+      "x": 300.47,
+      "y": 0,
+      "z": -831,
       "url": "/trees/maple_sugar/skeleton-1-lod2.glb",
       "lods": {
         "lod0": "/trees/maple_sugar/skeleton-1-lod0.glb",
@@ -193263,7 +193383,7 @@
       "category": "broadleaf",
       "source": "osm",
       "dbh": 13,
-      "lampGlow": 0.1048,
+      "lampGlow": 0.0964,
       "inHood": true,
       "heroTier": "cull"
     },

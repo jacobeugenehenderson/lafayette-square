@@ -728,6 +728,10 @@ const IS_GROUND = window.location.search.includes('ground')
 
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
+  // Baked layer visibility — the park title honors scene.json.layerVis like
+  // every other layer (authored in the panel → baked → all consumers gate on
+  // it). No consumer toggle; the slab carries the authored on/off.
+  const scene = useSceneJson(INSTANCE.lookId)
 
   // Hero needs CONTINUOUS rendering. Under frameloop="demand" the R3F clock
   // advances in coarse steps, so the authored pan (driven by clock.elapsedTime)
@@ -831,7 +835,7 @@ function Scene() {
           Stage (CartographApp) keeps the live mount (no SlabBuildings there →
           the index store stays null → SceneNeon falls back to live source, so
           authoring retint still works). */}
-      {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene hiddenLayers={{ building: true }} /></R3FErrorBoundary>}
+      {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene hiddenLayers={{ building: true, parkTitle: scene?.layerVis?.parkTitle === false }} /></R3FErrorBoundary>}
       {/* SlabBuildings ALWAYS mounts — it is the single hydration path for building
           identity (it publishes the index SceneNeon + selection resolve against).
           It self-gates to index-only when a city LOD2 model is drawing (see
@@ -852,12 +856,10 @@ function Scene() {
           If mobile ever needs a different lamp treatment, author it via the
           platform channel, don't hardwire a device fork here. (Boz + Jacob 2026-07-16.) */}
       {!IS_GROUND && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
-      {/* The Gateway Arch is an LS-only set-piece (bake-scene stamps arch defaults
-          into EVERY scene.json, so it can't gate on scene.arch presence). Gate per
-          look like StreetLights/LafayettePark do — else the St. Louis Arch renders
-          over Łódź et al. (compliance audit C1). Generalizes with the deferred
-          set-piece opt-in; bake-scene should also stop stamping arch for non-owners. */}
-      {!IS_GROUND && INSTANCE.lookId === 'lafayette-square' && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
+      {/* The Gateway Arch is a set-piece a Look INSTALLS (a `design.arch` block →
+          `scene.arch`); the component self-gates on that data, so no mount site
+          names a Look. The condition left here is the mobile budget, not identity. */}
+      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       {/* Landscape backdrop (§10 third hero kind) — a mesh behind everything,
           standing at its true geo spot. Renders NOTHING unless the look ships a
           baked landscape manifest (LS has none), so this is a no-op for LS. */}

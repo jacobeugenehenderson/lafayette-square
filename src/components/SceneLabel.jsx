@@ -1,34 +1,21 @@
 import { Text } from '@react-three/drei'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 
-// Shared street label renderer. drei <Text> (TroikaText/SDF) sized in
-// world units — labels live inside the cartographic surface, scaling
-// with the map like everything else painted on the ground. Each label
-// gets a width multiplier from its chain's measured pavement width so
-// wide arterials read bigger than narrow residentials. Landmark labels
-// (e.g. LAFAYETTE PARK) are authored directly in their own components,
-// not through SceneLabel — they're singular and don't share this
-// system's parametric assumptions.
+// Shared street label renderer — a DUMB drawer. drei <Text> (TroikaText/SDF)
+// sized in world units, so labels live inside the cartographic surface and
+// scale with the map like everything else painted on the ground. The
+// `fontSize` is computed upstream by the shared layout module (labelLayout.js,
+// the size law k × widthM); SceneLabel just draws the given text at the given
+// size + panel style. Landmark labels (e.g. LAFAYETTE PARK) are authored
+// directly in their own components — singular, not part of this system.
 //
 // renderOrder=16 matches MapLayers PRI.labels so labels sit at the
 // top of the transparent queue and don't get painted over by
 // terrain-displaced ground or median grass.
 const RENDER_ORDER = 16
 
-// Street-label widths typically span 4–18 m in LS (Truman one-side at 4 m
-// up to Lafayette at 18 m). Reference 12 m lands a typical residential
-// (~13 m total) right at 1×, and clamps stop extremes from dominating.
-const STREET_REFERENCE_WIDTH_M = 12
-const STREET_WIDTH_MUL_MIN = 0.5
-const STREET_WIDTH_MUL_MAX = 2.0
-
-export default function SceneLabel({ position, rotation, text, widthM = null }) {
+export default function SceneLabel({ position, rotation, text, fontSize = 4 }) {
   const style = useCartographStore(s => s.labels) || {}
-  const size = style.size ?? 4
-  const widthMul = widthM
-    ? Math.max(STREET_WIDTH_MUL_MIN, Math.min(STREET_WIDTH_MUL_MAX, widthM / STREET_REFERENCE_WIDTH_M))
-    : 1
-  const fontSize = size * widthMul
 
   const caseMode = style.case ?? 'mixed'
   const displayText = caseMode === 'upper' ? String(text).toUpperCase()

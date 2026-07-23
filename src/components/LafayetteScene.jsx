@@ -4,7 +4,8 @@ import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { buildings as _allBuildings, buildingMap as _buildingMap } from '../data/buildings'
 import { useStreetLabels } from '../lib/streetLabels.js'
-import SceneLabel from './SceneLabel.jsx'
+import { useLabelPlacements } from '../lib/useLabelPlacements.js'
+import StreetLabels from './StreetLabels.jsx'
 import { ParkTitle } from './LafayettePark'
 import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
@@ -1328,14 +1329,15 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [deselect])
 
-  // Street labels — shared with Cartograph's MapLayers via
-  // src/lib/streetLabels.js so Designer / Preview / LS never drift.
-  // Doctrine [[project_preview_equals_ls_literally]] — same data,
-  // same renderer (SceneLabel below). Retired with this consolidation:
-  // LS-local getStreetLabelPlacements, SAME_NAME_MIN_DIST /
-  // ANY_LABEL_MIN_DIST collision skip, and the EAST_OF_TRUMAN_ALLOWED
-  // whitelist (labelBoundary in the shared module supersedes it).
+  // Street labels — shared with Cartograph's MapLayers via the same pipeline
+  // (streetLabels.js polylines → useLabelPlacements layout → StreetLabels
+  // renderer + zoom-LOD) so Designer / Preview / LS never drift. Doctrine
+  // [[project_preview_equals_ls_literally]]. The old LS-local
+  // getStreetLabelPlacements, its SAME_NAME_MIN_DIST / ANY_LABEL_MIN_DIST
+  // collision skip, and the EAST_OF_TRUMAN_ALLOWED whitelist are retired — the
+  // collision de-dup now lives in labelLayout.js, the hood gate in the bake.
   const streetLabels = useStreetLabels()
+  const labelPlacements = useLabelPlacements(streetLabels)
 
   return (
     <group>
@@ -1363,19 +1365,11 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
         <SceneNeon forceNeonOn={forceNeonOn} lookId={INSTANCE.lookId} />
       </group>
 
-      {/* Street labels — SceneLabel renderer, panel-driven style; widthM
-          carries the chain's pavement width so labels scale with the
-          street. */}
-      {labelsReady && !hide.labels && streetLabels.map((lbl, i) => (
-        <SceneLabel
-          key={`label-${i}`}
-          text={lbl.name}
-          tier="street"
-          widthM={lbl.widthM}
-          position={[lbl.x, 0.08, lbl.z]}
-          rotation={[-Math.PI / 2, 0, -lbl.angle]}
-        />
-      ))}
+      {/* Street labels — the shared StreetLabels group (same component the
+          Designer mounts, so they never drift): repeat + size k × widthM +
+          fit/abbrev from labelLayout.js, thinned by the runtime zoom-LOD
+          (labelLod.js) as the camera pulls out / in. */}
+      {labelsReady && !hide.labels && <StreetLabels placements={labelPlacements} y={0.08} />}
 
       {/* Park title — the "LAFAYETTE PARK" landmark label. Has its OWN
           `parkTitle` toggle in the Labels panel (separate from `labels` =

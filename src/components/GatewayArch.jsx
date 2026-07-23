@@ -145,7 +145,8 @@ export default function GatewayArch({
   const meshRef = useRef()
   const shaderRef = useRef(null)
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
-  const arch    = (archOverride    ?? scene?.arch    ?? ARCH_DEFAULT_CHANNEL).values
+  const archChannel = archOverride ?? scene?.arch ?? null
+  const arch    = (archChannel ?? ARCH_DEFAULT_CHANNEL).values
   const horizon = (horizonOverride ?? scene?.horizon ?? HORIZON_DEFAULT_CHANNEL).values
   // Arch Lighting is a TOD-animatable channel — keep the whole channel
   // object and resolve it per-frame (below) so the uplight wash can ride a
@@ -430,24 +431,23 @@ export default function GatewayArch({
     }
   })
 
-  // ⛔ ST. LOUIS ONLY — gated in the COMPONENT, not at the call site.
+  // ⛔ SET-PIECE PRESENCE — gated in the COMPONENT, not at the call site.
   //
-  // Production gates this in `Scene.jsx:860`; Preview does not — it mounts
-  // `<GatewayArch />` bare (`PreviewApp.jsx:1176`), so the Gateway Arch stood
-  // in the middle of Łódź (Jacob, 2026-07-21). A gate at one of four mount
-  // sites is a gate the other three can forget: Scene, PreviewApp, StageApp
-  // and CartographApp all mount this component.
+  // The arch renders only for a Look that INSTALLS it — a `design.arch` block,
+  // baked into `scene.arch` (Stage passes the store's channel as archOverride).
+  // A gate at one of four mount sites is a gate the other three can forget:
+  // Scene, PreviewApp, StageApp and CartographApp all mount this component —
+  // which is how the arch came to stand in the middle of Łódź (2026-07-21).
   //
-  // On the RESOLVED look, not `INSTANCE.lookId` — Stage, Preview and
-  // Cartograph can each mount a look that is not the booted installation.
-  // (`LafayettePark` gates internally already, which is why registering
-  // Centrum fixed the park lake but left the arch standing.)
+  // The gate that fixed Łódź read the look NAME (`!== 'lafayette-square'`), and
+  // that took Hi-Pointe–DeMun down with it — a St. Louis hood that had the arch
+  // until 2026-07-19. The Look's own data decides now; no renderer names a Look.
   //
   // ⚠️ Placed AFTER every hook on purpose. Above `useMemo`/`useRef`/
   // `useSceneJson` this is an early return that changes the hook count when
   // the look changes — "rendered fewer hooks than expected", exactly the
   // crash Preview's look switcher would trigger.
-  if (resolveLookId(lookId) !== 'lafayette-square') return null
+  if (!archChannel) return null
 
   return (
     <>

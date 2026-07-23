@@ -23,6 +23,7 @@ function HeroSubjectPicker() {
   const heroSubject = useCartographStore(s => s.heroSubject)
   const setHeroSubject = useCartographStore(s => s.setHeroSubject)
   const activeLookId = useCartographStore(s => s.activeLookId)
+  const archInstalled = useCartographStore(s => !!s.arch)
   // Offer the landscape (backdrop) hero ONLY when the active look has a baked
   // landscape asset (piece-2 manifest). A backdrop is the §10 third subject kind;
   // selecting it swaps the Hero Controls to its placement/snowline/atmosphere knobs.
@@ -41,10 +42,17 @@ function HeroSubjectPicker() {
     const landmarks = (landmarksData.landmarks || [])
       .map(l => ({ kind: 'landmark', id: l.id, label: l.name }))
       .sort((a, b) => a.label.localeCompare(b.label))
-    const base = [{ kind: 'arch', id: 'arch', label: 'Gateway Arch' }, ...landmarks]
+    // The hood itself — always available, and the answer for any installation
+    // that owns no set-piece and no privileged building.
+    const base = [{ kind: 'centroid', id: 'centroid', label: 'Neighborhood Centroid' }]
+    // The arch is a SET-PIECE: offered only where the Look installed it (an
+    // `arch` channel), the same rule the landscape option below runs on. A hood
+    // that doesn't want it simply doesn't carry it — and picks the centroid.
+    if (archInstalled) base.push({ kind: 'arch', id: 'arch', label: 'Gateway Arch' })
+    base.push(...landmarks)
     if (landscape) base.push({ kind: 'landscape', id: 'backdrop', label: landscape.label })
     return base
-  }, [landscape])
+  }, [landscape, archInstalled])
   const currentKey = heroSubject ? `${heroSubject.kind}:${heroSubject.id}` : ''
   return (
     <div className="carto-section">

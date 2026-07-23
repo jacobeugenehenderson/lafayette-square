@@ -912,17 +912,6 @@
       "value": 0
     }
   },
-  "arch": {
-    "values": {
-      "distance": 1690,
-      "bearingX": 0.9487,
-      "bearingZ": -0.3163,
-      "scale": 2.1,
-      "rotation": 1.99,
-      "yOffset": 155,
-      "footFade": 36
-    }
-  },
   "archLight": {
     "animated": "tod",
     "transitionIn": 30,

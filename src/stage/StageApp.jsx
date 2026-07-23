@@ -218,7 +218,7 @@ function ArchHorizonControls() {
           <SliderRow label="Backdrop Haze" value={ls.haze} min={0} max={1} step={0.01}
             onChange={(v) => setLandscape('haze', v)} />
           <ColorRow label="Haze" value={ls.hazeColor} onChange={(v) => setLandscape('hazeColor', v)} />
-        </>) : (<>
+        </>) : archChannel ? (<>
           <SliderRow label="Hero Distance" value={a.distance} min={400} max={2000} step={10}
             onChange={(v) => setArch('distance', v)} />
           <SliderRow label="Hero Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
@@ -229,7 +229,10 @@ function ArchHorizonControls() {
             onChange={(v) => setArch('yOffset', v)} />
           <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
             onChange={(v) => setArch('footFade', v)} />
-        </>)}
+        </>) : null}
+        {/* No knobs for a hood that frames on its own centroid — the subject is
+            the neighborhood, and it has no placement to author. Horizon (below)
+            is a hood property, so it stays for every subject kind. */}
         {/* Arch uplights moved to the "Light Sources" card (Phase A) — they're a
             light source, not framing. Placement (above) stays here. */}
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />

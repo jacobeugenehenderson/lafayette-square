@@ -31,10 +31,17 @@
 // (see below). For LS the arch sits ~1670m out, far from this stale [400,45,-100].
 export const FALLBACK_HERO_SUBJECT = [400, 45, -100]
 
-// The arch is the LS hero landmark. Resolve it from the authored `arch` channel
+// The neighborhood itself — the local frame's origin IS the boundary centroid
+// (config.js wgs84ToLocal centers on it), at mid-building height. The subject for
+// a hood that frames on ITSELF rather than on a set-piece or a named building:
+// the answer for every installation that doesn't own a Gateway Arch.
+const HOOD_CENTROID = [0, 40, 0]
+
+// The arch is a set-piece hero. Resolve it from the authored `arch` channel
 // (distance × bearing), NOT a hardcoded centroid. Mid-height ≈ scale × 35.
+// No arch channel ⇒ the Look never installed the prop ⇒ frame the hood.
 function archPoint(a) {
-  if (!a) return FALLBACK_HERO_SUBJECT
+  if (!a) return HOOD_CENTROID
   return [a.distance * a.bearingX, a.scale * 35, a.distance * a.bearingZ]
 }
 
@@ -57,11 +64,14 @@ export function resolveHeroSubject(subject, { slabIndex, buildings, archValues }
   // needed). The old [400,45,-100] literal is retired as the default.
   if (!subject) return archPoint(archValues)
   if (subject.kind === 'arch') return archPoint(archValues)
+  // The hood itself — an explicit designation, not a fallback. Chosen in Survey
+  // by any installation that doesn't want a set-piece or a privileged building.
+  if (subject.kind === 'centroid') return HOOD_CENTROID
   // A landscape is the THIRD kind: a backdrop MESH, not a point to frame ON. The
   // camera frames the hood (origin, mid-height) and the range fills the sky
   // behind it (north = −z). Its render controls live in the scene.json `landscape`
   // channel (placement/snowline/atmosphere), resolved by the piece-3 renderer.
-  if (subject.kind === 'landscape') return [0, 40, 0]
+  if (subject.kind === 'landscape') return HOOD_CENTROID
   if (subject.kind === 'building' || subject.kind === 'landmark') {
     // Slab path (production/Preview): resolve from the render-scoped index.
     if (slabIndex) {

@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { INSTANCE } from '../instance.js'
+import { ParkTitleMesh } from '../components/LafayettePark.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import mapData from '../../cartograph/data/lafayette-square/clean/map.json'
 import ribbonsData from '../data/ribbons.json'
@@ -8,8 +10,9 @@ import parkWaterData from '../data/lafayette-square/park_water.json'
 import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
-import SceneLabel from '../components/SceneLabel.jsx'
+import StreetLabels from '../components/StreetLabels.jsx'
 import { useStreetLabels } from '../lib/streetLabels.js'
+import { useLabelPlacements } from '../lib/useLabelPlacements.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import {
   assignTerrainUniforms,
@@ -344,7 +347,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // ~14 m higher than the face-park polygon interior interpolates to, so
   // the dark slab wins the depth test and the grass disappears. The slab
   // is owned by BakedGround in shots; skip the MapLayers ground here.
-  const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'lamp', 'centerline', 'labels', 'ground'])
+  const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'lamp', 'centerline', 'labels', 'ground', 'parkTitle'])
   // Survey is a blue wireframe over the aerial photo. The aerial already shows
   // every piece of CONTENT (buildings, trees, water, parking, lamps), so drawing
   // MapLayers' flat versions of them on top is pure redundant overdraw — much of
@@ -476,6 +479,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // own names (Łódź shows Łódź), not a static LS import.
   const activeLookId = useCartographStore(s => s.activeLookId)
   const labelData = useStreetLabels(activeLookId)
+  const labelPlacements = useLabelPlacements(labelData)
 
   // ── Streetlamps (dots, no boundary clip — the 641 street lamps from
   // street_lamps.json all sit in the neighborhood anyway; lamp pools gate
@@ -787,22 +791,15 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         <mesh geometry={waterGeo} material={mats.water} />
       )}
 
-      {/* Labels — SceneLabel (TroikaText/SDF, world-space sizing). widthM
-          comes from the chain's measured pavement width so wide arterials
-          get bigger labels than narrow residentials. */}
-      {!hide.labels && labelData.map((lbl, i) => {
-        if (!Number.isFinite(lbl.x) || !Number.isFinite(lbl.z) || !Number.isFinite(lbl.angle)) return null
-        return (
-          <SceneLabel
-            key={i}
-            text={lbl.name}
-            tier="street"
-            widthM={lbl.widthM}
-            position={[lbl.x, 2.5, lbl.z]}
-            rotation={[-Math.PI / 2, 0, -lbl.angle]}
-          />
-        )
-      })}
+      {/* Labels — the shared StreetLabels group: laid out by labelLayout.js
+          (repeat + size k × widthM + fit/abbrev) and thinned by the runtime
+          zoom-LOD (labelLod.js). Same component the player mounts. */}
+      {!hide.labels && <StreetLabels placements={labelPlacements} y={2.5} />}
+
+      {/* Park title — the SHARED ParkTitleMesh (one source, used by the 3D scene
+          too, so they're in both by construction). Reliable depth-off quad, so
+          it can't be clipped by the terrain-displaced Designer ground. LS-only. */}
+      {!hide.parkTitle && INSTANCE.lookId === 'lafayette-square' && <ParkTitleMesh y={2.6} />}
     </group>
   )
 }

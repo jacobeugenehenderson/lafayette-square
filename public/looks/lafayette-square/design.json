@@ -9,16 +9,16 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": false,
-    "parking_lot": false,
-    "garden": false,
-    "playground": false,
+    "building": true,
+    "parking_lot": true,
+    "garden": true,
+    "playground": true,
     "swimming_pool": true,
     "pitch": false,
-    "sports_centre": false,
+    "sports_centre": true,
     "wood": false,
     "scrub": false,
-    "tree_row": true,
+    "tree_row": false,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -26,15 +26,15 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": true,
-    "lamp": false,
+    "tree": false,
+    "lamp": true,
     "fence": false,
     "wall": false,
     "retaining_wall": false,
     "hedge": false,
     "labels": true,
     "centerline": false,
-    "park_path": false,
+    "park_path": true,
     "parkTitle": true
   },
   "layerColors": {
@@ -87,6 +87,10 @@
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.381,
+  "parkTitlePos": [
+    -22.48,
+    -97.31
+  ],
   "alleyCap": "round",
   "labels": {
     "weight": 500,
@@ -289,8 +293,38 @@
       "left": {
         "0": {
           "pavementHW": 8.179490412721057,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
+          "treelawn": 2.546021232629661,
+          "sidewalk": 2.039200575940102,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "LU"
+          }
+        },
+        "1": {
+          "pavementHW": 8.179490412721057,
+          "treelawn": 2.546021232629661,
+          "sidewalk": 2.039200575940102,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "LU"
+          }
+        },
+        "2": {
+          "pavementHW": 8.179490412721057,
+          "treelawn": 2.546021232629661,
+          "sidewalk": 2.039200575940102,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "LU"
+          }
+        },
+        "3": {
+          "pavementHW": 8.179490412721057,
+          "treelawn": 2.546021232629661,
+          "sidewalk": 2.039200575940102,
           "terminal": "sidewalk",
           "materials": {
             "outer": "SW",
@@ -489,6 +523,18 @@
     },
     "preston-place": {
       "left": {
+        "0": {
+          "pavementHW": 3.9047686923479747,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "1": {
+          "pavementHW": 3.9047686923479747,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
         "-2": {
           "capFlip": true
         }
@@ -507,6 +553,163 @@
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "none"
+        }
+      }
+    },
+    "nicholson-place": {
+      "right": {
+        "0": {
+          "pavementHW": 4.953470215077112,
+          "treelawn": 1,
+          "sidewalk": 2,
+          "terminal": "sidewalk"
+        }
+      },
+      "left": {
+        "0": {
+          "pavementHW": 3.660739071360638,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "lafayette-avenue-3": {
+      "right": {
+        "3": {
+          "pavementHW": 9.049114831723323,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "4": {
+          "pavementHW": 13.229318250420944,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 9.200031383825847,
+          "treelawn": 3.1589719902293307,
+          "sidewalk": 4.965535778268794,
+          "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 9.125642042552016,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "left": {
+        "2": {
+          "pavementHW": 10.364150173989287,
+          "treelawn": 3.882790047265674,
+          "sidewalk": 2.2352464194779262,
+          "terminal": "sidewalk"
+        },
+        "3": {
+          "pavementHW": 10.364150173989287,
+          "treelawn": 3.882790047265674,
+          "sidewalk": 2.2352464194779262,
+          "terminal": "sidewalk"
+        },
+        "4": {
+          "pavementHW": 10.364150173989287,
+          "treelawn": 3.882790047265674,
+          "sidewalk": 2.2352464194779262,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 10.364150173989287,
+          "treelawn": 3.882790047265674,
+          "sidewalk": 2.2352464194779262,
+          "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 10.364150173989287,
+          "treelawn": 3.882790047265674,
+          "sidewalk": 2.2352464194779262,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "waverly-place-3": {
+      "left": {
+        "0": {
+          "pavementHW": 2.016100368765303,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        }
+      }
+    },
+    "waverly-place-0": {
+      "left": {
+        "2": {
+          "pavementHW": 2.827153549335855,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "right": {
+        "0": {
+          "pavementHW": 2.827153549335855,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "1": {
+          "pavementHW": 2.827153549335855,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "2": {
+          "pavementHW": 2.827153549335855,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "missouri-avenue-1": {
+      "left": {
+        "0": {
+          "pavementHW": 4.7823176714314055,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "simpson-place": {
+      "right": {
+        "0": {
+          "pavementHW": 3.96,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "LU"
+          }
+        }
+      },
+      "left": {
+        "0": {
+          "pavementHW": 3.96,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "SW",
+            "inner": "LU"
+          }
+        },
+        "-2": {
+          "capFlip": false
         }
       }
     }
@@ -1194,11 +1397,11 @@
     "Blocks": false,
     "Paths": false,
     "Features": false,
-    "Labels": true,
+    "Labels": false,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,
-    "Furniture": false
+    "Furniture": true
   },
   "trees": [
     {

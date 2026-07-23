@@ -7,10 +7,20 @@
  * (LS-only) src/data/ribbons.json import. Retires the streetLabels.js
  * "deferred-to-producer" hardwire — every town gets its names for free.
  *
+ * The bake slims to "gate + emit geometry": it no longer PLACES a single label
+ * point per street. It emits each named street chain as a **hood-clipped
+ * polyline** carrying the chain's `widthM`; the shared runtime layout module
+ * (src/lib/streetLabels.js → SceneLabel) does the placement — repeat, size-law,
+ * fit/abbreviate, and camera-distance LOD — so Designer + player never drift and
+ * a long street reads labelled wherever you're actually looking. The boundary
+ * gate stays here: each polyline is clipped to its in-hood portion(s) so the
+ * runtime lays out on whatever geometry it's handed.
+ *
  * Reads : cartograph/data/<scene>/clean/ribbons.json  (named street geometry)
  *         cartograph/data/<scene>/neighborhood_boundary.json  (the hood gate)
  * Writes: public/baked/<scene>/labels.json  → { version, count, labels: [
- *           { name, x, z, angle, widthM } ] }  — the shape SceneLabel consumes.
+ *           { name, widthM, points:[[x,z]…] } ] }  — named polylines the runtime
+ *           layout module consumes.
  *
  * Run: node cartograph/bake-labels.js --scene <id>
  */
@@ -37,50 +47,74 @@ function parseArgs() {
   return a
 }
 
-// One label per named street: the arclength midpoint of its LONGEST chain, with
-// the segment's local angle normalized to [-π/2, π/2] so text reads L→R.
+// Boundary crossing between an inside point and an outside point, found by
+// bisecting the membership predicate (we only have isInside(), not the raw
+// polygon — and membership is a composite of polygon ∪ activate − exclusions,
+// so bisecting the predicate is the general clip). ~24 iterations ≈ sub-mm on a
+// hood-scale segment.
+function bisectBoundary(inX, inZ, outX, outZ, isInside) {
+  let ax = inX, az = inZ, bx = outX, bz = outZ
+  for (let i = 0; i < 24; i++) {
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2
+    if (isInside(mx, mz)) { ax = mx; az = mz } else { bx = mx; bz = mz }
+  }
+  return [ax, az]
+}
+
+// Clip a polyline to the in-hood portion(s) of the membership region. Returns an
+// array of polylines (a chain can enter/exit the hood more than once). With no
+// gate, the whole chain passes through as one piece. Boundary crossings are
+// interpolated so a clipped piece ends exactly at the hood edge, not at the last
+// interior vertex.
+function clipToHood(points, isInside) {
+  if (!isInside) return points.length >= 2 ? [points.map(p => [p[0], p[1]])] : []
+  const pieces = []
+  let cur = null
+  let prev = null, prevIn = false
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i]
+    const pIn = isInside(p[0], p[1])
+    if (i === 0) {
+      if (pIn) { cur = [[p[0], p[1]]] }
+    } else {
+      if (prevIn && pIn) {
+        cur.push([p[0], p[1]])
+      } else if (prevIn && !pIn) {
+        cur.push(bisectBoundary(prev[0], prev[1], p[0], p[1], isInside))
+        if (cur.length >= 2) pieces.push(cur)
+        cur = null
+      } else if (!prevIn && pIn) {
+        cur = [bisectBoundary(p[0], p[1], prev[0], prev[1], isInside), [p[0], p[1]]]
+      }
+      // !prevIn && !pIn → the segment may still tunnel through a thin lobe of
+      // the hood, but street segments are short relative to the hood; the
+      // midpoint gate the previous bake used had the same blind spot. Skip.
+    }
+    prev = p; prevIn = pIn
+  }
+  if (cur && cur.length >= 2) pieces.push(cur)
+  return pieces
+}
+
+// Emit each named street chain as hood-clipped polyline(s), carrying the chain's
+// measured pavement width. Placement (repeat / size-law / fit / LOD) is the
+// runtime layout module's job — the bake is now gate + geometry only.
+const r2 = n => Math.round(n * 100) / 100
 function computeLabels(ribbons, keepPoint) {
-  const byName = new Map()
+  const labels = []
   for (const st of ribbons.streets || []) {
     if (!st.name || !st.points || st.points.length < 2) continue
     if (NO_LABEL_HIGHWAY.has(st.highway)) continue
-    if (!byName.has(st.name)) byName.set(st.name, [])
-    byName.get(st.name).push(st)
-  }
-  const labels = []
-  for (const [name, chains] of byName) {
-    let best = null
-    for (const st of chains) {
-      const pts = st.points
-      const segLens = []
-      let totalLen = 0
-      for (let i = 0; i < pts.length - 1; i++) {
-        const L = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
-        segLens.push(L); totalLen += L
-      }
-      if (totalLen === 0) continue
-      const halfLen = totalLen / 2
-      let acc = 0, segIdx = 0
-      for (; segIdx < segLens.length - 1; segIdx++) {
-        if (acc + segLens[segIdx] >= halfLen) break
-        acc += segLens[segIdx]
-      }
-      const t = segLens[segIdx] > 0 ? (halfLen - acc) / segLens[segIdx] : 0
-      const ax = pts[segIdx][0], ay = pts[segIdx][1]
-      const bx = pts[segIdx + 1][0], by = pts[segIdx + 1][1]
-      const cx = ax + (bx - ax) * t
-      const cy = ay + (by - ay) * t
-      if (keepPoint && !keepPoint(cx, cy)) continue      // gate to the neighborhood
-      if (best && totalLen <= best.totalLen) continue
-      let angle = Math.atan2(by - ay, bx - ax)
-      if (angle >  Math.PI / 2) angle -= Math.PI
-      if (angle < -Math.PI / 2) angle += Math.PI
-      const m = st.measure || {}
-      const widthM = (m.left?.pavementHW || 0) + (m.right?.pavementHW || 0) || null
-      best = { cx, cy, totalLen, angle, widthM }
+    const m = st.measure || {}
+    const widthM = (m.left?.pavementHW || 0) + (m.right?.pavementHW || 0) || null
+    for (const piece of clipToHood(st.points, keepPoint)) {
+      const pts = piece.map(([x, z]) => [r2(x), r2(z)])
+      // Drop degenerate zero-length pieces (coincident points after rounding).
+      let len = 0
+      for (let i = 0; i < pts.length - 1; i++) len += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+      if (len === 0) continue
+      labels.push({ name: st.name, widthM: widthM == null ? null : r2(widthM), points: pts })
     }
-    if (!best) continue
-    labels.push({ name, x: Math.round(best.cx * 100) / 100, z: Math.round(best.cy * 100) / 100, angle: Math.round(best.angle * 1e4) / 1e4, widthM: best.widthM })
   }
   return labels
 }
@@ -111,7 +145,7 @@ function main() {
   const outDir = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
   const outPath = join(outDir, 'labels.json')
-  writeFileSync(outPath, JSON.stringify({ version: 1, scene, look, count: labels.length, labels }))
+  writeFileSync(outPath, JSON.stringify({ version: 2, scene, look, count: labels.length, labels }))
   console.log(`[bake-labels] scene=${scene} look=${look}: ${labels.length} street labels → ${outPath}`)
   if (labels.length) console.log('  e.g. ' + labels.slice(0, 8).map(l => l.name).join(' · '))
 }
