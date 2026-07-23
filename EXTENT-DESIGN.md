@@ -157,10 +157,20 @@ independent centers**, and the two fetches doing **different jobs**:
    the zone. The ~20–25% is sized to contain *every future edit* — that is *why* it is frozen and
    chosen deliberately, not casually.
 
+**⭐ The bb centroid must never MOVE.** Once laid down at the hard fetch, the frame origin is frozen
+forever. The extent *may* grow (append) and *may* shrink (**destructively** — you lose the trimmed
+data, and that is allowed); the one operation it may **never** do is **move**. The reason is precise:
+grow or shrink *from a fixed center* leaves every **retained** coordinate and id exactly where it was,
+so blockKeys, authored work, and content anchors all still resolve — only *moving* the origin
+reprojects everything at once and re-orders identity (the 84→5 content death). The identity lock
+already embodies this: on any re-fetch, retained footprints keep their `msbfId` and dropped ones keep
+reserved numbers — **verified**, the tight re-fetch shrank 13,427→8,460 footprints with **zero
+renumbers**. "Never move the center" is the whole content safeguard.
+
 **Two centers (R10), and the interaction that follows:** the **bb / frame origin is poured once and
-frozen** (fetch center); the **disc centroid is a separate, draggable value** that roams the forever
-zone (hood center). That draggable-centroid is R10 made a handle — reuse the `CircleHandle` /
-`ParkTitleHandle` dot pattern.
+frozen** (fetch center, append-only); the **disc centroid is a separate, draggable value** that roams
+the forever zone (hood center). That draggable-centroid is R10 made a handle — reuse the `CircleHandle`
+/ `ParkTitleHandle` dot pattern.
 
 ⛔ **Blocked today by D4:** the code **forces disc center = origin** (`ExtentApp.jsx:~1138
 if(committed) return {x:0,z:0}` + `makeCircleBoundary` hardcodes `center:[0,0]`), discarding the
