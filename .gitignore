@@ -83,6 +83,10 @@ cartograph/data/hipointe-demun/*
 !cartograph/data/hipointe-demun/tree-species-map.json
 !cartograph/data/hipointe-demun/tree-mix.json
 !cartograph/data/hipointe-demun/neighborhood.json
+# identity-registry.json — FROZEN building identity (centroid-key -> permanent
+# msbfId). Git-tracked on purpose (R18): a re-fetch must preserve it, so it is a
+# curated artifact, not regenerable output. (EXTENT-DESIGN §4)
+!cartograph/data/hipointe-demun/identity-registry.json
 # content/ — track only the hand-authored content files, keep bulk out
 !cartograph/data/hipointe-demun/content/
 cartograph/data/hipointe-demun/content/*
