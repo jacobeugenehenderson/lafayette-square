@@ -133,15 +133,19 @@ const GROUPS = [
                 'Export the parcel layer as GeoJSON covering your neighbourhood.',
                 'Outside the US this often does not exist in this shape. Addresses do not depend on it — they come from OpenStreetMap.'] },
       { name: 'Tree census', act: DOC, where: 'TREE-INTAKE.md',
+        // The census UNIONS every well it finds — losing one silently prints
+        // park-only trees (2026-07-22 regression). Each source below is a well.
         sources: [
-          { name: 'city forestry inventory', note: 'ArcGIS FeatureServer · free · no key' },
+          { name: 'OpenStreetMap', note: 'natural=tree · real positions · fetched with the base — the "osm" well' },
+          { name: 'city forestry inventory', note: 'ArcGIS FeatureServer · free · no key — the "city-inventory" well' },
+          { name: 'authored park census', note: 'hand-curated for a signature park — the "park" well' },
           { name: 'opentrees.org', note: 'aggregates several hundred municipal inventories', unverified: true },
           { name: 'a public-records request', note: 'when the contractor never published it' },
         ],
-        steps: ['Free where it is published at all.',
-                'Search "<your city> tree inventory open data" or "<city> street trees GIS".',
+        steps: ['The census UNIONS all its wells — OSM trees + city inventory + authored park — deduped by trunk.',
+                'OSM natural=tree comes free with the street fetch; the city inventory is the hand-found part.',
+                'Search "<your city> tree inventory open data" or "<city> street trees GIS" for the inventory.',
                 'Export as GeoJSON — species, diameter and condition per tree if offered.',
-                'Many towns have none. Then a public-records request to the municipal forestry contractor is the procedure.',
                 'This locates YOUR trees. What each species looks like ships with the platform.'] },
       { name: 'Canopy raster', act: FETCH, where: 'MRLC',
         sources: [
