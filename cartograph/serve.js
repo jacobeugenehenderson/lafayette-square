@@ -1391,77 +1391,42 @@ createServer(async (req, res) => {
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
         const geoPath = sceneDataPaths(scene).geography
-        // ── Re-center guard (the SSoT that keeps a committed hood safe) ──────
-        // Re-centering an already-committed hood is THE destructive move: it
-        // shifts the frame, so blockCustoms / corner / hero work (all keyed off
-        // bbox-derived block keys) is silently ORPHANED and the whole slab must
-        // re-bake. A first pour (uncommitted) and a same-center re-commit
-        // (radius / exclusions / name edits) are safe and pass freely; only a
-        // real center move on a committed hood is refused, unless the caller
-        // explicitly opts in with allowRecenter. The Extent panel already routes
-        // committed hoods down the light rescope path — this is the fix-at-source
-        // backstop so a direct/scripted/raced POST can't re-pour LS or HPDM by
-        // accident. [Extent guard, 2026-07-15]
-        {
-          const RECENTER_EPS_M = 5   // r5 rounding is ~1.1 m; a real boundary move is far larger
-          const nbGuardPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
-          let wasCommitted = false, prev = null
-          try { wasCommitted = !!JSON.parse(readFileSync(nbGuardPath, 'utf8')).committed } catch { /* uncommitted / no file */ }
-          try { const g0 = JSON.parse(readFileSync(geoPath, 'utf8')); if (Number.isFinite(g0.lat) && Number.isFinite(g0.lon)) prev = { lat: g0.lat, lon: g0.lon } } catch { /* no prior frame */ }
-          if (wasCommitted && prev && !allowRecenter) {
-            const dLatM = (center.lat - prev.lat) * 111320
-            const dLonM = (center.lon - prev.lon) * 111320 * Math.cos((center.lat * Math.PI) / 180)
-            const movedM = Math.hypot(dLatM, dLonM)
-            if (movedM > RECENTER_EPS_M) {
-              res.writeHead(409, { 'Content-Type': 'application/json' })
-              res.end(JSON.stringify({
-                error: `Refusing to re-center committed hood "${scene}" by ${Math.round(movedM)} m — this orphans authored work and forces a full re-bake. Pass allowRecenter:true to override.`,
-                code: 'recenter-blocked', from: prev, to: { lat: r5(center.lat), lon: r5(center.lon) }, movedMeters: Math.round(movedM),
-              }))
-              return
-            }
-          }
-        }
-        // Snapshot the pre-commit frame so a failure mid-Pour can roll back
-        // (commit re-centers geography + reprojects raw — destructive). Consumed
-        // by /rollback-extent when onBuild throws before the bake lands. Stale
-        // .prebak from a prior run is cleared first so only one generation exists.
+        // ── (Re-center guard REMOVED 2026-07-23 — EXTENT-DESIGN §3.3) ────────
+        // It refused a committed hood whose `center` moved >5 m, to stop the FRAME
+        // from shifting (which orphans blockCustoms). Under the never-move model
+        // the frame origin is FROZEN at the fetch center and the hood center is
+        // stored OFF-ORIGIN on the disc — so there is no frame move to guard, and
+        // `center` legitimately differs from the origin on any off-centre hood.
+        // (Jacob, 2026-07-23.) `allowRecenter` is now unused; kept in the destructure
+        // for payload compatibility.
+        // Snapshot the pre-commit frame so a failure mid-Pour can roll back.
+        // Consumed by /rollback-extent when onBuild throws before the bake lands.
+        // Stale .prebak from a prior run is cleared first so only one exists.
         const nPathC = join(sceneCleanDir(scene), '..', 'neighborhood.json')
         for (const src of [geoPath, sceneDataPaths(scene).boundary, nPathC]) {
           try { rmSync(src + '.prebak', { force: true }); if (existsSync(src)) writeFileSync(src + '.prebak', readFileSync(src)) } catch { /* best-effort */ }
         }
         const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
-        // ── Don't reproject the world for a rounding error ────────────────────
-        // Commit's contract is "the frame origin is the hood's centroid", but the
-        // origin is arbitrary as long as it is STABLE — and moving it runs
-        // reproject-raw over every raw file and rebuilds the skeleton. A first pour
-        // whose frame is already sensible (fetch centred on the place) lands within
-        // tens of metres of the centroid, so the move buys nothing and costs a full
-        // reprojection. Below the threshold, keep the existing origin.
-        const RECENTER_MIN_M = 100
-        let skipReproject = false
-        if (Number.isFinite(geo.lat) && Number.isFinite(geo.lon)) {
-          const dM = Math.hypot(
-            (center.lat - geo.lat) * 111320,
-            (center.lon - geo.lon) * 111320 * Math.cos((center.lat * Math.PI) / 180),
-          )
-          if (dM < RECENTER_MIN_M) {
-            skipReproject = true
-            console.log(`[commit-extent] ${scene}: origin move is ${Math.round(dM)} m (< ${RECENTER_MIN_M}) — keeping frame, skipping reproject`)
-            center.lat = geo.lat; center.lon = geo.lon
-          }
-        }
-        geo.lat = r5(center.lat); geo.lon = r5(center.lon)
-        geo.lonToMeters = Math.round(111320 * Math.cos((center.lat * Math.PI) / 180))
-        // Derive the timezone from the committed center — replaces the Central-US
-        // default so weather/TOD are right for any region (Altadena → Pacific,
-        // Cape Cod → Eastern). A lat/lon→IANA resolution (offline), scene-generic.
+        // ⭐ NEVER MOVE THE FRAME ORIGIN (EXTENT-DESIGN §3.3). The origin is the
+        // FROZEN fetch center; moving it would run reproject-raw over every raw
+        // file AND re-order building identity (the content death). So the hood
+        // center is stored OFF-ORIGIN on the disc instead of re-centering the
+        // frame — no reproject, ever. `discCenter` = the hood center projected
+        // into the frozen frame (x/z; +z = south, so lat is negated).
+        const latToM = geo.latToMeters || 111000
+        const discCenter = [
+          Math.round(((center.lon - geo.lon) * geo.lonToMeters) * 100) / 100,
+          Math.round(((geo.lat - center.lat) * latToM) * 100) / 100,
+        ]
+        // Timezone still derives from the hood LOCATION (not the frame origin) so
+        // weather/TOD are right for any region (Altadena → Pacific, etc.).
         try { geo.timezone = tzLookup(center.lat, center.lon) } catch { /* keep prior tz */ }
-        geo._comment = 'Committed extent — center = the boundary centroid; bbox = the fetch extent; timezone derived from center.'
+        geo._comment = 'Committed extent — frame origin FROZEN at the fetch center (never moves); hood center stored off-origin on the disc. bbox = the fetch extent; timezone from the hood center.'
         writeFileSync(geoPath, JSON.stringify(geo, null, 2))
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        if (!skipReproject) await runShell('node reproject-raw.js', { cwd: here, env, timeout: 60000 })
+        // No reproject-raw — the origin didn't move. Still bake the real skeleton
+        // (the hard fetch's job) in the frozen frame.
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
         _streetLookupCache.delete(scene)
         // ── The boundary write ────────────────────────────────────────────────
@@ -1487,7 +1452,7 @@ createServer(async (req, res) => {
         //
         // Accepts lon/lat anchors (frame-independent, like exclusions) and flattens
         // into the NOW re-centered frame, so a re-commit never drifts the boundary.
-        const boundary = makeCircleBoundary(radius)
+        const boundary = makeCircleBoundary(radius, discCenter)
         const excl = Array.isArray(exclusions)
           ? exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
           : []
