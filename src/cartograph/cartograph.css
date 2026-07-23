@@ -45,6 +45,7 @@
   --carto-tree-osm:        #e0a44a;   /* OSM position; species + size sampled */
   --carto-tree-derived:    #8a8a86;   /* synthetic NLCD canopy fill */
   --carto-tree-unknown:    #7aa0c0;   /* fallback / unrecognized source */
+  --carto-lamp:            #F2D67A;   /* Designer lamp-placement dot (matches design.json layerColors.lamp) */
 
   /* Shared values */
   --carto-accent-color:    #666;

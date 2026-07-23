@@ -7,6 +7,7 @@ import * as THREE from 'three'
 import MapLayers from './MapLayers.jsx'
 import SceneMapLayers from './SceneMapLayers.jsx'
 import DesignerTrees from './DesignerTrees.jsx'
+import DesignerLamps from './DesignerLamps.jsx'
 import OneWayArrows from './OneWayArrows.jsx'
 import BakedGround from '../components/BakedGround.jsx'
 
@@ -1149,6 +1150,15 @@ export default function CartographApp() {
               Stage's 3D InstancedTrees owns the trees in shots. */}
           {scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <DesignerTrees scene={scene} hiddenLayers={decorationsHidden} bakeLastMs={bakeLastMs} />
+          )}
+
+          {/* Lamps (2D flat dots) for EVERY poured scene — reads the baked slab
+              (baked/<scene>/lamps.json), one shared path, replacing MapLayers'
+              old hardwired src/data/street_lamps.json (prod LS only). The lamp
+              twin of DesignerTrees. Designer-only; Stage's 3D BakedLamps owns
+              the real lamp props in shots. */}
+          {scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
+            <DesignerLamps scene={scene} hiddenLayers={decorationsHidden} bakeLastMs={bakeLastMs} />
           )}
 
           {/* ── Designer-only UI overlays. Survey + Measure overlays mount

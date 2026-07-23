@@ -7,7 +7,6 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import mapData from '../../cartograph/data/lafayette-square/clean/map.json'
 import ribbonsData from '../data/ribbons.json'
 import parkWaterData from '../data/lafayette-square/park_water.json'
-import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
 import StreetLabels from '../components/StreetLabels.jsx'
@@ -481,17 +480,6 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   const labelData = useStreetLabels(activeLookId)
   const labelPlacements = useLabelPlacements(labelData)
 
-  // ── Streetlamps (dots, no boundary clip — the 641 street lamps from
-  // street_lamps.json all sit in the neighborhood anyway; lamp pools gate
-  // visibility). street_lamps.json (Python ETL) is canonical; map.json
-  // also carries a streetlamp layer from the same OSM source — skip it
-  // to avoid rendering each lamp twice.
-  const lampPositions = useMemo(() => {
-    const lamps = []
-    for (const l of (lampData.lamps || [])) lamps.push({ x: l.x, z: l.z })
-    return lamps
-  }, [])
-
   // ── Park water (flat plan-view; park-local, rotated below) ────
   // ShapeGeometry sits in XY → rotateX maps (x,y,0) → (x,0,-y); negate z to
   // get mesh(x,0,z) matching JSON. Lake carries an island hole.
@@ -656,17 +644,6 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     centerline: makeLineMat(color('centerline'), 0.9),
     centerlineSurvey: makeLineMat(STROKE_COLORS.surveyCenterline, 1),
     centerlineOutline: makeLineMat(STROKE_COLORS.centerlineOutline, 0.5),
-    // Designer lamp marker — flat dot at the lamp's world position. The
-    // legacy shader-based "night pool" rendered a fake gradient halo here
-    // before Stage existed; with Stage owning the actual lamp shading,
-    // Designer's only job is to show placement (and visibility — the layer
-    // toggle handles on/off). Plain MeshBasicMaterial, no shader.
-    lamp: new THREE.MeshBasicMaterial({
-      color: new THREE.Color(color('lamp')),
-      transparent: true,
-      opacity: 0.9,
-      depthWrite: false,
-    }),
     tree: makeFlatMat(color('tree'), PRI.park + 1),
     water: makeFlatMat(color('water'), PRI.park + 1),
     // rigidCentroid=true: sample terrain once per feature, not per vertex.
@@ -778,13 +755,10 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           Previously rendered as ring polygons here; retired 2026-04-22 so
           alleys/paths are first-class roadway ribbons matching streets. */}
 
-      {/* Streetlamps — Designer-only flat dots showing placement. Stage
-          mounts the real lamp props (StreetLights). */}
-      {!hide.lamp && lampPositions.map((l, i) => (
-        <mesh key={`lamp-${i}`} position={[l.x, 2, l.z]} rotation={[-Math.PI / 2, 0, 0]} material={mats.lamp} renderOrder={11.5} frustumCulled={false}>
-          <circleGeometry args={[1.2, 16]} />
-        </mesh>
-      ))}
+      {/* Streetlamps now render via the shared DesignerLamps layer (baked
+          slab, per-scene) — mounted in CartographApp beside DesignerTrees.
+          The old hardwired src/data/street_lamps.json path drew prod LS's
+          lamps for every scene; retired 2026-07-23. */}
 
       {/* Trees now render via the shared DesignerTrees layer (baked slab). */}
       {!hide.water && waterGeo && (
