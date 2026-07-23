@@ -1575,7 +1575,7 @@ createServer(async (req, res) => {
       if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
       _seedsInFlight.add(scene)
       try {
-        const { radius, exclusions, dropPolygon = false, polygon, polygonSource } = JSON.parse(body || '{}')
+        const { radius, exclusions, dropPolygon = false, polygon, polygonSource, center } = JSON.parse(body || '{}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const bPath = sceneDataPaths(scene).boundary
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
@@ -1594,7 +1594,25 @@ createServer(async (req, res) => {
         // which is what those hoods already are. (R10 two centers, EXTENT-DESIGN
         // §3.3: the FRAME origin is frozen forever; the DISC center is free to roam
         // the forever zone — moving the disc must never move the frame.)
-        const boundary = makeCircleBoundary(radius, prev.center)
+        //
+        // ⭐ AND it may now be SET explicitly (`center: [x,z]`, local frame). Without
+        // this, a committed hood's disc center could never be changed at all: rescope
+        // preserved it, and the only path that WROTE one was `commit-extent` — the
+        // heavy re-center, which is exactly what the re-center guard forbids on a
+        // committed hood. That left the authored-off-origin disc unreachable after
+        // the first pour (the CenterHandle is still gated to `!committed`,
+        // `ExtentApp.jsx` — un-gating it is the remaining half).
+        //
+        // Moving the DISC is not moving the FRAME: this rewrites only
+        // neighborhood_boundary.json's center + ring, never geography.json, so no
+        // reprojection, no skeleton rebuild, no identity churn (R10).
+        const discCenter = Array.isArray(center) && center.length === 2 && center.every(Number.isFinite)
+          ? center
+          : prev.center
+        if (Array.isArray(center) && discCenter !== prev.center) {
+          console.log(`[rescope] ${scene}: disc center ${JSON.stringify(prev.center ?? [0, 0])} → ${JSON.stringify(discCenter)} (frame origin untouched)`)
+        }
+        const boundary = makeCircleBoundary(radius, discCenter)
         // The LIGHT re-apply — re-clip + re-bake in the committed frame, no re-center.
         if (Array.isArray(exclusions)) {
           // EXCLUDER model: membership = inside-circle − exclusions.
