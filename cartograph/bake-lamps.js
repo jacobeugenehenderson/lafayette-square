@@ -74,6 +74,34 @@ function clipToBoundary(lamps, scene) {
   return kept
 }
 
+// The AUTHORED lamp well — hand-placed lamps OSM doesn't carry, per scene.
+//
+// ⚠️ LS's authored well still lives at the shared default path
+// `src/data/street_lamps.json` (80 lamps, all inside Lafayette Park). That path
+// is the LS-bleed root: it is simultaneously "the shared default" and "LS's own
+// data" (`EXTENT-DESIGN §2.1`). It is read here ONLY for lafayette-square and
+// never as a fallback for anyone else — absence must render nothing, never
+// another installation's lamps (`BRIEF-ls-bleed-excision.md` site 1; before that
+// guard, any lampless town baked LS's 80 under its own name, in its own frame).
+//
+// ▶ The clean end-state is a per-scene `data/<scene>/authored_lamps.json`; moving
+// LS's file there retires one of the 13 name-imports and this special case with
+// it. Kept as-is for now so the move is one deliberate commit, not a side effect.
+function loadAuthoredLamps(scene) {
+  const perScene = join(ROOT, 'cartograph', 'data', scene, 'authored_lamps.json')
+  if (existsSync(perScene)) {
+    const raw = JSON.parse(readFileSync(perScene, 'utf-8'))
+    return raw.lamps || raw
+  }
+  if (scene === 'lafayette-square') {
+    const p = join(ROOT, 'src', 'data', 'street_lamps.json')
+    if (!existsSync(p)) return []
+    const raw = JSON.parse(readFileSync(p, 'utf-8'))
+    return raw.lamps || raw
+  }
+  return []
+}
+
 function loadLampsForScene(scene) {
   const osmPath = join(ROOT, 'cartograph', 'data', scene, 'raw', 'osm_street_lamps.json')
   const geoPath = join(ROOT, 'cartograph', 'data', scene, 'geography.json')
@@ -92,22 +120,36 @@ function loadLampsForScene(scene) {
       const [x, z] = toLocal(e.lon, e.lat)
       lamps.push({ x, z, park: false })
     }
-    const clipped = clipToBoundary(lamps, scene)
-    console.log(`[bake-lamps] scene=${scene}: derived ${lamps.length} OSM street lamps → ${clipped.length} inside the boundary (projected to current frame)`)
+    // ⭐ UNION THE WELLS, don't let one shadow the other (Jacob, 2026-07-23:
+    // *"I would rather have more lamps and trees, since they're vibes"*). Same
+    // doctrine the tree census already runs on — a census is the UNION of every
+    // well, never whichever well happened to be found first.
+    //
+    // Why this exists: the moment LS gained `raw/osm_street_lamps.json`, this
+    // branch started returning early and the `scene === 'lafayette-square'`
+    // fallback below became unreachable — so LS's 80 hand-placed LAFAYETTE PARK
+    // lamps silently stopped being baked. The park is the centrepiece and it
+    // quietly went from 80 authored lamps to ~35 incidental OSM ones. Nobody
+    // noticed, because the count went UP overall (80 → 536) while the park's
+    // own lamps vanished.
+    //
+    // Dedupe is proximity-based: an OSM lamp within DEDUPE_M of a curated one is
+    // the same physical lamp digitized twice. 33 of the 80 dedupe out; the
+    // threshold is stable anywhere in 2–6 m (measured), so 4 m is a safe middle.
+    const DEDUPE_M = 4
+    const authored = loadAuthoredLamps(scene)
+    let merged = lamps
+    if (authored.length) {
+      const fresh = authored.filter(a => !lamps.some(l => Math.hypot(l.x - a.x, l.z - a.z) <= DEDUPE_M))
+      merged = lamps.concat(fresh)
+      console.log(`[bake-lamps] scene=${scene}: UNION — ${lamps.length} OSM + ${authored.length} authored, ${authored.length - fresh.length} deduped (<${DEDUPE_M}m) → ${merged.length}`)
+    }
+    const clipped = clipToBoundary(merged, scene)
+    console.log(`[bake-lamps] scene=${scene}: derived ${merged.length} street lamps → ${clipped.length} inside the boundary (projected to current frame)`)
     return clipped
   }
-  // No per-scene lamp source. `src/data/street_lamps.json` is LAFAYETTE SQUARE'S
-  // OWN census — it predates the per-scene convention and is still LS's canonical
-  // file, so LS legitimately reads it here. EVERY OTHER SCENE GETS NOTHING.
-  //
-  // This used to be unconditional, which meant any town without lamp data baked
-  // LS's 80 lamps under its own name, in its own coordinate frame — plausible
-  // enough that nobody investigated. Absence must render nothing, never another
-  // installation's data (`BRIEF-ls-bleed-excision.md` site 1).
-  if (scene === 'lafayette-square') {
-    const raw = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'street_lamps.json'), 'utf-8'))
-    return raw.lamps || raw
-  }
+  const authoredOnly = loadAuthoredLamps(scene)
+  if (authoredOnly.length) return authoredOnly
   console.warn(
     `[bake-lamps] scene=${scene}: no raw/osm_street_lamps.json (or geography.json) — ` +
     `baking ZERO lamps. This scene has no lamp census; acquire one via the Intake ` +
