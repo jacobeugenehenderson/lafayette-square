@@ -2123,8 +2123,18 @@ createServer(async (req, res) => {
         skipped.push('trees (layer hidden)')
       }
       // AO bake last — slowest, benefits from updated geometry.
+      // ⚠️ lamps.json + trees.json ARE inputs here, not just neighbours in the
+      // chain: bake-ground-ao reads both (`bake-ground-ao.js:276/289`) to burn the
+      // lamp light-POOLS and the tree/lamp contact shadows into ground.poolmap /
+      // ground.lightmap. They were missing from this dirty-list, so a lamps- or
+      // trees-only change re-baked the point cloud and left the GROUND still lit
+      // for the previous set — new lamps standing in the dark with no pool, and
+      // pools glowing where a lamp no longer is. Caught 2026-07-23 re-baking LS
+      // after the lamp-well union added 47 park lamps.
       await runIfDirty('ground-ao',
-        [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'), join(here, 'bake-ground-ao.js')],
+        [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'),
+         join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'),
+         join(here, 'bake-ground-ao.js')],
         [join(LOOK_DIR, 'ground.lightmap.png')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
