@@ -7,7 +7,7 @@
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
       "bakedAt": 1784817965190,
-      "updatedAt": 1784790782157
+      "updatedAt": 1784832071596
     },
     {
       "id": "toy",
@@ -48,6 +48,14 @@
       "createdAt": 1784592746607,
       "bakedAt": 1784613972068,
       "updatedAt": 1784613237116
+    },
+    {
+      "id": "lafayette-square-staging",
+      "name": "LS (staging / re-skeleton)",
+      "scene": "lafayette-square-staging",
+      "createdAt": 1784789317317,
+      "bakedAt": 1784789317317,
+      "updatedAt": 1784789317317
     }
   ]
 }
