@@ -48,7 +48,7 @@ The steps, in execution order:
 | 2 | **promote-ribbons** | `promote-ribbons.js` | `map.json` | `src/data/ribbons.json` | extracts `layers.ribbons` → the bundled runtime asset (the First Bake artifact). LS-only. |
 | 3 | **ground** | `bake-ground.js` | `map.json`, `design.json`, `ribbonsGeometry.js` | `ground.json` + `ground.bin` **+ `shape.json`** | calls `buildTileGround(ribbons, { emitArtifact:true })` (the Section FILL construction) → merged, triangulated, indexed ground plane, one group per material/face-use. **Non-street ribbons** (alleys + footway/cycleway/steps/path) are stroked by `buildPathRibbons` (clipped to parcel interiors = block − curb − treelawn − sidewalk; park excluded — its paths render gravel-shaded via `LafayettePark.jsx`) and added as their own `mat:<kind>` groups, `layerVis`-gated like every other group — the **same** geometry the Designer renders live (`BlockGeometryV2Debug`). *(This call was orphaned in the dead V2 bake path until 2026-06-12 — `DOC-CODE-COHERENCE C13`; the slab shipped without alleys/paths.)* **Also emits `shape.json`** — the frozen per-tile shape the Section consumer reads chain-free (the **WALL artifact**, `WALL.md §3`). Y=0 always (flat; terrain lift is a runtime shader). |
 | 4 | **buildings** | `bake-buildings.js` | `map.json` (poured) / **render ledger** (LS), `design.json` | `buildings.json` (v2) + `buildings.bin` | merged building mesh + render-scoped per-building index (`SLAB-CONTRACT.md §6`). Gated on `layerVis.building`. **Render ledger (2026-07-05):** `loadBuildings(scene)` reads a per-scene **render record** at `data/<scene>/buildings.json` for every scene — the `scene==='lafayette-square'` source hardwire (`:62`) is retired (keyed on data, not the name). LS's ledger is the render-field projection of its authored `src/data/buildings.json` (`derive-ls-render-ledger.js`); LS bakes byte-identical. Poured scenes without a ledger fall back to `map.json`→`adaptMapBuildings`. **Membership cull (2026-07-20):** belt-and-suspenders re-application of the pipeline's membership — `(polygon ∪ activate) − (exclusions ∪ hide)`, where the **circle is only the fallback** when the scene has no polygon — reads `neighborhood_boundary.json` (circle + exclusions) + `building-overrides.json` (git-tracked) at bake time, so **curation only reaches the slab on a re-bake** (`OPERATIONS §Extent`). ⚠️ A re-bake used to DROP `nb.polygon` (`24323ab2`) — **retired 2026-07-20**; the polygon is now first-class and preserved. See `PIPELINE.md §prebake`. *(Was: the boundary-street polygon; before that, drop any footprint point outside the circle.)* |
-| 5 | **lamps** | `bake-lamps.js` | `street_lamps.json`, `design.json` | `lamps.json` | lamp point cloud (`SLAB-CONTRACT.md §5`). Gated on `layerVis.lamp`. |
+| 5 | **lamps** | `bake-lamps.js` | `raw/osm_street_lamps.json` **+** the authored well, `design.json` | `lamps.json` | lamp point cloud (`SLAB-CONTRACT.md §5`). Gated on `layerVis.lamp`. ⭐ **UNION of wells, deduped at 4 m** — see below. |
 | 6 | **scene** | `bake-scene.js` | `design.json` **only** | `scene.json` | **wall #2** — the Look's full authored snapshot (palette, materials, every SC channel). Geometry-independent; never forces a geometry re-bake. This is the **Stage's** output — owned by `STAGE.md`, format in `SLAB-CONTRACT.md §4`. |
 | 7 | **trees** | `arborist/bake-trees.js` | the SCENE's census + species map + `map.json` (resolved by `cartograph/tree-bake-inputs.mjs`) | `public/baked/<scene>/trees.json` | Per **neighborhood**, never shared (`SLAB-CONTRACT.md §8`). Two axes: `--scene` = whose census; `--heroLook` = whose camera tracks drive `heroTier`. No census on disk → **honest zero**, skip (a blank grove, never another hood's trees). Gated on `layerVis.tree`. *(Was LS-only, writing the fossil `baked/default.json`; retired 2026-07-15.)* |
 | 8 | **ground-ao** | `bake-ground-ao.js` | `map.json`, `design.json`, `ground.json` | `ground.lightmap.png` **+ `ground.poolmap.png` + `ground.colormap.png`** | **last** — slowest (~50 s); depends on `ground.json` mtime, runs after the geometry settles. Emits three "ground-contact" textures (2026-06-22): the **AO lightmap** (building AO), the **ground FX map** (R = lamp light pool, G = tree+lamp contact shadow), and the **ground-color map** (albedo raster for the tree trunk-base blend). See `SLAB-CONTRACT.md §3/§3.1/§3.2`. ⚠️ reads tree positions from the look's own `trees.json` + lamp positions from the per-Look `lamps.json` (or `street_lamps.json`). |
@@ -92,6 +92,39 @@ The bake's outputs **are** the slab. Their byte-level format — top-level field
 **This is the one true gate between "Section done" and "geometry ready for the Stage."** Until the curb is frozen in prebake (`POLYGON-FIRST.md §3`, tickets D6a→d, currently PARKED), the bake cannot pour a *provably* correct slab — it can only pour a faithful photograph of a still-moving subject. Freezing the curb upstream is what makes the bake's snapshot a freeze of *frozen* data rather than a freeze of *live* data. The bake mechanism itself needs no change; its **input** does.
 
 > **Diagnostic when a baked artifact looks wrong:** the first question is *not* "is the bake broken?" — it's "**is this the live re-stroke's defect, faithfully captured?**" (`feedback_verify_render_path_before_forensics`). The bake is almost never the bug; it is the messenger.
+
+---
+
+## 4.5 ⭐ A CENSUS IS THE UNION OF ITS WELLS — never whichever well was found first
+
+**The rule.** Any population the kit bakes — lamps, trees — is assembled by **unioning every well that carries it**, then deduping by proximity. A source-selection `if/else` that returns the first well it finds is the bug: it silently makes every other well invisible. Jacob, 2026-07-23: *"I would rather have more lamps and trees, since they're vibes."* Density is the product; a missing well reads as a thinner, deader place, and nothing errors.
+
+**Lamps — the regression this rule is named for (fixed `4db5c07c`, 2026-07-23).** `bake-lamps.js` had OSM and authored as **alternatives**: if the scene had `raw/osm_street_lamps.json`, it returned early and the authored branch below became **unreachable**. The moment LS acquired an OSM lamp fetch, its **80 hand-placed Lafayette Park lamps stopped baking** — and nobody noticed, because the *total* rose (80 → 536) while the park's own lamps vanished under it. The park is the centrepiece and it had been running on ~35 incidental OSM lamps.
+
+| well | LS | note |
+|---|---|---|
+| OSM (`raw/osm_street_lamps.json`) | 641 | hood-wide; ~35 fall inside the park |
+| authored (`loadAuthoredLamps`) | 80 | **all 80 inside Lafayette Park** — never covered streets |
+| proximity dupes removed (<4 m) | 33 | threshold stable 2–6 m, measured |
+| **union, pre-clip** | **688** | → ~583 after the boundary clip |
+
+The authored well prefers a per-scene `data/<scene>/authored_lamps.json`; LS's still sits at the shared default `src/data/street_lamps.json` (one of the 13 name-imports — moving it retires both the import and the scene-name special case). ⛔ **The LS-bleed guard is unchanged:** an authored well is read only for **its own** scene, never as a fallback for a lampless town (`BRIEF-ls-bleed-excision.md` site 1). *(The `park` flag `bake-lamps` writes is currently read by nobody — vestigial; park and street lamps render identically.)*
+
+**Trees** already follow this rule (`[[project_tree_census_wells_must_union_all]]`) — LS unions park / park-census / OSM. What thins trees is a **different**, deliberate gate: see §4.6.
+
+## 4.6 What the tree gates actually exclude (measured 2026-07-23)
+
+Harness: **`scratch/tree-lu-exclusion-census.mjs`** (read-only; runs the *same* `makeZoneTester` the bake uses against the *same* frozen shape, so it reports the real gate). LS, census union **6767**:
+
+| gate | trees | share | |
+|---|---|---|---|
+| **hardscape PAINT** — pavement 713 · sidewalk 569 · asphalt 293 · parking_lot 70 · curb 38 · footway 14 · alley 5 · building 5 | **1707** | 25.2% | our strips are *guesses*, so surveyed trees here get **nudged**, not dropped |
+| **LU allow-model** — `lu:parking` 371 · `lu:commercial` 186 · `lu:unknown` 80 | **637** | **9.4%** | the hard-typed land-use interiors |
+| kept (`treelawn` 513 + `lu` 3910) | 4423 | 65.4% | |
+
+⭐ **The LU allow-model is the SMALLER gate — 637 trees, 9.4%.** Relaxing it is a modest, bounded win: flip a class to `soft` in **`cartograph/data/<scene>/lu-policy.json`** (`{"commercial":"soft"}`) — a per-scene override, no kit edit. Kit defaults + the reasoning live in `cartograph/lu-policy.mjs` (unrecognized classes already default **soft + loud**, the HPDM bald-blocks fix).
+
+⚠️ **Read these as "which gate bites," not as a yield.** The zone verdict is not the bake's final answer: `bake-trees.js` then dedups across wells and **nudges** trees from *surveyed* wells onto legal ground rather than dropping them (only *invented* wells are dropped). That is why LS bakes **5001** — more than the 4423 raw-kept.
 
 ---
 

@@ -261,9 +261,19 @@ export const INTAKE_ROWS = [
     label: 'Street lamps',
     path: 'raw/osm_street_lamps.json',
     unlocks: 'street lamps and their night light-pools',
-    // ⛔ LS-BLEED #1 (`bake-lamps.js:99`) — the Altadena wrong-lamps bug.
-    // Killing this is deliverable #4 of the brief, not tonight's slice.
-    absent: { kind: ABSENT.LS_BLEED, note: "bake-lamps.js:99 reads LAFAYETTE SQUARE's 80 lamps" },
+    // ✅ The unconditional LS fallback (the Altadena wrong-lamps bug) is CLOSED:
+    // an authored well is read only for its OWN scene. A lampless town bakes
+    // ZERO lamps and says so — it never inherits LS's.
+    //
+    // ⚠️ Still a bleed *site* only in that LS's authored well lives at the shared
+    // default `src/data/street_lamps.json` (80 park lamps) rather than a per-scene
+    // `data/lafayette-square/authored_lamps.json`. Moving it retires one of the 13
+    // name-imports and the last scene-name special case in bake-lamps.
+    //
+    // NOTE this row tracks the OSM well only. Lamps bake as the UNION of
+    // OSM ∪ authored, deduped at 4 m (`BAKE.md §4.5`) — so a filled row does not
+    // mean the authored well is unnecessary, and an authored-only scene is legal.
+    absent: { kind: ABSENT.LS_BLEED, note: "LS's authored well still sits at the shared src/data path (guard closed; union since 2026-07-23)" },
     acquisition: { kind: ACQUIRE.BUTTON, note: 'Overpass highway=street_lamp — ODbL' },
     doc: 'cartograph/INTAKE.md',
   },

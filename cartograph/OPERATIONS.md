@@ -39,6 +39,17 @@ The single most re-derived thing in this tool. **Nested: hood < disc < bounding 
 
 ⚠️ **Inside the forever zone, these are live and need no re-pour:** hide/reveal buildings · change the disc radius · move the disc centroid. That is what the ~20–25% padding is *for*. *(Design of record: `EXTENT-DESIGN.md §3.3`.)*
 
+## Density — "more lamps and trees" (the vibes knobs)
+
+*Density is product, not decoration. Both populations are a **union of wells**, deduped — never one well winning (`BAKE.md §4.5`).*
+
+- **Lamps.** Two wells: the OSM fetch (`raw/osm_street_lamps.json`) + an **authored** well for lamps OSM doesn't carry (`data/<scene>/authored_lamps.json`; LS's is still the legacy `src/data/street_lamps.json`). They **union**, deduped at 4 m. To add lamps by hand, add them to the authored well and re-bake — they no longer have to compete with the OSM set. *(Before 2026-07-23 these were alternatives, and LS's 80 authored park lamps silently stopped baking the day it gained an OSM fetch.)*
+- **Trees — the one knob that matters is `lu-policy.json`.** Trees are excluded by two gates, and they are very different sizes (measured on LS, `scratch/tree-lu-exclusion-census.mjs`):
+  - **hardscape paint** (pavement/sidewalk/asphalt) — 1707 trees, 25% of the census. **Not a knob.** Surveyed trees here get *nudged* onto legal ground, because our strips are guesses and real trees win.
+  - **the land-use allow-model** — **637 trees, 9.4%**: `parking` 371 · `commercial` 186 · `unknown` 80. **This is your dial.** Drop a `cartograph/data/<scene>/lu-policy.json` — `{"commercial": "soft"}` — and those interiors become plantable. Per-scene, no kit edit, no code change. Kit defaults: `park`/`residential`/`recreation`/`island`/`institutional`/`vacant`/`median` are **soft**; `commercial`/`parking`/`industrial`/`unknown` are **hard**.
+  - ⚠️ **An LU class the kit has never seen defaults to SOFT and announces itself** — wrong-but-visible beats wrong-and-silent (the HPDM bald-blocks lesson: 7.7% of that hood went bald with no warning). Check the `[lu-policy]` block the bake prints.
+  - ⚠️ Re-run the harness after changing the policy; and remember a tree bake needs the **frozen `shape.json`** — there is no honest forbidden-surface without it.
+
 ## Survey — the hardscape-SHAPE tool
 
 The hardscape silhouette: centerlines, smoothing, caps, anchor, road metadata, corner radius, curb.
