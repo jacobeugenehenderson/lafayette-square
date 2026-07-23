@@ -19,7 +19,7 @@ Cartograph + Stage produce a **slab** — a baked, flattened, fortified, secure,
 Cartograph is recursive — each authoring step makes a truth-claim the next builds on:
 
 - **centerlines** (Survey) → *provable truth*: streets exist here, with this geometry
-- **+ thickness** (Measure) → *provable truth*: this street is N meters wide on each side
+- **+ thickness** (Section) → *provable truth*: this street is N meters wide on each side
 - **+ dimension** (ribbons) → *emergent*: the 3D cross-section per street
 - **+ finish** (Stage) → *authored*: materials, palettes, lighting, sky
 
@@ -51,6 +51,7 @@ Cartograph is recursive — each authoring step makes a truth-claim the next bui
 
 | Component | Role | Audience | Deployed? |
 |---|---|---|---|
+| **Extent** | Intake — say what the neighborhood IS, then pour it (the front door) | Operator | No |
 | Designer / Survey / Section | Fortification authoring (geometry + tabular data integrity) | Operator | No |
 | Stage | Look authoring (materials, palettes, lighting, post-FX, shots) | Operator | No |
 | **Bake** (action) | Slab pour — publishes to `public/baked/<look>/` | Operator clicks | N/A |
@@ -59,9 +60,9 @@ Cartograph is recursive — each authoring step makes a truth-claim the next bui
 | LS app | Consumer surface (place cards, businesses, accounts, …) | End users | Yes |
 | Aerial photos (in Designer) | Ground-truth verification | Operator | No (max-res, never shipped) |
 
-## The three operator environments
+## The operator environments
 
-*(What each is, for the pitch. The knobs — every slider and gesture — live in `OPERATIONS.md`.)*
+*(What each is, for the pitch. The knobs — every slider and gesture — live in `OPERATIONS.md`.)* **Extent** is the front door — the intake tool described up top ("say what the neighborhood is, then pour it"); the three below are where the map gets made.
 
 ### 1. Designer (`/cartograph.html`, `inDesigner` mode)
 **Owns: fortification of all spatial + tabular data against aerial-photo ground truth.** Top-down orthographic, compass-N up, paired with max-resolution georeferenced aerials (never shipped). The operator traces and corrects the street network, paths, lots, park boundary; classifies land use; integrates buildings, parcels, landmarks, lamps — splits, defines, marks caps, sets couplers, but doesn't author geometry. **Toolbar = views, Panel = tools:** the toolbar carries view controls (Aerial, Look/Toy picker, Stage); the panel's 3-part pill (Survey · Section · Design) selects the authoring tool. **Toy is the canonical pipeline test rig** — land geometry/pipeline changes in toy first, then cut LS over (doctrine: `/AGENT-VALIDATION-SURFACES.md`; a new scene routes through the *same* pipeline, never a toy-only branch). Output: `data/raw/{centerlines,measurements}.json` + `data/clean/overlay.json`.

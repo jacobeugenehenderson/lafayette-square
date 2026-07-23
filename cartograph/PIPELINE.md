@@ -50,7 +50,7 @@ PHASE D — PUBLISH (the slab)
 ### intake — onboard a place  (`◎ Extent` tool → `ExtentApp.jsx`) — **THE INCLUSION POLYGON (2026-07-20)**
 - **What / job:** author a place front-to-back with **no JSON hand-editing, no CLI**: ZIP → Locate → **frame** the hood on the global aerial → **Fetch this view** (frame-then-fetch: OSM + buildings + skeleton) → **author the inclusion POLYGON** (gazetteer ring · click boundary streets · draw) → exclusion loops + per-building overrides as *correction* (`BezierPen`) → **Bake** (Commit re-centers `geography.json` to the boundary centroid, writes `neighborhood_boundary.json` = circle + `exclusions`; then one-click Pour into the 3D Designer, §pour).
 - **STATUS:** **LANDED** (on trunk `curb-offset-draw`; **not yet in prod** `origin/main`). Membership = **`(polygon ∪ activate) − (exclusions ∪ hide)`** (2026-07-20) — the polygon decides, the disc renders and is only the fallback when a scene has none. Installation-agnostic (kit); hipointe-demun and **altadena** were onboarded, poured and baked this way — **altadena is the first fully end-to-end intake→pour hood** (LS/HPDM predate the regime and carry bolt-on protections). **Never geocode for geometry** — search is the fetch bootstrap only.
-- **Refs:** ⭐ **`INTAKE.md §0.5`** (the flow + the "why excluder" + frame-then-fetch + the re-center guard) · `FEATURES.md` (pitch) · `OPERATIONS.md` (knobs) · BACKLOG "Onboarding/Intake".
+- **Refs:** ⭐ **`EXTENT-DESIGN.md`** (design of record — what the tool makes, the size/centroid model, the seal) · **`INTAKE.md §0.5`** (the as-built flow + frame-then-fetch + the re-center guard) · `FEATURES.md` (pitch) · `OPERATIONS.md §Extent` (knobs) · BACKLOG "Onboarding/Intake".
 
 ### skeleton — the frame  (`skeleton.js`: `osm.json → skeleton.json`)
 - **What / job:** trace the real street network from OSM into canonical chains (skelId-keyed) and produce an **extremely simplified, polygon-ready** frame. *"The Skeleton is The First Bake."*
@@ -68,7 +68,7 @@ PHASE D — PUBLISH (the slab)
 ### pour — one-click intake→3D  (`POST /:scene/pour` → the Extent "Pour → Designer" button)
 - **What / job:** collapse the whole prebake→bake arc into one operator click. `pipeline.js --skip-elevation` (boundary-clipped, above) → `promote-ribbons.js --scene=<s>` → ensure a Look bound to the scene (`createLook` now forwards `scene`) → `setActiveLook` → `bakeLook(force)` (ground/AO/buildings/lamps/scene) → load fresh ribbons → open the Designer. **The whole intake→3D arc is now ONE tool, no CLI.**
 - **STATUS:** **LANDED + scene-generic.** Uses the scene's OSM buildings, OSM land-use, STL parcels if in STL. Guarded per-scene (`_seedsInFlight`). The pour applies **circle − exclusions + activate/hide membership** in `pipeline.js` (the single filtered `map.json` source for 2D Designer + bake; §prebake cut 2, `NEIGHBORHOOD-INPUTS §5.2`) and flushes the overrides before building. A committed hood's Bake routes through the light **rescope** path (re-clip + re-bake, no re-center — the re-center guard, `INTAKE §0.5`). ⚠️ The pour is **long** (derive processes the whole fetch *before* clipping — the bottleneck; clipping the INPUT for speed is OPEN); a too-wide fetch OOM'd the dev stack once — **frame tighter**. On trunk `curb-offset-draw`.
-- **Refs:** `INTAKE.md §0.5` (the flow + why-excluder) · `OPERATIONS.md §Extent`.
+- **Refs:** `INTAKE.md §0.5` (the as-built flow) · `OPERATIONS.md §Extent` · `EXTENT-DESIGN.md` (the model).
 
 ### survey — the SHAPE tool  (`surveyor` pill → `SurveyorPanel.jsx`)
 - **What / job:** author the **hardscape SHAPE** off the prebaked frame — asphalt/curb silhouette, smoothing, caps, anchor, road metadata, corner radius, hero-pick. Strokes chains outward into the curb `iA`; freezes at the WALL (chains die).
@@ -194,5 +194,5 @@ This doc is the first of a family of address-maps:
 
 ---
 
-*Updated 2026-07-16 — intake boundary authoring reconciled to the shipped **excluder pen** (circle − exclusion loops; the earlier name-streets/corner-resolver flow is dormant/dead code, flagged for excision in `NOTES.md`). Committed on `curb-offset-draw`, not yet in prod.*
+*Updated 2026-07-23 (canon sweep) — intake boundary authoring is the **INCLUSION POLYGON**: membership = `(polygon ∪ activate) − (exclusions ∪ hide)`, the polygon decides and the disc renders. ⛔ The 2026-07-16 line here reconciled this doc to the **excluder pen** ("circle − exclusion loops; the name-streets flow is dormant/dead code") — that model was RETRACTED 2026-07-20 and the street-selection machinery is the live mechanism, not dead weight. Design of record: `EXTENT-DESIGN.md`; as-built: `INTAKE.md §0.5`. Committed on `curb-offset-draw`, not yet in prod.*
 *Updated 2026-06-15 — the tile-model rewrite (v0.2). The ladder + §Tile now describe the live `tileGround.js` construction; the figure-ground ladder is archived. Verify the addresses against `src/lib/tileGround.js` before building.*

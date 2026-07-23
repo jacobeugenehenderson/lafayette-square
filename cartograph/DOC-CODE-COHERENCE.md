@@ -84,7 +84,7 @@ Triggered by Jacob: *"we can't take the BACKLOG's word for it; we need a forensi
 | B5 | The bake **chain + `shape.json` emission** had no keystone Reference doc — its home was "README · ARCHITECTURE · FEATURES" (BOZ §0 Suite) | **Landmine** (truth lived only in code/orchestration) | now documented | → **`BAKE.md`** | ✅ documented 2026-06-10 |
 | B6 | The Stage tool + the SC.1–SC.7 channel inventory had no keystone Reference doc | **Landmine** | now documented | → **`STAGE.md`** | ✅ documented 2026-06-10 |
 
-### Extent tool + the Pour (seeded 2026-07-04; the boundary tool is now the committed **excluder pen**, `INTAKE §0.5`)
+### Extent tool + the Pour (seeded 2026-07-04; boundary authoring is the **INCLUSION POLYGON** — `EXTENT-DESIGN.md` is the design of record, `INTAKE §0.5` the as-built. ⛔ The "excluder pen" model this heading used to name was retracted 2026-07-20.)
 
 | # | Divergence | Type | The truth | Locus | Status |
 |---|---|---|---|---|---|

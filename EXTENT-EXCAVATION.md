@@ -1,5 +1,7 @@
 # EXTENT — excavation, audit, prior art, reconciliation
 
+> ⭐ **THIS IS THE EVIDENCE LAYER. The design of record is [`EXTENT-DESIGN.md`](EXTENT-DESIGN.md)** (ratified with Jacob 2026-07-22) — read that for *what we decided*; read this for *why we know it*. Every claim in the design traces back here. If the two ever disagree, the design wins and this file gets a pointer, never a silent edit. As-built engineering: `cartograph/ARCHITECTURE.md §Extent`; as-built operator flow: `cartograph/INTAKE.md §0.5`.
+
 **Agent: Marl.** Fresh, single-subsystem pass. No production code written; no file modified but this one. Two throwaway scripts in `scratch/` (`marl-extent-invariants.mjs`, `marl-ksi-polygon-cost.mjs`, `marl-galeria-check.mjs`).
 
 **Read order followed as mandated** (§1 → §2 → §3 → §4 → *then* §5): `CLAUDE.md` → `ORIENTATION.md` → `README.md §⭐ START HERE` → `cartograph/ARCHITECTURE.md §"The Extent tool & the Pour" → ⭐THE PROCEDURE, as-built`. Then the excavation sweeps, the code audit, and the prior-art survey. `BRIEF-extent-boundary-procedure.md` was read **last**, after §§2–4 were drafted.

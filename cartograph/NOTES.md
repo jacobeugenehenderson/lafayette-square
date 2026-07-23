@@ -8,7 +8,22 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
-## 2026-07-16 — the extent tool became the EXCLUDER pen (get-current accord sweep, Boz).
+## 2026-07-23 — the canon accord sweep: the Extent retraction finally finished (Boz)
+
+`BRIEF-canon-sweep.md`, run first thing on clean context as it required. The finding that justified the whole exercise: **the 2026-07-20 retraction of the excluder model had never landed in the canon.** Commit `004a33e3` touched ten files and left the *step-by-step procedures* stating the retracted model — so an agent obeying the routing gate on 2026-07-23 was still being told, in the operator's manual, that *"the auto-fit circle is the boundary — every building inside it is IN by default."* That is the third time this subsystem has cost agent passes to a stale confident claim, and it is exactly the failure mode `BOZ §3` names: **a half-update that leaves a contradiction is worse than none — the live truth now competes with a confident stale one.**
+
+**What moved, and where:**
+- **`OPERATIONS.md`** — step 5 rewritten from "set the disc" to **"author the BOUNDARY"** (the three interchangeable entries), disc demoted to step 6 as *what renders*, steps renumbered. Added **§"The three sizes and the two centers"** — hood<disc<bb, the forever-zone %, and the ⛔ never-move-the-origin rule — because that is the single most re-derived fact here and it had no operator-facing home. Trimmed a DONE-narrative out of §"Named levers" (landed fact → knob; the unbuilt half → BACKLOG).
+- **`PREBAKE.md:56`** — the one file the retraction commit missed entirely; its membership bullet stated the retracted model *in full*. Now `(polygon ∪ activate) − (exclusions ∪ hide)` with the retraction noted in place.
+- **`ARCHITECTURE.md`** — §7 disc bullet corrected; §Extent gained three records the brief asked for: **D4** (fixed at the commit path `d82c5e60` + `CenterHandle`, with **two residuals found by reading the code** — `serve.js:1583` rescope drops the disc center, `ExtentApp.jsx:1145` still short-circuits when committed), the **identity lock** (`ca2db7ca`/`8c1b65ae`, centroid-keyed registry, 13,427→8,460 with zero renumbers), and a loud **palimpsest warning** — pouring a 2nd scene clobbers production LS, because LS *is* the fallback.
+- **`INTAKE.md` / `NEIGHBORHOOD-INPUTS.md` / `PIPELINE.md` / `BACKLOG.md` / `DOC-CODE-COHERENCE.md`** — headings, status lines, §11 flow and the doc footer all repointed. **`BACKLOG` carried an actively dangerous follow-on** — "excise the dormant street-selection code" — which is the live mechanism; that entry is now a ⛔, since acting on it would repeat the mistake `a05fc129` had to undo.
+- **`ORIENTATION.md` + `README §⭐ START HERE`** — the adherence lever. Both now name **`EXTENT-DESIGN.md`** as design of record and state the settled model in plain language (what the tool makes = the *served skeleton*, a labeled point cloud; the two centers; the seal as identity registry). ORIENTATION also gained the LS-is-the-fallback warning.
+
+**Verified, not assumed:** the 19-hardwire figure in `EXTENT-DESIGN §2.1` measures as **13 static name-imports across 10 files** today (`ribbons.json` alone at 8). D4's status was checked in `serve.js`/`ExtentApp.jsx` rather than taken from the memory line — which is how the two residuals surfaced.
+
+**The lesson worth keeping** (it is the same one this subsystem keeps paying for, one level up): *a retraction is not done when the headers change.* `004a33e3` corrected every banner and left every procedure. **Fix the steps, not the signage** — an agent reads the numbered list, not the status line above it.
+
+## 2026-07-16 — the extent tool became the EXCLUDER pen (get-current accord sweep, Boz). ⛔ **SUPERSEDED 2026-07-20 — the excluder model was RETRACTED; this entry is the Diary record of what was believed, not live doctrine. Live: `EXTENT-DESIGN.md` / `INTAKE §0.5`.**
 
 Jacob opened the day wanting to be "forensically current" before any push — several threads had run in parallel and the canon had drifted. It had: a git+code forensic found the **Extent boundary tool pivoted from an inclusion model to an EXCLUDER model on 2026-07-14**, and *no* canon doc had caught it. The whole 2026-07-02→14 arc, in order: geocode-the-CDP-ring → snap-route-onto-streets → name-the-4-boundary-streets/corner-resolver → the concerted-logic segment SELECTOR → an inclusion bezier PEN (`e140cb67`) → **the excluder** (`5d92b419`: "pen draws exclusion loops, buildings IN by default"). Each earlier model chased *tracing the perimeter*; the excluder threw that whole frame out.
 
