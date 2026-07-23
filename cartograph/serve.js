@@ -606,20 +606,25 @@ function streetGeom(scene, name) {
   return { polylines: chains.map(c => c.points.map(p => [r2(p.x), r2(p.z)])) }
 }
 
-// The neighborhood stencil — a 256-gon circle of radius R around local [0,0]
-// (the geo center after re-center), with the two feather bands the slab clip
-// reads (SLAB-CONTRACT §2.1). center is ALWAYS [0,0] == the geo center.
-function makeCircleBoundary(radius) {
+// The neighborhood stencil — a 256-gon circle of radius R around `center`
+// (local x/z), with the two feather bands the slab clip reads (SLAB-CONTRACT
+// §2.1). ⭐ center is the HOOD CENTER and may be OFF-ORIGIN: the frame origin is
+// the frozen fetch center and never moves (R10 two centers; EXTENT-DESIGN §3.3),
+// so the disc sits wherever the hood is. Every consumer already reads this center
+// (boundary.js `nb.center`, BakedGround `stencil.center`, bake-ground bbox), so
+// an off-origin disc is followed, not broken. Fade bands are radial (center-free).
+function makeCircleBoundary(radius, center = [0, 0]) {
   const R = Math.round(radius)
   const r2 = (v) => Math.round(v * 100) / 100
+  const cx = r2(center?.[0] || 0), cz = r2(center?.[1] || 0)
   const boundary = []
   for (let i = 0; i < 256; i++) {
     const a = (i / 256) * 2 * Math.PI
-    boundary.push([r2(R * Math.cos(a)), r2(R * Math.sin(a))])
+    boundary.push([r2(cx + R * Math.cos(a)), r2(cz + R * Math.sin(a))])
   }
   return {
     version: 2,
-    center: [0, 0],
+    center: [cx, cz],
     radius: R,
     innerFadeOffset: 200,
     fade: { inner: Math.max(0, R - 200), outer: R },
