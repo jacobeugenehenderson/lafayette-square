@@ -16,7 +16,7 @@ stamp brief; consult this for the measurements.
 
 **Status:** ⛔ RETIRED (above). Was: DRAFT, dispatch-ready. Active brief (tracked at root). Written 2026-07-22 from a live
 eye-session with Jacob on the Lafayette Avenue strip (Missouri · Simpson · Waverly · Nicholson
-Places). Continues the dead-end class: `BRIEF-dead-end-leg-flip-and-slope.md` (the TIP end —
+Places). Continues the dead-end class: the LANDED leg-flip + cap-slope work (the TIP end — brief retired 2026-07-23, outcome in `cartograph/BACKLOG.md §"Retired BRIEFs"` —
 **LANDED**, see §1) closed the cap; this is the **other end of the same finger**.
 
 > ⛔ **ROUTE FIRST (`CLAUDE.md` gate):** `ORIENTATION.md` → `README §⭐ START HERE` → then
