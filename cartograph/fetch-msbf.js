@@ -21,7 +21,8 @@ import { join } from 'path'
 import { execSync } from 'child_process'
 import { createInterface } from 'readline'
 import { createGunzip } from 'zlib'
-import { BBOX, RAW_DIR, wgs84ToLocal } from './config.js'
+import { BBOX, RAW_DIR, SCENE, wgs84ToLocal } from './config.js'
+import { registryPath, loadRegistry, saveRegistry, assignIds } from './msbf-identity.js'
 
 const INDEX_URL = 'https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv'
 const CACHE = join(RAW_DIR, '_cache')
@@ -154,7 +155,12 @@ async function main() {
 
   // 5. Convert to the same shape as fetch.js's OSM buildings
   //    { osmId|msbfId, tags, isClosed, coords: [{lon,lat,x,z}, …] }
-  const buildings = allFeatures.map((f, i) => {
+  // Build the rounded rings first, THEN assign identity — the centroid key must
+  // be derived from the SAME rounded coords the capture read (else the key drifts
+  // and the consult fails open; BRIEF-hpdm-identity-lock §3).
+  const SOURCE  = 'Microsoft Global Building Footprints (quadkey z=9)'
+  const DATASET = 'global-buildings/2026-02-03'
+  const built = allFeatures.map((f) => {
     const ring = f.geometry.coordinates[0]
     const coords = ring.map(([lon, lat]) => {
       const [x, z] = wgs84ToLocal(lon, lat)
@@ -165,24 +171,40 @@ async function main() {
         z:   Math.round(z * 100) / 100,
       }
     })
-    return {
-      msbfId: i,
-      tags: {
-        building: 'yes',
-        source: 'microsoft',
-        ...(f.properties?.height != null && f.properties.height >= 0
-          ? { height: Math.round(f.properties.height * 100) / 100 }
-          : {}),
-      },
-      isClosed: true,
-      coords,
-    }
+    const height = (f.properties?.height != null && f.properties.height >= 0)
+      ? Math.round(f.properties.height * 100) / 100 : null
+    return { coords, height }
   })
+
+  // ── IDENTITY LOCK (EXTENT-DESIGN §4) ──────────────────────────────────────
+  // Consult the per-scene registry: an existing footprint keeps its PERMANENT
+  // msbfId; an unseen one appends at highWater+1; nothing is renumbered. On a
+  // brand-new scene (no registry) this mints i and FREEZES it for next time.
+  const regPath  = registryPath(RAW_DIR)
+  const existing = loadRegistry(regPath)
+  const { ids, registry, minting, appended, collisions } =
+    assignIds(built.map(b => b.coords), existing, { scene: SCENE, source: SOURCE, dataset: DATASET })
+  if (collisions) console.warn(`  ⚠ ${collisions} coincident-centroid collisions — identity ambiguous for those; investigate`)
+  console.log(minting
+    ? `  identity: MINTED fresh registry (${registry.count} keys) → ${regPath}`
+    : `  identity: consulted registry (${existing.count} known, ${appended} appended, highWater ${registry.highWater}) → locked`)
+  saveRegistry(regPath, registry)
+
+  const buildings = built.map((b, i) => ({
+    msbfId: ids[i],
+    tags: {
+      building: 'yes',
+      source: 'microsoft',
+      ...(b.height != null ? { height: b.height } : {}),
+    },
+    isClosed: true,
+    coords: b.coords,
+  }))
 
   // 6. Write output
   const out = {
-    source: 'Microsoft Global Building Footprints (quadkey z=9)',
-    dataset: 'global-buildings/2026-02-03',
+    source: SOURCE,
+    dataset: DATASET,
     date: new Date().toISOString().split('T')[0],
     bbox: { ...BBOX },
     quadkeys: neededQks,

@@ -18,22 +18,13 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { keyOf, PREC } from '../cartograph/msbf-identity.js' // the ONE key definition (no drift)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SCENE = 'hipointe-demun'
 const RAW = join(ROOT, 'cartograph/data', SCENE, 'raw/msbf.json')
 const OUT = join(ROOT, 'cartograph/data', SCENE, 'identity-registry.json')
 const WRITE = process.argv.includes('--write')
-
-const PREC = 7 // decimal places for the centroid key (~1 cm; 0 collisions verified)
-
-// The permanent key: the footprint's centroid, rounded. Derivable identically
-// from fetch-msbf.js's raw output on any future fetch — that is the whole point.
-function keyOf(coords) {
-  let x = 0, y = 0, n = 0
-  for (const c of coords) { x += c.lon; y += c.lat; n++ }
-  return (x / n).toFixed(PREC) + ',' + (y / n).toFixed(PREC)
-}
 
 const raw = JSON.parse(readFileSync(RAW, 'utf8'))
 const B = raw.buildings || []
