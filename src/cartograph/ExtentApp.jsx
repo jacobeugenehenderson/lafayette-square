@@ -2088,7 +2088,7 @@ export default function ExtentApp() {
               )}
               {exclusionsLL.length > 0 && (
                 <div className="carto-extent-status ok" style={{ marginBottom: 8 }}>
-                  {exclusionsLL.length} exclusion loop{exclusionsLL.length > 1 ? 's' : ''} · {keptFit.count.toLocaleString()} buildings kept
+                  {exclusionsLL.length} exclusion loop{exclusionsLL.length > 1 ? 's' : ''} · {((buildingCentroids?.length || 0) - excludedIds.size).toLocaleString()} buildings kept
                 </div>
               )}
 
