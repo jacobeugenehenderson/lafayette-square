@@ -44,6 +44,7 @@ import MarkerFAB from './MarkerFAB.jsx'
 import SourcesPanel from './SourcesPanel.jsx'
 import BezierPen, { flattenPath } from './BezierPen.jsx'
 import CircleHandle from './CircleHandle.jsx'
+import CenterHandle from './CenterHandle.jsx'
 import { CompassRoseSVG } from '../components/CompassRose.jsx'
 import {
   TileMesh, TILE_URL, lonLatToTile, tileToLonLat, wgs84ToLocal, localToWgs84,
@@ -1024,6 +1025,11 @@ export default function ExtentApp() {
   }, [name, scene])
   const [radiusM, setRadiusM] = useState(0)
   const [radiusTouched, setRadiusTouched] = useState(false)
+  // The disc CENTROID, authored as a draggable handle (lon/lat so it survives a
+  // reload / frame change — R16). null = not authored → fall back to the auto-fit
+  // of kept buildings. The bb/frame origin never moves; this is the SEPARATE hood
+  // center (R10 two centers; EXTENT-DESIGN §3.3).
+  const [centerLL, setCenterLL] = useState(null)
 
   // ── Is the authored extent DIRTY relative to what was last baked? ──────────
   //
@@ -1040,8 +1046,9 @@ export default function ExtentApp() {
     x: (exclusionsLL || []).map(l => (l.anchors || []).length),
     a: [...activate].sort(),
     h: [...hide].sort(),
+    c: centerLL ? [Math.round(centerLL.lon * 1e5), Math.round(centerLL.lat * 1e5)] : null,
     n: name.trim(), b: blurb.trim(),
-  }), [radiusM, polygonLL, exclusionsLL, activate, hide, name, blurb])
+  }), [radiusM, polygonLL, exclusionsLL, activate, hide, centerLL, name, blurb])
   const [bakedSig, setBakedSig] = useState(null)
   const bakeDirty = !bakedSig || bakedSig !== bakeSignature
   // §4 live re-scope: the radius the committed circle was last baked at. When the
@@ -1136,13 +1143,21 @@ export default function ExtentApp() {
   // a COMMITTED hood is re-centered so its circle sits at the origin.
   const keptCenter = useMemo(() => {
     if (committed) return { x: 0, z: 0 }
+    // Authored disc center (the draggable handle) wins over the auto-fit. Stored
+    // lon/lat, projected into the live frame; never forced to origin (that force,
+    // for committed hoods, is D4 — its fix is the re-center removal, tracked
+    // separately). EXTENT-DESIGN §3.3.
+    if (centerLL && geo) {
+      const [x, z] = wgs84ToLocal(geo, centerLL.lon, centerLL.lat)
+      return { x: r2(x), z: r2(z) }
+    }
     if (!buildingCentroids?.length) return { x: 0, z: 0 }
     let sx = 0, sz = 0, n = 0
     for (const c of buildingCentroids) { if (loopOrHandOut(c.id)) continue; sx += c.x; sz += c.z; n++ }
     if (!n) return { x: 0, z: 0 }
     return { x: r2(sx / n), z: r2(sz / n) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildingCentroids, committed, hide, activate, loopExcluded])
+  }, [buildingCentroids, committed, hide, activate, loopExcluded, centerLL, geo])
 
   // Membership (INVERTED): a building is EXCLUDED if hand-hidden, or (not force-kept
   // AND (inside any loop OR outside the extent circle)). The circle is a coarse dial
@@ -1191,42 +1206,9 @@ export default function ExtentApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildingCentroids, hide, activate, loopExcluded, keptCenter])
 
-  // ⭐ CONTAINMENT — does the disc claim ground the fetch never covered?
-  //
-  // The invariant is bbox ⊇ disc: you cannot include what was never fetched. It
-  // held nowhere until now — Księży Młyn committed a radius of 1530 m against a
-  // 2.07×1.55 km envelope, so 56% of the disc was bare aerial and the operator had
-  // no way to know. Reported per-side in metres because "which way do I re-fetch"
-  // is the operator's actual next question.
-  // NB: reads `keptCenter`, not `boundaryCentroid` — the latter is the same value
-  // but is aliased further down (`boundaryCentroid = keptCenter`), so naming it
-  // here is a temporal-dead-zone throw that blanks the whole screen.
-  const envelopeOvershoot = useMemo(() => {
-    const rect = fetchRectOf(geo)
-    if (!rect || !(radiusM > 0) || !keptCenter) return null
-    const { x, z } = keptCenter
-    const over = {
-      north: Math.round((z - radiusM) < rect.z0 ? rect.z0 - (z - radiusM) : 0),
-      south: Math.round((z + radiusM) > rect.z1 ? (z + radiusM) - rect.z1 : 0),
-      west: Math.round((x - radiusM) < rect.x0 ? rect.x0 - (x - radiusM) : 0),
-      east: Math.round((x + radiusM) > rect.x1 ? (x + radiusM) - rect.x1 : 0),
-    }
-    const sides = Object.entries(over).filter(([, m]) => m > 0)
-    if (!sides.length) return null
-    // Fraction of the disc with data behind it — a coarse sample is plenty for a
-    // readout, and it's the number that makes the problem legible at a glance.
-    let inside = 0, total = 0
-    const step = Math.max(20, radiusM / 40)
-    for (let dx = -radiusM; dx <= radiusM; dx += step) {
-      for (let dz = -radiusM; dz <= radiusM; dz += step) {
-        if (dx * dx + dz * dz > radiusM * radiusM) continue
-        total++
-        const px = x + dx, pz = z + dz
-        if (px >= rect.x0 && px <= rect.x1 && pz >= rect.z0 && pz <= rect.z1) inside++
-      }
-    }
-    return { sides, covered: total ? Math.round((100 * inside) / total) : 100 }
-  }, [geo, radiusM, keptCenter])
+  // (Removed 2026-07-22: the disc-overshoots-the-fetch warning. Under the forever
+  // safety-zone model the bb = disc + ~20–25% padding, so the disc reaching into
+  // that zone is EXPECTED, not an error — nothing to forbid or warn. EXTENT-DESIGN §3.3.)
 
   // Toggle one boundary street. Order-independent by construction — the resolver
   // rebuilds the ring from the junctions the selected streets SHARE, so the operator
@@ -1288,6 +1270,7 @@ export default function ExtentApp() {
     setSeedError(null); setFetchSources(null)
     setSides([]); setStreetCorners(null); setPreviewStreet(null)
     setName(''); setBlurb(''); setRadiusM(0); setRadiusTouched(false)
+    setCenterLL(null)
     setCommittedRadius(0)
     setExclusionsLL([]); setPenActive(false); setSelAnchor(null)
     draftHydrated.current = false
@@ -1300,6 +1283,7 @@ export default function ExtentApp() {
         if (nb.name) setName(nb.name)
         if (nb.blurb) setBlurb(nb.blurb)
         if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
+        if (nb.center && Number.isFinite(nb.center.lon) && Number.isFinite(nb.center.lat)) setCenterLL(nb.center)
         // Rehydrate the editable pen path (lon/lat) — reopening a hood returns the
         // FULL editable path (not a frozen polygon), the "keep fixing across sessions"
         // requirement. Projected to the live frame by `penPaths`.
@@ -1353,6 +1337,8 @@ export default function ExtentApp() {
     const clean = sides.map(s => s.trim()).filter(Boolean)
     const t = setTimeout(() => {
       const draft = { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), exclusions: exclusionsLL || [] }
+      // The authored disc center (lon/lat) is operator-visible → must survive reload.
+      if (centerLL) draft.center = centerLL
       // ⭐ The BOUNDARY and the searched place belong in the draft, not just in the
       // commit. They were client-only state, so reopening a scene from the picker
       // (rather than re-searching) silently lost both: the inclusion polygon vanished
@@ -1371,7 +1357,7 @@ export default function ExtentApp() {
       saveNeighborhood(scene, draft).catch(() => {})
     }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope])
+  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope, centerLL])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -1822,6 +1808,16 @@ export default function ExtentApp() {
             disabled={penActive || curating || building || markerActive} />
         )}
 
+        {/* The disc CENTROID as a draggable dot — move the hood center within the
+            fetched square; the bb / frame origin never moves (R10, EXTENT-DESIGN
+            §3.3). Authoring only for now — committed hoods still ride the re-center
+            path. Pink crosshair distinguishes it from the yellow rim knob. */}
+        {located && !committed && boundaryCentroid && (
+          <CenterHandle cameraRef={orthoRef} center={boundaryCentroid} bounds={fetchRectOf(geo)}
+            onChange={(x, z) => { const [lon, lat] = localToWgs84(geo, x, z); setCenterLL({ lon, lat }) }}
+            disabled={penActive || curating || building || markerActive} />
+        )}
+
         {/* Compass — the aerial is north-up, non-rotating (compass frame), so
             the shared rose sits static (reused from the runtime CompassRose). */}
         <div className="carto-extent-compass">
@@ -2119,19 +2115,6 @@ export default function ExtentApp() {
               {/* The containment breach, in the operator's terms. Not a blocker —
                   a wide disc over thin data is sometimes deliberate — but it must
                   never again be invisible. */}
-              {envelopeOvershoot && (
-                <div className="carto-extent-status" style={{
-                  marginTop: 8, fontSize: 11, lineHeight: 1.5,
-                  color: '#ff5a3c', border: '1px solid rgba(255,90,60,0.45)',
-                  borderRadius: 6, padding: '6px 8px', background: 'rgba(255,90,60,0.08)',
-                }}>
-                  ⚠ The disc reaches past the fetched data on{' '}
-                  {envelopeOvershoot.sides.map(([s, m]) => `${s} ${m} m`).join(' · ')}.<br />
-                  Only <strong>{envelopeOvershoot.covered}%</strong> of it has data behind it — the rest is bare aerial.
-                  Re-fetch wider to author out there.
-                </div>
-              )}
-
               {footprints?.buildings?.length > 0 && (
                 <div className="carto-row carto-row--wrap" style={{ marginTop: 12 }}>
                   <button className="carto-btn-sm" onClick={() => { setCurating(c => !c); setPenActive(false) }}
