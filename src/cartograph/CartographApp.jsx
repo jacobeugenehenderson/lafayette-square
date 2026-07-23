@@ -5,7 +5,6 @@ import * as THREE from 'three'
 
 // Map geometry (rendered in every shot)
 import MapLayers from './MapLayers.jsx'
-import SceneMapLayers from './SceneMapLayers.jsx'
 import DesignerTrees from './DesignerTrees.jsx'
 import DesignerLamps from './DesignerLamps.jsx'
 import OneWayArrows from './OneWayArrows.jsx'
@@ -1134,15 +1133,17 @@ export default function CartographApp() {
               In Designer, any time aerial is on (tool focus OR pure design
               with aerial), hide entirely so the photo isn't covered by
               buildings/parcels/water/parking-lots/etc. */}
-          {scene === 'lafayette-square' && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
+          {/* Map layers — ONE scene-generic renderer for LS + every pour
+              (unified 2026-07-23). MapLayers now resolves its map/ribbons/
+              boundary per-scene; the old `scene === 'lafayette-square'` gate +
+              the thin SceneMapLayers substitute (buildings+LU only) are retired,
+              so a poured scene gets the full Designer view — road paint, alleys,
+              barriers, parking, labels — not just footprints. Toy has no
+              map.json, so it stays out. */}
+          {scene !== 'toy' && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner}
               measureActive={tool === 'measure' && inDesigner} />
-          )}
-          {/* Buildings + sub-block land-use for non-LS scenes (LS uses MapLayers
-              above; toy has no map.json). Scene-aware, clipped to its boundary. */}
-          {scene !== 'lafayette-square' && scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
-            <SceneMapLayers hiddenLayers={decorationsHidden} />
           )}
           {/* Trees (2D flat dots) for EVERY poured scene — reads the baked slab,
               sized by DBH, tinted by source. One shared path (LS + non-LS),

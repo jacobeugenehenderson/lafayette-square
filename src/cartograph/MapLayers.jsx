@@ -1,13 +1,20 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
 import { ParkTitleMesh } from '../components/LafayettePark.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import mapData from '../../cartograph/data/lafayette-square/clean/map.json'
-import ribbonsData from '../data/ribbons.json'
-import parkWaterData from '../data/lafayette-square/park_water.json'
-import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius } from './boundary.js'
+// ── LS-DEFAULT data (the mold the kit was cast around). These stay static
+// imports because LS's render data lives at the shared default paths; a POURED
+// scene resolves its own map/ribbons/park-water/boundary per-scene inside the
+// component (see the `map`/`ribbons`/`B` locals below) and shadows these. This
+// is what makes MapLayers scene-generic — one renderer for LS + every pour —
+// retiring the LS-only gate + the thin SceneMapLayers substitute (2026-07-23).
+import _lsMapData from '../../cartograph/data/lafayette-square/clean/map.json'
+import _lsRibbonsData from '../data/ribbons.json'
+import _lsParkWaterData from '../data/lafayette-square/park_water.json'
+import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius, makeBoundary } from './boundary.js'
+import { fetchMap } from './api.js'
 import useCartographStore from './stores/useCartographStore.js'
 import StreetLabels from '../components/StreetLabels.jsx'
 import { useStreetLabels } from '../lib/streetLabels.js'
@@ -60,19 +67,37 @@ const FADE_OUTER = _FO
 // instead of fading. Nudge this one value by eye.
 const CENTERLINE_CLIP_R = FADE_INNER + 52   // ≈810m
 
+// The LS boundary bundle, assembled from the module singletons so a POURED scene
+// can swap in its own via makeBoundary(sceneBoundary) with the SAME shape. For
+// scene==='lafayette-square' the component uses this object → every clip/fade
+// resolves to exactly the pre-unification singleton (byte-identical).
+const _LS_BUNDLE = {
+  pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius,
+  center: _BC, fadeInner: FADE_INNER, fadeOuter: FADE_OUTER,
+}
+// Safe empties for a poured scene whose map/ribbons haven't fetched yet.
+const _EMPTY_MAP = { bbox: { minX: 0, maxX: 0, minZ: 0, maxZ: 0 }, buildings: [], layers: {} }
+const _EMPTY_RIBBONS = { streets: [] }
+
 // `rigidCentroid=true` switches terrain displacement from per-vertex to
 // per-feature: the shader samples the heightmap at an `aCentroidXZ` vertex
 // attribute (world-space x,z of the feature's centroid), so every vertex of
 // a given path/alley/parking-lot lifts by the same amount.  Each feature
 // stays internally flat — terrain ridges can't cut through a path polygon's
 // interior the way they do with per-vertex sampling across sparse geometry.
-function injectRadialFade(mat, { rigidCentroid = false } = {}) {
+function injectRadialFade(mat, { rigidCentroid = false, fade } = {}) {
+  // Per-scene fade (poured scene) or the LS defaults. The feather must track the
+  // ACTIVE scene's disc, or a poured scene's edge content fades at LS's radius.
+  const fInner = fade?.inner ?? FADE_INNER
+  const fOuter = fade?.outer ?? FADE_OUTER
+  const fCx = fade?.center ? fade.center[0] : FADE_CENTER.x
+  const fCz = fade?.center ? fade.center[1] : FADE_CENTER.z
   mat.transparent = true
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
-    shader.uniforms.uFadeCenter = { value: new THREE.Vector2(FADE_CENTER.x, FADE_CENTER.z) }
-    shader.uniforms.uFadeInner = { value: FADE_INNER }
-    shader.uniforms.uFadeOuter = { value: FADE_OUTER }
+    shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fCx, fCz) }
+    shader.uniforms.uFadeInner = { value: fInner }
+    shader.uniforms.uFadeOuter = { value: fOuter }
     const displaceSnippet = rigidCentroid ? TERRAIN_DISPLACE_CENTROID : TERRAIN_DISPLACE
     const commonDecl = '#include <common>\n' + TERRAIN_DECL +
       (rigidCentroid ? '\nattribute vec2 aCentroidXZ;' : '') +
@@ -89,7 +114,7 @@ function injectRadialFade(mat, { rigidCentroid = false } = {}) {
         'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
         'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
   }
-  mat.customProgramCacheKey = () => `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${FADE_INNER}-${FADE_OUTER}`
+  mat.customProgramCacheKey = () => `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${fInner}-${fOuter}`
   return mat
 }
 
@@ -99,7 +124,7 @@ function injectRadialFade(mat, { rigidCentroid = false } = {}) {
 // the camera and caused alley z-fighting once terrain displacement
 // lifted everything simultaneously.
 export function makeFlatMat(color, pri, opts = {}) {
-  const { rigidCentroid = false, ...matOpts } = opts
+  const { rigidCentroid = false, fade, ...matOpts } = opts
   // Defensive: a missing layer color (e.g., a stale Look) used to crash
   // here. Fall back to neutral grey so the scene renders.
   const safeColor = color ?? '#888'
@@ -110,7 +135,7 @@ export function makeFlatMat(color, pri, opts = {}) {
     polygonOffsetUnits: -pri * 4,
     ...matOpts,
   })
-  return injectRadialFade(mat, { rigidCentroid })
+  return injectRadialFade(mat, { rigidCentroid, fade })
 }
 
 // ── Line material ───────────────────────────────────────────
@@ -371,6 +396,54 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   const layerStrokes = useCartographStore(s => s.layerStrokes) || {}
   const luColors = useCartographStore(s => s.luColors) || {}
 
+  // ── SCENE-GENERIC data resolution (the unification, 2026-07-23) ───────────
+  // LS uses the static default imports (byte-identical to before); a POURED
+  // scene resolves its OWN map.json / ribbons / boundary per-scene from the
+  // store + a fetch, then shadows the import names below so the whole body is
+  // scene-agnostic. This replaces the old `scene === 'lafayette-square'` gate +
+  // the thin SceneMapLayers substitute (buildings+LU only) with ONE renderer.
+  const scene = useCartographStore(s => s.scene)
+  const isLS = !scene || scene === 'lafayette-square'
+  const sceneRibbonsRaw = useCartographStore(s => s.sceneRibbons)
+  const sceneBoundaryRaw = useCartographStore(s => s.sceneBoundary)
+  const sceneMapPrefetch = useCartographStore(s => s.sceneMap)
+  // map.json for a poured scene — from the Bake prefetch if it's this scene's,
+  // else fetched here (mirrors SceneMapLayers). Null while loading → the geometry
+  // memos below guard and render nothing until it lands.
+  const [fetchedMap, setFetchedMap] = useState(null)
+  useEffect(() => {
+    if (isLS) { setFetchedMap(null); return }
+    if (sceneMapPrefetch?.scene === scene && sceneMapPrefetch.map) { setFetchedMap(sceneMapPrefetch.map); return }
+    let cancelled = false
+    fetchMap(scene).then(m => { if (!cancelled) setFetchedMap(m) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [scene, isLS, sceneMapPrefetch])
+  // These SHADOW the module imports of the same name — the body is unchanged.
+  // Empty-object defaults (not null) so the geometry memos read safely while a
+  // poured scene's map/ribbons are still loading (they render nothing until the
+  // real data lands, then the deps below recompute them).
+  const mapData = isLS ? _lsMapData : (fetchedMap || _EMPTY_MAP)
+  const ribbonsData = isLS ? _lsRibbonsData : (sceneRibbonsRaw || _EMPTY_RIBBONS)
+  const parkWaterData = isLS ? _lsParkWaterData : _EMPTY_MAP   // authored LS content; poured scenes have none
+  // Boundary bundle: LS singleton, or built from the scene's own nb. Same shape.
+  const B = useMemo(
+    () => (isLS || !sceneBoundaryRaw) ? _LS_BUNDLE : makeBoundary(sceneBoundaryRaw),
+    [isLS, sceneBoundaryRaw],
+  )
+  const pointInBoundary = B.pointInBoundary
+  const boundaryPolygon = B.boundaryPolygon
+  const clipPolylineToBoundary = B.clipPolylineToBoundary
+  const clipPolylineToRadius = B.clipPolylineToRadius
+  const bcXZ = B.center
+  const clcR = (B === _LS_BUNDLE) ? CENTERLINE_CLIP_R : (B.fadeInner + 52)
+  // Per-scene fade for the flat materials — undefined for LS (→ module defaults,
+  // byte-identical); the scene's disc for a pour so its edge feathers correctly.
+  // Memoized on B so its reference is stable (else the mats memo churns every render).
+  const fade = useMemo(
+    () => (B === _LS_BUNDLE) ? undefined : { inner: B.fadeInner, outer: B.fadeOuter, center: B.center },
+    [B],
+  )
+
   // ── Ground plane ────────────────────────────────────────
   // Segmented so the per-vertex terrain displacement (injected via
   // makeFlatMat → TERRAIN_DISPLACE) actually conforms to the elevation
@@ -390,7 +463,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     geo.rotateX(-Math.PI / 2)
     geo.translate(cx, 0, cz)
     return geo
-  }, [])
+  }, [mapData])
 
   // ── Buildings (boundary-clipped) ────────────────────────
   const buildingGeo = useMemo(() => {
@@ -405,7 +478,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return mergeGeos(geos)
-  }, [])
+  }, [mapData, B])
 
   // ── Center stripes (yellow paint on road, thin ribbon) ──
   const stripeGeo = useMemo(() => {
@@ -419,7 +492,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return mergeGeos(geos)
-  }, [])
+  }, [mapData, B])
 
   // ── Edge lines (white parking lines, thin ribbon) ───────
   const edgeGeo = useMemo(() => {
@@ -435,7 +508,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return mergeGeos(geos)
-  }, [])
+  }, [mapData, B])
 
   // ── Bike lanes (green, thin ribbon) ─────────────────────
   const bikeGeo = useMemo(() => {
@@ -451,7 +524,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return mergeGeos(geos)
-  }, [])
+  }, [mapData, B])
 
   // ── Centerlines (debug reference, hidden by default, radius-clipped) ─
   // Per-segment clip to CENTERLINE_CLIP_R (inside the feather band) so chains
@@ -460,9 +533,9 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // what left them jutting past where the ground reads as gone.
   const centerlineLines = useMemo(() => {
     const lines = []
-    for (const st of ribbonsData.streets) {
+    for (const st of (ribbonsData.streets || [])) {
       if (st.points.length < 2) continue
-      const pieces = clipPolylineToRadius(st.points, _BC, CENTERLINE_CLIP_R)
+      const pieces = clipPolylineToRadius(st.points, bcXZ, clcR)
       for (const piece of pieces) {
         if (!piece || piece.length < 2) continue
         const pts = piece.map(p => new THREE.Vector3(p[0], 0.25, p[1]))
@@ -470,7 +543,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return lines
-  }, [])
+  }, [ribbonsData, bcXZ, clcR])
 
   // Street label placements — read per-scene from the slab (baked/<look>/
   // labels.json), shared with LafayetteScene via src/lib/streetLabels.js so
@@ -515,7 +588,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     merged.setIndex(indices)
     merged.computeVertexNormals()
     return merged
-  }, [])
+  }, [parkWaterData])
 
   // ── Alleys (filled rings, boundary-clipped) ─────────────────
   const alleyGeo = useMemo(() => {
@@ -530,7 +603,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       if (g) geos.push(g)
     }
     return mergeGeos(geos)
-  }, [])
+  }, [mapData, B])
 
 
   // ── Landscape overlays (leisure + natural, grouped by subtype) ─
@@ -555,7 +628,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     const merged = {}
     for (const kind of Object.keys(groups)) merged[kind] = mergeGeos(groups[kind])
     return merged
-  }, [])
+  }, [mapData, B])
 
   // ── Barrier lines (fence, wall, hedge, retaining_wall) ──
   // Clipped to the soft-circle silhouette: barriers render with
@@ -579,7 +652,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return groups
-  }, [])
+  }, [mapData, B])
 
   // ── Parking lots (amenity=parking overlays) ─────────────
   const parkingLotGeo = useMemo(() => {
@@ -594,7 +667,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       if (g) geos.push(g)
     }
     return mergeGeos(geos)
-  }, [])
+  }, [mapData, B])
 
   // Stroke segments — one line geometry per polygon (kept separate from fill)
   const parkingLotStrokes = useMemo(() => {
@@ -610,7 +683,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       lines.push(new THREE.BufferGeometry().setFromPoints(pts))
     }
     return lines
-  }, [])
+  }, [mapData, B])
 
   // ── Footways / paths / walkways (filled rings, boundary-clipped) ─
   const footwayGeo = useMemo(() => {
@@ -627,33 +700,33 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return mergeGeos(geos)
-  }, [])
+  }, [mapData, B])
 
   // ── Materials (re-memo when the panel changes any color) ──
   const color = (id) => layerColors[id] || DEFAULT_LAYER_COLORS[id]
   const mats = useMemo(() => ({
-    ground: makeFlatMat(color('ground'), PRI.ground),
-    building: makeFlatMat(color('building'), PRI.building),
+    ground: makeFlatMat(color('ground'), PRI.ground, { fade }),
+    building: makeFlatMat(color('building'), PRI.building, { fade }),
     stripe: makeLineMat(color('stripe')),
     edgeline: makeLineMat(color('edgeline'), 0.7),
     bikelane: makeLineMat(color('bikelane')),
     // Flat (mesh) variants — terrain-aware ribbons used in shots
-    stripeFlat: makeFlatMat(color('stripe'), PRI.stripe),
-    edgelineFlat: makeFlatMat(color('edgeline'), PRI.edgeline),
-    bikelaneFlat: makeFlatMat(color('bikelane'), PRI.bikelane),
+    stripeFlat: makeFlatMat(color('stripe'), PRI.stripe, { fade }),
+    edgelineFlat: makeFlatMat(color('edgeline'), PRI.edgeline, { fade }),
+    bikelaneFlat: makeFlatMat(color('bikelane'), PRI.bikelane, { fade }),
     centerline: makeLineMat(color('centerline'), 0.9),
     centerlineSurvey: makeLineMat(STROKE_COLORS.surveyCenterline, 1),
     centerlineOutline: makeLineMat(STROKE_COLORS.centerlineOutline, 0.5),
-    tree: makeFlatMat(color('tree'), PRI.park + 1),
-    water: makeFlatMat(color('water'), PRI.park + 1),
+    tree: makeFlatMat(color('tree'), PRI.park + 1, { fade }),
+    water: makeFlatMat(color('water'), PRI.park + 1, { fade }),
     // rigidCentroid=true: sample terrain once per feature, not per vertex.
     // Sparse path triangulations can't capture terrain ridges in their
     // interior; under per-vertex displacement the ground mesh passes through
     // them.  Centroid-sampled lift keeps each feature internally flat.
-    parking_lot: makeFlatMat(color('parking_lot'), PRI.parking_lot, { rigidCentroid: true }),
+    parking_lot: makeFlatMat(color('parking_lot'), PRI.parking_lot, { rigidCentroid: true, fade }),
     parking_lot_stroke: makeLineMat(layerStrokes.parking_lot?.color || '#1a1a18', 1),
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [layerColors, layerStrokes])
+  }), [layerColors, layerStrokes, fade])
 
   // (legacy lamp sun-altitude sync removed — Designer now uses a flat
   // dot marker; Stage owns the real lamp shading.)
@@ -665,7 +738,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       p => new THREE.Vector3(p[0], 0.4, p[1])
     )
     return new THREE.BufferGeometry().setFromPoints(pts)
-  }, [])
+  }, [boundaryPolygon])
   const boundaryMat = useMemo(() => new THREE.LineBasicMaterial({
     color: '#ff6600', transparent: true, opacity: 0.5, depthTest: false,
   }), [])
@@ -726,7 +799,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           "curled paper" floating-edge artifact on uneven terrain. */}
       {!hide.parking_lot && parkingLotGeo && (
         <mesh geometry={parkingLotGeo}
-          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot)}
+          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot, { fade })}
           renderOrder={PRI.parking_lot} receiveShadow />
       )}
 
@@ -735,7 +808,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       {!surveyActive && Object.entries(landscapeByKind).map(([kind, geo]) => {
         if (!geo || hide[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
-        const mat = makeFlatMat(col, PRI.landscape)
+        const mat = makeFlatMat(col, PRI.landscape, { fade })
         return <mesh key={`ls-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape} receiveShadow />
       })}
 
