@@ -135,6 +135,41 @@ walk, never placed (R11). Exclusion loops + per-building `activate`/`hide` are t
 (R14, durable, independent files). The disc is what we **render** — the ground plane / the world's
 horizon (R4) — drawn on the **hood center**, frame on the **fetch center** (R10, two centerpoints).
 
+### 3.3 ⭐ The size/centroid model — the whole thing (Jacob, 2026-07-22)
+
+The single most re-derived thing in this subsystem. Nested sizes **hood < disc < bb**, **two
+independent centers**, and the two fetches doing **different jobs**:
+
+1. **SEARCH** (name / zip[s]) → the **original centroid** *and* the candidate **street list**. The
+   center is anchored by the search — **not** a buildings auto-fit.
+2. **SOFT fetch — big and generous *because* it's light.** Cheap (chains, names, junctions,
+   footprints — no heights/parcels/derive), so over-fetch on purpose and author the boundary against
+   the whole area. Casual, reversible.
+3. **Author the DISC** — radius = the (tiny) hood's actual size **+ slight aesthetic padding**,
+   centered on the search centroid. The disc **HIDES** buildings outside it; bands + exclusions/
+   `activate`/`hide` curate the rest.
+4. **HARD fetch — the FREEZE.** Big, not-casual, irreversible. bb = **radius + ~20–25% = the "forever
+   safety zone."** It is a **percentage** (scales with the hood), never an absolute distance (a fixed
+   1000 m is enormous on a tiny hood, trivial on a big one). Floor: the % must clear the fade band and
+   reach the first junction past the boundary streets, so corners still close.
+5. **FOREVER, inside the zone, no re-pour** (R15, the living boundary): **hide/reveal buildings ·
+   change the radius · move the centroid.** All live, because the frozen square holds every point in
+   the zone. The ~20–25% is sized to contain *every future edit* — that is *why* it is frozen and
+   chosen deliberately, not casually.
+
+**Two centers (R10), and the interaction that follows:** the **bb / frame origin is poured once and
+frozen** (fetch center); the **disc centroid is a separate, draggable value** that roams the forever
+zone (hood center). That draggable-centroid is R10 made a handle — reuse the `CircleHandle` /
+`ParkTitleHandle` dot pattern.
+
+⛔ **Blocked today by D4:** the code **forces disc center = origin** (`ExtentApp.jsx:~1138
+if(committed) return {x:0,z:0}` + `makeCircleBoundary` hardcodes `center:[0,0]`), discarding the
+`keptCenter` it just computed. **Fixing D4 is what enables the draggable centroid.** ⚠️ The recurring
+trap: resizing the **bb** when the **disc** is the problem (an un-authored scene auto-fits the disc to
+*all* fetched buildings → huge radius, off-center), and conflating the big-generous SOFT with the
+deliberate HARD. Author the disc; keep the bb's forever-zone. (Home:
+`[[project_extent_disc_centroid_radius_bb_model]]`.)
+
 ---
 
 ## 4. The seal — the lock that is the registry
