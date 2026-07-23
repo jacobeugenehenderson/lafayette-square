@@ -2,7 +2,8 @@
 
 **Status:** DRAFT, dispatch-ready. Active brief (tracked at root). Written 2026-07-22 (Kestrel) from a
 live eye-session with Jacob on the Lafayette strip + a full day in the dead-end class. Successor to
-`BRIEF-dead-end-leg-flip-and-slope.md` (LANDED) and `BRIEF-dead-end-mouth-junction.md` (**RETIRED into
+the dead-end leg-flip + cap-slope work (**LANDED** 2026-07-22 — brief retired, outcome in
+`cartograph/BACKLOG.md §"Retired BRIEFs"`) and `BRIEF-dead-end-mouth-junction.md` (**RETIRED into
 this brief** 2026-07-22 — it is now the mouth's evidence appendix, not a separate campaign; its §3
 measurements stand, its §4 fix direction is superseded here). **Jacob dispatches.**
 

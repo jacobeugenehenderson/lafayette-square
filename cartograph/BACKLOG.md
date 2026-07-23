@@ -1,10 +1,8 @@
 # Cartograph Backlog
 
 > **STATE + forward-work only** (`BOZ.md` doc architecture). No diary (→ `NOTES.md` + git), no how-it-works (→ Reference: `SKELETON` / `PREBAKE` / `SURVEY` / `SECTION` / `RIBBONS` / `ARCHITECTURE` / `PIPELINE` / `STAGE` / `PREVIEW` / `BAKE`). **When an arc lands it LEAVES here:** *fact* → Reference, *why* → `ARCHITECTURE` Decisions, *narrative* → `NOTES`, *dispatch brief* → `_archive/handoffs/` (dated). Landed work is NOT logged here.
->
-> *Rewritten 2026-06-22 (the doc-pristineness campaign): the NOW reframed from the SHAPE closeout to the publish-confidence frontier; landed narratives moved out (the pre-DataWall closeout, the tri-cut, the Section build, the code-landed ledger → `_archive/` + Reference); the HANDOFF index reconciled to the 15 live briefs (27→15 prune, wave 1+2). Deep pre-rewrite history: git + `NOTES.md`.*
 
-Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartograph-looks-pass-ab` trunk was retired 2026-07-08, `26a62407`). **Production is NOT pre-slab (corrected 2026-07-05):** `origin/main` = `7b2ae01e` (2026-06-30) already ships the LS slab, the full looks pass, the 7-slot TOD day-cycle, and the Publish ceremony — the wedding is mostly done. It's a **clean fast-forward, 59 commits behind head, no divergence.** Those 59: HiPointe/DeMun #2 (18, kit/authoring — not LS-public) · ls onboarding/trust-roles/reviews (10, **user-facing**) · render-pipeline install (7, **render-path**) · roster editor (6, authoring) · security migration (1, unapplied) · docs/accord sweeps. The remaining marriage-leap is now **incremental** (which of those 59 to push), not "wait for the whole platform." ⚠️ *A stale local `main` fossil sits at April 27 — `git fetch` before trusting it.* *(This line previously claimed "main is intentionally pre-slab; the leap waits until the whole platform is up" — true when written, superseded by the June-30 publish.)*
+Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartograph-looks-pass-ab` trunk was retired 2026-07-08, `26a62407`). **Production is NOT pre-slab:** `origin/main` = `7b2ae01e` (2026-06-30) already ships the LS slab, the full looks pass, the 7-slot TOD day-cycle, and the Publish ceremony. It is a **clean fast-forward with no divergence** — **484 commits behind head** as of 2026-07-23 (was 59 on 2026-07-05; the gap is widening because the trunk has not shipped since June 30). The remaining marriage-leap is **incremental** — which commits to push — not "wait for the whole platform." ⚠️ *A stale local `main` fossil sits at April 27 — `git fetch` before trusting it.*
 
 ---
 
@@ -136,23 +134,35 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ## 🛠 LIVE HANDOFFS — the live briefs (dispatch layer)
 
 > Honest labels (`DOC-CODE-COHERENCE §Landed-forensic`): `landed` = ancestor-of-HEAD + code-path-live · `eye-pending` = code-landed, unconfirmed on the lit app · `⚠️ NOT landed` = claimed but absent. The 12 landed/OBE/folded briefs are in `_archive/handoffs/` (dated).
+>
+> ⚠️ **Two different layers, two different homes.** `HANDOFF-*.md` (this table) live in the **gitignored `_handoffs/`** folder — local-only, not in git. Root **`BRIEF-*.md`** are git-tracked campaign briefs; when one lands it is captured below and **deleted** (git is its archive, `BOZ §2`).
+
+### ✅ Retired BRIEFs — outcome captured, files deleted (git holds them)
+
+| Brief (deleted) | Outcome | Refs |
+|---|---|---|
+| **BRIEF-hpdm-identity-lock** | ✅ **LANDED.** `fetch-msbf.js` now consults a per-scene **centroid-keyed registry** (`msbf-identity.js` — `loadRegistry`/`assignIds`/`saveRegistry`): a known footprint keeps its permanent id, a new one appends off a persisted `highWater`, a dropped one stays reserved. **Nothing is ever renumbered** — verified 13,427→8,460 footprints, zero renumbers, 9/9 checks. This is `EXTENT-DESIGN §6` step 2 and the thing between HPDM and "safe to hand a customer." | `ca2db7ca` + `8c1b65ae`; fact → `ARCHITECTURE §Extent` "THE IDENTITY LOCK" |
+| **BRIEF-dead-end-leg-flip-and-slope** | ✅ **BOTH THREADS LANDED 2026-07-22.** (a) **cap SLOPE** — the transition quad was *hard-coded* to one arrangement, correct only for a treelawn-Y leg and painted backwards for a walk-at-curb one; now derived per shoulder from each end's RESOLVED materials, smoothstep-eased. *(This is why smoothstepping alone read pixel-identical the cycle before — the shape was wrong, not the edge.)* (b) **LEG flip** — two roots closed: the ribbon folds on itself at a dead end (v2 emitted one fe under one side token, 46/50 caps) and both legs share a centreline under a symmetric claim stroke. Legs responding **56 → 93 of 100**. (c) Found while verifying: **width collapse** — `tileGround.js:3216` wrote both directed keys, leaving 22/48 chains one-sided. **Open tail:** 7 legs unresponsive, 7 caps no-visible-change (pre-existing), 10 asymmetric caps ACCEPTED by Jacob's eye. | fact → `SECTION.md §6` / `RIBBONS.md`; successor thread = the MOUTH co-claim |
+| **BRIEF-dead-end-mouth-junction** *(retired-in-place — file KEPT, not deleted)* | ⛔ **RETIRED 2026-07-22 into `BRIEF-polygon-asks-the-stamp.md`** — do not dispatch separately. The mouth stub is a **CO-CLAIM, not a gap** (~15 m²/mouth across 2 layers), so it is an *identity* defect, not a fill one; the junction-band cannot gate it. ⛔ **Never FILL-patch it.** ⚠️ Waverly (loop×loop, E2/E3) is a **different class** — the mouth fix won't touch it. ⚠️ **The file stays at root** because its §3 measurements are the **evidence appendix** the still-OPEN stamp brief cites (`BRIEF-polygon-asks-the-stamp §141`); deleting it would strand an open campaign. Retire it when the stamp brief lands. *(Its §4 fix direction IS superseded — read §3 only.)* | harness `scratch/cap-mouth-classify.mjs`; live thread → `BRIEF-polygon-asks-the-stamp.md` |
+| **BRIEF-extent-excavation-and-design** | ✅ **DELIVERED** — produced both of its artifacts: **`EXTENT-EXCAVATION.md`** (the evidence layer, agent Marl) and **`EXTENT-DESIGN.md`** (the design of record, ratified with Jacob 2026-07-22). The brief is fully superseded by its own outputs. | → `EXTENT-DESIGN.md` (design) · `EXTENT-EXCAVATION.md` (evidence) |
+| **BRIEF-canon-sweep** | ✅ **RUN 2026-07-23** (this sweep). §1 FEATURES+OPERATIONS and §2 the Extent accord closed; §3 retirals captured here; §4 dead-end fold + BACKLOG trim done. Key finding: the 2026-07-20 retraction had **never landed in the procedures** — only the banners. | `dd197e06` + this commit; writeup → `NOTES.md` 2026-07-23 |
 
 | Brief | Arc | Status |
 |---|---|---|
 | **park-path-unify** | unify park-path ribbon construction/render | dispatch-ready 2026-06-27 (was orphaned — indexed 2026-06-30); detail `scratch/PARK-PATH-FORENSIC.md` |
-| **animator-unify** | drop the animate toggle, always show ToD chips | ⚠️ **verify-then-act** — precursor (stamped-slot write) landed; the core toggle-drop shows no landing evidence (was orphaned — indexed 2026-06-30; confirm OBE-or-live before dispatch) |
+| ~~animator-unify~~ | drop the animate toggle, always show ToD chips | ✅ **LANDED + RETIRED** → `_archive/HANDOFF-animator-unify-LANDED-2026-06-28.md`. The shipped behaviour is canon in `OPERATIONS.md §"How to operate any TOD channel"` (chips always on, no arming step). *(The 2026-06-30 "no landing evidence, verify-then-act" note was stale — the archive says landed 2026-06-28.)* |
 | **preview-measurement** | publish-confidence instrument | device-profile SSoT landed; **real per-tier numbers = the gate** |
 | **render-conformance** | Stage↔Preview↔Production parity | Ph1–3 landed; Ph4–7 open (cold-review) |
 | **mobile-profile** | what ships to mobile (3 homes) | sensing done; B/C/E open (Preview-authored inclusion) |
 | **channel-variant-cascade** | per-shot + per-platform channel values | design-doc first; **lands LAST** (highest convergence) |
 | **authoring-session-hardening** | restore-where-left · safe bake · one camera home | Ph1–3 landed; Ph4 (camera) + Ph5 (docs) open |
-| **section-perf** | the FILL re-stroke perf | #1/#2/toggle landed; drag-fluidity eye-pending |
-| **dead-end-cap-wrap-curb** | curb break wrapping the round cap | detector-flagged sub-8m² clusters (2026-07-22), **NO visible symptom** on Jacob's eye; low pri |
+| **section-perf** | the FILL re-stroke perf | #1/#2/toggle landed; drag-fluidity eye-pending. ⚠️ Brief lives at `cartograph/_archive/HANDOFF-section-perf.md` (not `_handoffs/`) |
+| **dead-end-cap-wrap-curb** | curb break wrapping the round cap | ⚠️ **no brief file exists** (index-only row — not dispatchable until one is drafted, `BOZ §2`). Detector-flagged sub-8 m² clusters (2026-07-22), **NO visible symptom** on Jacob's eye; low pri |
 | **curve-primitive-skeleton** | curves as beziers | Ph1/2.1 landed; **v2 (loops/divided) open** |
 | **junction-construction** | intersection-everywhere | metadata spans every node; geometry divided-only |
 | **band-fold-fix** | G12 thorn clamp | ⚠️ **NOT landed** (`8e1e414` stranded) |
 | **freeze-the-curb-in-the-first-bake** | freeze the curb polygon | "d" instance landed; the freeze program PARKED (rebuild-gated) |
-| **boundary-trio** | circle-SSOT · crop-last · cull | post-tile-arc; edge-of-map face-walk half landed |
+| ~~boundary-trio~~ | circle-SSOT · crop-last · cull | ⛔ **SUPERSEDED 2026-07-21** → `_archive/HANDOFF-boundary-trio-SUPERSEDED-2026-07-21.md`. ⚠️ **Do not mine it for doctrine** — its "one idea" was *"the circle is the real boundary, derive the bbox from it,"* the baldest statement of the RETRACTED model in the repo, and it also called to "retire the manual toggles" (contradicting the durable per-building override). Live home: `EXTENT-DESIGN.md`. |
 | **tile-T3-authoring** | authoring → Survey (off figure-ground) | open; gates T4 (delete figure-ground) + the rename |
 | **tile-feature-ledger** | re-pour definition-of-done ledger | tracking; construction side ✅, T3/T4/slab-content open |
 | **cloud-specialist** | cloud morphology renderer | TABLED (flagship IP; the agentic Tuner loop is the design — `meteorologist/TUNER.md`) |
