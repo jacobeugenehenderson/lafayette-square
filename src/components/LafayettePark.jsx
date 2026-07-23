@@ -767,14 +767,18 @@ function ElevatedGroup({ at, children }) {
 // in the world on the terrain (occludable, height/position matter) and want
 // their OWN operator controls, not the shared `labels` toggle. See
 // ls/BACKLOG.md "Landmark labels need their own controls".
-// Pull the landmark label OUT of the terrain-occludable depth stack: terrain
-// (or a foreground tree) was clipping the leading "L" of "LAFAYETTE PARK"
-// because the ground rises under the left of the word and a rigid lift that
-// clears it would float the whole word off the grass. Disabling depthTest on
-// the SDF material makes the label always render (with renderOrder=16 keeping
-// it correctly ordered in the transparent queue) — the documented root fix
-// (ls/BACKLOG.md: render landmark labels in the label/ribbon stack like street
-// labels, which never depth-fight the terrain). Reapplied on every troika sync.
+// DEPTH: occlusion is the CALLER's choice (`occlude` on ParkTitleMesh), because
+// the two consumers want opposite things. 2026-06-30 the label was pulled OUT of
+// the depth stack entirely (depthTest off) because terrain rising under the left
+// of the word clipped the leading "L" ("AFAYETTE PARK") and any rigid lift that
+// cleared it floated the whole word off the grass. That was always flagged as an
+// eye-gate (ls/BACKLOG.md): always-on-top means the word draws OVER foreground
+// trees. Once the title was moved into the clearing (2026-07-23) the terrain-clip
+// cause was gone, so the 3D scene now depth-tests again and trees occlude it
+// properly — trees are opaque (alphaTest, depthWrite on), so renderOrder=16 in
+// the transparent queue orders correctly against them. The 2D Designer map keeps
+// depthTest OFF: there the displaced ground would clip the quad and there are no
+// trees to occlude it.
 // The title + subtitle drawn onto one texture (canvas 2D), so it can ride a
 // plain quad printed on the grass. Title white, subtitle grey, dark outline —
 // matching the old troika look. Built once.
@@ -828,20 +832,20 @@ export function useParkTitleTexture() {
 // THE park-title mesh — the ONE source, reused by both the 2D Designer map
 // (MapLayers) and the 3D scene (ParkTitle below) so it's in both by
 // construction, never two drifting copies. A flat textured quad with a PLAIN
-// material whose depthTest is reliably OFF — so nothing (2D map ground or 3D
-// foreground terrain) can clip it. This replaces the troika <Text>, whose
+// material whose depth behaviour the caller picks (`occlude`) — see the DEPTH
+// note above. This replaces the troika <Text>, whose
 // depthTest flag didn't hold (its internal render material ignored it), which is
 // why the word kept shearing ("AFAYETTE PARK"). `y` = height above whatever
 // ground the caller sits it on. LS-only geometry (LABEL_TITLE_POS).
-export function ParkTitleMesh({ y = 0.25 }) {
+export function ParkTitleMesh({ y = 0.25, occlude = false }) {
   const tex = useParkTitleTexture()
   // Size knob (proportional scale, Auto/absent = 1×) scales the whole quad — the
   // same sizeK the street labels use, so the one control drives both.
   const sizeK = useCartographStore(s => s.labels?.sizeK) ?? 1
   const posOverride = useCartographStore(s => s.parkTitlePos)
   const mat = useMemo(() => tex && new THREE.MeshBasicMaterial({
-    map: tex, transparent: true, depthTest: false, depthWrite: false, toneMapped: false,
-  }), [tex])
+    map: tex, transparent: true, depthTest: !!occlude, depthWrite: false, toneMapped: false,
+  }), [tex, occlude])
   if (!mat) return null
   // Quad centered at the operator's moved position, or the default. 4:1 texture.
   const cx = posOverride ? posOverride[0] : PARK_TITLE_DEFAULT_CENTER[0]
@@ -869,7 +873,7 @@ export function ParkTitle() {
   const cz = posOverride ? posOverride[1] : PARK_TITLE_DEFAULT_CENTER[1]
   return (
     <ElevatedGroup at={[cx, cz]}>
-      <ParkTitleMesh y={0.25} />
+      <ParkTitleMesh y={0.25} occlude />
     </ElevatedGroup>
   )
 }
