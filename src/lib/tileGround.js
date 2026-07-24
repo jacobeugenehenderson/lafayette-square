@@ -1530,7 +1530,15 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // Whatever the legs + pads didn't claim flows to LU — the remainder runs
     // curb → block-center (§3.3: no hard property line; both-strips-LU = open
     // field falls out for free).
-    let luRemainder = unionRings([...iW, ...luExtra, ...differenceRings(bandRem, cornerPad)])
+    // ⚠️ The corner TREELAWN (cornerTreelawn — luInner + the slid-walk's luWedge)
+    // is pad-derived and pushed to tlByLu, but it is NOT peeled from bandRem the
+    // way the leg strips are (only the leg sectors and cornerPad leave bandRem).
+    // So it must be subtracted here too, else that ground is owned by BOTH the
+    // treelawn AND this remainder — the tl∩lu corner co-claim (1091 m² map-wide,
+    // 78% of the total; measured scratch/coclaim-by-pair.mjs). This completes the
+    // comment's own contract: "whatever the legs + pads didn't claim". [Seal 2026-07-23]
+    const cornerClaimed = cornerTreelawn.length ? unionRings([...cornerPad, ...cornerTreelawn]) : cornerPad
+    let luRemainder = unionRings([...iW, ...luExtra, ...differenceRings(bandRem, cornerClaimed)])
     // G8 — at a blunt/none dead-end the street just ends FLAT. The side
     // treelawn/sidewalk run TO the end (the concentric rings already follow the
     // blunt cap in iA), and the band caps flat across the end. The earlier
@@ -1625,7 +1633,14 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
       if (pc.mat === 'SW' && swCarve.length) pc.rings = differenceRings(pc.rings, swCarve)   // Idea A — the deep walk's tail slid to LU
       if (!pc.rings.length) continue
       if (pc.mat === 'SW') Wacc.push(...pc.rings)
-      else pushLu(tlByLu, lu, pc.rings)
+      // SECTION §6.1 s2/s3: the leg TREELAWN ends at its true tangent — the corner
+      // concrete pad's leg-ward side IS the tangent radius (C→tA ⊥ the leg), so
+      // clipping the treelawn against cornerPad trims it to exactly there. This is
+      // tangentTrim's own contract ("no cream step / green sliver") completed for
+      // the deeper strip. The ADA pad stays WHOLE (street-edge always concrete);
+      // treelawn YIELDS, never wraps the curb — the reverted §6.2 "wrap" (route
+      // concrete → cornerTreelawn) is NOT taken. [Seal 2026-07-23]
+      else pushLu(tlByLu, lu, cornerPad.length ? differenceRings(pc.rings, cornerPad) : pc.rings)
     }
     Wacc.push(...cornerPad)
     if (cornerTreelawn.length) pushLu(tlByLu, lu, cornerTreelawn)   // PROTOTYPE C — tapered corner treelawn

@@ -296,3 +296,80 @@ into this brief for a FRESH agent to execute** (Jacob's call) — this brief sta
 dispatch-ready SSoT; the sequencing of the cut (incremental-with-rebake-checkpoints vs. one landing) is
 the fresh agent's first standup question, informed by §8.1 (the target is reachable) and §4 (the four
 collapses). ⛔ Still true: nothing reaches the eye until `node scratch/rebake-shape.mjs` (§5).
+
+---
+
+## 9. ⭐ EXECUTION FINDINGS (2026-07-23, Seal) — the premise is falsified; the campaign converges on TWO FILL bookkeeping corrections + Jacob's eye, NOT a polygonization rewrite
+
+A fresh-agent execution pass (worktree `polygon-asks-stamp`, off HEAD `19aaf3f4`) measured the actual
+mechanism at each of the brief's two checkpoints. **Both checkpoints' core premise — "the polygon does
+not ask the stamp; the fix is upstream identity" — is falsified by measurement.** This is a *real
+result*, ruled by Jacob 2026-07-23: the co-claim is not an identity negotiation, it is two within-tile
+FILL emit-path clipping omissions. The stamp architecture is **not** being built.
+
+### 9.1 CP1 (dead-ends / 70·29·50) — the polygon ALREADY asks the stamp; Δ=0-render bookkeeping
+
+`scratch/deadend-triple-sets.mjs`: the three counts are **not one fact with three answers competing to
+drive the render** — they are three estimators with different information, and the correct one already
+governs:
+- **50** = face-topology caps (`detectTileCaps`), frozen onto `tiles[].caps` at prebake, **read by the
+  FILL at `tileGround.js:3051`** to draw the round caps. `cap(50) ⊂ deadend(70)` is **50/50 exact.**
+  This IS "the polygon asks the stamp" — already true, already shipping.
+- **70** = skeleton graph-degree deadend — over-counts by exactly **20 boundary danglers** (all deg-1 at
+  the ±900 m periphery). Skeleton is the FIRST bake; it cannot see faces, so it legitimately can't
+  filter them. The `709-720` comment ("50 real caps survive") is **correct, not a lazy re-derivation.**
+- **29** = junctionMap `pendant-tip` (an "L↔R asymmetry" heuristic, `derive.js:4143`) — **misaligned**
+  (misses 35 real caps, +12 non-caps) and **inert**: its only FILL role (`tip-wrap` continuity) is
+  *explicitly skipped* at `tileGround.js:2240` → deferred to the caps.
+
+⇒ Collapsing 70/29/50→1 is honest hygiene but **Δ=0 on the render**. Caps are the **worked existence
+proof** the stamp travels the freeze — which DE-RISKS the mechanism, but there is nothing to build here.
+**Decision (Jacob): skip the cap-collapse, pivot to CP2.**
+
+### 9.2 CP2 (corners / the 1115 m²) — 78 % is a `luRemainder` double-count, not identity; 22 % is a deferred design call
+
+`scratch/coclaim-by-pair.mjs` partitions the 1403.8 m² co-claim by layer-pair. §8.2's claim that *"inside
+one tile those three ped layers cannot overlap by construction"* is **empirically false**:
+
+```
+  tl∩lu : 1091.4 m²  (78%)  treelawn laps block-LU   ← within-tile bookkeeping bug
+  sw∩tl :  312.1 m²  (22%)  sidewalk laps treelawn   ← within-tile pad/leg lap (design call)
+  sw∩lu :    0.2 m²
+```
+
+- **tl∩lu (1091, the dominant mass) — an unambiguous bug, FIXED.** `luRemainder`
+  (`tileGround.js` ~1533) subtracts `cornerPad` but **not** `cornerTreelawn` (the pad-derived
+  `luInner` + slid-walk `luWedge`, which are pushed to `tlByLu` yet never peeled from `bandRem`). So
+  that ground is owned by BOTH treelawn AND the LU remainder. The fix subtracts `cornerTreelawn` too —
+  completing line 1530's own stated contract (*"whatever the legs + pads didn't claim flows to LU"*).
+  **This is a FILL bug at ordinary corners, NOT the mouth class the FILL-patch prohibition guards** (the
+  four prohibited patches are the *additive* dead-end mouth-wrap, `abf7c600`/`42ec46e7`; `luRemainder`
+  has never carried this subtraction — clean history check). Result: **co-claim 1403.8 → 312.4**,
+  unclaimed 8684.3 **unchanged** (no new gaps), junction-band **82 clean holds**, cap-sweep **0 errors**,
+  customs **0 lost / 0 changed** (diff confined to `tileGround.js`; `buildBlockGeometryV2`/`feCustomKey`
+  untouched). Before/after render: `scratch/coclaim-crop-{BASELINE,FIXED}-{a,b}.png` — the red
+  double-claim band vanishes, treelawn clean, sidewalk intact, no holes. ⛔ **Gate is Jacob's eye on the
+  lit app**, not the 312.4 (post-Wall FILL → a reload shows it, no rebake).
+- **sw∩tl (312) — FIXED via tangent-trim (Jacob's direction 2026-07-23): treelawn ends at its TRUE
+  TANGENT, not "pick a winner."** Diagnosis (proxy crops `coclaim-crop-SWTL-z{1,2}.png`): the leg
+  **treelawn overruns its tangent** into the whole concrete corner (the pad is correctly whole; the green
+  laps *into* it) — NOT the pad reaching too far. Fix: clip the leg treelawn against `cornerPad`. The
+  pad's leg-ward side **IS the tangent radius** (`C→tA` ⊥ the leg), so this trims the treelawn to exactly
+  its true tangent — completing `tangentTrim`'s own contract ("no cream step / green sliver", SECTION
+  §6.1 s2) for the deeper strip. **The ADA concrete pad stays WHOLE (street-edge always concrete, s3);
+  the treelawn YIELDS — it never wraps the curb.** ⛔ The reverted §6.2 "wrap" (route concrete →
+  `cornerTreelawn`) is NOT taken. sw∩tl 312 → ~42 (residual = sharp/no-fillet corners on the `e.a+R`
+  fallback + deep-trim grazing). ⛔ **Gate = Jacob's eye on the lit 5173 app, never the 42** — sw∩tl going
+  to 0 two different ways is the proof the number can't settle it (SECTION §6.1 note).
+
+### 9.3 Net
+
+The brief's thesis ("the polygon must ask the stamp") is a sound *principle* and caps are its existence
+proof — but for THIS map's measured co-claim it was the wrong *diagnosis*: no polygonization rewrite is
+warranted. The campaign lands as **two within-tile FILL corrections in `sectionPassTile`** — (1) tl∩lu:
+`luRemainder` also subtracts `cornerTreelawn`; (2) sw∩tl: the leg treelawn is clipped to the concrete
+pad = its true tangent — **+ Jacob's eye on 5173.** Whole-map co-claim 1403.8 → 42.6 m² (residual = the
+`e.a+R` sharp-corner fallback + deep-trim grazing; not chased — the eye gates, not the number). Guards
+green: floor 82 clean, cap-sweep 0 err, customs 0 lost/changed, diff confined to `tileGround.js`.
+Tooling added (all `scratch/`, git-tracked): `deadend-triple-sets.mjs`, `coclaim-by-pair.mjs`,
+`coclaim-crop.mjs`.
