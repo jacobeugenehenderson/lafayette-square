@@ -7,8 +7,36 @@ the dead-end leg-flip + cap-slope work (**LANDED** 2026-07-22 — brief retired,
 this brief** 2026-07-22 — it is now the mouth's evidence appendix, not a separate campaign; its §3
 measurements stand, its §4 fix direction is superseded here). **Jacob dispatches.**
 
-> ⚠️ **A good-looking LS render is NOT evidence the class is fixed** — the co-claim can be authored
-> over by hand (Jacob, 2026-07-22). Gate on `corner-coclaim.mjs`, then the eye. Never the eye alone.
+> # ⭐⭐ CORRECTION — READ THIS FIRST (2026-07-23, Boz, ruled by Jacob)
+>
+> **The symptom this brief exists to fix is "THE RIBBONS READ WRONG IN GENERAL." The co-claim m² was
+> a BAD PROXY for it, and chasing that number derailed the whole thing.** §8 and §9 below are a pass
+> that optimized the proxy — drove co-claim **1403.8 → ~42 m²** with two within-tile FILL bookkeeping
+> edits (`25acccf2`) — and on that basis declared *"the premise is falsified; no polygonization
+> rewrite; it's just bookkeeping."* **That conclusion is WRONG, and here is the proof:** on Jacob's eye
+> those fixes produced **no visible improvement, and if anything slightly worse.** A metric you can
+> drive to near-zero with two arithmetic edits while the operator sees nothing change is not measuring
+> the symptom. **⛔ RETIRE "gate on `corner-coclaim.mjs`" as the primary gate** (the line below) — it is
+> what caused this.
+>
+> **The premise STANDS and is the whole point:** the ribbons read wrong *because the tile does not carry
+> the skeleton's identity.* `RIBBONS §1.1` is the doctrine — *"the polygon is BOTH the geometry source
+> AND the identity source"*: the ribbon reads **leg** (`groupRuns`), **corner** (the run seam), and
+> **treelawn-vs-sidewalk** (`gleanTreelawn`) off the tile, and `extractFaces` emits the tile as bare
+> `{ring, edges}` with the skeleton's identity **thrown away**, so the FILL re-guesses it from shape and
+> fragments — legs, corners, materials — *everywhere*, not just at the co-claim hotspots. **Carrying the
+> stamp (the frozen `junctionMap.nodes` identity) onto the emitted tile so the FILL READS ownership is
+> the fix for the ribbons reading wrong.** That is §0 below, unchanged, and it is correct.
+>
+> **THE GATE IS THE OPERATOR'S EYE ON THE RIBBONS READING CORRECTLY — leg/corner/material identity
+> right, map-wide. NEVER the co-claim number again.** §8/§9 are kept only as the record of the
+> metric-chasing detour and its lesson (`proxy ≠ operator eye`); do not execute their conclusion.
+> ⚠️ The customs are currently RESET on LS (working tree, backed up `*.pre-reset`) so the raw ribbons
+> are visible for exactly this diagnosis; `25acccf2` (the two FILL edits) is a candidate for revert.
+
+> ⚠️ *(Superseded framing, kept for the record — see the CORRECTION above.)* A good-looking LS render is
+> NOT evidence the class is fixed — the co-claim can be authored over by hand (Jacob, 2026-07-22).
+> ~~Gate on `corner-coclaim.mjs`, then the eye.~~
 
 > ✅ **RE-VERIFIED 2026-07-23 (Wren) — every gate number in this brief still holds on the current
 > tree** (trunk `curb-offset-draw`, modified working-tree `design.json`): co-claim **1403.8 m² / 243 of
@@ -299,7 +327,14 @@ collapses). ⛔ Still true: nothing reaches the eye until `node scratch/rebake-s
 
 ---
 
-## 9. ⭐ EXECUTION FINDINGS (2026-07-23, Seal) — the premise is falsified; the campaign converges on TWO FILL bookkeeping corrections + Jacob's eye, NOT a polygonization rewrite
+## 9. ⛔ EXECUTION FINDINGS (2026-07-23, Seal) — SUPERSEDED, see the CORRECTION at the top. [Original header, kept as record: "the premise is falsified; converges on TWO FILL bookkeeping corrections, NOT a polygonization rewrite"]
+
+> ⛔ **This section's conclusion is RETRACTED (2026-07-23, Boz, ruled by Jacob).** It equated the
+> co-claim m² *metric* with the symptom ("the ribbons read wrong in general") and, having driven the
+> metric to ~42 with two FILL edits (`25acccf2`) that changed nothing on Jacob's eye, wrongly declared
+> the stamp premise falsified. The premise stands — the stamp is the fix for the ribbons reading wrong
+> (`RIBBONS §1.1`; the CORRECTION banner up top). Kept below **only** as the record of the
+> proxy-chasing detour. Do NOT execute its "two bookkeeping corrections" conclusion as the campaign.
 
 A fresh-agent execution pass (worktree `polygon-asks-stamp`, off HEAD `19aaf3f4`) measured the actual
 mechanism at each of the brief's two checkpoints. **Both checkpoints' core premise — "the polygon does
