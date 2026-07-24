@@ -10,6 +10,13 @@ measurements stand, its §4 fix direction is superseded here). **Jacob dispatche
 > ⚠️ **A good-looking LS render is NOT evidence the class is fixed** — the co-claim can be authored
 > over by hand (Jacob, 2026-07-22). Gate on `corner-coclaim.mjs`, then the eye. Never the eye alone.
 
+> ✅ **RE-VERIFIED 2026-07-23 (Wren) — every gate number in this brief still holds on the current
+> tree** (trunk `curb-offset-draw`, modified working-tree `design.json`): co-claim **1403.8 m² / 243 of
+> 568** · junction-band **82 clean / 63 flagged** (the floor) · triple-derive **70 / 29 / 50 exact**.
+> The +3 m² over the 1400.6 below is the modified `design.json`, not drift. **New scope finding →
+> §8:** the co-claim mass is **79 % at `plain` ordinary corners** (1115 m²), NOT the §7 divided/median
+> class — so the stamp-read fix hits the bulk *in scope*. Read §8 before planning the cut.
+
 > ⛔ **ROUTE FIRST (`CLAUDE.md` gate):** `ORIENTATION.md` → `README §⭐ START HERE` → then
 > **`RIBBONS.md §1`** (the derivation chain — *"the polygon is BOTH the geometry source AND the
 > identity source"*, the line this brief is about) + **`SECTION.md §6`** (the corner construction) +
@@ -200,6 +207,7 @@ first false alarm (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`).
 |---|---|
 | `corner-coclaim.mjs` | ⭐ **the gate** — co-claimed m² at every frozen corner (bbox-indexed; without the index it never finishes) |
 | `corner-stamp-coverage.mjs` | co-claim split by whether a `junctionMap` stamp is nearby |
+| `coclaim-by-nodekind.mjs` ⭐NEW | co-claim m² **partitioned by nearest junctionMap node kind** — the §8 in-scope-vs-out proof (79 % `plain`) |
 | `cap-mouth-classify.mjs` | which layer owns each point at a mouth (co-claim vs unclaimed) |
 | `correctness-detector.mjs` | invariant #8 junction-band — the regression guard (82-clean floor) |
 | `cap-fill-hash.mjs [plain\|design]` | whole-map FILL fingerprint for parity |
@@ -225,3 +233,66 @@ first false alarm (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`).
 - **Verify the instrument before trusting the verdict.** `cap-side-parity.mjs` gave 0 mirrored, then
   8, on a sampling change — and was blind to the one case verified two independent ways. Every number
   in this brief that gates anything should be re-run, not quoted.
+
+---
+
+## 8. Session learnings (2026-07-23, Wren — re-verification + scope + mechanism)
+
+A fresh-agent route + baseline pass before the cut. Three findings that a fresh executor should carry;
+none change the thesis, all sharpen the target.
+
+### 8.1 ⭐ The co-claim mass is IN scope — 79 % is `plain` ordinary corners
+
+`scratch/coclaim-by-nodekind.mjs` (new; partitions the 568-apex co-claim by the **nearest
+junctionMap node kind within 16 m**):
+
+```
+  1115.0 m2   79%   plain                                  ← ordinary corners = the target
+    52.0 m2    4%   corridor-terminus+divided-transition   ┐
+    42.5 m2    3%   divided-transition                     │ §7 divided/median class ≈ 10% total,
+    43.8 m2    3%   same-corridor-join                     │ explicitly OUT of this brief
+    24.5 m2    2%   continuation+corridor-terminus         ┘
+    50.1 m2    4%   NONE (no stamp <16 m)
+     0.0 m2    0%   pendant-tip                            ← see 8.3
+  TOTAL ~1403.6
+```
+
+**This retires a worry and strengthens the brief.** The single *worst* apex `[153,209]` (15 m²) sits
+by a `corridor-terminus+divided-transition` node — a §7 outlier — which tempted the reading "the total
+is dominated by the divided class we don't cover." It is not: **the mass is plain corners.** So the
+stamp-read fix on ordinary-corner identity addresses ~79 % of the co-claim directly, and **`co-claim →
+0` (§5.1) is a plausible target for THIS brief's scope**, not something the §7 campaign gates. Suggest
+the executor track the `plain`-only subtotal as the true acceptance line and let the ~10 % divided
+residue fall to §7 — don't chase it here and don't let it block the landing.
+
+### 8.2 The mechanism, sharpened — co-claim is INDEPENDENT-EMIT-PATH overlap, not legs-vs-pad
+
+Traced through `sectionPassTile`: the co-claim is **not** a within-tile legs-vs-pad fight. Leg strips
+and the corner pad both peel from a **single shared `bandRem`** via `differenceRings(bandRem,
+g.sectors)` — inside one tile those three ped layers ({sidewalk, treelawn, LU}) cannot overlap by
+construction. The co-claim is the **independent emit paths that never clip against each other**: leg
+sectors (`strokeOpen`, trimmed by `tangentTrim`), the corner pad (`cornerT`), `cornerTreelawn`, the
+dead-end mouth-wrap, the LU flood, **and cross-tile accumulation at a shared node** (each tile decides
+its own boundary near the shared apex; the whole-map sweep sees them overlap). **This is why the fix is
+"declare the owner": once the corner boundary is read from ONE stamp on the shared node, every path
+lands on the same line and the overlap is structurally gone** (§4.2's claim, now grounded in the code).
+`tangentTrim` (`tileGround.js:1308`, *"meet the arc with no cream step / green sliver"*) is the exact
+contract that breaks — it re-derives the trim per-tile from the nearest fillet, so two tiles disagree.
+
+### 8.3 Two measurement surfaces — `corner-coclaim` (apexes) ≠ `cap-mouth-classify` (mouths)
+
+`corner-coclaim.mjs` samples **fillet apexes**; the pendant-tip / mouth co-claim (§1's *"~15 m²/mouth"*
+from `cap-mouth-classify.mjs`) reads **0.0 m² on the apex sweep** (8.1). They measure different loci —
+mouths don't emit the fillet apexes the corner sweep enumerates. **So the MOUTH face (§3.4 row 2) is
+gated by `cap-mouth-classify.mjs`, NOT `corner-coclaim.mjs`** — don't expect the apex gate to move when
+a mouth fix lands, and don't read a flat apex-gate as "the mouth isn't fixed." Gate each face on its
+own instrument.
+
+### 8.4 Standup decision (Jacob, 2026-07-23)
+
+Work lands in a **worktree** under `.claude/worktrees/` (risky, upstream-of-Wall, byte-moves the
+authored map — isolate the rebake churn from trunk's prod LS). And **these learnings are folded back
+into this brief for a FRESH agent to execute** (Jacob's call) — this brief stays the self-contained,
+dispatch-ready SSoT; the sequencing of the cut (incremental-with-rebake-checkpoints vs. one landing) is
+the fresh agent's first standup question, informed by §8.1 (the target is reachable) and §4 (the four
+collapses). ⛔ Still true: nothing reaches the eye until `node scratch/rebake-shape.mjs` (§5).
