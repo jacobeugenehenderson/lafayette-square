@@ -100,6 +100,31 @@ When a head-scratcher appears, the first question is: **"is this chains again?"*
 
 Doctrine memory: `memory/project_skeleton_is_the_first_bake.md`.
 
+### ⭐⭐ The wall we have is a HANDLE rule; it needs to be a CONTENT rule (2026-07-25, Jacob)
+
+> **"An absolute datawall rule where we are *polygons only* by the time we get to the Section tools."**
+
+`sectionOpen`'s signature is genuinely chain-free — artifact + design params, no handle on
+streets/chains/ribbons — so a Section surface *physically cannot reach back*. That is enforced and it
+holds. **But it only guarantees no consumer can reach the chain; it says nothing about whether the
+artifact IS one.** And at a dead end, it is: the face freeze walks the spur **out and back over the same
+vertices**, so the ring is the traversal. **46 of 49 LS dead-end tips are zero-width slits**
+(`scratch/coupler-slit-universal.mjs`); 40 only *look* right because the FILL-layer mouth-wrap snap
+displaces `run.poly` off the ring by up to 13 m. Section then consumed a chain trace through a chain-free
+API, and every dead-end mechanism — inverted `side`, the synthetic cap fe, the mouth disc — is a consumer
+rebuilding the polygon that was never made.
+
+⭐ **`detectTileCaps` is a SLIT DETECTOR wearing a cap detector's name.** Its criterion (*same chain, both
+adjacent edges, opposite sides, at a chain endpoint* — `tileGround.js:738`) is exactly *"the ring doubled
+back here."* `tile.caps` is a **registry of the places the freeze failed to close a polygon**, and we used
+it for months as an identity source.
+
+⇒ The rule is **content, checked at the freeze, failing the bake**: rings simple + nonzero area · no
+same-chain/opposite-side vertex · every frontage edge has an interior on exactly one side · no real
+feature described by a patch. Enforceable form + the "gate to make green" caveat (it currently fails 46/49):
+**`POLYGON-FIRST.md §2.1`**. Live task + the punch-out construction:
+`_handoffs/HANDOFF-deadend-face-resolution.md`.
+
 > **The frame is already correct; the consumers re-derive.** `skeleton.json` carries the marrow (329 typed junctions, name-transitions, seeds, divided pairs, grade flags). The degenerate polygons people chase are mostly **construction artifacts** — the tile corner-builder pairing the wrong legs at a divided transition (`SKELETON §5e`), a width-step datum at a through-node (`SKELETON §5g`), or a grade-separated crossing that should be excluded from the face graph (`gradeSeparated`, landed). Diagnose at the frame and the construction, not by hand-patching faces. (The intersection-everywhere / `osm2streets` sub-thread was retired 2026-06-13 — the *wrong task*; the centerlines are clean, only the drawing was wrong.)
 
 ---

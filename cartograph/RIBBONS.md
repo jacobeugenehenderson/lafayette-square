@@ -27,6 +27,15 @@
 
 **The map is made of TILES — the block faces of the centerline graph. The centerlines are the grout; each tile is painted INWARD from its own edges (asphalt → curb → treelawn → sidewalk → land-use); the corner is the band BENT around the curb arc, never a constructed primitive.** Everything visible is a pure derivation of the centerline.
 
+> ⚠️ **"Faces of the centerline graph" is the assumption now under challenge (2026-07-25).** A graph face
+> cannot close around a **degree-1** chain: `extractFaces` walks a dead-end spur out and back over the
+> same vertices, so **46 of 49 LS dead-end tips are zero-width slits** — a chain traversal, not a shape
+> (`PREBAKE §4.0`, `PIPELINE §Wall`). Proposed replacement (Jacob): the SSoT radius as the **outer
+> polygon**, everything inside **punched out** — blocks = boundary − stroked roads — which closes a spur
+> into a real notch and makes the concentric law literal (the block boundary IS the curb). Not ratified;
+> it re-founds the tile substrate and this sentence changes with it. Spike + risks:
+> **`_handoffs/HANDOFF-deadend-face-resolution.md`**.
+
 > The tile model replaced the **figure-ground** regime (blocks-as-positive, streets-as-subtracted-void) in the ~2026-06-01 re-pour, and **T4 (2026-07-15) deleted figure-ground's geometry outright** — the tile construction is now the only one. The emitter reference is archived at [`_archive/RIBBONS-figureground-emitter-2026-06-15.md`](_archive/RIBBONS-figureground-emitter-2026-06-15.md); `silhouetteStraightEmitter` and the band emitters no longer exist in the tree. `buildBlockGeometryV2` survives as a **frontage-edge identity builder only** (§1's T3 note below).
 
 > ## ⭐⭐ DOCTRINE (2026-06-15, Jacob — the construction campaign): CONSTRUCT the hard polygons; DERIVE only the simple block faces.

@@ -29,6 +29,33 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 
 ---
 
+## 2.1 ⭐⭐ POLYGONS ONLY at the Section tools — the content wall (2026-07-25, Jacob)
+
+> **"An absolute datawall rule where we are *polygons only* by the time we get to the Section tools."**
+
+The existing Wall is a **handle** rule (`sectionOpen` takes no chain reference) — it stops a consumer
+*reaching back*, but not the artifact from **being** a chain. At a dead end it is one: the face freeze
+walks the spur out and back over the same vertices, so the ring is the traversal
+(`PIPELINE §Wall`). These are the **content** checks, run **at the freeze**, failing the **bake** — never
+the eye:
+
+| # | Check | Violation means |
+|---|---|---|
+| 1 | every tile ring is **simple**, **nonzero area**, no repeated vertex | the ring doubled back — it's a traversal, not a shape |
+| 2 | **no ring vertex whose two adjacent edges carry the same chain on opposite sides** | the slit test — `detectTileCaps`' criterion inverted from a feature into a violation |
+| 3 | every frontage edge has an **interior on exactly one side** | `side` is undefined there; every consumer keyed on it is guessing |
+| 4 | **no real feature described by a patch** (synthetic negative-`segOrd` cap fe, mouth disc) | a polygon that didn't close, wearing a cover |
+
+⚠️ **This is a gate to MAKE green, not a regression test that passes today: it currently fails on 46 of 49
+LS dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or an
+equivalent. Checks 1–2 are already computed by `scratch/coupler-slit-universal.mjs`; **target 0**.
+
+⭐ Why it earns its cost: it would have failed at the freeze on 2026-07-24, *before* a coupler was
+designed, a walk-ordinal key built, and an evening spent clicking dead-end legs that had no interior to
+click. Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md`**.
+
+---
+
 ## 2. The definition-of-done — three checks, not three adjectives
 
 "Polygon-First is done for the curb" **means exactly** that all three pass. Nothing else counts as done.

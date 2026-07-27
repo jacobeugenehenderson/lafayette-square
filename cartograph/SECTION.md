@@ -217,6 +217,21 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 
 *Also fixed in that pass, upstream of the FILL: `tileGround.js:3216` wrote each ring edge's asphalt depth under BOTH directed keys, so on a zero-width slit the second leg clobbered the first and **22 of 48** dead-end chains drew at one side's width. Directed keys now keep the two legs distinct.*
 
+> ### ⭐⭐ UPDATE 2026-07-25 — the open tail is ONE upstream defect, and the fix is not in Section
+>
+> The "7 legs still unresponsive" below, the leg-flip class, and the mouth co-claim are **the same defect,
+> and it is not a Section defect**: the face freeze never closes a polygon at a dead end. **46 of 49 tips
+> are zero-width slits**; the **40** that look right are held together by the mouth-wrap snap (a FILL-layer
+> patch), and the **9** without a mouth disc are exactly where the eye fails — South 18th among them.
+> A leg with no interior on one side has **nothing to click**, which is the unresponsive tail measured here.
+>
+> ⛔ **Nothing in this section can fix it.** An addressing scheme was built for it (a side-free
+> walk-ordinal key, branch `polygon-asks-stamp`) — measured, gated, and **retired**: it re-derives identity
+> from a chain trace after the Wall. ⛔ Do not fan the write across the leg range, do not restore the mouth
+> on the 9, do not key differently. **Answer the hole, not the cover.**
+> Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md`** (prebake) · rule: `POLYGON-FIRST §2.1` ·
+> `BRIEF-polygon-asks-the-stamp.md §10/§11` is **retracted at the layer**.
+
 > **Scoreboard after the pass (2026-07-22), so nobody re-measures it:** three defects fixed **at source** — cap slope · leg flip · width collapse. Legs responding **56 → 93 of 100**. ✅ **10 asymmetric caps ACCEPTED** on Jacob's eye (they are correct, not a defect — see the per-side `pavementHW` warning above). **Open tail:** 7 legs still unresponsive; 7 caps flip with no visible change (pre-existing). ⚠️ **A SHAPE-pass fix is invisible until `shape.json` is re-baked** — re-bake before judging on the eye (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`).
 
 ---

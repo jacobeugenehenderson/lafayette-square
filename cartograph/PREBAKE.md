@@ -78,6 +78,28 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 
 ## 4. ⭐ The gap — prebake freezes the *wrong* polygons
 
+> ### ⭐⭐ 4.0 — At a DEAD END it freezes no polygon at all (2026-07-25)
+>
+> The sharpest instance of this whole section. `extractFaces` walks a dead-end spur **out and back inside
+> its enclosing face**, so the tip is a ring vertex whose two adjacent edges carry the **same chain on
+> opposite sides** — the ring retraces its own vertices. **46 of 49 LS dead-end tips are zero-width slits**
+> (`scratch/coupler-slit-universal.mjs`; on `south-18th-street-3`, `ring[2]` and `ring[4]` are the same
+> coordinate). **40 of them only LOOK resolved** because the FILL-layer mouth-wrap snap displaces
+> `run.poly` off the ring by up to 13 m after the freeze; the 9 with no mouth disc show the slit raw, and
+> those are exactly where the operator's eye fails.
+>
+> ⇒ Downstream, `side` inverts on the returning leg (34/34, measured), the cap needs a synthetic
+> negative-`segOrd` fe, the mouth needs a patch disc, and a fold leg has **no interior on one side** — so
+> there is nothing there to click. Every one of those is a consumer rebuilding a polygon prebake never
+> made. ⛔ **Do not address around it** (a walk-ordinal key was built and retired for exactly this reason).
+>
+> **The construction (Jacob):** the SSoT radius as the **outer polygon**, everything inside **punched
+> out** — blocks = boundary − stroked roads — so a spur becomes a real notch. Precedent in-repo:
+> `buildBlockGeometryV2` already builds `blockSharp = differenceRings([stencil], asphaltSharp)`, and all 9
+> slit chains have frontage edges on **both** sides there (`scratch/punchout-spike.mjs`). Risks to design
+> for (identity attribution; topology becoming width-dependent) + the spike:
+> **`_handoffs/HANDOFF-deadend-face-resolution.md`**. Enforcement: `POLYGON-FIRST §2.1`.
+
 Two independent topologies pass through prebake, and the one that matters isn't frozen:
 
 - **`streets[]` come from the skeleton; `faces[]` come from raw OSM.** That's the **two-source seam** — the skeleton was bolted on *beside* the original raw-OSM face derivation, not *in front of* it. The faces carry raw OSM's node topology (un-simplified, un-consolidated), so they don't agree with the chains.
