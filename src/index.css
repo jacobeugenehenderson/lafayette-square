@@ -24,32 +24,63 @@ body {
   background: #1a1a2e;
 }
 
-/* Embed anchor — `?layer=player`. With no slab under it the Player is an
-   interface layer floating on nothing, and the page doing the embedding owns
-   the ground it stands on. Painting our own colour here would cover that
-   page's sheet and turn a transparent layer into an opaque panel. The class is
-   stamped before first paint by the inline script in index.html. */
-html.layer-player,
-html.layer-player body {
-  background: transparent;
+/* ── Embed anchor: the sheet the Player stands on when it is alone ──────────
+   `?layer=player` shows the commons with no slab. It does NOT hide the slab.
+
+   ⚠ NEVER hide the canvas to achieve this — not `visibility: hidden`, not
+   `display: none`, not `opacity: 0`. All three were measured, on this dev
+   build AND on production: while invisible the canvas goes idle, and Chrome
+   drops the WebGL surface. Bringing it back costs a single blocked frame of
+   5–12 SECONDS while the context, shaders and textures are restored. That is
+   the "it feels like it's crashing" report, and it is not a dev artifact
+   (production: 8.2s). The control — sitting in composite, switching nothing —
+   never stalls at all.
+
+   So the slab keeps rendering, fully composited, and this sheet is laid OVER
+   it. Costs exactly what the composite costs, which is the price already being
+   paid, and the switch is then instant in both directions.
+
+   z-index 5: above the scene, below every piece of chrome (SidePanel z-10 is
+   the lowest; Controls, EventTicker and CompassRose are z-50, BrowseHeader
+   z-60). Keep it under 10 or the sheet swallows the commons it exists to
+   stand under.
+
+   The grid is Jacob's motif, carried from jacobhenderson.studio's tokens so
+   the two match. `data-ground` follows the embedding page's Paper/Plate
+   switch, sent with the layer message; plate is the default because a direct
+   ?layer=player link has no page to ask. */
+.embed-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+
+  /* ⚠ MUST stay below 1. A fully opaque sheet is occlusion-culled by Chrome
+     exactly as if the canvas were hidden: it goes idle, the WebGL surface is
+     dropped, and coming back costs a 5.6s blocked frame. Two percent of
+     transparency keeps the canvas composited and the switch instant —
+     measured, same cycle: 5624ms opaque vs 224ms at 0.98. The slab ghosts
+     through at 2%, which is invisible in practice and true besides: it is
+     still there, under the sheet. Do not round this up to 1. */
+  opacity: 0.98;
+
+  --g-bg: #2A2E30;
+  --g-minor: #373C3F;
+  --g-major: #474E52;
+  --g-cell: 0.75rem;
+  --g-major-cell: 3.75rem;
+
+  background-color: var(--g-bg);
+  background-image:
+    repeating-linear-gradient(to right,  var(--g-major) 0 1px, transparent 1px var(--g-major-cell)),
+    repeating-linear-gradient(to bottom, var(--g-major) 0 1px, transparent 1px var(--g-major-cell)),
+    repeating-linear-gradient(to right,  var(--g-minor) 0 1px, transparent 1px var(--g-cell)),
+    repeating-linear-gradient(to bottom, var(--g-minor) 0 1px, transparent 1px var(--g-cell));
 }
 
-/* The slab is still MOUNTED under the Player — only hidden. Unmounting would
-   tear down the WebGL context and rebuild it on the way back, resetting the
-   camera; the point of the three layers is that the commons holds still while
-   the ground goes out from under it. Costs a hidden render; buys continuity. */
-html.layer-player canvas {
-  visibility: hidden;
-}
-
-/* Scene's wrapper carries an INLINE `background: #000` (src/components/Scene.jsx),
-   which nothing but `!important` can outrank — and overriding it here beats
-   editing Scene, which has no business knowing it is being embedded. Without
-   this the slab is hidden but its black backing still covers the embedding
-   page's sheet, so the commons appears to float on a black panel instead of on
-   graph paper. Scoped to the anchor: production never matches this selector. */
-html.layer-player div[role="img"] {
-  background: transparent !important;
+.embed-sheet[data-ground="paper"] {
+  --g-bg: #C6CACC;
+  --g-minor: #B2B8BB;
+  --g-major: #949CA1;
 }
 
 /* Prevent iOS Safari auto-zoom on input focus and double-tap zoom */
