@@ -242,6 +242,25 @@ When a tile's interior pinches below the band depth `WB = cw+tl+sw`, the inward 
 
 ⚠️ **Changing this moves land use map-wide** → re-run prebake, re-bake, and gate on Jacob's eye (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`). Still independent of the geometry work. Reproduce: the attribution replays `classify.js`'s overlay loop against `raw/osm.json`; see the 2026-07-30 session.
 
+### 6.2a ⛔ `layers.park[0]` is AUTHORED — it is NOT the phantom (read this before "getting rid of" it)
+**The recurring trap (Jacob: *"a piece of phantom geometry that always trips us up"* — 2026-07-30).** `map.json layers.park` holds exactly **one** object, and it reads synthetic on sight: a **perfect 350 × 350 m square, 4 vertices, no tags, centred on the origin, rotated 9.2°, area 122,502 m²** (= 350²). It looks like junk. **It is not.**
+
+It is `clean/park-polygon.json` — an authored 4-corner polygon (`tiltDegrees: -9.2`, `halfWidthMeters: 175`) that `derive.js:1060` **deliberately prefers over the OSM `leisure=park` trace**, because 4-corner topology is what lets the round-corners op and the three corner-plug components (asphalt / curb / concrete) reconcile cleanly. `derive.js` warns on fallback: *"corner plugs will degrade."* Consumers: `parkFeats` · `parkSidewalk` · `parkPaths` · the face-retag at `derive.js:3008`. **Deleting it drops the map onto the 65-vertex OSM trace the doctrine rejects** (`FEATURES.md` "The ribbon doctrine"); `[[feedback_dont_undo_a_decision_the_operator_made]]`.
+
+⭐ **And it is NOT misaligned — measured 2026-07-30:**
+
+| | bearing off axis |
+|---|---|
+| the authored square | **9.20°** (all four edges) |
+| OSM Lafayette Park (65 verts) | **9°** (1,379 m length-weighted) |
+| Park Ave · Lafayette Ave · Mississippi · Missouri | **9–9.5°** |
+
+It agrees with the street grid to within ~0.3°. *(Boz mis-identified this face as "the real park, legitimate" by matching area+centroid alone — 122,502 vs the OSM overlay's 133,443 m² at (3,0) — and only caught it when Jacob challenged the object. **Match a suspicious polygon on its VERTEX COUNT and edge lengths, not its area.**)*
+
+⚠️ **Two real correctables — correct these; do not delete:**
+1. **The square is ~8% small.** 350 m a side vs the OSM trace's ~365 m (122,502 vs 133,443 m²) ⇒ the authored edge sits **~7 m inside** the true park edge all round. If that is a slip rather than intent, the fix is `halfWidthMeters`, not the polygon.
+2. **`PARK_CENTER` disagrees with it.** `derive.js:1033` uses `{x: -15, z: -15}` for the park-parcel exclusion test while the authored polygon centres on `(0,0)` — a **21 m** offset. Harmless inside a 250 m radius today; it is latent drift.
+
 ### 6.3 Curb-as-offset residuals — see the correctness suite
 The robust-offset program (D6a) is partial; the RED-until-true detector (`scratch/correctness-detector.mjs`) + `POLYGON-FIRST.md §5` gate the curve-fit cleanliness + corner-roundness. Live state in `BACKLOG.md`.
 
