@@ -193,7 +193,7 @@ One continuous stroke polygon per tile, wraps the whole silhouette incl. corners
 
 ### P8 · LU / median
 Per-tile land-use color (M1); treelawn matches its tile's LU (M2); loop/divided interiors flood grass (`medianClipFor` / `isMedianTile`). `lu = blockLandUse[blockKey] || face.use || hash`.
-- **🩺 Troubleshoot:** phantom park from `classify.js:60` (`leisure=garden` mis-stamp — `RIBBONS §6.2`); per-block LU via blockKey, not centroid probe.
+- **🩺 Troubleshoot:** phantom park from `classify.js:60` (⭐ **`landuse=grass` mis-stamp — 25 of 29 `use='park'` faces are residential yards, measured 2026-07-30; NOT chiefly `leisure=garden`** — `RIBBONS §6.2`); per-block LU via blockKey, not centroid probe.
 - **🗣 Explain:** "Every block is colored by what it's used for — and the tree-lawn picks up its block's color."
 
 ### P9 · Materials
