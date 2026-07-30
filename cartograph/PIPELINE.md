@@ -108,9 +108,9 @@ Doctrine memory: `memory/project_skeleton_is_the_first_bake.md`.
 streets/chains/ribbons — so a Section surface *physically cannot reach back*. That is enforced and it
 holds. **But it only guarantees no consumer can reach the chain; it says nothing about whether the
 artifact IS one.** And at a dead end, it is: the face freeze walks the spur **out and back over the same
-vertices**, so the ring is the traversal. **46 of 49 LS dead-end tips are zero-width slits**
-(`scratch/coupler-slit-universal.mjs` — ⚠️ runs **only from the `polygon-asks-stamp` worktree**; on trunk it
-prints a silent, lying `0`, see `POLYGON-FIRST §2.1`); 40 only *look* right because the FILL-layer mouth-wrap snap
+vertices**, so the ring is the traversal. **ALL 50 LS dead-end tips are zero-width slits**
+(`scratch/coupler-slit-universal.mjs`, ported to trunk 2026-07-30 — the old "46 of 49" mismeasured; see
+`POLYGON-FIRST §2.1`); 40 only *look* right because the FILL-layer mouth-wrap snap
 displaces `run.poly` off the ring by up to 13 m. Section then consumed a chain trace through a chain-free
 API, and every dead-end mechanism — inverted `side`, the synthetic cap fe, the mouth disc — is a consumer
 rebuilding the polygon that was never made.
@@ -122,7 +122,7 @@ it for months as an identity source.
 
 ⇒ The rule is **content, checked at the freeze, failing the bake**: rings simple + nonzero area · no
 same-chain/opposite-side vertex · every frontage edge has an interior on exactly one side · no real
-feature described by a patch. Enforceable form + the "gate to make green" caveat (it currently fails 46/49):
+feature described by a patch. Enforceable form + the "gate to make green" caveat (Checks 1–2 fail on all 50 tips; Check 5 on 9 of 50):
 **`POLYGON-FIRST.md §2.1`**. Live task + the punch-out construction:
 `_handoffs/HANDOFF-deadend-face-resolution.md`.
 

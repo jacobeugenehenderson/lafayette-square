@@ -47,23 +47,41 @@ the eye:
 | 4 | **no real feature described by a patch** (synthetic negative-`segOrd` cap fe, mouth disc) | a polygon that didn't close, wearing a cover |
 | 5 ⭐ | **every dead-end spur presents TWO mouth corners — one per side** — so each leg is bounded `corner → cap` | ⭐ **THE ONE THAT MATTERS.** One leg is bounded and the other runs through unbounded: you can *name* that leg but you cannot *bound* it |
 
-⚠️ **This is a gate to MAKE green, not a regression test that passes today: it currently fails on 46 of 49
-LS dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or an
-equivalent. Checks 1–2 are already computed by `scratch/coupler-slit-universal.mjs`; **target 0**.
+⚠️ **This is a gate to MAKE green, not a regression test that passes today: on the frozen LS face it fails
+on ALL 50 dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or
+an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`; **target 0**.
 
-> ⚠️⚠️ **WHERE THE PROBES LIVE — NOT on trunk (verified 2026-07-30, Boz).** Every `scratch/coupler-*.mjs`
-> cited on this page lives on branch/worktree **`polygon-asks-stamp`** (`.claude/worktrees/polygon-asks-stamp/`),
-> and each reads **Slice-1 fields that do not exist on trunk** (`run.foldBranch`, `run.walkOrd`,
-> `buildFoldWalkIndex`). **Run them from that worktree.**
+> ⭐ **THE PROBES RUN ON TRUNK (ported 2026-07-30, Boz).** `coupler-fold-legs.mjs` (the shared helper) +
+> `coupler-slit-universal.mjs` · `coupler-slit-anatomy.mjs` · `coupler-fe-coverage.mjs` derive every dead-end
+> fold from the **frozen face artifact alone** — `ribbons.tiles[].{ring, edges{skelId,side}, caps{vertexIdx}}`
+> — walking run spans by INTEGER RING INDEX, never by position (position collapses at a zero-width spur).
+> No Slice-1 fields, no src change. Just `node scratch/coupler-slit-universal.mjs`.
 >
-> ⛔ **Do NOT copy them onto trunk to make the citation resolve.** There they do not fail loudly — they lie:
-> `coupler-slit-anatomy.mjs` prints **nothing** (its `foldBranch` filter matches no run), `coupler-slit-universal.mjs`
-> prints **`0 slits / 0 width / 0 mouth discs`**, and only `coupler-fe-coverage.mjs` throws. A silent `0` on a
-> slit census reads as *"no defect"* — the exact opposite of the truth this page is built on. *(Tried and
-> undone on 2026-07-30; this note is the residue.)*
+> ⛔ **The BRANCH originals (`polygon-asks-stamp`) still read `run.foldBranch` / `run.walkOrd` /
+> `buildFoldWalkIndex`, and copying THOSE to trunk does not fail — it lies** (`coupler-slit-anatomy` prints
+> nothing; `coupler-slit-universal` prints `0 slits`, which reads as *"no defect"*). The ported versions
+> replaced them; don't re-copy from the branch.
+
+> ⭐⭐ **THE MEASUREMENT, CORRECTED ON THE PORT (2026-07-30). Two different vertices, two different numbers —
+> the old "46 of 49" conflated them.**
 >
-> A trunk-runnable Check 1–2 harness needs only the frozen ring + its edge chain labels — Slice 1 is not
-> required for it — but **it does not exist yet.** Until it does, the gate runs from the worktree.
+> | | measured | what it means |
+> |---|---|---|
+> | **TIP** — Checks 1–2 | **50 of 50** tips are zero-width slits | the freeze closes NO dead-end polygon, anywhere |
+> | **MOUTH** — Check 5 | **9 of 50** spurs miss a mouth corner | the leg that runs through unbounded |
+>
+> **Why the old count was wrong:** the branch probe read the tip off a FILL run's span *end* rather than the
+> frozen `cap.vertexIdx`. On `hickory-street-1`, `henrietta-place` and `south-22nd-street` that end is the FAR
+> end of the block — 195 m, 154 m and 328 m from the cap — so it measured a gap there and called them
+> "FACE=WIDTH". At the actual cap vertex all three are **0.0000 m**. It also dropped `waverly-place-1`, which
+> caps twice in one tile, giving 49 instead of 50.
+>
+> ⭐ **And Check 5 is NOT universal — that is the substantive find.** 41 of 50 spurs DO get a corner at every
+> mouth pass, because their returning leg immediately meets a *different* chain. The 9 that fail are the ones
+> whose **chain continues past the mouth**, so both sides of the second pass carry the same `skelId`
+> (`south-18th-street-3`: `ring[4]` is `south-18th/left → south-18th/left`, and its returning leg runs on to
+> `ring[5]` because no corner stops it). ⚠️ 6 of those 9 are also in the no-mouth-disc 9 — overlapping, **not**
+> the same set. Scope the fix to the condition, not to "all dead ends".
 
 ### ⭐⭐⭐ Check 5 is the diagnosis — the missing piece is the CORNER (Jacob, 2026-07-30)
 
@@ -91,9 +109,12 @@ it could not fix *where that leg starts and stops*, because there was no second 
 > ⭐ **The one-line test for any proposal: DOES IT CREATE THE SECOND MOUTH CORNER?** If not, it is another
 > way of managing the absence, and it will fail on the eye exactly as the previous three passes did.
 
-⚠️ **Do not over-read this as "there is nothing to click."** `scratch/coupler-fe-coverage.mjs`: **191 of 198
-dead-end walk slots DO have a clickable frontage edge; only 7 do not.** The dominant defect is **bounding,
-not existence** — aim at the missing corner, not at a missing surface.
+⚠️ **Do not over-read this as "there is nothing to click."** `scratch/coupler-fe-coverage.mjs` on trunk:
+**98 of 107 dead-end leg slots DO have a clickable frontage edge; 9 do not**, and all 9 have an fe on the
+opposite side. (The branch original counted Slice-1 *walk* slots — 191 of 198 — same shape, different
+denominator.) The 9 include `whittemore-place|right`, `rutger-street-0|right`, `st-vincent-court-1|left` —
+exactly the legs the mouth brief §1 recorded as unresponsive, which is independent corroboration. The
+dominant defect is **bounding, not existence** — aim at the missing corner, not at a missing surface.
 
 ⭐ Why the gate earns its cost: it would have failed at the freeze on 2026-07-24, *before* a coupler was
 designed, a walk-ordinal key built, and an evening spent clicking dead-end legs that could be named but not

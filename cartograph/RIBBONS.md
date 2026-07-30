@@ -29,7 +29,7 @@
 
 > ⚠️ **"Faces of the centerline graph" is the assumption now under challenge (2026-07-25).** A graph face
 > cannot close around a **degree-1** chain: `extractFaces` walks a dead-end spur out and back over the
-> same vertices, so **46 of 49 LS dead-end tips are zero-width slits** — a chain traversal, not a shape
+> same vertices, so **ALL 50 LS dead-end tips are zero-width slits** — a chain traversal, not a shape
 > (`PREBAKE §4.0`, `PIPELINE §Wall`). Proposed replacement (Jacob): the SSoT radius as the **outer
 > polygon**, everything inside **punched out** — blocks = boundary − stroked roads — which closes a spur
 > into a real notch and makes the concentric law literal (the block boundary IS the curb). Not ratified;

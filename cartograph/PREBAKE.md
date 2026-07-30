@@ -82,9 +82,9 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 >
 > The sharpest instance of this whole section. `extractFaces` walks a dead-end spur **out and back inside
 > its enclosing face**, so the tip is a ring vertex whose two adjacent edges carry the **same chain on
-> opposite sides** — the ring retraces its own vertices. **46 of 49 LS dead-end tips are zero-width slits**
-> (`scratch/coupler-slit-universal.mjs` — ⚠️ runs **only from the `polygon-asks-stamp` worktree**; on trunk
-> it prints a silent, lying `0`, see `POLYGON-FIRST §2.1`; on `south-18th-street-3`, `ring[2]` and `ring[4]` are the same
+> opposite sides** — the ring retraces its own vertices. **ALL 50 LS dead-end tips are zero-width slits**
+> (`scratch/coupler-slit-universal.mjs`, ported to trunk 2026-07-30 — the old "46 of 49" read the tip off a
+> FILL run's span end, not the frozen `cap.vertexIdx`; see `POLYGON-FIRST §2.1`; on `south-18th-street-3`, `ring[2]` and `ring[4]` are the same
 > coordinate). **40 of them only LOOK resolved** because the FILL-layer mouth-wrap snap displaces
 > `run.poly` off the ring by up to 13 m after the freeze; the 9 with no mouth disc show the slit raw, and
 > those are exactly where the operator's eye fails.

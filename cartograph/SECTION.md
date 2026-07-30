@@ -220,7 +220,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > ### ⭐⭐ UPDATE 2026-07-25 — the open tail is ONE upstream defect, and the fix is not in Section
 >
 > The "7 legs still unresponsive" below, the leg-flip class, and the mouth co-claim are **the same defect,
-> and it is not a Section defect**: the face freeze never closes a polygon at a dead end. **46 of 49 tips
+> and it is not a Section defect**: the face freeze never closes a polygon at a dead end. **ALL 50 tips
 > are zero-width slits**; the **40** that look right are held together by the mouth-wrap snap (a FILL-layer
 > patch), and the **9** without a mouth disc are exactly where the eye fails — South 18th among them.
 >
@@ -231,9 +231,10 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > `south-18th-street-3` those two visits are the bit-identical coordinate `(386.30, 149.10)`
 > (`ring[2]` ≡ `ring[4]`, `scratch/coupler-slit-anatomy.mjs`):
 >
-> ⚠️ **Every `coupler-*.mjs` on this page runs only from the `polygon-asks-stamp` worktree** — they read
-> Slice-1 fields absent on trunk, where they print a silent, lying `0`. **Do not copy them over**;
-> the full note is `POLYGON-FIRST §2.1`.
+> ⭐ **The `coupler-*.mjs` probes were PORTED TO TRUNK 2026-07-30** — they derive folds from the frozen
+> artifact alone (`node scratch/coupler-slit-anatomy.mjs`). ⛔ The BRANCH originals still read Slice-1
+> fields and print a silent, lying `0` on trunk — don't re-copy them. Full note + the corrected counts:
+> `POLYGON-FIRST §2.1`.
 >
 > | mouth vertex | incoming → outgoing | corner? |
 > |---|---|---|
@@ -255,8 +256,9 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > landed. Read "workaround" as *solved the naming half*, **not** as *wrong idea*.
 >
 > ⚠️ **CORRECTION to the paragraph above — "nothing to click" over-generalises.**
-> `scratch/coupler-fe-coverage.mjs`: **191 of 198 dead-end walk slots DO have a clickable frontage edge;
-> only 7 do not** (all 7 have an fe on the opposite side). The unresponsive tail is real but is the
+> `scratch/coupler-fe-coverage.mjs` on trunk: **98 of 107 dead-end leg slots DO have a clickable frontage
+> edge; 9 do not** (all 9 have an fe on the opposite side; the branch original counted Slice-1 walk slots,
+> 191 of 198 — same shape, different denominator). The unresponsive tail is real but is the
 > *minority* symptom. **The dominant defect is BOUNDING, not EXISTENCE.**
 >
 > ⭐ **The test for any proposed fix: does it CREATE THE SECOND MOUTH CORNER?** A notch (road-with-width
