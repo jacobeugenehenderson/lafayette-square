@@ -280,7 +280,84 @@ Authoring HTMLs (`/cartograph.html`, `/arborist.html`, `/preview.html`) bypass `
 
 ---
 
-## 7. Pending verifications
+## 7. Embedded — running inside someone else's page
+
+`jacobhenderson.studio` frames LS as a live portfolio piece. Everything here is
+additive: absent the params and the frame, the app is byte-identical.
+
+### The two layer params
+
+| Param | Renders | Mechanism |
+|---|---|---|
+| `?layer=slab` | the baked environment, no Player chrome | reuses `App.jsx`'s existing chrome gate |
+| `?layer=player` | the commons, no slab beneath | `.embed-sheet` laid over the scene |
+| *(absent)* | both — what the public sees | unchanged |
+
+`layer` is **state**, not a read-once const: the URL param seeds it (and serves
+direct links), and a `message` listener switches it live. Switching must not
+change the frame's `src` — a reload rebuilds the WebGL context and resets the
+camera, which turns three layers into three unrelated pictures. The listener
+only binds when framed, and also carries `ground` (`paper` | `plate`) so the
+sheet matches the embedding page's light/dark, which a cross-origin frame
+cannot read for itself.
+
+**`?layer=slab` is NOT `?ground`.** `Scene.jsx`'s own `IS_GROUND` reads the URL
+independently and strips trees, buildings, lamps, arch and post-FX to leave bare
+ground — a diagnostic, not the slab. `layer=slab` reuses App's chrome gate
+*without* tripping it. Do not merge them.
+
+### ⚠ Never hide the canvas — the switch-back stall
+
+The obvious implementation of `layer=player` is to hide the slab. It is wrong,
+expensively, and the reason is worth keeping:
+
+| Approach | While showing | Switching back |
+|---|---|---|
+| `visibility:hidden` / `display:none` / `opacity:0` | idle | **5–12s frozen frame** |
+| a fully opaque cover | idle (occlusion-culled) | **5.6s** |
+| `[data-scene-pause]` — our own contract | idle | **4.4s** |
+| a cover at `opacity: 0.95` | renders normally | **~185ms** |
+| control: never switch | — | no stall at all |
+
+Chrome drops the WebGL surface the moment the canvas stops being visibly
+composited — **hidden or fully occluded makes no difference** — and restoring
+context, shaders and textures lands as one blocked frame. Measured on the dev
+build *and on production* (8.2s), so it is not a dev artifact.
+
+So the slab stays mounted, visible and rendering, and `.embed-sheet` covers it
+at 95% opacity. The remaining 5% is load-bearing: it keeps the canvas
+composited. **Do not round it to 1**, and do not reintroduce
+`data-scene-pause` here — pausing idles the canvas too, which is the same trap
+wearing our own contract's clothes. The slab costs what the composite costs,
+which is the price already being paid.
+
+### Scrolled off screen, it stops
+
+Worth knowing before anyone tries to add throttling: an embedded LS already
+stops on its own when scrolled out of the host page's viewport. Chrome does not
+composite an offscreen iframe, the canvas idles, and the host's own frame time
+drops from ~211ms to ~17ms — measured through the portfolio page. Coming back
+costs a single ~970ms frame and paints within 400ms, because scrolling away
+does not tear the surface down the way hiding it does.
+
+So a one-page host carrying several embeds pays for the one being looked at,
+and no more. Nothing in this app arranges that; do not add machinery for it.
+
+### Framed defaults
+
+`useCamera`'s initial state reads `window.self !== window.top` once and starts
+`panelState` at `collapsed` — the visitor came for the embedding page, so what
+they should meet first is the place, with the panel down to its three-part bar.
+The check is guarded (`window.top` can throw cross-origin; a throw means framed).
+
+**Only the initial state.** `panelState` lives in the store, so the visitor's
+own choice survives layer switches and component unmounts for the rest of the
+session. Nothing re-imposes the default, and nothing should: overriding a
+choice the visitor just made is worse than an imperfect first frame.
+
+---
+
+## 8. Pending verifications
 
 Items the inventory walk surfaced. Status reflects Phase B resolution where applicable.
 

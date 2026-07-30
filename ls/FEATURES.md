@@ -42,6 +42,48 @@ The everyday view: the camera floats overhead, framed on the neighborhood, and t
 ### Hero mode
 The landing shot — the first framing every visitor sees. A slow cinematic camera *bounce*: the camera sweeps a Catmull-Rom path out-and-back through the operator-authored keyframes, holding its gaze on the neighborhood's designated hero subject (the Gateway Arch) the whole time. The path's keyframes, per-keyframe FOV, the bounce period/easing, and the subject are all authored in Cartograph's Stage (Hero shot) and travel through the bake in `scene.json` (`heroKeyframes` / `heroMotion` / `heroSubject`); production replays them through `Scene.jsx`'s CameraRig and the shared `src/preview/heroAnim.js` motion model — identical to what the operator previewed in Stage.
 
+### Putting the panel away
+
+The side panel carries the same mark the search drawer does — a short rule,
+centred, sitting just outside its top edge on the scene. Pulling the search
+drawer *down* out of the ticker and putting the panel *down* to its tabs are
+the same gesture, so they are the same mark; only the rule for it is shared,
+since the two rails differ.
+
+Tapping it collapses the panel to its three-part Almanac / Bulletin / Society
+bar, leaving the neighbourhood in view, and tapping it again brings it back.
+The collapsed state itself is not new — opening a place card has always used it
+to get the panel out of the way — but until 2026-07-30 nothing let the visitor
+reach it, so the panel could be put away *for* them and never *by* them.
+
+The mark carries a dark halo, because it sits on the scene and the scene runs
+from a noon sky to a night street; a fixed tint disappears against a bright
+horizon.
+
+### Embedded — the frame on somebody else's page
+
+LS is also a *guest*. `jacobhenderson.studio` frames it as a live piece of a
+portfolio, and framed it behaves differently, because the visitor is different:
+they did not come for the commons, they came for whatever that page is about,
+and they will give it a few seconds.
+
+**The panel starts collapsed** — down to its three-part bar, with the
+neighbourhood behind it. Unframed nothing changes; someone who typed
+`lafayette-square.com` came for the commons and gets it open. After that first
+paint the visitor's own choice stands: opening or collapsing the panel sticks
+for the session, and nothing the embedding page does resets it.
+
+**Either half can be mounted on its own.** `?layer=slab` renders the baked
+environment with no Player over it; `?layer=player` renders the commons with no
+slab under it, standing on a sheet the embedding page's colours are sent for.
+No param renders both, exactly as the public sees it. `SLAB-CONTRACT.md §0` has
+always said the slab and the reader are separate payloads; these make that
+watchable rather than merely true, and a framed consumer switches between them
+live, by message, without reloading.
+
+Nothing here is a cut-down build. Every module, every type, every control is
+present — it is the same app, meeting a different visitor.
+
 ### Street view & the night sky
 **Double-click anywhere on the map and the camera drops to the street** — it flies down to standing eye height (~1.7 m) at that exact spot, resting on the real ground relief, and you look around in place: turn a full 360°, tilt from the horizon all the way up to straight overhead. The neighborhood at human scale.
 
@@ -87,6 +129,7 @@ What LS trusts cartograph to publish, and what LS does *not* re-author (confirme
 ## Product / runtime decisions worth knowing
 
 - **Buildings render off the slab (L1.3, shipped 2026-05-26).** Production + Preview mount `SlabBuildings` — the merged-mesh buildings bake (`buildings.json` **v2**) plus a render-scoped per-building index. Identity (click / hover / neon / selection / place card) resolves `raycast → building id` against the slab index (`useSlabBuildingIndex`), then `id → record` via the content layer (`buildingMap` / `useListings`) — the slab owns spatial identity, content owns what to display. `SceneNeon` sources tube geometry/anchors from the index. **Stage keeps the live `LafayetteScene` mount** (authoring needs live retint), so `SceneNeon` falls back to live `src/data/buildings` there. The `src/data/buildings` *render* dependency is gone from production; the *content* importers (`SidePanel`, `GlassSearch`, `useListings`, `CheckinPage`, `PlaceCard`) still read it as the content DB — relocating that is a separate future brief. `BakedBuildings` is deleted. See `SLAB-CONTRACT.md §6`.
+- **Framed is a different visitor, not a different build (2026-07-30).** `window.self !== window.top` is read once, in `useCamera`'s initial state, and starts the panel collapsed. The check is guarded — reading `window.top` across a cross-origin parent can throw, and a throw means we *are* framed. Nothing else in the app branches on it. See `ARCHITECTURE.md §7`.
 - **Mobile-first staging.** `LafayetteScene` mobile-detects and staggers heavy content (labels, markers) across seconds to avoid GPU upload crashes.
 - **Time-of-day is live, not baked.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute sun/moon/sky continuously. The slab carries no time-of-day data.
 - **Authoring routes ship to production today.** `/cartograph`, `/arborist`, `/stage`, `/preview` bundle into the prod build. Stripping them is a v1 BACKLOG item — they expose authoring surfaces to end users and bloat first-paint (cartograph chunk is 4.5MB minified / 1.1MB gzipped).
