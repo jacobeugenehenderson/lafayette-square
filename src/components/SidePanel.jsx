@@ -869,6 +869,7 @@ function SidePanel() {
   const activeTab = useCamera((s) => s.activeTab)
   const setActiveTab = useCallback((tab) => useCamera.setState({ activeTab: tab }), [])
   const panelState = useCamera((s) => s.panelState)
+  const panelCollapsedPx = useCamera((s) => s.panelCollapsedPx)
   const setPanelState = useCamera((s) => s.setPanelState)
   const collapsed = panelState === 'collapsed'
   const isNeutral = panelState === 'neutral'
@@ -943,6 +944,35 @@ function SidePanel() {
   }, [])
 
   return (
+    <>
+    {/* ── Collapse mark ──
+        The same mark the search drawer carries, doing the same job in the other
+        direction: there it pulls a drawer down out of the ticker, here it puts
+        the panel away down to its tabs. One gesture to learn, and the mark's
+        rule is shared (index.css) so the two cannot drift.
+
+        OUTSIDE the panel, exactly as the search rail sits outside its drawer —
+        a mark on the scene, no background, nothing else painted. It has to be
+        a SIBLING rather than a child: the panel is `overflow-hidden` for its
+        rounded corners and would clip anything above its top edge. Anchored off
+        `panelCollapsedPx`, the live panel height the ResizeObserver below
+        publishes — the same value InfoModal, CodeDeskModal, BulletinModal and
+        PlaceCard already use to sit clear of the panel.
+
+        `collapsed` already rendered exactly the three-part bar this produces;
+        until now only opening a place card could reach it, so the panel could
+        be put away FOR you but never BY you. */}
+    <button
+      type="button"
+      className="panel-rail"
+      style={{ bottom: `${(panelCollapsedPx || 76) + 12}px` }}
+      aria-expanded={!collapsed}
+      aria-label={collapsed ? 'Expand the panel' : 'Collapse the panel to its tabs'}
+      onClick={() => setPanelState(collapsed ? 'neutral' : 'collapsed')}
+    >
+      <span className="panel-pill" />
+    </button>
+
     <div
       ref={panelRef}
       className="absolute left-3 right-3 bottom-3 flex flex-col select-none overflow-hidden z-50 font-mono rounded-2xl"
@@ -1056,6 +1086,7 @@ function SidePanel() {
       )}
 
     </div>
+    </>
   )
 }
 
