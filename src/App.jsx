@@ -14,7 +14,6 @@ import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
 import BrowseHeader from './components/BrowseHeader'
 import FeatureBoundary from './components/FeatureBoundary'
-import WeatherPoller from './components/WeatherPoller'
 import AdminPrompt from './components/AdminPrompt'
 import useGuardianStatus from './hooks/useGuardianStatus'
 import useCamera from './hooks/useCamera'
@@ -563,6 +562,41 @@ function Splash() {
 function App() {
   const route = parseRoute()
 
+  // ── Embed anchors ────────────────────────────────────────────────────────
+  // `?layer=slab` mounts the slab with no Player over it; `?layer=player` the
+  // Player with no slab under it. SLAB-CONTRACT.md §0 says the two are separate
+  // payloads and that neither imports the other's source; these let an outside
+  // consumer mount either alone. Absent, `layer` is null and nothing changes.
+  //
+  // Hooks live up here, ahead of the route early-returns below, so they are
+  // called on every render.
+  const [layer, setLayer] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('layer') } catch { return null }
+  })
+
+  // A framed consumer switches layers by postMessage, NOT by changing our src.
+  // Reloading would rebuild the WebGL context and reset the camera — which is
+  // precisely what stacking exists to avoid. The commons has to stay put while
+  // the ground goes out from under it, so the switch happens in place.
+  useEffect(() => {
+    if (window.parent === window) return undefined
+    function onMessage(e) {
+      const m = e.data
+      if (!m || m.type !== 'ward-layer') return
+      setLayer(m.layer === 'slab' || m.layer === 'player' ? m.layer : null)
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  // With no slab under it the Player stands on the embedding page's ground, so
+  // we must not paint our own. The class drives it from src/index.css rather
+  // than an inline style, and follows the live switch. index.html stamps the
+  // same class before first paint for a direct ?layer=player link.
+  useEffect(() => {
+    document.documentElement.classList.toggle('layer-player', layer === 'player')
+  }, [layer])
+
   if (route.page === 'checkin') {
     return <CheckinPage locationId={route.locationId} />
   }
@@ -577,24 +611,11 @@ function App() {
   if (route.page === 'terms-restaurant') return <RestaurantTermsPage />
   if (route.page === 'cary' && moduleOn('delivery')) return <CaryStandalone />
 
-  // ── Embed anchors ────────────────────────────────────────────────────────
-  // `?layer=slab`   — the slab, with no Player over it.
-  // `?layer=player` — the Player, with no slab under it.
-  //
-  // SLAB-CONTRACT.md §0 says the slab and the reader are separate payloads and
-  // that neither imports the other's source. These two params are that claim
-  // made watchable: each layer served on its own URL, so an outside consumer
-  // can mount either one alone. Added for the jacobhenderson.studio embed,
-  // which shows all three states side by side.
-  //
-  // Absent, both are null and nothing changes — this is additive only.
-  //
   // NOT `?ground`. That is a narrower, older thing: `Scene.jsx`'s own
   // `IS_GROUND` reads the URL independently and strips trees, buildings,
   // lamps, the arch and post-FX to leave bare ground. `layer=slab` reuses this
   // component's chrome gate WITHOUT tripping that one, so the slab arrives
   // whole. Do not merge the two.
-  const layer = new URLSearchParams(window.location.search).get('layer')
   const isGround = window.location.search.includes('ground') || layer === 'slab'
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
   const splashReady = useSplashReady()
@@ -602,14 +623,14 @@ function App() {
   return (
     <div className="w-full h-full relative">
       <ClockCalendarPump mode="live" />
-      {!adminPromptOpen && splashReady && layer !== 'player' && <SceneBoundary><Scene /></SceneBoundary>}
-      {/* The Almanac's temperature comes from `WeatherPoller`, which normally
-          rides inside `Scene`. With the slab out from under it the Player kept
-          its clock and its sky but read `--°F`. The poller is pure — one
-          `useEffect`, returns null, no R3F hooks — so it mounts perfectly well
-          on its own. Only for the player layer; everywhere else `Scene` still
-          owns it and mounting twice would double the polling. */}
-      {layer === 'player' && <WeatherPoller />}
+      {/* Scene is mounted for EVERY layer, including `player`, and hidden by CSS
+          when it is not wanted. Unmounting it would tear down the WebGL context
+          and rebuild it on the way back — a reload by another name, resetting
+          the camera and losing the continuity that makes these layers a stack
+          rather than three pictures. Hide, do not strip. It also keeps
+          `WeatherPoller` alive, so the Player's Almanac still has a
+          temperature. See `html.layer-player canvas` in src/index.css. */}
+      {!adminPromptOpen && splashReady && <SceneBoundary><Scene /></SceneBoundary>}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && moduleOn('bulletin') && <BulletinOpener />}
       {/* cary routes now render standalone — see CaryStandalone above (gated on modules.delivery) */}

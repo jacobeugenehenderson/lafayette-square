@@ -24,6 +24,34 @@ body {
   background: #1a1a2e;
 }
 
+/* Embed anchor — `?layer=player`. With no slab under it the Player is an
+   interface layer floating on nothing, and the page doing the embedding owns
+   the ground it stands on. Painting our own colour here would cover that
+   page's sheet and turn a transparent layer into an opaque panel. The class is
+   stamped before first paint by the inline script in index.html. */
+html.layer-player,
+html.layer-player body {
+  background: transparent;
+}
+
+/* The slab is still MOUNTED under the Player — only hidden. Unmounting would
+   tear down the WebGL context and rebuild it on the way back, resetting the
+   camera; the point of the three layers is that the commons holds still while
+   the ground goes out from under it. Costs a hidden render; buys continuity. */
+html.layer-player canvas {
+  visibility: hidden;
+}
+
+/* Scene's wrapper carries an INLINE `background: #000` (src/components/Scene.jsx),
+   which nothing but `!important` can outrank — and overriding it here beats
+   editing Scene, which has no business knowing it is being embedded. Without
+   this the slab is hidden but its black backing still covers the embedding
+   page's sheet, so the commons appears to float on a black panel instead of on
+   graph paper. Scoped to the anchor: production never matches this selector. */
+html.layer-player div[role="img"] {
+  background: transparent !important;
+}
+
 /* Prevent iOS Safari auto-zoom on input focus and double-tap zoom */
 html {
   touch-action: manipulation;
