@@ -9,7 +9,7 @@ the seal sequence, and the ordered v1 worklist. Not yet decomposed into dispatch
 > design builds on: **`cartograph/SKELETON.md §0–§2, §6`** (the skeleton is the First Bake, a black
 > box, the artifact a gajillion consumers trust) · **`cartograph/ARCHITECTURE.md §"The Extent tool &
 > the Pour"`** (the live procedure) · **`EXTENT-EXCAVATION.md §0–§0.8`** (Jacob's ruled spec) ·
-> **`BRIEF-polygon-asks-the-stamp.md`** (the same disease one layer down) ·
+> **`cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md`** (the same disease one layer down) ·
 > **`BRIEF-ls-bleed-excision.md`** + **`INTAKE-CATALOGUE.md`** (the bleed class; the Inputs tab).
 
 ---
@@ -18,7 +18,7 @@ the seal sequence, and the ordered v1 worklist. Not yet decomposed into dispatch
 
 The Extent subsystem and the polygon/stamp subsystem have the **same disease**, at two scales:
 
-- **Stamp (`BRIEF-polygon-asks-the-stamp`):** the skeleton types every node; `extractFaces` throws
+- **Stamp (`cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md`):** the skeleton types every node; `extractFaces` throws
   the type away and emits `{ring, edges}`; the FILL re-guesses identity *from shape* and co-claims
   1400 m². Cure: *the polygon asks the stamp* — carry identity onto the face; the FILL **reads**
   ownership instead of negotiating it.
@@ -53,7 +53,7 @@ We unite the points with **line segments** for two reasons only: so a person can
 skeleton, and so we have something to **stroke** into streets, curbs and sidewalks. So the primary
 artifact is the labeled points; the segment-skeleton and the polygons derived from it are both
 *downstream views*. **The identity lives on the points, not the lines** — which is the whole reason a
-polygon must *ask the stamp* (`BRIEF-polygon-asks-the-stamp`): when segments become faces, the point's
+polygon must *ask the stamp* (`cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md`): when segments become faces, the point's
 label must ride along, or the FILL re-guesses it from bare shape and gets it wrong. Same for building
 ids: the label is on the thing, and every view of it must carry the label, never re-derive it.
 
@@ -215,7 +215,7 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 
 Today it is minted and then *not believed*: `extractFaces` emits `{ring, edges}` and drops the label,
 so the FILL re-guesses (dead-ends counted three ways — 70/29/50 — and 1400 m² of corner co-claim).
-The fix is `BRIEF-polygon-asks-the-stamp` — **polygonization consumes the stamp and carries identity
+The fix is `cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md` — **polygonization consumes the stamp and carries identity
 onto the emitted face; the FILL reads ownership instead of negotiating it.** That brief is its own
 campaign (SHAPE/FILL, not Extent), but it is listed here because it is *the same identity discipline
 the seal exists to enforce*, one artifact down — and because "what the Extent tool makes" is a

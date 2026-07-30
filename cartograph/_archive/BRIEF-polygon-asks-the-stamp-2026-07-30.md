@@ -408,3 +408,86 @@ pad = its true tangent — **+ Jacob's eye on 5173.** Whole-map co-claim 1403.8 
 green: floor 82 clean, cap-sweep 0 err, customs 0 lost/changed, diff confined to `tileGround.js`.
 Tooling added (all `scratch/`, git-tracked): `deadend-triple-sets.mjs`, `coclaim-by-pair.mjs`,
 `coclaim-crop.mjs`.
+
+---
+
+## 10. ⭐ THE LIVE EXECUTION PLAN (2026-07-23, Boz+Jacob standup) — Phase 1: the plain-block `[kind]` stamp
+
+> **This is the section to execute. It supersedes §9 (retracted) and re-grounds §4 on the seam we
+> actually traced.** Ruled at a fresh-context standup: the symptom is *"the ribbons read wrong in
+> general,"* the fix is the `[kind]` stamp (Jacob), and the co-claim m² is **retired as a gate** — the
+> gate is Jacob's eye on the ribbons reading right, map-wide (the CORRECTION banner up top).
+
+### 10.1 The two-axis finding — what already rides, what's dropped (traced, not assumed)
+
+The tile carries identity on **two axes**, in different states. This is the correction to §0's
+one-liner (*"the polygon never asks the stamp"* is overstated — it asks on one axis, not the other):
+
+| Axis | Rides on the frozen tile today? | Read by | State |
+|---|---|---|---|
+| **Leg + material** — `{streetIdx, forward, side}` per edge | ✅ **YES** (`tileGround.js:704`) | `groupRuns` (`:959`), `gleanTreelawn` (`:850`) | **Fine — not the problem.** |
+| **Corner / node `[kind]`** — which run-ends are real corners, of what kind | ❌ **NO** | `cornerT` re-derives from shape+guards (`:1316`) | **The dropped axis — this is Phase 1.** |
+| Caps (dead-end tips) | ✅ YES (`:704` → read `:3066`) | face-topology `detectTileCaps` | existence proof the stamp travels the freeze |
+
+⇒ My leg/material grep does **not** contradict the stamp thesis — it **localizes** it. The axis that's
+re-guessed is the **corner decision**, exactly the `[kind]` stamp Jacob named.
+
+### 10.2 The seam Phase 1 targets — the corner bid at the run-end
+
+`cornerT` (`tileGround.js:1218`, built at the `ends.forEach` loop `:1316`) fires a **corner bid at each
+run END** — a vertex where `(streetIdx, side)` changes — and suppresses it via a pile of **ad-hoc,
+shape-derived guards**: `tipped[i] || through[i] || isNameTransition(p,run) || isThruNode(p,run)`
+(`:1315`, `:1317`). That is the entire "is this a corner?" decision, and it never asks *"does a real
+`junctionMap` node live at this vertex, and of what `[kind]`?"*
+
+- **Why plain blocks read wrong:** a frontage split into two `streetIdx` at a **same-name chain seam**
+  (not a name transition → `isNameTransition` misses it) fires a **spurious mid-frontage corner** — a
+  pad/fillet where the eye sees a straight run. Map-wide, that's the plain-block fragmentation.
+- **The `[kind]` fix:** carry the node `[kind]` (from `ribbons.junctionMap.nodes`, keyed by vertex `at`)
+  onto the emitted tile, and let the corner bid read it: **a run-end is a corner iff it maps to a real
+  node of a corner-bearing kind.** No node → no corner (spurious mid-frontage pad gone). Real node →
+  bid governed by its `[kind]` (`plain` corners, `continuation`/`same-corridor-join` handled per kind).
+
+### 10.3 ⛔ The guardrail — CONSOLIDATE onto E3.3, do NOT build a fifth path
+
+The FILL **already consumes `junctionMap` globally** at `[E3.3] THE CORNER IDENTITIES`
+(`:2187`–`:2710`, gated `consumeJM`). A fresh agent reading §0's *"the polygon never asks the stamp"*
+will build a **redundant** per-tile stamp beside E3.3 — the exact anti-pattern §4.3 forbids (*"replace
+it, don't leave it beside — otherwise we've added a fifth private derivation"*). **The `[kind]` stamp
+must be the vehicle E3.3 already wants, and the four ad-hoc guards (`isThruNode` — one of §3.3's inert
+markers — `isNameTransition`, `through`, `tipped`) collapse INTO the one `[kind]` read, not sit beside
+it.** First executor task is to map how E3.3's node consumption relates to `cornerT`'s run-end bid, and
+route the `[kind]` through the existing seam.
+
+### 10.4 Phase 1 scope — plain-block corner identity ONLY
+
+- **IN:** carry node `[kind]` onto the frozen tile; the `cornerT` run-end bid reads it; the spurious
+  mid-frontage corners on plain blocks stop; the guards it subsumes are removed (not left beside).
+- **OUT (Phase 2, after Jacob's eye on Phase 1):** junction corners / mouths / the divided-median class
+  (§7). Do **not** touch them in Phase 1. Phase 1's win must be visible on **plain blocks, map-wide**.
+
+### 10.5 Acceptance — the eye, then the guards (co-claim RETIRED as a gate)
+
+1. ⭐ **Jacob's eye on :5173, map-wide:** plain-block frontages read as continuous runs — no spurious
+   mid-block pad/fillet, sidewalk/treelawn coherent along a straight frontage. **This is THE gate.**
+2. **Regression floor holds:** junction-band **82 clean** (`correctness-detector.mjs`), cap-sweep **0
+   err** (`cap-sweep.mjs`), authored customs **0 lost / 0 re-keyed** (`cap-fe-key-diff.mjs`).
+3. ⛔ **NOT the co-claim number.** `corner-coclaim.mjs` may be *observed* but it does **not** gate
+   (§9's lesson: it moved 1403→42 with zero visible change).
+4. ⚠️ **Upstream of the Wall** if the `[kind]` is carried at polygonization (`derive.js`/`extractFaces`)
+   — nothing reaches the eye until `node scratch/rebake-shape.mjs`
+   (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`). *"It didn't do anything"* is the first
+   false alarm. If the `[kind]` read lands purely in the FILL (`sectionPassTile`, post-Wall), a reload
+   suffices — the executor confirms which side of the Wall the change sits on and rebakes accordingly.
+
+### 10.6 Mechanics
+
+- **Worktree** under `.claude/worktrees/` (upstream-of-Wall, byte-moves the map — isolate rebake churn
+  from trunk's prod LS; §8.4). **Jacob dispatches a fresh baby; Boz drafted this plan.**
+- **Customs are RESET on LS** (working tree, `*.pre-reset` backup) — raw ribbons visible for the eye.
+- **`25acccf2` is a revert candidate** — the two §9 FILL edits (`+19/-2` in `tileGround.js`) that
+  changed nothing on the eye. It also carries three git-tracked `scratch/` tools; if reverted, back out
+  only the `tileGround.js` hunk and keep the tooling. (Executor's call once Phase 1 lands — the edits
+  may simply be superseded rather than reverted.)
+- **Sequencing (Jacob's call, 2026-07-23):** plain-block identity **first** (this section), junctions
+  **second** — front-load a visible map-wide win, stand up with Jacob before Phase 2.

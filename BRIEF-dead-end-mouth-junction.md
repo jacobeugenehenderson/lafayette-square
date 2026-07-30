@@ -1,6 +1,6 @@
 # BRIEF — the dead-end MOUTH (where the spur meets the through road)
 
-## ⛔ RETIRED 2026-07-22 into `BRIEF-polygon-asks-the-stamp.md` — do NOT dispatch this separately
+## ⛔ RETIRED 2026-07-22 into `cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md` — do NOT dispatch this separately
 
 The mouth is not its own campaign; it is the corner co-claim class seen at a dead end (same signature,
 same magnitude — 0 m² unclaimed, ~15 m² co-claimed per mouth, vs 1400 m² across 243 corners).
