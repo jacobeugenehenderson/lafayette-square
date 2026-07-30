@@ -16,7 +16,7 @@ import BrowseHeader from './components/BrowseHeader'
 import FeatureBoundary from './components/FeatureBoundary'
 import AdminPrompt from './components/AdminPrompt'
 import useGuardianStatus from './hooks/useGuardianStatus'
-import useCamera from './hooks/useCamera'
+import useCamera, { FRAMED } from './hooks/useCamera'
 import useTimeOfDay from './hooks/useTimeOfDay'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
 import useBulletin from './hooks/useBulletin'
@@ -566,11 +566,19 @@ function App() {
   // `?layer=slab` mounts the slab with no Player over it; `?layer=player` the
   // Player with no slab under it. SLAB-CONTRACT.md §0 says the two are separate
   // payloads and that neither imports the other's source; these let an outside
-  // consumer mount either alone. Absent, `layer` is null and nothing changes.
+  // consumer mount either alone.
+  //
+  // Both are FRAMED-ONLY, params and messages alike. Unframed this whole
+  // section is inert and the app is byte-identical to what it was.
   //
   // Hooks live up here, ahead of the route early-returns below, so they are
   // called on every render.
+  // ⚠ FRAMED-only. Unframed, `?layer=` is ignored outright and this is always
+  // null — the layers are an embedding surface, not a public one. On
+  // lafayette-square.com they would only ever show a visitor half an app: a
+  // neighbourhood with no commons, or a commons standing on nothing.
   const [layer, setLayer] = useState(() => {
+    if (!FRAMED) return null
     try { return new URLSearchParams(window.location.search).get('layer') } catch { return null }
   })
   // Which ground the embedding page is on, so the sheet matches its Paper /
