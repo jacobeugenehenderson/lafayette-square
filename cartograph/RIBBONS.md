@@ -225,8 +225,22 @@ The 2D Survey/Section render reads `buildTileGround` live (Survey) or `sectionOp
 ### 6.1 G12 — thin-feature degeneracy ("thorns") — OPEN (PARTIAL)
 When a tile's interior pinches below the band depth `WB = cw+tl+sw`, the inward offsets collapse past the medial axis → degenerate spurs `filletRing` rounds into thorns. **Two subclasses, both open** (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) self-intersecting blobs (the band-fold-fix is STRANDED on a non-ancestor branch); (2) band-neck / partial-degeneracy (the `cap` clamp fires only on FULL collapse; the `thinTile` signal is computed but orphaned). The fix is the **LOCAL** capacity clamp (engage on partial-degeneracy without over-clamping the in-spec rest of the block — `HANDOFF-band-fold-fix.md`). ⛔ **Not** a corner-R clamp. Verify map-wide, zoomed-out, on Jacob's eye (the pulled-in view hides them).
 
-### 6.2 Phantom park[0] from `classify.js:60` — OPEN (data/classification)
-`classify.js:60` stamps `type='park'` on any face whose centroid falls inside a `leisure=park` OR `leisure=garden` overlay. OSM has 245 `leisure=garden` in LS (residential yards) + 3 real parks; first-match-wins centroid test mis-stamps a large polygonization face 'park'. **Fix (~3 LOC):** narrow the `'park'` bucket to actual parks; drop `leisure=garden`. Independent of geometry work.
+### 6.2 Phantom park from `classify.js` — OPEN (data/classification) · ⭐ **MEASURED 2026-07-30, and the prescribed fix was aimed at the WRONG TAG**
+`classify.js:60` stamps `type='park'` on any face whose centroid falls inside a park-stamping overlay, **first match wins** — and the bucket is `leisure=park` **OR `leisure=garden` OR `landuse=grass` OR `landuse=recreation_ground`**. Residential yards therefore capture whole blocks.
+
+**Measured on the current `ribbons.json` + `raw/osm.json` (replaying the classifier's own overlay loop):**
+
+| | |
+|---|---|
+| overlays that stamp `park` | **512 of 895** (258 `landuse=grass` · 249 `leisure=garden` · 4 real parks · 1 recreation_ground) |
+| faces whose first match is a park-stamper | 32 — **31 caught by a residential yard, 1 by a real park** |
+| faces shipping `use='park'` | 29 — **25 phantom** (all via `landuse=grass`), 1 real, 1 no-hit, 2 other |
+| phantom `use='park'` area | **92,869 m²** (the real Lafayette Park face is 122,502 m²) |
+| worst single capture | **face#12, 136,234 m² — the 2nd-largest face on the map — stamped by a 4,899 m² lawn** (its final `use` recovers to `residential`; the `type` stamp does not) |
+
+⛔ **The documented "~3 LOC: drop `leisure=garden`" fix would repair 3 of 28.** The dominant offender is **`landuse=grass`** (28 of the 31 phantom catches; gardens account for 3). Any fix must narrow the bucket to genuine parkland (`leisure=park`, `landuse=recreation_ground`) and drop **grass and garden both** — and grass is the one that matters.
+
+⚠️ **Changing this moves land use map-wide** → re-run prebake, re-bake, and gate on Jacob's eye (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`). Still independent of the geometry work. Reproduce: the attribution replays `classify.js`'s overlay loop against `raw/osm.json`; see the 2026-07-30 session.
 
 ### 6.3 Curb-as-offset residuals — see the correctness suite
 The robust-offset program (D6a) is partial; the RED-until-true detector (`scratch/correctness-detector.mjs`) + `POLYGON-FIRST.md §5` gate the curve-fit cleanliness + corner-roundness. Live state in `BACKLOG.md`.
