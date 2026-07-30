@@ -280,15 +280,49 @@ input, textarea, select {
   }
   .search-drawer-rail:active { cursor: grabbing; }
 
-  .search-drawer-pill {
+  /* ── The mark ──────────────────────────────────────────────────
+     Shared, deliberately: the search drawer pulls DOWN out of the ticker and
+     the panel puts itself away DOWN to its tabs. One gesture to learn, so one
+     rule — two copies would drift the moment either was touched.
+
+     Only the MARK is shared. Its rail is not: the search drawer's is a row of
+     its own above the drawer, while the panel's floats over the tab bar,
+     because a full-width row there reads as a fourth bar rather than a handle
+     on the three. */
+  .search-drawer-pill,
+  .panel-pill {
     width: 24px;
     height: 2px;
     border-radius: var(--radius-full);
     background: var(--on-surface-subtle);
     transition: background 0.15s;
   }
-  .search-drawer-rail:hover .search-drawer-pill {
+  .search-drawer-rail:hover .search-drawer-pill,
+  .panel-rail:hover .panel-pill,
+  .panel-rail:focus-visible .panel-pill {
     background: var(--on-surface-variant);
+  }
+
+  /* Nothing here may paint. The mark is the only visible thing — this is a hit
+     target sitting over the top edge of the tab bar, wide enough to grab and
+     narrow enough to leave the tabs clickable either side of it. */
+  .panel-rail {
+    position: absolute;
+    /* No `top`. The component sets `bottom` from the live panel height; a
+       leftover `top: 0` wins over it and pins the mark to the top of the
+       screen. */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    width: 64px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
   }
 
   .search-drawer {
