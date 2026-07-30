@@ -109,7 +109,8 @@ streets/chains/ribbons — so a Section surface *physically cannot reach back*. 
 holds. **But it only guarantees no consumer can reach the chain; it says nothing about whether the
 artifact IS one.** And at a dead end, it is: the face freeze walks the spur **out and back over the same
 vertices**, so the ring is the traversal. **46 of 49 LS dead-end tips are zero-width slits**
-(`scratch/coupler-slit-universal.mjs`); 40 only *look* right because the FILL-layer mouth-wrap snap
+(`scratch/coupler-slit-universal.mjs` — ⚠️ runs **only from the `polygon-asks-stamp` worktree**; on trunk it
+prints a silent, lying `0`, see `POLYGON-FIRST §2.1`); 40 only *look* right because the FILL-layer mouth-wrap snap
 displaces `run.poly` off the ring by up to 13 m. Section then consumed a chain trace through a chain-free
 API, and every dead-end mechanism — inverted `side`, the synthetic cap fe, the mouth disc — is a consumer
 rebuilding the polygon that was never made.

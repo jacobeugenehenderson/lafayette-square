@@ -231,6 +231,10 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > `south-18th-street-3` those two visits are the bit-identical coordinate `(386.30, 149.10)`
 > (`ring[2]` ≡ `ring[4]`, `scratch/coupler-slit-anatomy.mjs`):
 >
+> ⚠️ **Every `coupler-*.mjs` on this page runs only from the `polygon-asks-stamp` worktree** — they read
+> Slice-1 fields absent on trunk, where they print a silent, lying `0`. **Do not copy them over**;
+> the full note is `POLYGON-FIRST §2.1`.
+>
 > | mouth vertex | incoming → outgoing | corner? |
 > |---|---|---|
 > | 1st pass | `kennett-place` → `south-18th-street-3` | ✅ different streets |

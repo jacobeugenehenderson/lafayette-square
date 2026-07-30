@@ -51,6 +51,20 @@ the eye:
 LS dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or an
 equivalent. Checks 1–2 are already computed by `scratch/coupler-slit-universal.mjs`; **target 0**.
 
+> ⚠️⚠️ **WHERE THE PROBES LIVE — NOT on trunk (verified 2026-07-30, Boz).** Every `scratch/coupler-*.mjs`
+> cited on this page lives on branch/worktree **`polygon-asks-stamp`** (`.claude/worktrees/polygon-asks-stamp/`),
+> and each reads **Slice-1 fields that do not exist on trunk** (`run.foldBranch`, `run.walkOrd`,
+> `buildFoldWalkIndex`). **Run them from that worktree.**
+>
+> ⛔ **Do NOT copy them onto trunk to make the citation resolve.** There they do not fail loudly — they lie:
+> `coupler-slit-anatomy.mjs` prints **nothing** (its `foldBranch` filter matches no run), `coupler-slit-universal.mjs`
+> prints **`0 slits / 0 width / 0 mouth discs`**, and only `coupler-fe-coverage.mjs` throws. A silent `0` on a
+> slit census reads as *"no defect"* — the exact opposite of the truth this page is built on. *(Tried and
+> undone on 2026-07-30; this note is the residue.)*
+>
+> A trunk-runnable Check 1–2 harness needs only the frozen ring + its edge chain labels — Slice 1 is not
+> required for it — but **it does not exist yet.** Until it does, the gate runs from the worktree.
+
 ### ⭐⭐⭐ Check 5 is the diagnosis — the missing piece is the CORNER (Jacob, 2026-07-30)
 
 A corner is built where **two different streets meet** (`cornerAt(a,b)` = real corner iff `a !== b`,
