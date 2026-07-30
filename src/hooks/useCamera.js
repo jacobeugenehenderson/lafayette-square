@@ -2,11 +2,27 @@ import { create } from 'zustand'
 import useLandmarkFilter from './useLandmarkFilter'
 import useSelectedBuilding from './useSelectedBuilding'
 
+// Embed anchor. Framed, the panel starts COLLAPSED — down to its three-part
+// bar, with the neighbourhood showing behind it.
+//
+// Someone arriving at lafayette-square.com came for the commons, so the panel
+// opens on it. Someone meeting this in a frame on somebody else's page did
+// not: they came for whatever that page is about, they will give it a few
+// seconds, and what they should see first is the place. The bar is still
+// right there to open.
+//
+// Reading `window.top` across a cross-origin parent can throw, so it is
+// guarded — and a throw means we ARE framed. Unframed, nothing changes.
+function isFramed() {
+  try { return window.self !== window.top } catch { return true }
+}
+const FRAMED = typeof window !== 'undefined' && isFramed()
+
 const useCamera = create((set, get) => ({
   viewMode: 'hero',       // 'hero' | 'browse' | 'planetarium'
   previousMode: 'hero',
-  panelState: 'neutral',       // 'collapsed' | 'neutral' | 'browse' | 'full'
-  panelOpen: true,          // derived compat — false only when collapsed
+  panelState: FRAMED ? 'collapsed' : 'neutral',  // 'collapsed' | 'neutral' | 'browse' | 'full'
+  panelOpen: !FRAMED,       // derived compat — false only when collapsed
   panelCollapsedPx: 0,
   activeTab: 'almanac',     // 'almanac' | 'bulletin' | 'lafayettepages'
   azimuth: 0,
