@@ -16,7 +16,9 @@ import useSelectedBuilding from './useSelectedBuilding'
 function isFramed() {
   try { return window.self !== window.top } catch { return true }
 }
-const FRAMED = typeof window !== 'undefined' && isFramed()
+// Exported because it is the gate on the whole embed surface, and there must be
+// exactly one answer to "are we framed?" in the app.
+export const FRAMED = typeof window !== 'undefined' && isFramed()
 
 const useCamera = create((set, get) => ({
   viewMode: 'hero',       // 'hero' | 'browse' | 'planetarium'

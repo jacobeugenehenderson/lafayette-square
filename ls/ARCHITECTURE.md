@@ -293,8 +293,15 @@ additive: absent the params and the frame, the app is byte-identical.
 | `?layer=player` | the commons, no slab beneath | `.embed-sheet` laid over the scene |
 | *(absent)* | both — what the public sees | unchanged |
 
-`layer` is **state**, not a read-once const: the URL param seeds it (and serves
-direct links), and a `message` listener switches it live. Switching must not
+**Both are framed-only.** Unframed, `?layer=` is ignored outright and `layer`
+is always null — these are an *embedding* surface, not a public one. On
+lafayette-square.com they would only ever show a visitor half an app: a
+neighbourhood with no commons, or a commons standing on nothing. The gate is
+`FRAMED`, exported from `useCamera` so there is exactly one answer in the app
+to "are we framed?".
+
+`layer` is **state**, not a read-once const: the param seeds it, and a
+`message` listener switches it live. Switching must not
 change the frame's `src` — a reload rebuilds the WebGL context and resets the
 camera, which turns three layers into three unrelated pictures. The listener
 only binds when framed, and also carries `ground` (`paper` | `plate`) so the
