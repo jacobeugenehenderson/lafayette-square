@@ -20,11 +20,6 @@
     <script>
       // Apply accessible class before first paint to avoid CSS repaint spike
       try { if (localStorage.getItem('lsq-accessible') === '1') document.documentElement.classList.add('accessible') } catch(e) {}
-      // Embed anchor: `?layer=player` mounts the Player with no slab under it,
-      // so the page doing the embedding provides the ground. Stamped here
-      // rather than from React so there is no flash of the app's own colour
-      // before an effect could run. See src/index.css.
-      try { if (/[?&]layer=player\b/.test(location.search)) document.documentElement.classList.add('layer-player') } catch(e) {}
     </script>
     <script>
       // SPA path restoration for GitHub Pages 404.html redirect

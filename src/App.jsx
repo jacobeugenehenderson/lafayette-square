@@ -573,6 +573,10 @@ function App() {
   const [layer, setLayer] = useState(() => {
     try { return new URLSearchParams(window.location.search).get('layer') } catch { return null }
   })
+  // Which ground the embedding page is on, so the sheet matches its Paper /
+  // Plate switch. Plate by default: a direct ?layer=player link has no page to
+  // ask, and this app is dark.
+  const [ground, setGround] = useState('plate')
 
   // A framed consumer switches layers by postMessage, NOT by changing our src.
   // Reloading would rebuild the WebGL context and reset the camera — which is
@@ -584,18 +588,11 @@ function App() {
       const m = e.data
       if (!m || m.type !== 'ward-layer') return
       setLayer(m.layer === 'slab' || m.layer === 'player' ? m.layer : null)
+      if (m.ground === 'paper' || m.ground === 'plate') setGround(m.ground)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [])
-
-  // With no slab under it the Player stands on the embedding page's ground, so
-  // we must not paint our own. The class drives it from src/index.css rather
-  // than an inline style, and follows the live switch. index.html stamps the
-  // same class before first paint for a direct ?layer=player link.
-  useEffect(() => {
-    document.documentElement.classList.toggle('layer-player', layer === 'player')
-  }, [layer])
 
   if (route.page === 'checkin') {
     return <CheckinPage locationId={route.locationId} />
@@ -623,14 +620,26 @@ function App() {
   return (
     <div className="w-full h-full relative">
       <ClockCalendarPump mode="live" />
-      {/* Scene is mounted for EVERY layer, including `player`, and hidden by CSS
-          when it is not wanted. Unmounting it would tear down the WebGL context
-          and rebuild it on the way back — a reload by another name, resetting
-          the camera and losing the continuity that makes these layers a stack
-          rather than three pictures. Hide, do not strip. It also keeps
-          `WeatherPoller` alive, so the Player's Almanac still has a
-          temperature. See `html.layer-player canvas` in src/index.css. */}
+      {/* ⚠ Do NOT pause the scene for the player layer. `data-scene-pause` was
+          tried here — Scene's own contract, and the obvious saving, since the
+          slab is behind an opaque sheet. It made things WORSE: going idle is
+          exactly what makes Chrome drop the WebGL surface, so the switch back
+          still cost a 4.3s blocked frame. Left rendering, it stays hot and the
+          switch is free. The slab costs what the composite costs, which is the
+          price already being paid. Do not "optimise" this back in. */}
+
+      {/* Scene is mounted for EVERY layer and NEVER hidden. Unmounting tears
+          down the WebGL context; hiding it — by any means, visibility/display/
+          opacity — makes Chrome drop the surface, and restoring it costs one
+          blocked frame of 5–12 SECONDS. Measured on production too, so it is
+          not a dev artifact. The slab therefore keeps rendering and the sheet
+          below is laid OVER it. Staying mounted also keeps WeatherPoller
+          alive, so the Player's Almanac has a temperature. */}
       {!adminPromptOpen && splashReady && <SceneBoundary><Scene /></SceneBoundary>}
+
+      {/* The ground the commons stands on once the slab is not showing: over
+          the scene, under every piece of chrome. See .embed-sheet. */}
+      {layer === 'player' && <div className="embed-sheet" data-ground={ground} aria-hidden="true" />}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && moduleOn('bulletin') && <BulletinOpener />}
       {/* cary routes now render standalone — see CaryStandalone above (gated on modules.delivery) */}
