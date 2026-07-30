@@ -289,18 +289,32 @@ input, textarea, select {
      its own above the drawer, while the panel's floats over the tab bar,
      because a full-width row there reads as a fourth bar rather than a handle
      on the three. */
+  /* Both marks sit on the SCENE, whose brightness runs from a noon sky to a
+     night street, so a fixed tint cannot work: at 40% white the handle
+     disappeared against a bright sky.
+
+     Blend modes were the obvious answer and are not available — `difference`
+     and `exclusion` both render as flat white here, because the mark is over a
+     WebGL canvas on its own compositing layer and there is no backdrop to
+     blend with. Tested, not assumed.
+
+     So the mark carries its own contrast instead: opaque enough to hold
+     against a bright sky, with a dark halo that only shows where the backdrop
+     is light. Same outcome as being background-aware, without depending on
+     blending. */
   .search-drawer-pill,
   .panel-pill {
     width: 24px;
     height: 2px;
     border-radius: var(--radius-full);
-    background: var(--on-surface-subtle);
+    background: var(--on-surface-variant);
+    filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.9));
     transition: background 0.15s;
   }
   .search-drawer-rail:hover .search-drawer-pill,
   .panel-rail:hover .panel-pill,
   .panel-rail:focus-visible .panel-pill {
-    background: var(--on-surface-variant);
+    background: var(--on-surface);
   }
 
   /* Nothing here may paint. The mark is the only visible thing — this is a hit
