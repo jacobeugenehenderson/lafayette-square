@@ -223,7 +223,42 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > and it is not a Section defect**: the face freeze never closes a polygon at a dead end. **46 of 49 tips
 > are zero-width slits**; the **40** that look right are held together by the mouth-wrap snap (a FILL-layer
 > patch), and the **9** without a mouth disc are exactly where the eye fails — South 18th among them.
-> A leg with no interior on one side has **nothing to click**, which is the unresponsive tail measured here.
+>
+> ### ⭐⭐⭐ SHARPENED 2026-07-30 (Jacob) — the missing piece is **THE CORNER**
+>
+> A corner is built where **two different streets meet** (`cornerAt(a,b)` = corner iff `a !== b`,
+> `RIBBONS §1`). The doubled-back ring visits the spur's mouth vertex **twice** — and on
+> `south-18th-street-3` those two visits are the bit-identical coordinate `(386.30, 149.10)`
+> (`ring[2]` ≡ `ring[4]`, `scratch/coupler-slit-anatomy.mjs`):
+>
+> | mouth vertex | incoming → outgoing | corner? |
+> |---|---|---|
+> | 1st pass | `kennett-place` → `south-18th-street-3` | ✅ different streets |
+> | 2nd pass | `south-18th-street-3` → `south-18th-street-3` | ❌ **same street both sides** |
+>
+> ⇒ **A dead-end spur gets a corner on ONE side of its mouth and NONE on the other.** A leg is normally
+> bounded **corner-to-corner** — that boundary is what makes "select this leg" a region, what stops an edit
+> at the leg's end, and what tells the cap/mouth machinery where they sit. One leg is therefore bounded and
+> the other is an unbounded run-through, which is exactly this class's triad: **the edit lands on a SEGMENT
+> not the LEG** (no far corner to fan to) · **the partner flips** (same line, sides labelled from walk
+> direction ⇒ inverted 34/34) · **the neighbouring corner and cap move** (with no second mouth corner, the
+> mouth *patch* is defining them).
+>
+> ⭐ **Why the coupler could not finish it, and why that is not its failure:** the walk-ordinal key gave the
+> two legs distinct, correct names, fully gated. **But naming a thing does not give it edges.** It fixed
+> *which leg you mean*; it could not fix *where that leg starts and stops*, because there was no second
+> mouth corner to couple to — which is why the eye still saw all three defects on South 18th *after* it
+> landed. Read "workaround" as *solved the naming half*, **not** as *wrong idea*.
+>
+> ⚠️ **CORRECTION to the paragraph above — "nothing to click" over-generalises.**
+> `scratch/coupler-fe-coverage.mjs`: **191 of 198 dead-end walk slots DO have a clickable frontage edge;
+> only 7 do not** (all 7 have an fe on the opposite side). The unresponsive tail is real but is the
+> *minority* symptom. **The dominant defect is BOUNDING, not EXISTENCE.**
+>
+> ⭐ **The test for any proposed fix: does it CREATE THE SECOND MOUTH CORNER?** A notch (road-with-width
+> subtracted from the disc) does — two genuine mouth corners, one per side, plus a real end — so every leg
+> is bounded `corner → cap` like any other leg on the map. If a proposal does not create that corner, it is
+> another way of managing the absence.
 >
 > ⛔ **Nothing in this section can fix it.** An addressing scheme was built for it (a side-free
 > walk-ordinal key, branch `polygon-asks-stamp`) — measured, gated, and **retired**: it re-derives identity

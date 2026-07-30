@@ -45,14 +45,45 @@ the eye:
 | 2 | **no ring vertex whose two adjacent edges carry the same chain on opposite sides** | the slit test — `detectTileCaps`' criterion inverted from a feature into a violation |
 | 3 | every frontage edge has an **interior on exactly one side** | `side` is undefined there; every consumer keyed on it is guessing |
 | 4 | **no real feature described by a patch** (synthetic negative-`segOrd` cap fe, mouth disc) | a polygon that didn't close, wearing a cover |
+| 5 ⭐ | **every dead-end spur presents TWO mouth corners — one per side** — so each leg is bounded `corner → cap` | ⭐ **THE ONE THAT MATTERS.** One leg is bounded and the other runs through unbounded: you can *name* that leg but you cannot *bound* it |
 
 ⚠️ **This is a gate to MAKE green, not a regression test that passes today: it currently fails on 46 of 49
 LS dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or an
 equivalent. Checks 1–2 are already computed by `scratch/coupler-slit-universal.mjs`; **target 0**.
 
-⭐ Why it earns its cost: it would have failed at the freeze on 2026-07-24, *before* a coupler was
-designed, a walk-ordinal key built, and an evening spent clicking dead-end legs that had no interior to
-click. Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md`**.
+### ⭐⭐⭐ Check 5 is the diagnosis — the missing piece is the CORNER (Jacob, 2026-07-30)
+
+A corner is built where **two different streets meet** (`cornerAt(a,b)` = real corner iff `a !== b`,
+`RIBBONS §1`). Walk a dead-end spur's mouth vertex — which the doubled-back ring visits **twice** — and
+apply that rule (`south-18th-street-3`, `scratch/coupler-slit-anatomy.mjs`; `ring[2]` and `ring[4]` are
+bit-identical):
+
+| mouth vertex | incoming → outgoing | corner? |
+|---|---|---|
+| 1st pass | `kennett-place` → `south-18th-street-3` | ✅ different streets |
+| 2nd pass | `south-18th-street-3` → `south-18th-street-3` | ❌ **same street both sides** |
+
+⇒ **One mouth corner is built; the other is not.** The rule is not malfunctioning — at a doubled-back spur
+the second mouth genuinely *is not* two streets meeting. But a leg is normally bounded **corner-to-corner**,
+and that boundary is what makes "select this leg" a region, stops an edit at the leg's end, and tells the
+cap/mouth machinery where they sit. With a corner on one side and none on the other, one leg is a bounded
+piece and the other is an unbounded run-through — which is precisely the *edit lands on a segment, not the
+leg* · *partner flips* · *neighbouring corner and cap move* triad (`SECTION §6.3`).
+
+⭐ **Why the addressing fixes could not finish it:** the walk-ordinal coupler gave the two legs distinct,
+correct names, fully gated — but **naming a thing does not give it edges.** It fixed *which leg you mean*;
+it could not fix *where that leg starts and stops*, because there was no second mouth corner to couple to.
+
+> ⭐ **The one-line test for any proposal: DOES IT CREATE THE SECOND MOUTH CORNER?** If not, it is another
+> way of managing the absence, and it will fail on the eye exactly as the previous three passes did.
+
+⚠️ **Do not over-read this as "there is nothing to click."** `scratch/coupler-fe-coverage.mjs`: **191 of 198
+dead-end walk slots DO have a clickable frontage edge; only 7 do not.** The dominant defect is **bounding,
+not existence** — aim at the missing corner, not at a missing surface.
+
+⭐ Why the gate earns its cost: it would have failed at the freeze on 2026-07-24, *before* a coupler was
+designed, a walk-ordinal key built, and an evening spent clicking dead-end legs that could be named but not
+bounded. Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md` §C0**.
 
 ---
 
