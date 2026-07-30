@@ -14,6 +14,7 @@ import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
 import BrowseHeader from './components/BrowseHeader'
 import FeatureBoundary from './components/FeatureBoundary'
+import WeatherPoller from './components/WeatherPoller'
 import AdminPrompt from './components/AdminPrompt'
 import useGuardianStatus from './hooks/useGuardianStatus'
 import useCamera from './hooks/useCamera'
@@ -576,14 +577,39 @@ function App() {
   if (route.page === 'terms-restaurant') return <RestaurantTermsPage />
   if (route.page === 'cary' && moduleOn('delivery')) return <CaryStandalone />
 
-  const isGround = window.location.search.includes('ground')
+  // ── Embed anchors ────────────────────────────────────────────────────────
+  // `?layer=slab`   — the slab, with no Player over it.
+  // `?layer=player` — the Player, with no slab under it.
+  //
+  // SLAB-CONTRACT.md §0 says the slab and the reader are separate payloads and
+  // that neither imports the other's source. These two params are that claim
+  // made watchable: each layer served on its own URL, so an outside consumer
+  // can mount either one alone. Added for the jacobhenderson.studio embed,
+  // which shows all three states side by side.
+  //
+  // Absent, both are null and nothing changes — this is additive only.
+  //
+  // NOT `?ground`. That is a narrower, older thing: `Scene.jsx`'s own
+  // `IS_GROUND` reads the URL independently and strips trees, buildings,
+  // lamps, the arch and post-FX to leave bare ground. `layer=slab` reuses this
+  // component's chrome gate WITHOUT tripping that one, so the slab arrives
+  // whole. Do not merge the two.
+  const layer = new URLSearchParams(window.location.search).get('layer')
+  const isGround = window.location.search.includes('ground') || layer === 'slab'
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
   const splashReady = useSplashReady()
 
   return (
     <div className="w-full h-full relative">
       <ClockCalendarPump mode="live" />
-      {!adminPromptOpen && splashReady && <SceneBoundary><Scene /></SceneBoundary>}
+      {!adminPromptOpen && splashReady && layer !== 'player' && <SceneBoundary><Scene /></SceneBoundary>}
+      {/* The Almanac's temperature comes from `WeatherPoller`, which normally
+          rides inside `Scene`. With the slab out from under it the Player kept
+          its clock and its sky but read `--°F`. The poller is pure — one
+          `useEffect`, returns null, no R3F hooks — so it mounts perfectly well
+          on its own. Only for the player layer; everywhere else `Scene` still
+          owns it and mounting twice would double the polling. */}
+      {layer === 'player' && <WeatherPoller />}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && moduleOn('bulletin') && <BulletinOpener />}
       {/* cary routes now render standalone — see CaryStandalone above (gated on modules.delivery) */}
