@@ -56,12 +56,16 @@ body {
 
   /* ⚠ MUST stay below 1. A fully opaque sheet is occlusion-culled by Chrome
      exactly as if the canvas were hidden: it goes idle, the WebGL surface is
-     dropped, and coming back costs a 5.6s blocked frame. Two percent of
-     transparency keeps the canvas composited and the switch instant —
-     measured, same cycle: 5624ms opaque vs 224ms at 0.98. The slab ghosts
-     through at 2%, which is invisible in practice and true besides: it is
-     still there, under the sheet. Do not round this up to 1. */
-  opacity: 0.98;
+     dropped, and coming back costs a 5.6s blocked frame. Leaving the canvas
+     partly composited keeps the switch instant — measured, same cycle:
+     5624ms opaque vs 224ms at 0.98.
+
+     0.95 rather than the 0.98 that first fixed it. At 2% the slab ghosting
+     through read as a smudge; at 5% it reads as intent — the neighbourhood
+     is still there under the sheet, and saying so is the argument the piece
+     makes. Lower is also further from the culling threshold, so this is the
+     safer number as well as the better-looking one. Do not round it to 1. */
+  opacity: 0.95;
 
   --g-bg: #2A2E30;
   --g-minor: #373C3F;
