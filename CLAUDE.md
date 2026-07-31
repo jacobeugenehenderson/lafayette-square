@@ -8,6 +8,48 @@ When Jacob summons you at day's start by the name **"Pip"**, read **`PIP.md`** a
 
 ---
 
+## ⛔⛔ LAYER 0 — WHAT WE ARE BUILDING. Answer this before you route, every time.
+
+> **We are building a KIT that pours neighborhoods. We are not fixing Lafayette Square.**
+> LS is the **first one off the line** and the **mould the kit was cast around** — which makes it
+> the most misleading thing in the repo. Almost every doc, probe and defect below is written in LS
+> proper nouns; that is a *sampling artifact of it being first*, not the subject of the work.
+
+**The deliverable for any defect is the METHOD that catches its whole class in a town nobody has
+looked at** — *"that checker is the real prize"* (`ORIENTATION.md`). A fix that needed an operator
+to have already seen this street has delivered nothing to town #2.
+
+### The two questions. Say the answers out loud before proposing anything.
+
+1. **"What does this do for town #2?"** If the answer requires a human who has already looked at
+   the specific street, it is not a fix — it is an instance patch wearing a method's clothes.
+   ⛔ A **skip list**, an enumerated exception table, a per-street override, "I measured it on LS
+   and it's better" — each fails this and each has shipped here before.
+2. **"What happens when this is WRONG on a town nobody has inspected?"** The only acceptable
+   answer is *it fails loudly*. ⛔ **NO FALLBACKS.** A fallback converts a failure into a
+   plausible-looking success, and a plausible-looking success in a kit is the worst outcome there
+   is — the operator sees a map and never learns it is wrong. Silence is the defect.
+
+> ⭐ **Most questions you want to ask Jacob are already answered by these two.** "Skip list or
+> handle the class?" — it's a kit; handle the class. "This method or that one?" — one method, not
+> two. Asking him to re-decide what the purpose already settles is outsourcing comprehension, and
+> he has to spend the day re-teaching the premise instead of doing the work. **Read Layer 0, then
+> decide.**
+>
+> ⚠️ **This is not new and not optional. It is stated in `ORIENTATION.md`'s first paragraph.** It
+> lives here because being *read* at 9am did not stop a full day being spent on LS-specific
+> patches with an exception table at the end (2026-07-31). The purpose has to be *used*, not
+> absorbed.
+
+**The standing evidence that this is real, not rhetoric:** `measureModel.js` seeds street widths in
+**every scene** from LS's `ribbons.json`, keyed by street NAME — so **24 Altadena streets silently
+inherit St. Louis measurements** (incl. Allen Ave, Iowa Ave), and every town collides on the
+auto-generated `motorway_link N`. Both Polish pours show **0** collisions, so the defect is
+invisible in exactly the scenes you would reach for to prove the kit travels. That is what a
+fallback costs. (Measured 2026-07-31; open — `ROADMAP` A-tier.)
+
+---
+
 ## Before you diagnose, run a forensic, or edit ANY topic — ROUTE FIRST
 
 > ⛔ **Fires on EVERY topic you engage — including one that surfaces mid-session or feels like Jacob redirecting you.** A felt "new topic" is most often *you drifting off the plan*, not a real change of plan: route to the canon FIRST and it pulls you back. (2026-06-13 — the session "changed topics" repeatedly; every time, *"is this chains again?"* showed it was the **same** plan — a return, not a redirect — and the day was lost patching downstream before re-routing.) When the topic shifts, you do **not** skip the route; you re-run it for the new topic before touching anything. **Documentation first, every time, period.**

@@ -29,6 +29,13 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 
 ---
 
+> ⛔ **KIT READING (applies to every count and every street name in this document).** The numbers
+> below — 50 dead ends, 9 of these, 6 of those, `south-18th-street-3` — are **the first town's
+> sample**, not the work item. The work item is the **method that finds this class anywhere**, and
+> the **check that fails the bake when it doesn't** (`ORIENTATION`: *"that checker is the real
+> prize"*). ⛔ An enumerated list of the cases a method could not handle is **not** a result; it is
+> the method admitting it isn't one. `CLAUDE.md` **Layer 0**.
+
 ## 2.1 ⭐⭐ POLYGONS ONLY at the Section tools — the content wall (2026-07-25, Jacob)
 
 > **"An absolute datawall rule where we are *polygons only* by the time we get to the Section tools."**

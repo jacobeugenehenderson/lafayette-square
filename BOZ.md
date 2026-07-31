@@ -6,6 +6,73 @@ This is the coordinator's operating doc: who coordinates, how the docs are organ
 
 ---
 
+## 0.0 ⭐⭐ LEVEL SET — read before you coordinate anything (written 2026-07-31, after a lost day)
+
+**Boz: the thing you are coordinating is a KIT. It is not Lafayette Square.**
+
+LS is the first neighborhood off the line and the mould the kit was cast around. That makes it the
+most misleading object in the repo, because **the entire corpus is written in its proper nouns** —
+`south-18th-street-3`, `park-avenue-1`, "LS's 50 dead ends." Those are a *sampling artifact of LS
+being first*. They are not the subject. The subject is the method, and the method's real deliverable
+is **the automatic check that catches the class in a town nobody has looked at** — *"that checker is
+the real prize"* (`ORIENTATION`).
+
+### Why this note exists
+
+On 2026-07-31 an agent read `ORIENTATION`'s first paragraph — *"a kit for pouring 3D
+neighborhoods… the next neighborhood pours from the same kit"* — and then spent a full day producing
+LS-specific geometry fixes that ended in **a skip list of nine named dead ends**. On town #2 that
+list means nothing: different streets, same class, nobody there to enumerate them. Jacob had to stop
+the work and say *"this is a kit"* out loud.
+
+**The failure was not ignorance. The purpose was read and then not used.** That is the specific
+thing you must not repeat, and it is why `CLAUDE.md` now opens with **Layer 0** — the purpose
+restated as two questions that can *fail*, ahead of routing:
+
+1. **What does this do for town #2?** If the answer needs an operator who has already seen that
+   street, it is an instance patch wearing a method's clothes.
+2. **What happens when this is wrong on a town nobody inspected?** The only acceptable answer is
+   *it fails loudly*. **No fallbacks.**
+
+### The rule that generalizes both — SILENT SUBSTITUTION IS THE DEFECT
+
+A fallback converts a failure into a **plausible-looking success**, and for a kit that is the worst
+outcome available: the operator sees a map and trusts it. Jacob, 2026-07-31: *"There should be no
+fallback; it would help exactly 0 to have a failed neighborhood loading to fall back to Lafayette
+Square."*
+
+The same day produced four more instances of the identical shape, and you should recognise the
+family on sight:
+
+| what stood in silently | what it hid |
+|---|---|
+| `measureModel.js` seeds widths in EVERY scene from LS's ribbons, keyed by street NAME | **24 Altadena streets inherit St. Louis measurements**; both Polish pours collide on 0, so it is invisible in exactly the scenes used to prove the kit travels |
+| `SCENE = env \|\| DEFAULT_SCENE` | every build silently became LS — a whole day spent building a scene the operator wasn't viewing |
+| a committed artifact that a fresh pipeline run doesn't reproduce | "stale" was a *judgement*; re-deriving and promoting over it destroyed the operator's map |
+| a skip list of nine unhandled cases | made an ~80% method look finished |
+
+Each one substituted something plausible for the real thing instead of failing. **When you see a
+`||` default, an exception table, or a "falls back to", you are looking at this family.**
+
+### What this means for how you coordinate
+
+- **Do not ask Jacob what the purpose already decides.** "Skip list or handle the class?" — it's a
+  kit; handle the class. "This method or that one?" — one method, not two. Asking him to re-decide
+  settled premises makes him re-teach the project instead of doing the work, and he experiences it —
+  correctly — as not understanding what we're doing. Read Layer 0, then decide.
+- **Instance names in canon carry a kit meaning.** When a doc says "LS has 50 dead ends," brief it
+  as *"50 in the first town — the method must find them anywhere."* Add that clause when you touch a
+  doc; `POLYGON-FIRST §2` has the pattern.
+- **A measurement on LS is not evidence the method works.** It is evidence it works *here*. The
+  gates that matter are the ones that would fire on a town you have never seen.
+- **Verify the artifact the OPERATOR is looking at**, not the one you produced — scene, flag state,
+  and browser cache included. All three diverged on 2026-07-31.
+
+⛔ Nothing in this note is new doctrine. All of it was already written in `ORIENTATION.md`. It is
+here because being *written* was not enough, and it is your job to make sure it is *used*.
+
+---
+
 ## 0. THE ENTRY KEY — the Suite at a glance (read this to *use* the library)
 
 > The docs are a **large, studious pile** — large *because* we keep everything, never because we're sloppy. The pile becomes a **navigable golden Suite** only by one discipline: **every topic is documented across every register, a little at a time as we touch it, and nothing is ever deleted — only moved.** This section is the key that makes the pile legible. (The *who/why* of coordinating is §1; the *kinds* are §2; the *maintenance gate* is §3; the *find-path* is §4. This §0 is the one-glance legend over all of them.)
