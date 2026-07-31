@@ -27,6 +27,32 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys } from '../src/lib/tileGround.js'
+import { assertSpurOutlines } from './spurOutline.js'
+
+// Which asserted spurs failed to bound a face? A face that walks the SAME curb stroke
+// from BOTH sides has walked out and back around a dangling outline — the landings never
+// spliced, so the outline floats inside that face instead of bounding it. Identity-based
+// (the stroke's own tag), no geometry test.
+function unclosedSpurs(faces, faceStreets) {
+  const bad = new Set()
+  for (const f of faces) {
+    const seen = new Map()
+    for (const e of f.edges) {
+      const fs = faceStreets[e.streetIdx]
+      if (!fs?.spurSide) continue
+      const prev = seen.get(e.streetIdx)
+      if (prev && prev !== e.side) bad.add(fs.spurOf)
+      seen.set(e.streetIdx, e.side)
+    }
+  }
+  return bad
+}
+
+// ⭐ Assert dead-end spurs as width-bearing outlines BEFORE polygonization
+// (`spurOutline.js`). Opt-in while it proves out: this is the THIRD pass at the dead-end
+// face and a prior fix landed and was reverted (`28f88566` → `dd4ddb6d`), so the two
+// constructions must stay A/B-comparable from one flag rather than one being archaeology.
+const SPUR_OUTLINE = process.argv.includes('--spur-outline') || process.env.SPUR_OUTLINE === '1'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -3892,6 +3918,29 @@ export function deriveLayers(highways) {
     const corOf = (s) => s.phase?.corridorName || s.name
     const isCw = (s) => /^carriageway/.test(s.phase?.role || '')
 
+    // A chain endpoint of degree 1 is a DEAD END only if it lies INSIDE the
+    // neighborhood boundary. The street network extends past the boundary
+    // (frame extent ≫ silhouette radius), so most degree-1 endpoints are the
+    // ENVELOPE CUT, not a dead end — 42 of LS's 94. Measured 2026-07-30: the
+    // 52 inside contain all 50 frozen `tiles[].caps` with zero misses (the 2
+    // extra are south-18th-street-4's ends — a disconnected interior stub that
+    // bounds no face, so it caps nowhere; a genuine tip all the same).
+    // Chain-only, evaluated BEFORE the face walk exists — the stamp must not
+    // read the ring it is supposed to predict.
+    const insideBoundary = (() => {
+      const bp = boundaryPolyXZ
+      if (!bp || bp.length < 3) return () => true
+      const bn = bp.length
+      return (px, pz) => {
+        let inside = false
+        for (let i = 0, j = bn - 1; i < bn; j = i++) {
+          const xi = bp[i][0], zi = bp[i][1], xj = bp[j][0], zj = bp[j][1]
+          if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside
+        }
+        return inside
+      }
+    })()
+
     const noseByEnd = new Map()
     for (const r of noseRecs) noseByEnd.set(`${r.idx}|${r.end}`, Math.round(r.nose * 100) / 100)
 
@@ -4140,17 +4189,25 @@ export function deriveLayers(highways) {
       }
     }
 
-    // ── Source 6: pendant tips with L↔R asymmetry — the tip itself is the
-    // continuity point (the butt cap wraps one curb into the other; a width
-    // step there is the SAME-STREET step family).
+    // ── Source 6: PENDANT TIPS — every dead end, not just the lopsided ones.
+    // The tip itself is the continuity point (the butt cap wraps one curb into
+    // the other).
+    //
+    // ⚠️ This source used to gate on `Math.abs(L - R) >= 0.5` — it stamped a tip
+    // only where the chain's left/right pavement half-widths DIFFER. It was
+    // written as a width-step detector and given the tip's name, so it covered
+    // 15 of the 50 frozen caps while stamping 14 boundary cuts that are not dead
+    // ends at all (measured 2026-07-30; the same name-vs-function slip as
+    // `detectTileCaps`, POLYGON-FIRST §2.1). The width step is still readable off
+    // `measure` — nothing is lost by dropping the gate. The real discriminator is
+    // topological: degree 1 AND inside the boundary.
     let tipCount = 0
     for (const [k, list] of endsAt) {
       if (list.length !== 1 || (interiorAt.get(k) || []).length) continue
       const { s, end } = list[0]
-      const L = s.measure?.left?.pavementHW || 0
-      const R = s.measure?.right?.pavementHW || 0
-      if (Math.abs(L - R) < 0.5) continue
-      const n = nodeFor(ptOf(s, end))
+      const pt = ptOf(s, end)
+      if (!insideBoundary(pt[0], pt[1])) continue   // envelope cut, not a dead end
+      const n = nodeFor(pt)
       n.kinds.add('pendant-tip')
       addLeg(n, s, end, s.phase?.role || 'single')
       addPair(n, { chain: s.skelId, side: 'left' }, { chain: s.skelId, side: 'right' }, 'tip-wrap')
@@ -4204,17 +4261,59 @@ export function deriveLayers(highways) {
       }
     }
 
-    // ── Corner pairs by CLOCKWISE LEG ADJACENCY — the standard's corner
-    // assembly, stamped as frozen identity at EVERY node (the only legal
-    // corner locations; subsumes corner identities — OSM2STREETS-GROUNDING
-    // §4.2: "filletRing corners identified legs only, everywhere"). Computed
-    // from ALL incident curbed chains (not the node's stamped legs — a
-    // partial leg set would fabricate false adjacencies). Sides are
-    // point-order measure keys resolved per directed leg: the CCW-wedge side
-    // of a leg is measure-RIGHT iff the leg points along point order.
-    // PRESENT-but-not-yet-consumed: the fillet-identity gate flips on these
-    // once the through-node construction is blessed.
-    let adjacentPairs = 0
+    // ── Source 0b: DEGREE-2 CORNER JOINS — the L-corner between two different
+    // streets. Sources 2+4 reach an end-to-end meeting only when the outward
+    // tangents are near-opposite (a CONTINUATION); a meeting that turns is
+    // explicitly dropped there as "a genuine corner between different streets —
+    // not junction-map material". That was true while the map was construction
+    // bookkeeping; it is false for a CORNER REGISTRY, where an L-corner is the
+    // most ordinary corner there is. Source 0 can't pick them up either — it
+    // requires degree ≥ 3. So 6 real corners were in neither list.
+    // IDENTITY ONLY, exactly like Source 0: no continuity pairs, no de-taper
+    // window, no apron (gated below) — geometry-neutral by construction.
+    let cornerJoinCount = 0
+    for (const [k, list] of endsAt) {
+      if (jnodes.has(k)) continue
+      if (list.length !== 2 || (interiorAt.get(k) || []).length) continue
+      const [P, Q] = list
+      if (P.s === Q.s) continue                       // a chain closing on itself
+      const n = nodeFor(ptOf(P.s, P.end))
+      n.kinds.add('corner-join')
+      addLeg(n, P.s, P.end, P.s.phase?.role || 'single')
+      addLeg(n, Q.s, Q.end, Q.s.phase?.role || 'single')
+      cornerJoinCount++
+    }
+
+    // ── ⭐ THE CORNER REGISTRY (`corners.all`) — one list, every corner, every
+    // node. This REPLACES `cornersAdjacent` (the old degree-≥3-only adjacency
+    // list) and supersedes `corners.outer` as the answer to "what corners are
+    // here"; `outer`/`apex`/`stub` survive below only as the divided-transition
+    // CONSTRUCTION bookkeeping tileGround still consumes (retire them once this
+    // list has a consumer — HANDOFF-ask-the-stamp).
+    //
+    // A corner is the meeting of two curb SIDES, each knowing what comes in and
+    // what goes out. Built by CLOCKWISE LEG ADJACENCY from all incident curbed
+    // chains (not the node's stamped legs — a partial leg set fabricates false
+    // adjacencies). Sides are point-order measure keys per directed leg: the
+    // CCW-wedge side of a leg is measure-RIGHT iff the leg points along point
+    // order.
+    //
+    // ⭐⭐ WHY THIS EXISTS AND THE RING DOES NOT SUFFICE (POLYGON-FIRST §2.1
+    // Check 5). The ring-derived test is `cornerAt(a,b)` = a corner iff the two
+    // adjacent edges carry DIFFERENT chains. A dead-end spur's doubled-back ring
+    // visits its mouth TWICE, and on the second pass both sides carry the SAME
+    // chain — so the ring is structurally blind to that corner, one leg ends up
+    // bounded and the other runs through unbounded, and no amount of naming
+    // fixes it. This registry is written from the CHAINS, before the ring
+    // exists, and records the same-chain meeting explicitly as `sameChain`.
+    // Measured 2026-07-30: 6 of the 50 frozen caps have such a mouth.
+    //
+    // Three shapes, one list:
+    //   degree ≥ 3  — the adjacency fan (n corners for n directions)
+    //   degree 2    — one corner per physical side (the L-corner)
+    //   degree 1    — the TIP WRAP: the chain's own left curb meets its own
+    //                 right curb around the cap. Always `sameChain`.
+    let cornerCount = 0, sameChainCorners = 0
     for (const n of jnodes.values()) {
       const dirs = []
       for (const { s, end } of endsAt.get(n.key) || []) {
@@ -4233,19 +4332,35 @@ export function deriveLayers(highways) {
         dirs.push({ chain: s.skelId, end: 'through', half: 'fwd', u: fwd, alongPO: true })
         dirs.push({ chain: s.skelId, end: 'through', half: 'back', u: back, alongPO: false })
       }
-      if (dirs.length < 3) continue
-      dirs.sort((a, b) => Math.atan2(a.u[1], a.u[0]) - Math.atan2(b.u[1], b.u[0]))
-      n.cornersAdjacent = []
-      for (let i = 0; i < dirs.length; i++) {
-        const A = dirs[i], B = dirs[(i + 1) % dirs.length]
-        if (A.chain === B.chain && A.end === B.end && A.half === B.half) continue
-        // wedge runs CCW from A to B: A bounds it on its CCW side, B on its CW
-        n.cornersAdjacent.push({
-          a: { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.alongPO ? 'right' : 'left' },
-          b: { chain: B.chain, end: B.end, ...(B.half ? { half: B.half } : {}), side: B.alongPO ? 'left' : 'right' },
-        })
-        adjacentPairs++
+      if (!dirs.length) continue
+      const list = []
+      const push = (A, B, source) => {
+        const a = { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.side }
+        const b = { chain: B.chain, end: B.end, ...(B.half ? { half: B.half } : {}), side: B.side }
+        const rec = { a, b, source }
+        if (a.chain === b.chain) { rec.sameChain = true; sameChainCorners++ }
+        list.push(rec)
+        cornerCount++
       }
+      if (dirs.length === 1) {
+        // THE TIP. The butt cap wraps left into right — one corner, same chain
+        // both sides, invisible to every ring-based test there is.
+        const A = dirs[0]
+        push({ ...A, side: 'left' }, { ...A, side: 'right' }, 'tip-wrap')
+      } else {
+        dirs.sort((a, b) => Math.atan2(a.u[1], a.u[0]) - Math.atan2(b.u[1], b.u[0]))
+        for (let i = 0; i < dirs.length; i++) {
+          const A = dirs[i], B = dirs[(i + 1) % dirs.length]
+          if (A.chain === B.chain && A.end === B.end && A.half === B.half) continue
+          // wedge runs CCW from A to B: A bounds it on its CCW side, B on its CW
+          push(
+            { ...A, side: A.alongPO ? 'right' : 'left' },
+            { ...B, side: B.alongPO ? 'left' : 'right' },
+            dirs.length === 2 ? 'join' : 'adjacency',
+          )
+        }
+      }
+      n.cornerList = list
     }
 
     // ── The node APRON spec — ONE junction-interior polygon per NODE (not
@@ -4263,6 +4378,7 @@ export function deriveLayers(highways) {
     for (const n of jnodes.values()) {
       if (n.kinds.has('pendant-tip') && n.kinds.size === 1) continue
       if (n.kinds.has('plain') && n.kinds.size === 1) continue
+      if (n.kinds.has('corner-join') && n.kinds.size === 1) continue   // identity-only, like 'plain'
       const chains = [...n.legs.values()].map(l => l.chain)
       const absorbsMedians = []
       medians.forEach((m, mi) => {
@@ -4291,8 +4407,16 @@ export function deriveLayers(highways) {
         legs: [...n.legs.values()],
         continuity: n.continuity,
         ...(n.deTaper.length ? { deTaper: n.deTaper } : {}),
-        corners: { outer: n.corners.outer, ...(n.corners.apex.length ? { apex: n.corners.apex } : {}), ...(n.corners.stub.length ? { stub: n.corners.stub } : {}) },
-        ...(n.cornersAdjacent?.length ? { cornersAdjacent: n.cornersAdjacent } : {}),
+        // `all` = THE corner registry (every corner at this node, any degree).
+        // `outer`/`apex`/`stub` = divided-transition construction bookkeeping,
+        // still consumed by tileGround's E3.3 corner cut — kept until `all` has
+        // a consumer, then retired.
+        corners: {
+          all: n.cornerList || [],
+          outer: n.corners.outer,
+          ...(n.corners.apex.length ? { apex: n.corners.apex } : {}),
+          ...(n.corners.stub.length ? { stub: n.corners.stub } : {}),
+        },
         ...(n.apron ? { apron: n.apron } : {}),
       }))
     const kindCounts = {}
@@ -4301,7 +4425,8 @@ export function deriveLayers(highways) {
     const windowCount = nodes.reduce((a, n) => a + (n.deTaper?.length || 0), 0)
     console.log(`    [E3.1] junction map: ${nodes.length} nodes [${Object.entries(kindCounts).map(([k, v]) => `${k} ${v}`).join(', ')}]`)
     console.log(`    [E3.1]   ${pairCount} continuity pairs (${spineLinkPairs} spine-link), ${windowCount} de-taper windows, ${apronCount} aprons, ${absorbed} median fragment(s) absorbed, ${tipCount} pendant tips`)
-    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs`)
+    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes, ${cornerJoinCount} deg-2 corner joins`)
+    console.log(`    [E3.1]   corner registry: ${cornerCount} corners over ${nodes.filter(n => n.corners.all.length).length}/${nodes.length} nodes (${sameChainCorners} same-chain — the ring-blind class)`)
     if (unpaired.length) console.log(`    [E3.1]   unpaired: ${unpaired.map(u => `${u.chains.join('+')}@${u.key} (${u.reason})`).join('; ')}`)
     return { nodes, unpaired }
   })()
@@ -4536,26 +4661,130 @@ export function deriveLayers(highways) {
       const nCross = crossingsOnEdge.reduce((a, e) => a + e.length, 0)
       console.log(`    [F] clipped face-streets to boundary (${clipped.length} pieces, ${nCross} crossings) → perimeter faces close`)
     }
-    const fzTiles = extractFaces(faceStreets)
+    // ── ⭐ ASSERT THE SPUR *BEFORE* POLYGONIZATION (2026-07-30, Jacob).
+    // The order is the fix. Polygonizing centrelines and then trying to carve width
+    // into the resulting ring is post-processing a bad polygon — it is what produced
+    // the slit and every consumer that rebuilds a polygon prebake never made. Here the
+    // dead-end spur is laid down as a OPEN U first (curb · cap · curb,
+    // from the width and cap already on the chain), so the walk below finds no pendant
+    // edge to double back over and the enclosing block closes around a real notch.
+    // The two curbs land on the through geometry at TWO points, road-width apart —
+    // which IS the second mouth corner (POLYGON-FIRST §2.1 Check 5), created rather
+    // than detected. Identity rides the strokes (`spurSide`/`spurCap`), never recovered
+    // from ring geometry afterwards (§C6).
+    // `junctionMap` is the source of WHICH endpoints are dead ends — only correct since
+    // the pendant-tip stamp was fixed to cover 50 of 50 (it knew 15).
+    let spurRecs = [], spurSkipped = [], spurAssert = null
+    const faceStreets0 = faceStreets
+    const mById = new Map(ribbonsLayer.streets.map(s => [s.skelId || s.name, s]))
+    // `capEnds` is the per-end object {start,end}; `capStart`/`capEnd` are the older
+    // scalars. Read the object FIRST — reading the scalars first handed the coupler builder an
+    // object, which silently fell through to the blunt cap on every round tip.
+    const capKindOf = (id, end) => {
+      const st = mById.get(id)
+      const perEnd = st?.capEnds && typeof st.capEnds === 'object' ? st.capEnds[end] : null
+      return perEnd || (end === 'start' ? st?.capStart : st?.capEnd) || 'round'
+    }
+    if (SPUR_OUTLINE && junctionMap?.nodes?.length) {
+      const tips = junctionMap.nodes
+        .filter(n => n.kinds.includes('pendant-tip'))
+        .map(n => ({ skelId: n.legs[0]?.chain, end: n.legs[0]?.end, at: n.at }))
+        .filter(t => t.skelId && t.end)
+      const res = assertSpurOutlines(
+        faceStreets,
+        tips,
+        (id) => mById.get(id)?.measure,
+        capKindOf,
+      )
+      faceStreets = res.faceStreets
+      spurRecs = res.spurs; spurSkipped = res.skipped
+      console.log(`    [S] asserted ${spurRecs.length} dead-end spur outlines before polygonization (${spurSkipped.length} skipped)`)
+      for (const sk of spurSkipped) console.log(`    [S]   skipped ${sk.skelId}[${sk.end}] — ${sk.why}`)
+      spurAssert = { tips, mById, base: faceStreets0 }
+    }
+    // ⛔ A spur whose notch never CLOSES must be rolled back, not shipped. Asserting it
+    // trims the centreline away, so if the outline then fails to bound a face the street
+    // has no tile and no notch — its road simply disappears. That is precisely the
+    // 2026-06 pendant-prune failure (`dd4ddb6d`), and it cost south-jefferson-avenue-0
+    // and -8 their carriageway here. Detect after the walk and re-assert without them.
+    let fzTiles = extractFaces(faceStreets)
+    if (spurAssert) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const bad = unclosedSpurs(fzTiles, faceStreets)
+        if (!bad.size) break
+        console.log(`    [S] ⚠️ rolling back ${bad.size} spur(s) whose notch never closed: ${[...bad].join(', ')}`)
+        const keep = spurAssert.tips.filter(t => !bad.has(t.skelId))
+        const res2 = assertSpurOutlines(spurAssert.base, keep, (id) => spurAssert.mById.get(id)?.measure, capKindOf)
+        faceStreets = res2.faceStreets
+        spurRecs = res2.spurs
+        spurSkipped = [...res2.skipped, ...[...bad].map(id => ({ skelId: id, end: '?', why: 'rolled back — outline never closed a notch' }))]
+        fzTiles = extractFaces(faceStreets)
+      }
+    }
     // [CAP FREEZE] Dead-end cap identity is a FACE-topology fact — frozen ONCE
     // here (the single source both the flip and the render read; feCustomKey.js
     // §cap). Resolve capEnd against the ORIGINAL chain endpoints (ribbonsLayer
     // .streets), not the boundary-clipped faceStreets — interior dead-ends are
     // never clipped, so their endpoints are intact.
     const capEndpointKeys = chainEndpointKeys(ribbonsLayer.streets)
-    let nPerim = 0, nCaps = 0
+    let nPerim = 0, nCaps = 0, nRoad = 0
+    const nUnclosed = new Set()
     ribbonsLayer.tiles = fzTiles.map(f => {
       const ring = f.ring.map(p => [p[0], p[1]])
+      // ⭐ Which face is the NOTCH (the road) vs the block around it — decided from the
+      // identity the stroke carried, never from the ring's shape or size.
+      // A curb stroke is shared by exactly two faces. On the LEFT curb the block lies to
+      // measure-left and the road to measure-right, so the face that sees the left curb
+      // as side 'right' is the road — and vice versa on the right curb. (Testing "all
+      // edges belong to the spur" does NOT work: the notch's fourth side is the through
+      // street's own centreline between the two landings.)
+      // Seeing ONE curb from its road side is not enough — a large block can pick up a
+      // single such edge and get mis-tagged (it did: a 136,000 m² 148-edge block came
+      // back as a "notch"). The notch is the face that sees BOTH of a spur's curbs from
+      // their road side; only the enclosed road can do that.
+      const roadSideHits = new Map()
+      const bothWays = new Set()          // a stroke this face walks from BOTH sides
+      const seenSide = new Map()
       const edges = f.edges.map(e => {
-        const sk = faceStreets[e.streetIdx].skelId || faceStreets[e.streetIdx].name
+        const fs = faceStreets[e.streetIdx]
+        const sk = fs.skelId || fs.name
         if (sk === BOUNDARY_SKEL) nPerim++
-        return { skelId: sk, side: e.side }
+        // ⭐ `atCurb` — THIS edge is the curb line, not a centreline. The spur was
+        // asserted at its curb (`spurOutline.js`), so the FILL must NOT step inward by
+        // pavementHW again: the block's asphalt inset here is zero. Carried on the edge
+        // from the stroke that laid it down — never inferred downstream.
+        // ⚠️ PER EDGE. As a running flag it latched: the first spur stroke in a face
+        // tagged every edge after it, and two spurs that were never even asserted
+        // (south-13th-street, henrietta-place) lost their asphalt.
+        const atCurb = !!(fs.spurSide || fs.spurCap)
+        if (fs.spurSide) {
+          const prev = seenSide.get(e.streetIdx)
+          if (prev && prev !== e.side) bothWays.add(fs.spurOf)
+          seenSide.set(e.streetIdx, e.side)
+          if (e.side === (fs.spurSide === 'left' ? 'right' : 'left')) {
+            const seen = roadSideHits.get(fs.spurOf) || new Set()
+            seen.add(fs.spurSide)
+            roadSideHits.set(fs.spurOf, seen)
+          }
+        }
+        return { skelId: sk, side: e.side, ...(atCurb ? { atCurb: true } : {}) }
       })
+      // ⚠️ A face that walks the SAME curb stroke from both sides has walked out and back
+      // around it — the outline is dangling inside this face, not bounding it, so its
+      // landings never spliced into the through chain. That face is a BLOCK with an
+      // unclosed spur in it, never the notch. Without this test one such block was tagged
+      // road (136,000 m², south-jefferson-avenue-8).
+      let roadOf = null
+      for (const [of_, sides] of roadSideHits) if (sides.size === 2 && !bothWays.has(of_)) { roadOf = of_; break }
+      for (const of_ of bothWays) nUnclosed.add(of_)
+      // `PREBAKE §4.0`: blocks = boundary − stroked roads. The notch IS road, not a block.
+      if (roadOf) { nRoad++; return { ring, edges, road: true, roadOf } }
       const caps = detectTileCaps(ring, edges, capEndpointKeys)
       nCaps += caps.length
       return caps.length ? { ring, edges, caps } : { ring, edges }
     })
-    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology; ${nPerim} boundary edges; ${nCaps} dead-end caps)`)
+    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology; ${nPerim} boundary edges; ${nCaps} dead-end caps${nRoad ? `; ${nRoad} spur road faces` : ''})`)
+    if (nUnclosed.size) console.log(`    [D2] ⚠️ ${nUnclosed.size} asserted spur(s) never closed a notch (landings did not splice): ${[...nUnclosed].join(', ')}`)
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)

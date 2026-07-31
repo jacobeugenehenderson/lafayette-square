@@ -1015,6 +1015,13 @@ console.log(`    grid FP   = ${FP.length}/${gridNames.size} clean-grid names fla
   console.log(`    ${Js.length} junctions (deg>=${JUNC_DEG}): ${cleanJ.length} CLEAN (0 throat slivers), ${flaggedJ.length} FLAGGED (>=${JUNC_SLIVER_FLAG} slivers <${SLIVER_AREA}m2)`)
   console.log(`    curated-touching junctions flagged = ${curJF.length}/${curJ.length};  pure-grid junctions flagged = ${gridJF.length}/${gridJ.length}`)
   console.log(`    the 4 weird junctions caught = ${weirdCaught.length}/4  [${weirdCaught.map(w=>w.split(' ')[0]).join(', ')}]`)
+  // JUNC_DUMP=1 → per-junction CSV on stderr, so two runs (e.g. a flag A/B) can be
+  // diffed to find WHICH junctions moved. The aggregate count alone cannot tell you.
+  if (process.env.JUNC_DUMP === '1') {
+    for (const j of Js.slice().sort((a, b) => (a.p[0] - b.p[0]) || (a.p[1] - b.p[1]))) {
+      console.error(`JUNC\t${j.p[0].toFixed(1)},${j.p[1].toFixed(1)}\t${j.slivers}\t${j.deg}\t${j.names.join('|')}`)
+    }
+  }
   console.log(`    NOTE 55% of junctions are clean — the sliver signal discriminates; it is NOT firing everywhere.`)
   console.log(`       The defect class is PERVASIVE (${flaggedJ.length} junctions), so name-level grid FP is mostly REAL`)
   console.log(`       uncurated defect, not noise (verified by eye: scratch/jx-montrose-hickory.png et al).`)
