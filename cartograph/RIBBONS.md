@@ -35,6 +35,17 @@
 > into a real notch and makes the concentric law literal (the block boundary IS the curb). Not ratified;
 > it re-founds the tile substrate and this sentence changes with it. Spike + risks:
 > **`_handoffs/HANDOFF-deadend-face-resolution.md`**.
+>
+> ⭐ **ANSWERED IN THE NARROW, 2026-07-30 — and the sentence survives.** The tile model does NOT have to be
+> re-founded to close a dead end. Keep the face walk on centrelines and **assert the spur as a closed
+> two-sided outline before the walk runs** (`spurOutline.js`, `PREBAKE §4.0a`): the walk finds no pendant,
+> the block closes around a real notch, and — measured — the **block faces stay at 101**, where whole-map
+> punch-out re-topologises 25 of them. So "tiles = faces of the centreline graph" holds; what changes is
+> that a degree-1 chain is **given its two sides before it is walked**, rather than walked as a line and
+> patched after. Both halves built (still flag-off): the frozen edge carries `atCurb` so the block's
+> asphalt inset is zero at a curb edge — the notch IS the road and nothing paints it twice
+> (43/52 → 45/52 at full width). ⭐ The junction band comes out **net better than baseline (101 → 110 clean)** once the
+> centreline↔curb seam stops being read as a street corner. ⛔ Open: the eye has not been run.
 
 > The tile model replaced the **figure-ground** regime (blocks-as-positive, streets-as-subtracted-void) in the ~2026-06-01 re-pour, and **T4 (2026-07-15) deleted figure-ground's geometry outright** — the tile construction is now the only one. The emitter reference is archived at [`_archive/RIBBONS-figureground-emitter-2026-06-15.md`](_archive/RIBBONS-figureground-emitter-2026-06-15.md); `silhouetteStraightEmitter` and the band emitters no longer exist in the tree. `buildBlockGeometryV2` survives as a **frontage-edge identity builder only** (§1's T3 note below).
 

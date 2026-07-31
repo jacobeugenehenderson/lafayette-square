@@ -76,12 +76,23 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > "FACE=WIDTH". At the actual cap vertex all three are **0.0000 m**. It also dropped `waverly-place-1`, which
 > caps twice in one tile, giving 49 instead of 50.
 >
-> ⭐ **And Check 5 is NOT universal — that is the substantive find.** 41 of 50 spurs DO get a corner at every
-> mouth pass, because their returning leg immediately meets a *different* chain. The 9 that fail are the ones
+> ⭐ **And Check 5 is NOT universal — that is the substantive find.** Most spurs DO get a corner at every
+> mouth pass, because their returning leg immediately meets a *different* chain. The failures are the ones
 > whose **chain continues past the mouth**, so both sides of the second pass carry the same `skelId`
 > (`south-18th-street-3`: `ring[4]` is `south-18th/left → south-18th/left`, and its returning leg runs on to
-> `ring[5]` because no corner stops it). ⚠️ 6 of those 9 are also in the no-mouth-disc 9 — overlapping, **not**
-> the same set. Scope the fix to the condition, not to "all dead ends".
+> `ring[5]` because no corner stops it). Scope the fix to the condition, not to "all dead ends".
+>
+> ⚠️⚠️ **"9 of 50" IS TWO DIFFERENT MEASUREMENTS WORN AS ONE — corrected 2026-07-30.** The figure is quoted
+> in `README`, `ROADMAP`, `PIPELINE` and above. Re-measured with `scratch/stamp-mouth-audit.mjs`:
+>
+> | measurement | count | what it is |
+> |---|---|---|
+> | mouths where the ring cannot see a corner | **6 of 50** | the second pass reads same-chain — Check 5's actual failure |
+> | folds with a leg **running through** the mouth | **9 of 50** | the *symptom*: no corner stops the returning leg's span |
+> | fold chains with **no mouth disc** | **9 of 50** | a third, overlapping set — the FILL patch's coverage |
+>
+> Three sets of similar size, listed interchangeably. **The corner test fires on 6.** Quote the number with
+> the probe that produced it, or don't quote it.
 
 ### ⭐⭐⭐ Check 5 is the diagnosis — the missing piece is the CORNER (Jacob, 2026-07-30)
 
@@ -108,6 +119,61 @@ it could not fix *where that leg starts and stops*, because there was no second 
 
 > ⭐ **The one-line test for any proposal: DOES IT CREATE THE SECOND MOUTH CORNER?** If not, it is another
 > way of managing the absence, and it will fail on the eye exactly as the previous three passes did.
+
+### ⭐⭐ LANDED 2026-07-30 — the CORNER REGISTRY (`junctionMap.nodes[].corners.all`)
+
+**The second mouth corner is now RECORDED at prebake, at all 6 mouths that need it.** Not constructed —
+*recorded*: the stamp is written from the chains, before the face walk exists, so it is not subject to the
+ring's blindness. Additive only; **`cap-fill-hash.mjs` is byte-identical in both `plain` and `design` mode**,
+and `correctness-detector.mjs` is line-identical but for its own tip-wrap skip counter (26 → 52).
+
+**One list replaces two.** `cornersAdjacent` (degree-≥3 only, no consumer) is **retired**; `corners.all`
+carries every corner at every node in one shape — `{ a, b, sameChain?, source }`, each side a
+`{chain, end, half?, side}` measure key. `corners.{outer,apex,stub}` survive **only** as the
+divided-transition construction bookkeeping `tileGround.js:2665` still consumes; they retire when `all`
+gains a consumer (`HANDOFF-ask-the-stamp`). Three shapes, one list: degree ≥ 3 = the adjacency fan ·
+degree 2 = one corner per side (the L-corner) · degree 1 = **the tip wrap**, the chain's own left curb
+meeting its own right curb around the cap, always `sameChain`.
+
+⭐ **`sameChain: true` IS the ring-blind class, marked explicitly** so no consumer has to rediscover that
+`a.chain === b.chain` is the meaningful case. 160 of 769 corners carry it.
+
+| | before | after |
+|---|---|---|
+| nodes | 228 | **261** |
+| nodes carrying a corner | 200 (`cornersAdjacent`) / 24 (`corners.outer`) | **261 / 261** |
+| corners recorded | 695 | **769** (160 `sameChain`) |
+| dead-end caps with a `pendant-tip` | **15 of 50** | **50 of 50** |
+| blind mouth corners recorded | 5 of 6 | **6 of 6** |
+
+**Two root causes, both name-vs-function slips** (the `detectTileCaps` pattern again):
+1. **Source 6 gated on `Math.abs(L - R) >= 0.5`** — it stamped a tip only where the chain's left/right
+   pavement half-widths *differ*. A **width-step detector wearing the tip's name**: it covered 15 of 50 caps
+   while stamping **14 boundary cuts that are not dead ends at all**. Gate dropped; the width step is still
+   readable off `measure`, so nothing was lost.
+2. **The real discriminator is topological: degree 1 AND inside the boundary.** LS has **94 degree-1
+   endpoints but only 50 dead ends** — the other 44 are the ENVELOPE CUT (the network extends past the
+   boundary). The inside-boundary test yields **52, containing all 50 caps with zero misses**; the 2 extra
+   are `south-18th-street-4`'s two ends, a disconnected interior stub that bounds no face so it caps
+   nowhere — a genuine tip all the same.
+
+Also added: **Source 0b, degree-2 corner joins** (7 nodes). Sources 2+4 reach an end-to-end meeting only
+when it *continues*; one that **turns** was explicitly dropped as "not junction-map material" — true for
+construction bookkeeping, false for a corner registry, where an L-corner is the most ordinary corner there
+is. Identity-only, like `plain`; no apron.
+
+⚠️ **`src/data/ribbons.json` was STALE on trunk** — the committed bundle read 233 nodes / 29 tips where a
+fresh `pipeline.js` gives 228 / 26, and its FILL fingerprint differed (75 vs 71 asphalt rings). Pre-existing
+drift, unrelated to this change; measure against a **fresh** run, never the committed bundle.
+
+⚠️ **Open findings — the stamp does NOT predict 8 constructed corners** (`scratch/stamp-predicts-fill.mjs`):
+513 fillet corners, 455 predicted, 50 on the map edge (expected — the boundary is not a chain), **8 away
+from it**. Four cluster on the `officer-david-haynes-memorial-highway` interchange, where `curbed()` filters
+`gradeSeparated` out of the junction map by design; the rest sit on divided Lafayette. **None are in the
+dead-end class.** Not addressed this pass.
+
+Probes: `scratch/stamp-mouth-audit.mjs` (does the registry record each ring-blind mouth?) ·
+`scratch/stamp-predicts-fill.mjs` (acceptance #1).
 
 ⚠️ **Do not over-read this as "there is nothing to click."** `scratch/coupler-fe-coverage.mjs` on trunk:
 **98 of 107 dead-end leg slots DO have a clickable frontage edge; 9 do not**, and all 9 have an fe on the

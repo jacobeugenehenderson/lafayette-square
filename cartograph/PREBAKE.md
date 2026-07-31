@@ -101,6 +101,88 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 > for (identity attribution; topology becoming width-dependent) + the spike:
 > **`_handoffs/HANDOFF-deadend-face-resolution.md`**. Enforcement: `POLYGON-FIRST §2.1`.
 
+> ### ⭐⭐ 4.0a — ASSERT THE SPUR *BEFORE* POLYGONIZATION (2026-07-31) — BUILT, FLAG OFF
+>
+> **In plain words:** blocks are traced by following street centre-lines. At a dead end the
+> trace ran out to the tip and straight back along the same line, so the block came back with
+> a zero-width crack instead of a street-shaped notch. The fix is not to cut width into that
+> crack afterwards — it is to **lay the dead-end street down as a two-sided shape first**, and
+> only then trace the blocks. ⭐ **The sequence is the fix** (Jacob): *"the slit needs to be
+> asserted BEFORE the polygonization."* Built in **`cartograph/spurOutline.js`**, called from
+> `derive.js` immediately before `extractFaces`. Same mechanism the map boundary already uses.
+>
+> **What is emitted is an OPEN U — two curbs + an END COUPLER — not a closed ring.** The U's
+> free ends land on the through street's centreline, road-width apart, and the FACE WALK closes
+> the notch (its fourth side is the through-centreline between the landings). ⚠️ Closure is a
+> property of the graph, not of the stroke — when a landing fails to splice, nothing closes the
+> U, it floats inside the block, and because asserting a spur also TRIMS ITS CENTRELINE AWAY
+> that street loses its road outright. That is the 2026-06 pendant-prune failure exactly
+> (`dd4ddb6d`); it hit `south-jefferson-avenue-0`/`-8`. Hence the detect-and-roll-back pass:
+> never trust the closure, verify it after the walk.
+>
+> ⭐ **The second mouth corner is CREATED, not detected** (`POLYGON-FIRST §2.1` Check 5): the
+> two curbs land at two distinct points, so each leg is bounded corner→coupler like any other.
+> Identity rides the strokes (`spurSide`/`spurCap`/`spurOf`/`atCurb`), never recovered from ring
+> geometry afterwards.
+>
+> **MEASURED (`SPUR_OUTLINE=1`, LS, 2026-07-31)** — re-run, don't trust:
+>
+> | | flag OFF | flag ON | probe |
+> |---|---|---|---|
+> | rings with a repeated vertex (Check 1) | 50 | **9** | `coupler-slit-universal.mjs` |
+> | `tiles[].caps` (the slit registry) | 50 | **9** | inline |
+> | BLOCK faces | 101 | **101** | inline |
+> | road notch faces | 0 | **41** | inline |
+> | spurs at full road width | 43 / 52 | **45 / 52** | `spur-asphalt-truth.mjs` |
+> | junction band CLEAN | 101 | **110** | `correctness-detector.mjs` |
+> | tips asserted | — | **43 of 52**, 2 rolled back | `[S]` log line |
+>
+> ⭐ **Block topology does not move (101 → 101)** — what separates this from whole-map punch-out,
+> measured to re-topologise **25 of 101** faces (`ea3ab870`).
+>
+> **The FILL half.** An edge asserted at the curb carries **`atCurb`** through
+> `tilesFromFrozen` → `groupRuns` → the run, and the block's asphalt inset is **zero** there
+> (both the per-run stroke and `baseDepth`, which feeds `iA`; `asphalt = tile.ring − iA`). The
+> notch IS the road; nothing paints it twice.
+>
+> **The junction band.** Net better (101 → 110 clean). The cause was a **datum change read as a
+> street corner**: at a landing one edge is a curb line and the other a centreline, so
+> `cornerAt`'s `a !== b` bid a fillet and shattered the ped band. Cured by suppressing the corner
+> across that seam and zeroing `vertR` there. 2 junctions still lose CLEAN (`Truman×Lafayette`,
+> one 4.7 m² fragment at exactly the 14 m throat radius; `Rutger`, one sub-threshold sliver).
+>
+> ### ⛔ OPEN — what is owed before this ships
+> 1. **Jacob's eye in Survey — NEVER RUN.** The only remaining gate. Dolman · South 18th ·
+>    Simpson · Nicholson: click a dead-end leg → that leg, whole, reacts; no partner flip, no
+>    neighbouring corner or cap moving. Needs `scratch/rebake-shape.mjs` first.
+> 2. **The END COUPLER is not doctrine-conformant.** `SECTION §6.3`: the cap is an end coupler
+>    whose shoulders are lane-switch corners, the bulb is ONE semicircle, and **width is
+>    germane** — a spur may be authored asymmetric (Nicholson left 2.50 m / right 6.70 m), so
+>    *"any dead-end detector keyed on both shoulders at the same radius is wrong by
+>    construction."* `spurOutline.endCoupler` **averages the two radii** and does **not taper
+>    depth across the shoulders**. Both owed.
+> 3. **9 tips not asserted** — one class: a mouth with geometry on only one side (an L-corner, or
+>    a T whose cross street ends at the mouth), so one curb has nothing to land on. Plus
+>    `south-18th-street-4` ×2, a disconnected stub touching nothing.
+> 4. **Retire what this makes redundant** — `walkOrd`, the mouth disc, the synthetic cap fe
+>    (acceptance §5). After the eye passes, not before.
+>
+> **Flag off ⇒ byte-identical** in `plain` and `design`; no detector invariant moves.
+>
+> **Bugs found building it — the expensive knowledge.** The landing search returned a *copy* of
+> the segment, so the splice never matched and every curb dangled (reproducing the 2026-06 prune
+> exactly) · the mouth test required degree ≥ 3 and walked past spurs ending in an L-corner · the
+> landing ray aimed at the tip end instead of the mouth end · the inversion guard used an outward
+> tangent instead of the **point-order** tangent, rejecting 25 sound spurs · `atCurb` was written
+> as a *running* flag and latched, so two spurs never even asserted lost their asphalt · the
+> road-tile early-return skipped `shapeTiles.push`, breaking the documented `shapeTiles[i] ≡
+> tiles[i]` alignment.
+>
+> ⚠️ **`spur-asphalt-truth.mjs` must NOT read `tiles[].caps`** to find tips. A cap exists only
+> where the freeze *failed* to close, so once spurs are asserted the caps vanish and a
+> caps-driven probe stops measuring the spurs the fix repaired — it dropped 50 rows to 7 and read
+> as a pass. It takes tips from `junctionMap`'s pendant-tip stamps instead.
+
 Two independent topologies pass through prebake, and the one that matters isn't frozen:
 
 - **`streets[]` come from the skeleton; `faces[]` come from raw OSM.** That's the **two-source seam** — the skeleton was bolted on *beside* the original raw-OSM face derivation, not *in front of* it. The faces carry raw OSM's node topology (un-simplified, un-consolidated), so they don't agree with the chains.

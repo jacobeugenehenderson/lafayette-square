@@ -122,7 +122,7 @@ it for months as an identity source.
 
 ⇒ The rule is **content, checked at the freeze, failing the bake**: rings simple + nonzero area · no
 same-chain/opposite-side vertex · every frontage edge has an interior on exactly one side · no real
-feature described by a patch. Enforceable form + the "gate to make green" caveat (Checks 1–2 fail on all 50 tips; Check 5 on 9 of 50):
+feature described by a patch. Enforceable form + the "gate to make green" caveat (Checks 1–2 fail on all 50 tips; Check 5 on 6 of 50 — not the "9 of 50" quoted elsewhere, which counts legs running through the mouth):
 **`POLYGON-FIRST.md §2.1`**. Live task + the punch-out construction:
 `_handoffs/HANDOFF-deadend-face-resolution.md`.
 
