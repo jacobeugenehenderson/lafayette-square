@@ -9,9 +9,9 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": false,
-    "parking_lot": false,
-    "garden": false,
+    "building": true,
+    "parking_lot": true,
+    "garden": true,
     "playground": true,
     "swimming_pool": true,
     "pitch": false,
@@ -1401,7 +1401,7 @@
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,
-    "Furniture": false
+    "Furniture": true
   },
   "trees": [
     {

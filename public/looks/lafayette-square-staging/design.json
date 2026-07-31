@@ -9,16 +9,16 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": true,
-    "parking_lot": true,
-    "garden": true,
-    "playground": true,
+    "building": false,
+    "parking_lot": false,
+    "garden": false,
+    "playground": false,
     "swimming_pool": true,
     "pitch": false,
-    "sports_centre": true,
+    "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": true,
+    "tree_row": false,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -26,8 +26,8 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": true,
-    "lamp": true,
+    "tree": false,
+    "lamp": false,
     "fence": false,
     "wall": false,
     "retaining_wall": false,
@@ -229,8 +229,16 @@
           "pavementHW": 8.701555809672122,
           "terminal": "sidewalk"
         },
+        "9": {
+          "pavementHW": 3.458789725833094,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
         "10": {
-          "pavementHW": 8.701555809672122,
+          "pavementHW": 3.458789725833094,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "12": {
@@ -271,8 +279,16 @@
           "pavementHW": 11.828274929333126,
           "terminal": "sidewalk"
         },
+        "9": {
+          "pavementHW": 4.432206386519458,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
         "10": {
-          "pavementHW": 11.828274929333126,
+          "pavementHW": 4.432206386519458,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "12": {
@@ -710,6 +726,72 @@
         },
         "-2": {
           "capFlip": false
+        }
+      }
+    },
+    "park-avenue-3": {
+      "right": {
+        "2": {
+          "pavementHW": 18.707443318294573,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        },
+        "3": {
+          "pavementHW": 18.707443318294573,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        },
+        "4": {
+          "pavementHW": 18.707443318294573,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        },
+        "5": {
+          "pavementHW": 18.707443318294573,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        },
+        "6": {
+          "pavementHW": 18.707443318294573,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        },
+        "7": {
+          "pavementHW": 9.135600981959353,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        },
+        "8": {
+          "pavementHW": 9.340560919679064,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        }
+      }
+    },
+    "lafayette-avenue-6": {
+      "right": {
+        "0": {
+          "pavementHW": 7.097106502138425,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
+        }
+      }
+    },
+    "lafayette-avenue-4": {
+      "right": {
+        "7": {
+          "pavementHW": 9.41044291679207,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
         }
       }
     }
@@ -1403,14 +1485,14 @@
   },
   "openSections": {
     "Streets": false,
-    "Blocks": true,
+    "Blocks": false,
     "Paths": false,
     "Features": false,
     "Labels": false,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,
-    "Furniture": true
+    "Furniture": false
   },
   "trees": [
     {
