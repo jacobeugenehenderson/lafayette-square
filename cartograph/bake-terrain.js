@@ -35,8 +35,11 @@
 import fs from 'fs'
 import { join } from 'path'
 import { fromFile } from 'geotiff'
-import { CARTOGRAPH_DIR, DEFAULT_SCENE } from './config.js'
+import { CARTOGRAPH_DIR, DEFAULT_SCENE, requireExplicitScene} from './config.js'
 import { writeIfChanged } from './io.js'
+
+// ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
+requireExplicitScene('bake-terrain.js (writes terrain into the slab)')
 
 // Scene resolution — the installation whose terrain we bake. Resolve order:
 // --scene=<id> flag (how serve.js's bake handler invokes us) > CARTOGRAPH_SCENE

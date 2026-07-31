@@ -19,11 +19,52 @@ import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// Scene selection — CARTOGRAPH_SCENE overrides the default (single-scene per
-// process; the pipeline runs one neighborhood at a time). Exported so scripts
-// can log/branch on the active scene.
+// Scene selection — `--scene=<id>` or CARTOGRAPH_SCENE (single-scene per process;
+// the pipeline runs one neighborhood at a time). Exported so scripts can
+// log/branch on the active scene.
+//
+// ⛔⛔ NO SILENT DEFAULT ON ANYTHING THAT WRITES (`BRIEF-ls-bleed-excision` site 11,
+// Class C). `SCENE = env || DEFAULT_SCENE` meant forgetting the variable silently
+// redirected the whole run onto Lafayette Square — no error, no warning. On
+// 2026-07-31 that cost a full day: an agent rebuilt LS repeatedly while the
+// operator worked in `lafayette-square-staging`, and the resulting "no symptom
+// change" was read as the fix failing rather than as the wrong town being built.
+// A fallback turns a failure into a plausible-looking success; for a kit that is
+// the worst available outcome (`CLAUDE.md` Layer 0).
+//
+// READ paths may still resolve to the default (the dev server imports this at
+// module load and must not die), but the choice is now VISIBLE. Anything that
+// WRITES must call `requireExplicitScene()` and refuse.
 export const DEFAULT_SCENE = 'lafayette-square'
-export const SCENE = process.env.CARTOGRAPH_SCENE || DEFAULT_SCENE
+
+const _sceneArg = (process.argv || []).map(a => /^--scene=(.+)$/.exec(a)).find(Boolean)?.[1]
+/** true when the operator actually named the scene (flag or env), false when defaulted. */
+export const SCENE_IS_EXPLICIT = !!(_sceneArg || process.env.CARTOGRAPH_SCENE)
+export const SCENE = _sceneArg || process.env.CARTOGRAPH_SCENE || DEFAULT_SCENE
+
+/**
+ * Refuse to proceed unless the operator named the scene. Call this FIRST in any
+ * entry point that writes an artifact — a wrong scene there does not show a wrong
+ * map, it overwrites a right one.
+ */
+export function requireExplicitScene(who = 'this command') {
+  if (SCENE_IS_EXPLICIT) return SCENE
+  console.error(`
+⛔ ${who} refuses to run without an explicit scene.
+
+   It writes artifacts, and defaulting would silently target '${DEFAULT_SCENE}' —
+   overwriting Lafayette Square's build with another town's run, or vice versa.
+
+   Name the scene:
+     node ${process.argv[1]?.split('/').pop() || '<script>'} --scene=${DEFAULT_SCENE}
+     CARTOGRAPH_SCENE=${DEFAULT_SCENE} node ${process.argv[1]?.split('/').pop() || '<script>'}
+
+   (BRIEF-ls-bleed-excision site 11 · CLAUDE.md Layer 0 — no fallbacks.)
+`)
+  process.exit(2)
+}
+
+if (!SCENE_IS_EXPLICIT) console.warn(`[config] scene not named — defaulting to '${DEFAULT_SCENE}'. Pass --scene=<id> to be explicit.`)
 
 // Geography resolver: a non-default scene's data/<scene>/geography.json wins;
 // otherwise the instance.js SSOT (LS). Same shape either way.
@@ -31,7 +72,19 @@ function _loadGeography() {
   if (SCENE !== DEFAULT_SCENE) {
     const p = join(__dirname, 'data', SCENE, 'geography.json')
     if (existsSync(p)) return JSON.parse(readFileSync(p, 'utf8'))
-    console.warn(`[config] CARTOGRAPH_SCENE=${SCENE} but no ${p}; falling back to instance.js geography`)
+    // ⛔ Was: warn + fall back to instance.js (Lafayette Square's lat/lon). That
+    // projects another town at St. Louis's coordinates — every metre of its
+    // geometry lands in the wrong place, plausibly, with only a console warning.
+    // An absent geography is not a degraded state, it is an unbuildable one.
+    console.error(`
+⛔ scene '${SCENE}' has no geography.json (looked in ${p}).
+
+   Refusing to fall back to Lafayette Square's coordinates — that would project
+   this town at St. Louis's lat/lon and every derived metre would be wrong.
+
+   Create data/${SCENE}/geography.json (lat/lon/bbox) first.
+`)
+    process.exit(2)
   }
   return INSTANCE.geography
 }

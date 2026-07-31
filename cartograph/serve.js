@@ -762,7 +762,11 @@ function backfillLookScenesOnBoot() {
   if (!idx || !Array.isArray(idx.looks)) return
   let changed = false
   for (const entry of idx.looks) {
-    if (!entry.scene) { entry.scene = DEFAULT_SCENE; changed = true }
+    // ⛔ Was: `entry.scene = DEFAULT_SCENE` — a Look with no scene was silently
+    // ASSIGNED Lafayette Square, and the wrong value then PERSISTED, so the bleed
+    // outlived the request (BRIEF-ls-bleed-excision site 13). Leave it unset and
+    // let the consumer refuse; a Look whose town we don't know is not an LS Look.
+    if (!entry.scene) console.warn(`[looks] '${entry.id}' has no scene — left unset (was silently assigned '${DEFAULT_SCENE}')`)
   }
   if (changed) {
     saveLooksIndex(idx)
@@ -1903,7 +1907,18 @@ createServer(async (req, res) => {
       // (toy doesn't have an OSM-derived pipeline yet — its centerlines
       // are hand-authored, so the pipeline step is a no-op for now).
       const bakeLookEntry = idx.looks.find(l => l.id === id)
-      const bakeScene = bakeLookEntry?.scene || DEFAULT_SCENE
+      // ⛔⛔ Was: `|| DEFAULT_SCENE` — a bake whose Look carried no scene BAKED OVER
+      // Lafayette Square (BRIEF-ls-bleed-excision site 14). This is the destructive
+      // end of the class and the mechanism behind ORIENTATION's palimpsest warning;
+      // it already fired once, 2026-07-23. Nothing that WRITES may fall back.
+      const bakeScene = bakeLookEntry?.scene
+      if (!bakeScene) {
+        const msg = `refusing to bake: look '${bakeLookEntry?.id ?? '?'}' has no scene. Defaulting would bake over '${DEFAULT_SCENE}'.`
+        console.error('[bake] ⛔ ' + msg)
+        res.writeHead(409, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: msg }))
+        return
+      }
       const isDefaultScene = bakeScene === DEFAULT_SCENE
       const bakePaths = sceneDataPaths(bakeScene)
       // overlay.json + skeleton.json are operator-edited / derived

@@ -7,6 +7,7 @@ import {
   saveShapeFreeze, fetchRibbons, fetchGeography, fetchBoundary,
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
+import { setSceneMeasureSource } from '../measureModel.js'
 import toyRibbonsData from '../../data/toy/toy-ribbons.json'
 import { feCustomKey } from '../../lib/feCustomKey.js'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
@@ -2143,6 +2144,10 @@ const useCartographStore = create((set, get) => ({
       const ribbonsFixture = scene === 'toy' ? toyRibbonsData
         : BUNDLED_SCENES.has(scene) ? ribbonsData
         : (fetchedRibbons || { streets: [] })
+      // ⭐ Register THIS scene's fixture as the Measure seed source. Was a static
+      // LS import inside measureModel (BRIEF-ls-bleed-excision site 9) — every
+      // scene seeded its widths from Lafayette Square, keyed by street name.
+      setSceneMeasureSource(ribbonsFixture, scene)
       const ribbonById = new Map((ribbonsFixture.streets || []).map(r => [r.skelId, r]))
       const streets = skelStreets.map((s) => {
         const ov = overlayById[s.id]

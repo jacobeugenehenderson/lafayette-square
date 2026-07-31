@@ -15,9 +15,12 @@
 
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, CLEAN_DIR } from './config.js'
+import { RAW_DIR, CLEAN_DIR, requireExplicitScene} from './config.js'
 import { writeIfChanged } from './io.js'
 import { CURB_WIDTH, SV_SIDEWALK } from '../src/cartograph/streetProfiles.js'
+
+// ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
+requireExplicitScene('skeleton.js (writes data/<scene>/clean/skeleton.json)')
 
 // --- Operator-reviewable manifests ----------------------------------------
 

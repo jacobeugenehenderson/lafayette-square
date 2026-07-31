@@ -172,3 +172,24 @@ so the sites go here. ⛔ Do not open a second brief for the same class — that
 the class already went un-named for eleven days because site 4 had no category to belong to.
 
 **Tracked in `ROADMAP` as A00.**
+
+
+---
+
+## A.6 EXCISION LOG — landed 2026-07-31
+
+| # | Site | What it does now |
+|---|---|---|
+| 9 | `measureModel.js` | **Scene-scoped.** The static LS import is gone; the active scene's fixture is registered by the store (`setSceneMeasureSource`, called where the store already resolves `ribbonsFixture` per scene). Unregistered ⇒ the seed is EMPTY and `chainMeasure` degrades to the generic type default, which belongs to no town. |
+| 11 | `config.js:26` | `--scene=<id>` added; `SCENE_IS_EXPLICIT` tracks whether the operator named it; an unnamed run warns. **`requireExplicitScene()` added and called by every WRITE entry point** — `pipeline.js`, `promote-ribbons.js`, `skeleton.js`, `bake-terrain.js` — which now exit(2) with the fix printed. |
+| — | `config.js` `_loadGeography` | ⭐ **Found while excising, not in the original sweep.** A non-default scene with no `geography.json` fell back to `INSTANCE.geography` — projecting another town at **St. Louis's lat/lon**, every derived metre wrong, with only a `console.warn`. Now exits(2). |
+| 13 | `serve.js:765` | No longer **assigns** LS to a scene-less Look (the wrong value used to persist). Warns and leaves it unset. |
+| 14 | `serve.js:1906` | A bake whose Look has no scene now **409s** instead of baking over Lafayette Square. |
+| — | `promote-ribbons.js` | ⭐ **Found by re-committing the same crime while verifying.** The promote silently replaced the committed artifact with a materially different re-derivation — **three times on 2026-07-31, twice while merely "verifying" an unrelated change**. It now compares `{streets, tiles, faces, medians, nodes, caps}` and **refuses when any moved**, printing the delta; `--yes` to override. Verified firing on the real case (`nodes 233 → 228`). |
+
+**Not done, deliberately:**
+- **Site 10** (`LafayettePark.jsx`) — needs the verify step the brief asks for (does it mount outside LS?). Not touched on a guess.
+- **Site 12** (`serve.js:902`, scene-less route ⇒ LS) — `api.js sceneUrl()` deliberately emits scene-less URLs for the default scene, so refusing would break the running app. Needs the client changed first; **sequence it with the client, don't cut it alone.**
+- **Sites 1–8** — the original absence-class sweep, untouched here.
+
+⚠️ **`--scene=` is now required by the write paths.** `node cartograph/pipeline.js` alone exits(2) with the corrected command printed. This is the intended friction: the missing flag is exactly how a full day got spent building the wrong town.

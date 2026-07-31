@@ -13,8 +13,6 @@
 // them here so the two consumers share one definition.
 
 import { defaultMeasure, CURB_WIDTH } from './streetProfiles.js'
-import ribbonsRaw from '../data/ribbons.json'
-import toyRibbonsRaw from '../data/toy/toy-ribbons.json'
 
 // Drag clamps — a handle dragged very far must not explode ribbon geometry
 // (subdivideGeo can request a multi-million-vert buffer). 30m past any real
@@ -23,32 +21,45 @@ export const MAX_PAVEMENT_HW = 30
 export const MAX_STRIPE = 20
 export const STRIPE_MIN = 1.0  // meters — thinnest a stripe can be dragged
 
-// Survey-derived measure by street identity — adopted when an un-edited
-// street is first selected so handles sit on the rendered edges. Built from
-// BOTH scene fixtures (LS ribbons.json + toy-ribbons.json) and keyed by name
-// AND skelId: the render resolves a reset/un-edited street's measure from its
-// scene fixture via mergeLiveRibbons, so the seed must consult the same source
-// or toy streets fall to a generic default off the bands (the scene-blind
-// fixture fault — feedback_scene_blind_fixture_latent_fault). Toy and LS
-// identities are disjoint, so one merged map resolves each correctly.
-const PIPELINE_MEASURE = (() => {
+// ⛔⛔ EXCISED 2026-07-31 — this was an LS BLEED (`BRIEF-ls-bleed-excision` site 9,
+// Class B). It statically imported Lafayette Square's ribbons.json and built a
+// seed map keyed by street NAME, consulted in EVERY scene. Its own comment named
+// the assumption — "Toy and LS identities are disjoint, so one merged map
+// resolves each correctly" — which held for toy vs LS and is FALSE for LS vs any
+// other American town. MEASURED: 24 Altadena streets silently inherited St. Louis
+// measurements (Allen Ave, Iowa Ave), Hi-Pointe 6, both Polish pours 0 — so the
+// defect was invisible in exactly the scenes used to prove the kit travels.
+//
+// Now SCENE-SCOPED: the active scene's fixture is registered by the store (which
+// already resolves it correctly per scene) and nothing else is consulted. With no
+// registration the seed is EMPTY and `chainMeasure` degrades to the generic
+// type default — which belongs to no town. An honest generic beats a plausible
+// wrong one; a default seeded from another installation's survey is the defect,
+// not a "documented fallback" (brief §A.3).
+let _sceneMeasure = new Map()
+let _sceneMeasureScene = null
+
+/** Register the ACTIVE scene's ribbons as the seed source. Call on scene resolve. */
+export function setSceneMeasureSource(ribbons, sceneId = null) {
   const m = new Map()
-  for (const src of [ribbonsRaw, toyRibbonsRaw]) {
-    for (const st of (src.streets || [])) {
-      if (!st.measure) continue
-      if (st.name) m.set(st.name, st.measure)
-      if (st.skelId) m.set(st.skelId, st.measure)
-    }
+  for (const st of (ribbons?.streets || [])) {
+    if (!st.measure) continue
+    if (st.skelId) m.set(st.skelId, st.measure)
+    if (st.name) m.set(st.name, st.measure)
   }
-  return m
-})()
+  _sceneMeasure = m
+  _sceneMeasureScene = sceneId
+}
+
+/** Which scene the current seed came from — for probes/asserts. */
+export function sceneMeasureSource() { return { scene: _sceneMeasureScene, size: _sceneMeasure.size } }
 
 // Chain-level READ default. Order: street.measure → pipeline-derived →
 // type default. This is a fallback for seeding/handle-placement only —
 // never a write target.
 export function chainMeasure(st) {
   if (st.measure) return st.measure
-  const fromPipeline = PIPELINE_MEASURE.get(st.skelId) || PIPELINE_MEASURE.get(st.name)
+  const fromPipeline = _sceneMeasure.get(st.skelId) || _sceneMeasure.get(st.name)
   if (fromPipeline) {
     return {
       left: { ...fromPipeline.left },
