@@ -6,6 +6,14 @@
 
 ---
 
+> ⭐ **UPDATED 2026-07-31 — see APPENDIX A.** The sweep below found bleeds of ONE shape (*an input is
+> absent → LS's data stands in*). Two further classes are now documented at the end of this file:
+> **Class B**, always-on cross-scene reads that fire *even when the town has its own data* (site 9,
+> `measureModel.js` — **24 Altadena streets inherit St. Louis measurements**), and **Class C**, the
+> BUILD direction, where the operator's action is silently redirected *onto* LS (site 14 — a bake with
+> no scene **bakes over Lafayette Square**). Sites 9–14 there. Read §1–§7 first; the principle is the
+> same and Appendix A only extends the site list and the regression test.
+
 ## 1. The defect, in one sentence
 
 **When an input is absent, the kit does not render nothing — it renders Lafayette Square's data under the other town's name.**
@@ -80,3 +88,87 @@ Add the three-way distinction to the manifest's absent-state column: `honest-zer
 - ⚠️ **Do not `git restore public/baked/**`** — the working tree is more correct than `origin/main` there.
 - Sites 2/3/4 share `arborist/bake-trees.js`; sites 1/4 share `src/data/street_lamps.json`. **Serialize within those groups** (`feedback_load_bearing_files_serial_dispatch`).
 - Name yourself in the writeup.
+
+
+---
+
+# ⭐ APPENDIX A — TWO NEW CLASSES (added 2026-07-31)
+
+**The 2026-07-20 sweep found bleeds of one shape: _an input is absent, so LS's data stands in._ Both
+classes below are different, and neither is covered above.**
+
+- **Class B — ALWAYS-ON cross-scene reads.** Not absence-triggered. LS's data is compiled into a
+  shared module and consulted in **every** scene, so it fires *even when the town has its own data*.
+  (Site 4 above is the same shape — module-level, unconditional — so this class was already present
+  and un-named.)
+- **Class C — the BUILD direction.** Not "the operator sees LS's data" but "the operator's action is
+  silently redirected **onto** LS." These are worse: Class A/B show a wrong map, Class C **overwrites
+  a right one**.
+
+All line numbers verified 2026-07-31; re-verify before editing.
+
+## A.1 The sites
+
+| # | Site | Class | What bleeds | Sev |
+|---|---|---|---|---|
+| 9 ⭐ | `src/cartograph/measureModel.js:16` + `:36` | B | `import ribbonsRaw from '../data/ribbons.json'` → a measurement lookup **keyed by street NAME** (and skelId), used as the chain-level read-default for seeding + handle placement. **Zero scene checks in the file.** Read by `MeasurePanel.jsx`, `SurveyorOverlay.jsx`, `MeasureOverlay.jsx` — i.e. the whole Measure/Section authoring surface, in every scene. | **HIGH** |
+| 10 | `src/components/LafayettePark.jsx:16` → `:234`, `:290` | B | LS ribbons used for park path rings, **zero scene checks in the file**. ⚠️ *Verify whether the component mounts outside LS before excising* — it may be gated by its caller, which would make this soft. | MED — verify |
+| 11 ⭐⭐ | `cartograph/config.js:26` | **C** | `SCENE = process.env.CARTOGRAPH_SCENE \|\| DEFAULT_SCENE`. Forget the env var and **every build silently becomes Lafayette Square** — no error, no warning. Cost a full day on 2026-07-31: an agent rebuilt LS repeatedly while the operator was working in `lafayette-square-staging`, and the "no symptom change" that resulted was read as the fix failing. | **HIGH** |
+| 12 | `cartograph/serve.js:902` | C | `const scene = sceneRouteMatch[1] \|\| DEFAULT_SCENE` — a request that omits the scene is served **LS's** artifacts under whatever the caller thought it asked for. | MED |
+| 13 | `cartograph/serve.js:765` | C | `if (!entry.scene) { entry.scene = DEFAULT_SCENE }` — a Look with no scene is **assigned** LS. The wrong value is then persisted, so the bleed outlives the request. | MED |
+| 14 ⭐⭐ | `cartograph/serve.js:1906` | **C** | `const bakeScene = bakeLookEntry?.scene \|\| DEFAULT_SCENE` — a bake whose Look carries no scene **bakes over Lafayette Square**. This is the destructive end of the class and the mechanism behind `ORIENTATION`'s palimpsest warning (*"pouring a second neighborhood can overwrite production LS"* — it did, 2026-07-23). | **HIGH** |
+
+**Verified NOT bleeding** (they import LS's ribbons but gate correctly — leave them alone, and don't
+"fix" them in a sweep): `MapLayers.jsx:14` (`isLS ? _lsRibbonsData : (sceneRibbons \|\| _EMPTY_RIBBONS)`
+— a non-LS scene degrades to an honest empty, which is exactly §5's preferred pattern) ·
+`useCartographStore.js:9` (`:2144` gates on `BUNDLED_SCENES.has(scene)`).
+
+## A.2 ⭐ Site 9 measured — and why nobody caught it
+
+`measureModel.js` keys on **street name**, so it fires wherever a poured town shares a name with LS:
+
+| town | street names that silently inherit LS measurements |
+|---|---|
+| **Altadena** | **24** — incl. real ones: *Allen Avenue*, *Iowa Avenue* |
+| Hi-Pointe–DeMun | 6 |
+| Księży Młyn · Centrum | **0** |
+
+⭐ **Both Polish pours collide on ZERO.** The defect is invisible in exactly the scenes reached for to
+prove the kit travels, and only fires on a second *American* town — which is the case that matters and
+the case nobody ran. Every town additionally collides on the auto-generated `motorway_link N` names,
+**by construction**.
+
+Reproduce: load LS's `streets[].name` into a set, intersect with each scene's
+`cartograph/data/<scene>/clean/ribbons.json`.
+
+## A.3 What "fixed" means for these two classes
+
+§5's three outcomes still govern, with one addition per class:
+
+- **Class B** — the lookup must be **scene-scoped**, not name-scoped. A default seeded from *another
+  installation's survey* is never a "documented fallback"; it is site 9's whole defect. If no
+  scene-local measurement exists, seed from the **standards/AASHTO** default (which is generic and
+  belongs to no town) or degrade to honest-zero.
+- **Class C** — an unresolved scene must be a **loud refusal**, never a default. `SCENE`, the route
+  param, the Look's `scene`, and the bake's scene should each throw or exit non-zero with the missing
+  value named. ⛔ Nothing that WRITES may fall back: site 14 can destroy production LS, and a default
+  is not worth that.
+
+## A.4 Add to the §6 regression test
+
+The existing item 4 asserts *"nothing of LS appears in a stubbed scene's outputs."* Extend it to the
+two new classes, because neither is triggered by absence and item 4 would not catch either:
+
+- **Class B:** pour a scene that shares street NAMES with LS but has its own measurements; assert no
+  LS measurement reaches it. (Name-collision is the trigger, not absence.)
+- **Class C:** run each entry point with the scene omitted; assert it **fails** rather than defaulting
+  — and specifically that a bake cannot touch `lafayette-square` unless LS was named explicitly.
+
+## A.5 Why this belongs in this brief and not a new one
+
+`ORIENTATION` and `CLAUDE.md` **Layer 0** now carry the principle (*"no fallbacks — a fallback turns a
+failure into a plausible-looking success"*, Jacob 2026-07-31). This document is where the *sites* live,
+so the sites go here. ⛔ Do not open a second brief for the same class — that is the palimpsest, and
+the class already went un-named for eleven days because site 4 had no category to belong to.
+
+**Tracked in `ROADMAP` as A00.**
